@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
 (** Given a clang command, normalize it via `clang -###` if needed to get a clear view of what work
     is being done and which source files are being compiled, if any, then replace compilation
     commands by our own clang with our plugin attached for each source file. *)
-open! IStd
 
 module L = Logging
 
@@ -37,7 +37,7 @@ let check_for_existing_file args =
       | option :: rest ->
           if String.equal option "-c" then
             (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
-             Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
+               Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
             match (clang_ignore_regex, List.hd rest) with
             | Some regexp, Some arg ->
                 if Str.string_match regexp arg 0 && Sys.file_exists arg <> `Yes then (
@@ -59,27 +59,27 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
     Printf.sprintf "%s 2>&1"
       ( ClangCommand.prepend_arg "-###" cmd
       |> (* c++ modules are not supported, so let clang know in case it was passed "-fmodules".
-           Unfortunately we cannot know accurately if "-fmodules" was passed because we don't go
-           into argument files at this point ("clang -### ..." will do that for us), so we also pass
-           "-Qunused-arguments" to silence the potential warning that "-fno-cxx-modules" was
-           ignored. Moreover, "-fno-cxx-modules" is only accepted by the clang driver so we have to
-           pass it now.
+            Unfortunately we cannot know accurately if "-fmodules" was passed because we don't go
+            into argument files at this point ("clang -### ..." will do that for us), so we also pass
+            "-Qunused-arguments" to silence the potential warning that "-fno-cxx-modules" was
+            ignored. Moreover, "-fno-cxx-modules" is only accepted by the clang driver so we have to
+            pass it now.
 
-           Using clang instead of gcc may trigger warnings about unsupported optimization flags;
-           passing -Wno-ignored-optimization-argument prevents that.
+            Using clang instead of gcc may trigger warnings about unsupported optimization flags;
+            passing -Wno-ignored-optimization-argument prevents that.
 
-           Clang adds "-faddrsig" by default on ELF targets. This is ok in itself, but for some
-           reason that flag is the only one to show up *after* the source file name in the -cc1
-           commands emitted by [clang -### ...]. Passing [-fno-addrsig] ensures that the source
-           path is always the last argument.  *)
-         ClangCommand.append_args
-           [ "-fno-cxx-modules"
-           ; "-Qunused-arguments"
-           ; "-Wno-ignored-optimization-argument"
-           ; "-fno-addrsig" ]
+            Clang adds "-faddrsig" by default on ELF targets. This is ok in itself, but for some
+            reason that flag is the only one to show up *after* the source file name in the -cc1
+            commands emitted by [clang -### ...]. Passing [-fno-addrsig] ensures that the source
+            path is always the last argument. *)
+      ClangCommand.append_args
+        [ "-fno-cxx-modules"
+        ; "-Qunused-arguments"
+        ; "-Wno-ignored-optimization-argument"
+        ; "-fno-addrsig" ]
       |> (* If -fembed-bitcode is passed, it leads to multiple cc1 commands, which try to read .bc
             files that don't get generated, and fail. So pass -fembed-bitcode=off to disable. *)
-         ClangCommand.append_args ["-fembed-bitcode=off"]
+      ClangCommand.append_args ["-fembed-bitcode=off"]
       |> ClangCommand.command_to_run )
   in
   L.(debug Capture Medium) "clang -### invocation: %s@\n" clang_hashhashhash ;
@@ -89,8 +89,9 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
       CanonicalCommand
         ( (* massage line to remove edge-cases for splitting *)
         match
-          "\"" ^ line ^ " \"" |> (* split by whitespace *)
-                                 Str.split (Str.regexp_string "\" \"")
+          "\"" ^ line ^ " \""
+          |> (* split by whitespace *)
+          Str.split (Str.regexp_string "\" \"")
         with
         | prog :: args ->
             ClangCommand.mk ~is_driver:false ClangQuotes.EscapedDoubleQuotes ~prog ~args
@@ -112,8 +113,7 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
         let line = In_channel.input_line_exn i in
         (* keep only commands and errors *)
         if
-          Str.string_match commands_or_errors line 0
-          && not (Str.string_match ignored_errors line 0)
+          Str.string_match commands_or_errors line 0 && not (Str.string_match ignored_errors line 0)
         then normalized_commands := one_line line :: !normalized_commands
       done
     with End_of_file -> ()
@@ -134,7 +134,7 @@ let normalize ~prog ~args : action_item list =
 let exec_action_item ~prog ~args = function
   | ClangError error ->
       (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
-       `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
+         `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
       L.(die UserError)
         "Failed to execute compilation command:@\n\
          '%s' %a@\n\
@@ -142,8 +142,7 @@ let exec_action_item ~prog ~args = function
          Error message:@\n\
          %s@\n\
          @\n\
-         *** Infer needs a working compilation command to run."
-        prog Pp.cli_args args error
+         *** Infer needs a working compilation command to run." prog Pp.cli_args args error
   | ClangWarning warning ->
       L.external_warning "%s@\n" warning
   | CanonicalCommand clang_cmd ->
@@ -184,8 +183,8 @@ let exe ~prog ~args =
          In particular, this can happen when
          - there are only assembly commands to execute, which we skip, or
          - the user tries to run `infer -- clang -c file_that_does_not_exist.c`. In this case, this
-           will fail with the appropriate error message from clang instead of silently analyzing 0
-           files. *)
+         will fail with the appropriate error message from clang instead of silently analyzing 0
+         files. *)
       L.(debug Capture Quiet)
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will \
          run the original command directly:@\n\

@@ -17,9 +17,9 @@ end
 
 open! Types
 
+exception Stop_analysis
 (** This exception can be raised by abstract interpreters to stop the analysis early without
     triggering further errors. Clients who raise this exception should catch it eventually. *)
-exception Stop_analysis
 
 (** Abstract domains and domain combinators *)
 
@@ -38,13 +38,12 @@ module type S = sig
   val widen : prev:t -> next:t -> num_iters:int -> t
 end
 
-include
-  (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   sig
-    [@@@warning "-60"]
+  [@@@warning "-60"]
 
-    (** a trivial domain *)
-    module Empty : S with type t = unit
+  module Empty : S with type t = unit
+  (** a trivial domain *)
 end
 
 (** A domain with an explicit bottom value *)
@@ -95,12 +94,11 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
   val get : t -> V.t option
 end
 
-include
-  sig
-    [@@@warning "-60"]
+include sig
+  [@@@warning "-60"]
 
-    (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of [Below] are strictly smaller than elements of [Above] *)
-    module Stacked (Below : S) (Above : S) : S with type t = (Below.t, Above.t) below_above
+  (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of [Below] are strictly smaller than elements of [Above] *)
+  module Stacked (Below : S) (Above : S) : S with type t = (Below.t, Above.t) below_above
 end
 
 module StackedUtils : sig
@@ -165,13 +163,12 @@ module type FiniteSetS = sig
   include WithBottom with type t := t
 end
 
-include
-  sig
-    [@@@warning "-60"]
+include sig
+  [@@@warning "-60"]
 
-    (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
+  (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
-    module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
+  module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
 end
 
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
@@ -195,18 +192,14 @@ module type MapS = sig
   include WithBottom with type t := t
 end
 
-include
-  sig
-    [@@@warning "-60"]
+include sig
+  [@@@warning "-60"]
 
-    (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
+  (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else.
     Uses PPMap as the underlying map *)
-    module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
-      MapS
-      with type key = PPMap.key
-       and type value = ValueDomain.t
-       and type t = ValueDomain.t PPMap.t
+  module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
+    MapS with type key = PPMap.key and type value = ValueDomain.t and type t = ValueDomain.t PPMap.t
 end
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
@@ -233,30 +226,29 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
 
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
-include
-  sig
-    [@@@warning "-60"]
+include sig
+  [@@@warning "-60"]
 
-    module FiniteMultiMap
-        (Key : PrettyPrintable.PrintableOrderedType)
-        (Value : PrettyPrintable.PrintableOrderedType) : sig
-      include WithBottom
+  module FiniteMultiMap
+      (Key : PrettyPrintable.PrintableOrderedType)
+      (Value : PrettyPrintable.PrintableOrderedType) : sig
+    include WithBottom
 
-      val add : Key.t -> Value.t -> t -> t [@@warning "-32"]
+    val add : Key.t -> Value.t -> t -> t [@@warning "-32"]
 
-      val mem : Key.t -> t -> bool [@@warning "-32"]
+    val mem : Key.t -> t -> bool [@@warning "-32"]
 
-      val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
-    end
+    val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
+  end
 end
 
+module BooleanAnd : S with type t = bool
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
     true in both conditional branches. *)
-module BooleanAnd : S with type t = bool
 
+module BooleanOr : WithBottom with type t = bool
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
-module BooleanOr : WithBottom with type t = bool
 
 module type MaxCount = sig
   val max : int
@@ -268,8 +260,8 @@ end
 module CountDomain (MaxCount : MaxCount) : sig
   include WithBottom with type t = private int
 
-  (** top is maximum value *)
   include WithTop with type t := t
+  (** top is maximum value *)
 
   val increment : t -> t
   (** bump the count by one if it is less than the max *)
@@ -284,11 +276,11 @@ end
 (** Domain keeping a non-negative count with a bounded maximum value. 
     [join] is minimum and [top] is zero. *)
 module DownwardIntDomain (MaxCount : MaxCount) : sig
-  (** top is zero *)
   include WithTop with type t = private int
+  (** top is zero *)
 
-  (** bottom is the provided maximum *)
   include WithBottom with type t := t
+  (** bottom is the provided maximum *)
 
   val increment : t -> t
   (** bump the count by one if this won't cross the maximum *)

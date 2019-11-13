@@ -229,9 +229,7 @@ let get_pure_extended p =
 
 
 (** Print existential quantification *)
-let pp_evars f evars =
-  if evars <> [] then F.fprintf f "exists [%a]. " (Pp.comma_seq Ident.pp) evars
-
+let pp_evars f evars = if evars <> [] then F.fprintf f "exists [%a]. " (Pp.comma_seq Ident.pp) evars
 
 (** Print an hpara in simple mode *)
 let pp_hpara_simple pe_ env n f pred =
@@ -357,8 +355,7 @@ let gen_free_vars {sigma; sigma_fp; sub; pi; pi_fp} =
   >>= fun () ->
   sigma_gen_free_vars sigma_fp
   >>= fun () ->
-  Sil.subst_gen_free_vars sub
-  >>= fun () -> pi_gen_free_vars pi >>= fun () -> pi_gen_free_vars pi_fp
+  Sil.subst_gen_free_vars sub >>= fun () -> pi_gen_free_vars pi >>= fun () -> pi_gen_free_vars pi_fp
 
 
 let free_vars prop = Sequence.Generator.run (gen_free_vars prop)
@@ -440,8 +437,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
   let init_value () =
     let create_fresh_var () =
       let fresh_id =
-        Ident.create_fresh
-          (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed)
+        Ident.create_fresh (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed)
       in
       Exp.Var fresh_id
     in
@@ -455,8 +451,8 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
   | Tstruct name, _ -> (
       if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
         L.die InternalError
-          "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also \
-           of type struct %a: %a:%a"
+          "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also of \
+           type struct %a: %a:%a"
           Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path) Typ.Name.pp name ;
       match (struct_init_mode, Tenv.lookup tenv name) with
       | Fld_init, Some {fields} ->
@@ -831,7 +827,7 @@ module Normalize = struct
           in
           match (e1', e2') with
           (* pattern for arrays and extensible structs:
-               sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
+             sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
           | ( Sizeof ({typ; dynamic_length= len1_opt} as sizeof_data)
             , BinOp (Mult _, len2, Sizeof {typ= elt; dynamic_length= None}) )
             when isPlusA && extensible_array_element_typ_equal elt typ ->
@@ -1457,7 +1453,7 @@ module Normalize = struct
         match (normalized_cnt, normalized_te) with
         | Earray ((Exp.Sizeof _ as size), [], inst), Sizeof {typ= {desc= Tarray _}} ->
             (* check for an empty array whose size expression is (Sizeof type), and turn the array
-                 into a strexp of the given type *)
+               into a strexp of the given type *)
             let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
             replace_hpred hpred'
         | ( Earray
@@ -1481,10 +1477,7 @@ module Normalize = struct
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              { Exp.typ= arr
-              ; nbytes= None
-              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
-              ; subtype }
+              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (omult, x, len)); subtype}
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
@@ -1495,10 +1488,7 @@ module Normalize = struct
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              { Exp.typ= arr
-              ; nbytes= None
-              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
-              ; subtype }
+              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (omult, x, len)); subtype}
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
@@ -1553,9 +1543,7 @@ module Normalize = struct
       in
       List.fold ~f:get_disequality_info ~init:[] nonineq_list
     in
-    let is_neq e n =
-      List.exists ~f:(fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list
-    in
+    let is_neq e n = List.exists ~f:(fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
     let le_list_tightened =
       let get_le_inequality_info acc a =
         match atom_exp_le_const a with Some (e, n) -> (e, n) :: acc | _ -> acc

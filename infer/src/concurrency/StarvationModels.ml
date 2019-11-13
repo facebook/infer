@@ -75,8 +75,8 @@ let empty_or_excessive_timeout actuals =
       |> Option.value_map ~default:false ~f:(fun duration -> is_excessive_secs (0.001 *. duration))
   | [_; snd_arg; third_arg] ->
       (* this is either a call to Object.wait(_, _) or to a java.util.concurent.lock(_, _) method.
-           In the first case the arguments are a duration in milliseconds and an extra duration in
-           nanoseconds; in the second case, the arguments are a duration and a time unit. *)
+         In the first case the arguments are a duration in milliseconds and an extra duration in
+         nanoseconds; in the second case, the arguments are a duration and a time unit. *)
       duration_of_exp snd_arg
       |> Option.value_map ~default:false ~f:(fun duration ->
              match timeunit_of_exp third_arg with

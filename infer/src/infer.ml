@@ -44,8 +44,8 @@ let setup () =
       if
         Config.(
           (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
-              avoid getting errors because some of their contents is missing (removed by
-              [Driver.clean_results_dir ()]). *)
+             avoid getting errors because some of their contents is missing (removed by
+             [Driver.clean_results_dir ()]). *)
           (buck && flavors) || genrule_mode)
         || not
              ( Driver.(equal_mode driver_mode Analyze)
@@ -64,7 +64,7 @@ let setup () =
       ResultsDir.assert_results_dir "have you run infer before?" ) ;
   db_start () ;
   NullsafeInit.init () ;
-  if CLOpt.is_originator then ( RunState.add_run_to_sequence () ; RunState.store () ) ;
+  if CLOpt.is_originator then (RunState.add_run_to_sequence () ; RunState.store ()) ;
   ()
 
 

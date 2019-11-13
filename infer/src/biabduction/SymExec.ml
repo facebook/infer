@@ -112,8 +112,8 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
         match List.find ~f:(fun fse -> Typ.Fieldname.equal fld (fst fse)) fsel with
         | Some (_, se') ->
             let res_e', res_se', res_t', res_pred_insts_op' =
-              apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f
-                inst lookup_inst
+              apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f inst
+                lookup_inst
             in
             let replace_fse fse =
               if Typ.Fieldname.equal fld (fst fse) then (fld, res_se') else fse
@@ -127,7 +127,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
             (res_e', res_se, typ, res_pred_insts_op')
         | None ->
             (* This case should not happen. The rearrangement should
-                 have materialized all the accessed cells. *)
+               have materialized all the accessed cells. *)
             pp_error () ;
             assert false )
     | None ->
@@ -146,9 +146,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
             apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f inst
               lookup_inst
           in
-          let replace_ese ese =
-            if Exp.equal idx_ese' (fst ese) then (idx_ese', res_se') else ese
-          in
+          let replace_ese ese = if Exp.equal idx_ese' (fst ese) then (idx_ese', res_se') else ese in
           let res_se = Sil.Earray (len, List.map ~f:replace_ese esel, inst1) in
           let res_t = Typ.mk_array ~default:typ res_t' ?length:len' ?stride:stride' in
           (res_e', res_se, res_t, res_pred_insts_op')
@@ -256,8 +254,7 @@ let prune_ne tenv ~positive e1 e2 prop =
 *)
 let prune_ineq tenv ~is_strict ~positive prop e1 e2 =
   if Exp.equal e1 e2 then
-    if (positive && not is_strict) || ((not positive) && is_strict) then
-      Propset.singleton tenv prop
+    if (positive && not is_strict) || ((not positive) && is_strict) then Propset.singleton tenv prop
     else Propset.empty
   else
     (* build the pruning condition and its negation, as explained in
@@ -513,8 +510,8 @@ let method_exists right_proc_name methods =
     List.exists ~f:(fun meth_name -> Typ.Procname.equal right_proc_name meth_name) methods
   else
     (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
-          the method has been called directly somewhere. It can still be that this is not the
-          case but we have a model for the method. *)
+       the method has been called directly somewhere. It can still be that this is not the
+       case but we have a model for the method. *)
     match Attributes.load right_proc_name with
     | Some attrs ->
         attrs.ProcAttributes.is_defined
@@ -806,8 +803,8 @@ let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver 
 (*  2. We don't know, but obj could be null, we return both options, *)
 (* (obj = null, res = null), (obj != null, res = [obj foo]) *)
 (*  We want the same behavior even when we are going to skip the function. *)
-let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre ret_id
-    res =
+let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre ret_id res
+    =
   let path_description =
     F.sprintf "Message %s with receiver nil returns nil."
       (Typ.Procname.to_simplified_string callee_pname)
@@ -924,8 +921,8 @@ let is_rec_call callee_pname caller_pdesc =
   Typ.Procname.equal callee_pname (Procdesc.get_proc_name caller_pdesc)
 
 
-let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ callee_pname
-    callee_loc =
+let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ callee_pname callee_loc
+    =
   if Typ.Procname.is_infer_undefined callee_pname then prop
   else
     let lookup_abduced_expression p abduced_ret_pv =
@@ -1098,8 +1095,8 @@ let is_variadic_procname callee_pname =
     ~default:false
 
 
-let resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params
-    callee_pname call_flags =
+let resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params callee_pname
+    call_flags =
   let resolved_pname =
     match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
     | resolved_pname :: _ ->
@@ -1148,8 +1145,7 @@ let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee
             callee_pname call_flags
         in
         { result with
-          dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_model_specialization_failure
-        }
+          dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_model_specialization_failure }
       else resolve_and_analyze_result
     with SpecializeProcdesc.UnmatchedParameters ->
       let result =
@@ -1159,8 +1155,8 @@ let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee
       { result with
         dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_parameters_arguments_mismatch }
   else
-    resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params
-      callee_pname call_flags
+    resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params callee_pname
+      call_flags
 
 
 let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
@@ -1250,8 +1246,8 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
           ; exe_env }
     in
     if is_objc_instance_method then
-      handle_objc_instance_method_call_or_skip current_pdesc tenv actual_args path callee_pname
-        prop (fst ret_id_typ) skip_res
+      handle_objc_instance_method_call_or_skip current_pdesc tenv actual_args path callee_pname prop
+        (fst ret_id_typ) skip_res
     else skip_res ()
   in
   let call_args prop_ proc_name args ret_id_typ loc =
@@ -1274,8 +1270,7 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
-        if
-          !Language.curr_language <> Language.Clang || Config.report_condition_always_true_in_clang
+        if !Language.curr_language <> Language.Clang || Config.report_condition_always_true_in_clang
         then
           let report_condition_always_true_false i =
             let skip_loop =
@@ -1583,11 +1578,8 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
     let already_has_abduced_retval p =
       List.exists
         ~f:(fun hpred ->
-          match hpred with
-          | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
-              Pvar.equal pv abduced
-          | _ ->
-              false )
+          match hpred with Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced | _ -> false
+          )
         p.Prop.sigma_fp
     in
     (* prevent introducing multiple abduced retvals for a single call site in a loop *)
@@ -1704,8 +1696,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
         match actual with
         | (Exp.Lvar _ as e), ({Typ.desc= Tptr _} as t) ->
             Some (e, t, i)
-        | (Exp.Var _ as e), ({Typ.desc= Tptr _} as t) when should_abduce_param_value callee_pname
-          ->
+        | (Exp.Var _ as e), ({Typ.desc= Tptr _} as t) when should_abduce_param_value callee_pname ->
             Some (e, t, i)
         | _ ->
             None )
@@ -1821,8 +1812,7 @@ and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
     :: (lexp2, typ2) :: _ ->
       Tenv.add_field tenv struct_name field ;
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
-      execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc
-        prop
+      execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -1909,12 +1899,12 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
         raise (Exceptions.Wrong_argument_number __POS__)
   in
   (* Actual parameters are associated to their formal
-       parameter type if there are enough formal parameters, and
-       to their actual type otherwise. The latter case happens
-       with variable - arguments functions *)
+     parameter type if there are enough formal parameters, and
+     to their actual type otherwise. The latter case happens
+     with variable - arguments functions *)
   let actual_params = comb actual_pars formal_types in
   (* In case we call an objc instance method we add an extra spec
-      where the receiver is null and the semantics of the call is nop *)
+     where the receiver is null and the semantics of the call is nop *)
   let pdesc = Summary.get_proc_desc summary in
   match (!Language.curr_language, callee_attrs.ProcAttributes.clang_method_kind) with
   | Language.Clang, ClangMethodKind.OBJC_INSTANCE ->
@@ -2030,7 +2020,7 @@ let node handle_exn exe_env tenv summary proc_cfg (node : ProcCfg.Exceptional.No
         && (not (Sil.instr_is_auxiliary instr))
         && ProcCfg.Exceptional.Node.kind node <> Procdesc.Node.exn_handler_kind
         (* skip normal instructions if an exception was thrown,
-            unless this is an exception handler node *)
+           unless this is an exception handler node *)
       then (
         L.d_str "Skipping instr " ;
         Sil.d_instr instr ;

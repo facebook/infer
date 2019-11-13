@@ -78,12 +78,7 @@ val mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 
 type log_issue =
-     Typ.Procname.t
-  -> ?node:Procdesc.Node.t
-  -> ?loc:Location.t
-  -> ?ltr:Errlog.loc_trace
-  -> exn
-  -> unit
+  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
 
 val process_execution_failures : log_issue -> Typ.Procname.t -> unit
 (** Process the failures during symbolic execution of a procedure *)

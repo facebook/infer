@@ -78,9 +78,7 @@ module ConditionTrace = struct
 
   let check ~issue_type_u5 ~issue_type_r2 : _ t0 -> IssueType.t option =
    fun ct ->
-    if has_risky ct then Some issue_type_r2
-    else if has_unknown ct then Some issue_type_u5
-    else None
+    if has_risky ct then Some issue_type_r2 else if has_unknown ct then Some issue_type_u5 else None
 
 
   let check_buffer_overrun ct =
@@ -178,8 +176,8 @@ module AllocSizeCondition = struct
           | cmp_big ->
               let propagate =
                 match (cmp_mone, cmp_big) with
-                | (`NotComparable | `LeftSubsumesRight), _
-                | _, (`NotComparable | `LeftSubsumesRight) ->
+                | (`NotComparable | `LeftSubsumesRight), _ | _, (`NotComparable | `LeftSubsumesRight)
+                  ->
                     is_symbolic
                 | _ ->
                     false
@@ -337,22 +335,22 @@ module ArrayAccessCondition = struct
     (* basically, alarms involving infinity are filtered *)
     ((not (ItvPure.is_finite real_idx)) || not (ItvPure.is_finite c.size))
     && (* except the following cases *)
-       not
-         ( Bound.is_not_infty (ItvPure.lb real_idx)
-           && (* idx non-infty lb < 0 *)
-              Bound.lt (ItvPure.lb real_idx) Bound.zero
-         || Bound.is_not_infty (ItvPure.lb real_idx)
-            && (* idx non-infty lb > size lb *)
-               Bound.gt (ItvPure.lb real_idx) (ItvPure.lb c.size)
-         || Bound.is_not_infty (ItvPure.lb real_idx)
-            && (* idx non-infty lb > size ub *)
-               Bound.gt (ItvPure.lb real_idx) (ItvPure.ub c.size)
-         || Bound.is_not_infty (ItvPure.ub real_idx)
-            && (* idx non-infty ub > size lb *)
-               Bound.gt (ItvPure.ub real_idx) (ItvPure.lb c.size)
-         || Bound.is_not_infty (ItvPure.ub real_idx)
-            && (* idx non-infty ub > size ub *)
-               Bound.gt (ItvPure.ub real_idx) (ItvPure.ub c.size) )
+    not
+      ( Bound.is_not_infty (ItvPure.lb real_idx)
+        && (* idx non-infty lb < 0 *)
+        Bound.lt (ItvPure.lb real_idx) Bound.zero
+      || Bound.is_not_infty (ItvPure.lb real_idx)
+         && (* idx non-infty lb > size lb *)
+         Bound.gt (ItvPure.lb real_idx) (ItvPure.lb c.size)
+      || Bound.is_not_infty (ItvPure.lb real_idx)
+         && (* idx non-infty lb > size ub *)
+         Bound.gt (ItvPure.lb real_idx) (ItvPure.ub c.size)
+      || Bound.is_not_infty (ItvPure.ub real_idx)
+         && (* idx non-infty ub > size lb *)
+         Bound.gt (ItvPure.ub real_idx) (ItvPure.lb c.size)
+      || Bound.is_not_infty (ItvPure.ub real_idx)
+         && (* idx non-infty ub > size ub *)
+         Bound.gt (ItvPure.ub real_idx) (ItvPure.ub c.size) )
 
 
   (* check buffer overrun and return its confidence *)
@@ -735,14 +733,12 @@ module ConditionWithTrace = struct
 
   let pp fmt {cond; trace; reachability} =
     F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace ;
-    if Config.bo_debug >= 3 then
-      F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
+    if Config.bo_debug >= 3 then F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
 
 
   let pp_summary fmt {cond; trace; reachability} =
     F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp_summary trace ;
-    if Config.bo_debug >= 3 then
-      F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
+    if Config.bo_debug >= 3 then F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
 
 
   let have_same_bounds {cond= cond1} {cond= cond2} = Condition.equal cond1 cond2
@@ -818,7 +814,7 @@ module ConditionWithTrace = struct
     | Issue issue_type ->
         let issue_type = set_u5 cwt issue_type in
         (* Only report if the precision has improved.
-        This is approximated by: only report if the issue_type has changed. *)
+           This is approximated by: only report if the issue_type has changed. *)
         let report_issue_type =
           match cwt.reported with
           | Some reported when Reported.equal reported issue_type ->
@@ -869,7 +865,7 @@ module ConditionSet = struct
 
   let try_merge ~existing:(existing_cwt, existing_checked) ~new_:(new_cwt, new_checked) =
     (* we don't want to remove issues that would end up in a higher bucket,
-     e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
+       e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
     let try_deduplicate () =
       match ConditionWithTrace.xcompare ~lhs:existing_cwt ~rhs:new_cwt with
       | `LeftSubsumesRight ->
@@ -908,8 +904,8 @@ module ConditionSet = struct
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
             if Config.bo_debug >= 3 then
-              L.d_printfln_escaped "[InferboPO] Removing condition %a (because of new %a)@."
-                pp_cond existing pp_cond new_ ;
+              L.d_printfln_escaped "[InferboPO] Removing condition %a (because of new %a)@." pp_cond
+                existing pp_cond new_ ;
             aux acc ~same:false rest
         | `KeepExistingAndContinue ->
             aux (existing :: acc) ~same rest )
@@ -932,8 +928,7 @@ module ConditionSet = struct
 
   let add_array_access location ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
       ~relation ~idx_traces ~arr_traces ~latest_prune condset =
-    ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
-      ~relation
+    ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp ~relation
     |> Condition.make_array_access
     |> add_opt location
          (ValTrace.Issue.(binary location ArrayAccess) idx_traces arr_traces)
@@ -955,12 +950,12 @@ module ConditionSet = struct
          latest_prune condset
 
 
-  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site
-      latest_prune =
+  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site latest_prune
+      =
     let subst_add_cwt condset cwt =
       match
-        ConditionWithTrace.subst eval_sym_trace rel_subst_map caller_relation callee_pname
-          call_site cwt
+        ConditionWithTrace.subst eval_sym_trace rel_subst_map caller_relation callee_pname call_site
+          cwt
       with
       | None ->
           condset

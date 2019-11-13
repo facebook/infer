@@ -61,8 +61,8 @@ val debug : debug_kind -> debug_level -> ('a, F.formatter, unit) format -> 'a
 
 val debug_dev : ('a, Format.formatter, unit) format -> 'a
   [@@deprecated
-    "Only use to debug during development. If you want more permanent logging, use \
-     [Logging.debug] instead."]
+    "Only use to debug during development. If you want more permanent logging, use [Logging.debug] \
+     instead."]
   [@@warning "-32"]
 (** For debugging during development. *)
 

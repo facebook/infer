@@ -90,8 +90,8 @@ let create_condition_ls ids_private id_base p_leftover (inst : Sil.subst) =
   (* [fav_insts_of_private_ids] does not intersect the free vars in [p_leftover.sigma] *)
   Prop.sigma_free_vars p_leftover.Prop.sigma |> Fn.non intersects_fav_insts_of_private_ids
   && (* [fav_insts_of_private_ids] does not intersect the free vars in [insts_of_public_ids] *)
-     List.for_all insts_of_public_ids ~f:(fun e ->
-         Exp.free_vars e |> Fn.non intersects_fav_insts_of_private_ids )
+  List.for_all insts_of_public_ids ~f:(fun e ->
+      Exp.free_vars e |> Fn.non intersects_fav_insts_of_private_ids )
 
 
 let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Sil.hpara) =
@@ -912,7 +912,7 @@ let abstract_gc tenv p =
   let check fav_seq =
     Sequence.is_empty fav_seq
     || (* non-empty intersection with [fav_p_without_pi] *)
-       Sequence.exists fav_seq ~f:(fun id -> Ident.Set.mem id fav_p_without_pi)
+    Sequence.exists fav_seq ~f:(fun id -> Ident.Set.mem id fav_p_without_pi)
   in
   let strong_filter = function
     | Sil.Aeq (e1, e2) | Sil.Aneq (e1, e2) ->
@@ -1112,7 +1112,7 @@ let check_junk pname tenv prop =
               in
               (is_none alloc_attribute && !leaks_reported <> [])
               || (* None attribute only reported if it's the first one *)
-                 List.mem ~equal:attr_opt_equal !leaks_reported alloc_attribute
+              List.mem ~equal:attr_opt_equal !leaks_reported alloc_attribute
             in
             let ignore_leak =
               !BiabductionConfig.allow_leak || ignore_resource || is_undefined

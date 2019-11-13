@@ -213,7 +213,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
     let seen = Exp.Set.add e seen_ in
     match Prop.exp_normalize_noabs tenv Sil.sub_empty e with
     | Exp.Const c ->
-        if verbose then ( L.d_str "exp_lv_dexp: constant " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_lv_dexp: constant " ; Sil.d_exp e ; L.d_ln ()) ;
         Some (DExp.Dderef (DExp.Dconst c))
     | Exp.BinOp (Binop.PlusPI, e1, e2) -> (
         if verbose then (
@@ -311,7 +311,7 @@ and exp_rv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
     let seen = Exp.Set.add e seen_ in
     match e with
     | Exp.Const c ->
-        if verbose then ( L.d_str "exp_rv_dexp: constant " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_rv_dexp: constant " ; Sil.d_exp e ; L.d_ln ()) ;
         Some (DExp.Dconst c)
     | Exp.Lvar pv ->
         if verbose then (
@@ -346,24 +346,24 @@ and exp_rv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         | Some de1, Some de2 ->
             Some (DExp.Darray (de1, de2)) )
     | Exp.BinOp (op, e1, e2) -> (
-        if verbose then ( L.d_str "exp_rv_dexp: BinOp " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_rv_dexp: BinOp " ; Sil.d_exp e ; L.d_ln ()) ;
         match (exp_rv_dexp_ tenv seen node e1, exp_rv_dexp_ tenv seen node e2) with
         | None, _ | _, None ->
             None
         | Some de1, Some de2 ->
             Some (DExp.Dbinop (op, de1, de2)) )
     | Exp.UnOp (op, e1, _) -> (
-        if verbose then ( L.d_str "exp_rv_dexp: UnOp " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_rv_dexp: UnOp " ; Sil.d_exp e ; L.d_ln ()) ;
         match exp_rv_dexp_ tenv seen node e1 with
         | None ->
             None
         | Some de1 ->
             Some (DExp.Dunop (op, de1)) )
     | Exp.Cast (_, e1) ->
-        if verbose then ( L.d_str "exp_rv_dexp: Cast " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_rv_dexp: Cast " ; Sil.d_exp e ; L.d_ln ()) ;
         exp_rv_dexp_ tenv seen node e1
     | Exp.Sizeof {typ; dynamic_length; subtype} ->
-        if verbose then ( L.d_str "exp_rv_dexp: type " ; Sil.d_exp e ; L.d_ln () ) ;
+        if verbose then (L.d_str "exp_rv_dexp: type " ; Sil.d_exp e ; L.d_ln ()) ;
         Some
           (DExp.Dsizeof (typ, Option.bind dynamic_length ~f:(exp_rv_dexp_ tenv seen node), subtype))
     | _ ->
@@ -564,7 +564,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
 let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
-  if verbose then ( L.d_str "in vpath_find exp:" ; Sil.d_exp exp_ ; L.d_ln () ) ;
+  if verbose then (L.d_str "in vpath_find exp:" ; Sil.d_exp exp_ ; L.d_ln ()) ;
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) =
       match se with

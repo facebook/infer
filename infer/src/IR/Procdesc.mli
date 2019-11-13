@@ -178,17 +178,17 @@ module Node : sig
   val compute_key : t -> NodeKey.t
 end
 
-(** Map with node id keys. *)
 module IdMap : PrettyPrintable.PPMap with type key = Node.id
+(** Map with node id keys. *)
 
-(** Hash table with nodes as keys. *)
 module NodeHash : Caml.Hashtbl.S with type key = Node.t
+(** Hash table with nodes as keys. *)
 
-(** Map over nodes. *)
 module NodeMap : Caml.Map.S with type key = Node.t
+(** Map over nodes. *)
 
-(** Set of nodes. *)
 module NodeSet : Caml.Set.S with type elt = Node.t
+(** Set of nodes. *)
 
 (** procedure descriptions *)
 
@@ -316,8 +316,8 @@ val has_modify_in_block_attr : t -> Pvar.t -> bool
 val is_connected : t -> (unit, [`Join | `Other]) Result.t
 (** checks whether a cfg for the given procdesc is connected or not *)
 
+module SQLite : SqliteUtils.Data with type t = t option
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
    CFG *)
-module SQLite : SqliteUtils.Data with type t = t option
 
 val load : Typ.Procname.t -> t option

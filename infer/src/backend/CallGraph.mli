@@ -8,8 +8,7 @@ open! IStd
 module F = Format
 
 module type NodeSig = sig
-  type t = private
-    {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
+  type t = private {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
 
   val make : int -> Typ.Procname.t -> int list -> t
 

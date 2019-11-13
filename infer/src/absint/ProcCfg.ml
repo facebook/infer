@@ -216,9 +216,7 @@ module Exceptional = struct
       in
       fold_exceptional_succs pdesc n ~f:add_exn_pred ~init:exn_preds_acc
     in
-    let exceptional_preds =
-      Procdesc.fold_nodes pdesc ~f:add_exn_preds ~init:Procdesc.IdMap.empty
-    in
+    let exceptional_preds = Procdesc.fold_nodes pdesc ~f:add_exn_preds ~init:Procdesc.IdMap.empty in
     (pdesc, exceptional_preds)
 
 
@@ -291,8 +289,7 @@ end
 (** Wrapper that reverses the direction of the CFG *)
 module Backward (Base : S with type instrs_dir = Instrs.not_reversed) = struct
   include (
-    Base :
-      S with type t = Base.t and type instrs_dir := Base.instrs_dir and module Node = Base.Node )
+    Base : S with type t = Base.t and type instrs_dir := Base.instrs_dir and module Node = Base.Node )
 
   type instrs_dir = Instrs.reversed
 
@@ -341,8 +338,7 @@ end = struct
 
   let instrs (node, index) =
     let instrs = Base.instrs node in
-    if Instrs.is_empty instrs then Instrs.empty
-    else Instrs.nth_exn instrs index |> Instrs.singleton
+    if Instrs.is_empty instrs then Instrs.empty else Instrs.nth_exn instrs index |> Instrs.singleton
 
 
   let first_of_node node = (node, 0)

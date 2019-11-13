@@ -25,8 +25,8 @@ end
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module HoistCalls = AbstractDomain.FiniteSet (Call)
 
-(** Map loop_header -> instrs that can be hoisted out of the loop *)
 module LoopHeadToHoistInstrs = Procdesc.NodeMap
+(** Map loop_header -> instrs that can be hoisted out of the loop *)
 
 (* A loop-invariant function call C(args) at node N can be hoisted out of the loop if
  *
@@ -39,7 +39,7 @@ let add_if_hoistable inv_vars instr node source_nodes idom hoistable_calls =
     when (* Check condition (1); N dominates all loop sources *)
          List.for_all ~f:(fun source -> Dominators.dominates idom node source) source_nodes
          && (* Check condition (2); id should be invariant already *)
-            LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars ->
+         LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars ->
       HoistCalls.add {pname; loc; node; params; ret} hoistable_calls
   | _ ->
       hoistable_calls

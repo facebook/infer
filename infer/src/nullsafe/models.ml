@@ -98,7 +98,7 @@ let get_modelled_annotated_signature tenv proc_attributes =
 (** Return true when the procedure has been modelled for nullability. *)
 let is_modelled_for_nullability_as_internal proc_name =
   (* TODO: get rid of this function, and propagate this information in get_modelled_annotated_signature instead
-   to avoid double calculation and make the code more clear.
+     to avoid double calculation and make the code more clear.
   *)
   let proc_id = Typ.Procname.to_unique_id proc_name in
   try

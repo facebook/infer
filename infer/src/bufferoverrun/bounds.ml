@@ -70,19 +70,18 @@ module SymLinear = struct
     M.for_all2 ~f:le_one_pair x y
 
 
-  let pp1 :
-      markup:bool -> is_beginning:bool -> F.formatter -> Symb.Symbol.t -> NonZeroInt.t -> unit =
+  let pp1 : markup:bool -> is_beginning:bool -> F.formatter -> Symb.Symbol.t -> NonZeroInt.t -> unit
+      =
    fun ~markup ~is_beginning f s c ->
     let c = (c :> Z.t) in
     let c =
       if is_beginning then c
-      else if Z.gt c Z.zero then ( F.pp_print_string f " + " ; c )
-      else ( F.pp_print_string f " - " ; Z.neg c )
+      else if Z.gt c Z.zero then (F.pp_print_string f " + " ; c)
+      else (F.pp_print_string f " - " ; Z.neg c)
     in
     if Z.(equal c one) then (Symb.Symbol.pp_mark ~markup) f s
     else if Z.(equal c minus_one) then F.fprintf f "-%a" (Symb.Symbol.pp_mark ~markup) s
-    else
-      F.fprintf f "%a%s%a" Z.pp_print c SpecialChars.dot_operator (Symb.Symbol.pp_mark ~markup) s
+    else F.fprintf f "%a%s%a" Z.pp_print c SpecialChars.dot_operator (Symb.Symbol.pp_mark ~markup) s
 
 
   let pp : markup:bool -> is_beginning:bool -> F.formatter -> t -> unit =
@@ -578,11 +577,9 @@ module Bound = struct
           mk_MinMax (c2, Plus, Min, Z.(c1 - c2), SymLinear.get_one_symbol x2)
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2 ->
           mk_MinMax (c1, Plus, Min, Z.(c2 - c1), SymLinear.get_one_symbol x1)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
-        ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2 ->
           mk_MinMax (c2, Minus, Max, Z.(c2 - c1), SymLinear.get_mone_symbol x2)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
-        ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2 ->
           mk_MinMax (c1, Minus, Max, Z.(c1 - c2), SymLinear.get_mone_symbol x1)
       | MinMax (c1, (Plus as sign), (Min as minmax), _, s), Linear (c2, se)
       | Linear (c2, se), MinMax (c1, (Plus as sign), (Min as minmax), _, s)

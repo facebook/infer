@@ -203,22 +203,22 @@ let rec abduce_eq (a1 : t) (a2 : t) =
   | Outside (l1, u1), Outside (l2, u2) ->
       (* ∃x. (x<l1 ∨ x>u1) ∧ (x<l2 ∨ x>u2) ∧ li<=ui*)
       (* all the possible cases:
-            x: --------[   ]---------
-            y: -----[       ]--------
+         x: --------[   ]---------
+         y: -----[       ]--------
 
-            x: ---[           ]------
-            y: -----[       ]--------
+         x: ---[           ]------
+         y: -----[       ]--------
 
-            x: ---[       ]----------
-            y: -----[       ]--------
+         x: ---[       ]----------
+         y: -----[       ]--------
 
-            x: ---------[       ]----
-            y: -----[       ]--------
+         x: ---------[       ]----
+         y: -----[       ]--------
 
          -> SAT, can tighten both to min(l1,l2)][max(u1,u2)
 
-            x: ---------------[   ]--
-            y: -----[       ]--------
+         x: ---------------[   ]--
+         y: -----[       ]--------
          or symmetrically x<->y => cannot express the 3 intervals that would be needed so return SAT
          (TODO: we might want to keep only one of these, which would be a kind of recency model of
          disequalities: remember the last known disequality)
@@ -235,24 +235,24 @@ let rec abduce_eq (a1 : t) (a2 : t) =
       (* ∃x. l1≤x≤u1 ∧ (x<l2 ∨ x>u2) *)
       (* all the possible cases:
 
-            x:  [-------]
-            y: --[   ]---
+         x:  [-------]
+         y: --[   ]---
 
          case 1 above: SAT, cannot say more unless a1 is [-∞,+∞] (then we can abduce that a1 is
          the same as a2)
 
-            x:        [--]
-            y: ------[   ]--
+         x:        [--]
+         y: ------[   ]--
 
          case 2 above: UNSAT
 
-            x:   [---]
-            y: ------[   ]--
+         x:   [---]
+         y: ------[   ]--
 
          case 3 above: SAT: x = x\cap y for both
 
-            x:      [----]
-            y: ------[   ]--
+         x:      [----]
+         y: ------[   ]--
 
          case 4 above: SAT: x\cap y for both
       *)
@@ -328,11 +328,11 @@ let abduce_le (a1 : t) (a2 : t) =
       (* two cases:
          1. l1<l2: we don't know if x≤y for sure and cannot express a good fact to abduce to make
          it true
-            x:   [----doesn't matter where u1 is
-            y: -----[       ]---------------------
+         x:   [----doesn't matter where u1 is
+         y: -----[       ]---------------------
          2. l1≥l2: we can abduce that y≥max(u2+1, l1) and that makes it SAT
-            x:      [----doesn't matter either
-            y: -----[       ]---------------------
+         x:      [----doesn't matter either
+         y: -----[       ]---------------------
       *)
       if Bound.lt lower1 (Int l2) then (* case 1: l1<l2 *) Satisfiable (None, None)
       else
@@ -342,12 +342,12 @@ let abduce_le (a1 : t) (a2 : t) =
   | Outside (l1, u1), Between (_lower2, upper2) ->
       (* similarly, two cases:
          1. u1≥u2: can refine to x≤min(l1+1, u2)
-            x: -----[       ]---------------------
-            y: ..-]
+         x: -----[       ]---------------------
+         y: ..-]
          or y:      ...-----]
-         2. u1<u2: cannot deduce anything 
-            x: -----[       ]---------------------
-            y:          ...---]
+         2. u1<u2: cannot deduce anything
+         x: -----[       ]---------------------
+         y:          ...---]
       *)
       if Bound.ge (Int u1) upper2 then
         (* case 1: l1>l2 *)
@@ -385,8 +385,8 @@ let abduce_binop_constraints ~negated (bop : Binop.t) (a1 : t) (a2 : t) =
 
 
 let abduce_binop_is_true ~negated bop v1 v2 =
-  Logging.d_printfln "abduce_binop_is_true ~negated:%b %s (%a) (%a)" negated
-    (Binop.str Pp.text bop) (Pp.option pp) v1 (Pp.option pp) v2 ;
+  Logging.d_printfln "abduce_binop_is_true ~negated:%b %s (%a) (%a)" negated (Binop.str Pp.text bop)
+    (Pp.option pp) v1 (Pp.option pp) v2 ;
   match (v1, v2) with
   | None, None ->
       (* two existential variables: no way to express in the non-relational domain *)

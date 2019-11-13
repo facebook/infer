@@ -7,14 +7,7 @@
 open! IStd
 
 type t =
-  { sum: float
-  ; avg: float
-  ; min: float
-  ; p10: float
-  ; median: float
-  ; p75: float
-  ; max: float
-  ; count: int }
+  {sum: float; avg: float; min: float; p10: float; median: float; p75: float; max: float; count: int}
 
 let to_json s =
   `Assoc

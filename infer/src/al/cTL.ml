@@ -261,10 +261,10 @@ module Debug = struct
       match root with
       | Stmt (DeclStmt (_, stmts, ([VarDecl _] as var_decl))) ->
           (* handling special case of DeclStmt with VarDecl: emit the VarDecl node
-              then emit the statements in DeclStmt as children of VarDecl. This is
-              because despite being equal, the statements inside VarDecl and those
-              inside DeclStmt belong to different instances, hence they fail the
-              phys_equal check that should colour them *)
+             then emit the statements in DeclStmt as children of VarDecl. This is
+             because despite being equal, the statements inside VarDecl and those
+             inside DeclStmt belong to different instances, hence they fail the
+             phys_equal check that should colour them *)
           pp_children pp_ast_aux (fun n -> Decl n) fmt next_level var_decl ;
           pp_stmts fmt (next_level + 1) stmts
       | Stmt stmt ->

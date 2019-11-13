@@ -342,7 +342,7 @@ module Reg = struct
     include (
       Map :
         module type of Map
-        with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
+          with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
 
     type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
 

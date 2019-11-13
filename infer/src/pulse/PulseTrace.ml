@@ -33,8 +33,7 @@ let rec pp ~pp_immediate fmt trace =
     | Immediate {location= _; history} ->
         F.fprintf fmt "%a::%t" ValueHistory.pp history pp_immediate
     | ViaCall {f; location= _; history; in_call} ->
-        F.fprintf fmt "%a::%a[%a]" ValueHistory.pp history CallEvent.pp f (pp ~pp_immediate)
-          in_call
+        F.fprintf fmt "%a::%a[%a]" ValueHistory.pp history CallEvent.pp f (pp ~pp_immediate) in_call
 
 
 let add_event event = function

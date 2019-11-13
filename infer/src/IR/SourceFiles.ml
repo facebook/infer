@@ -109,9 +109,7 @@ let is_captured source =
       |> Option.is_some )
 
 
-let is_non_empty_statement =
-  ResultsDatabase.register_statement "SELECT 1 FROM source_files LIMIT 1"
-
+let is_non_empty_statement = ResultsDatabase.register_statement "SELECT 1 FROM source_files LIMIT 1"
 
 let is_empty () =
   ResultsDatabase.with_registered_statement is_non_empty_statement ~f:(fun db stmt ->
@@ -134,8 +132,8 @@ let is_freshly_captured source =
       SourceFile.SQLite.serialize source
       |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false
-        ~log:"SourceFiles.is_freshly_captured" db load_stmt
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.is_freshly_captured"
+        db load_stmt
       |> Option.value_map ~default:false ~f:deserialize_freshly_captured )
 
 

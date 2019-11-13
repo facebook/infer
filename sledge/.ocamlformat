@@ -1,3 +1,4 @@
 profile = compact
-margin = 77
+break-before-in = fit-or-vertical
+margin = 76
 wrap-comments = true

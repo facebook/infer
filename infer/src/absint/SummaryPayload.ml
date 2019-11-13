@@ -20,8 +20,7 @@ module type S = sig
 
   val of_summary : Summary.t -> t option
 
-  val read_full :
-    caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> (Procdesc.t * t) option
+  val read_full : caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> (Procdesc.t * t) option
 
   val read : caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> t option
 
@@ -44,8 +43,7 @@ module Make (P : Payload) : S with type t = P.t = struct
   let get_payload analysis_result =
     let open Option.Monad_infix in
     analysis_result
-    >>= fun summary ->
-    of_summary summary >>| fun payload -> (Summary.get_proc_desc summary, payload)
+    >>= fun summary -> of_summary summary >>| fun payload -> (Summary.get_proc_desc summary, payload)
 
 
   let read_full ~caller_summary ~callee_pname =

@@ -100,9 +100,7 @@ let line_count source_file =
   count_newlines abs_path
 
 
-let to_rel_path fname =
-  match fname with RelativeProjectRoot path -> path | _ -> to_abs_path fname
-
+let to_rel_path fname = match fname with RelativeProjectRoot path -> path | _ -> to_abs_path fname
 
 let invalid ml_source_file = Invalid {ml_source_file}
 

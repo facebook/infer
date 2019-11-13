@@ -76,7 +76,7 @@ end = struct
     try
       let old = IssueSet.find issue !all_issues in
       (* update human-readable string in case it was supplied this time, but keep the previous
-           value of enabled (see doc comment) *)
+         value of enabled (see doc comment) *)
       if Option.is_some hum0 then old.hum <- hum ;
       if Option.is_some doc_url then old.doc_url <- doc_url ;
       if Option.is_some linters_def_file then old.linters_def_file <- linters_def_file ;
@@ -145,8 +145,7 @@ let checkers_allocates_memory =
 
 
 let checkers_annotation_reachability_error =
-  register_from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
-    ~hum:"Annotation Reachability Error"
+  register_from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR" ~hum:"Annotation Reachability Error"
 
 
 let checkers_calls_expensive_method =

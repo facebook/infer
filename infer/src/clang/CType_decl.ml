@@ -111,13 +111,12 @@ module BuildMethodSignature = struct
     match decl_ref with
     | {Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} ->
         (* In Objective-C class methods, self is not the standard self instance, since in this
-        context we don't have an instance. Instead it is used to get the class of the method.
-        We translate this variables in a different way than normal, we don't treat them as
-        variables in Sil, instead we remove them and get the class directly in the frontend.
-        For that reason, we shouldn't add them as captured variables of blocks, since they
-        don't appear anywhere else in the translation. *)
-        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then
-          None
+           context we don't have an instance. Instead it is used to get the class of the method.
+           We translate this variables in a different way than normal, we don't treat them as
+           variables in Sil, instead we remove them and get the class directly in the frontend.
+           For that reason, we shouldn't add them as captured variables of blocks, since they
+           don't appear anywhere else in the translation. *)
+        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then None
         else Some (Option.value_exn decl_ref.Clang_ast_t.dr_qual_type |> qual_type_to_sil_type tenv)
     | _ ->
         assert false
@@ -464,8 +463,8 @@ and get_record_typename ?tenv decl =
       (* types that have methods. And in C++ struct/class/union can have methods *)
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate
         (CAst_utils.get_qualified_name ~linters_mode name_info)
-  | ObjCInterfaceDecl (_, name_info, _, _, _), _
-  | ObjCImplementationDecl (_, name_info, _, _, _), _ ->
+  | ObjCInterfaceDecl (_, name_info, _, _, _), _ | ObjCImplementationDecl (_, name_info, _, _, _), _
+    ->
       CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
   | ObjCProtocolDecl (_, name_info, _, _, _), _ ->
       CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.protocol_from_qual_name
@@ -543,12 +542,11 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   let file =
     match function_decl_info_opt with
     (* when we model static functions, we cannot take the file into account to
-            create a mangled name because the file of the model is different to the real file,
-            thus the model won't work *)
+       create a mangled name because the file of the model is different to the real file,
+       thus the model won't work *)
     | Some (decl_info, function_decl_info)
       when function_decl_info.Clang_ast_t.fdi_is_static
-           && not
-                (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name))
+           && not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name))
       ->
         let file_opt =
           (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
@@ -721,7 +719,7 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
             sil_desc )
           else (
             (* There is no definition for that struct in whole translation unit.
-                Put empty struct into tenv to prevent backend problems *)
+               Put empty struct into tenv to prevent backend problems *)
             ignore (Tenv.mk_struct tenv ~fields:[] sil_typename) ;
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             sil_desc ) )

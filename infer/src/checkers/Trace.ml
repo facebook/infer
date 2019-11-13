@@ -53,10 +53,7 @@ module type S = sig
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
 
   type report =
-    { issue: IssueType.t
-    ; path_source: Source.t
-    ; path_sink: Sink.t
-    ; path_passthroughs: Passthroughs.t }
+    {issue: IssueType.t; path_source: Source.t; path_sink: Sink.t; path_passthroughs: Passthroughs.t}
 
   val sources : t -> Sources.t
   (** get the sources of the trace. *)
@@ -126,9 +123,7 @@ module Expander (TraceElem : TraceElem.S) = struct
       let caller_elem_kind = TraceElem.kind elem in
       let seen_acc' = CallSite.Set.add caller_elem_site seen_acc in
       let elems, passthroughs = elems_passthroughs_of_pname (CallSite.pname caller_elem_site) in
-      let is_recursive callee_elem seen =
-        CallSite.Set.mem (TraceElem.call_site callee_elem) seen
-      in
+      let is_recursive callee_elem seen = CallSite.Set.mem (TraceElem.call_site callee_elem) seen in
       (* find sinks that are the same kind as the caller, but have a different procname *)
       let matching_elems =
         List.filter
@@ -246,10 +241,7 @@ module Make (Spec : Spec) = struct
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
 
   type report =
-    { issue: IssueType.t
-    ; path_source: Source.t
-    ; path_sink: Sink.t
-    ; path_passthroughs: Passthroughs.t }
+    {issue: IssueType.t; path_source: Source.t; path_sink: Sink.t; path_passthroughs: Passthroughs.t}
 
   let pp fmt {sources; sinks; passthroughs} =
     let pp_passthroughs fmt passthroughs =
@@ -401,9 +393,7 @@ module Make (Spec : Spec) = struct
     let trace_elems_of_passthroughs lt_level passthroughs acc0 =
       let trace_elem_of_passthrough passthrough acc =
         let passthrough_site = Passthrough.site passthrough in
-        let desc =
-          F.asprintf "flow through %a" Typ.Procname.pp (CallSite.pname passthrough_site)
-        in
+        let desc = F.asprintf "flow through %a" Typ.Procname.pp (CallSite.pname passthrough_site) in
         Errlog.make_trace_element lt_level (CallSite.loc passthrough_site) desc [] :: acc
       in
       (* sort passthroughs by ascending line number to create a coherent trace *)
@@ -518,8 +508,7 @@ module Make (Spec : Spec) = struct
           let footprint_indices =
             Sources.Footprint.BaseMap.fold
               (fun (vname, _) _ s ->
-                match Var.get_footprint_index vname with Some ind -> IntSet.add ind s | None -> s
-                )
+                match Var.get_footprint_index vname with Some ind -> IntSet.add ind s | None -> s )
               callee_trace.sources.footprint IntSet.empty
           in
           List.map

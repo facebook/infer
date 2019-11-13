@@ -73,7 +73,7 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
             insert_infer_profile xml_out
         | [_] when not !found_profiles_tag ->
             (* closing the root tag but no <profiles> tag found, add
-                <profiles>[infer profile]</profiles> *)
+               <profiles>[infer profile]</profiles> *)
             Xmlm.output xml_out (`El_start (("", "profiles"), [])) ;
             found_profiles_tag := true ;
             (* do not add <profiles> again *)

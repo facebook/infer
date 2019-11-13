@@ -52,8 +52,8 @@ module JavaString = struct
     let itv =
       Itv.minus (BufferOverrunDomain.Val.get_itv end_v) (BufferOverrunDomain.Val.get_itv begin_v)
     in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
-      ~of_function:"String.substring" location
+    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.substring"
+      location
 
 
   let substring exp begin_idx model_env ~ret:_ inferbo_mem =
@@ -76,8 +76,8 @@ module JavaString = struct
 
 
   (** O(|m|-|n|) where m is the given string and n is the index to start searching from *)
-  let indexOf_char_starting_from exp start_exp ({integer_type_widths; location} as model_env)
-      ~ret:_ inferbo_mem =
+  let indexOf_char_starting_from exp start_exp ({integer_type_widths; location} as model_env) ~ret:_
+      inferbo_mem =
     let itv =
       CostUtils.string_len_range_itv model_env exp
         ~from:(Some (start_exp, integer_type_widths))
@@ -98,8 +98,8 @@ module JavaString = struct
       |> BufferOverrunDomain.Val.get_itv
     in
     let n =
-      CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
-        ~of_function:"String.indexOf" location
+      CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf"
+        location
     in
     let m =
       CostUtils.of_itv ~itv:index_itv ~degree_kind:Polynomials.DegreeKind.Linear

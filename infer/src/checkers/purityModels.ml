@@ -84,16 +84,14 @@ module ProcName = struct
       ; +PatternMatch.implements_io "PrintStream" &:: "print" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "PrintStream" &:: "println" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "Reader" &:: "read" <>--> PurityDomain.impure_global
-      ; +PatternMatch.implements_io "BufferedReader"
-        &:: "readLine" <>--> PurityDomain.impure_global
+      ; +PatternMatch.implements_io "BufferedReader" &:: "readLine" <>--> PurityDomain.impure_global
         (* deserialization is often expensive *)
       ; +PatternMatch.implements_jackson "databind.JsonDeserializer"
         &:: "deserialize" <>--> PurityDomain.pure
       ; +PatternMatch.implements_jackson "core.JsonParser" &:: "nextToken" <>--> modifies_first
       ; +PatternMatch.implements_jackson "core.JsonParser"
         &:: "getCurrentName" <>--> PurityDomain.pure
-      ; +PatternMatch.implements_jackson "core.JsonParser"
-        &::+ getStarValue <>--> PurityDomain.pure
+      ; +PatternMatch.implements_jackson "core.JsonParser" &::+ getStarValue <>--> PurityDomain.pure
       ; +PatternMatch.implements_jackson "core.JsonParser"
         &::+ startsWith "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_pseudo_collection &:: "size" <>--> PurityDomain.pure
@@ -147,7 +145,6 @@ module ProcName = struct
       ; +PatternMatch.implements_list &:: "subList" <>--> PurityDomain.pure
       ; +PatternMatch.implements_arrays &:: "binarySearch" <>--> PurityDomain.pure
       ; +PatternMatch.implements_org_json "JSONArray" &::+ startsWith "get" <>--> PurityDomain.pure
-      ; +PatternMatch.implements_org_json "JSONObject"
-        &::+ startsWith "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_org_json "JSONObject" &::+ startsWith "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_org_json "JSONArray" &:: "length" <>--> PurityDomain.pure ]
 end

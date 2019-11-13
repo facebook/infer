@@ -72,8 +72,7 @@ let _read_file_perf_data fname =
     match split_class_method_name itm.Perf_profiler_t.function_name with
     | Some (classname, methodname) ->
         let procname = JProcname.make_void_signature_procname ~classname ~methodname in
-        global_perf_profiler_data :=
-          PerfProfilerDataMap.add procname itm !global_perf_profiler_data
+        global_perf_profiler_data := PerfProfilerDataMap.add procname itm !global_perf_profiler_data
     | _ ->
         ()
   in

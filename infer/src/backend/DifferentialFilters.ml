@@ -48,9 +48,8 @@ module FileRenamings = struct
       with Yojson.Json_error err ->
         L.(die UserError)
           "Error parsing file renamings: %s@\n\
-           Expected JSON object of the following form: '%s', but instead got: '%s'"
-          err "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
-          (Yojson.Basic.to_string assoc)
+           Expected JSON object of the following form: '%s', but instead got: '%s'" err
+          "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}" (Yojson.Basic.to_string assoc)
     in
     match j with
     | `List json_renamings ->

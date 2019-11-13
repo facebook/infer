@@ -174,9 +174,7 @@ module JNI = struct
           reduce_aux ~symbols:tl ~unchanged_symbols ~in_method ~jnis_in_method ~jnis:(t :: jnis)
       | NonTerminal (SymMethod method_jnis) :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Method (method_jnis, t)) :: tl in
-          let new_symbols =
-            List.rev_append (all_collected_symbols_so_far ()) transformed_symbols
-          in
+          let new_symbols = List.rev_append (all_collected_symbols_so_far ()) transformed_symbols in
           reduce_aux ~symbols:new_symbols ~unchanged_symbols:[] ~in_method:false ~jnis_in_method:[]
             ~jnis
       | (NonTerminal SymMethodOpen as nt) :: tl ->
@@ -185,9 +183,7 @@ module JNI = struct
             ~in_method:true ~jnis_in_method:[] ~jnis
       | NonTerminal SymArray :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Array t) :: tl in
-          let new_symbols =
-            List.rev_append (all_collected_symbols_so_far ()) transformed_symbols
-          in
+          let new_symbols = List.rev_append (all_collected_symbols_so_far ()) transformed_symbols in
           reduce_aux ~symbols:new_symbols ~unchanged_symbols:[] ~in_method:false ~jnis_in_method:[]
             ~jnis
       | (NonTerminal SymArray as nt) :: tl ->

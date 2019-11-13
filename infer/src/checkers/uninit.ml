@@ -9,8 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** Forward analysis to compute uninitialized variables at each program point *)
 module D = UninitDomain.Domain
+(** Forward analysis to compute uninitialized variables at each program point *)
 
 module MaybeUninitVars = UninitDomain.MaybeUninitVars
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
@@ -135,7 +135,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (* checks that the set of initialized formal parameters defined in the precondition of
-   the function (init_formal_params) contains the (base of) nth formal parameter of the function  *)
+     the function (init_formal_params) contains the (base of) nth formal parameter of the function *)
   let init_nth_actual_param callee_pname idx init_formal_params =
     match nth_formal_param callee_pname idx with
     | None ->
@@ -231,8 +231,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, HilInstr.Direct call, [HilExp.AccessExpression (AddressOf (Base base))], _, _)
       when is_dummy_constructor_of_a_struct call ->
         (* if it's a default constructor, we use the following heuristic: we assume that it initializes
-    correctly all fields when there is an implementation of the constructor that initilizes at least one
-    field. If there is no explicit implementation we cannot assume fields are initialized *)
+           correctly all fields when there is an implementation of the constructor that initilizes at least one
+           field. If there is no explicit implementation we cannot assume fields are initialized *)
         if function_initializes_some_formal_params summary call then
           let maybe_uninit_vars =
             (* in HIL/SIL the default constructor has only one param: the struct *)
@@ -327,7 +327,7 @@ module Initial = struct
               in
               base_access_expr :: flist
               (* for struct we take the struct address, and the access_path
-                                    to the fields one level down *)
+                 to the fields one level down *)
           | _ ->
               acc )
         | Typ.Tarray {elt} ->

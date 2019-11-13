@@ -41,8 +41,8 @@ let at ?(size = Int64.zero) array_exp index_exp =
       (Sem.eval_lindex integer_type_widths array_exp index_exp mem)
       mem
   and check {location; integer_type_widths} mem cond_set =
-    BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem
-      location cond_set
+    BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem location
+      cond_set
   in
   {exec; check}
 
@@ -67,8 +67,7 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
   | Exp.BinOp (Binop.Mult _, length, Exp.Sizeof {typ; nbytes}) ->
       (typ, nbytes, length, None)
   (* In Java all arrays are dynamically allocated *)
-  | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length} when Language.curr_language_is Java
-    ->
+  | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length} when Language.curr_language_is Java ->
       (typ, nbytes, arr_length, Some arr_length)
   | Exp.Sizeof {typ; nbytes; dynamic_length} ->
       (typ, nbytes, Exp.one, dynamic_length)
@@ -99,8 +98,7 @@ let fgets str_exp num_exp =
         let num = Dom.Val.get_itv num_v in
         Itv.plus offset (Itv.set_lb_zero (Itv.decr num))
       in
-      Dom.Mem.set_first_idx_of_null (Loc.of_allocsite allocsite) (Dom.Val.of_itv ~traces strlen)
-        acc
+      Dom.Mem.set_first_idx_of_null (Loc.of_allocsite allocsite) (Dom.Val.of_itv ~traces strlen) acc
     in
     mem
     |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
@@ -115,8 +113,7 @@ let fgets str_exp num_exp =
 
 
 let malloc ~can_be_zero size_exp =
-  let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem
-      =
+  let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
@@ -276,9 +273,7 @@ let realloc src_exp size_exp =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, _, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
-    let v =
-      Sem.eval integer_type_widths src_exp mem |> Dom.Val.set_array_length location ~length
-    in
+    let v = Sem.eval integer_type_widths src_exp mem |> Dom.Val.set_array_length location ~length in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
         let dyn_length = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
@@ -419,8 +414,7 @@ let set_array_length array length_exp =
         let size = Dom.Val.get_itv length in
         let allocsite =
           let represents_multiple_values = not (Itv.is_one size) in
-          Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path
-            ~represents_multiple_values
+          Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
         in
         let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
         Dom.Mem.add_stack (Loc.of_pvar array_pvar) v mem
@@ -665,8 +659,7 @@ module StdVector = struct
 
 
   let set_size {location} locs new_size mem =
-    Dom.Mem.transform_mem locs mem ~f:(fun v ->
-        Dom.Val.set_array_length location ~length:new_size v )
+    Dom.Mem.transform_mem locs mem ~f:(fun v -> Dom.Val.set_array_length location ~length:new_size v)
 
 
   let empty elt_typ vec_arg =
@@ -743,8 +736,8 @@ module StdBasicString = struct
       Option.value_map len_opt ~default:cond_set ~f:(fun len ->
           let {check= malloc_check} = malloc ~can_be_zero:true len in
           let cond_set = malloc_check model_env mem cond_set in
-          BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len
-            ~last_included:true mem location cond_set )
+          BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
+            mem location cond_set )
     in
     {exec; check}
 
@@ -1351,8 +1344,7 @@ module Call = struct
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ any_arg $+ capt_exp $--> Collection.init_with_capacity
         (* model sets as lists *)
-      ; +PatternMatch.implements_collections
-        &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
+      ; +PatternMatch.implements_collections &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
       ; +PatternMatch.implements_collections &:: "singleton" <>--> Collection.singleton_collection
       ; +PatternMatch.implements_collections &:: "emptySet" <>--> Collection.new_collection
         (* model maps as lists *)
@@ -1413,8 +1405,7 @@ module Call = struct
       ; +PatternMatch.implements_nio "ByteBuffer"
         &:: "getShort" <>$ capt_exp $--> ByteBuffer.get_int
       ; +PatternMatch.implements_nio "ByteBuffer" &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.implements_nio "ByteBuffer"
-        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.implements_nio "ByteBuffer" &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
       ; -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
       ; +PatternMatch.implements_lang "Math"
         &:: "max" <>$ capt_exp $+ capt_exp

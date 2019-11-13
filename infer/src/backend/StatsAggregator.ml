@@ -86,8 +86,7 @@ let collect_all_stats_files () =
             let buck_out_parent = Filename.concat p Filename.parent_dir_name in
             let targets_files =
               List.map
-                ~f:(fun (t, p) ->
-                  (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p)) )
+                ~f:(fun (t, p) -> (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p)))
                 r
             in
             Ok (Buck_out targets_files)

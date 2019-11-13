@@ -168,7 +168,7 @@ end = struct
       | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
       | Pnode (_, _, _, path, stats, _) | Pcall (path, _, ExecSkipped _, stats) ->
-          if not (stats_is_dummy stats) then ( reset_stats path ; set_dummy_stats stats )
+          if not (stats_is_dummy stats) then (reset_stats path ; set_dummy_stats stats)
       | Pjoin (path1, path2, stats) ->
           if not (stats_is_dummy stats) then (
             reset_stats path1 ; reset_stats path2 ; set_dummy_stats stats )

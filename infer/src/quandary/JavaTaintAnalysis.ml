@@ -49,7 +49,7 @@ include TaintAnalysis.Make (struct
         with
         | "android.content.Intent", ("putExtra" | "putExtras"), _ ->
             (* don't care about tainted extras. instead. we'll check that result of getExtra is
-                   always used safely *)
+               always used safely *)
             []
         | _ when Typ.Procname.is_constructor pname ->
             [TaintSpec.Propagate_to_receiver]
@@ -63,8 +63,8 @@ include TaintAnalysis.Make (struct
             when (not is_static) && types_match (get_receiver_typ tenv receiver_exp) classname tenv
             ->
               (* if the receiver and return type are the same, propagate to both. we're
-                         assuming the call is one of the common "builder-style" methods that both
-                         updates and returns the receiver *)
+                 assuming the call is one of the common "builder-style" methods that both
+                 updates and returns the receiver *)
               [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
           | _ ->
               (* receiver doesn't match return type; just propagate to the return type *)

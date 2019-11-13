@@ -74,11 +74,10 @@ let update_issues all_issues =
   in
   let paired_issues =
     (* Can be computed more efficiently (in n*log(n)) by using a Map mapping
-    file name + line number to quandary_issues to match with inferbo_issues *)
+       file name + line number to quandary_issues to match with inferbo_issues *)
     List.concat_map quandary_issues ~f:(fun quandary_issue ->
         List.filter_map inferBO_issues ~f:(fun inferbo_issue ->
-            if matching_issues quandary_issue inferbo_issue then
-              Some (quandary_issue, inferbo_issue)
+            if matching_issues quandary_issue inferbo_issue then Some (quandary_issue, inferbo_issue)
             else None ) )
   in
   let merge_issues (issue1, issue2) =

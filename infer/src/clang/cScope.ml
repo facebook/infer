@@ -164,7 +164,7 @@ module Variables = struct
           List.filter decl_list ~f:(function Clang_ast_t.VarDecl _ -> true | _ -> false)
         in
         (* the reverse order is the one we want to destroy the variables in at the end of the scope
-           *)
+        *)
         L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," pp_var_decl) new_vars ;
         (rev_append new_vars scope, map)
     | _ -> (

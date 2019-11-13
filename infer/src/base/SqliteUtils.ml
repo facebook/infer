@@ -25,8 +25,7 @@ let exec db ~log ~stmt =
       PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
   let rc = Sqlite3.exec db stmt in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-  try check_result_code db ~log rc
-  with Error err -> error "exec: %s (%s)" err (Sqlite3.errmsg db)
+  try check_result_code db ~log rc with Error err -> error "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 
 let finalize db ~log stmt =
@@ -48,8 +47,7 @@ let result_fold_rows ?finalize:(do_finalize = true) db ~log stmt ~init ~f =
     | err ->
         L.die InternalError "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
   in
-  if do_finalize then
-    protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux init stmt)
+  if do_finalize then protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux init stmt)
   else aux init stmt
 
 
@@ -64,8 +62,7 @@ let zero_or_one_row ~log = function
   | [x] ->
       Some x
   | _ :: _ :: _ as l ->
-      L.die InternalError "%s: zero or one result expected, got %d rows instead" log
-        (List.length l)
+      L.die InternalError "%s: zero or one result expected, got %d rows instead" log (List.length l)
 
 
 let result_option ?finalize db ~log ~read_row stmt =
@@ -79,8 +76,7 @@ let result_single_column_option ?finalize db ~log stmt =
 
 
 let result_unit ?finalize db ~log stmt =
-  if
-    not (Container.is_empty stmt ~iter:(Container.iter ~fold:(result_fold_rows ?finalize db ~log)))
+  if not (Container.is_empty stmt ~iter:(Container.iter ~fold:(result_fold_rows ?finalize db ~log)))
   then L.die InternalError "%s: the SQLite query should not return any rows" log
 
 

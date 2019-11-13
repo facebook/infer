@@ -93,10 +93,7 @@ module VarPair = struct
   let pp fmt pair = F.fprintf fmt " (%a, %a)" Var.pp (fst pair) Var.pp (snd pair)
 end
 
-module Record
-    (Domain1 : AbstractDomain.S)
-    (Domain2 : AbstractDomain.S)
-    (Domain3 : AbstractDomain.S) =
+module Record (Domain1 : AbstractDomain.S) (Domain2 : AbstractDomain.S) (Domain3 : AbstractDomain.S) =
 struct
   type t = {maybe_uninit_vars: Domain1.t; aliased_vars: Domain2.t; prepost: Domain3.t prepost}
 
@@ -158,9 +155,8 @@ end
 
 module Summary = struct
   (* pre = set of parameters initialized inside the procedure;
-    post = set of uninit local variables of the procedure *)
+     post = set of uninit local variables of the procedure *)
   type t = Domain.t prepost
 
-  let pp fmt {pre; post} =
-    F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
+  let pp fmt {pre; post} = F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
 end

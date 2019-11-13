@@ -128,9 +128,7 @@ let make_message_expr param_qt selector decl_ref_exp stmt_info add_cast =
   let stmt_info = stmt_info_with_fresh_pointer stmt_info in
   let parameters =
     if add_cast then
-      let cast_expr =
-        create_implicit_cast_expr stmt_info [decl_ref_exp] param_qt `LValueToRValue
-      in
+      let cast_expr = create_implicit_cast_expr stmt_info [decl_ref_exp] param_qt `LValueToRValue in
       [cast_expr]
     else [decl_ref_exp]
   in

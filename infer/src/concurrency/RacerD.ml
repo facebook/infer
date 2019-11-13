@@ -51,8 +51,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses base acc accesses )
 
 
-  let make_container_access ret_base callee_pname ~is_write receiver_ap callee_loc tenv
-      caller_pdesc (astate : Domain.t) =
+  let make_container_access ret_base callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
+      (astate : Domain.t) =
     let open Domain in
     let callee_access =
       if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
@@ -282,8 +282,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with threads= ThreadsDomain.AnyThreadButSelf}
       else
         (* if we don't have any evidence about whether the current function can run in parallel
-               with other threads or not, start assuming that it can. why use a lock if the function
-               can't run in a multithreaded context? *)
+           with other threads or not, start assuming that it can. why use a lock if the function
+           can't run in a multithreaded context? *)
         let update_for_lock_use = function
           | ThreadsDomain.AnyThreadButSelf ->
               ThreadsDomain.AnyThreadButSelf
@@ -372,8 +372,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match AccessExpression.get_typ lhs_access_exp tenv with
       | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble} ->
           (* writes to longs and doubles are not guaranteed to be atomic in Java
-                 (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
-                 can be a race even if the RHS is functional *)
+             (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
+             can be a race even if the RHS is functional *)
           false
       | _ ->
           true
@@ -381,7 +381,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let accesses =
       if is_functional then
         (* we want to forget about writes to @Functional fields altogether, otherwise we'll
-               report spurious read/write races *)
+           report spurious read/write races *)
         rhs_accesses
       else
         add_access loc ~is_write_access:true astate.locks astate.threads astate.ownership proc_data
@@ -420,7 +420,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           |> Option.fold ~init:astate ~f:(fun init bool_value ->
                  let choices = AttributeMapDomain.get_choices access_expr astate.attribute_map in
                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
-                     add the constraint that the choice must be [bool_value] to the state *)
+                    add the constraint that the choice must be [bool_value] to the state *)
                  List.fold ~f:(add_choice bool_value) ~init choices )
       | _ ->
           astate
@@ -474,8 +474,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
           runs_on_ui_thread ~attrs_of_pname tenv proc_name
           || is_thread_confined_method tenv proc_name
         then ThreadsDomain.AnyThreadButSelf
-        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv
-        then ThreadsDomain.AnyThread
+        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv then
+          ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
       let add_owned_local acc (var_data : ProcAttributes.var_data) =
@@ -485,7 +485,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       in
       (* Add ownership to local variables. In cpp, stack-allocated local
          variables cannot be raced on as every thread has its own stack.
-          More generally, we will never be confident that a race exists on a local/temp. *)
+         More generally, we will never be confident that a race exists on a local/temp. *)
       let own_locals =
         List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc) ~init:OwnershipDomain.empty
       in
@@ -568,8 +568,7 @@ let get_reporting_explanation_java report_kind tenv pname thread =
     if is_thread_safe_method pname tenv then
       Some
         (F.asprintf
-           "@\n\
-           \ Reporting because current method is annotated %a or overrides an annotated method."
+           "@\n Reporting because current method is annotated %a or overrides an annotated method."
            MF.pp_monospaced "@ThreadSafe")
     else
       match FbThreadSafety.get_fbthreadsafe_class_annot pname tenv with
@@ -601,8 +600,8 @@ let get_reporting_explanation_java report_kind tenv pname thread =
   | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
       ( IssueType.thread_safety_violation
       , F.asprintf
-          "%s, so we assume that this method can run in parallel with other non-private methods \
-           in the class (including itself)."
+          "%s, so we assume that this method can run in parallel with other non-private methods in \
+           the class (including itself)."
           threadsafe_explanation )
   | _, Some threadsafe_explanation ->
       ( IssueType.thread_safety_violation
@@ -816,10 +815,7 @@ end = struct
   end
 
   module Key = struct
-    type t =
-      | Location of PathModuloThis.t
-      | Container of PathModuloThis.t
-      | Call of Typ.Procname.t
+    type t = Location of PathModuloThis.t | Container of PathModuloThis.t | Call of Typ.Procname.t
     [@@deriving compare]
 
     let of_access (access : RacerDDomain.Access.t) =
@@ -856,7 +852,7 @@ let should_report_on_proc tenv procdesc =
   match proc_name with
   | Java java_pname ->
       (* return true if procedure is at an abstraction boundary or reporting has been explicitly
-              requested via @ThreadSafe in java *)
+         requested via @ThreadSafe in java *)
       RacerDModels.is_thread_safe_method proc_name tenv
       || Procdesc.get_access procdesc <> PredSymb.Private
          && (not (Typ.Procname.Java.is_autogen_method java_pname))
@@ -880,8 +876,7 @@ let should_report_on_proc tenv procdesc =
       false
 
 
-let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} : reported_access)
-    =
+let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} : reported_access) =
   let is_uitthread param =
     match String.lowercase param with
     | "ui thread" | "ui-thread" | "ui_thread" | "uithread" ->
@@ -1020,8 +1015,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
             None
           else
             (* unprotected write, but not on a method that may run in parallel with itself
-                   (i.e., not a self race). find accesses on a background thread this access might
-                   conflict with and report them *)
+               (i.e., not a self race). find accesses on a background thread this access might
+               conflict with and report them *)
             List.find_map accesses ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
                 if TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
                 then Some other_snapshot.access
@@ -1039,7 +1034,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
         acc
     | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
         (* unprotected read. report all writes as conflicts for java. for c++ filter out
-             unprotected writes *)
+           unprotected writes *)
         let is_conflict {snapshot; threads= other_threads} =
           TraceElem.is_write snapshot.access
           &&
@@ -1053,8 +1048,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                  make_read_write_race_description ~read_is_sync:false conflict
                in
                let report_kind = ReadWriteRace conflict.snapshot.access in
-               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access
-           )
+               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
     | Access.Read _ | ContainerRead _ ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
@@ -1073,8 +1067,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                  make_read_write_race_description ~read_is_sync:true conflict
                in
                let report_kind = ReadWriteRace conflict.snapshot.access in
-               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access
-           )
+               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
   in
   let report_accesses_on_location reportable_accesses init =
     (* Don't report on location if all accesses are on non-concurrent contexts *)
@@ -1096,9 +1089,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   let report grouped_accesses (reported, issue_log) =
     (* reset the reported reads and writes for each memory location *)
     let reported =
-      { reported with
-        reported_writes= Typ.Procname.Set.empty
-      ; reported_reads= Typ.Procname.Set.empty }
+      {reported with reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty}
     in
     report_guardedby_violations_on_location grouped_accesses (reported, issue_log)
     |> report_accesses_on_location grouped_accesses

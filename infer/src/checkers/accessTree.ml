@@ -16,7 +16,8 @@ module type S = sig
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.t * tree
- and tree = Subtree of node AccessMap.t | Star
+
+  and tree = Subtree of node AccessMap.t | Star
 
   include AbstractDomain.WithBottom with type t = node BaseMap.t
 
@@ -295,9 +296,9 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
                 try AccessMap.find access subtree with Caml.Not_found -> empty_normal_leaf
               in
               (* once we encounter a subtree rooted in an array access, we have to do weak updates in
-               the entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
-               x[j].f.g = <empty trace>, I don't want to overwrite <interesting trace>. instead, I
-               should get <interesting trace> |_| <empty trace> *)
+                 the entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
+                 x[j].f.g = <empty trace>, I don't want to overwrite <interesting trace>. instead, I
+                 should get <interesting trace> |_| <empty trace> *)
               let seen_array_access =
                 seen_array_access
                 ||

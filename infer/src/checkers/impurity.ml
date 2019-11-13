@@ -147,8 +147,7 @@ let report_errors summary modified_opt =
           impure_fun_ltr
           :: modified_ltr Formal modified_params (modified_ltr Global modified_globals [])
         in
-        Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc
-      ) ;
+        Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc ) ;
       Payload.update_summary astate summary
 
 

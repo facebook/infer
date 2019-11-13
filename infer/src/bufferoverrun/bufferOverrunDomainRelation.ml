@@ -489,9 +489,7 @@ module Make (Manager : Manager_S) = struct
       a
 
 
-    let of_powloc var_of_loc locs =
-      PowLoc.fold (fun loc acc -> add (var_of_loc loc) acc) locs empty
-
+    let of_powloc var_of_loc locs = PowLoc.fold (fun loc acc -> add (var_of_loc loc) acc) locs empty
 
     let int_of_powloc locs = of_powloc Var.of_loc locs
 
@@ -1565,12 +1563,8 @@ module Make (Manager : Manager_S) = struct
 
 
   let init_array :
-         Allocsite.t
-      -> offset_opt:Itv.t option
-      -> size:Itv.t
-      -> size_exp_opt:SymExp.t option
-      -> t
-      -> t =
+      Allocsite.t -> offset_opt:Itv.t option -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t
+      =
    fun allocsite ~offset_opt ~size ~size_exp_opt ->
     lift_default ~default:Bottom (PackedVal.init_array allocsite ~offset_opt ~size ~size_exp_opt)
 

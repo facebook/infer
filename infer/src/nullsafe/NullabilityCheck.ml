@@ -124,8 +124,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if is_direct_dereference then
           (* direct dereference without intermediate variable *)
           F.asprintf
-            "The return value of %s is annotated with %a and is dereferenced without being \
-             checked for null at %a"
+            "The return value of %s is annotated with %a and is dereferenced without being checked \
+             for null at %a"
             (MF.monospaced_to_string simplified_pname)
             MF.pp_monospaced annotation Location.pp loc
         else
@@ -242,7 +242,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (* the rhs has type int when assigning the lhs to null *)
       if HilExp.is_null_literal rhs then true
         (* the lhs and rhs have the same type in the case of pointer assignment
-         but the types are different when assigning the pointee *)
+           but the types are different when assigning the pointee *)
       else
         match (AccessPath.get_typ lhs tenv, HilExp.get_typ tenv rhs) with
         (* defensive assumption when the types are not known *)
@@ -273,11 +273,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when is_non_objc_instance_method callee_pname ->
         check_ap proc_data loc (HilExp.AccessExpression.to_access_path receiver) astate
     | Call
-        ( ((_, ret_typ) as ret_var)
-        , Direct callee_pname
-        , HilExp.AccessExpression receiver :: _
-        , _
-        , _ )
+        (((_, ret_typ) as ret_var), Direct callee_pname, HilExp.AccessExpression receiver :: _, _, _)
       when Typ.is_pointer ret_typ && is_objc_instance_method callee_pname -> (
       match longest_nullable_prefix (HilExp.AccessExpression.to_access_path receiver) astate with
       | None ->

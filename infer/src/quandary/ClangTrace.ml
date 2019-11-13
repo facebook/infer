@@ -13,9 +13,9 @@ let parse_clang_procedure procedure kinds index =
   try Some (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kinds, index)
   with QualifiedCppName.ParseError _ ->
     (* Java and Clang sources/sinks live in the same inferconfig entry. If we try to parse a Java
-         procedure that happens to be an invalid Clang qualified name (e.g., MyClass.<init>),
-         parsing will crash. In the future, we can avoid this by requiring JSON source/sink
-         specifications to indicate the language *)
+       procedure that happens to be an invalid Clang qualified name (e.g., MyClass.<init>),
+       parsing will crash. In the future, we can avoid this by requiring JSON source/sink
+       specifications to indicate the language *)
     None
 
 
@@ -480,8 +480,8 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
-    | ( (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ))
-      , SQLInjection ) ->
+    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQLInjection
+      ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
           (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
           Some IssueType.sql_injection_risk
@@ -494,8 +494,7 @@ include Trace.Make (struct
     | (Endpoint _ | UserControlledEndpoint _), EnvironmentChange ->
         (* user-controlled environment mutation *)
         Some IssueType.untrusted_environment_change_risk
-    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec
-      ->
+    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)

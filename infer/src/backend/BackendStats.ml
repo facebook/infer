@@ -105,8 +105,7 @@ let reset () = copy initial ~into:global_stats
 let pp f stats =
   let pp_hit_percent hit miss f =
     let total = hit + miss in
-    if Int.equal total 0 then F.pp_print_string f "N/A%%"
-    else F.fprintf f "%d%%" (hit * 100 / total)
+    if Int.equal total 0 then F.pp_print_string f "N/A%%" else F.fprintf f "%d%%" (hit * 100 / total)
   in
   let pp_int_field stats f field =
     F.fprintf f "%s= %d@;" (Field.name field) (Field.get field stats)
@@ -120,8 +119,7 @@ let pp f stats =
     Fields.iter ~summary_file_try_load:(pp_int_field stats f)
       ~summary_read_from_disk:(pp_int_field stats f)
       ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses f)
-      ~summary_cache_misses:(pp_int_field stats f)
-      ~summary_has_model_queries:(pp_int_field stats f)
+      ~summary_cache_misses:(pp_int_field stats f) ~summary_has_model_queries:(pp_int_field stats f)
       ~ondemand_procs_analyzed:(pp_int_field stats f)
       ~ondemand_local_cache_hits:(pp_cache_hits stats stats.ondemand_local_cache_misses f)
       ~ondemand_local_cache_misses:(pp_int_field stats f)

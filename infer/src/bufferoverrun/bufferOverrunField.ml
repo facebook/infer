@@ -73,5 +73,4 @@ let cpp_vector_elem ~vec_typ ~elt_typ =
   mk ~cpp_classname:classname cpp_vector_elem_str {Typ.desc; quals= Typ.mk_type_quals ()}
 
 
-let is_cpp_vector_elem fn =
-  String.equal (Typ.Fieldname.to_simplified_string fn) cpp_vector_elem_str
+let is_cpp_vector_elem fn = String.equal (Typ.Fieldname.to_simplified_string fn) cpp_vector_elem_str

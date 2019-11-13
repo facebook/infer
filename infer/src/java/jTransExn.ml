@@ -70,8 +70,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
         | Some exn_class_name ->
             let exn_type =
               match
-                JTransType.get_class_type context.program (JContext.get_tenv context)
-                  exn_class_name
+                JTransType.get_class_type context.program (JContext.get_tenv context) exn_class_name
               with
               | {Typ.desc= Tptr (typ, _)} ->
                   typ

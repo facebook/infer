@@ -17,8 +17,8 @@ let check ~what ~by_rhs_upper_bound =
           E.g. we technically can suggest changing [DeclaredNonnull] to [Nonnull],
           but in practice that requires strictification the code, which is a
           separate effort.
-        *)
-       Nullability.equal what Nullable
+       *)
+    Nullability.equal what Nullable
   then Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
   else Ok ()
 

@@ -15,11 +15,7 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type deref_kind =
-    | Deref_ArrayIndex
-    | Deref_COneValuePointer
-    | Deref_CPointer
-    | Deref_JavaPointer
+  type deref_kind = Deref_ArrayIndex | Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer
   [@@deriving compare]
 
   type partial = private

@@ -15,11 +15,11 @@ module LoopNodes : module type of AbstractDomain.FiniteSet (Procdesc.Node)
 
 module VarSet : module type of AbstractDomain.FiniteSet (Var)
 
-(** Map loop header node -> all nodes in the loop *)
 module LoopHeadToLoopNodes = Procdesc.NodeMap
+(** Map loop header node -> all nodes in the loop *)
 
-(** Map loop head ->  invariant vars in loop  *)
 module LoopHeadToInvVars = Procdesc.NodeMap
+(** Map loop head ->  invariant vars in loop  *)
 
 type invariant_map = VarsInLoop.t Procdesc.NodeMap.t
 
@@ -27,9 +27,9 @@ val get_inv_vars_in_loop :
      Tenv.t
   -> ReachingDefs.invariant_map
   -> is_pure_by_default:bool
-  -> get_callee_purity:(   Typ.Procname.t
-                        -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted
-                           option)
+  -> get_callee_purity:
+       (   Typ.Procname.t
+        -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option)
   -> Procdesc.Node.t
   -> LoopNodes.t
   -> VarSet.t

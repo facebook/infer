@@ -59,7 +59,7 @@ end
 
 module DiffLines = struct
   (* This is a map
-        file name |--> {set of changed line }
+     file name |--> {set of changed line }
   *)
 
   (* Read the file containing info on changed lines and populate the map *)
@@ -204,8 +204,8 @@ let java_test_to_run () =
 let remove_llvm_suffix_native_symbols native_symbols =
   let remove_llvm_suffix_native_symbol native_symbol =
     let remove_llvm_suffix name =
-      (* The first dot of .llvm.... is the first dot after the name, 
-       because neither names nor mangled names can have dots. *)
+      (* The first dot of .llvm.... is the first dot after the name,
+         because neither names nor mangled names can have dots. *)
       match String.lsplit2 name ~on:'.' with
       | Some (name_no_suffix, _) ->
           name_no_suffix

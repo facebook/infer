@@ -121,8 +121,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace ?(sink_indexes = IntSet.empty) trace cur_site (proc_data : extras ProcData.t)
-        =
+    let report_trace ?(sink_indexes = IntSet.empty) trace cur_site (proc_data : extras ProcData.t) =
       let get_summary pname =
         if Typ.Procname.equal pname (Summary.get_proc_name proc_data.summary) then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
@@ -217,8 +216,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 match
                   List.find
                     ~f:(fun sink ->
-                      [%compare.equal: Sink.Kind.t] kind (Sink.kind sink)
-                      && not (is_recursive sink) )
+                      [%compare.equal: Sink.Kind.t] kind (Sink.kind sink) && not (is_recursive sink)
+                      )
                     (Sinks.elements (sinks trace))
                 with
                 | Some matching_sink ->
@@ -331,8 +330,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                        (TraceDomain.Sources.Footprint.is_bottom
                           (TraceDomain.sources actual_trace').footprint) ->
                   let actual_ap =
-                    AccessPath.Abs.Abstracted
-                      (HilExp.AccessExpression.to_access_path actual_ae_raw)
+                    AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path actual_ae_raw)
                   in
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | _ ->
@@ -361,9 +359,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               None
         in
         let project ~formal_ap ~actual_ap =
-          let projected_ap =
-            AccessPath.append actual_ap (snd (AccessPath.Abs.extract formal_ap))
-          in
+          let projected_ap = AccessPath.append actual_ap (snd (AccessPath.Abs.extract formal_ap)) in
           if AccessPath.Abs.is_exact formal_ap then AccessPath.Abs.Exact projected_ap
           else AccessPath.Abs.Abstracted projected_ap
         in
@@ -437,8 +433,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     (* not all sinks are function calls; we might want to treat an array or field access as a
-           sink too. do this by pretending an access is a call to a dummy function and using the
-           existing machinery for adding function call sinks *)
+       sink too. do this by pretending an access is a call to a dummy function and using the
+       existing machinery for adding function call sinks *)
     let add_sinks_for_access_path (proc_data : extras ProcData.t) access_expr loc astate =
       let rec add_sinks_for_access astate_acc = function
         | HilExp.AccessExpression.Base _ ->
@@ -483,8 +479,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               AccessPath.Abs.Exact (HilExp.AccessExpression.to_access_path access_expr)
             in
             let trace, subtree =
-              Option.value ~default:TaintDomain.empty_node
-                (TaintDomain.get_node access_path astate)
+              Option.value ~default:TaintDomain.empty_node (TaintDomain.get_node access_path astate)
             in
             TaintDomain.add_node access_path (TraceDomain.add_source source trace, subtree) astate
         )
@@ -595,8 +590,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | [AccessExpression lhs_access_expr; rhs_exp; HilExp.AccessExpression access_expr] -> (
               let dummy_ret_access_expr = access_expr in
               match dummy_ret_access_expr with
-              | HilExp.AccessExpression.Base (Var.ProgramVar pvar, _)
-                when Pvar.is_frontend_tmp pvar ->
+              | HilExp.AccessExpression.Base (Var.ProgramVar pvar, _) when Pvar.is_frontend_tmp pvar
+                ->
                   (* the frontend translates operator=(x, y) as operator=(x, y, dummy_ret) when
                      operator= returns a value type *)
                   exec_write proc_data lhs_access_expr rhs_exp access_tree
@@ -618,8 +613,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match ret_ap with
         | _, {Typ.desc= Tvoid} when not (Typ.Procname.is_java callee_pname) -> (
           (* the C++ frontend handles returns of non-pointers by adding a dummy
-                   pass-by-reference variable as the last actual, then returning the value by
-                   assigning to it. understand this pattern by pretending it's the return value *)
+             pass-by-reference variable as the last actual, then returning the value by
+             assigning to it. understand this pattern by pretending it's the return value *)
           match List.last actuals with
           | Some (HilExp.AccessExpression access_expr) -> (
             match HilExp.AccessExpression.to_access_path access_expr with
@@ -667,8 +662,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | Some model ->
                 handle_model callee_pname astate_with_direct_sources model
             | None ->
-                apply_summary dummy_ret_opt actuals access_tree astate_with_direct_sources
-                  proc_data call_site )
+                apply_summary dummy_ret_opt actuals access_tree astate_with_direct_sources proc_data
+                  call_site )
       in
       let astate_with_sanitizer =
         match dummy_ret_opt with
@@ -691,9 +686,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       match instr with
       | Assign (Base (Var.ProgramVar pvar, _), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
-               wonky. this translation causes problems for us in computing a summary when an
-               exception is "returned" from a void function. skip code like this for now, fix via
-               t14159157 later *)
+             wonky. this translation causes problems for us in computing a summary when an
+             exception is "returned" from a void function. skip code like this for now, fix via
+             t14159157 later *)
           astate
       | Assign (Base (Var.ProgramVar pvar, _), rhs_exp, _)
         when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp

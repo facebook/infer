@@ -48,9 +48,9 @@ let is_setter {pointer_to_property_opt; params} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length params) 1
 
 
-let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc
-    method_kind ?(is_cpp_virtual = false) ?(is_cpp_nothrow = false) ?(is_variadic = false)
-    pointer_to_parent pointer_to_property_opt return_param_typ access =
+let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc method_kind
+    ?(is_cpp_virtual = false) ?(is_cpp_nothrow = false) ?(is_variadic = false) pointer_to_parent
+    pointer_to_property_opt return_param_typ access =
   { name
   ; access
   ; class_param

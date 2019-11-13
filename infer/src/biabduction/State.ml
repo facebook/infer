@@ -260,12 +260,7 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-     Typ.Procname.t
-  -> ?node:Procdesc.Node.t
-  -> ?loc:Location.t
-  -> ?ltr:Errlog.loc_trace
-  -> exn
-  -> unit
+  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
 
 let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =

@@ -8,8 +8,7 @@ open! IStd
 module F = Format
 
 module type NodeSig = sig
-  type t = private
-    {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
+  type t = private {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
 
   val make : int -> Typ.Procname.t -> int list -> t
 
@@ -144,7 +143,7 @@ let to_dotty g filename =
 let remove_unflagged_and_unflag_all {id_map; node_map} =
   NodeMap.filter_map_inplace
     (fun _id (n : Node.t) ->
-      if n.flag then ( Node.unset_flag n ; Some n ) else ( IdMap.remove id_map n.pname ; None ) )
+      if n.flag then (Node.unset_flag n ; Some n) else (IdMap.remove id_map n.pname ; None) )
     node_map
 
 

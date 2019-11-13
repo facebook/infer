@@ -6,4 +6,5 @@
  *)
 
 (** Interval abstract domain *)
+
 include Domain_sig.Dom

@@ -55,7 +55,7 @@ module ThreadDomain = struct
 
   let is_uithread = function UIThread -> true | _ -> false
 
-  (* If we know that either the caller is a UI/BG thread or both, keep it that way. 
+  (* If we know that either the caller is a UI/BG thread or both, keep it that way.
      Otherwise, we have no info on caller, so use callee's info. *)
   let integrate_summary ~caller ~callee = if is_bottom caller then callee else caller
 
@@ -100,11 +100,7 @@ module Lock = struct
   let pp = AccessPath.pp
 
   let owner_class ((_, {Typ.desc}), _) =
-    match desc with
-    | Typ.Tstruct name | Typ.Tptr ({desc= Tstruct name}, _) ->
-        Some name
-    | _ ->
-        None
+    match desc with Typ.Tstruct name | Typ.Tptr ({desc= Tstruct name}, _) -> Some name | _ -> None
 
 
   let describe fmt lock =
@@ -206,7 +202,7 @@ end = struct
 
   module Map = AbstractDomain.InvertedMap (Lock) (LockCount)
 
-  (* [acquisitions] has the currently held locks, so as to avoid a linear fold in [get_acquisitions]. 
+  (* [acquisitions] has the currently held locks, so as to avoid a linear fold in [get_acquisitions].
      This should also increase sharing across returned values from [get_acquisitions]. *)
   type t = {map: Map.t; acquisitions: Acquisitions.t}
 
@@ -338,8 +334,7 @@ module CriticalPair = struct
     Acquisitions.fold
       (fun {procname= acq_procname; loc= acq_loc} acc ->
         if
-          Typ.Procname.equal procname acq_procname
-          && Int.is_negative (Location.compare acq_loc acc)
+          Typ.Procname.equal procname acq_procname && Int.is_negative (Location.compare acq_loc acc)
         then acq_loc
         else acc )
       acquisitions initial_loc
@@ -368,7 +363,7 @@ module CriticalPair = struct
       let trace =
         Typ.Procname.Map.find_opt procname acquisitions_map
         |> Option.value ~default:[]
-        (* many acquisitions can be on same line (eg, std::lock) so use stable sort 
+        (* many acquisitions can be on same line (eg, std::lock) so use stable sort
            to produce a deterministic trace *)
         |> List.stable_sort ~compare:Acquisition.compare_loc
         |> List.map ~f:Acquisition.make_trace_step
@@ -552,15 +547,14 @@ let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
           let event = Event.make_acquire lock in
           add_critical_pair (Some tenv) lock_state event astate.thread ~loc acc )
   ; lock_state=
-      List.fold locks ~init:lock_state ~f:(fun acc lock ->
-          LockState.acquire ~procname ~loc lock acc ) }
+      List.fold locks ~init:lock_state ~f:(fun acc lock -> LockState.acquire ~procname ~loc lock acc)
+  }
 
 
 let make_call_with_event new_event ~loc astate =
   { astate with
     critical_pairs=
-      add_critical_pair None astate.lock_state new_event astate.thread ~loc astate.critical_pairs
-  }
+      add_critical_pair None astate.lock_state new_event astate.thread ~loc astate.critical_pairs }
 
 
 let blocking_call ~callee sev ~loc astate =
@@ -630,8 +624,7 @@ let pp_summary fmt (summary : summary) =
 
 let integrate_summary tenv callsite (astate : t) (summary : summary) =
   let critical_pairs' =
-    CriticalPairs.with_callsite summary.critical_pairs tenv astate.lock_state callsite
-      astate.thread
+    CriticalPairs.with_callsite summary.critical_pairs tenv astate.lock_state callsite astate.thread
   in
   { astate with
     critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'

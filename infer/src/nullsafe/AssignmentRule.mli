@@ -18,9 +18,7 @@ val check :
 
 type assignment_type =
   | PassingParamToFunction of
-      { param_description: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
+      {param_description: string; param_position: int; function_procname: Typ.Procname.t}
   | AssigningToField of Typ.Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]

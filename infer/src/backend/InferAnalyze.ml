@@ -7,8 +7,8 @@
  *)
 
 (** Main module for the analysis after the capture phase *)
-open! IStd
 
+open! IStd
 module F = Format
 module L = Logging
 
@@ -36,8 +36,8 @@ let analyze_target : SchedulerTypes.target Tasks.doer =
   let analyze_proc_name exe_env proc_name =
     decr procs_left ;
     if Int.( <= ) !procs_left 0 then (
-      L.log_task "Analysing block of %d procs, starting with %a@."
-        per_procedure_logging_granularity Typ.Procname.pp proc_name ;
+      L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
+        Typ.Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
     Ondemand.analyze_proc_name_toplevel exe_env proc_name
   in
@@ -116,9 +116,7 @@ let get_source_files_to_analyze ~changed_files =
 
 let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
-    let target_files =
-      List.rev_map source_files_to_analyze ~f:(fun sf -> SchedulerTypes.File sf)
-    in
+    let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> SchedulerTypes.File sf) in
     Tasks.run_sequentially ~f:analyze_target target_files ;
     BackendStats.get () )
   else (
@@ -167,8 +165,8 @@ let invalidate_changed_procedures changed_files =
         0
     in
     L.progress
-      "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were \
-       invalidated @."
+      "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were invalidated \
+       @."
       total_nodes invalidated_nodes ;
     ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
     ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;

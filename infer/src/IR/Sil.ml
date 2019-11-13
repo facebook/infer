@@ -218,12 +218,7 @@ let compare_hpara_dll = compare_hpara_dll0 (fun _ _ -> 0)
 let equal_hpara_dll = [%compare.equal: hpara_dll]
 
 (** {2 Comparision and Inspection Functions} *)
-let is_objc_object = function
-  | Hpointsto (_, _, Sizeof {typ}) ->
-      Typ.is_objc_class typ
-  | _ ->
-      false
-
+let is_objc_object = function Hpointsto (_, _, Sizeof {typ}) -> Typ.is_objc_class typ | _ -> false
 
 (** Check if a pvar is a local static in objc *)
 let is_static_local_name pname pvar =
@@ -301,8 +296,7 @@ let pp_texp pe f = function
   | Exp.Sizeof {typ; nbytes; dynamic_length; subtype} ->
       let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" (pp_exp_printenv pe)) l in
       let pp_size f size = Option.iter ~f:(Int.pp f) size in
-      F.fprintf f "%a%a%a%a" (Typ.pp pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp
-        subtype
+      F.fprintf f "%a%a%a%a" (Typ.pp pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
   | e ->
       pp_exp_printenv pe f e
 
@@ -827,9 +821,7 @@ let rec pp_sexp_env pe0 envo f se =
       | Eexp (e, inst) ->
           F.fprintf f "%a%a" (pp_exp_printenv pe) e (pp_inst_if_trace pe) inst
       | Estruct (fel, inst) ->
-          let pp_diff f (n, se) =
-            F.fprintf f "%a:%a" Typ.Fieldname.pp n (pp_sexp_env pe envo) se
-          in
+          let pp_diff f (n, se) = F.fprintf f "%a:%a" Typ.Fieldname.pp n (pp_sexp_env pe envo) se in
           F.fprintf f "{%a}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
       | Earray (len, nel, inst) ->
           let pp_diff f (i, se) =
@@ -1268,8 +1260,7 @@ let rec exp_sub_ids (f : subst_fun) exp =
 
 
 let apply_sub subst : subst_fun =
- fun id ->
-  match List.Assoc.find subst ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id
+ fun id -> match List.Assoc.find subst ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id
 
 
 let exp_sub (subst : subst) e = exp_sub_ids (apply_sub subst) e
@@ -1305,8 +1296,7 @@ let instr_sub_ids ~sub_id_binders f instr =
             if phys_equal actual' actual then actual_pair else (actual', typ) )
           actuals
       in
-      if
-        phys_equal ret_id' ret_id_typ && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
+      if phys_equal ret_id' ret_id_typ && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
       then instr
       else Call (ret_id', fun_exp', actuals', call_flags, loc)
   | Prune (exp, loc, true_branch, if_kind) ->
@@ -1464,14 +1454,8 @@ let hpred_compact sh hpred =
 let exp_get_offsets exp =
   let rec f offlist_past e =
     match (e : Exp.t) with
-    | Var _
-    | Const _
-    | UnOp _
-    | BinOp _
-    | Exn _
-    | Closure _
-    | Lvar _
-    | Sizeof {dynamic_length= None} ->
+    | Var _ | Const _ | UnOp _ | BinOp _ | Exn _ | Closure _ | Lvar _ | Sizeof {dynamic_length= None}
+      ->
         offlist_past
     | Sizeof {dynamic_length= Some l} ->
         f offlist_past l

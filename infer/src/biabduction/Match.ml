@@ -356,9 +356,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
               prop_match_with_impl_sub tenv p condition sub_new vars_leftover hpat_next hpats_rest
       in
       let do_para_lseg _ =
-        let para2_exist_vars, para2_inst =
-          Sil.hpara_instantiate para2 e_start2 e_end2 es_shared2
-        in
+        let para2_exist_vars, para2_inst = Sil.hpara_instantiate para2 e_start2 e_end2 es_shared2 in
         (* let allow_impl hpred = {hpred=hpred; flag=hpat.flag} in *)
         let allow_impl hpred = {hpred; flag= true} in
         let para2_hpat, para2_hpats =

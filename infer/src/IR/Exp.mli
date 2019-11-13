@@ -47,14 +47,14 @@ and t =
 val equal : t -> t -> bool
 (** Equality for expressions. *)
 
-(** Set of expressions. *)
 module Set : Caml.Set.S with type elt = t
+(** Set of expressions. *)
 
-(** Map with expression keys. *)
 module Map : Caml.Map.S with type key = t
+(** Map with expression keys. *)
 
-(** Hashtable with expression keys. *)
 module Hash : Caml.Hashtbl.S with type key = t
+(** Hashtable with expression keys. *)
 
 val is_null_literal : t -> bool
 

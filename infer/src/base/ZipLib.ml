@@ -41,8 +41,8 @@ let zip_libraries =
            None
        in
        (* Order matters: jar files should appear in the order in which they should be searched for
-            specs files. [Config.specs_library] is in reverse order of appearance on the command
-            line. *)
+          specs files. [Config.specs_library] is in reverse order of appearance on the command
+          line. *)
        List.rev_filter_map Config.specs_library ~f:load_zip
      in
      if
@@ -50,7 +50,7 @@ let zip_libraries =
        && (not Config.biabduction_models_mode)
        && Sys.file_exists Config.biabduction_models_jar = `Yes
      then mk_zip_lib Config.biabduction_models_jar :: zip_libs
-     else zip_libs)
+     else zip_libs )
 
 
 (** Search path in the list of zip libraries and use a cache directory to save already deserialized

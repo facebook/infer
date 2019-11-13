@@ -257,9 +257,7 @@ let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
 
 
-let set_callee_translated program pname =
-  Typ.Procname.Hash.replace program.callees pname Translated
-
+let set_callee_translated program pname = Typ.Procname.Hash.replace program.callees pname Translated
 
 let add_missing_callee program pname cn ms =
   if not (Typ.Procname.Hash.mem program.callees pname) then

@@ -19,8 +19,7 @@ let merge_global_tenvs infer_deps_file =
     let global_tenv_path =
       infer_out_src ^/ Config.global_tenv_filename |> DB.filename_from_string
     in
-    Tenv.read global_tenv_path
-    |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
+    Tenv.read global_tenv_path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
   in
   Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge infer_deps_file ;
   Tenv.store_global global_tenv ;

@@ -88,8 +88,7 @@ let tests =
         ; If (unknown_exp, [], [])
         ; invariant "4" ] )
     ; ("loop", [invariant "1"; While (unknown_exp, [invariant "T"]); invariant "T"])
-    ; ( "if_in_loop"
-      , [While (unknown_exp, [If (unknown_exp, [], []); invariant "T"]); invariant "T"] )
+    ; ("if_in_loop", [While (unknown_exp, [If (unknown_exp, [], []); invariant "T"]); invariant "T"])
     ; ( "nested_loop_visit"
       , [ invariant "1"
         ; While (unknown_exp, [invariant "T"; While (unknown_exp, [invariant "T"]); invariant "T"])

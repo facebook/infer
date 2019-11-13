@@ -60,10 +60,10 @@ module Partition = struct
         match fold_right head ~init ~f:prepend_node with
         | Empty | Component _ ->
             (* [fold_right] is expected to always provide a non-empty sequence.
-            Hence the result of [fold_right ~f:prepend_node] will always start with a Node. *)
+               Hence the result of [fold_right ~f:prepend_node] will always start with a Node. *)
             Logging.(die InternalError)
-              "WeakTopologicalOrder.Partition.expand: the expansion function fold_right should \
-               not return ~init directly"
+              "WeakTopologicalOrder.Partition.expand: the expansion function fold_right should not \
+               return ~init directly"
         | Node {node= head; next= rest} ->
             Component {head; rest; next} )
 
@@ -111,12 +111,12 @@ module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
 module Bourdoncle_SCC (CFG : PreProcCfg) = struct
   module CFG = CFG
 
+  module Dfn = CFG.Node.IdMap
   (**
     [dfn] contains a DFS pre-order indexing. A node is not in the map if it has never been visited.
     A node's dfn is +oo if it has been fully visited (head of cross-edges) or we want to hide it
     for building a subcomponent partition (head of highest back-edges).
   *)
-  module Dfn = CFG.Node.IdMap
 
   (*
     Unlike Bourdoncle's paper version or OCamlGraph implementation, this implementation handles

@@ -41,8 +41,8 @@ module Jprop : sig
   (** Extract the toplevel jprop of a prop *)
 end
 
-(** set of visited nodes: node id and list of lines of all the instructions *)
 module Visitedset : Caml.Set.S with type elt = Procdesc.Node.id * int list
+(** set of visited nodes: node id and list of lines of all the instructions *)
 
 (** A spec consists of:
     pre: a joined prop

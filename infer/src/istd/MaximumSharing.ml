@@ -65,8 +65,7 @@ end = struct
       let hash ((h, _) : t) = (h :> int)
 
       let equal ((h1, o1) : t) ((h2, o2) : t) = Int.equal (h1 :> int) (h2 :> int) && eq o1 o2
-    end
-    : Caml.Hashtbl.HashedType
+    end : Caml.Hashtbl.HashedType
       with type t = Hashing.hash_value * Obj.t )
 
 
@@ -112,7 +111,7 @@ end = struct
     Obj.repr (lazy (assert false))
 
 
-  (* 
+  (*
     TODO: be much more efficient and write it in C to be able to use the GC flags to
     mark visited values.
   *)
@@ -276,8 +275,8 @@ module ForHashtbl (H : Caml.Hashtbl.S) = struct
   let normalize h =
     let sharer = Sharer.create () in
     (* If a hash table has been created with [add] and not [replace] only, it is possible to
-    have several values for a given key.  We need to collect them all and reinsert them in
-    the reverse order. *)
+       have several values for a given key.  We need to collect them all and reinsert them in
+       the reverse order. *)
     let rev_bindings = H.fold (fun k v acc -> (k, v) :: acc) h [] in
     (* No need to preserve the initial size of the original hash table *)
     let h' = H.create (H.length h) in

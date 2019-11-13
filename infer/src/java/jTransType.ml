@@ -271,9 +271,7 @@ let add_model_fields program classpath_fields cn =
   try
     match JBasics.ClassMap.find cn (JClasspath.get_models program) with
     | Javalib.JClass _ as jclass ->
-        Javalib.cf_fold
-          (collect_models_class_fields classpath_field_map cn)
-          jclass classpath_fields
+        Javalib.cf_fold (collect_models_class_fields classpath_field_map cn) jclass classpath_fields
     | _ ->
         classpath_fields
   with Caml.Not_found -> classpath_fields
@@ -349,9 +347,7 @@ and get_class_struct_typ =
             Tenv.mk_struct tenv name
         | Some node ->
             let create_super_list interface_names =
-              List.iter
-                ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn))
-                interface_names ;
+              List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;
               List.map ~f:typename_of_classname interface_names
             in
             let supers, fields, statics, annots =

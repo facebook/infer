@@ -140,10 +140,7 @@ let tests =
     ; ("exn_succs_n2", ProcCfg.Exceptional.fold_exceptional_succs exceptional_proc_cfg, n2, [n3])
     ; ("exn_succs_n3", ProcCfg.Exceptional.fold_exceptional_succs exceptional_proc_cfg, n3, [n4])
     ; (* test exceptional pred links *)
-      ( "exn_preds_n3"
-      , ProcCfg.Exceptional.fold_exceptional_preds exceptional_proc_cfg
-      , n3
-      , [n2; n1] )
+      ("exn_preds_n3", ProcCfg.Exceptional.fold_exceptional_preds exceptional_proc_cfg, n3, [n2; n1])
     ; (* succs should return both normal and exceptional successors *)
       ("exn_all_succs_n1", ProcCfg.Exceptional.fold_succs exceptional_proc_cfg, n1, [n3; n2])
     ; (* but, should not return duplicates *)

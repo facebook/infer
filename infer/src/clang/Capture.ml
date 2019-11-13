@@ -183,8 +183,7 @@ let cc1_capture clang_cmd =
   else if
     Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
   then (
-    L.(debug Capture Quiet)
-      "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
+    L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )
   else
     match Config.clang_biniou_file with

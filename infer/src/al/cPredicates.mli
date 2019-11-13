@@ -434,8 +434,7 @@ val get_available_attr_ios_sdk : Ctl_parser_types.ast_node -> string option
 
 val get_selector : Ctl_parser_types.ast_node -> string option
 
-val within_responds_to_selector_block :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> bool
+val within_responds_to_selector_block : CLintersContext.context -> Ctl_parser_types.ast_node -> bool
 
 val objc_method_call_within_responds_to_selector_block :
   CLintersContext.context -> Ctl_parser_types.ast_node -> bool

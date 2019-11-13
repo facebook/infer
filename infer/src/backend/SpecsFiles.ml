@@ -35,13 +35,13 @@ let print_usage_exit err_s =
 let spec_files_from_cmdline () =
   if CLOpt.is_originator then (
     (* Find spec files specified by command-line arguments.  Not run at init time since the specs
-         files may be generated between init and report time. *)
+       files may be generated between init and report time. *)
     List.iter
       ~f:(fun arg ->
         if (not (Filename.check_suffix arg Config.specs_files_suffix)) && arg <> "." then
           print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
       Config.anon_args ;
-    if Config.test_filtering then ( Inferconfig.test () ; L.exit 0 ) ;
+    if Config.test_filtering then (Inferconfig.test () ; L.exit 0) ;
     if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
   else load_specfiles ()
 

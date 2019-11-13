@@ -274,8 +274,7 @@ let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false)
     for i = 0 to copy_lines_before do
       F.fprintf fmt "%s\n" lines.(i)
     done ;
-    if
-      starts_with_newline com_style && copy_lines_before > 0 && lines.(copy_lines_before - 1) <> ""
+    if starts_with_newline com_style && copy_lines_before > 0 && lines.(copy_lines_before - 1) <> ""
     then F.fprintf fmt "@\n" ;
     pp_copyright ~monoidics ~ropas com_style fmt ;
     for i = copy_lines_after to Array.length lines - 1 do

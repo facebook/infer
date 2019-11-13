@@ -85,13 +85,12 @@ let sil_var_of_captured_var context source_range procname decl_ref =
     match decl_ref with
     | {Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} ->
         (* In Objective-C class methods, self is not the standard self instance, since in this
-        context we don't have an instance. Instead it is used to get the class of the method.
-        We translate this variables in a different way than normal, we don't treat them as
-        variables in Sil, instead we remove them and get the class directly in the frontend.
-        For that reason, we shouldn't add them as captured variables of blocks, since they
-        don't appear anywhere else in the translation. *)
-        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then
-          None
+           context we don't have an instance. Instead it is used to get the class of the method.
+           We translate this variables in a different way than normal, we don't treat them as
+           variables in Sil, instead we remove them and get the class directly in the frontend.
+           For that reason, we shouldn't add them as captured variables of blocks, since they
+           don't appear anywhere else in the translation. *)
+        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then None
         else Some (sil_var_of_decl_ref context source_range decl_ref procname)
     | _ ->
         assert false

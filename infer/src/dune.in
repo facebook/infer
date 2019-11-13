@@ -32,9 +32,7 @@ let source_dirs =
        ; "unit" ^/ "nullsafe" ] )
 
 
-let infer_binaries =
-  ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
-
+let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
 
 let infer_cflags =
   common_cflags
@@ -110,7 +108,7 @@ let stanzas =
         (fun source_dir ->
           [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
           ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
-       copy# actions *)
+               copy# actions *)
             Printf.sprintf "(copy_files %s/*.mly)" source_dir ] )
         source_dirs
     |> List.concat )

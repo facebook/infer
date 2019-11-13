@@ -96,8 +96,8 @@ module SourceKind = struct
               Some [(Intent, return); (intent_for_insecure_intent_handling ~caller_pname, return)]
           | "android.support.v4.app.FragmentActivity", "getIntent" ->
               Some [(intent_for_insecure_intent_handling ~caller_pname, return)]
-          | "android.content.Intent", "<init>"
-            when actual_has_type 2 "android.net.Uri" actuals tenv ->
+          | "android.content.Intent", "<init>" when actual_has_type 2 "android.net.Uri" actuals tenv
+            ->
               (* taint the [this] parameter passed to the constructor *)
               Some [(IntentFromURI, Some 0)]
           | ( "android.content.Intent"
@@ -179,9 +179,7 @@ module SourceKind = struct
     let taint_all_but_this ~make_source =
       List.map
         ~f:(fun (name, typ) ->
-          let taint =
-            if Mangled.is_this name then None else Some (make_source name typ.Typ.desc)
-          in
+          let taint = if Mangled.is_this name then None else Some (make_source name typ.Typ.desc) in
           (name, typ, taint) )
         (Procdesc.get_formals pdesc)
     in
@@ -604,8 +602,8 @@ include Trace.Make (struct
       ->
         (* untrusted data flows into JS *)
         Some IssueType.javascript_injection
-    | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)
-      , SQLInjection ) ->
+    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), SQLInjection
+      ->
         (* untrusted and unescaped data flows to SQL *)
         Some IssueType.sql_injection_risk
     | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)

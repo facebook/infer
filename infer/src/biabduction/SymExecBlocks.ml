@@ -58,7 +58,7 @@ let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params 
          (* only specialize defined methods, and when formals and actuals have the same length  *)
     -> (
       (* a list with the same length of the actual params of the function,
-        containing either a Closure or None. *)
+         containing either a Closure or None. *)
       let block_args =
         List.map act_params ~f:(function
           | Exp.Closure cl, _ when Typ.Procname.is_objc_block cl.name ->
@@ -78,21 +78,20 @@ let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params 
         Typ.Procname.with_block_parameters pname block_name_args
       in
       (* new procdesc cloned from the original one, where the block parameters have been
-       replaced by the block arguments. The formals have also been expanded with the captured variables  *)
+         replaced by the block arguments. The formals have also been expanded with the captured variables *)
       let specialized_pdesc =
         SpecializeProcdesc.with_block_args pdesc pname_with_block_args block_args
       in
       Logging.(debug Analysis Verbose) "Instructions of specialized method:@." ;
       Procdesc.iter_instrs
         (fun _ instr ->
-          Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr ~print_types:false Pp.text) instr
-          )
+          Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr ~print_types:false Pp.text) instr )
         specialized_pdesc ;
       Logging.(debug Analysis Verbose) "End of instructions@." ;
       match Ondemand.analyze_proc_desc ~caller_summary specialized_pdesc with
       | Some summary ->
           (* Since the closures in the formals were replaced by the captured variables,
-           we do the same with the actual arguments *)
+             we do the same with the actual arguments *)
           let extended_args = get_extended_args_for_method_with_block_analysis act_params in
           Some (summary, extended_args)
       | None ->

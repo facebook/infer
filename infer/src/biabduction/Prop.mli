@@ -193,8 +193,7 @@ val mk_ptsto_exp : Tenv.t -> struct_init_mode -> Exp.t * Exp.t * Exp.t option ->
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
     base for fresh identifiers. *)
 
-val mk_ptsto_lvar :
-  Tenv.t -> struct_init_mode -> Sil.inst -> Pvar.t * Exp.t * Exp.t option -> hpred
+val mk_ptsto_lvar : Tenv.t -> struct_init_mode -> Sil.inst -> Pvar.t * Exp.t * Exp.t option -> hpred
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 

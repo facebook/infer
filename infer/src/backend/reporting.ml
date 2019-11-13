@@ -119,10 +119,10 @@ let is_suppressed ?(field_name = None) tenv proc_desc kind =
   let lookup = Tenv.lookup tenv in
   let proc_attributes = Procdesc.get_attributes proc_desc in
   (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
-         suppressed with the following annotations:
-         - @android.annotation.SuppressLint("checker-error-name")
-         - @some.PrefixErrorName
-         where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
+     suppressed with the following annotations:
+     - @android.annotation.SuppressLint("checker-error-name")
+     - @some.PrefixErrorName
+     where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
   let annotation_matches (a : Annot.t) =
     let normalize str = Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
     let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in

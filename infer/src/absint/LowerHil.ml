@@ -110,8 +110,8 @@ module MakeAbstractInterpreterWithConfig
     (HilConfig : HilConfig)
     (TransferFunctions : TransferFunctions.HIL) :
   S
-  with type domain = TransferFunctions.Domain.t
-   and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig)) = struct
+    with type domain = TransferFunctions.Domain.t
+     and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig)) = struct
   module LowerHilInterpreter = Make (TransferFunctions) (HilConfig)
   module Interpreter = MakeAbstractInterpreter (LowerHilInterpreter)
 

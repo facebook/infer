@@ -457,8 +457,8 @@ let blur_array_indices tenv (p : Prop.normal Prop.t) (root : StrexpMatch.path)
 
 
 (** Given [p] containing an array at [root], only keep [indices] in it *)
-let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path)
-    (indices : Exp.t list) : Prop.normal Prop.t * bool =
+let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (indices : Exp.t list)
+    : Prop.normal Prop.t * bool =
   let prune_sigma footprint_part sigma =
     try
       let matched = StrexpMatch.find_path sigma path in
@@ -509,16 +509,16 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
   if Config.trace_absarray && not footprint_part then L.d_strln "strexp_do_abstract (nonfootprint)" ;
   let prune_and_blur d_keys keep blur path keep_keys blur_keys =
     let p2, changed2 =
-      if Config.trace_absarray then ( L.d_str "keep " ; d_keys keep_keys ; L.d_ln () ) ;
+      if Config.trace_absarray then (L.d_str "keep " ; d_keys keep_keys ; L.d_ln ()) ;
       keep p path keep_keys
     in
     let p3, changed3 =
       if List.is_empty blur_keys then (p2, false)
       else (
-        if Config.trace_absarray then ( L.d_str "blur " ; d_keys blur_keys ; L.d_ln () ) ;
+        if Config.trace_absarray then (L.d_str "blur " ; d_keys blur_keys ; L.d_ln ()) ;
         blur p2 path blur_keys )
     in
-    if Config.trace_absarray then ( L.d_strln "Returns" ; Prop.d_prop p3 ; L.d_ln () ; L.d_ln () ) ;
+    if Config.trace_absarray then (L.d_strln "Returns" ; Prop.d_prop p3 ; L.d_ln () ; L.d_ln ()) ;
     (p3, changed2 || changed3)
   in
   let prune_and_blur_indices =
@@ -549,7 +549,7 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
     let keep_ksel = List.filter ~f:should_keep ksel in
     let keep_keys = List.map ~f:fst keep_ksel in
     let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
-    if Config.trace_absarray then ( L.d_str "keep " ; d_keys keep_keys' ; L.d_ln () ) ;
+    if Config.trace_absarray then (L.d_str "keep " ; d_keys keep_keys' ; L.d_ln ()) ;
     abstract keep_keys' []
   in
   let do_array_reexecution esel =

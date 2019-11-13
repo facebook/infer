@@ -945,9 +945,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let sil_test_true = Exp.UnOp (Unop.LNot, sil_test_false, None) in
         let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, Sil.Ik_if) in
         let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, Sil.Ik_if) in
-        let node_kind_true =
-          Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody)
-        in
+        let node_kind_true = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody) in
         let node_kind_false =
           Procdesc.Node.Prune_node (false, Sil.Ik_if, PruneNodeKind_MethodBody)
         in
@@ -975,8 +973,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
         let sizeof_exp =
-          Exp.Sizeof
-            {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+          Exp.Sizeof {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
         in
         let args = [(sizeof_exp, class_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
@@ -1011,11 +1008,7 @@ let instruction (context : JContext.t) pc instr : translation =
         in
         let set_instr =
           Sil.Store
-            { e1= Exp.Lvar array_name
-            ; root_typ= array_type
-            ; typ= array_type
-            ; e2= Exp.Var ret_id
-            ; loc }
+            {e1= Exp.Lvar array_name; root_typ= array_type; typ= array_type; e2= Exp.Var ret_id; loc}
         in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (instrs @ [call_instr; set_instr]) in
@@ -1088,8 +1081,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let call_node = create_node node_kind (instrs @ call_instrs) in
         Instr call_node
     | MonitorEnter expr ->
-        trans_monitor_enter_exit context expr pc loc BuiltinDecl.__set_locked_attribute
-          MonitorEnter
+        trans_monitor_enter_exit context expr pc loc BuiltinDecl.__set_locked_attribute MonitorEnter
     | MonitorExit expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__delete_locked_attribute
           MonitorExit

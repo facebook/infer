@@ -19,12 +19,12 @@ let get_required_props typename tenv =
       ~f:(fun (({Annot.parameters} as annot), _) ->
         Annotations.annot_ends_with annot Annotations.prop
         && (* Don't count as required if it's @Prop(optional = true) *)
-           not
-             (List.exists
-                ~f:(fun Annot.{name; value} ->
-                  Option.value_map name ~default:false ~f:(fun name -> String.equal "optional" name)
-                  && String.equal value "true" )
-                parameters) )
+        not
+          (List.exists
+             ~f:(fun Annot.{name; value} ->
+               Option.value_map name ~default:false ~f:(fun name -> String.equal "optional" name)
+               && String.equal value "true" )
+             parameters) )
       annot_list
   in
   let get_var_args annot_list =
@@ -32,7 +32,7 @@ let get_required_props typename tenv =
       ~f:(fun acc (({Annot.parameters} as annot), _) ->
         if Annotations.annot_ends_with annot Annotations.prop then
           (* Pick up the parameter for varArg if it has the form
-               @Prop(varArg = myProp). *)
+             @Prop(varArg = myProp). *)
           List.fold ~init:acc
             ~f:(fun acc Annot.{name; value} ->
               if Option.value_map name ~default:false ~f:(fun name -> String.equal "varArg" name)
@@ -98,11 +98,11 @@ let has_prop prop_set prop =
   let check prop =
     String.Set.mem prop_set prop
     || (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
-           Our annotation parameter parsing is too primitive to identify resType, so just assume
-           that all @Prop's can be set any of these 6 ways. *)
-       String.Set.exists prop_set ~f:(fun el ->
-           String.chop_prefix el ~prefix:prop
-           |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
+          Our annotation parameter parsing is too primitive to identify resType, so just assume
+          that all @Prop's can be set any of these 6 ways. *)
+    String.Set.exists prop_set ~f:(fun el ->
+        String.chop_prefix el ~prefix:prop
+        |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
   in
   match prop with
   | Prop prop ->
@@ -156,8 +156,8 @@ module LithoContext = struct
       | Domain.MethodCall.{procname} :: _
         when LithoFramework.is_component_build_method procname tenv -> (
         (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder
-               part from the typename, then look at the fields of MyComponent to figure out which
-               ones are annotated with @Prop *)
+           part from the typename, then look at the fields of MyComponent to figure out which
+           ones are annotated with @Prop *)
         match find_client_component_type call_chain with
         | Some parent_typename ->
             let required_props = get_required_props parent_typename tenv in

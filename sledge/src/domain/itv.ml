@@ -32,8 +32,7 @@ let sexp_of_t (itv : t) =
   let sexps =
     Array.fold (bindings itv) ~init:[] ~f:(fun acc (v, {inf; sup}) ->
         Sexp.List
-          [ Sexp.Atom (Var.to_string v)
-          ; Sexp.Atom (Scalar.to_string inf)
+          [ Sexp.Atom (Var.to_string v); Sexp.Atom (Scalar.to_string inf)
           ; Sexp.Atom (Scalar.to_string sup) ]
         :: acc )
   in

@@ -160,7 +160,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
             curr_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
             ~typestates_for_all_constructors_incl_current proc_loc ;
-          if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate )
+          if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate
+          )
       in
       match typestate_opt with None -> () | Some typestate -> do_typestate typestate
     in
@@ -207,8 +208,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         let linereader = Printer.LineReader.create () in
         if Config.eradicate_verbose then
           L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature ;
-        callback2 tenv curr_pname calls_this checks callback_args annotated_signature linereader
-          loc ) ;
+        callback2 tenv curr_pname calls_this checks callback_args annotated_signature linereader loc
+    ) ;
     summary
 end
 

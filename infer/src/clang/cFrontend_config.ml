@@ -47,8 +47,8 @@ let ckcomponentcontroller_cl = "CKComponentController"
 
 (** script to run our own clang *)
 let clang_bin xx =
-  Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name
-  ^/ "facebook-clang-plugins" ^/ "clang" ^/ "install" ^/ "bin" ^/ "clang" ^ xx
+  Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
+  ^/ "clang" ^/ "install" ^/ "bin" ^/ "clang" ^ xx
 
 
 let class_method = "class"

@@ -60,9 +60,7 @@ let rec is_component_or_controller_descendant_impl decl =
     CKComponentController.
 
     Does not recurse into hierarchy. *)
-and contains_ck_impl decl_list =
-  List.exists ~f:is_component_or_controller_descendant_impl decl_list
-
+and contains_ck_impl decl_list = List.exists ~f:is_component_or_controller_descendant_impl decl_list
 
 (** An easy way to fix the component kit best practice
     http://componentkit.org/docs/avoid-local-variables.html
@@ -165,8 +163,8 @@ let mutable_local_vars_advice context an =
     else None
   with CFrontend_errors.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
-    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-      e.source_range e.ast_node ;
+    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position e.source_range
+      e.ast_node ;
     None
 
 
@@ -257,9 +255,7 @@ let component_with_unconventional_superclass_advice context an =
   in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
-      let if_decl_opt =
-        CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
-      in
+      let if_decl_opt = CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       if Option.is_some if_decl_opt && is_ck_context context an then
         check_interface (Option.value_exn if_decl_opt)
       else None
@@ -315,9 +311,7 @@ let component_with_multiple_factory_methods_advice context an =
   in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) -> (
-      let if_decl_opt =
-        CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
-      in
+      let if_decl_opt = CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       match if_decl_opt with Some d when is_ck_context context an -> check_interface d | _ -> [] )
   | _ ->
       []

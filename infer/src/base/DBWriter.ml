@@ -12,21 +12,21 @@ module F = Format
 module Implementation = struct
   let attribute_replace_statement =
     (* The innermost SELECT returns either the current attributes_kind and source_file associated with
-     the given proc name, or default values of (-1,""). These default values have the property that
-     they are always "less than" any legit value. More precisely, MAX ensures that some value is
-     returned even if there is no row satisfying WHERE (we'll get NULL in that case, the value in
-     the row otherwise). COALESCE then returns the first non-NULL value, which will be either the
-     value of the row corresponding to that pname in the DB, or the default if no such row exists.
+       the given proc name, or default values of (-1,""). These default values have the property that
+       they are always "less than" any legit value. More precisely, MAX ensures that some value is
+       returned even if there is no row satisfying WHERE (we'll get NULL in that case, the value in
+       the row otherwise). COALESCE then returns the first non-NULL value, which will be either the
+       value of the row corresponding to that pname in the DB, or the default if no such row exists.
 
-     The next (second-outermost) SELECT filters out that value if it is "more defined" than the ones
-     we would like to insert (which will never be the case if the default values are returned). If
-     not, it returns a trivial row (consisting solely of NULL since we don't use its values) and the
-     INSERT OR REPLACE will proceed and insert or update the values stored into the DB for that
-     pname.  *)
+       The next (second-outermost) SELECT filters out that value if it is "more defined" than the ones
+       we would like to insert (which will never be the case if the default values are returned). If
+       not, it returns a trivial row (consisting solely of NULL since we don't use its values) and the
+       INSERT OR REPLACE will proceed and insert or update the values stored into the DB for that
+       pname. *)
     (* TRICK: use the source file to be more deterministic in case the same procedure name is defined
-     in several files *)
+       in several files *)
     (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
-     values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
+       values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
     ResultsDatabase.register_statement
       {|
         INSERT OR REPLACE INTO procedures
@@ -44,8 +44,7 @@ module Implementation = struct
 
 
   let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
-    ResultsDatabase.with_registered_statement attribute_replace_statement
-      ~f:(fun db replace_stmt ->
+    ResultsDatabase.with_registered_statement attribute_replace_statement ~f:(fun db replace_stmt ->
         Sqlite3.bind replace_stmt 1 (* :pname *) pname
         |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
         Sqlite3.bind replace_stmt 2 (* :proc_name_hum *) (Sqlite3.Data.TEXT pname_str)
@@ -103,9 +102,9 @@ module Implementation = struct
   let merge_procedures_table ~db_file =
     let db = ResultsDatabase.get_database () in
     (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
-     sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
-     cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
-     NULL). All the rows that pass this filter are inserted/updated into the main table. *)
+       sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
+       cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
+       NULL). All the rows that pass this filter are inserted/updated into the main table. *)
     Sqlite3.exec db
       {|
         INSERT OR REPLACE INTO memdb.procedures
@@ -146,13 +145,11 @@ module Implementation = struct
     let db_file = infer_out_src ^/ ResultsDatabase.database_filename in
     let main_db = ResultsDatabase.get_database () in
     Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
-    |> SqliteUtils.check_result_code main_db
-         ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
+    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
     merge_procedures_table ~db_file ;
     merge_source_files_table ~db_file ;
     Sqlite3.exec main_db "DETACH attached"
-    |> SqliteUtils.check_result_code main_db
-         ~log:(Printf.sprintf "detaching database '%s'" db_file)
+    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "detaching database '%s'" db_file)
 
 
   let merge infer_deps_file =
@@ -244,7 +241,7 @@ end
 type response = Ack
 
 module Server = struct
-  (* General comment about socket/channel destruction: closing the in_channel associated with the socket 
+  (* General comment about socket/channel destruction: closing the in_channel associated with the socket
      will close the file descriptor too, so closing also the out_channel sometimes throws an exception.
      That's why in all code below only the input channel is ever closed. *)
 

@@ -328,8 +328,8 @@ let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
     Format.asprintf
       "The field %a is annotated with %a, but the lock %a is not held during the access to the \
        field %s. Since the current method is non-private, it can be called from outside the \
-       current class without synchronization. Consider wrapping the access in a %s block or \
-       making the method private."
+       current class without synchronization. Consider wrapping the access in a %s block or making \
+       the method private."
       MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str MF.pp_monospaced guarded_by_str
       line_info syncronized_str
   in
@@ -469,8 +469,7 @@ let desc_allocation_mismatch alloc dealloc =
   let using (primitive_pname, called_pname, loc) =
     let by_call =
       if Typ.Procname.equal primitive_pname called_pname then ""
-      else
-        " by call to " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
+      else " by call to " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
     in
     "using "
     ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)
@@ -564,7 +563,7 @@ let desc_frontend_warning desc sugg_opt loc =
   let tags = Tags.create () in
   let sugg = match sugg_opt with Some sugg -> sugg | None -> "" in
   (* If the description ends in a period, we remove it because the sentence continues with
-  "at line ..." *)
+     "at line ..." *)
   let desc = match String.chop_suffix ~suffix:"." desc with Some desc -> desc | None -> desc in
   let description = Format.sprintf "%s %s. %s" desc (at_line tags loc) sugg in
   {no_desc with descriptions= [description]; tags= !tags}
@@ -658,8 +657,7 @@ let desc_retain_cycle cycle_str loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:" ;
   let tags = Tags.create () in
   let desc =
-    Format.sprintf "Retain cycle %s involving the following objects:%s" (at_line tags loc)
-      cycle_str
+    Format.sprintf "Retain cycle %s involving the following objects:%s" (at_line tags loc) cycle_str
   in
   {descriptions= [desc]; tags= !tags; dotty= cycle_dotty}
 

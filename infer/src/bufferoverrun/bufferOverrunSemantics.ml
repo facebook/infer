@@ -201,7 +201,7 @@ and eval_lindex integer_type_widths array_exp index_exp mem =
              memory sections for each array fields in struct, it finds
              the memory section using the abstract memory, though the
              memory lookup is not required to evaluate the address of
-             x.f[n] in the concrete semantics.  *)
+             x.f[n] in the concrete semantics. *)
           let index_v = eval integer_type_widths index_exp mem in
           Val.plus_pi (Mem.find_set array_locs mem) index_v
     | _ ->
@@ -219,13 +219,7 @@ and eval_lindex integer_type_widths array_exp index_exp mem =
 and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths unop e mem ->
   let v = eval integer_type_widths e mem in
-  match unop with
-  | Unop.Neg ->
-      Val.neg v
-  | Unop.BNot ->
-      Val.unknown_bit v
-  | Unop.LNot ->
-      Val.lnot v
+  match unop with Unop.Neg -> Val.neg v | Unop.BNot -> Val.unknown_bit v | Unop.LNot -> Val.lnot v
 
 
 and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
@@ -485,9 +479,7 @@ let mk_eval_sym_cost = mk_eval_sym_mode ~mode:EvalCost
 
 let get_sym_f integer_type_widths mem e = Val.get_sym (eval integer_type_widths e mem)
 
-let get_offset_sym_f integer_type_widths mem e =
-  Val.get_offset_sym (eval integer_type_widths e mem)
-
+let get_offset_sym_f integer_type_widths mem e = Val.get_offset_sym (eval integer_type_widths e mem)
 
 let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
 
@@ -863,8 +855,8 @@ let get_matching_pairs :
   [] |> add_pair_val callee_v actual ~e2_opt:actual_exp_opt |> add_pair_ptr typ callee_v actual
 
 
-let subst_map_of_rel_pairs :
-    (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t =
+let subst_map_of_rel_pairs : (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t
+    =
  fun pairs ->
   let add_pair rel_map (x, e) = Relation.SubstMap.add x e rel_map in
   List.fold pairs ~init:Relation.SubstMap.empty ~f:add_pair

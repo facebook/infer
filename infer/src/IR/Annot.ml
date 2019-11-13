@@ -7,8 +7,8 @@
  *)
 
 (** The Smallfoot Intermediate Language: Annotations *)
-open! IStd
 
+open! IStd
 module F = Format
 
 type parameter = {name: string option; value: string} [@@deriving compare]
@@ -81,9 +81,7 @@ module Method = struct
   type t = {return: Item.t; params: Item.t list}
 
   (** Pretty print a method annotation. *)
-  let pp s fmt {return; params} =
-    F.fprintf fmt "%a %s(%a)" Item.pp return s (Pp.seq Item.pp) params
-
+  let pp s fmt {return; params} = F.fprintf fmt "%a %s(%a)" Item.pp return s (Pp.seq Item.pp) params
 
   (** Empty method annotation. *)
   let empty = {return= []; params= []}

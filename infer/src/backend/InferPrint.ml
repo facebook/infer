@@ -156,16 +156,14 @@ let should_report (issue_kind : Exceptions.severity) issue_type error_desc eclas
         in
         List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
       in
-      if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc
-      else true
+      if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
 
 
 (* The reason an issue should be censored (that is, not reported). The empty
    string (that is "no reason") means that the issue should be reported. *)
 let censored_reason (issue_type : IssueType.t) source_file =
   let filename = SourceFile.to_rel_path source_file in
-  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason)
-      =
+  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason) =
     let accepted =
       (* matches issue_type_re implies matches filename_re *)
       (not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0)))
@@ -332,9 +330,8 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
                 (CostDomain.BasicCost.pp_degree ~only_bigO:false)
                 degree_with_term
           ; big_o=
-              Format.asprintf "%a"
-                (CostDomain.BasicCost.pp_degree ~only_bigO:true)
-                degree_with_term }
+              Format.asprintf "%a" (CostDomain.BasicCost.pp_degree ~only_bigO:true) degree_with_term
+          }
         in
         let cost_info cost =
           { Jsonbug_t.polynomial_version= CostDomain.BasicCost.version
@@ -407,8 +404,7 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_hash ->
           Format.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.hash)
       | `Issue_field_line_offset ->
-          Format.fprintf fmt "%s%d" (comma_separator index)
-            (issue.line - issue.procedure_start_line)
+          Format.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
       | `Issue_field_qualifier_contains_potential_exception_note ->
           Format.pp_print_bool fmt
             (String.is_substring issue.qualifier ~substring:potential_exception_message)
@@ -506,9 +502,7 @@ module Stats = struct
       let loc = lt.Errlog.lt_loc in
       let level = lt.Errlog.lt_level in
       let description = lt.Errlog.lt_description in
-      let code =
-        match Printer.LineReader.from_loc linereader loc with Some s -> s | None -> ""
-      in
+      let code = match Printer.LineReader.from_loc linereader loc with Some s -> s | None -> "" in
       let line =
         let pp fmt =
           if description <> "" then
@@ -611,8 +605,7 @@ module StatsLogs = struct
         { analysis_nodes_visited= Summary.Stats.nb_visited summary.stats
         ; analysis_status= Summary.Stats.failure_kind summary.stats
         ; analysis_total_nodes= Summary.get_proc_desc summary |> Procdesc.get_nodes_num
-        ; clang_method_kind=
-            (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
+        ; clang_method_kind= (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
         ; lang= Language.to_explicit_string lang
         ; method_location= Summary.get_loc summary
         ; method_name= Typ.Procname.to_string proc_name
@@ -798,11 +791,7 @@ module SummaryStats = struct
     module StringMap = PrettyPrintable.MakePPMap (String)
 
     type ('i, 'k) result =
-      | R :
-          { typ: 't typ
-          ; get: 'i -> 't
-          ; aggrs: ('t, 'k) MetricAggregator.t list }
-          -> ('i, 'k) result
+      | R : {typ: 't typ; get: 'i -> 't; aggrs: ('t, 'k) MetricAggregator.t list} -> ('i, 'k) result
 
     let init metrics aggregators =
       List.fold metrics ~init:StringMap.empty ~f:(fun acc (name, M {typ; get}) ->

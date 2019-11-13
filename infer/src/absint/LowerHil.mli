@@ -18,12 +18,12 @@ module DefaultConfig : HilConfig
 module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) : sig
   module CFG :
     ProcCfg.S
-    with type t = TransferFunctions.CFG.t
-     and type instrs_dir = TransferFunctions.CFG.instrs_dir
-     and type Node.t = TransferFunctions.CFG.Node.t
-     and type Node.id = TransferFunctions.CFG.Node.id
-     and module Node.IdMap = TransferFunctions.CFG.Node.IdMap
-     and module Node.IdSet = TransferFunctions.CFG.Node.IdSet
+      with type t = TransferFunctions.CFG.t
+       and type instrs_dir = TransferFunctions.CFG.instrs_dir
+       and type Node.t = TransferFunctions.CFG.Node.t
+       and type Node.id = TransferFunctions.CFG.Node.id
+       and module Node.IdMap = TransferFunctions.CFG.Node.IdMap
+       and module Node.IdSet = TransferFunctions.CFG.Node.IdSet
 
   module Domain : module type of AbstractDomain.Pair (TransferFunctions.Domain) (Bindings)
 
@@ -68,12 +68,12 @@ module MakeAbstractInterpreterWithConfig
     (HilConfig : HilConfig)
     (TransferFunctions : TransferFunctions.HIL) :
   S
-  with type domain = TransferFunctions.Domain.t
-   and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig))
+    with type domain = TransferFunctions.Domain.t
+     and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig))
 
 (** Simpler version of the above wrapper that uses the default HIL config *)
 module MakeAbstractInterpreter (TransferFunctions : TransferFunctions.HIL) : sig
   include module type of
-    MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig)
-      (TransferFunctions)
+      MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig)
+        (TransferFunctions)
 end

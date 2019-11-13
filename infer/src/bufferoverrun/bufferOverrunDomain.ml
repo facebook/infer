@@ -840,30 +840,30 @@ module AliasTarget = struct
 
   (* Relations between values of logical variables(registers) and program variables
 
-   "Simple relation": Since Sil distinguishes logical and program variables, we need a relation for
+     "Simple relation": Since Sil distinguishes logical and program variables, we need a relation for
      pruning values of program variables.  For example, a C statement [if(x){...}] is translated to
      [%r=load(x); if(%r){...}] in Sil.  At the load statement, we record the alias between the
      values of [%r] and [x], then we can prune not only the value of [%r], but also that of [x]
      inside the if branch.  The [java_tmp] field is an additional slot for keeping one more alias of
      temporary variable in Java.  The [i] field is to express [%r=load(x)+i].
 
-   "Empty relation": For pruning [vector.length] with [vector::empty()] results, we adopt a specific
+     "Empty relation": For pruning [vector.length] with [vector::empty()] results, we adopt a specific
      relation between [%r] and [v->elements], where [%r=v.empty()].  So, if [%r!=0], [v]'s array
      length ([v->elements->length]) is pruned by [=0].  On the other hand, if [%r==0], [v]'s array
      length is pruned by [>=1].
 
-   "Size relation": This is for pruning vector's length.  When there is a function call,
+     "Size relation": This is for pruning vector's length.  When there is a function call,
      [%r=x.size()], the alias target for [%r] becomes [AliasTarget.size {l=x.elements}].  The
      [java_tmp] field is an additional slot for keeping one more alias of temporary variable in
      Java.  The [i] field is to express [%r=x.size()+i], which is required to follow the semantics
      of [Array.add] inside loops precisely.
 
-   "Iterator offset relation": This is for tracking a relation between an iterator offset and a
+     "Iterator offset relation": This is for tracking a relation between an iterator offset and a
      length of array.  If [%r] has an alias to [IteratorOffset {l; i}], which means that [%r's
      iterator offset] is same to [length(l)+i].
 
-   "HasNext relation": This is for tracking return values of the [hasNext] function.  If [%r] has an
-     alias to [HasNext {l}], which means that [%r] is a [hasNext] results of the iterator [l].  *)
+     "HasNext relation": This is for tracking return values of the [hasNext] function.  If [%r] has an
+     alias to [HasNext {l}], which means that [%r] is a [hasNext] results of the iterator [l]. *)
   type t =
     | Simple of {i: IntLit.t; java_tmp: Loc.t option}
     | Empty
@@ -893,8 +893,8 @@ module AliasTarget = struct
       | Empty ->
           F.fprintf fmt "%t=empty(%t)" pp_lhs pp_rhs
       | Size {alias_typ; i; java_tmp} ->
-          F.fprintf fmt "%t%a%asize(%t)%a" pp_lhs pp_java_tmp java_tmp alias_typ_pp alias_typ
-            pp_rhs pp_intlit i
+          F.fprintf fmt "%t%a%asize(%t)%a" pp_lhs pp_java_tmp java_tmp alias_typ_pp alias_typ pp_rhs
+            pp_intlit i
       | Fgets ->
           F.fprintf fmt "%t=fgets(%t)" pp_lhs pp_rhs
       | IteratorOffset {alias_typ; i; java_tmp} ->
@@ -1075,9 +1075,7 @@ module AliasTargets = struct
 
   let incr_size_alias loc x = update loc (Option.map ~f:AliasTarget.incr_size_alias) x
 
-  let incr_or_not_size_alias loc x =
-    update loc (Option.map ~f:AliasTarget.incr_or_not_size_alias) x
-
+  let incr_or_not_size_alias loc x = update loc (Option.map ~f:AliasTarget.incr_or_not_size_alias) x
 
   let subst ~subst_loc x =
     let accum_substed rhs tgt acc =
@@ -1935,9 +1933,7 @@ module MemReach = struct
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
    fun ?represents_multiple_values x v m ->
     let v =
-      let sym =
-        if Itv.is_bottom (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x
-      in
+      let sym = if Itv.is_bottom (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x in
       let offset_sym, size_sym =
         if ArrayBlk.is_bot (Val.get_array_blk v) then (Relation.Sym.bot, Relation.Sym.bot)
         else (Relation.Sym.of_loc_offset x, Relation.Sym.of_loc_size x)
@@ -2351,8 +2347,7 @@ module Mem = struct
 
 
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
-   fun ?represents_multiple_values k v ->
-    map ~f:(MemReach.add_heap ?represents_multiple_values k v)
+   fun ?represents_multiple_values k v -> map ~f:(MemReach.add_heap ?represents_multiple_values k v)
 
 
   let add_heap_set : ?represents_multiple_values:bool -> PowLoc.t -> Val.t -> t -> t =

@@ -100,7 +100,7 @@ module GraphComparison = struct
               None
           | Some (edges, attrs) when Memory.Edges.is_empty edges && Attributes.is_empty attrs ->
               (* this can happen because of [register_address] or because we don't care to delete empty
-               edges when removing edges *)
+                 edges when removing edges *)
               None
           | Some _ as some_cell ->
               some_cell
@@ -146,8 +146,7 @@ module GraphComparison = struct
     match (stack_lhs, stack_rhs) with
     | [], [] ->
         IsomorphicUpTo mapping
-    | ( (var_lhs, (addr_lhs, _trace_lhs)) :: stack_lhs
-      , (var_rhs, (addr_rhs, _trace_rhs)) :: stack_rhs )
+    | (var_lhs, (addr_lhs, _trace_lhs)) :: stack_lhs, (var_rhs, (addr_rhs, _trace_rhs)) :: stack_rhs
       when Var.equal var_lhs var_rhs -> (
       match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
       | IsomorphicUpTo mapping ->
@@ -182,7 +181,8 @@ module GraphVisit : sig
        var_filter:(Var.t -> bool)
     -> t
     -> init:'accum
-    -> f:(   'accum
+    -> f:
+         (   'accum
           -> AbstractValue.t
           -> Var.t
           -> Memory.Access.t list

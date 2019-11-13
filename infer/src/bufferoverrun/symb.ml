@@ -19,11 +19,7 @@ module BoundEnd = struct
 end
 
 module SymbolPath = struct
-  type deref_kind =
-    | Deref_ArrayIndex
-    | Deref_COneValuePointer
-    | Deref_CPointer
-    | Deref_JavaPointer
+  type deref_kind = Deref_ArrayIndex | Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer
 
   let compare_deref_kind _ _ = 0
 
@@ -33,49 +29,49 @@ module SymbolPath = struct
 
   include (* Enforce invariants on Field and StarField *) (
     struct
-        type partial =
-          | Pvar of Pvar.t
-          | Deref of deref_kind * partial
-          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: field_typ}
-          | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
-          | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
-        [@@deriving compare]
+      type partial =
+        | Pvar of Pvar.t
+        | Deref of deref_kind * partial
+        | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: field_typ}
+        | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+        | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
+      [@@deriving compare]
 
-        let of_pvar pvar = Pvar pvar
+      let of_pvar pvar = Pvar pvar
 
-        let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
+      let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
 
-        let deref ~deref_kind p = Deref (deref_kind, p)
+      let deref ~deref_kind p = Deref (deref_kind, p)
 
-        let star_field p0 fn =
-          let rec aux = function
-            | Pvar _ | Callsite _ ->
-                StarField {last_field= fn; prefix= p0}
-            | Deref (_, p) | Field {prefix= p} ->
-                aux p
-            | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
-                p
-            | StarField {prefix} ->
-                StarField {last_field= fn; prefix}
-          in
-          aux p0
+      let star_field p0 fn =
+        let rec aux = function
+          | Pvar _ | Callsite _ ->
+              StarField {last_field= fn; prefix= p0}
+          | Deref (_, p) | Field {prefix= p} ->
+              aux p
+          | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
+              p
+          | StarField {prefix} ->
+              StarField {last_field= fn; prefix}
+        in
+        aux p0
 
 
-        let field ?typ p0 fn =
-          let rec aux = function
-            | Pvar _ | Callsite _ ->
-                Field {fn; prefix= p0; typ}
-            | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
-                StarField {last_field= fn; prefix= p0}
-            | Field {prefix= p} | Deref (_, p) ->
-                aux p
-            | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
-                p
-            | StarField {prefix} ->
-                StarField {last_field= fn; prefix}
-          in
-          aux p0
-      end :
+      let field ?typ p0 fn =
+        let rec aux = function
+          | Pvar _ | Callsite _ ->
+              Field {fn; prefix= p0; typ}
+          | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
+              StarField {last_field= fn; prefix= p0}
+          | Field {prefix= p} | Deref (_, p) ->
+              aux p
+          | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
+              p
+          | StarField {prefix} ->
+              StarField {last_field= fn; prefix}
+        in
+        aux p0
+    end :
       sig
         type partial = private
           | Pvar of Pvar.t
@@ -269,14 +265,11 @@ module Symbol = struct
   let compare_extra_bool _ _ = 0
 
   (* NOTE: non_int represents the symbols that are not integer type,
-     so that their ranges are not used in the cost checker.  *)
+     so that their ranges are not used in the cost checker. *)
   type t =
     | OneValue of {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t}
     | BoundEnd of
-        { unsigned: extra_bool
-        ; non_int: extra_bool
-        ; path: SymbolPath.t
-        ; bound_end: BoundEnd.t }
+        {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
   [@@deriving compare]
 
   let pp : F.formatter -> t -> unit =
@@ -317,8 +310,8 @@ module Symbol = struct
     match (s1, s2) with
     | OneValue _, BoundEnd _ | BoundEnd _, OneValue _ ->
         false
-    | OneValue {path= path1}, OneValue {path= path2}
-    | BoundEnd {path= path1}, BoundEnd {path= path2} ->
+    | OneValue {path= path1}, OneValue {path= path2} | BoundEnd {path= path1}, BoundEnd {path= path2}
+      ->
         SymbolPath.equal path1 path2
 
 

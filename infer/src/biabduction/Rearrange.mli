@@ -13,8 +13,7 @@ open! IStd
 exception (* TODO: this description is not clear *)
             ARRAY_ACCESS
 
-val is_only_pt_by_fld_or_param_nonnull :
-  Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Exp.t -> bool
+val is_only_pt_by_fld_or_param_nonnull : Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Exp.t -> bool
 
 val check_dereference_error :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit

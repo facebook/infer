@@ -22,8 +22,7 @@ module type S = sig
   val of_summary : Summary.t -> t option
   (** Read the corresponding part of the payload from the procedure summary *)
 
-  val read_full :
-    caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> (Procdesc.t * t) option
+  val read_full : caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> (Procdesc.t * t) option
   (** Return the proc desc and payload for the given procedure. Runs the analysis on-demand if
      necessary. *)
 

@@ -221,8 +221,8 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}}
-       node instr ->
+   fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}} node
+       instr ->
     match instr with
     | Load {id} when Ident.is_none id ->
         mem

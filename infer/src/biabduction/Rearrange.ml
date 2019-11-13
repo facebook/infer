@@ -15,9 +15,7 @@ module L = Logging
 let list_product l1 l2 =
   let l1' = List.rev l1 in
   let l2' = List.rev l2 in
-  List.fold
-    ~f:(fun acc x -> List.fold ~f:(fun acc' y -> (x, y) :: acc') ~init:acc l2')
-    ~init:[] l1'
+  List.fold ~f:(fun acc x -> List.fold ~f:(fun acc' y -> (x, y) :: acc') ~init:acc l2') ~init:[] l1'
 
 
 let rec list_rev_and_concat l1 l2 =
@@ -44,7 +42,7 @@ let check_bad_index tenv pname p len index loc =
     let index_nonnegative = Prop.mk_inequality tenv (Exp.BinOp (Binop.Le, Exp.zero, index)) in
     Prover.check_zero tenv index
     || (* index 0 always in bound, even when we know nothing about len *)
-       (Prover.check_atom tenv p index_not_too_large && Prover.check_atom tenv p index_nonnegative)
+    (Prover.check_atom tenv p index_not_too_large && Prover.check_atom tenv p index_nonnegative)
   in
   let index_has_bounds () =
     match Prover.get_bounds tenv p index with Some _, Some _ -> true | _ -> false
@@ -208,8 +206,8 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
         match List.find ~f:(fun (f', _) -> Typ.Fieldname.equal f f') fsel with
         | Some (_, se') ->
             let atoms_se_typ_list' =
-              strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ'
-                off' inst
+              strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ' off'
+                inst
             in
             let replace acc (res_atoms', res_se', res_typ') =
               let replace_fse ((f1, _) as ft1) =
@@ -231,8 +229,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
             List.fold ~f:replace ~init:[] atoms_se_typ_list'
         | None ->
             let atoms', se', res_typ' =
-              create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ' off'
-                inst
+              create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ' off' inst
             in
             let res_fsel' =
               List.sort ~compare:[%compare: Typ.Fieldname.t * Sil.strexp] ((f, se') :: fsel)
@@ -345,8 +342,8 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
           List.concat (List.rev (res_new :: acc))
       | ((i, se) as ise) :: isel_unseen ->
           let atoms_se_typ_list =
-            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ_cont
-              off inst
+            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ_cont off
+              inst
           in
           let atoms_se_typ_list' =
             List.fold
@@ -413,9 +410,7 @@ let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se t
     strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off' inst
   in
   let atoms_se_typ_list_filtered =
-    let check_neg_atom atom =
-      Prover.check_atom tenv Prop.prop_emp (Prover.atom_negate tenv atom)
-    in
+    let check_neg_atom atom = Prover.check_atom tenv Prop.prop_emp (Prover.atom_negate tenv atom) in
     let check_not_inconsistent (atoms, _, _) = not (List.exists ~f:check_neg_atom atoms) in
     List.filter ~f:check_not_inconsistent atoms_se_typ_list
   in
@@ -446,7 +441,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
   if not (exp_has_only_footprint_ids root) then
     if
       (* in angelic mode, purposely ignore dangling pointer warnings during the footprint phase -- we
-     * will fix them during the re - execution phase *)
+         * will fix them during the re - execution phase *)
       not !BiabductionConfig.footprint
     then (
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
@@ -474,16 +469,16 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
             off0 inst
         in
         ( atoms
-        , Prop.mk_ptsto tenv root se
-            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype}) )
+        , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
+        )
     | _ ->
         let atoms, se, typ =
           create_struct_values pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ
             off0 inst
         in
         ( atoms
-        , Prop.mk_ptsto tenv root se
-            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype}) )
+        , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
+        )
   in
   let atoms, ptsto_foot = create_ptsto true off_foot in
   let sub = Sil.subst_of_list eqs in
@@ -688,9 +683,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let nsigma_fp = Prop.sigma_normalize_prop tenv Prop.prop_emp sigma_fp in
   let prop' = Prop.normalize tenv (Prop.set eprop ~sigma_fp:nsigma_fp) in
   let prop_new =
-    List.fold
-      ~f:(Prop.prop_atom_and tenv ~footprint:!BiabductionConfig.footprint)
-      ~init:prop' atoms
+    List.fold ~f:(Prop.prop_atom_and tenv ~footprint:!BiabductionConfig.footprint) ~init:prop' atoms
   in
   let iter =
     match Prop.prop_iter_create prop_new with
@@ -849,8 +842,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           match get_fld_strexp_and_typ typ (is_guarded_by_fld guarded_by_str0) flds with
           | None when guarded_by_str_is_this guarded_by_str0 ->
               (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
-                     note that this is a bit sketchy when there are mutliple this$n's, but there's
-                     nothing we can do to disambiguate them. *)
+                 note that this is a bit sketchy when there are mutliple this$n's, but there's
+                 nothing we can do to disambiguate them. *)
               get_fld_strexp_and_typ typ (fun f _ -> Typ.Fieldname.Java.is_outer_instance f) flds
           | None ->
               (* can't find an exact match. try a different convention. *)
@@ -919,9 +912,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
          | _ ->
              false )
       || (* or the prop says we already have the lock *)
-         List.exists
-           ~f:(function Sil.Apred (Alocked, _) -> true | _ -> false)
-           (Attribute.get_for_exp tenv prop guarded_by_exp)
+      List.exists
+        ~f:(function Sil.Apred (Alocked, _) -> true | _ -> false)
+        (Attribute.get_for_exp tenv prop guarded_by_exp)
     in
     let guardedby_is_self_referential =
       String.equal "itself" (String.lowercase guarded_by_str)
@@ -1237,8 +1230,8 @@ let iter_rearrange_pe_lseg tenv recurse_on_iters default_case_iter iter para e1 
 
 
 (** do re-arrangment for an iter whose current element is a possibly empty dllseg to be unrolled from lhs *)
-let iter_rearrange_pe_dllseg_first tenv recurse_on_iters default_case_iter iter para_dll e1 e2 e3
-    e4 elist =
+let iter_rearrange_pe_dllseg_first tenv recurse_on_iters default_case_iter iter para_dll e1 e2 e3 e4
+    elist =
   let iter_inductive_case =
     let n' = Exp.Var (Ident.create_fresh Ident.kprimed) in
     let _, para_dll_inst1 = Sil.hpara_dll_instantiate para_dll e1 e2 n' elist in
@@ -1407,8 +1400,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     let f_one_iter iter' =
       let prop' = Prop.prop_iter_to_prop tenv iter' in
       if Prover.check_inconsistency tenv prop' then []
-      else
-        iter_rearrange pname tenv (Prop.lexp_normalize_prop tenv prop' lexp) typ prop' iter' inst
+      else iter_rearrange pname tenv (Prop.lexp_normalize_prop tenv prop' lexp) typ prop' iter' inst
     in
     let rec f_many_iters iters_lst = function
       | [] ->
@@ -1626,9 +1618,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   match attribute_opt with
   | Some (Apred (Adangling dk, _)) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in
-      let err_desc =
-        Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc_exn ())
-      in
+      let err_desc = Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc_exn ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
   | Some (Apred (Aundef _, _)) ->
       ()
@@ -1730,7 +1720,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
             warn err_desc_nobuckets )
     | _ ->
         (* HP: fun_exp is not a footprint therefore,
-             either is a local or it's a modified param *)
+           either is a local or it's a modified param *)
         let err_desc = Localise.error_desc_set_bucket err_desc_nobuckets Localise.BucketLevel.b1 in
         raise (Exceptions.Null_dereference (err_desc, __POS__))
 

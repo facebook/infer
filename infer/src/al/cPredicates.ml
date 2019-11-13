@@ -446,11 +446,7 @@ let objc_message_receiver context an =
 
 (* an |= call_method(m) where the name must be exactly m *)
 let call_method an m =
-  match get_selector an with
-  | Some selector ->
-      ALVar.compare_str_with_alexp selector m
-  | _ ->
-      false
+  match get_selector an with Some selector -> ALVar.compare_str_with_alexp selector m | _ -> false
 
 
 let call_class_method an mname =
@@ -461,8 +457,8 @@ let call_class_method an mname =
         ALVar.compare_str_with_alexp omei.omei_selector mname
     | `Instance ->
         (* The ObjC class type, 'Class', is treated as an instance receiver kind.
-            We need to check if the receiver is the class type to catch cases like
-            [[self class] myClassMethod] *)
+           We need to check if the receiver is the class type to catch cases like
+           [[self class] myClassMethod] *)
         ALVar.compare_str_with_alexp omei.omei_selector mname && is_receiver_objc_class_type an
     | _ ->
         false )
@@ -479,8 +475,8 @@ let call_instance_method an mname =
         ALVar.compare_str_with_alexp omei.omei_selector mname
     | `Instance ->
         (* The ObjC class type, 'Class', is treated as an instance receiver kind.
-            We need to verify the receiver is not the class type to avoid cases like
-            [[self class] myClassMethod] *)
+           We need to verify the receiver is not the class type to avoid cases like
+           [[self class] myClassMethod] *)
         ALVar.compare_str_with_alexp omei.omei_selector mname
         && not (is_receiver_objc_class_type an)
     | _ ->
@@ -1427,9 +1423,7 @@ let rec get_decl_attributes_for_callexpr_param an =
       L.debug Linters Verbose "#####POINTER LOOP UP: '%i'@\n" si.si_pointer ;
       match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
       | Some (FunctionDecl (_, _, _, fdi)) ->
-          List.fold fdi.fdi_parameters
-            ~f:(fun acc p -> List.append (get_attr_param p) acc)
-            ~init:[]
+          List.fold fdi.fdi_parameters ~f:(fun acc p -> List.append (get_attr_param p) acc) ~init:[]
       | Some (ParmVarDecl _ as d) ->
           get_attr_param d
       | _ ->
@@ -1590,9 +1584,7 @@ let source_file_matches src_file path_re =
     ~default:false src_file
 
 
-let is_in_source_file an path_re =
-  source_file_matches (Ctl_parser_types.get_source_file an) path_re
-
+let is_in_source_file an path_re = source_file_matches (Ctl_parser_types.get_source_file an) path_re
 
 let is_referencing_decl_from_source_file an path_re =
   source_file_matches (Ctl_parser_types.get_referenced_decl_source_file an) path_re

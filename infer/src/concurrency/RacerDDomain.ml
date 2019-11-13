@@ -118,10 +118,10 @@ module CallPrinter = struct
 end
 
 module TraceElem = struct
+  include ExplicitTrace.MakeTraceElemModuloLocation (Access) (CallPrinter)
   (** This choice means the comparator is insensitive to the location access. 
       This preserves correctness only if the overlying comparator (AccessSnapshot) 
       takes into account the characteristics of the access (eg lock status). *)
-  include ExplicitTrace.MakeTraceElemModuloLocation (Access) (CallPrinter)
 
   let is_write {elem} = Access.is_write elem
 
@@ -569,8 +569,8 @@ let empty_summary =
 let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes} =
   F.fprintf fmt
     "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
-    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
-    OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
+    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipAbstractValue.pp
+    return_ownership AttributeSetDomain.pp return_attributes
 
 
 let pp fmt {threads; locks; accesses; ownership; attribute_map} =

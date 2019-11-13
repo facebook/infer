@@ -20,7 +20,7 @@ type sample =
 let new_sample ~time =
   let time = match time with Some time -> time | None -> int_of_float (Unix.time ()) in
   { (* time is a single mandatory field in scuba. without it,
-      scuba disregards all samples *)
+       scuba disregards all samples *)
     int_section= SMap.singleton "time" time
   ; normal_section= SMap.empty }
 

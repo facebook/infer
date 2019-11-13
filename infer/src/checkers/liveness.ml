@@ -264,8 +264,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   in
   let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store {e1= Lvar pvar; typ; e2= rhs_exp; loc}
-      when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp)
-      ->
+      when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp) ->
         log_report pvar typ loc
     | Sil.Call (_, e_fun, (arg, typ) :: _, loc, _) -> (
       match (Exp.ignore_cast e_fun, Exp.ignore_cast arg) with

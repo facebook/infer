@@ -95,8 +95,7 @@ let receiver_method_call an =
       Ctl_parser_types.ast_node_name (Ctl_parser_types.Decl decl)
   | _ ->
       L.(die ExternalError)
-        "receiver_method_call must be called with ObjCMessageExpr, but got %s"
-        (tag_name_of_node an)
+        "receiver_method_call must be called with ObjCMessageExpr, but got %s" (tag_name_of_node an)
 
 
 let ivar_name an =

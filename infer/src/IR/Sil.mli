@@ -7,8 +7,8 @@
  *)
 
 (** The Smallfoot Intermediate Language *)
-open! IStd
 
+open! IStd
 module F = Format
 
 (** {2 Programs and Types} *)
@@ -239,8 +239,8 @@ val equal_hpred : ?inst:bool -> hpred -> hpred -> bool
     The inst:: parameter specifies whether instumentations should also
     be considered (false by default).  *)
 
-(** Sets of heap predicates *)
 module HpredSet : Caml.Set.S with type elt = hpred
+(** Sets of heap predicates *)
 
 (** {2 Compaction} *)
 

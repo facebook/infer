@@ -152,7 +152,8 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
   in
   let sub =
     Sh.and_ (Term.eq b b')
-      (Sh.and_ (Term.eq m m') (Sh.and_ (Term.eq a0 a') (Sh.rem_seg ssg sub)))
+      (Sh.and_ (Term.eq m m')
+         (Sh.and_ (Term.eq a0 a') (Sh.rem_seg ssg sub)))
   in
   {goal with us; com; min; sub; zs}
 
@@ -235,7 +236,8 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   in
   let sub =
     Sh.and_ (Term.eq b b')
-      (Sh.and_ (Term.eq m m') (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
+      (Sh.and_ (Term.eq m m')
+         (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
   {goal with us; com; min; sub; zs}
 
@@ -274,8 +276,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Term.eq
          (Term.memory ~siz:o ~arr:a)
          (Term.concat
-            [| Term.memory ~siz:l_k ~arr:a0
-             ; Term.memory ~siz:n ~arr:a1
+            [| Term.memory ~siz:l_k ~arr:a0; Term.memory ~siz:n ~arr:a1
              ; Term.memory ~siz:ko_ln ~arr:a2 |]))
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
@@ -285,7 +286,8 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   in
   let sub =
     Sh.and_ (Term.eq b b')
-      (Sh.and_ (Term.eq m m') (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
+      (Sh.and_ (Term.eq m m')
+         (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
   {goal with us; com; min; sub; zs}
 
@@ -420,8 +422,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
          (Sh.and_
             (Term.eq
                (Term.concat
-                  [| Term.memory ~siz:k_l ~arr:a0'
-                   ; Term.memory ~siz:o ~arr:a
+                  [| Term.memory ~siz:k_l ~arr:a0'; Term.memory ~siz:o ~arr:a
                    ; Term.memory ~siz:ln_ko ~arr:a2' |])
                (Term.memory ~siz:n ~arr:a'))
             (Sh.star

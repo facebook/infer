@@ -36,8 +36,7 @@ module Closures = struct
   let is_captured_fake_access (access : _ HilExp.Access.t) =
     match access with
     | FieldAccess fieldname
-      when String.is_prefix ~prefix:fake_capture_field_prefix (Typ.Fieldname.to_string fieldname)
-      ->
+      when String.is_prefix ~prefix:fake_capture_field_prefix (Typ.Fieldname.to_string fieldname) ->
         true
     | _ ->
         false

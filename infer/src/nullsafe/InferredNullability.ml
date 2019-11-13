@@ -41,7 +41,7 @@ let join t1 t2 =
   (* Origin complements nullability information. It is the best effort to explain how was the nullability inferred.
      If nullability is fully determined by one of the arguments, origin should be get from this argument.
      Otherwise we apply heuristics to choose origin either from t1 or t2.
-    *)
+  *)
   let joined_origin =
     match (is_equal_to_t1, is_equal_to_t2) with
     | true, false ->
@@ -53,7 +53,7 @@ let join t1 t2 =
     | false, false | true, true ->
         (* Nullability is not fully determined by neither t1 nor t2
            Let TypeOrigin logic to decide what to prefer in this case.
-         *)
+        *)
         TypeOrigin.join t1.origin t2.origin
   in
   {nullability= joined_nullability; origin= joined_origin}

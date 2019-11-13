@@ -68,6 +68,5 @@ let violation_description _ violation_type ~base_proc_name ~overridden_proc_name
       Format.asprintf
         "%s parameter %a of method %a is not %a but is declared %ain the parent class method %a."
         (translate_position param_position)
-        MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
-        MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation MF.pp_monospaced
-        base_method_descr
+        MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr MF.pp_monospaced
+        nullable_annotation MF.pp_monospaced nullable_annotation MF.pp_monospaced base_method_descr

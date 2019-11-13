@@ -30,7 +30,7 @@ let get_qualified_name ?(linters_mode = false) name_info =
   if not linters_mode then get_qual_name name_info.Clang_ast_t.ni_qual_name
   else
     (* Because we are in linters mode, we can't get precise info about templates,
-        so we strip the template characters to not upset invariants in the system. *)
+       so we strip the template characters to not upset invariants in the system. *)
     let replace_template_chars qual_name =
       String.tr ~target:'<' ~replacement:'_' qual_name |> String.tr ~target:'>' ~replacement:'_'
     in
@@ -149,15 +149,13 @@ let update_enum_map enum_constant_pointer sil_exp =
   in
   let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
   CFrontend_config.enum_map :=
-    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
-      ~data:enum_map_value
+    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
 
 
 let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
   let enum_map_value = (predecessor_pointer_opt, None) in
   CFrontend_config.enum_map :=
-    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
-      ~data:enum_map_value
+    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
 
 
 let get_enum_constant_exp enum_constant_pointer =
@@ -236,7 +234,7 @@ let name_opt_of_typedef_qual_type qual_type =
 
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
-     Ast_expressions *)
+       Ast_expressions *)
     Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
   ; qt_is_const= false
   ; qt_is_volatile= false
@@ -576,8 +574,8 @@ let get_superclass_curr_class_objc_from_decl (decl : Clang_ast_t.decl) =
         otdi.otdi_super
     | _ ->
         Logging.die InternalError
-          "Expected that ObjCImplementationDecl always has a pointer to it's interface, but \
-           wasn't the case with %s"
+          "Expected that ObjCImplementationDecl always has a pointer to it's interface, but wasn't \
+           the case with %s"
           ni.Clang_ast_t.ni_name )
   | ObjCCategoryDecl (_, _, _, _, ocdi) ->
       ocdi.odi_class_interface

@@ -426,14 +426,12 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
       None
   | deref_err :: _ -> (
     (* Prefer to report Deref_null over other kinds of deref errors. this
-         * makes sure we report a NULL_DEREFERENCE instead of
-           a less interesting PRECONDITION_NOT_MET
-         * whenever possible *)
+       * makes sure we report a NULL_DEREFERENCE instead of
+       a less interesting PRECONDITION_NOT_MET
+       * whenever possible *)
     (* TOOD (t4893533): use this trick outside of angelic mode and in other parts of the code *)
     match
-      List.find
-        ~f:(fun err -> match err with Deref_null _, _ -> true | _ -> false)
-        deref_err_list
+      List.find ~f:(fun err -> match err with Deref_null _, _ -> true | _ -> false) deref_err_list
     with
     | Some x ->
         Some x
@@ -664,11 +662,7 @@ let hpred_typing_lhs_compare hpred1 (e2, _) =
 
 
 let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
-  match hpred1 with
-  | Sil.Hpointsto (e1, se1, _) ->
-      Sil.Hpointsto (e1, se1, te2)
-  | _ ->
-      assert false
+  match hpred1 with Sil.Hpointsto (e1, se1, _) -> Sil.Hpointsto (e1, se1, te2) | _ -> assert false
 
 
 (** Implementation of [*] between predicates and typings *)
@@ -1013,9 +1007,9 @@ let mk_actual_precondition tenv prop actual_params formal_params =
 let mk_posts tenv prop callee_pname posts =
   let mk_getter_idempotent posts =
     (* if we have seen a previous call to the same function, only use specs whose return value
-           is consistent with constraints on the return value of the previous call w.r.t to
-           nullness. meant to eliminate false NPE warnings from the common
-           "if (get() != null) get().something()" pattern *)
+       is consistent with constraints on the return value of the previous call w.r.t to
+       nullness. meant to eliminate false NPE warnings from the common
+       "if (get() != null) get().something()" pattern *)
     let last_call_ret_non_null =
       List.exists
         ~f:(function
@@ -1204,9 +1198,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
           frame_typ missing_typ
       in
       let report_valid_res split =
-        match
-          combine tenv ret_id posts actual_pre path_pre split caller_pdesc callee_pname loc
-        with
+        match combine tenv ret_id posts actual_pre path_pre split caller_pdesc callee_pname loc with
         | None ->
             Invalid_res Cannot_combine
         | Some results ->
@@ -1454,8 +1446,8 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id caller_pdesc
-    callee_pname loc actual_params prop path =
+let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id caller_pdesc callee_pname
+    loc actual_params prop path =
   let callee_attributes = Summary.get_attributes callee_summary in
   let caller_name = Procdesc.get_proc_name caller_pdesc in
   let trace_call =

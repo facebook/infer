@@ -193,8 +193,7 @@ module BoTrace = struct
     | Call {location; caller; callee} ->
         let desc = "Call" in
         let tail =
-          Errlog.make_trace_element depth location desc []
-          :: make_err_trace (depth + 1) callee tail
+          Errlog.make_trace_element depth location desc [] :: make_err_trace (depth + 1) callee tail
         in
         make_err_trace depth caller tail
 end
@@ -242,7 +241,11 @@ end
 module Issue = struct
   type elem = Alloc [@@deriving compare]
 
-  type binary = ArrayAccess (* offset, length *) | Binop [@@deriving compare]
+  type binary =
+    | ArrayAccess
+    (* offset, length *)
+    | Binop
+  [@@deriving compare]
 
   type t =
     | Elem of {location: Location.t; length: int; kind: elem; from: Set.t}

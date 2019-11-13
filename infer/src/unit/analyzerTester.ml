@@ -297,7 +297,6 @@ module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
     List.concat_map
       ~f:(fun (name, test_program) ->
         List.map ai_list ~f:(fun (ai_name, create_test) ->
-            name ^ "_" ^ ai_name >:: create_test test_program extras ~initial pp_opt test_pname )
-        )
+            name ^ "_" ^ ai_name >:: create_test test_program extras ~initial pp_opt test_pname ) )
       tests
 end

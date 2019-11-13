@@ -58,11 +58,11 @@ module type S = sig
   (** extract the state for a node id from the given invariant map *)
 end
 
-module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
-                                                                          with module TransferFunctions = TransferFunctions
+module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
+  S with module TransferFunctions = TransferFunctions
 
-(** create an intraprocedural abstract interpreter from transfer functions using the reverse post-order scheduler *)
 module MakeRPO : Make
+(** create an intraprocedural abstract interpreter from transfer functions using the reverse post-order scheduler *)
 
-(** create an intraprocedural abstract interpreter from transfer functions using Bourdoncle's strongly connected component weak topological order *)
 module MakeWTO : Make
+(** create an intraprocedural abstract interpreter from transfer functions using Bourdoncle's strongly connected component weak topological order *)

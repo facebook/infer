@@ -142,16 +142,15 @@ let create_cycle cycle =
   (*isa is an internal field not accessible or writable, so it doesn't make sense in a cycle *)
   if List.exists ~f:is_isa_field cycle then None
     (* The modelled types, where the models are meant to catch NPEs or Memory Leaks, include fields
-     that don't necessarily reflect the real code, so potential retain cycles including them are
-     probably wrong. *)
+       that don't necessarily reflect the real code, so potential retain cycles including them are
+       probably wrong. *)
   else if List.exists ~f:is_modelled_type cycle then None
     (* There are some false positives where we report on null expressions, we can eliminate them here *)
   else if List.exists ~f:is_exp_null cycle then None
   else
     match cycle with
     | [hd] ->
-        if is_inst_rearrange hd then None
-          (* cycles of length 1 created at rearrange are not real *)
+        if is_inst_rearrange hd then None (* cycles of length 1 created at rearrange are not real *)
         else Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
     | hd :: _ ->
         Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
@@ -184,8 +183,8 @@ let pp_dotty fmt cycle =
         Format.fprintf fmt ""
   in
   let pp_dotty_element fmt element =
-    Format.fprintf fmt "\t\"%a\" [label = \"%a | %a \"]@\n" pp_dotty_id element pp_dotty_obj
-      element pp_dotty_field element
+    Format.fprintf fmt "\t\"%a\" [label = \"%a | %a \"]@\n" pp_dotty_id element pp_dotty_obj element
+      pp_dotty_field element
   in
   let rec pp_dotty_edges fmt edges =
     match edges with

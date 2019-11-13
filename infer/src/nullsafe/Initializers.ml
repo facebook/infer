@@ -47,7 +47,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
     List.iter ~f:do_proc initializers ; !res
   in
   (* Get the initializers recursively called by computing a fixpoint.
-           Start from the initializers of the current class and the current procedure. *)
+     Start from the initializers of the current class and the current procedure. *)
   let initializers_recursive : init list =
     let initializers_base_case = initializers_current_class in
     let res = ref [] in
@@ -121,12 +121,12 @@ let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_fi
        Annotations.ia_is_initializer ia
      in
      let initializers_current_class =
-       pname_and_pdescs_with tenv curr_pname get_procs_in_file (function
-           | pname, proc_attributes ->
+       pname_and_pdescs_with tenv curr_pname get_procs_in_file (function pname, proc_attributes ->
            is_initializer proc_attributes
            && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
-     final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class) tenv typecheck_proc)
+     final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class) tenv typecheck_proc
+    )
 
 
 (** Typestates after all constructors. *)
@@ -137,4 +137,4 @@ let final_constructor_typestates_lazy tenv curr_pname get_procs_in_file typechec
            Typ.Procname.is_constructor pname
            && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
-     final_typestates constructors_current_class tenv typecheck_proc)
+     final_typestates constructors_current_class tenv typecheck_proc )

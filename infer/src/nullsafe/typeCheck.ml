@@ -101,8 +101,7 @@ end
 
 (* ComplexExpressions *)
 
-type check_return_type =
-  Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+type check_return_type = Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -270,8 +269,8 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
       in
       match frontend_variable_assignment with
       | Some (call_node, id) ->
-          handle_function_call tenv curr_pname typestate exp default ~is_assignment ~call_node
-            ~node id
+          handle_function_call tenv curr_pname typestate exp default ~is_assignment ~call_node ~node
+            id
       | _ ->
           default )
   | Exp.Lvar _ ->
@@ -413,8 +412,8 @@ let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc hand
 
 
 (* typecheck_expr with fewer parameters, using a common template for typestate range  *)
-let typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-    tenv node instr_ref typestate1 exp1 typ1 origin1 loc1 =
+let typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks tenv
+    node instr_ref typestate1 exp1 typ1 origin1 loc1 =
   typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node instr_ref
     curr_pdesc typestate1 exp1
     (typ1, InferredNullability.create_nonnull origin1)
@@ -431,8 +430,8 @@ let typecheck_expr_for_errors ~is_strict_mode find_canonical_duplicate curr_pdes
 
 (* Handle Preconditions.checkNotNull. *)
 let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc curr_pdesc
-    curr_pname curr_annotated_signature checks call_params idenv parameter_num ~is_vararg
-    typestate' =
+    curr_pname curr_annotated_signature checks call_params idenv parameter_num ~is_vararg typestate'
+    =
   (* clear the nullable flag of the first parameter of the procedure *)
   let clear_nullable_flag typestate'' pvar =
     (* remove the nullable flag for the given pvar *)
@@ -511,8 +510,8 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       let set_flag expression =
         let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
         match
-          convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature
-            ~node:cond_node ~original_node:node ~is_assignment:false cond_e typestate' loc
+          convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node:cond_node
+            ~original_node:node ~is_assignment:false cond_e typestate' loc
         with
         | Exp.Lvar pvar', _ ->
             set_nonnull pvar'
@@ -538,7 +537,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       let branch = false in
       match Errdesc.find_boolean_assignment curr_node pvar branch with
       (* In foo(cond1 && cond2), the node that sets the result to false
-                 has all the negated conditions as parents. *)
+         has all the negated conditions as parents. *)
       | Some boolean_assignment_node ->
           List.iter ~f:handle_negated_condition (Procdesc.Node.get_preds boolean_assignment_node) ;
           !res_typestate
@@ -620,8 +619,7 @@ let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =
       (node'', Exp.BinOp (bop, c1', c2'))
   | Exp.Var _ ->
       let c' = Idenv.expand_expr idenv cond in
-      if not (Exp.equal c' cond) then
-        normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
+      if not (Exp.equal c' cond) then normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
       else (node, c')
   | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
     match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
@@ -809,8 +807,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
 (* If the function has @PropagatesNullable params the nullability of result is determined by
   nullability of actual values of these params.
   *)
-let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.resolved_param list)
-    =
+let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.resolved_param list) =
   (* Nullability of actual values of params that are marked as propagating nullables *)
   let nullability_of_propagates_nullable_params =
     List.filter_map resolved_params
@@ -822,8 +819,8 @@ let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.re
       ret
   | head :: tail ->
       (* We got non-empty list of params that propagate null.
-           It means that nullability of the return value will be determined by actual (inferred) nullability of them.
-           Joining their nullability will give us the least upper bound of nullability of the result *)
+         It means that nullability of the return value will be determined by actual (inferred) nullability of them.
+         Joining their nullability will give us the least upper bound of nullability of the result *)
       let upper_bound_nullability =
         List.fold tail ~init:head ~f:(fun acc nullability ->
             InferredNullability.join acc nullability )
@@ -890,15 +887,15 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
   in
   let resolved_params = List.mapi ~f:resolve_param sig_call_params in
   (* Clarify function call result nullability based on params annotated with @PropagatesNullable
-           and inferred nullability of those params *)
+     and inferred nullability of those params *)
   let ret_respecting_propagates_nullable =
     clarify_ret_by_propagates_nullable preliminary_resolved_ret resolved_params
   in
   let typestate_after_call =
     if not is_anonymous_inner_class_constructor then (
       if cflags.CallFlags.cf_virtual && checks.eradicate then
-        EradicateChecks.check_call_receiver ~is_strict_mode tenv find_canonical_duplicate
-          curr_pdesc node typestate1 call_params callee_pname instr_ref loc
+        EradicateChecks.check_call_receiver ~is_strict_mode tenv find_canonical_duplicate curr_pdesc
+          node typestate1 call_params callee_pname instr_ref loc
           (typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
         EradicateChecks.check_call_parameters ~is_strict_mode tenv find_canonical_duplicate
@@ -912,8 +909,8 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
         | None when Typ.Procname.Java.is_vararg callee_pname_java ->
             let last_parameter = List.length call_params in
             do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
-              curr_pdesc curr_pname curr_annotated_signature checks call_params idenv
-              last_parameter ~is_vararg:true typestate1
+              curr_pdesc curr_pname curr_annotated_signature checks call_params idenv last_parameter
+              ~is_vararg:true typestate1
         | None ->
             (* assume the first parameter is checked for null *)
             do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
@@ -972,9 +969,7 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
     in
     List.fold_right ~f:handle_et etl ~init:([], typestate)
   in
-  let callee_annotated_signature =
-    Models.get_modelled_annotated_signature tenv callee_attributes
-  in
+  let callee_annotated_signature = Models.get_modelled_annotated_signature tenv callee_attributes in
   let signature_params =
     drop_unchecked_signature_params callee_attributes callee_annotated_signature
   in
@@ -1022,8 +1017,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           ~original_node:node ~is_assignment:false e typestate loc
       in
       TypeState.add_id id
-        (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this
-           checks tenv node instr_ref typestate' e' typ TypeOrigin.Undef loc)
+        (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
+           tenv node instr_ref typestate' e' typ TypeOrigin.Undef loc)
         typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
@@ -1061,8 +1056,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       check_field_assign () ; typestate2
   (* Java `new` operators *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
-    when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
-    ->
+    when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
       (* new never returns null *)
       TypeState.add_id id (typ, InferredNullability.create_nonnull TypeOrigin.New) typestate
   (* Type cast *)
@@ -1076,8 +1070,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       (* cast copies the type of the first argument *)
       TypeState.add_id id
-        (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this
-           checks tenv node instr_ref typestate' e' typ TypeOrigin.ONone loc)
+        (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
+           tenv node instr_ref typestate' e' typ TypeOrigin.ONone loc)
         typestate'
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
@@ -1112,7 +1106,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Call _ ->
       (* This is something weird, we don't normally expect this type of instruction
          This may be an unsoundness issue.
-        TODO(T54687014) investigate if this happens in production and add assertion, if not, and handle if gracefully, if yes.
+         TODO(T54687014) investigate if this happens in production and add assertion, if not, and handle if gracefully, if yes.
       *)
       typestate
   | Sil.Prune (cond, loc, true_branch, _) ->
@@ -1147,8 +1141,7 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
         if has_exceptions then typestates_exn := typestate :: !typestates_exn
     | Sil.Store {e1= Exp.Lvar pv}
       when Pvar.is_return pv
-           && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind
-      ->
+           && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind ->
         (* throw instruction *)
         typestates_exn := typestate :: !typestates_exn
     | _ ->

@@ -14,9 +14,7 @@ module ValueHistory = PulseValueHistory
 
 type t =
   | AccessToInvalidAddress of
-      { invalidation: Invalidation.t
-      ; invalidation_trace: Trace.t
-      ; access_trace: Trace.t }
+      {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 let get_location = function
@@ -58,8 +56,8 @@ let get_message = function
         | Immediate _ ->
             F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
         | ViaCall {f; _} ->
-            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe
-              invalidation pp_line line CallEvent.describe f
+            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalidation
+              pp_line line CallEvent.describe f
       in
       let invalidation_line =
         let {Location.line; _} = Trace.get_outer_location invalidation_trace in

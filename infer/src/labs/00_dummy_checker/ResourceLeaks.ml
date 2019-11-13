@@ -53,8 +53,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.pdesc= _; tenv= _} _
-      (instr : HilInstr.t) =
+  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.pdesc= _; tenv= _} _ (instr : HilInstr.t)
+      =
     match instr with
     | Call (_return_opt, Direct _callee_procname, _actuals, _, _loc) ->
         (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
@@ -75,9 +75,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "resource leaks"
 end
 
+module CFG = ProcCfg.Normal
 (** 5(a) Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
    ignore them *)
-module CFG = ProcCfg.Normal
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))

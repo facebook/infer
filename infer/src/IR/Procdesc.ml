@@ -17,9 +17,7 @@ module NodeKey = struct
   let to_string = Caml.Digest.to_hex
 
   let compute node ~simple_key ~succs ~preds =
-    let v =
-      (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds)
-    in
+    let v = (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds) in
     Utils.better_hash v
 
 
@@ -351,11 +349,7 @@ module Node = struct
 
   let pp_instrs ~highlight pe0 f node =
     let pe =
-      match highlight with
-      | None ->
-          pe0
-      | Some instr ->
-          Pp.extend_colormap pe0 (Obj.repr instr) Red
+      match highlight with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
     in
     Instrs.pp pe f (get_instrs node)
 
@@ -428,17 +422,17 @@ end
 
 (* =============== END of module Node =============== *)
 
-(** Map over nodes *)
 module NodeMap = Caml.Map.Make (Node)
+(** Map over nodes *)
 
-(** Hash table with nodes as keys. *)
 module NodeHash = Hashtbl.Make (Node)
+(** Hash table with nodes as keys. *)
 
-(** Set of nodes. *)
 module NodeSet = Node.NodeSet
+(** Set of nodes. *)
 
-(** Map with node id keys. *)
 module IdMap = Node.IdMap
+(** Map with node id keys. *)
 
 (** procedure description *)
 type t =
@@ -594,9 +588,7 @@ let set_exit_node pdesc node = pdesc.exit_node <- node
 let set_start_node pdesc node = pdesc.start_node <- node
 
 (** Append the locals to the list of local variables *)
-let append_locals pdesc new_locals =
-  pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
-
+let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
 let set_succs_exn_only (node : Node.t) exn = node.exn <- exn
 
@@ -837,10 +829,10 @@ let is_connected proc_desc =
         if List.is_empty succs || List.is_empty preds then Error `Other else Ok ()
     | Node.Join_node ->
         (* Join node has the exception that it may be without predecessors
-         and pointing to between_join_and_exit which points to an exit node.
-         This happens when the if branches end with a return.
-         Nested if statements, where all branches have return statements,
-         introduce a sequence of join nodes *)
+           and pointing to between_join_and_exit which points to an exit node.
+           This happens when the if branches end with a return.
+           Nested if statements, where all branches have return statements,
+           introduce a sequence of join nodes *)
         if
           (List.is_empty preds && not (is_consecutive_join_nodes n NodeSet.empty))
           || ((not (List.is_empty preds)) && List.is_empty succs)

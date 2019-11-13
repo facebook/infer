@@ -150,8 +150,7 @@ module Summary = struct
         | Formal i -> (
           match List.nth actuals i with
           | Some (HilExp.AccessExpression actual_expr) ->
-              Some
-                (AccessPath.append (HilExp.AccessExpression.to_access_path actual_expr) accesses)
+              Some (AccessPath.append (HilExp.AccessExpression.to_access_path actual_expr) accesses)
           | _ ->
               None )
       in

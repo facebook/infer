@@ -212,9 +212,7 @@ module Loops : sig
         ; increment: Clang_ast_t.stmt
         ; body: Clang_ast_t.stmt }
     | While of
-        { decl_stmt: Clang_ast_t.stmt option
-        ; condition: Clang_ast_t.stmt
-        ; body: Clang_ast_t.stmt }
+        {decl_stmt: Clang_ast_t.stmt option; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
     | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
   val get_cond : loop_kind -> Clang_ast_t.stmt
@@ -227,9 +225,7 @@ end
 module Self : sig
   exception
     SelfClassException of
-      { class_name: Typ.Name.t
-      ; position: Logging.ocaml_pos
-      ; source_range: Clang_ast_t.source_range }
+      {class_name: Typ.Name.t; position: Logging.ocaml_pos; source_range: Clang_ast_t.source_range}
 
   val add_self_parameter_for_super_instance :
        Clang_ast_t.stmt_info

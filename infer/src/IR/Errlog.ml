@@ -29,11 +29,7 @@ let pp_loc_trace fmt l = PrettyPrintable.pp_collection ~pp_item:pp_loc_trace_ele
 
 let contains_exception loc_trace_elem =
   let pred nt =
-    match nt with
-    | Exception _ ->
-        true
-    | Condition _ | Procedure_start _ | Procedure_end _ ->
-        false
+    match nt with Exception _ -> true | Condition _ | Procedure_start _ | Procedure_end _ -> false
   in
   List.exists ~f:pred loc_trace_elem.lt_node_tags
 

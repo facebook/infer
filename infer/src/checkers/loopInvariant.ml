@@ -14,8 +14,8 @@ module VarSet = AbstractDomain.FiniteSet (Var)
 
 let debug fmt = L.(debug Analysis Medium) fmt
 
-(** Map loop header node -> all nodes in the loop *)
 module LoopHeadToLoopNodes = Procdesc.NodeMap
+(** Map loop header node -> all nodes in the loop *)
 
 let is_defined_outside loop_nodes reaching_defs var =
   ReachingDefs.ReachingDefsMap.find_opt var reaching_defs
@@ -61,7 +61,7 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
                PurityDomain.is_pure
                  (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname)
                && (* check if all params are invariant *)
-                  List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
+               List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
            | _ ->
                false )
   | _ ->
@@ -186,9 +186,7 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
              | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
-                 let purity =
-                   get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname
-                 in
+                 let purity = get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname in
                  PurityDomain.(
                    match purity with
                    | AbstractDomain.Types.Top ->
@@ -220,8 +218,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_pure_by_default ~g
   let process_var_once var inv_vars invalidated_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
-    if
-      InvariantVars.mem var inv_vars || Var.is_none var || InvalidatedVars.mem var invalidated_vars
+    if InvariantVars.mem var inv_vars || Var.is_none var || InvalidatedVars.mem var invalidated_vars
     then (inv_vars, false)
     else
       let loop_head_id = Procdesc.Node.get_id loop_head in
@@ -263,8 +260,8 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_pure_by_default ~g
   find_fixpoint InvariantVars.empty
 
 
-(** Map loop head ->  invariant vars in loop  *)
 module LoopHeadToInvVars = Procdesc.NodeMap
+(** Map loop head ->  invariant vars in loop  *)
 
 type invariant_map = VarSet.t LoopHeadToInvVars.t
 

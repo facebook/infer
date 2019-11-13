@@ -7,8 +7,8 @@
  *)
 
 (** The Smallfoot Intermediate Language: Annotations *)
-open! IStd
 
+open! IStd
 module F = Format
 
 type parameter = {name: string option; value: string}

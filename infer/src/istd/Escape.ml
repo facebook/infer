@@ -150,5 +150,5 @@ let escape_shell =
         escape_double_quotes arg |> F.sprintf "\"%s\""
       else
         (* ends on-going single quote, output single quote inside double quotes, then open a new
-             single quote *)
+           single quote *)
         escape_map (function '\'' -> Some "'\"'\"'" | _ -> None) arg |> F.sprintf "'%s'"

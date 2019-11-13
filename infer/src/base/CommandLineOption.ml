@@ -99,8 +99,7 @@ type desc =
   ; default_string: string
   ; spec: spec
   ; decode_json: inferconfig_dir:string -> Yojson.Basic.t -> string list
-        (** how to go from an option in the json config file to a list of command-line options *)
-  }
+        (** how to go from an option in the json config file to a list of command-line options *) }
 
 let dashdash ?short long =
   match (long, short) with
@@ -163,7 +162,7 @@ module SectionMap = Caml.Map.Make (struct
   type t = String.t
 
   (* this must be the reverse of the order in which we want the sections to appear in the
-       manual *)
+     manual *)
   let compare s1 s2 =
     if String.equal s1 s2 then (* this simplifies the next two cases *)
       0
@@ -190,9 +189,7 @@ let add parse_mode sections desc =
   let desc_list = List.Assoc.find_exn ~equal:equal_parse_mode parse_mode_desc_lists parse_mode in
   desc_list := desc :: !desc_list ;
   let add_to_section (command, section) =
-    let sections =
-      List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command
-    in
+    let sections = List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command in
     let prev_contents = try SectionMap.find section !sections with Caml.Not_found -> [] in
     sections := SectionMap.add section (desc :: prev_contents) !sections
   in
@@ -526,8 +523,8 @@ let map_to_str map =
   String.concat list ~sep:","
 
 
-let mk_string_map ?(default = String.Map.empty) ?(default_to_string = map_to_str)
-    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "key=value") doc =
+let mk_string_map ?(default = String.Map.empty) ?(default_to_string = map_to_str) ?(deprecated = [])
+    ~long ?short ?parse_mode ?in_help ?(meta = "key=value") doc =
   let flag = mk_flag ~deprecated ?short ~long in
   let split_str str =
     match String.lsplit2 str ~on:'=' with
@@ -550,8 +547,8 @@ let mk_string_map ?(default = String.Map.empty) ?(default_to_string = map_to_str
       var := add_to_map !var ~key ~data )
     ~mk_spec:(fun set -> String set )
       (* In spirit of JSON we could have presented json as list of key-value pairs
-      with e.g. "key" and "value" fields, but for simplicity let's present each key-value pair
-      as it is passed to command line, which is a <key>=<value> *)
+         with e.g. "key" and "value" fields, but for simplicity let's present each key-value pair
+         as it is passed to command line, which is a <key>=<value> *)
     ~decode_json:(list_json_decoder (string_json_decoder ~flag))
 
 
@@ -568,8 +565,8 @@ let normalize_path_in_args_being_parsed ?(f = Fn.id) ~is_anon_arg str =
   else str
 
 
-let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short ~parse_mode
-    ~in_help ~meta ~decode_json doc =
+let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short ~parse_mode ~in_help
+    ~meta ~decode_json doc =
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~decode_json
     ~default_to_string
     ~mk_setter:(fun var str ->
@@ -707,8 +704,8 @@ let normalize_desc_list speclist =
   sort speclist
 
 
-let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~description
-    ?options ?exit_status ?environment ?files ?notes ?bugs ?examples ~see_also command_str =
+let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~description ?options
+    ?exit_status ?environment ?files ?notes ?bugs ?examples ~see_also command_str =
   let add_if section blocks =
     match blocks with None -> `Blocks [] | Some bs -> `Blocks (`S section :: bs)
   in
@@ -840,8 +837,7 @@ let anon_fun arg =
     (* stop parsing the current args and go look in that argfile *)
     raise (SubArguments (args_from_argfile arg))
   else if
-    !anon_arg_action.parse_subcommands
-    && List.Assoc.mem !subcommand_actions ~equal:String.equal arg
+    !anon_arg_action.parse_subcommands && List.Assoc.mem !subcommand_actions ~equal:String.equal arg
   then
     let command_switch = List.Assoc.find_exn !subcommand_actions ~equal:String.equal arg in
     match (!curr_command, is_originator) with
@@ -906,8 +902,8 @@ let encode_argv_to_env argv =
        ~f:(fun arg ->
          (not (String.contains arg env_var_sep))
          ||
-         ( warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n"
-             env_var_sep arg ;
+         ( warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n" env_var_sep
+             arg ;
            false ) )
        argv)
 

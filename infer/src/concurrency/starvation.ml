@@ -381,7 +381,7 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       c < 0
       || Int.equal 0 c
          && (* same class, so choose depending on location *)
-            Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
+         Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
 
 
 let should_report pdesc =
@@ -508,7 +508,7 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
       |> Option.value_map ~default:report_map ~f:(fun other_class ->
              (* get the class of the root variable of the lock in the lock acquisition
                 and retrieve all the summaries of the methods of that class;
-                then, report on the parallel composition of the current pair and any pair in these 
+                then, report on the parallel composition of the current pair and any pair in these
                 summaries that can indeed run in parallel *)
              fold_reportable_summaries env other_class ~init:report_map
                ~f:(fun acc (other_pname, {critical_pairs}) ->

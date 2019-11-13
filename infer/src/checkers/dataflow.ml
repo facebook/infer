@@ -55,8 +55,8 @@ let node_throws pdesc node (proc_throws : Typ.Procname.t -> throws) : throws =
     | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
-      when BuiltinDecl.is_declared callee_pn ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) when BuiltinDecl.is_declared callee_pn
+      ->
         if Typ.Procname.equal callee_pn BuiltinDecl.__cast then DontKnow else DoesNotThrow
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
         proc_throws callee_pn

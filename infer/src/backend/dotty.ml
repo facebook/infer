@@ -41,8 +41,7 @@ type coordinate = {id: int; lambda: int} [@@deriving compare]
 
 (* define a link between two nodes. src_fld/trg_fld define the label of the src/trg field. It is*)
 (* useful for having nodes from within a struct and/or to inside a struct *)
-type link =
-  {kind: kind_of_links; src: coordinate; src_fld: string; trg: coordinate; trg_fld: string}
+type link = {kind: kind_of_links; src: coordinate; src_fld: string; trg: coordinate; trg_fld: string}
 [@@deriving compare]
 
 let equal_link = [%compare.equal: link]
@@ -272,8 +271,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda : (Sil.hpred * int) lis
     incr dotty_state_count ;
     let coo = mk_coordinate n lambda in
     match hpred with
-    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when (not (Exp.equal e Exp.zero)) && !print_full_prop
-      ->
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when (not (Exp.equal e Exp.zero)) && !print_full_prop ->
         let e_color_str = color_to_str (exp_color hpred e) in
         [Dotdangling (coo, e, e_color_str)]
     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Exp.zero) ->
@@ -324,8 +322,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda : (Sil.hpred * int) lis
     | [] ->
         []
     | d :: candidates ->
-        if is_allocated d then subtract_allocated candidates
-        else d :: subtract_allocated candidates
+        if is_allocated d then subtract_allocated candidates else d :: subtract_allocated candidates
   in
   let candidate_dangling = List.concat_map ~f:get_rhs_predicate sigma_lambda in
   let candidate_dangling = filter_duplicate candidate_dangling [] in
@@ -365,8 +362,7 @@ let rec dotty_mk_node pe sigma =
         let e1_color_str = color_to_str (exp_color e1) in
         incr dotty_state_count ;
         (* increment once more n+1 is the box for e4 *)
-        [ Dotdllseg
-            (mk_coordinate n lambda, e1, e2, e3, e4, k, hpara_dll.Sil.body_dll, e1_color_str) ]
+        [Dotdllseg (mk_coordinate n lambda, e1, e2, e3, e4, k, hpara_dll.Sil.body_dll, e1_color_str)]
   in
   match sigma with
   | [] ->
@@ -589,8 +585,8 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
             ~f:(fun (k, lab_src, m, lab_trg) ->
               mk_link k
                 (mk_coordinate (n + 1) lambda)
-                (strip_special_chars lab_src) (mk_coordinate m lambda)
-                (strip_special_chars lab_trg) )
+                (strip_special_chars lab_src) (mk_coordinate m lambda) (strip_special_chars lab_trg)
+              )
             target_list
         in
         let links_from_elements = List.concat_map ~f:ff (n :: nl) in
@@ -636,8 +632,8 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
                   trg_label ]
             else []
           in
-          lnk_from_address_struct @ links_from_fields
-          @ dotty_mk_set_links dotnodes sigma' p f cycle )
+          lnk_from_address_struct @ links_from_fields @ dotty_mk_set_links dotnodes sigma' p f cycle
+      )
   | (Sil.Hpointsto (e, Sil.Eexp (e', _), _), lambda) :: sigma' -> (
       let src = look_up dotnodes e lambda in
       match src with
@@ -719,7 +715,7 @@ let print_kind f kind =
           "style=dashed; color=blue" !dotty_state_count !lambda_counter !lambda_counter
           "style=filled, color= lightblue" ;
         (* F.fprintf f "state%iL%i -> struct%iL%i:%s [color=\"lightblue \"  arrowhead=none] @\n"
-             !dotty_state_count !lambda_counter no lev lab;*)
+           !dotty_state_count !lambda_counter no lev lab;*)
         incr dotty_state_count )
 
 
@@ -745,8 +741,8 @@ let dotty_pp_link f link =
       F.fprintf f "struct%iL%i:%s%iL%i -> state%iL%i[label=\"\"]@\n" n1 lambda1 src_fld n1 lambda1
         n2 lambda2
   | _, LinkRetainCycle ->
-      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\", color= red]@\n" n1
-        lambda1 src_fld n1 lambda1 n2 lambda2 trg_fld n2 lambda2
+      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\", color= red]@\n" n1 lambda1
+        src_fld n1 lambda1 n2 lambda2 trg_fld n2 lambda2
   | _, LinkStructToStruct when !print_full_prop ->
       F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]@\n" n1 lambda1 src_fld n1
         lambda1 n2 lambda2 trg_fld n2 lambda2
@@ -844,8 +840,7 @@ let rec print_struct f pe e te l coo c =
   else
     F.fprintf f
       " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s@\n"
-      "shape=record" n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l
-      c ;
+      "shape=record" n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l c ;
   F.fprintf f "}@\n"
 
 
@@ -868,9 +863,8 @@ and print_sll f pe nesting k e1 coo =
   incr dotty_state_count ;
   ( match k with
   | Sil.Lseg_NE ->
-      F.fprintf f
-        "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"list NE\";" n'
-        lambda "style=filled; color=lightgrey;"
+      F.fprintf f "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"list NE\";"
+        n' lambda "style=filled; color=lightgrey;"
   | Sil.Lseg_PE ->
       F.fprintf f
         "subgraph cluster_%iL%i { %s node [style=filled,color=white];   label=\"list PE\";" n'
@@ -935,9 +929,7 @@ and dotty_pp_state f pe cycle dotnode =
   | Dotpointsto (coo, e1, c) when !print_full_prop ->
       dotty_exp coo e1 c false
   | Dotstruct (coo, e1, l, c, te) ->
-      let l' =
-        if !print_full_prop then l else List.filter ~f:(fun edge -> in_cycle cycle edge) l
-      in
+      let l' = if !print_full_prop then l else List.filter ~f:(fun edge -> in_cycle cycle edge) l in
       print_struct f pe e1 te l' coo c
   | Dotarray (coo, e1, e2, l, _, c) when !print_full_prop ->
       print_array f pe e1 e2 l coo c
@@ -1149,8 +1141,7 @@ let pp_cfgnode pdesc fmt (n : Procdesc.Node.t) =
         (* don't print exception edges to the exit node *)
         ()
     | _ ->
-        F.fprintf fmt "@\n\t %a -> %a %s;" (pp_cfgnodename pname) n1 (pp_cfgnodename pname) n2
-          color
+        F.fprintf fmt "@\n\t %a -> %a %s;" (pp_cfgnodename pname) n1 (pp_cfgnodename pname) n2 color
   in
   List.iter ~f:(fun n' -> print_edge n n' false) (Procdesc.Node.get_succs n) ;
   List.iter ~f:(fun n' -> print_edge n n' true) (Procdesc.Node.get_exn n)

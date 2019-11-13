@@ -245,7 +245,7 @@ let logger =
      else
        (* assume the trace file is here and is ready to accept list elements *)
        JsonFragment.(pp_state := InList :: !pp_state) ) ;
-     logger)
+     logger )
 
 
 (* export logging functions that output a list element at a time and flushes so that multiple

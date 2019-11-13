@@ -127,8 +127,8 @@ let sil_func_attributes_of_attributes attrs =
     match al with
     | [] ->
         List.rev acc
-    | `SentinelAttr (_attr_info, {Clang_ast_t.sai_sentinel= sentinel; sai_null_pos= null_pos})
-      :: tl ->
+    | `SentinelAttr (_attr_info, {Clang_ast_t.sai_sentinel= sentinel; sai_null_pos= null_pos}) :: tl
+      ->
         do_translation (PredSymb.FA_sentinel (sentinel, null_pos) :: acc) tl
     | _ :: tl ->
         do_translation acc tl
@@ -228,9 +228,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
     let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var, t)) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_mangled @ formals in
-    let const_formals =
-      get_const_params_indices ~shift:(List.length captured_mangled) all_params
-    in
+    let const_formals = get_const_params_indices ~shift:(List.length captured_mangled) all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Typ.Procname.pp proc_name ;

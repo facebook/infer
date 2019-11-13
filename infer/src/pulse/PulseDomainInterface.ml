@@ -6,14 +6,14 @@
  *)
 open! IStd
 
-(** if you do any mutations of the state in pulse you probably want this module *)
 module AbductiveDomain = PulseAbductiveDomain
+(** if you do any mutations of the state in pulse you probably want this module *)
 
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
 
-(** use only if you know what you are doing or you risk break bi-abduction *)
 module BaseDomain = PulseBaseDomain
+(** use only if you know what you are doing or you risk break bi-abduction *)
 
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory

@@ -54,8 +54,7 @@ module C = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
-        PulseOperations.invalidate location Invalidation.CFree deleted_access astate
-        >>| List.return
+        PulseOperations.invalidate location Invalidation.CFree deleted_access astate >>| List.return
     | _ ->
         Ok [astate]
 end
@@ -129,9 +128,7 @@ module StdFunction = struct
   let operator_call : model =
    fun ~caller_summary location ~ret ~actuals astate ->
     let havoc_ret (ret_id, _) astate =
-      let event =
-        ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []}
-      in
+      let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
     match actuals with

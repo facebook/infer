@@ -227,6 +227,6 @@ let test_interesting_paths_filter =
 
 let tests =
   "differential_filters_suite"
-  >::: test_file_renamings_from_json @ test_file_renamings_find_previous
-       @ test_relative_complements @ test_interesting_paths_filter
+  >::: test_file_renamings_from_json @ test_file_renamings_find_previous @ test_relative_complements
+       @ test_interesting_paths_filter
        @ [test_skip_duplicated_types_on_filenames]

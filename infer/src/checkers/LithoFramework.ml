@@ -128,15 +128,14 @@ struct
         if
           ( LithoContext.check_callee ~callee_pname ~tenv callee_summary_opt
           || (* track callee in order to report respective errors *)
-             Domain.mem receiver astate
-             (* track anything called on a receiver we're already tracking *) )
+          Domain.mem receiver astate
+          (* track anything called on a receiver we're already tracking *) )
           && (not (Typ.Procname.Java.is_static java_callee_procname))
           && LithoContext.satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
           let return_calls =
-            ( try Domain.find return_access_path astate
-              with Caml.Not_found -> Domain.CallSet.empty )
+            (try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty)
             |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_pname location)
           in
           Domain.add return_access_path return_calls astate

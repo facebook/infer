@@ -434,8 +434,8 @@ module Make (Dom : Domain_sig.Dom) = struct
                     exec_skip_func stk state block areturn return
                 | None ->
                     exec_call opts stk state block {call with callee}
-                      (Used_globals.by_function opts.globals callee.name.reg)
-                )
+                      (Used_globals.by_function opts.globals
+                         callee.name.reg) )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->

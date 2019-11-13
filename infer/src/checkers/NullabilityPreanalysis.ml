@@ -49,7 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Typ.Tptr ({desc= Tfun _}, _)
         when Typ.is_objc_class typ && is_self proc_data.extras lhs_id
              && (* lhs is self, rhs is not null *)
-                not (exp_is_null proc_data.extras rhs) ->
+             not (exp_is_null proc_data.extras rhs) ->
           FieldsAssignedInConstructors.add (name, typ) astate
       | _ ->
           astate )

@@ -43,8 +43,7 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
                 Cmdliner.Manpage.s_files section ) ]
   in
   CLOpt.mk_command_doc ~section ~version:Version.versionString
-    ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files
-    ~see_also
+    ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files ~see_also
 
 
 let analyze =
@@ -86,8 +85,8 @@ let compile =
     ~description:
       [ `P
           "Intercepts compilation commands similarly to $(b,infer-capture), but simply execute \
-           these compilation commands and do not perform any translation of the source files. \
-           This can be useful to configure build systems or for debugging purposes." ]
+           these compilation commands and do not perform any translation of the source files. This \
+           can be useful to configure build systems or for debugging purposes." ]
     ~examples:
       [ `P
           "$(b,cmake)(1) hardcodes the absolute paths to the compiler inside the Makefiles it \
@@ -151,8 +150,8 @@ $(b,infer) $(i,[options])|}
            languages of the C family, and a command to build them, infer produces a list of \
            potential issues."
       ; `P
-          "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of \
-           this manual. See their respective manuals for more information."
+          "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of this \
+           manual. See their respective manuals for more information."
       ; `P
           "When run without a subcommand, and if a compilation command is specified via the \
            $(b,--) option or one of the $(b,--clang-compilation-database[-escaped]) options, then \
@@ -171,9 +170,9 @@ $(b,infer) $(i,[options])|}
                inferconfig_file CLOpt.args_env_var CLOpt.args_env_var inferconfig_file
                CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files)
         ; `P
-            "Options can be specified inside an argument file $(i,file) by passing \
-             $(b,@)$(i,file) as argument. The format is one option per line, and enclosing single \
-             ' and double \" quotes are ignored."
+            "Options can be specified inside an argument file $(i,file) by passing $(b,@)$(i,file) \
+             as argument. The format is one option per line, and enclosing single ' and double \" \
+             quotes are ignored."
         ; `P
             "Options without a default value (e.g., $(b,--linter)) and options with list-like \
              values (e.g., $(b,--Xbuck)) all have a corresponding $(b,--option-reset) flag that \
@@ -197,9 +196,9 @@ $(b,infer) $(i,[options])|}
              inferconfig_env_var inferconfig_file Cmdliner.Manpage.s_files)
       ; `P
           (Printf.sprintf
-             "If $(b,%s) is set to \"1\", then infer commands will exit with an error code in \
-              some cases when otherwise a simple warning would be emitted on stderr, for instance \
-              if a deprecated form of an option is used."
+             "If $(b,%s) is set to \"1\", then infer commands will exit with an error code in some \
+              cases when otherwise a simple warning would be emitted on stderr, for instance if a \
+              deprecated form of an option is used."
              CLOpt.strict_mode_env_var) ]
     ~files:
       [ `P
@@ -224,8 +223,8 @@ $(b,infer) $(i,[options])|}
       ; `P "- cumulative options are JSON arrays of the appropriate type"
       ; `P
           (Printf.sprintf
-             "Infer will look for an $(b,%s) file in the current directory, then its parent, \
-              etc., stopping at the first $(b,%s) file found."
+             "Infer will look for an $(b,%s) file in the current directory, then its parent, etc., \
+              stopping at the first $(b,%s) file found."
              inferconfig_file inferconfig_file)
       ; `P "Example:"
       ; `Pre
@@ -242,8 +241,8 @@ let report =
     ~synopsis:"$(b,infer) $(b,report) $(i,[options]) [$(i,file.specs)...]"
     ~description:
       [ `P
-          "Read, convert, and print .specs files in the results directory. Each spec is printed \
-           to standard output unless option -q is used."
+          "Read, convert, and print .specs files in the results directory. Each spec is printed to \
+           standard output unless option -q is used."
       ; `P
           "If no specs file are passed on the command line, process all the .specs in the results \
            directory." ]
@@ -254,16 +253,15 @@ let reportdiff =
   mk_command_doc ~title:"Infer Report Difference"
     ~short_description:"compute the differences between two infer reports"
     ~synopsis:
-      "$(b,infer) $(b,reportdiff) $(b,--report-current) $(i,file) $(b,--report-previous) \
-       $(i,file) $(i,[options])"
+      "$(b,infer) $(b,reportdiff) $(b,--report-current) $(i,file) $(b,--report-previous) $(i,file) \
+       $(i,[options])"
     ~description:
       [ `P
           "Given two infer reports $(i,previous) and $(i,current), compute the following three \
            reports and store them inside the \"differential/\" subdirectory of the results \
            directory:"
       ; `Noblank
-      ; `P
-          "- $(b,introduced.json) contains the issues found in $(i,current) but not $(i,previous);"
+      ; `P "- $(b,introduced.json) contains the issues found in $(i,current) but not $(i,previous);"
       ; `Noblank
       ; `P "- $(b,fixed.json) contains the issues found in $(i,previous) but not $(i,current);"
       ; `Noblank
@@ -280,8 +278,8 @@ let events =
     ~synopsis:{|$(b,infer) $(b,events)|}
     ~description:
       [ `P
-          "Emit to stdout one JSON object per line, each describing a logged event happened \
-           during the execution of Infer" ]
+          "Emit to stdout one JSON object per line, each describing a logged event happened during \
+           the execution of Infer" ]
     ~see_also:InferCommand.[Report; Run]
 
 

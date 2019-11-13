@@ -123,9 +123,7 @@ let do_all_files classpath sources classes =
 
 (* loads the source files and translates them *)
 let main load_sources_and_classes =
-  ( match
-      (Config.biabduction_models_mode, Sys.file_exists Config.biabduction_models_jar = `Yes)
-    with
+  ( match (Config.biabduction_models_mode, Sys.file_exists Config.biabduction_models_jar = `Yes) with
   | true, false ->
       ()
   | false, false ->

@@ -84,7 +84,7 @@ let update_linter_context_map parsed_linters an linter_context_map =
         else
           let res = Ctl_parser_types.ast_node_has_kind tl an in
           (*L.(debug Linters Medium) "@\n Updating linter map for node %i with '%b'"
-              (Ctl_parser_types.ast_node_pointer an)  res; *)
+            (Ctl_parser_types.ast_node_pointer an)  res; *)
           ClosureHashtbl.add phi res acc_map
       with Caml.Not_found ->
         Logging.die InternalError "Every linter condition should have an entry in the map." )
@@ -220,15 +220,15 @@ let add_valid_formulae an checker lcxt cl =
     let pointer = Ctl_parser_types.ast_node_pointer an in *)
   let add_in_set phi acc_set =
     (* L.(debug Linters Medium)
-      "@\n **** In (%i, %s) ADDING FORMULA **** @\n   %a@\n@\n" pointer name CTL.Debug.pp_formula
-      phi ; *)
+       "@\n **** In (%i, %s) ADDING FORMULA **** @\n   %a@\n@\n" pointer name CTL.Debug.pp_formula
+       phi ; *)
     CTLFormulaSet.add phi acc_set
   in
   let is_valid phi acc_set = CTLFormulaSet.mem phi acc_set in
   let do_formula acc_set phi =
-    (*  L.(debug Linters Medium)
-      "@\n In (%i, %s) Dealing with formula @\n   %a@\n" pointer name CTL.Debug.pp_formula phi ;
-        L.(debug Linters Medium) "@\n ---------------------------- @\n" ;*)
+    (* L.(debug Linters Medium)
+       "@\n In (%i, %s) Dealing with formula @\n   %a@\n" pointer name CTL.Debug.pp_formula phi ;
+       L.(debug Linters Medium) "@\n ---------------------------- @\n" ;*)
     match phi with
     | True ->
         add_in_set phi acc_set
@@ -294,8 +294,8 @@ let report_issue an lcxt linter (*npo_condition*) =
   let open Ctl_parser_types in
   let open ALIssues in
   (*let name = Ctl_parser_types.ast_node_kind an in
-  let pointer = Ctl_parser_types.ast_node_pointer an in
-  L.(debug Linters Medium)
+    let pointer = Ctl_parser_types.ast_node_pointer an in
+    L.(debug Linters Medium)
     "@\n@\n@\n  ***** In (%i, %s) Reporting because we found @\n%a@\n@\n@\n@\n" pointer name
     CTL.Debug.pp_formula linter.condition ;*)
   let loc = ALUtils.location_from_an lcxt an in

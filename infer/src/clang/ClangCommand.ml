@@ -16,8 +16,7 @@ type t =
   ; is_driver: bool }
 
 let fcp_dir =
-  Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name
-  ^/ "facebook-clang-plugins"
+  Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
 
 
 (** path of the plugin to load in clang *)
@@ -189,8 +188,7 @@ let clang_cc1_cmd_sanitizer cmd =
      for details on the effects of setting SDKROOT *)
   let implicit_sysroot =
     if not explicit_sysroot_passed then
-      Option.map Config.implicit_sdk_root ~f:(fun x -> ["-isysroot"; x])
-      |> Option.value ~default:[]
+      Option.map Config.implicit_sdk_root ~f:(fun x -> ["-isysroot"; x]) |> Option.value ~default:[]
     else []
   in
   let pre_args_rev = [] |> List.rev_append implicit_sysroot in
@@ -199,10 +197,10 @@ let clang_cc1_cmd_sanitizer cmd =
     |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
     |> List.rev_append args_defines
     |> (* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
-       are appended at the end to override previous opposite settings.  How it's done: suppress
-       all the warnings, since there are no warnings, compiler can't elevate them to error
-       level. *)
-       argv_cons "-Wno-everything"
+          are appended at the end to override previous opposite settings.  How it's done: suppress
+          all the warnings, since there are no warnings, compiler can't elevate them to error
+          level. *)
+    argv_cons "-Wno-everything"
   in
   let clang_arguments =
     filter_and_replace_unsupported_args ~replace_options_arg ~post_args:(List.rev post_args_rev)
@@ -247,14 +245,14 @@ let with_plugin_args args =
   let args_before_rev =
     []
     |> (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
-       argv_cons "-cc1"
+    argv_cons "-cc1"
     |> List.rev_append
          [ "-load"
          ; plugin_path
          ; (* (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag and the
-         YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
-         files, we invoke apple clang again to generate the expected artifacts. This will keep
-         xcodebuild plus all the sub-steps happy. *)
+              YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
+              files, we invoke apple clang again to generate the expected artifacts. This will keep
+              xcodebuild plus all the sub-steps happy. *)
            (if has_flag args "-fmodules" then "-plugin" else "-add-plugin")
          ; plugin_name
          ; plugin_arg_flag

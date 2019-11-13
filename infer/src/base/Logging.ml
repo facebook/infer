@@ -134,7 +134,7 @@ let register_formatter =
        let formatters = mk_formatters () in
        let formatters_ref = ref formatters in
        logging_formatters := ((formatters_ref, mk_formatters), formatters) :: !logging_formatters ;
-       formatters_ref)
+       formatters_ref )
 
 
 let flush_formatters {file; console_file} =
@@ -209,9 +209,7 @@ let phase fmt = log ~to_console:false phase_file_fmts fmt
 let progress fmt = log ~to_console:(not Config.quiet) progress_file_fmts fmt
 
 let log_task fmt =
-  let to_console =
-    match Config.progress_bar with `Plain -> true | `Quiet | `MultiLine -> false
-  in
+  let to_console = match Config.progress_bar with `Plain -> true | `Quiet | `MultiLine -> false in
   log ~to_console progress_file_fmts fmt
 
 
@@ -277,9 +275,7 @@ let internal_error fmt = log ~to_console:true internal_error_file_fmts fmt
 type ocaml_pos = string * int * int * int
 
 (** Convert a ml location to a string *)
-let ocaml_pos_to_string (file, lnum, cnum, enum) =
-  Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
-
+let ocaml_pos_to_string (file, lnum, cnum, enum) = Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
 
 (** Pretty print a location of ml source *)
 let pp_ocaml_pos fmt ocaml_pos = F.pp_print_string fmt (ocaml_pos_to_string ocaml_pos)

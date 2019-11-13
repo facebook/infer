@@ -70,8 +70,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match Domain.find ap astate with
         | UseDefChain.NullDefCompare _ ->
             (* Stop NullDefCompare from propagating here because we want to prevent
-                 * the checker from suggesting @Nullable on y in the following case:
-                 * if (x == null) ... else { y = x; } *)
+             * the checker from suggesting @Nullable on y in the following case:
+             * if (x == null) ... else { y = x; } *)
             None
         | _ ->
             Some (UseDefChain.DependsOn (loc, ap))
@@ -195,9 +195,9 @@ let checker {Callbacks.summary; exe_env} =
              to be reported (the one that is using the field), but the root
              cause (the field with the wrong annotation itself).
              NOTE: Ideally we'd like to support such filtering in the way that
-                   is agnostic to particular checker, but it is not trivial to
-                   do, so let's do it in ad hoc way.
-           *)
+             is agnostic to particular checker, but it is not trivial to
+             do, so let's do it in ad hoc way.
+          *)
           ()
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)

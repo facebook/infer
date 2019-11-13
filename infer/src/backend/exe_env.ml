@@ -70,8 +70,8 @@ let file_data_to_tenv file_data =
 
 let file_data_to_integer_type_widths file_data =
   if is_none file_data.integer_type_widths then
-    file_data.integer_type_widths
-    <- Option.first_some (Typ.IntegerWidths.load file_data.source) (Some Typ.IntegerWidths.java) ;
+    file_data.integer_type_widths <-
+      Option.first_some (Typ.IntegerWidths.load file_data.source) (Some Typ.IntegerWidths.java) ;
   file_data.integer_type_widths
 
 

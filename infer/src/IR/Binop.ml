@@ -7,6 +7,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Binary Operators *)
+
 open! IStd
 
 type ikind_option_for_binop = Typ.ikind option

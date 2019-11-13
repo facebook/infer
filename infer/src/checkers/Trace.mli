@@ -23,20 +23,20 @@ end
 module type S = sig
   include Spec
 
-  (** bottom = this trace has no source or sink data *)
   include AbstractDomain.WithBottom
+  (** bottom = this trace has no source or sink data *)
 
   module Sources : sig
-    (** Set of sources returned by callees of the current function *)
     module Known : module type of AbstractDomain.FiniteSet (Source)
+    (** Set of sources returned by callees of the current function *)
 
     module FootprintConfig : AccessTree.Config
 
-    (** Set of access paths representing the sources that may flow in from the caller *)
     module Footprint : module type of AccessTree.PathSet (FootprintConfig)
+    (** Set of access paths representing the sources that may flow in from the caller *)
 
-    (** Set of sanitizers that have been applied to these sources *)
     module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
+    (** Set of sanitizers that have been applied to these sources *)
 
     type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 
@@ -62,10 +62,7 @@ module type S = sig
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
 
   type report =
-    { issue: IssueType.t
-    ; path_source: Source.t
-    ; path_sink: Sink.t
-    ; path_passthroughs: Passthroughs.t }
+    {issue: IssueType.t; path_source: Source.t; path_sink: Sink.t; path_passthroughs: Passthroughs.t}
 
   val sources : t -> Sources.t
   (** get the sources of the trace. *)

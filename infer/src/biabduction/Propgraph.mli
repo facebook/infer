@@ -27,8 +27,7 @@ val diff_get_colormap : bool -> 'a diff -> Pp.colormap
 (** [diff_get_colormap footprint_part diff] returns the colormap of a computed diff,
     selecting the footprint colormap if [footprint_part] is true. *)
 
-val pp_proplist :
-  Pp.env -> string -> 'a Prop.t * bool -> Format.formatter -> 'b Prop.t list -> unit
+val pp_proplist : Pp.env -> string -> 'a Prop.t * bool -> Format.formatter -> 'b Prop.t list -> unit
 (** Print a list of propositions, prepending each one with the given string,
     If !Config.pring_using_diff is true, print the diff w.r.t. the given prop,
     extracting its local stack vars if the boolean is true. *)

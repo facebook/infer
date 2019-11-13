@@ -346,9 +346,7 @@ module PrePost = struct
 
   type cannot_apply_pre =
     | Aliasing of
-        { addr_caller: AbstractValue.t
-        ; addr_callee: AbstractValue.t
-        ; addr_callee': AbstractValue.t }
+        {addr_caller: AbstractValue.t; addr_callee: AbstractValue.t; addr_callee': AbstractValue.t}
         (** raised when the precondition and the current state disagree on the aliasing, i.e. some
             addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to
             a single address [caller_addr] in the caller's current state. Typically raised when
@@ -391,9 +389,11 @@ module PrePost = struct
 
   let pp_call_state fmt {astate; subst; rev_subst; visited} =
     F.fprintf fmt
-      "@[<v>{ astate=@[<hv2>%a@];@, subst=@[<hv2>%a@];@, rev_subst=@[<hv2>%a@];@, \
-       visited=@[<hv2>%a@]@, }@]"
-      pp astate
+      "@[<v>{ astate=@[<hv2>%a@];@,\
+      \ subst=@[<hv2>%a@];@,\
+      \ rev_subst=@[<hv2>%a@];@,\
+      \ visited=@[<hv2>%a@]@,\
+      \ }@]" pp astate
       (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
       subst
       (AddressMap.pp ~pp_value:AbstractValue.pp)
@@ -534,8 +534,8 @@ module PrePost = struct
             (fun (addr_dest_pre, _) (addr_dest_post, _) ->
               (* NOTE: ignores traces
 
-                  TODO: can the traces be leveraged here? maybe easy to detect writes by looking at
-                  the post trace *)
+                 TODO: can the traces be leveraged here? maybe easy to detect writes by looking at
+                 the post trace *)
               AbstractValue.equal addr_dest_pre addr_dest_post )
             edges_pre edges_post
         in
@@ -549,7 +549,7 @@ module PrePost = struct
       call_state =
     (* For each [(formal, actual)] pair, resolve them to addresses in their respective states then
        call [materialize_pre_from] on them.  Give up if calling the function introduces aliasing.
-       *)
+    *)
     match
       IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal (actual, _) ->
           materialize_pre_from_actual callee_proc_name call_location
@@ -617,7 +617,7 @@ module PrePost = struct
           BaseMemory.Edges.merge
             (fun _access old_opt pre_opt ->
               (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
-                whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
+                 whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
               if Option.is_some pre_opt then
                 (* delete edge if some edge for the same access exists in the pre *)
                 None
@@ -717,9 +717,8 @@ module PrePost = struct
               record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
                 ~addr_hist_caller ~cell_post call_state
           in
-          IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold
-            ~init:call_state_after_post edges_post
-            ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
+          IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold ~init:call_state_after_post
+            edges_post ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
               let call_state, addr_hist_curr_dest =
                 call_state_subst_find_or_new call_state addr_callee_dest
                   ~default_hist_caller:(snd addr_hist_caller)
@@ -775,13 +774,13 @@ module PrePost = struct
           (call_state, Some return_caller_addr_hist) )
 
 
-  let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
-      call_state =
+  let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
+      =
     (* for each [(formal_i, actual_i)] pair, do [post_i = post union subst(graph reachable from
        formal_i in post)], deleting previous info when comparing pre and post shows a difference
        (TODO: record in the pre when a location is written to instead of just comparing values
        between pre and post since it's unreliable, eg replace value read in pre with same value in
-       post but nuke other fields in the meantime? is that possible?).  *)
+       post but nuke other fields in the meantime? is that possible?). *)
     match
       List.fold2 formals actuals ~init:call_state ~f:(fun call_state formal (actual, _) ->
           record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state
@@ -837,8 +836,7 @@ module PrePost = struct
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
     let r =
-      apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
-        call_state
+      apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
       |> apply_post_for_globals callee_proc_name call_location pre_post
       |> record_post_for_return callee_proc_name call_location pre_post
       |> fun (call_state, return_caller) ->
@@ -877,8 +875,8 @@ module PrePost = struct
 
 
   (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
-       in the *current* pre as appropriate so that callers of the current procedure will also know
-       about the deeper reads)
+     in the *current* pre as appropriate so that callers of the current procedure will also know
+     about the deeper reads)
 
      - for each actual, write the post for that actual
 
@@ -889,7 +887,7 @@ module PrePost = struct
      - what if some preconditions raise lifetime issues but others don't? Have to be careful with
      the noise that this will introduce since we don't care about values. For instance, if the pre
      is for a path where [formal != 0] and we pass [0] then it will be an FP. Maybe the solution is
-     to bake in some value analysis.  *)
+     to bake in some value analysis. *)
   let apply callee_proc_name call_location pre_post ~formals ~actuals astate =
     L.d_printfln "Applying pre/post for %a(%a):@\n%a" Typ.Procname.pp callee_proc_name
       (Pp.seq ~sep:"," Var.pp) formals pp pre_post ;

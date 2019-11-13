@@ -85,9 +85,7 @@ end = struct
     [ { def with
         classname= "apache::thrift::concurrency::Monitor"
       ; trylock= "timedlock" :: def.trylock }
-    ; { def with
-        classname= "apache::thrift::concurrency::Mutex"
-      ; trylock= "timedlock" :: def.trylock }
+    ; {def with classname= "apache::thrift::concurrency::Mutex"; trylock= "timedlock" :: def.trylock}
     ; {rwm with classname= "apache::thrift::concurrency::NoStarveReadWriteMutex"}
     ; {rwm with classname= "apache::thrift::concurrency::ReadWriteMutex"}
     ; {shd with classname= "boost::shared_mutex"}
@@ -117,8 +115,7 @@ end = struct
 
   let mk_matcher methods =
     let matcher = QualifiedCppName.Match.of_fuzzy_qual_names methods in
-    fun pname ->
-      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
 
 
   let is_lock, is_unlock, is_trylock, is_std_lock =
@@ -341,12 +338,11 @@ let ui_matcher_records =
   ; {default with classname= "android.app.Application"; methods= ["onCreate"]}
   ; { default with
       classname= "android.app.Activity"
-    ; methods= ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
-    }
+    ; methods= ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"] }
   ; { default with
       (* according to Android documentation, *all* methods of the View class run on UI thread, but
-       let's be a bit conservative and catch all methods that start with "on".
-       https://developer.android.com/reference/android/view/View.html *)
+         let's be a bit conservative and catch all methods that start with "on".
+         https://developer.android.com/reference/android/view/View.html *)
       method_prefix= true
     ; classname= "android.view.View"
     ; methods= ["on"] } ]

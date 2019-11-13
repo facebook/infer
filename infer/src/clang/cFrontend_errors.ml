@@ -36,8 +36,8 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translati
   in
   try f () with
   (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
-       catching the exception) unless `--keep-going` was passed. Print errors we should fix
-       (t21762295) to the console. *)
+     catching the exception) unless `--keep-going` was passed. Print errors we should fix
+     (t21762295) to the console. *)
   | Unimplemented e ->
       ClangLogging.log_caught_exception trans_unit_ctx "Unimplemented" e.position e.source_range
         e.ast_node ;

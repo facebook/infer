@@ -129,10 +129,7 @@ let range_of_ikind =
 let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
 
 (** Kinds of floating-point numbers *)
-type fkind =
-  | FFloat  (** [float] *)
-  | FDouble  (** [double] *)
-  | FLongDouble  (** [long double] *)
+type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
 [@@deriving compare]
 
 let equal_fkind = [%compare.equal: fkind]
@@ -684,8 +681,8 @@ module Procname = struct
       match verbosity with
       | Verbose | Non_verbose ->
           (* if verbose, then package.class.method(params): rtype,
-         else rtype package.class.method(params)
-         verbose is used for example to create unique filenames, non_verbose to create reports *)
+             else rtype package.class.method(params)
+             verbose is used for example to create unique filenames, non_verbose to create reports *)
           let pp_class_name verbosity fmt j =
             pp_type_verbosity verbosity fmt (Name.Java.split_typename j.class_name)
           in
@@ -1423,8 +1420,7 @@ module Procname = struct
 end
 
 module Fieldname = struct
-  type t = Clang of {class_name: Name.t; field_name: string} | Java of string
-  [@@deriving compare]
+  type t = Clang of {class_name: Name.t; field_name: string} | Java of string [@@deriving compare]
 
   let equal = [%compare.equal: t]
 

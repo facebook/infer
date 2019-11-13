@@ -83,7 +83,7 @@ type os_type = Unix | Win32 | Cygwin
 type compilation_database_dependencies =
   | Deps of int option
   (* get the compilation database of the dependencies up to depth n
-     by [Deps (Some n)], or all by [Deps None]  *)
+     by [Deps (Some n)], or all by [Deps None] *)
   | NoDeps
 [@@deriving compare]
 
@@ -140,8 +140,7 @@ let build_system_of_exe_name name =
        If this is an alias for another build system that infer supports, you can use@\n\
        `--force-integration <command>` where <command> is one of the following supported build \
        systems:@\n\
-       @[<v2>  %a@]"
-      name
+       @[<v2>  %a@]" name
       (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
       ( List.map ~f:fst build_system_exe_assoc
       |> List.map ~f:string_of_build_system
@@ -663,9 +662,7 @@ and { annotation_reachability
     ; uninit } =
   let mk_checker ?(default = false) ?(deprecated = []) ~long doc =
     let var =
-      CLOpt.mk_bool ~long
-        ~in_help:InferCommand.[(Analyze, manual_generic)]
-        ~default ~deprecated doc
+      CLOpt.mk_bool ~long ~in_help:InferCommand.[(Analyze, manual_generic)] ~default ~deprecated doc
     in
     all_checkers := (var, long, doc, default) :: !all_checkers ;
     var
@@ -819,8 +816,8 @@ and annotation_reachability_cxx =
   }
 |}
     ^ "\n\
-       This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function \
-       whose source path starts with \"isolated/\" that may reach the function named \"connect\", \
+       This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function whose \
+       source path starts with \"isolated/\" that may reach the function named \"connect\", \
        ignoring paths that go through a symbol matching the OCaml regexp \".*::Trusted::.*\"." )
 
 
@@ -888,8 +885,8 @@ and buck_blacklist =
     ~long:"buck-blacklist"
     ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
     ~meta:"regex"
-    "Skip capture of files matched by the specified regular expression (only the \"flavors \
-     (C++)\" Buck integration is supported, not Java)."
+    "Skip capture of files matched by the specified regular expression (only the \"flavors (C++)\" \
+     Buck integration is supported, not Java)."
 
 
 and buck_build_args =
@@ -935,8 +932,7 @@ and buck_out =
 
 and buck_targets_blacklist =
   CLOpt.mk_string_list ~long:"buck-targets-blacklist"
-    ~in_help:
-      InferCommand.[(Run, manual_buck_compilation_db); (Capture, manual_buck_compilation_db)]
+    ~in_help:InferCommand.[(Run, manual_buck_compilation_db); (Capture, manual_buck_compilation_db)]
     ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
 
 
@@ -968,8 +964,8 @@ and censor_report =
      filter is of the form: `<issue_type_regex>:<filename_regex>:<reason_string>`. The first two \
      components are OCaml Str regular expressions, with an optional `!` character prefix. If a \
      regex has a `!` prefix, the polarity is inverted, and the filter becomes a \"blacklist\" \
-     instead of a \"whitelist\". Each filter is interpreted as an implication: an issue matches \
-     if it does not match the `issue_type_regex` or if it does match the `filename_regex`. The \
+     instead of a \"whitelist\". Each filter is interpreted as an implication: an issue matches if \
+     it does not match the `issue_type_regex` or if it does match the `filename_regex`. The \
      filenames that are tested by the regex are relative to the `--project-root` directory. The \
      `<reason_string>` is a non-empty string used to explain why the issue was filtered."
 
@@ -1029,8 +1025,8 @@ and clang_ignore_regex =
 and clang_idirafter_to_override_regex =
   CLOpt.mk_string_opt ~long:"clang-idirafter-to-override-regex" ~meta:"dir_OCaml_regex"
     "Use this option in the uncommon case where the normal compilation process overrides the \
-     location of internal compiler headers. This option should specify regular expression with \
-     the path to those headers so that infer can use its own clang internal headers instead. \
+     location of internal compiler headers. This option should specify regular expression with the \
+     path to those headers so that infer can use its own clang internal headers instead. \
      Concretely, this will replace $(b,-idirafter <path matching the regex>) with $(b,-idirafter \
      /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include)."
 
@@ -1040,8 +1036,8 @@ and clang_isystem_to_override_regex =
     ~deprecated:["-clang-include-to-override-regex"; "-clang-include-to-override"]
     ~meta:"dir_OCaml_regex"
     "Use this option in the uncommon case where the normal compilation process overrides the \
-     location of internal compiler headers. This option should specify regular expression with \
-     the path to those headers so that infer can use its own clang internal headers instead. \
+     location of internal compiler headers. This option should specify regular expression with the \
+     path to those headers so that infer can use its own clang internal headers instead. \
      Concretely, this will replace $(b,-isystem <path matching the regex>) with $(b,-isystem \
      /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include)."
 
@@ -1069,8 +1065,8 @@ and compilation_database_escaped =
   CLOpt.mk_path_list ~long:"compilation-database-escaped"
     ~deprecated:["-clang-compilation-db-files-escaped"]
     ~in_help:InferCommand.[(Capture, manual_clang)]
-    "File that contain compilation commands where all entries are escaped for the shell, eg \
-     coming from Xcode (can be specified multiple times)"
+    "File that contain compilation commands where all entries are escaped for the shell, eg coming \
+     from Xcode (can be specified multiple times)"
 
 
 and compute_analytics =
@@ -1195,8 +1191,7 @@ and ( biabduction_models_mode
   and print_buckets =
     CLOpt.mk_bool ~long:"print-buckets"
       "Show the internal bucket of Infer reports in their textual description"
-  and print_types =
-    CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
+  and print_types = CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
   and keep_going =
     CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
       ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -1327,8 +1322,8 @@ and differential_filter_files =
 and differential_filter_set =
   CLOpt.mk_symbol_seq ~long:"differential-filter-set" ~eq:PolyVariantEqual.( = )
     "Specify which set of the differential results is filtered with the modified files provided \
-     through the $(b,--differential-modified-files) argument. By default it is applied to all \
-     sets ($(b,introduced), $(b,fixed), and $(b,preexisting))"
+     through the $(b,--differential-modified-files) argument. By default it is applied to all sets \
+     ($(b,introduced), $(b,fixed), and $(b,preexisting))"
     ~symbols:[("introduced", `Introduced); ("fixed", `Fixed); ("preexisting", `Preexisting)]
     ~default:[`Introduced; `Fixed; `Preexisting]
 
@@ -1400,16 +1395,14 @@ and eradicate_return_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
 
 
-and eradicate_verbose =
-  CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
-
+and eradicate_verbose = CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
 
 and external_java_packages =
   CLOpt.mk_string_list ~long:"external-java-packages"
     ~in_help:InferCommand.[(Analyze, manual_java)]
     ~meta:"prefix"
-    "Specify a list of Java package prefixes for external Java packages. If set, the analysis \
-     will not report non-actionable warnings on those packages."
+    "Specify a list of Java package prefixes for external Java packages. If set, the analysis will \
+     not report non-actionable warnings on those packages."
 
 
 and fail_on_bug =
@@ -1464,8 +1457,8 @@ and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
     ~meta:"report.json"
-    "Load analysis results from a report file (default is to load the results from the specs \
-     files generated by the analysis)."
+    "Load analysis results from a report file (default is to load the results from the specs files \
+     generated by the analysis)."
 
 
 and frontend_stats =
@@ -1540,8 +1533,8 @@ and hoisting_report_only_expensive =
 
 and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
-    "If set, specifies path where .dot file should be written, it overrides the path for all \
-     other options that would generate icfg file otherwise"
+    "If set, specifies path where .dot file should be written, it overrides the path for all other \
+     options that would generate icfg file otherwise"
 
 
 and iphoneos_target_sdk_version =
@@ -1623,9 +1616,9 @@ and liveness_dangerous_classes =
   CLOpt.mk_json ~long:"liveness-dangerous-classes"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     "Specify classes where the destructor should be ignored when computing liveness. In other \
-     words, assignement to variables of these types (or common wrappers around these types such \
-     as $(i,unique_ptr<type>)) will count as dead stores when the variables are not read \
-     explicitly by the program."
+     words, assignement to variables of these types (or common wrappers around these types such as \
+     $(i,unique_ptr<type>)) will count as dead stores when the variables are not read explicitly \
+     by the program."
 
 
 and log_events =
@@ -1695,8 +1688,7 @@ and linters_ignore_clang_failures =
 and linters_validate_syntax_only =
   CLOpt.mk_bool ~long:"linters-validate-syntax-only"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    ~default:false
-    "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
+    ~default:false "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
 
 
 and load_average =
@@ -1760,8 +1752,8 @@ and nullable_annotation =
 
 and nullsafe_third_party_signatures =
   CLOpt.mk_string_opt ~long:"nullsafe-third-party-signatures"
-    "Path to a folder with annotated signatures of third-party methods to be taken into account \
-     by nullsafe. Path is either relative to .inferconfig folder or absolute"
+    "Path to a folder with annotated signatures of third-party methods to be taken into account by \
+     nullsafe. Path is either relative to .inferconfig folder or absolute"
 
 
 and nullsafe_strict_containers =
@@ -1869,8 +1861,8 @@ and procedures_attributes =
 and procedures_definedness =
   CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
     ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
-    "Include procedures definedness in the output of $(b,--procedures), i.e. whether the \
-     procedure definition was found, or only the procedure declaration, or the procedure is an \
+    "Include procedures definedness in the output of $(b,--procedures), i.e. whether the procedure \
+     definition was found, or only the procedure declaration, or the procedure is an \
      auto-generated Objective-C accessor"
 
 
@@ -1878,8 +1870,8 @@ and procedures_filter =
   CLOpt.mk_string_opt ~long:"procedures-filter" ~meta:"filter"
     ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "With $(b,--procedures), only print functions and methods (procedures) matching the specified \
-     $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns \
-     are interpreted as OCaml Str regular expressions. For instance, to keep only methods named \
+     $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns are \
+     interpreted as OCaml Str regular expressions. For instance, to keep only methods named \
      \"foo\", one can use the filter \".*:foo\", or \"foo\" for short."
 
 
@@ -2097,8 +2089,7 @@ and rest =
     ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
     "Stop argument processing, use remaining arguments as a build command" ~usage:exe_usage
     (fun build_exe ->
-      match Filename.basename build_exe with "java" | "javac" -> CLOpt.Javac | _ -> CLOpt.NoParse
-      )
+      match Filename.basename build_exe with "java" | "javac" -> CLOpt.Javac | _ -> CLOpt.NoParse )
 
 
 and results_dir =
@@ -2136,8 +2127,8 @@ and scuba_normals =
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
-    "Methods that are SIOF-safe; \"foo::bar\" will match \"foo::bar()\", \"foo<int>::bar()\", \
-     etc. (can be specified multiple times)"
+    "Methods that are SIOF-safe; \"foo::bar\" will match \"foo::bar()\", \"foo<int>::bar()\", etc. \
+     (can be specified multiple times)"
 
 
 and skip_analysis_in_path =
@@ -2263,8 +2254,8 @@ and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
       InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
-    "SQLite cache size in pages (if positive) or kB (if negative), follows formal of \
-     corresponding SQLite PRAGMA."
+    "SQLite cache size in pages (if positive) or kB (if negative), follows formal of corresponding \
+     SQLite PRAGMA."
 
 
 and sqlite_page_size =
@@ -2421,8 +2412,7 @@ and type_size =
 
 
 and uninit_interproc =
-  CLOpt.mk_bool ~long:"uninit-interproc"
-    "Run uninit check in the experimental interprocedural mode"
+  CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
 
 
 and unsafe_malloc =
@@ -2489,7 +2479,7 @@ let javac_classes_out =
     ~short:
       'd'
       (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
-       needed but the tests break without this for now. See discussion in D4397716. *)
+         needed but the tests break without this for now. See discussion in D4397716. *)
     ~default:CLOpt.init_work_dir
     ~default_to_string:(fun _ -> ".")
     ~f:(fun classes_out ->

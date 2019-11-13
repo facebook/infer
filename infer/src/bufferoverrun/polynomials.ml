@@ -244,7 +244,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
 
   (* (c + r * R + s * S + t * T) x s
-    = 0 + r * (R x s) + s * (c + s * S + t * T) *)
+     = 0 + r * (R x s) + s * (c + s * S + t * T) *)
   let rec mult_symb : t -> S.t -> t =
    fun {const; terms} s ->
     let less_than_s, equal_s_opt, greater_than_s = M.split s terms in
@@ -296,8 +296,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
    fun ~lhs ~rhs ->
     phys_equal lhs rhs
     || (NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:leq lhs.terms rhs.terms)
-    || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
-           NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
+    || Option.exists (int_ub lhs) ~f:(fun lhs_ub -> NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs))
 
 
   let rec xcompare ~lhs ~rhs =
@@ -315,8 +314,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
           (fun s p acc ->
             let p' = mask_min_max_constant p in
             M.update (S.mask_min_max_constant s)
-              (function
-                | None -> Some p' | Some p -> if leq ~lhs:p ~rhs:p' then Some p' else Some p )
+              (function None -> Some p' | Some p -> if leq ~lhs:p ~rhs:p' then Some p' else Some p)
               acc )
           terms M.empty }
 

@@ -204,8 +204,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
             let prev = old_state.State.pre in
             let next = astate_pre in
             let res = Domain.widen ~prev ~next ~num_iters in
-            if Config.write_html then
-              debug_absint_operation (`Widen (num_iters, (prev, next, res))) ;
+            if Config.write_html then debug_absint_operation (`Widen (num_iters, (prev, next, res))) ;
             res )
           else astate_pre
         in
@@ -368,7 +367,7 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
      To mitigate the problem, it tries to do narrowing, in loop level, right after it found a
      fixpoint of a loop.  Thus, it narrows before the widened values are flowed to the following
      loops.  In order to guarantee the termination of the analysis, this eager narrowing is applied
-     only to the outermost loops or when the first visits of each loops.  *)
+     only to the outermost loops or when the first visits of each loops. *)
   type mode = Widen | WidenThenNarrow | Narrow
 
   let is_narrowing_of = function Widen | WidenThenNarrow -> false | Narrow -> true
@@ -453,8 +452,8 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
   let compute_post ?(do_narrowing = false) = make_compute_post ~exec_cfg_internal ~do_narrowing
 end
 
-module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
-                                                                          with module TransferFunctions = TransferFunctions
+module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
+  S with module TransferFunctions = TransferFunctions
 
 module MakeRPO (T : TransferFunctions.SIL) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)

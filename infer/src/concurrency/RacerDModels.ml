@@ -119,8 +119,8 @@ let get_container_access pn tenv =
   | Typ.Procname.Java _ ->
       None
   (* The following order matters: we want to check if pname is a container write
-       before we check if pname is a container read. This is due to a different
-       treatment between std::map::operator[] and all other operator[]. *)
+     before we check if pname is a container read. This is due to a different
+     treatment between std::map::operator[] and all other operator[]. *)
   | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
       Some ContainerWrite
   | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_read pn ->
@@ -167,7 +167,7 @@ let is_functional pname =
       with
       | "android.content.res.Resources", method_name ->
           (* all methods of Resources are considered @Functional except for the ones in this
-                        blacklist *)
+             blacklist *)
           let non_functional_resource_methods =
             [ "getAssets"
             ; "getConfiguration"
@@ -282,8 +282,8 @@ let is_thread_safe item_annot =
   let f ((annot : Annot.t), _) =
     List.exists
       ~f:(fun annot_string ->
-        Annotations.annot_ends_with annot annot_string
-        || String.equal annot.class_name annot_string )
+        Annotations.annot_ends_with annot annot_string || String.equal annot.class_name annot_string
+        )
       threadsafe_annotations
     &&
     match annot.Annot.parameters with
@@ -405,7 +405,7 @@ let should_flag_interface_call tenv exps call_flags pname =
       && (not (is_java_library java_pname))
       && (not (is_builder_function java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
-      thread-safe (would be unreasonable to ask everyone to annotate them) *)
+         thread-safe (would be unreasonable to ask everyone to annotate them) *)
       && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
            thread_safe_or_thread_confined tenv pname
          |> Option.is_none

@@ -38,9 +38,8 @@ let buck_build ~context target =
   let open Process in
   eval ~context
     (run "buck"
-       [ "build"
-       ; "@mode/" ^ Lazy.force mode
-       ; "-c"; "sledge.build=True"; target ])
+       [ "build"; "@mode/" ^ Lazy.force mode; "-c"; "sledge.build=True"
+       ; target ])
 
 (* split a fully-qualified buck target into file and rule *)
 let parse_target target =
@@ -99,7 +98,7 @@ let expand_arch_archive ~context archive_name =
                 if String.equal is_bc "BC" then (
                   warn "found bc file %s in %s" name archive_name () ;
                   acc + 1 )
-                else acc) ) )
+                else acc ) ) )
   in
   number_of_bitcode_files = 0
   || fail "found %d bitcode files in archive %s" number_of_bitcode_files

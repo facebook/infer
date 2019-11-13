@@ -212,9 +212,7 @@ let with_file_lock ~file_lock:{file; oc; fd} ~f =
 
 
 let with_intermediate_temp_file_out file ~f =
-  let temp_filename, temp_oc =
-    Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" ""
-  in
+  let temp_filename, temp_oc = Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" "" in
   let f () = f temp_oc in
   let finally () =
     Out_channel.close temp_oc ;

@@ -91,7 +91,7 @@ module BoundMap = struct
                         ~node_id mem
                     in
                     (* The zero cost of node does not make sense especially when the abstract memory
-                       is non-bottom.  *)
+                       is non-bottom. *)
                     if BasicCost.is_zero cost then BasicCost.one else cost
               in
               L.(debug Analysis Medium)
@@ -119,7 +119,7 @@ end
 
 module ControlFlowCost = struct
   (* A Control-flow cost represents the number of times the flow of control can go through a certain CFG item (a node or an edge),
-  or a sum of such things *)
+     or a sum of such things *)
 
   module Item = struct
     type t = [`Node of Node.id | `Edge of Node.id * Node.id]
@@ -166,9 +166,7 @@ module ControlFlowCost = struct
      fun (`Sum (l1, s1)) (`Sum (l2, s2)) -> [%compare: int * Item.t list] (l1, s1) (l2, s2)
 
 
-    let pp : F.formatter -> t -> unit =
-     fun fmt (`Sum (_, set)) -> Pp.seq ~sep:" + " Item.pp fmt set
-
+    let pp : F.formatter -> t -> unit = fun fmt (`Sum (_, set)) -> Pp.seq ~sep:" + " Item.pp fmt set
 
     let items (`Sum (_, l)) = l
 
@@ -180,11 +178,11 @@ module ControlFlowCost = struct
     let normalize ~normalizer sum = sum |> normalized_items ~normalizer |> of_list
 
     (* Given a sum and an item, remove one occurence of the item in the sum. Returns [None] if the item is not present in the sum.
-      [remove_one_item ~item:A (A + B)] = B
-      [remove_one_item ~item:A (A + B + C)] = B + C
-      [remove_one_item ~item:A (A + A + B)] = A + B
-      [remove_one_item ~item:A (B + C)] = None
-      *)
+       [remove_one_item ~item:A (A + B)] = B
+       [remove_one_item ~item:A (A + B + C)] = B + C
+       [remove_one_item ~item:A (A + A + B)] = A + B
+       [remove_one_item ~item:A (B + C)] = None
+    *)
     let remove_one_item ~item (`Sum (len, l)) =
       match IList.remove_first l ~f:(Item.equal item) with
       | None ->
@@ -272,11 +270,11 @@ module ControlFlowCost = struct
 
     let normalize_sums : normalizer:(elt -> elt) -> t -> unit =
      fun ~normalizer t ->
-      t.sums
-      <- t.sums
-         |> IContainer.rev_map_to_list ~fold:ARList.fold_unordered ~f:(Sum.normalize ~normalizer)
-         |> List.dedup_and_sort ~compare:Sum.compare
-         |> ARList.of_list
+      t.sums <-
+        t.sums
+        |> IContainer.rev_map_to_list ~fold:ARList.fold_unordered ~f:(Sum.normalize ~normalizer)
+        |> List.dedup_and_sort ~compare:Sum.compare
+        |> ARList.of_list
 
 
     let infer_equalities_by_removing_item ~on_infer t item =
@@ -299,8 +297,8 @@ module ControlFlowCost = struct
      fun ~on_infer ~normalizer t ->
       normalize_sums ~normalizer t ;
       (* Keep in mind that [on_infer] can modify [t].
-        It happens only if we merge a node while infering equalities from it, i.e. in the case an item appears in an equality class both alone and in two sums, i.e. X = A + X = A + B.
-        This is not a problem here (we could stop if it happens but it is not necessary as existing equalities still remain true after merges) *)
+         It happens only if we merge a node while infering equalities from it, i.e. in the case an item appears in an equality class both alone and in two sums, i.e. X = A + X = A + B.
+         This is not a problem here (we could stop if it happens but it is not necessary as existing equalities still remain true after merges) *)
       (* Also keep in mind that the current version, in the worst-case scenario, is quadratic-ish in the size of the CFG *)
       sum_items t |> List.iter ~f:(fun item -> infer_equalities_by_removing_item ~on_infer t item)
 
@@ -556,9 +554,7 @@ module InstrBasicCost = struct
   let get_instr_cost_record tenv extras instr_node instr =
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
-        let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} =
-          extras
-        in
+        let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} = extras in
         let operation_cost =
           match
             BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map

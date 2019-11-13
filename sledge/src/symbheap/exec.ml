@@ -234,10 +234,8 @@ let memmov_up_spec us dst src len =
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let memmov_specs us dst src len =
-  [ memmov_eq_spec us dst src len
-  ; memmov_dj_spec us dst src len
-  ; memmov_dn_spec us dst src len
-  ; memmov_up_spec us dst src len ]
+  [ memmov_eq_spec us dst src len; memmov_dj_spec us dst src len
+  ; memmov_dn_spec us dst src len; memmov_up_spec us dst src len ]
 
 (* { emp }
  *   alloc r [n × l]

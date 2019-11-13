@@ -107,9 +107,9 @@ module TransferFunctions = struct
      (i.e. index of a wrt. foo's formals).
 
      void foo (int x, Object a, Object b){
-        for (...){
-           impure_fun(b, 10, a); // modifies only 3rd argument, i.e. a
-        }
+     for (...){
+     impure_fun(b, 10, a); // modifies only 3rd argument, i.e. a
+     }
      }
   *)
   let find_params_matching_modified_args inferbo_mem formals callee_args callee_modified_params =
@@ -222,9 +222,7 @@ let compute_summary summary tenv get_callee_summary inferbo_invariant_map =
     Procdesc.get_formals (Summary.get_proc_desc summary)
     |> List.map ~f:(fun (mname, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
-  let proc_data =
-    ProcData.make summary tenv {inferbo_invariant_map; formals; get_callee_summary}
-  in
+  let proc_data = ProcData.make summary tenv {inferbo_invariant_map; formals; get_callee_summary} in
   Analyzer.compute_post proc_data ~initial:PurityDomain.pure
 
 

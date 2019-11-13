@@ -91,17 +91,14 @@ end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal :
-  S
-  with type t = Procdesc.t
-   and module Node = DefaultNode
-   and type instrs_dir = Instrs.not_reversed
+  S with type t = Procdesc.t and module Node = DefaultNode and type instrs_dir = Instrs.not_reversed
 
 (** Forward CFG with exceptional control-flow *)
 module Exceptional :
   S
-  with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
-   and module Node = DefaultNode
-   and type instrs_dir = Instrs.not_reversed
+    with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
+     and module Node = DefaultNode
+     and type instrs_dir = Instrs.not_reversed
 
 (** Wrapper that reverses the direction of the CFG *)
 module Backward (Base : S with type instrs_dir = Instrs.not_reversed) :

@@ -36,8 +36,7 @@ let join astate1 astate2 =
     let {modified_globals= mg2; modified_params= mp2} = astate2 in
     PhysEqual.optim2
       ~res:
-        { modified_globals= ModifiedVarSet.join mg1 mg2
-        ; modified_params= ModifiedVarSet.join mp1 mp2 }
+        {modified_globals= ModifiedVarSet.join mg1 mg2; modified_params= ModifiedVarSet.join mp1 mp2}
       astate1 astate2
 
 

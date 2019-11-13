@@ -170,16 +170,13 @@ module PulseTransferFunctions = struct
         [check_error summary result]
     | Prune (condition, loc, is_then_branch, if_kind) ->
         let post, cond_satisfiable =
-          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
-          |> check_error summary
+          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate |> check_error summary
         in
-        if cond_satisfiable then
-          (* [condition] is true or unknown value: go into the branch *)
+        if cond_satisfiable then (* [condition] is true or unknown value: go into the branch *)
           [post]
         else (* [condition] is known to be unsatisfiable: prune path *) []
     | Call (ret, call_exp, actuals, loc, call_flags) ->
-        dispatch_call tenv summary ret call_exp actuals loc call_flags astate
-        |> check_error summary
+        dispatch_call tenv summary ret call_exp actuals loc call_flags astate |> check_error summary
     | Metadata (ExitScope (vars, location)) ->
         [PulseOperations.remove_vars vars location astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->

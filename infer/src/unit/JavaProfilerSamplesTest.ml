@@ -166,8 +166,8 @@ let test_from_json_string_with_valid_input =
   let expected1 = [("label1", Typ.Procname.Set.of_list [])] in
   let input2 =
     Printf.sprintf
-      "[{\"foo\":{},\"test\": \"label1\",\"methods\": [{\"class\": \"ggg.hhh.Iii\", \"boo\": \
-       \"\", \"method\": \"<clinit>\", \"signature\": \"(Ljava/lang/String;[IJ)V\",\"wat\": \
+      "[{\"foo\":{},\"test\": \"label1\",\"methods\": [{\"class\": \"ggg.hhh.Iii\", \"boo\": \"\", \
+       \"method\": \"<clinit>\", \"signature\": \"(Ljava/lang/String;[IJ)V\",\"wat\": \
        \"\"},{\"class\": \"lll.mmm.Nnn\",\"boo\": \"\",\"method\": \"<init>\",\"signature\": \
        \"(Ljava/lang/String;[IJ)V\",\"wat\": \"\"}]},{\"boo\":\"aaa\",\"test\": \
        \"label2\",\"methods\": [{\"class\": \"aaa.bbb.Ccc\",\"boo\": \"\",\"method\": \

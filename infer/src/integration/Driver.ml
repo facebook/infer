@@ -37,8 +37,7 @@ let pp_mode fmt = function
   | BuckGenruleMaster build_cmd ->
       F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BuckCompilationDB (prog, args) ->
-      F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args
-        args
+      F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
       F.fprintf fmt "ClangCompilationDB driver mode"
   | PythonCapture (bs, args) ->
@@ -231,11 +230,7 @@ let python_capture build_system build_cmd =
                 []
             | Some tool ->
                 ["--force-integration"; Config.string_of_build_system tool] )
-          @ ( match Config.java_jar_compiler with
-            | None ->
-                []
-            | Some p ->
-                ["--java-jar-compiler"; p] )
+          @ (match Config.java_jar_compiler with None -> [] | Some p -> ["--java-jar-compiler"; p])
           @ ( match List.rev Config.buck_build_args with
             | args when in_buck_mode ->
                 List.map ~f:(fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
@@ -259,7 +254,7 @@ let python_capture build_system build_cmd =
           @ (if not Config.buck_merge_all_deps then [] else ["--buck-merge-all-deps"])
           @ ("--" :: updated_build_cmd) )
       in
-      if in_buck_mode && Config.flavors then ( RunState.set_merge_capture true ; RunState.store () ) ;
+      if in_buck_mode && Config.flavors then (RunState.set_merge_capture true ; RunState.store ()) ;
       run_command ~prog:infer_py ~args
         ~cleanup:(function
           | Error (`Exit_non_zero exit_code)
@@ -484,8 +479,8 @@ let assert_supported_build_system build_system =
         else (
           if Config.reactive_mode then
             L.user_error
-              "WARNING: The reactive analysis mode is not compatible with the Buck integration \
-               for Java" ;
+              "WARNING: The reactive analysis mode is not compatible with the Buck integration for \
+               Java" ;
           (`Java, Config.string_of_build_system build_system) )
       in
       assert_supported_mode analyzer build_string
@@ -563,9 +558,9 @@ let run_prologue mode =
   if CLOpt.is_originator then (
     if Config.dump_duplicate_symbols then reset_duplicates_file () ;
     (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
-     but cannot communicate with the parent make command. Since infer won't interfere with them
-     anyway, pretend that we are not called from another make to prevent make falling back to a
-     mono-threaded execution. *)
+       but cannot communicate with the parent make command. Since infer won't interfere with them
+       anyway, pretend that we are not called from another make to prevent make falling back to a
+       mono-threaded execution. *)
     Unix.unsetenv "MAKEFLAGS" ;
     (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
     Unix.putenv ~key:"NO_BUCKD" ~data:"1" ) ;

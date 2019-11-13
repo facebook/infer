@@ -35,11 +35,7 @@ module Nodes = struct
 
 
   let is_true_prune_node n =
-    match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Prune_node (true, _, _) ->
-        true
-    | _ ->
-        false
+    match Procdesc.Node.get_kind n with Procdesc.Node.Prune_node (true, _, _) -> true | _ -> false
 
 
   let create_prune_node proc_desc ~branch ~negate_cond e_cond instrs_cond loc if_kind =
@@ -258,14 +254,10 @@ module Loops = struct
         ; increment: Clang_ast_t.stmt
         ; body: Clang_ast_t.stmt }
     | While of
-        { decl_stmt: Clang_ast_t.stmt option
-        ; condition: Clang_ast_t.stmt
-        ; body: Clang_ast_t.stmt }
+        {decl_stmt: Clang_ast_t.stmt option; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
     | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
-  let get_body loop_kind =
-    match loop_kind with For {body} | While {body} | DoWhile {body} -> body
-
+  let get_body loop_kind = match loop_kind with For {body} | While {body} | DoWhile {body} -> body
 
   let get_cond loop_kind =
     match loop_kind with For {condition} | While {condition} | DoWhile {condition} -> condition
@@ -341,9 +333,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
     trans_state.context.CContext.cfg pname method_kind None ;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
   let ret_id_typ = (init_ret_id, alloc_ret_type) in
-  let init_stmt_call =
-    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, loc, call_flags)
-  in
+  let init_stmt_call = Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, loc, call_flags) in
   let instrs = alloc_stmt_call @ [init_stmt_call] in
   let res_trans_tmp = {empty_control with instrs} in
   let node_name = Procdesc.Node.CallObjCNew in
@@ -568,9 +558,7 @@ let extract_stmt_from_singleton stmt_list source_range warning_string =
 module Self = struct
   exception
     SelfClassException of
-      { class_name: Typ.Name.t
-      ; position: Logging.ocaml_pos
-      ; source_range: Clang_ast_t.source_range }
+      {class_name: Typ.Name.t; position: Logging.ocaml_pos; source_range: Clang_ast_t.source_range}
 
   let add_self_parameter_for_super_instance stmt_info context procname loc mei =
     if is_superinstance mei then

@@ -66,8 +66,7 @@ type record =
   ; methods: string list }
 
 let of_record {search_superclasses; method_prefix; actuals_pred; classname; methods} =
-  call_matches ~search_superclasses ~method_prefix ~actuals_pred classname methods
-  |> Staged.unstage
+  call_matches ~search_superclasses ~method_prefix ~actuals_pred classname methods |> Staged.unstage
 
 
 let default =

@@ -124,8 +124,7 @@ val mk_symbol :
 (** [mk_symbol long symbols] defines a command line flag [--long <symbol>] where [(<symbol>,_)] is
     an element of [symbols]. *)
 
-val mk_symbol_opt :
-  symbols:(string * 'a) list -> ?f:('a -> 'a) -> ?mk_reset:bool -> 'a option ref t
+val mk_symbol_opt : symbols:(string * 'a) list -> ?f:('a -> 'a) -> ?mk_reset:bool -> 'a option ref t
 (** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. If [mk_reset] is false then do not create an additional --[long]-reset option to reset the value of the option to [None]. *)
 
 val mk_symbol_seq :

@@ -120,13 +120,13 @@ let param_has_annot predicate pvar ann_sig =
 let pp proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
-    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp
-      param_annotated_type Mangled.pp mangled
+    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp param_annotated_type
+      Mangled.pp mangled
   in
   let {ret_annotation_deprecated; ret_annotated_type} = annotated_signature.ret in
   let mode_as_string = if annotated_signature.is_strict_mode then "Strict" else "Def" in
-  F.fprintf fmt "[%s] %a%a %a (%a )" mode_as_string pp_ia ret_annotation_deprecated
-    AnnotatedType.pp ret_annotated_type
+  F.fprintf fmt "[%s] %a%a %a (%a )" mode_as_string pp_ia ret_annotation_deprecated AnnotatedType.pp
+    ret_annotated_type
     (Typ.Procname.pp_simplified_string ~withclass:false)
     proc_name (Pp.comma_seq pp_annotated_param) annotated_signature.params
 

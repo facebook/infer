@@ -57,10 +57,9 @@ let should_try_to_update pname_blob akind =
       |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
       Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
       |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db
-        find_stmt
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db find_stmt
       |> (* there is no entry with a strictly larger "definedness" for that proc name *)
-         Option.is_none )
+      Option.is_none )
 
 
 let select_statement =

@@ -6,14 +6,11 @@
  *)
 open! IStd
 
-type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t}
-[@@deriving compare]
+type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
 
 type assignment_type =
   | PassingParamToFunction of
-      { param_description: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
+      {param_description: string; param_position: int; function_procname: Typ.Procname.t}
   | AssigningToField of Typ.Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
@@ -24,7 +21,7 @@ let is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs =
       (* We allow DeclaredNonnull -> Nonnull conversion outside of strict mode for better adoption.
          Otherwise using strictified classes in non-strict context becomes a pain because
          of extra warnings.
-     *)
+      *)
       true
   | _ ->
       false

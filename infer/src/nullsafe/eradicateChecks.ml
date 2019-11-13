@@ -26,8 +26,8 @@ let is_virtual = function
       false
 
 
-let check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_pname node
-    instr_ref object_exp dereference_type inferred_nullability loc =
+let check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_pname node instr_ref
+    object_exp dereference_type inferred_nullability loc =
   Result.iter_error
     (DereferenceRule.check ~is_strict_mode
        (InferredNullability.get_nullability inferred_nullability))
@@ -181,7 +181,7 @@ let is_declared_nonnull AnnotatedField.{annotated_type} =
 (* Is field declared as non-nullable (implicitly or explicitly)? *)
 let is_field_declared_as_nonnull annotated_field_opt =
   (* If the field is not present, we optimistically assume it is not nullable.
-    TODO(T54687014) investigate if this leads to unsoundness issues in practice
+     TODO(T54687014) investigate if this leads to unsoundness issues in practice
   *)
   Option.exists annotated_field_opt ~f:is_declared_nonnull
 
@@ -210,8 +210,8 @@ let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
   match range_for_field with
   | None ->
       (* There is no information about the field type in typestate (field was not assigned in all paths).
-       It gives the most generic upper bound.
-     *)
+         It gives the most generic upper bound.
+      *)
       Nullability.top
   (* We were able to lookup the field. Its nullability gives precise upper bound. *)
   | Some (_, inferred_nullability) ->
@@ -305,9 +305,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                       AnnotatedNullability.get_nullability
                         annotated_field.annotated_type.nullability
                     in
-                    let by_rhs_upper_bound =
-                      field_nullability_upper_bound_over_all_typestates ()
-                    in
+                    let by_rhs_upper_bound = field_nullability_upper_bound_over_all_typestates () in
                     Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
                       ~f:(fun over_annotated_violation ->
                         report_error tenv find_canonical_duplicate
@@ -328,8 +326,7 @@ let check_return_not_nullable ~is_strict_mode tenv find_canonical_duplicate loc 
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
   let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   let rhs = InferredNullability.get_nullability ret_inferred_nullability in
-  Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs)
-    ~f:(fun assignment_violation ->
+  Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:(fun assignment_violation ->
       let rhs_origin_descr = InferredNullability.descr_origin ret_inferred_nullability in
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
@@ -346,7 +343,7 @@ let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname cur
   (* In our CFG implementation, there is only one place where we return from a function
      (all execution flow joins are already made), hence inferreed nullability of returns gives us
      correct upper bound.
-    *)
+  *)
   let by_rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
   Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
     ~f:(fun over_annotated_violation ->
@@ -414,13 +411,13 @@ let is_third_party_without_model proc_name =
     | Typ.Procname.Java java_pname ->
         (* TODO: migrate to the new way of checking for third party: use
            signatures repository instead of looking it up in config params.
-     *)
+        *)
         Typ.Procname.Java.is_external java_pname
     | _ ->
         false
     (* TODO: propagate the knowledge if it is a third-party or not in the annotated signature instead
-     of calculating it every time from scratch.
-   *)
+       of calculating it every time from scratch.
+    *)
   in
   is_third_party
   && (not (Models.is_modelled_for_nullability_as_internal proc_name))
@@ -452,7 +449,7 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
       (* Passing a param to a function is essentially an assignment the actual param value
-      to the formal param *)
+         to the formal param *)
       let lhs = AnnotatedNullability.get_nullability formal.param_annotated_type.nullability in
       let rhs = InferredNullability.get_nullability nullability_actual in
       Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:report
@@ -462,7 +459,7 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
      Historically this is because there was no actionable way to change third party annotations.
      Now that we have such a support, this behavior might be reconsidered, provided
      our tooling and error reporting is friendly enough to be smoothly used by developers.
-    *)
+  *)
   let should_ignore_parameters_check =
     (* TODO(T52947663) model params in third-party non modelled method as a dedicated nullability type,
        so this logic can be moved to [AssignmentRule.check] *)
@@ -528,7 +525,7 @@ let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~base_pr
               (AnnotatedNullability.get_nullability annotated_nullability_overridden) )
   | Unequal_lengths ->
       (* Skip checking.
-      TODO (T5280249): investigate why argument lists can be of different length. *)
+         TODO (T5280249): investigate why argument lists can be of different length. *)
       ()
 
 

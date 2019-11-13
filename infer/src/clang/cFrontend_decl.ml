@@ -41,8 +41,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (Typ.Procname.to_string procname) ;
           let vars_to_destroy = CScope.Variables.compute_vars_to_destroy_map body in
           let context =
-            CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt
-              has_return_param outer_context_opt vars_to_destroy
+            CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt has_return_param
+              outer_context_opt vars_to_destroy
           in
           let start_node = Procdesc.get_start_node procdesc in
           let exit_node = Procdesc.get_exit_node procdesc in
@@ -261,9 +261,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let method_matcher =
       QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods
     in
-    let class_matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes
-    in
+    let class_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes in
     fun qual_name ->
       (* either the method is explictely whitelisted, or the whole class is whitelisted *)
       QualifiedCppName.Match.match_qualifiers method_matcher qual_name
@@ -378,10 +376,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
              || (vdi_is_global && Option.is_some vdi_init_expr) ->
           (* create a fake procedure that initializes the global variable so that the variable
-              initializer can be analyzed by the backend (eg, the SIOF checker) *)
+             initializer can be analyzed by the backend (eg, the SIOF checker) *)
           let procname =
             (* create the corresponding global variable to get the right pname for its
-                initializer *)
+               initializer *)
             let global =
               CGeneral_utils.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
             in
@@ -393,15 +391,14 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None `None
           in
           let stmt_info =
-            { si_pointer= CAst_utils.get_fresh_pointer ()
-            ; si_source_range= decl_info.di_source_range }
+            {si_pointer= CAst_utils.get_fresh_pointer (); si_source_range= decl_info.di_source_range}
           in
           let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
           ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
           add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None []
       (* Note that C and C++ records are treated the same way
-          Skip translating implicit struct declarations, unless they have
-          full definition (which happens with C++ lambdas) *)
+         Skip translating implicit struct declarations, unless they have
+         full definition (which happens with C++ lambdas) *)
       | ClassTemplateSpecializationDecl (di, _, _, decl_list, _, _, rdi, _, _, _)
       | CXXRecordDecl (di, _, _, decl_list, _, _, rdi, _)
       | RecordDecl (di, _, _, decl_list, _, _, rdi)

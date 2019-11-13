@@ -47,8 +47,7 @@ let load_and_validate () =
              "'%s' already exists but it is not an empty directory and it does not look like an \
               infer results directory:\n\
              \  %s\n\
-              Was it created using an older version of infer?"
-             Config.results_dir err_msg) )
+              Was it created using an older version of infer?" Config.results_dir err_msg) )
       msg
   in
   if Sys.file_exists state_file_path <> `Yes then

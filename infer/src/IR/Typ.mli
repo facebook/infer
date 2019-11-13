@@ -55,10 +55,7 @@ val ikind_is_unsigned : ikind -> bool
 (** Check whether the integer kind is unsigned *)
 
 (** Kinds of floating-point numbers *)
-type fkind =
-  | FFloat  (** [float] *)
-  | FDouble  (** [double] *)
-  | FLongDouble  (** [long double] *)
+type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
 [@@deriving compare]
 
 (** kind of pointer *)
@@ -448,8 +445,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
       ; template_args: template_spec_info }
     [@@deriving compare]
 
-    val make :
-      Name.t -> string -> kind -> template_spec_info -> Parameter.clang_parameter list -> t
+    val make : Name.t -> string -> kind -> template_spec_info -> Parameter.clang_parameter list -> t
     (** Create an objc procedure name from a class_name and method_name. *)
 
     val get_class_name : t -> string
@@ -540,14 +536,14 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   val is_objc_method : t -> bool
 
-  (** Hash tables with proc names as keys. *)
   module Hash : Caml.Hashtbl.S with type key = t
+  (** Hash tables with proc names as keys. *)
 
-  (** Maps from proc names. *)
   module Map : PrettyPrintable.PPMap with type key = t
+  (** Maps from proc names. *)
 
-  (** Sets of proc names. *)
   module Set : PrettyPrintable.PPSet with type elt = t
+  (** Sets of proc names. *)
 
   module SQLite : sig
     val serialize : t -> Sqlite3.Data.t
@@ -643,11 +639,11 @@ module Fieldname : sig
   val equal : t -> t -> bool
   (** Equality for field names. *)
 
-  (** Set for fieldnames *)
   module Set : Caml.Set.S with type elt = t
+  (** Set for fieldnames *)
 
-  (** Map for fieldnames *)
   module Map : Caml.Map.S with type key = t
+  (** Map for fieldnames *)
 
   module Clang : sig
     val from_class_name : Name.t -> string -> t

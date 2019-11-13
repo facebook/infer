@@ -68,7 +68,7 @@ let rec pp fmt = function
       F.fprintf fmt "*%a" pp de
   | Dfcall (fun_dexp, args, _, {cf_virtual= isvirtual}) ->
       let pp_args fmt des =
-        if eradicate_java () then ( if des <> [] then F.pp_print_string fmt "..." )
+        if eradicate_java () then (if des <> [] then F.pp_print_string fmt "...")
         else Pp.comma_seq pp fmt des
       in
       let pp_fun fmt = function
@@ -148,8 +148,7 @@ let pp_vpath pe fmt vpath =
 let rec has_tmp_var = function
   | Dpvar pvar | Dpvaraddr pvar ->
       Pvar.is_frontend_tmp pvar || Pvar.is_clang_tmp pvar
-  | Dderef dexp | Ddot (dexp, _) | Darrow (dexp, _) | Dunop (_, dexp) | Dsizeof (_, Some dexp, _)
-    ->
+  | Dderef dexp | Ddot (dexp, _) | Darrow (dexp, _) | Dunop (_, dexp) | Dsizeof (_, Some dexp, _) ->
       has_tmp_var dexp
   | Darray (dexp1, dexp2) | Dbinop (_, dexp1, dexp2) ->
       has_tmp_var dexp1 || has_tmp_var dexp2

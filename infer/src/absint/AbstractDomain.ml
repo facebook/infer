@@ -532,8 +532,7 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
     inter prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
 end
 
-module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : WithTop) =
-struct
+module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : WithTop) = struct
   module M = InvertedMap (Key) (ValueDomain)
 
   type key = M.key

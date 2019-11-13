@@ -201,9 +201,8 @@ let get_successor_stmts_of_decl decl =
       Option.to_list block_decl_info.Clang_ast_t.bdi_body
   | VarDecl (_, _, _, var_decl_info) ->
       Option.to_list var_decl_info.vdi_init_expr
-  | ObjCIvarDecl (_, _, _, fldi, _)
-  | FieldDecl (_, _, _, fldi)
-  | ObjCAtDefsFieldDecl (_, _, _, fldi) ->
+  | ObjCIvarDecl (_, _, _, fldi, _) | FieldDecl (_, _, _, fldi) | ObjCAtDefsFieldDecl (_, _, _, fldi)
+    ->
       Option.to_list fldi.fldi_init_expr
   | _ ->
       []
@@ -232,13 +231,13 @@ let rec is_node_successor_of ~is_successor:succ_node node =
   | Stmt _ ->
       let node_succ_stmts = get_successor_stmts node in
       List.exists node_succ_stmts ~f:(fun (s : Clang_ast_t.stmt) ->
-          ast_node_equal (Stmt s) succ_node
-          || is_node_successor_of ~is_successor:succ_node (Stmt s) )
+          ast_node_equal (Stmt s) succ_node || is_node_successor_of ~is_successor:succ_node (Stmt s)
+      )
   | Decl _ ->
       let node_succ_decls = get_successor_decls node in
       List.exists node_succ_decls ~f:(fun (d : Clang_ast_t.decl) ->
-          ast_node_equal (Decl d) succ_node
-          || is_node_successor_of ~is_successor:succ_node (Decl d) )
+          ast_node_equal (Decl d) succ_node || is_node_successor_of ~is_successor:succ_node (Decl d)
+      )
 
 
 let get_direct_successor_nodes an =
@@ -512,8 +511,8 @@ and c_type_equal c_type abs_ctype =
   | BuiltinType (_, bi), BuiltIn abi ->
       builtin_equal bi abi
   | BuiltinType (_, `ObjCId), TypeName ae when ALVar.compare_str_with_alexp "instancetype" ae ->
-      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
-  compiler change 'instancetype' to ObjCId *)
+      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the
+         compiler change 'instancetype' to ObjCId *)
       L.(debug Linters Verbose)
         "@\n Special Case when comparing BuiltInType(ObjcId) and TypeName(instancetype)\n" ;
       true
@@ -529,8 +528,8 @@ and c_type_equal c_type abs_ctype =
   | ObjCObjectPointerType (_, qt), _ ->
       check_type_ptr qt.qt_type_ptr abs_ctype
   | ObjCObjectType (_, ooti), TypeName ae when ALVar.compare_str_with_alexp "instancetype" ae ->
-      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
-       compiler change 'instancetype' to ObjCId *)
+      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the
+         compiler change 'instancetype' to ObjCId *)
       check_type_ptr ooti.ooti_base_type abs_ctype
   | ObjCObjectType _, ObjCGenProt _ ->
       objc_object_type_equal c_type abs_ctype

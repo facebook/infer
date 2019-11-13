@@ -13,8 +13,8 @@ open! IStd
 module type S = sig
   module CFG : ProcCfg.S
 
-  (** abstract domain whose state we propagate *)
   module Domain : AbstractDomain.S
+  (** abstract domain whose state we propagate *)
 
   (** read-only extra state (results of previous analyses, globals, etc.) *)
   type extras
@@ -75,7 +75,7 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
 
   include
     SIL
-    with type extras = TransferFunctions.extras
-     and module CFG = TransferFunctions.CFG
-     and type Domain.t = Disjuncts.t
+      with type extras = TransferFunctions.extras
+       and module CFG = TransferFunctions.CFG
+       and type Domain.t = Disjuncts.t
 end

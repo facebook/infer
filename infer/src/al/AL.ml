@@ -21,8 +21,7 @@ let rec parse_import_file import_file channel =
         ; global_paths= curr_file_paths
         ; checkers= _ } ->
         already_imported_files := import_file :: !already_imported_files ;
-        collect_all_macros_and_paths ~from_file:import_file imports curr_file_macros
-          curr_file_paths
+        collect_all_macros_and_paths ~from_file:import_file imports curr_file_macros curr_file_paths
     | None ->
         L.(debug Linters Medium) "No macros or paths found.@\n" ;
         ([], [])
@@ -312,7 +311,7 @@ and do_frontend_checks_decl linters (context : CLintersContext.context)
         let context' = CLintersContext.update_current_method context decl in
         ALIssues.invoke_set_of_checkers_on_node linters context' an ;
         (* We need to visit explicitly nodes reachable via Parameters transitions
-      because they won't be visited during the evaluation of the formula *)
+           because they won't be visited during the evaluation of the formula *)
         do_frontend_checks_via_transition linters context' map_active an CTL.Parameters ;
         ( match CAst_utils.get_method_body_opt decl with
         | Some stmt ->

@@ -13,7 +13,7 @@ let sourcefile =
   let x =
     lazy
       (let pid = Pid.to_int (Unix.getpid ()) in
-       SourceFile.create (Printf.sprintf "SynthesizedToplProperty%d.java" pid))
+       SourceFile.create (Printf.sprintf "SynthesizedToplProperty%d.java" pid) )
   in
   fun () -> Lazy.force x
 
@@ -139,7 +139,7 @@ let gen_if (cond : Exp.t) (true_branch : node_generator) (false_branch : node_ge
     false_branch create_node set_succs
   in
   (* NOTE: Symbolic execution works with non-pure prune expressions but it generates symbolic
-  states from which abstraction then removes too much information. *)
+     states from which abstraction then removes too much information. *)
   let cond, preamble = pure_exp cond in
   let prune_true =
     let node_type = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody) in
@@ -235,9 +235,7 @@ let generate_execute_state automaton proc_name =
     in
     let label = (ToplAutomaton.transition automaton t).label in
     let all_conjuncts =
-      let arg_conjunct i pattern =
-        conjunct (ToplUtils.static_var (ToplName.saved_arg i)) pattern
-      in
+      let arg_conjunct i pattern = conjunct (ToplUtils.static_var (ToplName.saved_arg i)) pattern in
       List.concat
         ( Option.value_map ~default:[] ~f:(fun x -> [x]) maybe
         :: [ToplUtils.static_var (ToplName.transition t)]
@@ -314,8 +312,7 @@ let maybe_synthesize_it automaton proc_name =
     else if is_execute_state proc_name then Some (generate_execute_state automaton proc_name)
     else if is_maybe proc_name then Some (generate_maybe automaton proc_name)
     else
-      L.die InternalError
-        "TOPL instrumentation introduced a call to a method that is not generated"
+      L.die InternalError "TOPL instrumentation introduced a call to a method that is not generated"
   else None
 
 

@@ -27,8 +27,8 @@ type t =
 
 let pp fmt = function
   | Assign (access_expr, exp, loc) ->
-      F.fprintf fmt "%a := %a [%a]" HilExp.AccessExpression.pp access_expr HilExp.pp exp
-        Location.pp loc
+      F.fprintf fmt "%a := %a [%a]" HilExp.AccessExpression.pp access_expr HilExp.pp exp Location.pp
+        loc
   | Assume (exp, _, _, loc) ->
       F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
   | Call (ret, call, actuals, _, loc) ->
@@ -60,8 +60,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
   match instr with
   | Load {id= lhs_id; e= rhs_exp; typ= rhs_typ; loc} ->
       analyze_id_assignment ~add_deref:true (Var.of_id lhs_id) rhs_exp rhs_typ loc
-  | Store {e1= Lvar lhs_pvar; typ= lhs_typ; e2= rhs_exp; loc}
-    when Pvar.is_ssa_frontend_tmp lhs_pvar ->
+  | Store {e1= Lvar lhs_pvar; typ= lhs_typ; e2= rhs_exp; loc} when Pvar.is_ssa_frontend_tmp lhs_pvar
+    ->
       (* do not need to add deref here as it is added implicitly in of_pvar by forgetting the & *)
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call

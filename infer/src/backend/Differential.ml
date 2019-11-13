@@ -208,8 +208,8 @@ end
 
 let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} ~delta
     ~prev_item
-    ~curr_item:( {CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as
-               curr_item ) =
+    ~curr_item:
+      ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
@@ -413,8 +413,7 @@ let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_
 
 
 let to_files {introduced; fixed; preexisting; costs_summary} destdir =
-  Out_channel.write_all (destdir ^/ "introduced.json")
-    ~data:(Jsonbug_j.string_of_report introduced) ;
+  Out_channel.write_all (destdir ^/ "introduced.json") ~data:(Jsonbug_j.string_of_report introduced) ;
   Out_channel.write_all (destdir ^/ "fixed.json") ~data:(Jsonbug_j.string_of_report fixed) ;
   Out_channel.write_all (destdir ^/ "preexisting.json")
     ~data:(Jsonbug_j.string_of_report preexisting) ;

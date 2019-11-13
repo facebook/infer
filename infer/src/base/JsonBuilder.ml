@@ -17,9 +17,7 @@ let add_float ({floats} as t) ~key ~data = {t with floats= String.Map.set floats
 
 let add_string ({strings} as t) ~key ~data = {t with strings= String.Map.set strings ~key ~data}
 
-let add_string_opt t ~key ~data =
-  match data with Some data -> add_string t ~key ~data | None -> t
-
+let add_string_opt t ~key ~data = match data with Some data -> add_string t ~key ~data | None -> t
 
 let yojson_of_integers integers =
   let f ~key ~data acc = (key, `Int data) :: acc in

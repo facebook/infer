@@ -233,7 +233,7 @@ let compute_mem_stats () =
       ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size) }
   in
   (* We log number of bytes instead of a larger unit in EventLogger so the EventLogger output can
-    display in whatever format fits best *)
+     display in whatever format fits best *)
   let mem =
     Some
       { EventLogger.minor_heap_mem= words_to_bytes gc_stats.minor_words

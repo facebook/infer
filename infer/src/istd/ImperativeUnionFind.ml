@@ -31,7 +31,7 @@ module Make (Set : Set) = struct
 
   module Repr : sig
     (* Sort-of abstracting away the fact that a representative is just an element itself.
-      This ensures that the [Sets] hashtable is accessed with representative only. *)
+       This ensures that the [Sets] hashtable is accessed with representative only. *)
 
     type t = private Set.elt
 

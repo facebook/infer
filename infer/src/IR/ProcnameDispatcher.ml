@@ -106,7 +106,7 @@ type ( 'context
 type ('context, 'f_in, 'f_out, 'captured_types, 'emptyness) path_extra =
   | PathEmpty : ('context, 'f, 'f, unit, empty) path_extra
   | PathNonEmpty :
-      { on_objc_cpp: 'context -> 'f_in -> objc_cpp -> ('f_out * 'captured_types capt) option }
+      {on_objc_cpp: 'context -> 'f_in -> objc_cpp -> ('f_out * 'captured_types capt) option}
       -> ('context, 'f_in, 'f_out, 'captured_types, non_empty) path_extra
 
 type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'emptyness) path_matcher =
@@ -272,14 +272,8 @@ let templ_cons :
 
 let templ_end :
        ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher
-    -> ( 'context
-       , 'f_in
-       , 'f_out
-       , 'captured_types
-       , 'markers_in
-       , 'markers_out
-       , non_empty )
-       path_matcher =
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
+    =
   let match_empty_templ_args (f, captured_types, template_args) =
     match template_args with [] -> Some (f, captured_types) | _ -> None
   in
@@ -544,8 +538,7 @@ module Call = struct
       | Exp.Var v ->
           v
       | e ->
-          Logging.(die InternalError)
-            "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) (typ arg)
+          Logging.(die InternalError) "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) (typ arg)
   end
 
   type ('context, 'f_in, 'f_out, 'captured_types) proc_matcher =
@@ -767,16 +760,15 @@ module Call = struct
 
   (** Matches third captured type *)
   let match_typ3 :
-      'marker -> ('context, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg_matcher
-      =
+      'marker -> ('context, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg_matcher =
     let pos3 (_, (_, (x, _))) = x in
     fun marker -> mk_match_typ_nth pos3 pos3 marker
 
 
   (** Matches the type matched by the given path_matcher *)
   let match_typ :
-         ('context, _, _, unit, unit, unit, non_empty) path_matcher
-      -> ('context, _, _) one_arg_matcher =
+      ('context, _, _, unit, unit, unit, non_empty) path_matcher -> ('context, _, _) one_arg_matcher
+      =
    fun m ->
     let ({on_templated_name} : (_, _, _, unit, unit, unit, non_empty) path_matcher) = m in
     let rec match_typ context typ =

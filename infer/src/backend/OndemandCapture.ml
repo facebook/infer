@@ -19,9 +19,9 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
     let definition_file_opt = SourceFile.of_header decl_file in
     let try_compile definition_file =
       (* Use the cfg as a proxy to find out whether definition_file was already captured.  If it
-           was, there is no point in trying to capture it again.  Treat existance of the cfg as a
-           barrier - if it exists it means that all attributes files have been created - write logic
-           is defined in Cfg.store *)
+         was, there is no point in trying to capture it again.  Treat existance of the cfg as a
+         barrier - if it exists it means that all attributes files have been created - write logic
+         is defined in Cfg.store *)
       if not (SourceFiles.is_captured decl_file) then (
         L.(debug Capture Verbose) "Started capture of %a...@\n" SourceFile.pp definition_file ;
         Timeout.suspend_existing_timeout ~keep_symop_total:true ;
@@ -50,9 +50,9 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
      load_defined_attributes is None, it may mean couple of things:
      - proc_name hasn't been captured yet, so it needs to get captured (most likely scenario)
      - there was a race and proc_name got captured by the time we checked whether
-       cfg_filename exists. In this case it's important to refetch attributes from disk because
-       contents may have changed (attributes file for proc_name may be there now)
+     cfg_filename exists. In this case it's important to refetch attributes from disk because
+     contents may have changed (attributes file for proc_name may be there now)
 
      Caveat: it's possible that procedure will be captured in some other unrelated file
-             later - infer may ignore it then. *)
+     later - infer may ignore it then. *)
   Attributes.load_defined attributes.proc_name

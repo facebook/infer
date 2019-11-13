@@ -87,8 +87,7 @@ val explain_dereference_as_caller_expression :
 (** return a description explaining value [exp] in [prop] in terms of a source expression
     using the formal parameters of the call *)
 
-val explain_divide_by_zero :
-  Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
+val explain_divide_by_zero : Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a division by zero *)
 
 val explain_condition_always_true_false :

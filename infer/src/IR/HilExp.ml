@@ -382,7 +382,7 @@ let rec get_typ tenv = function
       Some (Typ.mk (Typ.Tint Typ.IBool))
   | BinaryOperator (_, e1, e2) -> (
     (* TODO: doing this properly will require taking account of language-specific coercion
-          semantics. Only return a type when the operands have the same type for now *)
+       semantics. Only return a type when the operands have the same type for now *)
     match (get_typ tenv e1, get_typ tenv e2) with
     | Some typ1, Some typ2 when Typ.equal typ1 typ2 ->
         Some typ1
@@ -572,9 +572,9 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
             typ )
     | Lindex (Const (Cstr s), index_exp) ->
         (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
-         for the string literal. if you actually need to see the value of the string literal in the
-         analysis, you should probably be using SIL. this is unsound if the code modifies the
-         literal, e.g. using `const_cast<char*>` *)
+           for the string literal. if you actually need to see the value of the string literal in the
+           analysis, you should probably be using SIL. this is unsound if the code modifies the
+           literal, e.g. using `const_cast<char*>` *)
         of_sil_ (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
     | Lindex (root_exp, index_exp) -> (
       match access_expr_of_lhs_exp ~include_array_indexes ~f_resolve_id ~add_deref exp typ with
@@ -679,9 +679,9 @@ let access_expr_of_exp ~include_array_indexes ~f_resolve_id exp typ =
       Some access_expr
   | BinaryOperator (_, exp0, exp1) -> (
     (* pointer arithmetic. somewhere in one of the expressions, there should be at least
-               one pointer type represented as an access path. just use that access path and forget
-               about the arithmetic. if you need to model this more precisely, you should be using
-               SIL instead *)
+       one pointer type represented as an access path. just use that access path and forget
+       about the arithmetic. if you need to model this more precisely, you should be using
+       SIL instead *)
     match get_access_exprs exp0 with
     | ap :: _ ->
         Some ap
@@ -689,7 +689,7 @@ let access_expr_of_exp ~include_array_indexes ~f_resolve_id exp typ =
       match get_access_exprs exp1 with ap :: _ -> Some ap | [] -> None ) )
   | Constant (Const.Cint i) ->
       (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
-               debugging. doesn't really matter what we do here, so just create a dummy var *)
+         debugging. doesn't really matter what we do here, so just create a dummy var *)
       let dummy_base_var =
         Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
       in

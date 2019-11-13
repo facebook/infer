@@ -69,8 +69,7 @@ let decode_json_file (database : t) json_format =
           (* prefer "arguments" when available *)
           if Option.is_none !command then command := Some (parse_command_and_arguments cmd)
       | "command", json ->
-          exit_format_error
-            "the value of the \"command\" field is not a string; found '%s' instead"
+          exit_format_error "the value of the \"command\" field is not a string; found '%s' instead"
             (Yojson.Basic.to_string json)
       | "arguments", `List args -> (
           let args =
@@ -90,8 +89,7 @@ let decode_json_file (database : t) json_format =
           | cmd :: args ->
               command := Some (cmd, List.map ~f:Escape.escape_shell args) )
       | "arguments", json ->
-          exit_format_error
-            "the value of the \"arguments\" field is not a list; found '%s' instead"
+          exit_format_error "the value of the \"arguments\" field is not a list; found '%s' instead"
             (Yojson.Basic.to_string json)
       | "output", _ ->
           ()

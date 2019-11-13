@@ -78,8 +78,8 @@ let tests =
       in
       let actual_ap = make_ap exp in
       let pp_diff fmt (actual_ap, expected_ap) =
-        F.fprintf fmt "Expected to make access path %a from expression %a, but got %a"
-          AccessPath.pp expected_ap Exp.pp exp AccessPath.pp actual_ap
+        F.fprintf fmt "Expected to make access path %a from expression %a, but got %a" AccessPath.pp
+          expected_ap Exp.pp exp AccessPath.pp actual_ap
       in
       assert_equal ~cmp:AccessPath.equal ~pp_diff actual_ap expected_ap
     in
@@ -126,9 +126,7 @@ let tests =
   in
   let domain_test =
     let domain_test_ _ =
-      let pp_diff fmt (actual, expected) =
-        F.fprintf fmt "Expected %s but got %s" expected actual
-      in
+      let pp_diff fmt (actual, expected) = F.fprintf fmt "Expected %s but got %s" expected actual in
       let assert_eq input_aps expected =
         let input = F.asprintf "%a" AccessPathDomains.Set.pp input_aps in
         assert_equal ~cmp:String.equal ~pp_diff input expected
@@ -149,8 +147,7 @@ let tests =
       assert_bool "mem_fuzzy_harder2" (AccessPathDomains.Set.mem_fuzzy x_abstract aps1) ;
       assert_bool "mem_fuzzy_negative" (not (AccessPathDomains.Set.mem_fuzzy y_exact aps1)) ;
       (* [mem_fuzzy] should behave the same as [mem] except in this case *)
-      assert_bool "mem_fuzzy_not_fully_contained"
-        (AccessPathDomains.Set.mem_fuzzy yF_abstract aps3) ;
+      assert_bool "mem_fuzzy_not_fully_contained" (AccessPathDomains.Set.mem_fuzzy yF_abstract aps3) ;
       assert_bool "<= on same is true" (AccessPathDomains.Set.leq ~lhs:aps1 ~rhs:aps1) ;
       assert_bool "aps1 <= aps2" (AccessPathDomains.Set.leq ~lhs:aps1 ~rhs:aps2) ;
       assert_bool "aps2 <= aps1" (AccessPathDomains.Set.leq ~lhs:aps2 ~rhs:aps1) ;

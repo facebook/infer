@@ -106,8 +106,8 @@ end
 module BranchGuardDomain : sig
   include
     AbstractDomain.InvertedMapS
-    with type key = HilExp.AccessExpression.t
-     and type value = BranchGuard.t
+      with type key = HilExp.AccessExpression.t
+       and type value = BranchGuard.t
 
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
 end

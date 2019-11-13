@@ -104,9 +104,8 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname =
   let name = Mangled.from_string CFrontend_config.self in
   let params = [CMethodSignature.mk_param_type name class_type] in
   let bool_type = CType_to_sil_type.type_of_builtin_type_kind `Bool in
-  get_predefined_ms_method condition class_name method_name
-    Typ.Procname.ObjC_Cpp.ObjCInstanceMethod mk_procname params (bool_type, Annot.Item.empty) []
-    (Some BuiltinDecl.__instanceof)
+  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjC_Cpp.ObjCInstanceMethod
+    mk_procname params (bool_type, Annot.Item.empty) [] (Some BuiltinDecl.__instanceof)
 
 
 let get_predefined_model_method_signature class_name method_name mk_procname =

@@ -133,46 +133,46 @@ module Loc = struct
 
   include (* Enforce invariants on Field and StarField, see Symb.mli *) (
     struct
-        type t =
-          | Var of Var.t
-          | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: field_typ}
-          | StarField of {prefix: t; last_field: Typ.Fieldname.t}
-        [@@deriving compare]
+      type t =
+        | Var of Var.t
+        | Allocsite of Allocsite.t
+        | Field of {prefix: t; fn: Typ.Fieldname.t; typ: field_typ}
+        | StarField of {prefix: t; last_field: Typ.Fieldname.t}
+      [@@deriving compare]
 
-        let of_var v = Var v
+      let of_var v = Var v
 
-        let of_allocsite a = Allocsite a
+      let of_allocsite a = Allocsite a
 
-        let append_field ?typ l0 ~fn =
-          let rec aux = function
-            | Var _ | Allocsite _ ->
-                Field {prefix= l0; fn; typ}
-            | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
-                l
-            | StarField {prefix} ->
-                StarField {prefix; last_field= fn}
-            | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
-                StarField {prefix= l0; last_field= fn}
-            | Field {prefix= l} ->
-                aux l
-          in
-          aux l0
+      let append_field ?typ l0 ~fn =
+        let rec aux = function
+          | Var _ | Allocsite _ ->
+              Field {prefix= l0; fn; typ}
+          | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
+              l
+          | StarField {prefix} ->
+              StarField {prefix; last_field= fn}
+          | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
+              StarField {prefix= l0; last_field= fn}
+          | Field {prefix= l} ->
+              aux l
+        in
+        aux l0
 
 
-        let append_star_field l0 ~fn =
-          let rec aux = function
-            | Var _ | Allocsite _ ->
-                StarField {prefix= l0; last_field= fn}
-            | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
-                l
-            | StarField {prefix} ->
-                StarField {prefix; last_field= fn}
-            | Field {prefix= l} ->
-                aux l
-          in
-          aux l0
-      end :
+      let append_star_field l0 ~fn =
+        let rec aux = function
+          | Var _ | Allocsite _ ->
+              StarField {prefix= l0; last_field= fn}
+          | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
+              l
+          | StarField {prefix} ->
+              StarField {prefix; last_field= fn}
+          | Field {prefix= l} ->
+              aux l
+        in
+        aux l0
+    end :
       sig
         type t = private
           | Var of Var.t

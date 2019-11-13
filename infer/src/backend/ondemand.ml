@@ -191,8 +191,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payloads =
       let biabduction =
-        Some
-          BiabductionSummary.{preposts= []; phase= summary.payloads.biabduction |> opt_get_phase}
+        Some BiabductionSummary.{preposts= []; phase= summary.payloads.biabduction |> opt_get_phase}
       in
       {summary.payloads with biabduction}
     in
@@ -231,7 +230,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     match exn with
     | SymOp.Analysis_failure_exe kind ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
-              the failure occurred *)
+           the failure occurred *)
         log_error_and_continue exn initial_callee_summary kind
     | _ ->
         (* this happens with assert false or some other unrecognized exception *)
@@ -259,13 +258,13 @@ let dump_duplicate_procs source_file procs =
             { is_defined=
                 true
                 (* likely not needed: if [pname] is part of [procs] then it *is* defined, so we
-               expect the attribute to be defined too *)
+                   expect the attribute to be defined too *)
             ; translation_unit
             ; loc }
           when (* defined in another file *)
                (not (SourceFile.equal source_file translation_unit))
                && (* really defined in that file and not in an include *)
-                  SourceFile.equal translation_unit loc.file ->
+               SourceFile.equal translation_unit loc.file ->
             Some (pname, translation_unit)
         | _ ->
             None )
@@ -275,8 +274,8 @@ let dump_duplicate_procs source_file procs =
       ~append:true ~perm:0o666 ~f:(fun outc ->
         let fmt = F.formatter_of_out_channel outc in
         List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
-            F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n"
-              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) ;
+            F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n" SourceFile.pp
+              source_file SourceFile.pp source_captured Typ.Procname.pp pname ) ;
         F.pp_print_flush fmt () )
   in
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs

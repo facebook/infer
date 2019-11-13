@@ -24,8 +24,8 @@ end
 
 module type CallPrinter = PrettyPrintable.PrintableType with type t = CallSite.t
 
-(** Printer which outputs "Method call: <monospaced procname>" *)
 module DefaultCallPrinter : CallPrinter
+(** Printer which outputs "Method call: <monospaced procname>" *)
 
 module type TraceElem = sig
   type elem_t
@@ -33,8 +33,8 @@ module type TraceElem = sig
   (** An [elem] which occured at [loc], after the chain of steps (usually calls) in [trace]. *)
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
-  (** Both [pp] and [describe] simply call the same function on the trace element. *)
   include Element with type t := t
+  (** Both [pp] and [describe] simply call the same function on the trace element. *)
 
   val make : elem_t -> Location.t -> t
 
@@ -48,8 +48,8 @@ module type TraceElem = sig
   val with_callsite : t -> CallSite.t -> t
   (** Push given callsite onto trace, extending the call chain by one. *)
 
-  (** A powerset of traces. *)
   module FiniteSet : FiniteSet with type elt = t
+  (** A powerset of traces. *)
 end
 
 (* The [compare] function produced ignores traces but *not* locations *)

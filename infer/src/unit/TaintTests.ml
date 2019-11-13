@@ -77,8 +77,7 @@ let tests =
     in
     let pp_sinks fmt sinks =
       if MockTrace.Sinks.is_empty sinks then F.pp_print_char fmt '?'
-      else
-        MockTrace.Sinks.iter (fun sink -> pp_call_site fmt (MockTrace.Sink.call_site sink)) sinks
+      else MockTrace.Sinks.iter (fun sink -> pp_call_site fmt (MockTrace.Sink.call_site sink)) sinks
     in
     (* just print source -> sink, no line nums or passthroughs *)
     let pp_trace fmt trace =

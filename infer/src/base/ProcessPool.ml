@@ -138,8 +138,8 @@ let wait_for_updates pool buffer =
   let rec aux acc ~timeout =
     let file_descr = pool.children_updates in
     (* Use select(2) so that we can both wait on the pipe of children updates and wait for a
-     timeout. The timeout is for giving a chance to the taskbar of refreshing from time to time,
-     as well as for checking for new work where none were previously available. *)
+       timeout. The timeout is for giving a chance to the taskbar of refreshing from time to time,
+       as well as for checking for new work where none were previously available. *)
     let {Unix.Select_fds.read= read_fds} =
       Unix.select ~read:[file_descr] ~write:[] ~except:[] ~timeout ()
     in
@@ -150,18 +150,18 @@ let wait_for_updates pool buffer =
         (* no updates, break loop *) acc
     | [_file_descr] ->
         (* Read one OCaml value at a time. This is done by first reading the header of the marshalled
-       value (fixed size), then get the total size of the data from that header, then request a
-       read of the full OCaml value.
+           value (fixed size), then get the total size of the data from that header, then request a
+           read of the full OCaml value.
 
-       This way the buffer is used for only one OCaml value at a time. This is simpler (values do
-       not overlap across the end of a read and the beginning of another) and means we do not need
-       a large buffer as long as messages are never bigger than the buffer.
+           This way the buffer is used for only one OCaml value at a time. This is simpler (values do
+           not overlap across the end of a read and the beginning of another) and means we do not need
+           a large buffer as long as messages are never bigger than the buffer.
 
-       This works somewhat like [Marshal.from_channel] but uses the file descriptor directly
-       instead of an [in_channel]. Do *not* read from the pipe via an [in_channel] as they read
-       as much as possible eagerly. This can empty the pipe without us having a way to tell that
-       there is more to read anymore since the [select] call will return that there is nothing to
-       read. *)
+           This works somewhat like [Marshal.from_channel] but uses the file descriptor directly
+           instead of an [in_channel]. Do *not* read from the pipe via an [in_channel] as they read
+           as much as possible eagerly. This can empty the pipe without us having a way to tell that
+           there is more to read anymore since the [select] call will return that there is nothing to
+           read. *)
         really_read pool.children_updates ~buf:buffer ~len:Marshal.header_size ;
         let data_size = Marshal.data_size buffer 0 in
         really_read pool.children_updates ~buf:buffer ~pos:Marshal.header_size ~len:data_size ;
@@ -251,7 +251,7 @@ let process_updates pool buffer =
            TaskBar.update_status pool.task_bar ~slot t status
        | Crash slot ->
            (* NOTE: the workers only send this message if {!Config.keep_going} is not [true] so if
-               we receive it we know we should fail hard *)
+              we receive it we know we should fail hard *)
            let {pid} = pool.slots.(slot) in
            (* clean crash, give the child process a chance to cleanup *)
            Unix.wait (`Pid pid) |> ignore ;
@@ -270,8 +270,7 @@ let process_updates pool buffer =
   (* try to schedule more work if there are idle workers *)
   if not (pool.tasks.is_empty ()) then
     Array.iteri pool.children_states ~f:(fun slot state ->
-        match state with Idle -> send_work_to_child pool slot | Initializing | Processing _ -> ()
-    )
+        match state with Idle -> send_work_to_child pool slot | Initializing | Processing _ -> () )
 
 
 type 'a final_worker_message = Finished of int * 'a option | FinalCrash of int
@@ -420,8 +419,8 @@ let create :
   let file_lock = Utils.create_file_lock () in
   let task_bar = TaskBar.create ~jobs in
   (* Pipe to communicate from children to parent. Only one pipe is needed: the messages sent by
-      children include the identifier of the child sending the message (its [slot]). This way there
-      is only one pipe to wait on for updates. *)
+     children include the identifier of the child sending the message (its [slot]). This way there
+     is only one pipe to wait on for updates. *)
   let ((pipe_child_r, pipe_child_w) as status_pipe) = Unix.pipe () in
   let slots =
     Array.init jobs ~f:(fun slot ->

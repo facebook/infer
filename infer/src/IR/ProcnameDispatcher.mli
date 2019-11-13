@@ -9,7 +9,8 @@ open! IStd
 
 (** To be used in 'list_constraint *)
 type accept_more
- and end_of_list
+
+and end_of_list
 
 (* Markers are a fool-proofing mechanism to avoid mistaking captured types.
   Template argument types can be captured with [capt_typ] to be referenced later
@@ -226,7 +227,8 @@ module Call : sig
 
   include
     Common
-    with type ('context, 'f) dispatcher = 'context -> Typ.Procname.t -> FuncArg.t list -> 'f option
+      with type ('context, 'f) dispatcher =
+            'context -> Typ.Procname.t -> FuncArg.t list -> 'f option
 
   val merge_dispatchers :
     ('context, 'f) dispatcher -> ('context, 'f) dispatcher -> ('context, 'f) dispatcher

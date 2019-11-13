@@ -20,8 +20,7 @@ let execute___builtin_va_arg {Builtin.summary; tenv; prop_; path; args; loc; exe
   match args with
   | [(lexp3, typ3)] ->
       let instr' = Sil.Store {e1= lexp3; root_typ= typ3; typ= typ3; e2= Exp.zero; loc} in
-      SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton instr')
-        [(prop_, path)]
+      SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton instr') [(prop_, path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -86,8 +85,7 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
 
 
 (* Add an array in prop if it is not allocated.*)
-let execute___require_allocated_array {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ
-    =
+let execute___require_allocated_array {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ =
   let pdesc = Summary.get_proc_desc summary in
   match args with
   | [(lexp, typ)] -> (
@@ -173,8 +171,7 @@ let create_type tenv n_lexp typ prop =
           | Typ.Tptr (typ', _) ->
               let sexp = Sil.Estruct ([], Sil.inst_none) in
               let texp =
-                Exp.Sizeof
-                  {typ= typ'; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+                Exp.Sizeof {typ= typ'; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
               in
               let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
               Some hpred
@@ -215,8 +212,7 @@ let create_type tenv n_lexp typ prop =
   else null_case @ non_null_case
 
 
-let execute___get_type_of {Builtin.summary; tenv; prop_; path; ret_id_typ; args} : Builtin.ret_typ
-    =
+let execute___get_type_of {Builtin.summary; tenv; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
       let pname = Summary.get_proc_name summary in
@@ -364,8 +360,7 @@ let set_resource_attribute tenv prop path n_lexp loc ra_res =
 
 
 (** Set the attibute of the value as file *)
-let execute___set_file_attribute {Builtin.tenv; summary; prop_; path; args; loc} : Builtin.ret_typ
-    =
+let execute___set_file_attribute {Builtin.tenv; summary; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
       let pname = Summary.get_proc_name summary in
@@ -421,8 +416,7 @@ let execute___set_attr attr {Builtin.tenv; summary; prop_; path; args} : Builtin
 
 
 (** Delete the locked attibute of the value*)
-let execute___delete_locked_attribute {Builtin.tenv; prop_; summary; path; args} : Builtin.ret_typ
-    =
+let execute___delete_locked_attribute {Builtin.tenv; prop_; summary; path; args} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
       delete_attr tenv (Summary.get_proc_desc summary) prop_ path lexp PredSymb.Alocked
@@ -497,8 +491,8 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp 
       raise (Exceptions.Array_of_pointsto __POS__) )
 
 
-let execute_free mk ?(mark_as_freed = true) {Builtin.summary; instr; tenv; prop_; path; args; loc}
-    : Builtin.ret_typ =
+let execute_free mk ?(mark_as_freed = true) {Builtin.summary; instr; tenv; prop_; path; args; loc} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
       let pname = Summary.get_proc_name summary in
@@ -514,12 +508,12 @@ let execute_free mk ?(mark_as_freed = true) {Builtin.summary; instr; tenv; prop_
       let plist =
         prop_zero
         @ (* model: if 0 then skip else execute_free_nonzero_ *)
-          List.concat_map
-            ~f:(fun p ->
-              execute_free_nonzero_ mk ~mark_as_freed (Summary.get_proc_desc summary) tenv instr p
-                (Prop.exp_normalize_prop tenv p lexp)
-                typ loc )
-            prop_nonzero
+        List.concat_map
+          ~f:(fun p ->
+            execute_free_nonzero_ mk ~mark_as_freed (Summary.get_proc_desc summary) tenv instr p
+              (Prop.exp_normalize_prop tenv p lexp)
+              typ loc )
+          prop_nonzero
       in
       List.map ~f:(fun p -> (p, path)) plist
   | _ ->
@@ -607,8 +601,8 @@ let execute_alloc mk can_return_null {Builtin.summary; tenv; prop_; path; ret_id
   else [(prop_alloc, path)]
 
 
-let execute___cxx_typeid ({Builtin.summary; tenv; prop_; args; loc; exe_env} as r) :
-    Builtin.ret_typ =
+let execute___cxx_typeid ({Builtin.summary; tenv; prop_; args; loc; exe_env} as r) : Builtin.ret_typ
+    =
   match args with
   | type_info_exp :: rest -> (
       let res = execute_alloc PredSymb.Mnew false {r with args= [type_info_exp]} in
@@ -718,8 +712,8 @@ let execute_return_first_argument {Builtin.tenv; summary; prop_; path; ret_id_ty
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___split_get_nth {Builtin.tenv; summary; prop_; path; ret_id_typ; args} :
-    Builtin.ret_typ =
+let execute___split_get_nth {Builtin.tenv; summary; prop_; path; ret_id_typ; args} : Builtin.ret_typ
+    =
   match args with
   | [(lexp1, _); (lexp2, _); (lexp3, _)] -> (
       let pname = Summary.get_proc_name summary in
@@ -779,8 +773,8 @@ let execute___infer_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env
 
 
 (* translate builtin assertion failure *)
-let execute___assert_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env} :
-    Builtin.ret_typ =
+let execute___assert_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ
+    =
   let error_str =
     match List.length args with
     | 4 ->
@@ -812,8 +806,7 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
         []
   in
   let alloc_instr =
-    Sil.Call
-      (ret_id_typ, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)
+    Sil.Call (ret_id_typ, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)
   in
   SymExec.instrs exe_env tenv summary (Instrs.singleton alloc_instr) symb_state
 
@@ -904,9 +897,7 @@ let __method_set_ignore_attribute =
 
 let __new = Builtin.register BuiltinDecl.__new (execute_alloc PredSymb.Mnew false)
 
-let __new_array =
-  Builtin.register BuiltinDecl.__new_array (execute_alloc PredSymb.Mnew_array false)
-
+let __new_array = Builtin.register BuiltinDecl.__new_array (execute_alloc PredSymb.Mnew_array false)
 
 (* like __objc_alloc, but does not return nil *)
 let __objc_alloc_no_fail =

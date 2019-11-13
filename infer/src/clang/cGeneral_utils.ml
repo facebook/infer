@@ -132,8 +132,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
              None )
     |> Option.value_map ~default:true ~f:(function
          | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _)
-           ->
+         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
              xrdi_is_pod
          | _ ->
              true )
@@ -152,9 +151,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
 let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =
   match decl_info_qual_type_opt with
   | Some (decl_info, qt, var_decl_info, should_be_mangled) ->
-      let name_string, simple_name =
-        get_var_name_mangled decl_info named_decl_info var_decl_info
-      in
+      let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
       if var_decl_info.Clang_ast_t.vdi_is_global then
         let mk_name =
           if var_decl_info.Clang_ast_t.vdi_is_static_local then

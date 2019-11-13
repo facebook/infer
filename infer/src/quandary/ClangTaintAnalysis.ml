@@ -48,7 +48,7 @@ include TaintAnalysis.Make (struct
           [TaintSpec.Propagate_to_receiver]
     in
     (* if we have a specific model for a procedure, use that. otherwise, use the generic
-         heuristics for dealing with unknown code *)
+       heuristics for dealing with unknown code *)
     match Typ.Procname.get_method pname with
     | "operator+="
     | "operator-="
@@ -73,17 +73,17 @@ include TaintAnalysis.Make (struct
 
 
   (* treat folly functions as unknown library code. we often specify folly functions as sinks,
-       and we don't want to double-report if these functions eventually call other sinks (e.g.,
-       when folly::Subprocess calls exec), in addition some folly functions are heavily optimized in
-       a way that obscures what they're actually doing (e.g., they use assembly code). it's better
-       to write models for these functions or treat them as unknown *)
+     and we don't want to double-report if these functions eventually call other sinks (e.g.,
+     when folly::Subprocess calls exec), in addition some folly functions are heavily optimized in
+     a way that obscures what they're actually doing (e.g., they use assembly code). it's better
+     to write models for these functions or treat them as unknown *)
   let models_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly"]
 
   let get_model pname ret_typ actuals tenv summary =
     (* hack for default C++ constructors, which get translated as an empty body (and will thus
-         have an empty summary). We don't want that because we want to be able to propagate taint
-         from comstructor parameters to the constructed object. so we treat the empty constructor
-         as a skip function instead *)
+       have an empty summary). We don't want that because we want to be able to propagate taint
+       from comstructor parameters to the constructed object. so we treat the empty constructor
+       as a skip function instead *)
     let is_default_constructor pname =
       Typ.Procname.is_c_method pname && Typ.Procname.is_constructor pname
       && AccessTree.BaseMap.is_empty summary

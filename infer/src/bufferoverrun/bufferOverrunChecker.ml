@@ -33,8 +33,8 @@ module UnusedBranch = struct
     let desc =
       let err_desc =
         let i = match condition with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
-        Errdesc.explain_condition_always_true_false tenv i condition
-          (CFG.Node.underlying_node node) location
+        Errdesc.explain_condition_always_true_false tenv i condition (CFG.Node.underlying_node node)
+          location
       in
       F.asprintf "%a" Localise.pp_error_desc err_desc
     in
@@ -88,7 +88,7 @@ module ExitStatement = struct
   (* check that we are the last significant instruction
      * of a procedure (no more significant instruction)
      * or of a block (goes directly to a node with multiple predecessors)
-     *)
+  *)
   let rec is_end_of_block_or_procedure (cfg : CFG.t) node rem_instrs =
     Instrs.for_all rem_instrs ~f:Sil.instr_is_auxiliary
     &&
@@ -192,8 +192,8 @@ let check_expr_for_array_access :
       let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
       let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true
-        ~last_included:false ~latest_prune location cond_set
+      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included:false
+        ~latest_prune location cond_set
   | Exp.BinOp (bop, e1, e2) ->
       check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
   | _ ->
@@ -202,8 +202,7 @@ let check_expr_for_array_access :
 
 let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
   match bop with
-  | Binop.MinusA (Some typ) when Typ.ikind_is_unsigned typ && Exp.is_zero lhs && Exp.is_const rhs
-    ->
+  | Binop.MinusA (Some typ) when Typ.ikind_is_unsigned typ && Exp.is_zero lhs && Exp.is_const rhs ->
       cond_set
   | Binop.PlusA (Some _) | Binop.MinusA (Some _) | Binop.Mult (Some _) ->
       let lhs_v = Sem.eval integer_type_widths lhs mem in
@@ -258,9 +257,7 @@ let instantiate_cond :
     )
   in
   let caller_rel = Dom.Mem.get_relation caller_mem in
-  let eval_sym_trace =
-    Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
-  in
+  let eval_sym_trace = Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem in
   let latest_prune = Dom.Mem.get_latest_prune caller_mem in
   PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel callee_pname location
     latest_prune
@@ -269,8 +266,7 @@ let instantiate_cond :
 type checks_summary = BufferOverrunCheckerSummary.t
 
 type get_proc_summary =
-     Typ.Procname.t
-  -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list * checks_summary) option
+  Typ.Procname.t -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list * checks_summary) option
 
 let check_instr :
        get_proc_summary
@@ -348,8 +344,7 @@ let check_instrs :
   | {AbstractInterpreter.State.pre= Bottom | ExcRaised} ->
       checks
   | {AbstractInterpreter.State.pre= NonBottom _ as pre; post} ->
-      if Instrs.nth_exists instrs 1 then
-        L.(die InternalError) "Did not expect several instructions" ;
+      if Instrs.nth_exists instrs 1 then L.(die InternalError) "Did not expect several instructions" ;
       let instr = Instrs.nth_exn instrs 0 in
       let checks =
         match post with

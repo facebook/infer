@@ -24,8 +24,7 @@ let pp_parsing_error fmt {line_number; unparsable_method; parsing_error} =
    The evaluator function [f] has access to element's index.
  *)
 let bind_list_with_index list ~f =
-  List.foldi list ~init:(Ok ()) ~f:(fun index acc elem ->
-      Result.bind acc ~f:(fun _ -> f index elem) )
+  List.foldi list ~init:(Ok ()) ~f:(fun index acc elem -> Result.bind acc ~f:(fun _ -> f index elem))
 
 
 let parse_line_and_add_to_storage storage line =

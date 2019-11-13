@@ -217,9 +217,7 @@ let update_name_generator ids =
 
 
 (** Generate a normal identifier whose name encodes a path given as a string. *)
-let create_path pathstring =
-  create_normal (string_to_name ("%path%" ^ pathstring)) path_ident_stamp
-
+let create_path pathstring = create_normal (string_to_name ("%path%" ^ pathstring)) path_ident_stamp
 
 (** {2 Pretty Printing} *)
 

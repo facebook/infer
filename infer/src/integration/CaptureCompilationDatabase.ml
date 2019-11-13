@@ -30,8 +30,7 @@ let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
   | pid ->
       !ProcessPoolState.update_status (Mtime_clock.now ()) (SourceFile.to_string source_file) ;
       Unix.waitpid (Pid.of_int pid)
-      |> Result.map_error ~f:(fun unix_error ->
-             Unix.Exit_or_signal.to_string_hum (Error unix_error) )
+      |> Result.map_error ~f:(fun unix_error -> Unix.Exit_or_signal.to_string_hum (Error unix_error))
   | exception Unix.Unix_error (err, f, arg) ->
       Error (F.asprintf "%s(%s): %s@." f arg (Unix.Error.message err)) )
   |> function
@@ -83,8 +82,8 @@ let get_compilation_database_files_buck ~prog ~args =
       let build_args =
         (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline))
         @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
-          "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
-          :: "--config" :: "*//cxx.modules=False" :: targets_args
+        "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
+        :: "--config" :: "*//cxx.modules=False" :: targets_args
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;

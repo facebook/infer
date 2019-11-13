@@ -103,9 +103,7 @@ let check_not_null_parameter_list, check_not_null_list =
     ; ( 1
       , (o, [x])
       , "com.google.common.base.Preconditions.checkNotNull(java.lang.Object):java.lang.Object" )
-    ; ( 1
-      , (o, [x])
-      , "com.google.common.base.Verify.verifyNotNull(java.lang.Object):java.lang.Object" )
+    ; (1, (o, [x]), "com.google.common.base.Verify.verifyNotNull(java.lang.Object):java.lang.Object")
     ; ( 1
       , (o, [x; n; n])
       , "com.google.common.base.Verify.verifyNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
@@ -150,8 +148,7 @@ let check_state_list =
     , "com.facebook.infer.annotation.Assertions.assertCondition(boolean,java.lang.String):void" )
   ; ((o, [n]), "com.facebook.infer.annotation.Assertions.assumeCondition(boolean):void")
   ; ( (o, [n; o])
-    , "com.facebook.infer.annotation.Assertions.assumeCondition(boolean,java.lang.String):void" )
-  ]
+    , "com.facebook.infer.annotation.Assertions.assumeCondition(boolean,java.lang.String):void" ) ]
 
 
 let check_argument_list =
@@ -379,9 +376,7 @@ let annotated_list_nullability =
     ; ( (n, [o])
       , "javax.lang.model.element.Element.getAnnotation(java.lang.Class):java.lang.annotation.Annotation"
       )
-    ; ( ng
-      , "javax.lang.model.element.Element.getEnclosingElement():javax.lang.model.element.Element"
-      )
+    ; (ng, "javax.lang.model.element.Element.getEnclosingElement():javax.lang.model.element.Element")
     ; ( ng
       , "javax.lang.model.element.ExecutableElement.getDefaultValue():javax.lang.model.element.AnnotationValue"
       )

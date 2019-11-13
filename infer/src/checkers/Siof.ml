@@ -88,7 +88,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
     in
     Staged.stage (fun (* gvar \notin initialized, up to some fuzzing *)
-                      gvar ->
+                        gvar ->
         QualifiedCppName.of_qual_string (Pvar.to_string gvar)
         |> Fn.non (QualifiedCppName.Match.match_qualifiers initialized_matcher) )
 
@@ -198,11 +198,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_actuals_globals astate summary loc actuals
         |> Domain.join callee_astate
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
-           at_least_nonbottom
+        at_least_nonbottom
     | Call (_, _, actuals, loc, _) ->
         add_actuals_globals astate summary loc actuals
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
-           at_least_nonbottom
+        at_least_nonbottom
     | Metadata _ ->
         astate
 
@@ -235,8 +235,8 @@ let report_siof summary trace gname loc =
           assert false
       | (final_sink, _) :: _ ->
           F.asprintf
-            "Initializer of %s accesses global variable from a different translation unit: %a"
-            gname GlobalVar.pp (SiofTrace.Sink.kind final_sink)
+            "Initializer of %s accesses global variable from a different translation unit: %a" gname
+            GlobalVar.pp (SiofTrace.Sink.kind final_sink)
     in
     let ltr = SiofTrace.trace_of_error loc gname trace in
     Reporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco description

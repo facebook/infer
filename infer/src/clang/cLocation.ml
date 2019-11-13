@@ -44,8 +44,7 @@ let should_do_frontend_check translation_unit (loc_start, _) =
     translate the headers that are part of the project. However, in testing mode, we don't want to
     translate the headers because the dot files in the frontend tests should contain nothing else
     than the source file to avoid conflicts between different versions of the libraries. *)
-let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used
-    =
+let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_file_of pred loc =
     match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
     | Some f ->

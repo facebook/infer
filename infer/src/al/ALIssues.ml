@@ -22,9 +22,9 @@ let filter_parsed_linters_developer parsed_linters =
     match Config.linter with
     | None ->
         L.(die UserError)
-          "In linters developer mode you should debug only one linter at a time. This is \
-           important for debugging the rule. Pass the flag --linter <name> to specify the linter \
-           you want to debug."
+          "In linters developer mode you should debug only one linter at a time. This is important \
+           for debugging the rule. Pass the flag --linter <name> to specify the linter you want to \
+           debug."
     | Some lint ->
         List.filter
           ~f:(fun (rule : linter) ->
@@ -40,9 +40,7 @@ let filter_parsed_linters_by_path parsed_linters source_file =
         ~f:(fun path -> ALVar.compare_str_with_alexp (SourceFile.to_rel_path source_file) path)
         paths
     in
-    let whitelist_ok =
-      List.is_empty linter.whitelist_paths || should_lint linter.whitelist_paths
-    in
+    let whitelist_ok = List.is_empty linter.whitelist_paths || should_lint linter.whitelist_paths in
     let blacklist_ok =
       List.is_empty linter.blacklist_paths || not (should_lint linter.blacklist_paths)
     in
@@ -343,8 +341,7 @@ let expand_formula phi map_ error_msg_ =
                 expand f1_sub map' error_msg'
             | Unequal_lengths ->
                 L.(die ExternalError)
-                  "Formula identifier '%s' is not called with the right number of parameters" name
-            )
+                  "Formula identifier '%s' is not called with the right number of parameters" name )
         with Caml.Not_found -> acc
         (* in this case it should be a predicate *) )
     | Not f1 ->
@@ -491,8 +488,8 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
     ~ltr:trace ~node_key
 
 
-let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc)
-    loc =
+let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc) loc
+    =
   let process_message message =
     remove_new_lines_and_whitespace (expand_message_string context message current_node)
   in
@@ -502,8 +499,8 @@ let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CI
   try log_frontend_issue context.CLintersContext.current_method witness issue_desc'
   with CFrontend_errors.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
-    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-      e.source_range e.ast_node
+    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position e.source_range
+      e.ast_node
 
 
 (* Calls the set of hard coded checkers (if any) *)
@@ -540,7 +537,7 @@ let invoke_set_of_checkers_on_node parsed_linters context an =
   ( match an with
   | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) ->
       (* Don't run parsed linters on TranslationUnitDecl node.
-          Because depending on the formula it may give an error at line -1 *)
+         Because depending on the formula it may give an error at line -1 *)
       ()
   | _ ->
       if not CFrontend_config.tableaux_evaluation then

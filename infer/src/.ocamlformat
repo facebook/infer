@@ -1,4 +1,5 @@
 profile = ocamlformat
+break-before-in = fit-or-vertical
 let-binding-spacing = sparse
 margin = 100
-version = 0.9
+version = 0.12-20-gfce0d2e

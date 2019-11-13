@@ -215,9 +215,7 @@ let field_injector_readonly_list = inject :: field_injector_readwrite_list
 
 (** Annotations for readonly injectors.
     The injector framework initializes the field but does not write null into it. *)
-let ia_is_field_injector_readonly ia =
-  List.exists ~f:(ia_ends_with ia) field_injector_readonly_list
-
+let ia_is_field_injector_readonly ia = List.exists ~f:(ia_ends_with ia) field_injector_readonly_list
 
 (** Annotations for read-write injectors.
     The injector framework initializes the field and can write null into it. *)

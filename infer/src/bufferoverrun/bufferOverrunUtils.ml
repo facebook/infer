@@ -36,8 +36,7 @@ module Exec = struct
     let v = Dom.Mem.find_set ~typ locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     let mem =
-      if represents_multiple_values then
-        Dom.Mem.add_heap_set ~represents_multiple_values locs v mem
+      if represents_multiple_values then Dom.Mem.add_heap_set ~represents_multiple_values locs v mem
       else mem
     in
     match PowLoc.is_singleton_or_more locs with
@@ -65,8 +64,8 @@ module Exec = struct
         (mem, inst_num)
 
 
-  and decl_local_array ({pname; node_hash; location} as model_env) loc typ ~length ?stride
-      ~inst_num ~represents_multiple_values ~dimension mem =
+  and decl_local_array ({pname; node_hash; location} as model_env) loc typ ~length ?stride ~inst_num
+      ~represents_multiple_values ~dimension mem =
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
     let allocsite =
@@ -156,9 +155,7 @@ module Exec = struct
           match field_typ.Typ.desc with
           | Tarray {length= Some length} ->
               let length = Itv.plus (Itv.of_int_lit length) dyn_length |> Dom.Val.of_itv in
-              let v =
-                Dom.Mem.find_set field_loc mem |> Dom.Val.set_array_length location ~length
-              in
+              let v = Dom.Mem.find_set field_loc mem |> Dom.Val.set_array_length location ~length in
               Dom.Mem.strong_update field_loc v mem
           | _ ->
               set_dyn_length model_env field_typ field_loc dyn_length mem )

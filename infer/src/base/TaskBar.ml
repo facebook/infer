@@ -70,8 +70,7 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
     ++ ( "%s"
        , max (String.length elapsed_string) 9
          (* leave some room for elapsed_string to avoid flicker. 9 characters is "XXhXXmXXs" so it
-            gives some reasonable margin. *)
-       )
+            gives some reasonable margin. *) )
   in
   let top_bar_size = min term_width top_bar_size_default in
   let progress_bar_size = top_bar_size - size_around_progress_bar in

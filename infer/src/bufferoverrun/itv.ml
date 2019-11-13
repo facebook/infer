@@ -431,11 +431,7 @@ module ItvPure = struct
 
   let prune_eq : t -> t -> t bottom_lifted =
    fun x y ->
-    match prune_comp Binop.Le x y with
-    | Bottom ->
-        Bottom
-    | NonBottom x' ->
-        prune_comp Binop.Ge x' y
+    match prune_comp Binop.Le x y with Bottom -> Bottom | NonBottom x' -> prune_comp Binop.Ge x' y
 
 
   let prune_eq_zero : t -> t bottom_lifted =

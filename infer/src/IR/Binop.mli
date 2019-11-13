@@ -7,6 +7,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Binary Operators *)
+
 open! IStd
 
 (** Binary operations *)

@@ -52,8 +52,8 @@ let is_allocator tenv pname =
 
 let check_attributes check tenv pname =
   PatternMatch.check_class_attributes check tenv pname
-  || Annotations.pname_has_return_annot pname
-       ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes check
+  || Annotations.pname_has_return_annot pname ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
+       check
 
 
 let method_overrides is_annotated tenv pname =
@@ -94,12 +94,11 @@ let report_allocation_stack src_annot summary fst_call_loc trace stack_str const
       MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
       (stack_str ^ "new " ^ constr_str)
   in
-  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace
-    IssueType.checkers_allocates_memory description
+  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace IssueType.checkers_allocates_memory
+    description
 
 
-let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc
-    =
+let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc =
   let src_pname = Summary.get_proc_name src_summary in
   if String.equal snk_annot dummy_constructor_annot then
     report_allocation_stack src_annot src_summary loc trace stack_str snk_pname call_loc

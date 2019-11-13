@@ -261,9 +261,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
         in
         let call_instr =
           let id_exps = List.map ~f:(fun (id, _, typ) -> (id, typ)) id_exp_typs in
-          let converted_args =
-            List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args
-          in
+          let converted_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
           Sil.Call
             ( return_ids
             , Exp.Const (Const.Cfun block_name)
@@ -299,7 +297,7 @@ let append_no_duplicates_formals_and_annot =
 let with_block_args callee_pdesc pname_with_block_args block_args =
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   (* Substitution from a block parameter to the block name and the new formals
-  that correspond to the captured variables *)
+     that correspond to the captured variables *)
   let substitutions : (Typ.Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t =
     List.fold2_exn callee_attributes.formals block_args ~init:Mangled.Map.empty
       ~f:(fun subts (param_name, _) block_arg_opt ->
@@ -309,7 +307,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
               List.map
                 ~f:(fun (_, var, typ) ->
                   (* Here we create fresh names for the new formals, based on the names of the captured
-                   variables annotated with the name of the caller method *)
+                     variables annotated with the name of the caller method *)
                   (Pvar.get_name_of_local_with_procname var, typ) )
                 cl.captured_vars
             in
@@ -318,7 +316,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
             subts )
   in
   (* Extend formals with fresh variables for the captured variables of the block arguments,
-    without duplications. *)
+     without duplications. *)
   let new_formals_blocks_captured_vars, extended_formals_annots =
     let new_formals_blocks_captured_vars_with_annots =
       let formals_annots =
@@ -341,8 +339,8 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
         source_file
     | None ->
         Logging.die InternalError
-          "specialize_with_block_args ahould only be called with defined procedures, but we \
-           cannot find the captured file of procname %a"
+          "specialize_with_block_args ahould only be called with defined procedures, but we cannot \
+           find the captured file of procname %a"
           Typ.Procname.pp pname
   in
   let resolved_attributes =

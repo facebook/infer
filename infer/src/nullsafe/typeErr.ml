@@ -167,8 +167,7 @@ module Severity = struct
     match signature.params with
     | AnnotatedSignature.{mangled; param_annotated_type} :: _ when Mangled.is_this mangled ->
         (* TODO(T54088319) get rid of direct access to annotation *)
-        Option.bind ~f:get_severity
-          (PatternMatch.type_get_annotation tenv param_annotated_type.typ)
+        Option.bind ~f:get_severity (PatternMatch.type_get_annotation tenv param_annotated_type.typ)
     | _ ->
         None
 

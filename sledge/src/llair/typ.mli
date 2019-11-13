@@ -19,11 +19,7 @@ type t = private
   | Tuple of {elts: t vector; bits: int; byts: int; packed: bool}
       (** Anonymous aggregate of heterogeneous types. *)
   | Struct of
-      { name: string
-      ; elts: t vector
-      ; bits: int
-      ; byts: int
-      ; packed: bool }
+      {name: string; elts: t vector; bits: int; byts: int; packed: bool}
       (** Uniquely named aggregate of heterogeneous types. Every cycle of
           recursive types contains a [Struct]. NOTE: recursive [Struct]
           types are represented by cyclic values. *)

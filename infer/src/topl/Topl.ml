@@ -206,7 +206,7 @@ let is_inconsistent env query =
 let conjoin_props env post pre =
   (* PRE: p and q have no footprints: that would make no sense in pre/posts. *)
   (* TODO: Ideally, this should be boolean-conjunction. The function [Dom.prop_partial_meet]
-    comes close but fails in all practical cases. *)
+     comes close but fails in all practical cases. *)
   List.fold ~init:post ~f:(Prop.prop_atom_and env) (Prop.get_pure pre)
 
 

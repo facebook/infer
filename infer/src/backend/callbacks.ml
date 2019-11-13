@@ -64,8 +64,7 @@ let iterate_procedure_callbacks exe_env summary =
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
     ~f:(fun summary {name; dynamic_dispatch; language; callback} ->
-      if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized)
-      then (
+      if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized) then (
         PerfEvent.(
           log (fun logger ->
               log_begin_event logger ~name ~categories:["backend"]
