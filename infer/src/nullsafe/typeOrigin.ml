@@ -18,6 +18,9 @@ type t =
   | MethodCall of method_call_origin  (** A result of a method call *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
+  | InferredNonnull of {previous_origin: t}
+      (** The value is inferred as non-null during flow-sensitive type inference
+          (most commonly from relevant condition branch or assertion explicitly comparing the value with `null`) *)
   (* Below are two special values. *)
   | OptimisticFallback
       (** Something went wrong during typechecking.
@@ -50,6 +53,7 @@ let get_nullability = function
   | This (* `this` can not be null according to Java rules *)
   | New (* In Java `new` always create a non-null object  *)
   | ArrayLengthResult (* integer hence non-nullable *)
+  | InferredNonnull _
   | OptimisticFallback (* non-null is the most optimistic type *)
   | Undef (* This is a very special case, assigning non-null is a technical trick *) ->
       Nullability.Nonnull
@@ -81,6 +85,8 @@ let rec to_string = function
       "New"
   | ArrayLengthResult ->
       "ArrayLength"
+  | InferredNonnull _ ->
+      "InferredNonnull"
   | OptimisticFallback ->
       "OptimisticFallback"
   | Undef ->
@@ -118,7 +124,7 @@ let get_description origin =
      But for these issues we currently don't print origins in the error string.
      It is a good idea to change this and start printing origins for these origins as well.
   *)
-  | This | New | NonnullConst _ | ArrayLengthResult ->
+  | This | New | NonnullConst _ | ArrayLengthResult | InferredNonnull _ ->
       None
   (* Two special cases - should not really occur in normal code *)
   | OptimisticFallback | Undef ->

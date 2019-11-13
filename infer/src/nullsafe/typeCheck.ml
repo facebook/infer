@@ -456,10 +456,9 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
           EradicateChecks.report_error tenv find_canonical_duplicate
             (TypeErr.Condition_redundant (true, EradicateChecks.explain_expr tenv node cond))
             (Some instr_ref) loc curr_pdesc ) ;
-        TypeState.add pvar
-          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create TypeOrigin.OptimisticFallback)
-          typestate''
+        let previous_origin = InferredNullability.get_origin nullability in
+        let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
+        TypeState.add pvar (t, InferredNullability.create new_origin) typestate''
     | None ->
         typestate'
   in
@@ -498,11 +497,10 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
   let set_nonnull_to_pvar typestate1 pvar =
     (* handle the annotation flag for pvar *)
     match TypeState.lookup_pvar pvar typestate1 with
-    | Some (t, _) ->
-        TypeState.add pvar
-          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create TypeOrigin.OptimisticFallback)
-          typestate1
+    | Some (t, nullability) ->
+        let previous_origin = InferredNullability.get_origin nullability in
+        let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
+        TypeState.add pvar (t, InferredNullability.create new_origin) typestate1
     | None ->
         typestate1
   in
@@ -713,7 +711,11 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       match TypeState.lookup_pvar pvar typestate' with
       | Some (t, current_nullability) ->
           if not (InferredNullability.is_nonnull current_nullability) then
-            let new_nullability = InferredNullability.set_nonnull current_nullability in
+            let new_origin =
+              TypeOrigin.InferredNonnull
+                {previous_origin= InferredNullability.get_origin current_nullability}
+            in
+            let new_nullability = InferredNullability.create new_origin in
             TypeState.add pvar (t, new_nullability) typestate'
           else typestate'
       | None ->

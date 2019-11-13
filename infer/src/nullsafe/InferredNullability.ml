@@ -21,10 +21,6 @@ let is_nonnull {nullability} =
   match nullability with Nullable -> false | DeclaredNonnull -> false | Nonnull -> true
 
 
-let set_nullability nullability t = {t with nullability}
-
-let set_nonnull = set_nullability Nullability.Nonnull
-
 let descr_origin t =
   let descr_opt = TypeOrigin.get_description t.origin in
   match descr_opt with
