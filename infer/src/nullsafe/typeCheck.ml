@@ -142,13 +142,13 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
           (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
       in
-      let exp_origin = InferredNullability.get_origin inferred_nullability in
+      let object_origin = InferredNullability.get_origin inferred_nullability in
       let tr_new =
         match AnnotatedField.get tenv field_name typ with
         | Some AnnotatedField.{annotated_type} ->
             ( annotated_type.typ
             , InferredNullability.of_annotated_nullability annotated_type.nullability
-                (TypeOrigin.Field (exp_origin, field_name, loc)) )
+                (TypeOrigin.Field {object_origin; field_name; access_loc= loc}) )
         | None ->
             tr_default
       in
@@ -239,17 +239,18 @@ let handle_function_call tenv curr_pname typestate exp default ~is_assignment ~c
 
 
 (* If this is an assignment, update the typestate for a field access pvar. *)
-let update_typestate_fld ~is_assignment tenv loc typestate pvar origin fn typ =
+let update_typestate_fld ~is_assignment tenv access_loc typestate pvar object_origin field_name typ
+    =
   match TypeState.lookup_pvar pvar typestate with
   | Some _ when not is_assignment ->
       typestate
   | _ -> (
-    match AnnotatedField.get tenv fn typ with
+    match AnnotatedField.get tenv field_name typ with
     | Some AnnotatedField.{annotated_type} ->
         let range =
           ( annotated_type.typ
           , InferredNullability.of_annotated_nullability annotated_type.nullability
-              (TypeOrigin.Field (origin, fn, loc)) )
+              (TypeOrigin.Field {object_origin; field_name; access_loc}) )
         in
         TypeState.add pvar range typestate
     | None ->
@@ -862,9 +863,9 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
     let ret = callee_annotated_signature.AnnotatedSignature.ret in
     let is_library = Summary.OnDisk.proc_is_library callee_attributes in
     let origin =
-      TypeOrigin.Proc
+      TypeOrigin.MethodCall
         { TypeOrigin.pname= callee_pname
-        ; loc
+        ; call_loc= loc
         ; annotated_signature= callee_annotated_signature
         ; is_library }
     in

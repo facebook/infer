@@ -63,7 +63,7 @@ let get_origin t = t.origin
 
 let origin_is_fun_library t =
   match get_origin t with
-  | TypeOrigin.Proc proc_origin ->
+  | TypeOrigin.MethodCall proc_origin ->
       proc_origin.TypeOrigin.is_library
   | _ ->
       false

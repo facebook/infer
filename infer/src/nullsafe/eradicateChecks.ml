@@ -255,7 +255,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                 | TypeOrigin.Undef ->
                     (* Special case: not really an initialization *)
                     false
-                | TypeOrigin.Field (TypeOrigin.Formal name, _, _) ->
+                | TypeOrigin.Field {object_origin= TypeOrigin.Formal name} ->
                     (* Exclude circular initialization *)
                     let circular = Mangled.is_this name in
                     not circular

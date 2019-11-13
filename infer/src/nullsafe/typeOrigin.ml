@@ -9,24 +9,28 @@ open! IStd
 
 (** Describe the origin of values propagated by the checker. *)
 
-type proc_origin =
-  { pname: Typ.Procname.t
-  ; loc: Location.t
-  ; annotated_signature: AnnotatedSignature.t
-  ; is_library: bool }
-[@@deriving compare]
-
 type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
-  | Field of t * Typ.Fieldname.t * Location.t  (** A field access *)
+  | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
   | Formal of Mangled.t  (** A formal parameter *)
-  | Proc of proc_origin  (** A procedure call *)
+  | MethodCall of method_call_origin  (** A result of a method call *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ONone  (** No origin is known *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
+
+and field_origin =
+  { object_origin: t  (** field's object origin (object is before field access operator `.`)  *)
+  ; field_name: Typ.Fieldname.t
+  ; access_loc: Location.t }
+
+and method_call_origin =
+  { pname: Typ.Procname.t
+  ; call_loc: Location.t
+  ; annotated_signature: AnnotatedSignature.t
+  ; is_library: bool }
 
 let equal = [%compare.equal: t]
 
@@ -35,12 +39,14 @@ let rec to_string = function
       "null"
   | NonnullConst _ ->
       "Const (nonnull)"
-  | Field (o, fn, _) ->
-      "Field " ^ Typ.Fieldname.to_simplified_string fn ^ " (inner: " ^ to_string o ^ ")"
+  | Field {object_origin; field_name} ->
+      "Field "
+      ^ Typ.Fieldname.to_simplified_string field_name
+      ^ " (object: " ^ to_string object_origin ^ ")"
   | Formal s ->
       "Formal " ^ Mangled.to_string s
-  | Proc po ->
-      Printf.sprintf "Fun %s" (Typ.Procname.to_simplified_string po.pname)
+  | MethodCall {pname} ->
+      Printf.sprintf "Fun %s" (Typ.Procname.to_simplified_string pname)
   | New ->
       "New"
   | ArrayLengthResult ->
@@ -56,23 +62,26 @@ let get_description origin =
   match origin with
   | NullConst loc ->
       Some ("null constant" ^ atline loc, Some loc, None)
-  | Field (_, fn, loc) ->
-      Some ("field " ^ Typ.Fieldname.to_simplified_string fn ^ atline loc, Some loc, None)
+  | Field {field_name; access_loc} ->
+      Some
+        ( "field " ^ Typ.Fieldname.to_simplified_string field_name ^ atline access_loc
+        , Some access_loc
+        , None )
   | Formal s ->
       Some ("method parameter " ^ Mangled.to_string s, None, None)
-  | Proc po ->
+  | MethodCall {pname; call_loc; annotated_signature} ->
       let modelled_in =
         (* TODO(T54088319) don't calculate this info and propagate it from AnnotatedNullability instead *)
-        if Models.is_modelled_for_nullability_as_internal po.pname then
+        if Models.is_modelled_for_nullability_as_internal pname then
           " modelled in " ^ ModelTables.this_file
         else ""
       in
       let description =
         Printf.sprintf "call to %s%s%s"
-          (Typ.Procname.to_simplified_string po.pname)
-          modelled_in (atline po.loc)
+          (Typ.Procname.to_simplified_string pname)
+          modelled_in (atline call_loc)
       in
-      Some (description, Some po.loc, Some po.annotated_signature)
+      Some (description, Some call_loc, Some annotated_signature)
   (* These are origins of non-nullable expressions that are result of evaluating of some rvalue.
      Because they are non-nullable and they are rvalues, we won't get normal type violations
      With them. All we could get is things like condition redundant or overannotated.
@@ -91,7 +100,7 @@ let join o1 o2 =
   (* left priority *)
   | Undef, _ | _, Undef ->
       Undef
-  | Field _, (NullConst _ | NonnullConst _ | Formal _ | Proc _ | New) ->
+  | Field _, (NullConst _ | NonnullConst _ | Formal _ | MethodCall _ | New) ->
       (* low priority to Field, to support field initialization patterns *)
       o2
   | _ ->
