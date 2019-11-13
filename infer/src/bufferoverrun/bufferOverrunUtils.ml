@@ -173,8 +173,6 @@ module Exec = struct
 
 
   let decl_string {pname; node_hash; location; integer_type_widths} ~do_alloc locs s mem =
-    let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
-    let offset = Itv.zero in
     let size =
       let s_length =
         if Language.curr_language_is Java then String.length s else String.length s + 1
@@ -205,7 +203,14 @@ module Exec = struct
             Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
               ~represents_multiple_values:true
           in
-          let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
+          let v =
+            if Language.curr_language_is Java then
+              Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
+            else
+              let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
+              let offset = Itv.zero in
+              Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
+          in
           (Loc.of_allocsite allocsite, Dom.Mem.update_mem (PowLoc.singleton loc) v mem)
         else (loc, mem)
       in
