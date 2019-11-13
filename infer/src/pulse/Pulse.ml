@@ -99,7 +99,7 @@ module PulseTransferFunctions = struct
     >>= PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base
 
 
-  let dispatch_call summary ret call_exp actuals call_loc flags astate =
+  let dispatch_call tenv summary ret call_exp actuals call_loc flags astate =
     (* evaluate all actuals *)
     List.fold_result actuals ~init:(astate, [])
       ~f:(fun (astate, rev_actuals_evaled) (actual_exp, actual_typ) ->
@@ -111,7 +111,7 @@ module PulseTransferFunctions = struct
     let model =
       match proc_name_of_call call_exp with
       | Some callee_pname ->
-          PulseModels.dispatch callee_pname flags
+          PulseModels.dispatch tenv callee_pname flags
       | None ->
           (* function pointer, etc.: skip for now *)
           None
@@ -139,7 +139,7 @@ module PulseTransferFunctions = struct
         posts
 
 
-  let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
+  let exec_instr (astate : Domain.t) {tenv; ProcData.summary} _cfg_node (instr : Sil.instr) =
     match instr with
     | Load {id= lhs_id; e= rhs_exp; loc} ->
         (* [lhs_id := *rhs_exp] *)
@@ -178,7 +178,8 @@ module PulseTransferFunctions = struct
           [post]
         else (* [condition] is known to be unsatisfiable: prune path *) []
     | Call (ret, call_exp, actuals, loc, call_flags) ->
-        dispatch_call summary ret call_exp actuals loc call_flags astate |> check_error summary
+        dispatch_call tenv summary ret call_exp actuals loc call_flags astate
+        |> check_error summary
     | Metadata (ExitScope (vars, location)) ->
         [PulseOperations.remove_vars vars location astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->

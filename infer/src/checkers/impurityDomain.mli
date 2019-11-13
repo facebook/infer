@@ -34,3 +34,5 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem list
 
 val join : t -> t -> t
+
+val pp : Format.formatter -> t -> unit

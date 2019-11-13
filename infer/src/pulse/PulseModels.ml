@@ -39,6 +39,14 @@ module Misc = struct
   let early_exit : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ _ -> Ok []
 
   let skip : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ astate -> Ok [astate]
+
+  let id_first_arg : model =
+   fun ~caller_summary:_ _ ~ret ~actuals astate ->
+    match actuals with
+    | (arg_access_hist, _) :: _ ->
+        Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
+    | _ ->
+        Ok [astate]
 end
 
 module C = struct
@@ -185,9 +193,9 @@ module StdVector = struct
         Ok [astate]
 
 
-  let at : model =
+  let at ~desc : model =
    fun ~caller_summary:_ location ~ret ~actuals astate ->
-    let event = ValueHistory.Call {f= Model "std::vector::at()"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     match actuals with
     | [(vector, _); (index, _)] ->
         element_of_internal_array location vector (fst index) astate
@@ -228,7 +236,7 @@ module StdVector = struct
 end
 
 module ProcNameDispatcher = struct
-  let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
+  let dispatch : (Tenv.t, model) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
@@ -243,10 +251,12 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace
       ; -"std" &:: "vector" &:: "emplace_back" &--> StdVector.invalidate_references EmplaceBack
       ; -"std" &:: "vector" &:: "insert" &--> StdVector.invalidate_references Insert
-      ; -"std" &:: "vector" &:: "operator[]" &--> StdVector.at
+      ; -"std" &:: "vector" &:: "operator[]" &--> StdVector.at ~desc:"std::vector::at()"
       ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back
       ; -"std" &:: "vector" &:: "reserve" &--> StdVector.reserve
-      ; -"std" &:: "vector" &:: "shrink_to_fit" &--> StdVector.invalidate_references ShrinkToFit ]
+      ; -"std" &:: "vector" &:: "shrink_to_fit" &--> StdVector.invalidate_references ShrinkToFit
+      ; +PatternMatch.implements_collection &:: "get" <>--> StdVector.at ~desc:"Collection.get()"
+      ; -"__cast" <>--> Misc.id_first_arg ]
 end
 
 let builtins_dispatcher =
@@ -274,12 +284,12 @@ let builtins_dispatcher =
   fun proc_name -> Hashtbl.find builtins_map proc_name
 
 
-let dispatch proc_name flags =
+let dispatch tenv proc_name flags =
   match builtins_dispatcher proc_name with
   | Some _ as result ->
       result
   | None -> (
-    match ProcNameDispatcher.dispatch () proc_name with
+    match ProcNameDispatcher.dispatch tenv proc_name with
     | Some _ as result ->
         result
     | None ->

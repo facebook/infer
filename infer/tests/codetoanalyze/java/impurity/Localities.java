@@ -158,4 +158,20 @@ class Localities {
     s2 = s1;
     s1 = temp;
   }
+
+  // @mod:{list}
+  void modify_first_el_impure(ArrayList<Foo> list) {
+    Foo first = list.get(0);
+    first.x = 0;
+  }
+
+  Foo get_first_pure(ArrayList<Foo> list) {
+    return list.get(0);
+  }
+
+  // @mod:{list}
+  void modify_via_call_impure(ArrayList<Foo> list) {
+    Foo first = get_first_pure(list);
+    first.inc_impure();
+  }
 }
