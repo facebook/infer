@@ -111,11 +111,21 @@ type checks = {eradicate: bool; check_ret_type: check_return_type list}
 let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
     (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
   match e with
+  (* null literal or 0 *)
   | _ when Exp.is_null_literal e ->
-      let typ, inferred_nullability = tr_default in
+      let typ, _ = tr_default in
+      (* 0 is not the same thing as null. They are encoded as the same thing in SIL.
+         We distinct them by type.
+      *)
       if PatternMatch.type_is_class typ then
-        (typ, InferredNullability.create_nullable (TypeOrigin.Const loc))
-      else (typ, InferredNullability.with_origin inferred_nullability (TypeOrigin.Const loc))
+        (typ, InferredNullability.create_nullable (TypeOrigin.NullConst loc))
+      else
+        (* 0 const (this is not the same as null) *)
+        (typ, InferredNullability.create_nonnull (TypeOrigin.NonnullConst loc))
+  | Exp.Const _ ->
+      let typ, _ = tr_default in
+      (* We already considered case of null literal above, so this is a non-null const. *)
+      (typ, InferredNullability.create_nonnull (TypeOrigin.NonnullConst loc))
   | Exp.Lvar pvar ->
       Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
   | Exp.Var id ->
@@ -123,9 +133,6 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
   | Exp.Exn e1 ->
       typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
         curr_pdesc typestate e1 tr_default loc
-  | Exp.Const _ ->
-      let typ, _ = tr_default in
-      (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc))
   | Exp.Lfield (exp, field_name, typ) ->
       let _, _ = tr_default in
       let _, inferred_nullability =

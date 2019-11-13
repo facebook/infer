@@ -73,8 +73,6 @@ let create_nullable origin = {origin; nullability= Nullability.Nullable}
 
 let create_nonnull origin = {origin; nullability= Nullability.Nonnull}
 
-let with_origin t o = {t with origin= o}
-
 let of_annotated_nullability annotated_nullability origin =
   match annotated_nullability with
   | AnnotatedNullability.Nullable _ ->

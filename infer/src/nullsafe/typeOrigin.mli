@@ -16,7 +16,8 @@ type proc_origin =
 [@@deriving compare]
 
 type t =
-  | Const of Location.t  (** A constant in the source *)
+  | NullConst of Location.t  (** A null literal in the source *)
+  | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
   | Field of t * Typ.Fieldname.t * Location.t  (** A field access *)
   | Formal of Mangled.t  (** A formal parameter *)
   | Proc of proc_origin  (** A procedure call *)

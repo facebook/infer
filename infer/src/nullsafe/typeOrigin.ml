@@ -17,20 +17,23 @@ type proc_origin =
 [@@deriving compare]
 
 type t =
-  | Const of Location.t
-  | Field of t * Typ.Fieldname.t * Location.t
-  | Formal of Mangled.t
-  | Proc of proc_origin
-  | New
-  | ONone
-  | Undef
+  | NullConst of Location.t  (** A null literal in the source *)
+  | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
+  | Field of t * Typ.Fieldname.t * Location.t  (** A field access *)
+  | Formal of Mangled.t  (** A formal parameter *)
+  | Proc of proc_origin  (** A procedure call *)
+  | New  (** A new object creation *)
+  | ONone  (** No origin is known *)
+  | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
 
 let equal = [%compare.equal: t]
 
 let rec to_string = function
-  | Const _ ->
-      "Const"
+  | NullConst _ ->
+      "null"
+  | NonnullConst _ ->
+      "Const (nonnull)"
   | Field (o, fn, _) ->
       "Field " ^ Typ.Fieldname.to_simplified_string fn ^ " (inner: " ^ to_string o ^ ")"
   | Formal s ->
@@ -48,7 +51,7 @@ let rec to_string = function
 let get_description origin =
   let atline loc = " at line " ^ string_of_int loc.Location.line in
   match origin with
-  | Const loc ->
+  | NullConst loc ->
       Some ("null constant" ^ atline loc, Some loc, None)
   | Field (_, fn, loc) ->
       Some ("field " ^ Typ.Fieldname.to_simplified_string fn ^ atline loc, Some loc, None)
@@ -67,7 +70,16 @@ let get_description origin =
           modelled_in (atline po.loc)
       in
       Some (description, Some po.loc, Some po.annotated_signature)
-  | New | ONone | Undef ->
+  (* These are origins of non-nullable expressions that are result of evaluating of some rvalue.
+     Because they are non-nullable and they are rvalues, we won't get normal type violations
+     With them. All we could get is things like condition redundant or overannotated.
+     But for these issues we currently don't print origins in the error string.
+     It is a good idea to change this and start printing origins for these origins as well.
+  *)
+  | New | NonnullConst _ ->
+      None
+  (* Two special cases - should not really occur in normal code *)
+  | ONone | Undef ->
       None
 
 
@@ -76,7 +88,7 @@ let join o1 o2 =
   (* left priority *)
   | Undef, _ | _, Undef ->
       Undef
-  | Field _, (Const _ | Formal _ | Proc _ | New) ->
+  | Field _, (NullConst _ | NonnullConst _ | Formal _ | Proc _ | New) ->
       (* low priority to Field, to support field initialization patterns *)
       o2
   | _ ->

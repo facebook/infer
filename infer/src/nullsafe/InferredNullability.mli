@@ -61,6 +61,3 @@ val join : t -> t -> t
 val origin_is_fun_library : t -> bool
 
 val to_string : t -> string
-
-val with_origin : t -> TypeOrigin.t -> t
-(** Leave the same nullability, but change the origin *)
