@@ -203,4 +203,21 @@ class ArrayListTest {
     j = a1.get(b.size() + 1);
     j = a2.get(b.size() + 1);
   }
+
+  void alias_join_bad() {
+    int i;
+    ArrayList<Integer> a = new ArrayList<>();
+    ArrayList<Integer> b = new ArrayList<>();
+    if (unknown_bool) {
+      a.add(0);
+      i = 0; // i = size of b
+    } else {
+      b.add(0);
+      b.add(0);
+      i = 0; // i = size of a
+    }
+    if (i == 0) {
+      b.get(0); // size of b should be [0, 2]
+    }
+  }
 }

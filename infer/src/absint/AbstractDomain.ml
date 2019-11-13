@@ -649,7 +649,10 @@ struct
             match (v1_opt, v2_opt) with
             | Some v1, Some v2 ->
                 let v = f v1 v2 in
-                if ValueDomain.is_top v then None
+                if ValueDomain.is_top v then (
+                  equals1 := false ;
+                  equals2 := false ;
+                  None )
                 else (
                   if not (phys_equal v v1) then equals1 := false ;
                   if not (phys_equal v v2) then equals2 := false ;
