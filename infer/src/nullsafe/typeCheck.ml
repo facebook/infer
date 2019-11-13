@@ -194,8 +194,8 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
     match Idenv.expand_expr idenv e with
     | Exp.Lvar pvar when name_is_temporary (Pvar.to_string pvar) -> (
       match pvar_get_origin pvar with
-      | Some (TypeOrigin.Formal s) ->
-          let pvar' = Pvar.mk s curr_pname in
+      | Some TypeOrigin.This ->
+          let pvar' = Pvar.mk Mangled.this curr_pname in
           Some (Exp.Lvar pvar')
       | _ ->
           None )

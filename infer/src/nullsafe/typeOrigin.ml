@@ -13,7 +13,8 @@ type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
   | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
-  | Formal of Mangled.t  (** A formal parameter *)
+  | MethodParameter of AnnotatedSignature.param_signature  (** A method's parameter *)
+  | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
@@ -43,8 +44,11 @@ let rec to_string = function
       "Field "
       ^ Typ.Fieldname.to_simplified_string field_name
       ^ " (object: " ^ to_string object_origin ^ ")"
-  | Formal s ->
-      "Formal " ^ Mangled.to_string s
+  | MethodParameter {mangled; param_annotated_type= {nullability}} ->
+      Format.asprintf "Param %s <%a>" (Mangled.to_string mangled) AnnotatedNullability.pp
+        nullability
+  | This ->
+      "this"
   | MethodCall {pname} ->
       Printf.sprintf "Fun %s" (Typ.Procname.to_simplified_string pname)
   | New ->
@@ -67,8 +71,8 @@ let get_description origin =
         ( "field " ^ Typ.Fieldname.to_simplified_string field_name ^ atline access_loc
         , Some access_loc
         , None )
-  | Formal s ->
-      Some ("method parameter " ^ Mangled.to_string s, None, None)
+  | MethodParameter {mangled} ->
+      Some ("method parameter " ^ Mangled.to_string mangled, None, None)
   | MethodCall {pname; call_loc; annotated_signature} ->
       let modelled_in =
         (* TODO(T54088319) don't calculate this info and propagate it from AnnotatedNullability instead *)
@@ -88,7 +92,7 @@ let get_description origin =
      But for these issues we currently don't print origins in the error string.
      It is a good idea to change this and start printing origins for these origins as well.
   *)
-  | New | NonnullConst _ | ArrayLengthResult ->
+  | This | New | NonnullConst _ | ArrayLengthResult ->
       None
   (* Two special cases - should not really occur in normal code *)
   | ONone | Undef ->
@@ -100,7 +104,7 @@ let join o1 o2 =
   (* left priority *)
   | Undef, _ | _, Undef ->
       Undef
-  | Field _, (NullConst _ | NonnullConst _ | Formal _ | MethodCall _ | New) ->
+  | Field _, (NullConst _ | NonnullConst _ | MethodParameter _ | This | MethodCall _ | New) ->
       (* low priority to Field, to support field initialization patterns *)
       o2
   | _ ->

@@ -35,9 +35,16 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
       let pvar = Pvar.mk param_signature.mangled curr_pname in
       let inferred_nullability =
-        let origin = TypeOrigin.Formal param_signature.mangled in
-        InferredNullability.of_annotated_nullability
-          param_signature.param_annotated_type.nullability origin
+        let formal_name = param_signature.mangled in
+        if Mangled.is_this formal_name then
+          (* `this` is technically an implicit method param, but from syntactic and semantic points of view it
+             has very special meaning and nullability limitations (it can never be null).
+          *)
+          InferredNullability.create_nonnull TypeOrigin.This
+        else
+          let origin = TypeOrigin.MethodParameter param_signature in
+          InferredNullability.of_annotated_nullability
+            param_signature.param_annotated_type.nullability origin
       in
       TypeState.add pvar (param_signature.param_annotated_type.typ, inferred_nullability) typestate
     in
