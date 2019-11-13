@@ -18,7 +18,14 @@ type t =
   | MethodCall of method_call_origin  (** A result of a method call *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
-  | ONone  (** No origin is known *)
+  (* Below are two special values. *)
+  | OptimisticFallback
+      (** Something went wrong during typechecking.
+          We fall back to optimistic (not-nullable) type to reduce potential non-actionable false positives.
+          Ideally we should not see these instances. They should be either processed gracefully
+          (and a dedicated type constructor should be added), or fixed.
+          T54687014 tracks unsoundness issues caused by this type.
+      *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
 
@@ -55,8 +62,8 @@ let rec to_string = function
       "New"
   | ArrayLengthResult ->
       "ArrayLength"
-  | ONone ->
-      "ONone"
+  | OptimisticFallback ->
+      "OptimisticFallback"
   | Undef ->
       "Undef"
 
@@ -95,7 +102,7 @@ let get_description origin =
   | This | New | NonnullConst _ | ArrayLengthResult ->
       None
   (* Two special cases - should not really occur in normal code *)
-  | ONone | Undef ->
+  | OptimisticFallback | Undef ->
       None
 
 

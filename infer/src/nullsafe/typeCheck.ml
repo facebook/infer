@@ -139,7 +139,7 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
         typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
           curr_pdesc typestate exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
+          (typ, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
           loc
       in
       let object_origin = InferredNullability.get_origin inferred_nullability in
@@ -294,7 +294,7 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
             None )
         |> Option.value_map
              ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
-             ~default:TypeOrigin.ONone
+             ~default:TypeOrigin.OptimisticFallback
       in
       let exp' = Idenv.expand_expr_temps idenv original_node exp_ in
       let is_parameter_field pvar =
@@ -458,7 +458,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
             (Some instr_ref) loc curr_pdesc ) ;
         TypeState.add pvar
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.ONone)
+          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
           typestate''
     | None ->
         typestate'
@@ -501,7 +501,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
     | Some (t, _) ->
         TypeState.add pvar
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.ONone)
+          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
           typestate1
     | None ->
         typestate1
@@ -699,7 +699,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         let e1 = Exp.Lvar pvar in
         let typ, ta =
           typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this
-            checks tenv original_node instr_ref typestate e1 (Typ.mk Tvoid) TypeOrigin.ONone loc
+            checks tenv original_node instr_ref typestate e1 (Typ.mk Tvoid)
+            TypeOrigin.OptimisticFallback loc
         in
         let range = (typ, ta) in
         let typestate1 = TypeState.add pvar range typestate in
@@ -744,7 +745,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       in
       let typ, inferred_nullability =
         typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
+          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.OptimisticFallback
+          loc
       in
       if checks.eradicate then
         EradicateChecks.check_zero tenv find_canonical_duplicate curr_pdesc node e' typ
@@ -782,7 +784,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       in
       let typ, inferred_nullability =
         typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
+          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.OptimisticFallback
+          loc
       in
       if checks.eradicate then
         EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc original_node e' typ
@@ -847,7 +850,7 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
       typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node instr_ref
         curr_pdesc typestate e2
         (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-        (t2, InferredNullability.create_nonnull TypeOrigin.ONone)
+        (t2, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
         loc
     in
     let actual = (orig_e2, inferred_nullability_actual) in
@@ -1079,7 +1082,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       (* cast copies the type of the first argument *)
       TypeState.add_id id
         (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-           tenv node instr_ref typestate' e' typ TypeOrigin.ONone loc)
+           tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
         typestate'
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
@@ -1088,7 +1091,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node
           instr_ref curr_pdesc typestate array_exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.ONone)
+          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
           loc
       in
       if checks.eradicate then
