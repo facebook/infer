@@ -9,32 +9,32 @@ let%test_module _ =
   ( module struct
     (* let () = Trace.init ~margin:68 ~config:all () *)
     let () = Trace.init ~margin:68 ~config:none ()
-    let pp = Format.printf "@\n%a@." Term.pp
-    let ( ! ) i = Term.integer (Z.of_int i)
-    let ( + ) = Term.add
-    let ( - ) = Term.sub
-    let ( * ) = Term.mul
-    let ( = ) = Term.eq
-    let ( != ) = Term.dq
-    let ( < ) = Term.lt
-    let ( <= ) = Term.le
-    let ( && ) = Term.and_
-    let ( || ) = Term.or_
-    let ( ~~ ) = Term.not_
+
+    open Term
+
+    let pp = Format.printf "@\n%a@." pp
+    let ( ! ) i = integer (Z.of_int i)
+    let ( + ) = add
+    let ( - ) = sub
+    let ( * ) = mul
+    let ( = ) = eq
+    let ( != ) = dq
+    let ( < ) = lt
+    let ( <= ) = le
+    let ( && ) = and_
+    let ( || ) = or_
+    let ( ~~ ) = not_
     let wrt = Var.Set.empty
     let y_, wrt = Var.fresh "y" ~wrt
     let z_, _ = Var.fresh "z" ~wrt
-    let y = Term.var y_
-    let z = Term.var z_
+    let y = var y_
+    let z = var z_
 
-    let%test "booleans distinct" =
-      Term.is_false (Term.eq Term.minus_one Term.zero)
-
-    let%test "unsigned booleans distinct" =
-      Term.is_false (Term.eq Term.one Term.zero)
+    let%test "booleans distinct" = is_false (eq minus_one zero)
+    let%test "unsigned booleans distinct" = is_false (eq one zero)
 
     let%test "boolean overflow" =
-      Term.is_true
+      is_true
         (Exp.eq
            (Exp.integer Typ.bool Z.minus_one)
            (Exp.convert ~dst:Typ.bool ~src:Typ.siz
@@ -70,7 +70,7 @@ let%test_module _ =
       [%expect {| -1 |}]
 
     let%test "unsigned boolean overflow" =
-      Term.is_true
+      is_true
         (Exp.uge
            (Exp.integer Typ.bool Z.minus_one)
            (Exp.convert ~dst:Typ.bool ~src:Typ.siz
@@ -201,19 +201,19 @@ let%test_module _ =
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pp (!3 * y = z = Term.true_) ;
+      pp (!3 * y = z = true_) ;
       [%expect {| ((3 × %y_1) = %z_2) |}]
 
     let%expect_test _ =
-      pp (Term.true_ = (!3 * y = z)) ;
+      pp (true_ = (!3 * y = z)) ;
       [%expect {| ((3 × %y_1) = %z_2) |}]
 
     let%expect_test _ =
-      pp (!3 * y = z = Term.false_) ;
+      pp (!3 * y = z = false_) ;
       [%expect {| ((3 × %y_1) ≠ %z_2) |}]
 
     let%expect_test _ =
-      pp (Term.false_ = (!3 * y = z)) ;
+      pp (false_ = (!3 * y = z)) ;
       [%expect {| ((3 × %y_1) ≠ %z_2) |}]
 
     let%expect_test _ =
@@ -233,11 +233,11 @@ let%test_module _ =
       [%expect {| ((-3 × %y_1 + 4) = %y_1) |}]
 
     let%expect_test _ =
-      pp (Term.sub Term.true_ (z = !4)) ;
+      pp (sub true_ (z = !4)) ;
       [%expect {| (-1 × (%z_2 = 4) + -1) |}]
 
     let%expect_test _ =
-      pp (Term.add Term.true_ (z = !4) = (z = !4)) ;
+      pp (add true_ (z = !4) = (z = !4)) ;
       [%expect {| (((%z_2 = 4) + -1) = (%z_2 = 4)) |}]
 
     let%expect_test _ =
@@ -269,9 +269,9 @@ let%test_module _ =
       [%expect {| ((%y_1 < 2) && (3 ≤ %z_2)) |}]
 
     let%expect_test _ =
-      pp Term.(eq z null) ;
-      pp Term.(eq null z) ;
-      pp Term.(dq (eq null z) false_) ;
+      pp (eq z null) ;
+      pp (eq null z) ;
+      pp (dq (eq null z) false_) ;
       [%expect
         {|
         (%z_2 = 0)
