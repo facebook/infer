@@ -118,14 +118,14 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
          We distinct them by type.
       *)
       if PatternMatch.type_is_class typ then
-        (typ, InferredNullability.create_nullable (TypeOrigin.NullConst loc))
+        (typ, InferredNullability.create (TypeOrigin.NullConst loc))
       else
         (* 0 const (this is not the same as null) *)
-        (typ, InferredNullability.create_nonnull (TypeOrigin.NonnullConst loc))
+        (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
   | Exp.Const _ ->
       let typ, _ = tr_default in
       (* We already considered case of null literal above, so this is a non-null const. *)
-      (typ, InferredNullability.create_nonnull (TypeOrigin.NonnullConst loc))
+      (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
   | Exp.Lvar pvar ->
       Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
   | Exp.Var id ->
@@ -139,16 +139,16 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
         typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
           curr_pdesc typestate exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
       let object_origin = InferredNullability.get_origin inferred_nullability in
       let tr_new =
         match AnnotatedField.get tenv field_name typ with
-        | Some AnnotatedField.{annotated_type} ->
-            ( annotated_type.typ
-            , InferredNullability.of_annotated_nullability annotated_type.nullability
-                (TypeOrigin.Field {object_origin; field_name; access_loc= loc}) )
+        | Some AnnotatedField.{annotated_type= field_type} ->
+            ( field_type.typ
+            , InferredNullability.create
+                (TypeOrigin.Field {object_origin; field_name; field_type; access_loc= loc}) )
         | None ->
             tr_default
       in
@@ -246,11 +246,11 @@ let update_typestate_fld ~is_assignment tenv access_loc typestate pvar object_or
       typestate
   | _ -> (
     match AnnotatedField.get tenv field_name typ with
-    | Some AnnotatedField.{annotated_type} ->
+    | Some AnnotatedField.{annotated_type= field_type} ->
         let range =
-          ( annotated_type.typ
-          , InferredNullability.of_annotated_nullability annotated_type.nullability
-              (TypeOrigin.Field {object_origin; field_name; access_loc}) )
+          ( field_type.typ
+          , InferredNullability.create
+              (TypeOrigin.Field {object_origin; field_name; field_type; access_loc}) )
         in
         TypeState.add pvar range typestate
     | None ->
@@ -424,7 +424,7 @@ let typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc ca
     node instr_ref typestate1 exp1 typ1 origin1 loc1 =
   typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node instr_ref
     curr_pdesc typestate1 exp1
-    (typ1, InferredNullability.create_nonnull origin1)
+    (typ1, InferredNullability.create origin1)
     loc1
 
 
@@ -458,7 +458,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
             (Some instr_ref) loc curr_pdesc ) ;
         TypeState.add pvar
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+          (t, InferredNullability.create TypeOrigin.OptimisticFallback)
           typestate''
     | None ->
         typestate'
@@ -501,7 +501,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
     | Some (t, _) ->
         TypeState.add pvar
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+          (t, InferredNullability.create TypeOrigin.OptimisticFallback)
           typestate1
     | None ->
         typestate1
@@ -850,7 +850,7 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
       typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node instr_ref
         curr_pdesc typestate e2
         (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-        (t2, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+        (t2, InferredNullability.create TypeOrigin.OptimisticFallback)
         loc
     in
     let actual = (orig_e2, inferred_nullability_actual) in
@@ -872,10 +872,7 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
         ; annotated_signature= callee_annotated_signature
         ; is_library }
     in
-    let ret_inferred_nullability =
-      InferredNullability.of_annotated_nullability ret.ret_annotated_type.nullability origin
-    in
-    (ret_inferred_nullability, ret.ret_annotated_type.typ)
+    (InferredNullability.create origin, ret.ret_annotated_type.typ)
   in
   let sig_len = List.length signature_params in
   let call_len = List.length call_params in
@@ -1069,7 +1066,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
       (* new never returns null *)
-      TypeState.add_id id (typ, InferredNullability.create_nonnull TypeOrigin.New) typestate
+      TypeState.add_id id (typ, InferredNullability.create TypeOrigin.New) typestate
   (* Type cast *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
@@ -1091,14 +1088,14 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node
           instr_ref curr_pdesc typestate array_exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+          (t, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
       if checks.eradicate then
         EradicateChecks.check_object_dereference ~is_strict_mode tenv find_canonical_duplicate
           curr_pdesc node instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
       TypeState.add_id id
-        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.ArrayLengthResult)
+        (Typ.mk (Tint Typ.IInt), InferredNullability.create TypeOrigin.ArrayLengthResult)
         typestate
   (* All other builtins that are not considered above *)
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->

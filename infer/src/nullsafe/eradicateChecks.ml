@@ -123,13 +123,13 @@ let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pd
   let t_lhs, inferred_nullability_lhs =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
       (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+      (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
       loc
   in
   let _, inferred_nullability_rhs =
     typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
       (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+      (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
       loc
   in
   let field_is_injector_readwrite () =
@@ -387,7 +387,7 @@ let check_call_receiver ~is_strict_mode tenv find_canonical_duplicate curr_pdesc
       let _, this_inferred_nullability =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create_nonnull TypeOrigin.OptimisticFallback)
+          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
       check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node

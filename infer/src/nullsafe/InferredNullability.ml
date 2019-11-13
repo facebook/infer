@@ -9,6 +9,8 @@ open! IStd
 
 type t = {nullability: Nullability.t; origin: TypeOrigin.t} [@@deriving compare]
 
+let create origin = {nullability= TypeOrigin.get_nullability origin; origin}
+
 let get_nullability {nullability} = nullability
 
 let is_nonnull_or_declared_nonnull {nullability} =
@@ -67,17 +69,3 @@ let origin_is_fun_library t =
       proc_origin.TypeOrigin.is_library
   | _ ->
       false
-
-
-let create_nullable origin = {origin; nullability= Nullability.Nullable}
-
-let create_nonnull origin = {origin; nullability= Nullability.Nonnull}
-
-let of_annotated_nullability annotated_nullability origin =
-  match annotated_nullability with
-  | AnnotatedNullability.Nullable _ ->
-      {origin; nullability= Nullability.Nullable}
-  | AnnotatedNullability.DeclaredNonnull _ ->
-      {origin; nullability= Nullability.DeclaredNonnull}
-  | AnnotatedNullability.Nonnull _ ->
-      {origin; nullability= Nullability.Nonnull}

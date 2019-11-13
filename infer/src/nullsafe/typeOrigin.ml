@@ -32,6 +32,7 @@ type t =
 and field_origin =
   { object_origin: t  (** field's object origin (object is before field access operator `.`)  *)
   ; field_name: Typ.Fieldname.t
+  ; field_type: AnnotatedType.t
   ; access_loc: Location.t }
 
 and method_call_origin =
@@ -41,6 +42,24 @@ and method_call_origin =
   ; is_library: bool }
 
 let equal = [%compare.equal: t]
+
+let get_nullability = function
+  | NullConst _ ->
+      Nullability.Nullable
+  | NonnullConst _
+  | This (* `this` can not be null according to Java rules *)
+  | New (* In Java `new` always create a non-null object  *)
+  | ArrayLengthResult (* integer hence non-nullable *)
+  | OptimisticFallback (* non-null is the most optimistic type *)
+  | Undef (* This is a very special case, assigning non-null is a technical trick *) ->
+      Nullability.Nonnull
+  | Field {field_type= {nullability}} ->
+      AnnotatedNullability.get_nullability nullability
+  | MethodParameter {param_annotated_type= {nullability}} ->
+      AnnotatedNullability.get_nullability nullability
+  | MethodCall {annotated_signature= {ret= {ret_annotated_type= {nullability}}}} ->
+      AnnotatedNullability.get_nullability nullability
+
 
 let rec to_string = function
   | NullConst _ ->

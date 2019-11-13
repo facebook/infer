@@ -34,18 +34,16 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       annotated_signature linereader proc_loc : bool * TypeState.t option =
     let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
       let pvar = Pvar.mk param_signature.mangled curr_pname in
-      let inferred_nullability =
-        let formal_name = param_signature.mangled in
+      let formal_name = param_signature.mangled in
+      let origin =
         if Mangled.is_this formal_name then
           (* `this` is technically an implicit method param, but from syntactic and semantic points of view it
              has very special meaning and nullability limitations (it can never be null).
           *)
-          InferredNullability.create_nonnull TypeOrigin.This
-        else
-          let origin = TypeOrigin.MethodParameter param_signature in
-          InferredNullability.of_annotated_nullability
-            param_signature.param_annotated_type.nullability origin
+          TypeOrigin.This
+        else TypeOrigin.MethodParameter param_signature
       in
+      let inferred_nullability = InferredNullability.create origin in
       TypeState.add pvar (param_signature.param_annotated_type.typ, inferred_nullability) typestate
     in
     let get_initial_typestate () =

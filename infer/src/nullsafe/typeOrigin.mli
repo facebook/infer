@@ -29,6 +29,7 @@ type t =
 and field_origin =
   { object_origin: t  (** field's object origin (object is before field access operator `.`)  *)
   ; field_name: Typ.Fieldname.t
+  ; field_type: AnnotatedType.t
   ; access_loc: Location.t }
 
 and method_call_origin =
@@ -38,6 +39,8 @@ and method_call_origin =
   ; is_library: bool }
 
 val equal : t -> t -> bool
+
+val get_nullability : t -> Nullability.t
 
 val get_description : t -> TypeErr.origin_descr option
 (** Get a description to be used for error messages. *)

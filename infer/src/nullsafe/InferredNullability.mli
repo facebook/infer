@@ -21,9 +21,7 @@ type t [@@deriving compare]
 
 val get_nullability : t -> Nullability.t
 
-val create_nullable : TypeOrigin.t -> t
-
-val create_nonnull : TypeOrigin.t -> t
+val create : TypeOrigin.t -> t
 
 val is_nonnull_or_declared_nonnull : t -> bool
 
@@ -34,12 +32,6 @@ val set_nonnull : t -> t
 val descr_origin : t -> TypeErr.origin_descr
 (** Human-readable description of the origin of a value.
   (How did nullsafe infer the nullability )
- *)
-
-val of_annotated_nullability : AnnotatedNullability.t -> TypeOrigin.t -> t
-(** Convert formal type to inferred nullability.
-  (e.g. to infer nullability of {[o]} in {[Object o = someFunction();]}
-   based on {[someFunction()]} formal return type.
  *)
 
 val get_origin : t -> TypeOrigin.t
