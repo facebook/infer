@@ -9,39 +9,39 @@
 
 [@@@warning "+9"]
 
+type op1 =
+  | Signed of {bits: int}
+  | Unsigned of {bits: int}
+  | Convert of {src: Typ.t; dst: Typ.t}
+  | Select of int
+[@@deriving compare, equal, hash, sexp]
+
+type op2 =
+  | Eq
+  | Dq
+  | Lt
+  | Le
+  | Ord
+  | Uno
+  | Div
+  | Rem
+  | And
+  | Or
+  | Xor
+  | Shl
+  | Lshr
+  | Ashr
+  | Splat
+  | Memory
+  | Update of int
+[@@deriving compare, equal, hash, sexp]
+
+type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
+type recN = Record [@@deriving compare, equal, hash, sexp]
+
 module rec T : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type op1 =
-    | Signed of {bits: int}
-    | Unsigned of {bits: int}
-    | Convert of {src: Typ.t; dst: Typ.t}
-    | Select of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op2 =
-    | Eq
-    | Dq
-    | Lt
-    | Le
-    | Ord
-    | Uno
-    | Div
-    | Rem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Splat
-    | Memory
-    | Update of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
-  type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
-  type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
@@ -73,37 +73,6 @@ end
 and T0 : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
-  type op1 =
-    | Signed of {bits: int}
-    | Unsigned of {bits: int}
-    | Convert of {src: Typ.t; dst: Typ.t}
-    | Select of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op2 =
-    | Eq
-    | Dq
-    | Lt
-    | Le
-    | Ord
-    | Uno
-    | Div
-    | Rem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Splat
-    | Memory
-    | Update of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
-  type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
-  type recN = Record [@@deriving compare, equal, hash, sexp]
-
   type t =
     | Add of qset
     | Mul of qset
@@ -120,37 +89,6 @@ and T0 : sig
   [@@deriving compare, equal, hash, sexp]
 end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type op1 =
-    | Signed of {bits: int}
-    | Unsigned of {bits: int}
-    | Convert of {src: Typ.t; dst: Typ.t}
-    | Select of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op2 =
-    | Eq
-    | Dq
-    | Lt
-    | Le
-    | Ord
-    | Uno
-    | Div
-    | Rem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Splat
-    | Memory
-    | Update of int
-  [@@deriving compare, equal, hash, sexp]
-
-  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
-  type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
-  type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
