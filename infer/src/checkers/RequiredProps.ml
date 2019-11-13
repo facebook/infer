@@ -137,7 +137,11 @@ module LithoContext = struct
                  || LithoFramework.is_component_create_method procname tenv )
                call_set )
     in
-    not build_exists_in_callees
+    match callee_pname with
+    | Typ.Procname.Java java_callee_procname ->
+        not (Typ.Procname.Java.is_static java_callee_procname || build_exists_in_callees)
+    | _ ->
+        not build_exists_in_callees
 
 
   let field = Payloads.Fields.litho_required_props

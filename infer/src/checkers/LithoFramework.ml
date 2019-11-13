@@ -115,7 +115,7 @@ struct
     match instr with
     | Call
         ( return_base
-        , Direct (Typ.Procname.Java java_callee_procname as callee_pname)
+        , Direct callee_pname
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , location ) ->
@@ -130,7 +130,6 @@ struct
           || (* track callee in order to report respective errors *)
           Domain.mem receiver astate
           (* track anything called on a receiver we're already tracking *) )
-          && (not (Typ.Procname.Java.is_static java_callee_procname))
           && LithoContext.satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
