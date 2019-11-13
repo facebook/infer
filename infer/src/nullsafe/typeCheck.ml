@@ -1094,7 +1094,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         EradicateChecks.check_object_dereference ~is_strict_mode tenv find_canonical_duplicate
           curr_pdesc node instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
       TypeState.add_id id
-        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New)
+        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.ArrayLengthResult)
         typestate
   (* All other builtins that are not considered above *)
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->

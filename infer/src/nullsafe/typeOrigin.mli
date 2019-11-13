@@ -22,6 +22,7 @@ type t =
   | Formal of Mangled.t  (** A formal parameter *)
   | Proc of proc_origin  (** A procedure call *)
   | New  (** A new object creation *)
+  | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ONone  (** No origin is known *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]

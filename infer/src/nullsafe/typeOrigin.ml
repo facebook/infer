@@ -23,6 +23,7 @@ type t =
   | Formal of Mangled.t  (** A formal parameter *)
   | Proc of proc_origin  (** A procedure call *)
   | New  (** A new object creation *)
+  | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ONone  (** No origin is known *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
@@ -42,6 +43,8 @@ let rec to_string = function
       Printf.sprintf "Fun %s" (Typ.Procname.to_simplified_string po.pname)
   | New ->
       "New"
+  | ArrayLengthResult ->
+      "ArrayLength"
   | ONone ->
       "ONone"
   | Undef ->
@@ -76,7 +79,7 @@ let get_description origin =
      But for these issues we currently don't print origins in the error string.
      It is a good idea to change this and start printing origins for these origins as well.
   *)
-  | New | NonnullConst _ ->
+  | New | NonnullConst _ | ArrayLengthResult ->
       None
   (* Two special cases - should not really occur in normal code *)
   | ONone | Undef ->
