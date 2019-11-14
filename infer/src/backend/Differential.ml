@@ -250,9 +250,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
       let cold_start_or_ui_msg =
         let common_msg = "It is very important to avoid potential regressions in this phase." in
         if is_on_ui_thread then
-          Format.asprintf "This function is called on the UI Thread! %s" common_msg
+          Format.asprintf "%a %s" MarkupFormatter.pp_bold
+            "This function is called on the UI Thread!" common_msg
         else if ExternalPerfData.in_profiler_data_map procname then
-          Format.asprintf "This function is called during cold start! %s" common_msg
+          Format.asprintf "%a %s" MarkupFormatter.pp_bold
+            "This function is called during cold start!" common_msg
         else ""
       in
       let msg =
