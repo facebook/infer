@@ -316,6 +316,24 @@ public class ArrayListTest {
     HashMap<Integer, Integer> m = init_with_put_linear(a);
     for (HashMap.Entry<Integer, Integer> e : m.entrySet()) {}
   }
+
+  boolean unknown_bool;
+
+  void id(ArrayList<Integer> a) {
+    a.add(0);
+    a.remove(0);
+  }
+
+  void substitute_array_block_linear(ArrayList<Integer> a, ArrayList<Integer> b) {
+    ArrayList<Integer> c;
+    if (unknown_bool) {
+      c = a;
+    } else {
+      c = b;
+    }
+    id(c);
+    iterate_over_arraylist(a);
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {

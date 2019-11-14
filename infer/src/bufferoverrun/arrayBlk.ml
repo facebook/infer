@@ -270,6 +270,14 @@ module ArrInfo = struct
         cmp_itv Itv.zero Itv.zero
     | _ ->
         Boolean.Top
+
+
+  let is_symbolic_length_of_path path info =
+    match (path, info) with
+    | Symb.SymbolPath.Deref (_, prefix), Java {length} ->
+        Itv.is_length_path_of prefix length
+    | _ ->
+        false
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -333,6 +341,10 @@ let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> PowLoc.t * t =
         let locs = eval_locpath path in
         let add_allocsite l (powloc_acc, acc) =
           match l with
+          | Loc.Allocsite (Symbol (Symb.SymbolPath.Deref (_, prefix)) as a)
+            when ArrInfo.is_symbolic_length_of_path path info ->
+              let length = Itv.of_length_path ~is_void:false prefix in
+              (powloc_acc, add a (ArrInfo.make_java ~length) acc)
           | Loc.Allocsite a ->
               (powloc_acc, add a info' acc)
           | _ ->
