@@ -36,29 +36,90 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
+  let log_parse_error error pname actuals =
+    L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+      (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+      actuals
+
+
+  (** convert an expression to a canonical form for a lock identifier *)
+  let get_lock_path extras = function
+    | HilExp.AccessExpression access_exp -> (
+      match HilExp.AccessExpression.to_access_path access_exp with
+      | (((Var.ProgramVar pvar, _) as base), _) as path
+        when FormalMap.is_formal base extras || Pvar.is_global pvar ->
+          Some (AccessPath.inner_class_normalize path)
+      | _ ->
+          (* ignore paths on local or logical variables *)
+          None )
+    | HilExp.Constant (Const.Cclass class_id) ->
+        (* this is a synchronized/lock(CLASSNAME.class) construct *)
+        Some (lock_of_class class_id)
+    | _ ->
+        None
+
+
+  let do_assume assume_exp (astate : Domain.t) =
+    let open Domain in
+    let add_choice (acc : Domain.t) bool_value =
+      let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
+      {acc with thread}
+    in
+    match HilExp.get_access_exprs assume_exp with
+    | [access_expr] when AttributeDomain.is_thread_guard access_expr astate.attributes ->
+        HilExp.eval_boolean_exp access_expr assume_exp |> Option.fold ~init:astate ~f:add_choice
+    | _ ->
+        astate
+
+
+  let do_thread_assert_effect (ret_var, _) callee (astate : Domain.t) =
+    let open Domain in
+    match ConcurrencyModels.get_thread_assert_effect callee with
+    | BackgroundThread ->
+        {astate with thread= ThreadDomain.BGThread}
+    | MainThread ->
+        {astate with thread= ThreadDomain.UIThread}
+    | MainThreadIfTrue ->
+        let attributes = AttributeDomain.add ret_var Attribute.Thread astate.attributes in
+        {astate with attributes}
+    | UnknownThread ->
+        astate
+
+
+  let do_work_scheduling tenv callee actuals loc (astate : Domain.t) =
+    let schedule_work runnable init thread =
+      StarvationModels.get_run_method_from_runnable tenv runnable
+      |> Option.fold ~init ~f:(Domain.schedule_work loc thread)
+    in
+    match actuals with
+    | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable]
+      when StarvationModels.schedules_work tenv callee ->
+        let thread_opt =
+          IList.force_until_first_some
+            [ (* match an executor call that we have a model for *)
+              lazy (StarvationModels.get_executor_thread_constraint tenv executor)
+            ; (* match an executor call where the executor is stored in a variable *)
+              lazy (Domain.AttributeDomain.get_executor_constraint executor astate.attributes) ]
+        in
+        Option.fold thread_opt ~init:astate ~f:(schedule_work runnable)
+    | _ ->
+        astate
+
+
+  let do_executor_effect tenv (ret_var, _) callee actuals astate =
+    let open Domain in
+    StarvationModels.get_executor_effect ~attrs_of_pname tenv callee actuals
+    |> Option.fold ~init:astate ~f:(fun acc effect ->
+           let attributes =
+             AttributeDomain.add ret_var (Attribute.Executor effect) astate.attributes
+           in
+           {acc with attributes} )
+
+
   let exec_instr (astate : Domain.t) {ProcData.summary; tenv; extras} _ (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
-    let log_parse_error error pname actuals =
-      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
-        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
-        actuals
-    in
-    let get_lock_path = function
-      | HilExp.AccessExpression access_exp -> (
-        match HilExp.AccessExpression.to_access_path access_exp with
-        | (((Var.ProgramVar pvar, _) as base), _) as path
-          when FormalMap.is_formal base extras || Pvar.is_global pvar ->
-            Some (AccessPath.inner_class_normalize path)
-        | _ ->
-            (* ignore paths on local or logical variables *)
-            None )
-      | HilExp.Constant (Const.Cclass class_id) ->
-          (* this is a synchronized/lock(CLASSNAME.class) construct *)
-          Some (lock_of_class class_id)
-      | _ ->
-          None
-    in
+    let get_lock_path = get_lock_path extras in
     let procname = Summary.get_proc_name summary in
     let is_java = Typ.Procname.is_java procname in
     let do_lock locks loc astate =
@@ -70,52 +131,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Payload.read ~caller_summary:summary ~callee_pname:callee
       |> Option.fold ~init:astate ~f:(Domain.integrate_summary tenv callsite)
     in
-    let do_assume assume_exp (astate : Domain.t) =
-      let open Domain in
-      let add_choice (acc : Domain.t) bool_value =
-        let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
-        {acc with thread}
-      in
-      match HilExp.get_access_exprs assume_exp with
-      | [access_expr] when BranchGuardDomain.is_thread_guard access_expr astate.branch_guards ->
-          HilExp.eval_boolean_exp access_expr assume_exp |> Option.fold ~init:astate ~f:add_choice
-      | _ ->
-          astate
-    in
-    let do_thread_assert_effect ret_base callee (astate : Domain.t) =
-      let open Domain in
-      match ConcurrencyModels.get_thread_assert_effect callee with
-      | BackgroundThread ->
-          {astate with thread= ThreadDomain.BGThread}
-      | MainThread ->
-          {astate with thread= ThreadDomain.UIThread}
-      | MainThreadIfTrue ->
-          let ret_access_exp = HilExp.AccessExpression.base ret_base in
-          let branch_guards =
-            BranchGuardDomain.add ret_access_exp BranchGuard.Thread astate.branch_guards
-          in
-          {astate with branch_guards}
-      | UnknownThread ->
-          astate
-    in
-    let do_work_scheduling actuals loc astate =
-      match actuals with
-      (* match an executor call where the second arg is the runnable object *)
-      | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable] ->
-          StarvationModels.get_executor_thread_constraint tenv executor
-          |> Option.fold ~init:astate ~f:(fun init thread ->
-                 StarvationModels.get_run_method_from_runnable tenv runnable
-                 |> Option.fold ~init ~f:(Domain.schedule_work loc thread) )
-      | _ ->
-          astate
-    in
     match instr with
-    | Assign _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
+    | Assign _ | Call (_, Indirect _, _, _, _) ->
         astate
-    | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
+    | Metadata (Sil.ExitScope (vars, _)) ->
+        {astate with attributes= Domain.AttributeDomain.exit_scope vars astate.attributes}
+    | Metadata _ ->
         astate
     | Assume (assume_exp, _, _, _) ->
         do_assume assume_exp astate
+    | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
+        astate
     | Call (ret_base, Direct callee, actuals, _, loc) -> (
       match get_lock_effect callee actuals with
       | Lock locks ->
@@ -143,10 +169,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
-      | NoEffect when is_java && StarvationModels.schedules_work tenv callee ->
-          do_work_scheduling actuals loc astate
       | NoEffect when is_java -> (
-          let astate = do_thread_assert_effect ret_base callee astate in
+          let astate =
+            do_thread_assert_effect ret_base callee astate
+            |> do_executor_effect tenv ret_base callee actuals
+            |> do_work_scheduling tenv callee actuals loc
+          in
           match may_block tenv callee actuals with
           | Some sev ->
               Domain.blocking_call ~callee sev ~loc astate

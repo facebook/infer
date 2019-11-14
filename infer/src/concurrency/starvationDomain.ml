@@ -442,29 +442,56 @@ module GuardToLockMap = struct
   let add_guard astate ~guard ~lock = add guard (FlatLock.v lock) astate
 end
 
-module BranchGuard = struct
-  type t = Nothing | Thread
+module Attribute = struct
+  type t = Nothing | Thread | Executor of StarvationModels.executor_thread_constraint
+  [@@deriving equal]
 
   let top = Nothing
 
   let is_top = function Nothing -> true | _ -> false
 
-  let pp fmt t = F.fprintf fmt (match t with Nothing -> "Nothing" | Thread -> "Thread")
+  let pp fmt t =
+    ( match t with
+    | Nothing ->
+        "Nothing"
+    | Thread ->
+        "Thread"
+    | Executor StarvationModels.ForUIThread ->
+        "Executor(UI)"
+    | Executor StarvationModels.ForNonUIThread ->
+        "Executor(BG)" )
+    |> F.pp_print_string fmt
 
-  let leq ~lhs ~rhs =
-    match (lhs, rhs) with _, Nothing -> true | Nothing, _ -> false | Thread, Thread -> true
 
+  let join lhs rhs = if equal lhs rhs then lhs else Nothing
 
-  let join lhs rhs = match (lhs, rhs) with Thread, Thread -> lhs | _ -> Nothing
+  let leq ~lhs ~rhs = equal (join lhs rhs) rhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module BranchGuardDomain = struct
-  include AbstractDomain.InvertedMap (HilExp.AccessExpression) (BranchGuard)
+module AttributeDomain = struct
+  include AbstractDomain.InvertedMap (Var) (Attribute)
 
-  let is_thread_guard acc_exp t =
-    find_opt acc_exp t |> Option.exists ~f:(function BranchGuard.Thread -> true | _ -> false)
+  let is_thread_guard (acc_exp : HilExp.AccessExpression.t) t =
+    match acc_exp with
+    | Base (v, _) ->
+        find_opt v t |> Option.exists ~f:(function Attribute.Thread -> true | _ -> false)
+    | _ ->
+        false
+
+
+  let get_executor_constraint (acc_exp : HilExp.AccessExpression.t) t =
+    match acc_exp with
+    | Base (v, _) ->
+        find_opt v t |> Option.bind ~f:(function Attribute.Executor c -> Some c | _ -> None)
+    | _ ->
+        None
+
+
+  let exit_scope vars t =
+    let pred key _value = not (List.exists vars ~f:(Var.equal key)) in
+    filter pred t
 end
 
 module ScheduledWorkItem = struct
@@ -481,7 +508,7 @@ type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
-  ; branch_guards: BranchGuardDomain.t
+  ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t }
 
@@ -489,7 +516,7 @@ let bottom =
   { guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
-  ; branch_guards= BranchGuardDomain.empty
+  ; attributes= AttributeDomain.empty
   ; thread= ThreadDomain.bottom
   ; scheduled_work= ScheduledWorkDomain.bottom }
 
@@ -498,17 +525,17 @@ let is_bottom astate =
   GuardToLockMap.is_empty astate.guard_map
   && LockState.is_top astate.lock_state
   && CriticalPairs.is_empty astate.critical_pairs
-  && BranchGuardDomain.is_top astate.branch_guards
+  && AttributeDomain.is_top astate.attributes
   && ThreadDomain.is_bottom astate.thread
   && ScheduledWorkDomain.is_bottom astate.scheduled_work
 
 
 let pp fmt astate =
   F.fprintf fmt
-    "{guard_map= %a; lock_state= %a; critical_pairs= %a; branch_guards= %a; thread= %a; \
+    "{guard_map= %a; lock_state= %a; critical_pairs= %a; attributes= %a; thread= %a; \
      scheduled_work= %a}"
     GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state CriticalPairs.pp
-    astate.critical_pairs BranchGuardDomain.pp astate.branch_guards ThreadDomain.pp astate.thread
+    astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp astate.thread
     ScheduledWorkDomain.pp astate.scheduled_work
 
 
@@ -516,7 +543,7 @@ let join lhs rhs =
   { guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
-  ; branch_guards= BranchGuardDomain.join lhs.branch_guards rhs.branch_guards
+  ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
   ; thread= ThreadDomain.join lhs.thread rhs.thread
   ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work }
 
@@ -527,7 +554,7 @@ let leq ~lhs ~rhs =
   GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
   && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
-  && BranchGuardDomain.leq ~lhs:lhs.branch_guards ~rhs:rhs.branch_guards
+  && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
   && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
   && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
 

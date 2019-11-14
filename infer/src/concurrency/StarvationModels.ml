@@ -204,15 +204,15 @@ let is_annotated_lockless ~attrs_of_pname tenv pname =
   |> Option.is_some
 
 
+let executor_type_str = "java.util.concurrent.Executor"
+
 let schedules_work =
   let open MethodMatcher in
-  let matcher =
-    [{default with classname= "java.util.concurrent.Executor"; methods= ["execute"]}] |> of_records
-  in
+  let matcher = [{default with classname= executor_type_str; methods= ["execute"]}] |> of_records in
   fun tenv pname -> matcher tenv pname []
 
 
-type executor_thread_constraint = ForUIThread | ForNonUIThread
+type executor_thread_constraint = ForUIThread | ForNonUIThread [@@deriving equal]
 
 (* Executors are usually stored in fields and annotated according to what type of thread 
    they schedule work on.  Given an expression representing such a field, try to find the kind of 
@@ -250,3 +250,28 @@ let get_run_method_from_runnable tenv runnable =
   |> Option.bind ~f:(Tenv.lookup tenv)
   |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.methods)
   |> Option.bind ~f:(List.find ~f:is_run_method)
+
+
+(* Syntactically match for certain methods known to return executors. *)
+let get_executor_effect ~attrs_of_pname tenv callee actuals =
+  let type_check =
+    lazy
+      ( attrs_of_pname callee
+      |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
+             match attrs.ret_type.Typ.desc with
+             | Tstruct tname | Typ.Tptr ({desc= Tstruct tname}, _) ->
+                 PatternMatch.is_subtype_of_str tenv tname executor_type_str
+             | _ ->
+                 false ) )
+  in
+  match (callee, actuals) with
+  | Typ.Procname.Java java_pname, [] -> (
+    match Typ.Procname.Java.get_method java_pname with
+    | "getForegroundExecutor" when Lazy.force type_check ->
+        Some ForUIThread
+    | "getBackgroundExecutor" when Lazy.force type_check ->
+        Some ForNonUIThread
+    | _ ->
+        None )
+  | _ ->
+      None

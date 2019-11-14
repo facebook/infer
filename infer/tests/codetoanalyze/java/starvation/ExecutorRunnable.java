@@ -96,4 +96,58 @@ class ExecutorRunnable {
           }
         });
   }
+
+  public void postDeadlockIndirectBad() {
+    Executors.getForegroundExecutor()
+        .execute(
+            new Runnable() {
+              @Override
+              public void run() {
+                lockAB();
+              }
+            });
+
+    Executors.getBackgroundExecutor()
+        .execute(
+            new Runnable() {
+              @Override
+              public void run() {
+                lockBA();
+              }
+            });
+  }
+
+  public void postOnUIThreadIndirectOk() {
+    Executors.getForegroundExecutor()
+        .execute(
+            new Runnable() {
+              @Override
+              public void run() {
+                lockAB();
+              }
+            });
+
+    Executors.getForegroundExecutor()
+        .execute(
+            new Runnable() {
+              @Override
+              public void run() {
+                lockBA();
+              }
+            });
+  }
+}
+
+class Executors {
+  static Executor uiExecutor;
+
+  static Executor getForegroundExecutor() {
+    return uiExecutor;
+  }
+
+  static Executor bgExecutor;
+
+  static Executor getBackgroundExecutor() {
+    return bgExecutor;
+  }
 }

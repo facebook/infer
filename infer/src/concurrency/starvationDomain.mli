@@ -95,21 +95,24 @@ module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
 module GuardToLockMap : AbstractDomain.WithTop
 
-(** tracks whether an expression has been tested for whether we execute on UI thread *)
-module BranchGuard : sig
-  type t = Nothing | Thread
+(** Tracks whether a variable has been tested for whether we execute on UI thread, or 
+    has been assigned an executor object. *)
+module Attribute : sig
+  type t = Nothing | Thread | Executor of StarvationModels.executor_thread_constraint
 
   include AbstractDomain.WithTop with type t := t
 end
 
-(** tracks all expressions currently known to have been tested for conditions in [BranchGuard] *)
-module BranchGuardDomain : sig
-  include
-    AbstractDomain.InvertedMapS
-      with type key = HilExp.AccessExpression.t
-       and type value = BranchGuard.t
+(** Tracks all variables assigned values of [Attribute] *)
+module AttributeDomain : sig
+  include AbstractDomain.InvertedMapS with type key = Var.t and type value = Attribute.t
 
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
+
+  val get_executor_constraint :
+    HilExp.AccessExpression.t -> t -> StarvationModels.executor_thread_constraint option
+
+  val exit_scope : Var.t list -> t -> t
 end
 
 (** A record of scheduled parallel work: the method scheduled to run, where, and on what thread. *)
@@ -125,7 +128,7 @@ type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
-  ; branch_guards: BranchGuardDomain.t
+  ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t }
 
