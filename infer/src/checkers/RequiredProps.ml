@@ -155,6 +155,10 @@ module LithoContext = struct
 
   let report astate tenv summary =
     let check_required_prop_chain _ call_chain =
+      let call_chain =
+        List.drop_while call_chain ~f:(fun Domain.MethodCall.{procname} ->
+            not (LithoFramework.is_component_create_method procname tenv) )
+      in
       let rev_chain = List.rev call_chain in
       match rev_chain with
       | Domain.MethodCall.{procname} :: _

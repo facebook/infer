@@ -109,7 +109,14 @@ public class RequiredProps {
   }
 
   // due to mutual recursion check, we break cycle at seen props
-  public Component doubleSetOk_FP() {
+  public Component doubleSetMissingBad_FN() {
+    Component.Builder builder =
+        mMyComponent.create().commonProp(new Object()).prop3(new Object()).commonProp(new Object());
+    return builder.build();
+  }
+
+  // due to mutual recursion check, we break cycle at seen props
+  public Component doubleSetCommonOk() {
     Component.Builder builder =
         mMyComponent
             .create()
