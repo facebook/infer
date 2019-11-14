@@ -34,7 +34,7 @@ RUN apt-get update && \
 RUN cd /usr/local/bin && ln -s /usr/bin/python2.7 python
 
 # Install opam 2
-RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-linux > /usr/bin/opam && \
+RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.5/opam-2.0.5-x86_64-linux > /usr/bin/opam && \
     chmod +x /usr/bin/opam
 
 # Disable sandboxing
@@ -56,14 +56,14 @@ RUN cd /infer && \
     ./facebook-clang-plugins/clang/setup.sh
 
 # Generate a release
-RUN cd /infer && \ 
+RUN cd /infer && \
     make install-with-libs \
-    BUILD_MODE=opt \ 
+    BUILD_MODE=opt \
     PATCHELF=patchelf \
-    DESTDIR="/infer-release" \ 
+    DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
 
-FROM debian:stretch-slim AS executor 
+FROM debian:stretch-slim AS executor
 
 # Install python 2.7 since infer requires it to run
 RUN apt-get update && apt-get install --yes --no-install-recommends \
