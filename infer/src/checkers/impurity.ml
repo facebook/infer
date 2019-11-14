@@ -15,12 +15,6 @@ let debug fmt = L.(debug Analysis Verbose fmt)
 (* An impurity analysis that relies on pulse to determine how the state
    changes *)
 
-module Payload = SummaryPayload.Make (struct
-  type t = ImpurityDomain.t
-
-  let field = Payloads.Fields.impurity
-end)
-
 let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractValue.t list option =
   match
     List.fold2 ~init:(Some [])
@@ -131,13 +125,12 @@ let report_errors summary modified_opt =
   let pname_loc = Procdesc.get_loc pdesc in
   let impure_fun_desc = F.asprintf "Impure function %a" Typ.Procname.pp proc_name in
   let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-  match modified_opt with
+  ( match modified_opt with
   | None ->
       Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
-        impure_fun_desc ;
-      summary
+        impure_fun_desc
   | Some (ImpurityDomain.{modified_globals; modified_params} as astate) ->
-      ( if Purity.should_report pdesc && not (ImpurityDomain.is_pure astate) then
+      if Purity.should_report pdesc && not (ImpurityDomain.is_pure astate) then
         let modified_ltr param_source set acc =
           ImpurityDomain.ModifiedVarSet.fold
             (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
@@ -148,7 +141,7 @@ let report_errors summary modified_opt =
           :: modified_ltr Formal modified_params (modified_ltr Global modified_globals [])
         in
         Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc ) ;
-      Payload.update_summary astate summary
+  summary
 
 
 let checker ({Callbacks.summary} as callback) : Summary.t =

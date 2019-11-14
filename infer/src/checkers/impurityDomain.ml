@@ -66,14 +66,3 @@ let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
   in
   let first_trace, rest = trace_list in
   List.fold_left rest ~init:(aux ~nesting errlog first_trace) ~f:(aux ~nesting)
-
-
-let pp fmt ({modified_globals; modified_params} as astate) =
-  if is_pure astate then F.fprintf fmt "@\n pure @\n"
-  else if ModifiedVarSet.is_empty modified_params then
-    F.fprintf fmt "@\n impure, modified globals :%a @\n" ModifiedVarSet.pp modified_globals
-  else if ModifiedVarSet.is_empty modified_globals then
-    F.fprintf fmt "@\n impure, modified params :%a @\n" ModifiedVarSet.pp modified_params
-  else
-    F.fprintf fmt "@\n impure, modified params :%a, modified globals :%a @\n" ModifiedVarSet.pp
-      modified_params ModifiedVarSet.pp modified_globals
