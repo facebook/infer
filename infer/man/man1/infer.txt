@@ -475,6 +475,7 @@ OPTIONS
              STARVATION (enabled by default),
              STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
              STRICT_MODE_VIOLATION (enabled by default),
+             STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              TAINTED_BUFFER_ACCESS (enabled by default),
              TAINTED_MEMORY_ALLOCATION (enabled by default),

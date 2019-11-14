@@ -1463,29 +1463,11 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
   res
 
 
-let is_weak_captured_var pdesc var_name =
-  let pname = Procdesc.get_proc_name pdesc in
-  match pname with
-  | Block _ ->
-      let is_weak_captured (var, typ) =
-        match typ.Typ.desc with
-        | Typ.Tptr (_, Pk_objc_weak) ->
-            String.equal var_name (Mangled.to_string var)
-        | _ ->
-            false
-      in
-      List.exists ~f:is_weak_captured (Procdesc.get_captured pdesc)
-  | _ ->
-      false
-
-
-let var_has_annotation ?(check_weak_captured_var = false) pdesc is_annotation pvar =
-  let is_weak_captured_var = is_weak_captured_var pdesc (Pvar.to_string pvar) in
+let var_has_annotation pdesc is_annotation pvar =
   let ann_sig =
     Models.get_modelled_annotated_signature_for_biabduction (Procdesc.get_attributes pdesc)
   in
   AnnotatedSignature.param_has_annot is_annotation pvar ann_sig
-  || (check_weak_captured_var && is_weak_captured_var)
 
 
 let attr_has_annot is_annotation tenv prop exp =
@@ -1521,16 +1503,13 @@ let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp (fld, s
 (* This returns true if the exp is pointed to only by fields or parameters with a given
    annotation. In that case it also returns a string representation of the annotation
    recipient. *)
-let is_only_pt_by_fld_or_param_with_annot ?(check_weak_captured_var = false) pdesc tenv prop
-    deref_exp is_annotation =
+let is_only_pt_by_fld_or_param_with_annot pdesc tenv prop deref_exp is_annotation =
   let obj_str = ref None in
   let is_pt_by_fld_or_param_with_annot hpred =
     match hpred with
     | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp ((Exp.Var _ as exp), _), _)
       when Exp.equal exp deref_exp ->
-        let var_has_annotation =
-          Pvar.is_seed pvar && var_has_annotation ~check_weak_captured_var pdesc is_annotation pvar
-        in
+        let var_has_annotation = Pvar.is_seed pvar && var_has_annotation pdesc is_annotation pvar in
         if var_has_annotation then obj_str := Some (Pvar.to_string pvar) ;
         let procname_str_opt = attr_has_annot is_annotation tenv prop exp in
         if Option.is_some procname_str_opt then obj_str := procname_str_opt ;
@@ -1547,8 +1526,7 @@ let is_only_pt_by_fld_or_param_with_annot ?(check_weak_captured_var = false) pde
 
 
 let is_only_pt_by_fld_or_param_nullable pdesc tenv prop deref_exp =
-  is_only_pt_by_fld_or_param_with_annot ~check_weak_captured_var:true pdesc tenv prop deref_exp
-    Annotations.ia_is_nullable
+  is_only_pt_by_fld_or_param_with_annot pdesc tenv prop deref_exp Annotations.ia_is_nullable
 
 
 let is_only_pt_by_fld_or_param_nonnull pdesc tenv prop deref_exp =
@@ -1599,8 +1577,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
     let deref_str =
       match nullable_var_opt with
       | Some str ->
-          if is_weak_captured_var pdesc str then Localise.deref_str_weak_variable_in_block None str
-          else Localise.deref_str_nullable None str
+          Localise.deref_str_nullable None str
       | None ->
           Localise.deref_str_null None
     in

@@ -200,14 +200,6 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
   deref_str_null proc_name_opt
 
 
-(** dereference strings for null dereference due to weak captured variable in block *)
-let deref_str_weak_variable_in_block proc_name_opt nullable_obj_str =
-  let tags = Tags.create () in
-  Tags.update tags Tags.weak_captured_var_src nullable_obj_str ;
-  let problem_str = "" in
-  deref_str_null_ proc_name_opt problem_str
-
-
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
 let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   let function_method, nil_null =

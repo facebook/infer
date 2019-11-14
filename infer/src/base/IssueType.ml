@@ -345,6 +345,8 @@ let missing_fld = register_from_string "Missing_fld" ~hum:"Missing Field"
 
 let missing_required_prop = register_from_string "MISSING_REQUIRED_PROP"
 
+let mixed_self_weakself = register_from_string "MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf"
+
 let mutable_local_variable_in_component_file =
   register_from_string "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
 
@@ -413,7 +415,9 @@ let strict_mode_violation =
   register_from_string "STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation"
 
 
-let mixed_self_weakself = register_from_string "MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf"
+let strong_self_not_checked =
+  register_from_string "STRONG_SELF_NOT_CHECKED" ~hum:"Strong Self Not Checked"
+
 
 let symexec_memory_error =
   register_from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"

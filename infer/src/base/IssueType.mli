@@ -230,6 +230,8 @@ val missing_fld : t
 
 val missing_required_prop : t
 
+val mixed_self_weakself : t
+
 val mutable_local_variable_in_component_file : t
 
 val null_dereference : t
@@ -286,7 +288,7 @@ val static_initialization_order_fiasco : t
 
 val strict_mode_violation : t
 
-val mixed_self_weakself : t
+val strong_self_not_checked : t
 
 val symexec_memory_error : t
 
