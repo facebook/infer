@@ -381,6 +381,11 @@ module type Common = sig
     -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Ends template arguments and starts a name *)
 
+  val ( >::+ ) :
+       ('a, 'b, 'c, 'd, 'e, 'f, 'g) templ_matcher
+    -> ('a -> string -> bool)
+    -> ('a, 'b, 'c, 'd, 'e, 'f) name_matcher
+
   val ( &+...>:: ) :
        ( 'context
        , 'f_in
@@ -512,6 +517,8 @@ module Common = struct
   let ( < ) name_matcher template_arg = name_matcher <! () &+ template_arg
 
   let ( >:: ) templ_matcher name = templ_matcher >! () &::! name
+
+  let ( >::+ ) templ_matcher f_name = templ_matcher >! () &::+! f_name
 
   let ( &+...>:: ) templ_matcher name = templ_matcher &+...>! () &::! name
 

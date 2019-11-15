@@ -7,6 +7,7 @@
 open! IStd
 open Result.Monad_infix
 open PulseBasicInterface
+open PulseDomainInterface
 
 type exec_fun =
      caller_summary:Summary.t
@@ -37,6 +38,17 @@ module Misc = struct
 
 
   let early_exit : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ _ -> Ok []
+
+  let return_int : Int64.t -> model =
+   fun i64 ~caller_summary:_ location ~ret:(ret_id, _) ~actuals:_ astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let astate =
+      Memory.add_attribute ret_addr
+        (Arithmetic (Arithmetic.equal_to (IntLit.of_int64 i64), Immediate {location; history= []}))
+        astate
+    in
+    Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
+
 
   let skip : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ astate -> Ok [astate]
 
@@ -243,6 +255,9 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "basic_string" &:: "~basic_string" &--> StdBasicString.destructor
       ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
       ; -"std" &:: "function" &:: "operator=" &--> Misc.shallow_copy "std::function::operator="
+      ; -"std" &:: "integral_constant" < any_typ &+ capt_int
+        >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+        &--> Misc.return_int
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace

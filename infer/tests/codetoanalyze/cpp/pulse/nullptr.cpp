@@ -4,6 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+#include <type_traits>
+
 void assign_zero_ok() {
   int x[2];
   x[1] = 42;
@@ -54,4 +57,36 @@ void compare_to_null(void* x) {
 void deref_after_compare_ok(int* x) {
   compare_to_null(x);
   *x = 42;
+}
+
+bool return_true() { return std::true_type{}; }
+
+void std_true_type_impossible_deref_ok() {
+  int* x = nullptr;
+  if (!return_true()) {
+    *x = 42;
+  }
+}
+
+void std_true_type_deref_bad() {
+  int* x = nullptr;
+  if (return_true()) {
+    *x = 42;
+  }
+}
+
+bool return_false() { return std::false_type{}; }
+
+void std_false_type_impossible_deref_ok() {
+  int* x = nullptr;
+  if (return_false()) {
+    *x = 42;
+  }
+}
+
+void std_false_type_deref_bad() {
+  int* x = nullptr;
+  if (!return_false()) {
+    *x = 42;
+  }
 }
