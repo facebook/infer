@@ -112,6 +112,27 @@ let%test_module _ =
     let%test _ = entails_eq r2 (g x y) (g z y)
     let%test _ = difference (or_ r1 r2) x z |> Poly.equal None
 
+    let%expect_test _ =
+      let r = of_eqs [(w, y); (y, z)] in
+      let s = of_eqs [(x, y); (y, z)] in
+      let rs = or_ r s in
+      pp r ;
+      pp s ;
+      pp rs ;
+      [%expect
+        {|
+        {sat= true; rep= [[%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
+
+        {sat= true; rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]}
+
+        {sat= true; rep= [[%z_7 ↦ %y_6]]} |}]
+
+    let%test _ =
+      let r = of_eqs [(w, y); (y, z)] in
+      let s = of_eqs [(x, y); (y, z)] in
+      let rs = or_ r s in
+      entails_eq rs y z
+
     let r3 = of_eqs [(g y z, w); (v, w); (g y w, t); (x, v); (x, u); (u, z)]
 
     let%expect_test _ =

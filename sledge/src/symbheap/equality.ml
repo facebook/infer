@@ -250,17 +250,27 @@ let and_ r s =
     Map.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> and_eq e e' r)
 
 let or_ r s =
-  if not s.sat then r
+  [%Trace.call fun {pf} -> pf "@[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
+  ;
+  ( if not s.sat then r
   else if not r.sat then s
   else
     let merge_mems rs r s =
-      Map.fold s.rep ~init:rs ~f:(fun ~key:e ~data:e' rs ->
-          if entails_eq r e e' then and_eq e e' rs else rs )
+      Map.fold (classes s) ~init:rs ~f:(fun ~key:rep ~data:cls rs ->
+          List.fold cls
+            ~init:([rep], rs)
+            ~f:(fun (reps, rs) exp ->
+              match List.find ~f:(entails_eq r exp) reps with
+              | Some rep -> (reps, and_eq exp rep rs)
+              | None -> (exp :: reps, rs) )
+          |> snd )
     in
     let rs = true_ in
     let rs = merge_mems rs r s in
     let rs = merge_mems rs s r in
-    rs
+    rs )
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp]
 
 (* assumes that f is injective and for any set of terms E, f[E] is disjoint
    from E *)
