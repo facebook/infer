@@ -92,11 +92,10 @@ module PulseTransferFunctions = struct
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope call_loc (pvar, typ) astate =
     let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
-    (* invalidate both [&x] and [x]: reading either is now forbidden *)
+    (* invalidate [&x] *)
     PulseOperations.eval call_loc (Exp.Lvar pvar) astate
     >>= fun (astate, out_of_scope_base) ->
-    PulseOperations.invalidate_deref call_loc gone_out_of_scope out_of_scope_base astate
-    >>= PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base
+    PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
 
 
   let dispatch_call tenv summary ret call_exp actuals call_loc flags astate =
