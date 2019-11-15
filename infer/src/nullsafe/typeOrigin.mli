@@ -16,6 +16,7 @@ type t =
   | MethodCall of method_call_origin  (** A result of a method call *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
+  | ArrayAccess  (** Result of accessing an array by index *)
   | InferredNonnull of {previous_origin: t}
       (** The value is inferred as non-null during flow-sensitive type inference
           (most commonly from relevant condition branch or assertion explicitly comparing the value with `null`) *)

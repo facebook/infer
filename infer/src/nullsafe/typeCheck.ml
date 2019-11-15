@@ -170,7 +170,8 @@ let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks t
           curr_pdesc node instr_ref array_exp
           (DereferenceRule.AccessByIndex {index_desc})
           inferred_nullability loc ;
-      tr_default
+      let typ, _ = tr_default in
+      (typ, InferredNullability.create TypeOrigin.ArrayAccess)
   | _ ->
       tr_default
 
