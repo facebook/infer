@@ -4,8 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
+module L = Logging
 
 module Bound = struct
   type t = Int of IntLit.t | MinusInfinity | PlusInfinity [@@deriving compare]
@@ -83,6 +85,27 @@ module Bound = struct
         false
     | _ ->
         le b1 b2
+
+
+  let add b1 b2 =
+    match (b1, b2) with
+    | MinusInfinity, (MinusInfinity | Int _) | Int _, MinusInfinity ->
+        MinusInfinity
+    | PlusInfinity, (PlusInfinity | Int _) | Int _, PlusInfinity ->
+        PlusInfinity
+    | Int i1, Int i2 ->
+        Int (IntLit.add i1 i2)
+    | MinusInfinity, PlusInfinity | PlusInfinity, MinusInfinity ->
+        L.die InternalError "cannot add %a and %a" pp b1 pp b2
+
+
+  let minus = function
+    | MinusInfinity ->
+        PlusInfinity
+    | Int i ->
+        Int (IntLit.neg i)
+    | PlusInfinity ->
+        MinusInfinity
 end
 
 module Unsafe : sig
@@ -396,3 +419,50 @@ let abduce_binop_is_true ~negated bop v1 v2 =
       let a1 = Option.value v1 ~default:unknown in
       let a2 = Option.value v2 ~default:unknown in
       abduce_binop_constraints ~negated bop a1 a2
+
+
+let add a1 a2 =
+  match (a1, a2) with
+  | Between (lower1, upper1), Between (lower2, upper2) ->
+      Some (between (Bound.add lower1 lower2) (Bound.add upper1 upper2))
+  | _ ->
+      None
+
+
+let minus = function
+  | Between (lower, upper) ->
+      Some (between (Bound.minus upper) (Bound.minus lower))
+  | Outside (l, u) ->
+      Some (outside (IntLit.neg u) (IntLit.neg l))
+
+
+let binop (bop : Binop.t) a_lhs a_rhs =
+  let open Option.Monad_infix in
+  match bop with
+  | PlusA _ ->
+      add a_lhs a_rhs
+  | MinusA _ ->
+      minus a_rhs >>= add a_lhs
+  | PlusPI
+  | MinusPI
+  | MinusPP
+  | Mult _
+  | Div
+  | Mod
+  | Shiftlt
+  | Shiftrt
+  | Lt
+  | Gt
+  | Le
+  | Ge
+  | Eq
+  | Ne
+  | BAnd
+  | BXor
+  | BOr
+  | LAnd
+  | LOr ->
+      None
+
+
+let unop (unop : Unop.t) a = match unop with Neg -> minus a | BNot | LNot -> None

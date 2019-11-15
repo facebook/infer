@@ -50,3 +50,73 @@ void compare_deref_ok(int *x) {
     *x = 42;
   }
 }
+
+void arith_test_ok(int* x, int y, int z) {
+  free(x);
+  if (y != 0 && y != 1 && y >= 1) { // should infer y >= 2
+    if (y < 2) { // always false
+      *x = 42;
+    }
+  }
+}
+
+void add_test1_ok(int* x) {
+  free(x);
+  int y = 0;
+  if (y + 1 != 1) { // always false
+    *x = 42;
+  }
+}
+
+void add_test2_ok(int* x, int y, int z) {
+  free(x);
+  if (y >= 0) {
+    if (z >= 4 && z <= 42) {
+      if (y + z < 4 || y + z <= 3 || z + 5 > 47) { // always false
+        *x = 42;
+      }
+    }
+  }
+}
+
+void add_test3_bad(int* x, int y, int z) {
+  free(x);
+  if (y > 2 && y + z > 5) { // sometimes true
+    *x = 42;
+  }
+}
+
+void add_test4_bad_FN(int* x) {
+  free(x);
+  // the concrete bound is never reached because it requires too many iterations
+  // and we never widen
+  for (int i = 0; i < 1000; i++) {
+  }
+  *x = 42;
+}
+
+void add_test5_bad(int* x, int n) {
+  free(x);
+  // the unknown bound is treated non-deterministically, good thing here
+  for (int i = 0; i < n; i++) {
+  }
+  *x = 42;
+}
+
+void add_test6_bad(int* x, int n, int step) {
+  free(x);
+  // the unknown bound is treated non-deterministically, "bad thing" here as
+  // loop should diverge but arguably the code is wrong and should have a more
+  // explicit "false" condition (so not marking FP because we would want to
+  // report here)
+  for (int i = n - 1; i < n;) {
+  }
+  *x = 42;
+}
+
+void minus_test_ok(int* x) {
+  free(x);
+  if (-1 + 3 - 2 != 0) { // always false
+    *x = 42;
+  }
+}

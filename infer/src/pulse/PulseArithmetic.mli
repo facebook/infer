@@ -35,3 +35,7 @@ val abduce_binop_is_true : negated:bool -> Binop.t -> t option -> t option -> ab
 
     If [negated] then imagine a similar explanation replacing "= ∅" with "≠ ∅" and vice-versa.
 *)
+
+val binop : Binop.t -> t -> t -> t option
+
+val unop : Unop.t -> t -> t option
