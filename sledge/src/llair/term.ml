@@ -1034,16 +1034,17 @@ let solve e f =
   ;
   let rec solve_ e f s =
     let solve_uninterp e f =
-      let ord = compare e f in
-      match (is_constant e, is_constant f) with
-      | true, true when ord <> 0 -> None
-      (* orient equation to discretionarily prefer term that is constant or
-         compares smaller as class representative *)
-      | true, false -> Some (Map.add_exn s ~key:f ~data:e)
-      | false, true -> Some (Map.add_exn s ~key:e ~data:f)
-      | _ ->
-          let key, data = if ord > 0 then (e, f) else (f, e) in
-          Some (Map.add_exn s ~key ~data)
+      match (e, f) with
+      | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
+      | _ -> (
+        match (is_constant e, is_constant f) with
+        (* orient equation to discretionarily prefer term that is constant
+           or compares smaller as class representative *)
+        | true, false -> Some (Map.add_exn s ~key:f ~data:e)
+        | false, true -> Some (Map.add_exn s ~key:e ~data:f)
+        | _ ->
+            let key, data = if compare e f > 0 then (e, f) else (f, e) in
+            Some (Map.add_exn s ~key ~data) )
     in
     let concat_size args =
       Vector.fold_until args ~init:zero
