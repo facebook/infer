@@ -137,6 +137,9 @@ let eval location exp0 astate =
           Memory.add_attribute addr
             (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
             astate
+          |> Memory.invalidate
+               (addr, [ValueHistory.Assignment location])
+               (ConstantDereference i) location
         in
         Ok (astate, (addr, []))
     | Const _ | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->

@@ -23,9 +23,9 @@ val pp_std_vector_function : F.formatter -> std_vector_function -> unit
 
 type t =
   | CFree
+  | ConstantDereference of IntLit.t
   | CppDelete
   | GoneOutOfScope of Pvar.t * Typ.t
-  | Nullptr
   | StdVector of std_vector_function
 [@@deriving compare]
 

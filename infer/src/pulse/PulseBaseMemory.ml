@@ -75,10 +75,10 @@ let invalidate (address, history) invalidation location memory =
 let check_valid address memory =
   L.d_printfln "Checking validity of %a" AbstractValue.pp address ;
   match Graph.find_opt address (snd memory) |> Option.bind ~f:Attributes.get_invalid with
-  | Some invalidation ->
-      Error invalidation
   | None ->
       Ok ()
+  | Some invalidation ->
+      Error invalidation
 
 
 let get_attribute getter address memory =

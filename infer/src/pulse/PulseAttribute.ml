@@ -54,7 +54,9 @@ module Attribute = struct
     Variants.to_rank (AddressOfStackVariable (var, location, []))
 
 
-  let invalid_rank = Variants.to_rank (Invalid (Invalidation.Nullptr, dummy_trace))
+  let invalid_rank =
+    Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
+
 
   let must_be_valid_rank = Variants.to_rank (MustBeValid dummy_trace)
 

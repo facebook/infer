@@ -197,6 +197,10 @@ let condition_always_false = register_from_string ~enabled:false "CONDITION_ALWA
 
 let condition_always_true = register_from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
 
+let constant_address_dereference =
+  register_from_string ~enabled:false "CONSTANT_ADDRESS_DEREFERENCE"
+
+
 let create_intent_from_uri = register_from_string "CREATE_INTENT_FROM_URI"
 
 let cross_site_scripting = register_from_string "CROSS_SITE_SCRIPTING"
@@ -354,6 +358,8 @@ let mutable_local_variable_in_component_file =
 let null_dereference = register_from_string "NULL_DEREFERENCE"
 
 let null_test_after_dereference = register_from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"
+
+let nullptr_dereference = register_from_string ~enabled:false "NULLPTR_DEREFERENCE"
 
 let nullsafe_field_not_nullable =
   register_from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"

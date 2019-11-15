@@ -119,6 +119,8 @@ val condition_always_false : t
 
 val condition_always_true : t
 
+val constant_address_dereference : t
+
 val create_intent_from_uri : t
 
 val cross_site_scripting : t
@@ -237,6 +239,8 @@ val mutable_local_variable_in_component_file : t
 val null_dereference : t
 
 val null_test_after_dereference : t
+
+val nullptr_dereference : t
 
 val nullsafe_field_not_nullable : t
 

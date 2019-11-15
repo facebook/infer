@@ -39,21 +39,23 @@ let pp_std_vector_function f = function
 
 type t =
   | CFree
+  | ConstantDereference of IntLit.t
   | CppDelete
   | GoneOutOfScope of Pvar.t * Typ.t
-  | Nullptr
   | StdVector of std_vector_function
 [@@deriving compare]
 
 let issue_type_of_cause = function
   | CFree ->
       IssueType.use_after_free
+  | ConstantDereference i when IntLit.iszero i ->
+      IssueType.nullptr_dereference
+  | ConstantDereference _ ->
+      IssueType.constant_address_dereference
   | CppDelete ->
       IssueType.use_after_delete
   | GoneOutOfScope _ ->
       IssueType.use_after_lifetime
-  | Nullptr ->
-      IssueType.null_dereference
   | StdVector _ ->
       IssueType.vector_invalidation
 
@@ -62,6 +64,10 @@ let describe f cause =
   match cause with
   | CFree ->
       F.pp_print_string f "was invalidated by call to `free()`"
+  | ConstantDereference i when IntLit.iszero i ->
+      F.pp_print_string f "is the null pointer"
+  | ConstantDereference i ->
+      F.fprintf f "is the constant %a" IntLit.pp i
   | CppDelete ->
       F.pp_print_string f "was invalidated by `delete`"
   | GoneOutOfScope (pvar, typ) ->
@@ -71,8 +77,6 @@ let describe f cause =
         else F.fprintf f "is the address of a stack variable `%a`" Pvar.pp_value pvar
       in
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
-  | Nullptr ->
-      F.pp_print_string f "is the null pointer"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
 
@@ -81,11 +85,11 @@ let pp f invalidation =
   match invalidation with
   | CFree ->
       F.fprintf f "CFree(%a)" describe invalidation
+  | ConstantDereference _ ->
+      F.fprintf f "ConstantDereference(%a)" describe invalidation
   | CppDelete ->
       F.fprintf f "CppDelete(%a)" describe invalidation
   | GoneOutOfScope _ ->
-      describe f invalidation
-  | Nullptr ->
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
