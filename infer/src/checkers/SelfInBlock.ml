@@ -87,14 +87,17 @@ module PPPVar = struct
 end
 
 module CheckedForNull = struct
-  type t = {checked: bool}
+  type t = {checked: bool; loc: Location.t}
 
   let pp fmt {checked} =
     let s = match checked with true -> "Checked" | false -> "NotChecked" in
     F.fprintf fmt "%s" s
 
 
-  let join {checked= elem1} {checked= elem2} = {checked= AbstractDomain.BooleanAnd.join elem1 elem2}
+  let join {checked= elem1; loc= loc1} {checked= elem2; loc= loc2} =
+    let loc = match (elem1, elem2) with true, false -> loc2 | false, _ | true, true -> loc1 in
+    {checked= AbstractDomain.BooleanAnd.join elem1 elem2; loc}
+
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
@@ -152,8 +155,11 @@ module TransferFunctions = struct
     try
       let elem = Vars.find id astate.vars in
       if StrongEqualToWeakCapturedVars.mem elem.pvar astate.strongVars then
+        let strongVarElem = StrongEqualToWeakCapturedVars.find elem.pvar astate.strongVars in
         let strongVars =
-          StrongEqualToWeakCapturedVars.add elem.pvar {checked= true} astate.strongVars
+          StrongEqualToWeakCapturedVars.add elem.pvar
+            {strongVarElem with checked= true}
+            astate.strongVars
         in
         let vars =
           (* We may have added UNCHECKED_STRONG_SELF in the previous Load instr,
@@ -183,12 +189,12 @@ module TransferFunctions = struct
             with Not_found_s _ | Caml.Not_found -> astate.vars
         in
         {astate with vars}
-    | Store {e1= Lvar pvar; e2= Var id; typ= pvar_typ} ->
+    | Store {e1= Lvar pvar; e2= Var id; typ= pvar_typ; loc} ->
         let strongVars =
           try
             let {DomainData.pvar= binding_for_id} = Vars.find id astate.vars in
             if is_captured_weak_self attributes binding_for_id && Typ.is_strong_pointer pvar_typ
-            then StrongEqualToWeakCapturedVars.add pvar {checked= false} astate.strongVars
+            then StrongEqualToWeakCapturedVars.add pvar {checked= false; loc} astate.strongVars
             else astate.strongVars
           with Not_found_s _ | Caml.Not_found -> astate.strongVars
         in
@@ -240,9 +246,38 @@ let report_mix_self_weakself_issues summary domain =
       ()
 
 
-let report_unchecked_strongself_issues summary domain =
+let make_trace_unchecked_strongself (domain : Domain.t) =
+  let trace_elems_strongVars =
+    StrongEqualToWeakCapturedVars.fold
+      (fun pvar {loc} trace_elems ->
+        let trace_elem_desc = F.asprintf "%a assigned here" (Pvar.pp Pp.text) pvar in
+        let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+        trace_elem :: trace_elems )
+      domain.strongVars []
+  in
+  let trace_elems_vars =
+    Vars.fold
+      (fun _ {pvar; loc; kind} trace_elems ->
+        match kind with
+        | UNCHECKED_STRONG_SELF ->
+            let trace_elem_desc =
+              F.asprintf "Using %a not checked for null" (Pvar.pp Pp.text) pvar
+            in
+            let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+            trace_elem :: trace_elems
+        | _ ->
+            trace_elems )
+      domain.vars []
+  in
+  let trace_elems = List.append trace_elems_strongVars trace_elems_vars in
+  List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
+      Location.compare loc1 loc2 )
+
+
+let report_unchecked_strongself_issues summary (domain : Domain.t) =
   let unchecked_strongSelf_opt =
-    Vars.filter (fun _ {kind} -> DomainData.is_unchecked_strong_self kind) domain |> Vars.choose_opt
+    Vars.filter (fun _ {kind} -> DomainData.is_unchecked_strong_self kind) domain.vars
+    |> Vars.choose_opt
   in
   match unchecked_strongSelf_opt with
   | Some (_, {pvar; loc}) ->
@@ -252,7 +287,8 @@ let report_unchecked_strongself_issues summary domain =
            at %a. This could cause a crash."
           (Pvar.pp Pp.text) pvar Location.pp loc
       in
-      Reporting.log_error summary ~loc IssueType.strong_self_not_checked message
+      let ltr = make_trace_unchecked_strongself domain in
+      Reporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message
   | _ ->
       ()
 
@@ -268,7 +304,7 @@ let checker {Callbacks.exe_env; summary} =
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
         report_mix_self_weakself_issues summary domain.vars ;
-        report_unchecked_strongself_issues summary domain.vars
+        report_unchecked_strongself_issues summary domain
     | None ->
         () ) ;
   summary
