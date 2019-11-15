@@ -243,6 +243,34 @@ public class RequiredProps {
     return layoutBuilder.build();
   }
 
+  public void castImpossibleOk_FP(Object o1) {
+    Component.Builder builder = mMyLithoComponent.create();
+    if (builder instanceof MyComponent.Builder)
+      ((MyComponent.Builder) builder)
+          .build(); // this branch will never be taken but we can't detect it yet
+  }
+
+  void castOk(Object o1) {
+    Component.Builder builder = mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
+    if (builder instanceof MyLithoComponent.Builder)
+      ((MyLithoComponent.Builder) builder).build(); // this branch will be taken
+  }
+
+  Component.Builder createBuilder() {
+    return mMyLithoComponent.create();
+  }
+
+  void castMissingOneBad(Object o1) {
+    Component.Builder builder = createBuilder();
+    if (builder instanceof MyLithoComponent.Builder)
+      ((MyLithoComponent.Builder) builder).prop2(new Object()).build(); // this branch will be taken
+  }
+
+  void buildMissingProp3_FN() {
+    Component.Builder builder = mMyComponent.create();
+    ((MyLithoComponent.Builder) builder).prop1(new Object()).prop2(new Object()).build();
+  }
+
   public class NonRequiredTreeProps {
 
     public MyTreeComponent mMyTreeComponent;
