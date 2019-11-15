@@ -36,7 +36,7 @@ class IntTest {
     }
   }
 
-  void control_var_band_add_constant_FP(int x, int y) {
+  void control_var_band_add_constant(int x, int y) {
     int z;
     for (int i = 0; i < 10; i++) {
       if (unknown_bool) {

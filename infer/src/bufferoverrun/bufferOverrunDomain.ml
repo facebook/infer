@@ -269,7 +269,9 @@ module Val = struct
     of_itv (Itv.set_lb_zero (Itv.of_int max_char))
 
 
-  let set_itv_updated_by itv_updated_by x = {x with itv_updated_by}
+  let set_itv_updated_by itv_updated_by x =
+    {x with itv_updated_by= ItvUpdatedBy.join x.itv_updated_by itv_updated_by}
+
 
   let set_itv_updated_by_addition = set_itv_updated_by ItvUpdatedBy.Addition
 
