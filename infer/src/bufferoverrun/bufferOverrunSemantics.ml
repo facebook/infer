@@ -159,9 +159,9 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         match bop with
         | Binop.(PlusA _ | MinusA _ | MinusPP) ->
             Val.set_itv_updated_by_addition v
-        | Binop.(Mult _ | Div | Mod | Shiftlt | Shiftrt | BAnd | BXor | BOr) ->
+        | Binop.(Mult _ | Div | Mod | Shiftlt | Shiftrt) ->
             Val.set_itv_updated_by_multiplication v
-        | Binop.(PlusPI | MinusPI | Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr) ->
+        | Binop.(PlusPI | MinusPI | Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr | BAnd | BXor | BOr) ->
             Val.set_itv_updated_by_unknown v )
     | Exp.Const c ->
         eval_const integer_type_widths c

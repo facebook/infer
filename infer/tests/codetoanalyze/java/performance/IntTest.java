@@ -19,4 +19,34 @@ class IntTest {
     Integer x = p; // call to valueOf
     for (int count = 0; count < x; count++) {}
   }
+
+  boolean unknown_bool;
+
+  void control_var_band_constant(int x, int y) {
+    int z;
+    for (int i = 0; i < 10; i++) {
+      if (unknown_bool) {
+        z = x & y;
+      } else {
+        z = x | y;
+      }
+      if (z == 0) {
+        break;
+      }
+    }
+  }
+
+  void control_var_band_add_constant_FP(int x, int y) {
+    int z;
+    for (int i = 0; i < 10; i++) {
+      if (unknown_bool) {
+        z = (x & y) + 1;
+      } else {
+        z = (x | y) + 1;
+      }
+      if (z == 0) {
+        break;
+      }
+    }
+  }
 }
