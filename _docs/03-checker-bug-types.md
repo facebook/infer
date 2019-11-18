@@ -25,6 +25,7 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Retain cycle](/docs/checkers-bug-types.html#RETAIN_CYCLE)
   - [Static initialization order fiasco](/docs/checkers-bug-types.html#STATIC_INITIALIZATION_ORDER_FIASCO)
   - [Strict mode violation](/docs/checkers-bug-types.html#STRICT_MODE_VIOLATION)
+  - [StrongSelf Not Checked](/docs/checkers-bug-types.html#STRONG_SELF_NOT_CHECKED) 
   - [Thread-safety violation](/docs/checkers-bug-types.html#THREAD_SAFETY_VIOLATION)
   - [UI Thread Starvation](/docs/checkers-bug-types.html#STARVATION)
   - [Unsafe_GuardedBy_Access](/docs/checkers-bug-types.html#UNSAFE_GUARDEDBY_ACCESS)
@@ -810,6 +811,21 @@ This instructs Infer to filter out any potentially blocking calls in `m()` (also
 Android has a feature called [strict mode](https://developer.android.com/reference/android/os/StrictMode), which if enabled, will flag the occasions where the main thread makes a call that results in disk I/O, waiting on a network socket, etc. The analysis catching starvation errors and deadlocks (the `--starvation` analysis) has the ability to statically detect such violations.
 
 To suppress this warning, it's enough to annotate the offending method with `@SuppressLint("STRICT_MODE_VIOLATION")`.
+
+<a name="STRONG_SELF_NOT_CHECKED"></a>
+
+## StrongSelf Not Checked
+
+When a block captures `weakSelf` in the following pattern:
+
+```
+__weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    int y = strongSelf->x;
+```
+
+the variable `strongSelf` should be checked for `null` before being used, otherwise this could cause a crash because the weak pointer `weakSelf` could be `null`. 
 
 <a name="UNSAFE_GUARDEDBY_ACCESS"></a>
 
