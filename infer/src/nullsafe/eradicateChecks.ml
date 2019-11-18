@@ -32,11 +32,11 @@ let check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_
     (DereferenceRule.check ~is_strict_mode
        (InferredNullability.get_nullability inferred_nullability))
     ~f:(fun dereference_violation ->
-      let origin_descr = InferredNullability.descr_origin inferred_nullability in
+      let nullable_object_origin = InferredNullability.get_origin inferred_nullability in
       let nullable_object_descr = explain_expr tenv node object_exp in
       let type_error =
         TypeErr.Nullable_dereference
-          {dereference_violation; nullable_object_descr; dereference_type; origin_descr}
+          {dereference_violation; nullable_object_descr; dereference_type; nullable_object_origin}
       in
       report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname )
 
@@ -159,11 +159,11 @@ let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pd
         && not (field_is_in_cleanup_context ())
       in
       if should_report then
-        let rhs_origin_descr = InferredNullability.descr_origin inferred_nullability_rhs in
+        let rhs_origin = InferredNullability.get_origin inferred_nullability_rhs in
         report_error tenv find_canonical_duplicate
           (TypeErr.Bad_assignment
              { assignment_violation
-             ; rhs_origin_descr
+             ; rhs_origin
              ; assignment_type= AssignmentRule.AssigningToField fname })
           (Some instr_ref) loc curr_pdesc )
 
@@ -326,11 +326,11 @@ let check_return_not_nullable ~is_strict_mode tenv find_canonical_duplicate loc 
   let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   let rhs = InferredNullability.get_nullability ret_inferred_nullability in
   Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:(fun assignment_violation ->
-      let rhs_origin_descr = InferredNullability.descr_origin ret_inferred_nullability in
+      let rhs_origin = InferredNullability.get_origin ret_inferred_nullability in
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
            { assignment_violation
-           ; rhs_origin_descr
+           ; rhs_origin
            ; assignment_type= AssignmentRule.ReturningFromFunction curr_pname })
         None loc curr_pdesc )
 
@@ -436,11 +436,11 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
         | None ->
             "formal parameter " ^ Mangled.to_string formal.mangled
       in
-      let rhs_origin_descr = InferredNullability.descr_origin nullability_actual in
+      let rhs_origin = InferredNullability.get_origin nullability_actual in
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
            { assignment_violation
-           ; rhs_origin_descr
+           ; rhs_origin
            ; assignment_type=
                AssignmentRule.PassingParamToFunction
                  {param_description; param_position; function_procname= callee_pname} })

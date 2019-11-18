@@ -25,5 +25,5 @@ val violation_description :
      violation
   -> dereference_type
   -> nullable_object_descr:string option
-  -> origin_descr:string
+  -> nullable_object_origin:TypeOrigin.t
   -> string

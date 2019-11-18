@@ -30,8 +30,6 @@ end
 (* InstrRefT *)
 module InstrRef : InstrRefT
 
-type origin_descr = string * Location.t option * AnnotatedSignature.t option
-
 (* callee signature *)
 
 (** Instance of an error *)
@@ -50,11 +48,11 @@ type err_instance =
       { dereference_violation: DereferenceRule.violation
       ; dereference_type: DereferenceRule.dereference_type
       ; nullable_object_descr: string option
-      ; origin_descr: origin_descr }
+      ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_type: AssignmentRule.assignment_type
-      ; rhs_origin_descr: origin_descr }
+      ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
 
 val node_reset_forall : Procdesc.Node.t -> unit

@@ -104,19 +104,16 @@ let rec to_string = function
       "Undef"
 
 
-let get_description origin =
+let get_description_impl origin =
   let atline loc = " at line " ^ string_of_int loc.Location.line in
   match origin with
   | NullConst loc ->
-      Some ("null constant" ^ atline loc, Some loc, None)
+      Some ("null constant" ^ atline loc)
   | Field {field_name; access_loc} ->
-      Some
-        ( "field " ^ Typ.Fieldname.to_simplified_string field_name ^ atline access_loc
-        , Some access_loc
-        , None )
+      Some ("field " ^ Typ.Fieldname.to_simplified_string field_name ^ atline access_loc)
   | MethodParameter {mangled} ->
-      Some ("method parameter " ^ Mangled.to_string mangled, None, None)
-  | MethodCall {pname; call_loc; annotated_signature} ->
+      Some ("method parameter " ^ Mangled.to_string mangled)
+  | MethodCall {pname; call_loc} ->
       let modelled_in =
         (* TODO(T54088319) don't calculate this info and propagate it from AnnotatedNullability instead *)
         if Models.is_modelled_for_nullability_as_internal pname then
@@ -128,7 +125,7 @@ let get_description origin =
           (Typ.Procname.to_simplified_string pname)
           modelled_in (atline call_loc)
       in
-      Some (description, Some call_loc, Some annotated_signature)
+      Some description
   (* These are origins of non-nullable expressions that are result of evaluating of some rvalue.
      Because they are non-nullable and they are rvalues, we won't get normal type violations
      With them. All we could get is things like condition redundant or overannotated.
@@ -140,6 +137,11 @@ let get_description origin =
   (* Two special cases - should not really occur in normal code *)
   | OptimisticFallback | Undef ->
       None
+
+
+let get_description origin =
+  get_description_impl origin
+  |> Option.map ~f:(fun description -> Format.sprintf "(Origin: %s)" description)
 
 
 let join o1 o2 =

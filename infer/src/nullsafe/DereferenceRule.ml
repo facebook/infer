@@ -25,8 +25,11 @@ let check ~is_strict_mode nullability =
       Ok ()
 
 
-let violation_description _ dereference_type ~nullable_object_descr ~origin_descr =
+let violation_description _ dereference_type ~nullable_object_descr ~nullable_object_origin =
   let module MF = MarkupFormatter in
+  let origin_descr =
+    TypeOrigin.get_description nullable_object_origin |> Option.value ~default:""
+  in
   let nullable_object_descr =
     match dereference_type with
     | MethodCall _ | AccessToField _ -> (

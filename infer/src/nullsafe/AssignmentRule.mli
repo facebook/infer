@@ -23,4 +23,4 @@ type assignment_type =
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
 
-val violation_description : violation -> assignment_type -> rhs_origin_descr:string -> string
+val violation_description : violation -> assignment_type -> rhs_origin:TypeOrigin.t -> string

@@ -56,12 +56,6 @@ end
 
 (* InstrRef *)
 
-type origin_descr = string * Location.t option * AnnotatedSignature.t option
-
-(* callee signature *)
-(* ignore origin descr *)
-let compare_origin_descr _ _ = 0
-
 (** Instance of an error *)
 type err_instance =
   | Condition_redundant of (bool * string option)
@@ -78,11 +72,11 @@ type err_instance =
       { dereference_violation: DereferenceRule.violation
       ; dereference_type: DereferenceRule.dereference_type
       ; nullable_object_descr: string option
-      ; origin_descr: origin_descr }
+      ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_type: AssignmentRule.assignment_type
-      ; rhs_origin_descr: origin_descr }
+      ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
 
 module H = Hashtbl.Make (struct
@@ -172,18 +166,18 @@ module Severity = struct
         None
 
 
-  let origin_descr_get_severity tenv origin_descr =
-    match origin_descr with
-    | _, _, Some signature ->
-        this_type_get_severity tenv signature
-    | _, _, None ->
+  let origin_get_severity tenv origin =
+    match origin with
+    | TypeOrigin.MethodCall {annotated_signature} ->
+        this_type_get_severity tenv annotated_signature
+    | _ ->
         None
 
 
   let err_instance_get_severity tenv err_instance : Exceptions.severity option =
     match err_instance with
-    | Nullable_dereference {origin_descr} ->
-        origin_descr_get_severity tenv origin_descr
+    | Nullable_dereference {nullable_object_origin} ->
+        origin_get_severity tenv nullable_object_origin
     | _ ->
         None
 end
@@ -261,16 +255,12 @@ let get_error_description err_instance =
       Format.asprintf "Field %a is not initialized in %s and is not declared %a" MF.pp_monospaced
         (Typ.Fieldname.to_simplified_string field_name)
         constructor_name MF.pp_monospaced nullable_annotation
-  | Bad_assignment {rhs_origin_descr= rhs_origin_descr, _, _; assignment_type; assignment_violation}
-    ->
-      AssignmentRule.violation_description assignment_violation assignment_type ~rhs_origin_descr
+  | Bad_assignment {rhs_origin; assignment_type; assignment_violation} ->
+      AssignmentRule.violation_description assignment_violation assignment_type ~rhs_origin
   | Nullable_dereference
-      { dereference_violation
-      ; nullable_object_descr
-      ; dereference_type
-      ; origin_descr= origin_descr, _, _ } ->
+      {dereference_violation; nullable_object_descr; dereference_type; nullable_object_origin} ->
       DereferenceRule.violation_description dereference_violation dereference_type
-        ~nullable_object_descr ~origin_descr
+        ~nullable_object_descr ~nullable_object_origin
   | Inconsistent_subclass
       {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
       InheritanceRule.violation_description inheritance_violation violation_type ~base_proc_name

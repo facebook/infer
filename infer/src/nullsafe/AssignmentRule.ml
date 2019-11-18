@@ -35,7 +35,8 @@ let check ~is_strict_mode ~lhs ~rhs =
   Result.ok_if_true is_allowed_assignment ~error:{is_strict_mode; lhs; rhs}
 
 
-let violation_description _ assignment_type ~rhs_origin_descr =
+let violation_description _ assignment_type ~rhs_origin =
+  let rhs_origin_descr = TypeOrigin.get_description rhs_origin |> Option.value ~default:"" in
   let module MF = MarkupFormatter in
   match assignment_type with
   | PassingParamToFunction {param_description; param_position; function_procname} ->

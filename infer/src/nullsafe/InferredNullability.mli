@@ -27,11 +27,6 @@ val is_nonnull_or_declared_nonnull : t -> bool
 
 val is_nonnull : t -> bool
 
-val descr_origin : t -> TypeErr.origin_descr
-(** Human-readable description of the origin of a value.
-  (How did nullsafe infer the nullability )
- *)
-
 val get_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred.  *)
 

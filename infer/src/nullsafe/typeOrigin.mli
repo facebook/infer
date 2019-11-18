@@ -46,7 +46,7 @@ val equal : t -> t -> bool
 
 val get_nullability : t -> Nullability.t
 
-val get_description : t -> TypeErr.origin_descr option
+val get_description : t -> string option
 (** Get a description to be used for error messages. *)
 
 val join : t -> t -> t

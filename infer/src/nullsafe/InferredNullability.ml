@@ -21,15 +21,6 @@ let is_nonnull {nullability} =
   match nullability with Nullable -> false | DeclaredNonnull -> false | Nonnull -> true
 
 
-let descr_origin t =
-  let descr_opt = TypeOrigin.get_description t.origin in
-  match descr_opt with
-  | None ->
-      ("", None, None)
-  | Some (str, loc_opt, sig_opt) ->
-      ("(Origin: " ^ str ^ ")", loc_opt, sig_opt)
-
-
 let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)
 
 let join t1 t2 =
