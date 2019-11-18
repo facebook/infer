@@ -345,7 +345,11 @@ let ui_matcher_records =
          https://developer.android.com/reference/android/view/View.html *)
       method_prefix= true
     ; classname= "android.view.View"
-    ; methods= ["on"] } ]
+    ; methods= ["on"] }
+  ; { default with
+      classname= "android.content.ServiceConnection"
+    ; methods= ["onBindingDied"; "onNullBinding"; "onServiceConnected"; "onServiceDisconnected"] }
+  ]
 
 
 let is_modeled_ui_method =
