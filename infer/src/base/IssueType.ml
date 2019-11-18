@@ -422,7 +422,7 @@ let strict_mode_violation =
 
 
 let strong_self_not_checked =
-  register_from_string "STRONG_SELF_NOT_CHECKED" ~hum:"Strong Self Not Checked"
+  register_from_string "STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked"
 
 
 let symexec_memory_error =
