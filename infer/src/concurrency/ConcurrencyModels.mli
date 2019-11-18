@@ -61,3 +61,6 @@ val annotated_as_worker_thread :
 val runs_on_ui_thread :
   attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
 (** is method not transitively annotated @WorkerThread and is modeled or annotated @UIThread or equivalent? *)
+
+val is_modeled_ui_method : Tenv.t -> Typ.Procname.t -> bool
+(** is method a known Android UI thread callback (eg [Activity.onCreate]) *)

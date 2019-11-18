@@ -578,13 +578,15 @@ let get_summary_of_scheduled_work (work_item : Domain.ScheduledWorkItem.t) =
 
 (* given a summary, do [f work critical_pairs] for each [work] item scheduled in the summary,
    where [critical_pairs] are those of the method scheduled, adapted to the thread it's scheduled for *)
-let iter_summary ~f (summary : Summary.t) =
-  let caller = Summary.get_proc_name summary in
+let iter_summary ~f exe_env (summary : Summary.t) =
   let open Domain in
   Payloads.starvation summary.payloads
-  |> Option.iter ~f:(fun ({scheduled_work} : summary) ->
+  |> Option.iter ~f:(fun ({scheduled_work; critical_pairs} : summary) ->
+         let pname = Summary.get_proc_name summary in
+         let tenv = Exe_env.get_tenv exe_env pname in
+         if ConcurrencyModels.is_modeled_ui_method tenv pname then f pname critical_pairs ;
          ScheduledWorkDomain.iter
-           (fun work -> get_summary_of_scheduled_work work |> Option.iter ~f:(f caller))
+           (fun work -> get_summary_of_scheduled_work work |> Option.iter ~f:(f pname))
            scheduled_work )
 
 
@@ -636,7 +638,7 @@ let whole_program_analysis () =
   let work_set = WorkHashSet.create 1 in
   let exe_env = Exe_env.mk () in
   L.progress "Processing on-disk summaries...@." ;
-  SpecsFiles.iter ~f:(iter_summary ~f:(WorkHashSet.add_pairs work_set)) ;
+  SpecsFiles.iter ~f:(iter_summary exe_env ~f:(WorkHashSet.add_pairs work_set)) ;
   L.progress "Loaded %d pairs@." (WorkHashSet.length work_set) ;
   L.progress "Reporting on processed summaries...@." ;
   report exe_env work_set
