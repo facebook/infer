@@ -1751,6 +1751,10 @@ INTERNAL OPTIONS
            Deactivates: During starvation analysis, report strict mode
            violations (Android only) (Conversely: --starvation-strict-mode)
 
+       --starvation-whole-program
+           Activates: Run whole-program starvation analysis (Conversely:
+           --no-starvation-whole-program)
+
        --stats-report file
            Write a report of the analysis results to a file
 

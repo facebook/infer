@@ -123,13 +123,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let procname = Summary.get_proc_name summary in
     let is_java = Typ.Procname.is_java procname in
     let do_lock locks loc astate =
-      List.filter_map ~f:get_lock_path locks |> Domain.acquire tenv astate ~procname ~loc
+      List.filter_map ~f:get_lock_path locks |> Domain.acquire ~tenv astate ~procname ~loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
       let callsite = CallSite.make callee loc in
       Payload.read ~caller_summary:summary ~callee_pname:callee
-      |> Option.fold ~init:astate ~f:(Domain.integrate_summary tenv callsite)
+      |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv callsite)
     in
     match instr with
     | Assign _ | Call (_, Indirect _, _, _, _) ->
@@ -210,7 +210,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
           | _ ->
               FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
         in
-        Domain.acquire tenv astate ~procname ~loc (Option.to_list lock)
+        Domain.acquire ~tenv astate ~procname ~loc (Option.to_list lock)
       else astate
     in
     let set_thread_status_by_annotation (astate : Domain.t) =
@@ -474,6 +474,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
     | LockAcquire other_lock
       when CriticalPair.may_deadlock pair other_pair
            && should_report_deadlock_on_current_proc pair other_pair ->
+        let open Domain in
         let error_message =
           Format.asprintf
             "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse \
@@ -531,7 +532,7 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
       ReportMap.add_deadlock tenv pdesc loc ltr error_message report_map
-  | LockAcquire lock ->
+  | LockAcquire lock when not Config.starvation_whole_program ->
       Lock.owner_class lock
       |> Option.value_map ~default:report_map ~f:(fun other_class ->
              (* get the class of the root variable of the lock in the lock acquisition
@@ -549,14 +550,93 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
 
 
 let reporting {Callbacks.procedures} =
-  let report_on_summary env report_map (summary : Domain.summary) =
-    Domain.CriticalPairs.fold (report_on_pair env) summary.critical_pairs report_map
+  if Config.starvation_whole_program then ()
+  else
+    let report_on_summary env report_map (summary : Domain.summary) =
+      Domain.CriticalPairs.fold (report_on_pair env) summary.critical_pairs report_map
+    in
+    let report_procedure report_map ((_, summary) as env) =
+      let proc_desc = Summary.get_proc_desc summary in
+      if should_report proc_desc then
+        Payload.read_toplevel_procedure (Procdesc.get_proc_name proc_desc)
+        |> Option.fold ~init:report_map ~f:(report_on_summary env)
+      else report_map
+    in
+    List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store
+
+
+(* given a scheduled-work item, read the summary of the scheduled method from the disk
+   and adapt its contents to the thread it was scheduled too *)
+let get_summary_of_scheduled_work (work_item : Domain.ScheduledWorkItem.t) =
+  let astate = {Domain.bottom with thread= work_item.thread} in
+  let callsite = CallSite.make work_item.procname work_item.loc in
+  Summary.OnDisk.get work_item.procname
+  |> Option.bind ~f:(fun (summary : Summary.t) -> Payloads.starvation summary.payloads)
+  |> Option.map ~f:(Domain.integrate_summary ?tenv:None callsite astate)
+  |> Option.map ~f:(fun (astate : Domain.t) -> astate.critical_pairs)
+
+
+(* given a summary, do [f work critical_pairs] for each [work] item scheduled in the summary,
+   where [critical_pairs] are those of the method scheduled, adapted to the thread it's scheduled for *)
+let iter_summary ~f (summary : Summary.t) =
+  let caller = Summary.get_proc_name summary in
+  let open Domain in
+  Payloads.starvation summary.payloads
+  |> Option.iter ~f:(fun ({scheduled_work} : summary) ->
+         ScheduledWorkDomain.iter
+           (fun work -> get_summary_of_scheduled_work work |> Option.iter ~f:(f caller))
+           scheduled_work )
+
+
+module WorkHashSet = struct
+  module T = struct
+    type t = Typ.Procname.t * Domain.CriticalPair.t
+
+    (* [compare] for critical pairs ignore various fields, so using a generated equality here would
+       break the polymorphic hash function.  We use [phys_equal] instead and rely on the clients to
+       not add duplicate items. *)
+    let equal = phys_equal
+
+    let hash = Hashtbl.hash
+  end
+
+  include Caml.Hashtbl.Make (T)
+
+  let add_pairs work_set caller pairs =
+    let open Domain in
+    CriticalPairs.iter (fun pair -> replace work_set (caller, pair) ()) pairs
+end
+
+let report exe_env work_set =
+  let open Domain in
+  let wrap_report (procname, (pair : CriticalPair.t)) () init =
+    Summary.OnDisk.get procname
+    |> Option.fold ~init ~f:(fun acc summary ->
+           let pdesc = Summary.get_proc_desc summary in
+           let tenv = Exe_env.get_tenv exe_env procname in
+           let acc = report_on_pair (tenv, summary) pair acc in
+           match pair.elem.event with
+           | LockAcquire lock ->
+               let should_report_starvation =
+                 CriticalPair.is_uithread pair && not (Typ.Procname.is_constructor procname)
+               in
+               WorkHashSet.fold
+                 (fun (other_procname, (other_pair : CriticalPair.t)) () acc ->
+                   report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock
+                     other_procname other_pair acc )
+                 work_set acc
+           | _ ->
+               acc )
   in
-  let report_procedure report_map ((_, summary) as env) =
-    let proc_desc = Summary.get_proc_desc summary in
-    if should_report proc_desc then
-      Payload.read_toplevel_procedure (Procdesc.get_proc_name proc_desc)
-      |> Option.fold ~init:report_map ~f:(report_on_summary env)
-    else report_map
-  in
-  List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store
+  WorkHashSet.fold wrap_report work_set ReportMap.empty |> ReportMap.store
+
+
+let whole_program_analysis () =
+  L.progress "Starvation whole program analysis starts.@." ;
+  let work_set = WorkHashSet.create 1 in
+  let exe_env = Exe_env.mk () in
+  L.progress "Processing on-disk summaries...@." ;
+  SpecsFiles.iter ~f:(iter_summary ~f:(WorkHashSet.add_pairs work_set)) ;
+  L.progress "Loaded %d pairs@." (WorkHashSet.length work_set) ;
+  L.progress "Reporting on processed summaries...@." ;
+  report exe_env work_set

@@ -48,9 +48,16 @@ end
 
 module LockState : AbstractDomain.WithTop
 
+(** a lock acquisition with location information *)
+module Acquisition : sig
+  type t = private
+    {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Typ.Procname.t [@compare.ignore]}
+  [@@deriving compare]
+end
+
 (** A set of lock acquisitions with source locations and procnames. *)
 module Acquisitions : sig
-  type t
+  include PrettyPrintable.PPSet with type elt = Acquisition.t
 
   val lock_is_held : Lock.t -> t -> bool
   (** is the given lock in the set *)
@@ -134,7 +141,7 @@ type t =
 
 include AbstractDomain.WithBottom with type t := t
 
-val acquire : Tenv.t -> t -> procname:Typ.Procname.t -> loc:Location.t -> Lock.t list -> t
+val acquire : ?tenv:Tenv.t -> t -> procname:Typ.Procname.t -> loc:Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
 
 val release : t -> Lock.t list -> t
@@ -173,7 +180,7 @@ type summary =
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : Tenv.t -> CallSite.t -> t -> summary -> t
+val integrate_summary : ?tenv:Tenv.t -> CallSite.t -> t -> summary -> t
 
 val summary_of_astate : t -> summary
 

@@ -2213,6 +2213,11 @@ and starvation_skip_analysis =
     "Specify combinations of class/method list that should be skipped during starvation analysis"
 
 
+and starvation_whole_program =
+  CLOpt.mk_bool ~long:"starvation-whole-program" ~default:false
+    "Run whole-program starvation analysis"
+
+
 and spec_abs_level =
   CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1 ~meta:"int"
     {|Set the level of abstracting the postconditions of discovered specs:
@@ -3198,6 +3203,8 @@ and starvation = !starvation
 and starvation_skip_analysis = !starvation_skip_analysis
 
 and starvation_strict_mode = !starvation_strict_mode
+
+and starvation_whole_program = !starvation_whole_program
 
 and stats_report = !stats_report
 

@@ -74,7 +74,8 @@ module ThreadDomain = struct
         (* callee pair is UI / BG / Any and caller has abstracted away info so use callee's knowledge *)
         Some pair_thread
     | UIThread, BGThread | BGThread, UIThread ->
-        (* annotations or assertions are incorrectly used in code, just drop the callee pair *)
+        (* annotations or assertions are incorrectly used in code, or callee is path-sensitive on
+           thread-identity, just drop the callee pair *)
         None
     | _, _ ->
         (* caller is UI or BG and callee does not disagree, so use that *)
@@ -413,19 +414,19 @@ let is_recursive_lock event tenv =
   - [event] is not a lock event, or,
   - we do not hold the lock, or,
   - the lock is not recursive. *)
-let should_skip tenv_opt event lock_state =
-  Option.exists tenv_opt ~f:(fun tenv ->
+let should_skip ?tenv event lock_state =
+  Option.exists tenv ~f:(fun tenv ->
       LockState.is_lock_taken event lock_state && is_recursive_lock event tenv )
 
 
 module CriticalPairs = struct
   include CriticalPair.FiniteSet
 
-  let with_callsite astate tenv lock_state call_site thread =
+  let with_callsite astate ?tenv lock_state call_site thread =
     let existing_acquisitions = LockState.get_acquisitions lock_state in
     fold
       (fun ({elem= {event}} as critical_pair : CriticalPair.t) acc ->
-        if should_skip (Some tenv) event lock_state then acc
+        if should_skip ?tenv event lock_state then acc
         else
           CriticalPair.integrate_summary_opt existing_acquisitions call_site thread critical_pair
           |> Option.fold ~init:acc ~f:(fun acc new_pair -> add new_pair acc) )
@@ -559,20 +560,20 @@ let leq ~lhs ~rhs =
   && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
 
 
-let add_critical_pair tenv_opt lock_state event thread ~loc acc =
-  if should_skip tenv_opt event lock_state then acc
+let add_critical_pair ?tenv lock_state event thread ~loc acc =
+  if should_skip ?tenv event lock_state then acc
   else
     let acquisitions = LockState.get_acquisitions lock_state in
     let critical_pair = CriticalPair.make ~loc acquisitions event thread in
     CriticalPairs.add critical_pair acc
 
 
-let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
+let acquire ?tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
   { astate with
     critical_pairs=
       List.fold locks ~init:critical_pairs ~f:(fun acc lock ->
           let event = Event.make_acquire lock in
-          add_critical_pair (Some tenv) lock_state event astate.thread ~loc acc )
+          add_critical_pair ?tenv lock_state event astate.thread ~loc acc )
   ; lock_state=
       List.fold locks ~init:lock_state ~f:(fun acc lock -> LockState.acquire ~procname ~loc lock acc)
   }
@@ -581,7 +582,7 @@ let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
 let make_call_with_event new_event ~loc astate =
   { astate with
     critical_pairs=
-      add_critical_pair None astate.lock_state new_event astate.thread ~loc astate.critical_pairs }
+      add_critical_pair astate.lock_state new_event astate.thread ~loc astate.critical_pairs }
 
 
 let blocking_call ~callee sev ~loc astate =
@@ -601,7 +602,7 @@ let release ({lock_state} as astate) locks =
 
 let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
   let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
-  if acquire_now then acquire tenv astate ~procname ~loc [lock] else astate
+  if acquire_now then acquire ~tenv astate ~procname ~loc [lock] else astate
 
 
 let remove_guard astate guard =
@@ -621,7 +622,7 @@ let unlock_guard astate guard =
 let lock_guard ~procname ~loc tenv astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         FlatLock.get lock_opt |> Option.to_list |> acquire tenv astate ~procname ~loc )
+         FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
 
 
 let filter_blocking_calls ({critical_pairs} as astate) =
@@ -649,9 +650,10 @@ let pp_summary fmt (summary : summary) =
     summary.scheduled_work
 
 
-let integrate_summary tenv callsite (astate : t) (summary : summary) =
+let integrate_summary ?tenv callsite (astate : t) (summary : summary) =
   let critical_pairs' =
-    CriticalPairs.with_callsite summary.critical_pairs tenv astate.lock_state callsite astate.thread
+    CriticalPairs.with_callsite summary.critical_pairs ?tenv astate.lock_state callsite
+      astate.thread
   in
   { astate with
     critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'

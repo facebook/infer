@@ -672,6 +672,8 @@ val starvation_skip_analysis : Yojson.Basic.t
 
 val starvation_strict_mode : bool
 
+val starvation_whole_program : bool
+
 val stats_report : string option
 
 val subtype_multirange : bool
