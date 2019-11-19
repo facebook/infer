@@ -41,6 +41,40 @@ class ModeledExecutors {
               }
             });
   }
+
+  // starvation via posting a transaction on UI thread
+  public void staticPostBlockingCallToUIThreadBad() {
+    Executors.postOnUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        });
+  }
+
+  // starvation via running a transaction on UI thread
+  public void staticRunBlockingCallToUIThreadBad() {
+    Executors.runOnUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        });
+  }
+
+  // starvation via running a delayed transaction on UI thread
+  public void staticPostDelayedBlockingCallToUIThreadBad() {
+    Executors.postOnUiThreadDelayed(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        },
+        1000L);
+  }
 }
 
 // modeled executors
@@ -56,4 +90,10 @@ class Executors {
   static Executor getBackgroundExecutor() {
     return bgExecutor;
   }
+
+  public static void postOnUiThread(Runnable runnable) {}
+
+  public static void runOnUiThread(Runnable runnable) {}
+
+  public static void postOnUiThreadDelayed(Runnable runnable, long delayMs) {}
 }

@@ -102,6 +102,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               lazy (Domain.AttributeDomain.get_executor_constraint executor astate.attributes) ]
         in
         Option.fold thread_opt ~init:astate ~f:(schedule_work runnable)
+    | HilExp.AccessExpression runnable :: _
+      when StarvationModels.schedules_work_on_ui_thread tenv callee ->
+        schedule_work runnable astate StarvationModels.ForUIThread
     | _ ->
         astate
 

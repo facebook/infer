@@ -212,6 +212,17 @@ let schedules_work =
   fun tenv pname -> matcher tenv pname []
 
 
+let schedules_work_on_ui_thread =
+  let open MethodMatcher in
+  let matcher =
+    [ { default with
+        classname= "java.lang.Object"
+      ; methods= ["postOnUiThread"; "runOnUiThread"; "postOnUiThreadDelayed"] } ]
+    |> of_records
+  in
+  fun tenv pname -> matcher tenv pname []
+
+
 type executor_thread_constraint = ForUIThread | ForNonUIThread [@@deriving equal]
 
 (* Executors are usually stored in fields and annotated according to what type of thread 

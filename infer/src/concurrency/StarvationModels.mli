@@ -52,3 +52,6 @@ val get_executor_effect :
   -> HilExp.t list
   -> executor_thread_constraint option
 (** does the function return an executor and of which thread? *)
+
+val schedules_work_on_ui_thread : Tenv.t -> Typ.Procname.t -> bool
+(** method call known to directly schedule work on UI thread *)
