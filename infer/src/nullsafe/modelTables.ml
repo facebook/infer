@@ -564,8 +564,6 @@ let mk_table list =
   map
 
 
-let this_file = Filename.basename __FILE__
-
 let annotated_table_nullability = mk_table annotated_list_nullability
 
 let check_not_null_table, check_not_null_parameter_table =

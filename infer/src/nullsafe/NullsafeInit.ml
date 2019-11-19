@@ -39,13 +39,13 @@ let get_absolute_path_to_repo_dir path_to_repo_dir =
 let create_global_storage () =
   match Config.nullsafe_third_party_signatures with
   | Some path_to_repo_dir ->
-      load_third_party_repo
-        ~absolute_path_to_repo_dir:(get_absolute_path_to_repo_dir path_to_repo_dir)
+      let absolute_path_to_repo_dir = get_absolute_path_to_repo_dir path_to_repo_dir in
+      (load_third_party_repo ~absolute_path_to_repo_dir, Some absolute_path_to_repo_dir)
   (* Create empty *)
   | None ->
-      ThirdPartyAnnotationInfo.create_storage ()
+      (ThirdPartyAnnotationInfo.create_storage (), None)
 
 
 let init () =
-  let global_storage = create_global_storage () in
-  ThirdPartyAnnotationGlobalRepo.initialize global_storage
+  let storage, absolute_path_to_repo = create_global_storage () in
+  ThirdPartyAnnotationGlobalRepo.initialize ~absolute_path_to_repo storage

@@ -11,6 +11,7 @@ type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t} 
 type assignment_type =
   | PassingParamToFunction of
       { param_signature: AnnotatedSignature.param_signature
+      ; model_source: AnnotatedSignature.model_source option
       ; actual_param_expression: string
       ; param_position: int
       ; function_procname: Typ.Procname.t }
@@ -68,15 +69,27 @@ let violation_description _ assignment_type ~rhs_origin =
   let module MF = MarkupFormatter in
   match assignment_type with
   | PassingParamToFunction
-      {param_signature; actual_param_expression; param_position; function_procname} ->
+      {model_source; param_signature; actual_param_expression; param_position; function_procname} ->
       let argument_description =
         if String.equal "null" actual_param_expression then "is `null`"
         else Format.asprintf "%a is nullable" MF.pp_monospaced actual_param_expression
       in
-      Format.asprintf "%a: parameter #%d%a is declared non-nullable but the argument %s%s"
+      let nullability_evidence =
+        match model_source with
+        | None ->
+            ""
+        | Some InternalModel ->
+            " (according to nullsafe internal models)"
+        | Some (ThirdPartyRepo {filename; line_number}) ->
+            Format.sprintf " (see %s at line %d)"
+              (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name ~filename)
+              line_number
+      in
+      Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s"
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string ~withclass:true function_procname)
-        param_position pp_param_name param_signature.mangled argument_description suffix
+        param_position pp_param_name param_signature.mangled nullability_evidence
+        argument_description suffix
   | AssigningToField field_name ->
       Format.asprintf "%a is declared non-nullable but is assigned a nullable%s" MF.pp_monospaced
         (Typ.Fieldname.to_flat_string field_name)

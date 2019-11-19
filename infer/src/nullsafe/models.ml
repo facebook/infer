@@ -38,7 +38,8 @@ let get_modelled_annotated_signature_for_biabduction proc_attributes =
   let lookup_models_nullable ann_sig =
     try
       let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
-      AnnotatedSignature.set_modelled_nullability proc_name ann_sig modelled_nullability
+      AnnotatedSignature.set_modelled_nullability proc_name ann_sig InternalModel
+        modelled_nullability
     with Caml.Not_found -> ann_sig
   in
   annotated_signature |> lookup_models_nullable
@@ -75,7 +76,8 @@ let get_modelled_annotated_signature tenv proc_attributes =
   let correct_by_internal_models ann_sig =
     try
       let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
-      AnnotatedSignature.set_modelled_nullability proc_name ann_sig modelled_nullability
+      AnnotatedSignature.set_modelled_nullability proc_name ann_sig InternalModel
+        modelled_nullability
     with Caml.Not_found -> ann_sig
   in
   (* Look at external models *)
@@ -85,11 +87,14 @@ let get_modelled_annotated_signature tenv proc_attributes =
          ~f:
            (ThirdPartyAnnotationInfo.find_nullability_info
               (ThirdPartyAnnotationGlobalRepo.get_repo ()))
-    |> Option.map ~f:(fun ThirdPartyAnnotationInfo.{nullability} ->
-           to_modelled_nullability nullability )
+    |> Option.map ~f:(fun ThirdPartyAnnotationInfo.{nullability; filename; line_number} ->
+           (to_modelled_nullability nullability, filename, line_number) )
     |> Option.value_map
        (* If we found information in third-party repo, overwrite annotated signature *)
-         ~f:(AnnotatedSignature.set_modelled_nullability proc_name ann_sig)
+         ~f:(fun (modelled_nullability, filename, line_number) ->
+           AnnotatedSignature.set_modelled_nullability proc_name ann_sig
+             (ThirdPartyRepo {filename; line_number})
+             modelled_nullability )
          ~default:ann_sig
   in
   (* External models overwrite internal ones *)

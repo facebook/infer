@@ -33,9 +33,8 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
          the user can quickly go to field_name definition and see if its annotation. *)
       let field_name_str = Typ.Fieldname.to_flat_string field_name in
       String.is_suffix object_expression ~suffix:field_name_str
-  | TypeOrigin.MethodCall {pname} ->
-      (* TODO: take into account external models as well *)
-      let is_modelled = Models.is_modelled_for_nullability_as_internal pname in
+  | TypeOrigin.MethodCall {pname; annotated_signature= {model_source}} ->
+      let is_modelled = Option.is_some model_source in
       if is_modelled then (* This is non-trivial and should always be explained to the user *)
         false
       else

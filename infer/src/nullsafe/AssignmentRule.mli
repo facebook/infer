@@ -19,6 +19,7 @@ val check :
 type assignment_type =
   | PassingParamToFunction of
       { param_signature: AnnotatedSignature.param_signature
+      ; model_source: AnnotatedSignature.model_source option
       ; actual_param_expression: string
       ; param_position: int
       ; function_procname: Typ.Procname.t }

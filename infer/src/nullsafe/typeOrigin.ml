@@ -104,8 +104,44 @@ let rec to_string = function
       "Undef"
 
 
+let atline loc = " at line " ^ string_of_int loc.Location.line
+
+let get_method_ret_description pname call_loc
+    AnnotatedSignature.{model_source; ret= {ret_annotated_type= {nullability}}} =
+  let should_show_class_name =
+    (* Class name is generally redundant: the user knows line number and
+       can immediatelly go to definition and see the function annotation.
+       When something is modelled though, let's show the class name as well, so it is
+       super clear what exactly is modelled.
+    *)
+    Option.is_some model_source
+  in
+  let ret_nullability =
+    match nullability with
+    | AnnotatedNullability.Nullable _ ->
+        "nullable"
+    | AnnotatedNullability.DeclaredNonnull _ | AnnotatedNullability.Nonnull _ ->
+        "non-nullable"
+  in
+  let model_info =
+    match model_source with
+    | None ->
+        ""
+    | Some InternalModel ->
+        Format.sprintf " (%s according to nullsafe internal models)" ret_nullability
+    | Some (ThirdPartyRepo {filename; line_number}) ->
+        let filename_to_show =
+          ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name ~filename
+        in
+        Format.sprintf " (declared %s in %s at line %d)" ret_nullability filename_to_show
+          line_number
+  in
+  Format.sprintf "call to %s%s%s"
+    (Typ.Procname.to_simplified_string ~withclass:should_show_class_name pname)
+    (atline call_loc) model_info
+
+
 let get_description origin =
-  let atline loc = " at line " ^ string_of_int loc.Location.line in
   match origin with
   | NullConst loc ->
       Some ("null constant" ^ atline loc)
@@ -113,19 +149,8 @@ let get_description origin =
       Some ("field " ^ Typ.Fieldname.to_flat_string field_name ^ atline access_loc)
   | MethodParameter {mangled} ->
       Some ("method parameter " ^ Mangled.to_string mangled)
-  | MethodCall {pname; call_loc} ->
-      let modelled_in =
-        (* TODO(T54088319) don't calculate this info and propagate it from AnnotatedNullability instead *)
-        if Models.is_modelled_for_nullability_as_internal pname then
-          " modelled in " ^ ModelTables.this_file
-        else ""
-      in
-      let description =
-        Printf.sprintf "call to %s%s%s"
-          (Typ.Procname.to_simplified_string pname)
-          modelled_in (atline call_loc)
-      in
-      Some description
+  | MethodCall {pname; call_loc; annotated_signature} ->
+      Some (get_method_ret_description pname call_loc annotated_signature)
   (* These are origins of non-nullable expressions that are result of evaluating of some rvalue.
      Because they are non-nullable and they are rvalues, we won't get normal type violations
      With them. All we could get is things like condition redundant or overannotated.

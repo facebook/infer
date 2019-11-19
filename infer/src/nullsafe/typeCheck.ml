@@ -909,8 +909,8 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
           node typestate1 call_params callee_pname instr_ref loc
           (typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
-        EradicateChecks.check_call_parameters ~is_strict_mode tenv find_canonical_duplicate
-          curr_pdesc node callee_attributes resolved_params loc instr_ref ;
+        EradicateChecks.check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv
+          find_canonical_duplicate curr_pdesc node callee_attributes resolved_params loc instr_ref ;
       if Models.is_check_not_null callee_pname then
         match Models.get_check_not_null_parameter callee_pname with
         | Some index ->

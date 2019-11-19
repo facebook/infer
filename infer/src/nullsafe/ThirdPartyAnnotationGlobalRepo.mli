@@ -9,8 +9,14 @@ open! IStd
 
 (** A singleton. Should be initialized once prior to start of nullsafe. *)
 
-val initialize : ThirdPartyAnnotationInfo.storage -> unit
-(** Should be initialized exactly once before access. *)
+val initialize : absolute_path_to_repo:string option -> ThirdPartyAnnotationInfo.storage -> unit
+(** Should be initialized exactly once before access. Path to repo is None if there is no repo on the disk. *)
 
 val get_repo : unit -> ThirdPartyAnnotationInfo.storage
 (** Can be accessed only when initialization was done *)
+
+val get_absolute_path_to_repo : unit -> string option
+(** Can be accessed only when initialization was done. None if there is no repo (i.e. empty repo) *)
+
+val get_user_friendly_third_party_sig_file_name : filename:string -> string
+(** Given filename containing the repo signatures, render it in a way convenient for the user *)

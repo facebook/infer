@@ -15,7 +15,11 @@ module L = Logging
     c. Known method-level annotations.
 *)
 
-type t = {is_strict_mode: bool; ret: ret_signature; params: param_signature list}
+type t =
+  { is_strict_mode: bool
+  ; model_source: model_source option
+  ; ret: ret_signature
+  ; params: param_signature list }
 [@@deriving compare]
 
 and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_annotated_type: AnnotatedType.t}
@@ -25,6 +29,9 @@ and param_signature =
   { param_annotation_deprecated: Annot.Item.t
   ; mangled: Mangled.t
   ; param_annotated_type: AnnotatedType.t }
+[@@deriving compare]
+
+and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
@@ -107,7 +114,7 @@ let get ~is_strict_mode proc_attributes : t =
         ; mangled
         ; param_annotated_type= AnnotatedType.{nullability; typ} } )
   in
-  {is_strict_mode; ret; params}
+  {is_strict_mode; model_source= None; ret; params}
 
 
 let param_has_annot predicate pvar ann_sig =
@@ -149,7 +156,7 @@ let set_modelled_nullability_for_annotated_type annotated_type should_set_nullab
   AnnotatedType.{annotated_type with nullability}
 
 
-let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullability) =
+let set_modelled_nullability proc_name asig model_source (nullability_for_ret, params_nullability) =
   let set_modelled_nullability_for_param param should_set_nullable =
     { param with
       param_annotation_deprecated=
@@ -188,4 +195,5 @@ let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullabi
   in
   { asig with
     ret= set_modelled_nullability_for_ret asig.ret nullability_for_ret
+  ; model_source= Some model_source
   ; params= final_params }

@@ -423,8 +423,8 @@ let is_third_party_without_model proc_name =
 
 
 (** Check the parameters of a call. *)
-let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node
-    callee_attributes resolved_params loc instr_ref : unit =
+let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_canonical_duplicate
+    curr_pdesc node callee_attributes resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
     let report assignment_violation =
@@ -443,6 +443,7 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
            ; assignment_type=
                AssignmentRule.PassingParamToFunction
                  { param_signature= formal
+                 ; model_source= callee_annotated_signature.AnnotatedSignature.model_source
                  ; actual_param_expression
                  ; param_position
                  ; function_procname= callee_pname } })
