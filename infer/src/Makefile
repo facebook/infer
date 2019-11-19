@@ -133,16 +133,16 @@ ifeq ($(WINDOWS_BUILD),yes)
 # http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
 	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
 endif
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN).exe
+	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN).exe
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe \
+	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 endif
 
 
 .PHONY: infer
 infer: $(INFER_BIN).exe
-	$(INSTALL_PROGRAM) $(INFER_BIN).exe $(INFER_BIN)
+	$(INSTALL_PROGRAM) -C $(INFER_BIN).exe $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
@@ -155,15 +155,15 @@ ifeq ($(WINDOWS_BUILD),yes)
 # http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
 	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
 endif
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN).bc
+	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN).bc
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
+	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 endif
 
 .PHONY: byte
 byte: $(INFER_BIN).bc
-	$(INSTALL_PROGRAM) $(INFER_BIN).bc $(INFER_BIN)
+	$(INSTALL_PROGRAM) -C $(INFER_BIN).bc $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 roots:=Infer
@@ -196,7 +196,7 @@ $(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAK
 	$(QUIET)touch $@
 
 $(INFERTOP_BIN): $(INFER_BUILD_DIR)/infertop.bc
-	$(QUIET)$(INSTALL_PROGRAM) $< $@
+	$(QUIET)$(INSTALL_PROGRAM) -C $< $@
 	$(QUIET)touch $@
 
 .PHONY: toplevel
@@ -207,7 +207,7 @@ checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 $(CHECKCOPYRIGHT_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	dune build $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe $(CHECKCOPYRIGHT_BIN)
+	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules
 # generate files using atdgen
@@ -237,7 +237,7 @@ $(foreach atd_type,$(CLANG_ATDGEN_TYPES),\
 
 define mirror_fcp_file
 $(CLANG_PLUGIN_MIRROR)/$(notdir $(1)): $(1)
-	$(INSTALL_DATA) $$< $$@
+	$(INSTALL_DATA) -C $$< $$@
 endef
 
 $(foreach file, $(FCP_FILES_TO_MIRROR), $(eval $(call mirror_fcp_file,$(file))))
