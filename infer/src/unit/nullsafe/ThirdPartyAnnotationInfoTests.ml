@@ -34,16 +34,18 @@ let assert_no_info storage unique_repr =
 
 
 let add_from_annot_file_and_check_success storage ~lines =
-  ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines
-  |> Result.iter_error ~f:(fun parsing_error ->
-         assert_failure
-           (F.asprintf "Expected to parse the file, but it was unparsable: %a"
-              ThirdPartyAnnotationInfo.pp_parsing_error parsing_error) )
+  match ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines with
+  | Ok storage ->
+      storage
+  | Error parsing_error ->
+      assert_failure
+        (F.asprintf "Expected to parse the file, but it was unparsable: %a"
+           ThirdPartyAnnotationInfo.pp_parsing_error parsing_error)
 
 
 let add_from_annot_file_and_check_failure storage ~lines ~expected_error_line_number =
   match ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines with
-  | Ok () ->
+  | Ok _ ->
       assert_failure
         "Expected to not be able to parse the file, but it was successfully parsed instead"
   | Error {line_number} ->
@@ -55,10 +57,11 @@ let basic_find =
   let open ThirdPartyMethod in
   "basic_find"
   >:: fun _ ->
-  let storage = ThirdPartyAnnotationInfo.create_storage () in
   let lines = ["a.A#foo(b.B)"; "b.B#bar(c.C, @Nullable d.D) @Nullable"] in
   (* Load some functions from the file *)
-  add_from_annot_file_and_check_success storage ~lines ;
+  let storage =
+    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines
+  in
   (* Make sure we can find what we just stored *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
@@ -83,7 +86,6 @@ let overload_resolution =
   let open ThirdPartyMethod in
   "overload_resolution"
   >:: fun _ ->
-  let storage = ThirdPartyAnnotationInfo.create_storage () in
   let lines =
     [ "a.b.SomeClass#foo(@Nullable a.b.C1) @Nullable"
     ; "a.b.SomeClass#<init>(a.b.C1)"
@@ -94,7 +96,9 @@ let overload_resolution =
     ; "a.b.SomeClass#foo(@Nullable a.b.C2)" ]
   in
   (* Load some functions from the file *)
-  add_from_annot_file_and_check_success storage ~lines ;
+  let storage =
+    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines
+  in
   (* Make sure we can find what we just stored *)
   (* a.b.SomeClass.foo with 1 param *)
   assert_has_nullability_info storage
@@ -146,16 +150,17 @@ let can_add_several_files =
   "can_add_several_files"
   >:: fun _ ->
   let open ThirdPartyMethod in
-  let storage = ThirdPartyAnnotationInfo.create_storage () in
   (* 1. Add file and check if we added info *)
   let file1 = ["a.A#foo(b.B)"; "b.B#bar(c.C, @Nullable d.D) @Nullable"] in
-  add_from_annot_file_and_check_success storage ~lines:file1 ;
+  let storage =
+    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file1
+  in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
     ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
   (* 2. Add another file and check if we added info *)
   let file2 = ["e.E#baz(f.F)"; "g.G#<init>(h.H, @Nullable i.I) @Nullable"] in
-  add_from_annot_file_and_check_success storage ~lines:file2 ;
+  let storage = add_from_annot_file_and_check_success storage ~lines:file2 in
   assert_has_nullability_info storage
     {class_name= "e.E"; method_name= Method "baz"; param_types= ["f.F"]}
     ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
@@ -176,7 +181,8 @@ let should_not_forgive_unparsable_strings =
   let file_ok = [line1; line2_ok; line3] in
   let file_bad = [line1; line2_bad; line3] in
   (* Ensure we can add the good file, but can not add the bad one *)
-  add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file_ok ;
+  add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file_ok
+  |> ignore ;
   add_from_annot_file_and_check_failure
     (ThirdPartyAnnotationInfo.create_storage ())
     ~lines:file_bad ~expected_error_line_number:2

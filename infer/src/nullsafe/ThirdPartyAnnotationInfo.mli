@@ -17,7 +17,7 @@ type file_parsing_error =
 
 val pp_parsing_error : Format.formatter -> file_parsing_error -> unit
 
-val add_from_signature_file : storage -> lines:string list -> (unit, file_parsing_error) result
+val add_from_signature_file : storage -> lines:string list -> (storage, file_parsing_error) result
 (** Parse the information from the signature file, and add it to the storage *)
 
 val find_nullability_info :

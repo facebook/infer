@@ -20,23 +20,27 @@ let pp_parsing_error fmt {line_number; unparsable_method; parsing_error} =
 
 
 (* Consequtively evaluates results for all elements in a list,
-   returns Ok () if all succeeded or the first error.
+   returns Ok (folded results) if all succeeded, or the first error.
    The evaluator function [f] has access to element's index.
  *)
-let bind_list_with_index list ~f =
-  List.foldi list ~init:(Ok ()) ~f:(fun index acc elem -> Result.bind acc ~f:(fun _ -> f index elem))
+let bind_list_with_index ~init list ~f =
+  List.foldi list ~init:(Ok init) ~f:(fun index acc elem ->
+      Result.bind acc ~f:(fun acc -> f acc index elem) )
 
 
-let parse_line_and_add_to_storage storage line =
+let parse_line_and_add_to_storage storage _line_index line =
   let open Result in
   ThirdPartyMethod.parse line
-  >>= fun (signature, nullability) -> Ok (Hashtbl.add storage signature nullability)
+  >>= fun (signature, nullability) ->
+  Ok
+    ( Hashtbl.add storage signature nullability ;
+      storage )
 
 
 let add_from_signature_file storage ~lines =
   (* each line in a file should represent a method signature *)
-  bind_list_with_index lines ~f:(fun index method_as_str ->
-      parse_line_and_add_to_storage storage method_as_str
+  bind_list_with_index lines ~init:storage ~f:(fun storage index method_as_str ->
+      parse_line_and_add_to_storage storage index method_as_str
       |> Result.map_error ~f:(fun parsing_error ->
              {line_number= index + 1; unparsable_method= method_as_str; parsing_error} ) )
 
