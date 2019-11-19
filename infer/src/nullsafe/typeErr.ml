@@ -64,7 +64,7 @@ type err_instance =
       ; violation_type: InheritanceRule.violation_type
       ; base_proc_name: Typ.Procname.t
       ; overridden_proc_name: Typ.Procname.t }
-  | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
+  | Field_not_initialized of Typ.Fieldname.t
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }
@@ -223,7 +223,7 @@ let get_infer_issue_type = function
 let get_field_name_for_error_suppressing = function
   | Over_annotation {violation_type= OverAnnotatedRule.FieldOverAnnoted field_name} ->
       Some field_name
-  | Field_not_initialized (field_name, _) ->
+  | Field_not_initialized field_name ->
       Some field_name
   | Condition_redundant _
   | Over_annotation {violation_type= OverAnnotatedRule.ReturnOverAnnotated _}
@@ -235,26 +235,18 @@ let get_field_name_for_error_suppressing = function
 
 
 let get_error_description err_instance =
-  let nullable_annotation = "@Nullable" in
   match err_instance with
   | Condition_redundant (is_always_true, s_opt) ->
       P.sprintf "The condition %s is always %b according to the existing annotations."
         (Option.value s_opt ~default:"") is_always_true
   | Over_annotation {over_annotated_violation; violation_type} ->
       OverAnnotatedRule.violation_description over_annotated_violation violation_type
-  | Field_not_initialized (field_name, proc_name) ->
-      let constructor_name =
-        if Typ.Procname.is_constructor proc_name then "the constructor"
-        else
-          match proc_name with
-          | Typ.Procname.Java pn_java ->
-              MF.monospaced_to_string (Typ.Procname.Java.get_method pn_java)
-          | _ ->
-              MF.monospaced_to_string (Typ.Procname.to_simplified_string proc_name)
-      in
-      Format.asprintf "Field %a is not initialized in %s and is not declared %a" MF.pp_monospaced
-        (Typ.Fieldname.to_simplified_string field_name)
-        constructor_name MF.pp_monospaced nullable_annotation
+  | Field_not_initialized field_name ->
+      Format.asprintf
+        "Field %a is declared non-nullable, so it should be initialized in the constructor or in \
+         an `@Initializer` method"
+        MF.pp_monospaced
+        (Typ.Fieldname.to_flat_string field_name)
   | Bad_assignment {rhs_origin; assignment_type; assignment_violation} ->
       AssignmentRule.violation_description assignment_violation assignment_type ~rhs_origin
   | Nullable_dereference

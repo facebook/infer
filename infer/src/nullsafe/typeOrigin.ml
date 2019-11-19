@@ -110,7 +110,7 @@ let get_description origin =
   | NullConst loc ->
       Some ("null constant" ^ atline loc)
   | Field {field_name; access_loc} ->
-      Some ("field " ^ Typ.Fieldname.to_simplified_string field_name ^ atline access_loc)
+      Some ("field " ^ Typ.Fieldname.to_flat_string field_name ^ atline access_loc)
   | MethodParameter {mangled} ->
       Some ("method parameter " ^ Mangled.to_string mangled)
   | MethodCall {pname; call_loc} ->

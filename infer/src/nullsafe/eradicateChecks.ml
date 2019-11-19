@@ -292,8 +292,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                 && not is_initialized_in_either_constructor_or_initializer
               then
                 report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_not_initialized (field_name, curr_constructor_pname))
-                  None loc curr_constructor_pdesc ;
+                  (TypeErr.Field_not_initialized field_name) None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               match annotated_field with
               | None ->
@@ -429,7 +428,7 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
     let report assignment_violation =
-      let param_description =
+      let actual_param_expression =
         match explain_expr tenv node orig_e2 with
         | Some descr ->
             descr
@@ -443,7 +442,10 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
            ; rhs_origin
            ; assignment_type=
                AssignmentRule.PassingParamToFunction
-                 {param_description; param_position; function_procname= callee_pname} })
+                 { param_signature= formal
+                 ; actual_param_expression
+                 ; param_position
+                 ; function_procname= callee_pname } })
         (Some instr_ref) loc curr_pdesc
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
