@@ -500,6 +500,8 @@ val nullsafe : bool
 
 val nullsafe_third_party_signatures : string option
 
+val nullsafe_third_party_location_for_messaging_only : string option
+
 val nullsafe_strict_containers : bool
 
 val oom_threshold : int option

@@ -1756,6 +1756,15 @@ and nullsafe_third_party_signatures =
      nullsafe. Path is either relative to .inferconfig folder or absolute"
 
 
+and nullsafe_third_party_location_for_messaging_only =
+  CLOpt.mk_string_opt ~long:"nullsafe-third-party-location-for-messaging-only"
+    "Path to a folder with annotated signatures to include into error message. If not specified, \
+     path will be fetched from nullsafe-third-party-signatures. This param is only needed for the \
+     case when the real repository is located in the different place, and \
+     nullsafe-third-party-signatures contains only its copy (which can happen e.g. in case of \
+     caching by the build system)"
+
+
 and nullsafe_strict_containers =
   CLOpt.mk_bool ~long:"nullsafe-strict-containers" ~default:false
     "Warn when containers are used with nullable keys or values"
@@ -3005,6 +3014,10 @@ and nelseg = !nelseg
 and nullable_annotation = !nullable_annotation
 
 and nullsafe_third_party_signatures = !nullsafe_third_party_signatures
+
+and nullsafe_third_party_location_for_messaging_only =
+  !nullsafe_third_party_location_for_messaging_only
+
 
 and nullsafe_strict_containers = !nullsafe_strict_containers
 

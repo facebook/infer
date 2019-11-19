@@ -38,11 +38,16 @@ let get_last_2_dirs path =
   String.concat last_2_dirs ~sep:"/"
 
 
-let get_user_friendly_third_party_sig_file_name ~filename =
-  (* Enough details that will hint the user to where to look for the file. *)
-  let absolute_path_opt = get_absolute_path_to_repo () in
+let get_from_absolute_path () =
   (* If we got file_name from somewhere, it definitely means the repo exists. *)
-  let absolute_path = Option.value_exn absolute_path_opt in
-  (* Take last 2 dirs: the last one is one with the folder itself, and the previous will indicate
-     the location *)
-  get_last_2_dirs absolute_path ^ "/" ^ filename
+  Option.value_exn (get_absolute_path_to_repo ())
+  (* Enough details to have an idea where to look *)
+  |> get_last_2_dirs
+
+
+let get_user_friendly_third_party_sig_file_name ~filename =
+  let path =
+    Config.nullsafe_third_party_location_for_messaging_only
+    |> Option.value ~default:(get_from_absolute_path ())
+  in
+  path ^ "/" ^ filename

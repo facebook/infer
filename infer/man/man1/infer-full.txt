@@ -1548,6 +1548,18 @@ INTERNAL OPTIONS
            Activates: Warn when containers are used with nullable keys or
            values (Conversely: --no-nullsafe-strict-containers)
 
+       --nullsafe-third-party-location-for-messaging-only string
+           Path to a folder with annotated signatures to include into error
+           message. If not specified, path will be fetched from
+           nullsafe-third-party-signatures. This param is only needed for the
+           case when the real repository is located in the different place,
+           and nullsafe-third-party-signatures contains only its copy (which
+           can happen e.g. in case of caching by the build system)
+
+       --nullsafe-third-party-location-for-messaging-only-reset
+           Cancel the effect of
+           --nullsafe-third-party-location-for-messaging-only.
+
        --nullsafe-third-party-signatures string
            Path to a folder with annotated signatures of third-party methods
            to be taken into account by nullsafe. Path is either relative to
