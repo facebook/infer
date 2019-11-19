@@ -49,24 +49,23 @@ let get_origin_opt assignment_type origin =
 
 
 let violation_description _ assignment_type ~rhs_origin =
-  let rhs_origin_descr =
+  let suffix =
     get_origin_opt assignment_type rhs_origin
     |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-    |> Option.value_map ~f:(fun origin -> " " ^ origin) ~default:""
+    |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
   in
   let module MF = MarkupFormatter in
   match assignment_type with
   | PassingParamToFunction {param_description; param_position; function_procname} ->
-      Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null.%s"
+      Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null%s"
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string ~withclass:true function_procname)
-        param_position MF.pp_monospaced param_description rhs_origin_descr
+        param_position MF.pp_monospaced param_description suffix
   | AssigningToField field_name ->
-      Format.asprintf "Field %a can be null but is not declared %a.%s" MF.pp_monospaced
+      Format.asprintf "Field %a can be null but is not declared %a%s" MF.pp_monospaced
         (Typ.Fieldname.to_simplified_string field_name)
-        MF.pp_monospaced "@Nullable" rhs_origin_descr
+        MF.pp_monospaced "@Nullable" suffix
   | ReturningFromFunction function_proc_name ->
-      Format.asprintf "Method %a may return null but it is not annotated with %a.%s"
-        MF.pp_monospaced
+      Format.asprintf "Method %a may return null but it is not annotated with %a%s" MF.pp_monospaced
         (Typ.Procname.to_simplified_string function_proc_name)
-        MF.pp_monospaced "@Nullable" rhs_origin_descr
+        MF.pp_monospaced "@Nullable" suffix

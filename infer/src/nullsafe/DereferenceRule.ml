@@ -68,10 +68,10 @@ let violation_description _ dereference_type ~nullable_object_descr ~nullable_ob
     | ArrayLengthAccess ->
         "accessing its length"
   in
-  let origin_descr =
+  let suffix =
     get_origin_opt ~nullable_object_descr nullable_object_origin
     |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-    |> Option.value_map ~f:(fun origin -> " " ^ origin) ~default:""
+    |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
   in
-  Format.sprintf "%s is nullable and is not locally checked for null when %s.%s"
-    what_is_dereferred_str action_descr origin_descr
+  Format.sprintf "%s is nullable and is not locally checked for null when %s%s"
+    what_is_dereferred_str action_descr suffix

@@ -104,7 +104,7 @@ let rec to_string = function
       "Undef"
 
 
-let get_description_impl origin =
+let get_description origin =
   let atline loc = " at line " ^ string_of_int loc.Location.line in
   match origin with
   | NullConst loc ->
@@ -137,11 +137,6 @@ let get_description_impl origin =
   (* Two special cases - should not really occur in normal code *)
   | OptimisticFallback | Undef ->
       None
-
-
-let get_description origin =
-  get_description_impl origin
-  |> Option.map ~f:(fun description -> Format.sprintf "(Origin: %s)" description)
 
 
 let join o1 o2 =
