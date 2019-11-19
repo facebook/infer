@@ -31,3 +31,12 @@ val find_nullability_info : storage -> ThirdPartyMethod.unique_repr -> signature
     If we do not, or it is not a third-party method, returns None.
     Otherwise returns the nullability information.
   *)
+
+val lookup_related_sig_file : storage -> package:string -> string option
+(** If the package is third-party, return the relevant .sig file to add signatures for this package.
+  *)
+
+val lookup_related_sig_file_by_package : storage -> Typ.Procname.t -> string option
+(** If the function is third-party (based on its package), return relevant .sig file to add the signature
+    NOTE: this DOES NOT look if the function is is already
+ *)

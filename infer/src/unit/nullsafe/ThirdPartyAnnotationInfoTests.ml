@@ -204,9 +204,45 @@ let should_not_forgive_unparsable_strings =
     ~lines:file_bad ~expected_error_line_number:2
 
 
+let assert_third_party storage ~package ~expected_filename =
+  match ThirdPartyAnnotationInfo.lookup_related_sig_file storage ~package with
+  | None ->
+      assert_failure (F.sprintf "Did not find %s" package)
+  | Some sig_file_name ->
+      assert_equal expected_filename sig_file_name ~msg:"Unexpected sig file" ~printer:(fun s -> s)
+
+
+let assert_not_third_party storage ~package =
+  match ThirdPartyAnnotationInfo.lookup_related_sig_file storage ~package with
+  | None ->
+      ()
+  | Some sig_file_name ->
+      assert_failure
+        (F.sprintf "Did not expect %s to be third-party, but it was wrongly attributed to %s"
+           package sig_file_name)
+
+
+let test_is_third_party =
+  "test_is_third_party"
+  >:: fun _ ->
+  let storage =
+    ThirdPartyAnnotationInfo.create_storage ()
+    |> add_from_annot_file_and_check_success ~filename:"aaa.bbb.sig" ~lines:[]
+    |> add_from_annot_file_and_check_success ~filename:"aaa.bbb.ccc.sig" ~lines:[]
+    |> add_from_annot_file_and_check_success ~filename:"bbb.ccc.sig" ~lines:[]
+  in
+  assert_not_third_party storage ~package:"aaa" ;
+  assert_third_party storage ~package:"aaa.bbb" ~expected_filename:"aaa.bbb.sig" ;
+  assert_third_party storage ~package:"aaa.bbb.xxx.yyy" ~expected_filename:"aaa.bbb.sig" ;
+  assert_third_party storage ~package:"aaa.bbb.ccc" ~expected_filename:"aaa.bbb.ccc.sig" ;
+  assert_third_party storage ~package:"aaa.bbb.ccc.ddd.eee" ~expected_filename:"aaa.bbb.ccc.sig" ;
+  assert_not_third_party storage ~package:"aaa.ccc"
+
+
 let test =
   "ThirdPartyAnnotationInfoTests"
   >::: [ basic_find
        ; overload_resolution
        ; can_add_several_files
-       ; should_not_forgive_unparsable_strings ]
+       ; should_not_forgive_unparsable_strings
+       ; test_is_third_party ]

@@ -54,3 +54,29 @@ let add_from_signature_file storage ~filename ~lines =
 
 
 let find_nullability_info {signature_map} unique_repr = Hashtbl.find_opt signature_map unique_repr
+
+let does_package_match_file ~package sig_filename =
+  (* Filename should be of form <some.package.sig>, where <some.package> is prefix
+     for third party packages that should be declared in this file *)
+  let allowed_package_prefix = String.chop_suffix_exn sig_filename ~suffix:".sig" in
+  String.is_prefix package ~prefix:allowed_package_prefix
+
+
+let lookup_related_sig_file {filenames} ~package =
+  List.filter filenames ~f:(does_package_match_file ~package)
+  |> List.max_elt
+       ~compare:(fun (* If two different files match the package, we choose the most specific; it will have the biggest length *)
+                       filename1
+                filename2
+                -> String.length filename1 - String.length filename2 )
+
+
+let lookup_related_sig_file_by_package storage procname =
+  let package =
+    match procname with
+    | Typ.Procname.Java java_pname ->
+        Typ.Procname.Java.get_package java_pname
+    | _ ->
+        None
+  in
+  Option.bind package ~f:(fun package -> lookup_related_sig_file storage ~package)

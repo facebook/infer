@@ -9,15 +9,17 @@ open! IStd
 type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
 
 type assignment_type =
-  | PassingParamToFunction of
-      { param_signature: AnnotatedSignature.param_signature
-      ; model_source: AnnotatedSignature.model_source option
-      ; actual_param_expression: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
+  | PassingParamToFunction of function_info
   | AssigningToField of Typ.Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
+
+and function_info =
+  { param_signature: AnnotatedSignature.param_signature
+  ; model_source: AnnotatedSignature.model_source option
+  ; actual_param_expression: string
+  ; param_position: int
+  ; function_procname: Typ.Procname.t }
 
 let is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs =
   match (is_strict_mode, lhs, rhs) with
@@ -60,21 +62,44 @@ let pp_param_name fmt mangled =
   else Format.fprintf fmt "(%a)" MarkupFormatter.pp_monospaced name
 
 
-let violation_description _ assignment_type ~rhs_origin =
-  let suffix =
-    get_origin_opt assignment_type rhs_origin
-    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-    |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
+let bad_param_description
+    {model_source; param_signature; actual_param_expression; param_position; function_procname}
+    nullability_evidence =
+  let nullability_evidence_as_suffix =
+    Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
   in
   let module MF = MarkupFormatter in
-  match assignment_type with
-  | PassingParamToFunction
-      {model_source; param_signature; actual_param_expression; param_position; function_procname} ->
-      let argument_description =
-        if String.equal "null" actual_param_expression then "is `null`"
-        else Format.asprintf "%a is nullable" MF.pp_monospaced actual_param_expression
-      in
-      let nullability_evidence =
+  let argument_description =
+    if String.equal "null" actual_param_expression then "is `null`"
+    else Format.asprintf "%a is nullable" MF.pp_monospaced actual_param_expression
+  in
+  let suggested_file_to_add_third_party =
+    (* If the function is modelled, this is the different case:
+       suggestion to add third party is irrelevant
+    *)
+    Option.bind model_source ~f:(fun _ ->
+        ThirdPartyAnnotationInfo.lookup_related_sig_file_by_package
+          (ThirdPartyAnnotationGlobalRepo.get_repo ())
+          function_procname )
+  in
+  match suggested_file_to_add_third_party with
+  | Some sig_file_name ->
+      (* This is a special case. While for FB codebase we can assume "not annotated hence not nullable" rule for all signatures,
+         This is not the case for third party functions, which can have different conventions,
+         So we can not just say "param is declared as non-nullable" like we say for FB-internal or modelled case:
+         param can be nullable according to API but it was just not annotated.
+         So we phrase it differently to remain truthful, but as specific as possible.
+      *)
+      let procname_str = Typ.Procname.to_simplified_string ~withclass:true function_procname in
+      Format.asprintf
+        "Third-party %a is missing a signature that would allow passing a nullable to param #%d%a. \
+         Actual argument %s%s. Consider adding the correct signature of %a to %s."
+        MF.pp_monospaced procname_str param_position pp_param_name param_signature.mangled
+        argument_description nullability_evidence_as_suffix MF.pp_monospaced procname_str
+        (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
+           ~filename:sig_file_name)
+  | None ->
+      let nonnull_evidence =
         match model_source with
         | None ->
             ""
@@ -85,18 +110,32 @@ let violation_description _ assignment_type ~rhs_origin =
               (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name ~filename)
               line_number
       in
-      Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s"
+      Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string ~withclass:true function_procname)
-        param_position pp_param_name param_signature.mangled nullability_evidence
-        argument_description suffix
+        param_position pp_param_name param_signature.mangled nonnull_evidence argument_description
+        nullability_evidence_as_suffix
+
+
+let violation_description _ assignment_type ~rhs_origin =
+  let nullability_evidence =
+    get_origin_opt assignment_type rhs_origin
+    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+  in
+  let nullability_evidence_as_suffix =
+    Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
+  in
+  let module MF = MarkupFormatter in
+  match assignment_type with
+  | PassingParamToFunction function_info ->
+      bad_param_description function_info nullability_evidence
   | AssigningToField field_name ->
-      Format.asprintf "%a is declared non-nullable but is assigned a nullable%s" MF.pp_monospaced
+      Format.asprintf "%a is declared non-nullable but is assigned a nullable%s." MF.pp_monospaced
         (Typ.Fieldname.to_flat_string field_name)
-        suffix
+        nullability_evidence_as_suffix
   | ReturningFromFunction function_proc_name ->
       Format.asprintf
-        "%a: return type is declared non-nullable but the method returns a nullable value%s"
+        "%a: return type is declared non-nullable but the method returns a nullable value%s."
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string ~withclass:false function_proc_name)
-        suffix
+        nullability_evidence_as_suffix

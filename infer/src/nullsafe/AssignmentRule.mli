@@ -17,14 +17,16 @@ val check :
   is_strict_mode:bool -> lhs:Nullability.t -> rhs:Nullability.t -> (unit, violation) result
 
 type assignment_type =
-  | PassingParamToFunction of
-      { param_signature: AnnotatedSignature.param_signature
-      ; model_source: AnnotatedSignature.model_source option
-      ; actual_param_expression: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
+  | PassingParamToFunction of function_info
   | AssigningToField of Typ.Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
+
+and function_info =
+  { param_signature: AnnotatedSignature.param_signature
+  ; model_source: AnnotatedSignature.model_source option
+  ; actual_param_expression: string
+  ; param_position: int
+  ; function_procname: Typ.Procname.t }
 
 val violation_description : violation -> assignment_type -> rhs_origin:TypeOrigin.t -> string
