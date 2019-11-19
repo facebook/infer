@@ -15,8 +15,5 @@ val initialize : absolute_path_to_repo:string option -> ThirdPartyAnnotationInfo
 val get_repo : unit -> ThirdPartyAnnotationInfo.storage
 (** Can be accessed only when initialization was done *)
 
-val get_absolute_path_to_repo : unit -> string option
-(** Can be accessed only when initialization was done. None if there is no repo (i.e. empty repo) *)
-
 val get_user_friendly_third_party_sig_file_name : filename:string -> string
 (** Given filename containing the repo signatures, render it in a way convenient for the user *)
