@@ -739,7 +739,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
-    Procdesc.node_set_succs_exn context.procdesc root_node' res_trans.control.root_nodes [] ;
+    Procdesc.node_set_succs context.procdesc root_node' ~normal:res_trans.control.root_nodes ~exn:[] ;
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
 
@@ -892,7 +892,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     if res_trans_idx.control.root_nodes <> [] then
       List.iter
         ~f:(fun n ->
-          Procdesc.node_set_succs_exn context.procdesc n res_trans_idx.control.root_nodes [] )
+          Procdesc.node_set_succs context.procdesc n ~normal:res_trans_idx.control.root_nodes
+            ~exn:[] )
         res_trans_a.control.leaf_nodes ;
     (* Note the order of res_trans_idx.ids @ res_trans_a.ids is important. *)
     (* We expect to use only res_trans_idx.ids in construction of other operation. *)
@@ -1507,7 +1508,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       List.iter
-        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.control.root_nodes [])
+        ~f:(fun n ->
+          Procdesc.node_set_succs context.procdesc n ~normal:res_trans.control.root_nodes ~exn:[] )
         prune_nodes' ;
       res_trans
     in
@@ -1521,7 +1523,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Procdesc.Node.Join_node
             []
         in
-        Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [] ;
+        Procdesc.node_set_succs context.procdesc join_node ~normal:succ_nodes ~exn:[] ;
         let pvar = CVar_decl.mk_temp_sil_var procdesc ~name:"SIL_temp_conditional___" in
         let var_data =
           ProcAttributes.
@@ -1631,7 +1633,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let prune_t = mk_prune_node ~branch:true ~negate_cond e' instrs' in
       let prune_f = mk_prune_node ~branch:false ~negate_cond:(not negate_cond) e' instrs' in
       List.iter
-        ~f:(fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
+        ~f:(fun n' -> Procdesc.node_set_succs context.procdesc n' ~normal:[prune_t; prune_f] ~exn:[])
         res_trans_cond.control.leaf_nodes ;
       let root_nodes =
         if List.is_empty res_trans_cond.control.root_nodes then [prune_t; prune_f]
@@ -1668,7 +1670,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       List.iter
         ~f:(fun n ->
-          Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.control.root_nodes [] )
+          Procdesc.node_set_succs context.procdesc n ~normal:res_trans_s2.control.root_nodes ~exn:[]
+          )
         prune_to_s2 ;
       let root_nodes_to_parent =
         if List.is_empty res_trans_s1.control.root_nodes then res_trans_s1.control.leaf_nodes
@@ -1738,11 +1741,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       List.iter
-        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
+        ~f:(fun n -> Procdesc.node_set_succs context.procdesc n ~normal:nodes_branch ~exn:[])
         prune_nodes'
     in
     let join_node = Procdesc.create_node context.procdesc sil_loc Procdesc.Node.Join_node [] in
-    Procdesc.node_set_succs_exn context.procdesc join_node trans_state.succ_nodes [] ;
+    Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
     let trans_state_join_succ = {trans_state with succ_nodes= [join_node]} in
     (* translate the condition expression *)
     let res_trans_cond =
@@ -1835,7 +1838,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Procdesc.create_node context.procdesc sil_loc node_kind res_trans_cond_tmp.control.instrs
     in
     List.iter
-      ~f:(fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [switch_node] [])
+      ~f:(fun n' -> Procdesc.node_set_succs context.procdesc n' ~normal:[switch_node] ~exn:[])
       res_trans_cond_tmp.control.leaf_nodes ;
     let root_nodes =
       if res_trans_cond_tmp.control.root_nodes <> [] then res_trans_cond_tmp.control.root_nodes
@@ -1889,8 +1892,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             create_prune_node context.procdesc ~branch:false ~negate_cond:true sil_eq_cond
               res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
           in
-          Procdesc.node_set_succs_exn context.procdesc true_prune_node root_nodes [] ;
-          Procdesc.node_set_succs_exn context.procdesc false_prune_node curr_succ_nodes [] ;
+          Procdesc.node_set_succs context.procdesc true_prune_node ~normal:root_nodes ~exn:[] ;
+          Procdesc.node_set_succs context.procdesc false_prune_node ~normal:curr_succ_nodes ~exn:[] ;
           (* return prune nodes as next roots *)
           [true_prune_node; false_prune_node]
       | {SwitchCase.condition= Default; root_nodes} ->
@@ -1900,7 +1903,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let cases_root_nodes =
       List.fold switch_cases ~init:trans_state.succ_nodes ~f:link_up_switch_cases
     in
-    Procdesc.node_set_succs_exn context.procdesc switch_node cases_root_nodes [] ;
+    Procdesc.node_set_succs context.procdesc switch_node ~normal:cases_root_nodes ~exn:[] ;
     let top_nodes = variable_result.control.root_nodes in
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes= top_nodes; leaf_nodes= trans_state.succ_nodes}
@@ -1947,7 +1950,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | Procdesc.Node.Stmt_node ReturnStmt ->
                 ()
             | _ ->
-                Procdesc.set_succs_exn_only try_end catch_start_nodes )
+                Procdesc.set_succs try_end ~normal:None ~exn:(Some catch_start_nodes) )
           try_ends ;
         try_trans_result
     | _ ->
@@ -2037,12 +2040,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Loops.DoWhile _ ->
           [join_node]
     in
-    Procdesc.node_set_succs_exn context.procdesc join_node join_succ_nodes [] ;
+    Procdesc.node_set_succs context.procdesc join_node ~normal:join_succ_nodes ~exn:[] ;
     List.iter
-      ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n prune_t_succ_nodes [])
+      ~f:(fun n -> Procdesc.node_set_succs context.procdesc n ~normal:prune_t_succ_nodes ~exn:[])
       prune_nodes_t ;
     List.iter
-      ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n succ_nodes [])
+      ~f:(fun n -> Procdesc.node_set_succs context.procdesc n ~normal:succ_nodes ~exn:[])
       prune_nodes_f ;
     let root_nodes =
       match loop_kind with
@@ -2582,9 +2585,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         Procdesc.create_node context.procdesc sil_loc (Procdesc.Node.Stmt_node ReturnStmt)
           (instrs @ instrs_of destr_trans_result @ instrs_of destructor_res)
       in
-      Procdesc.node_set_succs_exn context.procdesc ret_node
-        [Procdesc.get_exit_node context.CContext.procdesc]
-        [] ;
+      Procdesc.node_set_succs context.procdesc ret_node
+        ~normal:[Procdesc.get_exit_node context.CContext.procdesc]
+        ~exn:[] ;
       ret_node
     in
     let trans_result =
@@ -2622,7 +2625,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let instrs = var_instrs @ res_trans_stmt.control.instrs @ ret_instrs in
           let ret_node = mk_ret_node instrs in
           List.iter
-            ~f:(fun n -> Procdesc.node_set_succs_exn procdesc n [ret_node] [])
+            ~f:(fun n -> Procdesc.node_set_succs procdesc n ~normal:[ret_node] ~exn:[])
             res_trans_stmt.control.leaf_nodes ;
           let root_nodes_to_parent =
             if List.length res_trans_stmt.control.root_nodes > 0 then

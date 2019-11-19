@@ -285,10 +285,11 @@ val fold_nodes : t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
 val fold_slope_range : Node.t -> Node.t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
 (** fold between two nodes or until we reach a branching structure *)
 
-val set_succs_exn_only : Node.t -> Node.t list -> unit
+val set_succs : Node.t -> normal:Node.t list option -> exn:Node.t list option -> unit
+(** Set the successor nodes and exception nodes, if given, and update predecessor links *)
 
-val node_set_succs_exn : t -> Node.t -> Node.t list -> Node.t list -> unit
-(** Set the successor nodes and exception nodes, and build predecessor links *)
+val node_set_succs : t -> Node.t -> normal:Node.t list -> exn:Node.t list -> unit
+(** Set the successor nodes and exception nodes, and update predecessor links *)
 
 val set_exit_node : t -> Node.t -> unit
 (** Set the exit node of the procedure *)

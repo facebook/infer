@@ -166,7 +166,7 @@ struct
     in
     let create_node kind cmds = Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers =
-      Procdesc.node_set_succs_exn pdesc cur_node succs exn_handlers
+      Procdesc.node_set_succs pdesc cur_node ~normal:succs ~exn:exn_handlers
     in
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =

@@ -7,7 +7,7 @@ digraph cfg {
 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_2" [label="2: Exit FN_deref_null_after_catch_bad \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 53, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$6); [line 53, column 1]\n " color=yellow style=filled]
 	
 
-"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 52, column 11]\n  n$1=*n$0:int [line 52, column 10]\n  *&return:int=n$1 [line 52, column 3]\n  NULLIFY(&i); [line 52, column 3]\n  EXIT_SCOPE(n$0,n$1,0$?%__sil_tmpSIL_materialize_temp__n$2,i); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 52, column 11]\n  n$1=*n$0:int [line 52, column 10]\n  *&return:int=n$1 [line 52, column 3]\n  NULLIFY(&i); [line 52, column 3]\n  EXIT_SCOPE(n$0,n$1,i); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_2" ;
@@ -35,11 +35,11 @@ digraph cfg {
 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" [label="2: Exit FN_deref_null_in_catch_bad \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 43, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$4); [line 43, column 1]\n " color=yellow style=filled]
 	
 
-"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42, column 3]\n  NULLIFY(&i); [line 42, column 3]\n  EXIT_SCOPE(i,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42, column 3]\n  NULLIFY(&i); [line 42, column 3]\n  EXIT_SCOPE(i); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" ;
-"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$2=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n  EXIT_SCOPE(_,n$2,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 38, column 37]\n  APPLY_ABSTRACTION; [line 38, column 37]\n " shape="box"]
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$2=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n  EXIT_SCOPE(_,n$2,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 38, column 37]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" ;
@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n   EXIT_SCOPE(0$?%__sil_tmpSIL_materialize_temp__n$9,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 59, column 5]\n " ]
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n  " ]
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" ;
@@ -118,7 +118,7 @@ digraph cfg {
 	
 
 	 "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_1" -> "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_4" ;
-"basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_2" [label="2: Exit basic_throw_ok \n   EXIT_SCOPE(0$?%__sil_tmpSIL_materialize_temp__n$0); [line 27, column 64]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 27, column 64]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$4); [line 27, column 64]\n " color=yellow style=filled]
+"basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_2" [label="2: Exit basic_throw_ok \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 27, column 64]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$4); [line 27, column 64]\n " color=yellow style=filled]
 	
 
 "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_3" [label="3:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 27, column 61]\n  n$2=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 27, column 61]\n  EXIT_SCOPE(_,n$2,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 27, column 61]\n  APPLY_ABSTRACTION; [line 27, column 61]\n " shape="box"]
@@ -147,11 +147,11 @@ digraph cfg {
 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_2" [label="2: Exit dead_deref_null_after_throw_ok \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 33, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$6); [line 33, column 1]\n " color=yellow style=filled]
 	
 
-"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 32, column 11]\n  n$1=*n$0:int [line 32, column 10]\n  *&return:int=n$1 [line 32, column 3]\n  NULLIFY(&i); [line 32, column 3]\n  EXIT_SCOPE(n$0,n$1,0$?%__sil_tmpSIL_materialize_temp__n$2,i); [line 32, column 3]\n  APPLY_ABSTRACTION; [line 32, column 3]\n " shape="box"]
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 32, column 11]\n  n$1=*n$0:int [line 32, column 10]\n  *&return:int=n$1 [line 32, column 3]\n  NULLIFY(&i); [line 32, column 3]\n  EXIT_SCOPE(n$0,n$1,i); [line 32, column 3]\n  APPLY_ABSTRACTION; [line 32, column 3]\n " shape="box"]
 	
 
 	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_2" ;
-"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 31, column 39]\n  n$4=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 31, column 39]\n  EXIT_SCOPE(_,n$4,0$?%__sil_tmpSIL_materialize_temp__n$2); [line 31, column 39]\n  APPLY_ABSTRACTION; [line 31, column 39]\n " shape="box"]
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 31, column 39]\n  n$4=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 31, column 39]\n  EXIT_SCOPE(_,n$4,0$?%__sil_tmpSIL_materialize_temp__n$2); [line 31, column 39]\n " shape="box"]
 	
 
 	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" ;

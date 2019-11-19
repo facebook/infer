@@ -57,7 +57,8 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
     else JTransExn.create_exception_handlers context [exn_node] get_body_nodes impl
   in
   let connect node pc =
-    Procdesc.node_set_succs_exn context.procdesc node (get_succ_nodes node pc) (get_exn_nodes pc)
+    Procdesc.node_set_succs context.procdesc node ~normal:(get_succ_nodes node pc)
+      ~exn:(get_exn_nodes pc)
   in
   let connect_nodes pc translated_instruction =
     match translated_instruction with
@@ -68,7 +69,7 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
     | JTrans.Prune (node_true, node_false) ->
         connect node_true pc ; connect node_false pc
     | JTrans.Loop (join_node, node_true, node_false) ->
-        Procdesc.node_set_succs_exn context.procdesc join_node [node_true; node_false] [] ;
+        Procdesc.node_set_succs context.procdesc join_node ~normal:[node_true; node_false] ~exn:[] ;
         connect node_true pc ;
         connect node_false pc
   in
@@ -77,10 +78,10 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
     direct_successors (-1) Int.Set.empty
   in
   (* the exceptions edges here are going directly to the exit node *)
-  Procdesc.node_set_succs_exn context.procdesc start_node first_nodes exit_nodes ;
+  Procdesc.node_set_succs context.procdesc start_node ~normal:first_nodes ~exn:exit_nodes ;
   if not super_call then
     (* the exceptions node is just before the exit node *)
-    Procdesc.node_set_succs_exn context.procdesc exn_node exit_nodes exit_nodes ;
+    Procdesc.node_set_succs context.procdesc exn_node ~normal:exit_nodes ~exn:exit_nodes ;
   Array.iteri ~f:connect_nodes method_body_nodes
 
 

@@ -325,7 +325,7 @@ let create_empty_cfg source_file procdesc =
   let location = Location.none source_file in
   let start_node = Procdesc.create_node procdesc location Procdesc.Node.Start_node [] in
   let exit_node = Procdesc.create_node procdesc location Procdesc.Node.Exit_node [] in
-  Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exit_node] ;
+  Procdesc.node_set_succs procdesc start_node ~normal:[exit_node] ~exn:[exit_node] ;
   Procdesc.set_start_node procdesc start_node ;
   Procdesc.set_exit_node procdesc exit_node ;
   procdesc

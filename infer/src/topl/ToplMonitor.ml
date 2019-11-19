@@ -66,7 +66,9 @@ let procedure proc_name (make_body : node_generator) : Procdesc.t =
     Procdesc.create_node proc_desc (sourcefile_location ()) kind instrs
   in
   let exit_node = create_node Procdesc.Node.Exit_node [] in
-  let set_succs node succs = Procdesc.node_set_succs_exn proc_desc node succs [exit_node] in
+  let set_succs node succs =
+    Procdesc.node_set_succs proc_desc node ~normal:succs ~exn:[exit_node]
+  in
   let {start_node= body_start; exit_node= body_exit} = make_body create_node set_succs in
   let start_node = create_node Procdesc.Node.Start_node [] in
   set_succs start_node [body_start] ;

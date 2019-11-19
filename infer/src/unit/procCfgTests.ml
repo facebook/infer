@@ -37,9 +37,9 @@ let tests =
   Procdesc.set_start_node test_pdesc n1 ;
   (* let -> represent normal transitions and -*-> represent exceptional transitions *)
   (* creating graph n1 -> n2, n1 -*-> n3, n2 -> n4, n2 -*-> n3, n3 -> n4 , n3 -*> n4 *)
-  Procdesc.node_set_succs_exn test_pdesc n1 [n2] [n3] ;
-  Procdesc.node_set_succs_exn test_pdesc n2 [n4] [n3] ;
-  Procdesc.node_set_succs_exn test_pdesc n3 [n4] [n4] ;
+  Procdesc.node_set_succs test_pdesc n1 ~normal:[n2] ~exn:[n3] ;
+  Procdesc.node_set_succs test_pdesc n2 ~normal:[n4] ~exn:[n3] ;
+  Procdesc.node_set_succs test_pdesc n3 ~normal:[n4] ~exn:[n4] ;
   let normal_proc_cfg = ProcCfg.Normal.from_pdesc test_pdesc in
   let exceptional_proc_cfg = ProcCfg.Exceptional.from_pdesc test_pdesc in
   let backward_proc_cfg = BackwardCfg.from_pdesc test_pdesc in

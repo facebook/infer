@@ -22,11 +22,11 @@ digraph cfg {
 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_2" [label="2: Exit capture_by_ref \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 37, column 10]\n  *&return:int=n$0 [line 37, column 3]\n  NULLIFY(&x); [line 37, column 3]\n  EXIT_SCOPE(n$0,x,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 37, column 3]\n  APPLY_ABSTRACTION; [line 37, column 3]\n " shape="box"]
+"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 37, column 10]\n  *&return:int=n$0 [line 37, column 3]\n  NULLIFY(&x); [line 37, column 3]\n  EXIT_SCOPE(n$0,x); [line 37, column 3]\n  APPLY_ABSTRACTION; [line 37, column 3]\n " shape="box"]
 	
 
 	 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" -> "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_2" ;
-"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3 [line 36, column 19]\n  n$3=_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::~(&0$?%__sil_tmpSIL_materialize_temp__n$1:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*) injected [line 36, column 19]\n  EXIT_SCOPE(_,n$3,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 36, column 19]\n  APPLY_ABSTRACTION; [line 36, column 19]\n " shape="box"]
+"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" [label="4:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3 [line 36, column 19]\n  n$3=_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::~(&0$?%__sil_tmpSIL_materialize_temp__n$1:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*) injected [line 36, column 19]\n  EXIT_SCOPE(_,n$3,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 36, column 19]\n " shape="box"]
 	
 
 	 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" -> "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" ;

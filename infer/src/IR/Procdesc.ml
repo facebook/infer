@@ -590,13 +590,17 @@ let set_start_node pdesc node = pdesc.start_node <- node
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
-let set_succs_exn_only (node : Node.t) exn = node.exn <- exn
-
 (** Set the successor nodes and exception nodes, and build predecessor links *)
-let set_succs_exn_base (node : Node.t) succs exn =
-  node.succs <- succs ;
-  node.exn <- exn ;
-  List.iter ~f:(fun (n : Node.t) -> n.preds <- node :: n.preds) succs
+let set_succs (node : Node.t) ~normal:succs_opt ~exn:exn_opt =
+  let remove_pred pred_node (from_node : Node.t) =
+    from_node.preds <- List.filter from_node.preds ~f:(fun pred -> not (Node.equal pred pred_node))
+  in
+  let add_pred pred_node (to_node : Node.t) = to_node.preds <- pred_node :: to_node.preds in
+  Option.iter succs_opt ~f:(fun new_succs ->
+      List.iter node.succs ~f:(remove_pred node) ;
+      List.iter new_succs ~f:(add_pred node) ;
+      node.succs <- new_succs ) ;
+  Option.iter exn_opt ~f:(fun exn -> node.exn <- exn)
 
 
 (** Create a new cfg node *)
@@ -626,15 +630,15 @@ let create_node pdesc loc kind instrs =
 (** Set the successor and exception nodes.
     If this is a join node right before the exit node, add an extra node in the middle,
     otherwise nullify and abstract instructions cannot be added after a conditional. *)
-let node_set_succs_exn pdesc (node : Node.t) succs exn =
+let node_set_succs pdesc (node : Node.t) ~normal:succs ~exn =
   match (node.kind, succs) with
   | Join_node, [({Node.kind= Exit_node} as exit_node)] ->
       let kind = Node.Stmt_node BetweenJoinAndExit in
       let node' = create_node_from_not_reversed pdesc node.loc kind node.instrs in
-      set_succs_exn_base node [node'] exn ;
-      set_succs_exn_base node' [exit_node] exn
+      set_succs node ~normal:(Some [node']) ~exn:(Some exn) ;
+      set_succs node' ~normal:(Some [exit_node]) ~exn:(Some exn)
   | _ ->
-      set_succs_exn_base node succs exn
+      set_succs node ~normal:(Some succs) ~exn:(Some exn)
 
 
 module PreProcCfg = struct

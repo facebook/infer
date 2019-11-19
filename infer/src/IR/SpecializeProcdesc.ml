@@ -33,7 +33,8 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
               Procdesc.set_start_node resolved_pdesc new_node ;
             if Procdesc.Node.equal node callee_exit_node then
               Procdesc.set_exit_node resolved_pdesc new_node ;
-            Procdesc.node_set_succs_exn callee_pdesc new_node (loop successors) (loop exn_nodes) ;
+            Procdesc.node_set_succs callee_pdesc new_node ~normal:(loop successors)
+              ~exn:(loop exn_nodes) ;
             new_node
         in
         converted_node :: loop other_node

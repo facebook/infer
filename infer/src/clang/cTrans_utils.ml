@@ -163,7 +163,7 @@ let collect_controls pdesc l =
   let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps} =
     if root_nodes <> [] then
       List.iter
-        ~f:(fun n -> Procdesc.node_set_succs_exn pdesc n root_nodes [])
+        ~f:(fun n -> Procdesc.node_set_succs pdesc n ~normal:root_nodes ~exn:[])
         result_rev.leaf_nodes ;
     let root_nodes = if result_rev.root_nodes <> [] then result_rev.root_nodes else root_nodes in
     let leaf_nodes = if leaf_nodes <> [] then leaf_nodes else result_rev.leaf_nodes in
@@ -219,9 +219,11 @@ module PriorityNode = struct
       let node =
         Procdesc.create_node trans_state.context.CContext.procdesc loc node_kind res_state.instrs
       in
-      Procdesc.node_set_succs_exn trans_state.context.procdesc node trans_state.succ_nodes [] ;
+      Procdesc.node_set_succs trans_state.context.procdesc node ~normal:trans_state.succ_nodes
+        ~exn:[] ;
       List.iter
-        ~f:(fun leaf -> Procdesc.node_set_succs_exn trans_state.context.procdesc leaf [node] [])
+        ~f:(fun leaf ->
+          Procdesc.node_set_succs trans_state.context.procdesc leaf ~normal:[node] ~exn:[] )
         res_state.leaf_nodes ;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = if res_state.root_nodes <> [] then res_state.root_nodes else [node] in
@@ -465,7 +467,7 @@ let trans_assertion_failure sil_loc (context : CContext.t) =
     Procdesc.create_node context.CContext.procdesc sil_loc
       (Procdesc.Node.Stmt_node AssertionFailure) [call_instr]
   in
-  Procdesc.node_set_succs_exn context.procdesc failure_node [exit_node] [] ;
+  Procdesc.node_set_succs context.procdesc failure_node ~normal:[exit_node] ~exn:[] ;
   mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with root_nodes= [failure_node]}
 
 
@@ -476,7 +478,7 @@ let trans_assume_false sil_loc (context : CContext.t) succ_nodes =
     Procdesc.create_node context.CContext.procdesc sil_loc (Nodes.prune_kind true if_kind)
       instrs_cond
   in
-  Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [] ;
+  Procdesc.node_set_succs context.procdesc prune_node ~normal:succ_nodes ~exn:[] ;
   mk_trans_result
     (Exp.zero, Typ.(mk (Tint IInt)))
     {empty_control with root_nodes= [prune_node]; leaf_nodes= [prune_node]}
