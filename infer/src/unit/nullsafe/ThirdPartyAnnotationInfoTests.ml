@@ -9,32 +9,37 @@ open! IStd
 open OUnit2
 module F = Format
 
-let assert_has_nullability_info storage unique_repr ~expected_nullability =
+let assert_has_nullability_info ?expected_file ?expected_line storage unique_repr
+    ~expected_nullability =
   match ThirdPartyAnnotationInfo.find_nullability_info storage unique_repr with
   | None ->
       assert_failure
         (F.asprintf "Expected to find info for %a, but it was not found"
            ThirdPartyMethod.pp_unique_repr unique_repr)
-  | Some nullability ->
+  | Some {filename; line_number; nullability} ->
       assert_equal expected_nullability nullability
         ~msg:
           (F.asprintf "Nullability info for %a does not match" ThirdPartyMethod.pp_unique_repr
              unique_repr)
-        ~printer:(Pp.string_of_pp ThirdPartyMethod.pp_nullability)
+        ~printer:(Pp.string_of_pp ThirdPartyMethod.pp_nullability) ;
+      Option.iter expected_file ~f:(fun expected_file ->
+          assert_equal expected_file filename ~msg:"Filename does not match" ) ;
+      Option.iter expected_line ~f:(fun expected_line ->
+          assert_equal expected_line line_number ~msg:"Line number does not match" )
 
 
 let assert_no_info storage unique_repr =
   match ThirdPartyAnnotationInfo.find_nullability_info storage unique_repr with
   | None ->
       ()
-  | Some nullability ->
+  | Some {nullability} ->
       assert_failure
         (F.asprintf "Did not expect to find nullability info for method %a, but found %a"
            ThirdPartyMethod.pp_unique_repr unique_repr ThirdPartyMethod.pp_nullability nullability)
 
 
-let add_from_annot_file_and_check_success storage ~lines =
-  match ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines with
+let add_from_annot_file_and_check_success storage ~filename ~lines =
+  match ThirdPartyAnnotationInfo.add_from_signature_file storage ~filename ~lines with
   | Ok storage ->
       storage
   | Error parsing_error ->
@@ -43,8 +48,8 @@ let add_from_annot_file_and_check_success storage ~lines =
            ThirdPartyAnnotationInfo.pp_parsing_error parsing_error)
 
 
-let add_from_annot_file_and_check_failure storage ~lines ~expected_error_line_number =
-  match ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines with
+let add_from_annot_file_and_check_failure storage ~filename ~lines ~expected_error_line_number =
+  match ThirdPartyAnnotationInfo.add_from_signature_file storage ~filename ~lines with
   | Ok _ ->
       assert_failure
         "Expected to not be able to parse the file, but it was successfully parsed instead"
@@ -60,15 +65,19 @@ let basic_find =
   let lines = ["a.A#foo(b.B)"; "b.B#bar(c.C, @Nullable d.D) @Nullable"] in
   (* Load some functions from the file *)
   let storage =
-    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines
+    add_from_annot_file_and_check_success ~filename:"test.sig"
+      (ThirdPartyAnnotationInfo.create_storage ())
+      ~lines
   in
   (* Make sure we can find what we just stored *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
+    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_file:"test.sig" ~expected_line:1 ;
   assert_has_nullability_info storage
     {class_name= "b.B"; method_name= Method "bar"; param_types= ["c.C"; "d.D"]}
-    ~expected_nullability:{ret_nullability= Nullable; param_nullability= [Nonnull; Nullable]} ;
+    ~expected_nullability:{ret_nullability= Nullable; param_nullability= [Nonnull; Nullable]}
+    ~expected_file:"test.sig" ~expected_line:2 ;
   (* Make sure we can not find stuff we did not store *)
   (* Wrong class name *)
   assert_no_info storage {class_name= "a.AB"; method_name= Method "foo"; param_types= ["b.B"]} ;
@@ -97,7 +106,9 @@ let overload_resolution =
   in
   (* Load some functions from the file *)
   let storage =
-    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines
+    add_from_annot_file_and_check_success ~filename:"test.sig"
+      (ThirdPartyAnnotationInfo.create_storage ())
+      ~lines
   in
   (* Make sure we can find what we just stored *)
   (* a.b.SomeClass.foo with 1 param *)
@@ -153,21 +164,26 @@ let can_add_several_files =
   (* 1. Add file and check if we added info *)
   let file1 = ["a.A#foo(b.B)"; "b.B#bar(c.C, @Nullable d.D) @Nullable"] in
   let storage =
-    add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file1
+    add_from_annot_file_and_check_success
+      (ThirdPartyAnnotationInfo.create_storage ())
+      ~filename:"file1.sig" ~lines:file1
   in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
+    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_file:"file1.sig" ~expected_line:1 ;
   (* 2. Add another file and check if we added info *)
   let file2 = ["e.E#baz(f.F)"; "g.G#<init>(h.H, @Nullable i.I) @Nullable"] in
-  let storage = add_from_annot_file_and_check_success storage ~lines:file2 in
+  let storage = add_from_annot_file_and_check_success storage ~filename:"file2.sig" ~lines:file2 in
   assert_has_nullability_info storage
     {class_name= "e.E"; method_name= Method "baz"; param_types= ["f.F"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
+    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_file:"file2.sig" ~expected_line:1 ;
   (* 3. Ensure we did not forget the content from the first file *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
     ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_file:"file1.sig" ~expected_line:1
 
 
 let should_not_forgive_unparsable_strings =
@@ -183,7 +199,7 @@ let should_not_forgive_unparsable_strings =
   (* Ensure we can add the good file, but can not add the bad one *)
   add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file_ok
   |> ignore ;
-  add_from_annot_file_and_check_failure
+  add_from_annot_file_and_check_failure ~filename:"test.sig"
     (ThirdPartyAnnotationInfo.create_storage ())
     ~lines:file_bad ~expected_error_line_number:2
 

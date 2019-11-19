@@ -7,9 +7,13 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 
-type storage = (ThirdPartyMethod.unique_repr, ThirdPartyMethod.nullability) Hashtbl.t
+type signature_info = {filename: string; line_number: int; nullability: ThirdPartyMethod.nullability}
 
-let create_storage () = Hashtbl.create 1
+type storage = {signature_map: signature_map; filenames: string list}
+
+and signature_map = (ThirdPartyMethod.unique_repr, signature_info) Hashtbl.t
+
+let create_storage () = {signature_map= Hashtbl.create 1; filenames= []}
 
 type file_parsing_error =
   {line_number: int; unparsable_method: string; parsing_error: ThirdPartyMethod.parsing_error}
@@ -28,21 +32,25 @@ let bind_list_with_index ~init list ~f =
       Result.bind acc ~f:(fun acc -> f acc index elem) )
 
 
-let parse_line_and_add_to_storage storage _line_index line =
+let parse_line_and_add_to_storage signature_map ~filename ~line_index line =
   let open Result in
   ThirdPartyMethod.parse line
   >>= fun (signature, nullability) ->
   Ok
-    ( Hashtbl.add storage signature nullability ;
-      storage )
+    ( Hashtbl.add signature_map signature {filename; line_number= line_index + 1; nullability} ;
+      signature_map )
 
 
-let add_from_signature_file storage ~lines =
+let add_from_signature_file storage ~filename ~lines =
   (* each line in a file should represent a method signature *)
-  bind_list_with_index lines ~init:storage ~f:(fun storage index method_as_str ->
-      parse_line_and_add_to_storage storage index method_as_str
+  let open Result in
+  let new_filenames = storage.filenames @ [filename] in
+  bind_list_with_index lines ~init:storage.signature_map
+    ~f:(fun signature_map line_index method_as_str ->
+      parse_line_and_add_to_storage signature_map ~filename ~line_index method_as_str
       |> Result.map_error ~f:(fun parsing_error ->
-             {line_number= index + 1; unparsable_method= method_as_str; parsing_error} ) )
+             {line_number= line_index + 1; unparsable_method= method_as_str; parsing_error} ) )
+  >>= fun new_map -> Ok {signature_map= new_map; filenames= new_filenames}
 
 
-let find_nullability_info storage unique_repr = Hashtbl.find_opt storage unique_repr
+let find_nullability_info {signature_map} unique_repr = Hashtbl.find_opt signature_map unique_repr

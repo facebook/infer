@@ -15,9 +15,8 @@ let pp_load_error fmt {filename; parsing_error} =
 
 let add_from_file storage ~path_to_repo_dir ~sig_file =
   let lines = In_channel.read_lines (path_to_repo_dir ^ "/" ^ sig_file) in
-  ThirdPartyAnnotationInfo.add_from_signature_file storage ~lines
+  ThirdPartyAnnotationInfo.add_from_signature_file storage ~filename:sig_file ~lines
   |> Result.map_error ~f:(fun parsing_error -> {filename= sig_file; parsing_error})
-  |> Result.bind ~f:(fun _ -> Ok storage)
 
 
 let load ~path_to_repo_dir =

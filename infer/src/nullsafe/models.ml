@@ -85,7 +85,8 @@ let get_modelled_annotated_signature tenv proc_attributes =
          ~f:
            (ThirdPartyAnnotationInfo.find_nullability_info
               (ThirdPartyAnnotationGlobalRepo.get_repo ()))
-    |> Option.map ~f:to_modelled_nullability
+    |> Option.map ~f:(fun ThirdPartyAnnotationInfo.{nullability} ->
+           to_modelled_nullability nullability )
     |> Option.value_map
        (* If we found information in third-party repo, overwrite annotated signature *)
          ~f:(AnnotatedSignature.set_modelled_nullability proc_name ann_sig)
