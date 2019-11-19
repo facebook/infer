@@ -25,12 +25,20 @@ let check ~is_strict_mode nullability =
       Ok ()
 
 
+let get_origin_opt ~nullable_object_descr origin =
+  let should_show_origin =
+    match nullable_object_descr with
+    | Some object_expression ->
+        not (ErrorRenderingUtils.is_object_nullability_self_explanatory ~object_expression origin)
+    | None ->
+        true
+  in
+  if should_show_origin then Some origin else None
+
+
 let violation_description _ dereference_type ~nullable_object_descr ~nullable_object_origin =
   let module MF = MarkupFormatter in
-  let origin_descr =
-    TypeOrigin.get_description nullable_object_origin |> Option.value ~default:""
-  in
-  let nullable_object_descr =
+  let what_is_dereferred_str =
     match dereference_type with
     | MethodCall _ | AccessToField _ -> (
       match nullable_object_descr with
@@ -60,5 +68,10 @@ let violation_description _ dereference_type ~nullable_object_descr ~nullable_ob
     | ArrayLengthAccess ->
         "accessing its length"
   in
-  Format.sprintf "%s is nullable and is not locally checked for null when %s. %s"
-    nullable_object_descr action_descr origin_descr
+  let origin_descr =
+    get_origin_opt ~nullable_object_descr nullable_object_origin
+    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+    |> Option.value_map ~f:(fun origin -> " " ^ origin) ~default:""
+  in
+  Format.sprintf "%s is nullable and is not locally checked for null when %s.%s"
+    what_is_dereferred_str action_descr origin_descr

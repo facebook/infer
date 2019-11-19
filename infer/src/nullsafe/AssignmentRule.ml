@@ -35,21 +35,38 @@ let check ~is_strict_mode ~lhs ~rhs =
   Result.ok_if_true is_allowed_assignment ~error:{is_strict_mode; lhs; rhs}
 
 
+let get_origin_opt assignment_type origin =
+  let should_show_origin =
+    match assignment_type with
+    | PassingParamToFunction {param_description} ->
+        not
+          (ErrorRenderingUtils.is_object_nullability_self_explanatory
+             ~object_expression:param_description origin)
+    | AssigningToField _ | ReturningFromFunction _ ->
+        true
+  in
+  if should_show_origin then Some origin else None
+
+
 let violation_description _ assignment_type ~rhs_origin =
-  let rhs_origin_descr = TypeOrigin.get_description rhs_origin |> Option.value ~default:"" in
+  let rhs_origin_descr =
+    get_origin_opt assignment_type rhs_origin
+    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+    |> Option.value_map ~f:(fun origin -> " " ^ origin) ~default:""
+  in
   let module MF = MarkupFormatter in
   match assignment_type with
   | PassingParamToFunction {param_description; param_position; function_procname} ->
-      Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null. %s"
+      Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null.%s"
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string ~withclass:true function_procname)
         param_position MF.pp_monospaced param_description rhs_origin_descr
   | AssigningToField field_name ->
-      Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
+      Format.asprintf "Field %a can be null but is not declared %a.%s" MF.pp_monospaced
         (Typ.Fieldname.to_simplified_string field_name)
         MF.pp_monospaced "@Nullable" rhs_origin_descr
   | ReturningFromFunction function_proc_name ->
-      Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
+      Format.asprintf "Method %a may return null but it is not annotated with %a.%s"
         MF.pp_monospaced
         (Typ.Procname.to_simplified_string function_proc_name)
         MF.pp_monospaced "@Nullable" rhs_origin_descr
