@@ -166,6 +166,8 @@ DIRECT_TESTS += \
   java_quandary \
   java_racerd \
   java_starvation \
+  java_starvation-dedup \
+  java_starvation-whole-program \
   java_topl \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
