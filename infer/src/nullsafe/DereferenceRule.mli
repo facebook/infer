@@ -23,7 +23,9 @@ type dereference_type =
 
 val violation_description :
      violation
+  -> dereference_location:Location.t
   -> dereference_type
   -> nullable_object_descr:string option
   -> nullable_object_origin:TypeOrigin.t
-  -> string
+  -> string * IssueType.t * Location.t
+(** Given context around violation, return error message together with the info where to put this message *)

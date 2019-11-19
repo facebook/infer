@@ -164,6 +164,10 @@ val eradicate_return_not_nullable : t
 
 val eradicate_return_over_annotated : t
 
+val eradicate_unvetted_third_party_in_strict : t
+
+val eradicate_forbidden_non_strict_in_strict : t
+
 val expensive_cost_call : kind:CostKind.t -> is_on_cold_start:bool -> is_on_ui_thread:bool -> t
 
 val exposed_insecure_intent_handling : t

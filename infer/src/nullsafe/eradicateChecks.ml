@@ -36,7 +36,11 @@ let check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_
       let nullable_object_descr = explain_expr tenv node object_exp in
       let type_error =
         TypeErr.Nullable_dereference
-          {dereference_violation; nullable_object_descr; dereference_type; nullable_object_origin}
+          { dereference_violation
+          ; dereference_location= loc
+          ; nullable_object_descr
+          ; dereference_type
+          ; nullable_object_origin }
       in
       report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname )
 
@@ -163,6 +167,7 @@ let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pd
         report_error tenv find_canonical_duplicate
           (TypeErr.Bad_assignment
              { assignment_violation
+             ; assignment_location= loc
              ; rhs_origin
              ; assignment_type= AssignmentRule.AssigningToField fname })
           (Some instr_ref) loc curr_pdesc )
@@ -329,6 +334,7 @@ let check_return_not_nullable ~is_strict_mode tenv find_canonical_duplicate loc 
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
            { assignment_violation
+           ; assignment_location= loc
            ; rhs_origin
            ; assignment_type= AssignmentRule.ReturningFromFunction curr_pname })
         None loc curr_pdesc )
@@ -439,6 +445,7 @@ let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
            { assignment_violation
+           ; assignment_location= loc
            ; rhs_origin
            ; assignment_type=
                AssignmentRule.PassingParamToFunction

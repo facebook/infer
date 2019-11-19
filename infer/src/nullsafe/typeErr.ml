@@ -70,11 +70,13 @@ type err_instance =
       ; violation_type: OverAnnotatedRule.violation_type }
   | Nullable_dereference of
       { dereference_violation: DereferenceRule.violation
+      ; dereference_location: Location.t
       ; dereference_type: DereferenceRule.dereference_type
       ; nullable_object_descr: string option
       ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
+      ; assignment_location: Location.t
       ; assignment_type: AssignmentRule.assignment_type
       ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
@@ -195,29 +197,6 @@ type st_report_error =
   -> string
   -> unit
 
-let get_infer_issue_type = function
-  | Condition_redundant _ ->
-      IssueType.eradicate_condition_redundant
-  | Over_annotation {violation_type= OverAnnotatedRule.FieldOverAnnoted _} ->
-      IssueType.eradicate_field_over_annotated
-  | Over_annotation {violation_type= OverAnnotatedRule.ReturnOverAnnotated _} ->
-      IssueType.eradicate_return_over_annotated
-  | Field_not_initialized _ ->
-      IssueType.eradicate_field_not_initialized
-  | Bad_assignment {assignment_type= PassingParamToFunction _} ->
-      IssueType.eradicate_parameter_not_nullable
-  | Bad_assignment {assignment_type= AssigningToField _} ->
-      IssueType.eradicate_field_not_nullable
-  | Bad_assignment {assignment_type= ReturningFromFunction _} ->
-      IssueType.eradicate_return_not_nullable
-  | Nullable_dereference _ ->
-      IssueType.eradicate_nullable_dereference
-  | Inconsistent_subclass {violation_type= InconsistentReturn} ->
-      IssueType.eradicate_inconsistent_subclass_return_annotation
-  | Inconsistent_subclass {violation_type= InconsistentParam _} ->
-      IssueType.eradicate_inconsistent_subclass_parameter_annotation
-
-
 (* If an error is related to a particular field, we support suppressing the
    error via a supress annotation placed near the field declaration *)
 let get_field_name_for_error_suppressing = function
@@ -234,39 +213,66 @@ let get_field_name_for_error_suppressing = function
       None
 
 
-let get_error_description err_instance =
+let get_error_info err_instance =
   match err_instance with
   | Condition_redundant (is_always_true, s_opt) ->
-      P.sprintf "The condition %s is always %b according to the existing annotations."
-        (Option.value s_opt ~default:"") is_always_true
+      ( P.sprintf "The condition %s is always %b according to the existing annotations."
+          (Option.value s_opt ~default:"") is_always_true
+      , IssueType.eradicate_condition_redundant
+      , None )
   | Over_annotation {over_annotated_violation; violation_type} ->
-      OverAnnotatedRule.violation_description over_annotated_violation violation_type
+      ( OverAnnotatedRule.violation_description over_annotated_violation violation_type
+      , ( match violation_type with
+        | OverAnnotatedRule.FieldOverAnnoted _ ->
+            IssueType.eradicate_field_over_annotated
+        | OverAnnotatedRule.ReturnOverAnnotated _ ->
+            IssueType.eradicate_return_over_annotated )
+      , None )
   | Field_not_initialized field_name ->
-      Format.asprintf
-        "Field %a is declared non-nullable, so it should be initialized in the constructor or in \
-         an `@Initializer` method"
-        MF.pp_monospaced
-        (Typ.Fieldname.to_flat_string field_name)
-  | Bad_assignment {rhs_origin; assignment_type; assignment_violation} ->
-      AssignmentRule.violation_description assignment_violation assignment_type ~rhs_origin
+      ( Format.asprintf
+          "Field %a is declared non-nullable, so it should be initialized in the constructor or in \
+           an `@Initializer` method"
+          MF.pp_monospaced
+          (Typ.Fieldname.to_flat_string field_name)
+      , IssueType.eradicate_field_not_initialized
+      , None )
+  | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->
+      let description, issue_type, error_location =
+        AssignmentRule.violation_description ~assignment_location assignment_violation
+          assignment_type ~rhs_origin
+      in
+      (description, issue_type, Some error_location)
   | Nullable_dereference
-      {dereference_violation; nullable_object_descr; dereference_type; nullable_object_origin} ->
-      DereferenceRule.violation_description dereference_violation dereference_type
-        ~nullable_object_descr ~nullable_object_origin
+      { dereference_violation
+      ; dereference_location
+      ; nullable_object_descr
+      ; dereference_type
+      ; nullable_object_origin } ->
+      let description, issue_type, error_location =
+        DereferenceRule.violation_description ~dereference_location dereference_violation
+          dereference_type ~nullable_object_descr ~nullable_object_origin
+      in
+      (description, issue_type, Some error_location)
   | Inconsistent_subclass
       {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
-      InheritanceRule.violation_description inheritance_violation violation_type ~base_proc_name
-        ~overridden_proc_name
+      ( InheritanceRule.violation_description inheritance_violation violation_type ~base_proc_name
+          ~overridden_proc_name
+      , ( match violation_type with
+        | InconsistentReturn ->
+            IssueType.eradicate_inconsistent_subclass_return_annotation
+        | InconsistentParam _ ->
+            IssueType.eradicate_inconsistent_subclass_parameter_annotation )
+      , None )
 
 
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
-  let infer_issue_type = get_infer_issue_type err_instance in
+  let err_description, infer_issue_type, updated_location = get_error_info err_instance in
   let field_name = get_field_name_for_error_suppressing err_instance in
-  let err_description = get_error_description err_instance in
   let severity = Severity.err_instance_get_severity tenv err_instance in
-  st_report_error pname pdesc infer_issue_type loc ~field_name
+  let error_location = Option.value updated_location ~default:loc in
+  st_report_error pname pdesc infer_issue_type error_location ~field_name
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
     ?severity err_description
 

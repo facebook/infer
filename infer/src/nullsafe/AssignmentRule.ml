@@ -117,25 +117,51 @@ let bad_param_description
         nullability_evidence_as_suffix
 
 
-let violation_description _ assignment_type ~rhs_origin =
-  let nullability_evidence =
-    get_origin_opt assignment_type rhs_origin
-    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-  in
-  let nullability_evidence_as_suffix =
-    Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
-  in
-  let module MF = MarkupFormatter in
-  match assignment_type with
-  | PassingParamToFunction function_info ->
-      bad_param_description function_info nullability_evidence
-  | AssigningToField field_name ->
-      Format.asprintf "%a is declared non-nullable but is assigned a nullable%s." MF.pp_monospaced
-        (Typ.Fieldname.to_flat_string field_name)
-        nullability_evidence_as_suffix
-  | ReturningFromFunction function_proc_name ->
-      Format.asprintf
-        "%a: return type is declared non-nullable but the method returns a nullable value%s."
-        MF.pp_monospaced
-        (Typ.Procname.to_simplified_string ~withclass:false function_proc_name)
-        nullability_evidence_as_suffix
+let is_declared_nonnull_to_nonnull ~lhs ~rhs =
+  match (lhs, rhs) with Nullability.Nonnull, Nullability.DeclaredNonnull -> true | _ -> false
+
+
+let get_issue_type = function
+  | PassingParamToFunction _ ->
+      IssueType.eradicate_parameter_not_nullable
+  | AssigningToField _ ->
+      IssueType.eradicate_field_not_nullable
+  | ReturningFromFunction _ ->
+      IssueType.eradicate_return_not_nullable
+
+
+let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assignment_type
+    ~rhs_origin =
+  if is_declared_nonnull_to_nonnull ~lhs ~rhs then (
+    if not is_strict_mode then
+      Logging.die InternalError "Unexpected situation: should not be a violation not in strict mode" ;
+    (* This type of violation is more subtle than the normal case because, so it should be rendered in a special way *)
+    ErrorRenderingUtils.get_strict_mode_violation_issue ~bad_usage_location:assignment_location
+      rhs_origin )
+  else
+    let nullability_evidence =
+      get_origin_opt assignment_type rhs_origin
+      |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+    in
+    let nullability_evidence_as_suffix =
+      Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
+    in
+    let module MF = MarkupFormatter in
+    let error_message =
+      match assignment_type with
+      | PassingParamToFunction function_info ->
+          bad_param_description function_info nullability_evidence
+      | AssigningToField field_name ->
+          Format.asprintf "%a is declared non-nullable but is assigned a nullable%s."
+            MF.pp_monospaced
+            (Typ.Fieldname.to_flat_string field_name)
+            nullability_evidence_as_suffix
+      | ReturningFromFunction function_proc_name ->
+          Format.asprintf
+            "%a: return type is declared non-nullable but the method returns a nullable value%s."
+            MF.pp_monospaced
+            (Typ.Procname.to_simplified_string ~withclass:false function_proc_name)
+            nullability_evidence_as_suffix
+    in
+    let issue_type = get_issue_type assignment_type in
+    (error_message, issue_type, assignment_location)

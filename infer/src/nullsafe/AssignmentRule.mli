@@ -29,4 +29,10 @@ and function_info =
   ; param_position: int
   ; function_procname: Typ.Procname.t }
 
-val violation_description : violation -> assignment_type -> rhs_origin:TypeOrigin.t -> string
+val violation_description :
+     violation
+  -> assignment_location:Location.t
+  -> assignment_type
+  -> rhs_origin:TypeOrigin.t
+  -> string * IssueType.t * Location.t
+(** Given context around violation, return error message together with the info where to put this message *)

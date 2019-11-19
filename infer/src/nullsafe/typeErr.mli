@@ -46,11 +46,13 @@ type err_instance =
       ; violation_type: OverAnnotatedRule.violation_type }
   | Nullable_dereference of
       { dereference_violation: DereferenceRule.violation
+      ; dereference_location: Location.t
       ; dereference_type: DereferenceRule.dereference_type
       ; nullable_object_descr: string option
       ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
+      ; assignment_location: Location.t
       ; assignment_type: AssignmentRule.assignment_type
       ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]

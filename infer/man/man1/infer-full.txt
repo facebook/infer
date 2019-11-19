@@ -400,6 +400,8 @@ OPTIONS
              ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
              ERADICATE_RETURN_NOT_NULLABLE (enabled by default),
              ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
+             ERADICATE_UNCHECKED_NONSTRICT_FROM_STRICT (enabled by default),
+             ERADICATE_UNVETTED_THIRD_PARTY_IN_STRICT (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
            default),

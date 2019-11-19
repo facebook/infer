@@ -36,42 +36,53 @@ let get_origin_opt ~nullable_object_descr origin =
   if should_show_origin then Some origin else None
 
 
-let violation_description _ dereference_type ~nullable_object_descr ~nullable_object_origin =
+let violation_description nullability ~dereference_location dereference_type ~nullable_object_descr
+    ~nullable_object_origin =
   let module MF = MarkupFormatter in
-  let what_is_dereferred_str =
-    match dereference_type with
-    | MethodCall _ | AccessToField _ -> (
-      match nullable_object_descr with
-      | None ->
-          "Object"
-      (* Just describe an object itself *)
-      | Some descr ->
-          MF.monospaced_to_string descr )
-    | ArrayLengthAccess | AccessByIndex _ -> (
-      (* In Java, those operations can be applied only to arrays *)
-      match nullable_object_descr with
-      | None ->
-          "Array"
-      | Some descr ->
-          Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
-  in
-  let action_descr =
-    match dereference_type with
-    | MethodCall method_name ->
-        Format.sprintf "calling %s"
-          (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
-    | AccessToField field_name ->
-        Format.sprintf "accessing field %s"
-          (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
-    | AccessByIndex {index_desc} ->
-        Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
-    | ArrayLengthAccess ->
-        "accessing its length"
-  in
-  let suffix =
-    get_origin_opt ~nullable_object_descr nullable_object_origin
-    |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-    |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
-  in
-  Format.sprintf "%s is nullable and is not locally checked for null when %s%s"
-    what_is_dereferred_str action_descr suffix
+  match nullability with
+  | Nullability.DeclaredNonnull ->
+      (* This can happen only in strict mode.
+         This type of violation is more subtle than the normal case because, so it should be rendered in a special way *)
+      ErrorRenderingUtils.get_strict_mode_violation_issue ~bad_usage_location:dereference_location
+        nullable_object_origin
+  | _ ->
+      let what_is_dereferred_str =
+        match dereference_type with
+        | MethodCall _ | AccessToField _ -> (
+          match nullable_object_descr with
+          | None ->
+              "Object"
+          (* Just describe an object itself *)
+          | Some descr ->
+              MF.monospaced_to_string descr )
+        | ArrayLengthAccess | AccessByIndex _ -> (
+          (* In Java, those operations can be applied only to arrays *)
+          match nullable_object_descr with
+          | None ->
+              "Array"
+          | Some descr ->
+              Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
+      in
+      let action_descr =
+        match dereference_type with
+        | MethodCall method_name ->
+            Format.sprintf "calling %s"
+              (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
+        | AccessToField field_name ->
+            Format.sprintf "accessing field %s"
+              (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
+        | AccessByIndex {index_desc} ->
+            Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
+        | ArrayLengthAccess ->
+            "accessing its length"
+      in
+      let suffix =
+        get_origin_opt ~nullable_object_descr nullable_object_origin
+        |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+        |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
+      in
+      let description =
+        Format.sprintf "%s is nullable and is not locally checked for null when %s%s"
+          what_is_dereferred_str action_descr suffix
+      in
+      (description, IssueType.eradicate_nullable_dereference, dereference_location)
