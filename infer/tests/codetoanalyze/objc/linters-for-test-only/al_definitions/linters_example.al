@@ -888,3 +888,12 @@ DEFINE-CHECKER IVAR_CAPTURED_IN_OBJC_BLOCK = {
     SET severity = "ERROR";
 		SET mode = "ON";
 	};
+
+DEFINE-CHECKER CALLS_TO_FUNCTIONS_WITH_CREATE_FUNCTION_PARAMETERS = {
+LET is_create_method_parameter = HOLDS-NEXT WITH-TRANSITION Parameters 
+    (call_function(REGEXP(".*Create.*")) AND has_type("REGEXP('C.*Ref')"));
+SET report_when =
+    WHEN
+      is_create_method_parameter
+        HOLDS-IN-NODE CallExpr;
+};

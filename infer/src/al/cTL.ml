@@ -806,7 +806,9 @@ let transition_via_parameters an =
   match an with
   | Decl (ObjCMethodDecl (_, _, omdi)) ->
       List.map ~f:(fun d -> Decl d) omdi.omdi_parameters
-  | Stmt (ObjCMessageExpr (_, stmt_list, _, _)) ->
+  | Stmt (ObjCMessageExpr (_, stmt_list, _, _))
+  | Stmt (CallExpr (_, _ :: stmt_list, _))
+  | Stmt (CXXMemberCallExpr (_, stmt_list, _)) ->
       List.map ~f:(fun stmt -> Stmt stmt) stmt_list
   | _ ->
       []
