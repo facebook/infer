@@ -223,7 +223,8 @@ let schedules_work_on_ui_thread =
   fun tenv pname -> matcher tenv pname []
 
 
-type executor_thread_constraint = ForUIThread | ForNonUIThread [@@deriving equal]
+type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
+[@@deriving equal]
 
 (* Executors are usually stored in fields and annotated according to what type of thread 
    they schedule work on.  Given an expression representing such a field, try to find the kind of 

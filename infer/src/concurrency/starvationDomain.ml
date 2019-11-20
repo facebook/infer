@@ -460,7 +460,9 @@ module Attribute = struct
     | Executor StarvationModels.ForUIThread ->
         "Executor(UI)"
     | Executor StarvationModels.ForNonUIThread ->
-        "Executor(BG)" )
+        "Executor(BG)"
+    | Executor StarvationModels.ForUnknownThread ->
+        "Executor(Unknown)" )
     |> F.pp_print_string fmt
 
 
@@ -630,12 +632,14 @@ let filter_blocking_calls ({critical_pairs} as astate) =
 
 
 let schedule_work loc thread_constraint astate procname =
-  let thread =
-    match thread_constraint with
-    | StarvationModels.ForUIThread ->
-        ThreadDomain.UIThread
-    | StarvationModels.ForNonUIThread ->
-        ThreadDomain.BGThread
+  let thread : ThreadDomain.t =
+    match (thread_constraint : StarvationModels.executor_thread_constraint) with
+    | ForUIThread ->
+        UIThread
+    | ForNonUIThread ->
+        BGThread
+    | ForUnknownThread ->
+        UnknownThread
   in
   let work_item = ScheduledWorkItem.{procname; loc; thread} in
   {astate with scheduled_work= ScheduledWorkDomain.add work_item astate.scheduled_work}

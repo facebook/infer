@@ -36,11 +36,13 @@ val schedules_work : Tenv.t -> Typ.Procname.t -> bool
 (** call known to schedule runnable first argument to some thread/executor *)
 
 (** an instance field holding a reference to an executor may be annotated as running on UI/non-UI thread *)
-type executor_thread_constraint = ForUIThread | ForNonUIThread [@@deriving equal]
+type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
+[@@deriving equal]
 
 val get_executor_thread_constraint :
   Tenv.t -> HilExp.AccessExpression.t -> executor_thread_constraint option
-(** given an executor receiver, get its thread constraint, if any *)
+(** given an executor receiver, get its thread constraint, if any. [None] means lookup somehow failed, 
+    whereas [Some UnknownThread] means the receiver is an unannotated executor. *)
 
 val get_run_method_from_runnable : Tenv.t -> HilExp.AccessExpression.t -> Typ.Procname.t option
 (** given a receiver, find the [run()] method in the appropriate class *)

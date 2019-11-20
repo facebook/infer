@@ -99,7 +99,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             [ (* match an executor call that we have a model for *)
               lazy (StarvationModels.get_executor_thread_constraint tenv executor)
             ; (* match an executor call where the executor is stored in a variable *)
-              lazy (Domain.AttributeDomain.get_executor_constraint executor astate.attributes) ]
+              lazy (Domain.AttributeDomain.get_executor_constraint executor astate.attributes)
+            ; (* the receiver is an executor stored in a variable for which we have no knowledge *)
+              lazy (Some StarvationModels.ForUnknownThread) ]
         in
         Option.fold thread_opt ~init:astate ~f:(schedule_work runnable)
     | HilExp.AccessExpression runnable :: _
