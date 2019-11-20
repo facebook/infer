@@ -112,6 +112,8 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+#	needed for dune to "install" the relevant dynamic libraries for the C stubs
+	$(QUIET)cd c_stubs; dune build InferCStubs.install
 	$(QUIET)dune build \
 	  $(patsubst $(INFER_BUILD_DIR)/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
 	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
@@ -160,10 +162,12 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 endif
+#	needed for dune to "install" the relevant dynamic libraries for the C stubs
+	cd c_stubs; dune build InferCStubs.install
 
 .PHONY: byte
 byte: $(INFER_BIN).bc
-	$(INSTALL_PROGRAM) -C $(INFER_BIN).bc $(INFER_BIN)
+	$(INSTALL_PROGRAM) -C $(INFER_BIN).byte $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 roots:=Infer
@@ -193,6 +197,8 @@ dsort:
 
 $(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	dune build $@
+#	needed for dune to "install" the relevant dynamic libraries for the C stubs
+	cd c_stubs; dune build InferCStubs.install
 	$(QUIET)touch $@
 
 $(INFERTOP_BIN): $(INFER_BUILD_DIR)/infertop.bc

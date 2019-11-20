@@ -47,7 +47,9 @@ let infer_cflags =
     ; "-open"
     ; "InferIR"
     ; "-open"
-    ; "InferBase" ]
+    ; "InferBase"
+    ; "-open"
+    ; "InferCStubs" ]
 
 
 (** The build stanzas to be passed to dune *)
@@ -75,7 +77,7 @@ let stanzas =
 |}
         (String.concat " " infer_cflags)
         (String.concat " " common_optflags)
-        (String.concat " " ("InferIR" :: common_libraries))
+        (String.concat " " ("InferCStubs" :: "InferIR" :: common_libraries))
         (String.concat " " infer_binaries)
     ; Format.sprintf
         {|

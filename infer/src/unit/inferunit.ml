@@ -30,6 +30,7 @@ let () =
         ; AccessPathTests.tests
         ; AccessTreeTests.tests
         ; AddressTakenTests.tests
+        ; CStubsTests.tests
         ; DifferentialFiltersTests.tests
         ; DifferentialTests.tests
         ; FileDiffTests.tests

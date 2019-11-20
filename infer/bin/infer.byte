@@ -1,0 +1,11 @@
+#!/bin/bash
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+## Wrapper around the bytecode version of infer produced by `make byte`
+# This is needed to find the dynamic libraries of our C stubs
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+exec "$SCRIPT_DIR"/../../scripts/dune_exec_shim.sh "${0%.byte}.bc" "$@"
