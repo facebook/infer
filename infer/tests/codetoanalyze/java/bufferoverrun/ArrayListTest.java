@@ -94,6 +94,28 @@ class ArrayListTest {
     }
   }
 
+  void add_in_loop_by_param4_ok(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    a.add(0);
+    if (b.size() > 0) {
+      for (int i = 1; i < b.size(); i++) {
+        a.add(0);
+      } // a.size = b.size
+      int j = a.get(b.size() - 1);
+    }
+  }
+
+  void add_in_loop_by_param4_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    a.add(0);
+    if (b.size() > 0) {
+      for (int i = 1; i < b.size(); i++) {
+        a.add(0);
+      } // a.size = b.size
+      int j = a.get(b.size() + 1);
+    }
+  }
+
   void add_in_loop_iterator_ok(ArrayList<Integer> b) {
     ArrayList<Integer> a = new ArrayList<>();
     for (Integer i : b) {

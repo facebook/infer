@@ -1186,9 +1186,9 @@ module AliasMap = struct
     else x
 
 
-  let add_zero_size_alias ~size ~i ~arr x =
-    add_alias ~lhs:(KeyLhs.of_loc size) ~rhs:arr
-      (AliasTarget.Size {alias_typ= Eq; i; java_tmp= None})
+  let add_size_alias ~lhs ~lhs_v ~arr ~arr_size x =
+    add_alias ~lhs:(KeyLhs.of_loc lhs) ~rhs:arr
+      (AliasTarget.Size {alias_typ= Eq; i= IntLit.sub lhs_v arr_size; java_tmp= None})
       x
 
 
@@ -1343,12 +1343,12 @@ module Alias = struct
     update_size_alias locs a ~f:(fun loc acc -> lift_map (AliasMap.incr_or_not_size_alias loc) acc)
 
 
-  let add_empty_size_alias : Loc.t -> IntLit.t -> PowLoc.t -> t -> t =
+  let add_size_alias : Loc.t -> IntLit.t -> (Loc.t * IntLit.t) list -> t -> t =
    fun loc i arr_locs prev ->
-    let accum_empty_size_alias arr_loc acc =
-      lift_map (AliasMap.add_zero_size_alias ~size:loc ~i ~arr:arr_loc) acc
+    let accum_size_alias acc (arr_loc, arr_size) =
+      lift_map (AliasMap.add_size_alias ~lhs:loc ~lhs_v:i ~arr:arr_loc ~arr_size) acc
     in
-    PowLoc.fold accum_empty_size_alias arr_locs (lift_map (AliasMap.forget loc) prev)
+    List.fold arr_locs ~init:(lift_map (AliasMap.forget loc) prev) ~f:accum_size_alias
 
 
   let add_iterator_offset_alias : Ident.t -> PowLoc.t -> t -> t =
@@ -1888,11 +1888,14 @@ module MemReach = struct
     | Exp.Const (Const.Cint i) when IntLit.iszero i || IntLit.isone i ->
         let arr_locs =
           let add_arr l v acc =
-            if Itv.is_zero (Val.array_sizeof v) then PowLoc.add l acc else acc
+            let size = Val.array_sizeof v in
+            if Itv.is_zero size then (l, IntLit.zero) :: acc
+            else if Itv.is_one size then (l, IntLit.one) :: acc
+            else acc
           in
-          MemPure.fold add_arr m.mem_pure PowLoc.empty
+          MemPure.fold add_arr m.mem_pure []
         in
-        {m with alias= Alias.add_empty_size_alias loc i arr_locs m.alias}
+        {m with alias= Alias.add_size_alias loc i arr_locs m.alias}
     | _ ->
         {m with alias= Alias.store_simple loc e m.alias}
 
