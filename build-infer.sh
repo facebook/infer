@@ -122,8 +122,8 @@ if [ "$INTERACTIVE" == "no" ] || [ "$USER_OPAM_SWITCH" == "no" ]; then
 fi
 
 setup_opam () {
-    opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup
-    opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_COMPILER"
+    opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup &&
+    opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_COMPILER" &&
     opam switch set "$INFER_OPAM_SWITCH"
 }
 
@@ -132,7 +132,7 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=--locked
     fi
-    opam install --deps-only infer "$INFER_ROOT" $locked
+    opam install --deps-only infer "$INFER_ROOT" $locked &&
     if [ -n "$SANDCASTLE" ]; then
         opam pin list | grep yojson || opam pin add yojson "${DEPENDENCIES_DIR}/yojson-1.7.0fix"
     fi

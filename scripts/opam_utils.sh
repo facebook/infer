@@ -7,17 +7,17 @@
 # source this script to import its utility functions
 
 opam_retry () {
-  "$@" || ( \
-    echo >&2; \
-    printf '*** `%s` failed\n' "$*" >&2; \
-    echo '*** Updating opam then retrying' >&2; \
-    opam update && \
-    "$@" || ( \
-      echo >&2; \
-      printf '*** ERROR: `%s` failed\n' "$*" >&2; \
-      exit 1 \
-    ) \
-  )
+  "$@" || {
+    echo >&2;
+    printf '*** `%s` failed\n' "$*" >&2;
+    echo '*** Updating opam then retrying' >&2;
+    opam update &&
+    "$@" || {
+      echo >&2;
+      printf '*** ERROR: `%s` failed\n' "$*" >&2;
+      exit 1
+    }
+  }
 }
 
 opam_failed () {
