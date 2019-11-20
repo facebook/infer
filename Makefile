@@ -119,7 +119,7 @@ DIRECT_TESTS += \
   objcpp_linters-for-test-only \
   objcpp_liveness \
   objcpp_nullable \
-	objcpp_pulse \
+  objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \
 
@@ -366,7 +366,9 @@ clang_plugin: clang_setup
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES))
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
 	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
           build/clang_ast_proj.ml build/clang_ast_proj.mli \
@@ -375,45 +377,54 @@ clang_plugin: clang_setup
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES))
-
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
 .PHONY: clang_plugin_test
 clang_plugin_test: clang_setup
-		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ tests,\
-		$(MAKE) -C $(FCP_DIR)/libtooling test \
-		  CC=$(CC) CXX=$(CXX) \
-		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-		  CLANG_PREFIX=$(CLANG_PREFIX) \
-		  CLANG_INCLUDES=$(CLANG_INCLUDES))
-		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ tests,\
-		$(MAKE) -C $(FCP_DIR)/clang-ocaml test \
-		  CC=$(CC) CXX=$(CXX) \
-		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-		  CLANG_PREFIX=$(CLANG_PREFIX) \
-		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ tests,\
+	$(MAKE) -C $(FCP_DIR)/libtooling test \
+	  CC=$(CC) CXX=$(CXX) \
+	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+	  CLANG_PREFIX=$(CLANG_PREFIX) \
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
+	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ tests,\
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml test \
+	  CC=$(CC) CXX=$(CXX) \
+	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+	  CLANG_PREFIX=$(CLANG_PREFIX) \
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
 
 .PHONY: clang_plugin_test
 clang_plugin_test_replace: clang_setup
-		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ record tests,\
-		$(MAKE) -C $(FCP_DIR)/libtooling record-test-outputs \
-		  CC=$(CC) CXX=$(CXX) \
-		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-		  CLANG_PREFIX=$(CLANG_PREFIX) \
-		  CLANG_INCLUDES=$(CLANG_INCLUDES))
-		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ record tests,\
-		$(MAKE) -C $(FCP_DIR)/clang-ocaml record-test-outputs \
-		  CC=$(CC) CXX=$(CXX) \
-		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-		  CLANG_PREFIX=$(CLANG_PREFIX) \
-		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ record tests,\
+	$(MAKE) -C $(FCP_DIR)/libtooling record-test-outputs \
+	  CC=$(CC) CXX=$(CXX) \
+	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+	  CLANG_PREFIX=$(CLANG_PREFIX) \
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
+	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ record tests,\
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml record-test-outputs \
+	  CC=$(CC) CXX=$(CXX) \
+	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+	  CLANG_PREFIX=$(CLANG_PREFIX) \
+	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
+	  SDKPATH=$(XCODE_ISYSROOT) \
+	)
 
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
@@ -594,7 +605,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/etc/' || \
-		$(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/etc'
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/etc'
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/java/' || \
