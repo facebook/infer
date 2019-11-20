@@ -189,8 +189,8 @@ let () =
                 List.iter proc_names ~f:(fun proc_name ->
                     Procdesc.load proc_name
                     |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
-                (* emit the dotty file in captured/... *)
-                Dotty.print_icfg_dotty source_file cfgs ) ;
+                (* emit the dot file in captured/... *)
+                DotCfg.emit source_file cfgs ) ;
             L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_output )
       | false, false ->
           let if_some key opt args =

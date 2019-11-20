@@ -22,7 +22,7 @@ let init_global_state source_file =
 let store_icfg tenv source_file cfg =
   Typ.Procname.Hash.iter (fun _ pdesc -> Preanal.do_preanalysis pdesc tenv) cfg ;
   SourceFiles.add source_file cfg Tenv.Global None ;
-  if Config.debug_mode || Config.frontend_tests then Dotty.print_icfg_dotty source_file cfg ;
+  if Config.debug_mode || Config.frontend_tests then DotCfg.emit source_file cfg ;
   ()
 
 

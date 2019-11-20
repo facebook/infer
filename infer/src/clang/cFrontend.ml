@@ -61,7 +61,7 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   if
     Config.debug_mode || Config.testing_mode || Config.frontend_tests
     || Option.is_some Config.icfg_dotty_outfile
-  then Dotty.print_icfg_dotty source_file cfg ;
+  then DotCfg.emit source_file cfg ;
   L.(debug Capture Verbose) "Stored on disk:@[<v>%a@]@." Cfg.pp_proc_signatures cfg ;
   let procedures_translated_summary =
     EventLogger.ProceduresTranslatedSummary

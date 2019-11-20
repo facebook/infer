@@ -10,8 +10,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-(** {1 Dotty} *)
-
 (* When false it prints only the retain cycle part of a prop.
    When true it prints the full property (maybe useful for debug) *)
 let print_full_prop = ref false
@@ -82,8 +80,7 @@ let fields_structs = ref []
 
 let struct_exp_nodes = ref []
 
-(* general unique counter to assign a different number to boxex,           *)
-(* clusters,subgraphs etc.                                                 *)
+(** general unique counter to assign a different number to boxes, clusters, subgraphs, etc. *)
 let dotty_state_count = ref 0
 
 let spec_counter = ref 0
@@ -1025,7 +1022,6 @@ and pp_dotty f kind (prop_ : Prop.normal Prop.t) cycle =
       ~f:(fun node -> if node_in_cycle cycle node then dotty_pp_state f pe cycle node)
       all_nodes ;
   List.iter ~f:(dotty_pp_link f) links ;
-  (* F.fprintf f "@\n } @\n"; *)
   F.fprintf f "@\n } @\n"
 
 
@@ -1054,142 +1050,6 @@ let pp_dotty_one_spec f pre posts =
   F.fprintf f "@\n } @\n"
 
 
-(********** START of Print interprocedural cfgs in dotty format  *)
-(********** Print control flow graph (in dot form) for fundec to channel. You have to compute an
-            interprocedural cfg first. *)
-
-let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
-  F.fprintf fmt "\"%s_%d\""
-    (Escape.escape_dotty (Typ.Procname.to_filename pname))
-    (Procdesc.Node.get_id n :> int)
-
-
-let pp_etlist fmt etl =
-  List.iter
-    ~f:(fun (id, typ) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) typ)
-    etl
-
-
-let pp_var_list fmt etl =
-  List.iter
-    ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
-    etl
-
-
-let pp_local_list fmt etl = List.iter ~f:(Procdesc.pp_local fmt) etl
-
-let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
-  let pp_label fmt n =
-    match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Start_node ->
-        let pname = Procdesc.Node.get_proc_name n in
-        let pname_string = Escape.escape_dotty (Typ.Procname.to_string pname) in
-        let attributes = Procdesc.get_attributes pdesc in
-        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string pp_etlist
-          (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
-        if not (List.is_empty (Procdesc.get_captured pdesc)) then
-          Format.fprintf fmt "\\nCaptured: %a" pp_var_list (Procdesc.get_captured pdesc) ;
-        let method_annotation = attributes.ProcAttributes.method_annotation in
-        if not (Annot.Method.is_empty method_annotation) then
-          Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation
-    | Procdesc.Node.Exit_node ->
-        let pname = Procdesc.Node.get_proc_name n in
-        Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
-    | Procdesc.Node.Join_node ->
-        Format.pp_print_char fmt '+'
-    | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
-        Format.fprintf fmt "Prune (%b branch, %s)" is_true_branch (Sil.if_kind_to_string if_kind)
-    | Procdesc.Node.Stmt_node s ->
-        Format.fprintf fmt " %a" Procdesc.Node.pp_stmt s
-    | Procdesc.Node.Skip_node s ->
-        Format.fprintf fmt "Skip %s" s
-  in
-  let instr_string i =
-    let pp f = Sil.pp_instr ~print_types:false Pp.text f i in
-    let str = F.asprintf "%t" pp in
-    Escape.escape_dotty str
-  in
-  let pp_instrs fmt instrs =
-    Instrs.iter ~f:(fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs
-  in
-  let instrs = Procdesc.Node.get_instrs n in
-  F.fprintf fmt "%d: %a \\n  %a" (Procdesc.Node.get_id n :> int) pp_label n pp_instrs instrs
-
-
-let pp_cfgnodeshape fmt (n : Procdesc.Node.t) =
-  match Procdesc.Node.get_kind n with
-  | Procdesc.Node.Start_node | Procdesc.Node.Exit_node ->
-      F.pp_print_string fmt "color=yellow style=filled"
-  | Procdesc.Node.Prune_node _ ->
-      F.fprintf fmt "shape=\"invhouse\""
-  | Procdesc.Node.Skip_node _ ->
-      F.fprintf fmt "color=\"gray\""
-  | Procdesc.Node.Stmt_node _ ->
-      F.fprintf fmt "shape=\"box\""
-  | _ ->
-      ()
-
-
-let pp_cfgnode pdesc fmt (n : Procdesc.Node.t) =
-  let pname = Procdesc.get_proc_name pdesc in
-  F.fprintf fmt "%a [label=\"%a\" %a]@\n\t@\n" (pp_cfgnodename pname) n (pp_cfgnodelabel pdesc) n
-    pp_cfgnodeshape n ;
-  let print_edge n1 n2 is_exn =
-    let color = if is_exn then "[color=\"red\" ]" else "" in
-    match Procdesc.Node.get_kind n2 with
-    | Procdesc.Node.Exit_node when is_exn ->
-        (* don't print exception edges to the exit node *)
-        ()
-    | _ ->
-        F.fprintf fmt "@\n\t %a -> %a %s;" (pp_cfgnodename pname) n1 (pp_cfgnodename pname) n2 color
-  in
-  List.iter ~f:(fun n' -> print_edge n n' false) (Procdesc.Node.get_succs n) ;
-  List.iter ~f:(fun n' -> print_edge n n' true) (Procdesc.Node.get_exn n)
-
-
-(** Print the flowgraphs in [cfg]. Nodes are printed only if (a) their location is [source] or
-(b) [Config.dotty_cfg_libs] is set. This triggers preanalysis. *)
-let print_icfg source fmt cfg =
-  let print_node pdesc node =
-    let loc = Procdesc.Node.get_loc node in
-    if Config.dotty_cfg_libs || SourceFile.equal loc.Location.file source then
-      F.fprintf fmt "%a@\n" (pp_cfgnode pdesc) node
-  in
-  let print_pdesc pdesc =
-    Procdesc.get_nodes pdesc
-    |> List.sort ~compare:Procdesc.Node.compare
-    |> List.iter ~f:(fun node -> print_node pdesc node)
-  in
-  Cfg.iter_sorted cfg ~f:(fun pdesc -> print_pdesc pdesc)
-
-
-let write_icfg_dotty_to_file source cfg fname =
-  let chan = Out_channel.create fname in
-  let fmt = Format.formatter_of_out_channel chan in
-  (* avoid phabricator thinking this file was generated by substituting substring with %s *)
-  F.fprintf fmt "@[/* %@%s */@\ndigraph cfg {@\n" "generated" ;
-  print_icfg source fmt cfg ;
-  F.fprintf fmt "}@]@." ;
-  Out_channel.close chan
-
-
-let print_icfg_dotty source cfg =
-  let fname =
-    match Config.icfg_dotty_outfile with
-    | Some file ->
-        file
-    | None when Config.frontend_tests ->
-        SourceFile.to_abs_path source ^ ".test.dot"
-    | None ->
-        DB.filename_to_string
-          (DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
-             [Config.dotty_output])
-  in
-  write_icfg_dotty_to_file source cfg fname
-
-
-(********** END of Printing dotty files ***********)
-
 (** Dotty printing for specs *)
 let pp_speclist_dotty f (splist : Prop.normal BiabductionSummary.spec list) =
   reset_proposition_counter () ;
@@ -1207,11 +1067,13 @@ let pp_speclist_dotty f (splist : Prop.normal BiabductionSummary.spec list) =
 
 
 let pp_speclist_to_file (filename : DB.filename) spec_list =
-  let outc = Out_channel.create (DB.filename_to_string (DB.filename_add_suffix filename ".dot")) in
+  let outc =
+    Out_channel.create (DB.filename_to_string (DB.filename_add_suffix filename ".biabd.dot"))
+  in
   let fmt = F.formatter_of_out_channel outc in
-  let () = F.fprintf fmt "#### Dotty version:  ####@\n%a@\n@\n" pp_speclist_dotty spec_list in
+  let () = F.fprintf fmt "@[#### Dotty version:  ####@\n%a@\n@\n@]@." pp_speclist_dotty spec_list in
   Out_channel.close outc
 
 
-let pp_speclist_dotty_file (filename : DB.filename) spec_list =
+let emit_specs_to_file filename spec_list =
   try pp_speclist_to_file filename spec_list with exn when SymOp.exn_not_failure exn -> ()

@@ -899,7 +899,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
           [Typ.Procname.to_filename pname]
       in
-      if Config.write_dotty then Dotty.pp_speclist_dotty_file filename specs ;
+      if Config.write_dotty then DotBiabduction.emit_specs_to_file filename specs ;
       (specs, BiabductionSummary.RE_EXECUTION)
     in
     (go, get_results)
