@@ -424,7 +424,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let zero_exp = Exp.zero_of_type_exn typ in
               let instrs = [Sil.Store {e1= exp; root_typ= typ; typ; e2= zero_exp; loc= sil_loc}] in
               mk_trans_result (exp, typ) {empty_control with instrs}
-          | Tfun _ | Tvoid | Tarray _ | TVar _ ->
+          | Tfun | Tvoid | Tarray _ | TVar _ ->
               CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
                 "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
         in

@@ -565,7 +565,7 @@ module Val = struct
         let v = itv_val ~non_int:(Language.curr_language_is Java) in
         if Language.curr_language_is Java then set_itv_updated_by_unknown v
         else set_itv_updated_by_addition v
-    | Tfloat _ | Tfun _ | TVar _ ->
+    | Tfloat _ | Tfun | TVar _ ->
         itv_val ~non_int:true |> set_itv_updated_by_unknown
     | Tint _ | Tvoid ->
         itv_val ~non_int:false |> set_itv_updated_by_addition

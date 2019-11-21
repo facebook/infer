@@ -483,7 +483,7 @@ let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (i
 (** If the type is array, check whether we should do abstraction *)
 let array_typ_can_abstract {Typ.desc} =
   match desc with
-  | Tarray {elt= {desc= Tptr ({desc= Tfun _}, _)}} ->
+  | Tarray {elt= {desc= Tptr ({desc= Tfun}, _)}} ->
       false (* don't abstract arrays of pointers *)
   | _ ->
       true

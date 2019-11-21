@@ -46,7 +46,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Store {e1= Exp.Lfield (Exp.Var lhs_id, name, typ); typ= exp_typ; e2= rhs} -> (
       match exp_typ.Typ.desc with
       (* block field of a ObjC class *)
-      | Typ.Tptr ({desc= Tfun _}, _)
+      | Typ.Tptr ({desc= Tfun}, _)
         when Typ.is_objc_class typ && is_self proc_data.extras lhs_id
              && (* lhs is self, rhs is not null *)
              not (exp_is_null proc_data.extras rhs) ->

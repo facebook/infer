@@ -446,7 +446,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
     else create_fresh_var ()
   in
   match (typ.desc, len) with
-  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), None ->
+  | (Tint _ | Tfloat _ | Tvoid | Tfun | Tptr _ | TVar _), None ->
       Eexp (init_value (), inst)
   | Tstruct name, _ -> (
       if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
@@ -476,7 +476,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
       Earray (len, [], inst)
   | Tarray _, Some len ->
       Earray (len, [], inst)
-  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), Some _ ->
+  | (Tint _ | Tfloat _ | Tvoid | Tfun | Tptr _ | TVar _), Some _ ->
       assert false
 
 
@@ -532,7 +532,7 @@ let sigma_get_unsigned_exps sigma =
     to ensure the soundness of this collapsing. *)
 let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let typ_is_base (typ1 : Typ.t) =
-    match typ1.desc with Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun _ -> true | _ -> false
+    match typ1.desc with Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun -> true | _ -> false
   in
   let typ_is_one_step_from_base =
     match typ.desc with Tptr (t, _) | Tarray {elt= t} -> typ_is_base t | _ -> false

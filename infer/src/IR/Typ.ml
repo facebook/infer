@@ -177,7 +177,7 @@ module T = struct
     | Tint of ikind  (** integer type *)
     | Tfloat of fkind  (** float type *)
     | Tvoid  (** void type *)
-    | Tfun of {no_return: bool}  (** function type with noreturn attribute *)
+    | Tfun  (** function type *)
     | Tptr of t * ptr_kind  (** pointer type *)
     | Tstruct of name  (** structured value type name *)
     | TVar of string  (** type variable (ie. C++ template variables) *)
@@ -291,11 +291,9 @@ let rec pp_full pe f typ =
         F.pp_print_string f (fkind_to_string fk)
     | Tvoid ->
         F.pp_print_string f "void"
-    | Tfun {no_return= false} ->
+    | Tfun ->
         F.pp_print_string f "_fn_"
-    | Tfun {no_return= true} ->
-        F.pp_print_string f "_fn_noreturn_"
-    | Tptr (({desc= Tarray _ | Tfun _} as typ), pk) ->
+    | Tptr (({desc= Tarray _ | Tfun} as typ), pk) ->
         F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
     | Tptr (typ, pk) ->
         F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)

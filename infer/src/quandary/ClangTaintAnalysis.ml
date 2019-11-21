@@ -24,7 +24,7 @@ include TaintAnalysis.Make (struct
     let handle_generic_unknown ret_typ actuals =
       match ((ret_typ.Typ.desc : Typ.desc), List.rev_map actuals ~f:HilExp.ignore_cast) with
       (* everything but Tvoid*)
-      | (Tint _ | Tfloat _ | Tfun _ | Tptr (_, _) | Tstruct _ | TVar _ | Tarray _), _ ->
+      | (Tint _ | Tfloat _ | Tfun | Tptr _ | Tstruct _ | TVar _ | Tarray _), _ ->
           (* propagate taint from actuals to return value *)
           [TaintSpec.Propagate_to_return]
       | Tvoid, [] ->
