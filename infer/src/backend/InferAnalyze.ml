@@ -25,7 +25,7 @@ let analyze_target : SchedulerTypes.target Tasks.doer =
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         Ondemand.analyze_file exe_env source_file ;
         if Topl.is_active () && Config.debug_mode then
-          DotCfg.emit (Topl.sourcefile ()) (Topl.cfg ()) ;
+          DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
         if Config.write_html then Printer.write_all_html_files source_file )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.

@@ -7,11 +7,11 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 15, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Fallback node \n   n$0=*&X:int [line 13, column 5]\n  NULLIFY(&X); [line 13, column 5]\n  EXIT_SCOPE(X); [line 13, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Fallback node \n   n$0=*&X:int [line 13, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
@@ -19,11 +19,11 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   *&y:int=n$0 [line 11, column 3]\n  NULLIFY(&y); [line 11, column 3]\n  EXIT_SCOPE(n$0,y); [line 11, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   *&y:int=n$0 [line 11, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 9, column 3]\n  *&y:int=3 [line 9, column 3]\n  NULLIFY(&y); [line 9, column 3]\n  EXIT_SCOPE(y); [line 9, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 9, column 3]\n  *&y:int=3 [line 9, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -34,7 +34,7 @@ digraph cfg {
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Add \n   n$0=*&x:int [line 22, column 5]\n  n$1=*&y:int [line 22, column 9]\n  NULLIFY(&x); [line 22, column 9]\n  NULLIFY(&y); [line 22, column 9]\n  EXIT_SCOPE(x,y); [line 22, column 9]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Add \n   n$0=*&x:int [line 22, column 5]\n  n$1=*&y:int [line 22, column 9]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
@@ -42,11 +42,11 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 5]\n  n$2=*&p:int* [line 20, column 14]\n  n$3=*n$2:int [line 20, column 13]\n  *&x:int=n$3 [line 20, column 5]\n  NULLIFY(&p); [line 20, column 5]\n  EXIT_SCOPE(n$2,n$3,p); [line 20, column 5]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 5]\n  n$2=*&p:int* [line 20, column 14]\n  n$3=*n$2:int [line 20, column 13]\n  *&x:int=n$3 [line 20, column 5]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 19, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
@@ -61,23 +61,23 @@ digraph cfg {
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&p:int* [line 29, column 5]\n  PRUNE(n$1, true); [line 29, column 5]\n  EXIT_SCOPE(n$1); [line 29, column 5]\n " shape="invhouse"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&p:int* [line 29, column 5]\n  PRUNE(n$1, true); [line 29, column 5]\n " shape="invhouse"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&p:int* [line 29, column 5]\n  PRUNE(!n$1, false); [line 29, column 5]\n  NULLIFY(&p); [line 29, column 5]\n  EXIT_SCOPE(n$1,p); [line 29, column 5]\n " shape="invhouse"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&p:int* [line 29, column 5]\n  PRUNE(!n$1, false); [line 29, column 5]\n " shape="invhouse"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" [label="6:  ConditionalStmt Branch \n   n$2=*&p:int* [line 29, column 10]\n  n$3=*n$2:int [line 29, column 9]\n  n$4=*&x:int [line 29, column 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=(n$3 + n$4) [line 29, column 5]\n  NULLIFY(&x); [line 29, column 5]\n  NULLIFY(&p); [line 29, column 5]\n  EXIT_SCOPE(n$2,n$3,n$4,x,p); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" [label="6:  ConditionalStmt Branch \n   n$2=*&p:int* [line 29, column 10]\n  n$3=*n$2:int [line 29, column 9]\n  n$4=*&x:int [line 29, column 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=(n$3 + n$4) [line 29, column 5]\n " shape="box"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" [label="7:  ConditionalStmt Branch \n   n$5=*&x:int [line 29, column 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$5 [line 29, column 5]\n  NULLIFY(&x); [line 29, column 5]\n  EXIT_SCOPE(n$5,x); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" [label="7:  ConditionalStmt Branch \n   n$5=*&x:int [line 29, column 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$5 [line 29, column 5]\n " shape="box"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" [label="8:  Fallback node \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 29, column 5]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 29, column 5]\n  EXIT_SCOPE(0$?%__sil_tmpSIL_temp_conditional___n$0); [line 29, column 5]\n " shape="box"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" [label="8:  Fallback node \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 29, column 5]\n " shape="box"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_10" ;
@@ -86,7 +86,7 @@ digraph cfg {
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_9" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" ;
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_9" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_10" [label="10:  Return Stmt \n   *&return:int=n$6 [line 27, column 3]\n  EXIT_SCOPE(n$6); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_10" [label="10:  Return Stmt \n   *&return:int=n$6 [line 27, column 3]\n " shape="box"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_10" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_2" ;

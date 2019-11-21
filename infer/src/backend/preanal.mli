@@ -8,5 +8,5 @@
 
 open! IStd
 
-val do_preanalysis : Procdesc.t -> Tenv.t -> unit
+val do_preanalysis : Exe_env.t -> Procdesc.t -> unit
 (** Various preanalysis passes for transforming the IR in useful ways *)

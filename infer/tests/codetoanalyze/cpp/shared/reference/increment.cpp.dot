@@ -4,18 +4,18 @@ digraph cfg {
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_1" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_6" ;
-"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_2" [label="2: Exit using_ref \n   NULLIFY(&v); [line 19, column 1]\n " color=yellow style=filled]
+"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_2" [label="2: Exit using_ref \n  " color=yellow style=filled]
 	
 
-"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(q:int&); [line 18, column 3]\n  n$0=*&vr:int& [line 18, column 14]\n  n$1=*n$0:int [line 18, column 12]\n  *n$0:int=(n$1 - 1) [line 18, column 12]\n  *&q:int&=n$0 [line 18, column 3]\n  NULLIFY(&vr); [line 18, column 3]\n  NULLIFY(&q); [line 18, column 3]\n  EXIT_SCOPE(n$0,n$1,vr,q); [line 18, column 3]\n  APPLY_ABSTRACTION; [line 18, column 3]\n " shape="box"]
+"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(q:int&); [line 18, column 3]\n  n$0=*&vr:int& [line 18, column 14]\n  n$1=*n$0:int [line 18, column 12]\n  *n$0:int=(n$1 - 1) [line 18, column 12]\n  *&q:int&=n$0 [line 18, column 3]\n " shape="box"]
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_3" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_2" ;
-"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 17, column 3]\n  n$2=*&vr:int& [line 17, column 14]\n  n$3=*n$2:int [line 17, column 12]\n  *n$2:int=(n$3 + 1) [line 17, column 12]\n  *&r:int&=n$2 [line 17, column 3]\n  NULLIFY(&r); [line 17, column 3]\n  EXIT_SCOPE(n$2,n$3,r); [line 17, column 3]\n " shape="box"]
+"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 17, column 3]\n  n$2=*&vr:int& [line 17, column 14]\n  n$3=*n$2:int [line 17, column 12]\n  *n$2:int=(n$3 + 1) [line 17, column 12]\n  *&r:int&=n$2 [line 17, column 3]\n " shape="box"]
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_4" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_3" ;
-"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(vr:int&); [line 16, column 3]\n  *&vr:int&=&v [line 16, column 3]\n  EXIT_SCOPE(v); [line 16, column 3]\n " shape="box"]
+"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(vr:int&); [line 16, column 3]\n  *&vr:int&=&v [line 16, column 3]\n " shape="box"]
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_5" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_4" ;
@@ -27,14 +27,14 @@ digraph cfg {
 	
 
 	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" [label="2: Exit using_value \n   NULLIFY(&v); [line 12, column 1]\n " color=yellow style=filled]
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" [label="2: Exit using_value \n  " color=yellow style=filled]
 	
 
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(q:int&); [line 11, column 3]\n  n$0=*&v:int [line 11, column 12]\n  *&v:int=(n$0 - 1) [line 11, column 12]\n  *&q:int&=&v [line 11, column 3]\n  NULLIFY(&q); [line 11, column 3]\n  EXIT_SCOPE(n$0,q,v); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(q:int&); [line 11, column 3]\n  n$0=*&v:int [line 11, column 12]\n  *&v:int=(n$0 - 1) [line 11, column 12]\n  *&q:int&=&v [line 11, column 3]\n " shape="box"]
 	
 
 	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 10, column 3]\n  n$1=*&v:int [line 10, column 12]\n  *&v:int=(n$1 + 1) [line 10, column 12]\n  *&r:int&=&v [line 10, column 3]\n  NULLIFY(&r); [line 10, column 3]\n  EXIT_SCOPE(n$1,r); [line 10, column 3]\n " shape="box"]
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 10, column 3]\n  n$1=*&v:int [line 10, column 12]\n  *&v:int=(n$1 + 1) [line 10, column 12]\n  *&r:int&=&v [line 10, column 3]\n " shape="box"]
 	
 
 	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" ;

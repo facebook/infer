@@ -210,8 +210,9 @@ module FunctionPointerSubstitution = struct
     if updated then Attributes.store ~proc_desc:(Some pdesc) (Procdesc.get_attributes pdesc)
 end
 
-let do_preanalysis pdesc tenv =
+let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
+  let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
   if
     Config.function_pointer_specialization
     && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))

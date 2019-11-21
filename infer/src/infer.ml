@@ -190,8 +190,8 @@ let () =
                     Procdesc.load proc_name
                     |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
                 (* emit the dot file in captured/... *)
-                DotCfg.emit source_file cfgs ) ;
-            L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_output )
+                DotCfg.emit_frontend_cfg source_file cfgs ) ;
+            L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_frontend_output )
       | false, false ->
           let if_some key opt args =
             match opt with None -> args | Some arg -> key :: string_of_int arg :: args

@@ -7,7 +7,7 @@ digraph cfg {
 "get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_2" [label="2: Exit get<ENUM> \n  " color=yellow style=filled]
 	
 
-"get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12, column 3]\n " shape="box"]
 	
 
 	 "get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_3" -> "get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_2" [label="2: Exit get<float> \n  " color=yellow style=filled]
 	
 
-"get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" [label="3:  Return Stmt \n   *&return:float=0. [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" [label="3:  Return Stmt \n   *&return:float=0. [line 12, column 3]\n " shape="box"]
 	
 
 	 "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" -> "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "get<float_*>#2842478093973053540.94b60b146800ad29688a426dfa5aaafe_2" [label="2: Exit get<float_*> \n  " color=yellow style=filled]
 	
 
-"get<float_*>#2842478093973053540.94b60b146800ad29688a426dfa5aaafe_3" [label="3:  Return Stmt \n   *&return:float*=null [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get<float_*>#2842478093973053540.94b60b146800ad29688a426dfa5aaafe_3" [label="3:  Return Stmt \n   *&return:float*=null [line 12, column 3]\n " shape="box"]
 	
 
 	 "get<float_*>#2842478093973053540.94b60b146800ad29688a426dfa5aaafe_3" -> "get<float_*>#2842478093973053540.94b60b146800ad29688a426dfa5aaafe_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "get<int>#2877167444606952489.51207fd4e308b488877945d48484f2bc_2" [label="2: Exit get<int> \n  " color=yellow style=filled]
 	
 
-"get<int>#2877167444606952489.51207fd4e308b488877945d48484f2bc_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get<int>#2877167444606952489.51207fd4e308b488877945d48484f2bc_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12, column 3]\n " shape="box"]
 	
 
 	 "get<int>#2877167444606952489.51207fd4e308b488877945d48484f2bc_3" -> "get<int>#2877167444606952489.51207fd4e308b488877945d48484f2bc_2" ;
@@ -51,7 +51,7 @@ digraph cfg {
 "get<void>#8296845500290212976.bb4a1c12bef114b00039399debc79878_2" [label="2: Exit get<void> \n  " color=yellow style=filled]
 	
 
-"get<void>#8296845500290212976.bb4a1c12bef114b00039399debc79878_3" [label="3:  Return Stmt \n   *&return:void=0 [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get<void>#8296845500290212976.bb4a1c12bef114b00039399debc79878_3" [label="3:  Return Stmt \n   *&return:void=0 [line 12, column 3]\n " shape="box"]
 	
 
 	 "get<void>#8296845500290212976.bb4a1c12bef114b00039399debc79878_3" -> "get<void>#8296845500290212976.bb4a1c12bef114b00039399debc79878_2" ;
@@ -62,27 +62,27 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(f2:float); [line 21, column 3]\n  *&f2:float=0. [line 21, column 3]\n  NULLIFY(&f2); [line 21, column 3]\n  EXIT_SCOPE(f2); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(f2:float); [line 21, column 3]\n  *&f2:float=0. [line 21, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 3]\n  n$0=_fun_get<ENUM>() [line 20, column 12]\n  *&x:int=n$0 [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  EXIT_SCOPE(n$0,x); [line 20, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 3]\n  n$0=_fun_get<ENUM>() [line 20, column 12]\n  *&x:int=n$0 [line 20, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  Call _fun_get<void> \n   n$1=_fun_get<void>() [line 19, column 3]\n  EXIT_SCOPE(n$1); [line 19, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  Call _fun_get<void> \n   n$1=_fun_get<void>() [line 19, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(fp:float*); [line 18, column 3]\n  n$2=_fun_get<float_*>() [line 18, column 15]\n  *&fp:float*=n$2 [line 18, column 3]\n  NULLIFY(&fp); [line 18, column 3]\n  EXIT_SCOPE(n$2,fp); [line 18, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(fp:float*); [line 18, column 3]\n  n$2=_fun_get<float_*>() [line 18, column 15]\n  *&fp:float*=n$2 [line 18, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(f:float); [line 17, column 3]\n  n$3=_fun_get<float>() [line 17, column 13]\n  *&f:float=n$3 [line 17, column 3]\n  NULLIFY(&f); [line 17, column 3]\n  EXIT_SCOPE(n$3,f); [line 17, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(f:float); [line 17, column 3]\n  n$3=_fun_get<float>() [line 17, column 13]\n  *&f:float=n$3 [line 17, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 16, column 3]\n  n$4=_fun_get<int>() [line 16, column 11]\n  *&i:int=n$4 [line 16, column 3]\n  NULLIFY(&i); [line 16, column 3]\n  EXIT_SCOPE(n$4,i); [line 16, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 16, column 3]\n  n$4=_fun_get<int>() [line 16, column 11]\n  *&i:int=n$4 [line 16, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;

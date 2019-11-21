@@ -7,11 +7,11 @@ digraph cfg {
 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_2" [label="2: Exit unroll_loop \n  " color=yellow style=filled]
 	
 
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 24, column 10]\n  *&return:int=n$0 [line 24, column 3]\n  NULLIFY(&ret); [line 24, column 3]\n  EXIT_SCOPE(n$0,ret); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 24, column 10]\n  *&return:int=n$0 [line 24, column 3]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_3" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_2" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_4" [label="4:  SwitchStmt \n   n$1=*&n:int [line 10, column 11]\n  NULLIFY(&n); [line 10, column 11]\n  EXIT_SCOPE(n); [line 10, column 11]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_4" [label="4:  SwitchStmt \n   n$1=*&n:int [line 10, column 11]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_4" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_22" ;
@@ -25,15 +25,15 @@ digraph cfg {
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_6" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_7" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_6" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_8" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_7" [label="7: Prune (true branch, do while) \n   PRUNE(((n$2 - 1) > 0), true); [line 22, column 16]\n  EXIT_SCOPE(n$2); [line 22, column 16]\n  APPLY_ABSTRACTION; [line 22, column 16]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_7" [label="7: Prune (true branch, do while) \n   PRUNE(((n$2 - 1) > 0), true); [line 22, column 16]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_7" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_5" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_8" [label="8: Prune (false branch, do while) \n   PRUNE(!((n$2 - 1) > 0), false); [line 22, column 16]\n  NULLIFY(&loop); [line 22, column 16]\n  EXIT_SCOPE(n$2,loop); [line 22, column 16]\n  APPLY_ABSTRACTION; [line 22, column 16]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_8" [label="8: Prune (false branch, do while) \n   PRUNE(!((n$2 - 1) > 0), false); [line 22, column 16]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_8" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_3" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_9" [label="9:  UnaryOperator \n   n$3=*&ret:int [line 21, column 11]\n  *&ret:int=(n$3 + 1) [line 21, column 11]\n  EXIT_SCOPE(n$3); [line 21, column 11]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_9" [label="9:  UnaryOperator \n   n$3=*&ret:int [line 21, column 11]\n  *&ret:int=(n$3 + 1) [line 21, column 11]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_9" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_6" ;
@@ -41,36 +41,36 @@ digraph cfg {
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_10" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_9" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" [label="11: Prune (true branch, if) \n   PRUNE(1, true); [line 16, column 15]\n  APPLY_ABSTRACTION; [line 16, column 15]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" [label="11: Prune (true branch, if) \n   PRUNE(1, true); [line 16, column 15]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" [label="12: Prune (false branch, if) \n   PRUNE(!1, false); [line 16, column 15]\n  APPLY_ABSTRACTION; [line 16, column 15]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" [label="12: Prune (false branch, if) \n   PRUNE(!1, false); [line 16, column 15]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_10" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" [label="13:  UnaryOperator \n   n$4=*&ret:int [line 18, column 15]\n  *&ret:int=(n$4 + 1) [line 18, column 15]\n  EXIT_SCOPE(n$4); [line 18, column 15]\n  APPLY_ABSTRACTION; [line 18, column 15]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" [label="13:  UnaryOperator \n   n$4=*&ret:int [line 18, column 15]\n  *&ret:int=(n$4 + 1) [line 18, column 15]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_10" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" [label="14:  UnaryOperator \n   n$7=*&ret:int [line 15, column 11]\n  *&ret:int=(n$7 + 1) [line 15, column 11]\n  EXIT_SCOPE(n$7); [line 15, column 11]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" [label="14:  UnaryOperator \n   n$7=*&ret:int [line 15, column 11]\n  *&ret:int=(n$7 + 1) [line 15, column 11]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_15" [label="15:  UnaryOperator \n   n$8=*&ret:int [line 13, column 9]\n  *&ret:int=(n$8 + 1) [line 13, column 9]\n  EXIT_SCOPE(n$8); [line 13, column 9]\n  APPLY_ABSTRACTION; [line 13, column 9]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_15" [label="15:  UnaryOperator \n   n$8=*&ret:int [line 13, column 9]\n  *&ret:int=(n$8 + 1) [line 13, column 9]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_15" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_16" [label="16: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 1), true); [line 20, column 9]\n  EXIT_SCOPE(n$1); [line 20, column 9]\n  APPLY_ABSTRACTION; [line 20, column 9]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_16" [label="16: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 1), true); [line 20, column 9]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_16" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_9" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_17" [label="17: Prune (false branch, switch) \n   PRUNE(!((n$1 % 8) == 1), false); [line 20, column 9]\n  NULLIFY(&loop); [line 20, column 9]\n  EXIT_SCOPE(n$1,loop); [line 20, column 9]\n  APPLY_ABSTRACTION; [line 20, column 9]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_17" [label="17: Prune (false branch, switch) \n   PRUNE(!((n$1 % 8) == 1), false); [line 20, column 9]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_17" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_3" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_18" [label="18: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 2), true); [line 17, column 13]\n  EXIT_SCOPE(n$1); [line 17, column 13]\n  APPLY_ABSTRACTION; [line 17, column 13]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_18" [label="18: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 2), true); [line 17, column 13]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_18" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" ;
@@ -79,7 +79,7 @@ digraph cfg {
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_19" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_16" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_19" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_17" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_20" [label="20: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 3), true); [line 14, column 9]\n  EXIT_SCOPE(n$1); [line 14, column 9]\n  APPLY_ABSTRACTION; [line 14, column 9]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_20" [label="20: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 3), true); [line 14, column 9]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_20" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" ;
@@ -88,7 +88,7 @@ digraph cfg {
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_21" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_18" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_21" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_19" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_22" [label="22: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 0), true); [line 11, column 5]\n  EXIT_SCOPE(n$1); [line 11, column 5]\n  APPLY_ABSTRACTION; [line 11, column 5]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_22" [label="22: Prune (true branch, switch) \n   PRUNE(((n$1 % 8) == 0), true); [line 11, column 5]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_22" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_5" ;
@@ -97,7 +97,7 @@ digraph cfg {
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_23" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_20" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_23" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_21" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" [label="24:  DeclStmt \n   VARIABLE_DECLARED(loop:int); [line 9, column 3]\n  n$11=*&n:int [line 9, column 14]\n  *&loop:int=(n$11 + (3 / 4)) [line 9, column 3]\n  EXIT_SCOPE(n$11); [line 9, column 3]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" [label="24:  DeclStmt \n   VARIABLE_DECLARED(loop:int); [line 9, column 3]\n  n$11=*&n:int [line 9, column 14]\n  *&loop:int=(n$11 + (3 / 4)) [line 9, column 3]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_4" ;

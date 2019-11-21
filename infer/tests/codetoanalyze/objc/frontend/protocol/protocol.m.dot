@@ -11,24 +11,24 @@ digraph cfg {
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject::conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n  NULLIFY(&self); [line 23, column 7]\n  EXIT_SCOPE(n$0,self); [line 23, column 7]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject::conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 23, column 7]\n  EXIT_SCOPE(n$1); [line 23, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 23, column 7]\n  EXIT_SCOPE(n$1); [line 23, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" [label="8:  Return Stmt \n   APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;

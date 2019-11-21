@@ -7,11 +7,11 @@ digraph cfg {
 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" [label="2: Exit ExceptionExample::test \n  " color=yellow style=filled]
 	
 
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 21, column 6]\n  n$1=_fun_NSObject::description(n$0:ExceptionExample*) [line 21, column 5]\n  NULLIFY(&self); [line 21, column 5]\n  EXIT_SCOPE(n$0,n$1,self); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 21, column 6]\n  n$1=_fun_NSObject::description(n$0:ExceptionExample*) [line 21, column 5]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 18, column 5]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 18, column 19]\n  *&s:NSString*=n$3 [line 18, column 5]\n  NULLIFY(&s); [line 18, column 5]\n  EXIT_SCOPE(n$3,s); [line 18, column 5]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 18, column 5]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 18, column 19]\n  *&s:NSString*=n$3 [line 18, column 5]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
@@ -26,23 +26,23 @@ digraph cfg {
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_2" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" [label="5: Prune (true branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(n$4, true); [line 27, column 7]\n  NULLIFY(&s); [line 27, column 7]\n  EXIT_SCOPE(n$4,s); [line 27, column 7]\n " shape="invhouse"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" [label="5: Prune (true branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(n$4, true); [line 27, column 7]\n " shape="invhouse"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" [label="6: Prune (false branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(!n$4, false); [line 27, column 7]\n  NULLIFY(&s); [line 27, column 7]\n  EXIT_SCOPE(n$4,s); [line 27, column 7]\n  APPLY_ABSTRACTION; [line 27, column 7]\n " shape="invhouse"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" [label="6: Prune (false branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(!n$4, false); [line 27, column 7]\n " shape="invhouse"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$6=_fun_NSString::stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 29, column 27]\n  n$5=_fun_NSString::stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 31, column 24]\n  n$7=_fun_NSException::exceptionWithName:reason:userInfo:(n$6:NSString*,n$5:NSString*,null:NSDictionary*) [line 28, column 12]\n  n$8=_fun___infer_objc_cpp_throw(n$7:NSException*) [line 28, column 5]\n  EXIT_SCOPE(n$5,n$6,n$7,n$8); [line 28, column 5]\n  APPLY_ABSTRACTION; [line 28, column 5]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$6=_fun_NSString::stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 29, column 27]\n  n$5=_fun_NSString::stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 31, column 24]\n  n$7=_fun_NSException::exceptionWithName:reason:userInfo:(n$6:NSString*,n$5:NSString*,null:NSDictionary*) [line 28, column 12]\n  n$8=_fun___infer_objc_cpp_throw(n$7:NSException*) [line 28, column 5]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 26, column 3]\n  n$11=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 26, column 17]\n  *&s:NSString*=n$11 [line 26, column 3]\n  EXIT_SCOPE(n$11); [line 26, column 3]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 26, column 3]\n  n$11=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 26, column 17]\n  *&s:NSString*=n$11 [line 26, column 3]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" ;

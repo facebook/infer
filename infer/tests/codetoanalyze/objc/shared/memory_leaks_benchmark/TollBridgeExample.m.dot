@@ -7,11 +7,11 @@ digraph cfg {
 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_2" [label="2: Exit bridgeDictionaryNoLeak \n  " color=yellow style=filled]
 	
 
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(dict:__CFDictionary const *); [line 44, column 3]\n  n$0=*&bufferAttributes:NSDictionary* [line 44, column 52]\n  *&dict:__CFDictionary const *=n$0 [line 44, column 3]\n  NULLIFY(&bufferAttributes); [line 44, column 3]\n  NULLIFY(&dict); [line 44, column 3]\n  EXIT_SCOPE(n$0,bufferAttributes,dict); [line 44, column 3]\n  APPLY_ABSTRACTION; [line 44, column 3]\n " shape="box"]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(dict:__CFDictionary const *); [line 44, column 3]\n  n$0=*&bufferAttributes:NSDictionary* [line 44, column 52]\n  *&dict:__CFDictionary const *=n$0 [line 44, column 3]\n " shape="box"]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_2" ;
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(bufferAttributes:NSDictionary*); [line 43, column 3]\n  n$2=_fun_NSDictionary::dictionaryWithObjects:forKeys:count:(null:objc_object*) [line 43, column 58]\n  n$1=_fun_NSString::stringWithUTF8String:(\"key\":char* const ) [line 43, column 49]\n  n$3=_fun_NSDictionary::dictionaryWithObjects:forKeys:count:(n$2:objc_object*,n$1:objc_object*,null:objc_object*) [line 43, column 36]\n  *&bufferAttributes:NSDictionary*=n$3 [line 43, column 3]\n  EXIT_SCOPE(n$1,n$2,n$3); [line 43, column 3]\n " shape="box"]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(bufferAttributes:NSDictionary*); [line 43, column 3]\n  n$2=_fun_NSDictionary::dictionaryWithObjects:forKeys:count:(null:objc_object*) [line 43, column 58]\n  n$1=_fun_NSString::stringWithUTF8String:(\"key\":char* const ) [line 43, column 49]\n  n$3=_fun_NSDictionary::dictionaryWithObjects:forKeys:count:(n$2:objc_object*,n$1:objc_object*,null:objc_object*) [line 43, column 36]\n  *&bufferAttributes:NSDictionary*=n$3 [line 43, column 3]\n " shape="box"]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" [label="2: Exit cfautorelease_test \n  " color=yellow style=filled]
 	
 
-"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char*) [line 39, column 45]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.:double,null:CGAffineTransform const *) [line 39, column 24]\n  n$2=_fun_CFAutorelease(n$1:void const *) [line 39, column 10]\n  *&return:__CTFont const *=n$2 [line 39, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2); [line 39, column 3]\n  APPLY_ABSTRACTION; [line 39, column 3]\n " shape="box"]
+"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char*) [line 39, column 45]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.:double,null:CGAffineTransform const *) [line 39, column 24]\n  n$2=_fun_CFAutorelease(n$1:void const *) [line 39, column 10]\n  *&return:__CTFont const *=n$2 [line 39, column 3]\n " shape="box"]
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" ;
@@ -33,11 +33,11 @@ digraph cfg {
 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" [label="2: Exit TollBridgeExample::_readHTTPHeader \n  " color=yellow style=filled]
 	
 
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$8=*&ref:__CFDictionary const * [line 35, column 21]\n  n$9=_fun_CFBridgingRelease(n$8:void const *) [line 35, column 3]\n  NULLIFY(&ref); [line 35, column 3]\n  EXIT_SCOPE(n$8,n$9,ref); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$8=*&ref:__CFDictionary const * [line 35, column 21]\n  n$9=_fun_CFBridgingRelease(n$8:void const *) [line 35, column 3]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(ref:__CFDictionary const *); [line 34, column 3]\n  n$10=_fun_CFHTTPMessageCopyAllHeaderFields(null:__CFHTTPMessage*) [line 34, column 25]\n  *&ref:__CFDictionary const *=n$10 [line 34, column 3]\n  EXIT_SCOPE(n$10); [line 34, column 3]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(ref:__CFDictionary const *); [line 34, column 3]\n  n$10=_fun_CFHTTPMessageCopyAllHeaderFields(null:__CFHTTPMessage*) [line 34, column 25]\n  *&ref:__CFDictionary const *=n$10 [line 34, column 3]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" ;
@@ -48,11 +48,11 @@ digraph cfg {
 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" [label="2: Exit TollBridgeExample::brideRetained \n  " color=yellow style=filled]
 	
 
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:__CFLocale const *); [line 29, column 3]\n  n$6=*&observer:objc_object* [line 29, column 50]\n  *&a:__CFLocale const *=n$6 [line 29, column 3]\n  NULLIFY(&observer); [line 29, column 3]\n  NULLIFY(&a); [line 29, column 3]\n  EXIT_SCOPE(n$6,observer,a); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:__CFLocale const *); [line 29, column 3]\n  n$6=*&observer:objc_object* [line 29, column 50]\n  *&a:__CFLocale const *=n$6 [line 29, column 3]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(observer:objc_object*); [line 28, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSLocale):unsigned long) [line 28, column 17]\n  *&observer:objc_object*=n$7 [line 28, column 3]\n  EXIT_SCOPE(n$7); [line 28, column 3]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(observer:objc_object*); [line 28, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSLocale):unsigned long) [line 28, column 17]\n  *&observer:objc_object*=n$7 [line 28, column 3]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" ;
@@ -63,11 +63,11 @@ digraph cfg {
 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" [label="2: Exit TollBridgeExample::bridge \n  " color=yellow style=filled]
 	
 
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:NSLocale*); [line 24, column 3]\n  n$3=*&nameRef:__CFLocale const * [line 24, column 37]\n  n$4=_fun___free_cf(n$3:__CFLocale const *) [line 24, column 17]\n  *&a:NSLocale*=n$3 [line 24, column 3]\n  NULLIFY(&a); [line 24, column 3]\n  NULLIFY(&nameRef); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$4,a,nameRef); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:NSLocale*); [line 24, column 3]\n  n$3=*&nameRef:__CFLocale const * [line 24, column 37]\n  n$4=_fun___free_cf(n$3:__CFLocale const *) [line 24, column 17]\n  *&a:NSLocale*=n$3 [line 24, column 3]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(nameRef:__CFLocale const *); [line 23, column 3]\n  n$5=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 23, column 25]\n  *&nameRef:__CFLocale const *=n$5 [line 23, column 3]\n  EXIT_SCOPE(n$5); [line 23, column 3]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(nameRef:__CFLocale const *); [line 23, column 3]\n  n$5=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 23, column 25]\n  *&nameRef:__CFLocale const *=n$5 [line 23, column 3]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" ;
@@ -78,11 +78,11 @@ digraph cfg {
 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" [label="2: Exit TollBridgeExample::bridgeTransfer \n  " color=yellow style=filled]
 	
 
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:NSLocale*); [line 19, column 3]\n  n$0=*&nameRef:__CFLocale const * [line 19, column 46]\n  n$1=_fun___free_cf(n$0:__CFLocale const *) [line 19, column 17]\n  *&a:NSLocale*=n$0 [line 19, column 3]\n  NULLIFY(&nameRef); [line 19, column 3]\n  NULLIFY(&a); [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1,nameRef,a); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:NSLocale*); [line 19, column 3]\n  n$0=*&nameRef:__CFLocale const * [line 19, column 46]\n  n$1=_fun___free_cf(n$0:__CFLocale const *) [line 19, column 17]\n  *&a:NSLocale*=n$0 [line 19, column 3]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(nameRef:__CFLocale const *); [line 18, column 3]\n  n$2=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 18, column 25]\n  *&nameRef:__CFLocale const *=n$2 [line 18, column 3]\n  EXIT_SCOPE(n$2); [line 18, column 3]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(nameRef:__CFLocale const *); [line 18, column 3]\n  n$2=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 18, column 25]\n  *&nameRef:__CFLocale const *=n$2 [line 18, column 3]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" ;

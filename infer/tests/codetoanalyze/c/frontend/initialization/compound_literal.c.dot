@@ -7,7 +7,7 @@ digraph cfg {
 "compound_literal_expr.137fbe19f590ba2423c07134917ec888_2" [label="2: Exit compound_literal_expr \n  " color=yellow style=filled]
 	
 
-"compound_literal_expr.137fbe19f590ba2423c07134917ec888_3" [label="3:  Return Stmt \n   *&0$?%__sil_tmpSIL_compound_literal__n$0.x:int=52 [line 13, column 53]\n  *&0$?%__sil_tmpSIL_compound_literal__n$0.y:int=32 [line 13, column 53]\n  n$1=*&0$?%__sil_tmpSIL_compound_literal__n$0.x:int [line 13, column 38]\n  *&return:int=n$1 [line 13, column 31]\n  NULLIFY(&0$?%__sil_tmpSIL_compound_literal__n$0); [line 13, column 31]\n  EXIT_SCOPE(n$1,0$?%__sil_tmpSIL_compound_literal__n$0); [line 13, column 31]\n  APPLY_ABSTRACTION; [line 13, column 31]\n " shape="box"]
+"compound_literal_expr.137fbe19f590ba2423c07134917ec888_3" [label="3:  Return Stmt \n   *&0$?%__sil_tmpSIL_compound_literal__n$0.x:int=52 [line 13, column 53]\n  *&0$?%__sil_tmpSIL_compound_literal__n$0.y:int=32 [line 13, column 53]\n  n$1=*&0$?%__sil_tmpSIL_compound_literal__n$0.x:int [line 13, column 38]\n  *&return:int=n$1 [line 13, column 31]\n " shape="box"]
 	
 
 	 "compound_literal_expr.137fbe19f590ba2423c07134917ec888_3" -> "compound_literal_expr.137fbe19f590ba2423c07134917ec888_2" ;
@@ -18,11 +18,11 @@ digraph cfg {
 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_2" [label="2: Exit init_with_compound_literal \n  " color=yellow style=filled]
 	
 
-"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" [label="3:  Return Stmt \n   n$0=*&p.x:int [line 17, column 15]\n  *&return:int=(1 / (n$0 - 32)) [line 17, column 3]\n  NULLIFY(&p); [line 17, column 3]\n  EXIT_SCOPE(n$0,p); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" [label="3:  Return Stmt \n   n$0=*&p.x:int [line 17, column 15]\n  *&return:int=(1 / (n$0 - 32)) [line 17, column 3]\n " shape="box"]
 	
 
 	 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" -> "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_2" ;
-"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(p:point); [line 16, column 3]\n  *&p.x:int=32 [line 16, column 34]\n  *&p.y:int=52 [line 16, column 34]\n  n$1=*&p:point [line 16, column 20]\n  EXIT_SCOPE(n$1); [line 16, column 20]\n " shape="box"]
+"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(p:point); [line 16, column 3]\n  *&p.x:int=32 [line 16, column 34]\n  *&p.y:int=52 [line 16, column 34]\n  n$1=*&p:point [line 16, column 20]\n " shape="box"]
 	
 
 	 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" -> "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" ;

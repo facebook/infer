@@ -7,7 +7,7 @@ digraph cfg {
 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A::init \n  " color=yellow style=filled]
 	
 
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Return Stmt \n   n$0=*&self:A* [line 20, column 10]\n  *&return:objc_object*=n$0 [line 20, column 3]\n  NULLIFY(&self); [line 20, column 3]\n  EXIT_SCOPE(n$0,self); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Return Stmt \n   n$0=*&self:A* [line 20, column 10]\n  *&return:objc_object*=n$0 [line 20, column 3]\n " shape="box"]
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
@@ -18,11 +18,11 @@ digraph cfg {
 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" [label="2: Exit A::test1: \n  " color=yellow style=filled]
 	
 
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" [label="3:  Return Stmt \n   n$1=*&aa:A* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n  NULLIFY(&aa); [line 25, column 3]\n  EXIT_SCOPE(n$1,n$2,aa); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" [label="3:  Return Stmt \n   n$1=*&aa:A* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n " shape="box"]
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 24, column 3]\n  n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A::child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n  NULLIFY(&a); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$4,a); [line 24, column 3]\n " shape="box"]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 24, column 3]\n  n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A::child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n " shape="box"]
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" ;
@@ -33,11 +33,11 @@ digraph cfg {
 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" [label="2: Exit A::test2: \n  " color=yellow style=filled]
 	
 
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" [label="3:  Return Stmt \n   n$5=*&aa:A* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n  NULLIFY(&aa); [line 30, column 3]\n  EXIT_SCOPE(n$5,n$6,aa); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" [label="3:  Return Stmt \n   n$5=*&aa:A* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n " shape="box"]
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 29, column 3]\n  n$7=*&a:A* [line 29, column 12]\n  n$8=_fun_A::child(n$7:A*) [line 29, column 11]\n  *&aa:A*=n$8 [line 29, column 3]\n  NULLIFY(&a); [line 29, column 3]\n  EXIT_SCOPE(n$7,n$8,a); [line 29, column 3]\n " shape="box"]
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 29, column 3]\n  n$7=*&a:A* [line 29, column 12]\n  n$8=_fun_A::child(n$7:A*) [line 29, column 11]\n  *&aa:A*=n$8 [line 29, column 3]\n " shape="box"]
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" ;
@@ -48,11 +48,11 @@ digraph cfg {
 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" [label="2: Exit A::test3: \n  " color=yellow style=filled]
 	
 
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" [label="3:  Return Stmt \n   *&return:int=0 [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" [label="3:  Return Stmt \n   *&return:int=0 [line 35, column 3]\n " shape="box"]
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 34, column 3]\n  n$10=_fun_NSString::stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=n$9(n$10:NSString*) objc_block [line 34, column 3]\n  NULLIFY(&successBlock); [line 34, column 3]\n  EXIT_SCOPE(n$9,n$10,n$11,successBlock); [line 34, column 3]\n " shape="box"]
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 34, column 3]\n  n$10=_fun_NSString::stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=n$9(n$10:NSString*) objc_block [line 34, column 3]\n " shape="box"]
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
@@ -63,11 +63,11 @@ digraph cfg {
 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" [label="2: Exit A::test4: \n  " color=yellow style=filled]
 	
 
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n  APPLY_ABSTRACTION; [line 40, column 3]\n " shape="box"]
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n " shape="box"]
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 39, column 3]\n  n$13=_fun_NSString::stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=n$12(n$13:NSString*) objc_block [line 39, column 3]\n  NULLIFY(&successBlock); [line 39, column 3]\n  EXIT_SCOPE(n$12,n$13,n$14,successBlock); [line 39, column 3]\n " shape="box"]
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 39, column 3]\n  n$13=_fun_NSString::stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=n$12(n$13:NSString*) objc_block [line 39, column 3]\n " shape="box"]
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;

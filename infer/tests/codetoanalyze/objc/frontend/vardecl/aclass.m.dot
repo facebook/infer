@@ -7,7 +7,7 @@ digraph cfg {
 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" [label="2: Exit AClass::sharedInstance \n  " color=yellow style=filled]
 	
 
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass.m>$aVariable:NSObject* [line 19, column 10]\n  *&return:NSObject*=n$0 [line 19, column 3]\n  EXIT_SCOPE(n$0); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass.m>$aVariable:NSObject* [line 19, column 10]\n  *&return:NSObject*=n$0 [line 19, column 3]\n " shape="box"]
 	
 
 	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" ;

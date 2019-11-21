@@ -19,10 +19,9 @@ let init_global_state source_file =
   JContext.reset_exn_node_table ()
 
 
-let store_icfg tenv source_file cfg =
-  Typ.Procname.Hash.iter (fun _ pdesc -> Preanal.do_preanalysis pdesc tenv) cfg ;
+let store_icfg source_file cfg =
   SourceFiles.add source_file cfg Tenv.Global None ;
-  if Config.debug_mode || Config.frontend_tests then DotCfg.emit source_file cfg ;
+  if Config.debug_mode || Config.frontend_tests then DotCfg.emit_frontend_cfg source_file cfg ;
   ()
 
 
@@ -35,7 +34,7 @@ let do_source_file linereader classes program tenv source_basename package_opt s
     JFrontend.compute_source_icfg linereader classes program tenv source_basename package_opt
       source_file
   in
-  store_icfg tenv source_file cfg
+  store_icfg source_file cfg
 
 
 let capture_libs linereader program tenv =
@@ -49,8 +48,7 @@ let capture_libs linereader program tenv =
         let fake_source_file = SourceFile.from_abs_path (JFrontend.path_of_cached_classname cn) in
         init_global_state fake_source_file ;
         let cfg = JFrontend.compute_class_icfg fake_source_file linereader program tenv node in
-        store_icfg tenv fake_source_file cfg ;
-        JFrontend.cache_classname cn
+        store_icfg fake_source_file cfg ; JFrontend.cache_classname cn
   in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
 

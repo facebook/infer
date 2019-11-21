@@ -11,24 +11,24 @@ digraph cfg {
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_3" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_4" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_4" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_2" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&j:int [line 23, column 7]\n  NULLIFY(&j); [line 23, column 7]\n  EXIT_SCOPE(j); [line 23, column 7]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&j:int [line 23, column 7]\n " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" ;
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 0), true); [line 23, column 7]\n  EXIT_SCOPE(n$0); [line 23, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 0), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_8" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 0), false); [line 23, column 7]\n  NULLIFY(&i); [line 23, column 7]\n  EXIT_SCOPE(n$0,i); [line 23, column 7]\n  APPLY_ABSTRACTION; [line 23, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 0), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_3" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_8" [label="8:  UnaryOperator \n   n$1=*&i:int [line 24, column 5]\n  *&i:int=(n$1 + 1) [line 24, column 5]\n  NULLIFY(&i); [line 24, column 5]\n  EXIT_SCOPE(n$1,i); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_8" [label="8:  UnaryOperator \n   n$1=*&i:int [line 24, column 5]\n  *&i:int=(n$1 + 1) [line 24, column 5]\n " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_8" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_3" ;
@@ -41,15 +41,15 @@ digraph cfg {
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" ;
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch, if) \n   PRUNE((n$4 == 0), true); [line 19, column 7]\n  NULLIFY(&j); [line 19, column 7]\n  NULLIFY(&i); [line 19, column 7]\n  EXIT_SCOPE(n$4,j,i); [line 19, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch, if) \n   PRUNE((n$4 == 0), true); [line 19, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$4 == 0), false); [line 19, column 7]\n  EXIT_SCOPE(n$4); [line 19, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$4 == 0), false); [line 19, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_9" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" [label="13:  Return Stmt \n   APPLY_ABSTRACTION; [line 20, column 5]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" [label="13:  Return Stmt \n  " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_2" ;

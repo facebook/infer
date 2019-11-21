@@ -83,7 +83,7 @@ val default_failure_name : string
 
 val default_in_zip_results_dir : string
 
-val dotty_output : string
+val dotty_frontend_output : string
 
 val driver_stats_dir_name : string
 

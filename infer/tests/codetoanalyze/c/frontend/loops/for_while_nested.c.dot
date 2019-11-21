@@ -7,7 +7,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&k:int [line 15, column 10]\n  *&return:int=n$0 [line 15, column 3]\n  NULLIFY(&k); [line 15, column 3]\n  EXIT_SCOPE(n$0,k); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&k:int [line 15, column 10]\n  *&return:int=n$0 [line 15, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n  APPLY_ABSTRACTION; [line 10, column 8]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n  EXIT_SCOPE(n$1); [line 10, column 27]\n  APPLY_ABSTRACTION; [line 10, column 27]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
@@ -28,11 +28,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n  EXIT_SCOPE(n$2); [line 10, column 19]\n  APPLY_ABSTRACTION; [line 10, column 19]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n  NULLIFY(&i); [line 10, column 19]\n  EXIT_SCOPE(n$2,i); [line 10, column 19]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
@@ -45,15 +45,15 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12: Prune (true branch, while) \n   PRUNE((n$3 < 10), true); [line 11, column 12]\n  EXIT_SCOPE(n$3); [line 11, column 12]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12: Prune (true branch, while) \n   PRUNE((n$3 < 10), true); [line 11, column 12]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13: Prune (false branch, while) \n   PRUNE(!(n$3 < 10), false); [line 11, column 12]\n  EXIT_SCOPE(n$3); [line 11, column 12]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13: Prune (false branch, while) \n   PRUNE(!(n$3 < 10), false); [line 11, column 12]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  UnaryOperator \n   n$4=*&k:int [line 12, column 7]\n  *&k:int=(n$4 + 1) [line 12, column 7]\n  EXIT_SCOPE(n$4); [line 12, column 7]\n  APPLY_ABSTRACTION; [line 12, column 7]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  UnaryOperator \n   n$4=*&k:int [line 12, column 7]\n  *&k:int=(n$4 + 1) [line 12, column 7]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;

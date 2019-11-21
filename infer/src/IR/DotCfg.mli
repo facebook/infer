@@ -8,5 +8,8 @@
 
 open! IStd
 
-val emit : SourceFile.t -> Cfg.t -> unit
+val emit_frontend_cfg : SourceFile.t -> Cfg.t -> unit
 (** emit the given {!Cfg.t} in the "dot" format to a file determined by {!Config} values *)
+
+val emit_proc_desc : SourceFile.t -> Procdesc.t -> unit
+(** emit the given {!Procdesc.t} in the "dot" format to a file in infer-out/captured/ *)

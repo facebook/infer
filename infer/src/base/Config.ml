@@ -184,7 +184,7 @@ let default_failure_name = "ASSERTION_FAILURE"
 let default_in_zip_results_dir = "infer"
 
 (** Dotty output filename **)
-let dotty_output = "icfg.dot"
+let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
 let driver_stats_dir_name = "driver_stats"
 

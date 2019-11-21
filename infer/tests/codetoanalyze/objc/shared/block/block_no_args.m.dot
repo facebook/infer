@@ -7,7 +7,7 @@ digraph cfg {
 "objc_blockMy_manager::m_1.bc98a1b6d7bd8cbef60672af337939a3_2" [label="2: Exit objc_blockMy_manager::m_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager::m_1.bc98a1b6d7bd8cbef60672af337939a3_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n  NULLIFY(&z); [line 24, column 5]\n  EXIT_SCOPE(n$8,z); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"objc_blockMy_manager::m_1.bc98a1b6d7bd8cbef60672af337939a3_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
 	
 
 	 "objc_blockMy_manager::m_1.bc98a1b6d7bd8cbef60672af337939a3_3" -> "objc_blockMy_manager::m_1.bc98a1b6d7bd8cbef60672af337939a3_2" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
@@ -31,19 +31,19 @@ digraph cfg {
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" ;
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n  NULLIFY(&z); [line 28, column 7]\n  EXIT_SCOPE(n$0,z); [line 28, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n  NULLIFY(&p); [line 28, column 7]\n  EXIT_SCOPE(n$0,p); [line 28, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n  NULLIFY(&p); [line 29, column 5]\n  EXIT_SCOPE(n$1,n$2,p); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n  NULLIFY(&z); [line 31, column 5]\n  EXIT_SCOPE(n$3,z); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
@@ -51,11 +51,11 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n  EXIT_SCOPE(n$5,n$6,b); [line 26, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager::m_1,(n$7 &z:int)) [line 23, column 3]\n  EXIT_SCOPE(n$7); [line 23, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager::m_1,(n$7 &z:int)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;

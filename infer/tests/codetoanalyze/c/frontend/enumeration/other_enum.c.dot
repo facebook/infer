@@ -7,31 +7,31 @@ digraph cfg {
 "other_enum_main.572f04969b0ade4902dd1faf86fac461_2" [label="2: Exit other_enum_main \n  " color=yellow style=filled]
 	
 
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 17, column 3]\n  *&foo_g:int=(2 + 10) [line 17, column 3]\n  NULLIFY(&foo_g); [line 17, column 3]\n  EXIT_SCOPE(foo_g); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 17, column 3]\n  *&foo_g:int=(2 + 10) [line 17, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_3" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_2" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(foo_f:int); [line 16, column 3]\n  *&foo_f:int=2 [line 16, column 3]\n  NULLIFY(&foo_f); [line 16, column 3]\n  EXIT_SCOPE(foo_f); [line 16, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(foo_f:int); [line 16, column 3]\n  *&foo_f:int=2 [line 16, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_4" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_3" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(foo_e:int); [line 15, column 3]\n  *&foo_e:int=1 [line 15, column 3]\n  NULLIFY(&foo_e); [line 15, column 3]\n  EXIT_SCOPE(foo_e); [line 15, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(foo_e:int); [line 15, column 3]\n  *&foo_e:int=1 [line 15, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_5" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_4" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(foo_d:int); [line 14, column 3]\n  *&foo_d:int=11 [line 14, column 3]\n  NULLIFY(&foo_d); [line 14, column 3]\n  EXIT_SCOPE(foo_d); [line 14, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(foo_d:int); [line 14, column 3]\n  *&foo_d:int=11 [line 14, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_6" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_5" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(foo_c:int); [line 13, column 3]\n  *&foo_c:int=10 [line 13, column 3]\n  NULLIFY(&foo_c); [line 13, column 3]\n  EXIT_SCOPE(foo_c); [line 13, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(foo_c:int); [line 13, column 3]\n  *&foo_c:int=10 [line 13, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_7" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_6" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(foo_b:int); [line 12, column 3]\n  *&foo_b:int=1 [line 12, column 3]\n  NULLIFY(&foo_b); [line 12, column 3]\n  EXIT_SCOPE(foo_b); [line 12, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(foo_b:int); [line 12, column 3]\n  *&foo_b:int=1 [line 12, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_8" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_7" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 11, column 3]\n  *&foo_a:int=0 [line 11, column 3]\n  NULLIFY(&foo_a); [line 11, column 3]\n  EXIT_SCOPE(foo_a); [line 11, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 11, column 3]\n  *&foo_a:int=0 [line 11, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_9" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_8" ;
@@ -46,7 +46,7 @@ digraph cfg {
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_3" -> "other_enum_test.100f3583adf0259001be6c944828c44a_4" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_4" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
@@ -55,19 +55,19 @@ digraph cfg {
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_6" ;
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_7" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if) \n   PRUNE(((unsigned int)n$0 == (unsigned int)12), true); [line 23, column 7]\n  EXIT_SCOPE(n$0); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if) \n   PRUNE(((unsigned int)n$0 == (unsigned int)12), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_6" -> "other_enum_test.100f3583adf0259001be6c944828c44a_8" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n  NULLIFY(&foo_a); [line 23, column 7]\n  NULLIFY(&foo_g); [line 23, column 7]\n  EXIT_SCOPE(n$0,foo_a,foo_g); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_7" -> "other_enum_test.100f3583adf0259001be6c944828c44a_9" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n  *&return:int=((unsigned int)n$1 / (unsigned int)n$2) [line 24, column 5]\n  NULLIFY(&foo_a); [line 24, column 5]\n  NULLIFY(&foo_g); [line 24, column 5]\n  EXIT_SCOPE(n$1,n$2,foo_a,foo_g); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n  *&return:int=((unsigned int)n$1 / (unsigned int)n$2) [line 24, column 5]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_8" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_9" [label="9:  Return Stmt \n   *&return:int=0 [line 26, column 5]\n  APPLY_ABSTRACTION; [line 26, column 5]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_9" [label="9:  Return Stmt \n   *&return:int=0 [line 26, column 5]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_9" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;

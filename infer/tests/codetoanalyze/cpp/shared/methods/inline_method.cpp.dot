@@ -7,11 +7,11 @@ digraph cfg {
 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" [label="2: Exit test_call \n  " color=yellow style=filled]
 	
 
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn::fun \n   n$0=*&a_ptr:A* [line 24, column 3]\n  n$1=*n$0.in:A::AIn* [line 24, column 3]\n  _=*n$1:A::AIn [line 24, column 3]\n  n$3=_fun_A::AIn::fun(n$1:A::AIn*) [line 24, column 3]\n  NULLIFY(&a_ptr); [line 24, column 3]\n  EXIT_SCOPE(_,n$0,n$1,n$3,a_ptr); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn::fun \n   n$0=*&a_ptr:A* [line 24, column 3]\n  n$1=*n$0.in:A::AIn* [line 24, column 3]\n  _=*n$1:A::AIn [line 24, column 3]\n  n$3=_fun_A::AIn::fun(n$1:A::AIn*) [line 24, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" ;
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A::fun \n   n$4=*&a_ptr:A* [line 23, column 3]\n  _=*n$4:A [line 23, column 3]\n  n$6=_fun_A::fun(n$4:A*) [line 23, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 23, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A::fun \n   n$4=*&a_ptr:A* [line 23, column 3]\n  _=*n$4:A [line 23, column 3]\n  n$6=_fun_A::fun(n$4:A*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n  NULLIFY(&c); [line 17, column 5]\n  EXIT_SCOPE(n$0,c); [line 17, column 5]\n  APPLY_ABSTRACTION; [line 17, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
@@ -37,7 +37,7 @@ digraph cfg {
 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_2" [label="2: Exit A::AIn::fun \n  " color=yellow style=filled]
 	
 
-"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11, column 17]\n  APPLY_ABSTRACTION; [line 11, column 17]\n " shape="box"]
+"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11, column 17]\n " shape="box"]
 	
 
 	 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" -> "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_2" ;

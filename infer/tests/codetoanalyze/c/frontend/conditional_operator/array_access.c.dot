@@ -12,7 +12,7 @@ digraph cfg {
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_3" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_4" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_4" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_2" ;
@@ -20,16 +20,16 @@ digraph cfg {
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_5" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_6" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_6" [label="6:  UnaryOperator \n   n$2=*&p:int** [line 15, column 14]\n  n$3=*n$2:int* [line 15, column 13]\n  NULLIFY(&p); [line 15, column 13]\n  EXIT_SCOPE(n$2,p); [line 15, column 13]\n " shape="box"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_6" [label="6:  UnaryOperator \n   n$2=*&p:int** [line 15, column 14]\n  n$3=*n$2:int* [line 15, column 13]\n " shape="box"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_6" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_7" ;
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_6" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_8" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_7" [label="7: Prune (true branch, if) \n   n$1=*n$0:int* [line 15, column 7]\n  n$4=*n$3:int [line 15, column 12]\n  n$5=*n$1[n$4]:int [line 15, column 7]\n  PRUNE(n$5, true); [line 15, column 7]\n  EXIT_SCOPE(n$0,n$1,n$3,n$4,n$5); [line 15, column 7]\n  APPLY_ABSTRACTION; [line 15, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_7" [label="7: Prune (true branch, if) \n   n$1=*n$0:int* [line 15, column 7]\n  n$4=*n$3:int [line 15, column 12]\n  n$5=*n$1[n$4]:int [line 15, column 7]\n  PRUNE(n$5, true); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_7" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_3" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_8" [label="8: Prune (false branch, if) \n   n$1=*n$0:int* [line 15, column 7]\n  n$4=*n$3:int [line 15, column 12]\n  n$5=*n$1[n$4]:int [line 15, column 7]\n  PRUNE(!n$5, false); [line 15, column 7]\n  EXIT_SCOPE(n$0,n$1,n$3,n$4,n$5); [line 15, column 7]\n  APPLY_ABSTRACTION; [line 15, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_8" [label="8: Prune (false branch, if) \n   n$1=*n$0:int* [line 15, column 7]\n  n$4=*n$3:int [line 15, column 12]\n  n$5=*n$1[n$4]:int [line 15, column 7]\n  PRUNE(!n$5, false); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_8" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_3" ;
@@ -37,16 +37,16 @@ digraph cfg {
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_9" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_5" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_10" [label="10:  UnaryOperator \n   n$10=*&p:int** [line 13, column 11]\n  n$11=*n$10:int* [line 13, column 10]\n  EXIT_SCOPE(n$10); [line 13, column 10]\n " shape="box"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_10" [label="10:  UnaryOperator \n   n$10=*&p:int** [line 13, column 11]\n  n$11=*n$10:int* [line 13, column 10]\n " shape="box"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_10" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_11" ;
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_10" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_12" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_11" [label="11: Prune (true branch, if) \n   n$9=*&p:int** [line 13, column 7]\n  n$12=*n$11:int [line 13, column 9]\n  n$13=*n$9[n$12]:int* [line 13, column 7]\n  PRUNE(n$13, true); [line 13, column 7]\n  EXIT_SCOPE(n$9,n$11,n$12,n$13); [line 13, column 7]\n  APPLY_ABSTRACTION; [line 13, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_11" [label="11: Prune (true branch, if) \n   n$9=*&p:int** [line 13, column 7]\n  n$12=*n$11:int [line 13, column 9]\n  n$13=*n$9[n$12]:int* [line 13, column 7]\n  PRUNE(n$13, true); [line 13, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_11" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_9" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_12" [label="12: Prune (false branch, if) \n   n$9=*&p:int** [line 13, column 7]\n  n$12=*n$11:int [line 13, column 9]\n  n$13=*n$9[n$12]:int* [line 13, column 7]\n  PRUNE(!n$13, false); [line 13, column 7]\n  EXIT_SCOPE(n$9,n$11,n$12,n$13); [line 13, column 7]\n  APPLY_ABSTRACTION; [line 13, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_12" [label="12: Prune (false branch, if) \n   n$9=*&p:int** [line 13, column 7]\n  n$12=*n$11:int [line 13, column 9]\n  n$13=*n$9[n$12]:int* [line 13, column 7]\n  PRUNE(!n$13, false); [line 13, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_12" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_9" ;
@@ -59,11 +59,11 @@ digraph cfg {
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_14" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_15" ;
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_14" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_16" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_15" [label="15: Prune (true branch, if) \n   n$18=*n$17:int* [line 11, column 7]\n  n$19=*n$18[1]:int [line 11, column 7]\n  PRUNE(n$19, true); [line 11, column 7]\n  EXIT_SCOPE(n$17,n$18,n$19); [line 11, column 7]\n  APPLY_ABSTRACTION; [line 11, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_15" [label="15: Prune (true branch, if) \n   n$18=*n$17:int* [line 11, column 7]\n  n$19=*n$18[1]:int [line 11, column 7]\n  PRUNE(n$19, true); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_15" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_13" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_16" [label="16: Prune (false branch, if) \n   n$18=*n$17:int* [line 11, column 7]\n  n$19=*n$18[1]:int [line 11, column 7]\n  PRUNE(!n$19, false); [line 11, column 7]\n  EXIT_SCOPE(n$17,n$18,n$19); [line 11, column 7]\n  APPLY_ABSTRACTION; [line 11, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_16" [label="16: Prune (false branch, if) \n   n$18=*n$17:int* [line 11, column 7]\n  n$19=*n$18[1]:int [line 11, column 7]\n  PRUNE(!n$19, false); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_16" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_13" ;
@@ -71,11 +71,11 @@ digraph cfg {
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_17" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_14" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_18" [label="18: Prune (true branch, if) \n   n$23=*&p:int** [line 9, column 7]\n  n$24=*n$23[0]:int* [line 9, column 7]\n  PRUNE(n$24, true); [line 9, column 7]\n  EXIT_SCOPE(n$23,n$24); [line 9, column 7]\n  APPLY_ABSTRACTION; [line 9, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_18" [label="18: Prune (true branch, if) \n   n$23=*&p:int** [line 9, column 7]\n  n$24=*n$23[0]:int* [line 9, column 7]\n  PRUNE(n$24, true); [line 9, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_18" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_17" ;
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_19" [label="19: Prune (false branch, if) \n   n$23=*&p:int** [line 9, column 7]\n  n$24=*n$23[0]:int* [line 9, column 7]\n  PRUNE(!n$24, false); [line 9, column 7]\n  EXIT_SCOPE(n$23,n$24); [line 9, column 7]\n  APPLY_ABSTRACTION; [line 9, column 7]\n " shape="invhouse"]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_19" [label="19: Prune (false branch, if) \n   n$23=*&p:int** [line 9, column 7]\n  n$24=*n$23[0]:int* [line 9, column 7]\n  PRUNE(!n$24, false); [line 9, column 7]\n " shape="invhouse"]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_19" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_17" ;

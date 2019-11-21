@@ -7,35 +7,35 @@ digraph cfg {
 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" [label="2: Exit autorelease_test1 \n  " color=yellow style=filled]
 	
 
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 40, column 10]\n  *&s3:Auto*=n$0 [line 40, column 5]\n  NULLIFY(&s3); [line 40, column 5]\n  EXIT_SCOPE(n$0,s3); [line 40, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 40, column 10]\n  *&s3:Auto*=n$0 [line 40, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 39, column 10]\n  *&s2:Auto*=n$1 [line 39, column 5]\n  NULLIFY(&s2); [line 39, column 5]\n  EXIT_SCOPE(n$1,s2); [line 39, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 39, column 10]\n  *&s2:Auto*=n$1 [line 39, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 38, column 6]\n  n$3=_fun_NSObject::retain(n$2:Auto*) virtual [line 38, column 5]\n  NULLIFY(&s1); [line 38, column 5]\n  EXIT_SCOPE(n$2,n$3,s1); [line 38, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 38, column 6]\n  n$3=_fun_NSObject::retain(n$2:Auto*) virtual [line 38, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  BinaryOperatorStmt: Assign \n   n$4=_fun_createA() [line 37, column 10]\n  *&s1:Auto*=n$4 [line 37, column 5]\n  EXIT_SCOPE(n$4); [line 37, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  BinaryOperatorStmt: Assign \n   n$4=_fun_createA() [line 37, column 10]\n  *&s1:Auto*=n$4 [line 37, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s3:Auto*); [line 35, column 3]\n  *&s3:Auto*=null [line 35, column 3]\n  NULLIFY(&s3); [line 35, column 3]\n  EXIT_SCOPE(s3); [line 35, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s3:Auto*); [line 35, column 3]\n  *&s3:Auto*=null [line 35, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(s2:Auto*); [line 34, column 3]\n  *&s2:Auto*=null [line 34, column 3]\n  NULLIFY(&s2); [line 34, column 3]\n  EXIT_SCOPE(s2); [line 34, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(s2:Auto*); [line 34, column 3]\n  *&s2:Auto*=null [line 34, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 33, column 3]\n  *&s1:Auto*=null [line 33, column 3]\n  NULLIFY(&s1); [line 33, column 3]\n  EXIT_SCOPE(s1); [line 33, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 33, column 3]\n  *&s1:Auto*=null [line 33, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
@@ -46,31 +46,31 @@ digraph cfg {
 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" [label="2: Exit autorelease_test2 \n  " color=yellow style=filled]
 	
 
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" [label="3:  Return Stmt \n   *&return:int=0 [line 54, column 3]\n  APPLY_ABSTRACTION; [line 54, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" [label="3:  Return Stmt \n   *&return:int=0 [line 54, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 52, column 10]\n  *&s3:Auto*=n$0 [line 52, column 5]\n  NULLIFY(&s3); [line 52, column 5]\n  EXIT_SCOPE(n$0,s3); [line 52, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 52, column 10]\n  *&s3:Auto*=n$0 [line 52, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 51, column 10]\n  *&s2:Auto*=n$1 [line 51, column 5]\n  NULLIFY(&s2); [line 51, column 5]\n  EXIT_SCOPE(n$1,s2); [line 51, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 51, column 10]\n  *&s2:Auto*=n$1 [line 51, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 50, column 10]\n  *&s1:Auto*=n$2 [line 50, column 5]\n  NULLIFY(&s1); [line 50, column 5]\n  EXIT_SCOPE(n$2,s1); [line 50, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 50, column 10]\n  *&s1:Auto*=n$2 [line 50, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(s3:Auto*); [line 48, column 3]\n  *&s3:Auto*=null [line 48, column 3]\n  NULLIFY(&s3); [line 48, column 3]\n  EXIT_SCOPE(s3); [line 48, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(s3:Auto*); [line 48, column 3]\n  *&s3:Auto*=null [line 48, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s2:Auto*); [line 47, column 3]\n  *&s2:Auto*=null [line 47, column 3]\n  NULLIFY(&s2); [line 47, column 3]\n  EXIT_SCOPE(s2); [line 47, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(s2:Auto*); [line 47, column 3]\n  *&s2:Auto*=null [line 47, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 46, column 3]\n  *&s1:Auto*=null [line 46, column 3]\n  NULLIFY(&s1); [line 46, column 3]\n  EXIT_SCOPE(s1); [line 46, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 46, column 3]\n  *&s1:Auto*=null [line 46, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
@@ -81,19 +81,19 @@ digraph cfg {
 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" [label="2: Exit autorelease_test3 \n  " color=yellow style=filled]
 	
 
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:NSString*); [line 62, column 3]\n  n$0=*&string:NSString* [line 62, column 17]\n  *&c:NSString*=n$0 [line 62, column 3]\n  NULLIFY(&string); [line 62, column 3]\n  NULLIFY(&c); [line 62, column 3]\n  EXIT_SCOPE(n$0,string,c); [line 62, column 3]\n  APPLY_ABSTRACTION; [line 62, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:NSString*); [line 62, column 3]\n  n$0=*&string:NSString* [line 62, column 17]\n  *&c:NSString*=n$0 [line 62, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 61, column 4]\n  n$2=_fun_NSObject::release(n$1:NSAutoreleasePool*) virtual [line 61, column 3]\n  NULLIFY(&pool); [line 61, column 3]\n  EXIT_SCOPE(n$1,n$2,pool); [line 61, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 61, column 4]\n  n$2=_fun_NSObject::release(n$1:NSAutoreleasePool*) virtual [line 61, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(string:NSString*); [line 59, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 59, column 23]\n  n$4=_fun_NSObject::autorelease(n$3:NSString*) virtual [line 59, column 22]\n  *&string:NSString*=n$4 [line 59, column 3]\n  EXIT_SCOPE(n$3,n$4); [line 59, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(string:NSString*); [line 59, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 59, column 23]\n  n$4=_fun_NSObject::autorelease(n$3:NSString*) virtual [line 59, column 22]\n  *&string:NSString*=n$4 [line 59, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(pool:NSAutoreleasePool*); [line 58, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 58, column 30]\n  n$6=_fun_NSObject::init(n$5:NSAutoreleasePool*) virtual [line 58, column 29]\n  *&pool:NSAutoreleasePool*=n$6 [line 58, column 3]\n  EXIT_SCOPE(n$5,n$6); [line 58, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(pool:NSAutoreleasePool*); [line 58, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 58, column 30]\n  n$6=_fun_NSObject::init(n$5:NSAutoreleasePool*) virtual [line 58, column 29]\n  *&pool:NSAutoreleasePool*=n$6 [line 58, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
@@ -104,11 +104,11 @@ digraph cfg {
 "createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:Auto*) virtual [line 29, column 10]\n  *&return:Auto*=n$1 [line 29, column 3]\n  NULLIFY(&s1); [line 29, column 3]\n  EXIT_SCOPE(n$0,n$1,s1); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:Auto*) virtual [line 29, column 10]\n  *&return:Auto*=n$1 [line 29, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
-"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject::init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 28, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject::init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
@@ -119,11 +119,11 @@ digraph cfg {
 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto::autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:NSString*) virtual [line 22, column 10]\n  *&return:NSString*=n$1 [line 22, column 3]\n  NULLIFY(&s); [line 22, column 3]\n  EXIT_SCOPE(n$0,n$1,s); [line 22, column 3]\n  APPLY_ABSTRACTION; [line 22, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:NSString*) virtual [line 22, column 10]\n  *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n  EXIT_SCOPE(n$2); [line 21, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n " shape="box"]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;

@@ -12,19 +12,19 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_3" -> "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_4" ;
-"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_4" -> "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_2" ;
-"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_5" [label="5: Prune (true branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n  EXIT_SCOPE(n$10); [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_5" [label="5: Prune (true branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_5" -> "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_7" ;
-"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_6" [label="6: Prune (false branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n  NULLIFY(&newImage); [line 24, column 9]\n  EXIT_SCOPE(n$10,newImage); [line 24, column 9]\n  APPLY_ABSTRACTION; [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_6" [label="6: Prune (false branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_6" -> "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_3" ;
-"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n  NULLIFY(&newImage); [line 25, column 7]\n  EXIT_SCOPE(n$11,n$12,newImage); [line 25, column 7]\n  APPLY_ABSTRACTION; [line 25, column 7]\n " shape="box"]
+"objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n " shape="box"]
 	
 
 	 "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_7" -> "objc_blockMy_manager::blockReleaseNoLeak_1(struct CGImage).84ad49561aaa89b84a792baf34151a77_3" ;
@@ -35,7 +35,7 @@ digraph cfg {
 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_2" [label="2: Exit My_manager::blockReleaseNoLeak \n  " color=yellow style=filled]
 	
 
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n  *&return:int=n$0 [line 30, column 3]\n  NULLIFY(&z); [line 30, column 3]\n  EXIT_SCOPE(n$0,z); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n  *&return:int=n$0 [line 30, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_2" ;
@@ -43,32 +43,32 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: Prune (true branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n  EXIT_SCOPE(n$1); [line 28, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: Prune (true branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (false branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n  NULLIFY(&context); [line 28, column 7]\n  EXIT_SCOPE(n$1,context); [line 28, column 7]\n  APPLY_ABSTRACTION; [line 28, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (false branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" [label="7:  Call _fun_CGContextRelease \n   n$2=*&context:CGContext* [line 29, column 22]\n  n$3=_fun_CGContextRelease(n$2:CGContext*) [line 29, column 5]\n  NULLIFY(&context); [line 29, column 5]\n  EXIT_SCOPE(n$2,n$3,context); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" [label="7:  Call _fun_CGContextRelease \n   n$2=*&context:CGContext* [line 29, column 22]\n  n$3=_fun_CGContextRelease(n$2:CGContext*) [line 29, column 5]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n  NULLIFY(&b); [line 27, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,b); [line 27, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager::blockReleaseNoLeak_1,(n$9 &newImage:CGImage*)) [line 23, column 3]\n  NULLIFY(&newImage); [line 23, column 3]\n  EXIT_SCOPE(n$9,newImage); [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager::blockReleaseNoLeak_1,(n$9 &newImage:CGImage*)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$15=*&context:CGContext* [line 22, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$16 [line 22, column 3]\n  EXIT_SCOPE(n$15,n$16); [line 22, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$15=*&context:CGContext* [line 22, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$16 [line 22, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$17=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$17 [line 21, column 3]\n  EXIT_SCOPE(n$17); [line 21, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$17=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$17 [line 21, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;

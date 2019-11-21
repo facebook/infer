@@ -7,7 +7,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
@@ -16,11 +16,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch, while) \n   PRUNE(1, true); [line 10, column 10]\n  APPLY_ABSTRACTION; [line 10, column 10]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch, while) \n   PRUNE(1, true); [line 10, column 10]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch, while) \n   PRUNE(!1, false); [line 10, column 10]\n  NULLIFY(&x); [line 10, column 10]\n  EXIT_SCOPE(x); [line 10, column 10]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch, while) \n   PRUNE(!1, false); [line 10, column 10]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
@@ -33,11 +33,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (true branch, if) \n   PRUNE((n$0 == 2), true); [line 17, column 9]\n  EXIT_SCOPE(n$0); [line 17, column 9]\n  APPLY_ABSTRACTION; [line 17, column 9]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (true branch, if) \n   PRUNE((n$0 == 2), true); [line 17, column 9]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$0 == 2), false); [line 17, column 9]\n  EXIT_SCOPE(n$0); [line 17, column 9]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$0 == 2), false); [line 17, column 9]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
@@ -50,7 +50,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_18" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13: Prune (false branch, while) \n   PRUNE(!2, false); [line 11, column 12]\n  APPLY_ABSTRACTION; [line 11, column 12]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13: Prune (false branch, while) \n   PRUNE(!2, false); [line 11, column 12]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
@@ -63,19 +63,19 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_16" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_17" ;
-"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if) \n   PRUNE((n$4 > 5), true); [line 13, column 11]\n  EXIT_SCOPE(n$4); [line 13, column 11]\n  APPLY_ABSTRACTION; [line 13, column 11]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if) \n   PRUNE((n$4 > 5), true); [line 13, column 11]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_16" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if) \n   PRUNE(!(n$4 > 5), false); [line 13, column 11]\n  EXIT_SCOPE(n$4); [line 13, column 11]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if) \n   PRUNE(!(n$4 > 5), false); [line 13, column 11]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_17" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-"main.fad58de7366495db4650cfefac2fcd61_18" [label="18:  BinaryOperatorStmt: AddAssign \n   n$8=*&x:int [line 12, column 7]\n  *&x:int=(n$8 + 1) [line 12, column 7]\n  EXIT_SCOPE(n$8); [line 12, column 7]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_18" [label="18:  BinaryOperatorStmt: AddAssign \n   n$8=*&x:int [line 12, column 7]\n  *&x:int=(n$8 + 1) [line 12, column 7]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_18" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
-"main.fad58de7366495db4650cfefac2fcd61_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n  APPLY_ABSTRACTION; [line 9, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_19" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;

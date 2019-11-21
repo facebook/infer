@@ -4,10 +4,10 @@ digraph cfg {
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_1" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_11" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_2" [label="2: Exit assign_conditional \n   NULLIFY(&v2); [line 24, column 1]\n  NULLIFY(&v1); [line 24, column 1]\n " color=yellow style=filled]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_2" [label="2: Exit assign_conditional \n  " color=yellow style=filled]
 	
 
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_3" [label="3:  Return Stmt \n   n$0=*&v1:int [line 23, column 10]\n  *&return:int=n$0 [line 23, column 3]\n  EXIT_SCOPE(n$0,v1); [line 23, column 3]\n  APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_3" [label="3:  Return Stmt \n   n$0=*&v1:int [line 23, column 10]\n  *&return:int=n$0 [line 23, column 3]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_3" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_2" ;
@@ -15,23 +15,23 @@ digraph cfg {
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_4" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 22, column 4]\n  PRUNE(n$2, true); [line 22, column 4]\n  NULLIFY(&a); [line 22, column 4]\n  EXIT_SCOPE(n$2,a,v2); [line 22, column 4]\n " shape="invhouse"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 22, column 4]\n  PRUNE(n$2, true); [line 22, column 4]\n " shape="invhouse"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_7" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 22, column 4]\n  PRUNE(!n$2, false); [line 22, column 4]\n  NULLIFY(&a); [line 22, column 4]\n  EXIT_SCOPE(n$2,a); [line 22, column 4]\n " shape="invhouse"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 22, column 4]\n  PRUNE(!n$2, false); [line 22, column 4]\n " shape="invhouse"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_8" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 22, column 4]\n  APPLY_ABSTRACTION; [line 22, column 4]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 22, column 4]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_7" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_4" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 22, column 4]\n  EXIT_SCOPE(v2); [line 22, column 4]\n  APPLY_ABSTRACTION; [line 22, column 4]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 22, column 4]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_8" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_4" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 22, column 4]\n  *n$3:int=1 [line 22, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 22, column 3]\n  EXIT_SCOPE(n$3,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 22, column 3]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 22, column 4]\n  *n$3:int=1 [line 22, column 3]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_3" ;
@@ -48,10 +48,10 @@ digraph cfg {
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_1" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_11" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_2" [label="2: Exit choose_lvalue \n   NULLIFY(&v1); [line 12, column 1]\n  NULLIFY(&v2); [line 12, column 1]\n " color=yellow style=filled]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_2" [label="2: Exit choose_lvalue \n  " color=yellow style=filled]
 	
 
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 11, column 10]\n  *&return:int=n$0 [line 11, column 3]\n  NULLIFY(&v3); [line 11, column 3]\n  EXIT_SCOPE(n$0,v3); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 11, column 10]\n  *&return:int=n$0 [line 11, column 3]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_3" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_2" ;
@@ -59,23 +59,23 @@ digraph cfg {
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_4" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 10, column 12]\n  PRUNE(n$2, true); [line 10, column 12]\n  NULLIFY(&a); [line 10, column 12]\n  EXIT_SCOPE(n$2,v2,a); [line 10, column 12]\n " shape="invhouse"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 10, column 12]\n  PRUNE(n$2, true); [line 10, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_7" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 10, column 12]\n  PRUNE(!n$2, false); [line 10, column 12]\n  NULLIFY(&a); [line 10, column 12]\n  EXIT_SCOPE(n$2,a,v1); [line 10, column 12]\n " shape="invhouse"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 10, column 12]\n  PRUNE(!n$2, false); [line 10, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 10, column 12]\n  EXIT_SCOPE(v1); [line 10, column 12]\n  APPLY_ABSTRACTION; [line 10, column 12]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 10, column 12]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_7" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_4" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 10, column 12]\n  EXIT_SCOPE(v2); [line 10, column 12]\n  APPLY_ABSTRACTION; [line 10, column 12]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 10, column 12]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_4" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(v3:int); [line 10, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 10, column 12]\n  n$4=*n$3:int [line 10, column 12]\n  *&v3:int=n$4 [line 10, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 10, column 3]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 10, column 3]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(v3:int); [line 10, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 10, column 12]\n  n$4=*n$3:int [line 10, column 12]\n  *&v3:int=n$4 [line 10, column 3]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_3" ;
@@ -95,7 +95,7 @@ digraph cfg {
 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_2" [label="2: Exit choose_rvalue \n  " color=yellow style=filled]
 	
 
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 17, column 10]\n  *&return:int=n$0 [line 17, column 3]\n  NULLIFY(&v3); [line 17, column 3]\n  EXIT_SCOPE(n$0,v3); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 17, column 10]\n  *&return:int=n$0 [line 17, column 3]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_3" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_2" ;
@@ -103,23 +103,23 @@ digraph cfg {
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_4" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 16, column 12]\n  PRUNE(n$2, true); [line 16, column 12]\n  NULLIFY(&a); [line 16, column 12]\n  EXIT_SCOPE(n$2,a); [line 16, column 12]\n " shape="invhouse"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 16, column 12]\n  PRUNE(n$2, true); [line 16, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_7" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 16, column 12]\n  PRUNE(!n$2, false); [line 16, column 12]\n  NULLIFY(&a); [line 16, column 12]\n  NULLIFY(&v1); [line 16, column 12]\n  EXIT_SCOPE(n$2,a,v1); [line 16, column 12]\n " shape="invhouse"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 16, column 12]\n  PRUNE(!n$2, false); [line 16, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_7" [label="7:  ConditionalStmt Branch \n   n$3=*&v1:int [line 16, column 16]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 16, column 12]\n  NULLIFY(&v1); [line 16, column 12]\n  EXIT_SCOPE(n$3,v1); [line 16, column 12]\n  APPLY_ABSTRACTION; [line 16, column 12]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_7" [label="7:  ConditionalStmt Branch \n   n$3=*&v1:int [line 16, column 16]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 16, column 12]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_7" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_4" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 16, column 12]\n  APPLY_ABSTRACTION; [line 16, column 12]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 16, column 12]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_4" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(v3:int); [line 16, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 16, column 12]\n  *&v3:int=n$4 [line 16, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 16, column 3]\n  EXIT_SCOPE(n$4,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 16, column 3]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(v3:int); [line 16, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 16, column 12]\n  *&v3:int=n$4 [line 16, column 3]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_3" ;
@@ -135,7 +135,7 @@ digraph cfg {
 "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_2" [label="2: Exit div0_assign_conditional \n  " color=yellow style=filled]
 	
 
-"div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 39, column 44]\n  *&return:int=(1 / n$0) [line 39, column 33]\n  EXIT_SCOPE(n$0); [line 39, column 33]\n  APPLY_ABSTRACTION; [line 39, column 33]\n " shape="box"]
+"div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 39, column 44]\n  *&return:int=(1 / n$0) [line 39, column 33]\n " shape="box"]
 	
 
 	 "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" -> "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_2" ;
@@ -146,7 +146,7 @@ digraph cfg {
 "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_2" [label="2: Exit div0_choose_lvalue \n  " color=yellow style=filled]
 	
 
-"div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 31, column 39]\n  *&return:int=(1 / n$0) [line 31, column 28]\n  EXIT_SCOPE(n$0); [line 31, column 28]\n  APPLY_ABSTRACTION; [line 31, column 28]\n " shape="box"]
+"div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 31, column 39]\n  *&return:int=(1 / n$0) [line 31, column 28]\n " shape="box"]
 	
 
 	 "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" -> "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_2" ;
@@ -157,7 +157,7 @@ digraph cfg {
 "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_2" [label="2: Exit div0_choose_rvalue \n  " color=yellow style=filled]
 	
 
-"div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 35, column 39]\n  *&return:int=(1 / n$0) [line 35, column 28]\n  EXIT_SCOPE(n$0); [line 35, column 28]\n  APPLY_ABSTRACTION; [line 35, column 28]\n " shape="box"]
+"div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 35, column 39]\n  *&return:int=(1 / n$0) [line 35, column 28]\n " shape="box"]
 	
 
 	 "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" -> "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_2" ;
@@ -168,7 +168,7 @@ digraph cfg {
 "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_2" [label="2: Exit div0_temp_lvalue \n  " color=yellow style=filled]
 	
 
-"div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 43, column 33]\n  *&return:int=n$0 [line 43, column 26]\n  EXIT_SCOPE(n$0); [line 43, column 26]\n  APPLY_ABSTRACTION; [line 43, column 26]\n " shape="box"]
+"div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 43, column 33]\n  *&return:int=n$0 [line 43, column 26]\n " shape="box"]
 	
 
 	 "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" -> "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_2" ;
@@ -179,7 +179,7 @@ digraph cfg {
 "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_2" [label="2: Exit div1_assign_conditional \n  " color=yellow style=filled]
 	
 
-"div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 41, column 44]\n  *&return:int=(1 / n$0) [line 41, column 33]\n  EXIT_SCOPE(n$0); [line 41, column 33]\n  APPLY_ABSTRACTION; [line 41, column 33]\n " shape="box"]
+"div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 41, column 44]\n  *&return:int=(1 / n$0) [line 41, column 33]\n " shape="box"]
 	
 
 	 "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" -> "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_2" ;
@@ -190,7 +190,7 @@ digraph cfg {
 "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_2" [label="2: Exit div1_choose_lvalue \n  " color=yellow style=filled]
 	
 
-"div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 33, column 39]\n  *&return:int=(1 / n$0) [line 33, column 28]\n  EXIT_SCOPE(n$0); [line 33, column 28]\n  APPLY_ABSTRACTION; [line 33, column 28]\n " shape="box"]
+"div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 33, column 39]\n  *&return:int=(1 / n$0) [line 33, column 28]\n " shape="box"]
 	
 
 	 "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" -> "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_2" ;
@@ -201,7 +201,7 @@ digraph cfg {
 "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_2" [label="2: Exit div1_choose_rvalue \n  " color=yellow style=filled]
 	
 
-"div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 37, column 39]\n  *&return:int=(1 / n$0) [line 37, column 28]\n  EXIT_SCOPE(n$0); [line 37, column 28]\n  APPLY_ABSTRACTION; [line 37, column 28]\n " shape="box"]
+"div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 37, column 39]\n  *&return:int=(1 / n$0) [line 37, column 28]\n " shape="box"]
 	
 
 	 "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" -> "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_2" ;
@@ -212,7 +212,7 @@ digraph cfg {
 "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_2" [label="2: Exit div1_temp_lvalue \n  " color=yellow style=filled]
 	
 
-"div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 45, column 33]\n  *&return:int=n$0 [line 45, column 26]\n  EXIT_SCOPE(n$0); [line 45, column 26]\n  APPLY_ABSTRACTION; [line 45, column 26]\n " shape="box"]
+"div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 45, column 33]\n  *&return:int=n$0 [line 45, column 26]\n " shape="box"]
 	
 
 	 "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" -> "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_2" ;
@@ -221,10 +221,10 @@ digraph cfg {
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" ;
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_2" [label="2: Exit div_temp_lvalue \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 29, column 1]\n " color=yellow style=filled]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_2" [label="2: Exit div_temp_lvalue \n  " color=yellow style=filled]
 	
 
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" [label="3:  Return Stmt \n   n$0=*&r:int const & [line 28, column 14]\n  n$1=*n$0:int [line 28, column 14]\n  *&return:int=(1 / n$1) [line 28, column 3]\n  NULLIFY(&r); [line 28, column 3]\n  EXIT_SCOPE(n$0,n$1,r); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" [label="3:  Return Stmt \n   n$0=*&r:int const & [line 28, column 14]\n  n$1=*n$0:int [line 28, column 14]\n  *&return:int=(1 / n$1) [line 28, column 3]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_2" ;
@@ -232,23 +232,23 @@ digraph cfg {
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" [label="5: Prune (true branch, boolean exp) \n   n$4=*&a:int [line 27, column 18]\n  PRUNE(n$4, true); [line 27, column 18]\n  NULLIFY(&a); [line 27, column 18]\n  EXIT_SCOPE(n$4,a); [line 27, column 18]\n " shape="invhouse"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" [label="5: Prune (true branch, boolean exp) \n   n$4=*&a:int [line 27, column 18]\n  PRUNE(n$4, true); [line 27, column 18]\n " shape="invhouse"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" [label="6: Prune (false branch, boolean exp) \n   n$4=*&a:int [line 27, column 18]\n  PRUNE(!n$4, false); [line 27, column 18]\n  NULLIFY(&a); [line 27, column 18]\n  EXIT_SCOPE(n$4,a); [line 27, column 18]\n " shape="invhouse"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" [label="6: Prune (false branch, boolean exp) \n   n$4=*&a:int [line 27, column 18]\n  PRUNE(!n$4, false); [line 27, column 18]\n " shape="invhouse"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" [label="7:  ConditionalStmt Branch \n   n$5=*&b:int [line 27, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=n$5 [line 27, column 18]\n  NULLIFY(&b); [line 27, column 18]\n  EXIT_SCOPE(n$5,b); [line 27, column 18]\n  APPLY_ABSTRACTION; [line 27, column 18]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" [label="7:  ConditionalStmt Branch \n   n$5=*&b:int [line 27, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=n$5 [line 27, column 18]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=1 [line 27, column 18]\n  APPLY_ABSTRACTION; [line 27, column 18]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=1 [line 27, column 18]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(r:int const &); [line 27, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 27, column 18]\n  n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 27, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=n$6 [line 27, column 18]\n  *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 27, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 27, column 3]\n  EXIT_SCOPE(n$6,0$?%__sil_tmpSIL_materialize_temp__n$2,0$?%__sil_tmpSIL_temp_conditional___n$3); [line 27, column 3]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(r:int const &); [line 27, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 27, column 18]\n  n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 27, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=n$6 [line 27, column 18]\n  *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 27, column 3]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" ;

@@ -7,7 +7,7 @@ digraph cfg {
 "objc_blockB::f_1(class B).5b7adcd944bbfcb88a674af924a1733e_2" [label="2: Exit objc_blockB::f_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockB::f_1(class B).5b7adcd944bbfcb88a674af924a1733e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n  NULLIFY(&self); [line 25, column 9]\n  EXIT_SCOPE(n$3,self); [line 25, column 9]\n  APPLY_ABSTRACTION; [line 25, column 9]\n " shape="box"]
+"objc_blockB::f_1(class B).5b7adcd944bbfcb88a674af924a1733e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
 	
 
 	 "objc_blockB::f_1(class B).5b7adcd944bbfcb88a674af924a1733e_3" -> "objc_blockB::f_1(class B).5b7adcd944bbfcb88a674af924a1733e_2" ;
@@ -18,11 +18,11 @@ digraph cfg {
 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_2" [label="2: Exit B::f \n  " color=yellow style=filled]
 	
 
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 27, column 10]\n  n$1=*n$0.y:int [line 27, column 10]\n  *&return:int=n$1 [line 27, column 3]\n  NULLIFY(&self); [line 27, column 3]\n  EXIT_SCOPE(n$0,n$1,self); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 27, column 10]\n  n$1=*n$0.y:int [line 27, column 10]\n  *&return:int=n$1 [line 27, column 3]\n " shape="box"]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_2" ;
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B::foo:and:(n$5:int,(_fun_objc_blockB::f_1,(n$2 &self:B* const )):_fn_(*)) block_params [line 23, column 3]\n  EXIT_SCOPE(n$2,n$4,n$5,n$6); [line 23, column 3]\n " shape="box"]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B::foo:and:(n$5:int,(_fun_objc_blockB::f_1,(n$2 &self:B* const )):_fn_(*)) block_params [line 23, column 3]\n " shape="box"]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" ;
