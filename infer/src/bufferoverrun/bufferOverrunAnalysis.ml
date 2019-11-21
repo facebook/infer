@@ -220,6 +220,51 @@ module TransferFunctions = struct
         assert false
 
 
+  let join_java_static_final =
+    let known_java_static_fields = String.Set.of_list [".EMPTY"] in
+    let is_known_java_static_field fn =
+      let fieldname = Typ.Fieldname.to_string fn in
+      String.Set.exists known_java_static_fields ~f:(fun suffix ->
+          String.is_suffix fieldname ~suffix )
+    in
+    let copy_reachable_locs_from loc ~from_mem ~to_mem =
+      let copy loc acc =
+        Option.value_map (Dom.Mem.find_opt loc from_mem) ~default:acc ~f:(fun v ->
+            Dom.Mem.add_heap loc v acc )
+      in
+      let reachable_locs = Dom.Mem.get_reachable_locs_from [] (PowLoc.singleton loc) from_mem in
+      PowLoc.fold copy reachable_locs to_mem
+    in
+    fun tenv get_proc_summary_and_formals exp mem ->
+      Option.value_map (Exp.get_java_class_initializer tenv exp) ~default:mem
+        ~f:(fun (clinit_pname, pvar, fn, field_typ) ->
+          match field_typ.Typ.desc with
+          | Typ.Tptr ({desc= Tstruct _}, _) ->
+              (* It copies all of the reachable values when the contents of the field are commonly
+                 used as immutable, e.g., values of enum.  Otherwise, it copies only the size of
+                 static final array. *)
+              Option.value_map (get_proc_summary_and_formals clinit_pname) ~default:mem
+                ~f:(fun (clinit_mem, _) ->
+                  let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) ~fn in
+                  if is_known_java_static_field fn then
+                    copy_reachable_locs_from field_loc ~from_mem:clinit_mem ~to_mem:mem
+                  else mem )
+          | _ ->
+              mem )
+
+
+  let modeled_range_of_exp location exp mem =
+    match exp with
+    | Exp.Lindex (arr_exp, _) ->
+        let length =
+          Sem.eval_array_locs_length (Sem.eval_locs arr_exp mem) mem |> Dom.Val.get_itv
+        in
+        Option.map (Itv.is_const length)
+          ~f:(Dom.ModeledRange.of_big_int ~trace:(Bounds.BoundTrace.of_loop location))
+    | _ ->
+        None
+
+
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
    fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}} node
        instr ->
@@ -242,9 +287,16 @@ module TransferFunctions = struct
           L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
-    | Load {id; e= exp; typ} ->
+    | Load {id; e= exp; typ; loc= location} ->
+        let mem =
+          if Language.curr_language_is Java then
+            join_java_static_final tenv get_proc_summary_and_formals exp mem
+          else mem
+        in
         let represents_multiple_values = is_array_access_exp exp in
-        BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
+        let modeled_range = modeled_range_of_exp location exp mem in
+        BoUtils.Exec.load_locs ~represents_multiple_values ~modeled_range id typ
+          (Sem.eval_locs exp mem) mem
     | Store {e2= Exn _} when Language.curr_language_is Java ->
         Dom.Mem.exc_raised
     | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}

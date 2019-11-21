@@ -21,9 +21,13 @@ type t =
   ; parameters: parameters  (** currently only one string parameter *) }
 [@@deriving compare]
 
+let equal = [%compare.equal: t]
+
 let volatile = {class_name= "volatile"; parameters= []}
 
 let final = {class_name= "final"; parameters= []}
+
+let is_final x = equal final x
 
 (** Pretty print an annotation. *)
 let prefix = match Language.curr_language_is Java with true -> "@" | false -> "_"
@@ -63,6 +67,8 @@ module Item = struct
 
   (** Check if the item annotation is empty. *)
   let is_empty ia = List.is_empty ia
+
+  let is_final ia = List.exists ia ~f:(fun (x, b) -> b && is_final x)
 end
 
 module Class = struct

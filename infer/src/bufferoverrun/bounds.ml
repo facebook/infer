@@ -1220,6 +1220,9 @@ module BoundTrace = struct
     | ModeledFunction {pname; location} ->
         let desc = F.asprintf "Modeled call to %s" pname in
         [Errlog.make_trace_element depth location desc []]
+
+
+  let of_loop location = Loop location
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
@@ -1261,6 +1264,8 @@ module NonNegativeBound = struct
       assert false
     else (b, BoundTrace.ModeledFunction {pname; location})
 
+
+  let of_big_int ~trace c = (Bound.of_big_int c, trace)
 
   let int_lb (b, _) =
     Bound.big_int_lb b

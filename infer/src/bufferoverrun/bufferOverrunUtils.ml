@@ -32,8 +32,12 @@ end
 module Exec = struct
   open ModelEnv
 
-  let load_locs ~represents_multiple_values id typ locs mem =
-    let v = Dom.Mem.find_set ~typ locs mem in
+  let load_locs ~represents_multiple_values ~modeled_range id typ locs mem =
+    let set_modeled_range v =
+      Option.value_map modeled_range ~default:v ~f:(fun modeled_range ->
+          Dom.Val.set_modeled_range modeled_range v )
+    in
+    let v = Dom.Mem.find_set ~typ locs mem |> set_modeled_range in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     let mem =
       if represents_multiple_values then Dom.Mem.add_heap_set ~represents_multiple_values locs v mem

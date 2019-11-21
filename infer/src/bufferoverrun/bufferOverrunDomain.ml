@@ -82,6 +82,9 @@ module ModeledRange = struct
   let of_modeled_function pname location bound =
     let pname = Typ.Procname.to_simplified_string pname in
     NonBottom (Bounds.NonNegativeBound.of_modeled_function pname location bound)
+
+
+  let of_big_int ~trace z = NonBottom (Bounds.NonNegativeBound.of_big_int ~trace z)
 end
 
 module Val = struct

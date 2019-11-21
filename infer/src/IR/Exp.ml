@@ -361,3 +361,21 @@ let rec ignore_cast e = match e with Cast (_, e) -> ignore_cast e | _ -> e
 
 let rec ignore_integer_cast e =
   match e with Cast (t, e) when Typ.is_int t -> ignore_integer_cast e | _ -> e
+
+
+let rec get_java_class_initializer tenv = function
+  | Lfield (Lvar pvar, fn, typ) when Pvar.is_global pvar -> (
+    match Typ.Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) fn typ with
+    | Some (field_typ, annot) when Annot.Item.is_final annot ->
+        let java_class = Typ.JavaClass (Pvar.get_name pvar) in
+        Some
+          ( Typ.Procname.Java (Typ.Procname.Java.get_class_initializer java_class)
+          , pvar
+          , fn
+          , field_typ )
+    | _ ->
+        None )
+  | Cast (_, e) | Lfield (e, _, _) ->
+      get_java_class_initializer tenv e
+  | Lvar _ | Var _ | UnOp _ | BinOp _ | Exn _ | Closure _ | Const _ | Lindex _ | Sizeof _ ->
+      None

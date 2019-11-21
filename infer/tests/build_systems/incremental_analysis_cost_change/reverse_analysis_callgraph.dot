@@ -20,7 +20,10 @@ digraph callgraph {
   N2 -> N4 ;
   N2 -> N3 ;
 
-  N8 [ label = "void PrintStream.println(String)", flag = false ];
+  N9 [ label = "void PrintStream.println(String)", flag = false ];
+  N9 -> N2 ;
+
+  N8 [ label = "void System.<clinit>()", flag = false ];
   N8 -> N2 ;
 
   N3 [ label = "void Test.complexityDecrease(int)", flag = true ];

@@ -25,7 +25,13 @@ end
 
 module Exec : sig
   val load_locs :
-    represents_multiple_values:bool -> Ident.t -> Typ.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
+       represents_multiple_values:bool
+    -> modeled_range:Dom.ModeledRange.t option
+    -> Ident.t
+    -> Typ.t
+    -> PowLoc.t
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   val decl_local : ModelEnv.model_env -> Dom.Mem.t * int -> Loc.t * Typ.t -> Dom.Mem.t * int
 

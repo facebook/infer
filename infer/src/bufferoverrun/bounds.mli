@@ -131,6 +131,8 @@ module BoundTrace : sig
   val length : t -> int
 
   val make_err_trace : depth:int -> t -> Errlog.loc_trace
+
+  val of_loop : Location.t -> t
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
@@ -147,6 +149,8 @@ module NonNegativeBound : sig
   val of_loop_bound : Location.t -> Bound.t -> t
 
   val of_modeled_function : string -> Location.t -> Bound.t -> t
+
+  val of_big_int : trace:BoundTrace.t -> Z.t -> t
 
   val pp : hum:bool -> Format.formatter -> t -> unit
 

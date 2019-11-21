@@ -39,6 +39,9 @@ module Item : sig
 
   val empty : t
   (** Empty item annotation. *)
+
+  val is_final : t -> bool
+  (** Check if final annotation is included in. *)
 end
 
 module Class : sig
