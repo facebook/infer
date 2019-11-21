@@ -33,6 +33,7 @@ type t =
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
+  ; is_no_return: bool  (** the procedure is known not to return *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)

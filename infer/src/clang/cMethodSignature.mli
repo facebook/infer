@@ -24,6 +24,7 @@ type t =
   ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
   ; is_cpp_nothrow: bool
+  ; is_no_return: bool
   ; is_variadic: bool
   ; pointer_to_parent: Clang_ast_t.pointer option
   ; pointer_to_property_opt: Clang_ast_t.pointer option
@@ -45,6 +46,7 @@ val mk :
   -> ClangMethodKind.t
   -> ?is_cpp_virtual:bool
   -> ?is_cpp_nothrow:bool
+  -> ?is_no_return:bool
   -> ?is_variadic:bool
   -> Clang_ast_t.pointer option
   -> Clang_ast_t.pointer option

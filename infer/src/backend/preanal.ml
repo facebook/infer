@@ -210,6 +210,32 @@ module FunctionPointerSubstitution = struct
     if updated then Attributes.store ~proc_desc:(Some pdesc) (Procdesc.get_attributes pdesc)
 end
 
+(** pre-analysis to cut control flow after calls to functions whose type indicates they do not
+    return *)
+module NoReturn = struct
+  let has_noreturn_call node =
+    Procdesc.Node.get_instrs node
+    |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
+           match instr with
+           | Call (_, _, _, _, {cf_noreturn= true}) ->
+               true
+           | Call (_, Const (Cfun proc_name), _, _, _) -> (
+             match Attributes.load proc_name with
+             | Some {ProcAttributes.is_no_return= true} ->
+                 true
+             | _ ->
+                 false )
+           | _ ->
+               false )
+
+
+  let process proc_desc =
+    Procdesc.iter_nodes
+      (fun node ->
+        if has_noreturn_call node then Procdesc.set_succs node ~normal:(Some []) ~exn:None )
+      proc_desc
+end
+
 let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
   let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
@@ -219,4 +245,5 @@ let do_preanalysis exe_env pdesc =
   then FunctionPointerSubstitution.process summary tenv ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
+  NoReturn.process pdesc ;
   ()

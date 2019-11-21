@@ -135,3 +135,13 @@ void sizeof_expr_ok(void) {
   }
   free(p);
 }
+
+void __attribute__((noreturn)) will_not_return();
+
+void unreachable_null_ok() {
+  int* p = NULL;
+  if (p == NULL) {
+    will_not_return();
+  }
+  *p = 42;
+}

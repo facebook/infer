@@ -50,6 +50,7 @@ type t =
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
+  ; is_no_return: bool  (** the procedure is known not to return *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
@@ -74,8 +75,9 @@ let default translation_unit proc_name =
   ; is_biabduction_model= false
   ; is_bridge_method= false
   ; is_cpp_noexcept_method= false
-  ; is_java_synchronized_method= false
   ; is_defined= false
+  ; is_java_synchronized_method= false
+  ; is_no_return= false
   ; is_specialized= false
   ; is_synthetic_method= false
   ; is_variadic= false
@@ -107,6 +109,7 @@ let pp f
      ; is_defined
      ; is_cpp_noexcept_method
      ; is_java_synchronized_method
+     ; is_no_return
      ; is_specialized
      ; is_synthetic_method
      ; is_variadic
@@ -145,13 +148,14 @@ let pp f
       (Pp.semicolon_seq ~print_env:Pp.text_break PredSymb.pp_func_attribute)
       func_attributes ;
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
+  pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
-  pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_cpp_noexcept_method "is_cpp_noexcept_method"
     is_cpp_noexcept_method f () ;
+  pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
-  pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
+  pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;

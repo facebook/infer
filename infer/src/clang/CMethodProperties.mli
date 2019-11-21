@@ -30,6 +30,8 @@ val get_pointer_to_property : Clang_ast_t.decl -> Clang_ast_t.pointer option
 
 val is_objc_method : Clang_ast_t.decl -> bool
 
+val is_no_return : Clang_ast_t.decl -> bool
+
 val is_variadic : Clang_ast_t.decl -> bool
 
 val get_block_captured_variables : Clang_ast_t.decl -> Clang_ast_t.block_captured_variable list

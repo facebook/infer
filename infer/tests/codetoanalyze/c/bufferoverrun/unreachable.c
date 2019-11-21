@@ -136,7 +136,7 @@ void FN_unreachable_statement_call_bad() {
   nop();
 }
 
-void unreachable_statement_exit_bad() {
+void FN_unreachable_statement_exit_bad() {
   exit(2);
   nop();
 }

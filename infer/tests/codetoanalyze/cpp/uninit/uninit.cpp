@@ -257,7 +257,7 @@ int warning_when_throw_in_other_branch_bad(int t) {
 
 [[noreturn]] void noreturn_function() {}
 
-int FP_no_warning_noreturn_callee_ok(bool t) {
+int no_warning_noreturn_callee_ok(bool t) {
   int x;
   if (t) {
     x = 2;
