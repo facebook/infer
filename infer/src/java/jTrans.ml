@@ -809,14 +809,13 @@ type translation =
 let assume_not_null loc sil_expr =
   let builtin_infer_assume = Exp.Const (Const.Cfun BuiltinDecl.__infer_assume) in
   let not_null_expr = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
-  let assume_call_flag = {CallFlags.default with CallFlags.cf_noreturn= true} in
   let call_args = [(not_null_expr, Typ.mk (Tint Typ.IBool))] in
   Sil.Call
     ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
     , builtin_infer_assume
     , call_args
     , loc
-    , assume_call_flag )
+    , CallFlags.default )
 
 
 let instruction (context : JContext.t) pc instr : translation =
