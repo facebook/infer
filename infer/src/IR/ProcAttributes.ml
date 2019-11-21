@@ -43,7 +43,6 @@ type t =
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
-  ; func_attributes: PredSymb.func_attribute list
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
@@ -54,6 +53,7 @@ type t =
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
@@ -70,7 +70,6 @@ let default translation_unit proc_name =
   ; exceptions= []
   ; formals= []
   ; const_formals= []
-  ; func_attributes= []
   ; is_abstract= false
   ; is_biabduction_model= false
   ; is_bridge_method= false
@@ -81,6 +80,7 @@ let default translation_unit proc_name =
   ; is_specialized= false
   ; is_synthetic_method= false
   ; is_variadic= false
+  ; sentinel_attr= None
   ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
   ; translation_unit
@@ -102,7 +102,6 @@ let pp f
      ; exceptions
      ; formals
      ; const_formals
-     ; func_attributes
      ; is_abstract
      ; is_biabduction_model
      ; is_bridge_method
@@ -113,6 +112,7 @@ let pp f
      ; is_specialized
      ; is_synthetic_method
      ; is_variadic
+     ; sentinel_attr
      ; clang_method_kind
      ; loc
      ; translation_unit
@@ -142,11 +142,6 @@ let pp f
     F.fprintf f "; const_formals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       const_formals ;
-  if not ([%compare.equal: PredSymb.func_attribute list] default.func_attributes func_attributes)
-  then
-    F.fprintf f "; func_attributes= [@[%a@]]@,"
-      (Pp.semicolon_seq ~print_env:Pp.text_break PredSymb.pp_func_attribute)
-      func_attributes ;
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
   pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
@@ -160,6 +155,10 @@ let pp f
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
+  if not ([%compare.equal: (int * int) option] default.sentinel_attr sentinel_attr) then
+    F.fprintf f "; sentinel_attr= %a@,"
+      (Pp.option (Pp.pair ~fst:F.pp_print_int ~snd:F.pp_print_int))
+      sentinel_attr ;
   if not (ClangMethodKind.equal default.clang_method_kind clang_method_kind) then
     F.fprintf f "; clang_method_kind= %a@,"
       (Pp.of_string ~f:ClangMethodKind.to_string)

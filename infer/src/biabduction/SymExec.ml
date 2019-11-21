@@ -1766,17 +1766,15 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
 
 and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as builtin_args) =
   match Summary.OnDisk.proc_resolve_attributes proc_name with
+  | Some callee_attributes -> (
+    match callee_attributes.ProcAttributes.sentinel_attr with
+    | Some sentinel ->
+        let formals = callee_attributes.ProcAttributes.formals in
+        check_variadic_sentinel (List.length formals) sentinel builtin_args
+    | None ->
+        [(prop_, path)] )
   | None ->
       [(prop_, path)]
-  | Some callee_attributes -> (
-    match
-      PredSymb.get_sentinel_func_attribute_value callee_attributes.ProcAttributes.func_attributes
-    with
-    | None ->
-        [(prop_, path)]
-    | Some sentinel_arg ->
-        let formals = callee_attributes.ProcAttributes.formals in
-        check_variadic_sentinel (List.length formals) sentinel_arg builtin_args )
 
 
 and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =

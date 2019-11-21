@@ -122,20 +122,6 @@ let get_objc_method_data obj_c_message_expr_info =
       (selector, pointer, MCStatic)
 
 
-let sil_func_attributes_of_attributes attrs =
-  let rec do_translation acc al =
-    match al with
-    | [] ->
-        List.rev acc
-    | `SentinelAttr (_attr_info, {Clang_ast_t.sai_sentinel= sentinel; sai_null_pos= null_pos}) :: tl
-      ->
-        do_translation (PredSymb.FA_sentinel (sentinel, null_pos) :: acc) tl
-    | _ :: tl ->
-        do_translation acc tl
-  in
-  do_translation [] attrs
-
-
 let should_create_procdesc cfg procname defined set_objc_accessor_attr =
   match Typ.Procname.Hash.find cfg procname with
   | previous_procdesc ->
@@ -195,12 +181,19 @@ let get_objc_property_accessor tenv ms =
       None
 
 
+let find_sentinel_attribute attrs =
+  List.find_map attrs ~f:(function
+    | `SentinelAttr (_attr_info, {Clang_ast_t.sai_sentinel= sentinel; sai_null_pos= null_pos}) ->
+        Some (sentinel, null_pos)
+    | _ ->
+        None )
+
+
 (** Creates a procedure description. *)
 let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg tenv ms fbody
     captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
-  let attributes = sil_func_attributes_of_attributes ms.CMethodSignature.attributes in
   let clang_method_kind = ms.CMethodSignature.method_kind in
   let is_cpp_nothrow = ms.CMethodSignature.is_cpp_nothrow in
   let access =
@@ -253,12 +246,12 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
         ; const_formals
         ; has_added_return_param
         ; access
-        ; func_attributes= attributes
         ; is_defined= defined
         ; is_cpp_noexcept_method= is_cpp_nothrow
         ; is_biabduction_model= Config.biabduction_models_mode
         ; is_no_return= ms.CMethodSignature.is_no_return
         ; is_variadic= ms.CMethodSignature.is_variadic
+        ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor

@@ -9,16 +9,8 @@
 (** The Smallfoot Intermediate Language: Predicate Symbols *)
 
 open! IStd
-module F = Format
 
 (** {2 Programs and Types} *)
-
-type func_attribute = FA_sentinel of int * int [@@deriving compare]
-
-val pp_func_attribute : F.formatter -> func_attribute -> unit
-
-val get_sentinel_func_attribute_value : func_attribute list -> (int * int) option
-(** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected [@@deriving compare]
