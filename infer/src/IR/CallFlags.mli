@@ -18,7 +18,6 @@ type t =
         (** true if this is an implicit C++ destructor call injected by the clang frontend *)
   ; cf_interface: bool
   ; cf_is_objc_block: bool
-  ; cf_noreturn: bool
   ; cf_virtual: bool
   ; cf_with_block_parameters: bool }
 [@@deriving compare]

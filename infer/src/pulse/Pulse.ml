@@ -110,7 +110,7 @@ module PulseTransferFunctions = struct
     let model =
       match proc_name_of_call call_exp with
       | Some callee_pname ->
-          PulseModels.dispatch tenv callee_pname flags
+          PulseModels.dispatch tenv callee_pname
       | None ->
           (* function pointer, etc.: skip for now *)
           None

@@ -217,8 +217,6 @@ module NoReturn = struct
     Procdesc.Node.get_instrs node
     |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
            match instr with
-           | Call (_, _, _, _, {cf_noreturn= true}) ->
-               true
            | Call (_, Const (Cfun proc_name), _, _, _) -> (
              match Attributes.load proc_name with
              | Some {ProcAttributes.is_no_return= true} ->

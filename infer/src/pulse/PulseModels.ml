@@ -296,13 +296,9 @@ let builtins_dispatcher =
   fun proc_name -> Hashtbl.find builtins_map proc_name
 
 
-let dispatch tenv proc_name flags =
+let dispatch tenv proc_name =
   match builtins_dispatcher proc_name with
   | Some _ as result ->
       result
-  | None -> (
-    match ProcNameDispatcher.dispatch tenv proc_name with
-    | Some _ as result ->
-        result
-    | None ->
-        if flags.CallFlags.cf_noreturn then Some Misc.early_exit else None )
+  | None ->
+      ProcNameDispatcher.dispatch tenv proc_name

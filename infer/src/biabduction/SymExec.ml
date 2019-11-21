@@ -1476,29 +1476,23 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
         && not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp)
       then Rearrange.check_call_to_objc_block_error tenv current_pdesc prop_r fun_exp loc ;
       Rearrange.check_dereference_error tenv current_pdesc prop_r fun_exp loc ;
-      if call_flags.CallFlags.cf_noreturn then (
-        L.d_str "Unknown function pointer with noreturn attribute " ;
-        Sil.d_exp fun_exp ;
-        L.d_strln ", diverging." ;
-        diverge prop_r path )
-      else (
-        L.d_str "Unknown function pointer " ;
-        Sil.d_exp fun_exp ;
-        L.d_strln ", returning undefined value." ;
-        let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
-        unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" (snd ret_id_typ)
-          Annot.Item.empty
-          Builtin.
-            { summary= current_summary
-            ; instr
-            ; tenv
-            ; prop_= prop_r
-            ; path
-            ; ret_id_typ
-            ; args= n_actual_params
-            ; proc_name= callee_pname
-            ; loc
-            ; exe_env } )
+      L.d_str "Unknown function pointer " ;
+      Sil.d_exp fun_exp ;
+      L.d_strln ", returning undefined value." ;
+      let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
+      unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" (snd ret_id_typ)
+        Annot.Item.empty
+        Builtin.
+          { summary= current_summary
+          ; instr
+          ; tenv
+          ; prop_= prop_r
+          ; path
+          ; ret_id_typ
+          ; args= n_actual_params
+          ; proc_name= callee_pname
+          ; loc
+          ; exe_env }
   | Sil.Metadata (Nullify (pvar, _)) -> (
       let eprop = Prop.expose prop_ in
       match

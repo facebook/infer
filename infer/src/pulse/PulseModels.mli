@@ -17,4 +17,4 @@ type exec_fun =
 
 type model = exec_fun
 
-val dispatch : Tenv.t -> Typ.Procname.t -> CallFlags.t -> model option
+val dispatch : Tenv.t -> Typ.Procname.t -> model option
