@@ -75,6 +75,46 @@ class ModeledExecutors {
         },
         1000L);
   }
+
+  public void scheduleGuaranteedDelayedBlockingCallToNonUIThreadOk() {
+    Executors.scheduleGuaranteedDelayed(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        },
+        1000L,
+        1000L);
+  }
+
+  Object monitorA, monitorB;
+
+  public void scheduleGuaranteedDelayedDeadlockBad() {
+    Executors.scheduleGuaranteedDelayed(
+        new Runnable() {
+          @Override
+          public void run() {
+            synchronized (monitorA) {
+              synchronized (monitorB) {
+              }
+            }
+          }
+        },
+        1000L,
+        1000L);
+
+    Executors.runOnUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            synchronized (monitorB) {
+              synchronized (monitorA) {
+              }
+            }
+          }
+        });
+  }
 }
 
 // modeled executors
@@ -96,4 +136,7 @@ class Executors {
   public static void runOnUiThread(Runnable runnable) {}
 
   public static void postOnUiThreadDelayed(Runnable runnable, long delayMs) {}
+
+  public static void scheduleGuaranteedDelayed(
+      Runnable job, long delayMillis, long lastExecution) {}
 }

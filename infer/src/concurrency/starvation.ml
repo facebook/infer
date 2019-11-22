@@ -107,6 +107,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | HilExp.AccessExpression runnable :: _
       when StarvationModels.schedules_work_on_ui_thread tenv callee ->
         schedule_work runnable astate StarvationModels.ForUIThread
+    | HilExp.AccessExpression runnable :: _
+      when StarvationModels.schedules_work_on_bg_thread tenv callee ->
+        schedule_work runnable astate StarvationModels.ForNonUIThread
     | _ ->
         astate
 

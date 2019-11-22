@@ -57,3 +57,6 @@ val get_executor_effect :
 
 val schedules_work_on_ui_thread : Tenv.t -> Typ.Procname.t -> bool
 (** method call known to directly schedule work on UI thread *)
+
+val schedules_work_on_bg_thread : Tenv.t -> Typ.Procname.t -> bool
+(** method call known to directly schedule work on BG thread *)
