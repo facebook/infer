@@ -200,7 +200,7 @@ module SymLinear = struct
     plus x to_add
 
 
-  let is_same_symbol x1 x2 =
+  let get_same_one_symbol x1 x2 =
     match (get_one_symbol_opt x1, get_one_symbol_opt x2) with
     | Some s1, Some s2 when Symb.Symbol.paths_equal s1 s2 ->
         Some (Symb.Symbol.path s1)
@@ -856,7 +856,7 @@ module Bound = struct
 
   let widen_u : t -> t -> t = fun x y -> widen_u_thresholds ~thresholds:[] x y
 
-  let is_const : t -> Z.t option =
+  let get_const : t -> Z.t option =
    fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
 
 
@@ -1157,10 +1157,10 @@ module Bound = struct
         if phys_equal a a' && phys_equal b b' then x else mk_MinMaxB (m, a', b')
 
 
-  let is_same_symbol b1 b2 =
+  let get_same_one_symbol b1 b2 =
     match (b1, b2) with
     | Linear (n1, se1), Linear (n2, se2) when Z.(equal n1 zero) && Z.(equal n2 zero) ->
-        SymLinear.is_same_symbol se1 se2
+        SymLinear.get_same_one_symbol se1 se2
     | _ ->
         None
 
@@ -1282,7 +1282,7 @@ module NonNegativeBound = struct
     | Bound.MInf ->
         assert false
     | b -> (
-      match Bound.is_const b with
+      match Bound.get_const b with
       | None ->
           Symbolic (b, trace)
       | Some c ->

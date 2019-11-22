@@ -90,7 +90,7 @@ module Bound : sig
 
   val widen_u_thresholds : thresholds:Z.t list -> t -> t -> t
 
-  val is_const : t -> Z.t option
+  val get_const : t -> Z.t option
 
   val plus_l : weak:bool -> t -> t -> t
 
@@ -120,7 +120,7 @@ module Bound : sig
 
   val simplify_min_one : t -> t
 
-  val is_same_symbol : t -> t -> Symb.SymbolPath.t option
+  val get_same_one_symbol : t -> t -> Symb.SymbolPath.t option
 
   val exists_str : f:(string -> bool) -> t -> bool
 end

@@ -145,7 +145,7 @@ val of_big_int : Z.t -> t
 
 val of_int_lit : IntLit.t -> t
 
-val is_const : t -> Z.t option
+val get_const : t -> Z.t option
 
 val is_zero : t -> bool
 

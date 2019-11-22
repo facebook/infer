@@ -394,7 +394,7 @@ module Val = struct
       else pruned_itv
     in
     let itv_thresholds =
-      Option.value_map (Itv.is_const y.itv) ~default:x.itv_thresholds ~f:(fun z ->
+      Option.value_map (Itv.get_const y.itv) ~default:x.itv_thresholds ~f:(fun z ->
           x.itv_thresholds
           |> ItvThresholds.add Z.(z - one)
           |> ItvThresholds.add z

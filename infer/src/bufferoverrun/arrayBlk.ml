@@ -52,7 +52,7 @@ module ArrInfo = struct
         , C {offset= offset2; size= size2; stride= stride2} ) ->
           let offset =
             let thresholds =
-              if Itv.eq size1 size2 then Option.to_list (Itv.is_const size1) else []
+              if Itv.eq size1 size2 then Option.to_list (Itv.get_const size1) else []
             in
             Itv.widen_thresholds ~thresholds ~prev:offset1 ~next:offset2 ~num_iters
           in
@@ -224,7 +224,7 @@ module ArrInfo = struct
    fun new_stride arr ->
     match arr with
     | C {offset; size; stride} ->
-        Option.value_map (Itv.is_const stride) ~default:arr ~f:(fun stride ->
+        Option.value_map (Itv.get_const stride) ~default:arr ~f:(fun stride ->
             assert ((not Z.(equal stride zero)) && not Z.(equal new_stride zero)) ;
             if Z.equal new_stride stride then arr
             else

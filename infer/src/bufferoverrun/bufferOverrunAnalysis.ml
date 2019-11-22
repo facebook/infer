@@ -259,7 +259,7 @@ module TransferFunctions = struct
         let length =
           Sem.eval_array_locs_length (Sem.eval_locs arr_exp mem) mem |> Dom.Val.get_itv
         in
-        Option.map (Itv.is_const length)
+        Option.map (Itv.get_const length)
           ~f:(Dom.ModeledRange.of_big_int ~trace:(Bounds.BoundTrace.of_loop location))
     | _ ->
         None

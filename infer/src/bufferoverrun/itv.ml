@@ -44,7 +44,7 @@ module ItvPure = struct
 
   let is_finite : t -> bool =
    fun (l, u) ->
-    match (Bound.is_const l, Bound.is_const u) with Some _, Some _ -> true | _, _ -> false
+    match (Bound.get_const l, Bound.get_const u) with Some _, Some _ -> true | _, _ -> false
 
 
   let have_similar_bounds (l1, u1) (l2, u2) = Bound.are_similar l1 l2 && Bound.are_similar u1 u2
@@ -104,7 +104,7 @@ module ItvPure = struct
    fun ~markup fmt (l, u) ->
     if Bound.equal l u then Bound.pp_mark ~markup fmt l
     else
-      match Bound.is_same_symbol l u with
+      match Bound.get_same_one_symbol l u with
       | Some symbol when Config.bo_debug < 3 ->
           Symb.SymbolPath.pp_mark ~markup fmt symbol
       | _ ->
@@ -153,9 +153,9 @@ module ItvPure = struct
 
   let is_nat : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_pinf u
 
-  let is_const : t -> Z.t option =
+  let get_const : t -> Z.t option =
    fun (l, u) ->
-    match (Bound.is_const l, Bound.is_const u) with
+    match (Bound.get_const l, Bound.get_const u) with
     | (Some n as z), Some m when Z.equal n m ->
         z
     | _, _ ->
@@ -257,7 +257,7 @@ module ItvPure = struct
 
   let mult : t -> t -> t =
    fun x y ->
-    match (is_const x, is_const y) with
+    match (get_const x, get_const y) with
     | _, Some n ->
         mult_const n x
     | Some n, _ ->
@@ -266,17 +266,17 @@ module ItvPure = struct
         top
 
 
-  let div : t -> t -> t = fun x y -> match is_const y with None -> top | Some n -> div_const x n
+  let div : t -> t -> t = fun x y -> match get_const y with None -> top | Some n -> div_const x n
 
   let mod_sem : t -> t -> t =
    fun x y ->
-    match is_const y with
+    match get_const y with
     | None ->
         top
     | Some n when Z.(equal n zero) ->
         x (* x % [0,0] does nothing. *)
     | Some m -> (
-      match is_const x with
+      match get_const x with
       | Some n ->
           of_big_int Z.(n mod m)
       | None ->
@@ -291,7 +291,7 @@ module ItvPure = struct
   (* x << [-1,-1] does nothing. *)
   let shiftlt : t -> t -> t =
    fun x y ->
-    Option.value_map (is_const y) ~default:top ~f:(fun n ->
+    Option.value_map (get_const y) ~default:top ~f:(fun n ->
         match Z.to_int n with
         | n ->
             if n < 0 then x else mult_const Z.(one lsl n) x
@@ -304,7 +304,7 @@ module ItvPure = struct
    fun x y ->
     if is_zero x then x
     else
-      match is_const y with
+      match get_const y with
       | Some n when Z.(leq n zero) ->
           x
       | Some n when Z.(n >= of_int 64) ->
@@ -317,7 +317,7 @@ module ItvPure = struct
 
   let band_sem : t -> t -> t =
    fun x y ->
-    match (is_const x, is_const y) with
+    match (get_const x, get_const y) with
     | Some x', Some y' ->
         if Z.(equal x' y') then x else of_big_int Z.(x' land y')
     | _, _ ->
@@ -637,7 +637,7 @@ let set_lb_zero = lift1 ItvPure.set_lb_zero
 
 let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
-let is_const : t -> Z.t option = bind1zo ItvPure.is_const
+let get_const : t -> Z.t option = bind1zo ItvPure.get_const
 
 let is_zero = bind1bool ItvPure.is_zero
 
