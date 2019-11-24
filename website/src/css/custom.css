@@ -1,0 +1,22 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+:root {
+  --ifm-color-primary: #6223b0;
+  --ifm-color-primary-dark: #58209e;
+  --ifm-color-primary-darker: #4e1c8d;
+  --ifm-color-primary-darkest: #45197b;
+  --ifm-color-primary-light: #7239b8;
+  --ifm-color-primary-lighter: #814fc0;
+  --ifm-color-primary-lightest: #9165c8;
+
+  --ifm-code-font-size: 95%;
+}
+
+.large-math {
+  vertical-align: text-bottom;
+}
