@@ -444,7 +444,11 @@ module GuardToLockMap = struct
 end
 
 module Attribute = struct
-  type t = Nothing | ThreadGuard | Executor of StarvationModels.executor_thread_constraint
+  type t =
+    | Nothing
+    | ThreadGuard
+    | Executor of StarvationModels.executor_thread_constraint
+    | Runnable of Typ.Procname.t
   [@@deriving equal]
 
   let top = Nothing
@@ -452,18 +456,20 @@ module Attribute = struct
   let is_top = function Nothing -> true | _ -> false
 
   let pp fmt t =
-    ( match t with
+    let pp_constr fmt c =
+      StarvationModels.(
+        match c with ForUIThread -> "UI" | ForNonUIThread -> "BG" | ForUnknownThread -> "Unknown")
+      |> F.pp_print_string fmt
+    in
+    match t with
     | Nothing ->
-        "Nothing"
+        F.pp_print_string fmt "Nothing"
     | ThreadGuard ->
-        "ThreadGuard"
-    | Executor StarvationModels.ForUIThread ->
-        "Executor(UI)"
-    | Executor StarvationModels.ForNonUIThread ->
-        "Executor(BG)"
-    | Executor StarvationModels.ForUnknownThread ->
-        "Executor(Unknown)" )
-    |> F.pp_print_string fmt
+        F.pp_print_string fmt "ThreadGuard"
+    | Executor c ->
+        F.fprintf fmt "Executor(%a)" pp_constr c
+    | Runnable runproc ->
+        F.fprintf fmt "Runnable(%a)" Typ.Procname.pp runproc
 
 
   let join lhs rhs = if equal lhs rhs then lhs else Nothing

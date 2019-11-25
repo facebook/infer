@@ -101,4 +101,29 @@ class AttributeFlows {
               }
             });
   }
+
+  Runnable getBadRunnable() {
+    return new Runnable() {
+      @Override
+      public void run() {
+        doTransact();
+      }
+    };
+  }
+
+  public void postRunnableIndirectlyToUIThreadBad() {
+    Executors.getForegroundExecutor().execute(getBadRunnable());
+  }
+
+  Runnable runnableField =
+      new Runnable() {
+        @Override
+        public void run() {
+          doTransact();
+        }
+      };
+
+  public void FN_postRunnableFieldToUIThreadBad() {
+    Executors.getForegroundExecutor().execute(runnableField);
+  }
 }

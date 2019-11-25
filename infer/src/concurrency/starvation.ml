@@ -72,19 +72,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
+  (* get attribute of an expression, and if there is none, check if the expression can
+     be implicitly ascribed a property (runnable/executor). *)
   let get_exp_attributes tenv exp (astate : Domain.t) =
     let open Domain in
     AttributeDomain.find_opt exp astate.attributes
     |> IOption.if_none_evalopt ~f:(fun () ->
            StarvationModels.get_executor_thread_annotation_constraint tenv exp
            |> Option.map ~f:(fun constr -> Attribute.Executor constr) )
+    |> IOption.if_none_evalopt ~f:(fun () ->
+           StarvationModels.get_run_method_from_runnable tenv exp
+           |> Option.map ~f:(fun procname -> Attribute.Runnable procname) )
 
 
   let do_work_scheduling tenv callee actuals loc (astate : Domain.t) =
     let open Domain in
-    let schedule_work runnable init thread =
-      StarvationModels.get_run_method_from_runnable tenv runnable
-      |> Option.fold ~init ~f:(Domain.schedule_work loc thread)
+    let schedule_work runnable thread =
+      match get_exp_attributes tenv runnable astate with
+      | Some (Attribute.Runnable procname) ->
+          Domain.schedule_work loc thread astate procname
+      | _ ->
+          astate
     in
     match actuals with
     | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable]
@@ -96,13 +104,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | _ ->
               StarvationModels.ForUnknownThread
         in
-        schedule_work runnable astate thread
+        schedule_work runnable thread
     | HilExp.AccessExpression runnable :: _
       when StarvationModels.schedules_work_on_ui_thread tenv callee ->
-        schedule_work runnable astate StarvationModels.ForUIThread
+        schedule_work runnable StarvationModels.ForUIThread
     | HilExp.AccessExpression runnable :: _
       when StarvationModels.schedules_work_on_bg_thread tenv callee ->
-        schedule_work runnable astate StarvationModels.ForNonUIThread
+        schedule_work runnable StarvationModels.ForNonUIThread
     | _ ->
         astate
 

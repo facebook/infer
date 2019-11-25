@@ -105,7 +105,11 @@ module GuardToLockMap : AbstractDomain.WithTop
 (** Tracks whether a variable has been tested for whether we execute on UI thread, or 
     has been assigned an executor object. *)
 module Attribute : sig
-  type t = Nothing | ThreadGuard | Executor of StarvationModels.executor_thread_constraint
+  type t =
+    | Nothing
+    | ThreadGuard
+    | Executor of StarvationModels.executor_thread_constraint
+    | Runnable of Typ.Procname.t
 
   include AbstractDomain.WithTop with type t := t
 end
