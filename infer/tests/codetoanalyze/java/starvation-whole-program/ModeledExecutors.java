@@ -7,6 +7,10 @@
 
 import android.os.Binder;
 import android.os.RemoteException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 class ModeledExecutors {
   static Binder binder;
@@ -111,6 +115,46 @@ class ModeledExecutors {
               synchronized (monitorA) {
               }
             }
+          }
+        });
+  }
+
+  public void submitBlockingCallToUIThreadBad() {
+    ExecutorService foregroundExecutor = (ExecutorService) Executors.getForegroundExecutor();
+
+    foregroundExecutor.submit(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        });
+  }
+
+  public void scheduleBlockingCallToUIThreadBad() {
+    ScheduledExecutorService foregroundExecutor =
+        (ScheduledExecutorService) Executors.getForegroundExecutor();
+
+    foregroundExecutor.schedule(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        },
+        1000L,
+        TimeUnit.SECONDS);
+  }
+
+  public void submitBadCallableToUIThreadBad() {
+    ExecutorService foregroundExecutor = (ExecutorService) Executors.getForegroundExecutor();
+
+    foregroundExecutor.submit(
+        new Callable<Object>() {
+          @Override
+          public Object call() {
+            doTransact();
+            return null;
           }
         });
   }

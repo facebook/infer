@@ -208,7 +208,14 @@ let executor_type_str = "java.util.concurrent.Executor"
 
 let schedules_work =
   let open MethodMatcher in
-  let matcher = [{default with classname= executor_type_str; methods= ["execute"]}] |> of_records in
+  (* Some methods below belong to subclasses of [Executor]; we do check for an [Executor] base class. *)
+  let matcher =
+    [ { default with
+        classname= executor_type_str
+      ; methods= ["execute"; "schedule"; "scheduleAtFixedRate"; "scheduleWithFixedDelay"; "submit"]
+      } ]
+    |> of_records
+  in
   fun tenv pname -> matcher tenv pname []
 
 
@@ -257,11 +264,15 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
 
 (* Given an object, find the [run] method in its class and return the procname, if any *)
 let get_run_method_from_runnable tenv runnable =
+  let run_like_methods = ["run"; "call"] in
   let is_run_method = function
     | Typ.Procname.Java pname when Typ.Procname.Java.(not (is_static pname)) ->
         (* confusingly, the parameter list in (non-static?) Java procnames does not contain [this] *)
         Typ.Procname.Java.(
-          String.equal "run" (get_method pname) && List.is_empty (get_parameters pname))
+          List.is_empty (get_parameters pname)
+          &&
+          let methodname = get_method pname in
+          List.exists run_like_methods ~f:(String.equal methodname))
     | _ ->
         false
   in

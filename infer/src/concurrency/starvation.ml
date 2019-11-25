@@ -95,7 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
     in
     match actuals with
-    | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable]
+    | HilExp.AccessExpression executor :: HilExp.AccessExpression runnable :: _
       when StarvationModels.schedules_work tenv callee ->
         let thread =
           match get_exp_attributes tenv executor astate with
