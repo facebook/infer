@@ -10,17 +10,18 @@ type violation = {declared_nullability: Nullability.t; can_be_narrowed_to: Nulla
 [@@deriving compare]
 
 let check ~what ~by_rhs_upper_bound =
-  if
-    Nullability.is_strict_subtype ~subtype:by_rhs_upper_bound ~supertype:what
-    && (* Suppress violations for anything apart from Nullable since such
-          issues are not very actionable and/or clear for the user.
-          E.g. we technically can suggest changing [DeclaredNonnull] to [Nonnull],
-          but in practice that requires strictification the code, which is a
-          separate effort.
-       *)
-    Nullability.equal what Nullable
-  then Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
-  else Ok ()
+  match (what, by_rhs_upper_bound) with
+  | Nullability.Nullable, Nullability.Nonnull | Nullability.Nullable, Nullability.DeclaredNonnull ->
+      Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
+  | Nullability.Null, Nullability.Nonnull | Nullability.Null, Nullability.DeclaredNonnull ->
+      (* Null, Nonnull pais is an edge case that we don't expect to arise in practice for two reasons:
+         1. The only way to declare something as Null is to declare it is java.lang.Void, but nullsafe
+         does not know about it just yet.
+         2. Even if it knew, such could should not compile: the only way it could compile if it returns `null` directly.
+      *)
+      Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
+  | _ ->
+      Ok ()
 
 
 type violation_type =

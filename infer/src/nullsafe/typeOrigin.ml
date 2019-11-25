@@ -49,7 +49,7 @@ let equal = [%compare.equal: t]
 
 let get_nullability = function
   | NullConst _ ->
-      Nullability.Nullable
+      Nullability.Null
   | NonnullConst _
   | This (* `this` can not be null according to Java rules *)
   | New (* In Java `new` always create a non-null object  *)

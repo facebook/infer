@@ -14,12 +14,10 @@ let create origin = {nullability= TypeOrigin.get_nullability origin; origin}
 let get_nullability {nullability} = nullability
 
 let is_nonnull_or_declared_nonnull {nullability} =
-  match nullability with Nullable -> false | DeclaredNonnull -> true | Nonnull -> true
+  match nullability with Nonnull | DeclaredNonnull -> true | _ -> false
 
 
-let is_nonnull {nullability} =
-  match nullability with Nullable -> false | DeclaredNonnull -> false | Nonnull -> true
-
+let is_nonnull {nullability} = match nullability with Nonnull -> true | _ -> false
 
 let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)
 
@@ -33,6 +31,10 @@ let join t1 t2 =
   *)
   let joined_origin =
     match (is_equal_to_t1, is_equal_to_t2) with
+    | _ when Nullability.equal t1.nullability Nullability.Null ->
+        t1.origin
+    | _ when Nullability.equal t2.nullability Nullability.Null ->
+        t2.origin
     | true, false ->
         (* Nullability was fully determined by t1. *)
         t1.origin

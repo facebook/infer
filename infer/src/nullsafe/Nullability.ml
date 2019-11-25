@@ -8,6 +8,7 @@
 open! IStd
 
 type t =
+  | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
   | DeclaredNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to conventions)
@@ -24,6 +25,10 @@ let top = Nullable
 
 let join x y =
   match (x, y) with
+  | Null, Null ->
+      Null
+  | Null, _ | _, Null ->
+      Nullable
   | Nullable, _ | _, Nullable ->
       Nullable
   | DeclaredNonnull, _ | _, DeclaredNonnull ->
@@ -34,11 +39,9 @@ let join x y =
 
 let is_subtype ~subtype ~supertype = equal (join subtype supertype) supertype
 
-let is_strict_subtype ~subtype ~supertype =
-  is_subtype ~subtype ~supertype && not (equal subtype supertype)
-
-
 let to_string = function
+  | Null ->
+      "Null"
   | Nullable ->
       "Nullable"
   | DeclaredNonnull ->

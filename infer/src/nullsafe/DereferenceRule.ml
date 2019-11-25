@@ -17,7 +17,7 @@ type dereference_type =
 
 let check ~is_strict_mode nullability =
   match nullability with
-  | Nullability.Nullable ->
+  | Nullability.Nullable | Nullability.Null ->
       Error nullability
   | Nullability.DeclaredNonnull ->
       if is_strict_mode then Error nullability else Ok ()
