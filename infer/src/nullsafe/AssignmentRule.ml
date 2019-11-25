@@ -74,13 +74,16 @@ let bad_param_description
     else Format.asprintf "%a is nullable" MF.pp_monospaced actual_param_expression
   in
   let suggested_file_to_add_third_party =
-    (* If the function is modelled, this is the different case:
-       suggestion to add third party is irrelevant
-    *)
-    Option.bind model_source ~f:(fun _ ->
+    match model_source with
+    | None ->
         ThirdPartyAnnotationInfo.lookup_related_sig_file_by_package
           (ThirdPartyAnnotationGlobalRepo.get_repo ())
-          function_procname )
+          function_procname
+    | Some _ ->
+        (* This is a different case:
+           suggestion to add third party is irrelevant (it is already added or modelled internally).
+        *)
+        None
   in
   match suggested_file_to_add_third_party with
   | Some sig_file_name ->
