@@ -339,12 +339,12 @@ and get_class_struct_typ =
     | Some struct_typ ->
         struct_typ
     | None when JBasics.ClassSet.mem cn !seen ->
-        Tenv.mk_struct tenv name
+        Tenv.mk_struct ~dummy:true tenv name
     | None -> (
         seen := JBasics.ClassSet.add cn !seen ;
         match JClasspath.lookup_node cn program with
         | None ->
-            Tenv.mk_struct tenv name
+            Tenv.mk_struct ~dummy:true tenv name
         | Some node ->
             let create_super_list interface_names =
               List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;

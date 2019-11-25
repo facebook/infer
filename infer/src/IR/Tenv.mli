@@ -41,6 +41,7 @@ val mk_struct :
   -> ?exported_objc_methods:Typ.Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
+  -> ?dummy:bool
   -> Typ.Name.t
   -> Typ.Struct.t
 (** Construct a struct_typ, normalizing field types *)

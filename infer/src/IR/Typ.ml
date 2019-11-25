@@ -1518,7 +1518,8 @@ module Struct = struct
     ; supers: Name.t list  (** superclasses *)
     ; methods: Procname.t list  (** methods defined *)
     ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
-    ; annots: Annot.Item.t  (** annotations *) }
+    ; annots: Annot.Item.t  (** annotations *)
+    ; dummy: bool  (** dummy struct for class including static method *) }
 
   type lookup = Name.t -> t option
 
@@ -1554,21 +1555,22 @@ module Struct = struct
 
 
   let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-      () =
+      ?dummy () =
     let default_ =
       { fields= []
       ; statics= []
       ; methods= []
       ; exported_objc_methods= []
       ; supers= []
-      ; annots= Annot.Item.empty }
+      ; annots= Annot.Item.empty
+      ; dummy= false }
     in
     let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
         ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
-        ?(supers = default.supers) ?(annots = default.annots) () =
-      {fields; statics; methods; exported_objc_methods; supers; annots}
+        ?(supers = default.supers) ?(annots = default.annots) ?(dummy = default.dummy) () =
+      {fields; statics; methods; exported_objc_methods; supers; annots; dummy}
     in
-    mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ()
+    mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
 
 
   (** the element typ of the final extensible array in the given typ, if any *)
@@ -1617,4 +1619,7 @@ module Struct = struct
           None )
     | _ ->
         None
+
+
+  let is_dummy {dummy} = dummy
 end

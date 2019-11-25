@@ -29,10 +29,11 @@ let pp fmt (tenv : t) =
 let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
-let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots name =
+let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy
+    name =
   let struct_typ =
     Typ.Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?annots ()
+      ?annots ?dummy ()
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ
@@ -99,7 +100,13 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
         FileLocal (Serializer.deserialize blob)
 end
 
-let merge ~src ~dst = TypenameHash.iter (fun pname cfg -> TypenameHash.replace dst pname cfg) src
+let merge ~src ~dst =
+  TypenameHash.iter
+    (fun pname cfg ->
+      if (not (Typ.Struct.is_dummy cfg)) || not (TypenameHash.mem dst pname) then
+        TypenameHash.replace dst pname cfg )
+    src
+
 
 let merge_per_file ~src ~dst =
   match (src, dst) with

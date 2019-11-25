@@ -697,7 +697,8 @@ module Struct : sig
     ; supers: Name.t list  (** supers *)
     ; methods: Procname.t list  (** methods defined *)
     ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
-    ; annots: Annot.Item.t  (** annotations *) }
+    ; annots: Annot.Item.t  (** annotations *)
+    ; dummy: bool  (** dummy struct for class including static method *) }
 
   type lookup = Name.t -> t option
 
@@ -714,6 +715,7 @@ module Struct : sig
     -> ?exported_objc_methods:Procname.t list
     -> ?supers:Name.t list
     -> ?annots:Annot.Item.t
+    -> ?dummy:bool
     -> unit
     -> t
   (** Construct a struct_typ, normalizing field types *)
@@ -728,4 +730,6 @@ module Struct : sig
   val get_field_type_and_annotation :
     lookup:lookup -> Fieldname.t -> typ -> (typ * Annot.Item.t) option
   (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
+
+  val is_dummy : t -> bool
 end
