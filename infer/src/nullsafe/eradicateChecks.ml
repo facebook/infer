@@ -427,13 +427,11 @@ let is_marked_third_party_in_config proc_name =
 
 
 (* if this method belongs to a third party code, but is not modelled neigher internally nor externally *)
-let is_third_party_without_model proc_name =
+let is_third_party_without_model proc_name model_source =
   let is_third_party =
     is_third_party_via_sig_files proc_name || is_marked_third_party_in_config proc_name
   in
-  is_third_party
-  && (not (Models.is_modelled_for_nullability_as_internal proc_name))
-  && not (Models.is_modelled_for_nullability_as_external proc_name)
+  is_third_party && Option.is_none model_source
 
 
 (** Check the parameters of a call. *)
@@ -471,16 +469,12 @@ let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_
       let rhs = InferredNullability.get_nullability nullability_actual in
       Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:report
   in
-  (* Currently, in a non-strict mode, Nullsafe does not check calls to unknown third-party functions, i.e.
-     we explicitly assume all params can accept null.
-     Historically this is because there was no actionable way to change third party annotations.
-     Now that we have such a support, this behavior might be reconsidered, provided
-     our tooling and error reporting is friendly enough to be smoothly used by developers.
-  *)
   let should_ignore_parameters_check =
     (* TODO(T52947663) model params in third-party non modelled method as a dedicated nullability type,
        so this logic can be moved to [AssignmentRule.check] *)
-    (not is_strict_mode) && is_third_party_without_model callee_pname
+    (not is_strict_mode) && Config.nullsafe_optimistic_third_party_params_in_non_strict
+    && is_third_party_without_model callee_pname
+         callee_annotated_signature.AnnotatedSignature.model_source
   in
   if not should_ignore_parameters_check then
     (* left to right to avoid guessing the different lengths *)

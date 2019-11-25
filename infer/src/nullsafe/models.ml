@@ -101,31 +101,6 @@ let get_modelled_annotated_signature tenv proc_attributes =
   annotated_signature |> correct_by_internal_models |> correct_by_external_models
 
 
-(** Return true when the procedure has been modelled for nullability. *)
-let is_modelled_for_nullability_as_internal proc_name =
-  (* TODO: get rid of this function, and propagate this information in get_modelled_annotated_signature instead
-     to avoid double calculation and make the code more clear.
-  *)
-  let proc_id = Typ.Procname.to_unique_id proc_name in
-  try
-    ignore (Hashtbl.find annotated_table_nullability proc_id) ;
-    true
-  with Caml.Not_found -> false
-
-
-(** Return true when the procedure has been modelled for nullability as external third-party code. *)
-let is_modelled_for_nullability_as_external proc_name =
-  (* TODO: get rid of this function, and propagate this information in get_modelled_annotated_signature instead
-     to avoid double calculation and make the code more clear.
-  *)
-  get_unique_repr proc_name
-  |> Option.map
-       ~f:
-         (ThirdPartyAnnotationInfo.find_nullability_info
-            (ThirdPartyAnnotationGlobalRepo.get_repo ()))
-  |> Option.is_some
-
-
 (** Check if the procedure is one of the known Preconditions.checkNotNull. *)
 let is_check_not_null proc_name =
   table_has_procedure check_not_null_table proc_name || match_method_name proc_name "checkNotNull"

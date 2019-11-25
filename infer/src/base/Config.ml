@@ -1750,6 +1750,19 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
 
+and nullsafe_optimistic_third_party_params_in_non_strict =
+  CLOpt.mk_bool
+    ~long:
+      "nullsafe-optimistic-third-party-params-in-non-strict"
+      (* Turned on for compatibility reasons.
+         Historically this is because there was no actionable way to change third party annotations.
+         Now that we have such a support, this behavior should be reconsidered, provided
+         our tooling and error reporting is friendly enough to be smoothly used by developers.
+      *) ~default:true
+    "Nullsafe: in this mode we treat non annotated third party method params as if they were \
+     annotated as nullable."
+
+
 and nullsafe_third_party_signatures =
   CLOpt.mk_string_opt ~long:"nullsafe-third-party-signatures"
     "Path to a folder with annotated signatures of third-party methods to be taken into account by \
@@ -3012,6 +3025,10 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 
 and nullable_annotation = !nullable_annotation
+
+and nullsafe_optimistic_third_party_params_in_non_strict =
+  !nullsafe_optimistic_third_party_params_in_non_strict
+
 
 and nullsafe_third_party_signatures = !nullsafe_third_party_signatures
 

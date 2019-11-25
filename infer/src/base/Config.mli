@@ -498,6 +498,8 @@ val nullable_annotation : string option
 
 val nullsafe : bool
 
+val nullsafe_optimistic_third_party_params_in_non_strict : bool
+
 val nullsafe_third_party_signatures : string option
 
 val nullsafe_third_party_location_for_messaging_only : string option

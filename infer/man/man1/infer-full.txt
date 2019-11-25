@@ -1544,6 +1544,12 @@ INTERNAL OPTIONS
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
 
+       --no-nullsafe-optimistic-third-party-params-in-non-strict
+           Deactivates: Nullsafe: in this mode we treat non annotated third
+           party method params as if they were annotated as nullable.
+           (Conversely:
+           --nullsafe-optimistic-third-party-params-in-non-strict)
+
        --nullsafe-strict-containers
            Activates: Warn when containers are used with nullable keys or
            values (Conversely: --no-nullsafe-strict-containers)
