@@ -408,20 +408,28 @@ type resolved_param =
   ; actual: Exp.t * InferredNullability.t
   ; is_formal_propagates_nullable: bool }
 
+let is_third_party_via_sig_files proc_name =
+  Option.is_some
+    (ThirdPartyAnnotationInfo.lookup_related_sig_file_by_package
+       (ThirdPartyAnnotationGlobalRepo.get_repo ())
+       proc_name)
+
+
+let is_marked_third_party_in_config proc_name =
+  match proc_name with
+  | Typ.Procname.Java java_pname ->
+      (* TODO: migrate to the new way of checking for third party: use
+         signatures repository instead of looking it up in config params.
+      *)
+      Typ.Procname.Java.is_external java_pname
+  | _ ->
+      false
+
+
 (* if this method belongs to a third party code, but is not modelled neigher internally nor externally *)
 let is_third_party_without_model proc_name =
   let is_third_party =
-    match proc_name with
-    | Typ.Procname.Java java_pname ->
-        (* TODO: migrate to the new way of checking for third party: use
-           signatures repository instead of looking it up in config params.
-        *)
-        Typ.Procname.Java.is_external java_pname
-    | _ ->
-        false
-    (* TODO: propagate the knowledge if it is a third-party or not in the annotated signature instead
-       of calculating it every time from scratch.
-    *)
+    is_third_party_via_sig_files proc_name || is_marked_third_party_in_config proc_name
   in
   is_third_party
   && (not (Models.is_modelled_for_nullability_as_internal proc_name))
