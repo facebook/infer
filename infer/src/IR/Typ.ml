@@ -1422,6 +1422,8 @@ module Fieldname = struct
 
   let equal = [%compare.equal: t]
 
+  let is_java = function Java _ -> true | Clang _ -> false
+
   module T = struct
     type nonrec t = t
 

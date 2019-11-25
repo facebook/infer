@@ -639,6 +639,8 @@ module Fieldname : sig
   val equal : t -> t -> bool
   (** Equality for field names. *)
 
+  val is_java : t -> bool
+
   module Set : Caml.Set.S with type elt = t
   (** Set for fieldnames *)
 

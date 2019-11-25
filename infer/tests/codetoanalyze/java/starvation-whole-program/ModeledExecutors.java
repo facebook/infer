@@ -7,7 +7,6 @@
 
 import android.os.Binder;
 import android.os.RemoteException;
-import java.util.concurrent.Executor;
 
 class ModeledExecutors {
   static Binder binder;
@@ -115,28 +114,4 @@ class ModeledExecutors {
           }
         });
   }
-}
-
-// modeled executors
-class Executors {
-  static Executor uiExecutor;
-
-  static Executor getForegroundExecutor() {
-    return uiExecutor;
-  }
-
-  static Executor bgExecutor;
-
-  static Executor getBackgroundExecutor() {
-    return bgExecutor;
-  }
-
-  public static void postOnUiThread(Runnable runnable) {}
-
-  public static void runOnUiThread(Runnable runnable) {}
-
-  public static void postOnUiThreadDelayed(Runnable runnable, long delayMs) {}
-
-  public static void scheduleGuaranteedDelayed(
-      Runnable job, long delayMillis, long lastExecution) {}
 }

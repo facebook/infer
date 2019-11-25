@@ -444,7 +444,7 @@ module GuardToLockMap = struct
 end
 
 module Attribute = struct
-  type t = Nothing | Thread | Executor of StarvationModels.executor_thread_constraint
+  type t = Nothing | ThreadGuard | Executor of StarvationModels.executor_thread_constraint
   [@@deriving equal]
 
   let top = Nothing
@@ -455,8 +455,8 @@ module Attribute = struct
     ( match t with
     | Nothing ->
         "Nothing"
-    | Thread ->
-        "Thread"
+    | ThreadGuard ->
+        "ThreadGuard"
     | Executor StarvationModels.ForUIThread ->
         "Executor(UI)"
     | Executor StarvationModels.ForNonUIThread ->
@@ -474,26 +474,22 @@ module Attribute = struct
 end
 
 module AttributeDomain = struct
-  include AbstractDomain.InvertedMap (Var) (Attribute)
+  include AbstractDomain.SafeInvertedMap (HilExp.AccessExpression) (Attribute)
 
-  let is_thread_guard (acc_exp : HilExp.AccessExpression.t) t =
-    match acc_exp with
-    | Base (v, _) ->
-        find_opt v t |> Option.exists ~f:(function Attribute.Thread -> true | _ -> false)
-    | _ ->
-        false
+  let is_thread_guard acc_exp t =
+    find_opt acc_exp t |> Option.exists ~f:(function Attribute.ThreadGuard -> true | _ -> false)
 
 
-  let get_executor_constraint (acc_exp : HilExp.AccessExpression.t) t =
-    match acc_exp with
-    | Base (v, _) ->
-        find_opt v t |> Option.bind ~f:(function Attribute.Executor c -> Some c | _ -> None)
-    | _ ->
-        None
+  let get_executor_constraint acc_exp t =
+    find_opt acc_exp t |> Option.bind ~f:(function Attribute.Executor c -> Some c | _ -> None)
 
 
   let exit_scope vars t =
-    let pred key _value = not (List.exists vars ~f:(Var.equal key)) in
+    let pred key _value =
+      HilExp.AccessExpression.get_base key
+      |> fst
+      |> fun v -> not (List.exists vars ~f:(Var.equal v))
+    in
     filter pred t
 end
 
@@ -646,26 +642,47 @@ let schedule_work loc thread_constraint astate procname =
 
 
 type summary =
-  {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t; scheduled_work: ScheduledWorkDomain.t}
+  { critical_pairs: CriticalPairs.t
+  ; thread: ThreadDomain.t
+  ; scheduled_work: ScheduledWorkDomain.t
+  ; return_attribute: Attribute.t }
+
+let empty_summary : summary =
+  { critical_pairs= CriticalPairs.bottom
+  ; thread= ThreadDomain.bottom
+  ; scheduled_work= ScheduledWorkDomain.bottom
+  ; return_attribute= Attribute.top }
+
 
 let pp_summary fmt (summary : summary) =
-  F.fprintf fmt "{thread= %a; critical_pairs= %a; scheduled_work= %a}" ThreadDomain.pp
-    summary.thread CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp
-    summary.scheduled_work
+  F.fprintf fmt "{thread= %a; critical_pairs= %a; scheduled_work= %a; return_attributes= %a}"
+    ThreadDomain.pp summary.thread CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp
+    summary.scheduled_work Attribute.pp summary.return_attribute
 
 
-let integrate_summary ?tenv callsite (astate : t) (summary : summary) =
+let integrate_summary ?tenv ?lhs callsite (astate : t) (summary : summary) =
   let critical_pairs' =
     CriticalPairs.with_callsite summary.critical_pairs ?tenv astate.lock_state callsite
       astate.thread
   in
   { astate with
     critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'
-  ; thread= ThreadDomain.integrate_summary ~caller:astate.thread ~callee:summary.thread }
+  ; thread= ThreadDomain.integrate_summary ~caller:astate.thread ~callee:summary.thread
+  ; attributes=
+      Option.value_map lhs ~default:astate.attributes ~f:(fun lhs_exp ->
+          AttributeDomain.add lhs_exp summary.return_attribute astate.attributes ) }
 
 
-let summary_of_astate : t -> summary =
- fun astate ->
+let summary_of_astate : Procdesc.t -> t -> summary =
+ fun proc_desc astate ->
   { critical_pairs= astate.critical_pairs
   ; thread= astate.thread
-  ; scheduled_work= astate.scheduled_work }
+  ; scheduled_work= astate.scheduled_work
+  ; return_attribute=
+      (let return_var_exp =
+         HilExp.AccessExpression.base
+           ( Var.of_pvar (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
+           , Procdesc.get_ret_type proc_desc )
+       in
+       AttributeDomain.find_opt return_var_exp astate.attributes
+       |> Option.value ~default:Attribute.Nothing ) }

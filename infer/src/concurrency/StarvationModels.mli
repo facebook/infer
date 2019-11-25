@@ -39,7 +39,7 @@ val schedules_work : Tenv.t -> Typ.Procname.t -> bool
 type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
 [@@deriving equal]
 
-val get_executor_thread_constraint :
+val get_executor_thread_annotation_constraint :
   Tenv.t -> HilExp.AccessExpression.t -> executor_thread_constraint option
 (** given an executor receiver, get its thread constraint, if any. [None] means lookup somehow failed, 
     whereas [Some UnknownThread] means the receiver is an unannotated executor. *)
@@ -47,7 +47,7 @@ val get_executor_thread_constraint :
 val get_run_method_from_runnable : Tenv.t -> HilExp.AccessExpression.t -> Typ.Procname.t option
 (** given a receiver, find the [run()] method in the appropriate class *)
 
-val get_executor_effect :
+val get_returned_executor :
      attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
   -> Tenv.t
   -> Typ.Procname.t

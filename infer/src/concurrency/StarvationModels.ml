@@ -235,12 +235,12 @@ let schedules_work_on_bg_thread =
 type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
 [@@deriving equal]
 
-(* Executors are usually stored in fields and annotated according to what type of thread 
+(* Executors are sometimes stored in fields and annotated according to what type of thread 
    they schedule work on.  Given an expression representing such a field, try to find the kind of 
    annotation constraint, if any. *)
-let rec get_executor_thread_constraint tenv (receiver : HilExp.AccessExpression.t) =
+let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.AccessExpression.t) =
   match receiver with
-  | FieldOffset (_, field_name) ->
+  | FieldOffset (_, field_name) when Typ.Fieldname.is_java field_name ->
       Typ.Fieldname.Java.get_class field_name
       |> Typ.Name.Java.from_string |> Tenv.lookup tenv
       |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.fields @ tstruct.statics)
@@ -250,7 +250,7 @@ let rec get_executor_thread_constraint tenv (receiver : HilExp.AccessExpression.
              else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
              else None )
   | Dereference prefix ->
-      get_executor_thread_constraint tenv prefix
+      get_executor_thread_annotation_constraint tenv prefix
   | _ ->
       None
 
@@ -274,7 +274,7 @@ let get_run_method_from_runnable tenv runnable =
 
 
 (* Syntactically match for certain methods known to return executors. *)
-let get_executor_effect ~attrs_of_pname tenv callee actuals =
+let get_returned_executor ~attrs_of_pname tenv callee actuals =
   let type_check =
     lazy
       ( attrs_of_pname callee

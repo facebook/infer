@@ -105,14 +105,17 @@ module GuardToLockMap : AbstractDomain.WithTop
 (** Tracks whether a variable has been tested for whether we execute on UI thread, or 
     has been assigned an executor object. *)
 module Attribute : sig
-  type t = Nothing | Thread | Executor of StarvationModels.executor_thread_constraint
+  type t = Nothing | ThreadGuard | Executor of StarvationModels.executor_thread_constraint
 
   include AbstractDomain.WithTop with type t := t
 end
 
 (** Tracks all variables assigned values of [Attribute] *)
 module AttributeDomain : sig
-  include AbstractDomain.InvertedMapS with type key = Var.t and type value = Attribute.t
+  include
+    AbstractDomain.InvertedMapS
+      with type key = HilExp.AccessExpression.t
+       and type value = Attribute.t
 
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
 
@@ -176,12 +179,20 @@ val schedule_work :
 (** record the fact that a method is scheduled to run on a certain thread/executor *)
 
 type summary =
-  {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t; scheduled_work: ScheduledWorkDomain.t}
+  { critical_pairs: CriticalPairs.t
+  ; thread: ThreadDomain.t
+  ; scheduled_work: ScheduledWorkDomain.t
+  ; return_attribute: Attribute.t }
+
+val empty_summary : summary
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : ?tenv:Tenv.t -> CallSite.t -> t -> summary -> t
+val integrate_summary :
+  ?tenv:Tenv.t -> ?lhs:HilExp.AccessExpression.t -> CallSite.t -> t -> summary -> t
+(** apply a callee summary to the current abstract state; 
+    [lhs] is the expression assigned the returned value, if any *)
 
-val summary_of_astate : t -> summary
+val summary_of_astate : Procdesc.t -> t -> summary
 
 val filter_blocking_calls : t -> t

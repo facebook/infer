@@ -72,21 +72,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let do_thread_assert_effect (ret_var, _) callee (astate : Domain.t) =
+  let get_exp_attributes tenv exp (astate : Domain.t) =
     let open Domain in
-    match ConcurrencyModels.get_thread_assert_effect callee with
-    | BackgroundThread ->
-        {astate with thread= ThreadDomain.BGThread}
-    | MainThread ->
-        {astate with thread= ThreadDomain.UIThread}
-    | MainThreadIfTrue ->
-        let attributes = AttributeDomain.add ret_var Attribute.Thread astate.attributes in
-        {astate with attributes}
-    | UnknownThread ->
-        astate
+    AttributeDomain.find_opt exp astate.attributes
+    |> IOption.if_none_evalopt ~f:(fun () ->
+           StarvationModels.get_executor_thread_annotation_constraint tenv exp
+           |> Option.map ~f:(fun constr -> Attribute.Executor constr) )
 
 
   let do_work_scheduling tenv callee actuals loc (astate : Domain.t) =
+    let open Domain in
     let schedule_work runnable init thread =
       StarvationModels.get_run_method_from_runnable tenv runnable
       |> Option.fold ~init ~f:(Domain.schedule_work loc thread)
@@ -94,16 +89,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match actuals with
     | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable]
       when StarvationModels.schedules_work tenv callee ->
-        let thread_opt =
-          IList.force_until_first_some
-            [ (* match an executor call that we have a model for *)
-              lazy (StarvationModels.get_executor_thread_constraint tenv executor)
-            ; (* match an executor call where the executor is stored in a variable *)
-              lazy (Domain.AttributeDomain.get_executor_constraint executor astate.attributes)
-            ; (* the receiver is an executor stored in a variable for which we have no knowledge *)
-              lazy (Some StarvationModels.ForUnknownThread) ]
+        let thread =
+          match get_exp_attributes tenv executor astate with
+          | Some (Attribute.Executor constr) ->
+              constr
+          | _ ->
+              StarvationModels.ForUnknownThread
         in
-        Option.fold thread_opt ~init:astate ~f:(schedule_work runnable)
+        schedule_work runnable astate thread
     | HilExp.AccessExpression runnable :: _
       when StarvationModels.schedules_work_on_ui_thread tenv callee ->
         schedule_work runnable astate StarvationModels.ForUIThread
@@ -114,17 +107,43 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let do_executor_effect tenv (ret_var, _) callee actuals astate =
+  let do_assignment tenv lhs_access_exp rhs_exp (astate : Domain.t) =
+    HilExp.get_access_exprs rhs_exp
+    |> List.filter_map ~f:(fun exp -> get_exp_attributes tenv exp astate)
+    |> List.reduce ~f:Domain.Attribute.join
+    |> Option.value_map ~default:astate ~f:(fun attribute ->
+           let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
+           {astate with attributes} )
+
+
+  let do_call ProcData.{tenv; summary} lhs callee actuals loc astate =
     let open Domain in
-    StarvationModels.get_executor_effect ~attrs_of_pname tenv callee actuals
-    |> Option.fold ~init:astate ~f:(fun acc effect ->
-           let attributes =
-             AttributeDomain.add ret_var (Attribute.Executor effect) astate.attributes
-           in
-           {acc with attributes} )
+    let get_returned_executor_summary () =
+      StarvationModels.get_returned_executor ~attrs_of_pname tenv callee actuals
+      |> Option.map ~f:(fun thread_constraint ->
+             {empty_summary with return_attribute= Attribute.Executor thread_constraint} )
+    in
+    let get_thread_assert_summary () =
+      match ConcurrencyModels.get_thread_assert_effect callee with
+      | BackgroundThread ->
+          Some {empty_summary with thread= ThreadDomain.BGThread}
+      | MainThread ->
+          Some {empty_summary with thread= ThreadDomain.UIThread}
+      | MainThreadIfTrue ->
+          Some {empty_summary with return_attribute= Attribute.ThreadGuard}
+      | UnknownThread ->
+          None
+    in
+    let get_callee_summary () = Payload.read ~caller_summary:summary ~callee_pname:callee in
+    let callsite = CallSite.make callee loc in
+    get_returned_executor_summary ()
+    |> IOption.if_none_evalopt ~f:get_thread_assert_summary
+    |> IOption.if_none_evalopt ~f:get_callee_summary
+    |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv ~lhs callsite)
 
 
-  let exec_instr (astate : Domain.t) {ProcData.summary; tenv; extras} _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) ({ProcData.summary; tenv; extras} as procdata) _
+      (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
     let get_lock_path = get_lock_path extras in
@@ -134,20 +153,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       List.filter_map ~f:get_lock_path locks |> Domain.acquire ~tenv astate ~procname ~loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
-    let do_call callee loc astate =
-      let callsite = CallSite.make callee loc in
-      Payload.read ~caller_summary:summary ~callee_pname:callee
-      |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv callsite)
-    in
     match instr with
-    | Assign _ | Call (_, Indirect _, _, _, _) ->
-        astate
+    | Assign (lhs_access_exp, rhs_exp, _) ->
+        do_assignment tenv lhs_access_exp rhs_exp astate
     | Metadata (Sil.ExitScope (vars, _)) ->
         {astate with attributes= Domain.AttributeDomain.exit_scope vars astate.attributes}
     | Metadata _ ->
         astate
     | Assume (assume_exp, _, _, _) ->
         do_assume assume_exp astate
+    | Call (_, Indirect _, _, _, _) ->
+        astate
     | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
         astate
     | Call (ret_base, Direct callee, actuals, _, loc) -> (
@@ -178,19 +194,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java -> (
-          let astate =
-            do_thread_assert_effect ret_base callee astate
-            |> do_executor_effect tenv ret_base callee actuals
-            |> do_work_scheduling tenv callee actuals loc
-          in
+          let ret_exp = HilExp.AccessExpression.base ret_base in
+          let astate = do_work_scheduling tenv callee actuals loc astate in
           match may_block tenv callee actuals with
           | Some sev ->
               Domain.blocking_call ~callee sev ~loc astate
           | None ->
-              do_call callee loc astate )
+              do_call procdata ret_exp callee actuals loc astate )
       | NoEffect ->
           (* in C++/Obj C we only care about deadlocks, not starvation errors *)
-          do_call callee loc astate )
+          let ret_exp = HilExp.AccessExpression.base ret_base in
+          do_call procdata ret_exp callee actuals loc astate )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
@@ -241,7 +255,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:filter_blocks
-    |> Option.map ~f:Domain.summary_of_astate
+    |> Option.map ~f:(Domain.summary_of_astate proc_desc)
     |> Option.fold ~init:summary ~f:(fun acc payload -> Payload.update_summary payload acc)
 
 
@@ -580,7 +594,7 @@ let get_summary_of_scheduled_work (work_item : Domain.ScheduledWorkItem.t) =
   let callsite = CallSite.make work_item.procname work_item.loc in
   Summary.OnDisk.get work_item.procname
   |> Option.bind ~f:(fun (summary : Summary.t) -> Payloads.starvation summary.payloads)
-  |> Option.map ~f:(Domain.integrate_summary ?tenv:None callsite astate)
+  |> Option.map ~f:(Domain.integrate_summary callsite astate)
   |> Option.map ~f:(fun (astate : Domain.t) -> astate.critical_pairs)
 
 
