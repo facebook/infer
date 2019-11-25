@@ -64,14 +64,24 @@ let pp_param_name fmt mangled =
 
 let bad_param_description
     {model_source; param_signature; actual_param_expression; param_position; function_procname}
-    nullability_evidence =
+    ~param_nullability nullability_evidence =
   let nullability_evidence_as_suffix =
     Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
   in
   let module MF = MarkupFormatter in
   let argument_description =
-    if String.equal "null" actual_param_expression then "is `null`"
-    else Format.asprintf "%a is nullable" MF.pp_monospaced actual_param_expression
+    if String.equal actual_param_expression "null" then "is `null`"
+    else
+      let nullability_descr =
+        match param_nullability with
+        | Nullability.Null ->
+            "`null`"
+        | Nullability.Nullable ->
+            "nullable"
+        | Nullability.Nonnull | Nullability.DeclaredNonnull ->
+            Logging.die InternalError "Invariant violation: unexpected nullability"
+      in
+      Format.asprintf "%a is %s" MF.pp_monospaced actual_param_expression nullability_descr
   in
   let suggested_file_to_add_third_party =
     match model_source with
@@ -153,18 +163,35 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
     let error_message =
       match assignment_type with
       | PassingParamToFunction function_info ->
-          bad_param_description function_info nullability_evidence
+          bad_param_description function_info nullability_evidence ~param_nullability:rhs
       | AssigningToField field_name ->
-          Format.asprintf "%a is declared non-nullable but is assigned a nullable%s."
-            MF.pp_monospaced
+          let rhs_description =
+            match rhs with
+            | Null ->
+                "`null`"
+            | Nullable ->
+                "a nullable"
+            | Nonnull | DeclaredNonnull ->
+                Logging.die InternalError "Invariant violation: unexpected nullability"
+          in
+          Format.asprintf "%a is declared non-nullable but is assigned %s%s." MF.pp_monospaced
             (Typ.Fieldname.to_flat_string field_name)
-            nullability_evidence_as_suffix
+            rhs_description nullability_evidence_as_suffix
       | ReturningFromFunction function_proc_name ->
-          Format.asprintf
-            "%a: return type is declared non-nullable but the method returns a nullable value%s."
+          let return_description =
+            match rhs with
+            | Null ->
+                (* Return `null` in all branches *)
+                "`null`"
+            | Nullable ->
+                "a nullable value"
+            | Nonnull | DeclaredNonnull ->
+                Logging.die InternalError "Invariant violation: unexpected nullability"
+          in
+          Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s."
             MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:false function_proc_name)
-            nullability_evidence_as_suffix
+            return_description nullability_evidence_as_suffix
     in
     let issue_type = get_issue_type assignment_type in
     (error_message, issue_type, assignment_location)

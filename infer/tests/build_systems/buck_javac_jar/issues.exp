@@ -1,1 +1,1 @@
-src/UsingJavacJar.java, UsingJavacJar.foo():java.lang.Object, 0, ERADICATE_RETURN_NOT_NULLABLE, no_bucket, WARNING, [`foo()`: return type is declared non-nullable but the method returns a nullable value: null constant at line 10.]
+src/UsingJavacJar.java, UsingJavacJar.foo():java.lang.Object, 0, ERADICATE_RETURN_NOT_NULLABLE, no_bucket, WARNING, [`foo()`: return type is declared non-nullable but the method returns `null`: null constant at line 10.]
