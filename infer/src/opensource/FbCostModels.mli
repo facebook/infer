@@ -8,5 +8,5 @@
 open! IStd
 
 module Call : sig
-  val dispatch : (Tenv.t, CostUtils.model) ProcnameDispatcher.Call.dispatcher
+  val dispatch : (Tenv.t, CostUtils.model) BufferOverrunModels.ModeledCall.dispatcher
 end

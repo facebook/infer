@@ -294,7 +294,10 @@ let check_instr :
         List.fold params ~init:cond_set ~f:(fun cond_set (exp, _) ->
             check_expr_for_integer_overflow integer_type_widths exp location mem cond_set )
       in
-      match Models.Call.dispatch tenv callee_pname params with
+      let fun_arg_list =
+        List.map params ~f:(fun (exp, typ) -> Models.ModeledCall.FuncArg.{exp; typ; value= ()})
+      in
+      match Models.Call.dispatch tenv callee_pname fun_arg_list with
       | Some {Models.check} ->
           let model_env =
             let node_hash = CFG.Node.hash node in

@@ -224,10 +224,14 @@ module ProcName :
 
 module TypName : NameCommon with type ('context, 'f) dispatcher = 'context -> Typ.name -> 'f option
 
-module Call : sig
+module type VALUE = sig
+  type t
+end
+
+module MakeCall (Val : VALUE) : sig
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg : sig
-    type t = Exp.t * Typ.t
+    type t = {exp: Exp.t; typ: Typ.t; value: Val.t}
   end
 
   include
@@ -250,6 +254,9 @@ module Call : sig
 
   val capt_arg : ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg *)
+
+  val capt_value : ('context, Val.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures the value of one arg at current state  *)
 
   val capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression *)

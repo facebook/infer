@@ -116,7 +116,11 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
                ~callee_pname:pname ~callee_formals ~params ~callee_cost ~loc)
         else None
     | None ->
-        CostModels.Call.dispatch tenv pname params
+        let fun_arg_list =
+          List.map params ~f:(fun (exp, typ) ->
+              BufferOverrunModels.ModeledCall.FuncArg.{exp; typ; value= ()} )
+        in
+        CostModels.Call.dispatch tenv pname fun_arg_list
         |> Option.map ~f:(fun model ->
                let model_env =
                  let node_hash = InstrCFG.Node.hash last_node in

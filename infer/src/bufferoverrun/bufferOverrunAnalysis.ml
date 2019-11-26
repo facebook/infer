@@ -362,7 +362,10 @@ module TransferFunctions = struct
         if is_java_enum_values ~caller_pname:(Summary.get_proc_name summary) ~callee_pname then
           assign_java_enum_values id callee_pname mem
         else
-          match Models.Call.dispatch tenv callee_pname params with
+          let fun_arg_list =
+            List.map params ~f:(fun (exp, typ) -> Models.ModeledCall.FuncArg.{exp; typ; value= ()})
+          in
+          match Models.Call.dispatch tenv callee_pname fun_arg_list with
           | Some {Models.exec} ->
               let model_env =
                 let node_hash = CFG.Node.hash node in

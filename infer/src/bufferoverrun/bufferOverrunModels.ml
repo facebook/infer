@@ -17,6 +17,13 @@ module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
 open BoUtils.ModelEnv
 
+module Val = struct
+  type t = unit
+end
+
+module ModeledCall = ProcnameDispatcher.MakeCall (Val)
+open ModeledCall.FuncArg
+
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 
 type check_fun = model_env -> Dom.Mem.t -> PO.ConditionSet.checked_t -> PO.ConditionSet.checked_t
@@ -282,9 +289,9 @@ let realloc src_exp size_exp =
   {exec; check}
 
 
-let placement_new size_exp (src_exp1, t1) src_arg2_opt =
+let placement_new size_exp {exp= src_exp1; typ= t1} src_arg2_opt =
   match (t1.Typ.desc, src_arg2_opt) with
-  | Tint _, None | Tint _, Some (_, {Typ.desc= Tint _}) ->
+  | Tint _, None | Tint _, Some {typ= {Typ.desc= Tint _}} ->
       malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
   | Tstruct (CppClass (name, _)), None
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
@@ -295,7 +302,7 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
           if Typ.is_pointer_to_void t1 then src_exp1
           else
             match src_arg2_opt with
-            | Some (src_exp2, t2) when Typ.is_pointer_to_void t2 ->
+            | Some {exp= src_exp2; typ= t2} when Typ.is_pointer_to_void t2 ->
                 src_exp2
             | _ ->
                 (* TODO: Raise an exception when given unexpected arguments.  Before that, we need
@@ -403,9 +410,9 @@ let get_array_length array_exp =
 
 
 (* Clang only *)
-let set_array_length array length_exp =
+let set_array_length {exp; typ} length_exp =
   let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
-    match array with
+    match (exp, typ) with
     | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {stride}} ->
         let length = Sem.eval integer_type_widths length_exp mem in
         let stride = Option.map ~f:IntLit.to_int_exn stride in
@@ -460,7 +467,7 @@ module CFArray = struct
     {exec; check}
 
 
-  let at (array_exp, _) (index_exp, _) = at ?size:None array_exp index_exp
+  let at {exp= array_exp} {exp= index_exp} = at ?size:None array_exp index_exp
 
   let length e =
     let exec {integer_type_widths} ~ret:(ret_id, _) mem =
@@ -472,7 +479,7 @@ module CFArray = struct
 end
 
 module Split = struct
-  let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
+  let std_vector ~adds_at_least_one {exp= vector_exp; typ= vector_typ} location mem =
     let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
     let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
@@ -515,9 +522,9 @@ module StdArray = struct
     {exec; check= no_check}
 
 
-  let at size (array_exp, _) (index_exp, _) = at ~size array_exp index_exp
+  let at size {exp= array_exp} {exp= index_exp} = at ~size array_exp index_exp
 
-  let begin_ _size (array_exp, _) =
+  let begin_ _size {exp= array_exp} =
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
         Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
@@ -527,7 +534,7 @@ module StdArray = struct
     {exec; check= no_check}
 
 
-  let end_ size (array_exp, _) =
+  let end_ size {exp= array_exp} =
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
         let offset = Itv.of_int_lit (IntLit.of_int64 size) in
@@ -538,7 +545,7 @@ module StdArray = struct
     {exec; check= no_check}
 
 
-  let back size (array_exp, _) =
+  let back size {exp= array_exp} =
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
         let offset = Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)) in
@@ -607,13 +614,13 @@ module StdVector = struct
     PowLoc.append_field locs ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
 
 
-  let deref_of model_env elt_typ (vec_exp, vec_typ) mem =
+  let deref_of model_env elt_typ {exp= vec_exp; typ= vec_typ} mem =
     let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
     ArrObjCommon.deref_of model_env vec_exp ~fn mem
 
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
-  let constructor_size elt_typ (vec_exp, vec_typ) size_exp =
+  let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
     let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
         mem =
@@ -639,7 +646,7 @@ module StdVector = struct
   let constructor_empty elt_typ vec = constructor_size elt_typ vec Exp.zero
 
   (* The (5) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
-  let constructor_copy elt_typ (vec_exp, vec_typ) src_exp =
+  let constructor_copy elt_typ {exp= vec_exp; typ= vec_typ} src_exp =
     let exec ({integer_type_widths} as model_env) ~ret:_ mem =
       let vec_locs, traces =
         let v = Sem.eval integer_type_widths vec_exp mem in
@@ -654,7 +661,7 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let at elt_typ (vec_exp, vec_typ) index_exp =
+  let at elt_typ {exp= vec_exp; typ= vec_typ} index_exp =
     ArrObjCommon.at vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ) index_exp
 
 
@@ -703,7 +710,7 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let size elt_typ (vec_exp, vec_typ) =
+  let size elt_typ {exp= vec_exp; typ= vec_typ} =
     let exec =
       ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
     in
@@ -711,7 +718,7 @@ module StdVector = struct
 end
 
 module StdBasicString = struct
-  let constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt =
+  let constructor_from_char_ptr char_typ {exp= tgt_exp; typ= tgt_typ} src ~len_opt =
     let exec ({pname; node_hash} as model_env) ~ret mem =
       let mem =
         Option.value_map len_opt ~default:mem ~f:(fun len ->
@@ -743,13 +750,13 @@ module StdBasicString = struct
 
 
   (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr_with_len char_typ (tgt_exp, tgt_typ) src len =
-    constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt:(Some len)
+  let constructor_from_char_ptr_with_len char_typ tgt_arg src len =
+    constructor_from_char_ptr char_typ tgt_arg src ~len_opt:(Some len)
 
 
   (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr_without_len char_typ (tgt_exp, tgt_typ) src =
-    constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt:None
+  let constructor_from_char_ptr_without_len char_typ tgt_arg src =
+    constructor_from_char_ptr char_typ tgt_arg src ~len_opt:None
 
 
   (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
@@ -1169,8 +1176,8 @@ module Object = struct
 end
 
 module Call = struct
-  let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
-    let open ProcnameDispatcher.Call in
+  let dispatch : (Tenv.t, model) ModeledCall.dispatcher =
+    let open ModeledCall in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
     let std_array1 = mk_std_array () in

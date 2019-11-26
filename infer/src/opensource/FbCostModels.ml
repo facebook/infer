@@ -8,5 +8,5 @@
 open! IStd
 
 module Call = struct
-  let dispatch = ProcnameDispatcher.Call.make_dispatcher []
+  let dispatch = BufferOverrunModels.ModeledCall.make_dispatcher []
 end

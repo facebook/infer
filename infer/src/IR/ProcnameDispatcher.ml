@@ -529,23 +529,29 @@ module Common = struct
   let ( <>:: ) name_matcher name = name_matcher <! () >:: name
 end
 
-module Call = struct
+module type VALUE = sig
+  type t
+end
+
+module MakeCall (Val : VALUE) = struct
   include Common
 
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg = struct
-    type t = Exp.t * Typ.t
+    type t = {exp: Exp.t; typ: Typ.t; value: Val.t}
 
-    let typ (_, ty) = ty
+    let typ {typ} = typ
 
-    let exp (e, _) = e
+    let exp {exp} = exp
 
-    let get_var_exn arg =
-      match exp arg with
+    let value {value} = value
+
+    let get_var_exn {exp; typ} =
+      match exp with
       | Exp.Var v ->
           v
       | e ->
-          Logging.(die InternalError) "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) (typ arg)
+          Logging.(die InternalError) "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) typ
   end
 
   type ('context, 'f_in, 'f_out, 'captured_types) proc_matcher =
@@ -814,6 +820,13 @@ module Call = struct
     {get_captured_value; do_capture}
 
 
+  (** Capture the argument value *)
+  let capture_arg_val : (Val.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+    let get_captured_value arg = FuncArg.value arg in
+    let do_capture f v = f v in
+    {get_captured_value; do_capture}
+
+
   (** Capture the argument expression *)
   let capture_arg_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
     let get_captured_value arg = FuncArg.exp arg in
@@ -867,6 +880,10 @@ module Call = struct
 
   let capt_arg : ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg}
+
+
+  let capt_value : ('context, Val.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+    {one_arg_matcher= match_any_arg; capture= capture_arg_val}
 
 
   let capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =

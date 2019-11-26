@@ -118,8 +118,8 @@ module ImmutableSet = struct
 end
 
 module Call = struct
-  let dispatch : (Tenv.t, CostUtils.model) ProcnameDispatcher.Call.dispatcher =
-    let open ProcnameDispatcher.Call in
+  let dispatch : (Tenv.t, CostUtils.model) BufferOverrunModels.ModeledCall.dispatcher =
+    let open BufferOverrunModels.ModeledCall in
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let dispatcher =
       make_dispatcher

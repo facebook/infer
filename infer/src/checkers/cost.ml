@@ -563,7 +563,11 @@ module InstrBasicCost = struct
               CostDomain.unit_cost_atomic_operation
           | Some inferbo_mem -> (
               let loc = InstrCFG.Node.loc instr_node in
-              match CostModels.Call.dispatch tenv callee_pname params with
+              let fun_arg_list =
+                List.map params ~f:(fun (exp, typ) ->
+                    BufferOverrunModels.ModeledCall.FuncArg.{exp; typ; value= ()} )
+              in
+              match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
               | Some model ->
                   let node_hash = InstrCFG.Node.hash instr_node in
                   let model_env =
