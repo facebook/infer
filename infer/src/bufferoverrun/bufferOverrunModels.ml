@@ -1259,29 +1259,18 @@ module Call = struct
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> no_model
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "basic_string" $ capt_arg
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "basic_string" $ capt_arg
         $+ capt_exp_of_typ (-"std" &:: "basic_string")
         $--> StdBasicString.copy_constructor
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "basic_string" $ capt_arg $+ capt_exp_of_prim_typ char_ptr
-        $--> StdBasicString.constructor_from_char_ptr_without_len
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "basic_string" $ capt_arg $+ capt_exp_of_prim_typ char_ptr
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "basic_string" $ capt_arg
+        $+ capt_exp_of_prim_typ char_ptr $--> StdBasicString.constructor_from_char_ptr_without_len
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "basic_string" $ capt_arg
+        $+ capt_exp_of_prim_typ char_ptr
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $--> StdBasicString.constructor_from_char_ptr_with_len
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "empty" $ capt_arg $--> StdBasicString.empty
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "length" $ capt_arg $--> StdBasicString.length
-      ; -"std" &:: "basic_string"
-        < capt_typ `T
-        &+...>:: "size" $ capt_arg $--> StdBasicString.length
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "empty" $ capt_arg $--> StdBasicString.empty
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "length" $ capt_arg $--> StdBasicString.length
+      ; -"std" &:: "basic_string" < capt_typ &+...>:: "size" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "compare" &--> by_value Dom.Val.Itv.top
       ; +PatternMatch.implements_lang "String"
         &:: "equals"
@@ -1314,35 +1303,26 @@ module Call = struct
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "basic_string" &::.*--> no_model
-      ; -"std" &:: "vector"
-        < capt_typ `T
-        &+ any_typ >:: "vector"
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $--> StdVector.constructor_empty
-      ; -"std" &:: "vector"
-        < capt_typ `T
-        &+ any_typ >:: "vector"
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $+? any_arg $--> StdVector.constructor_size
-      ; -"std" &:: "vector"
-        < capt_typ `T
-        &+ any_typ >:: "vector"
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_typ (-"std" &:: "vector")
         $+? any_arg $--> StdVector.constructor_copy
-      ; -"std" &:: "vector"
-        < capt_typ `T
-        &+ any_typ >:: "operator[]"
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "operator[]"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp $--> StdVector.at
-      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "empty" $ capt_arg $--> StdVector.empty
-      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
-      ; -"std" &:: "vector"
-        < capt_typ `T
-        &+ any_typ >:: "push_back" $ capt_arg $+ capt_exp $--> StdVector.push_back
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "empty" $ capt_arg $--> StdVector.empty
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "push_back" $ capt_arg $+ capt_exp
+        $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
-      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn
         $+ capt_exp_of_typ (+PatternMatch.implements_collection)

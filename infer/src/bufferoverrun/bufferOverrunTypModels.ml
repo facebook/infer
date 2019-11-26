@@ -33,7 +33,7 @@ end
 let dispatch : (Tenv.t, typ_model, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
-    [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> std_array
+    [ -"std" &:: "array" < capt_typ &+ capt_int >--> std_array
     ; -"std" &:: "vector" < any_typ &+ any_typ >--> std_vector
     ; +PatternMatch.implements_collection &::.*--> Java.collection
     ; +PatternMatch.implements_iterator &::.*--> Java.collection
