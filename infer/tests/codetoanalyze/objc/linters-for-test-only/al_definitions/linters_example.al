@@ -897,3 +897,18 @@ SET report_when =
       is_create_method_parameter
         HOLDS-IN-NODE CallExpr;
 };
+
+DEFINE-CHECKER CLASS_AND_VAR = {
+  LET global_var_exists =
+  is_node("VarDecl");
+
+	 LET var_decl =
+	  		(HOLDS-NEXT WITH-TRANSITION Sibling
+        (global_var_exists()));
+
+   SET report_when =
+   WHEN var_decl() AND declaration_has_name("SiblingExample")
+   HOLDS-IN-NODE  ObjCInterfaceDecl;
+
+	 SET message = "Found a global var next to a class";
+};

@@ -28,6 +28,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
+  | Sibling  (** decl to decl *)
   | SourceExpr
 [@@deriving compare]
 
@@ -43,7 +44,7 @@ let is_transition_to_successor trans =
   | Cond
   | SourceExpr ->
       true
-  | Super | PointerToDecl | Protocol | AccessorForProperty _ ->
+  | Super | PointerToDecl | Protocol | AccessorForProperty _ | Sibling ->
       false
 
 
@@ -158,6 +159,8 @@ module Debug = struct
           Format.pp_print_string fmt "Protocol"
       | PointerToDecl ->
           Format.pp_print_string fmt "PointerToDecl"
+      | Sibling ->
+          Format.pp_print_string fmt "Sibling"
       | SourceExpr ->
           Format.pp_print_string fmt "SourceExpr"
     in
@@ -935,6 +938,28 @@ let transition_via_field_name node name =
       []
 
 
+let transition_via_sibling node =
+  let open Clang_ast_t in
+  match node with
+  | Decl orig_decl -> (
+      let decl_info = Clang_ast_proj.get_decl_tuple orig_decl in
+      match CAst_utils.get_decl_opt decl_info.Clang_ast_t.di_parent_pointer with
+      | Some (TranslationUnitDecl (_, decls, _, _))
+      | Some (ObjCImplementationDecl (_, _, decls, _, _))
+      | Some (ObjCInterfaceDecl (_, _, decls, _, _))
+      | Some (ObjCProtocolDecl (_, _, decls, _, _))
+      | Some (ObjCCategoryDecl (_, _, decls, _, _))
+      | Some (ObjCCategoryImplDecl (_, _, decls, _, _))
+      | Some (RecordDecl (_, _, _, decls, _, _, _)) ->
+          List.filter_map
+            ~f:(fun decl -> if not (phys_equal decl orig_decl) then Some (Decl decl) else None)
+            decls
+      | _ ->
+          [] )
+  | Stmt _ ->
+      []
+
+
 (* given a node an returns a list of nodes an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match (an, trans) with
@@ -946,6 +971,8 @@ let next_state_via_transition an trans =
       transition_via_fields an
   | _, Parameters ->
       transition_via_parameters an
+  | _, Sibling ->
+      transition_via_sibling an
   | Decl d, InitExpr | Decl d, Body ->
       transition_decl_to_stmt d trans
   | Decl d, Protocol ->

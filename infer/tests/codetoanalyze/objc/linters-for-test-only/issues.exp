@@ -227,6 +227,8 @@ codetoanalyze/objc/linters-for-test-only/PrivateInstanceMethod.m, UselessClass::
 codetoanalyze/objc/linters-for-test-only/PrivateInstanceMethod.m, UselessClass::b, 11, TEST_RETURN_METHOD, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/PrivateInstanceMethod.m, UselessClass::b, 18, TEST_IS_METHOD_EXPOSED, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/PrivateInstanceMethod.m, UselessClass::b, 18, TEST_RETURN_METHOD, no_bucket, WARNING, []
+codetoanalyze/objc/linters-for-test-only/al_definitions/sibling_example.m, Linters_dummy_method, 9, TEST_VAR_TYPE_CHECK, no_bucket, WARNING, []
+codetoanalyze/objc/linters-for-test-only/al_definitions/sibling_example.m, Linters_dummy_method, 11, CLASS_AND_VAR, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/const.m, Linters_dummy_method, 7, CONST_NAMING, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/const.m, Linters_dummy_method, 7, TEST_VAR_TYPE_CHECK, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/const.m, Linters_dummy_method, 8, CONST_NAMING, no_bucket, WARNING, []

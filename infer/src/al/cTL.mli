@@ -28,6 +28,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
+  | Sibling  (** decl to decl *)
   | SourceExpr
 [@@deriving compare]
 
