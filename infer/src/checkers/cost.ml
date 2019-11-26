@@ -565,7 +565,7 @@ module InstrBasicCost = struct
               let loc = InstrCFG.Node.loc instr_node in
               let fun_arg_list =
                 List.map params ~f:(fun (exp, typ) ->
-                    BufferOverrunModels.ModeledCall.FuncArg.{exp; typ; value= ()} )
+                    ProcnameDispatcher.Call.FuncArg.{exp; typ; value= ()} )
               in
               match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
               | Some model ->

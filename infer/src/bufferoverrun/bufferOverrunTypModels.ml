@@ -30,7 +30,7 @@ module Java = struct
   let integer = JavaInteger
 end
 
-let dispatch : (Tenv.t, typ_model) ProcnameDispatcher.TypName.dispatcher =
+let dispatch : (Tenv.t, typ_model, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
     [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> std_array

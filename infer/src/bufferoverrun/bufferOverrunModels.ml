@@ -21,8 +21,7 @@ module Val = struct
   type t = unit
 end
 
-module ModeledCall = ProcnameDispatcher.MakeCall (Val)
-open ModeledCall.FuncArg
+open ProcnameDispatcher.Call.FuncArg
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 
@@ -1176,8 +1175,8 @@ module Object = struct
 end
 
 module Call = struct
-  let dispatch : (Tenv.t, model) ModeledCall.dispatcher =
-    let open ModeledCall in
+  let dispatch : (Tenv.t, model, unit) ProcnameDispatcher.Call.dispatcher =
+    let open ProcnameDispatcher.Call in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
     let std_array1 = mk_std_array () in

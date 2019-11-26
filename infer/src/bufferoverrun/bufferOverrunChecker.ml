@@ -295,7 +295,7 @@ let check_instr :
             check_expr_for_integer_overflow integer_type_widths exp location mem cond_set )
       in
       let fun_arg_list =
-        List.map params ~f:(fun (exp, typ) -> Models.ModeledCall.FuncArg.{exp; typ; value= ()})
+        List.map params ~f:(fun (exp, typ) -> ProcnameDispatcher.Call.FuncArg.{exp; typ; value= ()})
       in
       match Models.Call.dispatch tenv callee_pname fun_arg_list with
       | Some {Models.check} ->

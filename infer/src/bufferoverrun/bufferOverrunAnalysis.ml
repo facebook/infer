@@ -363,7 +363,8 @@ module TransferFunctions = struct
           assign_java_enum_values id callee_pname mem
         else
           let fun_arg_list =
-            List.map params ~f:(fun (exp, typ) -> Models.ModeledCall.FuncArg.{exp; typ; value= ()})
+            List.map params ~f:(fun (exp, typ) ->
+                ProcnameDispatcher.Call.FuncArg.{exp; typ; value= ()} )
           in
           match Models.Call.dispatch tenv callee_pname fun_arg_list with
           | Some {Models.exec} ->

@@ -34,7 +34,7 @@ let startsWith prefix _ s = String.is_prefix ~prefix s
 let getStarValue tenv s = startsWith "get" tenv s && endsWith "Value" tenv s
 
 module ProcName = struct
-  let dispatch : (Tenv.t, PurityDomain.t) ProcnameDispatcher.ProcName.dispatcher =
+  let dispatch : (Tenv.t, PurityDomain.t, unit) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ +pure_builtins <>--> PurityDomain.pure

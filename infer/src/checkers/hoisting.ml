@@ -118,7 +118,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
     | None ->
         let fun_arg_list =
           List.map params ~f:(fun (exp, typ) ->
-              BufferOverrunModels.ModeledCall.FuncArg.{exp; typ; value= ()} )
+              ProcnameDispatcher.Call.FuncArg.{exp; typ; value= ()} )
         in
         CostModels.Call.dispatch tenv pname fun_arg_list
         |> Option.map ~f:(fun model ->

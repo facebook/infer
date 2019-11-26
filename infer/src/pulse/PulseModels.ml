@@ -245,7 +245,7 @@ module StdVector = struct
 end
 
 module ProcNameDispatcher = struct
-  let dispatch : (Tenv.t, model) ProcnameDispatcher.ProcName.dispatcher =
+  let dispatch : (Tenv.t, model, unit) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip

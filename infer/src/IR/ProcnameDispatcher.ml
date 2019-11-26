@@ -65,7 +65,7 @@ let templated_name_of_java java =
 
 (* Intermediate matcher types *)
 
-type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
+type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher =
   { on_objc_cpp: 'context -> 'f_in -> objc_cpp -> ('f_out * 'captured_types capt) option
   ; on_qual_name: 'context -> 'f_in -> qual_name -> ('f_out * 'captured_types capt) option
   ; get_markers: 'markers_in -> 'markers_out }
@@ -89,7 +89,8 @@ type ( 'context
      , 'captured_types
      , 'markers_in
      , 'markers_out
-     , 'list_constraint )
+     , 'list_constraint
+     , 'value )
      templ_matcher =
   { on_objc_cpp:
          'context
@@ -109,7 +110,15 @@ type ('context, 'f_in, 'f_out, 'captured_types, 'emptyness) path_extra =
       {on_objc_cpp: 'context -> 'f_in -> objc_cpp -> ('f_out * 'captured_types capt) option}
       -> ('context, 'f_in, 'f_out, 'captured_types, non_empty) path_extra
 
-type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'emptyness) path_matcher =
+type ( 'context
+     , 'f_in
+     , 'f_out
+     , 'captured_types
+     , 'markers_in
+     , 'markers_out
+     , 'emptyness
+     , 'value )
+     path_matcher =
   { on_templated_name: 'context -> 'f_in -> templated_name -> ('f_out * 'captured_types capt) option
   ; path_extra: ('context, 'f_in, 'f_out, 'captured_types, 'emptyness) path_extra
   ; get_markers: 'markers_in -> 'markers_out }
@@ -118,7 +127,7 @@ type typ_matcher = typ -> bool
 
 (* Combinators *)
 
-let empty : ('context, 'f, 'f, unit, 'markers, 'markers, empty) path_matcher =
+let empty : ('context, 'f, 'f, unit, 'markers, 'markers, empty, 'value) path_matcher =
   let get_markers m = m in
   let get_capture () = () in
   let on_templated_name _context f (qual_name, template_args) =
@@ -134,9 +143,9 @@ let empty : ('context, 'f, 'f, unit, 'markers, 'markers, empty) path_matcher =
 
 
 let name_cons :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) path_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _, 'value) path_matcher
     -> string
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher =
  fun m name ->
   let {on_templated_name; get_markers} = m in
   let match_fuzzy_name =
@@ -159,9 +168,9 @@ let name_cons :
 
 
 let name_cons_f :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) path_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _, 'value) path_matcher
     -> ('context -> string -> bool)
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher =
  fun m f_name ->
   let {on_templated_name; get_markers} = m in
   let on_qual_name context f qual_name =
@@ -180,9 +189,24 @@ let name_cons_f :
 
 
 let all_names_cons :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
-    -> ('context, 'f_in, 'f_out, 'captured_tpes, 'markers_in, 'markers_out, non_empty) path_matcher
-    =
+       ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_types
+       , 'markers_in
+       , 'markers_out
+       , non_empty
+       , 'value )
+       path_matcher
+    -> ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_tpes
+       , 'markers_in
+       , 'markers_out
+       , non_empty
+       , 'value )
+       path_matcher =
  fun m ->
   let {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}} = m in
   let rec on_templated_name_rec context f templated_name =
@@ -209,14 +233,15 @@ let all_names_cons :
 
 
 let templ_begin :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
     -> ( 'context
        , 'f_in
        , 'f_out
        , 'captured_types
        , 'markers_in
        , 'markers_out
-       , accept_more )
+       , accept_more
+       , 'value )
        templ_matcher =
  fun m ->
   let {on_objc_cpp; on_qual_name; get_markers} = m in
@@ -245,7 +270,8 @@ let templ_cons :
        , 'captured_types_in
        , 'markers_interm
        , 'markers_out
-       , accept_more )
+       , accept_more
+       , 'value )
        templ_matcher
     -> ( 'f_interm
        , 'f_out
@@ -255,8 +281,15 @@ let templ_cons :
        , 'markers_interm
        , 'lc )
        template_arg
-    -> ('context, 'f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
-    =
+    -> ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_types_out
+       , 'markers_in
+       , 'markers_out
+       , 'lc
+       , 'value )
+       templ_matcher =
  fun m template_arg ->
   let {on_objc_cpp; on_templated_name; get_markers} = m in
   let {eat_template_arg; add_marker} = template_arg in
@@ -271,9 +304,16 @@ let templ_cons :
 
 
 let templ_end :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
-    =
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _, 'value) templ_matcher
+    -> ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_types
+       , 'markers_in
+       , 'markers_out
+       , non_empty
+       , 'value )
+       path_matcher =
   let match_empty_templ_args (f, captured_types, template_args) =
     match template_args with [] -> Some (f, captured_types) | _ -> None
   in
@@ -289,11 +329,11 @@ let templ_end :
 
 
 module type Common = sig
-  type ('context, 'f) matcher
+  type ('context, 'f, 'value) matcher
 
-  type ('context, 'f) dispatcher
+  type ('context, 'f, 'value) dispatcher
 
-  val make_dispatcher : ('context, 'f) matcher list -> ('context, 'f) dispatcher
+  val make_dispatcher : ('context, 'f, 'value) matcher list -> ('context, 'f, 'value) dispatcher
 
   (* Template arguments *)
 
@@ -335,11 +375,12 @@ module type Common = sig
     template_arg
   (** Captures all template args *)
 
-  val ( ~- ) : string -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
+  val ( ~- ) : string -> ('context, 'f, 'f, unit, 'markers, 'markers, 'value) name_matcher
   (** Starts a path with a name *)
 
   val ( ~+ ) :
-    ('context -> string -> bool) -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
+       ('context -> string -> bool)
+    -> ('context, 'f, 'f, unit, 'markers, 'markers, 'value) name_matcher
   (** Starts a path with a matching name that satisfies the given function *)
 
   val ( &+ ) :
@@ -349,7 +390,8 @@ module type Common = sig
        , 'captured_types_in
        , 'markers_interm
        , 'markers_out
-       , accept_more )
+       , accept_more
+       , 'value )
        templ_matcher
     -> ( 'f_interm
        , 'f_out
@@ -359,11 +401,26 @@ module type Common = sig
        , 'markers_interm
        , 'lc )
        template_arg
-    -> ('context, 'f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+    -> ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_types_out
+       , 'markers_in
+       , 'markers_out
+       , 'lc
+       , 'value )
+       templ_matcher
   (** Separate template arguments *)
 
   val ( < ) :
-       ('context, 'f_in, 'f_interm, 'captured_types_in, 'markers_interm, 'markers_out) name_matcher
+       ( 'context
+       , 'f_in
+       , 'f_interm
+       , 'captured_types_in
+       , 'markers_interm
+       , 'markers_out
+       , 'value )
+       name_matcher
     -> ( 'f_interm
        , 'f_out
        , 'captured_types_in
@@ -372,19 +429,27 @@ module type Common = sig
        , 'markers_interm
        , 'lc )
        template_arg
-    -> ('context, 'f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+    -> ( 'context
+       , 'f_in
+       , 'f_out
+       , 'captured_types_out
+       , 'markers_in
+       , 'markers_out
+       , 'lc
+       , 'value )
+       templ_matcher
   (** Starts template arguments after a name *)
 
   val ( >:: ) :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _, 'value) templ_matcher
     -> string
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
   (** Ends template arguments and starts a name *)
 
   val ( >::+ ) :
-       ('a, 'b, 'c, 'd, 'e, 'f, 'g) templ_matcher
+       ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) templ_matcher
     -> ('a -> string -> bool)
-    -> ('a, 'b, 'c, 'd, 'e, 'f) name_matcher
+    -> ('a, 'b, 'c, 'd, 'e, 'f, 'h) name_matcher
 
   val ( &+...>:: ) :
        ( 'context
@@ -393,27 +458,28 @@ module type Common = sig
        , 'captured_types
        , 'markers_in
        , 'markers_out
-       , accept_more )
+       , accept_more
+       , 'value )
        templ_matcher
     -> string
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
   (** Ends template arguments with eats-ALL and starts a name *)
 
   val ( &:: ) :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
     -> string
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
   (** Separates names (accepts ALL template arguments on the left one) *)
 
   val ( &::+ ) :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
     -> ('context -> string -> bool)
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
 
   val ( <>:: ) :
-       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
     -> string
-    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'value) name_matcher
   (** Separates names (accepts NO template arguments on the left one) *)
 end
 
@@ -529,16 +595,12 @@ module Common = struct
   let ( <>:: ) name_matcher name = name_matcher <! () >:: name
 end
 
-module type VALUE = sig
-  type t
-end
-
-module MakeCall (Val : VALUE) = struct
+module Call = struct
   include Common
 
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg = struct
-    type t = {exp: Exp.t; typ: Typ.t; value: Val.t}
+    type 'value t = {exp: Exp.t; typ: Typ.t; value: 'value}
 
     let typ {typ} = typ
 
@@ -559,64 +621,75 @@ module MakeCall (Val : VALUE) = struct
     ; on_c: 'context -> 'f_in -> c -> ('f_out * 'captured_types) option
     ; on_java: 'context -> 'f_in -> java -> ('f_out * 'captured_types) option }
 
-  type ('context, 'f_in, 'f_out, 'captured_types) on_args =
-    'context -> 'captured_types -> 'f_in * FuncArg.t list -> ('f_out * FuncArg.t list) option
+  type ('context, 'f_in, 'f_out, 'captured_types, 'value) on_args =
+       'context
+    -> 'captured_types
+    -> 'f_in * 'value FuncArg.t list
+    -> ('f_out * 'value FuncArg.t list) option
 
-  type ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher =
+  type ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers, 'value) args_matcher =
     { on_proc: ('context, 'f_in, 'f_proc_out, 'captured_types) proc_matcher
-    ; on_args: ('context, 'f_proc_out, 'f_out, 'captured_types) on_args
+    ; on_args: ('context, 'f_proc_out, 'f_out, 'captured_types, 'value) on_args
     ; markers: 'markers }
 
-  type ('context, 'captured_types, 'markers) one_arg_matcher =
-    { match_arg: 'context -> 'captured_types -> FuncArg.t -> bool
+  type ('context, 'captured_types, 'markers, 'value) one_arg_matcher =
+    { match_arg: 'context -> 'captured_types -> 'value FuncArg.t -> bool
     ; marker_static_checker: 'markers -> bool }
 
-  type ('arg_in, 'arg_out, 'f_in, 'f_out) arg_capture =
-    {get_captured_value: FuncArg.t -> 'arg_in; do_capture: 'f_in -> 'arg_out -> 'f_out}
+  type ('arg_in, 'arg_out, 'f_in, 'f_out, 'value) arg_capture =
+    {get_captured_value: 'value FuncArg.t -> 'arg_in; do_capture: 'f_in -> 'arg_out -> 'f_out}
 
-  type ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg =
-    { one_arg_matcher: ('context, 'captured_types, 'markers) one_arg_matcher
-    ; capture: ('arg_in, 'arg_out, 'f_in, 'f_out) arg_capture }
+  type ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers, 'value) one_arg =
+    { one_arg_matcher: ('context, 'captured_types, 'markers, 'value) one_arg_matcher
+    ; capture: ('arg_in, 'arg_out, 'f_in, 'f_out, 'value) arg_capture }
 
-  type ('arg_in, 'arg_out, 'f_in, 'f_out) arg_preparer =
-    { on_empty: ('f_in -> 'arg_out -> 'f_out) -> 'f_in -> ('f_out * FuncArg.t list) option
+  type ('arg_in, 'arg_out, 'f_in, 'f_out, 'value) arg_preparer =
+    { on_empty: ('f_in -> 'arg_out -> 'f_out) -> 'f_in -> ('f_out * 'value FuncArg.t list) option
     ; wrapper: 'arg_in -> 'arg_out }
 
-  type ('context, 'f_in, 'f_out, 'captured_types, 'markers) func_arg =
-    { eat_func_arg: ('context, 'f_in, 'f_out, 'captured_types) on_args
+  type ('context, 'f_in, 'f_out, 'captured_types, 'markers, 'value) func_arg =
+    { eat_func_arg: ('context, 'f_in, 'f_out, 'captured_types, 'value) on_args
     ; marker_static_checker: 'markers -> bool }
 
-  type ('context, 'f) matcher =
-    { on_objc_cpp: 'context -> objc_cpp -> FuncArg.t list -> 'f option
-    ; on_c: 'context -> c -> FuncArg.t list -> 'f option
-    ; on_java: 'context -> java -> FuncArg.t list -> 'f option }
+  type ('context, 'f, 'value) matcher =
+    { on_objc_cpp: 'context -> objc_cpp -> 'value FuncArg.t list -> 'f option
+    ; on_c: 'context -> c -> 'value FuncArg.t list -> 'f option
+    ; on_java: 'context -> java -> 'value FuncArg.t list -> 'f option }
 
-  type ('context, 'f) pre_result =
+  type ('context, 'f, 'value) pre_result =
     | DoesNotMatch
     | Matches of 'f
-    | RetryWith of ('context, 'f) matcher
+    | RetryWith of ('context, 'f, 'value) matcher
 
   let pre_bind_opt opt ~f = match opt with None -> DoesNotMatch | Some x -> f x
 
   let pre_map_opt opt ~f = match opt with None -> DoesNotMatch | Some x -> Matches (f x)
 
-  type ('context, 'f_in, 'f_out, 'captured_types) func_args_end =
-       on_args:('context, 'f_in, 'f_out, 'captured_types) on_args
+  type ('context, 'f_in, 'f_out, 'captured_types, 'value) func_args_end =
+       on_args:('context, 'f_in, 'f_out, 'captured_types, 'value) on_args
     -> 'context
-    -> FuncArg.t list
+    -> 'value FuncArg.t list
     -> 'f_in * 'captured_types
-    -> ('context, 'f_out) pre_result
+    -> ('context, 'f_out, 'value) pre_result
 
-  type ('context, 'f_in, 'f_out) all_args_matcher =
-    { on_objc_cpp: 'context -> 'f_in -> objc_cpp -> FuncArg.t list -> ('context, 'f_out) pre_result
-    ; on_c: 'context -> 'f_in -> c -> FuncArg.t list -> ('context, 'f_out) pre_result
-    ; on_java: 'context -> 'f_in -> java -> FuncArg.t list -> ('context, 'f_out) pre_result }
+  type ('context, 'f_in, 'f_out, 'value) all_args_matcher =
+    { on_objc_cpp:
+           'context
+        -> 'f_in
+        -> objc_cpp
+        -> 'value FuncArg.t list
+        -> ('context, 'f_out, 'value) pre_result
+    ; on_c: 'context -> 'f_in -> c -> 'value FuncArg.t list -> ('context, 'f_out, 'value) pre_result
+    ; on_java:
+        'context -> 'f_in -> java -> 'value FuncArg.t list -> ('context, 'f_out, 'value) pre_result
+    }
 
-  type ('context, 'f) dispatcher = 'context -> Typ.Procname.t -> FuncArg.t list -> 'f option
+  type ('context, 'f, 'value) dispatcher =
+    'context -> Typ.Procname.t -> 'value FuncArg.t list -> 'f option
 
   let args_begin :
-         ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, non_empty) path_matcher
-      -> ('context, 'f_in, 'f_out, 'f_out, 'captured_types, 'markers) args_matcher =
+         ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, non_empty, 'value) path_matcher
+      -> ('context, 'f_in, 'f_out, 'f_out, 'captured_types, 'markers, 'value) args_matcher =
     let on_args _context _capt f_args = Some f_args in
     fun m ->
       let {on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}; get_markers} = m in
@@ -637,9 +710,9 @@ module MakeCall (Val : VALUE) = struct
 
 
   let args_cons :
-         ('context, 'f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
-      -> ('context, 'f_interm, 'f_out, 'captured_types, 'markers) func_arg
-      -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher =
+         ('context, 'f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers, 'value) args_matcher
+      -> ('context, 'f_interm, 'f_out, 'captured_types, 'markers, 'value) func_arg
+      -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers, 'value) args_matcher =
    fun m func_arg ->
     let {on_proc; on_args; markers} = m in
     let {marker_static_checker; eat_func_arg} = func_arg in
@@ -651,9 +724,9 @@ module MakeCall (Val : VALUE) = struct
 
 
   let args_end :
-         ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
-      -> ('context, 'f_proc_out, 'f_out, 'captured_types) func_args_end
-      -> ('context, 'f_in, 'f_out) all_args_matcher =
+         ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers, 'value) args_matcher
+      -> ('context, 'f_proc_out, 'f_out, 'captured_types, 'value) func_args_end
+      -> ('context, 'f_in, 'f_out, 'value) all_args_matcher =
    fun m func_args_end ->
     let {on_proc= {on_c; on_java; on_objc_cpp}; on_args} = m in
     let on_c context f c args =
@@ -669,9 +742,11 @@ module MakeCall (Val : VALUE) = struct
 
 
   let make_matcher :
-      ('context, 'f_in, 'f_out) all_args_matcher -> 'f_in -> ('context, 'f_out) matcher =
+         ('context, 'f_in, 'f_out, 'value) all_args_matcher
+      -> 'f_in
+      -> ('context, 'f_out, 'value) matcher =
    fun m f ->
-    let ({on_c; on_java; on_objc_cpp} : (_, _, _) all_args_matcher) = m in
+    let ({on_c; on_java; on_objc_cpp} : (_, _, _, _) all_args_matcher) = m in
     let on_objc_cpp context objc_cpp args =
       match on_objc_cpp context f objc_cpp args with
       | DoesNotMatch ->
@@ -703,7 +778,7 @@ module MakeCall (Val : VALUE) = struct
 
 
   (** Simple implementation of a dispatcher, could be optimized later *)
-  let make_dispatcher : ('context, 'f) matcher list -> ('context, 'f) dispatcher =
+  let make_dispatcher : ('context, 'f, 'value) matcher list -> ('context, 'f, 'value) dispatcher =
    fun matchers ->
     let on_objc_cpp context objc_cpp args =
       List.find_map matchers ~f:(fun (matcher : _ matcher) ->
@@ -728,7 +803,9 @@ module MakeCall (Val : VALUE) = struct
 
 
   let merge_dispatchers :
-      ('context, 'f) dispatcher -> ('context, 'f) dispatcher -> ('context, 'f) dispatcher =
+         ('context, 'f, 'value) dispatcher
+      -> ('context, 'f, 'value) dispatcher
+      -> ('context, 'f, 'value) dispatcher =
    fun dispatcher1 dispatcher2 context procname args ->
     match dispatcher1 context procname args with
     | Some _ as r ->
@@ -742,7 +819,7 @@ module MakeCall (Val : VALUE) = struct
   let no_marker_checker _markers = true
 
   (** Matches any arg *)
-  let match_any_arg : (_, _, _) one_arg_matcher =
+  let match_any_arg : (_, _, _, _) one_arg_matcher =
     let match_arg _context _capt _arg = true in
     {match_arg; marker_static_checker= no_marker_checker}
 
@@ -751,7 +828,7 @@ module MakeCall (Val : VALUE) = struct
          ('markers -> 'marker)
       -> ('captured_types -> 'marker mtyp)
       -> 'marker
-      -> ('context, 'captured_types, 'markers) one_arg_matcher =
+      -> ('context, 'captured_types, 'markers, 'value) one_arg_matcher =
    fun get_m get_c marker ->
     let marker_static_checker markers = Poly.equal marker (get_m markers) in
     let match_arg _context capt arg = Typ.equal (FuncArg.typ arg) (get_c capt) in
@@ -759,31 +836,32 @@ module MakeCall (Val : VALUE) = struct
 
 
   (** Matches first captured type *)
-  let match_typ1 : 'marker -> ('context, 'marker mtyp * _, 'marker * _) one_arg_matcher =
+  let match_typ1 : 'marker -> ('context, 'marker mtyp * _, 'marker * _, _) one_arg_matcher =
     let pos1 (x, _) = x in
     fun marker -> mk_match_typ_nth pos1 pos1 marker
 
 
   (** Matches second captured type *)
-  let match_typ2 : 'marker -> ('context, _ * ('marker mtyp * _), _ * ('marker * _)) one_arg_matcher
-      =
+  let match_typ2 :
+      'marker -> ('context, _ * ('marker mtyp * _), _ * ('marker * _), _) one_arg_matcher =
     let pos2 (_, (x, _)) = x in
     fun marker -> mk_match_typ_nth pos2 pos2 marker
 
 
   (** Matches third captured type *)
   let match_typ3 :
-      'marker -> ('context, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg_matcher =
+         'marker
+      -> ('context, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _)), 'value) one_arg_matcher =
     let pos3 (_, (_, (x, _))) = x in
     fun marker -> mk_match_typ_nth pos3 pos3 marker
 
 
   (** Matches the type matched by the given path_matcher *)
   let match_typ :
-      ('context, _, _, unit, unit, unit, non_empty) path_matcher -> ('context, _, _) one_arg_matcher
-      =
+         ('context, _, _, unit, unit, unit, non_empty, 'value) path_matcher
+      -> ('context, _, _, _) one_arg_matcher =
    fun m ->
-    let ({on_templated_name} : (_, _, _, unit, unit, unit, non_empty) path_matcher) = m in
+    let ({on_templated_name} : (_, _, _, unit, unit, unit, non_empty, 'value) path_matcher) = m in
     let rec match_typ context typ =
       match typ with
       | {Typ.desc= Tstruct name} ->
@@ -807,35 +885,35 @@ module MakeCall (Val : VALUE) = struct
   (* Function argument capture *)
 
   (** Do not capture this argument *)
-  let no_capture : (_, _, 'f, 'f) arg_capture =
+  let no_capture : (_, _, 'f, 'f, _) arg_capture =
     let get_captured_value _arg = () in
     let do_capture f _v = f in
     {get_captured_value; do_capture}
 
 
   (** Capture the argument *)
-  let capture_arg : (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+  let capture_arg : ('value FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'value) arg_capture =
     let get_captured_value arg = arg in
     let do_capture f v = f v in
     {get_captured_value; do_capture}
 
 
   (** Capture the argument value *)
-  let capture_arg_val : (Val.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+  let capture_arg_val : ('value, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'value) arg_capture =
     let get_captured_value arg = FuncArg.value arg in
     let do_capture f v = f v in
     {get_captured_value; do_capture}
 
 
   (** Capture the argument expression *)
-  let capture_arg_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+  let capture_arg_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _) arg_capture =
     let get_captured_value arg = FuncArg.exp arg in
     let do_capture f v = f v in
     {get_captured_value; do_capture}
 
 
   (** Capture the argument local var or fail *)
-  let capture_arg_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+  let capture_arg_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _) arg_capture =
     let get_captured_value arg = FuncArg.get_var_exn arg in
     let do_capture f v = f v in
     {get_captured_value; do_capture}
@@ -854,9 +932,9 @@ module MakeCall (Val : VALUE) = struct
 
 
   let make_arg :
-         ('arg_in, 'arg_out, 'f_in, 'f_out) arg_preparer
-      -> ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, _, _) one_arg
-      -> ('context, 'f_in, 'f_out, _, _) func_arg =
+         ('arg_in, 'arg_out, 'f_in, 'f_out, 'value) arg_preparer
+      -> ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, _, _, 'value) one_arg
+      -> ('context, 'f_in, 'f_out, _, _, 'value) func_arg =
    fun arg_preparer one_arg ->
     let {on_empty; wrapper} = arg_preparer in
     let {one_arg_matcher; capture} = one_arg in
@@ -874,23 +952,24 @@ module MakeCall (Val : VALUE) = struct
     {eat_func_arg; marker_static_checker}
 
 
-  let any_arg : ('context, unit, _, 'f, 'f, _, _) one_arg =
+  let any_arg : ('context, unit, _, 'f, 'f, _, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= no_capture}
 
 
-  let capt_arg : ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+  let capt_arg :
+      ('context, 'value FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _, 'value) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg}
 
 
-  let capt_value : ('context, Val.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+  let capt_value : ('context, 'value, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _, 'value) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_val}
 
 
-  let capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+  let capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_exp}
 
 
-  let capt_var_exn : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+  let capt_var_exn : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_var_exn}
 
 
@@ -913,36 +992,36 @@ module MakeCall (Val : VALUE) = struct
     {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= capture_arg_exp}
 
 
-  let typ1 : 'marker -> ('context, unit, _, 'f, 'f, _, _) one_arg =
+  let typ1 : 'marker -> ('context, unit, _, 'f, 'f, _, _, _) one_arg =
    fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}
 
 
-  let typ2 : 'marker -> ('context, unit, _, 'f, 'f, _, _) one_arg =
+  let typ2 : 'marker -> ('context, unit, _, 'f, 'f, _, _, _) one_arg =
    fun m -> {one_arg_matcher= match_typ2 m; capture= no_capture}
 
 
-  let typ3 : 'marker -> ('context, unit, _, 'f, 'f, _, _) one_arg =
+  let typ3 : 'marker -> ('context, unit, _, 'f, 'f, _, _, _) one_arg =
    fun m -> {one_arg_matcher= match_typ3 m; capture= no_capture}
 
 
   (* Function args end *)
 
   (** Matches if there is no function arguments left *)
-  let no_args_left : ('context, _, _, _) func_args_end =
+  let no_args_left : ('context, _, _, _, _) func_args_end =
     let match_empty_args = function Some (f, []) -> Matches f | _ -> DoesNotMatch in
     fun ~on_args context args (f, capt) -> on_args context capt (f, args) |> match_empty_args
 
 
   (** Matches any function arguments *)
-  let any_func_args : ('context, _, _, _) func_args_end =
+  let any_func_args : ('context, _, _, _, _) func_args_end =
    fun ~on_args context args (f, capt) -> on_args context capt (f, args) |> pre_map_opt ~f:fst
 
 
   (** If [func_args_end1] does not match, use [func_args_end2] *)
   let alternative_args_end :
-         ('context, 'f_in, 'f_out, 'captured_types) func_args_end
-      -> ('context, 'f_in, 'f_out, 'captured_types) func_args_end
-      -> ('context, 'f_in, 'f_out, 'captured_types) func_args_end =
+         ('context, 'f_in, 'f_out, 'captured_types, 'value) func_args_end
+      -> ('context, 'f_in, 'f_out, 'captured_types, 'value) func_args_end
+      -> ('context, 'f_in, 'f_out, 'captured_types, 'value) func_args_end =
    fun func_args_end1 func_args_end2 ~on_args context args f_capt ->
     match func_args_end1 ~on_args context args f_capt with
     | DoesNotMatch ->
@@ -952,13 +1031,14 @@ module MakeCall (Val : VALUE) = struct
 
 
   (** Retries matching with another matcher *)
-  let args_end_retry : _ matcher -> ('context, _, _, _) func_args_end =
+  let args_end_retry : _ matcher -> ('context, _, _, _, _) func_args_end =
    fun m ~on_args:_ _context _args _f_capt -> RetryWith m
 
 
   (** Retries matching with another matcher if the function does not have the
     exact number/types of args *)
-  let exact_args_or_retry : ('context, 'f) matcher -> ('context, _, _, _) func_args_end =
+  let exact_args_or_retry :
+      ('context, 'f, 'value) matcher -> ('context, _, _, _, 'value) func_args_end =
    fun m -> alternative_args_end no_args_left (args_end_retry m)
 
 
@@ -1023,24 +1103,24 @@ module type NameCommon = sig
   include Common
 
   val ( >--> ) :
-       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, _, 'value) templ_matcher
     -> 'f_in
-    -> ('context, 'f_out) matcher
+    -> ('context, 'f_out, 'value) matcher
 
   val ( <>--> ) :
-       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, 'value) name_matcher
     -> 'f_in
-    -> ('context, 'f_out) matcher
+    -> ('context, 'f_out, 'value) matcher
 
   val ( &--> ) :
-       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, 'value) name_matcher
     -> 'f_in
-    -> ('context, 'f_out) matcher
+    -> ('context, 'f_out, 'value) matcher
 
   val ( &::.*--> ) :
-       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher
+       ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, 'value) name_matcher
     -> 'f_in
-    -> ('context, 'f_out) matcher
+    -> ('context, 'f_out, 'value) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
         accepts ALL function arguments, binds the function *)
 end
@@ -1048,17 +1128,17 @@ end
 module NameCommon = struct
   include Common
 
-  type ('context, 'f) matcher =
+  type ('context, 'f, 'value) matcher =
     { on_templated_name: 'context -> templated_name -> 'f option
     ; on_objc_cpp: 'context -> objc_cpp -> 'f option }
 
   let make_matcher :
-         ('context, 'f_in, 'f_out, _, _, _, non_empty) path_matcher
+         ('context, 'f_in, 'f_out, _, _, _, non_empty, 'value) path_matcher
       -> 'f_in
-      -> ('context, 'f_out) matcher =
+      -> ('context, 'f_out, 'value) matcher =
    fun m f ->
     let ({on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}}
-          : ('context, 'f_in, 'f_out, _, _, _, non_empty) path_matcher) =
+          : ('context, 'f_in, 'f_out, _, _, _, non_empty, 'value) path_matcher) =
       m
     in
     let on_templated_name context templated_name =
@@ -1082,9 +1162,9 @@ end
 module ProcName = struct
   include NameCommon
 
-  type ('context, 'f) dispatcher = 'context -> Typ.Procname.t -> 'f option
+  type ('context, 'f, 'value) dispatcher = 'context -> Typ.Procname.t -> 'f option
 
-  let make_dispatcher : ('context, 'f) matcher list -> ('context, 'f) dispatcher =
+  let make_dispatcher : ('context, 'f, 'value) matcher list -> ('context, 'f, 'value) dispatcher =
    fun matchers ->
     let on_objc_cpp context objc_cpp =
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_objc_cpp context objc_cpp)
@@ -1117,9 +1197,9 @@ end
 module TypName = struct
   include NameCommon
 
-  type ('context, 'f) dispatcher = 'context -> Typ.name -> 'f option
+  type ('context, 'f, 'value) dispatcher = 'context -> Typ.name -> 'f option
 
-  let make_dispatcher : ('context, 'f) matcher list -> ('context, 'f) dispatcher =
+  let make_dispatcher : ('context, 'f, 'value) matcher list -> ('context, 'f, 'value) dispatcher =
    fun matchers context typname ->
     let templated_name = templated_name_of_class_name typname in
     List.find_map matchers ~f:(fun (matcher : _ matcher) ->
