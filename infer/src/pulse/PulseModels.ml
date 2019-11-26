@@ -70,7 +70,7 @@ module Cplusplus = struct
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
     match List.rev actuals with
-    | ProcnameDispatcher.Call.FuncArg.{value= address, hist} :: _ ->
+    | ProcnameDispatcher.Call.FuncArg.{arg_payload= address, hist} :: _ ->
         Ok [PulseOperations.write_id ret_id (address, event :: hist) astate]
     | _ ->
         Ok [PulseOperations.havoc_id ret_id [event] astate]
@@ -127,7 +127,8 @@ module StdFunction = struct
         (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
     | Some callee_proc_name ->
         let actuals =
-          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{value; typ} -> (value, typ))
+          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+              (arg_payload, typ) )
         in
         PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals astate
 end
@@ -205,41 +206,43 @@ module ProcNameDispatcher = struct
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Typ.Procname.get_method builtin) in
     make_dispatcher
-      [ +match_builtin BuiltinDecl.free <>$ capt_value $--> C.free
-      ; +match_builtin BuiltinDecl.__delete <>$ capt_value $--> Cplusplus.delete
+      [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
+      ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
       ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
       ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
-      ; +match_builtin BuiltinDecl.__cast <>$ capt_value $+...$--> Misc.id_first_arg
+      ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
       ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
-      ; -"std" &:: "basic_string" &:: "data" <>$ capt_value $--> StdBasicString.data
-      ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_value $--> StdBasicString.destructor
-      ; -"std" &:: "function" &:: "operator()" $ capt_value $++$--> StdFunction.operator_call
-      ; -"std" &:: "function" &:: "operator=" $ capt_value $+ capt_value
+      ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
+      ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
+        $--> StdBasicString.destructor
+      ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload $++$--> StdFunction.operator_call
+      ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
         $--> Misc.shallow_copy "std::function::operator="
       ; -"std" &:: "integral_constant" < any_typ &+ capt_int
         >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
         <>--> Misc.return_int
-      ; -"std" &:: "vector" &:: "assign" <>$ capt_value
+      ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
         $+...$--> StdVector.invalidate_references Assign
-      ; -"std" &:: "vector" &:: "clear" <>$ capt_value $--> StdVector.invalidate_references Clear
-      ; -"std" &:: "vector" &:: "emplace" $ capt_value
+      ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
+        $--> StdVector.invalidate_references Clear
+      ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
         $+...$--> StdVector.invalidate_references Emplace
-      ; -"std" &:: "vector" &:: "emplace_back" $ capt_value
+      ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
         $+...$--> StdVector.invalidate_references EmplaceBack
-      ; -"std" &:: "vector" &:: "insert" <>$ capt_value
+      ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
         $+...$--> StdVector.invalidate_references Insert
-      ; -"std" &:: "vector" &:: "operator[]" <>$ capt_value $+ capt_value
+      ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdVector.at ~desc:"std::vector::at()"
-      ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_value
+      ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
         $--> StdVector.invalidate_references ShrinkToFit
-      ; -"std" &:: "vector" &:: "push_back" <>$ capt_value $+...$--> StdVector.push_back
-      ; -"std" &:: "vector" &:: "reserve" <>$ capt_value $+...$--> StdVector.reserve
+      ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
       ; +PatternMatch.implements_collection
-        &:: "get" <>$ capt_value $+ capt_value
+        &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdVector.at ~desc:"Collection.get()" ]
 end
 

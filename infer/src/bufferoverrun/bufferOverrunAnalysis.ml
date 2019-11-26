@@ -364,7 +364,7 @@ module TransferFunctions = struct
         else
           let fun_arg_list =
             List.map params ~f:(fun (exp, typ) ->
-                ProcnameDispatcher.Call.FuncArg.{exp; typ; value= ()} )
+                ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
           in
           match Models.Call.dispatch tenv callee_pname fun_arg_list with
           | Some {Models.exec} ->

@@ -105,7 +105,8 @@ module PulseTransferFunctions = struct
         PulseOperations.eval call_loc actual_exp astate
         >>| fun (astate, actual_evaled) ->
         ( astate
-        , ProcnameDispatcher.Call.FuncArg.{exp= actual_exp; value= actual_evaled; typ= actual_typ}
+        , ProcnameDispatcher.Call.FuncArg.
+            {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
           :: rev_func_args ) )
     >>= fun (astate, rev_func_args) ->
     let func_args = List.rev rev_func_args in
@@ -126,7 +127,9 @@ module PulseTransferFunctions = struct
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let only_actuals_evaled =
-            List.map ~f:(fun ProcnameDispatcher.Call.FuncArg.{value; typ} -> (value, typ)) func_args
+            List.map
+              ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} -> (arg_payload, typ))
+              func_args
           in
           let r =
             interprocedural_call summary ret call_exp only_actuals_evaled flags call_loc astate
