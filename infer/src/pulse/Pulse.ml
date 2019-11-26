@@ -101,16 +101,18 @@ module PulseTransferFunctions = struct
   let dispatch_call tenv summary ret call_exp actuals call_loc flags astate =
     (* evaluate all actuals *)
     List.fold_result actuals ~init:(astate, [])
-      ~f:(fun (astate, rev_actuals_evaled) (actual_exp, actual_typ) ->
+      ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
         PulseOperations.eval call_loc actual_exp astate
         >>| fun (astate, actual_evaled) ->
-        (astate, (actual_evaled, actual_typ) :: rev_actuals_evaled) )
-    >>= fun (astate, rev_actuals_evaled) ->
-    let actuals_evaled = List.rev rev_actuals_evaled in
+        ( astate
+        , ProcnameDispatcher.Call.FuncArg.{exp= actual_exp; value= actual_evaled; typ= actual_typ}
+          :: rev_func_args ) )
+    >>= fun (astate, rev_func_args) ->
+    let func_args = List.rev rev_func_args in
     let model =
       match proc_name_of_call call_exp with
       | Some callee_pname ->
-          PulseModels.dispatch tenv callee_pname
+          PulseModels.dispatch tenv callee_pname func_args
       | None ->
           (* function pointer, etc.: skip for now *)
           None
@@ -120,10 +122,15 @@ module PulseTransferFunctions = struct
       match model with
       | Some model ->
           L.d_printfln "Found model for call@\n" ;
-          model ~caller_summary:summary call_loc ~ret ~actuals:actuals_evaled astate
+          model ~caller_summary:summary call_loc ~ret astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-          let r = interprocedural_call summary ret call_exp actuals_evaled flags call_loc astate in
+          let only_actuals_evaled =
+            List.map ~f:(fun ProcnameDispatcher.Call.FuncArg.{value; typ} -> (value, typ)) func_args
+          in
+          let r =
+            interprocedural_call summary ret call_exp only_actuals_evaled flags call_loc astate
+          in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
     in

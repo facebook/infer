@@ -11,10 +11,13 @@ type exec_fun =
      caller_summary:Summary.t
   -> Location.t
   -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t list PulseOperations.access_result
 
 type model = exec_fun
 
-val dispatch : Tenv.t -> Typ.Procname.t -> model option
+val dispatch :
+     Tenv.t
+  -> Typ.Procname.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> model option

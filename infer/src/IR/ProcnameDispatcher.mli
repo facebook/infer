@@ -242,6 +242,12 @@ module Call : sig
     ('context, 'f_in, _, 'f_out, 'value) args_matcher -> 'f_in -> ('context, 'f_out, 'value) matcher
   (** Ends function arguments with eats-ALL and binds the function *)
 
+  val ( $++$--> ) :
+       ('context, 'f_in, _, 'value FuncArg.t list -> 'f_out, 'value) args_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'value) matcher
+  (** Ends and captures ALL function arguments as a list and binds the function *)
+
   val ( >$$--> ) :
        ('context, 'f_in, 'f_out, _, 'value) templ_matcher
     -> 'f_in
@@ -263,6 +269,13 @@ module Call : sig
   val ( <>--> ) :
     ('context, 'f_in, 'f_out, 'value) name_matcher -> 'f_in -> ('context, 'f_out, 'value) matcher
   (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the function *)
+
+  val ( &++> ) :
+       ('context, 'f_in, 'value FuncArg.t list -> 'f_out, 'value) name_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'value) matcher
+  (** After a name, accepts ALL template arguments, captures ALL function arguments as a list, binds
+     the function *)
 
   val ( &::.*--> ) :
     ('context, 'f_in, 'f_out, 'value) name_matcher -> 'f_in -> ('context, 'f_out, 'value) matcher

@@ -9,38 +9,35 @@ open Result.Monad_infix
 open PulseBasicInterface
 open PulseDomainInterface
 
+type arg_payload = AbstractValue.t * ValueHistory.t
+
 type exec_fun =
      caller_summary:Summary.t
   -> Location.t
   -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t list PulseOperations.access_result
 
 type model = exec_fun
 
 module Misc = struct
-  let shallow_copy model_desc : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+  let shallow_copy model_desc dest_pointer_hist src_pointer_hist : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
-    ( match actuals with
-    | [(dest_pointer_hist, _); (src_pointer_hist, _)] ->
-        PulseOperations.eval_access location src_pointer_hist Dereference astate
-        >>= fun (astate, obj) ->
-        PulseOperations.shallow_copy location obj astate
-        >>= fun (astate, obj_copy) ->
-        PulseOperations.write_deref location ~ref:dest_pointer_hist
-          ~obj:(fst obj_copy, event :: snd obj_copy)
-          astate
-    | _ ->
-        Ok astate )
+    PulseOperations.eval_access location src_pointer_hist Dereference astate
+    >>= fun (astate, obj) ->
+    PulseOperations.shallow_copy location obj astate
+    >>= fun (astate, obj_copy) ->
+    PulseOperations.write_deref location ~ref:dest_pointer_hist
+      ~obj:(fst obj_copy, event :: snd obj_copy)
+      astate
     >>| fun astate -> [PulseOperations.havoc_id ret_id [event] astate]
 
 
-  let early_exit : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ _ -> Ok []
+  let early_exit : model = fun ~caller_summary:_ _ ~ret:_ _ -> Ok []
 
   let return_int : Int64.t -> model =
-   fun i64 ~caller_summary:_ location ~ret:(ret_id, _) ~actuals:_ astate ->
+   fun i64 ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
       Memory.add_attribute ret_addr
@@ -50,43 +47,30 @@ module Misc = struct
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
 
-  let skip : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ astate -> Ok [astate]
+  let skip : model = fun ~caller_summary:_ _ ~ret:_ astate -> Ok [astate]
 
-  let id_first_arg : model =
-   fun ~caller_summary:_ _ ~ret ~actuals astate ->
-    match actuals with
-    | (arg_access_hist, _) :: _ ->
-        Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
-    | _ ->
-        Ok [astate]
+  let id_first_arg arg_access_hist : model =
+   fun ~caller_summary:_ _ ~ret astate ->
+    Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
 end
 
 module C = struct
-  let free : model =
-   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
-    match actuals with
-    | [(deleted_access, _)] ->
-        PulseOperations.invalidate location Invalidation.CFree deleted_access astate >>| List.return
-    | _ ->
-        Ok [astate]
+  let free deleted_access : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    PulseOperations.invalidate location Invalidation.CFree deleted_access astate >>| List.return
 end
 
 module Cplusplus = struct
-  let delete : model =
-   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
-    match actuals with
-    | [(deleted_access, _)] ->
-        PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
-        >>| List.return
-    | _ ->
-        Ok [astate]
+  let delete deleted_access : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate >>| List.return
 
 
-  let placement_new : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+  let placement_new actuals : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
     match List.rev actuals with
-    | ((address, hist), _) :: _ ->
+    | ProcnameDispatcher.Call.FuncArg.{value= address, hist} :: _ ->
         Ok [PulseOperations.write_id ret_id (address, event :: hist) astate]
     | _ ->
         Ok [PulseOperations.havoc_id ret_id [event] astate]
@@ -105,57 +89,47 @@ module StdBasicString = struct
     PulseOperations.eval_access location bstring internal_string_access astate
 
 
-  let data : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+  let data this_hist : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
-    match actuals with
-    | [(this_hist, _)] ->
-        to_internal_string location this_hist astate
-        >>= fun (astate, string_addr_hist) ->
-        PulseOperations.eval_access location string_addr_hist Dereference astate
-        >>| fun (astate, (string, hist)) ->
-        [PulseOperations.write_id ret_id (string, event :: hist) astate]
-    | _ ->
-        Ok [PulseOperations.havoc_id ret_id [event] astate]
+    to_internal_string location this_hist astate
+    >>= fun (astate, string_addr_hist) ->
+    PulseOperations.eval_access location string_addr_hist Dereference astate
+    >>| fun (astate, (string, hist)) ->
+    [PulseOperations.write_id ret_id (string, event :: hist) astate]
 
 
-  let destructor : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+  let destructor this_hist : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
     let model = CallEvent.Model "std::basic_string::~basic_string()" in
     let call_event = ValueHistory.Call {f= model; location; in_call= []} in
-    match actuals with
-    | [(this_hist, _)] ->
-        to_internal_string location this_hist astate
-        >>= fun (astate, (string_addr, string_hist)) ->
-        let string_addr_hist = (string_addr, call_event :: string_hist) in
-        PulseOperations.invalidate_deref location CppDelete string_addr_hist astate
-        >>= fun astate ->
-        PulseOperations.invalidate location CppDelete string_addr_hist astate
-        >>| fun astate -> [astate]
-    | _ ->
-        Ok [PulseOperations.havoc_id ret_id [call_event] astate]
+    to_internal_string location this_hist astate
+    >>= fun (astate, (string_addr, string_hist)) ->
+    let string_addr_hist = (string_addr, call_event :: string_hist) in
+    PulseOperations.invalidate_deref location CppDelete string_addr_hist astate
+    >>= fun astate ->
+    PulseOperations.invalidate location CppDelete string_addr_hist astate >>| fun astate -> [astate]
 end
 
 module StdFunction = struct
-  let operator_call : model =
-   fun ~caller_summary location ~ret ~actuals astate ->
+  let operator_call lambda_ptr_hist actuals : model =
+   fun ~caller_summary location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
-    match actuals with
-    | [] ->
-        Ok (havoc_ret ret astate)
-    | (lambda_ptr_hist, _) :: actuals -> (
-        PulseOperations.eval_access location lambda_ptr_hist Dereference astate
-        >>= fun (astate, (lambda, _)) ->
-        PulseOperations.Closures.check_captured_addresses location lambda astate
-        >>= fun astate ->
-        match PulseAbductiveDomain.Memory.get_closure_proc_name lambda astate with
-        | None ->
-            (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
-        | Some callee_proc_name ->
-            PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals astate )
+    PulseOperations.eval_access location lambda_ptr_hist Dereference astate
+    >>= fun (astate, (lambda, _)) ->
+    PulseOperations.Closures.check_captured_addresses location lambda astate
+    >>= fun astate ->
+    match PulseAbductiveDomain.Memory.get_closure_proc_name lambda astate with
+    | None ->
+        (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
+    | Some callee_proc_name ->
+        let actuals =
+          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{value; typ} -> (value, typ))
+        in
+        PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals astate
 end
 
 module StdVector = struct
@@ -187,118 +161,86 @@ module StdVector = struct
     >>= PulseOperations.havoc_field location vector internal_array trace
 
 
-  let invalidate_references vector_f : model =
-   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
-    match actuals with
-    | (vector, _) :: _ ->
-        let crumb =
-          ValueHistory.Call
-            { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
-            ; location
-            ; in_call= [] }
-        in
-        reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
-    | _ ->
-        Ok [astate]
+  let invalidate_references vector_f vector : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    let crumb =
+      ValueHistory.Call
+        { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
+        ; location
+        ; in_call= [] }
+    in
+    reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
 
 
-  let at ~desc : model =
-   fun ~caller_summary:_ location ~ret ~actuals astate ->
+  let at ~desc vector index : model =
+   fun ~caller_summary:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    match actuals with
-    | [(vector, _); (index, _)] ->
-        element_of_internal_array location vector (fst index) astate
-        >>| fun (astate, (addr, hist)) ->
-        [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
-    | _ ->
-        Ok [PulseOperations.havoc_id (fst ret) [event] astate]
+    element_of_internal_array location vector (fst index) astate
+    >>| fun (astate, (addr, hist)) ->
+    [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
 
 
-  let reserve : model =
-   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
-    match actuals with
-    | [(vector, _); _value] ->
-        let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
-        reallocate_internal_array [crumb] vector Reserve location astate
-        >>| PulseAbductiveDomain.Memory.std_vector_reserve (fst vector)
-        >>| List.return
-    | _ ->
-        Ok [astate]
+  let reserve vector : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
+    reallocate_internal_array [crumb] vector Reserve location astate
+    >>| PulseAbductiveDomain.Memory.std_vector_reserve (fst vector)
+    >>| List.return
 
 
-  let push_back : model =
-   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
-    match actuals with
-    | [(vector, _); _value] ->
-        let crumb =
-          ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []}
-        in
-        if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
-          (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
-             (a perfect analysis would also make sure we don't exceed the reserved size) *)
-          Ok [astate]
-        else
-          (* simulate a re-allocation of the underlying array every time an element is added *)
-          reallocate_internal_array [crumb] vector PushBack location astate >>| List.return
-    | _ ->
-        Ok [astate]
+  let push_back vector : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    let crumb = ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []} in
+    if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
+      (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
+         (a perfect analysis would also make sure we don't exceed the reserved size) *)
+      Ok [astate]
+    else
+      (* simulate a re-allocation of the underlying array every time an element is added *)
+      reallocate_internal_array [crumb] vector PushBack location astate >>| List.return
 end
 
 module ProcNameDispatcher = struct
-  let dispatch : (Tenv.t, model, unit) ProcnameDispatcher.ProcName.dispatcher =
-    let open ProcnameDispatcher.ProcName in
+  let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
+    let open ProcnameDispatcher.Call in
+    let match_builtin builtin _ s = String.equal s (Typ.Procname.get_method builtin) in
     make_dispatcher
-      [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
+      [ +match_builtin BuiltinDecl.free <>$ capt_value $--> C.free
+      ; +match_builtin BuiltinDecl.__delete <>$ capt_value $--> Cplusplus.delete
+      ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
+      ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
+      ; +match_builtin BuiltinDecl.__cast <>$ capt_value $+...$--> Misc.id_first_arg
+      ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
+      ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+      ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
-      ; -"std" &:: "basic_string" &:: "data" &--> StdBasicString.data
-      ; -"std" &:: "basic_string" &:: "~basic_string" &--> StdBasicString.destructor
-      ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
-      ; -"std" &:: "function" &:: "operator=" &--> Misc.shallow_copy "std::function::operator="
+      ; -"std" &:: "basic_string" &:: "data" <>$ capt_value $--> StdBasicString.data
+      ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_value $--> StdBasicString.destructor
+      ; -"std" &:: "function" &:: "operator()" $ capt_value $++$--> StdFunction.operator_call
+      ; -"std" &:: "function" &:: "operator=" $ capt_value $+ capt_value
+        $--> Misc.shallow_copy "std::function::operator="
       ; -"std" &:: "integral_constant" < any_typ &+ capt_int
         >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-        &--> Misc.return_int
-      ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
-      ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
-      ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace
-      ; -"std" &:: "vector" &:: "emplace_back" &--> StdVector.invalidate_references EmplaceBack
-      ; -"std" &:: "vector" &:: "insert" &--> StdVector.invalidate_references Insert
-      ; -"std" &:: "vector" &:: "operator[]" &--> StdVector.at ~desc:"std::vector::at()"
-      ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back
-      ; -"std" &:: "vector" &:: "reserve" &--> StdVector.reserve
-      ; -"std" &:: "vector" &:: "shrink_to_fit" &--> StdVector.invalidate_references ShrinkToFit
-      ; +PatternMatch.implements_collection &:: "get" <>--> StdVector.at ~desc:"Collection.get()"
-      ; -"__cast" <>--> Misc.id_first_arg ]
+        <>--> Misc.return_int
+      ; -"std" &:: "vector" &:: "assign" <>$ capt_value
+        $+...$--> StdVector.invalidate_references Assign
+      ; -"std" &:: "vector" &:: "clear" <>$ capt_value $--> StdVector.invalidate_references Clear
+      ; -"std" &:: "vector" &:: "emplace" $ capt_value
+        $+...$--> StdVector.invalidate_references Emplace
+      ; -"std" &:: "vector" &:: "emplace_back" $ capt_value
+        $+...$--> StdVector.invalidate_references EmplaceBack
+      ; -"std" &:: "vector" &:: "insert" <>$ capt_value
+        $+...$--> StdVector.invalidate_references Insert
+      ; -"std" &:: "vector" &:: "operator[]" <>$ capt_value $+ capt_value
+        $--> StdVector.at ~desc:"std::vector::at()"
+      ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_value
+        $--> StdVector.invalidate_references ShrinkToFit
+      ; -"std" &:: "vector" &:: "push_back" <>$ capt_value $+...$--> StdVector.push_back
+      ; -"std" &:: "vector" &:: "reserve" <>$ capt_value $+...$--> StdVector.reserve
+      ; +PatternMatch.implements_collection
+        &:: "get" <>$ capt_value $+ capt_value
+        $--> StdVector.at ~desc:"Collection.get()" ]
 end
 
-let builtins_dispatcher =
-  let builtins =
-    [ (BuiltinDecl.__delete, Cplusplus.delete)
-    ; (BuiltinDecl.__placement_new, Cplusplus.placement_new)
-    ; (BuiltinDecl.abort, Misc.early_exit)
-    ; (BuiltinDecl.exit, Misc.early_exit)
-    ; (BuiltinDecl.free, C.free)
-    ; (BuiltinDecl.objc_cpp_throw, Misc.early_exit) ]
-  in
-  let builtins_map =
-    Hashtbl.create
-      ( module struct
-        include Typ.Procname
-
-        let hash = Caml.Hashtbl.hash
-
-        let sexp_of_t _ = assert false
-      end )
-  in
-  List.iter builtins ~f:(fun (builtin, model) ->
-      let open PolyVariantEqual in
-      assert (Hashtbl.add builtins_map ~key:builtin ~data:model = `Ok) ) ;
-  fun proc_name -> Hashtbl.find builtins_map proc_name
-
-
-let dispatch tenv proc_name =
-  match builtins_dispatcher proc_name with
-  | Some _ as result ->
-      result
-  | None ->
-      ProcNameDispatcher.dispatch tenv proc_name
+let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
