@@ -10,7 +10,9 @@
 open Apron
 open Option.Let_syntax
 
-type apron_typ = [%import: Apron.Texpr0.typ] [@@deriving equal]
+let equal_apron_typ =
+  (* Apron.Texpr1.typ is a sum of nullary constructors *)
+  Poly.equal
 
 (** Apron-managed map from variables to intervals *)
 type t = Box.t Abstract1.t

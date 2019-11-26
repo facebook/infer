@@ -15,16 +15,6 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
-type lllinkage = [%import: Llvm.Linkage.t] [@@deriving sexp]
-type llopcode = [%import: Llvm.Opcode.t] [@@deriving sexp]
-
-type llvaluekind = [%import: (Llvm.ValueKind.t[@with Opcode.t := llopcode])]
-[@@deriving sexp]
-
-let _pp_lllinkage fs l = Sexp.pp_hum fs (sexp_of_lllinkage l)
-let pp_llopcode fs l = Sexp.pp_hum fs (sexp_of_llopcode l)
-let pp_llvaluekind fs l = Sexp.pp_hum fs (sexp_of_llvaluekind l)
-
 exception Invalid_llvm of string
 
 let invalid_llvm : string -> 'a =
@@ -84,8 +74,7 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
       | ConstantExpr -> None
       | ConstantPointerNull -> None
       | _ ->
-          warn "Unexpected type %a of llv, might crash: %a" pp_llvaluekind
-            (Llvm.classify_value llv) pp_llvalue llv () ;
+          warn "Unexpected type of llv, might crash: %a" pp_llvalue llv () ;
           Some (`Mod (Llvm.global_parent llv))
     in
     match maybe_scope with
@@ -494,7 +483,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     let rand = Llvm.operand llv 0 in
     let src = xlate_type x (Llvm.type_of rand) in
     let arg = xlate_value x rand in
-    match opcode with
+    match (opcode : Llvm.Opcode.t) with
     | Trunc -> Exp.signed (Typ.bit_size_of dst) arg ~to_:dst
     | SExt -> Exp.signed (Typ.bit_size_of src) arg ~to_:dst
     | ZExt -> Exp.unsigned (Typ.bit_size_of src) arg ~to_:dst
@@ -502,7 +491,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc | FPExt | PtrToInt
      |IntToPtr | BitCast | AddrSpaceCast ->
         Exp.convert src ~to_:dst arg
-    | _ -> fail "convert: %a" pp_llopcode opcode ()
+    | _ -> fail "convert: %a" pp_llvalue llv ()
   in
   let binary (mk : ?typ:_ -> _) =
     Lazy.force check_vector ;
@@ -855,7 +844,7 @@ let rec xlate_func_name x llv =
   | GlobalIFunc -> todo "ifunc: %a" pp_llvalue llv ()
   | InlineAsm -> todo "inline asm: %a" pp_llvalue llv ()
   | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
-  | k -> todo "function kind %a in %a" pp_llvaluekind k pp_llvalue llv ()
+  | _ -> todo "function kind in %a" pp_llvalue llv ()
 
 let ignored_callees = Hash_set.create (module String)
 
@@ -931,8 +920,8 @@ let xlate_instr :
               todo "opcode kind in call instruction %a" pp_llvalue
                 maybe_llfunc () )
         | _ ->
-            todo "operand kind in call instruction %a" pp_llvaluekind
-              llfunc_valuekind ()
+            todo "operand kind in call instruction %a" pp_llvalue
+              maybe_llfunc ()
       in
       let fname = Llvm.value_name llfunc in
       let skip msg =

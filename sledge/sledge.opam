@@ -21,7 +21,6 @@ depends: [
   "dune-build-info"
   "llvm" {= "8.0.0"}
   "ppx_compare"
-  "ppx_import"
   "ppx_hash"
   "shexp"
   "yojson"
