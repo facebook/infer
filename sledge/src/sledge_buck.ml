@@ -176,9 +176,8 @@ let abs_path_arg =
   Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
 
 let main ~(command : unit Command.basic_command) ~analyze =
-  let target_flag = Command.Param.(anon ("<target>" %: string)) in
   let bitcode_inputs =
-    let%map_open target = target_flag
+    let%map_open target = anon ("<target>" %: string)
     and modules =
       flag "modules" (optional string)
         ~doc:

@@ -7,7 +7,7 @@
  *)
 
 let common_flags =
-  {|(-w +a-4-9-18-40-42-44-48@50
+  {|(-w +a-4-9-18-40-42-44-48@50-66
      -strict-formats -strict-sequence
      -short-paths -bin-annot -keep-docs
      -unboxed-types)|}
