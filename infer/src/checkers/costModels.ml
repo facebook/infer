@@ -49,8 +49,11 @@ end
 module JavaString = struct
   let substring_aux ~begin_idx ~end_v {integer_type_widths; location} inferbo_mem =
     let begin_v = BufferOverrunSemantics.eval integer_type_widths begin_idx inferbo_mem in
+    let begin_itv = BufferOverrunDomain.Val.get_itv begin_v in
+    let end_itv = BufferOverrunDomain.Val.get_itv end_v in
     let itv =
-      Itv.minus (BufferOverrunDomain.Val.get_itv end_v) (BufferOverrunDomain.Val.get_itv begin_v)
+      if Boolean.is_true (Itv.le_sem begin_itv end_itv) then Itv.minus end_itv begin_itv
+      else end_itv
     in
     CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.substring"
       location

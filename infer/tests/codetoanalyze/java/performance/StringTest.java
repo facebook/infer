@@ -29,4 +29,9 @@ class StringTest {
     int index = indexof_linear(mId);
     return mId.substring(0, index);
   }
+
+  private String startsWith_constant() {
+    String s = "";
+    return s.startsWith(",") ? s.substring(1) : s;
+  }
 }
