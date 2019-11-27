@@ -10,7 +10,7 @@ open! IStd
 val issue_log : IssueLog.t ref
 
 type linter =
-  { condition: CTL.t
+  { condition: CTLTypes.t
   ; issue_desc: CIssue.issue_desc
   ; whitelist_paths: ALVar.t list
   ; blacklist_paths: ALVar.t list }
@@ -23,7 +23,7 @@ val pp_linters : Format.formatter -> linter list -> unit
    (visited, parameters, definition).
    Visited is used during the expansion phase to understand if the
    formula was already expanded and, if yes we have a cyclic definifion *)
-type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
+type macros_map = (bool * ALVar.t list * CTLTypes.t) ALVar.FormulaIdMap.t
 
 (** Map a path name to a list of paths.  *)
 type paths_map = ALVar.t list ALVar.VarMap.t

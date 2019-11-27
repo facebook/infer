@@ -5,15 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
-open Ctl_parser_types
-
-(**
-  This module defines a language to define checkers. These checkers are interpreted over the AST of
-  the program. A checker is defined by a CTL formula which expresses a condition saying when the
-  checker should report a problem.
-*)
-
 (** Transition labels used for example to switch from decl to stmt *)
 type transitions =
   | AccessorForProperty of ALVar.alexp  (** decl to decl *)
@@ -68,53 +59,12 @@ type t =
   | InObjCClass of t * t
 [@@deriving compare]
 
-(* "set" clauses are used for defining mandatory variables that will be used
-   by when reporting issues: eg for defining the condition.
+val is_transition_to_successor : transitions -> bool
 
-   "desc" clauses are used for defining the error message,
-   the suggestion, the severity.
-
-   "let" clauses are used to define temporary formulas which are then
-   used to abbreviate the another formula. For example
-
-   let f = a And B
-
-   set formula  = f OR f
-
-   set message = "bla"
-
-*)
+val has_transition : t -> bool
 
 val equal : t -> t -> bool
 
-type clause =
-  | CLet of ALVar.formula_id * ALVar.t list * t  (** Let clause: let id = definifion;  *)
-  | CSet of ALVar.keyword * t  (** Set clause: set id = definition *)
-  | CDesc of ALVar.keyword * string  (** Description clause eg: set message = "..." *)
-  | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
+val pp_transition : Format.formatter -> transitions option -> unit
 
-type ctl_checker =
-  {id: string  (** Checker's id *); definitions: clause list  (** A list of let/set definitions *)}
-
-type al_file =
-  { import_files: string list
-  ; global_macros: clause list
-  ; global_paths: (string * ALVar.alexp list) list
-  ; checkers: ctl_checker list }
-
-val print_checker : ctl_checker -> unit
-
-val eval_formula : t -> ast_node -> CLintersContext.context -> ast_node option
-(** return the evaluation of the formula and a witness *)
-
-val save_dotty_when_in_debug_mode : SourceFile.t -> unit
-
-val next_state_via_transition : ast_node -> transitions -> ast_node list
-
-val create_ctl_evaluation_tracker : SourceFile.t -> unit
-
-module Debug : sig
-  val pp_formula : Format.formatter -> t -> unit
-
-  val pp_transition : Format.formatter -> transitions option -> unit
-end
+val pp_formula : Format.formatter -> t -> unit

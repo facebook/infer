@@ -296,7 +296,7 @@ and do_frontend_checks_decl linters (context : CLintersContext.context) decl =
         ALIssues.invoke_set_of_checkers_on_node linters context' an ;
         (* We need to visit explicitly nodes reachable via Parameters transitions
            because they won't be visited during the evaluation of the formula *)
-        do_frontend_checks_via_transition linters context' an CTL.Parameters ;
+        do_frontend_checks_via_transition linters context' an CTLTypes.Parameters ;
         match CAst_utils.get_method_body_opt decl with
         | Some stmt ->
             do_frontend_checks_stmt linters context' stmt

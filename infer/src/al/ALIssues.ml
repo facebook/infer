@@ -11,7 +11,7 @@ module L = Logging
 module MF = MarkupFormatter
 
 type linter =
-  { condition: CTL.t
+  { condition: CTLTypes.t
   ; issue_desc: CIssue.issue_desc
   ; whitelist_paths: ALVar.t list
   ; blacklist_paths: ALVar.t list }
@@ -66,7 +66,7 @@ let pp_linters fmt linters =
 (* Map a formula id to a triple (visited, parameters, definition).
    Visited is used during the expansion phase to understand if the
    formula was already expanded and, if yes we have a cyclic definifion *)
-type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
+type macros_map = (bool * ALVar.t list * CTLTypes.t) ALVar.FormulaIdMap.t
 
 (* Map a path name to a list of paths.  *)
 type paths_map = ALVar.t list ALVar.VarMap.t
@@ -249,11 +249,12 @@ let create_parsed_linters linters_def_file checkers : linter list =
         | _ ->
             (issue, cond, wl_paths, bl_paths)
       in
-      List.fold ~f:process_linter_definitions ~init:(dummy_issue, CTL.False, [], [])
+      List.fold ~f:process_linter_definitions
+        ~init:(dummy_issue, CTLTypes.False, [], [])
         checker.definitions
     in
     L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.id ;
-    L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition ;
+    L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTLTypes.pp_formula condition ;
     let issue_type =
       let doc_url =
         Option.first_some
@@ -276,7 +277,7 @@ let rec apply_substitution f sub =
     with Not_found_s _ | Caml.Not_found -> p
   in
   let sub_list_param ps = List.map ps ~f:sub_param in
-  let open CTL in
+  let open CTLTypes in
   match f with
   | True | False ->
       f
@@ -320,7 +321,7 @@ let expand_formula phi map_ error_msg_ =
   let fail_with_circular_macro_definition name error_msg =
     L.(die ExternalError) "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg
   in
-  let open CTL in
+  let open CTLTypes in
   let rec expand acc map error_msg =
     match acc with
     | True | False ->
