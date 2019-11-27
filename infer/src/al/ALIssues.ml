@@ -540,6 +540,5 @@ let invoke_set_of_checkers_on_node parsed_linters context an =
          Because depending on the formula it may give an error at line -1 *)
       ()
   | _ ->
-      if not CFrontend_config.tableaux_evaluation then
-        invoke_set_of_parsed_checkers_an parsed_linters context an ) ;
+      invoke_set_of_parsed_checkers_an parsed_linters context an ) ;
   if Config.default_linters then invoke_set_of_hard_coded_checkers_an context an

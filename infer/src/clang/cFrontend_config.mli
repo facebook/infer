@@ -119,5 +119,3 @@ val get_fresh_block_index : unit -> int
 val reset_block_counter : unit -> unit
 
 val reset_global_state : unit -> unit
-
-val tableaux_evaluation : bool

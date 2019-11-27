@@ -138,6 +138,3 @@ let reset_global_state () =
   sil_types_map := Clang_ast_extend.TypePointerMap.empty ;
   procedures_attempted := 0 ;
   procedures_failed := 0
-
-
-let tableaux_evaluation = false
