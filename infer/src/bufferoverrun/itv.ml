@@ -394,6 +394,16 @@ module ItvPure = struct
         Bottom
 
 
+  let arith_binop bop x y =
+    match bop with
+    | Binop.PlusA _ ->
+        Some (plus x y)
+    | Binop.MinusA _ ->
+        Some (minus x y)
+    | _ ->
+        None
+
+
   let prune_le : t -> t -> t = fun (l1, u1) (_, u2) -> (l1, Bound.overapprox_min u1 u2)
 
   let prune_ge : t -> t -> t = fun (l1, u1) (l2, _) -> (Bound.underapprox_max l1 l2, u1)
@@ -616,6 +626,15 @@ let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
       NonBottom (f x y)
 
 
+let lift2opt : (ItvPure.t -> ItvPure.t -> ItvPure.t option) -> t -> t -> t option =
+ fun f x y ->
+  match (x, y) with
+  | Bottom, _ | _, Bottom ->
+      Some Bottom
+  | NonBottom x, NonBottom y ->
+      f x y |> Option.map ~f:(fun v -> NonBottom v)
+
+
 let bind2_gen : bot:'a -> (ItvPure.t -> ItvPure.t -> 'a) -> t -> t -> 'a =
  fun ~bot f x y ->
   match (x, y) with Bottom, _ | _, Bottom -> bot | NonBottom x, NonBottom y -> f x y
@@ -692,6 +711,8 @@ let min_sem : ?use_minmax_bound:bool -> t -> t -> t =
 let max_sem : ?use_minmax_bound:bool -> t -> t -> t =
  fun ?use_minmax_bound -> lift2 (ItvPure.max_sem ?use_minmax_bound)
 
+
+let arith_binop : Binop.t -> t -> t -> t option = fun bop -> lift2opt (ItvPure.arith_binop bop)
 
 let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 

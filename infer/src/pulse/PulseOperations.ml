@@ -158,18 +158,18 @@ let eval location exp0 astate =
             let unop_trace = Trace.Immediate {location; history= unop_hist} in
             let astate = Memory.add_attribute unop_addr (Arithmetic (unop_a, unop_trace)) astate in
             (astate, (unop_addr, unop_hist)) )
-    | BinOp (bop, e_lhs, e_rhs) -> (
+    | BinOp (bop, e_lhs, e_rhs) ->
         eval e_lhs astate
         >>= fun (astate, (addr_lhs, hist_lhs)) ->
         eval e_rhs astate
         >>| fun (astate, (addr_rhs, _hist_rhs)) ->
         let binop_addr = AbstractValue.mk_fresh () in
-        match
-          Option.both
-            (Memory.get_arithmetic addr_lhs astate)
-            (Memory.get_arithmetic addr_rhs astate)
-          |> Option.bind ~f:(function (a1, _), (a2, _) -> Arithmetic.binop bop a1 a2)
-        with
+        ( match
+            Option.both
+              (Memory.get_arithmetic addr_lhs astate)
+              (Memory.get_arithmetic addr_rhs astate)
+            |> Option.bind ~f:(function (a1, _), (a2, _) -> Arithmetic.binop bop a1 a2)
+          with
         | None ->
             (astate, (binop_addr, (* TODO history *) []))
         | Some binop_a ->
@@ -179,6 +179,10 @@ let eval location exp0 astate =
               Memory.add_attribute binop_addr (Arithmetic (binop_a, binop_trace)) astate
             in
             (astate, (binop_addr, binop_hist)) )
+        |> fun ((astate, ((addr, _) as addr_hist)) as default) ->
+        Itv.arith_binop bop (Memory.get_bo_itv addr_lhs astate) (Memory.get_bo_itv addr_rhs astate)
+        |> Option.value_map ~default ~f:(fun itv ->
+               (Memory.add_attribute addr (BoItv itv) astate, addr_hist) )
     | Const _ | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in

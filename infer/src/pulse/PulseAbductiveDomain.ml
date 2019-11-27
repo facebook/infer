@@ -215,6 +215,8 @@ module Memory = struct
 
   let get_arithmetic addr astate = BaseMemory.get_arithmetic addr (astate.post :> base_domain).heap
 
+  let get_bo_itv addr astate = BaseMemory.get_bo_itv addr (astate.post :> base_domain).heap
+
   let std_vector_reserve addr astate =
     map_post_heap astate ~f:(fun heap -> BaseMemory.std_vector_reserve addr heap)
 

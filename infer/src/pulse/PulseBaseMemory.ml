@@ -90,6 +90,14 @@ let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_arithmetic = get_attribute Attributes.get_arithmetic
 
+let get_bo_itv v memory =
+  match get_attribute Attributes.get_bo_itv v memory with
+  | None ->
+      Itv.of_pulse_value v
+  | Some itv ->
+      itv
+
+
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory

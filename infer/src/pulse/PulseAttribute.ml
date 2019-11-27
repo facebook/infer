@@ -65,6 +65,8 @@ module Attribute = struct
 
   let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero, dummy_trace))
 
+  let bo_itv_rank = Variants.to_rank (BoItv Itv.zero)
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -144,6 +146,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.Arithmetic (a, trace)) = attr in
            (a, trace) )
+
+
+  let get_bo_itv attrs =
+    Set.find_rank attrs Attribute.bo_itv_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.BoItv itv) = attr in
+           itv )
 
 
   include Set

@@ -34,6 +34,8 @@ module Attributes : sig
 
   val get_arithmetic : t -> (Arithmetic.t * Trace.t) option
 
+  val get_bo_itv : t -> Itv.t option
+
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 
   val get_must_be_valid : t -> Trace.t option

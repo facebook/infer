@@ -81,6 +81,8 @@ module Memory : sig
       returns what it points to or creates a fresh value if that edge didn't exist.  *)
 
   val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
+
+  val get_bo_itv : AbstractValue.t -> t -> Itv.t
 end
 
 val is_local : Var.t -> t -> bool
