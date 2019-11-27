@@ -107,7 +107,7 @@ let invariant r =
 let true_ = {sat= true; rep= empty_map} |> check invariant
 
 (** apply a subst to a term *)
-let apply s a = try Map.find_exn s a with Caml.Not_found -> a
+let apply s a = Map.find s a |> Option.value ~default:a
 
 (** apply a subst to maximal non-interpreted subterms *)
 let rec norm s a =

@@ -395,7 +395,7 @@ module Var = struct
       Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
           Set.add range data )
 
-    let apply sub v = try Map.find_exn sub v with Caml.Not_found -> v
+    let apply sub v = Map.find sub v |> Option.value ~default:v
 
     let apply_set sub vs =
       Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
