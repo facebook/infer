@@ -267,6 +267,7 @@ module Symbol = struct
   (* NOTE: non_int represents the symbols that are not integer type,
      so that their ranges are not used in the cost checker. *)
   type t =
+    | PulseValue of PulseAbstractValue.t
     | OneValue of {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t}
     | BoundEnd of
         {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
@@ -275,13 +276,15 @@ module Symbol = struct
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
     match s with
+    | PulseValue v ->
+        PulseAbstractValue.pp fmt v
     | OneValue {unsigned; non_int; path} | BoundEnd {unsigned; non_int; path} ->
         SymbolPath.pp fmt path ;
         ( if Config.developer_mode then
           match s with
           | BoundEnd {bound_end} ->
               Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
-          | OneValue _ ->
+          | PulseValue _ | OneValue _ ->
               () ) ;
         if Config.bo_debug > 1 then
           F.fprintf fmt "(%c%s)" (if unsigned then 'u' else 's') (if non_int then "n" else "")
@@ -289,6 +292,12 @@ module Symbol = struct
 
   let compare s1 s2 =
     match (s1, s2) with
+    | PulseValue _, (OneValue _ | BoundEnd _) ->
+        -1
+    | (OneValue _ | BoundEnd _), PulseValue _ ->
+        1
+    | PulseValue x, PulseValue y ->
+        PulseAbstractValue.compare x y
     | OneValue _, BoundEnd _ ->
         -1
     | BoundEnd _, OneValue _ ->
@@ -308,7 +317,7 @@ module Symbol = struct
 
   let paths_equal s1 s2 =
     match (s1, s2) with
-    | OneValue _, BoundEnd _ | BoundEnd _, OneValue _ ->
+    | PulseValue _, _ | _, PulseValue _ | OneValue _, BoundEnd _ | BoundEnd _, OneValue _ ->
         false
     | OneValue {path= path1}, OneValue {path= path2} | BoundEnd {path= path1}, BoundEnd {path= path2}
       ->
@@ -325,24 +334,39 @@ module Symbol = struct
    fun bound_end ~unsigned ?(non_int = false) path -> BoundEnd {unsigned; non_int; path; bound_end}
 
 
+  let of_pulse_value v = PulseValue v
+
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
-  let is_unsigned : t -> bool = function OneValue {unsigned} | BoundEnd {unsigned} -> unsigned
+  let is_unsigned : t -> bool = function
+    | PulseValue _ ->
+        false
+    | OneValue {unsigned} | BoundEnd {unsigned} ->
+        unsigned
 
-  let is_non_int : t -> bool = function OneValue {non_int} | BoundEnd {non_int} -> non_int
+
+  let is_non_int : t -> bool = function
+    | PulseValue _ ->
+        false
+    | OneValue {non_int} | BoundEnd {non_int} ->
+        non_int
+
 
   let is_global : t -> bool = function
+    | PulseValue _ ->
+        false
     | OneValue {path} | BoundEnd {path} ->
         SymbolPath.is_global path
 
 
-  let path = function OneValue {path} | BoundEnd {path} -> path
+  (* This should be called on non-pulse bound as of now. *)
+  let path = function PulseValue _ -> assert false | OneValue {path} | BoundEnd {path} -> path
 
   (* NOTE: This may not be satisfied in the cost checker for simplifying its results. *)
   let check_bound_end s be =
     if Config.bo_debug >= 3 then
       match s with
-      | OneValue _ ->
+      | PulseValue _ | OneValue _ ->
           ()
       | BoundEnd {bound_end} ->
           if not (BoundEnd.equal be bound_end) then
@@ -351,7 +375,11 @@ module Symbol = struct
               (BoundEnd.to_string be)
 
 
-  let exists_str ~f = function OneValue {path} | BoundEnd {path} -> SymbolPath.exists_str ~f path
+  let exists_str ~f = function
+    | PulseValue _ ->
+        false
+    | OneValue {path} | BoundEnd {path} ->
+        SymbolPath.exists_str ~f path
 end
 
 module SymbolSet = struct

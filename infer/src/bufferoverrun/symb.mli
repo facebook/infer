@@ -118,6 +118,8 @@ module Symbol : sig
 
   val make_boundend : BoundEnd.t -> make_t
 
+  val of_pulse_value : PulseAbstractValue.t -> t
+
   val exists_str : f:(string -> bool) -> t -> bool
 end
 

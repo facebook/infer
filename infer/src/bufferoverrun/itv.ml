@@ -119,6 +119,8 @@ module ItvPure = struct
 
   let of_big_int n = of_bound (Bound.of_big_int n)
 
+  let of_pulse_value v = of_bound (Bound.of_pulse_value v)
+
   let mone = of_bound Bound.mone
 
   let zero_255 = (Bound.zero, Bound.z255)
@@ -573,6 +575,8 @@ let of_int : int -> t = fun n -> NonBottom (ItvPure.of_int n)
 let of_big_int : Z.t -> t = fun n -> NonBottom (ItvPure.of_big_int n)
 
 let of_int_lit : IntLit.t -> t = fun n -> of_big_int (IntLit.to_big_int n)
+
+let of_pulse_value : PulseAbstractValue.t -> t = fun v -> NonBottom (ItvPure.of_pulse_value v)
 
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 

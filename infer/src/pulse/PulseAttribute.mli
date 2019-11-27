@@ -15,6 +15,7 @@ type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Arithmetic of Arithmetic.t * Trace.t
+  | BoItv of Itv.t
   | Closure of Typ.Procname.t
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t

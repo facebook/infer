@@ -137,6 +137,7 @@ let eval location exp0 astate =
           Memory.add_attribute addr
             (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
             astate
+          |> Memory.add_attribute addr (BoItv (Itv.of_int_lit i))
           |> Memory.invalidate
                (addr, [ValueHistory.Assignment location])
                (ConstantDereference i) location

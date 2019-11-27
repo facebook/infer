@@ -634,6 +634,7 @@ module PrePost = struct
         Attribute.Arithmetic (arith, add_call_to_trace proc_name call_location caller_history trace)
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
+    | BoItv _
     | Closure _
     | MustBeValid _
     | StdVectorReserve

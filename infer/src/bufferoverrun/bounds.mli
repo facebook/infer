@@ -23,6 +23,8 @@ module Bound : sig
 
   val of_big_int : Z.t -> t
 
+  val of_pulse_value : PulseAbstractValue.t -> t
+
   val minf : t
 
   val mone : t

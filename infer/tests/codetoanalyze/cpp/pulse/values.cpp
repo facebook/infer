@@ -69,3 +69,12 @@ void FP_infeasible_tricky_ok(int* x) {
     *x = 42;
   }
 }
+
+int minus(int x, int y) { return x - y; }
+
+void function_call_infeasible_error_path_ok_FP(int* x) {
+  free(x);
+  if (minus(0, 0) < 0) {
+    *x = 42;
+  }
+}
