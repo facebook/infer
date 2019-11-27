@@ -25,8 +25,6 @@ val create : TypeOrigin.t -> t
 
 val is_nonnull_or_declared_nonnull : t -> bool
 
-val is_nonnull : t -> bool
-
 val get_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred.  *)
 

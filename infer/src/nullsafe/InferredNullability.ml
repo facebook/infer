@@ -17,8 +17,6 @@ let is_nonnull_or_declared_nonnull {nullability} =
   match nullability with Nonnull | DeclaredNonnull -> true | _ -> false
 
 
-let is_nonnull {nullability} = match nullability with Nonnull -> true | _ -> false
-
 let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)
 
 let join t1 t2 =

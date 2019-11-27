@@ -711,14 +711,12 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
     let handle_pvar typestate' pvar =
       match TypeState.lookup_pvar pvar typestate' with
       | Some (t, current_nullability) ->
-          if not (InferredNullability.is_nonnull current_nullability) then
-            let new_origin =
-              TypeOrigin.InferredNonnull
-                {previous_origin= InferredNullability.get_origin current_nullability}
-            in
-            let new_nullability = InferredNullability.create new_origin in
-            TypeState.add pvar (t, new_nullability) typestate'
-          else typestate'
+          let new_origin =
+            TypeOrigin.InferredNonnull
+              {previous_origin= InferredNullability.get_origin current_nullability}
+          in
+          let new_nullability = InferredNullability.create new_origin in
+          TypeState.add pvar (t, new_nullability) typestate'
       | None ->
           typestate'
     in
@@ -758,9 +756,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       match from_call with
       | EradicateChecks.From_is_true_on_null ->
           (* if f returns true on null, then false branch implies != null *)
-          if not (InferredNullability.is_nonnull inferred_nullability) then
-            set_nonnull e' typestate2
-          else typestate2
+          set_nonnull e' typestate2
       | _ ->
           typestate2 )
   | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
@@ -800,9 +796,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       | EradicateChecks.From_containsKey
       | EradicateChecks.From_instanceof
       | EradicateChecks.From_is_false_on_null ->
-          if not (InferredNullability.is_nonnull inferred_nullability) then
-            set_nonnull e' typestate2
-          else typestate2 )
+          set_nonnull e' typestate2 )
   | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
       check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
         curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
