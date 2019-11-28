@@ -96,16 +96,16 @@ val pp : t pp
 
 include Invariant.S with type t := t
 
-type exp = t
-
 (** Exp.Reg is re-exported as Reg *)
 module Reg : sig
+  type exp := t
   type t = private exp [@@deriving compare, equal, hash, sexp]
-  type reg = t
 
   include Comparator.S with type t := t
 
   module Set : sig
+    type reg := t
+
     type t = (reg, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
@@ -117,6 +117,8 @@ module Reg : sig
   end
 
   module Map : sig
+    type reg := t
+
     type 'a t = (reg, 'a, comparator_witness) Map.t
     [@@deriving compare, equal, sexp]
 

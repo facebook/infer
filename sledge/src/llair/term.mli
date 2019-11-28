@@ -87,16 +87,16 @@ val pp_full : ?is_x:(t -> bool) -> t pp
 val pp : t pp
 val invariant : t -> unit
 
-type term = t
-
 (** Term.Var is re-exported as Var *)
 module Var : sig
+  type term := t
   type t = private term [@@deriving compare, equal, hash, sexp]
-  type var = t
 
   include Comparator.S with type t := t
 
   module Set : sig
+    type var := t
+
     type t = (var, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
@@ -120,6 +120,7 @@ module Var : sig
   val global : t -> bool
 
   module Subst : sig
+    type var := t
     type t [@@deriving compare, equal, sexp]
 
     val pp : t pp

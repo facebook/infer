@@ -308,9 +308,6 @@ and typ_of exp =
   [@@warning "-9"]
 
 let typ = typ_of
-
-type exp = t
-
 let pp_exp = pp
 
 (** Registers are the expressions constructed by [Reg] *)
@@ -318,8 +315,6 @@ module Reg = struct
   include T
 
   let pp = pp
-
-  type reg = t
 
   let var r =
     match Var.of_term r.term with Some v -> v | _ -> violates invariant r

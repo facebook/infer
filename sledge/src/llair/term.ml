@@ -216,8 +216,6 @@ and pp_record fs elts =
             Format.fprintf fs "@[<h>%a@]" (Vector.pp ",@ " pp) elts )
       elts]
 
-type term = t
-
 let pp_t = pp ?is_x:None
 let pp_full = pp
 let pp = pp_t
@@ -295,8 +293,6 @@ module Var = struct
   include T
 
   let pp = pp
-
-  type var = t
 
   module Set = struct
     include (
