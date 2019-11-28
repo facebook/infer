@@ -212,8 +212,6 @@ module List = struct
     in
     remove_ [] xs
 
-  let remove xs x = try Some (remove_exn xs x) with Caml.Not_found -> None
-
   let rec rev_init n ~f =
     if n = 0 then []
     else
