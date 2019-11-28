@@ -10,7 +10,7 @@ class PurityModeled {
     return Math.random();
   }
 
-  void arraycopy_pure(int[] src) {
+  void arraycopy_pure_FP(int[] src) {
     int[] dst = {5, 10, 20, 30, 40, 50};
     // copies an array from the specified source array
     System.arraycopy(src, 0, dst, 0, 1);

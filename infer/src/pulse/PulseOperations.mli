@@ -115,3 +115,13 @@ val call :
   -> t list access_result
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if
     it exists *)
+
+val unknown_call :
+     Location.t
+  -> CallEvent.t
+  -> ret:Ident.t * 'a
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
+  -> t
+  -> t
+(** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
+   the return value as appropriate *)

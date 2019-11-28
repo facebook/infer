@@ -438,6 +438,24 @@ let remove_vars vars location astate =
   if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
 
 
+let unknown_call call_loc reason ~ret ~actuals astate =
+  let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
+  let havoc_ret (ret, _) astate = havoc_id ret [event] astate in
+  let havoc_actual_if_ptr (actual, typ) astate =
+    if Typ.is_pointer typ then
+      (* TODO: to avoid false negatives, we should not havoc when the corresponding formal is a
+         pointer to const *)
+      (* HACK: write through the pointer even if it is invalid. This is to avoid raising issues when
+         havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
+      let fresh_value = AbstractValue.mk_fresh () in
+      Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
+    else astate
+  in
+  L.d_printfln "skipping unknown procedure@." ;
+  List.fold actuals ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ astate) ~init:astate
+  |> havoc_ret ret
+
+
 let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
   match PulsePayload.read_full ~caller_summary ~callee_pname with
   | Some (callee_proc_desc, preposts) ->
@@ -467,7 +485,4 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
-      let event =
-        ValueHistory.Call {f= SkippedKnownCall callee_pname; location= call_loc; in_call= []}
-      in
-      Ok [havoc_id (fst ret) [event] astate]
+      Ok [unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals astate]

@@ -9,7 +9,7 @@ import java.util.Iterator;
 
 class Localities {
   // @pure
-  boolean contains_pure(Integer i, ArrayList<Integer> list) {
+  boolean contains_pure_FP(Integer i, ArrayList<Integer> list) {
     Iterator<Integer> listIterator = list.iterator();
     while (listIterator.hasNext()) {
       Integer el = listIterator.next();
@@ -21,7 +21,7 @@ class Localities {
   }
 
   // @mod:{list}
-  void makeAllZero_impure_FN(ArrayList<Foo> list) {
+  void makeAllZero_impure(ArrayList<Foo> list) {
     Iterator<Foo> listIterator = list.iterator();
     while (listIterator.hasNext()) {
       Foo foo = listIterator.next();
@@ -30,7 +30,7 @@ class Localities {
   }
 
   // @mod:{list}
-  void incrementAll_impure_FN(ArrayList<Foo> list) {
+  void incrementAll_impure(ArrayList<Foo> list) {
     Iterator<Foo> listIterator = list.iterator();
     while (listIterator.hasNext()) {
       Foo foo = listIterator.next();
@@ -41,7 +41,7 @@ class Localities {
   // @pure
   void call_impure_with_fresh_args_pure() {
     ArrayList<Foo> list = new ArrayList<Foo>();
-    makeAllZero_impure_FN(list);
+    makeAllZero_impure(list);
   }
 
   class Bar {
@@ -74,7 +74,7 @@ class Localities {
   }
 
   // @pure, @loc:{}
-  int length_pure(ArrayList<Integer> list) {
+  int length_pure_FP(ArrayList<Integer> list) {
     Counter c = new Counter();
     for (Integer i : list) {
       c.inc_impure();

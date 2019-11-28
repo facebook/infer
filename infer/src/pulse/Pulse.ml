@@ -40,39 +40,13 @@ module PulseTransferFunctions = struct
 
   type extras = unit
 
-  let exec_unknown_call reason ret call actuals _flags call_loc astate =
-    let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
-    let havoc_ret (ret, _) astate = PulseOperations.havoc_id ret [event] astate in
-    match proc_name_of_call call with
-    | Some callee_pname when Typ.Procname.is_constructor callee_pname -> (
-        L.d_printfln "constructor call detected@." ;
-        match actuals with
-        | (object_ref, _) :: _ ->
-            PulseOperations.havoc_deref call_loc object_ref [event] astate >>| havoc_ret ret
-        | _ ->
-            Ok (havoc_ret ret astate) )
-    | Some (Typ.Procname.ObjC_Cpp callee_pname)
-      when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
-        L.d_printfln "operator= detected@." ;
-        match actuals with
-        (* copy assignment *)
-        | [(lhs, _); _rhs] ->
-            PulseOperations.havoc_deref call_loc lhs [event] astate >>| havoc_ret ret
-        | _ ->
-            Ok (havoc_ret ret astate) )
-    | _ ->
-        L.d_printfln "skipping unknown procedure@." ;
-        Ok (havoc_ret ret astate)
-
-
-  let interprocedural_call caller_summary ret call_exp actuals flags call_loc astate =
+  let interprocedural_call caller_summary ret call_exp actuals call_loc astate =
     match proc_name_of_call call_exp with
     | Some callee_pname ->
         PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals astate
     | None ->
-        L.d_printfln "Indirect call %a@\n" Exp.pp call_exp ;
-        exec_unknown_call (SkippedUnknownCall call_exp) ret call_exp actuals flags call_loc astate
-        >>| List.return
+        L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
+        Ok [PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals astate]
 
 
   (** has an object just gone out of scope? *)
@@ -131,9 +105,7 @@ module PulseTransferFunctions = struct
               ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} -> (arg_payload, typ))
               func_args
           in
-          let r =
-            interprocedural_call summary ret call_exp only_actuals_evaled flags call_loc astate
-          in
+          let r = interprocedural_call summary ret call_exp only_actuals_evaled call_loc astate in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
     in

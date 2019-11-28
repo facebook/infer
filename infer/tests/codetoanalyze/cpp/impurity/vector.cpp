@@ -32,8 +32,7 @@ struct A {
   int i;
 };
 
-// iterators are not modeled in pulse yet
-int set_zero_impure_FN(std::vector<A>& numbers) {
+int set_zero_impure(std::vector<A>& numbers) {
   for (auto& num : numbers) {
     num.i = 0;
   }
