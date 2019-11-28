@@ -12,16 +12,8 @@ include (
     sig
       include
         (module type of Base
-          (* extended below, remove *)
-          with module Array := Base.Array
-           and module Invariant := Base.Invariant
-           and module List := Base.List
-           and module Map := Base.Map
-           and module Option := Base.Option
-           and module Result := Base.Result
-           and module Set := Base.Set
           (* prematurely deprecated, remove and use Stdlib instead *)
-           and module Filename := Base.Filename
+          with module Filename := Base.Filename
            and module Format := Base.Format
            and module Marshal := Base.Marshal
            and module Scanf := Base.Scanf
