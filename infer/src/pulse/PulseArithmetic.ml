@@ -161,6 +161,13 @@ let pp fmt = function
       F.fprintf fmt "∉[%a,%a]" IntLit.pp l IntLit.pp u
 
 
+let is_equal_to_zero = function
+  | Between (Int l, Int u) when IntLit.iszero l && IntLit.iszero u ->
+      true
+  | _ ->
+      false
+
+
 let has_empty_intersection a1 a2 =
   match (a1, a2) with
   | Outside _, Outside _ ->

@@ -7,14 +7,11 @@
 open! IStd
 module F = Format
 
-module Bound : sig
-  type t = Int of IntLit.t | MinusInfinity | PlusInfinity
-end
-
-type t = private Between of Bound.t * Bound.t | Outside of IntLit.t * IntLit.t
-[@@deriving compare]
+type t [@@deriving compare]
 
 val equal_to : IntLit.t -> t
+
+val is_equal_to_zero : t -> bool
 
 val pp : F.formatter -> t -> unit
 

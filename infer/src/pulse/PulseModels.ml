@@ -57,7 +57,13 @@ end
 module C = struct
   let free deleted_access : model =
    fun ~caller_summary:_ location ~ret:_ astate ->
-    PulseOperations.invalidate location Invalidation.CFree deleted_access astate >>| List.return
+    match Memory.get_arithmetic (fst deleted_access) astate with
+    | Some (arith, _) when Arithmetic.is_equal_to_zero arith ->
+        (* freeing 0 is a no-op *)
+        Ok [astate]
+    | _ ->
+        PulseOperations.invalidate location Invalidation.CFree deleted_access astate
+        >>| fun astate -> [astate]
 end
 
 module Cplusplus = struct
