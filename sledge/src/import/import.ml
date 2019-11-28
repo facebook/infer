@@ -134,6 +134,20 @@ let map_preserving_phys_equal map t ~f =
   in
   if !change then t' else t
 
+module type Applicative_syntax = sig
+  type 'a t
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
+module type Monad_syntax = sig
+  include Applicative_syntax
+
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
 module Option = struct
   include Base.Option
 
@@ -142,9 +156,19 @@ module Option = struct
     | None -> ()
 
   let cons xo xs = match xo with Some x -> x :: xs | None -> xs
+
+  module Monad_syntax = struct
+    type nonrec 'a t = 'a t
+
+    let ( let+ ) x f = map ~f x
+    let ( and+ ) x y = both x y
+    let ( let* ) x f = bind ~f x
+    let ( and* ) x y = both x y
+  end
 end
 
 include Option.Monad_infix
+include Option.Monad_syntax
 
 module List = struct
   include Base.List

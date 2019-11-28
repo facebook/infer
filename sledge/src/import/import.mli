@@ -105,6 +105,20 @@ val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
 
 module Invariant : module type of Base.Invariant
 
+module type Applicative_syntax = sig
+  type 'a t
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
+module type Monad_syntax = sig
+  include Applicative_syntax
+
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
 module Option : sig
   include module type of Base.Option
 
@@ -112,9 +126,12 @@ module Option : sig
   (** Pretty-print an option. *)
 
   val cons : 'a t -> 'a list -> 'a list
+
+  module Monad_syntax : Monad_syntax
 end
 
 include module type of Option.Monad_infix
+include module type of Option.Monad_syntax with type 'a t = 'a option
 
 module List : sig
   include module type of Base.List
