@@ -96,6 +96,52 @@ let eval_access location addr_hist access astate =
   >>| fun astate -> Memory.eval_edge addr_hist access astate
 
 
+type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+
+let eval_arith_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
+  let arith_of_op op astate =
+    match op with
+    | LiteralOperand i ->
+        Some (Arithmetic.equal_to i)
+    | AbstractValueOperand v ->
+        Memory.get_arithmetic v astate |> Option.map ~f:fst
+  in
+  match
+    Option.both (arith_of_op op_lhs astate) (arith_of_op op_rhs astate)
+    |> Option.bind ~f:(fun (addr_lhs, addr_rhs) -> Arithmetic.binop bop addr_lhs addr_rhs)
+  with
+  | None ->
+      astate
+  | Some binop_a ->
+      let binop_trace = Trace.Immediate {location; history= binop_hist} in
+      let astate = Memory.add_attribute binop_addr (Arithmetic (binop_a, binop_trace)) astate in
+      astate
+
+
+let eval_bo_itv_binop binop_addr bop op_lhs op_rhs astate =
+  let bo_itv_of_op op astate =
+    match op with
+    | LiteralOperand i ->
+        Itv.of_int_lit i
+    | AbstractValueOperand v ->
+        Memory.get_bo_itv v astate
+  in
+  match Itv.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate) with
+  | None ->
+      astate
+  | Some itv ->
+      Memory.add_attribute binop_addr (BoItv itv) astate
+
+
+let eval_binop location binop op_lhs op_rhs binop_hist astate =
+  let binop_addr = AbstractValue.mk_fresh () in
+  let astate =
+    eval_arith_operand location binop_addr binop_hist binop op_lhs op_rhs astate
+    |> eval_bo_itv_binop binop_addr binop op_lhs op_rhs
+  in
+  (astate, (binop_addr, binop_hist))
+
+
 let eval location exp0 astate =
   let rec eval exp astate =
     match (exp : Exp.t) with
@@ -162,27 +208,12 @@ let eval location exp0 astate =
         eval e_lhs astate
         >>= fun (astate, (addr_lhs, hist_lhs)) ->
         eval e_rhs astate
-        >>| fun (astate, (addr_rhs, _hist_rhs)) ->
-        let binop_addr = AbstractValue.mk_fresh () in
-        ( match
-            Option.both
-              (Memory.get_arithmetic addr_lhs astate)
-              (Memory.get_arithmetic addr_rhs astate)
-            |> Option.bind ~f:(function (a1, _), (a2, _) -> Arithmetic.binop bop a1 a2)
-          with
-        | None ->
-            (astate, (binop_addr, (* TODO history *) []))
-        | Some binop_a ->
-            let binop_hist = (* TODO: add event *) hist_lhs in
-            let binop_trace = Trace.Immediate {location; history= binop_hist} in
-            let astate =
-              Memory.add_attribute binop_addr (Arithmetic (binop_a, binop_trace)) astate
-            in
-            (astate, (binop_addr, binop_hist)) )
-        |> fun ((astate, ((addr, _) as addr_hist)) as default) ->
-        Itv.arith_binop bop (Memory.get_bo_itv addr_lhs astate) (Memory.get_bo_itv addr_rhs astate)
-        |> Option.value_map ~default ~f:(fun itv ->
-               (Memory.add_attribute addr (BoItv itv) astate, addr_hist) )
+        >>| fun ( astate
+                , ( addr_rhs
+                  , (* NOTE: arbitrarily track only the history of the lhs, maybe not the brightest idea *)
+                  _ ) ) ->
+        eval_binop location bop (AbstractValueOperand addr_lhs) (AbstractValueOperand addr_rhs)
+          hist_lhs astate
     | Const _ | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
@@ -208,12 +239,11 @@ let eval_arith location exp astate =
           (astate, Some addr, None) )
 
 
-let record_abduced ~is_then_branch if_kind location addr_opt orig_arith_hist_opt arith_opt astate =
+let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate =
   match Option.both addr_opt arith_opt with
   | None ->
       astate
   | Some (addr, arith) ->
-      let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
       let trace =
         match orig_arith_hist_opt with
         | None ->
@@ -240,9 +270,10 @@ let prune ~is_then_branch if_kind location ~condition astate =
         | Unsatisfiable ->
             (astate, false)
         | Satisfiable (abduced1, abduced2) ->
+            let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
             let astate =
-              record_abduced ~is_then_branch if_kind location addr1 eval1 abduced1 astate
-              |> record_abduced ~is_then_branch if_kind location addr2 eval2 abduced2
+              record_abduced event location addr1 eval1 abduced1 astate
+              |> record_abduced event location addr2 eval2 abduced2
             in
             (astate, true) )
     | UnOp (LNot, exp', _) ->

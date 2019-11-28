@@ -45,6 +45,17 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
+type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+
+val eval_binop :
+     Location.t
+  -> Binop.t
+  -> operand
+  -> operand
+  -> ValueHistory.t
+  -> t
+  -> t * (AbstractValue.t * ValueHistory.t)
+
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_deref :

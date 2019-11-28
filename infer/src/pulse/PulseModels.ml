@@ -76,6 +76,129 @@ module Cplusplus = struct
         Ok [PulseOperations.havoc_id ret_id [event] astate]
 end
 
+module StdAtomicInteger = struct
+  let internal_int =
+    Typ.Fieldname.Clang.from_class_name
+      (Typ.CStruct (QualifiedCppName.of_list ["std"; "atomic"]))
+      "__infer_model_backing_int"
+
+
+  let load_backing_int location this astate =
+    PulseOperations.eval_access location this Dereference astate
+    >>= fun (astate, obj) ->
+    PulseOperations.eval_access location obj (FieldAccess internal_int) astate
+    >>= fun (astate, int_addr) ->
+    PulseOperations.eval_access location int_addr Dereference astate
+    >>| fun (astate, int_val) -> (astate, int_addr, int_val)
+
+
+  let constructor this_address init_value : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []} in
+    let this = (AbstractValue.mk_fresh (), [event]) in
+    PulseOperations.eval_access location this (FieldAccess internal_int) astate
+    >>= fun (astate, int_field) ->
+    PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate
+    >>= fun astate ->
+    PulseOperations.write_deref location ~ref:this_address ~obj:this astate
+    >>| fun astate -> [astate]
+
+
+  let arith_bop prepost location event ret_id bop this operand astate =
+    load_backing_int location this astate
+    >>= fun (astate, int_addr, (old_int, old_int_hist)) ->
+    let astate, (new_int, hist) =
+      PulseOperations.eval_binop location bop (AbstractValueOperand old_int) operand old_int_hist
+        astate
+    in
+    PulseOperations.write_deref location ~ref:int_addr ~obj:(new_int, event :: hist) astate
+    >>| fun astate ->
+    let ret_int = match prepost with `Pre -> new_int | `Post -> old_int in
+    PulseOperations.write_id ret_id (ret_int, event :: hist) astate
+
+
+  let fetch_add this (increment, _) _memory_ordering : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= []} in
+    arith_bop `Post location event ret_id (PlusA None) this (AbstractValueOperand increment) astate
+    >>| fun astate -> [astate]
+
+
+  let fetch_sub this (increment, _) _memory_ordering : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= []} in
+    arith_bop `Post location event ret_id (MinusA None) this (AbstractValueOperand increment) astate
+    >>| fun astate -> [astate]
+
+
+  let operator_plus_plus_pre this : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= []} in
+    arith_bop `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
+    >>| fun astate -> [astate]
+
+
+  let operator_plus_plus_post this _int : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic<T>::operator++(T)"; location; in_call= []}
+    in
+    arith_bop `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
+    >>| fun astate -> [astate]
+
+
+  let operator_minus_minus_pre this : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= []} in
+    arith_bop `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
+    >>| fun astate -> [astate]
+
+
+  let operator_minus_minus_post this _int : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic<T>::operator--(T)"; location; in_call= []}
+    in
+    arith_bop `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
+    >>| fun astate -> [astate]
+
+
+  let load_instr model_desc this _memory_ordering_opt : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+    load_backing_int location this astate
+    >>| fun (astate, _int_addr, (int, hist)) ->
+    [PulseOperations.write_id ret_id (int, event :: hist) astate]
+
+
+  let load = load_instr "std::atomic<T>::load()"
+
+  let operator_t = load_instr "std::atomic<T>::operator_T()"
+
+  let store_backing_int location this_address new_value astate =
+    PulseOperations.eval_access location this_address Dereference astate
+    >>= fun (astate, this) ->
+    PulseOperations.eval_access location this (FieldAccess internal_int) astate
+    >>= fun (astate, int_field) ->
+    PulseOperations.write_deref location ~ref:int_field ~obj:new_value astate
+
+
+  let store this_address (new_value, new_hist) _memory_ordering : model =
+   fun ~caller_summary:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []} in
+    store_backing_int location this_address (new_value, event :: new_hist) astate
+    >>| fun astate -> [astate]
+
+
+  let exchange this_address (new_value, new_hist) _memory_ordering : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []} in
+    load_backing_int location this_address astate
+    >>= fun (astate, _int_addr, (old_int, old_hist)) ->
+    store_backing_int location this_address (new_value, event :: new_hist) astate
+    >>| fun astate -> [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
+end
+
 module StdBasicString = struct
   let internal_string =
     Typ.Fieldname.Clang.from_class_name
@@ -222,6 +345,29 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload $++$--> StdFunction.operator_call
       ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
         $--> Misc.shallow_copy "std::function::operator="
+      ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
+        $--> StdAtomicInteger.constructor
+      ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
+        $+ capt_arg_payload $--> StdAtomicInteger.fetch_add
+      ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
+        $+ capt_arg_payload $--> StdAtomicInteger.fetch_sub
+      ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
+        $+ capt_arg_payload $--> StdAtomicInteger.exchange
+      ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
+        $--> StdAtomicInteger.load
+      ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
+        $+ capt_arg_payload $--> StdAtomicInteger.store
+      ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
+        $--> StdAtomicInteger.operator_plus_plus_pre
+      ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
+        $--> StdAtomicInteger.operator_plus_plus_post
+      ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
+        $--> StdAtomicInteger.operator_minus_minus_pre
+      ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
+        $--> StdAtomicInteger.operator_minus_minus_post
+      ; -"std" &:: "__atomic_base"
+        &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+        <>$ capt_arg_payload $+? capt_arg_payload $--> StdAtomicInteger.operator_t
       ; -"std" &:: "integral_constant" < any_typ &+ capt_int
         >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
         <>--> Misc.return_int
