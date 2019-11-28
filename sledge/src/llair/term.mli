@@ -201,7 +201,7 @@ val update : rcd:t -> idx:int -> elt:t -> t
 
 (* recursive n-ary application *)
 val rec_app :
-     (module Hashtbl.Key with type t = 'id)
+     (module Hashtbl.Key.S with type t = 'id)
   -> (id:'id -> recN -> t lazy_t vector -> t) Staged.t
 
 val size_of : Typ.t -> t
