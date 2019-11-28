@@ -25,6 +25,8 @@ include (
 external ( == ) : 'a -> 'a -> bool = "%eq"
 external ( != ) : 'a -> 'a -> bool = "%noteq"
 
+exception Not_found = Caml.Not_found
+
 include Stdio
 module Command = Core.Command
 module Hash_queue = Core_kernel.Hash_queue
@@ -183,7 +185,7 @@ module List = struct
         | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
         Option.iter suf ~f:(Format.fprintf fs)
 
-  let pop_exn = function x :: xs -> (x, xs) | [] -> raise Caml.Not_found
+  let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
 
   let find_map_remove xs ~f =
     let rec find_map_remove_ ys = function
@@ -206,7 +208,7 @@ module List = struct
 
   let remove_exn ?(equal = phys_equal) xs x =
     let rec remove_ ys = function
-      | [] -> raise Caml.Not_found
+      | [] -> raise Not_found
       | z :: xs ->
           if equal x z then rev_append ys xs else remove_ (z :: ys) xs
     in
