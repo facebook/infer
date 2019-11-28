@@ -63,7 +63,7 @@ opt: setup
 
 .PHONY: watch
 watch: setup
-	dune build --watch $(TARGETS)
+	dune build --watch --terminal-persistence=clear-on-rebuild $(TARGETS)
 
 .PHONY: test
 test: setup
