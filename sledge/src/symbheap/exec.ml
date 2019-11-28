@@ -635,31 +635,30 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
 
 (* execute a command with given spec from pre *)
 let exec_spec pre0 {xs; foot; sub; ms; post} =
-  [%Trace.call fun {pf} ->
-    pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
-      (Sh.pp_us ~pre:"@<2>∀ ")
-      xs Sh.pp foot
-      (fun fs sub ->
-        if not (Var.Subst.is_empty sub) then
-          Format.fprintf fs "∧ %a" Var.Subst.pp sub )
-      sub
-      (fun fs ms ->
-        if not (Set.is_empty ms) then
-          Format.fprintf fs "%a := " Var.Set.pp ms )
-      ms Sh.pp post ;
-    assert (
-      let vs = Set.diff (Set.diff foot.us xs) pre0.us in
-      Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
-    assert (
-      let vs = Set.diff (Set.diff post.us xs) pre0.us in
-      Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
+  ([%Trace.call fun {pf} ->
+     pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
+       (Sh.pp_us ~pre:"@<2>∀ ")
+       xs Sh.pp foot
+       (fun fs sub ->
+         if not (Var.Subst.is_empty sub) then
+           Format.fprintf fs "∧ %a" Var.Subst.pp sub )
+       sub
+       (fun fs ms ->
+         if not (Set.is_empty ms) then
+           Format.fprintf fs "%a := " Var.Set.pp ms )
+       ms Sh.pp post ;
+     assert (
+       let vs = Set.diff (Set.diff foot.us xs) pre0.us in
+       Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
+     assert (
+       let vs = Set.diff (Set.diff post.us xs) pre0.us in
+       Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let foot = Sh.extend_us xs foot in
   let zs, pre = Sh.bind_exists pre0 ~wrt:xs in
-  ( Solver.infer_frame pre xs foot
-  >>| fun frame ->
+  let+ frame = Solver.infer_frame pre xs foot in
   Sh.exists (Set.union zs xs)
-    (Sh.star post (Sh.exists ms (Sh.rename sub frame))) )
+    (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   |>
   [%Trace.retn fun {pf} r ->
     pf "%a" (Option.pp "%a" Sh.pp) r ;
@@ -671,9 +670,9 @@ let rec exec_specs pre = function
   | ({xs; foot; _} as spec) :: specs ->
       let foot = Sh.extend_us xs foot in
       let pre_pure = Sh.star (Sh.exists xs (Sh.pure_approx foot)) pre in
-      exec_spec pre_pure spec
-      >>= fun post ->
-      exec_specs pre specs >>| fun posts -> Sh.or_ post posts
+      let* post = exec_spec pre_pure spec in
+      let+ posts = exec_specs pre specs in
+      Sh.or_ post posts
   | [] -> Some (Sh.false_ pre.us)
 
 let exec_specs pre specs =

@@ -8,7 +8,6 @@
 (** Interval abstract domain *)
 
 open Apron
-open Option.Let_syntax
 
 let equal_apron_typ =
   (* Apron.Texpr1.typ is a sum of nullary constructors *)
@@ -77,7 +76,7 @@ let rec pow base typ = function
 let rec texpr_of_nary_term subtms typ q op =
   assert (Qset.length subtms >= 2) ;
   let term_to_texpr (tm, coeff) =
-    let%bind base = apron_texpr_of_llair_term tm q typ in
+    let* base = apron_texpr_of_llair_term tm q typ in
     match op with
     | Texpr1.Add ->
         Some
@@ -91,8 +90,8 @@ let rec texpr_of_nary_term subtms typ q op =
   match Qset.to_list subtms with
   | hd :: tl ->
       List.fold tl ~init:(term_to_texpr hd) ~f:(fun acc curr ->
-          let%bind c = term_to_texpr curr in
-          let%map a = acc in
+          let* c = term_to_texpr curr in
+          let+ a = acc in
           Texpr1.Binop (op, c, a, typ, Texpr0.Rnd) )
   | _ -> assert false
 
@@ -115,21 +114,21 @@ and apron_texpr_of_llair_term tm q typ =
         let subtm = apron_texpr_of_llair_term t q src in
         if equal_apron_typ src dst then subtm
         else
-          let%bind t = subtm in
-          Some (Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd)) )
+          let+ t = subtm in
+          Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd) )
   (* extraction to unsigned 1-bit int is llvm encoding of C boolean;
      restrict to [0,1] *)
   | Ap1 (Unsigned {bits= 1}, _t) -> Some (Texpr1.Cst (Coeff.i_of_int 0 1))
   (* "t xor true" and "true xor t" are negation *)
   | Ap2 (Xor, t, Integer {data}) when Z.is_true data ->
-      let%map t = apron_texpr_of_llair_term t q typ in
+      let+ t = apron_texpr_of_llair_term t q typ in
       Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
   | Ap2 (Xor, Integer {data}, t) when Z.is_true data ->
-      let%map t = apron_texpr_of_llair_term t q typ in
+      let+ t = apron_texpr_of_llair_term t q typ in
       Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
   (* query apron for abstract evaluation of binary operations*)
   | Ap2 (op, t1, t2) ->
-      let%bind f =
+      let* f =
         match op with
         | Rem -> Some (mk_arith_binop typ Texpr0.Mod)
         | Div -> Some (mk_arith_binop typ Texpr0.Div)
@@ -139,8 +138,8 @@ and apron_texpr_of_llair_term tm q typ =
         | Le -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUPEQ))
         | _ -> None
       in
-      let%bind te1 = apron_texpr_of_llair_term t1 q typ in
-      let%map te2 = apron_texpr_of_llair_term t2 q typ in
+      let* te1 = apron_texpr_of_llair_term t1 q typ in
+      let+ te2 = apron_texpr_of_llair_term t2 q typ in
       f te1 te2
   | x ->
       [%Trace.info

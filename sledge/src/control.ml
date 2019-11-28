@@ -271,8 +271,8 @@ module Make (Dom : Domain_sig.Dom) = struct
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
-              Hashtbl.find summary_table name.reg
-              >>= List.find_map ~f:(Dom.apply_summary state)
+              let* summary = Hashtbl.find summary_table name.reg in
+              List.find_map ~f:(Dom.apply_summary state) summary
             in
             [%Trace.info
               "Maybe summary post: %a" (Option.pp "%a" Dom.pp)

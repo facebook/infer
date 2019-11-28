@@ -85,9 +85,11 @@ let excise_term ({us; min; xs} as goal) pure term =
 
 let excise_pure ({sub} as goal) =
   [%Trace.info "@[<2>excise_pure@ %a@]" pp goal] ;
-  List.fold_option sub.pure ~init:(goal, []) ~f:(fun (goal, pure) term ->
-      excise_term goal pure term )
-  >>| fun (goal, pure) -> {goal with sub= Sh.with_pure pure sub}
+  let+ goal, pure =
+    List.fold_option sub.pure ~init:(goal, []) ~f:(fun (goal, pure) term ->
+        excise_term goal pure term )
+  in
+  {goal with sub= Sh.with_pure pure sub}
 
 (*   [k; o)
  * ⊢ [l; n)
@@ -496,8 +498,7 @@ let excise_seg ({sub} as goal) msg ssg =
       (Sh.pp_seg_norm sub.cong) ssg] ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
-  Equality.difference sub.cong k l
-  >>= fun k_l ->
+  let* k_l = Equality.difference sub.cong k l in
   if
     (not (Equality.entails_eq sub.cong b b'))
     || not (Equality.entails_eq sub.cong m m')
@@ -511,13 +512,11 @@ let excise_seg ({sub} as goal) msg ssg =
     | -1 -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        Equality.difference sub.cong ko ln
-        >>= fun ko_ln ->
+        let* ko_ln = Equality.difference sub.cong ko ln in
         match[@warning "-p"] Z.sign ko_ln with
         (* k+o-(l+n) < 0 so k+o < l+n *)
         | -1 -> (
-            Equality.difference sub.cong l ko
-            >>= fun l_ko ->
+            let* l_ko = Equality.difference sub.cong l ko in
             match[@warning "-p"] Z.sign l_ko with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
@@ -551,8 +550,7 @@ let excise_seg ({sub} as goal) msg ssg =
     | 1 -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        Equality.difference sub.cong ko ln
-        >>= fun ko_ln ->
+        let* ko_ln = Equality.difference sub.cong ko ln in
         match[@warning "-p"] Z.sign ko_ln with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
@@ -562,8 +560,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | 0 -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
         | 1 -> (
-            Equality.difference sub.cong k ln
-            >>= fun k_ln ->
+            let* k_ln = Equality.difference sub.cong k ln in
             match[@warning "-p"] Z.sign k_ln with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
@@ -601,16 +598,20 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       let ys, min = Sh.bind_exists minuend ~wrt:xs in
       let us = min.us in
       let com = Sh.emp in
-      List.find_map dnf_subtrahend ~f:(fun sub ->
-          [%Trace.info "@[<2>subtrahend@ %a@]" Sh.pp sub] ;
-          let sub = Sh.extend_us us sub in
-          let ws, sub = Sh.bind_exists sub ~wrt:xs in
-          let xs = Set.union xs ws in
-          let sub = Sh.and_cong min.cong sub in
-          let zs = Var.Set.empty in
-          excise {us; com; min; xs; sub; zs; pgs= true}
-          >>| fun remainder -> Sh.exists (Set.union ys ws) remainder )
-      >>| fun remainder -> Sh.or_ remainders remainder )
+      let+ remainder =
+        List.find_map dnf_subtrahend ~f:(fun sub ->
+            [%Trace.info "@[<2>subtrahend@ %a@]" Sh.pp sub] ;
+            let sub = Sh.extend_us us sub in
+            let ws, sub = Sh.bind_exists sub ~wrt:xs in
+            let xs = Set.union xs ws in
+            let sub = Sh.and_cong min.cong sub in
+            let zs = Var.Set.empty in
+            let+ remainder =
+              excise {us; com; min; xs; sub; zs; pgs= true}
+            in
+            Sh.exists (Set.union ys ws) remainder )
+      in
+      Sh.or_ remainders remainder )
 
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->

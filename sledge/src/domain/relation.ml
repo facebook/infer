@@ -32,17 +32,16 @@ module Make (State_domain : State_domain_sig) = struct
   let init globals = embed (State_domain.init globals)
 
   let join (entry_a, current_a) (entry_b, current_b) =
-    if State_domain.equal entry_b entry_a then
-      State_domain.join current_a current_b
-      >>= fun curr -> Some (entry_a, curr)
+    if State_domain.equal entry_a entry_b then
+      let+ next = State_domain.join current_a current_b in
+      (entry_a, next)
     else None
 
   let is_false (_, curr) = State_domain.is_false curr
 
   let exec_assume (entry, current) cnd =
-    match State_domain.exec_assume current cnd with
-    | Some current -> Some (entry, current)
-    | None -> None
+    let+ next = State_domain.exec_assume current cnd in
+    (entry, next)
 
   let exec_kill (entry, current) reg =
     (entry, State_domain.exec_kill current reg)
@@ -51,16 +50,17 @@ module Make (State_domain : State_domain_sig) = struct
     (entry, State_domain.exec_move current reg_exps)
 
   let exec_inst (entry, current) inst =
-    State_domain.exec_inst current inst >>| fun current -> (entry, current)
+    let+ next = State_domain.exec_inst current inst in
+    (entry, next)
 
   let exec_intrinsic ~skip_throw (entry, current) areturn intrinsic actuals
       =
-    State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
-      actuals
-    |> function
-    | Some (Some current) -> Some (Some (entry, current))
-    | Some None -> Some None
-    | None -> None
+    let+ next_opt =
+      State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
+        actuals
+    in
+    let+ next = next_opt in
+    (entry, next)
 
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
@@ -105,22 +105,20 @@ module Make (State_domain : State_domain_sig) = struct
     List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
   let resolve_callee f e (entry, current) =
-    let callees, current = State_domain.resolve_callee f e current in
-    (callees, (entry, current))
+    let callees, next = State_domain.resolve_callee f e current in
+    (callees, (entry, next))
 
   type summary = State_domain.summary
 
   let pp_summary = State_domain.pp_summary
 
   let create_summary ~locals ~formals (entry, current) =
-    let fs, current =
+    let fs, next =
       State_domain.create_summary ~locals ~formals ~entry ~current
     in
-    (fs, (entry, current))
+    (fs, (entry, next))
 
-  let apply_summary rel summ =
-    let entry, current = rel in
-    Option.map
-      ~f:(fun c -> (entry, c))
-      (State_domain.apply_summary current summ)
+  let apply_summary (entry, current) summ =
+    let+ next = State_domain.apply_summary current summ in
+    (entry, next)
 end
