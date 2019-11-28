@@ -104,7 +104,8 @@ and apron_texpr_of_llair_term tm q typ =
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} ->
       let f =
-        try Float.of_string data with _ -> failwith "malformed float: %s"
+        try Float.of_string data
+        with Invalid_argument _ -> failwith "malformed float: %s"
       in
       Some (Texpr1.Cst (Coeff.s_of_float f))
   | Ap1 (Convert {dst; src}, t) -> (
