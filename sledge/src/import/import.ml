@@ -240,17 +240,15 @@ module Map = struct
 
   let equal_m__t (module Elt : Compare_m) equal_v = equal equal_v
 
-  let find_and_remove_exn m k =
+  let find_and_remove m k =
     let found = ref None in
     let m =
       change m k ~f:(fun v ->
           found := v ;
           None )
     in
-    match !found with None -> raise Caml.Not_found | Some v -> (v, m)
-
-  let find_and_remove m k =
-    try Some (find_and_remove_exn m k) with Caml.Not_found -> None
+    let+ v = !found in
+    (v, m)
 
   let find_or_add (type data) map key ~(default : data) ~if_found ~if_added
       =

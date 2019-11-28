@@ -184,7 +184,6 @@ module Map : sig
     -> ('k, 'v, 'c) t
     -> bool
 
-  val find_and_remove_exn : ('k, 'v, 'c) t -> 'k -> 'v * ('k, 'v, 'c) t
   val find_and_remove : ('k, 'v, 'c) t -> 'k -> ('v * ('k, 'v, 'c) t) option
 
   val find_or_add :
