@@ -236,7 +236,8 @@ let schedules_work_on_ui_thread =
 let schedules_work_on_bg_thread =
   let open MethodMatcher in
   let matcher =
-    [{default with classname= "java.lang.Object"; methods= ["scheduleGuaranteedDelayed"]}]
+    [ {default with classname= "java.lang.Object"; methods= ["scheduleGuaranteedDelayed"]}
+    ; {default with classname= "java.lang.Thread"; methods= ["start"]} ]
     |> of_records
   in
   fun tenv pname -> matcher tenv pname []
@@ -327,4 +328,13 @@ let is_handler_constructor =
       classname= "android.os.Handler"
     ; methods= [Typ.Procname.Java.constructor_method_name]
     ; actuals_pred= (fun actuals -> not (List.is_empty actuals)) } ]
+  |> of_records
+
+
+let is_thread_constructor =
+  let open MethodMatcher in
+  [ { default with
+      classname= "java.lang.Thread"
+    ; search_superclasses= false
+    ; methods= [Typ.Procname.Java.constructor_method_name] } ]
   |> of_records

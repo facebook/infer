@@ -64,3 +64,5 @@ val schedules_work_on_bg_thread : Tenv.t -> Typ.Procname.t -> bool
 val is_getMainLooper : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 
 val is_handler_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+val is_thread_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool

@@ -129,49 +129,80 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let make_thread thread = {empty_summary with thread} in
     let get_returned_executor_summary () =
       StarvationModels.get_returned_executor ~attrs_of_pname tenv callee actuals
-      |> Option.map ~f:(fun thread_constraint ->
-             make_ret_attr (Attribute.WorkScheduler thread_constraint) )
+      |> Option.map ~f:(fun thread_constraint -> make_ret_attr (WorkScheduler thread_constraint))
     in
     let get_thread_assert_summary () =
       match ConcurrencyModels.get_thread_assert_effect callee with
       | BackgroundThread ->
-          Some (make_thread ThreadDomain.BGThread)
+          Some (make_thread BGThread)
       | MainThread ->
-          Some (make_thread ThreadDomain.UIThread)
+          Some (make_thread UIThread)
       | MainThreadIfTrue ->
-          Some (make_ret_attr Attribute.ThreadGuard)
+          Some (make_ret_attr ThreadGuard)
       | UnknownThread ->
           None
     in
     let get_mainLooper_summary () =
       if StarvationModels.is_getMainLooper tenv callee actuals then
-        Some (make_ret_attr (Attribute.Looper StarvationModels.ForUIThread))
+        Some (make_ret_attr (Looper ForUIThread))
       else None
     in
     let get_callee_summary () = Payload.read ~caller_summary:summary ~callee_pname:callee in
-    let callsite = CallSite.make callee loc in
+    let treat_handler_constructor () =
+      if StarvationModels.is_handler_constructor tenv callee actuals then
+        match actuals with
+        | HilExp.AccessExpression receiver :: HilExp.AccessExpression exp :: _ ->
+            let constr =
+              AttributeDomain.find_opt exp astate.attributes
+              |> Option.bind ~f:(function Attribute.Looper c -> Some c | _ -> None)
+              |> Option.value ~default:StarvationModels.ForUnknownThread
+            in
+            let attributes =
+              AttributeDomain.add receiver (WorkScheduler constr) astate.attributes
+            in
+            Some {astate with attributes}
+        | _ ->
+            None
+      else None
+    in
+    let treat_thread_constructor () =
+      if StarvationModels.is_thread_constructor tenv callee actuals then
+        match actuals with
+        | HilExp.AccessExpression receiver :: rest ->
+            ( match rest with
+            | HilExp.AccessExpression exp1 :: HilExp.AccessExpression exp2 :: _ ->
+                (* two additional arguments, either could be a runnable, see docs *)
+                [exp1; exp2]
+            | HilExp.AccessExpression runnable :: _ ->
+                (* either just one argument, or more but 2nd is not an access expression *)
+                [runnable]
+            | _ ->
+                [] )
+            |> List.map ~f:(fun r () -> StarvationModels.get_run_method_from_runnable tenv r)
+            |> IList.eval_until_first_some
+            |> Option.map ~f:(fun procname ->
+                   let attributes =
+                     AttributeDomain.add receiver (Runnable procname) astate.attributes
+                   in
+                   {astate with attributes} )
+        | _ ->
+            None
+      else None
+    in
     (* constructor calls are special-cased because they side-effect the receiver and do not
        return anything *)
-    if StarvationModels.is_handler_constructor tenv callee actuals then
-      match actuals with
-      | HilExp.AccessExpression receiver :: HilExp.AccessExpression exp :: _ ->
-          let thread_constraint_attr =
-            AttributeDomain.find_opt exp astate.attributes
-            |> Option.bind ~f:(function Attribute.Looper c -> Some c | _ -> None)
-            |> Option.value ~default:StarvationModels.ForUnknownThread
-            |> fun constr -> Attribute.WorkScheduler constr
-          in
-          let attributes = AttributeDomain.add receiver thread_constraint_attr astate.attributes in
-          {astate with attributes}
-      | _ ->
-          astate
-    else
-      get_returned_executor_summary ()
-      |> IOption.if_none_evalopt ~f:get_thread_assert_summary
-      |> IOption.if_none_evalopt ~f:get_mainLooper_summary
-      (* [get_callee_summary] should come after all models *)
-      |> IOption.if_none_evalopt ~f:get_callee_summary
-      |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv ~lhs callsite)
+    let treat_modeled_summaries () =
+      let callsite = CallSite.make callee loc in
+      IList.eval_until_first_some
+        [ get_returned_executor_summary
+        ; get_thread_assert_summary
+        ; get_mainLooper_summary
+        ; get_callee_summary ]
+      |> Option.map ~f:(Domain.integrate_summary ~tenv ~lhs callsite astate)
+    in
+    IList.eval_until_first_some
+      [treat_handler_constructor; treat_thread_constructor; treat_modeled_summaries]
+    |> Option.value ~default:astate
 
 
   let exec_instr (astate : Domain.t) ({ProcData.summary; tenv; extras} as procdata) _

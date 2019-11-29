@@ -50,6 +50,9 @@ val force_until_first_some : 'a option lazy_t list -> 'a option
 (** [force_until_first_some xs] forces the computation of each element of [xs] and returns the first
 that matches (Some _); or, if no such element exists, it returns None. *)
 
+val eval_until_first_some : (unit -> 'a option) list -> 'a option
+(** given a list of functions taking unit, evaluate and return the first one to return [Some x] *)
+
 val pp_print_list :
      max:int
   -> ?pp_sep:(Format.formatter -> unit -> unit)
