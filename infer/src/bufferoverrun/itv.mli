@@ -243,11 +243,6 @@ val prune_le : t -> t -> t
 
 val subst : t -> Bound.eval_sym -> t
 
-val subst_pulse_values :
-     (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
-  -> t
-  -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t
-
 val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t
 
 val of_normal_path : unsigned:bool -> ?non_int:bool -> Symb.SymbolPath.partial -> t

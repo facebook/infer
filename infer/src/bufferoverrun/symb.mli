@@ -124,10 +124,7 @@ module Symbol : sig
 
   val is_pulse_value : t -> bool
 
-  val subst_pulse_value :
-       (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
-    -> t
-    -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t
+  val get_pulse_value_exn : t -> PulseAbstractValue.t
 end
 
 module SymbolSet : sig

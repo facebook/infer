@@ -40,6 +40,10 @@ module ItvPure = struct
 
   let ub : t -> Bound.t = snd
 
+  let get_bound (lb, ub) bound_end =
+    match bound_end with Symb.BoundEnd.LowerBound -> lb | Symb.BoundEnd.UpperBound -> ub
+
+
   let is_lb_infty : t -> bool = fun (l, _) -> Bound.is_minf l
 
   let is_finite : t -> bool =
@@ -394,16 +398,6 @@ module ItvPure = struct
         Bottom
 
 
-  let subst_pulse_values :
-         (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
-      -> t
-      -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t =
-   fun subst (l, u) ->
-    let subst, l' = Bound.subst_pulse_value subst l in
-    let subst, u' = Bound.subst_pulse_value subst u in
-    (subst, (l', u'))
-
-
   let arith_binop bop x y =
     match bop with
     | Binop.PlusA _ ->
@@ -549,14 +543,8 @@ let bot : t = Bottom
 
 let top : t = NonBottom ItvPure.top
 
-let get_bound itv (be : Symb.BoundEnd.t) =
-  match (itv, be) with
-  | Bottom, _ ->
-      Bottom
-  | NonBottom x, LowerBound ->
-      NonBottom (ItvPure.lb x)
-  | NonBottom x, UpperBound ->
-      NonBottom (ItvPure.ub x)
+let get_bound itv bound_end =
+  match itv with Bottom -> Bottom | NonBottom x -> NonBottom (ItvPure.get_bound x bound_end)
 
 
 let false_sem = NonBottom ItvPure.false_sem
@@ -742,19 +730,6 @@ let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne
 
 let subst : t -> Bound.eval_sym -> t =
  fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
-
-
-let subst_pulse_values :
-       (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
-    -> t
-    -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t =
- fun subst x ->
-  match x with
-  | NonBottom x' ->
-      let subst', x'' = ItvPure.subst_pulse_values subst x' in
-      (subst', NonBottom x'')
-  | Bottom ->
-      (subst, x)
 
 
 let is_symbolic = bind1bool ItvPure.is_symbolic

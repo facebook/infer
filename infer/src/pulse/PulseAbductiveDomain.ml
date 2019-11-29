@@ -533,12 +533,23 @@ module PrePost = struct
           ~addr_pre ~addr_hist_caller call_state )
 
 
-  let translate_attributes attrs_callee subst =
-    let translate_attribute subst attr =
+  let subst_attributes attrs_callee {astate; subst} =
+    let eval_sym_of_subst subst s bound_end =
+      let v = Symb.Symbol.get_pulse_value_exn s in
+      match PulseAbstractValue.Map.find_opt v !subst with
+      | Some (v', _) ->
+          Itv.get_bound (Memory.get_bo_itv v' astate) bound_end
+      | None ->
+          let v' = PulseAbstractValue.mk_fresh () in
+          subst := PulseAbstractValue.Map.add v (v', []) !subst ;
+          AbstractDomain.Types.NonBottom (Bounds.Bound.of_pulse_value v')
+    in
+    let subst_attribute subst attr =
       match (attr : Attribute.t) with
       | BoItv itv ->
-          let subst, itv' = Itv.subst_pulse_values subst itv in
-          (subst, Attribute.BoItv itv')
+          let subst = ref subst in
+          let itv' = Itv.subst itv (eval_sym_of_subst subst) in
+          (!subst, Attribute.BoItv itv')
       | AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Arithmetic _
@@ -550,7 +561,7 @@ module PrePost = struct
           (* non-relational attributes *)
           (subst, attr)
     in
-    Attributes.fold_map attrs_callee ~init:subst ~f:translate_attribute
+    Attributes.fold_map attrs_callee ~init:subst ~f:subst_attribute
 
 
   let solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
@@ -592,7 +603,7 @@ module PrePost = struct
 
   let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
     let one_address_sat addr_pre callee_attrs addr_hist_caller call_state =
-      let subst, attrs_pre = translate_attributes callee_attrs call_state.subst in
+      let subst, attrs_pre = subst_attributes callee_attrs call_state in
       solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
         ~addr_hist_caller {call_state with subst}
     in
@@ -681,7 +692,7 @@ module PrePost = struct
       | WrittenTo _ ->
           attr
     in
-    let call_state, attrs = translate_attributes attrs call_state in
+    let call_state, attrs = subst_attributes attrs call_state in
     (call_state, Attributes.map attrs ~f:(fun attr -> add_call_to_attribute attr))
 
 
@@ -693,7 +704,7 @@ module PrePost = struct
     let heap = (call_state.astate.post :> base_domain).heap in
     let subst, heap =
       let subst, attrs_post_caller =
-        add_call_to_attributes callee_proc_name call_loc hist_caller attrs_post call_state.subst
+        add_call_to_attributes callee_proc_name call_loc hist_caller attrs_post call_state
       in
       (subst, BaseMemory.set_attrs addr_caller attrs_post_caller heap)
     in
@@ -863,7 +874,8 @@ module PrePost = struct
                 (* callee address has no meaning for the caller *) (subst, heap)
             | Some (addr_caller, history) ->
                 let subst, attrs' =
-                  add_call_to_attributes callee_proc_name call_loc history attrs subst
+                  add_call_to_attributes callee_proc_name call_loc history attrs
+                    {call_state with subst}
                 in
                 (subst, BaseMemory.set_attrs addr_caller attrs' heap) )
         (pre_post.post :> BaseDomain.t).heap (call_state.subst, heap0)

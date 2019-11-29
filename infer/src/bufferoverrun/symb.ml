@@ -366,6 +366,13 @@ module Symbol = struct
         false
 
 
+  let get_pulse_value_exn : t -> PulseAbstractValue.t = function
+    | PulseValue v ->
+        v
+    | OneValue _ | BoundEnd _ ->
+        assert false
+
+
   (* This should be called on non-pulse bound as of now. *)
   let path = function PulseValue _ -> assert false | OneValue {path} | BoundEnd {path} -> path
 
@@ -387,23 +394,6 @@ module Symbol = struct
         false
     | OneValue {path} | BoundEnd {path} ->
         SymbolPath.exists_str ~f path
-
-
-  let subst_pulse_value subst s =
-    match s with
-    | OneValue _ | BoundEnd _ ->
-        (subst, s)
-    | PulseValue v ->
-        let subst', v' =
-          match PulseAbstractValue.Map.find_opt v subst with
-          | Some (v', _) ->
-              (subst, v')
-          | None ->
-              let v' = PulseAbstractValue.mk_fresh () in
-              let subst' = PulseAbstractValue.Map.add v (v', []) subst in
-              (subst', v')
-        in
-        (subst', PulseValue v')
 end
 
 module SymbolSet = struct
