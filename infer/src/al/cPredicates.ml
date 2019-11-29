@@ -1391,21 +1391,23 @@ let using_namespace an namespace =
       false
 
 
-let rec get_decl_attributes_for_callexpr an =
+let rec get_decl_attributes an =
   let open Clang_ast_t in
   let open Ctl_parser_types in
   match an with
   | Stmt (CallExpr (_, func :: _, _)) ->
-      get_decl_attributes_for_callexpr (Stmt func)
+      get_decl_attributes (Stmt func)
   | Stmt (ImplicitCastExpr (_, [stmt], _, _)) ->
-      get_decl_attributes_for_callexpr (Stmt stmt)
+      get_decl_attributes (Stmt stmt)
   | Stmt (DeclRefExpr (_, _, _, drti)) -> (
     match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
     | Some decl ->
-        let decl_info = Clang_ast_proj.get_decl_tuple decl in
-        decl_info.di_attributes
+        get_decl_attributes (Decl decl)
     | None ->
         [] )
+  | Decl decl ->
+      let decl_info = Clang_ast_proj.get_decl_tuple decl in
+      decl_info.di_attributes
   | _ ->
       []
 
@@ -1452,7 +1454,7 @@ let has_visibility_attribute an visibility =
       | _ ->
           false )
   in
-  let attributes = get_decl_attributes_for_callexpr an in
+  let attributes = get_decl_attributes an in
   match visibility with ALVar.Const vis -> has_visibility_attr attributes vis | _ -> false
 
 
@@ -1462,7 +1464,7 @@ let has_no_escape_attribute an =
 
 
 let has_used_attribute an =
-  let attributes = get_decl_attributes_for_callexpr an in
+  let attributes = get_decl_attributes an in
   List.exists ~f:(fun attr -> match attr with `UsedAttr _ -> true | _ -> false) attributes
 
 

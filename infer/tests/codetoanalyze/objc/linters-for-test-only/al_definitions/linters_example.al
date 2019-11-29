@@ -932,5 +932,26 @@ DEFINE-CHECKER CAT_DECL_MACRO = {
       ) 
       HOLDS-IN-NODE ObjCCategoryDecl;
 
-	 SET message = "A category is defined without the corrsponding macro";
+	 SET message = "A category is defined without the corresponding macro";
+};
+
+DEFINE-CHECKER CAT_IMPL_MACRO = {
+
+  LET is_linkable_var = 
+      has_visibility_attribute("Default") AND
+      declaration_has_name(REGEXP("Linkable_.*")) AND
+      has_type("char");
+
+	 LET var_decls =
+	  		HOLDS-NEXT WITH-TRANSITION Sibling
+        (is_node("VarDecl") AND is_linkable_var());
+
+   SET report_when = 
+       WHEN 
+      NOT (
+          is_node("ObjCCategoryImplDecl") 
+           AND-WITH-WITNESSES var_decls() : decl_name_is_contained_in_name_of_decl()
+      ) HOLDS-IN-NODE ObjCCategoryImplDecl;
+
+	 SET message = "A category is implemented without the corresponding macro";
 };

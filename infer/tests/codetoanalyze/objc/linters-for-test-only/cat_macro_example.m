@@ -17,8 +17,18 @@ int x;
   extern const void* const OS_WEAK OS_CONCAT(Link_, NAME); \
   OS_USED const void* const OS_WEAK OS_CONCAT(Link_, NAME) = &Linkable_##NAME;
 
+#define LINKABLE(NAME) \
+  __attribute__((visibility("default"))) char Linkable_##NAME = 'L';
+
 LINK_REQUIRE(SiblingExample_Cat2);
 @interface SiblingExample (Cat2)
 - (void)foo:(int)themeProvider;
+@end
+
+LINKABLE(SiblingExample)
+@implementation SiblingExample (Cat2)
+
+- (void)foo:(int)themeProvider {
+}
 
 @end
