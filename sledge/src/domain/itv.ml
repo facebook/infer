@@ -171,8 +171,9 @@ let assign reg exp q =
   ;
   let lval = apron_var_of_reg reg in
   ( match
-      apron_typ_of_llair_typ (Reg.typ reg)
-      >>= apron_texpr_of_llair_term (Exp.term exp) q
+      Option.bind
+        ~f:(apron_texpr_of_llair_term (Exp.term exp) q)
+        (apron_typ_of_llair_typ (Reg.typ reg))
     with
   | Some e ->
       let env = Abstract1.env q in
@@ -195,8 +196,9 @@ let assign reg exp q =
 (** block if [e] is known to be false; skip otherwise *)
 let exec_assume q e =
   match
-    apron_typ_of_llair_typ (Exp.typ e)
-    >>= apron_texpr_of_llair_term (Exp.term e) q
+    Option.bind
+      ~f:(apron_texpr_of_llair_term (Exp.term e) q)
+      (apron_typ_of_llair_typ (Exp.typ e))
   with
   | Some e ->
       let cond =
@@ -247,7 +249,7 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
       ; "mallctlbymib"; "malloc_stats_print"; "strlen"
       ; "__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then aret >>| (exec_kill pre >> Option.some)
+  then Option.map ~f:(Option.some << exec_kill pre) aret
   else None
 
 type from_call = {areturn: Reg.t option; caller_q: t} [@@deriving sexp_of]

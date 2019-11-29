@@ -47,17 +47,21 @@ val ( >> ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
 (** Composition of functions: [(f >> g) x] is exactly equivalent to [g (f
     (x))]. Left associative. *)
 
+val ( << ) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
+(** Reverse composition of functions: [(g << f) x] is exactly equivalent to
+    [g (f (x))]. Left associative. *)
+
 val ( $ ) : ('a -> unit) -> ('a -> 'b) -> 'a -> 'b
 (** Sequential composition of functions: [(f $ g) x] is exactly equivalent
     to [(f x) ; (g x)]. Left associative. *)
 
 val ( $> ) : 'a -> ('a -> unit) -> 'a
-(** Apply and ignore function: [x $> f] is exactly equivalent to [f x ; x].
-    Left associative. *)
+(** Reverse apply and ignore function: [x $> f] is exactly equivalent to [f
+    x ; x]. Left associative. *)
 
 val ( <$ ) : ('a -> unit) -> 'a -> 'a
-(** Reverse apply and ignore function: [f <$ x] is exactly equivalent to [f
-    x ; x]. Left associative. *)
+(** Apply and ignore function: [f <$ x] is exactly equivalent to [f x ; x].
+    Left associative. *)
 
 (** Pretty-printing *)
 

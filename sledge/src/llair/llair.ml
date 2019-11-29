@@ -547,7 +547,8 @@ let set_derived_metadata functions =
         | Iswitch {tbl; _} -> Vector.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
-                Reg.of_exp callee >>| Reg.name >>= Func.find functions
+                Option.bind ~f:(Func.find functions)
+                  (Option.map ~f:Reg.name (Reg.of_exp callee))
               with
             | Some func ->
                 if Set.mem ancestors func.entry then call.recursive <- true

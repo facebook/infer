@@ -283,8 +283,7 @@ let apply_summary q ({xs; foot; post} as fs) =
     if Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot else None
   in
   [%Trace.info "frame %a" (Option.pp "%a" pp) frame] ;
-  Option.map ~f:(Sh.star post) frame
-  |> Option.map ~f:(Sh.extend_us add_back)
+  Option.map ~f:(Sh.extend_us add_back) (Option.map ~f:(Sh.star post) frame)
   |>
   [%Trace.retn fun {pf} r ->
     match r with None -> pf "None" | Some q -> pf "@,%a" pp q]

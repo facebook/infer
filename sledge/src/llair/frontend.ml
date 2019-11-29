@@ -642,9 +642,10 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
                 (ptr_idx x ~ptr ~idx ~llelt, llelt)
             | Struct ->
                 let fld =
-                  Option.bind ~f:Int64.to_int
-                    (Llvm.int64_of_const (Llvm.operand llv i))
-                  |> function
+                  match
+                    Option.bind ~f:Int64.to_int
+                      (Llvm.int64_of_const (Llvm.operand llv i))
+                  with
                   | Some n -> n
                   | None -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
                 in
