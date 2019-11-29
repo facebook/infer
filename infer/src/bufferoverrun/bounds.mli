@@ -125,6 +125,11 @@ module Bound : sig
   val get_same_one_symbol : t -> t -> Symb.SymbolPath.t option
 
   val exists_str : f:(string -> bool) -> t -> bool
+
+  val subst_pulse_value :
+       (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+    -> t
+    -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t
 end
 
 module BoundTrace : sig

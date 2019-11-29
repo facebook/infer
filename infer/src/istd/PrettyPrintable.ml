@@ -221,6 +221,8 @@ module type PPUniqRankSet = sig
 
   val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
 
+  val fold_map : t -> init:'accum -> f:('accum -> elt -> 'accum * elt) -> 'accum * t
+
   val is_empty : t -> bool
 
   val is_singleton : t -> bool
@@ -271,6 +273,17 @@ module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type e
         assert (Int.equal rank (Val.to_rank value')) ;
         value' )
       m
+
+
+  let fold_map m ~init ~f =
+    let accum = ref init in
+    let m' =
+      map m ~f:(fun value ->
+          let acc', v' = f !accum value in
+          accum := acc' ;
+          v' )
+    in
+    (!accum, m')
 
 
   let pp ?(print_rank = false) fmt map =

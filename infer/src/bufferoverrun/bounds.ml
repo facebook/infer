@@ -209,6 +209,14 @@ module SymLinear = struct
 
 
   let exists_str ~f x = M.exists (fun k _ -> Symb.Symbol.exists_str ~f k) x
+
+  let subst_pulse_value subst map =
+    M.fold
+      (fun symbol coeff (new_map, new_subst) ->
+        let new_subst, symbol' = Symb.Symbol.subst_pulse_value new_subst symbol in
+        let new_map = M.add symbol' coeff new_map in
+        (new_map, new_subst) )
+      map (M.empty, subst)
 end
 
 module Bound = struct
@@ -1136,6 +1144,15 @@ module Bound = struct
   let subst_lb x eval_sym = subst ~subst_pos:Symb.BoundEnd.LowerBound x eval_sym
 
   let subst_ub x eval_sym = subst ~subst_pos:Symb.BoundEnd.UpperBound x eval_sym
+
+  let subst_pulse_value subst b =
+    match b with
+    | MInf | PInf | MinMax _ | MinMaxB _ ->
+        (subst, b)
+    | Linear (c, se) ->
+        let se', subst = SymLinear.subst_pulse_value subst se in
+        (subst, Linear (c, se'))
+
 
   (* When a positive bound is expected, min(1,x) can be simplified to 1. *)
   let simplify_min_one b =

@@ -121,6 +121,13 @@ module Symbol : sig
   val of_pulse_value : PulseAbstractValue.t -> t
 
   val exists_str : f:(string -> bool) -> t -> bool
+
+  val is_pulse_value : t -> bool
+
+  val subst_pulse_value :
+       (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+    -> t
+    -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t
 end
 
 module SymbolSet : sig

@@ -394,6 +394,16 @@ module ItvPure = struct
         Bottom
 
 
+  let subst_pulse_values :
+         (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+      -> t
+      -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t =
+   fun subst (l, u) ->
+    let subst, l' = Bound.subst_pulse_value subst l in
+    let subst, u' = Bound.subst_pulse_value subst u in
+    (subst, (l', u'))
+
+
   let arith_binop bop x y =
     match bop with
     | Binop.PlusA _ ->
@@ -732,6 +742,19 @@ let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne
 
 let subst : t -> Bound.eval_sym -> t =
  fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
+
+
+let subst_pulse_values :
+       (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+    -> t
+    -> (PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t * t =
+ fun subst x ->
+  match x with
+  | NonBottom x' ->
+      let subst', x'' = ItvPure.subst_pulse_values subst x' in
+      (subst', NonBottom x'')
+  | Bottom ->
+      (subst, x)
 
 
 let is_symbolic = bind1bool ItvPure.is_symbolic

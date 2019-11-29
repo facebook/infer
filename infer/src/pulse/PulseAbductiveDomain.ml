@@ -446,43 +446,6 @@ module PrePost = struct
     Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
 
 
-  let solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
-      ~addr_hist_caller call_state =
-    match Attributes.get_arithmetic attrs_pre with
-    | None ->
-        call_state
-    | Some (arith_callee, arith_callee_hist) -> (
-        let addr_caller, hist_caller = addr_hist_caller in
-        let astate = call_state.astate in
-        let arith_caller_opt = Memory.get_arithmetic addr_caller astate |> Option.map ~f:fst in
-        (* TODO: we don't use [abduced_callee] but we could probably use it to refine the attributes
-           for that address in the post since abstract values are immutable *)
-        match
-          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee)
-        with
-        | Unsatisfiable ->
-            raise
-              (CannotApplyPre
-                 (Arithmetic
-                    { addr_caller
-                    ; addr_callee= addr_pre
-                    ; arith_caller= arith_caller_opt
-                    ; arith_callee= Some arith_callee }))
-        | Satisfiable (abduce_caller, _abduce_callee) ->
-            let new_astate =
-              Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
-                  let attribute =
-                    Attribute.Arithmetic
-                      ( abduce_caller
-                      , add_call_to_trace callee_proc_name call_location hist_caller
-                          arith_callee_hist )
-                  in
-                  Memory.abduce_attribute addr_caller attribute astate
-                  |> Memory.add_attribute addr_caller attribute )
-            in
-            {call_state with astate= new_astate} )
-
-
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
@@ -495,11 +458,7 @@ module PrePost = struct
       match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
       | None ->
           Ok call_state
-      | Some (edges_pre, attrs_pre) ->
-          let call_state =
-            solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
-              ~addr_hist_caller call_state
-          in
+      | Some (edges_pre, _attrs_pre) ->
           Container.fold_result
             ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
             ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
@@ -574,15 +533,92 @@ module PrePost = struct
           ~addr_pre ~addr_hist_caller call_state )
 
 
+  let translate_attributes attrs_callee subst =
+    let translate_attribute subst attr =
+      match (attr : Attribute.t) with
+      | BoItv itv ->
+          let subst, itv' = Itv.subst_pulse_values subst itv in
+          (subst, Attribute.BoItv itv')
+      | AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Arithmetic _
+      | Closure _
+      | Invalid _
+      | MustBeValid _
+      | StdVectorReserve
+      | WrittenTo _ ->
+          (* non-relational attributes *)
+          (subst, attr)
+    in
+    Attributes.fold_map attrs_callee ~init:subst ~f:translate_attribute
+
+
+  let solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
+      ~addr_hist_caller call_state =
+    match Attributes.get_arithmetic attrs_pre with
+    | None ->
+        call_state
+    | Some (arith_callee, arith_callee_hist) -> (
+        let addr_caller, hist_caller = addr_hist_caller in
+        let astate = call_state.astate in
+        let arith_caller_opt = Memory.get_arithmetic addr_caller astate |> Option.map ~f:fst in
+        (* TODO: we don't use [abduced_callee] but we could probably use it to refine the attributes
+           for that address in the post since abstract values are immutable *)
+        match
+          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee)
+        with
+        | Unsatisfiable ->
+            raise
+              (CannotApplyPre
+                 (Arithmetic
+                    { addr_caller
+                    ; addr_callee= addr_pre
+                    ; arith_caller= arith_caller_opt
+                    ; arith_callee= Some arith_callee }))
+        | Satisfiable (abduce_caller, _abduce_callee) ->
+            let new_astate =
+              Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
+                  let attribute =
+                    Attribute.Arithmetic
+                      ( abduce_caller
+                      , add_call_to_trace callee_proc_name call_location hist_caller
+                          arith_callee_hist )
+                  in
+                  Memory.abduce_attribute addr_caller attribute astate
+                  |> Memory.add_attribute addr_caller attribute )
+            in
+            {call_state with astate= new_astate} )
+
+
+  let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
+    let one_address_sat addr_pre callee_attrs addr_hist_caller call_state =
+      let subst, attrs_pre = translate_attributes callee_attrs call_state.subst in
+      solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
+        ~addr_hist_caller {call_state with subst}
+    in
+    (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
+    AddressMap.fold
+      (fun addr_callee addr_hist_caller call_state ->
+        match BaseMemory.find_opt addr_callee (pre_post.pre :> BaseDomain.t).heap with
+        | None ->
+            call_state
+        | Some (_edges, callee_attrs) ->
+            one_address_sat addr_callee callee_attrs addr_hist_caller call_state )
+      call_state.subst call_state
+
+
   let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
+    let ( >>= ) x f = Option.map x ~f:(Result.bind ~f) in
+    let ( >>| ) x f = Option.map x ~f:(Result.map ~f) in
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
     let r =
+      (* first make as large a mapping as we can between callee values and caller values... *)
       materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
         call_state
-      |> Option.map
-           ~f:
-             (Result.bind ~f:(fun call_state ->
-                  materialize_pre_for_globals callee_proc_name call_location pre_post call_state ))
+      >>= materialize_pre_for_globals callee_proc_name call_location pre_post
+      >>| (* ...then relational arithmetic constraints in the callee's attributes will make sense in
+             terms of the caller's values *)
+      apply_arithmetic_constraints callee_proc_name call_location pre_post
     in
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     r
@@ -627,21 +663,26 @@ module PrePost = struct
             old_post_edges edges_pre )
 
 
-  let add_call_to_attr proc_name call_location caller_history attr =
-    match (attr : Attribute.t) with
-    | Invalid (invalidation, trace) ->
-        Attribute.Invalid
-          (invalidation, add_call_to_trace proc_name call_location caller_history trace)
-    | Arithmetic (arith, trace) ->
-        Attribute.Arithmetic (arith, add_call_to_trace proc_name call_location caller_history trace)
-    | AddressOfCppTemporary (_, _)
-    | AddressOfStackVariable (_, _, _)
-    | BoItv _
-    | Closure _
-    | MustBeValid _
-    | StdVectorReserve
-    | WrittenTo _ ->
-        attr
+  let add_call_to_attributes proc_name call_location caller_history attrs call_state =
+    let add_call_to_attribute attr =
+      match (attr : Attribute.t) with
+      | Invalid (invalidation, trace) ->
+          Attribute.Invalid
+            (invalidation, add_call_to_trace proc_name call_location caller_history trace)
+      | Arithmetic (arith, trace) ->
+          Attribute.Arithmetic
+            (arith, add_call_to_trace proc_name call_location caller_history trace)
+      | AddressOfCppTemporary (_, _)
+      | AddressOfStackVariable (_, _, _)
+      | BoItv _
+      | Closure _
+      | MustBeValid _
+      | StdVectorReserve
+      | WrittenTo _ ->
+          attr
+    in
+    let call_state, attrs = translate_attributes attrs call_state in
+    (call_state, Attributes.map attrs ~f:(fun attr -> add_call_to_attribute attr))
 
 
   let record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
@@ -650,16 +691,14 @@ module PrePost = struct
       delete_edges_in_callee_pre_from_caller ~addr_callee ~cell_pre_opt ~addr_caller call_state
     in
     let heap = (call_state.astate.post :> base_domain).heap in
-    let heap =
-      let attrs_post_caller =
-        Attributes.map attrs_post ~f:(fun attr ->
-            add_call_to_attr callee_proc_name call_loc hist_caller attr )
+    let subst, heap =
+      let subst, attrs_post_caller =
+        add_call_to_attributes callee_proc_name call_loc hist_caller attrs_post call_state.subst
       in
-      BaseMemory.set_attrs addr_caller attrs_post_caller heap
+      (subst, BaseMemory.set_attrs addr_caller attrs_post_caller heap)
     in
     let subst, translated_post_edges =
-      BaseMemory.Edges.fold_map ~init:call_state.subst edges_post
-        ~f:(fun subst (addr_callee, trace_post) ->
+      BaseMemory.Edges.fold_map ~init:subst edges_post ~f:(fun subst (addr_callee, trace_post) ->
           let subst, (addr_curr, hist_curr) =
             subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
           in
@@ -812,28 +851,25 @@ module PrePost = struct
 
   let record_post_remaining_attributes callee_proc_name call_loc pre_post call_state =
     let heap0 = (call_state.astate.post :> base_domain).heap in
-    let heap =
+    let subst, heap =
       BaseMemory.fold_attrs
-        (fun addr_callee attrs heap ->
+        (fun addr_callee attrs (subst, heap) ->
           if AddressSet.mem addr_callee call_state.visited then
-            (* already recorded the attributes when we were walking the edges map *) heap
+            (* already recorded the attributes when we were walking the edges map *)
+            (subst, heap)
           else
             match AddressMap.find_opt addr_callee call_state.subst with
             | None ->
-                (* callee address has no meaning for the caller *) heap
+                (* callee address has no meaning for the caller *) (subst, heap)
             | Some (addr_caller, history) ->
-                let attrs' =
-                  Attributes.map
-                    ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc history attr)
-                    attrs
+                let subst, attrs' =
+                  add_call_to_attributes callee_proc_name call_loc history attrs subst
                 in
-                BaseMemory.set_attrs addr_caller attrs' heap )
-        (pre_post.post :> BaseDomain.t).heap heap0
+                (subst, BaseMemory.set_attrs addr_caller attrs' heap) )
+        (pre_post.post :> BaseDomain.t).heap (call_state.subst, heap0)
     in
-    if phys_equal heap heap0 then call_state
-    else
-      let post = Domain.make (call_state.astate.post :> BaseDomain.t).stack heap in
-      {call_state with astate= {call_state.astate with post}}
+    let post = Domain.make (call_state.astate.post :> BaseDomain.t).stack heap in
+    {call_state with subst; astate= {call_state.astate with post}}
 
 
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
