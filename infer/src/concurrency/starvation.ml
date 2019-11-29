@@ -123,7 +123,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            {astate with attributes} )
 
 
-  let do_call ProcData.{tenv; summary} lhs callee actuals loc astate =
+  let do_call ProcData.{tenv; summary} lhs callee actuals loc (astate : Domain.t) =
     let open Domain in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
@@ -244,6 +244,53 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
+(** Before analyzing Java instance methods (non-constructor, non-static), compute the attributes
+    of instance variables that all constructors agree on after termination. *)
+let add_constructor_attributes tenv procname (astate : Domain.t) =
+  let open Domain in
+  let skip_constructor_analysis =
+    match procname with
+    | Typ.Procname.Java jname ->
+        (* constructor attributes affect instance fields, which static methods cannot access;
+           ditto for the class initializer; finally, don't recurse if already in constructor *)
+        Typ.Procname.Java.(is_static jname || is_constructor jname || is_class_initializer jname)
+    | _ ->
+        (* don't do anything for non-Java code *)
+        true
+  in
+  if skip_constructor_analysis then astate
+  else
+    (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
+    let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
+    let make_local exp =
+      let var, typ = HilExp.AccessExpression.get_base exp in
+      let newvar =
+        assert (Var.is_this var) ;
+        local_this
+      in
+      HilExp.AccessExpression.replace_base ~remove_deref_after_base:false (newvar, typ) exp
+    in
+    let localize_attrs attributes =
+      AttributeDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
+    in
+    (* get class of current procedure *)
+    Typ.Procname.get_class_type_name procname
+    (* retrieve its definition *)
+    |> Option.bind ~f:(Tenv.lookup tenv)
+    (* get the list of methods in the class *)
+    |> Option.value_map ~default:[] ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.methods)
+    (* keep only the constructors *)
+    |> List.filter ~f:Typ.Procname.(function Java jname -> Java.is_constructor jname | _ -> false)
+    (* get the summaries of the constructors *)
+    |> List.filter_map ~f:Payload.read_toplevel_procedure
+    (* make instances of [this] local to the current procedure and select only the attributes *)
+    |> List.map ~f:(fun (summary : Domain.summary) -> localize_attrs summary.attributes)
+    (* join all the attribute maps together *)
+    |> List.reduce ~f:AttributeDomain.join
+    |> Option.value ~default:AttributeDomain.top
+    |> fun attributes -> {astate with attributes}
+
+
 let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
   let procname = Procdesc.get_proc_name proc_desc in
@@ -283,7 +330,10 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       else Fn.id
     in
     let initial =
-      Domain.bottom |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
+      Domain.bottom
+      (* set the attributes of instance variables to those achieved by all constructors *)
+      |> add_constructor_attributes tenv procname
+      |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:filter_blocks

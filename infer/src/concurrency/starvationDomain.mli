@@ -187,6 +187,7 @@ type summary =
   { critical_pairs: CriticalPairs.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
+  ; attributes: AttributeDomain.t  (** final-state attributes that affect instance variables only *)
   ; return_attribute: Attribute.t }
 
 val empty_summary : summary

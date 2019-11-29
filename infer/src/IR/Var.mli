@@ -41,6 +41,8 @@ val is_footprint : t -> bool
 
 val is_none : t -> bool
 
+val is_this : t -> bool
+
 val appears_in_source_code : t -> bool
 (** return true if this variable appears in source code (i.e., is not a LogicalVar or a
     frontend-generated ProgramVar) *)

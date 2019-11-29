@@ -44,6 +44,8 @@ let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_fo
 
 let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
 
+let is_this = function ProgramVar pv -> Pvar.is_this pv | LogicalVar _ -> false
+
 let get_declaring_function = function
   | LogicalVar _ ->
       None

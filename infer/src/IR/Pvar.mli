@@ -86,7 +86,7 @@ val is_cpp_temporary : t -> bool
 (** return true if this pvar represents a C++ temporary object (see http://en.cppreference.com/w/cpp/language/lifetime) *)
 
 val mk : Mangled.t -> Typ.Procname.t -> t
-(** [mk name proc_name suffix] creates a program var with the given function name and suffix *)
+(** [mk name proc_name] creates a program var with the given function name *)
 
 val mk_abduced_ref_param : Typ.Procname.t -> int -> Location.t -> t
 (** create an abduced variable for a parameter passed by reference *)

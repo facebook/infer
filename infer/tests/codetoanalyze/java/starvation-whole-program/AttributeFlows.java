@@ -123,7 +123,7 @@ class AttributeFlows {
         }
       };
 
-  public void FN_postRunnableFieldToUIThreadBad() {
+  public void postRunnableFieldToUIThreadBad() {
     Executors.getForegroundExecutor().execute(runnableField);
   }
 }

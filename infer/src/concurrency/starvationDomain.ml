@@ -497,7 +497,7 @@ module AttributeDomain = struct
     let pred key _value =
       HilExp.AccessExpression.get_base key
       |> fst
-      |> fun v -> not (List.exists vars ~f:(Var.equal v))
+      |> fun v -> Var.is_this v || not (List.exists vars ~f:(Var.equal v))
     in
     filter pred t
 end
@@ -654,19 +654,23 @@ type summary =
   { critical_pairs: CriticalPairs.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
+  ; attributes: AttributeDomain.t
   ; return_attribute: Attribute.t }
 
 let empty_summary : summary =
   { critical_pairs= CriticalPairs.bottom
   ; thread= ThreadDomain.bottom
   ; scheduled_work= ScheduledWorkDomain.bottom
+  ; attributes= AttributeDomain.top
   ; return_attribute= Attribute.top }
 
 
 let pp_summary fmt (summary : summary) =
-  F.fprintf fmt "{thread= %a; critical_pairs= %a; scheduled_work= %a; return_attributes= %a}"
+  F.fprintf fmt
+    "{thread= %a; critical_pairs= %a; scheduled_work= %a; attributes= %a; return_attributes= %a}"
     ThreadDomain.pp summary.thread CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp
-    summary.scheduled_work Attribute.pp summary.return_attribute
+    summary.scheduled_work AttributeDomain.pp summary.attributes Attribute.pp
+    summary.return_attribute
 
 
 let integrate_summary ?tenv ?lhs callsite (astate : t) (summary : summary) =
@@ -684,14 +688,31 @@ let integrate_summary ?tenv ?lhs callsite (astate : t) (summary : summary) =
 
 let summary_of_astate : Procdesc.t -> t -> summary =
  fun proc_desc astate ->
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let is_java_constr =
+    match (proc_name : Typ.Procname.t) with
+    | Java jname ->
+        Typ.Procname.Java.is_constructor jname
+    | _ ->
+        false
+  in
+  let attributes =
+    if is_java_constr then
+      (* only keep attributes that have [this] as their root *)
+      let filter_this exp _ = HilExp.AccessExpression.get_base exp |> fst |> Var.is_this in
+      AttributeDomain.filter filter_this astate.attributes
+    else AttributeDomain.empty
+  in
+  let return_attribute =
+    let return_var_exp =
+      HilExp.AccessExpression.base
+        (Var.of_pvar (Pvar.get_ret_pvar proc_name), Procdesc.get_ret_type proc_desc)
+    in
+    AttributeDomain.find_opt return_var_exp astate.attributes
+    |> Option.value ~default:Attribute.Nothing
+  in
   { critical_pairs= astate.critical_pairs
   ; thread= astate.thread
   ; scheduled_work= astate.scheduled_work
-  ; return_attribute=
-      (let return_var_exp =
-         HilExp.AccessExpression.base
-           ( Var.of_pvar (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
-           , Procdesc.get_ret_type proc_desc )
-       in
-       AttributeDomain.find_opt return_var_exp astate.attributes
-       |> Option.value ~default:Attribute.Nothing ) }
+  ; attributes
+  ; return_attribute }
