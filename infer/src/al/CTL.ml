@@ -513,7 +513,7 @@ let choose_witness_opt witness_opt1 witness_opt2 =
 (* Evaluation of formulas *)
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
-let rec eval_Atomic pred_name_ args an lcxt =
+let eval_Atomic pred_name_ args an lcxt =
   let pred_name = ALVar.formula_id_to_string pred_name_ in
   match (pred_name, args, an) with
   | "call_class_method", [m], an ->
@@ -758,10 +758,44 @@ let rec eval_Atomic pred_name_ args an lcxt =
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
 
-and eval_AND an lcxt f1 f2 =
+let eval_Atomic_with_witness pred_name_ args witness1 witness2 _ =
+  let pred_name = ALVar.formula_id_to_string pred_name_ in
+  match (pred_name, args) with
+  | "decl_name_is_contained_in_name_of_decl", [] ->
+      CPredicatesOnTwoNodes.decl_name_is_contained_in_name_of_decl witness1 witness2
+  | _ ->
+      L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
+
+
+let rec eval_AndWithW an lcxt f1 f2 =
   match eval_formula f1 an lcxt with
   | Some witness1 -> (
-    match eval_formula f2 an lcxt with
+    match eval_formula ~keep_witness:true f2 an lcxt with
+    | Some witness2 ->
+        Some (witness1, witness2)
+    | _ ->
+        None )
+  | None (* we short-circuit the AND evaluation *) ->
+      None
+
+
+and eval_AndWithWitnesses an lcxt f1 f2 pred_name_ args =
+  match eval_AndWithW an lcxt f1 f2 with
+  | Some (witness1, witness2) -> (
+    try if eval_Atomic_with_witness pred_name_ args witness1 witness2 lcxt then Some an else None
+    with CFrontend_errors.IncorrectAssumption e ->
+      let trans_unit_ctx = lcxt.CLintersContext.translation_unit_context in
+      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+        e.source_range e.ast_node ;
+      None )
+  | None ->
+      None
+
+
+and eval_AND ?keep_witness an lcxt f1 f2 =
+  match eval_formula ?keep_witness f1 an lcxt with
+  | Some witness1 -> (
+    match eval_formula ?keep_witness f2 an lcxt with
     | Some witness2 ->
         Some (choose_one_witness witness1 witness2)
     | _ ->
@@ -806,7 +840,7 @@ and eval_EF phi an lcxt trans =
    there exists is a child an' of the node an
    such that (an', lcxt) satifies phi
 *)
-and eval_EX phi an lcxt trans =
+and eval_EX ?(keep_witness = false) phi an lcxt trans =
   let succs =
     match trans with
     | Some l ->
@@ -818,11 +852,13 @@ and eval_EX phi an lcxt trans =
     List.fold_left succs ~init:None ~f:(fun acc node ->
         choose_witness_opt (eval_formula phi node lcxt) acc )
   in
-  match (witness_opt, trans) with
-  | Some _, Some trans when not (CTLTypes.is_transition_to_successor trans) ->
-      Some an (* We want to limit the witnesses to the successors of the original node. *)
-  | _ ->
-      witness_opt
+  if keep_witness then witness_opt
+  else
+    match (witness_opt, trans) with
+    | Some _, Some trans when not (CTLTypes.is_transition_to_successor trans) ->
+        Some an (* We want to limit the witnesses to the successors of the original node. *)
+    | _ ->
+        witness_opt
 
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
@@ -917,7 +953,7 @@ and eval_InObjCClass an lcxt f1 f2 =
 
 
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
-and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
+and eval_formula ?keep_witness f an lcxt : Ctl_parser_types.ast_node option =
   let open CTLTypes in
   debug_eval_begin (debug_create_payload an f lcxt) ;
   let res =
@@ -939,6 +975,8 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
       match eval_formula f1 an lcxt with Some _ -> None | None -> Some an )
     | And (f1, f2) ->
         eval_AND an lcxt f1 f2
+    | AndWithWitnesses (f1, f2, (name, params)) ->
+        eval_AndWithWitnesses an lcxt f1 f2 name params
     | Or (f1, f2) ->
         eval_OR an lcxt f1 f2
     | Implies (f1, f2) ->
@@ -954,7 +992,7 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
     | AG (trans, f1) ->
         eval_formula (Not (EF (trans, Not f1))) an lcxt
     | EX (trans, f1) ->
-        eval_EX f1 an lcxt trans
+        eval_EX ?keep_witness f1 an lcxt trans
     | AX (trans, f1) ->
         eval_formula (Not (EX (trans, Not f1))) an lcxt
     | EH (cl, phi) ->

@@ -907,8 +907,30 @@ DEFINE-CHECKER CLASS_AND_VAR = {
         (global_var_exists()));
 
    SET report_when =
-   WHEN var_decl() AND declaration_has_name("SiblingExample")
+   WHEN (var_decl() AND declaration_has_name("SiblingExample"))
    HOLDS-IN-NODE  ObjCInterfaceDecl;
 
 	 SET message = "Found a global var next to a class";
+};
+
+DEFINE-CHECKER CAT_DECL_MACRO = {
+
+  LET is_linkable_var = 
+      is_extern_var() AND
+      declaration_has_name(REGEXP("Linkable_.*")) AND
+      has_type("char");
+
+	 LET var_decls =
+	  		HOLDS-NEXT WITH-TRANSITION Sibling
+        (is_node("VarDecl") AND is_linkable_var());
+
+   SET report_when = 
+       WHEN 
+       NOT (
+          is_node("ObjCCategoryDecl") 
+           AND-WITH-WITNESSES var_decls() : decl_name_is_contained_in_name_of_decl()
+      ) 
+      HOLDS-IN-NODE ObjCCategoryDecl;
+
+	 SET message = "A category is defined without the corrsponding macro";
 };

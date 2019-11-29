@@ -64,9 +64,11 @@
 %token ASSIGNMENT
 %token SEMICOLON
 %token COMMA
+%token COLON
 %token LEFT_SQBRACE
 %token RIGHT_SQBRACE
 %token AND
+%token AND_WITH_WITNESSES
 %token OR
 %token NOT
 %token IMPLIES
@@ -308,6 +310,9 @@ formula:
         "\tParsed AX with transition '%a'@\n" CTLTypes.pp_transition $3;
         CTLTypes.AX ($3, $4)}
   | formula AND formula { L.(debug Linters Verbose) "\tParsed AND@\n"; CTLTypes.And ($1, $3) }
+  | formula AND_WITH_WITNESSES formula COLON identifier LEFT_PAREN actual_params RIGHT_PAREN
+    { L.(debug Linters Verbose) "\tParsed predicate@\n";
+    CTLTypes.AndWithWitnesses ($1, $3, (ALVar.Formula_id $5, $7)) }
   | formula OR formula { L.(debug Linters Verbose) "\tParsed OR@\n"; CTLTypes.Or ($1, $3) }
   | formula IMPLIES formula
       { L.(debug Linters Verbose) "\tParsed IMPLIES@\n"; CTLTypes.Implies ($1, $3) }

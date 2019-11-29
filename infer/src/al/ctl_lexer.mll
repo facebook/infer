@@ -63,10 +63,12 @@ rule token = parse
   | ")" { RIGHT_PAREN }
   | "=" { ASSIGNMENT }
   | ";" { SEMICOLON }
+  | ":" { COLON }
   | "," { COMMA }
   | "[" { LEFT_SQBRACE }
   | "]" { RIGHT_SQBRACE }
   | "AND" { AND }
+  | "AND-WITH-WITNESSES" {AND_WITH_WITNESSES}
   | "OR" { OR }
   | "NOT" { NOT }
   | "IMPLIES" { IMPLIES }

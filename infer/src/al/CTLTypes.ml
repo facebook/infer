@@ -53,6 +53,7 @@ type t =
   | Atomic of CPredicates.t
   | Not of t
   | And of t * t
+  | AndWithWitnesses of t * t * CPredicates.t
   | Or of t * t
   | Implies of t * t
   | InNode of ALVar.alexp list * t
@@ -73,7 +74,17 @@ let equal = [%compare.equal: t]
 
 let has_transition phi =
   match phi with
-  | True | False | Atomic _ | Not _ | And _ | Or _ | Implies _ | InNode _ | EH _ | InObjCClass _ ->
+  | True
+  | False
+  | Atomic _
+  | Not _
+  | And _
+  | Or _
+  | Implies _
+  | InNode _
+  | EH _
+  | InObjCClass _
+  | AndWithWitnesses _ ->
       false
   | AX (trans_opt, _)
   | AF (trans_opt, _)
@@ -140,6 +151,11 @@ let rec pp_formula fmt phi =
   | And (phi1, phi2) ->
       if full_print then Format.fprintf fmt "(%a AND %a)" pp_formula phi1 pp_formula phi2
       else Format.pp_print_string fmt "(... AND ...)"
+  | AndWithWitnesses (phi1, phi2, p) ->
+      if full_print then
+        Format.fprintf fmt "(%a AndWithWitnesses %a : %a)" pp_formula phi1 pp_formula phi2
+          CPredicates.pp_predicate p
+      else Format.pp_print_string fmt "(... AndWithWitnesses ...)"
   | Or (phi1, phi2) ->
       if full_print then Format.fprintf fmt "(%a OR %a)" pp_formula phi1 pp_formula phi2
       else Format.pp_print_string fmt "(... OR ...)"

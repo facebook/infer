@@ -287,6 +287,9 @@ let rec apply_substitution f sub =
       Not (apply_substitution f1 sub)
   | And (f1, f2) ->
       And (apply_substitution f1 sub, apply_substitution f2 sub)
+  | AndWithWitnesses (f1, f2, (name, ps)) ->
+      AndWithWitnesses
+        (apply_substitution f1 sub, apply_substitution f2 sub, (name, sub_list_param ps))
   | Or (f1, f2) ->
       Or (apply_substitution f1 sub, apply_substitution f2 sub)
   | Implies (f1, f2) ->
@@ -323,32 +326,40 @@ let expand_formula phi map_ error_msg_ =
   in
   let open CTLTypes in
   let rec expand acc map error_msg =
+    let expand_predicate av actual_param =
+      match av with
+      | ALVar.Formula_id name -> (
+          (* it may be a macro *)
+          let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^ "'@\n" in
+          try
+            match ALVar.FormulaIdMap.find av map with
+            | true, _, _ ->
+                fail_with_circular_macro_definition name error_msg'
+            | false, fparams, f1 -> (
+              (* in this case it should be a defined macro *)
+              match List.zip fparams actual_param with
+              | Ok sub ->
+                  let f1_sub = apply_substitution f1 sub in
+                  let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
+                  expand f1_sub map' error_msg'
+              | Unequal_lengths ->
+                  L.(die ExternalError)
+                    "Formula identifier '%s' is not called with the right number of parameters" name
+              )
+          with Caml.Not_found -> acc )
+      (* in this case it should be a predicate *)
+    in
     match acc with
     | True | False ->
         acc
-    | Atomic ((ALVar.Formula_id name as av), actual_param) -> (
-        (* it may be a macro *)
-        let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^ "'@\n" in
-        try
-          match ALVar.FormulaIdMap.find av map with
-          | true, _, _ ->
-              fail_with_circular_macro_definition name error_msg'
-          | false, fparams, f1 -> (
-            (* in this case it should be a defined macro *)
-            match List.zip fparams actual_param with
-            | Ok sub ->
-                let f1_sub = apply_substitution f1 sub in
-                let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
-                expand f1_sub map' error_msg'
-            | Unequal_lengths ->
-                L.(die ExternalError)
-                  "Formula identifier '%s' is not called with the right number of parameters" name )
-        with Caml.Not_found -> acc
-        (* in this case it should be a predicate *) )
+    | Atomic (av, actual_param) ->
+        expand_predicate av actual_param
     | Not f1 ->
         Not (expand f1 map error_msg)
     | And (f1, f2) ->
         And (expand f1 map error_msg, expand f2 map error_msg)
+    | AndWithWitnesses (f1, f2, pred) ->
+        AndWithWitnesses (expand f1 map error_msg, expand f2 map error_msg, pred)
     | Or (f1, f2) ->
         Or (expand f1 map error_msg, expand f2 map error_msg)
     | Implies (f1, f2) ->

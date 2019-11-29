@@ -34,6 +34,7 @@ type t =
   | Atomic of CPredicates.t  (** Atomic formula *)
   | Not of t
   | And of t * t
+  | AndWithWitnesses of t * t * CPredicates.t
   | Or of t * t
   | Implies of t * t
   | InNode of ALVar.alexp list * t

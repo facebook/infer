@@ -48,7 +48,8 @@ type al_file =
 val print_checker : ctl_checker -> unit
 
 val eval_formula :
-     CTLTypes.t
+     ?keep_witness:bool
+  -> CTLTypes.t
   -> Ctl_parser_types.ast_node
   -> CLintersContext.context
   -> Ctl_parser_types.ast_node option
