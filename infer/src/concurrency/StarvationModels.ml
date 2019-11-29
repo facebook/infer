@@ -213,7 +213,10 @@ let schedules_work =
     [ { default with
         classname= executor_type_str
       ; methods= ["execute"; "schedule"; "scheduleAtFixedRate"; "scheduleWithFixedDelay"; "submit"]
-      } ]
+      }
+    ; { default with
+        classname= "android.os.Handler"
+      ; methods= ["post"; "postAtFrontOfQueue"; "postAtTime"; "postDelayed"] } ]
     |> of_records
   in
   fun tenv pname -> matcher tenv pname []
@@ -239,7 +242,7 @@ let schedules_work_on_bg_thread =
   fun tenv pname -> matcher tenv pname []
 
 
-type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
+type scheduler_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
 [@@deriving equal]
 
 (* Executors are sometimes stored in fields and annotated according to what type of thread 
@@ -307,3 +310,21 @@ let get_returned_executor ~attrs_of_pname tenv callee actuals =
         None )
   | _ ->
       None
+
+
+let is_getMainLooper =
+  let open MethodMatcher in
+  [ { default with
+      classname= "android.os.Looper"
+    ; methods= ["getMainLooper"]
+    ; actuals_pred= List.is_empty } ]
+  |> of_records
+
+
+let is_handler_constructor =
+  let open MethodMatcher in
+  [ { default with
+      classname= "android.os.Handler"
+    ; methods= [Typ.Procname.Java.constructor_method_name]
+    ; actuals_pred= (fun actuals -> not (List.is_empty actuals)) } ]
+  |> of_records

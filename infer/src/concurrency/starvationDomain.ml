@@ -447,8 +447,9 @@ module Attribute = struct
   type t =
     | Nothing
     | ThreadGuard
-    | Executor of StarvationModels.executor_thread_constraint
     | Runnable of Typ.Procname.t
+    | WorkScheduler of StarvationModels.scheduler_thread_constraint
+    | Looper of StarvationModels.scheduler_thread_constraint
   [@@deriving equal]
 
   let top = Nothing
@@ -466,10 +467,12 @@ module Attribute = struct
         F.pp_print_string fmt "Nothing"
     | ThreadGuard ->
         F.pp_print_string fmt "ThreadGuard"
-    | Executor c ->
-        F.fprintf fmt "Executor(%a)" pp_constr c
     | Runnable runproc ->
         F.fprintf fmt "Runnable(%a)" Typ.Procname.pp runproc
+    | WorkScheduler c ->
+        F.fprintf fmt "WorkScheduler(%a)" pp_constr c
+    | Looper c ->
+        F.fprintf fmt "Looper(%a)" pp_constr c
 
 
   let join lhs rhs = if equal lhs rhs then lhs else Nothing
@@ -486,8 +489,8 @@ module AttributeDomain = struct
     find_opt acc_exp t |> Option.exists ~f:(function Attribute.ThreadGuard -> true | _ -> false)
 
 
-  let get_executor_constraint acc_exp t =
-    find_opt acc_exp t |> Option.bind ~f:(function Attribute.Executor c -> Some c | _ -> None)
+  let get_scheduler_constraint acc_exp t =
+    find_opt acc_exp t |> Option.bind ~f:(function Attribute.WorkScheduler c -> Some c | _ -> None)
 
 
   let exit_scope vars t =
@@ -635,7 +638,7 @@ let filter_blocking_calls ({critical_pairs} as astate) =
 
 let schedule_work loc thread_constraint astate procname =
   let thread : ThreadDomain.t =
-    match (thread_constraint : StarvationModels.executor_thread_constraint) with
+    match (thread_constraint : StarvationModels.scheduler_thread_constraint) with
     | ForUIThread ->
         UIThread
     | ForNonUIThread ->

@@ -33,14 +33,14 @@ val is_annotated_lockless :
 (** is procedure transitively annotated [@Lockless] *)
 
 val schedules_work : Tenv.t -> Typ.Procname.t -> bool
-(** call known to schedule runnable first argument to some thread/executor *)
+(** call known to schedule runnable first argument to some executor/handler or subclass *)
 
 (** an instance field holding a reference to an executor may be annotated as running on UI/non-UI thread *)
-type executor_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
+type scheduler_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
 [@@deriving equal]
 
 val get_executor_thread_annotation_constraint :
-  Tenv.t -> HilExp.AccessExpression.t -> executor_thread_constraint option
+  Tenv.t -> HilExp.AccessExpression.t -> scheduler_thread_constraint option
 (** given an executor receiver, get its thread constraint, if any. [None] means lookup somehow failed, 
     whereas [Some UnknownThread] means the receiver is an unannotated executor. *)
 
@@ -52,7 +52,7 @@ val get_returned_executor :
   -> Tenv.t
   -> Typ.Procname.t
   -> HilExp.t list
-  -> executor_thread_constraint option
+  -> scheduler_thread_constraint option
 (** does the function return an executor and of which thread? *)
 
 val schedules_work_on_ui_thread : Tenv.t -> Typ.Procname.t -> bool
@@ -60,3 +60,7 @@ val schedules_work_on_ui_thread : Tenv.t -> Typ.Procname.t -> bool
 
 val schedules_work_on_bg_thread : Tenv.t -> Typ.Procname.t -> bool
 (** method call known to directly schedule work on BG thread *)
+
+val is_getMainLooper : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+val is_handler_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool

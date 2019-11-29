@@ -79,7 +79,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     AttributeDomain.find_opt exp astate.attributes
     |> IOption.if_none_evalopt ~f:(fun () ->
            StarvationModels.get_executor_thread_annotation_constraint tenv exp
-           |> Option.map ~f:(fun constr -> Attribute.Executor constr) )
+           |> Option.map ~f:(fun constr -> Attribute.WorkScheduler constr) )
     |> IOption.if_none_evalopt ~f:(fun () ->
            StarvationModels.get_run_method_from_runnable tenv exp
            |> Option.map ~f:(fun procname -> Attribute.Runnable procname) )
@@ -87,32 +87,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_work_scheduling tenv callee actuals loc (astate : Domain.t) =
     let open Domain in
-    let schedule_work runnable thread =
-      match get_exp_attributes tenv runnable astate with
-      | Some (Attribute.Runnable procname) ->
-          Domain.schedule_work loc thread astate procname
-      | _ ->
-          astate
+    let schedule_work (runnable, thread) =
+      get_exp_attributes tenv runnable astate
+      |> Option.bind ~f:(function Attribute.Runnable procname -> Some procname | _ -> None)
+      |> Option.fold ~init:astate ~f:(Domain.schedule_work loc thread)
     in
-    match actuals with
-    | HilExp.AccessExpression executor :: HilExp.AccessExpression runnable :: _
-      when StarvationModels.schedules_work tenv callee ->
-        let thread =
-          match get_exp_attributes tenv executor astate with
-          | Some (Attribute.Executor constr) ->
-              constr
-          | _ ->
-              StarvationModels.ForUnknownThread
-        in
-        schedule_work runnable thread
-    | HilExp.AccessExpression runnable :: _
-      when StarvationModels.schedules_work_on_ui_thread tenv callee ->
-        schedule_work runnable StarvationModels.ForUIThread
-    | HilExp.AccessExpression runnable :: _
-      when StarvationModels.schedules_work_on_bg_thread tenv callee ->
-        schedule_work runnable StarvationModels.ForNonUIThread
-    | _ ->
-        astate
+    let work_opt =
+      match actuals with
+      | HilExp.AccessExpression executor :: HilExp.AccessExpression runnable :: _
+        when StarvationModels.schedules_work tenv callee ->
+          let thread =
+            get_exp_attributes tenv executor astate
+            |> Option.bind ~f:(function Attribute.WorkScheduler c -> Some c | _ -> None)
+            |> Option.value ~default:StarvationModels.ForUnknownThread
+          in
+          Some (runnable, thread)
+      | HilExp.AccessExpression runnable :: _
+        when StarvationModels.schedules_work_on_ui_thread tenv callee ->
+          Some (runnable, StarvationModels.ForUIThread)
+      | HilExp.AccessExpression runnable :: _
+        when StarvationModels.schedules_work_on_bg_thread tenv callee ->
+          Some (runnable, StarvationModels.ForNonUIThread)
+      | _ ->
+          None
+    in
+    Option.value_map work_opt ~default:astate ~f:schedule_work
 
 
   let do_assignment tenv lhs_access_exp rhs_exp (astate : Domain.t) =
@@ -126,28 +125,53 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_call ProcData.{tenv; summary} lhs callee actuals loc astate =
     let open Domain in
+    let make_ret_attr return_attribute = {empty_summary with return_attribute} in
+    let make_thread thread = {empty_summary with thread} in
     let get_returned_executor_summary () =
       StarvationModels.get_returned_executor ~attrs_of_pname tenv callee actuals
       |> Option.map ~f:(fun thread_constraint ->
-             {empty_summary with return_attribute= Attribute.Executor thread_constraint} )
+             make_ret_attr (Attribute.WorkScheduler thread_constraint) )
     in
     let get_thread_assert_summary () =
       match ConcurrencyModels.get_thread_assert_effect callee with
       | BackgroundThread ->
-          Some {empty_summary with thread= ThreadDomain.BGThread}
+          Some (make_thread ThreadDomain.BGThread)
       | MainThread ->
-          Some {empty_summary with thread= ThreadDomain.UIThread}
+          Some (make_thread ThreadDomain.UIThread)
       | MainThreadIfTrue ->
-          Some {empty_summary with return_attribute= Attribute.ThreadGuard}
+          Some (make_ret_attr Attribute.ThreadGuard)
       | UnknownThread ->
           None
     in
+    let get_mainLooper_summary () =
+      if StarvationModels.is_getMainLooper tenv callee actuals then
+        Some (make_ret_attr (Attribute.Looper StarvationModels.ForUIThread))
+      else None
+    in
     let get_callee_summary () = Payload.read ~caller_summary:summary ~callee_pname:callee in
     let callsite = CallSite.make callee loc in
-    get_returned_executor_summary ()
-    |> IOption.if_none_evalopt ~f:get_thread_assert_summary
-    |> IOption.if_none_evalopt ~f:get_callee_summary
-    |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv ~lhs callsite)
+    (* constructor calls are special-cased because they side-effect the receiver and do not
+       return anything *)
+    if StarvationModels.is_handler_constructor tenv callee actuals then
+      match actuals with
+      | HilExp.AccessExpression receiver :: HilExp.AccessExpression exp :: _ ->
+          let thread_constraint_attr =
+            AttributeDomain.find_opt exp astate.attributes
+            |> Option.bind ~f:(function Attribute.Looper c -> Some c | _ -> None)
+            |> Option.value ~default:StarvationModels.ForUnknownThread
+            |> fun constr -> Attribute.WorkScheduler constr
+          in
+          let attributes = AttributeDomain.add receiver thread_constraint_attr astate.attributes in
+          {astate with attributes}
+      | _ ->
+          astate
+    else
+      get_returned_executor_summary ()
+      |> IOption.if_none_evalopt ~f:get_thread_assert_summary
+      |> IOption.if_none_evalopt ~f:get_mainLooper_summary
+      (* [get_callee_summary] should come after all models *)
+      |> IOption.if_none_evalopt ~f:get_callee_summary
+      |> Option.fold ~init:astate ~f:(Domain.integrate_summary ~tenv ~lhs callsite)
 
 
   let exec_instr (astate : Domain.t) ({ProcData.summary; tenv; extras} as procdata) _

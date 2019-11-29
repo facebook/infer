@@ -102,19 +102,20 @@ module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
 module GuardToLockMap : AbstractDomain.WithTop
 
-(** Tracks whether a variable has been tested for whether we execute on UI thread, or 
-    has been assigned an executor object. *)
+(** Tracks expression attributes *)
 module Attribute : sig
   type t =
     | Nothing
-    | ThreadGuard
-    | Executor of StarvationModels.executor_thread_constraint
-    | Runnable of Typ.Procname.t
+    | ThreadGuard  (** is boolean equivalent to whether on UI thread *)
+    | Runnable of Typ.Procname.t  (** is a Runnable/Callable with given "run" procname *)
+    | WorkScheduler of StarvationModels.scheduler_thread_constraint
+        (** exp is something that schedules work on the given thread *)
+    | Looper of StarvationModels.scheduler_thread_constraint  (** Android looper on given thread *)
 
   include AbstractDomain.WithTop with type t := t
 end
 
-(** Tracks all variables assigned values of [Attribute] *)
+(** Tracks all expressions assigned values of [Attribute] *)
 module AttributeDomain : sig
   include
     AbstractDomain.InvertedMapS
@@ -123,8 +124,8 @@ module AttributeDomain : sig
 
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
 
-  val get_executor_constraint :
-    HilExp.AccessExpression.t -> t -> StarvationModels.executor_thread_constraint option
+  val get_scheduler_constraint :
+    HilExp.AccessExpression.t -> t -> StarvationModels.scheduler_thread_constraint option
 
   val exit_scope : Var.t list -> t -> t
 end
@@ -179,7 +180,7 @@ val unlock_guard : t -> HilExp.t -> t
 (** Release the lock the guard was constructed with. *)
 
 val schedule_work :
-  Location.t -> StarvationModels.executor_thread_constraint -> t -> Typ.Procname.t -> t
+  Location.t -> StarvationModels.scheduler_thread_constraint -> t -> Typ.Procname.t -> t
 (** record the fact that a method is scheduled to run on a certain thread/executor *)
 
 type summary =
