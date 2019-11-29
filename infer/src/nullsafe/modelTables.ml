@@ -125,6 +125,13 @@ let check_not_null_parameter_list, check_not_null_list =
     ; ( 1
       , (o, [n; o])
       , "com.facebook.infer.annotation.Assertions.assumeNotNull(java.lang.Object,java.lang.String):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [x])
+      , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object):java.lang.Object" )
+    ; ( 1
+      , (o, [x; n])
+      , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
       ) ]
   in
   (List.map ~f:(fun (x, _, z) -> (x, z)) list, List.map ~f:(fun (_, y, z) -> (y, z)) list)
