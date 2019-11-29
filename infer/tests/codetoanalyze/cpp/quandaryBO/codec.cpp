@@ -46,7 +46,7 @@ uint64_t getP_Bad(uint64_t w) {
   auto w4m1o15p1 = w4m1o15 + 1; // BUG: can overflow
   return w4m1o15p1;
 }
-uint64_t checkedMultiply_Good_FP(uint64_t a, uint64_t b) {
+uint64_t checkedMultiply_Good(uint64_t a, uint64_t b) {
   __uint128_t mul = ((__uint128_t)a) * b; // OK: no overflow
   if ((mul >> 64) != 0) {
     throw std::runtime_error("Detected overflow in checked multiplcation");
@@ -54,11 +54,11 @@ uint64_t checkedMultiply_Good_FP(uint64_t a, uint64_t b) {
   auto result = (uint64_t)mul; // OK: within the bounds
   return result;
 }
-void foo_Bad_FN() {
+void foo_Bad_FN_FP() {
   int w = __infer_taint_source();
   int h = __infer_taint_source();
   auto p = getP_Bad(w); // MISSED BUG: casting signed int64 -> unsigned int64
-  auto s = checkedMultiply_Good_FP(h, p); // OK
+  auto s = checkedMultiply_Good(h, p); // OK, FP
   auto d = std::make_unique<uint8_t[]>(s); // OK
 }
 } // namespace Codec_Bad2

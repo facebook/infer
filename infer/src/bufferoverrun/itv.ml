@@ -186,6 +186,8 @@ module ItvPure = struct
 
   let is_le_mone : t -> bool = fun (_, ub) -> Bound.le ub Bound.mone
 
+  let is_same_one_symbol (l, u) = Bound.is_same_one_symbol l u
+
   let range : Location.t -> t -> ItvRange.t =
    fun loop_head_loc (lb, ub) -> ItvRange.of_bounds ~loop_head_loc ~lb ~ub
 
@@ -269,7 +271,9 @@ module ItvPure = struct
     | Some n, _ ->
         mult_const n y
     | None, None ->
-        top
+        if is_same_one_symbol x && is_same_one_symbol y then
+          (Bound.mk_MultB (Z.zero, lb x, lb y), Bound.mk_MultB (Z.zero, ub x, ub y))
+        else top
 
 
   let div : t -> t -> t = fun x y -> match get_const y with None -> top | Some n -> div_const x n

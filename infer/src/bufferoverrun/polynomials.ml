@@ -72,6 +72,8 @@ module type NonNegativeSymbol = sig
     -> (NonNegativeInt.t, t, Bounds.BoundTrace.t) Bounds.valclass
 
   val pp : hum:bool -> F.formatter -> t -> unit
+
+  val split_mult : t -> (t * t) option
 end
 
 module type NonNegativeSymbolWithDegreeKind = sig
@@ -84,6 +86,8 @@ module type NonNegativeSymbolWithDegreeKind = sig
   val degree_kind : t -> DegreeKind.t
 
   val symbol : t -> t0
+
+  val split_mult : t -> (t * t) option
 end
 
 module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
@@ -130,6 +134,9 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
   let degree_kind {degree_kind} = degree_kind
 
   let symbol {symbol} = symbol
+
+  let split_mult {degree_kind; symbol} =
+    Option.map (S.split_mult symbol) ~f:(fun (s1, s2) -> (make degree_kind s1, make degree_kind s2))
 end
 
 module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
@@ -209,15 +216,6 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
   let of_int_exn : int -> t = fun i -> i |> NonNegativeInt.of_int_exn |> of_non_negative_int
 
-  let of_valclass : (NonNegativeInt.t, S.t, 't) Bounds.valclass -> (t, 't) below_above = function
-    | ValTop trace ->
-        Above trace
-    | Constant i ->
-        Below (of_non_negative_int i)
-    | Symbolic s ->
-        Below {const= NonNegativeInt.zero; terms= M.singleton s one}
-
-
   let is_zero : t -> bool = fun {const; terms} -> NonNegativeInt.is_zero const && M.is_empty terms
 
   let is_one : t -> bool = fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
@@ -270,6 +268,24 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     else if is_one p2 then p1
     else
       mult_const p1 p2.const |> M.fold (fun s p acc -> plus (mult_symb (mult p p1) s) acc) p2.terms
+
+
+  let rec of_valclass : (NonNegativeInt.t, S.t, 't) Bounds.valclass -> (t, 't) below_above =
+    function
+    | ValTop trace ->
+        Above trace
+    | Constant i ->
+        Below (of_non_negative_int i)
+    | Symbolic s -> (
+      match S.split_mult s with
+      | None ->
+          Below {const= NonNegativeInt.zero; terms= M.singleton s one}
+      | Some (s1, s2) -> (
+        match (of_valclass (S.classify s1), of_valclass (S.classify s2)) with
+        | Below s1, Below s2 ->
+            Below (mult s1 s2)
+        | (Above _ as t), _ | _, (Above _ as t) ->
+            t ) )
 
 
   let rec int_lb {const; terms} =

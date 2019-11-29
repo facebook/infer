@@ -206,6 +206,10 @@ public class Cost_test {
   void band_constant(int x) {
     for (int i = 0; i < (int) (x & 0xff); i++) {}
   }
+
+  void mult_symbols_quadratic(int x, int y) {
+    for (int i = 0; i < x * y; i++) {}
+  }
 }
 
 class CloneTest {

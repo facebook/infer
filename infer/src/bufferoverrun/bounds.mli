@@ -11,6 +11,10 @@ module F = Format
 module Bound : sig
   type t
 
+  val mk_MultB : Z.t * t * t -> t
+  (** It makes a bound of [Bound.MultB], which represents a multiplication of two bounds.  For
+     example, [MultB (1, x, y)] represents [1 + x × y].  *)
+
   type eval_sym = t Symb.Symbol.eval
 
   val compare : t -> t -> int
@@ -123,6 +127,10 @@ module Bound : sig
   val simplify_min_one : t -> t
 
   val get_same_one_symbol : t -> t -> Symb.SymbolPath.t option
+  (** It returns a symbol [s] when the two bounds are all linear expressions of the symbol [1⋅s]. *)
+
+  val is_same_one_symbol : t -> t -> bool
+  (** It returns [true] when the two bounds are linear expressions of the same one symbol [1⋅s]. *)
 
   val exists_str : f:(string -> bool) -> t -> bool
 end
@@ -174,4 +182,6 @@ module NonNegativeBound : sig
     -> t
     -> Bound.eval_sym
     -> (Ints.NonNegativeInt.t, t, BoundTrace.t) valclass
+
+  val split_mult : t -> (t * t) option
 end
