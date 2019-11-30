@@ -369,6 +369,12 @@ let is_safe_access (access : 'a HilExp.Access.t) prefix_exp tenv =
       false
 
 
+let is_builder_class tname = String.is_suffix ~suffix:"$Builder" (Typ.Name.to_string tname)
+
+let is_builder_method java_pname =
+  is_builder_class (Typ.Procname.Java.get_class_type_name java_pname)
+
+
 let should_flag_interface_call tenv exps call_flags pname =
   let thread_safe_or_thread_confined annot =
     Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
@@ -380,9 +386,6 @@ let should_flag_interface_call tenv exps call_flags pname =
            String.is_prefix ~prefix:"java." package_name
            || String.is_prefix ~prefix:"android." package_name
            || String.is_prefix ~prefix:"com.google." package_name )
-  in
-  let is_builder_function java_pname =
-    String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
   in
   let receiver_is_not_safe exps tenv =
     List.hd exps
@@ -403,7 +406,7 @@ let should_flag_interface_call tenv exps call_flags pname =
   | Typ.Procname.Java java_pname ->
       call_flags.CallFlags.cf_interface
       && (not (is_java_library java_pname))
-      && (not (is_builder_function java_pname))
+      && (not (is_builder_method java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
          thread-safe (would be unreasonable to ask everyone to annotate them) *)
       && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
@@ -476,3 +479,31 @@ let is_abstract_getthis_like callee =
              true
          | _ ->
              false )
+
+
+let creates_builder callee =
+  (match callee with Typ.Procname.Java jpname -> Typ.Procname.Java.is_static jpname | _ -> false)
+  && String.equal "create" (Typ.Procname.get_method callee)
+  && attrs_of_pname callee
+     |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
+            match attrs.ret_type with
+            | Typ.{desc= Tptr ({desc= Tstruct ret_class}, _)} ->
+                is_builder_class ret_class
+            | _ ->
+                false )
+
+
+let is_builder_passthrough callee =
+  match callee with
+  | Typ.Procname.Java java_pname ->
+      (not (Typ.Procname.Java.is_static java_pname))
+      && is_builder_method java_pname
+      && attrs_of_pname callee
+         |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
+                match attrs.formals with
+                | (_, typ) :: _ when Typ.equal typ attrs.ret_type ->
+                    true
+                | _ ->
+                    false )
+  | _ ->
+      false

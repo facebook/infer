@@ -183,8 +183,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let call_without_summary callee_pname ret_base call_flags actuals astate =
     let open RacerDModels in
     let open RacerDDomain in
-    let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
-      (not call_flags.cf_interface) && List.is_empty actuals
+    let should_assume_returns_ownership callee_pname (call_flags : CallFlags.t) actuals =
+      (* non-interface methods with no summary and no parameters *)
+      ((not call_flags.cf_interface) && List.is_empty actuals)
+      || (* static [$Builder] creation methods *)
+      creates_builder callee_pname
+    in
+    let should_assume_returns_conditional_ownership callee_pname =
+      (* non-interface methods with  no parameters  *)
+      is_abstract_getthis_like callee_pname
+      || (* non-static [$Builder] methods with same return type as receiver type *)
+      is_builder_passthrough callee_pname
     in
     if is_box callee_pname then
       match actuals with
@@ -200,14 +209,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else astate
       | _ ->
           astate
-    else if should_assume_returns_ownership call_flags actuals then
-      (* assume non-interface methods with no summary and no parameters return ownership *)
+    else if should_assume_returns_ownership callee_pname call_flags actuals then
       let ownership =
         OwnershipDomain.add (AccessExpression.base ret_base) OwnershipAbstractValue.owned
           astate.ownership
       in
       {astate with ownership}
-    else if is_abstract_getthis_like callee_pname then
+    else if should_assume_returns_conditional_ownership callee_pname then
       (* assume abstract, single-parameter methods whose return type is equal to that of the first
          formal return conditional ownership -- an example is getThis in Litho *)
       let ownership =

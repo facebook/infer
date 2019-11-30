@@ -55,3 +55,9 @@ val is_synchronized_container : Typ.Procname.t -> HilExp.AccessExpression.t -> T
 
 val is_abstract_getthis_like : Typ.Procname.t -> bool
 (** is the callee an abstract method with one argument where argument type is equal to return type *)
+
+val creates_builder : Typ.Procname.t -> bool
+(** is the callee a static java method returning a [Builder] object? *)
+
+val is_builder_passthrough : Typ.Procname.t -> bool
+(** is the callee a non-static [Builder] method returning the same type as its receiver *)
