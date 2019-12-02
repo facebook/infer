@@ -61,7 +61,7 @@ module Allocsite = struct
 
   let is_pretty = function Symbol _ | Known {path= Some _} -> true | _ -> false
 
-  let is_literal_string = function LiteralString s -> Some s | _ -> None
+  let get_literal_string = function LiteralString s -> Some s | _ -> None
 
   let is_unknown = function Unknown -> true | Symbol _ | Known _ | LiteralString _ -> false
 
@@ -301,11 +301,11 @@ module Loc = struct
     match field_loc with Field {prefix= l} | StarField {prefix= l} -> equal loc l | _ -> false
 
 
-  let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
+  let get_literal_string = function Allocsite a -> Allocsite.get_literal_string a | _ -> None
 
-  let is_literal_string_strlen = function
+  let get_literal_string_strlen = function
     | Field {prefix= l; fn} when Typ.Fieldname.equal (BufferOverrunField.c_strlen ()) fn ->
-        is_literal_string l
+        get_literal_string l
     | _ ->
         None
 

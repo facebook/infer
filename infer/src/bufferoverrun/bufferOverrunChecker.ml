@@ -8,11 +8,11 @@
  *)
 
 open! IStd
-open AbsLoc
 open! AbstractDomain.Types
 module BoUtils = BufferOverrunUtils
 module CFG = BufferOverrunAnalysis.CFG
 module Dom = BufferOverrunDomain
+module F = Format
 module L = Logging
 module Models = BufferOverrunModels
 module PO = BufferOverrunProofObligations

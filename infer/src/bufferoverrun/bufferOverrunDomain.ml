@@ -653,11 +653,11 @@ module Val = struct
       let may_last_field = may_last_field path in
       of_path tenv ~may_last_field integer_type_widths entry_location typ path
     in
-    match Loc.is_literal_string l with
+    match Loc.get_literal_string l with
     | Some s ->
         deref_of_literal_string s
     | None -> (
-      match Loc.is_literal_string_strlen l with
+      match Loc.get_literal_string_strlen l with
       | Some s ->
           of_itv (Itv.of_int (String.length s))
       | None -> (

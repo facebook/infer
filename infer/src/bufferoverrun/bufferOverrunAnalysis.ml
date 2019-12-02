@@ -12,6 +12,7 @@ open AbsLoc
 open! AbstractDomain.Types
 module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
+module F = Format
 module L = Logging
 module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
