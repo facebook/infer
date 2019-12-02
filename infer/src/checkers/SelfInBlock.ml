@@ -284,7 +284,7 @@ let report_unchecked_strongself_issues summary (domain : Domain.t) =
       let message =
         F.asprintf
           "The variable `%a`, equal to a weak pointer to `self`, is used without a check for null \
-           at %a. This could cause a crash."
+           at %a. This could cause a crash or unexpected behavior."
           (Pvar.pp Pp.text) pvar Location.pp loc
       in
       let ltr = make_trace_unchecked_strongself domain in
