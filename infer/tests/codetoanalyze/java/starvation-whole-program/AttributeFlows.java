@@ -35,8 +35,8 @@ class AttributeFlows {
     return getForegroundExecutor();
   }
 
-  // starvation via scheduling a transaction on UI thread
-  public void postBlockingCallToUIThreadBad() {
+  // executors are all on background threads, no report
+  public void postBlockingCallToForegroundExecutorOk() {
     indirectlyGetForegroundExecutor()
         .execute(
             new Runnable() {
@@ -48,7 +48,7 @@ class AttributeFlows {
   }
 
   // no report here
-  public void postBlockingCallToNonUIThreadOk() {
+  public void postBlockingCallToBackgroundExecutorOk() {
     indirectlyGetBackgroundExecutor()
         .execute(
             new Runnable() {
@@ -112,7 +112,7 @@ class AttributeFlows {
   }
 
   public void postRunnableIndirectlyToUIThreadBad() {
-    Executors.getForegroundExecutor().execute(getBadRunnable());
+    mUiThreadExecutor.execute(getBadRunnable());
   }
 
   Runnable runnableField =
@@ -124,6 +124,6 @@ class AttributeFlows {
       };
 
   public void postRunnableFieldToUIThreadBad() {
-    Executors.getForegroundExecutor().execute(runnableField);
+    mUiThreadExecutor.execute(runnableField);
   }
 }

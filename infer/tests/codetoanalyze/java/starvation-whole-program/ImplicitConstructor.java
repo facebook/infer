@@ -21,7 +21,9 @@ class ImplicitConstructor {
     }
   }
 
-  Executor mUiExecutor = Executors.getForegroundExecutor();
+  @ForUiThread private final Executor mUiThreadExecutor = null;
+
+  Executor mUiExecutor = mUiThreadExecutor;
   Executor mNonUiExecutor = Executors.getBackgroundExecutor();
   Handler mUiHandler = new Handler(Looper.getMainLooper());
   Runnable mBadRunnable =

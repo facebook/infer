@@ -303,9 +303,7 @@ let get_returned_executor ~attrs_of_pname tenv callee actuals =
   match (callee, actuals) with
   | Typ.Procname.Java java_pname, [] -> (
     match Typ.Procname.Java.get_method java_pname with
-    | "getForegroundExecutor" when Lazy.force type_check ->
-        Some ForUIThread
-    | "getBackgroundExecutor" when Lazy.force type_check ->
+    | ("getForegroundExecutor" | "getBackgroundExecutor") when Lazy.force type_check ->
         Some ForNonUIThread
     | _ ->
         None )

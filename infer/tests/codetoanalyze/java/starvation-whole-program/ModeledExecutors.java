@@ -8,6 +8,7 @@
 import android.os.Binder;
 import android.os.RemoteException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +23,7 @@ class ModeledExecutors {
     }
   }
 
-  // starvation via scheduling a transaction on UI thread
-  public void postBlockingCallToUIThreadBad() {
+  public void postBlockingCallToForegroundExecutorOk() {
     Executors.getForegroundExecutor()
         .execute(
             new Runnable() {
@@ -34,7 +34,7 @@ class ModeledExecutors {
             });
   }
 
-  public void postBlockingCallToNonUIThreadOk() {
+  public void postBlockingCallToBackgroundExecutorOk() {
     Executors.getBackgroundExecutor()
         .execute(
             new Runnable() {
@@ -119,10 +119,12 @@ class ModeledExecutors {
         });
   }
 
-  public void submitBlockingCallToUIThreadBad() {
-    ExecutorService foregroundExecutor = (ExecutorService) Executors.getForegroundExecutor();
+  @ForUiThread private final Executor mUiThreadExecutor = null;
 
-    foregroundExecutor.submit(
+  public void submitBlockingCallToUIThreadBad() {
+    ExecutorService uiExecutor = (ExecutorService) mUiThreadExecutor;
+
+    uiExecutor.submit(
         new Runnable() {
           @Override
           public void run() {
@@ -131,11 +133,11 @@ class ModeledExecutors {
         });
   }
 
-  public void scheduleBlockingCallToUIThreadBad() {
-    ScheduledExecutorService foregroundExecutor =
-        (ScheduledExecutorService) Executors.getForegroundExecutor();
 
-    foregroundExecutor.schedule(
+  public void scheduleBlockingCallToUIThreadBad() {
+    ScheduledExecutorService uiExecutor = (ScheduledExecutorService) mUiThreadExecutor;
+
+    uiExecutor.schedule(
         new Runnable() {
           @Override
           public void run() {
@@ -147,9 +149,9 @@ class ModeledExecutors {
   }
 
   public void submitBadCallableToUIThreadBad() {
-    ExecutorService foregroundExecutor = (ExecutorService) Executors.getForegroundExecutor();
+    ExecutorService uiExecutor = (ExecutorService) mUiThreadExecutor;
 
-    foregroundExecutor.submit(
+    uiExecutor.submit(
         new Callable<Object>() {
           @Override
           public Object call() {

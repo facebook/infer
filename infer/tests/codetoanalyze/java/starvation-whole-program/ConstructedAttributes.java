@@ -21,6 +21,8 @@ class ConstructedAttributes {
     }
   }
 
+  @ForUiThread private final Executor mUiThreadExecutor = null;
+
   Executor mUiExecutor;
   Executor mNonUiExecutor;
   Handler mUiHandler;
@@ -28,7 +30,7 @@ class ConstructedAttributes {
   Runnable mOkRunnable;
 
   ConstructedAttributes() {
-    mUiExecutor = Executors.getForegroundExecutor();
+    mUiExecutor = mUiThreadExecutor;
     mNonUiExecutor = Executors.getBackgroundExecutor();
     mUiHandler = new Handler(Looper.getMainLooper());
     mBadRunnable =
