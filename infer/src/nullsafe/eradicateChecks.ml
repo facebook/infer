@@ -566,8 +566,8 @@ let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~base
       ()
 
 
-(** Checks if the annotations are consistent with the derived classes and with the
-    implemented interfaces *)
+(** Checks if the annotations are consistent with the derived classes and with the implemented
+    interfaces *)
 let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_desc
     annotated_signature =
   let start_node = Procdesc.get_start_node proc_desc in

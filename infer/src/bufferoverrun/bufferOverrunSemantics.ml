@@ -269,10 +269,8 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Va
       Val.lor_sem v1 v2
 
 
-(**
-  [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs]
-  but takes some shortcuts to avoid computing useless and/or problematic intermediate values
-*)
+(** [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs] but takes some shortcuts to avoid
+    computing useless and/or problematic intermediate values *)
 let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
  fun exp mem ->
   match exp with

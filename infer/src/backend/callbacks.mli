@@ -13,6 +13,7 @@ type proc_callback_args =
   {get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
 
 (** Type of a procedure callback:
+
     - List of all the procedures the callback will be called on.
     - get_proc_desc to get a proc desc from a proc name
     - Type environment.

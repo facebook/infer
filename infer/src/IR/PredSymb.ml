@@ -47,8 +47,7 @@ let equal_res_act_kind = [%compare.equal: res_act_kind]
 type dangling_kind =
   | DAuninit  (** pointer is dangling because it is uninitialized *)
   | DAaddr_stack_var
-      (** pointer is dangling because it is the address
-          of a stack variable which went out of scope *)
+      (** pointer is dangling because it is the address of a stack variable which went out of scope *)
   | DAminusone  (** pointer is -1 *)
 [@@deriving compare]
 
@@ -84,11 +83,11 @@ type path_pos_ = path_pos
 let compare_path_pos_ _ _ = 0
 
 (** Attributes are nary function symbols that are applied to expression arguments in Apred and
-    Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
-    generally treated as no-ops.  The first argument is treated specially, as the "anchor" of the
-    predicate application.  For example, adding or removing an attribute uses the anchor to identify
-    the atom to operate on.  Also, abstraction and normalization operations treat the anchor
-    specially and maintain more information on it than other arguments.  Therefore when attaching an
+    Anpred atomic formulas. Many operations don't make much sense for nullary predicates, and are
+    generally treated as no-ops. The first argument is treated specially, as the "anchor" of the
+    predicate application. For example, adding or removing an attribute uses the anchor to identify
+    the atom to operate on. Also, abstraction and normalization operations treat the anchor
+    specially and maintain more information on it than other arguments. Therefore when attaching an
     attribute to an expression, that expression should be the first argument, optionally followed by
     additional related expressions. *)
 type t =

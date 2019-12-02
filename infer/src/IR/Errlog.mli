@@ -31,9 +31,8 @@ type loc_trace = loc_trace_elem list
 val concat_traces : (string * loc_trace) list -> loc_trace
 
 val compute_local_exception_line : loc_trace -> int option
-(** Look at all the trace steps and find those that are arising any exception,
-    then bind them to the closest step at level 0.
-    This extra information adds value to the report itself, and may avoid
+(** Look at all the trace steps and find those that are arising any exception, then bind them to the
+    closest step at level 0. This extra information adds value to the report itself, and may avoid
     digging into the trace to understand the cause of the report. *)
 
 type node =
@@ -52,8 +51,8 @@ val merge_err_key :
   -> merge_descriptions:(string list -> string list -> string)
   -> err_key
 (** Merges two error keys, setting the result's severity to the maximum of that of the two arguments
-   and giving the user the opportunity to pass a function to merge the IssueTypes and descriptions
-   of the two. *)
+    and giving the user the opportunity to pass a function to merge the IssueTypes and descriptions
+    of the two. *)
 
 (** Data associated to a specific error *)
 type err_data = private
@@ -73,8 +72,8 @@ type err_data = private
 
 val merge_err_data : err_data -> err_data -> err_data
 (** Merges two err_datas, throwing out most information and setting the trace of the result to the
-   concatenation of the traces of the two arguments with a separator in between. Used specifically
-   for QuandaryBO. *)
+    concatenation of the traces of the two arguments with a separator in between. Used specifically
+    for QuandaryBO. *)
 
 (** Type of the error log *)
 type t
@@ -104,7 +103,7 @@ val pp_html : SourceFile.t -> DB.Results_dir.path -> Format.formatter -> t -> un
 (** Print an error log in html format *)
 
 val size : (Exceptions.severity -> bool) -> t -> int
-(** Return the number of elements in the error log which satisfy the filter.  *)
+(** Return the number of elements in the error log which satisfy the filter. *)
 
 val update : t -> t -> unit
 (** Update an old error log with a new one *)

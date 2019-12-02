@@ -8,15 +8,15 @@
 
 open! IStd
 
-(** Configuration values: either constant, determined at compile time, or set at startup
-    time by system calls, environment variables, or command line options *)
+(** Configuration values: either constant, determined at compile time, or set at startup time by
+    system calls, environment variables, or command line options *)
 
 type os_type = Unix | Win32 | Cygwin
 
 type compilation_database_dependencies =
   | Deps of int option
-      (** get the compilation database of the dependencies up to depth n
-     by [Deps (Some n)], or all by [Deps None]  *)
+      (** get the compilation database of the dependencies up to depth n by [Deps (Some n)], or all
+          by [Deps None] *)
   | NoDeps
 [@@deriving compare]
 

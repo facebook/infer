@@ -356,8 +356,8 @@ let unlink_file_on_exit temp_file =
 
 
 (** drop at most one layer of well-balanced first and last characters satisfying [drop] from the
-   string; for instance, [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"]
-   returns "aaba" *)
+    string; for instance,
+    [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"] returns "aaba" *)
 let strip_balanced_once ~drop s =
   let n = String.length s in
   if n < 2 then s

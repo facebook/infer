@@ -46,8 +46,9 @@ let equal_name = [%compare.equal: name]
 
 type kind =
   | KNone
-      (** special kind of "null ident" (basically, a more compact way of implementing an ident option).
-      useful for situations when an instruction requires an id, but no one should read the result. *)
+      (** special kind of "null ident" (basically, a more compact way of implementing an ident
+          option). useful for situations when an instruction requires an id, but no one should read
+          the result. *)
   | KFootprint
   | KNormal
   | KPrimed

@@ -52,7 +52,7 @@ let check_for_existing_file args =
 
 
 (** Given a clang command, return a list of new commands to run according to the results of `clang
-   -### [args]`. *)
+    \-### [args]`. *)
 let clang_driver_action_items : ClangCommand.t -> action_item list =
  fun cmd ->
   let clang_hashhashhash =

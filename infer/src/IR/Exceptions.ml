@@ -585,7 +585,7 @@ let severity_string = function
       "WARNING"
 
 
-(** pretty print an error  *)
+(** pretty print an error *)
 let pp_err loc severity ex_name desc ocaml_pos_opt fmt () =
   let kind = severity_string (if equal_severity severity Info then Warning else severity) in
   F.fprintf fmt "%a:%d: %s: %a %a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind

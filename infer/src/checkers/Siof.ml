@@ -20,9 +20,8 @@ let is_whitelisted (pname : Typ.Procname.t) =
 type siof_model =
   { qual_name: string  (** (fuzzy) name of the method, eg "std::ios_base::Init::Init" *)
   ; initialized_globals: string list
-        (** names of variables that are guaranteed to be initialized once the method is executed,
-            eg ["std::cerr"] *)
-  }
+        (** names of variables that are guaranteed to be initialized once the method is executed, eg
+            ["std::cerr"] *) }
 
 let parse_siof_model (qual_name, initialized_globals) = {qual_name; initialized_globals}
 

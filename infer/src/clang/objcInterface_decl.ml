@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** In this module an ObjC interface declaration or implementation is processed. The class  *)
+(** In this module an ObjC interface declaration or implementation is processed. The class *)
 
 (** is saved in the tenv as a struct with the corresponding fields, potential superclass and *)
 

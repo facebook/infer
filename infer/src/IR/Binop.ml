@@ -26,8 +26,8 @@ type t =
   | Mod  (** % *)
   | Shiftlt  (** shift left *)
   | Shiftrt  (** shift right *)
-  | Lt  (** <  (arithmetic comparison) *)
-  | Gt  (** >  (arithmetic comparison) *)
+  | Lt  (** < (arithmetic comparison) *)
+  | Gt  (** > (arithmetic comparison) *)
   | Le  (** <= (arithmetic comparison) *)
   | Ge  (** >= (arithmetic comparison) *)
   | Eq  (** == (arithmetic comparison) *)
@@ -41,13 +41,12 @@ type t =
 
 let equal = [%compare.equal: t]
 
-(** This function returns true if the operation is injective
-    wrt. each argument: op(e,-) and op(-, e) is injective for all e.
-    The return value false means "don't know". *)
+(** This function returns true if the operation is injective wrt. each argument: op(e,-) and op(-,
+    e) is injective for all e. The return value false means "don't know". *)
 let injective = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
-(** This function returns true if 0 is the right unit of [binop].
-    The return value false means "don't know". *)
+(** This function returns true if 0 is the right unit of [binop]. The return value false means
+    "don't know". *)
 let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
 let text = function

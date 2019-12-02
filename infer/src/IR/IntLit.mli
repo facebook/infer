@@ -20,8 +20,8 @@ val compare : t -> t -> int
 (** compare integers ignoring the distinction between pointers and non-pointers *)
 
 val compare_value : t -> t -> int
-(** compare the value of the integers, notice this is different from const compare,
-    which distinguished between signed and unsigned +1 *)
+(** compare the value of the integers, notice this is different from const compare, which
+    distinguished between signed and unsigned +1 *)
 
 val div : t -> t -> t
 

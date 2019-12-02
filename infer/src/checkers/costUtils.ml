@@ -19,8 +19,8 @@ let of_itv ~(itv : Itv.t) ~degree_kind ~of_function loc =
   |> BasicCost.of_non_negative_bound ~degree_kind
 
 
-(** Given a string of length n and an optional starting index i (0 by
-   default), return itv [0, n_u-i_l] *)
+(** Given a string of length n and an optional starting index i (0 by default), return itv
+    [0, n_u-i_l] *)
 let string_len_range_itv model_env exp ~from mem =
   let itv =
     BufferOverrunModels.JavaString.get_length model_env exp mem |> BufferOverrunDomain.Val.get_itv

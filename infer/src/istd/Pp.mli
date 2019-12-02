@@ -42,8 +42,8 @@ val reset_obj_sub : env -> env
 (** Reset the object substitution, so that no substitution takes place *)
 
 val set_obj_sub : env -> ('a -> 'a) -> env
-(** Set the object substitution, which is supposed to preserve the type.
-    Currently only used for a map from (identifier) expressions to the program var containing them *)
+(** Set the object substitution, which is supposed to preserve the type. Currently only used for a
+    map from (identifier) expressions to the program var containing them *)
 
 val colormap_red : colormap
 (** red colormap *)

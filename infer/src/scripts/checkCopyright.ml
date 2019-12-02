@@ -16,8 +16,8 @@ let exit_code_of_event = function CopyrightModified -> 1 | CopyrightMalformed ->
 
 type comment_style =
   | Line of string * bool
-      (** line comments, eg "#" for shell, and whether there should be a
-          newline before the copyright notice *)
+      (** line comments, eg "#" for shell, and whether there should be a newline before the
+          copyright notice *)
   | Block of string * string * string * bool  (** block comments, eg ("(*", "*", "*)") for ocaml *)
 [@@deriving compare]
 

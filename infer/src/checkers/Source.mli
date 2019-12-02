@@ -34,7 +34,8 @@ module type S = sig
     ; index: int option  (** index of the returned source if Some; return value if None *) }
 
   val get : caller_pname:Typ.Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
-  (** return Some (taint spec) if the call site with the given actuals is a taint source, None otherwise *)
+  (** return Some (taint spec) if the call site with the given actuals is a taint source, None
+      otherwise *)
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
   (** return each formal of the function paired with either Some(source) if the formal is a taint

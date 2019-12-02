@@ -30,13 +30,15 @@ let implements_map tenv s =
   PatternMatch.implements_map tenv s || PatternMatch.implements_androidx_map tenv s
 
 
-(** If given a node that has 4 instructions and calls fun_name, 
-    pickup bcvarY, i.e. variable for the first argument 
+(** If given a node that has 4 instructions and calls fun_name, pickup bcvarY, i.e. variable for the
+    first argument
+
+    {v
      n$X      = *&$bcvarY
        _      = *n$X 
      n$X+1    = fun_name(n$X,....)
     *&$irvarZ = n$X+1
- *)
+    v} *)
 let find_first_arg_pvar node ~fun_name ~class_name_f =
   let instrs = Procdesc.Node.get_instrs node in
   if Instrs.count instrs >= 4 then

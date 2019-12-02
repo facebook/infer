@@ -449,8 +449,7 @@ let create_copy_array src_exp =
 
 
 module CFArray = struct
-  (** Creates a new array from the given array by copying the first X
-     elements. *)
+  (** Creates a new array from the given array by copying the first X elements. *)
   let create_array src_exp size_exp =
     let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
     let exec model_env ~ret:((id, _) as ret) mem =
@@ -766,8 +765,8 @@ module StdBasicString = struct
   let length = StdVector.size
 end
 
-(** Java's integers are modeled with an indirection to a memory
-   location that holds the actual integer value *)
+(** Java's integers are modeled with an indirection to a memory location that holds the actual
+    integer value *)
 module JavaInteger = struct
   let intValue exp =
     let exec _ ~ret:(id, _) mem =
@@ -884,8 +883,8 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  (** increase the size by [0, 1] because put replaces the value
-     rather than add a new one when the key is found in the map *)
+  (** increase the size by [0, 1] because put replaces the value rather than add a new one when the
+      key is found in the map *)
   let put coll_id = {exec= change_size_by_incr_or_not coll_id; check= no_check}
 
   (* The return value is set by [set_itv_updated_by_addition] in order to be sure that it can be
@@ -954,9 +953,8 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  (** Returns a view of the portion of this list between the specified
-     fromIndex, inclusive, and toIndex, exclusive. Simply model it as
-     creating a new list with length toIndex - fromIndex.  *)
+  (** Returns a view of the portion of this list between the specified fromIndex, inclusive, and
+      toIndex, exclusive. Simply model it as creating a new list with length toIndex - fromIndex. *)
   let subList from_exp to_exp =
     let exec ({integer_type_widths} as model) ~ret mem =
       let from_idx = Sem.eval integer_type_widths from_exp mem in
@@ -967,8 +965,8 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  (** increase the size by [0, |collection_to_add|] because put replaces the value
-     rather than add a new one when the key is found in the map *)
+  (** increase the size by [0, |collection_to_add|] because put replaces the value rather than add a
+      new one when the key is found in the map *)
   let putAll coll_id coll_to_add =
     let exec model_env ~ret mem =
       let to_add_length =

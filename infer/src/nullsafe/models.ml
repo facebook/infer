@@ -62,9 +62,8 @@ let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability
   (is_nullable ret_nullability, List.map param_nullability ~f:is_nullable)
 
 
-(** Return the annotated signature of the procedure, taking into account models.
-    External models take precedence over internal ones.
- *)
+(** Return the annotated signature of the procedure, taking into account models. External models
+    take precedence over internal ones. *)
 let get_modelled_annotated_signature tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let is_strict_mode =

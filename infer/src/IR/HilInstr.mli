@@ -36,6 +36,6 @@ val of_sil :
   -> Sil.instr
   -> translation
 (** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an
-   SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
-   produce the same result as evaluating the SIL instruction and replacing the temporary variables
-   using [f_resolve_id]. *)
+    SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
+    produce the same result as evaluating the SIL instruction and replacing the temporary variables
+    using [f_resolve_id]. *)

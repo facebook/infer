@@ -28,11 +28,11 @@ let parse_command_and_arguments command_and_arguments =
   (command, [arguments])
 
 
-(** Parse the compilation database json file into the compilationDatabase
-    map. The json file consists of an array of json objects that contain the file
-    to be compiled, the directory to be compiled in, and the compilation command as a list
-    and as a string. We pack this information into the compilationDatabase map, and remove the
-    clang invocation part, because we will use a clang wrapper. *)
+(** Parse the compilation database json file into the compilationDatabase map. The json file
+    consists of an array of json objects that contain the file to be compiled, the directory to be
+    compiled in, and the compilation command as a list and as a string. We pack this information
+    into the compilationDatabase map, and remove the clang invocation part, because we will use a
+    clang wrapper. *)
 let decode_json_file (database : t) json_format =
   let json_path = match json_format with `Raw x | `Escaped x -> x in
   let unescape_path s =

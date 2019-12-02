@@ -64,8 +64,8 @@ module JsonFragment = struct
         "InList"
 
 
-  (** for some limited (not thread-safe) form of safety, and to know when we need to print separators
-   *)
+  (** for some limited (not thread-safe) form of safety, and to know when we need to print
+      separators *)
   let pp_state = ref [Outside]
 
   let pp f json_fragment =

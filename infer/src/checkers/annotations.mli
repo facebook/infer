@@ -65,12 +65,12 @@ val ia_is_initializer : Annot.Item.t -> bool
 val ia_is_cleanup : Annot.Item.t -> bool
 
 val ia_is_field_injector_readonly : Annot.Item.t -> bool
-(** Annotations for readonly injectors.
-    The injector framework initializes the field but does not write null into it. *)
+(** Annotations for readonly injectors. The injector framework initializes the field but does not
+    write null into it. *)
 
 val ia_is_field_injector_readwrite : Annot.Item.t -> bool
-(** Annotations for read-write injectors.
-    The injector framework initializes the field and can write null into it. *)
+(** Annotations for read-write injectors. The injector framework initializes the field and can write
+    null into it. *)
 
 val ia_is_nonnull : Annot.Item.t -> bool
 
@@ -116,8 +116,7 @@ val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
 (** get the list of annotations on the return value of [pdesc] *)
 
 val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
-(** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return
-    value *)
+(** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return value *)
 
 val pname_has_return_annot :
      Typ.Procname.t

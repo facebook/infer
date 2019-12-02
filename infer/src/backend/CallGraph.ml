@@ -46,9 +46,9 @@ end
 module IdMap = Typ.Procname.Hash
 module NodeMap = Caml.Hashtbl.Make (Int)
 
-(** [node_map] is a map from ids (unique ints) to nodes corresponding to defined procedures. 
-    [id_map] is a map from all encountered (not necessarily defined) procnames to their ids, 
-    and thus its image is a superset of the domain of [node_map], and usually a strict superset.
+(** [node_map] is a map from ids (unique ints) to nodes corresponding to defined procedures.
+    [id_map] is a map from all encountered (not necessarily defined) procnames to their ids, and
+    thus its image is a superset of the domain of [node_map], and usually a strict superset.
     [trim_id_map] makes the image equal to the domain of [node_map]. *)
 type t = {id_map: int IdMap.t; node_map: Node.t NodeMap.t}
 

@@ -98,8 +98,7 @@ module Loc : sig
   val is_global : t -> bool
 
   val is_pretty : t -> bool
-  (** It checks if it is representable with pretty form, e.g., with a path or with a variable
-     name. *)
+  (** It checks if it is representable with pretty form, e.g., with a path or with a variable name. *)
 
   val is_return : t -> bool
 
@@ -142,8 +141,8 @@ module PowLoc : sig
   (** It substitutes paths in the abstract location using [eval_locpath]. *)
 
   val lift_cmp : Boolean.EqualOrder.t -> t -> t -> Boolean.t
-  (** It lifts a comparison of [Loc.t] to [t].  The comparison can be [Boolean.EqualOrder.eq],
-     [Boolean.EqualOrder.ne], etc. *)
+  (** It lifts a comparison of [Loc.t] to [t]. The comparison can be [Boolean.EqualOrder.eq],
+      [Boolean.EqualOrder.ne], etc. *)
 end
 
 val can_strong_update : PowLoc.t -> bool

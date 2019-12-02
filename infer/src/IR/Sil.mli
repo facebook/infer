@@ -41,23 +41,25 @@ type instr =
   | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
 
-      [id = *exp:typ(root_typ)] where
-        [exp] is an expression denoting a heap address
-        [typ] is typ of [exp] and [id]
-        [root_typ] is the root type of [exp]
+          [id = *exp:typ(root_typ)] where
 
-          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          - [exp] is an expression denoting a heap address
+          - [typ] is typ of [exp] and [id]
+          - [root_typ] is the root type of [exp]
+
+          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
           future, so please use [typ] instead. *)
   | Store of {e1: Exp.t; root_typ: Typ.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
 
-      [*exp1:typ(root_typ) = exp2] where
-        [exp1] is an expression denoting a heap address
-        [typ] is typ of [*exp1] and [exp2]
-        [root_typ] is the root type of [exp1]
-        [exp2] is the expression whose value is stored.
+          [*exp1:typ(root_typ) = exp2] where
 
-          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          - [exp1] is an expression denoting a heap address
+          - [typ] is typ of [*exp1] and [exp2]
+          - [root_typ] is the root type of [exp1]
+          - [exp2] is the expression whose value is stored.
+
+          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
           future, so please use [typ] instead. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
@@ -166,54 +168,46 @@ type 'inst strexp0 =
   | Eexp of Exp.t * 'inst  (** Base case: expression with instrumentation *)
   | Estruct of (Typ.Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
   | Earray of Exp.t * (Exp.t * 'inst strexp0) list * 'inst
-      (** Array of given length
-          There are two conditions imposed / used in the array case.
-          First, if some index and value pair appears inside an array
-          in a strexp, then the index is less than the length of the array.
-          For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-          Second, if two indices appear in an array, they should be different.
-          For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
+      (** Array of given length There are two conditions imposed / used in the array case. First, if
+          some index and value pair appears inside an array in a strexp, then the index is less than
+          the length of the array. For instance, [x |->\[10 | e1: v1\]] implies that [e1 <= 9].
+          Second, if two indices appear in an array, they should be different. For instance,
+          [x |->\[10 | e1: v1, e2: v2\]] implies that [e1 != e2]. *)
 [@@deriving compare]
 
 type strexp = inst strexp0
 
 val compare_strexp : ?inst:bool -> strexp -> strexp -> int
-(** Comparison function for strexp.
-    The inst:: parameter specifies whether instumentations should also
-    be considered (false by default).  *)
+(** Comparison function for strexp. The inst:: parameter specifies whether instumentations should
+    also be considered (false by default). *)
 
 val equal_strexp : ?inst:bool -> strexp -> strexp -> bool
-(** Equality function for strexp.
-    The inst:: parameter specifies whether instumentations should also
-    be considered (false by default).  *)
+(** Equality function for strexp. The inst:: parameter specifies whether instumentations should also
+    be considered (false by default). *)
 
 (** an atomic heap predicate *)
 type 'inst hpred0 =
   | Hpointsto of Exp.t * 'inst strexp0 * Exp.t
-      (** represents [exp|->strexp:typexp] where [typexp]
-      is an expression representing a type, e.h. [sizeof(t)]. *)
+      (** represents [exp|->strexp:typexp] where [typexp] is an expression representing a type, e.h.
+          [sizeof(t)]. *)
   | Hlseg of lseg_kind * 'inst hpara0 * Exp.t * Exp.t * Exp.t list
-      (** higher - order predicate for singly - linked lists.
-      Should ensure that exp1!= exp2 implies that exp1 is allocated.
-      This assumption is used in the rearrangement. The last [exp list] parameter
-      is used to denote the shared links by all the nodes in the list. *)
+      (** higher - order predicate for singly - linked lists. Should ensure that exp1!= exp2 implies
+          that exp1 is allocated. This assumption is used in the rearrangement. The last [exp list]
+          parameter is used to denote the shared links by all the nodes in the list. *)
   | Hdllseg of lseg_kind * 'inst hpara_dll0 * Exp.t * Exp.t * Exp.t * Exp.t * Exp.t list
-      (** higher-order predicate for doubly-linked lists.
-      Parameter for the higher-order singly-linked list predicate.
-      Means "lambda (root,next,svars). Exists evars. body".
-      Assume that root, next, svars, evars are disjoint sets of
-      primed identifiers, and include all the free primed identifiers in body.
-      body should not contain any non - primed identifiers or program
-      variables (i.e. pvars). *)
+      (** higher-order predicate for doubly-linked lists. Parameter for the higher-order
+          singly-linked list predicate. Means "lambda (root,next,svars). Exists evars. body". Assume
+          that root, next, svars, evars are disjoint sets of primed identifiers, and include all the
+          free primed identifiers in body. body should not contain any non - primed identifiers or
+          program variables (i.e. pvars). *)
 [@@deriving compare]
 
 and 'inst hpara0 =
   {root: Ident.t; next: Ident.t; svars: Ident.t list; evars: Ident.t list; body: 'inst hpred0 list}
 [@@deriving compare]
 
-(** parameter for the higher-order doubly-linked list predicates.
-    Assume that all the free identifiers in body_dll should belong to
-    cell, blink, flink, svars_dll, evars_dll. *)
+(** parameter for the higher-order doubly-linked list predicates. Assume that all the free
+    identifiers in body_dll should belong to cell, blink, flink, svars_dll, evars_dll. *)
 and 'inst hpara_dll0 =
   { cell: Ident.t  (** address cell *)
   ; blink: Ident.t  (** backward link *)
@@ -230,14 +224,12 @@ type hpara = inst hpara0
 type hpara_dll = inst hpara_dll0
 
 val compare_hpred : ?inst:bool -> hpred -> hpred -> int
-(** Comparison function for hpred.
-    The inst:: parameter specifies whether instumentations should also
-    be considered (false by default).  *)
+(** Comparison function for hpred. The inst:: parameter specifies whether instumentations should
+    also be considered (false by default). *)
 
 val equal_hpred : ?inst:bool -> hpred -> hpred -> bool
-(** Equality function for hpred.
-    The inst:: parameter specifies whether instumentations should also
-    be considered (false by default).  *)
+(** Equality function for hpred. The inst:: parameter specifies whether instumentations should also
+    be considered (false by default). *)
 
 module HpredSet : Caml.Set.S with type elt = hpred
 (** Sets of heap predicates *)
@@ -262,9 +254,8 @@ val is_block_pvar : Pvar.t -> bool
 (** Check if a pvar is a local pointing to a block in objc *)
 
 val add_with_block_parameters_flag : instr -> instr
-(** Adds a with_blocks_parameters flag to a method call, when the arguments
-   contain an Objective-C block, and the method is an Objective-C method
-   (to be extended to other methods) *)
+(** Adds a with_blocks_parameters flag to a method call, when the arguments contain an Objective-C
+    block, and the method is an Objective-C method (to be extended to other methods) *)
 
 (** {2 Pretty Printing} *)
 
@@ -338,9 +329,8 @@ val pp_hpara : Pp.env -> F.formatter -> hpara -> unit
 val pp_hpara_dll : Pp.env -> F.formatter -> hpara_dll -> unit
 (** Pretty print a hpara_dll. *)
 
-(** Module Predicates records the occurrences of predicates as parameters
-    of (doubly -)linked lists and Epara.
-    Provides unique numbering for predicates and an iterator. *)
+(** Module Predicates records the occurrences of predicates as parameters of (doubly -)linked lists
+    and Epara. Provides unique numbering for predicates and an iterator. *)
 module Predicates : sig
   (** predicate environment *)
   type env
@@ -352,8 +342,8 @@ module Predicates : sig
   (** return true if the environment is empty *)
 
   val iter : env -> (int -> hpara -> unit) -> (int -> hpara_dll -> unit) -> unit
-  (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll,
-      passing the unique id to the functions. The iterator can only be used once. *)
+  (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll, passing the unique
+      id to the functions. The iterator can only be used once. *)
 
   val process_hpred : env -> hpred -> unit
   (** Process one hpred, updating the predicate environment *)
@@ -365,23 +355,19 @@ val pp_hpred_env : Pp.env -> Predicates.env option -> F.formatter -> hpred -> un
 (** {2 Functions for traversing SIL data types} *)
 
 val strexp_expmap : (Exp.t * inst option -> Exp.t * inst option) -> strexp -> strexp
-(** Change exps in strexp using [f].
-    WARNING: the result might not be normalized. *)
+(** Change exps in strexp using [f]. WARNING: the result might not be normalized. *)
 
 val hpred_expmap : (Exp.t * inst option -> Exp.t * inst option) -> hpred -> hpred
-(** Change exps in hpred by [f].
-    WARNING: the result might not be normalized. *)
+(** Change exps in hpred by [f]. WARNING: the result might not be normalized. *)
 
 val hpred_instmap : (inst -> inst) -> hpred -> hpred
 (** Change instrumentations in hpred using [f]. *)
 
 val hpred_list_expmap : (Exp.t * inst option -> Exp.t * inst option) -> hpred list -> hpred list
-(** Change exps in hpred list by [f].
-    WARNING: the result might not be normalized. *)
+(** Change exps in hpred list by [f]. WARNING: the result might not be normalized. *)
 
 val atom_expmap : (Exp.t -> Exp.t) -> atom -> atom
-(** Change exps in atom by [f].
-    WARNING: the result might not be normalized. *)
+(** Change exps in atom by [f]. WARNING: the result might not be normalized. *)
 
 val hpred_list_get_lexps : (Exp.t -> bool) -> hpred list -> Exp.t list
 
@@ -408,9 +394,8 @@ val equal_subst : subst -> subst -> bool
 (** Equality for substitutions. *)
 
 val subst_of_list : (Ident.t * Exp.t) list -> subst
-(** Create a substitution from a list of pairs.
-    For all (id1, e1), (id2, e2) in the input list,
-    if id1 = id2, then e1 = e2. *)
+(** Create a substitution from a list of pairs. For all (id1, e1), (id2, e2) in the input list, if
+    id1 = id2, then e1 = e2. *)
 
 val subst_of_list_duplicates : (Ident.t * Exp.t) list -> subst
 (** like subst_of_list, but allow duplicate ids and only keep the first occurrence *)
@@ -424,37 +409,33 @@ val sub_empty : subst
 val is_sub_empty : subst -> bool
 
 val sub_join : subst -> subst -> subst
-(** Compute the common id-exp part of two inputs [subst1] and [subst2].
-    The first component of the output is this common part.
-    The second and third components are the remainder of [subst1]
-    and [subst2], respectively. *)
+(** Compute the common id-exp part of two inputs [subst1] and [subst2]. The first component of the
+    output is this common part. The second and third components are the remainder of [subst1] and
+    [subst2], respectively. *)
 
 val sub_symmetric_difference : subst -> subst -> subst * subst * subst
-(** Compute the common id-exp part of two inputs [subst1] and [subst2].
-    The first component of the output is this common part.
-    The second and third components are the remainder of [subst1]
-    and [subst2], respectively. *)
+(** Compute the common id-exp part of two inputs [subst1] and [subst2]. The first component of the
+    output is this common part. The second and third components are the remainder of [subst1] and
+    [subst2], respectively. *)
 
 val sub_find : (Ident.t -> bool) -> subst -> Exp.t
-(** [sub_find filter sub] returns the expression associated to the first identifier
-    that satisfies [filter].
-    Raise [Not_found] if there isn't one. *)
+(** [sub_find filter sub] returns the expression associated to the first identifier that satisfies
+    [filter]. Raise [Not_found] if there isn't one. *)
 
 val sub_filter : (Ident.t -> bool) -> subst -> subst
-(** [sub_filter filter sub] restricts the domain of [sub] to the
-    identifiers satisfying [filter]. *)
+(** [sub_filter filter sub] restricts the domain of [sub] to the identifiers satisfying [filter]. *)
 
 val sub_filter_pair : subst -> f:(Ident.t * Exp.t -> bool) -> subst
-(** [sub_filter_exp filter sub] restricts the domain of [sub] to the
-    identifiers satisfying [filter(id, sub(id))]. *)
+(** [sub_filter_exp filter sub] restricts the domain of [sub] to the identifiers satisfying
+    [filter(id, sub(id))]. *)
 
 val sub_range_partition : (Exp.t -> bool) -> subst -> subst * subst
-(** [sub_range_partition filter sub] partitions [sub] according to
-    whether range expressions satisfy [filter]. *)
+(** [sub_range_partition filter sub] partitions [sub] according to whether range expressions satisfy
+    [filter]. *)
 
 val sub_domain_partition : (Ident.t -> bool) -> subst -> subst * subst
-(** [sub_domain_partition filter sub] partitions [sub] according to
-    whether domain identifiers satisfy [filter]. *)
+(** [sub_domain_partition filter sub] partitions [sub] according to whether domain identifiers
+    satisfy [filter]. *)
 
 val sub_domain : subst -> Ident.t list
 (** Return the list of identifiers in the domain of the substitution. *)
@@ -466,8 +447,8 @@ val sub_range_map : (Exp.t -> Exp.t) -> subst -> subst
 (** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. *)
 
 val sub_map : (Ident.t -> Ident.t) -> (Exp.t -> Exp.t) -> subst -> subst
-(** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
-    of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
+(** [sub_map f g sub] applies the renaming [f] to identifiers in the domain of [sub] and the
+    substitution [g] to the expressions in the range of [sub]. *)
 
 val extend_sub : subst -> Ident.t -> Exp.t -> subst option
 (** Extend substitution and return [None] if not possible. *)
@@ -476,8 +457,7 @@ val subst_free_vars : subst -> Ident.t Sequence.t
 
 val subst_gen_free_vars : subst -> (unit, Ident.t) Sequence.Generator.t
 
-(** substitution functions
-    WARNING: these functions do not ensure that the results are normalized. *)
+(** substitution functions WARNING: these functions do not ensure that the results are normalized. *)
 
 val exp_sub : subst -> Exp.t -> Exp.t
 
@@ -507,17 +487,15 @@ val exp_add_offsets : Exp.t -> offset list -> Exp.t
 val sigma_to_sigma_ne : hpred list -> (atom list * hpred list) list
 
 val hpara_instantiate : hpara -> Exp.t -> Exp.t -> Exp.t list -> Ident.t list * hpred list
-(** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1],
-    [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
-    then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]]
-    for some fresh [_zs'].*)
+(** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1], [e2] and [elist]. If
+    [para = lambda (x, y, xs). exists zs. b], then the result of the instantiation is
+    [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]] for some fresh [_zs'].*)
 
 val hpara_dll_instantiate :
   hpara_dll -> Exp.t -> Exp.t -> Exp.t -> Exp.t list -> Ident.t list * hpred list
-(** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
-    [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
-    then the result of the instantiation is
-    [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
-    for some fresh [_zs'].*)
+(** [hpara_dll_instantiate para cell blink flink elist] instantiates [para] with [cell], [blink],
+    [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b], then the result of the
+    instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]] for some fresh
+    [_zs'].*)
 
 val custom_error : Pvar.t

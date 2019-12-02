@@ -59,13 +59,11 @@ module Core : sig
 
   val unsafe_cast_to_sorted : exposed t -> sorted t
 end = struct
-  (** A proposition. The following invariants are mantained. [sub] is of
-      the form id1 = e1 ... idn = en where: the id's are distinct and do not
-      occur in the e's nor in [pi] or [sigma]; the id's are in sorted
-      order; the id's are not existentials; if idn = yn (for yn not
-      existential) then idn < yn in the order on ident's. [pi] is sorted
-      and normalized, and does not contain x = e. [sigma] is sorted and
-      normalized. *)
+  (** A proposition. The following invariants are mantained. [sub] is of the form id1 = e1 ... idn =
+      en where: the id's are distinct and do not occur in the e's nor in [pi] or [sigma]; the id's
+      are in sorted order; the id's are not existentials; if idn = yn (for yn not existential) then
+      idn < yn in the order on ident's. [pi] is sorted and normalized, and does not contain x = e.
+      [sigma] is sorted and normalized. *)
   type 'a t =
     { sigma: sigma  (** spatial part *)
     ; sub: Sil.subst  (** substitution *)
@@ -160,8 +158,8 @@ let d_pi (pi : pi) = L.d_pp_with_pe pp_pi pi
 (** Pretty print a sigma. *)
 let pp_sigma pe = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe)
 
-(** Split sigma into stack and nonstack parts.
-    The boolean indicates whether the stack should only include local variales. *)
+(** Split sigma into stack and nonstack parts. The boolean indicates whether the stack should only
+    include local variales. *)
 let sigma_get_stack_nonstack only_local_vars sigma =
   let hpred_is_stack_var = function
     | Sil.Hpointsto (Lvar pvar, _, _) ->
@@ -527,9 +525,9 @@ let sigma_get_unsigned_exps sigma =
   List.iter ~f:do_hpred sigma ; !uexps
 
 
-(** Collapse consecutive indices that should be added. For instance,
-    this function reduces [x[1][1]] to [x[2]]. The [typ] argument is used
-    to ensure the soundness of this collapsing. *)
+(** Collapse consecutive indices that should be added. For instance, this function reduces
+    [x\[1\]\[1\]] to [x\[2\]]. The [typ] argument is used to ensure the soundness of this
+    collapsing. *)
 let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let typ_is_base (typ1 : Typ.t) =
     match typ1.desc with Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun -> true | _ -> false
@@ -576,13 +574,12 @@ let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
 
 (* Module for normalization *)
 module Normalize = struct
-  (** Eliminates all empty lsegs from sigma, and collect equalities
-      The empty lsegs include
-      (a) "lseg_pe para 0 e elist",
-      (b) "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
-      (c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
-      (d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
-      cell iF or iB. *)
+  (** Eliminates all empty lsegs from sigma, and collect equalities The empty lsegs include
+
+      - "lseg_pe para 0 e elist",
+      - "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
+      - "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
+      - "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains cell iF or iB. *)
   let sigma_remove_emptylseg sigma =
     let alloc_set =
       let rec f_alloc set (sigma1 : sigma) =
@@ -1210,9 +1207,8 @@ module Normalize = struct
         a
 
 
-  (** Normalize an atom.
-      We keep the convention that inequalities with constants
-      are only of the form [e <= n] and [n < e]. *)
+  (** Normalize an atom. We keep the convention that inequalities with constants are only of the
+      form [e <= n] and [n < e]. *)
   let atom_normalize tenv sub a0 =
     let a = Sil.atom_sub sub a0 in
     let rec normalize_eq (eq : Exp.t * Exp.t) =
@@ -1372,9 +1368,10 @@ module Normalize = struct
 
 
   (** Captured variables in the closures consist of expressions and variables, with the implicit
-      assumption that these two values are in the relation &var -> id. However, after bi-abduction, etc.
-      the constraint may not hold anymore, so this function ensures that it is always kept.
-      In particular, we have &var -> id iff we also have the pair (id, var) as part of captured variables. *)
+      assumption that these two values are in the relation &var -> id. However, after bi-abduction,
+      etc. the constraint may not hold anymore, so this function ensures that it is always kept. In
+      particular, we have &var -> id iff we also have the pair (id, var) as part of captured
+      variables. *)
   let make_captured_in_closures_consistent sigma =
     let open Sil in
     let find_correct_captured captured =
@@ -1605,8 +1602,8 @@ module Normalize = struct
     (ineq_list', nonineq_list')
 
 
-  (** Normalization of pi.
-      The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
+  (** Normalization of pi. The normalization filters out obviously - true disequalities, such as e
+      <> e + 1. *)
   let pi_normalize tenv sub sigma pi0 =
     let pi = List.map ~f:(atom_normalize tenv sub) pi0 in
     let ineq_list, nonineq_list = pi_tighten_ineq tenv pi in
@@ -1640,8 +1637,8 @@ module Normalize = struct
     if equal_pi pi0 pi'' then pi0 else pi''
 
 
-  (** normalize the footprint part, and rename any primed vars
-      in the footprint with fresh footprint vars *)
+  (** normalize the footprint part, and rename any primed vars in the footprint with fresh footprint
+      vars *)
   let footprint_normalize tenv prop =
     let nsigma = sigma_normalize tenv Sil.sub_empty prop.sigma_fp in
     let npi = pi_normalize tenv Sil.sub_empty nsigma prop.pi_fp in
@@ -1809,8 +1806,8 @@ let mk_dllseg tenv k para exp_iF exp_oB exp_oF exp_iB exps_shared : Sil.hpred =
   Hdllseg (k, npara, exp_iF, exp_oB, exp_oF, exp_iB, exps_shared)
 
 
-(** Construct a points-to predicate for a single program variable.
-    If [expand_structs] is [Fld_init], initialize the fields of structs with fresh variables. *)
+(** Construct a points-to predicate for a single program variable. If [expand_structs] is
+    [Fld_init], initialize the fields of structs with fresh variables. *)
 let mk_ptsto_lvar tenv expand_structs inst ((pvar : Pvar.t), texp, expo) : Sil.hpred =
   Normalize.mk_ptsto_exp tenv expand_structs (Lvar pvar, texp, expo) inst
 
@@ -1834,9 +1831,8 @@ let prop_reset_inst inst_map prop =
 
 (** {1 Functions for transforming footprints into propositions.} *)
 
-(** The ones used for abstraction add/remove local stacks in order to
-    stop the firing of some abstraction rules. The other usual
-    transforation functions do not use this hack. *)
+(** The ones used for abstraction add/remove local stacks in order to stop the firing of some
+    abstraction rules. The other usual transforation functions do not use this hack. *)
 
 (** Extract the footprint and return it as a prop *)
 let extract_footprint p = set prop_emp ~pi:p.pi_fp ~sigma:p.sigma_fp
@@ -2239,7 +2235,7 @@ let prop_ren_sub tenv (ren_sub : Sil.subst) (prop : normal t) : normal t =
 
 
 (** Existentially quantify the [ids] in [prop]. [ids] should not contain any primed variables. If
-   [ids_queue] is passed then the function uses it instead of [ids] for membership tests. *)
+    [ids_queue] is passed then the function uses it instead of [ids] for membership tests. *)
 let exist_quantify tenv ?ids_queue ids (prop : normal t) : normal t =
   assert (not (List.exists ~f:Ident.is_primed ids)) ;
   (* sanity check *)
@@ -2349,15 +2345,14 @@ let prop_iter_to_prop tenv iter =
     ~init:prop iter.pit_newpi
 
 
-(** Add an atom to the pi part of prop iter. The
-    first parameter records whether it is done
-    during footprint or during re - execution. *)
+(** Add an atom to the pi part of prop iter. The first parameter records whether it is done during
+    footprint or during re - execution. *)
 let prop_iter_add_atom footprint iter atom =
   {iter with pit_newpi= (footprint, atom) :: iter.pit_newpi}
 
 
-(** Remove the current element of the iterator, and return the prop
-    associated to the resulting iterator *)
+(** Remove the current element of the iterator, and return the prop associated to the resulting
+    iterator *)
 let prop_iter_remove_curr_then_to_prop tenv iter : normal t =
   let sigma = List.rev_append iter.pit_old iter.pit_new in
   let normalized_sigma = Normalize.sigma_normalize tenv iter.pit_sub sigma in
@@ -2588,8 +2583,7 @@ end = struct
     !size
 
 
-  (** Compute a size value for the prop, which indicates its
-      complexity *)
+  (** Compute a size value for the prop, which indicates its complexity *)
   let prop_size p =
     let size_current = sigma_size p.sigma in
     let size_footprint = sigma_size p.sigma_fp in

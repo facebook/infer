@@ -46,23 +46,26 @@ end
 
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain.
 
-   CAVEAT: the translation does not attempt to preserve the semantics in the case where side-effects
-   happen between an assignment to a logical variable and the assignement of that logical variable
-   to a program variable. For instance the following SIL program
+    CAVEAT: the translation does not attempt to preserve the semantics in the case where
+    side-effects happen between an assignment to a logical variable and the assignement of that
+    logical variable to a program variable. For instance the following SIL program
 
+    {v
     n$0 = *&x.f
     _ = delete(&x)
     *&y = n$0
+    v}
 
     becomes
 
+    {v
     _ = delete(&x)
     *&y = *&x.f
+    v}
 
     The latter is a use-after-delete of &x whereas the original SIL program is well behaved.
 
-    Only use HIL if that is not something your checker needs to care about.
- *)
+    Only use HIL if that is not something your checker needs to care about. *)
 module MakeAbstractInterpreterWithConfig
     (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)

@@ -9,22 +9,21 @@ open! IStd
 
 val shallow_equal : 'a -> 'a -> bool
 
-(**
-  Helpers function to enforce physical equality.
+(** Helpers function to enforce physical equality.
 
-  Let suppose [construct/deconstruct] is a 1-level-allocation OCaml construction/deconstruction,
-  such as variant type, tuple or record construction.
-  Instead of writing
-    let a = deconstruct a0 in
-    let b = deconstruct b0 in
-    let res = f a b in
-    if phys_equal res a then a0
-    else if phys_equal res b then b0
-    else construct res
+    Let suppose [construct/deconstruct] is a 1-level-allocation OCaml construction/deconstruction,
+    such as variant type, tuple or record construction. Instead of writing
 
-  Simply write
-    PhysEqual.optim2 ~res:(construct (f a b)) a0 b0
-*)
+    {[
+      let a = deconstruct a0 in
+      let b = deconstruct b0 in
+      let res = f a b in
+      if phys_equal res a then a0 else if phys_equal res b then b0 else construct res
+    ]}
+
+    Simply write
+
+    {[ PhysEqual.optim2 ~res:(construct (f a b)) a0 b0 ]} *)
 
 val optim1 : res:'a -> 'a -> 'a
 

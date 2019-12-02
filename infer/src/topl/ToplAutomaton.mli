@@ -47,5 +47,5 @@ val max_args : t -> int
 
 val get_start_error_pairs : t -> (vindex * vindex) list
 (** Returns pairs [(i,j)] of vertex indices corresponding to pairs [((p, "start"), (p, "error"))] of
-vertex names, where [p] ranges over property names.
-POST: no vertex index occurs more than once in the result. *)
+    vertex names, where [p] ranges over property names. POST: no vertex index occurs more than once
+    in the result. *)

@@ -7,31 +7,27 @@
 
 open! IStd
 
-(**
-  This module defines a language to define checkers. These checkers are interpreted over the AST of
-  the program. A checker is defined by a CTL formula which expresses a condition saying when the
-  checker should report a problem.
-*)
+(** This module defines a language to define checkers. These checkers are interpreted over the AST
+    of the program. A checker is defined by a CTL formula which expresses a condition saying when
+    the checker should report a problem. *)
 
-(**  "set" clauses are used for defining mandatory variables that will be used
-   by when reporting issues: eg for defining the condition.
+(** "set" clauses are used for defining mandatory variables that will be used by when reporting
+    issues: eg for defining the condition.
 
-   "desc" clauses are used for defining the error message,
-   the suggestion, the severity.
+    "desc" clauses are used for defining the error message, the suggestion, the severity.
 
-   "let" clauses are used to define temporary formulas which are then
-   used to abbreviate the another formula. For example
+    "let" clauses are used to define temporary formulas which are then used to abbreviate the
+    another formula. For example
 
-   let f = a And B
+    {v
+    let f = a And B
 
-   set formula  = f OR f
+    set formula = f OR f
 
-   set message = "bla"
-
-*)
-
+    set message = "bla"
+    v} *)
 type clause =
-  | CLet of ALVar.formula_id * ALVar.t list * CTLTypes.t  (** Let clause: let id = definifion;  *)
+  | CLet of ALVar.formula_id * ALVar.t list * CTLTypes.t  (** Let clause: let id = definifion; *)
   | CSet of ALVar.keyword * CTLTypes.t  (** Set clause: set id = definition *)
   | CDesc of ALVar.keyword * string  (** Description clause eg: set message = "..." *)
   | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list

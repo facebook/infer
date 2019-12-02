@@ -11,18 +11,18 @@ module TaskGenerator : sig
   (** abstraction for generating jobs *)
   type 'a t =
     { remaining_tasks: unit -> int
-          (** number of tasks remaining to complete -- only used for reporting, so imprecision is not a bug *)
+          (** number of tasks remaining to complete -- only used for reporting, so imprecision is
+              not a bug *)
     ; is_empty: unit -> bool
           (** when should the main loop of the task manager stop expecting new tasks *)
     ; finished: 'a -> unit
-          (** Process pool calls [finished x] when a worker finishes item [x]. This is only called 
-            if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
+          (** Process pool calls [finished x] when a worker finishes item [x]. This is only called
+              if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
     ; next: unit -> 'a option
-          (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] 
-            must return [None].  However, it is OK to for [next ()] to return [None] when [is_empty] 
-            is false.  This corresponds to the case where there is more work to be done, 
-            but it is not schedulable until some already scheduled work is finished. *)
-    }
+          (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] must
+              return [None]. However, it is OK to for [next ()] to return [None] when [is_empty] is
+              false. This corresponds to the case where there is more work to be done, but it is not
+              schedulable until some already scheduled work is finished. *) }
 
   val chain : 'a t -> 'a t -> 'a t
   (** chain two generators in order *)
@@ -48,7 +48,7 @@ end
     See also {!module-ProcessPoolState}. *)
 
 (** A [('work, 'final) t] process pool accepts tasks of type ['work] and produces an array of
-   results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)
+    results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)
 type (_, _) t
 
 val create :

@@ -24,7 +24,7 @@ module type S = sig
 
   val read_full : caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> (Procdesc.t * t) option
   (** Return the proc desc and payload for the given procedure. Runs the analysis on-demand if
-     necessary. *)
+      necessary. *)
 
   val read : caller_summary:Summary.t -> callee_pname:Typ.Procname.t -> t option
   (** Return the payload for the given procedure. Runs the analysis on-demand if necessary. *)

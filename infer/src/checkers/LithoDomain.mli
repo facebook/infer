@@ -34,8 +34,8 @@ module CallSet : module type of AbstractDomain.FiniteSet (MethodCall)
 include module type of AbstractDomain.Map (LocalAccessPath) (CallSet)
 
 val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
-(** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the
-    original access path is retained; otherwise, the new one is used *)
+(** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original
+    access path is retained; otherwise, the new one is used *)
 
 val iter_call_chains : f:(AccessPath.t -> MethodCall.t list -> unit) -> t -> unit
 (** Apply [f] to each maximal call chain encoded in [t] *)

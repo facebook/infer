@@ -7,8 +7,8 @@
 
 open! IStd
 
-(** Contains current class and current method to be translated as well as local variables,
-    and the cfg, and tenv corresponding to the current file. *)
+(** Contains current class and current method to be translated as well as local variables, and the
+    cfg, and tenv corresponding to the current file. *)
 
 module StmtMap = ClangPointers.Map
 

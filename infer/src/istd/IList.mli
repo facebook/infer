@@ -33,7 +33,7 @@ val split_last_rev : 'a list -> ('a * 'a list) option
 
 val append_no_duplicates : cmp:('a -> 'a -> int) -> ('a list -> 'a list -> 'a list) Staged.t
 (** [append_no_duplicates list1 list2], assuming that list1 and list2 have no duplicates on their
-    own, it computes list1 @ (filtered list2), so it keeps the order of both lists and has no
+    own, it computes [list1 @ (filtered list2)], so it keeps the order of both lists and has no
     duplicates. *)
 
 val merge_dedup : 'a list -> 'a list -> compare:('a -> 'a -> int) -> 'a list
@@ -48,7 +48,7 @@ val remove_first : 'a list -> f:('a -> bool) -> 'a list option
 
 val force_until_first_some : 'a option lazy_t list -> 'a option
 (** [force_until_first_some xs] forces the computation of each element of [xs] and returns the first
-that matches (Some _); or, if no such element exists, it returns None. *)
+    that matches (Some _); or, if no such element exists, it returns None. *)
 
 val eval_until_first_some : (unit -> 'a option) list -> 'a option
 (** given a list of functions taking unit, evaluate and return the first one to return [Some x] *)

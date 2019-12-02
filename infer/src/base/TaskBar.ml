@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-(** {2 arbitrary constants } *)
+(** {2 arbitrary constants} *)
 
 (** max size for the top bar of the multiline task bar *)
 let top_bar_size_default = 100

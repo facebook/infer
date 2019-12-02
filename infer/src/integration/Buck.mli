@@ -23,12 +23,9 @@ val add_flavors_to_buck_arguments :
   -> extra_flavors:string list
   -> string list
   -> flavored_arguments
-(** Add infer flavors to the targets in the given buck arguments, depending on the infer analyzer. For
-    instance, in capture mode, the buck command:
-    build //foo/bar:baz#some,flavor
-    becomes:
-    build //foo/bar:baz#infer-capture-all,some,flavor
-*)
+(** Add infer flavors to the targets in the given buck arguments, depending on the infer analyzer.
+    For instance, in capture mode, the buck command: build //foo/bar:baz#some,flavor becomes: build
+    //foo/bar:baz#infer-capture-all,some,flavor *)
 
 val store_args_in_file : string list -> string list
 (** Given a list of arguments, stores them in a file if needed and returns the new command line *)

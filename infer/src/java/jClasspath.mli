@@ -10,8 +10,8 @@ open! IStd
 open Javalib_pack
 
 val add_models : string -> unit
-(**  Adds the set of procnames for the models of Java libraries so that methods
-     with similar names are skipped during the capture *)
+(** Adds the set of procnames for the models of Java libraries so that methods with similar names
+    are skipped during the capture *)
 
 val is_model : Typ.Procname.t -> bool
 (** Check if there is a model for the given procname *)
@@ -45,7 +45,7 @@ val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface
 
 val add_missing_callee :
   program -> Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit
-(** add the class name of method signature to the list of callees  *)
+(** add the class name of method signature to the list of callees *)
 
 val set_callee_translated : program -> Typ.Procname.t -> unit
 (** set that the CFG for the procedure has been created *)

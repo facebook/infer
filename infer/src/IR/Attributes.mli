@@ -23,8 +23,7 @@ val load_defined : Typ.Procname.t -> ProcAttributes.t option
 (** Load attributes for the procedure but only if is_defined is true *)
 
 val find_file_capturing_procedure : Typ.Procname.t -> (SourceFile.t * [`Include | `Source]) option
-(** Find the file where the procedure was captured, if a cfg for that file exists.
-   Return also a boolean indicating whether the procedure is defined in an
-   include file. *)
+(** Find the file where the procedure was captured, if a cfg for that file exists. Return also a
+    boolean indicating whether the procedure is defined in an include file. *)
 
 val pp_attributes_kind : Format.formatter -> attributes_kind -> unit

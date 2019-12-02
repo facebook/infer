@@ -1064,8 +1064,8 @@ let process_summary filters formats_by_report_kind linereader stats summary issu
   issues_acc'
 
 
-(** Although the out_file is an Option type, the None option is strictly meant for the
-  logs format_kind, and all other formats should contain an outfile value. *)
+(** Although the out_file is an Option type, the None option is strictly meant for the logs
+    format_kind, and all other formats should contain an outfile value. *)
 let mk_format format_kind fname =
   Option.value_map
     ~f:(fun out_file -> [(format_kind, Some out_file)])

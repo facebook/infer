@@ -8,13 +8,10 @@ open! IStd
 module F = Format
 module L = Logging
 
-(**
-  If fn is empty, prints [pp_lhs_alone lhs]
-  Otherwise prints [pp_lhs lhs ^ sep ^ fn]
+(** If fn is empty, prints [pp_lhs_alone lhs] Otherwise prints [pp_lhs lhs ^ sep ^ fn]
 
-  Create invisible phantom fields by giving them a name ending in '.'
-  The name preceeding the '.' will be used in debug mode.
-*)
+    Create invisible phantom fields by giving them a name ending in '.' The name preceeding the '.'
+    will be used in debug mode. *)
 let pp ~pp_lhs ~pp_lhs_alone ~sep f lhs fn =
   let fieldname = Typ.Fieldname.to_flat_string fn in
   if String.is_empty fieldname then

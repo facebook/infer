@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-(** Pretty Printing} *)
+(** Pretty Printing *)
 
 (** Kind of simple printing: default or with full types *)
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
@@ -73,8 +73,8 @@ let extend_colormap pe (x : Obj.t) (c : color) =
   {pe with cmap_norm= colormap}
 
 
-(** Set the object substitution, which is supposed to preserve the type.
-    Currently only used for a map from (identifier) expressions to the program var containing them *)
+(** Set the object substitution, which is supposed to preserve the type. Currently only used for a
+    map from (identifier) expressions to the program var containing them *)
 let set_obj_sub pe (sub : 'a -> 'a) =
   let new_obj_sub x =
     let x' = Obj.repr (sub (Obj.obj x)) in

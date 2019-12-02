@@ -16,8 +16,8 @@ module type S = sig
   (** schedule the successors of [node] *)
 
   val pop : t -> (CFG.Node.t * CFG.Node.id list * t) option
-  (** remove and return the node with the highest priority, the ids of its visited
-      predecessors, and the new schedule *)
+  (** remove and return the node with the highest priority, the ids of its visited predecessors, and
+      the new schedule *)
 
   val empty : CFG.t -> t
 end
@@ -90,7 +90,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
      quick popping, and do a linear search only when this list is empty *)
 
   (** remove and return the node with the highest priority (note that smaller integers have higher
-     priority), the ids of its visited predecessors, and new schedule *)
+      priority), the ids of its visited predecessors, and new schedule *)
   let pop t =
     try
       let init_id, init_work = M.min_binding t.worklist in

@@ -99,9 +99,8 @@ let err_tbl : err_state H.t = H.create 1
 (** Reset the error table. *)
 let reset () = H.reset err_tbl
 
-(** Get the forall status of an err_instance.
-    The forall status indicates that the error should be printed only if it
-    occurs on every path. *)
+(** Get the forall status of an err_instance. The forall status indicates that the error should be
+    printed only if it occurs on every path. *)
 let get_forall = function
   | Condition_redundant _ ->
       true
@@ -117,8 +116,8 @@ let get_forall = function
       false
 
 
-(** Reset the always field of the forall erros in the node, so if they are not set again
-    we know that they don't fire on every path. *)
+(** Reset the always field of the forall erros in the node, so if they are not set again we know
+    that they don't fire on every path. *)
 let node_reset_forall node =
   let iter (err_instance, instr_ref_opt) err_state =
     match (instr_ref_opt, get_forall err_instance) with
@@ -277,8 +276,8 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
     ?severity err_description
 
 
-(** Report an error unless is has been reported already, or unless it's a forall error
-    since it requires waiting until the end of the analysis and be printed by flush. *)
+(** Report an error unless is has been reported already, or unless it's a forall error since it
+    requires waiting until the end of the analysis and be printed by flush. *)
 let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate err_instance
     instr_ref_opt loc pdesc =
   let should_report_now = add_err find_canonical_duplicate err_instance instr_ref_opt loc in

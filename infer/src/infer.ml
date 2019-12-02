@@ -7,8 +7,7 @@
 
 open! IStd
 
-(** Top-level driver that orchestrates build system integration, frontends, backend, and
-    reporting *)
+(** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
 
 module CLOpt = CommandLineOption
 module L = Logging

@@ -24,9 +24,8 @@ val and_ : t -> t -> t
 val or_ : t -> t -> t
 
 module EqualOrder : sig
-  (**
-  This module provides abstract transfer functions for comparisons on unordered values, only based on equality, like abstract locations.
-*)
+  (** This module provides abstract transfer functions for comparisons on unordered values, only
+      based on equality, like abstract locations. *)
 
   type b = t
 

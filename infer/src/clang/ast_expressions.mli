@@ -29,9 +29,7 @@ val make_obj_c_message_expr_info_class :
 val make_function_call : stmt_info -> string -> stmt list -> stmt
 
 val trans_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
-(** We translate an expression with a conditional
-    x <=> x?1:0 *)
+(** We translate an expression with a conditional x <=> x?1:0 *)
 
 val trans_negation_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
-(** We translate the logical negation of an expression with a conditional
-    !x <=> x?0:1 *)
+(** We translate the logical negation of an expression with a conditional !x <=> x?0:1 *)

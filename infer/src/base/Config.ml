@@ -9,8 +9,8 @@
 open! IStd
 open PolyVariantEqual
 
-(** Configuration values: either constant, determined at compile time, or set at startup
-    time by system calls, environment variables, or command line options *)
+(** Configuration values: either constant, determined at compile time, or set at startup time by
+    system calls, environment variables, or command line options *)
 
 module F = Format
 module CLOpt = CommandLineOption
@@ -157,9 +157,8 @@ let assign = "<\"Assign\">"
 
 let backend_stats_dir_name = "backend_stats"
 
-(** If true, a procedure call succeeds even when there is a bound error this mimics what
-    happens with a direct array access where an error is produced and the analysis
-    continues *)
+(** If true, a procedure call succeeds even when there is a bound error this mimics what happens
+    with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
 
 let buck_infer_deps_file_name = "infer-deps.txt"
@@ -254,10 +253,8 @@ let max_narrows = 5
     operator *)
 let max_widens = 10000
 
-(** Flag to tune the level of applying the meet operator for
-    preconditions during the footprint analysis:
-    0 = do not use the meet
-    1 = use the meet to generate new preconditions *)
+(** Flag to tune the level of applying the meet operator for preconditions during the footprint
+    analysis: 0 = do not use the meet 1 = use the meet to generate new preconditions *)
 let meet_level = 1
 
 let nsnotification_center_checker_backend = false
@@ -399,8 +396,7 @@ let version_string = F.asprintf "%a" pp_version ()
 
 (** System call configuration values *)
 
-(** Initial time of the analysis, i.e. when this module is loaded, gotten from
-    Unix.time *)
+(** Initial time of the analysis, i.e. when this module is loaded, gotten from Unix.time *)
 let initial_analysis_time = Unix.time ()
 
 let clang_exe_aliases =
@@ -484,17 +480,15 @@ let locate_sdk_root () =
 
 let infer_sdkroot_env_var = "INFER_SDKROOT"
 
-(** Try to locate current SDK root on MacOS *unless* [SDKROOT] is
-   explicitly provided. The implicit SDK root is propagated to child
-   processes using a custom [INFER_SDKROOT] env var. The reason for
-   this is twofold:
+(** Try to locate current SDK root on MacOS *unless* [SDKROOT] is explicitly provided. The implicit
+    SDK root is propagated to child processes using a custom [INFER_SDKROOT] env var. The reason for
+    this is twofold:
 
-   1. With make and buck integrations infer is exec'ed by make/buck
-   for each source file. That's why we propagate the value by using an
-   env var instead of calling [locate_sdk_root] each time.
+    1. With make and buck integrations infer is exec'ed by make/buck for each source file. That's
+    why we propagate the value by using an env var instead of calling [locate_sdk_root] each time.
 
-   2. We don't use [SDKROOT] because it can mess up with other parts
-   of the toolchain not owned by infer. *)
+    2. We don't use [SDKROOT] because it can mess up with other parts of the toolchain not owned by
+    infer. *)
 let implicit_sdk_root =
   match Sys.getenv "SDKROOT" with
   | Some _ ->
@@ -1076,8 +1070,8 @@ and compute_analytics =
      cyclomatic complexity"
 
 
-(** Continue the capture for reactive mode:
-    If a procedure was changed beforehand, keep the changed marking. *)
+(** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
+    marking. *)
 and continue =
   CLOpt.mk_bool ~deprecated:["continue"] ~long:"continue"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2472,9 +2466,10 @@ and version =
 
 
 (** visit mode for the worklist:
-    0 depth - fist visit
-    1 bias towards exit node
-    2 least visited first *)
+
+    - 0 depth - fist visit
+    - 1 bias towards exit node
+    - 2 least visited first *)
 and worklist_mode =
   let var = ref 0 in
   CLOpt.mk_set var 2 ~long:"coverage" "analysis mode to maximize coverage (can take longer)" ;

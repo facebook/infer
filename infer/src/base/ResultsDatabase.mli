@@ -14,7 +14,7 @@ val database_fullpath : string
 (** the absolute path to the database file *)
 
 val schema_hum : string
-(**  some human-readable string describing the tables *)
+(** some human-readable string describing the tables *)
 
 val create_tables : ?prefix:string -> Sqlite3.db -> unit
 
@@ -23,7 +23,8 @@ val get_database : unit -> Sqlite3.db
     connection to it may change during the execution (see [new_database_connection]). *)
 
 val new_database_connection : unit -> unit
-(** Closes the previous connection to the database (if any), and opens a new one. Needed after calls to fork(2). *)
+(** Closes the previous connection to the database (if any), and opens a new one. Needed after calls
+    to fork(2). *)
 
 val db_close : unit -> unit
 (** close the current connection to the database *)

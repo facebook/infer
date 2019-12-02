@@ -15,7 +15,7 @@ type parameter = {name: string option; value: string}
 
 type parameters = parameter list
 
-(** Type to represent one @Annotation. *)
+(** Type to represent one [@Annotation]. *)
 type t =
   { class_name: string  (** name of the annotation *)
   ; parameters: parameters  (** currently only one string parameter *) }

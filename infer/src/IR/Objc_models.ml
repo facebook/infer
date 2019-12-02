@@ -7,10 +7,11 @@
 
 open! IStd
 
-(** This module handles C or Objective-C types for which there are special rules for memory management *)
+(** This module handles C or Objective-C types for which there are special rules for memory
+    management *)
 
-(** This module models special c struct types from the Apple's Core Foundation libraries
-    for which there are particular rules for memory management. *)
+(** This module models special c struct types from the Apple's Core Foundation libraries for which
+    there are particular rules for memory management. *)
 
 module Core_foundation_model = struct
   let core_foundation =

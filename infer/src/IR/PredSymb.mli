@@ -55,11 +55,11 @@ type res_action =
   ; ra_vpath: DecompiledExp.vpath  (** vpath of the resource value *) }
 
 (** Attributes are nary function symbols that are applied to expression arguments in Apred and
-    Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
-    generally treated as no-ops.  The first argument is treated specially, as the "anchor" of the
-    predicate application.  For example, adding or removing an attribute uses the anchor to identify
-    the atom to operate on.  Also, abstraction and normalization operations treat the anchor
-    specially and maintain more information on it than other arguments.  Therefore when attaching an
+    Anpred atomic formulas. Many operations don't make much sense for nullary predicates, and are
+    generally treated as no-ops. The first argument is treated specially, as the "anchor" of the
+    predicate application. For example, adding or removing an attribute uses the anchor to identify
+    the atom to operate on. Also, abstraction and normalization operations treat the anchor
+    specially and maintain more information on it than other arguments. Therefore when attaching an
     attribute to an expression, that expression should be the first argument, optionally followed by
     additional related expressions. *)
 type t =
@@ -104,7 +104,7 @@ type category =
 val equal_category : category -> category -> bool
 
 val to_category : t -> category
-(**  Return the category to which the attribute belongs. *)
+(** Return the category to which the attribute belongs. *)
 
 val is_undef : t -> bool
 

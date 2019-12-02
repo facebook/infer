@@ -32,8 +32,8 @@ val instrs :
   -> Instrs.not_reversed_t
   -> (Prop.normal Prop.t * Paths.Path.t) list
   -> (Prop.normal Prop.t * Paths.Path.t) list
-(** Symbolic execution of a sequence of instructions.
-    If errors occur and [mask_errors] is true, just treat as skip. *)
+(** Symbolic execution of a sequence of instructions. If errors occur and [mask_errors] is true,
+    just treat as skip. *)
 
 val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of the divergent pure computation. *)

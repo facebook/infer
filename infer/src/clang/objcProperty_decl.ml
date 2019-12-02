@@ -7,7 +7,8 @@
 
 open! IStd
 
-(** Process properties by creating their getters and setters in the case that they need to be syntethized *)
+(** Process properties by creating their getters and setters in the case that they need to be
+    syntethized *)
 
 (** or in the case of dynamic. *)
 

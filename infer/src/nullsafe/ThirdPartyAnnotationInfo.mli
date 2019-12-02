@@ -27,16 +27,12 @@ val add_from_signature_file :
 (** Parse the information from the signature file, and add it to the storage *)
 
 val find_nullability_info : storage -> ThirdPartyMethod.unique_repr -> signature_info option
-(** The main method. Do we have an information about the third-party method?
-    If we do not, or it is not a third-party method, returns None.
-    Otherwise returns the nullability information.
-  *)
+(** The main method. Do we have an information about the third-party method? If we do not, or it is
+    not a third-party method, returns None. Otherwise returns the nullability information. *)
 
 val lookup_related_sig_file : storage -> package:string -> string option
-(** If the package is third-party, return the relevant .sig file to add signatures for this package.
-  *)
+(** If the package is third-party, return the relevant .sig file to add signatures for this package. *)
 
 val lookup_related_sig_file_by_package : storage -> Typ.Procname.t -> string option
-(** If the function is third-party (based on its package), return relevant .sig file to add the signature
-    NOTE: this DOES NOT look if the function is is already
- *)
+(** If the function is third-party (based on its package), return relevant .sig file to add the
+    signature NOTE: this DOES NOT look if the function is is already *)

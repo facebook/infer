@@ -8,7 +8,7 @@
 open! IStd
 
 (** Define the signature of a method consisting of its name, its arguments, return type, location
-   and whether its an instance method. *)
+    and whether its an instance method. *)
 
 type param_type = {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; annot: Annot.Item.t}
 

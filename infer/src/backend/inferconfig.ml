@@ -325,8 +325,8 @@ let create_filters () =
 
 
 (** This function loads and list the path that are being filtered by the analyzer. The results are
-   of the form: path/to/file.java -> true/false meaning that analysis results will be reported on
-   path/to/file.java or not *)
+    of the form: path/to/file.java -> true/false meaning that analysis results will be reported on
+    path/to/file.java or not *)
 let test () =
   let filters = create_filters () in
   let matches path = filters.path_filter path in

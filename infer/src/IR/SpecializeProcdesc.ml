@@ -43,8 +43,7 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
   resolved_pdesc
 
 
-(** clone a procedure description and apply the type substitutions where
-      the parameters are used *)
+(** clone a procedure description and apply the type substitutions where the parameters are used *)
 let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
   let resolved_pname = Procdesc.get_proc_name resolved_pdesc in
   let convert_pvar pvar = Pvar.mk (Pvar.get_name pvar) resolved_pname in
@@ -132,10 +131,10 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
 
 exception UnmatchedParameters
 
-(** Creates a copy of a procedure description and a list of type substitutions of the form
-    (name, typ) where name is a parameter. The resulting proc desc is isomorphic but
-    all the type of the parameters are replaced in the instructions according to the list.
-    The virtual calls are also replaced to match the parameter types *)
+(** Creates a copy of a procedure description and a list of type substitutions of the form (name,
+    typ) where name is a parameter. The resulting proc desc is isomorphic but all the type of the
+    parameters are replaced in the instructions according to the list. The virtual calls are also
+    replaced to match the parameter types *)
 let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname args =
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let resolved_params, substitutions =

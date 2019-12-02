@@ -11,7 +11,7 @@ module L = Logging
 let debug_mode = Config.debug_mode || Config.frontend_stats
 
 (** This function reads the json file in fname, validates it, and encodes in the AST data structure
-    defined in Clang_ast_t.  *)
+    defined in Clang_ast_t. *)
 let validate_decl_from_file fname =
   Atdgen_runtime.Util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size
     Clang_ast_b.read_decl fname
@@ -22,7 +22,8 @@ let validate_decl_from_channel chan =
     Clang_ast_b.read_decl chan
 
 
-(**FIXME(T54413835): Make the perf stats in the frontend work when one runs more than one frontend action *)
+(**FIXME(T54413835): Make the perf stats in the frontend work when one runs more than one frontend
+   action *)
 let register_perf_stats_report source_file =
   let stats_type =
     if Config.capture then PerfStats.ClangFrontend source_file

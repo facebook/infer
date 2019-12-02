@@ -28,12 +28,13 @@ val extract_last : t -> (string * t) option
 
 val strip_template_args : t -> t
 (** returns qualified name without template arguments. For example:
-    input: std::shared_ptr<int>::shared_ptr<long>
-    output: std::shared_ptr::shared_ptr *)
+
+    - input: std::shared_ptr<int>::shared_ptr<long>
+    - output: std::shared_ptr::shared_ptr *)
 
 val append_template_args_to_last : t -> args:string -> t
-(** append template arguments to the last qualifier. Fails if qualified name is empty or it already has
-    template args *)
+(** append template arguments to the last qualifier. Fails if qualified name is empty or it already
+    has template args *)
 
 val to_list : t -> string list
 (** returns list of qualifiers *)
@@ -54,30 +55,32 @@ val pp : Format.formatter -> t -> unit
 (** Module to match qualified C++ procnames "fuzzily", that is up to namescapes and templating. In
     particular, this deals with the following issues:
 
-    1. 'std::' namespace may have inline namespace afterwards: std::move becomes std::__1::move. This
-        happens on libc++ and to some extent on libstdc++. To work around this problem, make matching
-        against 'std::' more fuzzier: std::X::Y::Z will match std::.*::X::Y::Z (but only for the
-        'std' namespace).
+    + 'std::' namespace may have inline namespace afterwards: std::move becomes std::__1::move. This
+      happens on libc++ and to some extent on libstdc++. To work around this problem, make matching
+      against 'std::' more fuzzier: std::X::Y::Z will match std::.*::X::Y::Z (but only for the 'std'
+      namespace).
 
-    2. The names are allowed not to commit to a template specialization: we want std::move to match
-       std::__1::move<const X&> and std::__1::move<int>. To do so, comparison function for qualifiers
-       will ignore template specializations.
+    + The names are allowed not to commit to a template specialization: we want std::move to match
+      std::__1::move<const X&> and std::__1::move<int>. To do so, comparison function for qualifiers
+      will ignore template specializations.
 
-       For example:
-       ["std", "move"]:
-       matches: ["std", "blah", "move"]
-       matches: ["std", "blah<int>", "move"]
-       does not match: ["std","blah", "move", "BAD"] - we don't want std::.*::X::.* to pass
-       does not match: ["stdBAD", "move"], - it's not std namespace anymore
+    For example:
 
-       ["folly", "someFunction"]
-       matches: ["folly","someFunction"]
-       matches: ["folly","someFunction<int>"]
-       matches: ["folly<int>","someFunction"]
-       does not match: ["folly", "BAD", "someFunction"] - unlike 'std' any other namespace needs all
-                                                          qualifiers to match
-       does not match: ["folly","someFunction<int>", "BAD"] - same as previous example
-   *)
+    ["std", "move"]:
+
+    - matches: ["std", "blah", "move"]
+    - matches: ["std", "blah<int>", "move"]
+    - does not match: ["std","blah", "move", "BAD"] - we don't want std::.*::X::.* to pass
+    - does not match: ["stdBAD", "move"], - it's not std namespace anymore
+
+    ["folly", "someFunction"]
+
+    - matches: ["folly","someFunction"]
+    - matches: ["folly","someFunction<int>"]
+    - matches: ["folly<int>","someFunction"]
+    - does not match: ["folly", "BAD", "someFunction"] - unlike 'std' any other namespace needs all
+      qualifiers to match
+    - does not match: ["folly","someFunction<int>", "BAD"] - same as previous example *)
 module Match : sig
   type quals_matcher
 

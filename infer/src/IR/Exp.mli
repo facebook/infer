@@ -8,8 +8,7 @@
 
 (** The Smallfoot Intermediate Language: Expressions
 
-NOTE: For doing substitutionson expressions, there are some functions in [Sil].
-*)
+    NOTE: For doing substitutionson expressions, there are some functions in [Sil]. *)
 
 open! IStd
 module F = Format
@@ -68,19 +67,19 @@ val is_const : t -> bool
 (** {2 Utility Functions for Expressions} *)
 
 val texp_to_typ : Typ.t option -> t -> Typ.t
-(** Turn an expression representing a type into the type it represents
-    If not a sizeof, return the default type if given, otherwise raise an exception *)
+(** Turn an expression representing a type into the type it represents If not a sizeof, return the
+    default type if given, otherwise raise an exception *)
 
 val root_of_lexp : t -> t
 (** Return the root of [lexp]. *)
 
 val get_undefined : bool -> t
-(** Get an expression "undefined", the boolean indicates
-    whether the undefined value goest into the footprint *)
+(** Get an expression "undefined", the boolean indicates whether the undefined value goest into the
+    footprint *)
 
 val pointer_arith : t -> bool
-(** Checks whether an expression denotes a location using pointer arithmetic.
-    Currently, catches array - indexing expressions such as a[i] only. *)
+(** Checks whether an expression denotes a location using pointer arithmetic. Currently, catches
+    array - indexing expressions such as a[i] only. *)
 
 val has_local_addr : t -> bool
 (** returns true if the expression operates on address of local variable *)
@@ -134,7 +133,7 @@ val program_vars : t -> Pvar.t Sequence.t
 
 val rename_pvars : f:(string -> string) -> t -> t
 (** Rename all Pvars according to the function [f]. WARNING: You want to rename pvars before you
-combine expressions from different symbolic states, which you RARELY want to.*)
+    combine expressions from different symbolic states, which you RARELY want to.*)
 
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)

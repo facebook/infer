@@ -50,8 +50,9 @@ let get_pi footprint_part g = if footprint_part then g.Prop.pi_fp else g.Prop.pi
 
 let get_subl footprint_part g = if footprint_part then [] else Sil.sub_to_list g.Prop.sub
 
-(** [edge_from_source g n footprint_part is_hpred] finds and edge with the given source [n] in prop [g].
-    [footprint_part] indicates whether to search the edge in the footprint part, and [is_pred] whether it is an hpred edge. *)
+(** [edge_from_source g n footprint_part is_hpred] finds and edge with the given source [n] in prop
+    [g]. [footprint_part] indicates whether to search the edge in the footprint part, and [is_pred]
+    whether it is an hpred edge. *)
 let edge_from_source g n footprint_part is_hpred =
   let edges =
     if is_hpred then List.map ~f:(fun hpred -> Ehpred hpred) (get_sigma footprint_part g)
@@ -65,7 +66,8 @@ let edge_from_source g n footprint_part is_hpred =
   match List.filter ~f:starts_from edges with [] -> None | edge :: _ -> Some edge
 
 
-(** [get_edges footprint_part g] returns the list of edges in [g], in the footprint part if [fotprint_part] is true *)
+(** [get_edges footprint_part g] returns the list of edges in [g], in the footprint part if
+    [fotprint_part] is true *)
 let get_edges footprint_part g =
   let hpreds = get_sigma footprint_part g in
   let atoms = get_pi footprint_part g in
@@ -87,8 +89,8 @@ let edge_equal e1 e2 =
       false
 
 
-(** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
-    searching the footprint part if [footprint_part] is true. *)
+(** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e], searching
+    the footprint part if [footprint_part] is true. *)
 let contains_edge (footprint_part : bool) (g : _ t) (e : edge) =
   List.exists ~f:(fun e' -> edge_equal e e') (get_edges footprint_part g)
 
@@ -210,15 +212,15 @@ let compute_diff default_color oldgraph newgraph : _ diff =
   ; diff_cmap_foot= colormap_foot }
 
 
-(** [diff_get_colormap footprint_part diff] returns the colormap of a computed diff,
-    selecting the footprint colormap if [footprint_part] is true. *)
+(** [diff_get_colormap footprint_part diff] returns the colormap of a computed diff, selecting the
+    footprint colormap if [footprint_part] is true. *)
 let diff_get_colormap footprint_part diff =
   if footprint_part then diff.diff_cmap_foot else diff.diff_cmap_norm
 
 
-(** Print a list of propositions, prepending each one with the given string.
-    If !Config.pring_using_diff is true, print the diff w.r.t. the given prop,
-    extracting its local stack vars if the boolean is true. *)
+(** Print a list of propositions, prepending each one with the given string. If
+    !Config.pring_using_diff is true, print the diff w.r.t. the given prop, extracting its local
+    stack vars if the boolean is true. *)
 let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let num = List.length plist in
   let base_stack = fst (Prop.sigma_get_stack_nonstack true base_prop.Prop.sigma) in

@@ -25,6 +25,6 @@ end
 
 val parse_unix_diff : string -> int list
 (** Given a difference between two files, return the relevant lines in the new file; a line is
-    relevant when a change took place in it, or nearby. To generate a valid input for this
-    parser, use unix-diff command with the following formatter arguments:
-    diff --unchanged-line-format="U" --old-line-format="O" --new-line-format="N" File1 File2 *)
+    relevant when a change took place in it, or nearby. To generate a valid input for this parser,
+    use unix-diff command with the following formatter arguments: diff --unchanged-line-format="U"
+    \--old-line-format="O" --new-line-format="N" File1 File2 *)

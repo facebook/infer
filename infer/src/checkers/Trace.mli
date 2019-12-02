@@ -75,7 +75,7 @@ module type S = sig
 
   val get_reports : ?cur_site:CallSite.t -> t -> report list
   (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
-      reported paths to ones introduced by the call at [cur_site]  *)
+      reported paths to ones introduced by the call at [cur_site] *)
 
   val get_reportable_paths :
     ?cur_site:CallSite.t -> t -> trace_of_pname:(Typ.Procname.t -> t) -> path list

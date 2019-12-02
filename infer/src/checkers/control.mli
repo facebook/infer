@@ -10,15 +10,15 @@ module LoopHead = Procdesc.Node
 module LoopHeads = Procdesc.NodeSet
 
 module ControlMap : module type of PrettyPrintable.MakePPMap (Var)
-(** Map control var -> loop head location  *)
+(** Map control var -> loop head location *)
 
 module GuardNodes : module type of AbstractDomain.FiniteSet (Procdesc.Node)
 
 module ExitNodeToLoopHeads = Procdesc.NodeMap
-(** Map exit node -> loop head set  *)
+(** Map exit node -> loop head set *)
 
 module LoopHeadToGuardNodes = Procdesc.NodeMap
-(** Map loop head -> prune nodes in the loop guard  *)
+(** Map loop head -> prune nodes in the loop guard *)
 
 type invariant_map
 

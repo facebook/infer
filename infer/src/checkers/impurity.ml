@@ -47,10 +47,10 @@ let add_invalid_and_modified ~check_empty attrs acc =
   else res @ acc
 
 
-(** Given Pulse summary, extract impurity info, i.e. parameters and
-   global variables that are modified by the function.
+(** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
+    modified by the function.
 
-  TODO: keep track of impure library calls *)
+    TODO: keep track of impure library calls *)
 let extract_impurity pdesc pre_post : ImpurityDomain.t =
   let pre_heap = (AbductiveDomain.extract_pre pre_post).BaseDomain.heap in
   let post_heap = (AbductiveDomain.extract_post pre_post).BaseDomain.heap in

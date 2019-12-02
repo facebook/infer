@@ -7,8 +7,8 @@
 
 open! IStd
 
-(** Environment for temporary identifiers used in instructions.
-    Lazy implementation: only created when actually used. *)
+(** Environment for temporary identifiers used in instructions. Lazy implementation: only created
+    when actually used. *)
 
 type t
 

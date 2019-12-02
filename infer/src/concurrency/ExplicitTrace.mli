@@ -41,7 +41,7 @@ module type TraceElem = sig
   val map : f:(elem_t -> elem_t) -> t -> t
 
   val get_loc : t -> Location.t
-  (** Starting location of the trace: this is either [loc] if [trace==[]], or the head of [trace]. *)
+  (** Starting location of the trace: this is either [loc] if [trace==\[\]], or the head of [trace]. *)
 
   val make_loc_trace : ?nesting:int -> t -> Errlog.loc_trace
 

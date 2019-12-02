@@ -54,8 +54,8 @@ let timeunit_of_exp =
   fun timeunit_exp -> str_of_exp timeunit_exp |> Option.bind ~f:(String.Map.find time_units)
 
 
-(** check whether actuals of a method call either empty, denoting indefinite timeout,
-      or evaluate to a finite timeout greater than the android anr limit *)
+(** check whether actuals of a method call either empty, denoting indefinite timeout, or evaluate to
+    a finite timeout greater than the android anr limit *)
 let empty_or_excessive_timeout actuals =
   let duration_of_exp = function
     | HilExp.Constant (Const.Cint duration_lit) ->

@@ -202,8 +202,8 @@ val compute_distance_to_exit_node : t -> unit
 (** Compute the distance of each node to the exit node, if not computed already *)
 
 val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
-(** Create a new cfg node with the given location, kind, list of instructions,
-    and add it to the procdesc. *)
+(** Create a new cfg node with the given location, kind, list of instructions, and add it to the
+    procdesc. *)
 
 val create_node_from_not_reversed :
   t -> Location.t -> Node.nodekind -> Instrs.not_reversed_t -> Node.t
@@ -269,12 +269,12 @@ val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
 
 val replace_instrs : t -> f:(Node.t -> Sil.instr -> Sil.instr) -> bool
-(** Map and replace the instructions to be executed.
-    Returns true if at least one substitution occured. *)
+(** Map and replace the instructions to be executed. Returns true if at least one substitution
+    occured. *)
 
 val replace_instrs_by : t -> f:(Node.t -> Sil.instr -> Sil.instr array) -> bool
-(** Like [replace_instrs], but slower, and each instruction may be replaced                                   
-by 0, 1, or more instructions. *)
+(** Like [replace_instrs], but slower, and each instruction may be replaced by 0, 1, or more
+    instructions. *)
 
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
@@ -319,6 +319,6 @@ val is_connected : t -> (unit, [`Join | `Other]) Result.t
 
 module SQLite : SqliteUtils.Data with type t = t option
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
-   CFG *)
+    CFG *)
 
 val load : Typ.Procname.t -> t option

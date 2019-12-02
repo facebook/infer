@@ -13,8 +13,8 @@ val register : f:(unit -> unit) -> description:string -> unit
 
 val register_late : f:(unit -> unit) -> description:string -> unit
 (** Register a function to run when the program exits or is interrupted. Registered functions are
-   run in the reverse order in which they were registered, but *after* the ones registered with
-   {!register}. *)
+    run in the reverse order in which they were registered, but *after* the ones registered with
+    {!register}. *)
 
 val run : unit -> unit
 

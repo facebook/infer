@@ -6,10 +6,9 @@
  *)
 open! IStd
 
-(** Assignment rule should be checked when a value is assigned to a location.
-    Assignment can be explicit (lhs = rhs) or implicit (e.g. returning from a function).
-    This rule checks if null can be passed to a place that does not expect null.
- *)
+(** Assignment rule should be checked when a value is assigned to a location. Assignment can be
+    explicit (lhs = rhs) or implicit (e.g. returning from a function). This rule checks if null can
+    be passed to a place that does not expect null. *)
 
 type violation [@@deriving compare]
 
@@ -35,4 +34,5 @@ val violation_description :
   -> assignment_type
   -> rhs_origin:TypeOrigin.t
   -> string * IssueType.t * Location.t
-(** Given context around violation, return error message together with the info where to put this message *)
+(** Given context around violation, return error message together with the info where to put this
+    message *)

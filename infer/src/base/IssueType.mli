@@ -26,14 +26,11 @@ val pp : Format.formatter -> t -> unit
 
 val register_from_string :
   ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
-(** Create a new issue and register it in the list of all issues.
-    NOTE: if the issue with the same string id is already registered,
-          overrides `hum`, `doc_url`, and `linters_def_file`, but DOES NOT override
-          `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues
-          from the config, when we don't know all params yet.
-          Thus, the human-readable description can be updated when we encounter the
-          definition of the issue type, eg in AL.
-  *)
+(** Create a new issue and register it in the list of all issues. NOTE: if the issue with the same
+    string id is already registered, overrides `hum`, `doc_url`, and `linters_def_file`, but DOES
+    NOT override `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues from
+    the config, when we don't know all params yet. Thus, the human-readable description can be
+    updated when we encounter the definition of the issue type, eg in AL. *)
 
 val set_enabled : t -> bool -> unit
 
@@ -74,18 +71,18 @@ val buffer_overrun_u5 : t
 val cannot_star : t
 
 val checkers_allocates_memory : t
-(** Warning name when a performance critical method directly or indirectly
-    calls a method allocating memory *)
+(** Warning name when a performance critical method directly or indirectly calls a method allocating
+    memory *)
 
 val checkers_annotation_reachability_error : t
 
 val checkers_calls_expensive_method : t
-(** Warning name when a performance critical method directly or indirectly
-    calls a method annotatd as expensive *)
+(** Warning name when a performance critical method directly or indirectly calls a method annotatd
+    as expensive *)
 
 val checkers_expensive_overrides_unexpensive : t
-(** Warning name for the subtyping rule: method not annotated as expensive cannot be overridden
-    by a method annotated as expensive *)
+(** Warning name for the subtyping rule: method not annotated as expensive cannot be overridden by a
+    method annotated as expensive *)
 
 val checkers_fragment_retain_view : t
 

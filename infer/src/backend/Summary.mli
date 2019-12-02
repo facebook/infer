@@ -9,7 +9,7 @@
 open! IStd
 
 (** Procedure summaries: the results of the capture and all the analysis for a single procedure,
-   plus some statistics *)
+    plus some statistics *)
 
 module Stats : sig
   (** Execution statistics *)
@@ -86,8 +86,8 @@ module OnDisk : sig
   (** Remove all the elements from the cache of summaries *)
 
   val remove_from_cache : Typ.Procname.t -> unit
-  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a summary
-    keeping the same Procdesc and updates the cache accordingly. *)
+  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a
+      summary keeping the same Procdesc and updates the cache accordingly. *)
 
   val get : Typ.Procname.t -> t option
   (** Return the summary option for the procedure name *)
@@ -102,15 +102,11 @@ module OnDisk : sig
   (** Load procedure summary from the given file *)
 
   val proc_resolve_attributes : Typ.Procname.t -> ProcAttributes.t option
-  (** Try to find the attributes for a defined proc.
-    First look at specs (to get attributes computed by analysis)
-    then look at the attributes table.
-    If no attributes can be found, return None.
-  *)
+  (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
+      by analysis) then look at the attributes table. If no attributes can be found, return None. *)
 
   val proc_is_library : ProcAttributes.t -> bool
-  (** Check if the procedure is from a library:
-    It's not defined, and there is no spec file for it. *)
+  (** Check if the procedure is from a library: It's not defined, and there is no spec file for it. *)
 
   val store : t -> unit
   (** Save summary for the procedure into the spec database *)

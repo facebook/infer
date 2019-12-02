@@ -633,14 +633,12 @@ let check_equal tenv prop e1_0 e2_0 =
   check_equal () || check_equal_const () || check_equal_pi ()
 
 
-(** Check [ |- e=0]. Result [false] means "don't know". *)
+(** Check [|- e=0]. Result [false] means "don't know". *)
 let check_zero tenv e = check_equal tenv Prop.prop_emp e Exp.zero
 
-(** [is_root prop base_exp exp] checks whether [base_exp =
-    exp.offlist] for some list of offsets [offlist]. If so, it returns
-    [Some(offlist)]. Otherwise, it returns [None]. Assumes that
-    [base_exp] points to the beginning of a structure, not the middle.
-*)
+(** [is_root prop base_exp exp] checks whether [base_exp = exp.offlist] for some list of offsets
+    [offlist]. If so, it returns [Some(offlist)]. Otherwise, it returns [None]. Assumes that
+    [base_exp] points to the beginning of a structure, not the middle. *)
 let is_root tenv prop base_exp exp =
   let rec f offlist_past e =
     match e with
@@ -840,8 +838,8 @@ let check_lt_normalized tenv prop e1 e2 =
   upper_lower_check () || Inequalities.check_lt ineq e1 e2
 
 
-(** Given an atom and a proposition returns a unique identifier.
-    We use this to distinguish among different queries. *)
+(** Given an atom and a proposition returns a unique identifier. We use this to distinguish among
+    different queries. *)
 let get_smt_key a p =
   let tmp_filename = Filename.temp_file "smt_query" ".cns" in
   let outc_tmp = Out_channel.create tmp_filename in
@@ -1309,9 +1307,8 @@ let extend_sub sub v e =
   Sil.sub_join new_exp_sub (Sil.sub_range_map (Sil.exp_sub new_exp_sub) sub)
 
 
-(** Extend [sub1] and [sub2] to witnesses that each instance of
-    [e1[sub1]] is an instance of [e2[sub2]]. Raise IMPL_FALSE if not
-    possible. *)
+(** Extend [sub1] and [sub2] to witnesses that each instance of [e1\[sub1\]] is an instance of
+    [e2\[sub2\]]. Raise IMPL_FALSE if not possible. *)
 let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
   let e1 = Prop.exp_normalize_noabs tenv (fst subs) e1_in in
   let e2 = Prop.exp_normalize_noabs tenv (snd subs) e2_in in
@@ -1431,10 +1428,9 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
   do_imply subs e1 e2
 
 
-(** Convert a path (from lhs of a |-> to a field name present only in
-    the rhs) into an id. If the lhs was a footprint var, the id is a
-    new footprint var. Othewise it is a var with the path in the name
-    and stamp - 1 *)
+(** Convert a path (from lhs of a |-> to a field name present only in the rhs) into an id. If the
+    lhs was a footprint var, the id is a new footprint var. Othewise it is a var with the path in
+    the name and stamp - 1 *)
 let path_to_id path =
   let rec f = function
     | Exp.Var id ->
@@ -1478,9 +1474,8 @@ let array_len_imply tenv calc_missing subs len1 len2 indices2 =
       subs
 
 
-(** Extend [sub1] and [sub2] to witnesses that each instance of
-    [se1[sub1]] is an instance of [se2[sub2]]. Raise IMPL_FALSE if not
-    possible. *)
+(** Extend [sub1] and [sub2] to witnesses that each instance of [se1\[sub1\]] is an instance of
+    [se2\[sub2\]]. Raise IMPL_FALSE if not possible. *)
 let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
     subst2 * Sil.strexp option * Sil.strexp option =
   (* L.d_str "sexp_imply "; Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2;
@@ -1731,8 +1726,9 @@ let move_primed_lhs_from_front subs sigma =
       else sigma
 
 
-(** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a Lfield or Lindex or ptr+off.
-    Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
+(** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a
+    Lfield or Lindex or ptr+off. Return [(changed, calc_index_frame', hpred')] where [changed]
+    indicates whether the predicate has changed. *)
 let expand_hpred_pointer =
   let count = ref 0 in
   fun tenv calc_index_frame hpred ->
@@ -2268,9 +2264,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
             (subs', prop1') ) )
 
 
-(** Check that [sigma1] implies [sigma2] and return two substitution
-    instantiations for the primed variables of [sigma1] and [sigma2]
-    and a frame. Raise IMPL_FALSE if the implication cannot be
+(** Check that [sigma1] implies [sigma2] and return two substitution instantiations for the primed
+    variables of [sigma1] and [sigma2] and a frame. Raise IMPL_FALSE if the implication cannot be
     proven. *)
 and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * Prop.normal Prop.t =
   let is_constant_string_class subs = function
@@ -2446,9 +2441,8 @@ let imply_atom tenv calc_missing (sub1, sub2) prop a =
   imply_pi tenv calc_missing (sub1, sub2) prop [a]
 
 
-(** Check pure implications before looking at the spatial part. Add
-    necessary instantiations for equalities and check that instantiations
-    are possible for disequalities. *)
+(** Check pure implications before looking at the spatial part. Add necessary instantiations for
+    equalities and check that instantiations are possible for disequalities. *)
 let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
   match pi2 with
   | [] ->
@@ -2480,9 +2474,9 @@ let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
       pre_check_pure_implication tenv calc_missing subs pi1 pi2'
 
 
-(** Perform the array bound checks delayed (to instantiate variables) by the prover.
-    If there is a provable violation of the array bounds, set the prover status to Bounds_check
-    and make the proof fail. *)
+(** Perform the array bound checks delayed (to instantiate variables) by the prover. If there is a
+    provable violation of the array bounds, set the prover status to Bounds_check and make the proof
+    fail. *)
 let check_array_bounds tenv (sub1, sub2) prop =
   let check_failed atom =
     ProverState.checks := Bounds_check :: !ProverState.checks ;
@@ -2515,8 +2509,8 @@ let check_array_bounds tenv (sub1, sub2) prop =
   List.iter ~f:check_bound (ProverState.get_bounds_checks ())
 
 
-(** [check_implication_base] returns true if [prop1|-prop2],
-    ignoring the footprint part of the props *)
+(** [check_implication_base] returns true if [prop1|-prop2], ignoring the footprint part of the
+    props *)
 let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2 =
   try
     ProverState.reset prop1 prop2 ;
@@ -2599,9 +2593,8 @@ type implication_result =
       * (Exp.t * Exp.t) list )
   | ImplFail of check list
 
-(** [check_implication_for_footprint p1 p2] returns
-    [Some(sub, frame, missing)] if [sub(p1 * missing) |- sub(p2 * frame)]
-    where [sub] is a substitution which instantiates the
+(** [check_implication_for_footprint p1 p2] returns [Some(sub, frame, missing)] if
+    [sub(p1 * missing) |- sub(p2 * frame)] where [sub] is a substitution which instantiates the
     primed vars of [p1] and [p2], which are assumed to be disjoint. *)
 let check_implication_for_footprint pname tenv p1 (p2 : Prop.exposed Prop.t) =
   let check_frame_empty = false in

@@ -11,16 +11,16 @@ open! IStd
 (** Create descriptions of analysis errors *)
 
 val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t option
-(** find the dexp, if any, where the given value is stored
-    also return the type of the value if found *)
+(** find the dexp, if any, where the given value is stored also return the type of the value if
+    found *)
 
 val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Sil.hpred -> PredSymb.resource option
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 
 val find_normal_variable_funcall :
   Procdesc.Node.t -> Ident.t -> (Exp.t * Exp.t list * Location.t * CallFlags.t) option
-(** Find the function call instruction used to initialize normal variable [id],
-    and return the function name and arguments *)
+(** Find the function call instruction used to initialize normal variable [id], and return the
+    function name and arguments *)
 
 val find_program_variable_assignment :
   Procdesc.Node.t -> Pvar.t -> (Procdesc.Node.t * Ident.t) option
@@ -30,8 +30,8 @@ val find_ident_assignment : Procdesc.Node.t -> Ident.t -> (Procdesc.Node.t * Exp
 (** Find a program variable assignment to id in the current node or predecessors. *)
 
 val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node.t option
-(** Find a boolean assignment to a temporary variable holding a boolean condition.
-    The boolean parameter indicates whether the true or false branch is required. *)
+(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
+    parameter indicates whether the true or false branch is required. *)
 
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 (** describe rvalue [e] as a dexp *)
@@ -84,8 +84,8 @@ val explain_dereference_as_caller_expression :
   -> Location.t
   -> Pvar.t list
   -> Localise.error_desc
-(** return a description explaining value [exp] in [prop] in terms of a source expression
-    using the formal parameters of the call *)
+(** return a description explaining value [exp] in [prop] in terms of a source expression using the
+    formal parameters of the call *)
 
 val explain_divide_by_zero : Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a division by zero *)
@@ -112,10 +112,9 @@ val explain_leak :
   -> PredSymb.t option
   -> string option
   -> Exceptions.visibility * Localise.error_desc
-(** Produce a description of a leak by looking at the current state.
-    If the current instruction is a variable nullify, blame the variable.
-    If it is an abstraction, blame any variable nullify at the current node.
-    If there is an alloc attribute, print the function call and line number. *)
+(** Produce a description of a leak by looking at the current state. If the current instruction is a
+    variable nullify, blame the variable. If it is an abstraction, blame any variable nullify at the
+    current node. If there is an alloc attribute, print the function call and line number. *)
 
 val explain_null_test_after_dereference :
   Tenv.t -> Exp.t -> Procdesc.Node.t -> int -> Location.t -> Localise.error_desc

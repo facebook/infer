@@ -18,9 +18,9 @@ type op1 =
           signed integer. That is, it two's-complement--decodes the low [n]
           bits of the infinite two's-complement encoding of [arg]. *)
   | Unsigned of {bits: int}
-      (** [Ap1 (Unsigned {bits= n}, arg)] is [arg] interpreted as an [n]-bit
-          unsigned integer. That is, it unsigned-binary--decodes the low [n]
-          bits of the infinite two's-complement encoding of [arg]. *)
+      (** [Ap1 (Unsigned {bits= n}, arg)] is [arg] interpreted as an
+          [n]-bit unsigned integer. That is, it unsigned-binary--decodes the
+          low [n] bits of the infinite two's-complement encoding of [arg]. *)
   | Convert of {src: Typ.t; dst: Typ.t}
       (** [Ap1 (Convert {src; dst}, arg)] is [arg] converted from type [src]
           to type [dst], possibly with loss of information. The [src] and

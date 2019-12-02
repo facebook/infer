@@ -10,8 +10,8 @@ open! IStd
 module L = Logging
 
 (** This function should be used before adding a new index to Earray. The [exp] is the newly created
-   index. This function "cleans" [exp] according to whether it is the footprint or current part of
-   the prop.  The function faults in the re - execution mode, as an internal check of the tool. *)
+    index. This function "cleans" [exp] according to whether it is the footprint or current part of
+    the prop. The function faults in the re - execution mode, as an internal check of the tool. *)
 let array_clean_new_index footprint_part new_idx =
   assert (not (footprint_part && not !BiabductionConfig.footprint)) ;
   if
@@ -294,8 +294,8 @@ end = struct
     replace_hpred (sigma, hpred, syn_offs) hpred'
 end
 
-(** This function renames expressions in [p]. The renaming is, roughly
-    speaking, to replace [path.i] by [path.i'] for all (i, i') in [map]. *)
+(** This function renames expressions in [p]. The renaming is, roughly speaking, to replace [path.i]
+    by [path.i'] for all (i, i') in [map]. *)
 let prop_replace_path_index tenv (p : Prop.exposed Prop.t) (path : StrexpMatch.path)
     (map : (Exp.t * Exp.t) list) : Prop.exposed Prop.t =
   let elist_path = StrexpMatch.path_to_exps path in
@@ -320,8 +320,8 @@ let prop_replace_path_index tenv (p : Prop.exposed Prop.t) (path : StrexpMatch.p
   Prop.prop_expmap expmap_fun p
 
 
-(** This function uses [update] and transforms the two sigma parts of [p],
-    the sigma of the current SH of [p] and that of the footprint of [p]. *)
+(** This function uses [update] and transforms the two sigma parts of [p], the sigma of the current
+    SH of [p] and that of the footprint of [p]. *)
 let prop_update_sigma_and_fp_sigma tenv (p : Prop.normal Prop.t)
     (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool =
   let sigma', changed = update false p.Prop.sigma in
@@ -338,9 +338,9 @@ let prop_update_sigma_and_fp_sigma tenv (p : Prop.normal Prop.t)
 (** Remember whether array abstraction was performed (to be reset before calling Abs.abstract) *)
 let array_abstraction_performed = ref false
 
-(** This function abstracts strexps. The parameter [can_abstract] spots strexps
-    where the abstraction might be applicable, and the parameter [do_abstract] does
-    the abstraction to those spotted strexps. *)
+(** This function abstracts strexps. The parameter [can_abstract] spots strexps where the
+    abstraction might be applicable, and the parameter [do_abstract] does the abstraction to those
+    spotted strexps. *)
 let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal Prop.t)
     (can_abstract_ : StrexpMatch.strexp_data -> bool)
     (do_abstract :
@@ -584,7 +584,8 @@ let report_error prop =
   assert false
 
 
-(** Check performed after the array abstraction to see whether it was successful. Raise assert false in case of failure *)
+(** Check performed after the array abstraction to see whether it was successful. Raise assert false
+    in case of failure *)
 let check_after_array_abstraction tenv prop =
   let lookup = Tenv.lookup tenv in
   let check_index root offs (ind, _) =

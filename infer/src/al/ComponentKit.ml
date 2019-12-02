@@ -36,15 +36,15 @@ let is_ck_context (context : CLintersContext.context) an =
   && CGeneral_utils.is_objc_extension context.translation_unit_context
 
 
-(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
-    (Returns false on decls other than that one.) *)
+(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl. (Returns false on
+    decls other than that one.) *)
 let is_component_or_controller_if decl =
   let open CFrontend_config in
   CAst_utils.is_objc_if_descendant decl [ckcomponent_cl; ckcomponentcontroller_cl]
 
 
-(** True if it's an objc class impl that extends from CKComponent or
-    CKComponentController, false otherwise *)
+(** True if it's an objc class impl that extends from CKComponent or CKComponentController, false
+    otherwise *)
 let rec is_component_or_controller_descendant_impl decl =
   match decl with
   | Clang_ast_t.ObjCImplementationDecl _ ->
@@ -55,9 +55,8 @@ let rec is_component_or_controller_descendant_impl decl =
       false
 
 
-(** Returns true if the passed-in list of decls contains an
-    ObjCImplementationDecl of a descendant of CKComponent or
-    CKComponentController.
+(** Returns true if the passed-in list of decls contains an ObjCImplementationDecl of a descendant
+    of CKComponent or CKComponentController.
 
     Does not recurse into hierarchy. *)
 and contains_ck_impl decl_list = List.exists ~f:is_component_or_controller_descendant_impl decl_list
@@ -65,27 +64,27 @@ and contains_ck_impl decl_list = List.exists ~f:is_component_or_controller_desce
 (** An easy way to fix the component kit best practice
     http://componentkit.org/docs/avoid-local-variables.html
 
-    Local variables that are const or const pointers by definition cannot be
-    assigned to after declaration, which means the entire class of bugs stemming
-    from value mutation after assignment are gone.
+    Local variables that are const or const pointers by definition cannot be assigned to after
+    declaration, which means the entire class of bugs stemming from value mutation after assignment
+    are gone.
 
     Note we want const pointers, not mutable pointers to const instances.
 
     OK:
 
-    ```
+    {v
     const int a;
     int *const b;
     NSString *const c;
     const int *const d;
-    ```
+    v}
 
     Not OK:
 
-    ```
+    {v
     const int *z;
     const NSString *y;
-    ``` *)
+    v} *)
 let mutable_local_vars_advice context an =
   try
     let rec get_referenced_type (qual_type : Clang_ast_t.qual_type) : Clang_ast_t.decl option =
@@ -202,9 +201,9 @@ let component_factory_function_advice context an =
 
 (* Should only be called with FunctionDecl *)
 
-(** Components should not inherit from each other. They should instead
-    inherit from CKComponent, CKCompositeComponent, or
-    CKStatefulViewComponent. (Similar rule applies to component controllers.) *)
+(** Components should not inherit from each other. They should instead inherit from CKComponent,
+    CKCompositeComponent, or CKStatefulViewComponent. (Similar rule applies to component
+    controllers.) *)
 let component_with_unconventional_superclass_advice context an =
   let check_interface if_decl =
     match if_decl with
@@ -265,17 +264,15 @@ let component_with_unconventional_superclass_advice context an =
 
 (** Components should only have one factory method.
 
-    (They could technically have none if they re-use the parent class's factory
-    method.)
+    (They could technically have none if they re-use the parent class's factory method.)
 
-    We care about ones that are declared in the interface. In other words, if
-    additional factory methods are implementation-only, the rule doesn't catch
-    it. While its existence is probably not good, I can't think of any reason
-    there would be factory methods that aren't exposed outside of a class is
-    not useful if there's only one public factory method.
+    We care about ones that are declared in the interface. In other words, if additional factory
+    methods are implementation-only, the rule doesn't catch it. While its existence is probably not
+    good, I can't think of any reason there would be factory methods that aren't exposed outside of
+    a class is not useful if there's only one public factory method.
 
-    Given n factory methods, the rule should emit n-1 issues. Each issue's
-    location should point to the method declaration. *)
+    Given n factory methods, the rule should emit n-1 issues. Each issue's location should point to
+    the method declaration. *)
 let component_with_multiple_factory_methods_advice context an =
   let is_unavailable_attr attr = match attr with `UnavailableAttr _ -> true | _ -> false in
   let is_available_factory_method if_decl (decl : Clang_ast_t.decl) =
@@ -347,11 +344,10 @@ let is_in_factory_method (context : CLintersContext.context) =
 
     http://componentkit.org/docs/no-side-effects.html
 
-    The only current way we look for side-effects is by looking for
-    asynchronous execution (dispatch_async, dispatch_after) and execution that
-    relies on other threads (dispatch_sync). Other side-effects, like reading
-    of global variables, is not checked by this analyzer, although still an
-    infraction of the rule. *)
+    The only current way we look for side-effects is by looking for asynchronous execution
+    (dispatch_async, dispatch_after) and execution that relies on other threads (dispatch_sync).
+    Other side-effects, like reading of global variables, is not checked by this analyzer, although
+    still an infraction of the rule. *)
 let rec component_initializer_with_side_effects_advice_ (context : CLintersContext.context)
     call_stmt =
   let condition =
@@ -398,8 +394,8 @@ let component_initializer_with_side_effects_advice (context : CLintersContext.co
 
 (** Returns one issue per line of code, with the column set to 0.
 
-    This still needs to be in infer b/c only files that have a valid component
-    kit class impl should be analyzed. *)
+    This still needs to be in infer b/c only files that have a valid component kit class impl should
+    be analyzed. *)
 let component_file_line_count_info (context : CLintersContext.context) dec =
   let condition = Config.compute_analytics && context.is_ck_translation_unit in
   match dec with

@@ -6,9 +6,8 @@
  *)
 open! IStd
 
-(** Dereference rule should be checked every type an object is dereferenced.
-    The rule checks if the reference is nullable.
- *)
+(** Dereference rule should be checked every type an object is dereferenced. The rule checks if the
+    reference is nullable. *)
 
 type violation [@@deriving compare]
 
@@ -28,4 +27,5 @@ val violation_description :
   -> nullable_object_descr:string option
   -> nullable_object_origin:TypeOrigin.t
   -> string * IssueType.t * Location.t
-(** Given context around violation, return error message together with the info where to put this message *)
+(** Given context around violation, return error message together with the info where to put this
+    message *)

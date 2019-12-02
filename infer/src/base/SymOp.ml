@@ -74,9 +74,8 @@ type t =
   ; mutable last_wallclock: float option  (** last wallclock set by an alarm, if any *)
   ; mutable symop_count: int  (** Number of symop's *)
   ; symop_total: int ref
-        (** Counter for the total number of symop's.
-        The new state created when save_state is called shares this counter
-        if keep_symop_total is true. Otherwise, a new counter is created. *)
+        (** Counter for the total number of symop's. The new state created when save_state is called
+            shares this counter if keep_symop_total is true. Otherwise, a new counter is created. *)
   }
 
 let initial () : t = {alarm_active= false; last_wallclock= None; symop_count= 0; symop_total= ref 0}
@@ -87,8 +86,8 @@ let gs : t ref = ref (initial ())
 (** Restore the old state. *)
 let restore_state state = gs := state
 
-(** Return the old state, and revert the current state to the initial one.
-    If keep_symop_total is true, share the total counter. *)
+(** Return the old state, and revert the current state to the initial one. If keep_symop_total is
+    true, share the total counter. *)
 let save_state ~keep_symop_total =
   let old_state = !gs in
   let new_state =

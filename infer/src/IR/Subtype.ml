@@ -21,7 +21,7 @@ type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t l
 
 let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal: t'] st1 st2
 
-(** denotes the current type and a list of types that are not their subtypes  *)
+(** denotes the current type and a list of types that are not their subtypes *)
 type kind = CAST | INSTOF | NORMAL [@@deriving compare]
 
 let equal_kind = [%compare.equal: kind]
@@ -264,13 +264,11 @@ let case_analysis_basic tenv (c1, st) (c2, (_, flag2)) =
   (change_flag pos_st c1 c2 flag2, change_flag neg_st c1 c2 flag2)
 
 
-(** [case_analysis (c1, st1) (c2, st2) f] performs case analysis on [c1 <: c2]
-    according to [st1] and [st2]
-    where f c1 c2 is true if c1 is a subtype of c2.
-    get_subtypes returning a pair:
+(** [case_analysis (c1, st1) (c2, st2) f] performs case analysis on [c1 <: c2] according to [st1]
+    and [st2] where f c1 c2 is true if c1 is a subtype of c2. get_subtypes returning a pair:
+
     - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-    - whether [st1] and [st2] admit [not(c1 <: c2)],
-    and in case return the updated subtype [st1] *)
+    - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return the updated subtype [st1] *)
 let case_analysis tenv (c1, st1) (c2, st2) =
   if Config.subtype_multirange then get_subtypes tenv (c1, st1) (c2, st2)
   else case_analysis_basic tenv (c1, st1) (c2, st2)

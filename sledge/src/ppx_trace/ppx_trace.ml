@@ -10,18 +10,24 @@
     This ppx rewriter declares a [--debug] command line option, to be passed
     by the build system in debug but not optimized build modes.
 
-    It rewrites [[%Trace.info f]] to a call [Trace.info mod_name fun_name f]
-    where [mod_name] and [fun_name] are the enclosing module and function
-    names in the parsetree. This is only done in debug mode, if [--debug] is
-    not passed, then [[%Trace.info f]] is rewritten to [()].
+    It rewrites [\[%Trace.info f\]] to a call
+    [\[Trace.info mod_name fun_name f\]] where [mod_name] and [fun_name] are
+    the enclosing module and function names in the parsetree. This is only
+    done in debug mode, if [--debug] is not passed, then [\[%Trace.info f\]]
+    is rewritten to [()].
 
-    Similarly, [[%Trace.call]] is rewritten to a call to [Trace.call] or
-    [()], and [[%Trace.retn]] to a call to [Trace.retn] or [Fn.id].
+    Similarly, [\[%Trace.call\]] is rewritten to a call to [Trace.call] or
+    [()], and [\[%Trace.retn\]] to a call to [Trace.retn] or [Fn.id].
 
     For example, this enables writing
 
-    [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg] ; func arg |>
-    [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
+    {[
+      [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg]
+      ;
+      func arg
+      |>
+      [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
+    ]}
 
     to trace calls to [f] in debug mode while completely compiling out the
     debug code in non-debug builds.
@@ -29,7 +35,7 @@
     This mechanism can also be used e.g. to dynamically check assertions
     only in debug mode.
 
-    Additionally, [[%debug]] is rewritten to the compile-time boolean
+    Additionally, [\[%debug\]] is rewritten to the compile-time boolean
     constant determined by whether or not [--debug] is passed. *)
 
 open Ppxlib

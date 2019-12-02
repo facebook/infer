@@ -46,8 +46,8 @@ val entails : t -> t -> bool
 (** Test if one relation entails another. *)
 
 val class_of : t -> Term.t -> Term.t list
-(** Equivalence class of [e]: all the terms [f] in the relation such that [e
-    = f] is implied by the relation. *)
+(** Equivalence class of [e]: all the terms [f] in the relation such that
+    [e = f] is implied by the relation. *)
 
 val normalize : t -> Term.t -> Term.t
 (** Normalize a term [e] to [e'] such that [e = e'] is implied by the

@@ -11,6 +11,5 @@ include BUILTINS.S with type t = Builtin.registered
 (** Models for the builtin functions supported *)
 
 val init : unit -> unit
-(** Clients of Builtin module should call this before Builtin module is used.
-    WARNING: builtins are not guaranteed to be registered with the Builtin module
-    until after init has been called. *)
+(** Clients of Builtin module should call this before Builtin module is used. WARNING: builtins are
+    not guaranteed to be registered with the Builtin module until after init has been called. *)

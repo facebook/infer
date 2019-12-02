@@ -8,23 +8,23 @@
 open! IStd
 module F = Format
 
-(** Domain for thread-type.  The main goals are 
-    - Track code paths that are explicitly on UI/BG thread (via annotations, or assertions). 
-    - Maintain UI/BG-thread-ness through the call stack (if a caller is of unknown status and 
-      callee is on UI/BG thread then caller must be on the UI/BG thread too). 
-    - Traces with "UI-thread" status cannot interleave but all other combinations can.  
-    - Top is AnyThread, which means that there are executions on both UI and BG threads on 
-      this method.
-    - Bottom is UnknownThread, and used as initial state.
-*)
+(** Domain for thread-type. The main goals are
+
+    - Track code paths that are explicitly on UI/BG thread (via annotations, or assertions).
+    - Maintain UI/BG-thread-ness through the call stack (if a caller is of unknown status and callee
+      is on UI/BG thread then caller must be on the UI/BG thread too).
+    - Traces with "UI-thread" status cannot interleave but all other combinations can.
+    - Top is AnyThread, which means that there are executions on both UI and BG threads on this
+      method.
+    - Bottom is UnknownThread, and used as initial state. *)
 module ThreadDomain : sig
   type t = UnknownThread | UIThread | BGThread | AnyThread
 
   include AbstractDomain.WithBottom with type t := t
 end
 
-(** Abstraction of a path that represents a lock, special-casing comparison
-    to work over type, base variable modulo this and access list *)
+(** Abstraction of a path that represents a lock, special-casing comparison to work over type, base
+    variable modulo this and access list *)
 module Lock : sig
   include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
 
@@ -68,12 +68,11 @@ module CriticalPairElement : sig
   type t = private {acquisitions: Acquisitions.t; event: Event.t; thread: ThreadDomain.t}
 end
 
-(** A [CriticalPairElement] equipped with a call stack. 
-    The intuition is that if we have a critical pair `(locks, event)` in the summary 
-    of a method then there is a trace of that method where `event` occurs, and right 
-    before it occurs the locks held are exactly `locks` (no over/under approximation).
-    We call it "critical" because the information here alone determines deadlock conditions. 
-*)
+(** A [CriticalPairElement] equipped with a call stack. The intuition is that if we have a critical
+    pair `(locks, event)` in the summary of a method then there is a trace of that method where
+    `event` occurs, and right before it occurs the locks held are exactly `locks` (no over/under
+    approximation). We call it "critical" because the information here alone determines deadlock
+    conditions. *)
 module CriticalPair : sig
   type t = private {elem: CriticalPairElement.t; loc: Location.t; trace: CallSite.t list}
 
@@ -196,8 +195,8 @@ val pp_summary : F.formatter -> summary -> unit
 
 val integrate_summary :
   ?tenv:Tenv.t -> ?lhs:HilExp.AccessExpression.t -> CallSite.t -> t -> summary -> t
-(** apply a callee summary to the current abstract state; 
-    [lhs] is the expression assigned the returned value, if any *)
+(** apply a callee summary to the current abstract state; [lhs] is the expression assigned the
+    returned value, if any *)
 
 val summary_of_astate : Procdesc.t -> t -> summary
 

@@ -75,8 +75,9 @@ module BuildMethodSignature = struct
 
 
   (** Returns parameters of a function/method. They will have following order:
-            1. normal parameters
-            2. return parameter (optional) *)
+
+      + normal parameters
+      + return parameter (optional) *)
   let get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl =
     let open Clang_ast_t in
     let par_to_ms_par par =

@@ -116,9 +116,8 @@ let instrs_normalize instrs =
   Instrs.fold instrs ~init:[] ~f:subst_and_add
 
 
-(** Create a function to find duplicate nodes.
-    A node is a duplicate of another one if they have the same kind and location
-    and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
+(** Create a function to find duplicate nodes. A node is a duplicate of another one if they have the
+    same kind and location and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.t =
   let module M = (* map from (loc,kind) *)
   Caml.Map.Make (struct
@@ -186,7 +185,8 @@ let get_loc_trace () : Errlog.loc_trace =
 
 let get_prop_tenv_pdesc () = !gs.last_prop_tenv_pdesc
 
-(** extract the footprint of the prop, and turn it into a normalized precondition using spec variables *)
+(** extract the footprint of the prop, and turn it into a normalized precondition using spec
+    variables *)
 let extract_pre p tenv pdesc abstract_fun =
   let sub =
     let idlist = Prop.free_vars p |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
@@ -204,8 +204,8 @@ let extract_pre p tenv pdesc abstract_fun =
   Prop.normalize tenv (Prop.prop_sub sub pre')
 
 
-(** return the normalized precondition extracted form the last prop seen, if any
-    the abstraction function is a parameter to get around module dependencies *)
+(** return the normalized precondition extracted form the last prop seen, if any the abstraction
+    function is a parameter to get around module dependencies *)
 let get_normalized_pre (abstract_fun : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) :
     Prop.normal Prop.t option =
   match get_prop_tenv_pdesc () with

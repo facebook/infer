@@ -12,8 +12,8 @@ module Bound : sig
   type t
 
   val mk_MultB : Z.t * t * t -> t
-  (** It makes a bound of [Bound.MultB], which represents a multiplication of two bounds.  For
-     example, [MultB (1, x, y)] represents [1 + x × y].  *)
+  (** It makes a bound of [Bound.MultB], which represents a multiplication of two bounds. For
+      example, [MultB (1, x, y)] represents [1 + x × y]. *)
 
   type eval_sym = t Symb.Symbol.eval
 

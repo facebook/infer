@@ -46,9 +46,9 @@ module ThreadDomain = struct
     |> F.pp_print_string fmt
 
 
-  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. 
-      In addition, this is monotonic wrt the lattice (increasing either argument cannot 
-      transition from true to false). *)
+  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. In
+      addition, this is monotonic wrt the lattice (increasing either argument cannot transition from
+      true to false). *)
   let can_run_in_parallel st1 st2 =
     match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
 
@@ -59,9 +59,9 @@ module ThreadDomain = struct
      Otherwise, we have no info on caller, so use callee's info. *)
   let integrate_summary ~caller ~callee = if is_bottom caller then callee else caller
 
-  (** given the current thread state [caller_thread] and the thread state under which a critical pair
-      occurred, [pair_thread], decide whether to throw away the pair (returning [None]) because it 
-      cannot occur within a call from the current state, or adapt its thread state appropriately. *)
+  (** given the current thread state [caller_thread] and the thread state under which a critical
+      pair occurred, [pair_thread], decide whether to throw away the pair (returning [None]) because
+      it cannot occur within a call from the current state, or adapt its thread state appropriately. *)
   let apply_to_pair caller_thread pair_thread =
     match (caller_thread, pair_thread) with
     | UnknownThread, _ ->
@@ -154,8 +154,8 @@ module Event = struct
     StrictModeCall descr
 end
 
-(** A lock acquisition with source location and procname in which it occurs.
-    The location & procname are *ignored* for comparisons, and are only for reporting. *)
+(** A lock acquisition with source location and procname in which it occurs. The location & procname
+    are *ignored* for comparisons, and are only for reporting. *)
 module Acquisition = struct
   type t =
     {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Typ.Procname.t [@compare.ignore]}
@@ -409,11 +409,12 @@ let is_recursive_lock event tenv =
       false
 
 
-(** skip adding an order pair [(_, event)] if  
-  - we have no tenv, or,
-  - [event] is not a lock event, or,
-  - we do not hold the lock, or,
-  - the lock is not recursive. *)
+(** skip adding an order pair [(_, event)] if
+
+    - we have no tenv, or,
+    - [event] is not a lock event, or,
+    - we do not hold the lock, or,
+    - the lock is not recursive. *)
 let should_skip ?tenv event lock_state =
   Option.exists tenv ~f:(fun tenv ->
       LockState.is_lock_taken event lock_state && is_recursive_lock event tenv )

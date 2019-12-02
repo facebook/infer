@@ -7,8 +7,7 @@
 
 open! IStd
 
-(** Escape a string for use in a CSV or XML file: replace reserved
-    characters with escape sequences *)
+(** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
 
 val escape_dotty : string -> string
 (** escape a string to be used in a dotty file *)

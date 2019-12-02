@@ -43,23 +43,25 @@ type instr =
   | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
 
-      [id = *exp:typ(root_typ)] where
-        [exp] is an expression denoting a heap address
-        [typ] is typ of [exp] and [id]
-        [root_typ] is the root type of [exp]
+          [id = *exp:typ(root_typ)] where
 
-          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          - [exp] is an expression denoting a heap address
+          - [typ] is typ of [exp] and [id]
+          - [root_typ] is the root type of [exp]
+
+          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
           future, so please use [typ] instead. *)
   | Store of {e1: Exp.t; root_typ: Typ.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
 
-      [*exp1:typ(root_typ) = exp2] where
-        [exp1] is an expression denoting a heap address
-        [typ] is typ of [*exp1] and [exp2]
-        [root_typ] is the root type of [exp1]
-        [exp2] is the expression whose value is stored.
+          [*exp1:typ(root_typ) = exp2] where
 
-          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          - [exp1] is an expression denoting a heap address
+          - [typ] is typ of [*exp1] and [exp2]
+          - [root_typ] is the root type of [exp1]
+          - [exp2] is the expression whose value is stored.
+
+          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
           future, so please use [typ] instead. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
@@ -143,13 +145,11 @@ type 'inst strexp0 =
   | Eexp of Exp.t * 'inst  (** Base case: expression with instrumentation *)
   | Estruct of (Typ.Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
   | Earray of Exp.t * (Exp.t * 'inst strexp0) list * 'inst
-      (** Array of given length
-          There are two conditions imposed / used in the array case.
-          First, if some index and value pair appears inside an array
-          in a strexp, then the index is less than the length of the array.
-          For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-          Second, if two indices appear in an array, they should be different.
-          For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
+      (** Array of given length There are two conditions imposed / used in the array case. First, if
+          some index and value pair appears inside an array in a strexp, then the index is less than
+          the length of the array. For instance, [x |->\[10 | e1: v1\]] implies that [e1 <= 9].
+          Second, if two indices appear in an array, they should be different. For instance,
+          [x |->\[10 | e1: v1, e2: v2\]] implies that [e1 != e2]. *)
 [@@deriving compare]
 
 type strexp = inst strexp0
@@ -163,30 +163,26 @@ let equal_strexp ?(inst = false) se1 se2 = Int.equal (compare_strexp ~inst se1 s
 (** an atomic heap predicate *)
 type 'inst hpred0 =
   | Hpointsto of Exp.t * 'inst strexp0 * Exp.t
-      (** represents [exp|->strexp:typexp] where [typexp]
-      is an expression representing a type, e.h. [sizeof(t)]. *)
+      (** represents [exp|->strexp:typexp] where [typexp] is an expression representing a type, e.h.
+          [sizeof(t)]. *)
   | Hlseg of lseg_kind * 'inst hpara0 * Exp.t * Exp.t * Exp.t list
-      (** higher - order predicate for singly - linked lists.
-      Should ensure that exp1!= exp2 implies that exp1 is allocated.
-      This assumption is used in the rearrangement. The last [exp list] parameter
-      is used to denote the shared links by all the nodes in the list. *)
+      (** higher - order predicate for singly - linked lists. Should ensure that exp1!= exp2 implies
+          that exp1 is allocated. This assumption is used in the rearrangement. The last [exp list]
+          parameter is used to denote the shared links by all the nodes in the list. *)
   | Hdllseg of lseg_kind * 'inst hpara_dll0 * Exp.t * Exp.t * Exp.t * Exp.t * Exp.t list
-      (** higher-order predicate for doubly-linked lists.
-      Parameter for the higher-order singly-linked list predicate.
-      Means "lambda (root,next,svars). Exists evars. body".
-      Assume that root, next, svars, evars are disjoint sets of
-      primed identifiers, and include all the free primed identifiers in body.
-      body should not contain any non - primed identifiers or program
-      variables (i.e. pvars). *)
+      (** higher-order predicate for doubly-linked lists. Parameter for the higher-order
+          singly-linked list predicate. Means "lambda (root,next,svars). Exists evars. body". Assume
+          that root, next, svars, evars are disjoint sets of primed identifiers, and include all the
+          free primed identifiers in body. body should not contain any non - primed identifiers or
+          program variables (i.e. pvars). *)
 [@@deriving compare]
 
 and 'inst hpara0 =
   {root: Ident.t; next: Ident.t; svars: Ident.t list; evars: Ident.t list; body: 'inst hpred0 list}
 [@@deriving compare]
 
-(** parameter for the higher-order doubly-linked list predicates.
-    Assume that all the free identifiers in body_dll should belong to
-    cell, blink, flink, svars_dll, evars_dll. *)
+(** parameter for the higher-order doubly-linked list predicates. Assume that all the free
+    identifiers in body_dll should belong to cell, blink, flink, svars_dll, evars_dll. *)
 and 'inst hpara_dll0 =
   { cell: Ident.t  (** address cell *)
   ; blink: Ident.t  (** backward link *)
@@ -380,7 +376,7 @@ let exps_of_instr = function
       exps_of_instr_metadata metadata
 
 
-(** Convert an if_kind to string  *)
+(** Convert an if_kind to string *)
 let if_kind_to_string = function
   | Ik_bexp ->
       "boolean exp"
@@ -481,9 +477,8 @@ let pp_lseg_kind f = function Lseg_NE -> F.pp_print_string f "ne" | Lseg_PE -> (
 (** Print a *-separated sequence. *)
 let pp_star_seq pp f l = Pp.seq ~sep:" * " pp f l
 
-(** Module Predicates records the occurrences of predicates as parameters
-    of (doubly -)linked lists and Epara. Provides unique numbering
-    for predicates and an iterator. *)
+(** Module Predicates records the occurrences of predicates as parameters of (doubly -)linked lists
+    and Epara. Provides unique numbering for predicates and an iterator. *)
 module Predicates : sig
   (** predicate environment *)
 
@@ -505,8 +500,8 @@ module Predicates : sig
 
   val get_hpara_dll_id : env -> hpara_dll -> int
 
-  (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll,
-      passing the unique id to the functions. The iterator can only be used once. *)
+  (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll, passing the unique
+      id to the functions. The iterator can only be used once. *)
 
   val iter : env -> (int -> hpara -> unit) -> (int -> hpara_dll -> unit) -> unit
 
@@ -593,11 +588,9 @@ end = struct
     {num= 0; hash= HparaHash.create 3; todo= []; hash_dll= HparaDllHash.create 3; todo_dll= []}
 
 
-  (** iterator for predicates which are marked as todo in env,
-      unless they have been visited already.
-      This can in turn extend the todo list for the nested predicates,
-      which are then visited as well.
-      Can be applied only once, as it destroys the todo list *)
+  (** iterator for predicates which are marked as todo in env, unless they have been visited
+      already. This can in turn extend the todo list for the nested predicates, which are then
+      visited as well. Can be applied only once, as it destroys the todo list *)
   let iter (env : env) f f_dll =
     while env.todo <> [] || env.todo_dll <> [] do
       match env.todo with
@@ -1113,9 +1106,8 @@ let equal_subst = [%compare.equal: subst]
 
 let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
 
-(** Create a substitution from a list of pairs.
-    For all (id1, e1), (id2, e2) in the input list,
-    if id1 = id2, then e1 = e2. *)
+(** Create a substitution from a list of pairs. For all (id1, e1), (id2, e2) in the input list, if
+    id1 = id2, then e1 = e2. *)
 let subst_of_list sub =
   let sub' = List.dedup_and_sort ~compare:compare_ident_exp sub in
   assert (sub_no_duplicated_ids sub') ;
@@ -1133,18 +1125,16 @@ let sub_empty = subst_of_list []
 
 let is_sub_empty = List.is_empty
 
-(** Join two substitutions into one.
-    For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
+(** Join two substitutions into one. For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
 let sub_join sub1 sub2 =
   let sub = IList.merge_dedup ~compare:compare_ident_exp sub1 sub2 in
   assert (sub_no_duplicated_ids sub) ;
   sub
 
 
-(** Compute the common id-exp part of two inputs [subst1] and [subst2].
-    The first component of the output is this common part.
-    The second and third components are the remainder of [subst1]
-    and [subst2], respectively. *)
+(** Compute the common id-exp part of two inputs [subst1] and [subst2]. The first component of the
+    output is this common part. The second and third components are the remainder of [subst1] and
+    [subst2], respectively. *)
 let sub_symmetric_difference sub1_in sub2_in =
   let rec diff sub_common sub1_only sub2_only sub1 sub2 =
     match (sub1, sub2) with
@@ -1162,24 +1152,23 @@ let sub_symmetric_difference sub1_in sub2_in =
   diff [] [] [] sub1_in sub2_in
 
 
-(** [sub_find filter sub] returns the expression associated to the first identifier
-    that satisfies [filter]. Raise [Not_found] if there isn't one. *)
+(** [sub_find filter sub] returns the expression associated to the first identifier that satisfies
+    [filter]. Raise [Not_found] if there isn't one. *)
 let sub_find filter (sub : subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
 
-(** [sub_filter filter sub] restricts the domain of [sub] to the
-    identifiers satisfying [filter]. *)
+(** [sub_filter filter sub] restricts the domain of [sub] to the identifiers satisfying [filter]. *)
 let sub_filter filter (sub : subst) = List.filter ~f:(fun (i, _) -> filter i) sub
 
-(** [sub_filter_pair filter sub] restricts the domain of [sub] to the
-    identifiers satisfying [filter(id, sub(id))]. *)
+(** [sub_filter_pair filter sub] restricts the domain of [sub] to the identifiers satisfying
+    [filter(id, sub(id))]. *)
 let sub_filter_pair = List.filter
 
-(** [sub_range_partition filter sub] partitions [sub] according to
-    whether range expressions satisfy [filter]. *)
+(** [sub_range_partition filter sub] partitions [sub] according to whether range expressions satisfy
+    [filter]. *)
 let sub_range_partition filter (sub : subst) = List.partition_tf ~f:(fun (_, e) -> filter e) sub
 
-(** [sub_domain_partition filter sub] partitions [sub] according to
-    whether domain identifiers satisfy [filter]. *)
+(** [sub_domain_partition filter sub] partitions [sub] according to whether domain identifiers
+    satisfy [filter]. *)
 let sub_domain_partition filter (sub : subst) = List.partition_tf ~f:(fun (i, _) -> filter i) sub
 
 (** Return the list of identifiers in the domain of the substitution. *)
@@ -1191,8 +1180,8 @@ let sub_range sub = List.map ~f:snd sub
 (** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. *)
 let sub_range_map f sub = subst_of_list (List.map ~f:(fun (i, e) -> (i, f e)) sub)
 
-(** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
-    of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
+(** [sub_map f g sub] applies the renaming [f] to identifiers in the domain of [sub] and the
+    substitution [g] to the expressions in the range of [sub]. *)
 let sub_map f g sub = subst_of_list (List.map ~f:(fun (i, e) -> (f i, g e)) sub)
 
 let mem_sub id sub = List.exists ~f:(fun (id1, _) -> Ident.equal id id1) sub
@@ -1329,8 +1318,8 @@ let hpred_sub subst =
 
 (** {2 Functions for replacing occurrences of expressions.} *)
 
-(** The first parameter should define a partial function.
-    No parts of hpara are replaced by these functions. *)
+(** The first parameter should define a partial function. No parts of hpara are replaced by these
+    functions. *)
 let rec exp_replace_exp epairs e =
   (* First we check if there is an exact match *)
   match List.find ~f:(fun (e1, _) -> Exp.equal e e1) epairs with
@@ -1505,10 +1494,9 @@ let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
   else [([], sigma)]
 
 
-(** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1],
-    [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
-    then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, zs'_/ zs\]]
-    for some fresh [_zs'].*)
+(** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1], [e2] and [elist]. If
+    [para = lambda (x, y, xs). exists zs. b], then the result of the instantiation is
+    [b\[e1 / x, e2 / y, elist / xs, zs'_/ zs\]] for some fresh [_zs'].*)
 let hpara_instantiate para e1 e2 elist =
   let subst_for_svars =
     let g id e = (id, e) in
@@ -1528,11 +1516,10 @@ let hpara_instantiate para e1 e2 elist =
   (ids_evars, List.map ~f:(hpred_sub subst) para.body)
 
 
-(** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
-    [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
-    then the result of the instantiation is
-    [b\[cell / x, blink / y, flink / z, elist / xs, zs'_/ zs\]]
-    for some fresh [_zs'].*)
+(** [hpara_dll_instantiate para cell blink flink elist] instantiates [para] with [cell], [blink],
+    [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b], then the result of the
+    instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, zs'_/ zs\]] for some fresh
+    [_zs'].*)
 let hpara_dll_instantiate (para : hpara_dll) cell blink flink elist =
   let subst_for_svars =
     let g id e = (id, e) in

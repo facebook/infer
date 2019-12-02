@@ -141,9 +141,8 @@ module ErrLogHash = struct
   include Hashtbl.Make (Key)
 end
 
-(** Type of the error log, to be reset once per function.
-    Map severity, footprint / re - execution flag, error name,
-    error description, severity, to set of err_data. *)
+(** Type of the error log, to be reset once per function. Map severity, footprint / re - execution
+    flag, error name, error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
 (** Empty error log *)
@@ -215,8 +214,8 @@ let pp_html source path_to_root fmt (errlog : t) =
   List.iter Exceptions.[Advice; Error; Info; Like; Warning] ~f:pp
 
 
-(** Add an error description to the error log unless there is
-    one already at the same node + session; return true if added *)
+(** Add an error description to the error log unless there is one already at the same node +
+    session; return true if added *)
 let add_issue tbl err_key (err_datas : ErrDataSet.t) : bool =
   try
     let current_eds = ErrLogHash.find tbl err_key in

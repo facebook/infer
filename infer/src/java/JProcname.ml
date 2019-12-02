@@ -151,8 +151,8 @@ module JNI = struct
     tokenize_aux input_chars []
 
 
-  (** Very simple minded: keep reducing until no more non-terminals are left. 
-      Fail if no reductions happened during a scan *)
+  (** Very simple minded: keep reducing until no more non-terminals are left. Fail if no reductions
+      happened during a scan *)
   let reduce symbols =
     let rec reduce_aux ~symbols ~unchanged_symbols ~in_method ~jnis_in_method ~jnis =
       let tl_or_empty l = match l with [] -> [] | [_] -> [] | _ :: tl -> tl in

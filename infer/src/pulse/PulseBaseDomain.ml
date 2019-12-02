@@ -26,8 +26,9 @@ let empty =
 (** comparison between two elements of the domain to determine the [<=] relation
 
     Given two states [lhs] and [rhs], try to find a bijection [lhs_to_rhs] (with inverse
-    [rhs_to_lhs]) between the addresses of [lhs] and [rhs] such that [lhs_to_rhs(reachable(lhs)) =
-    reachable(rhs)] (where addresses are reachable if they are reachable from stack variables).  *)
+    [rhs_to_lhs]) between the addresses of [lhs] and [rhs] such that
+    [lhs_to_rhs(reachable(lhs)) = reachable(rhs)] (where addresses are reachable if they are
+    reachable from stack variables). *)
 module GraphComparison = struct
   module AddressMap = PrettyPrintable.MakePPMap (AbstractValue)
 
@@ -140,8 +141,8 @@ module GraphComparison = struct
 
 
   (** check that the memory graph induced by the addresses in [lhs] reachable from the variables in
-     [stack_lhs] is a isograph of the same graph in [rhs] starting from [stack_rhs], up to some
-     [mapping] *)
+      [stack_lhs] is a isograph of the same graph in [rhs] starting from [stack_rhs], up to some
+      [mapping] *)
   let rec isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping =
     match (stack_lhs, stack_rhs) with
     | [], [] ->

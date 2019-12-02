@@ -14,8 +14,8 @@ module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
-(** Module to read specific lines from files.
-    The data from any file will stay in memory until the handle is collected by the gc. *)
+(** Module to read specific lines from files. The data from any file will stay in memory until the
+    handle is collected by the gc. *)
 module LineReader = struct
   (** Map a file name to an array of string, one for each line in the file. *)
   type t = (SourceFile.t, string array) Hashtbl.t
@@ -100,8 +100,7 @@ let pp_node_link_seq =
     Pp.seq pp_one fmt nodes
 
 
-(** Print information into html files for nodes
-    when starting and finishing the processing of a node *)
+(** Print information into html files for nodes when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> int -> unit
 

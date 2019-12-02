@@ -42,9 +42,9 @@ let pp fmt = function
 type translation = Instr of t | Bind of Var.t * HilExp.AccessExpression.t
 
 (** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an
-   SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
-   produce the same result as evaluating the SIL instruction and replacing the temporary variables
-   using [f_resolve_id]. *)
+    SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
+    produce the same result as evaluating the SIL instruction and replacing the temporary variables
+    using [f_resolve_id]. *)
 let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
   let exp_of_sil ?(add_deref = false) =
     HilExp.of_sil ~include_array_indexes ~f_resolve_id ~add_deref

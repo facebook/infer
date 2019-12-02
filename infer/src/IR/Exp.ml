@@ -81,8 +81,8 @@ let rec is_const = function Const _ -> true | Cast (_, x) -> is_const x | _ -> f
 
 (** {2 Utility Functions for Expressions} *)
 
-(** Turn an expression representing a type into the type it represents
-    If not a sizeof, return the default type if given, otherwise raise an exception *)
+(** Turn an expression representing a type into the type it represents If not a sizeof, return the
+    default type if given, otherwise raise an exception *)
 let texp_to_typ default_opt = function
   | Sizeof {typ} ->
       typ
@@ -111,8 +111,8 @@ let rec root_of_lexp lexp =
       lexp
 
 
-(** Checks whether an expression denotes a location by pointer arithmetic.
-    Currently, catches array-indexing expressions such as a[i] only. *)
+(** Checks whether an expression denotes a location by pointer arithmetic. Currently, catches
+    array-indexing expressions such as a[i] only. *)
 let rec pointer_arith = function
   | Lfield (e, _, _) ->
       pointer_arith e

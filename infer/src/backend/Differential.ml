@@ -321,11 +321,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
   else None
 
 
-(** Differential of cost reports, based on degree variations.
-    Compare degree_before (DB), and degree_after (DA):
-      DB > DA => fixed
-      DB < DA => introduced
- *)
+(** Differential of cost reports, based on degree variations. Compare degree_before (DB), and
+    degree_after (DA):
+
+    - DB > DA => fixed
+    - DB < DA => introduced *)
 let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
   let fold_aux kind issue_spec ~key:_ ~data (left, both, right) =
     match data with

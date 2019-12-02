@@ -8,34 +8,36 @@
 open! IStd
 module F = Format
 
-(** Representation of a (non local) type in Java program, with added information about its nullability,
-    according to the source code.
-    Nullability information might come either from explicit annotations, or from other sources,
-    including conventions about defaults.
-    Note that nullsafe omits Nullability information in types used for local variable declarations:
-    this information is inferred according to flow-sensitive inferrence rule.
-*)
+(** Representation of a (non local) type in Java program, with added information about its
+    nullability, according to the source code. Nullability information might come either from
+    explicit annotations, or from other sources, including conventions about defaults. Note that
+    nullsafe omits Nullability information in types used for local variable declarations: this
+    information is inferred according to flow-sensitive inferrence rule. *)
 
 type t =
   | Nullable of nullable_origin
-  | DeclaredNonnull of declared_nonnull_origin  (** See {Nullability.t} for explanation *)
+  | DeclaredNonnull of declared_nonnull_origin  (** See {!Nullability.t} for explanation *)
   | Nonnull of nonnull_origin
 [@@deriving compare]
 
 and nullable_origin =
-  | AnnotatedNullable  (** The type is expicitly annotated with @Nullable in the code *)
+  | AnnotatedNullable  (** The type is expicitly annotated with [@Nullable] in the code *)
   | AnnotatedPropagatesNullable
-      (** If a function param is annotated as @PropagatesNullable, this param is automatically nullable *)
+      (** If a function param is annotated as [@PropagatesNullable], this param is automatically
+          nullable *)
   | HasPropagatesNullableInParam
-      (** If a method has at least one param marked as @PropagatesNullable, return value is automatically nullable *)
+      (** If a method has at least one param marked as [@PropagatesNullable], return value is
+          automatically nullable *)
   | ModelledNullable  (** nullsafe knows it is nullable via its internal models *)
 [@@deriving compare]
 
 and declared_nonnull_origin =
   | AnnotatedNonnull
-      (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe recognizes *)
+      (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe
+          recognizes *)
   | ImplicitlyNonnull
-      (** Infer was run in mode where all not annotated (non local) types are treated as non nullable *)
+      (** Infer was run in mode where all not annotated (non local) types are treated as non
+          nullable *)
 
 and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)

@@ -26,9 +26,9 @@ type tindex = int
 
 type transition = {source: vindex; target: vindex; label: ToplAst.label}
 
-(** INV1: Array.length states = Array.length outgoing
-    INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
-    INV3: max_args is the maximum length of the arguments list in a label on a transition *)
+(** - INV1: Array.length states = Array.length outgoing
+    - INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
+    - INV3: max_args is the maximum length of the arguments list in a label on a transition *)
 type t =
   { states: vname array
   ; transitions: transition array

@@ -48,10 +48,10 @@ type succ_setter = Procdesc.Node.t -> Procdesc.Node.t list -> unit
 
 type block = {start_node: Procdesc.Node.t; exit_node: Procdesc.Node.t}
 
-(** [node_generator]s are the main concept used for organizing the code below. The main property
-of node generators is that they compose, because of their return type. The two arguments
-([node_creator] and [succ_setter]) are there mainly to ensure that there is a thin interface
-with the underlying (heavily imperative) cfg data-structure from [Procdesc]. *)
+(** [node_generator]s are the main concept used for organizing the code below. The main property of
+    node generators is that they compose, because of their return type. The two arguments
+    ([node_creator] and [succ_setter]) are there mainly to ensure that there is a thin interface
+    with the underlying (heavily imperative) cfg data-structure from [Procdesc]. *)
 type node_generator = node_creator -> succ_setter -> block
 
 let procedure proc_name (make_body : node_generator) : Procdesc.t =
@@ -99,9 +99,9 @@ let sequence (gens : node_generator list) : node_generator =
 
 
 (** Substitutes a fresh logical variable for any subexpression that is not an operator, a logical
-variable or a constant. Also returns assignments from subexpressions to the logical variables
-that replaced them. The goal is to get a Sil.Prune condition in a shape friendly to symbolic
-execution. *)
+    variable or a constant. Also returns assignments from subexpressions to the logical variables
+    that replaced them. The goal is to get a Sil.Prune condition in a shape friendly to symbolic
+    execution. *)
 let pure_exp e : Exp.t * Sil.instr list =
   let rec pluck =
     let open Exp in

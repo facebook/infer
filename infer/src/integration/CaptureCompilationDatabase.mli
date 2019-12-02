@@ -15,11 +15,11 @@ val capture_files_in_database :
 val capture_file_in_database : CompilationDatabase.t -> SourceFile.t -> unit
 
 val get_compilation_database_files_buck : prog:string -> args:string list -> [> `Raw of string] list
-(** Get the compilation database files that contain the compilation given by the
-    buck command. It will be the compilation of the passed targets only or also
-    the dependencies according to the flag --buck-compilation-database deps | no-deps *)
+(** Get the compilation database files that contain the compilation given by the buck command. It
+    will be the compilation of the passed targets only or also the dependencies according to the
+    flag --buck-compilation-database deps | no-deps *)
 
 val get_compilation_database_files_xcodebuild :
   prog:string -> args:string list -> [> `Escaped of string] list
-(** Get the compilation database files that contain the compilation given by the
-    xcodebuild command, using xcpretty. *)
+(** Get the compilation database files that contain the compilation given by the xcodebuild command,
+    using xcpretty. *)

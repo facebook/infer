@@ -24,8 +24,8 @@ val local_var : Typ.Procname.t -> string -> Exp.t
 val constant_int : int -> Exp.t
 
 val topl_call : Ident.t -> Typ.desc -> Location.t -> string -> (Exp.t * Typ.t) list -> Sil.instr
-(** Call a TOPL function; that is, a static member of "topl.Property" with java.lang.Object arguments
-and return [ret_id] of type [ret_typ].*)
+(** Call a TOPL function; that is, a static member of "topl.Property" with java.lang.Object
+    arguments and return [ret_id] of type [ret_typ].*)
 
 val is_synthesized : Typ.Procname.t -> bool
 

@@ -261,12 +261,11 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_pure_by_default ~g
 
 
 module LoopHeadToInvVars = Procdesc.NodeMap
-(** Map loop head ->  invariant vars in loop  *)
+(** Map loop head -> invariant vars in loop *)
 
 type invariant_map = VarSet.t LoopHeadToInvVars.t
 
-(** This is invoked by cost analysis, hence assume that unmodeled
-   calls are pure by default *)
+(** This is invoked by cost analysis, hence assume that unmodeled calls are pure by default *)
 let get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map loop_head_to_loop_nodes
     : invariant_map =
   LoopHeadToLoopNodes.fold

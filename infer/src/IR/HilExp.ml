@@ -36,12 +36,12 @@ module Access = struct
 end
 
 (** Module where unsafe construction of [access_expression] is allowed. In the rest of the code, and
-   especially in clients of the whole [AccessExpression] module, we do not want to allow
-   constructing access expressions directly as they could introduce de-normalized expressions of the
-   form [AddressOf (Dereference t)] or [Dereference (AddressOf t)].
+    especially in clients of the whole [AccessExpression] module, we do not want to allow
+    constructing access expressions directly as they could introduce de-normalized expressions of
+    the form [AddressOf (Dereference t)] or [Dereference (AddressOf t)].
 
     We could make only the types of [AddressOf] and [Dereference] private but that proved too
-   cumbersome...  *)
+    cumbersome... *)
 module T : sig
   type t =
     | AccessExpression of access_expression
@@ -648,9 +648,8 @@ let rec eval_boolean_binop op var e1 e2 =
   |> Option.map ~f:(fun (b1, b2) -> op b1 b2)
 
 
-(** return [Some bool_value] if the given boolean expression evaluates to bool_value when
-   [var] is set to true. return None if it has free variables that stop us from
-   evaluating it *)
+(** return [Some bool_value] if the given boolean expression evaluates to bool_value when [var] is
+    set to true. return None if it has free variables that stop us from evaluating it *)
 and eval_boolean_exp var = function
   | AccessExpression access_expr when AccessExpression.equal access_expr var ->
       Some true

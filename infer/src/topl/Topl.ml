@@ -50,7 +50,7 @@ let get_max_args () =
 let get_transitions_count () = ToplAutomaton.tcount (Lazy.force automaton)
 
 (** Checks whether the method name and the number of arguments matches the conditions in a
-transition label. Possible optimization: also evaluate if arguments equal certain constants. *)
+    transition label. Possible optimization: also evaluate if arguments equal certain constants. *)
 let evaluate_static_guard label (e_fun, arg_ts) =
   let match_name () =
     match e_fun with
@@ -165,12 +165,12 @@ let instrument tenv procdesc =
     tt "add types %d@\n" !max_args ; add_types tenv ; tt "done@\n" )
 
 
-(** [lookup_static_var var prop] expects [var] to have the form [Exp.Lfield (obj, fieldname)],
-and looks up inside the spatial part of [prop]. This function is currently used only to get
-around some limitations:
-  (a) one cannot do boolean-conjunction on symbolic heaps; and
-  (b) the prover fails to see that 0!=o.f * o|-f->0 is inconsistent
-*)
+(** [lookup_static_var var prop] expects [var] to have the form [Exp.Lfield (obj, fieldname)], and
+    looks up inside the spatial part of [prop]. This function is currently used only to get around
+    some limitations:
+
+    + one cannot do boolean-conjunction on symbolic heaps; and
+    + the prover fails to see that 0!=o.f * o|-f->0 is inconsistent *)
 let lookup_static_var env (var : Exp.t) (prop : 'a Prop.t) : Exp.t option =
   let from_strexp = function Sil.Eexp (e, _) -> Some e | _ -> None in
   let get_field field (f, e) = if Typ.Fieldname.equal field f then from_strexp e else None in
@@ -210,21 +210,22 @@ let conjoin_props env post pre =
   List.fold ~init:post ~f:(Prop.prop_atom_and env) (Prop.get_pure pre)
 
 
-(**
-For each (pre, post) pair of symbolic heaps and each (start, error) pair of Topl automata states,
-define
-  φ := pre & post & (state_pre==start)
-  ψ := φ & (state_post!=error)
-where & stands for boolean conjunction, in pre all program variables get suffix "_pre", and in post
-all program variables get suffix "_post".
+(** For each (pre, post) pair of symbolic heaps and each (start, error) pair of Topl automata
+    states, define
 
-Warn when φ is consistent and ψ is inconsistent. (TODO: experiment with asking if it is not forced
-but *possible* to get to error.)
+    φ := pre & post & (state_pre==start)
 
-To compute (pre & post) the function [conjoin_props] from above is used, which returns a weaker
-formula: in particular, the spatial part of pre is dropped. To get around some limitations of the
-prover we also use [lookup_static_var]; if a call to this function fails, we don't warn.
-*)
+    ψ := φ & (state_post!=error)
+
+    where & stands for boolean conjunction, in pre all program variables get suffix "_pre", and in
+    post all program variables get suffix "_post".
+
+    Warn when φ is consistent and ψ is inconsistent. (TODO: experiment with asking if it is not
+    forced but *possible* to get to error.)
+
+    To compute (pre & post) the function [conjoin_props] from above is used, which returns a weaker
+    formula: in particular, the spatial part of pre is dropped. To get around some limitations of
+    the prover we also use [lookup_static_var]; if a call to this function fails, we don't warn. *)
 let add_errors exe_env summary =
   let proc_desc = summary.Summary.proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in

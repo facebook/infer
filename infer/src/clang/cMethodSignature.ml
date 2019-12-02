@@ -8,7 +8,7 @@
 open! IStd
 
 (** Define the signature of a method consisting of its name, its arguments, return type, location
-   and whether its an instance method.  *)
+    and whether its an instance method. *)
 
 module F = Format
 

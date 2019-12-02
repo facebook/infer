@@ -79,7 +79,7 @@ end
 
 module CFG = ProcCfg.Normal
 (** 5(a) Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
-   ignore them *)
+    ignore them *)
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))

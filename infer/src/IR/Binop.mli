@@ -22,8 +22,8 @@ type t =
   | Mod  (** % *)
   | Shiftlt  (** shift left *)
   | Shiftrt  (** shift right *)
-  | Lt  (** <  (arithmetic comparison) *)
-  | Gt  (** >  (arithmetic comparison) *)
+  | Lt  (** < (arithmetic comparison) *)
+  | Gt  (** > (arithmetic comparison) *)
   | Le  (** <= (arithmetic comparison) *)
   | Ge  (** >= (arithmetic comparison) *)
   | Eq  (** == (arithmetic comparison) *)
@@ -38,13 +38,12 @@ type t =
 val equal : t -> t -> bool
 
 val injective : t -> bool
-(** This function returns true if the operation is injective
-    wrt. each argument: op(e,-) and op(-, e) is injective for all e.
-    The return value false means "don't know". *)
+(** This function returns true if the operation is injective wrt. each argument: op(e,-) and op(-,
+    e) is injective for all e. The return value false means "don't know". *)
 
 val is_zero_runit : t -> bool
-(** This function returns true if 0 is the right unit of [binop].
-    The return value false means "don't know". *)
+(** This function returns true if 0 is the right unit of [binop]. The return value false means
+    "don't know". *)
 
 val str : Pp.env -> t -> string
 (** String representation of a binary operator. *)

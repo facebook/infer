@@ -50,12 +50,13 @@ let log_or_die fmt = if Config.keep_going then L.internal_error fmt else L.die I
 
 type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 
-(** The master's abstraction of state for workers.
-    See [worker_message] and [boss_message] below for transitions between states.
+(** The master's abstraction of state for workers. See [worker_message] and [boss_message] below for
+    transitions between states.
+
     - [Initializing] is the state a newly-forked worker is in.
-    - [Idle] is the state a worker goes to after it finishes initializing, or finishes processing a work item.
-    - [Processing x] means the worker is currently processing [x].
-*)
+    - [Idle] is the state a worker goes to after it finishes initializing, or finishes processing a
+      work item.
+    - [Processing x] means the worker is currently processing [x]. *)
 type 'a child_state = Initializing | Idle | Processing of 'a
 
 (** the state of the pool *)
@@ -74,9 +75,8 @@ type ('work, 'final) t =
 
 (** {2 Constants} *)
 
-(** refresh rate of the task bar (worst case: it also refreshes on children updates)
-    this is now mandatory to allow checking for new work packets, when none were
-    previously available *)
+(** refresh rate of the task bar (worst case: it also refreshes on children updates) this is now
+    mandatory to allow checking for new work packets, when none were previously available *)
 let refresh_timeout =
   let frames_per_second = 12 in
   `After (Time_ns.Span.of_int_ms (1_000 / frames_per_second))
@@ -99,14 +99,14 @@ type worker_message =
       (** [(i, t, status)]: starting a task from slot [i], at start time [t], with description
           [status]. Watch out that [status] must not be too close in length to [buffer_size]. *)
   | Ready of int
-      (** Sent after finishing initializing or after finishing a given task.
-          When received by master, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
+      (** Sent after finishing initializing or after finishing a given task. When received by
+          master, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
   | Crash of int  (** there was an error and the child is no longer receiving messages *)
 
 (** messages from the parent process down to worker processes *)
 type 'a boss_message =
   | Do of 'a
-      (** [Do x] is sent only when the worker is [Idle], and moves worker state to [Processing x]  *)
+      (** [Do x] is sent only when the worker is [Idle], and moves worker state to [Processing x] *)
   | GoHome  (** all tasks done, prepare for teardown *)
 
 (** convenience function to send data down pipes without forgetting to flush *)
@@ -132,8 +132,8 @@ let rec really_read ?(pos = 0) ~len fd ~buf =
 
 
 (** return a list of all updates coming from workers. The first update is expected for up to the
-    timeout [refresh_timeout].  After that, all already received updates are consumed but with zero timeout.
-    If there is none left, return the list. *)
+    timeout [refresh_timeout]. After that, all already received updates are consumed but with zero
+    timeout. If there is none left, return the list. *)
 let wait_for_updates pool buffer =
   let rec aux acc ~timeout =
     let file_descr = pool.children_updates in
@@ -239,7 +239,7 @@ let send_work_to_child pool slot =
 
 
 (** main dispatch function that responds to messages from worker processes and updates the taskbar
-   periodically *)
+    periodically *)
 let process_updates pool buffer =
   (* abort everything if some child has died unexpectedly *)
   has_dead_child pool

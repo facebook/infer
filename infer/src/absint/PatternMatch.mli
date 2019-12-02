@@ -10,7 +10,8 @@ open! IStd
 (** Module for Pattern matching. *)
 
 val get_this_type_nonstatic_methods_only : ProcAttributes.t -> Typ.t option
-(** Get the `this` type of a procedure. Should not be called on non-static methods, otherwise it can return a wrong type *)
+(** Get the `this` type of a procedure. Should not be called on non-static methods, otherwise it can
+    return a wrong type *)
 
 val get_type_name : Typ.t -> string
 (** Get the name of a type *)
@@ -46,8 +47,7 @@ val implements_collections : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Collections *)
 
 val implements_pseudo_collection : Tenv.t -> string -> bool
-(** Check whether class implements a pseudo Collection with support
-   for get() and size() methods *)
+(** Check whether class implements a pseudo Collection with support for get() and size() methods *)
 
 val implements_enumeration : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Enumeration *)
@@ -89,13 +89,13 @@ val implements_list : Tenv.t -> string -> bool
 (** Check whether class implements a Java's list *)
 
 val implements_google : string -> Tenv.t -> string -> bool
-(** Check whether class implements a class of Google  *)
+(** Check whether class implements a class of Google *)
 
 val implements_android : string -> Tenv.t -> string -> bool
-(** Check whether class implements a class of Android  *)
+(** Check whether class implements a class of Android *)
 
 val implements_xmob_utils : string -> Tenv.t -> string -> bool
-(** Check whether class implements a class of xmod.utils  *)
+(** Check whether class implements a class of xmod.utils *)
 
 val supertype_exists : Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> bool) -> Typ.Name.t -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
@@ -116,7 +116,8 @@ val proc_calls :
 
 val override_exists :
   ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
-(** Return true if applying the given predicate to an override of [procname] (including [procname] itself when [check_current_type] is true, which it is by default) returns true. *)
+(** Return true if applying the given predicate to an override of [procname] (including [procname]
+    itself when [check_current_type] is true, which it is by default) returns true. *)
 
 val override_iter : (Typ.Procname.t -> unit) -> Tenv.t -> Typ.Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
@@ -139,15 +140,15 @@ val is_throwable : Tenv.t -> Typ.Name.t -> bool
 (** [is_throwable tenv class_name] checks if class_name is of type java.lang.Throwable *)
 
 val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
-(** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
-     including supertypes*)
+(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, including
+    supertypes*)
 
 val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
-(** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
-    for current class only*)
+(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, for
+    current class only*)
 
 val find_superclasses_with_attributes :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Name.t -> Typ.Name.t list
-(** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
+(** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
 
 val is_override_of : Typ.Procname.t -> (Typ.Procname.t -> bool) Staged.t

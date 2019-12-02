@@ -138,10 +138,9 @@ end = struct
     QualifiedCppName.Match.of_fuzzy_qual_names class_names
 
 
-  (** C++ guard classes used for scope-based lock management.
-    NB we pretend all classes below implement the mutex interface even though only
-    [shared_lock] and [unique_lock] do, for simplicity.  The comments summarise which
-    methods are implemented. *)
+  (** C++ guard classes used for scope-based lock management. NB we pretend all classes below
+      implement the mutex interface even though only [shared_lock] and [unique_lock] do, for
+      simplicity. The comments summarise which methods are implemented. *)
   let guards =
     (* TODO std::scoped_lock *)
     [ (* no lock/unlock *)

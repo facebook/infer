@@ -21,10 +21,12 @@ module Path : sig
   type session = int
 
   val add_call : bool -> t -> Typ.Procname.t -> t -> t
-  (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
+  (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure
+      should be included *)
 
   val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
-  (** add a call to a procname that's had to be skipped, along with the reason and the location of the procname when known *)
+  (** add a call to a procname that's had to be skipped, along with the reason and the location of
+      the procname when known *)
 
   val contains_position : t -> PredSymb.path_pos -> bool
   (** check wether the path contains the given position *)
@@ -36,10 +38,12 @@ module Path : sig
   (** return the current node of the path *)
 
   val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
-  (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
+  (** extend a path with a new node reached from the given session, with an optional string for
+      exceptions *)
 
   val add_description : t -> string -> t
-  (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
+  (** extend a path with a new node reached from the given session, with an optional string for
+      exceptions *)
 
   val fold_all_nodes_nocalls : (t, Procdesc.Node.t, 'accum) Container.fold
   (** fold over each node in the path, excluding calls, once *)
@@ -87,8 +91,8 @@ end = struct
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
     | Pstart of Procdesc.Node.t * stats_  (** start node *)
     | Pnode of Procdesc.Node.t * Typ.Name.t option * session * t * stats_ * string_option_
-        (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
-        and continue with [path].  *)
+        (** we got to [node] from last [session] perhaps propagating exception [exn_opt], and
+            continue with [path]. *)
     | Pjoin of t * t * stats_  (** join of two paths *)
     | Pcall of t * procname_ * path_exec_ * stats_  (** add a sub-path originating from a call *)
   [@@deriving compare]
@@ -178,11 +182,11 @@ end = struct
 
 
     (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are
-        dummy.  Function [f] (typically with side-effects) is applied once to every node, and
+        dummy. Function [f] (typically with side-effects) is applied once to every node, and
         max_length in the stats is the length of a longest sequence of nodes in the path where [f]
-        returned [true] on at least one node.  max_length is 0 if the path was visited but no node
-        satisfying [f] was found.  Assumes that the invariant holds beforehand, and ensures that all
-        the stats are computed afterwards.  Since this breaks the invariant, it must be followed by
+        returned [true] on at least one node. max_length is 0 if the path was visited but no node
+        satisfying [f] was found. Assumes that the invariant holds beforehand, and ensures that all
+        the stats are computed afterwards. Since this breaks the invariant, it must be followed by
         reset_stats. *)
     let rec compute_stats do_calls (f : Procdesc.Node.t -> bool) =
       let nodes_found stats = stats.max_length > 0 in
@@ -266,10 +270,9 @@ end = struct
     !found
 
 
-  (** iterate over the longest sequence belonging to the path,
-      restricting to those where [filter] holds of some element.
-      If a node is reached via an exception,
-      pass the exception information to [f] on the previous node *)
+  (** iterate over the longest sequence belonging to the path, restricting to those where [filter]
+      holds of some element. If a node is reached via an exception, pass the exception information
+      to [f] on the previous node *)
   let iter_shortest_sequence_filter (f : int -> t -> int -> Typ.Name.t option -> unit)
       (filter : Procdesc.Node.t -> bool) (path : t) : unit =
     let rec doit level session path prev_exn_opt =
@@ -299,11 +302,10 @@ end = struct
     Invariant.reset_stats path
 
 
-  (** iterate over the shortest sequence belonging to the path,
-      restricting to those containing the given position if given.
-      Do not iterate past the last occurrence of the given position.
-      [f level path session exn_opt] is passed the current nesting [level] and [path]
-      and previous [session] and possible exception [exn_opt] *)
+  (** iterate over the shortest sequence belonging to the path, restricting to those containing the
+      given position if given. Do not iterate past the last occurrence of the given position.
+      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous
+      [session] and possible exception [exn_opt] *)
   let iter_shortest_sequence (f : int -> t -> int -> Typ.Name.t option -> unit)
       (pos_opt : PredSymb.path_pos option) (path : t) : unit =
     let filter node =
@@ -542,7 +544,8 @@ module PathSet : sig
   type t
 
   val add_renamed_prop : Prop.normal Prop.t -> Path.t -> t -> t
-  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
+  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was
+      called on the prop *)
 
   val diff : t -> t -> t
   (** difference between two pathsets *)
@@ -560,7 +563,8 @@ module PathSet : sig
   (** fold over a pathset *)
 
   val from_renamed_list : (Prop.normal Prop.t * Path.t) list -> t
-  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
+  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was
+      called on the list *)
 
   val is_empty : t -> bool
   (** check whether the pathset is empty *)
@@ -572,7 +576,8 @@ module PathSet : sig
   (** map over the prop component of a pathset *)
 
   val map_option : (Prop.normal Prop.t -> Prop.normal Prop.t option) -> t -> t
-  (** map over the prop component of a pathset using a partial function; elements mapped to None are discarded *)
+  (** map over the prop component of a pathset using a partial function; elements mapped to None are
+      discarded *)
 
   val partition : (Prop.normal Prop.t -> bool) -> t -> t * t
   (** partition a pathset on the prop component *)
@@ -618,7 +623,7 @@ end = struct
 
 
   (** It's the caller's responsibility to ensure that [Prop.prop_rename_primed_footprint_vars] was
-     called on the prop *)
+      called on the prop *)
   let add_renamed_prop (p : Prop.normal Prop.t) (path : Path.t) (ps : t) : t =
     let path_new =
       try
@@ -686,7 +691,8 @@ end = struct
     iter f ps
 
 
-  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
+  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was
+      called on the list *)
   let from_renamed_list (pl : ('a Prop.t * Path.t) list) : t =
     List.fold ~f:(fun ps (p, pa) -> add_renamed_prop p pa ps) ~init:empty pl
 end

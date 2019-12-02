@@ -20,8 +20,9 @@ module StructuredSil = struct
     | Cmd of Sil.instr
     | If of Exp.t * structured_instr list * structured_instr list
     | While of Exp.t * structured_instr list
-        (** try/catch/finally. note: there is no throw. the semantics are that every command in the try
-       block is assumed to be possibly-excepting, and the catch block captures all exceptions *)
+        (** try/catch/finally. note: there is no throw. the semantics are that every command in the
+            try block is assumed to be possibly-excepting, and the catch block captures all
+            exceptions *)
     | Try of structured_instr list * structured_instr list * structured_instr list
     | Invariant of assertion * label
         (** gets autotranslated into assertions about abstract state *)

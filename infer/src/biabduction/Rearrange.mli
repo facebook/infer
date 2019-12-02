@@ -33,6 +33,6 @@ val rearrange :
   -> Prop.normal Prop.t
   -> Location.t
   -> Sil.offset list Prop.prop_iter list
-(** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
-    It returns an iterator with [lexp |-> strexp: typ] as current predicate
-    and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)
+(** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ]. It returns an
+    iterator with [lexp |-> strexp: typ] as current predicate and the path (an [offsetlist]) which
+    leads to [lexp] as the iterator state. *)

@@ -11,7 +11,5 @@ type load_error
 val pp_load_error : Format.formatter -> load_error -> unit
 
 val load : path_to_repo_dir:string -> (ThirdPartyAnnotationInfo.storage, load_error) result
-(** Given a path to a repo with 3rd annotation info, loads it from a disk to
-    in-memory representation.
-    After this is done, information can be requested via [ThirdPartyAnnotationInfo].
- *)
+(** Given a path to a repo with 3rd annotation info, loads it from a disk to in-memory
+    representation. After this is done, information can be requested via [ThirdPartyAnnotationInfo]. *)

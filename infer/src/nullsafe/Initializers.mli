@@ -7,16 +7,16 @@
 
 open! IStd
 
-(** Functionality for evaluating typestates after class initialization.
-    Nullsafe's notion of initialization augments Java's one in the following way:
-    1. A method is considered "initializer" if it is either marked as @Initializer or is in
-       the list of known initializer methods (e.g. onCreate()).
-    2. For each constructor, Nullsafe assumes all initializer methods will be called after
-       the constructor is called. (Nullsafe does not check if this assumption is indeed true).
-    3. Nullsafe uses assumption 2, in order to check if class fields were initialized or not.
-       (a non-nullable field is considered not initialized if it is not initialized in at least
-       one constructor).
- *)
+(** Functionality for evaluating typestates after class initialization. Nullsafe's notion of
+    initialization augments Java's one in the following way:
+
+    + A method is considered "initializer" if it is either marked as [@Initializer] or is in the
+      list of known initializer methods (e.g. onCreate()).
+    + For each constructor, Nullsafe assumes all initializer methods will be called after the
+      constructor is called. (Nullsafe does not check if this assumption is indeed true).
+    + Nullsafe uses assumption 2, in order to check if class fields were initialized or not. (a
+      non-nullable field is considered not initialized if it is not initialized in at least one
+      constructor). *)
 
 val final_initializer_typestates_lazy :
      Tenv.t

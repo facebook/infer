@@ -21,8 +21,9 @@ let rec strip_template_args str =
     if String.equal result str then str else strip_template_args result
 
 
-(** [call_matches <named args> C methods] builds a method matcher for calls [C.foo] where
-    [foo] is in [methods].  Named arguments change behaviour:
+(** [call_matches <named args> C methods] builds a method matcher for calls [C.foo] where [foo] is
+    in [methods]. Named arguments change behaviour:
+
     - [search_superclasses=true] will match calls [S.foo] where [S] is a superclass of [C].
     - [method_prefix=true] will match calls [C.foo] where [foo] is a prefix of a string in [methods]
     - [actuals_pred] is a predicate that runs on the expressions fed as arguments to the call, and

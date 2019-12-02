@@ -54,8 +54,8 @@ let log_many entries =
   Scuba.log Scuba.InferEvents samples
 
 
-(** If scuba logging is disabled, we would not log anyway, but let's not even try
-    to create samples to save perf *)
+(** If scuba logging is disabled, we would not log anyway, but let's not even try to create samples
+    to save perf *)
 let log_many = if Config.scuba_logging then log_many else fun _ -> ()
 
 let log_one entry = log_many [entry]

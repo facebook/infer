@@ -9,11 +9,9 @@
 open! IStd
 
 val array_clean_new_index : bool -> Exp.t -> Exp.t
-(** This function should be used before adding a new
-    index to Earray. The [exp] is the newly created
-    index. This function "cleans" [exp] according to whether it is the
-    footprint or current part of the prop.
-    The function faults in the re - execution mode, as an internal check of the tool. *)
+(** This function should be used before adding a new index to Earray. The [exp] is the newly created
+    index. This function "cleans" [exp] according to whether it is the footprint or current part of
+    the prop. The function faults in the re - execution mode, as an internal check of the tool. *)
 
 (** Abstraction for Arrays *)
 

@@ -80,7 +80,8 @@ let libcxx_include_to_override_regex =
 
 
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
-   [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse order) [prev]. *)
+    [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse
+    order) [prev]. *)
 let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(post_args = [])
     ?(pre_args = []) args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
@@ -141,9 +142,9 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
       List.append pre_args (List.rev_append res_rev post_args)
 
 
-(** Work around various path or library issues occurring when one tries to substitute Apple's version
-    of clang with a different version. Also mitigate version discrepancies in clang's
-    fatal warnings. *)
+(** Work around various path or library issues occurring when one tries to substitute Apple's
+    version of clang with a different version. Also mitigate version discrepancies in clang's fatal
+    warnings. *)
 let clang_cc1_cmd_sanitizer cmd =
   let replace_args arg = function
     | Some override_regex when Str.string_match override_regex arg 0 ->

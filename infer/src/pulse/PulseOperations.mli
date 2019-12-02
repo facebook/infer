@@ -124,4 +124,4 @@ val unknown_call :
   -> t
   -> t
 (** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
-   the return value as appropriate *)
+    the return value as appropriate *)

@@ -8,7 +8,7 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 
-(** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
+(** Utility methods to support the translation of clang ast constructs into sil instructions. *)
 
 module L = Logging
 
@@ -118,7 +118,7 @@ let mk_cond_continuation cont =
 type priority_node = Free | Busy of Clang_ast_t.pointer
 
 (** A translation state. It provides the translation function with the info it needs to carry on the
-   translation. *)
+    translation. *)
 type trans_state =
   { context: CContext.t  (** current context of the translation *)
   ; succ_nodes: Procdesc.Node.t list  (** successor nodes in the cfg *)

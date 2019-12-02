@@ -7,9 +7,7 @@
 
 open! IStd
 
-(**
-  Current implementation will stack overflow on deep values (TODO: a tailrec version).
-*)
+(** Current implementation will stack overflow on deep values (TODO: a tailrec version). *)
 
 module Sharer : sig
   type t

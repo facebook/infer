@@ -169,8 +169,8 @@ let remove_locals_ret tenv (curr_f : Procdesc.t) p =
   snd (remove_locals tenv curr_f (remove_ret tenv curr_f p))
 
 
-(** Remove locals and formal parameters from the prop.
-    Return the list of stack variables whose address was still present after deallocation. *)
+(** Remove locals and formal parameters from the prop. Return the list of stack variables whose
+    address was still present after deallocation. *)
 let remove_locals_formals tenv (curr_f : Procdesc.t) p =
   let pvars1, p1 = remove_locals tenv curr_f p in
   let pvars2, p2 = remove_formals tenv curr_f p1 in

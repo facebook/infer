@@ -78,7 +78,7 @@ module Memory : sig
   val eval_edge :
     AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
-      returns what it points to or creates a fresh value if that edge didn't exist.  *)
+      returns what it points to or creates a fresh value if that edge didn't exist. *)
 
   val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
 
@@ -104,8 +104,8 @@ module PrePost : sig
     -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
     -> domain_t
     -> ((domain_t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
-  (** return the abstract state after the call along with an optional return value, or [None] if
-      the precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
+  (** return the abstract state after the call along with an optional return value, or [None] if the
+      precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
 end
 
 val discard_unreachable : t -> t

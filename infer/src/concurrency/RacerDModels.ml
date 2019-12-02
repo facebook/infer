@@ -130,7 +130,7 @@ let get_container_access pn tenv =
 
 
 (** holds of procedure names which should not be analyzed in order to avoid known sources of
-            inaccuracy *)
+    inaccuracy *)
 let should_skip =
   let matcher =
     lazy
@@ -467,7 +467,7 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
         false
 
 
-(** check that callee is abstract and accepts one argument. In addition, its argument type must be 
+(** check that callee is abstract and accepts one argument. In addition, its argument type must be
     equal to its return type. *)
 let is_abstract_getthis_like callee =
   attrs_of_pname callee

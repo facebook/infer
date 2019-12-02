@@ -2147,16 +2147,16 @@ let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) 
   res
 
 
-(**
-   The meet operator does two things:
-   1) makes the result logically stronger (just like additive conjunction)
-   2) makes the result spatially larger (just like multiplicative conjunction).
-   Assuming that the meet operator forms a partial commutative monoid (soft assumption: it means
-   that the results are more predictable), try to combine every element of plist with any other element.
-   Return a list of the same lenght, with each element maximally combined. The algorithm is quadratic.
-   The operation is dependent on the order in which elements are combined; there is a straightforward
-   order - independent algorithm but it is exponential.
-*)
+(** The meet operator does two things:
+
+    + makes the result logically stronger (just like additive conjunction)
+    + makes the result spatially larger (just like multiplicative conjunction).
+
+    Assuming that the meet operator forms a partial commutative monoid (soft assumption: it means
+    that the results are more predictable), try to combine every element of plist with any other
+    element. Return a list of the same lenght, with each element maximally combined. The algorithm
+    is quadratic. The operation is dependent on the order in which elements are combined; there is a
+    straightforward order - independent algorithm but it is exponential. *)
 let proplist_meet_generate tenv plist =
   let props_done = ref Propset.empty in
   let combine p (porig, pcombined) =

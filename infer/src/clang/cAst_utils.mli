@@ -50,12 +50,12 @@ val get_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 (** looks up clang pointer to type and returns c_type. It requires type_ptr to be `TPtr. *)
 
 val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
-(** looks up clang pointer to type and resolves any sugar around it.
-    See get_type for more info and restrictions *)
+(** looks up clang pointer to type and resolves any sugar around it. See get_type for more info and
+    restrictions *)
 
 val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
-(** returns declaration of the type for certain types
-    (RecordType, ObjCInterfaceType and None for others *)
+(** returns declaration of the type for certain types (RecordType, ObjCInterfaceType and None for
+    others *)
 
 val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> QualifiedCppName.t
 
@@ -101,8 +101,7 @@ val generate_key_decl : Clang_ast_t.decl -> string
 (** Generates a key for a declaration based on its name and the declaration tag. *)
 
 val get_super_if : Clang_ast_t.decl option -> Clang_ast_t.decl option
-(** Given an objc impl or interface decl, returns the objc interface decl of
-    the superclass, if any. *)
+(** Given an objc impl or interface decl, returns the objc interface decl of the superclass, if any. *)
 
 val get_impl_decl_info : Clang_ast_t.decl -> Clang_ast_t.obj_c_implementation_decl_info option
 
@@ -111,14 +110,11 @@ val get_super_ObjCImplementationDecl :
 (** Given an objc impl decl info, return its super class implementation decl *)
 
 val is_objc_if_descendant : ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
-(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
-    Returns true if the passed in decl is an objc interface decl that's an
-    eventual descendant of one of the classes passed in.
-    Ancestors param is a list of strings that represent the class names.
-    Will short-circuit on NSObject and NSProxy since those are known to be
-    common base classes.
-    The list of classes to short-circuit on can be overridden via specifying
-    the named `blacklist` argument. *)
+(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl. Returns true if the
+    passed in decl is an objc interface decl that's an eventual descendant of one of the classes
+    passed in. Ancestors param is a list of strings that represent the class names. Will
+    short-circuit on NSObject and NSProxy since those are known to be common base classes. The list
+    of classes to short-circuit on can be overridden via specifying the named `blacklist` argument. *)
 
 val qual_type_to_objc_interface : Clang_ast_t.qual_type -> Clang_ast_t.decl option
 

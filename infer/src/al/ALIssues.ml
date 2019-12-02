@@ -202,7 +202,8 @@ let string_to_issue_mode m =
 
 type parsed_issue_type =
   { name: string option
-        (** issue name, if no name is given name will be a readable version of id, by removing underscores and capitalizing first letters of words *)
+        (** issue name, if no name is given name will be a readable version of id, by removing
+            underscores and capitalizing first letters of words *)
   ; doc_url: string option }
 
 (** Convert a parsed checker in list of linters *)

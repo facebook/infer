@@ -65,7 +65,8 @@ module Jprop = struct
   (** Get identifies of the jprop *)
   let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
 
-  (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
+  (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined
+      props *)
   let pp_list pe ~shallow f jplist =
     let rec pp_seq_newline f = function
       | [] ->
@@ -155,9 +156,10 @@ module Visitedset = struct
 end
 
 (** A spec consists of:
-    pre: a joined prop
-    post: a list of props with path
-    visited: a list of pairs (node_id, line) for the visited nodes *)
+
+    - pre: a joined prop
+    - post: a list of props with path
+    - visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = {pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited: Visitedset.t}
 
 (** encapsulate type for normalized specs *)

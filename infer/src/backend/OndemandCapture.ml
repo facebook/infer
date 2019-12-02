@@ -10,8 +10,8 @@ module L = Logging
 let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_dbs)
 
 (** Given proc_attributes try to produce proc_attributes' where proc_attributes'.is_defined = true
-    It may trigger capture of extra files to do so and when it does, it waits for
-    frontend to finish before returning *)
+    It may trigger capture of extra files to do so and when it does, it waits for frontend to finish
+    before returning *)
 let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
   let (lazy cdb) = compilation_db in
   ( if Option.is_none (Attributes.load_defined attributes.proc_name) then

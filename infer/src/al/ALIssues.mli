@@ -19,13 +19,12 @@ val filter_parsed_linters : linter list -> SourceFile.t -> linter list
 
 val pp_linters : Format.formatter -> linter list -> unit
 
-(** map used to expand macro. It maps a formula id to a triple
-   (visited, parameters, definition).
-   Visited is used during the expansion phase to understand if the
-   formula was already expanded and, if yes we have a cyclic definifion *)
+(** map used to expand macro. It maps a formula id to a triple (visited, parameters, definition).
+    Visited is used during the expansion phase to understand if the formula was already expanded
+    and, if yes we have a cyclic definifion *)
 type macros_map = (bool * ALVar.t list * CTLTypes.t) ALVar.FormulaIdMap.t
 
-(** Map a path name to a list of paths.  *)
+(** Map a path name to a list of paths. *)
 type paths_map = ALVar.t list ALVar.VarMap.t
 
 (* Module for warnings detected at translation time by the frontend *)

@@ -97,7 +97,8 @@ end
 include sig
   [@@@warning "-60"]
 
-  (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of [Below] are strictly smaller than elements of [Above] *)
+  (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of
+      [Below] are strictly smaller than elements of [Above] *)
   module Stacked (Below : S) (Above : S) : S with type t = (Below.t, Above.t) below_above
 end
 
@@ -135,8 +136,8 @@ module StackedUtils : sig
     ('b, 'a) below_above -> f_below:('b -> 'b2) -> f_above:('a -> 'a2) -> ('b2, 'a2) below_above
 end
 
-(** Abstracts a set of [Element]s by keeping its smallest representative only.
-  The widening is terminating only if the order fulfills the descending chain condition. *)
+(** Abstracts a set of [Element]s by keeping its smallest representative only. The widening is
+    terminating only if the order fulfills the descending chain condition. *)
 module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) : sig
   type elt = Element.t
 
@@ -166,8 +167,8 @@ end
 include sig
   [@@@warning "-60"]
 
-  (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
-    a *finite* collection of possible values, since the widening operator here is just union. *)
+  (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn
+      from a *finite* collection of possible values, since the widening operator here is just union. *)
   module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
 end
 
@@ -196,8 +197,8 @@ include sig
   [@@@warning "-60"]
 
   (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
-    Every element implicitly maps to bottom unless it is explicitly bound to something else.
-    Uses PPMap as the underlying map *)
+      Every element implicitly maps to bottom unless it is explicitly bound to something else. Uses
+      PPMap as the underlying map *)
   module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
     MapS with type key = PPMap.key and type value = ValueDomain.t and type t = ValueDomain.t PPMap.t
 end
@@ -218,9 +219,9 @@ end
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
   InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
-(** Similar to [InvertedMap] but it guarantees that it has a canonical form. For example, both [{a
-   -> top_v}] and [empty] represent the same abstract value [top] in [InvertedMap], but in this
-   implementation, [top] is always implemented as [empty] by not adding the [top_v] explicitly. *)
+(** Similar to [InvertedMap] but it guarantees that it has a canonical form. For example, both
+    [{a -> top_v}] and [empty] represent the same abstract value [top] in [InvertedMap], but in this
+    implementation, [top] is always implemented as [empty] by not adding the [top_v] explicitly. *)
 module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : WithTop) :
   InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
@@ -273,8 +274,8 @@ module CountDomain (MaxCount : MaxCount) : sig
   (** capped sum of two states *)
 end
 
-(** Domain keeping a non-negative count with a bounded maximum value. 
-    [join] is minimum and [top] is zero. *)
+(** Domain keeping a non-negative count with a bounded maximum value. [join] is minimum and [top] is
+    zero. *)
 module DownwardIntDomain (MaxCount : MaxCount) : sig
   include WithTop with type t = private int
   (** top is zero *)

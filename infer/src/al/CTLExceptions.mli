@@ -8,7 +8,7 @@
 open! IStd
 
 exception ALParserInvariantViolationException of string
-(** Raised when the parser encounters a violation of a certain invariant  *)
+(** Raised when the parser encounters a violation of a certain invariant *)
 
 type exc_info
 

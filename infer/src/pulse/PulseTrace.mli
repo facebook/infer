@@ -21,8 +21,8 @@ type t =
 val pp : pp_immediate:(F.formatter -> unit) -> F.formatter -> t -> unit
 
 val get_outer_location : t -> Location.t
-(** skip histories and go straight to the where the action is: either the action itself or the
-    call that leads to the action *)
+(** skip histories and go straight to the where the action is: either the action itself or the call
+    that leads to the action *)
 
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)

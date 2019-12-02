@@ -91,15 +91,13 @@ module Make (Set : Set) = struct
     let remove_now t r = H.remove t r
   end
 
-  (**
-    Data-structure for disjoint sets.
-    [reprs] is the mapping element -> representative
-    [sets] is the mapping representative -> set
+  (** Data-structure for disjoint sets. [reprs] is the mapping element -> representative [sets] is
+      the mapping representative -> set
 
-    It implements path-compression and union by size, hence find and union are amortized O(1)-ish.
+      It implements path-compression and union by size, hence find and union are amortized O(1)-ish.
 
-    [nb_iterators] and [to_remove] are used to defer removing elements to avoid iterator invalidation during fold.
-  *)
+      [nb_iterators] and [to_remove] are used to defer removing elements to avoid iterator
+      invalidation during fold. *)
   type t = {reprs: Reprs.t; sets: Sets.t; mutable nb_iterators: int; mutable to_remove: Repr.t list}
 
   let create () = {reprs= Reprs.create (); sets= Sets.create (); nb_iterators= 0; to_remove= []}

@@ -10,7 +10,7 @@ open! IStd
 open Javalib_pack
 open Sawja_pack
 
-(** Data structure for storing the results of the translation of an instruction.   *)
+(** Data structure for storing the results of the translation of an instruction. *)
 type translation =
   | Skip
   | Instr of Procdesc.Node.t
@@ -62,8 +62,8 @@ val create_cm_procdesc :
   -> JCode.jcode Javalib.concrete_method
   -> Typ.Procname.t
   -> (Procdesc.t * Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t * JBir.t) option
-(** [create_procdesc source_file program linereader icfg cm proc_name] creates
-    a procedure description for the concrete method cm and adds it to cfg *)
+(** [create_procdesc source_file program linereader icfg cm proc_name] creates a procedure
+    description for the concrete method cm and adds it to cfg *)
 
 val instruction : JContext.t -> int -> JBir.instr -> translation
 (** translates an instruction into a statement node or prune nodes in the cfg *)

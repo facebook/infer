@@ -912,7 +912,7 @@ let decode_env_to_argv env =
   String.split ~on:env_var_sep env |> List.filter ~f:(Fn.non String.is_empty)
 
 
-(** [prefix_before_rest (prefix @ ["--" :: rest])] is [prefix] where "--" is not in [prefix]. *)
+(** [prefix_before_rest (prefix @ \["--" :: rest\])] is [prefix] where "--" is not in [prefix]. *)
 let rev_prefix_before_rest args =
   let rec rev_prefix_before_rest_ rev_keep = function
     | [] | "--" :: _ ->

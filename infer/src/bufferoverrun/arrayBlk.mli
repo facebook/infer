@@ -43,15 +43,15 @@ val is_symbolic : t -> bool
 (** Check if there is a symbolic integer value in its offset or size *)
 
 val lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> Boolean.t
-(** Lift a comparison of [Itv.t] and [Loc.t] to that of [t].  The comparison for [Itv.t] is used for
-   integer values such as offset and size, and the comparison for [Loc.t] is used for allocsites. *)
+(** Lift a comparison of [Itv.t] and [Loc.t] to that of [t]. The comparison for [Itv.t] is used for
+    integer values such as offset and size, and the comparison for [Loc.t] is used for allocsites. *)
 
 val transform_length : f:(Itv.t -> Itv.t) -> t -> t
 (** Apply [f] to all sizes *)
 
 val prune_comp : Binop.t -> t -> t -> t
 (** [prune_comp comp x y] returns a pruned value of [x] by [comp] and [y]. [comp] should be
-   [Binop.Le], [Ge], [Lt], or [Gt]. *)
+    [Binop.Le], [Ge], [Lt], or [Gt]. *)
 
 val prune_eq : t -> t -> t
 (** [prune_eq x y] returns a pruned value of [x] by [== y]. *)
@@ -67,15 +67,15 @@ val diff : t -> t -> Itv.t
 (** Return difference of offsets between given array blocks *)
 
 val normalize : t -> t
-(** Normalize all interval values such as offset and size in it.  Thus, if an interval value is
-   invalid, the interval value is replaced with bottom. *)
+(** Normalize all interval values such as offset and size in it. Thus, if an interval value is
+    invalid, the interval value is replaced with bottom. *)
 
 val subst : t -> Bounds.Bound.eval_sym -> AbsLoc.PowLoc.eval_locpath -> AbsLoc.PowLoc.t * t
 (** Substitute symbolic abstract locations and symbolic interval value in the array block.
-   [eval_sym] is to get substituted interval values and [eval_locpath] is to get substituted
-   abstract locaion values.  It also returns a set of abstract locations containing non-allocsite
-   locations from the substitution results.  Since the key of [ArrayBlk.t] is [AbsLoc.Allocsite.t],
-   they cannot be written in this domain. *)
+    [eval_sym] is to get substituted interval values and [eval_locpath] is to get substituted
+    abstract locaion values. It also returns a set of abstract locations containing non-allocsite
+    locations from the substitution results. Since the key of [ArrayBlk.t] is [AbsLoc.Allocsite.t],
+    they cannot be written in this domain. *)
 
 val set_length : Itv.t -> t -> t
 
@@ -87,9 +87,9 @@ val get_symbols : t -> Symb.SymbolSet.t
 (** Return all symbols for integer values in it *)
 
 val get_offset : ?cost_mode:bool -> t -> Itv.t
-(** Return offset of the array block.  If [cost_mode] is [true], it returns a conservative
-   (bigger than correct one), but not correct offset results. *)
+(** Return offset of the array block. If [cost_mode] is [true], it returns a conservative (bigger
+    than correct one), but not correct offset results. *)
 
 val get_size : ?cost_mode:bool -> t -> Itv.t
-(** Return size of the array block.  If [cost_mode] is [true], it returns a conservative (bigger
-   than correct one), but not correct size results. *)
+(** Return size of the array block. If [cost_mode] is [true], it returns a conservative (bigger than
+    correct one), but not correct size results. *)

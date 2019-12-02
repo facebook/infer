@@ -7,10 +7,8 @@
 
 open! IStd
 
-(**
-  Log entry data model, global log entry store and functions to manipulate it.
-  Direct access to the store is not exposed.
-*)
+(** Log entry data model, global log entry store and functions to manipulate it. Direct access to
+    the store is not exposed. *)
 
 type count_entry_data = {value: int}
 

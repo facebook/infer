@@ -8,9 +8,8 @@
 open! IStd
 
 val contains_ck_impl : Clang_ast_t.decl list -> bool
-(** Returns true if the passed-in list of decls contains an
-    ObjCImplementationDecl of a descendant of CKComponent or
-    CKComponentController.
+(** Returns true if the passed-in list of decls contains an ObjCImplementationDecl of a descendant
+    of CKComponent or CKComponentController.
 
     Does not recurse into hierarchy. *)
 

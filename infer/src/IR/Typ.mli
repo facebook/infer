@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+[@@@ocamlformat "parse-docstrings = false"]
+
 (** The Smallfoot Intermediate Language: Types *)
 
 open! IStd

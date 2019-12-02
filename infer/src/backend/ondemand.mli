@@ -14,11 +14,11 @@ val get_proc_desc : Typ.Procname.t -> Procdesc.t option
 
 val analyze_proc_desc : caller_summary:Summary.t -> Procdesc.t -> Summary.t option
 (** [analyze_proc_desc ~caller_summary callee_pdesc] performs an on-demand analysis of callee_pdesc
-   triggered during the analysis of caller_summary *)
+    triggered during the analysis of caller_summary *)
 
 val analyze_proc_name : caller_summary:Summary.t -> Typ.Procname.t -> Summary.t option
 (** [analyze_proc_name ~caller_summary callee_pname] performs an on-demand analysis of callee_pname
-   triggered during the analysis of caller_summary *)
+    triggered during the analysis of caller_summary *)
 
 val analyze_proc_name_no_caller : Typ.Procname.t -> Summary.t option
 (** [analyze_proc_name_no_caller callee_pname] performs an on-demand analysis of callee_pname

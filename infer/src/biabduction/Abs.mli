@@ -17,9 +17,8 @@ val abstract : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Pro
 (** Abstract a proposition. *)
 
 val abstract_junk : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
-(** Check whether the prop contains junk.
-    If it does, and [Config.allowleak] is true, remove the junk,
-    otherwise raise a Leak exception. *)
+(** Check whether the prop contains junk. If it does, and [Config.allowleak] is true, remove the
+    junk, otherwise raise a Leak exception. *)
 
 val abstract_no_symop : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Abstract a proposition but don't pay a SymOp *)

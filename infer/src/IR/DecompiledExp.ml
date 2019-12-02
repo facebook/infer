@@ -27,8 +27,8 @@ type t =
   | Dunknown
   | Dretcall of t * t list * Location.t * CallFlags.t
 
-(** Value paths: identify an occurrence of a value in a symbolic heap
-    each expression represents a path, with Dpvar being the simplest one *)
+(** Value paths: identify an occurrence of a value in a symbolic heap each expression represents a
+    path, with Dpvar being the simplest one *)
 type vpath = t option
 
 let eradicate_java () = Config.eradicate && Language.curr_language_is Java

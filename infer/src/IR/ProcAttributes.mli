@@ -17,7 +17,8 @@ type var_data =
   { name: Mangled.t
   ; typ: Typ.t
   ; modify_in_block: bool
-        (** __block attribute of Objective-C variables, means that it will be modified inside a block *)
+        (** __block attribute of Objective-C variables, means that it will be modified inside a
+            block *)
   ; is_constexpr: bool }
 
 type t =

@@ -776,8 +776,8 @@ module Call = struct
    fun m ~on_args:_ _context _args _f_capt -> RetryWith m
 
 
-  (** Retries matching with another matcher if the function does not have the
-    exact number/types of args *)
+  (** Retries matching with another matcher if the function does not have the exact number/types of
+      args *)
   let exact_args_or_retry :
       ('context, 'f, 'arg_payload) matcher -> ('context, _, _, 'arg_payload) func_args_end =
    fun m -> alternative_args_end no_args_left (args_end_retry m)
@@ -869,7 +869,7 @@ module type NameCommon = sig
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
-        accepts ALL function arguments, binds the function *)
+      accepts ALL function arguments, binds the function *)
 end
 
 module NameCommon = struct

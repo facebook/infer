@@ -23,7 +23,7 @@ module Key = struct
     }
 
   (** Current keys for various serializable objects. The keys are computed using the [generate_keys]
-     function below *)
+      function below *)
   let tenv, summary, issues =
     ( {name= "tenv"; key= 425184201}
     , {name= "summary"; key= 160179325}

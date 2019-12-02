@@ -251,9 +251,10 @@ module Server = struct
 
   let socket_domain = Unix.domain_of_sockaddr socket_addr
 
-  (** Unix socket *paths* have a historical length limit of ~100 chars (!?*@&*$).  However, this only applies
-      to the argument passed in the system call to create the socket, not to the actual path.  
-      Thus a workaround is to cd into the parent dir of the socket and then use it, hence this function. *)
+  (** Unix socket *paths* have a historical length limit of ~100 chars (!?*\@&*$). However, this
+      only applies to the argument passed in the system call to create the socket, not to the actual
+      path. Thus a workaround is to cd into the parent dir of the socket and then use it, hence this
+      function. *)
   let in_results_dir ~f = Utils.do_in_dir ~dir:Config.toplevel_results_dir ~f
 
   let rec server_loop socket =

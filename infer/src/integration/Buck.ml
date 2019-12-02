@@ -213,8 +213,8 @@ let split_buck_command buck_cmd =
         accepted_buck_commands
 
 
-(** Given a list of arguments return the extended list of arguments where
-the args in a file have been extracted *)
+(** Given a list of arguments return the extended list of arguments where the args in a file have
+    been extracted *)
 let inline_argument_files buck_args =
   let expand_buck_arg buck_arg =
     if String.is_prefix ~prefix:"@" buck_arg then

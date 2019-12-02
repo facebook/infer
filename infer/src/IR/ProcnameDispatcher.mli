@@ -103,8 +103,8 @@ module type Common = sig
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> ('context -> string -> bool)
     -> ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
-  (** Separates names that satisfies the given function (accepts ALL
-     template arguments on the left one) *)
+  (** Separates names that satisfies the given function (accepts ALL template arguments on the left
+      one) *)
 
   val ( <>:: ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
@@ -137,7 +137,7 @@ module type NameCommon = sig
     -> ('context, 'f_out, 'arg_payload) matcher
 
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
-        accepts ALL function arguments, binds the function *)
+      accepts ALL function arguments, binds the function *)
 end
 
 module ProcName :
@@ -179,7 +179,7 @@ module Call : sig
 
   val capt_arg_payload :
     ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
-  (** Captures the payload of one arg at current state  *)
+  (** Captures the payload of one arg at current state *)
 
   val capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures one arg expression *)
@@ -279,7 +279,8 @@ module Call : sig
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-  (** After a name, accepts ALL template arguments, accepts NO function arguments, binds the function *)
+  (** After a name, accepts ALL template arguments, accepts NO function arguments, binds the
+      function *)
 
   val ( <>$$--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
@@ -291,20 +292,22 @@ module Call : sig
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-  (** After a name, accepts ALL template arguments, accepts ALL function arguments, binds the function *)
+  (** After a name, accepts ALL template arguments, accepts ALL function arguments, binds the
+      function *)
 
   val ( <>--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-  (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the function *)
+  (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the
+      function *)
 
   val ( &++> ) :
        ('context, 'f_in, 'arg_payload FuncArg.t list -> 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
   (** After a name, accepts ALL template arguments, captures ALL function arguments as a list, binds
-     the function *)
+      the function *)
 
   val ( &::.*--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
@@ -317,7 +320,7 @@ module Call : sig
        ('context, 'f_in, 'f_proc_out, 'f_out, 'arg_payload) args_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-  (** Ends function arguments, accepts NO more function arguments.
-    If the args do not match, raise an internal error. *)
+  (** Ends function arguments, accepts NO more function arguments. If the args do not match, raise
+      an internal error. *)
 end
 [@@warning "-32"]

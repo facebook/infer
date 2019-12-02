@@ -10,8 +10,8 @@ open! IStd
 
 (** Printers for the analysis results *)
 
-(** Module to read specific lines from files.
-    The data from any file will stay in memory until the handle is collected by the gc *)
+(** Module to read specific lines from files. The data from any file will stay in memory until the
+    handle is collected by the gc *)
 module LineReader : sig
   type t
 

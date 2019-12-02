@@ -31,8 +31,8 @@ type t =
   | Constant of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Sizeof of Typ.t * t option
-      (** C-style sizeof(), and also used to treate a type as an expression. Refer to [Exp] module for
-      canonical documentation *)
+      (** C-style sizeof(), and also used to treate a type as an expression. Refer to [Exp] module
+          for canonical documentation *)
 
 and access_expression = private
   | Base of AccessPath.base
@@ -81,12 +81,12 @@ module AccessExpression : sig
   val add_access : access_expression -> t option Access.t -> access_expression option
 
   val truncate : access_expression -> (access_expression * t option Access.t) option
-  (** remove and return the prefix and the last access of the expression if it's a base;
-      otherwise return None *)
+  (** remove and return the prefix and the last access of the expression if it's a base; otherwise
+      return None *)
 
   val append : onto:access_expression -> access_expression -> access_expression option
-  (** [append ~onto y] replaces the base of [y] with [onto] itself; this makes sense if no 
-     [Dereference (AddressOf _)] instances are introduced *)
+  (** [append ~onto y] replaces the base of [y] with [onto] itself; this makes sense if no
+      [Dereference (AddressOf _)] instances are introduced *)
 
   type nonrec t = access_expression = private
     | Base of AccessPath.base
@@ -124,9 +124,9 @@ val is_int_zero : t -> bool
 val eval : t -> Const.t option
 
 val eval_boolean_exp : AccessExpression.t -> t -> bool option
-(** [eval_boolean_exp var exp] returns [Some bool_value] if the given boolean expression [exp] 
-    evaluates to [bool_value] when [var] is set to true.  Return None if it has free variables 
-    that stop us from evaluating it, or is not a boolean expression. *)
+(** [eval_boolean_exp var exp] returns [Some bool_value] if the given boolean expression [exp]
+    evaluates to [bool_value] when [var] is set to true. Return None if it has free variables that
+    stop us from evaluating it, or is not a boolean expression. *)
 
 val ignore_cast : t -> t
 

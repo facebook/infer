@@ -7,9 +7,10 @@
 
 open! IStd
 
-(** In this module an ObjC category declaration or implementation is processed. The category    *)
+(** In this module an ObjC category declaration or implementation is processed. The category *)
 
-(** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
+(** is saved in the tenv as a struct with the corresponding fields and methods , and the class it
+    belongs to *)
 
 val category_decl :
      CAst_utils.qual_type_to_sil_type

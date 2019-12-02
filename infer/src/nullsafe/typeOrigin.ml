@@ -20,21 +20,19 @@ type t =
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ArrayAccess  (** Result of accessing an array by index *)
   | InferredNonnull of {previous_origin: t}
-      (** The value is inferred as non-null during flow-sensitive type inference
-          (most commonly from relevant condition branch or assertion explicitly comparing the value with `null`) *)
+      (** The value is inferred as non-null during flow-sensitive type inference (most commonly from
+          relevant condition branch or assertion explicitly comparing the value with `null`) *)
   (* Below are two special values. *)
   | OptimisticFallback
-      (** Something went wrong during typechecking.
-          We fall back to optimistic (not-nullable) type to reduce potential non-actionable false positives.
-          Ideally we should not see these instances. They should be either processed gracefully
-          (and a dedicated type constructor should be added), or fixed.
-          T54687014 tracks unsoundness issues caused by this type.
-      *)
+      (** Something went wrong during typechecking. We fall back to optimistic (not-nullable) type
+          to reduce potential non-actionable false positives. Ideally we should not see these
+          instances. They should be either processed gracefully (and a dedicated type constructor
+          should be added), or fixed. T54687014 tracks unsoundness issues caused by this type. *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
 
 and field_origin =
-  { object_origin: t  (** field's object origin (object is before field access operator `.`)  *)
+  { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
   ; field_name: Typ.Fieldname.t
   ; field_type: AnnotatedType.t
   ; access_loc: Location.t }

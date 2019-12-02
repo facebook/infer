@@ -27,9 +27,9 @@ module Jprop : sig
   val free_vars : Prop.normal t -> Ident.t Sequence.t
 
   val filter : ('a t -> 'b option) -> 'a t list -> 'b list
-  (** [jprop_filter filter joinedprops] applies [filter] to the elements
-      of [joindeprops] and applies it to the subparts if the result is
-      [None]. Returns the most absract results which pass [filter]. *)
+  (** [jprop_filter filter joinedprops] applies [filter] to the elements of [joindeprops] and
+      applies it to the subparts if the result is [None]. Returns the most absract results which
+      pass [filter]. *)
 
   val jprop_sub : Sil.subst -> Prop.normal t -> Prop.exposed t
   (** apply a substitution to a jprop *)
@@ -45,9 +45,10 @@ module Visitedset : Caml.Set.S with type elt = Procdesc.Node.id * int list
 (** set of visited nodes: node id and list of lines of all the instructions *)
 
 (** A spec consists of:
-    pre: a joined prop
-    posts: a list of props with path
-    visited: a list of pairs (node_id, line) for the visited nodes *)
+
+    - pre: a joined prop
+    - posts: a list of props with path
+    - visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = {pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited: Visitedset.t}
 
 (** encapsulate type for normalized specs *)

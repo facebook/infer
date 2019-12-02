@@ -41,8 +41,8 @@ module type DF = sig
   val join : state list -> state -> state
 
   val run : Tenv.t -> Procdesc.t -> state -> Procdesc.Node.t -> transition
-  (** Run the dataflow analysis on a procedure starting from the given state.
-      Returns a function to lookup the results of the analysis on every node *)
+  (** Run the dataflow analysis on a procedure starting from the given state. Returns a function to
+      lookup the results of the analysis on every node *)
 end
 
 (** Functor to create an instance of a dataflow analysis. *)

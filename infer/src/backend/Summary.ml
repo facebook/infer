@@ -222,19 +222,15 @@ module OnDisk = struct
         load_summary_to_spec_table proc_name
 
 
-  (** Check if the procedure is from a library:
-    It's not defined, and there is no spec file for it. *)
+  (** Check if the procedure is from a library: It's not defined, and there is no spec file for it. *)
   let proc_is_library proc_attributes =
     if not proc_attributes.ProcAttributes.is_defined then
       match get proc_attributes.ProcAttributes.proc_name with None -> true | Some _ -> false
     else false
 
 
-  (** Try to find the attributes for a defined proc.
-    First look at specs (to get attributes computed by analysis)
-    then look at the attributes table.
-    If no attributes can be found, return None.
-*)
+  (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
+      by analysis) then look at the attributes table. If no attributes can be found, return None. *)
   let proc_resolve_attributes proc_name =
     match get proc_name with
     | Some summary ->

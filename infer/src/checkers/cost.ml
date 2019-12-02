@@ -390,18 +390,21 @@ module ConstraintSolver = struct
       loop max
 
 
-    (**
-    Infer equalities from sums, like this:
-      (1) A + sum1 = A + sum2  =>  sum1 = sum2
+    (** Infer equalities from sums, like this:
 
-    It does not try to saturate
-      (2) A = B + C  /\  B = D + E  =>  A = C + D + E
-    Nor combine more than 2 equations
-      (3) A = B + C  /\  B = D + E  /\  F = C + D + E  =>  A = F
-      ((3) is implied by (1) /\ (2))
+        (1) A + sum1 = A + sum2 => sum1 = sum2
 
-    Its complexity is unknown but I think it is bounded by nbNodes x nbEdges x max.
-  *)
+        It does not try to saturate
+
+        (2) A = B + C /\ B = D + E => A = C + D + E
+
+        Nor combine more than 2 equations
+
+        (3) A = B + C /\ B = D + E /\ F = C + D + E => A = F
+
+        ((3) is implied by (1) /\ (2))
+
+        Its complexity is unknown but I think it is bounded by nbNodes x nbEdges x max. *)
     let infer_equalities_from_sums ~debug equalities ~max =
       let normalizer = normalizer equalities in
       let f ~did_improve (_repr, set) =
@@ -429,10 +432,9 @@ module ConstraintSolver = struct
           ControlFlowCost.Set.init_cost ~of_node set )
 
 
-    (**
-      From sums: if A = B + C, do cost(A) = min(cost(A), cost(B) + cost(C))
-      From inequalities: if A = B + C, then B <= A, do cost(B) = min(cost(B), cost(A))
-    *)
+    (** From sums: if A = B + C, do cost(A) = min(cost(A), cost(B) + cost(C))
+
+        From inequalities: if A = B + C, then B <= A, do cost(B) = min(cost(B), cost(A)) *)
     let improve_costs ~debug equalities ~max =
       let of_item (item : ControlFlowCost.Item.t) =
         (item :> ControlFlowCost.t)
@@ -649,15 +651,13 @@ module ThresholdReports = struct
       CostIssues.enabled_cost_map none
 end
 
-(** Calculate the final Worst Case Cost predicted for each cost field
-   and each WTO component.  It is the dot product of the symbolic cost
-   of the node and how many times it is executed.  *)
+(** Calculate the final Worst Case Cost predicted for each cost field and each WTO component. It is
+    the dot product of the symbolic cost of the node and how many times it is executed. *)
 module WorstCaseCost = struct
   type astate = {costs: CostDomain.t; reports: ThresholdReports.t}
 
-  (** We don't report when the cost is Top as it corresponds to
-     subsequent 'don't know's.  Instead, we report Top cost only at
-     the top level per function.  *)
+  (** We don't report when the cost is Top as it corresponds to subsequent 'don't know's. Instead,
+      we report Top cost only at the top level per function. *)
   let should_report_cost cost ~threshold =
     (not (BasicCost.is_top cost)) && not (BasicCost.leq ~lhs:cost ~rhs:threshold)
 

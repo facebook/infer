@@ -350,8 +350,8 @@ module PrePost = struct
     | Aliasing of
         {addr_caller: AbstractValue.t; addr_callee: AbstractValue.t; addr_callee': AbstractValue.t}
         (** raised when the precondition and the current state disagree on the aliasing, i.e. some
-            addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to
-            a single address [caller_addr] in the caller's current state. Typically raised when
+            addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
+            single address [caller_addr] in the caller's current state. Typically raised when
             calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
     | Arithmetic of
         { addr_caller: AbstractValue.t
@@ -384,10 +384,9 @@ module PrePost = struct
     ; visited: AddressSet.t
           (** set of callee addresses that have been visited already
 
-               NOTE: this is not always equal to the domain of [rev_subst]: when applying the post
-               we visit each subgraph from each formal independently so we reset [visited] between
-              the visit of each formal *)
-    }
+              NOTE: this is not always equal to the domain of [rev_subst]: when applying the post we
+              visit each subgraph from each formal independently so we reset [visited] between the
+              visit of each formal *) }
 
   let pp_call_state fmt {astate; subst; rev_subst; visited} =
     F.fprintf fmt
@@ -447,8 +446,8 @@ module PrePost = struct
 
 
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
-     [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
-     addresses are traversed in the process. *)
+      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
+      addresses are traversed in the process. *)
   let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre
       ~addr_hist_caller call_state =
     match visit call_state ~addr_callee:addr_pre ~addr_hist_caller with

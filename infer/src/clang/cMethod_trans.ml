@@ -7,12 +7,12 @@
 
 open! IStd
 
-(** Methods for creating a procdesc from a method or function declaration
-    and for resolving a method call and finding the right callee *)
+(** Methods for creating a procdesc from a method or function declaration and for resolving a method
+    call and finding the right callee *)
 
 module L = Logging
 
-(** When the methoc call is MCStatic, means that it is a class method.  When it is MCVirtual, it
+(** When the methoc call is MCStatic, means that it is a class method. When it is MCVirtual, it
     means that it is an instance method and that the method to be called will be determined at
     runtime. If it is MCNoVirtual it means that it is an instance method but that the method to be
     called will be determined at compile time *)

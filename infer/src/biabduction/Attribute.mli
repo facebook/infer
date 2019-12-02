@@ -32,8 +32,8 @@ val add_or_replace_check_changed :
   -> Prop.normal Prop.t
   -> Sil.atom
   -> Prop.normal Prop.t
-(** Replace an attribute associated to the expression, and call the given function with new and
-    old attributes if they changed. *)
+(** Replace an attribute associated to the expression, and call the given function with new and old
+    attributes if they changed. *)
 
 val get_all : 'a Prop.t -> Sil.atom list
 (** Get all the attributes of the prop *)
@@ -77,12 +77,12 @@ val map_resource :
 (** Apply f to every resource attribute in the prop *)
 
 val replace_objc_null : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> Prop.normal Prop.t
-(** [replace_objc_null lhs rhs].
-    If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
+(** [replace_objc_null lhs rhs]. If rhs has the objc_null attribute, replace the attribute and set
+    the lhs = 0 *)
 
 val nullify_exp_with_objc_null : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Prop.normal Prop.t
-(** For each Var subexp of the argument with an Aobjc_null attribute,
-    remove the attribute and conjoin an equality to zero. *)
+(** For each Var subexp of the argument with an Aobjc_null attribute, remove the attribute and
+    conjoin an equality to zero. *)
 
 val mark_vars_as_undefined :
      Tenv.t
@@ -113,7 +113,7 @@ val find_arithmetic_problem :
 
 val deallocate_stack_vars :
   Tenv.t -> Prop.normal Prop.t -> Pvar.t list -> Pvar.t list * Prop.normal Prop.t
-(** Deallocate the stack variables in [pvars], and replace them by normal variables.
-    Return the list of stack variables whose address was still present after deallocation. *)
+(** Deallocate the stack variables in [pvars], and replace them by normal variables. Return the list
+    of stack variables whose address was still present after deallocation. *)
 
 val find_equal_formal_path : Tenv.t -> Exp.t -> 'a Prop.t -> Exp.t option

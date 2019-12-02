@@ -16,7 +16,7 @@ type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle
 type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Typ.Procname.t * Pvar.t
 
 (** A retain cycle is a non-empty list of paths. It also contains a pointer to the head of the list
-to model the cycle structure. The next element from the end of the list is the head. *)
+    to model the cycle structure. The next element from the end of the list is the head. *)
 type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
 
 module Set : Caml.Set.S with type elt = t

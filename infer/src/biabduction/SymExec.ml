@@ -44,20 +44,17 @@ let unroll_type tenv (typ : Typ.t) (off : Sil.offset) =
       fail (Sil.pp_offset Pp.text) off
 
 
-(** Apply function [f] to the expression at position [offlist] in [strexp].
-    If not found, expand [strexp] and apply [f] to [None].
-    The routine should maintain the invariant that strexp and typ correspond to
-    each other exactly, without involving any re - interpretation of some type t
-    as the t array. The [fp_root] parameter indicates whether the kind of the
-    root expression of the corresponding pointsto predicate is a footprint identifier.
-    The function can expand a list of higher - order [hpara_psto] predicates, if
-    the list is stored at [offlist] in [strexp] initially. The expanded list
-    is returned as a part of the result. All these happen under [p], so that it
-    is sound to call the prover with [p]. Finally, before running this function,
-    the tool should run strexp_extend_value in rearrange.ml for the same strexp
-    and offlist, so that all the necessary extensions of strexp are done before
-    this function. If the tool follows this protocol, it will never hit the assert
-    false cases for field and array accesses. *)
+(** Apply function [f] to the expression at position [offlist] in [strexp]. If not found, expand
+    [strexp] and apply [f] to [None]. The routine should maintain the invariant that strexp and typ
+    correspond to each other exactly, without involving any re - interpretation of some type t as
+    the t array. The [fp_root] parameter indicates whether the kind of the root expression of the
+    corresponding pointsto predicate is a footprint identifier. The function can expand a list of
+    higher - order [hpara_psto] predicates, if the list is stored at [offlist] in [strexp]
+    initially. The expanded list is returned as a part of the result. All these happen under [p], so
+    that it is sound to call the prover with [p]. Finally, before running this function, the tool
+    should run strexp_extend_value in rearrange.ml for the same strexp and offlist, so that all the
+    necessary extensions of strexp are done before this function. If the tool follows this protocol,
+    it will never hit the assert false cases for field and array accesses. *)
 let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
     (f : Exp.t option -> Exp.t) inst lookup_inst =
   let pp_error () =
@@ -164,18 +161,16 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
       raise (Exceptions.Internal_error (Localise.verbatim_desc "Array out of bounds in Symexec"))
 
 
-(** Given [lexp |-> se: typ], if the location [offlist] exists in [se],
-    function [ptsto_lookup p (lexp, se, typ) offlist id] returns a tuple.
-    The first component of the tuple is an expression at position [offlist] in [se].
-    The second component is an expansion of the predicate [lexp |-> se: typ],
-    where the entity at [offlist] in [se] is expanded if the entity is a list of
-    higher - order parameters [hpara_psto]. If this expansion happens,
-    the last component of the tuple is a list of pi - sigma pairs obtained
-    by instantiating the [hpara_psto] list. Otherwise, the last component is None.
-    All these steps happen under [p]. So, we can call a prover with [p].
-    Finally, before running this function, the tool should run strexp_extend_value
-    in rearrange.ml for the same se and offlist, so that all the necessary
-    extensions of se are done before this function. *)
+(** Given [lexp |-> se: typ], if the location [offlist] exists in [se], function
+    [ptsto_lookup p (lexp, se, typ) offlist id] returns a tuple. The first component of the tuple is
+    an expression at position [offlist] in [se]. The second component is an expansion of the
+    predicate [lexp |-> se: typ], where the entity at [offlist] in [se] is expanded if the entity is
+    a list of higher - order parameters [hpara_psto]. If this expansion happens, the last component
+    of the tuple is a list of pi - sigma pairs obtained by instantiating the [hpara_psto] list.
+    Otherwise, the last component is None. All these steps happen under [p]. So, we can call a
+    prover with [p]. Finally, before running this function, the tool should run strexp_extend_value
+    in rearrange.ml for the same se and offlist, so that all the necessary extensions of se are done
+    before this function. *)
 let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
   let f = function Some exp -> exp | None -> Exp.Var id in
   let fp_root = match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
@@ -192,17 +187,13 @@ let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
   (e', ptsto', pred_insts_op', lookup_uninitialized)
 
 
-(** [ptsto_update p (lexp,se,typ) offlist exp] takes
-    [lexp |-> se: typ], and updates [se] by replacing the
-    expression at [offlist] with [exp]. Then, it returns
-    the updated pointsto predicate. If [lexp |-> se: typ] gets
-    expanded during this update, the generated pi - sigma list from
-    the expansion gets returned, and otherwise, None is returned.
-    All these happen under the proposition [p], so it is ok call
-    prover with [p]. Finally, before running this function,
-    the tool should run strexp_extend_value in rearrange.ml for the same
-    se and offlist, so that all the necessary extensions of se are done
-    before this function. *)
+(** [ptsto_update p (lexp,se,typ) offlist exp] takes [lexp |-> se: typ], and updates [se] by
+    replacing the expression at [offlist] with [exp]. Then, it returns the updated pointsto
+    predicate. If [lexp |-> se: typ] gets expanded during this update, the generated pi - sigma list
+    from the expansion gets returned, and otherwise, None is returned. All these happen under the
+    proposition [p], so it is ok call prover with [p]. Finally, before running this function, the
+    tool should run strexp_extend_value in rearrange.ml for the same se and offlist, so that all the
+    necessary extensions of se are done before this function. *)
 let ptsto_update pdesc tenv p (lexp, se, sizeof) offlist exp =
   let f _ = exp in
   let fp_root = match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
@@ -221,8 +212,7 @@ let update_iter iter pi sigma =
   List.fold ~f:(Prop.prop_iter_add_atom false) ~init:iter' pi
 
 
-(** Precondition: se should not include hpara_psto
-    that could mean nonempty heaps. *)
+(** Precondition: se should not include hpara_psto that could mean nonempty heaps. *)
 let rec execute_nullify_se = function
   | Sil.Eexp _ ->
       Sil.Eexp (Exp.zero, Sil.inst_nullify)
@@ -234,8 +224,8 @@ let rec execute_nullify_se = function
       Sil.Earray (len, esel', Sil.inst_nullify)
 
 
-(** Do pruning for conditional [if (e1 != e2) ] if [positive] is true
-    and [(if (e1 == e2)] if [positive] is false *)
+(** Do pruning for conditional [if (e1 != e2)] if [positive] is true and [(if (e1 == e2)] if
+    [positive] is false *)
 let prune_ne tenv ~positive e1 e2 prop =
   let is_inconsistent =
     if positive then Prover.check_equal tenv prop e1 e2 else Prover.check_disequal tenv prop e1 e2
@@ -248,10 +238,9 @@ let prune_ne tenv ~positive e1 e2 prop =
     else Propset.singleton tenv new_prop
 
 
-(** Do pruning for conditional "if ([e1] CMP [e2])" if [positive] is
-    true and "if (!([e1] CMP [e2]))" if [positive] is false, where CMP
-    is "<" if [is_strict] is true and "<=" if [is_strict] is false.
-*)
+(** Do pruning for conditional "if ([e1] CMP [e2])" if [positive] is true and "if (!([e1] CMP
+    [e2]))" if [positive] is false, where CMP is "<" if [is_strict] is true and "<=" if [is_strict]
+    is false. *)
 let prune_ineq tenv ~is_strict ~positive prop e1 e2 =
   if Exp.equal e1 e2 then
     if (positive && not is_strict) || ((not positive) && is_strict) then Propset.singleton tenv prop
@@ -486,8 +475,8 @@ let check_already_dereferenced tenv pname cond prop =
       ()
 
 
-(** Check whether symbolic execution de-allocated a stack variable or a constant string,
-    raising an exception in that case *)
+(** Check whether symbolic execution de-allocated a stack variable or a constant string, raising an
+    exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
     | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [Lvar pv])
@@ -693,8 +682,8 @@ type resolve_and_analyze_result =
   ; resolved_summary_opt: Summary.t option
   ; dynamic_dispatch_status: EventLogger.dynamic_dispatch option }
 
-(** Resolve the procedure name and run the analysis of the resolved procedure
-    if not already analyzed *)
+(** Resolve the procedure name and run the analysis of the resolved procedure if not already
+    analyzed *)
 let resolve_and_analyze tenv ~caller_summary ?(has_clang_model = false) prop args callee_proc_name
     call_flags : resolve_and_analyze_result =
   (* TODO (#15748878): Fix conflict with method overloading by encoding in the procedure name
@@ -736,8 +725,8 @@ let resolve_and_analyze tenv ~caller_summary ?(has_clang_model = false) prop arg
   {resolved_pname; resolved_procdesc_opt; resolved_summary_opt; dynamic_dispatch_status}
 
 
-(** recognize calls to the constructor java.net.URL and splits the argument string
-    to be only the protocol.  *)
+(** recognize calls to the constructor java.net.URL and splits the argument string to be only the
+    protocol. *)
 let call_constructor_url_update_args pname actual_params =
   let url_pname =
     Typ.Procname.Java
@@ -1532,8 +1521,8 @@ and diverge prop path =
   []
 
 
-(** Symbolic execution of a sequence of instructions.
-    If errors occur and [mask_errors] is true, just treat as skip. *)
+(** Symbolic execution of a sequence of instructions. If errors occur and [mask_errors] is true,
+    just treat as skip. *)
 and instrs ?(mask_errors = false) exe_env tenv summary instrs ppl =
   let exe_instr instr (p, path) =
     L.d_str "Executing Generated Instruction " ;

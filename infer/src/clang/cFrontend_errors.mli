@@ -34,8 +34,8 @@ val incorrect_assumption :
   -> ?ast_node:string
   -> ('a, Format.formatter, unit, _) format4
   -> 'a
-(** Used to mark places in the frontend that incorrectly assume something to be
-    impossible. TODO(t21762295) get rid of all instances of this. *)
+(** Used to mark places in the frontend that incorrectly assume something to be impossible.
+    TODO(t21762295) get rid of all instances of this. *)
 
 val protect :
      f:(unit -> unit)

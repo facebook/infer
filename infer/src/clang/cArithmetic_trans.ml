@@ -47,8 +47,8 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
 
 
 (** Returns a pair ([binary_expression], instructions). "binary_expression" is returned when we are
-   calculating an expression "instructions" is not empty when the binary operator is actually a
-   statement like an assignment. *)
+    calculating an expression "instructions" is not empty when the binary operator is actually a
+    statement like an assignment. *)
 let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ (e2, t2) loc =
   let binop_exp ?(change_order = false) op =
     if change_order then Exp.BinOp (op, e2, e1) else Exp.BinOp (op, e1, e2)

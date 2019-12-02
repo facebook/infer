@@ -40,7 +40,7 @@ let should_do_frontend_check translation_unit (loc_start, _) =
       false
 
 
-(** We translate by default the instructions in the current file.  In C++ development, we also
+(** We translate by default the instructions in the current file. In C++ development, we also
     translate the headers that are part of the project. However, in testing mode, we don't want to
     translate the headers because the dot files in the frontend tests should contain nothing else
     than the source file to avoid conflicts between different versions of the libraries. *)

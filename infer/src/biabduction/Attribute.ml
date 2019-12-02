@@ -189,10 +189,9 @@ let rec nullify_exp_with_objc_null tenv prop exp =
       prop
 
 
-(** mark Exp.Var's or Exp.Lvar's as undefined
-The annotations of the return type of the method get propagated to the return id,
-with the exception of when the return type is a struct, and we translate it as passing a reference
-to the method.  *)
+(** mark Exp.Var's or Exp.Lvar's as undefined The annotations of the return type of the method get
+    propagated to the return id, with the exception of when the return type is a struct, and we
+    translate it as passing a reference to the method. *)
 let mark_vars_as_undefined tenv prop ~ret_exp ~undefined_actuals_by_ref callee_pname ret_annots loc
     path_pos =
   let mark_var_as_undefined ~annot exp prop =
@@ -278,8 +277,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
   (problem_opt, !res)
 
 
-(** Deallocate the stack variables in [pvars], and replace them by normal variables.
-    Return the list of stack variables whose address was still present after deallocation. *)
+(** Deallocate the stack variables in [pvars], and replace them by normal variables. Return the list
+    of stack variables whose address was still present after deallocation. *)
 let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   let filter = function
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
@@ -334,9 +333,8 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   (!stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p''' pi)
 
 
-(** Input of this method is an exp in a prop. Output is a formal variable or path from a
-    formal variable that is equal to the expression,
-    or the OBJC_NULL attribute of the expression. *)
+(** Input of this method is an exp in a prop. Output is a formal variable or path from a formal
+    variable that is equal to the expression, or the OBJC_NULL attribute of the expression. *)
 let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
     List.fold_right

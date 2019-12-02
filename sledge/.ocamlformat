@@ -1,4 +1,5 @@
 profile = compact
 break-before-in = fit-or-vertical
 margin = 76
+parse-docstrings = true
 wrap-comments = true

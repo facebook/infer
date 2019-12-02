@@ -63,6 +63,6 @@ val merge : src:t -> dst:t -> unit
 
 val merge_per_file : src:per_file -> dst:per_file -> per_file
 (** Best-effort merge of [src] into [dst]. If a procedure is both in [dst] and [src], the one in
-   [dst] will get overwritten. *)
+    [dst] will get overwritten. *)
 
 module SQLite : SqliteUtils.Data with type t = per_file

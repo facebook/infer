@@ -15,8 +15,8 @@ module L = Logging
 
 let verbose = Config.trace_error
 
-(** check if the error was reported inside a nested loop
-    the implementation is approximate: check if the last two visits to a loop were entering loops *)
+(** check if the error was reported inside a nested loop the implementation is approximate: check if
+    the last two visits to a loop were entering loops *)
 let check_nested_loop path pos_opt =
   let trace_length = ref 0 in
   let loop_visits_log = ref [] in
@@ -56,8 +56,8 @@ let check_nested_loop path pos_opt =
   in_nested_loop ()
 
 
-(** Check that we know where the value was last assigned,
-    and that there is a local access instruction at that line. **)
+(** Check that we know where the value was last assigned, and that there is a local access
+    instruction at that line. **)
 let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node =

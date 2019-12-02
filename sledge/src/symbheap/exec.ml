@@ -9,7 +9,7 @@
 
 [@@@warning "+9"]
 
-(** generic command: ∀xs. {foot ∧ sub} ms := - {post} *)
+(** generic command: [∀xs. {foot ∧ sub} ms := - {post}] *)
 type spec =
   {xs: Var.Set.t; foot: Sh.t; sub: Var.Subst.t; ms: Var.Set.t; post: Sh.t}
 

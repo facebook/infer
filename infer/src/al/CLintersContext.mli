@@ -18,8 +18,8 @@ type context =
   ; parent_methods: Clang_ast_t.decl list
   ; in_synchronized_block: bool
   ; is_ck_translation_unit: bool
-        (** True if the translation unit contains an ObjC class impl that's a subclass
-            of CKComponent or CKComponentController. *)
+        (** True if the translation unit contains an ObjC class impl that's a subclass of
+            CKComponent or CKComponentController. *)
   ; current_objc_class: Clang_ast_t.decl option
         (** If inside an objc class, contains the objc class (impl or interface) decl. *)
   ; current_objc_category: Clang_ast_t.decl option

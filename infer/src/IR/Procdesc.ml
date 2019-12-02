@@ -627,9 +627,9 @@ let create_node pdesc loc kind instrs =
   create_node_from_not_reversed pdesc loc kind (Instrs.of_list instrs)
 
 
-(** Set the successor and exception nodes.
-    If this is a join node right before the exit node, add an extra node in the middle,
-    otherwise nullify and abstract instructions cannot be added after a conditional. *)
+(** Set the successor and exception nodes. If this is a join node right before the exit node, add an
+    extra node in the middle, otherwise nullify and abstract instructions cannot be added after a
+    conditional. *)
 let node_set_succs pdesc (node : Node.t) ~normal:succs ~exn =
   match (node.kind, succs) with
   | Join_node, [({Node.kind= Exit_node} as exit_node)] ->
@@ -676,10 +676,9 @@ let get_wto pdesc =
       wto
 
 
-(** Get loop heads for widening.
-   It collects all target nodes of back-edges in a depth-first traversal.
-   We need to use the exceptional CFG otherwise we will miss loop heads in catch clauses.
-*)
+(** Get loop heads for widening. It collects all target nodes of back-edges in a depth-first
+    traversal. We need to use the exceptional CFG otherwise we will miss loop heads in catch
+    clauses. *)
 let get_loop_heads pdesc =
   match pdesc.loop_heads with
   | Some lh ->

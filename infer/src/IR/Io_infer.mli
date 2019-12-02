@@ -50,10 +50,9 @@ module Html : sig
     -> Format.formatter
     -> int
     -> unit
-  (** Print an html link to the given node.
-      Usage: [pp_node_link path_to_root ... fmt id].
-      [path_to_root] is the path to the dir for the procedure in the spec db.
-      [id] is the node identifier. *)
+  (** Print an html link to the given node. Usage: [pp_node_link path_to_root ... fmt id].
+      [path_to_root] is the path to the dir for the procedure in the spec db. [id] is the node
+      identifier. *)
 
   val pp_proc_link : DB.Results_dir.path -> Typ.Procname.t -> Format.formatter -> string -> unit
   (** Print an html link to the given proc *)

@@ -10,10 +10,10 @@ module AccessExpression = HilExp.AccessExpression
 module F = Format
 module MF = MarkupFormatter
 
-(** Master function for deciding whether RacerD should completely ignore a variable as the root
-    of an access expression.  Currently fires on *static locals* and any variable which does not
-    appear in source code (eg, temporary variables and frontend introduced variables).
-    This is because currently reports on these variables would not be easily actionable.
+(** Master function for deciding whether RacerD should completely ignore a variable as the root of
+    an access expression. Currently fires on *static locals* and any variable which does not appear
+    in source code (eg, temporary variables and frontend introduced variables). This is because
+    currently reports on these variables would not be easily actionable.
 
     This is here and not in RacerDModels to avoid dependency cycles. *)
 let should_skip_var v =
@@ -119,9 +119,9 @@ end
 
 module TraceElem = struct
   include ExplicitTrace.MakeTraceElemModuloLocation (Access) (CallPrinter)
-  (** This choice means the comparator is insensitive to the location access. 
-      This preserves correctness only if the overlying comparator (AccessSnapshot) 
-      takes into account the characteristics of the access (eg lock status). *)
+  (** This choice means the comparator is insensitive to the location access. This preserves
+      correctness only if the overlying comparator (AccessSnapshot) takes into account the
+      characteristics of the access (eg lock status). *)
 
   let is_write {elem} = Access.is_write elem
 

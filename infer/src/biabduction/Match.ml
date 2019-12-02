@@ -14,13 +14,12 @@ module L = Logging
 
 let mem_idlist i l = List.exists ~f:(Ident.equal i) l
 
-(** Type for a hpred pattern. flag=false means that the implication
-    between hpreds is not considered, and flag = true means that it is
-    considered during pattern matching *)
+(** Type for a hpred pattern. flag=false means that the implication between hpreds is not
+    considered, and flag = true means that it is considered during pattern matching *)
 type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
-(** Checks [e1 = e2[sub ++ sub']] for some [sub'] with [dom(sub') subseteq vars].
-    Returns [(sub ++ sub', vars - dom(sub'))]. *)
+(** Checks [e1 = e2\[sub ++ sub'\]] for some [sub'] with [dom(sub') subseteq vars]. Returns
+    [(sub ++ sub', vars - dom(sub'))]. *)
 let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
   let check_equal sub vars e1 e2 =
     let e2_inst = Sil.exp_sub sub e2 in
@@ -95,10 +94,9 @@ let exp_list_match es1 sub vars es2 =
       None
 
 
-(** Checks [sexp1 = sexp2[sub ++ sub']] for some [sub'] with
-    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))].
-    WARNING: This function does not consider the fact that the analyzer
-    sometimes forgets fields of hpred. It can possibly cause a problem. *)
+(** Checks [sexp1 = sexp2\[sub ++ sub'\]] for some [sub'] with [dom(sub') subseteq vars]. Returns
+    [(sub ++ sub', vars - dom(sub'))]. WARNING: This function does not consider the fact that the
+    analyzer sometimes forgets fields of hpred. It can possibly cause a problem. *)
 let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
   match (sexp1, sexp2) with
   | Sil.Eexp (exp1, _), Sil.Eexp (exp2, _) ->
@@ -117,8 +115,8 @@ let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
         None )
 
 
-(** Checks [fsel1 = fsel2[sub ++ sub']] for some [sub'] with
-    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))]. *)
+(** Checks [fsel1 = fsel2\[sub ++ sub'\]] for some [sub'] with [dom(sub') subseteq vars]. Returns
+    [(sub ++ sub', vars - dom(sub'))]. *)
 and fsel_match fsel1 sub vars fsel2 =
   match (fsel1, fsel2) with
   | [], [] ->
@@ -141,8 +139,8 @@ and fsel_match fsel1 sub vars fsel2 =
       else None
 
 
-(** Checks [isel1 = isel2[sub ++ sub']] for some [sub'] with
-    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))]. *)
+(** Checks [isel1 = isel2\[sub ++ sub'\]] for some [sub'] with [dom(sub') subseteq vars]. Returns
+    [(sub ++ sub', vars - dom(sub'))]. *)
 and isel_match isel1 sub vars isel2 =
   match (isel1, isel2) with
   | [], [] ->
@@ -543,11 +541,11 @@ and hpara_dll_match_with_impl tenv impl_ok para1 para2 : bool =
   hpara_common_match_with_impl tenv impl_ok ids1 para1.Sil.body_dll eids2 ids2 para2.Sil.body_dll
 
 
-(** [prop_match_with_impl p condition vars hpat hpats]
-    returns [(subst, p_leftover)] such that
+(** [prop_match_with_impl p condition vars hpat hpats] returns [(subst, p_leftover)] such that
+
     + [dom(subst) = vars]
-    + [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
-    Using the flag [field], we can control the strength of |-. *)
+    + [p |- (hpat.hpred * hpats.hpred)\[subst\] * p_leftover]. Using the flag [field], we can
+      control the strength of |-. *)
 let prop_match_with_impl tenv p condition vars hpat hpats =
   prop_match_with_impl_sub tenv p condition Sil.sub_empty vars hpat hpats
 
@@ -673,11 +671,10 @@ let hpara_dll_iso tenv para1 para2 =
   && hpara_dll_match_with_impl tenv false para2 para1
 
 
-(** [generic_find_partial_iso] finds isomorphic subsigmas of [sigma_todo].
-    The function [update] is used to get rid of hpred pairs from [sigma_todo].
-    [sigma_corres] records the isormophic copies discovered so far. The first
-    parameter determines how much flexibility we will allow during this partial
-    isomorphism finding. *)
+(** [generic_find_partial_iso] finds isomorphic subsigmas of [sigma_todo]. The function [update] is
+    used to get rid of hpred pairs from [sigma_todo]. [sigma_corres] records the isormophic copies
+    discovered so far. The first parameter determines how much flexibility we will allow during this
+    partial isomorphism finding. *)
 let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigma_todo =
   match todos with
   | [] ->
@@ -780,12 +777,11 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
       None
 
 
-(** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma.
-    The function returns a partial iso and three sigmas. The first sigma is the first
-    copy of the two isomorphic sigmas, so it uses expressions in the domain of
-    the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
-    and it uses expressions in the range of the isomorphism. The third is the unused
-    part of the input sigma. *)
+(** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma. The function
+    returns a partial iso and three sigmas. The first sigma is the first copy of the two isomorphic
+    sigmas, so it uses expressions in the domain of the returned isomorphism. The second is the
+    second copy of the two isomorphic sigmas, and it uses expressions in the range of the
+    isomorphism. The third is the unused part of the input sigma. *)
 let find_partial_iso tenv eq corres todos sigma =
   let update e1 e2 sigma0 =
     let hpredo1, sigma0_no_e1 = sigma_remove_hpred eq sigma0 e1 in
@@ -811,13 +807,11 @@ let hpred_lift_to_pe hpred =
 (** Lift the kind of list segment predicates to PE in a given sigma *)
 let sigma_lift_to_pe sigma = List.map ~f:hpred_lift_to_pe sigma
 
-(** [generic_para_create] takes a correspondence, and a sigma
-    and a list of expressions for the first part of this
-    correspondence. Then, it creates a renaming of expressions
-    in the domain of the given correspondence, and applies this
-    renaming to the given sigma. The result is a tuple of the renaming,
-    the renamed sigma, ids for existentially quantified expressions,
-    ids for shared expressions, and shared expressions. *)
+(** [generic_para_create] takes a correspondence, and a sigma and a list of expressions for the
+    first part of this correspondence. Then, it creates a renaming of expressions in the domain of
+    the given correspondence, and applies this renaming to the given sigma. The result is a tuple of
+    the renaming, the renamed sigma, ids for existentially quantified expressions, ids for shared
+    expressions, and shared expressions. *)
 let generic_para_create tenv corres sigma1 elist1 =
   let corres_ids =
     let not_same_consts = function
@@ -847,9 +841,8 @@ let generic_para_create tenv corres sigma1 elist1 =
   (renaming, body, ids_exists, ids_shared, es_shared)
 
 
-(** [hpara_create] takes a correspondence, and a sigma, a root
-    and a next for the first part of this correspondence. Then, it creates a
-    hpara and discovers a list of shared expressions that are
+(** [hpara_create] takes a correspondence, and a sigma, a root and a next for the first part of this
+    correspondence. Then, it creates a hpara and discovers a list of shared expressions that are
     passed as arguments to hpara. Both of them are returned as a result. *)
 let hpara_create tenv corres sigma1 root1 next1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
@@ -867,10 +860,9 @@ let hpara_create tenv corres sigma1 root1 next1 =
   (hpara, es_shared)
 
 
-(** [hpara_dll_create] takes a correspondence, and a sigma, a root,
-    a blink and a flink for the first part of this correspondence. Then, it creates a
-    hpara_dll and discovers a list of shared expressions that are
-    passed as arguments to hpara. Both of them are returned as a result. *)
+(** [hpara_dll_create] takes a correspondence, and a sigma, a root, a blink and a flink for the
+    first part of this correspondence. Then, it creates a hpara_dll and discovers a list of shared
+    expressions that are passed as arguments to hpara. Both of them are returned as a result. *)
 let hpara_dll_create tenv corres sigma1 root1 blink1 flink1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
     generic_para_create tenv corres sigma1 [root1; blink1; flink1]

@@ -11,12 +11,11 @@ module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
-(** Make sure we don't depend on {!AbstractValue} to avoid attributes depending on
-    values. Otherwise they become a pain to handle when comparing memory states.
+(** Make sure we don't depend on {!AbstractValue} to avoid attributes depending on values. Otherwise
+    they become a pain to handle when comparing memory states.
 
-    If you find you need to make attributes depend on {!AbstractValue} then remember to modify
-    graph operations of {!PulseDomain} and the interprocedural operations in {!PulseAbductiveDomain}
-*)
+    If you find you need to make attributes depend on {!AbstractValue} then remember to modify graph
+    operations of {!PulseDomain} and the interprocedural operations in {!PulseAbductiveDomain} *)
 include struct
   [@@@warning "-60"]
 

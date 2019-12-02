@@ -275,8 +275,8 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-(** Before analyzing Java instance methods (non-constructor, non-static), compute the attributes
-    of instance variables that all constructors agree on after termination. *)
+(** Before analyzing Java instance methods (non-constructor, non-static), compute the attributes of
+    instance variables that all constructors agree on after termination. *)
 let add_constructor_attributes tenv procname (astate : Domain.t) =
   let open Domain in
   let skip_constructor_analysis =
@@ -585,7 +585,7 @@ let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
     The net effect of the above issues is that we will only see these locks in conflicting pairs
     once, as opposed to twice with all other deadlock pairs. *)
 
-(** report warnings possible on the parallel composition of two threads/critical pairs 
+(** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
 let report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock other_pname
     other_pair report_map =

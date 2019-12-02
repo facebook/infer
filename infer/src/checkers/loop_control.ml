@@ -72,11 +72,8 @@ let get_exit_nodes_in_loop loop_nodes =
   Control.GuardNodes.diff succs_of_loop_nodes loop_nodes |> Control.GuardNodes.elements
 
 
-(**
-  Starting from the start_nodes, find all the nodes upwards until the
-  target is reached, i.e picking up predecessors which have not been
-  already added to the found_nodes
-*)
+(** Starting from the start_nodes, find all the nodes upwards until the target is reached, i.e
+    picking up predecessors which have not been already added to the found_nodes *)
 let get_all_nodes_upwards_until target start_nodes =
   let rec aux found_nodes = function
     | [] ->
@@ -94,11 +91,8 @@ let is_prune node =
   match Procdesc.Node.get_kind node with Procdesc.Node.Prune_node _ -> true | _ -> false
 
 
-(**
-  Remove pairs of prune nodes that are for the same condition,
-  i.e. sibling of the same parent. This is necessary to prevent
-  picking unnecessary control variables in do-while like loops
-*)
+(** Remove pairs of prune nodes that are for the same condition, i.e. sibling of the same parent.
+    This is necessary to prevent picking unnecessary control variables in do-while like loops *)
 let remove_prune_node_pairs exit_nodes guard_nodes =
   let exit_nodes = Control.GuardNodes.of_list exit_nodes in
   let except_exit_nodes = Control.GuardNodes.diff guard_nodes exit_nodes in
@@ -112,10 +106,8 @@ let remove_prune_node_pairs exit_nodes guard_nodes =
   |> Control.GuardNodes.union exit_nodes
 
 
-(**
-  Since there could be multiple back-edges per loop, collect all source nodes per loop head.
-  loop_head (target of back-edges) --> source nodes
-*)
+(** Since there could be multiple back-edges per loop, collect all source nodes per loop head.
+    loop_head (target of back-edges) --> source nodes *)
 let get_loop_head_to_source_nodes cfg =
   get_back_edges cfg
   |> List.fold ~init:Procdesc.NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
@@ -124,13 +116,10 @@ let get_loop_head_to_source_nodes cfg =
            loop_head_to_source_list )
 
 
-(**
-  Get a pair of maps (exit_map, loop_head_to_guard_map) where
-  exit_map : exit_node -> loop_head set (i.e. target of the back edges) 
-  loop_head_to_guard_map : loop_head -> guard_nodes and
-  guard_nodes contains the nodes that may affect the looping behavior, i.e. 
-  occur in the guard of the loop conditional.
-*)
+(** Get a pair of maps (exit_map, loop_head_to_guard_map) where exit_map : exit_node -> loop_head
+    set (i.e. target of the back edges) loop_head_to_guard_map : loop_head -> guard_nodes and
+    guard_nodes contains the nodes that may affect the looping behavior, i.e. occur in the guard of
+    the loop conditional. *)
 let get_control_maps loop_head_to_source_nodes_map =
   Procdesc.NodeMap.fold
     (fun loop_head source_list

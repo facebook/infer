@@ -37,11 +37,8 @@ val get_direct_successor_nodes : ast_node -> ast_node list
 
 val infer_prefix : string
 
-(** Data structures for type parser.
-    Correspondence with clang types inferred from
-    StringRef BuiltinType::getName in
-    https://clang.llvm.org/doxygen/Type_8cpp_source.html
-*)
+(** Data structures for type parser. Correspondence with clang types inferred from StringRef
+    BuiltinType::getName in https://clang.llvm.org/doxygen/Type_8cpp_source.html *)
 type builtin_kind =
   | Void  (** void *)
   | Bool  (** bool *)

@@ -7,8 +7,8 @@
 
 open! IStd
 
-(** This module models special c struct types from the Apple's Core Foundation libraries
-    for which there are particular rules for memory management. *)
+(** This module models special c struct types from the Apple's Core Foundation libraries for which
+    there are particular rules for memory management. *)
 
 val is_core_lib_type : Typ.t -> bool
 

@@ -41,14 +41,14 @@ module type LivenessConfig = sig
 end
 
 (** Use this config to get a reliable liveness pre-analysis that tells you which variables are live
-   at which program point *)
+    at which program point *)
 module PreAnalysisMode : LivenessConfig = struct
   (** do not do any funky stuff *)
   let is_blacklisted_destructor _proc_name = false
 end
 
 (** Use this config to get a dead store checker that can take some liberties wrt a strict liveness
-   analysis *)
+    analysis *)
 module CheckerMode : LivenessConfig = struct
   let blacklisted_destructor_matcher =
     QualifiedCppName.Match.of_fuzzy_qual_names

@@ -15,7 +15,5 @@ val with_session :
   -> Procdesc.Node.t
   -> f:(unit -> 'a)
   -> 'a
-(**
-  Wraps [f] in an html debug session.
-  Will swallow timeouts so do *not* use from within biabduction.
-*)
+(** Wraps [f] in an html debug session. Will swallow timeouts so do *not* use from within
+    biabduction. *)

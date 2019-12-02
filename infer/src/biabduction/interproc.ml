@@ -193,8 +193,8 @@ let do_meet_pre tenv pset =
   else Propset.to_proplist pset
 
 
-(** Find the preconditions in the current spec table,
-    apply meet then join, and return the joined preconditions *)
+(** Find the preconditions in the current spec table, apply meet then join, and return the joined
+    preconditions *)
 let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t list =
   let proc_name = Summary.get_proc_name summary in
   let collect_do_abstract_one tenv prop =
@@ -513,8 +513,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
   L.d_ln ()
 
 
-(** Remove locals and formals,
-    and check if the address of a stack variable is left in the result *)
+(** Remove locals and formals, and check if the address of a stack variable is left in the result *)
 let remove_locals_formals_and_check tenv proc_cfg p =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
@@ -688,10 +687,9 @@ let create_seed_vars sigma =
   List.fold ~f:hpred_add_seed ~init:[] sigma
 
 
-(** Initialize proposition for execution given formal and global
-    parameters. The footprint is initialized according to the
-    execution mode. The prop is not necessarily emp, so it
-    should be incorporated when the footprint is constructed. *)
+(** Initialize proposition for execution given formal and global parameters. The footprint is
+    initialized according to the execution mode. The prop is not necessarily emp, so it should be
+    incorporated when the footprint is constructed. *)
 let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Prop.t =
   let sigma_new_formals =
     let do_formal (pv, typ) =
@@ -818,10 +816,9 @@ let execute_filter_prop summary exe_env tenv proc_cfg
 type exe_phase =
   (unit -> unit) * (unit -> Prop.normal BiabductionSummary.spec list * BiabductionSummary.phase)
 
-(** Return functions to perform one phase of the analysis for a procedure.
-    Given [proc_name], return [do, get_results] where [go ()] performs the analysis phase
-    and [get_results ()] returns the results computed.
-    This function is architected so that [get_results ()] can be called even after
+(** Return functions to perform one phase of the analysis for a procedure. Given [proc_name], return
+    [do, get_results] where [go ()] performs the analysis phase and [get_results ()] returns the
+    results computed. This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
 let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCfg.Exceptional.t) :
     exe_phase =
@@ -967,9 +964,9 @@ let remove_this_not_null tenv prop =
       Prop.normalize tenv prop'
 
 
-(** Is true when the precondition does not contain constrains that can be false at call site.
-    This means that the post-conditions associated with this precondition cannot be prevented
-    by the calling context. *)
+(** Is true when the precondition does not contain constrains that can be false at call site. This
+    means that the post-conditions associated with this precondition cannot be prevented by the
+    calling context. *)
 let is_unavoidable tenv pre =
   let prop = remove_this_not_null tenv (BiabductionSummary.Jprop.to_prop pre) in
   match Prop.CategorizePreconditions.categorize [prop] with
@@ -1132,8 +1129,8 @@ let transition_footprint_re_exe summary tenv joined_pres : Summary.t =
   summary'
 
 
-(** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
-    the procedures enabled after the analysis of [proc_name] *)
+(** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for the procedures enabled after the
+    analysis of [proc_name] *)
 let perform_transition proc_cfg tenv proc_name summary =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)

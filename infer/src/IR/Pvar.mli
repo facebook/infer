@@ -14,11 +14,11 @@ module F = Format
 type translation_unit = SourceFile.t option [@@deriving compare]
 
 (** Type for program variables. There are 4 kinds of variables:
-        1) local variables, used for local variables and formal parameters
-        2) callee program variables, used to handle recursion ([x | callee] is distinguished from [x])
-        3) global variables
-        4) seed variables, used to store the initial value of formal parameters
-*)
+
+    + local variables, used for local variables and formal parameters
+    + callee program variables, used to handle recursion ([x | callee] is distinguished from [x])
+    + global variables
+    + seed variables, used to store the initial value of formal parameters *)
 type t [@@deriving compare]
 
 val compare_modulo_this : t -> t -> int
@@ -83,7 +83,8 @@ val is_ssa_frontend_tmp : t -> bool
     once on a non-looping control-flow path *)
 
 val is_cpp_temporary : t -> bool
-(** return true if this pvar represents a C++ temporary object (see http://en.cppreference.com/w/cpp/language/lifetime) *)
+(** return true if this pvar represents a C++ temporary object (see
+    http://en.cppreference.com/w/cpp/language/lifetime) *)
 
 val mk : Mangled.t -> Typ.Procname.t -> t
 (** [mk name proc_name] creates a program var with the given function name *)
@@ -95,8 +96,8 @@ val mk_abduced_ret : Typ.Procname.t -> Location.t -> t
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 
 val mk_callee : Mangled.t -> Typ.Procname.t -> t
-(** [mk_callee name proc_name] creates a program var
-    for a callee function with the given function name *)
+(** [mk_callee name proc_name] creates a program var for a callee function with the given function
+    name *)
 
 val mk_global :
      ?is_constexpr:bool
@@ -151,8 +152,8 @@ val get_initializer_pname : t -> Typ.Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
 val get_name_of_local_with_procname : t -> Mangled.t
-(** [get_name_of_local_with_procname var] Return a name that is composed of the name of
-var and the name of the procname in case of locals *)
+(** [get_name_of_local_with_procname var] Return a name that is composed of the name of var and the
+    name of the procname in case of locals *)
 
 val materialized_cpp_temporary : string
 

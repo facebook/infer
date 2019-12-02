@@ -27,10 +27,9 @@ let mk_time ~label ~duration_ms =
   {label; created_at_ts; data}
 
 
-(** What _global_ mean at this point is subject to discussion. Right now
-    there is only one use-case which is Scuba+Scribe logging at the end of
-    execution. But there might be more. Let's change the naming accordingly
-    when the purpose gets clearer. *)
+(** What _global_ mean at this point is subject to discussion. Right now there is only one use-case
+    which is Scuba+Scribe logging at the end of execution. But there might be more. Let's change the
+    naming accordingly when the purpose gets clearer. *)
 let global_entry_log : t list ref = ref []
 
 let global_log_get () = List.rev !global_entry_log

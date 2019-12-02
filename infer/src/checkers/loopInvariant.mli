@@ -19,7 +19,7 @@ module LoopHeadToLoopNodes = Procdesc.NodeMap
 (** Map loop header node -> all nodes in the loop *)
 
 module LoopHeadToInvVars = Procdesc.NodeMap
-(** Map loop head ->  invariant vars in loop  *)
+(** Map loop head -> invariant vars in loop *)
 
 type invariant_map = VarsInLoop.t Procdesc.NodeMap.t
 

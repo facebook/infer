@@ -10,7 +10,7 @@ open! IStd
 
 (** State of symbolic execution *)
 
-(**  Internal state *)
+(** Internal state *)
 type t
 
 val add_diverging_states : Paths.PathSet.t -> unit
@@ -45,8 +45,8 @@ val get_node : unit -> Procdesc.Node.t option
 
 val get_normalized_pre :
   (Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
-(** return the normalized precondition extracted form the last prop seen, if any
-    the abstraction function is a parameter to get around module dependencies *)
+(** return the normalized precondition extracted form the last prop seen, if any the abstraction
+    function is a parameter to get around module dependencies *)
 
 val get_path : unit -> Paths.Path.t * PredSymb.path_pos option
 (** Get last path seen in symbolic execution *)
@@ -73,9 +73,8 @@ val mark_instr_ok : unit -> unit
 (** Mark that the execution of the current instruction was OK *)
 
 val mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.t
-(** Create a function to find duplicate nodes.
-    A node is a duplicate of another one if they have the same kind and location
-    and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
+(** Create a function to find duplicate nodes. A node is a duplicate of another one if they have the
+    same kind and location and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 
 type log_issue =
   Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit

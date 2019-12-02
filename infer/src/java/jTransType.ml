@@ -417,7 +417,7 @@ and value_type program tenv vt =
       object_type program tenv ot
 
 
-(**  Translate object types into Exp.Sizeof expressions *)
+(** Translate object types into Exp.Sizeof expressions *)
 let sizeof_of_object_type program tenv ot subtype =
   match (object_type program tenv ot).Typ.desc with
   | Typ.Tptr (typ, _) ->
@@ -452,8 +452,8 @@ let extract_array_type typ =
   match typ.Typ.desc with Typ.Tptr ({desc= Tarray {elt}}, Typ.Pk_pointer) -> elt | _ -> typ
 
 
-(** translate the type of an expression, looking in the method signature for formal parameters
-    this is because variables in expressions do not have accurate types *)
+(** translate the type of an expression, looking in the method signature for formal parameters this
+    is because variables in expressions do not have accurate types *)
 let rec expr_type (context : JContext.t) expr =
   let program = context.program in
   let tenv = JContext.get_tenv context in
@@ -469,7 +469,6 @@ let rec expr_type (context : JContext.t) expr =
       value_type program tenv (JBir.type_of_expr expr)
 
 
-(** Returns the return type of the method based on the return type
-    specified in ms. *)
+(** Returns the return type of the method based on the return type specified in ms. *)
 let return_type program tenv ms =
   match JBasics.ms_rtype ms with None -> Typ.mk Tvoid | Some vt -> value_type program tenv vt

@@ -9,8 +9,8 @@ open! IStd
 module L = Logging
 module F = Format
 
-(** Prints an error message to a log file, prints a message saying that the error can be
-    found in that file, and exits, with default code 1 or a given code. *)
+(** Prints an error message to a log file, prints a message saying that the error can be found in
+    that file, and exits, with default code 1 or a given code. *)
 let print_error_and_exit ?(exit_code = 1) fmt =
   F.kfprintf
     (fun _ ->
@@ -20,8 +20,8 @@ let print_error_and_exit ?(exit_code = 1) fmt =
 
 
 (** Given a command to be executed, create a process to execute this command, and wait for it to
-    terminate. The standard out and error are not redirected.  If the command fails to execute,
-    print an error message and exit. *)
+    terminate. The standard out and error are not redirected. If the command fails to execute, print
+    an error message and exit. *)
 let create_process_and_wait ~prog ~args =
   Unix.fork_exec ~prog ~argv:(prog :: args) ()
   |> Unix.waitpid

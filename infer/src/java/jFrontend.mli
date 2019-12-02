@@ -16,7 +16,7 @@ val cache_classname : JBasics.class_name -> unit
 (** [cache_classname cn] stores the classname to the disk *)
 
 val is_classname_cached : JBasics.class_name -> bool
-(** [is_classname_cached cn]  *)
+(** [is_classname_cached cn] *)
 
 val compute_source_icfg :
      Printer.LineReader.t
@@ -27,7 +27,9 @@ val compute_source_icfg :
   -> string option
   -> SourceFile.t
   -> Cfg.t
-(** [compute_cfg linereader classes program tenv source_basename source_file] create the control flow graph for the file [source_file] by translating all the classes in [program] originating from [source_file] *)
+(** [compute_cfg linereader classes program tenv source_basename source_file] create the control
+    flow graph for the file [source_file] by translating all the classes in [program] originating
+    from [source_file] *)
 
 val compute_class_icfg :
      SourceFile.t

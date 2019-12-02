@@ -231,7 +231,7 @@ module Main = struct
   let callback = Callback.callback
 end
 
-(** Eradicate checker for Java @Nullable annotations. *)
+(** Eradicate checker for Java [@Nullable] annotations. *)
 let callback_eradicate =
   let checks = {TypeCheck.eradicate= true; check_ret_type= []} in
   Main.callback checks

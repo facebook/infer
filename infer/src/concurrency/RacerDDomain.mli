@@ -21,7 +21,7 @@ module Access : sig
     | ContainerWrite of {exp: AccessExpression.t; pname: Typ.Procname.t}
         (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
-        (** Call to method of interface not annotated with @ThreadSafe *)
+        (** Call to method of interface not annotated with [@ThreadSafe] *)
   [@@deriving compare]
 
   include ExplicitTrace.Element with type t := t
@@ -59,17 +59,17 @@ module LocksDomain : sig
   (** integrate current state with a callee summary *)
 end
 
-(** Abstraction of threads that may run in parallel with the current thread.
-    NoThread < AnyThreadExceptSelf < AnyThread *)
+(** Abstraction of threads that may run in parallel with the current thread. NoThread <
+    AnyThreadExceptSelf < AnyThread *)
 module ThreadsDomain : sig
   type t =
     | NoThread
         (** No threads can run in parallel with the current thread (concretization: empty set). We
-        assume this by default unless we see evidence to the contrary (annotations, use of locks,
-        etc.) *)
+            assume this by default unless we see evidence to the contrary (annotations, use of
+            locks, etc.) *)
     | AnyThreadButSelf
         (** Current thread can run in parallel with other threads, but not with a copy of itself.
-        (concretization : {% \{ t | t \in TIDs ^ t != t_cur \} %} ) *)
+            (concretization : {% \{ t | t \in TIDs ^ t != t_cur \} %} ) *)
     | AnyThread
         (** Current thread can run in parallel with any thread, including itself (concretization:
             set of all TIDs ) *)
@@ -132,8 +132,8 @@ end
 module OwnershipAbstractValue : sig
   type t = private
     | OwnedIf of IntSet.t
-        (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned 
-        if the set of formals is empty = bottom of the lattice *)
+        (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned
+            if the set of formals is empty = bottom of the lattice *)
     | Unowned  (** Unowned value; top of the lattice *)
   [@@deriving compare]
 
@@ -171,7 +171,7 @@ end
 
 module Attribute : sig
   type t =
-    | Functional  (** holds a value returned from a callee marked @Functional *)
+    | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | Choice of Choice.t  (** holds a boolean choice variable *)
 
   include PrettyPrintable.PrintableOrderedType with type t := t

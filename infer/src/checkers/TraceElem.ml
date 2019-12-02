@@ -13,9 +13,9 @@ module type Kind = sig
 
   val matches : caller:t -> callee:t -> bool
   (** Return true if the [caller] element kind matches the [callee] element kind. Used during trace
-      expansion; we will only consider expanding the trace from caller into callee if this
-      evaluates to true. This can normally just be [equal], but something fuzzier may be required
-      if [t] is a type that contains identifiers from the caller/callee *)
+      expansion; we will only consider expanding the trace from caller into callee if this evaluates
+      to true. This can normally just be [equal], but something fuzzier may be required if [t] is a
+      type that contains identifiers from the caller/callee *)
 
   val pp : F.formatter -> t -> unit
 end

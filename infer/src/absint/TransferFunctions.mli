@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+[@@@ocamlformat "parse-docstrings = false"]
+
 open! IStd
 
 (** Transfer functions that push abstract states across instructions. A typical client should

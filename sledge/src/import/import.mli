@@ -44,8 +44,8 @@ val trd3 : _ * _ * 'a -> 'a
 (** Function combinators *)
 
 val ( >> ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
-(** Composition of functions: [(f >> g) x] is exactly equivalent to [g (f
-    (x))]. Left associative. *)
+(** Composition of functions: [(f >> g) x] is exactly equivalent to
+    [g (f (x))]. Left associative. *)
 
 val ( << ) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 (** Reverse composition of functions: [(g << f) x] is exactly equivalent to
@@ -56,8 +56,8 @@ val ( $ ) : ('a -> unit) -> ('a -> 'b) -> 'a -> 'b
     to [(f x) ; (g x)]. Left associative. *)
 
 val ( $> ) : 'a -> ('a -> unit) -> 'a
-(** Reverse apply and ignore function: [x $> f] is exactly equivalent to [f
-    x ; x]. Left associative. *)
+(** Reverse apply and ignore function: [x $> f] is exactly equivalent to
+    [f x ; x]. Left associative. *)
 
 val ( <$ ) : ('a -> unit) -> 'a -> 'a
 (** Apply and ignore function: [f <$ x] is exactly equivalent to [f x ; x].

@@ -23,15 +23,15 @@ type lock_effect =
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
 val is_thread_utils_method : string -> Typ.Procname.t -> bool
-(** return true if the given method name is a utility class for checking what thread we're on
-    TODO: clean this up so it takes only a procname *)
+(** return true if the given method name is a utility class for checking what thread we're on TODO:
+    clean this up so it takes only a procname *)
 
 val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 (** describe how this procedure behaves with respect to locking *)
 
 val get_thread_assert_effect : Typ.Procname.t -> thread
-(** In Java, certain methods can be used to assert execution on a specific kind of thread,
-    or return a boolean equivalent to such a fact. *)
+(** In Java, certain methods can be used to assert execution on a specific kind of thread, or return
+    a boolean equivalent to such a fact. *)
 
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> (Typ.name * Typ.name list) option
@@ -60,7 +60,8 @@ val annotated_as_worker_thread :
 
 val runs_on_ui_thread :
   attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
-(** is method not transitively annotated @WorkerThread and is modeled or annotated @UIThread or equivalent? *)
+(** is method not transitively annotated [@WorkerThread] and is modeled or annotated [@UIThread] or
+    equivalent? *)
 
 val is_modeled_ui_method : Tenv.t -> Typ.Procname.t -> bool
 (** is method a known Android UI thread callback (eg [Activity.onCreate]) *)

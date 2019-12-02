@@ -17,7 +17,8 @@ module Hashing : sig
   val of_int : int -> hash_value
 
   val shallow : 'a -> hash_value
-  (** A deterministic hash function that visits O(1) objects, to ensure termination on cyclic values. *)
+  (** A deterministic hash function that visits O(1) objects, to ensure termination on cyclic
+      values. *)
 
   val alloc_of_block : tag:int -> size:int -> state
 
@@ -261,12 +262,10 @@ end = struct
     (Hashing.of_int 0, (* Make sure it fails hard if [Obj.set_field] is called on it *) Obj.repr 0)
 
 
-  (**
-    Returns a value structurally equal but with potentially more sharing.
-    Potentially unsafe if used on mutable values that are modified later.
-    Preserves polymorphic compare, hashing, no-sharing marshalling.
-    May have an impact on code using [phys_equal] or marshalling with sharing.
-  *)
+  (** Returns a value structurally equal but with potentially more sharing. Potentially unsafe if
+      used on mutable values that are modified later. Preserves polymorphic compare, hashing,
+      no-sharing marshalling. May have an impact on code using [phys_equal] or marshalling with
+      sharing. *)
   let normalize_value sharer v =
     hash_and_normalize_obj sharer (Obj.repr v) dummy_should_not_be_patched (-1) |> snd |> Obj.obj
 end

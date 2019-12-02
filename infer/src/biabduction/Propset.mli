@@ -14,8 +14,8 @@ open! IStd
 
 [@@@warning "-32"]
 
-(** Sets of propositions.
-    The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
+(** Sets of propositions. The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is
+    called on any prop added to the set. *)
 type t
 
 val compare : t -> t -> int
@@ -56,13 +56,12 @@ val map_option : Tenv.t -> (Prop.normal Prop.t -> Prop.normal Prop.t option) -> 
 (** Apply function to all the elements of the propset, removing those where it returns [None]. *)
 
 val fold : ('a -> Prop.normal Prop.t -> 'a) -> 'a -> t -> 'a
-(** [fold f pset a] computes [(f pN ... (f p2 (f p1 a))...)],
-    where [p1 ... pN] are the elements of pset, in increasing
-    order. *)
+(** [fold f pset a] computes [(f pN ... (f p2 (f p1 a))...)], where [p1 ... pN] are the elements of
+    pset, in increasing order. *)
 
 val iter : (Prop.normal Prop.t -> unit) -> t -> unit
-(** [iter f pset] computes (f p1;f p2;..;f pN)
-    where [p1 ... pN] are the elements of pset, in increasing order. *)
+(** [iter f pset] computes (f p1;f p2;..;f pN) where [p1 ... pN] are the elements of pset, in
+    increasing order. *)
 
 val partition : (Prop.normal Prop.t -> bool) -> t -> t * t
 

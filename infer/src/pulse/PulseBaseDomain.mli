@@ -15,8 +15,8 @@ val empty : t
 include AbstractDomain.NoJoin with type t := t
 
 val reachable_addresses : t -> AbstractValue.Set.t
-(** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
-    from the stack variables *)
+(** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
+    the stack variables *)
 
 type mapping
 

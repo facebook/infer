@@ -28,8 +28,7 @@ end
 type 'a serializer
 
 val create_serializer : Key.t -> 'a serializer
-(** create a serializer from a file name
-    given an integer key used as double-check of the file type *)
+(** create a serializer from a file name given an integer key used as double-check of the file type *)
 
 val read_from_file : 'a serializer -> DB.filename -> 'a option
 (** Deserialize a file and check the keys *)

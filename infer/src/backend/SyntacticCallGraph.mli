@@ -7,8 +7,8 @@
 open! IStd
 
 val bottom_up : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t
-(** task generator that works by 
-    - loading the syntactic call graph from the capture DB 
+(** task generator that works by
+
+    - loading the syntactic call graph from the capture DB
     - restricting it to the reachable procs from the modified files
-    - scheduling leaves only and removing them from the graph when analysed.
-*)
+    - scheduling leaves only and removing them from the graph when analysed. *)

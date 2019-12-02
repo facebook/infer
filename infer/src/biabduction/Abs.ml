@@ -1152,8 +1152,8 @@ let check_junk pname tenv prop =
   else Prop.normalize tenv (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
 
 
-(** Check whether the prop contains junk.
-    If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
+(** Check whether the prop contains junk. If it does, and [Config.allowleak] is true, remove the
+    junk, otherwise raise a Leak exception. *)
 let abstract_junk pname tenv prop =
   Absarray.array_abstraction_performed := false ;
   check_junk pname tenv prop
@@ -1232,8 +1232,8 @@ let remove_local_stack sigma pvars =
   List.filter ~f:filter_non_stack sigma
 
 
-(** [prop_set_fooprint p p_foot] removes a local stack from [p_foot],
-    and sets proposition [p_foot] as footprint of [p]. *)
+(** [prop_set_fooprint p p_foot] removes a local stack from [p_foot], and sets proposition [p_foot]
+    as footprint of [p]. *)
 let set_footprint_for_abs (p : 'a Prop.t) (p_foot : 'a Prop.t) local_stack_pvars :
     Prop.exposed Prop.t =
   let p_foot_pure = Prop.get_pure p_foot in

@@ -20,8 +20,7 @@ val log_issue_deprecated_using_state :
   -> exn
   -> unit
 (** Report an issue in the given procedure using biabduction state (DO NOT USE ELSEWHERE).
-    DEPRECATED as it can create race conditions between checkers.
-    Use log_error/warning instead *)
+    DEPRECATED as it can create race conditions between checkers. Use log_error/warning instead *)
 
 val log_frontend_issue :
      Typ.Procname.t

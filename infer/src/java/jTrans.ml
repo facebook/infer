@@ -15,9 +15,8 @@ type invoke_kind = I_Virtual | I_Interface | I_Special | I_Static
 
 exception Frontend_error of string
 
-(** Fix the line associated to a method definition.
-    Since Sawja often reports a method off by a few lines, we search
-    backwards for a line where the method name is. *)
+(** Fix the line associated to a method definition. Since Sawja often reports a method off by a few
+    lines, we search backwards for a line where the method name is. *)
 let fix_method_definition_line linereader proc_name loc =
   let proc_name_java = match proc_name with Typ.Procname.Java p -> p | _ -> assert false in
   let method_name =
@@ -123,8 +122,8 @@ let translate_formals program tenv cn impl =
   List.rev (List.fold ~f:collect ~init:[] (JBir.params impl))
 
 
-(** Creates the list of local variables from the bytecode and add the variables from
-    the JBir representation *)
+(** Creates the list of local variables from the bytecode and add the variables from the JBir
+    representation *)
 let translate_locals program tenv formals bytecode jbir_code =
   let formal_set =
     List.fold ~f:(fun set (var, _) -> Mangled.Set.add var set) ~init:Mangled.Set.empty formals

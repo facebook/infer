@@ -9,8 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** functor that makes it easy to write a basic abstract interpretation checker by lifting
-    a type, comparison function, reporting function, and exec function into an analyzer *)
+(** functor that makes it easy to write a basic abstract interpretation checker by lifting a type,
+    comparison function, reporting function, and exec function into an analyzer *)
 
 module type Spec = sig
   (** what state do you want to propagate? *)
@@ -20,15 +20,12 @@ module type Spec = sig
   (** implement the state the analysis should start from here *)
 
   val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> t
-  (** implement how an instruction changes your state here.
-      input is the previous state, current instruction, current node kind, current procedure and
-      type environment.
-  *)
+  (** implement how an instruction changes your state here. input is the previous state, current
+      instruction, current node kind, current procedure and type environment. *)
 
   val report : t -> Location.t -> Typ.Procname.t -> unit
-  (** log errors here.
-      input is a state, location where the state occurs in the source, and the current procedure.
-  *)
+  (** log errors here. input is a state, location where the state occurs in the source, and the
+      current procedure. *)
 
   val compare : t -> t -> int
 end

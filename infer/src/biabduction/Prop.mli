@@ -65,8 +65,8 @@ val d_pi_sigma : pi -> sigma -> unit
 (** Dump a pi and a sigma *)
 
 val sigma_get_stack_nonstack : bool -> sigma -> sigma * sigma
-(** Split sigma into stack and nonstack parts.
-    The boolean indicates whether the stack should only include local variales. *)
+(** Split sigma into stack and nonstack parts. The boolean indicates whether the stack should only
+    include local variales. *)
 
 val prop_update_obj_sub : Pp.env -> 'a t -> Pp.env
 (** Update the object substitution given the stack variables in the prop *)
@@ -111,9 +111,8 @@ val prop_expmap : (Exp.t -> Exp.t) -> 'a t -> exposed t
 (** Apply the substitution to all the expressions in the prop. *)
 
 val sigma_replace_exp : Tenv.t -> (Exp.t * Exp.t) list -> hpred list -> hpred list
-(** Relaces all expressions in the [hpred list] using the first argument.
-    Assume that the first parameter defines a partial function.
-    No expressions inside hpara are replaced. *)
+(** Relaces all expressions in the [hpred list] using the first argument. Assume that the first
+    parameter defines a partial function. No expressions inside hpara are replaced. *)
 
 (** {2 Normalization} *)
 
@@ -130,7 +129,7 @@ val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
 (** If the atom is [n<e] return [n,e] *)
 
 val exp_normalize_prop : ?destructive:bool -> Tenv.t -> 'a t -> Exp.t -> Exp.t
-(** Normalize [exp] using the pure part of [prop].  Later, we should change this such that the
+(** Normalize [exp] using the pure part of [prop]. Later, we should change this such that the
     normalization exposes offsets of [exp] as much as possible.
 
     If [destructive] is true then normalize more aggressively, which may lose some useful structure
@@ -140,13 +139,13 @@ val exp_normalize_noabs : Tenv.t -> Sil.subst -> Exp.t -> Exp.t
 (** Normalize the expression without abstracting complex subexpressions *)
 
 val exp_collapse_consecutive_indices_prop : Typ.t -> Exp.t -> Exp.t
-(** Collapse consecutive indices that should be added. For instance,
-    this function reduces [x[1][1]] to [x[2]]. The [typ] argument is used
-    to ensure the soundness of this collapsing. *)
+(** Collapse consecutive indices that should be added. For instance, this function reduces
+    [x\[1\]\[1\]] to [x\[2\]]. The [typ] argument is used to ensure the soundness of this
+    collapsing. *)
 
 val lexp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
-(** Normalize [exp] used for the address of a heap cell.
-    This normalization does not combine two offsets inside [exp]. *)
+(** Normalize [exp] used for the address of a heap cell. This normalization does not combine two
+    offsets inside [exp]. *)
 
 val atom_normalize_prop : Tenv.t -> 'a t -> atom -> atom
 
@@ -194,8 +193,8 @@ val mk_ptsto_exp : Tenv.t -> struct_init_mode -> Exp.t * Exp.t * Exp.t option ->
     base for fresh identifiers. *)
 
 val mk_ptsto_lvar : Tenv.t -> struct_init_mode -> Sil.inst -> Pvar.t * Exp.t * Exp.t option -> hpred
-(** Construct a points-to predicate for a single program variable.
-    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+(** Construct a points-to predicate for a single program variable. If [expand_structs] is true,
+    initialize the fields of structs with fresh variables. *)
 
 val mk_lseg : Tenv.t -> lseg_kind -> hpara -> Exp.t -> Exp.t -> Exp.t list -> hpred
 (** Construct a lseg predicate *)
@@ -274,13 +273,12 @@ val prop_iter_to_prop : Tenv.t -> 'a prop_iter -> normal t
 (** Return the prop associated to the iterator. *)
 
 val prop_iter_add_atom : bool -> 'a prop_iter -> atom -> 'a prop_iter
-(** Add an atom to the pi part of prop iter. The
-    first parameter records whether it is done
-    during footprint or during re - execution. *)
+(** Add an atom to the pi part of prop iter. The first parameter records whether it is done during
+    footprint or during re - execution. *)
 
 val prop_iter_remove_curr_then_to_prop : Tenv.t -> 'a prop_iter -> normal t
-(** Remove the current element from the iterator, and return the prop
-    associated to the resulting iterator. *)
+(** Remove the current element from the iterator, and return the prop associated to the resulting
+    iterator. *)
 
 val prop_iter_current : Tenv.t -> 'a prop_iter -> hpred * 'a
 (** Return the current hpred and state. *)

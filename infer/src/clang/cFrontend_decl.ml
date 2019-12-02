@@ -255,8 +255,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     List.iter ~f:(process_one_method_decl trans_unit_ctx tenv cfg curr_class) decl_list
 
 
-  (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return
-      whether method should be translated based on method and class whitelists *)
+  (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return whether
+      method should be translated based on method and class whitelists *)
   let is_whitelisted_cpp_method =
     let method_matcher =
       QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods

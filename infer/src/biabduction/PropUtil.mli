@@ -12,8 +12,8 @@ val remove_locals_ret : Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Prop.norma
 
 val remove_locals_formals :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Pvar.t list * Prop.normal Prop.t
-(** Deallocate the stack variables in [pvars], and replace them by normal variables.
-    Return the list of stack variables whose address was still present after deallocation. *)
+(** Deallocate the stack variables in [pvars], and replace them by normal variables. Return the list
+    of stack variables whose address was still present after deallocation. *)
 
 val remove_seed_vars : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
 (** remove seed vars from a prop *)

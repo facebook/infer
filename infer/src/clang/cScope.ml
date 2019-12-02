@@ -79,8 +79,7 @@ module Variables = struct
     ; swallow_destructors: bool
           (** That scope does not generate destructor calls (eg because it ends in an instruction
               that will already do so like [ReturnStmt]). We still want to generate a scope to catch
-              variables declared in that scope and avoid them being destroyed elsewhere. *)
-    }
+              variables declared in that scope and avoid them being destroyed elsewhere. *) }
 
   (** get which statements define a variable scope and possible a breakable scope *)
   let get_scopes stmt =
