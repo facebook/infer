@@ -100,7 +100,7 @@ let fgets str_exp num_exp =
     let traces = Trace.Set.join (Dom.Val.get_traces str_v) (Dom.Val.get_traces num_v) in
     let update_strlen1 allocsite arrinfo acc =
       let strlen =
-        let offset = ArrayBlk.ArrInfo.offsetof arrinfo in
+        let offset = ArrayBlk.ArrInfo.get_offset arrinfo in
         let num = Dom.Val.get_itv num_v in
         Itv.plus offset (Itv.set_lb_zero (Itv.decr num))
       in
@@ -471,7 +471,7 @@ module CFArray = struct
   let length e =
     let exec {integer_type_widths} ~ret:(ret_id, _) mem =
       let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
+      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
       Dom.Mem.add_stack (Loc.of_id ret_id) length mem
     in
     {exec; check= no_check}
@@ -673,7 +673,7 @@ module StdVector = struct
       let deref_of_vec = deref_of model_env elt_typ vec_arg mem in
       let array_v = Dom.Mem.find_set deref_of_vec mem in
       let traces = Dom.Val.get_traces array_v in
-      let size = ArrayBlk.sizeof (Dom.Val.get_array_blk array_v) in
+      let size = ArrayBlk.get_size (Dom.Val.get_array_blk array_v) in
       let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
       let mem = model_by_value empty id mem in
       match PowLoc.is_singleton_or_more deref_of_vec with

@@ -231,7 +231,7 @@ module Exec = struct
     let src_itv = Dom.Val.get_itv src in
     let set_c_strlen1 allocsite arrinfo acc =
       let loc = Loc.of_allocsite allocsite in
-      let idx = Dom.Val.of_itv ~traces (ArrayBlk.ArrInfo.offsetof arrinfo) in
+      let idx = Dom.Val.of_itv ~traces (ArrayBlk.ArrInfo.get_offset arrinfo) in
       if Itv.leq ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null loc idx acc
       else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
@@ -256,7 +256,7 @@ module Check = struct
 
 
   let offsetof arr_info =
-    match ArrayBlk.ArrInfo.offsetof arr_info with
+    match ArrayBlk.ArrInfo.get_offset arr_info with
     | Bottom ->
         (* Java's collection has no offset. *)
         Itv.ItvPure.zero
@@ -280,7 +280,7 @@ module Check = struct
           op idx_sym_exp offset_sym_exp )
     in
     let array_access1 allocsite arr_info acc =
-      let size = ArrayBlk.ArrInfo.sizeof arr_info in
+      let size = ArrayBlk.ArrInfo.get_size arr_info in
       let offset = offsetof arr_info in
       log_array_access allocsite size offset idx ;
       check_access ~size ~idx ~offset ~size_sym_exp ~idx_sym_exp ~relation ~arr_traces ~idx_traces

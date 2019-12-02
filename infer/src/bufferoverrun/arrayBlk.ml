@@ -247,9 +247,9 @@ module ArrInfo = struct
         Top
 
 
-  let offsetof = function C {offset} -> offset | Java _ -> Itv.zero | Top -> Itv.top
+  let get_offset = function C {offset} -> offset | Java _ -> Itv.zero | Top -> Itv.top
 
-  let sizeof = function C {size} -> size | Java {length} -> length | Top -> Itv.top
+  let get_size = function C {size} -> size | Java {length} -> length | Top -> Itv.top
 
   let byte_size = function
     | C {size; stride} ->
@@ -304,9 +304,9 @@ let join_itv : cost_mode:bool -> f:(ArrInfo.t -> Itv.t) -> t -> Itv.t =
   fold (fun _ arr -> join (f arr)) a init
 
 
-let offsetof ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.offsetof
+let get_offset ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.get_offset
 
-let sizeof ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.sizeof
+let get_size ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.get_size
 
 let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 

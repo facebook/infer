@@ -505,7 +505,7 @@ module Val = struct
     {x with traces}
 
 
-  let array_sizeof {arrayblk} = ArrayBlk.sizeof arrayblk
+  let array_sizeof {arrayblk} = ArrayBlk.get_size arrayblk
 
   let set_array_length : Location.t -> length:t -> t -> t =
    fun location ~length v ->
