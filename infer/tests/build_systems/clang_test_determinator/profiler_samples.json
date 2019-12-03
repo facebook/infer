@@ -101,5 +101,35 @@
       ],
       "field5": {},
       "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label1_cpp_method",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "area",
+          "mangled_name": "_ZN6Shapes4Cube4areaEv"
+        }
+      ],
+      "field5": {},
+      "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label2_cpp_method",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "sort",
+          "mangled_name": "_ZN6Shapes4Cube4sortEPS0_j"
+        }
+      ],
+      "field5": {},
+      "field6": {}
     }
   ]

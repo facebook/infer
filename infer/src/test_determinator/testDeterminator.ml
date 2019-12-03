@@ -216,17 +216,56 @@ let remove_llvm_suffix_native_symbols native_symbols =
     let native_symbol_mangled_name =
       Option.map ~f:remove_llvm_suffix native_symbol.Clang_profiler_samples_t.mangled_name
     in
-    {Clang_profiler_samples_t.name= native_symbol_name; mangled_name= native_symbol_mangled_name}
+    { native_symbol with
+      Clang_profiler_samples_t.name= native_symbol_name
+    ; mangled_name= native_symbol_mangled_name }
   in
   List.map ~f:remove_llvm_suffix_native_symbol native_symbols
+
+
+(* The clang plugin exports C++ mangled names in hashed form for perf reasons, so here we
+hash the incoming mangled names in the profiler samples, so that we can compare them. *)
+let add_hash_mangled_native_symbols native_symbols =
+  let add_hash_mangled_native_symbol native_symbol =
+    let hash_mangled mangled_name =
+      match mangled_name with
+      | Some mangled_name ->
+          Some (Fnv64Hash.fnv64_hash mangled_name)
+      | None ->
+          None
+    in
+    let native_symbol_hashed_mangled_name =
+      hash_mangled native_symbol.Clang_profiler_samples_t.mangled_name
+    in
+    { native_symbol with
+      Clang_profiler_samples_t.hashed_mangled_name= native_symbol_hashed_mangled_name }
+  in
+  List.map ~f:add_hash_mangled_native_symbol native_symbols
+
+
+let match_mangled_names affected_function_mangled_name native_symbol =
+  match
+    (affected_function_mangled_name, native_symbol.Clang_profiler_samples_t.hashed_mangled_name)
+  with
+  | Some affected_function_mangled_name, Some hashed_mangled_name ->
+      String.equal affected_function_mangled_name hashed_mangled_name
+  | _ ->
+      false
 
 
 let match_profiler_samples_affected_methods native_symbols affected_methods =
   let match_samples_method affected_method =
     let match_sample_method affected_method native_symbol =
       match affected_method with
-      | Some (ClangProc.CFunction {name= affected_function_name}) ->
-          String.equal affected_function_name native_symbol.Clang_profiler_samples_t.name
+      | Some
+          (ClangProc.CFunction
+            {name= affected_function_name; mangled_name= affected_function_mangled_name}) ->
+          (* This is needed because for simple c functions from the standard library, the name
+             matches but the mangled name doesn't quite match, there is a __1 at the beginning
+             in the name we get from the plugin, but not in the name we get from the profiler samples. *)
+          if String.equal affected_function_name native_symbol.Clang_profiler_samples_t.name then
+            true
+          else match_mangled_names affected_function_mangled_name native_symbol
       | Some (ClangProc.ObjcMethod {mangled_name= affected_method_mangled_name}) ->
           String.equal affected_method_mangled_name native_symbol.Clang_profiler_samples_t.name
       | Some (ClangProc.ObjcBlock {mangled_name= affected_block_mangled_name}) -> (
@@ -236,6 +275,8 @@ let match_profiler_samples_affected_methods native_symbols affected_methods =
             String.equal native_symbol_mangled_name affected_block_mangled_name
         | None ->
             false )
+      | Some (ClangProc.CppMethod {mangled_name= affected_function_mangled_name}) ->
+          match_mangled_names (Some affected_function_mangled_name) native_symbol
       | _ ->
           false
       (* TODO: deal with mangled names, other method kinds *)
@@ -259,8 +300,11 @@ let clang_test_to_run ~clang_range_map ~source_file () =
     List.fold profiler_samples ~init:[]
       ~f:(fun acc ({test; native_symbols} : Clang_profiler_samples_t.profiler_sample) ->
         let native_symbols_no_suffix = remove_llvm_suffix_native_symbols native_symbols in
-        if match_profiler_samples_affected_methods native_symbols_no_suffix affected_methods then
-          test :: acc
+        let native_symbols_with_hash_mangled =
+          add_hash_mangled_native_symbols native_symbols_no_suffix
+        in
+        if match_profiler_samples_affected_methods native_symbols_with_hash_mangled affected_methods
+        then test :: acc
         else acc )
 
 
