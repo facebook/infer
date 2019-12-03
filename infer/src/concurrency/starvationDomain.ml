@@ -690,19 +690,22 @@ let integrate_summary ?tenv ?lhs callsite (astate : t) (summary : summary) =
 let summary_of_astate : Procdesc.t -> t -> summary =
  fun proc_desc astate ->
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let is_java_constr =
-    match (proc_name : Typ.Procname.t) with
-    | Java jname ->
-        Typ.Procname.Java.is_constructor jname
-    | _ ->
-        false
-  in
   let attributes =
-    if is_java_constr then
-      (* only keep attributes that have [this] as their root *)
-      let filter_this exp _ = HilExp.AccessExpression.get_base exp |> fst |> Var.is_this in
-      AttributeDomain.filter filter_this astate.attributes
-    else AttributeDomain.empty
+    let var_predicate =
+      match proc_name with
+      | Typ.Procname.Java jname when Typ.Procname.Java.is_class_initializer jname ->
+          (* only keep static attributes for the class initializer *)
+          fun v -> Var.is_global v
+      | Typ.Procname.Java jname when Typ.Procname.Java.is_constructor jname ->
+          (* only keep static attributes or ones that have [this] as their root *)
+          fun v -> Var.is_this v || Var.is_global v
+      | _ ->
+          (* non-constructor/class initializer or non-java, don't keep any attributes *)
+          Fn.const false
+    in
+    AttributeDomain.filter
+      (fun exp _ -> HilExp.AccessExpression.get_base exp |> fst |> var_predicate)
+      astate.attributes
   in
   let return_attribute =
     let return_var_exp =

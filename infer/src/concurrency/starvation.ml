@@ -275,36 +275,37 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-(** Before analyzing Java instance methods (non-constructor, non-static), compute the attributes of
-    instance variables that all constructors agree on after termination. *)
-let add_constructor_attributes tenv procname (astate : Domain.t) =
+(** Compute the attributes (of static variables) set up by the class initializer. *)
+let set_class_init_attributes procname (astate : Domain.t) =
   let open Domain in
-  let skip_constructor_analysis =
-    match procname with
-    | Typ.Procname.Java jname ->
-        (* constructor attributes affect instance fields, which static methods cannot access;
-           ditto for the class initializer; finally, don't recurse if already in constructor *)
-        Typ.Procname.Java.(is_static jname || is_constructor jname || is_class_initializer jname)
-    | _ ->
-        (* don't do anything for non-Java code *)
-        true
+  let attributes =
+    Typ.Procname.get_class_type_name procname
+    |> Option.map ~f:(fun tname -> Typ.Procname.(Java (Java.get_class_initializer tname)))
+    |> Option.bind ~f:Payload.read_toplevel_procedure
+    |> Option.value_map ~default:AttributeDomain.top ~f:(fun summary -> summary.attributes)
   in
-  if skip_constructor_analysis then astate
-  else
-    (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
-    let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
-    let make_local exp =
-      let var, typ = HilExp.AccessExpression.get_base exp in
-      let newvar =
-        assert (Var.is_this var) ;
-        local_this
-      in
-      HilExp.AccessExpression.replace_base ~remove_deref_after_base:false (newvar, typ) exp
-    in
-    let localize_attrs attributes =
-      AttributeDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
-    in
-    (* get class of current procedure *)
+  ({astate with attributes} : t)
+
+
+(** Compute the attributes of instance variables that all constructors agree on. *)
+let set_constructor_attributes tenv procname (astate : Domain.t) =
+  let open Domain in
+  (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
+  let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
+  let make_local exp =
+    (* contract here matches that of [StarvationDomain.summary_of_astate] *)
+    let var, typ = HilExp.AccessExpression.get_base exp in
+    if Var.is_global var then
+      (* let expressions rooted at globals unchanged, these are probably from class initialiser *)
+      exp
+    else (
+      assert (Var.is_this var) ;
+      HilExp.AccessExpression.replace_base ~remove_deref_after_base:false (local_this, typ) exp )
+  in
+  let localize_attrs attributes =
+    AttributeDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
+  in
+  let attributes =
     Typ.Procname.get_class_type_name procname
     (* retrieve its definition *)
     |> Option.bind ~f:(Tenv.lookup tenv)
@@ -319,7 +320,26 @@ let add_constructor_attributes tenv procname (astate : Domain.t) =
     (* join all the attribute maps together *)
     |> List.reduce ~f:AttributeDomain.join
     |> Option.value ~default:AttributeDomain.top
-    |> fun attributes -> {astate with attributes}
+  in
+  {astate with attributes}
+
+
+let set_initial_attributes tenv procname astate =
+  match procname with
+  | Typ.Procname.Java java_pname when Typ.Procname.Java.is_class_initializer java_pname ->
+      (* we are analyzing the class initializer, don't go through on-demand again *)
+      astate
+  | Typ.Procname.Java java_pname
+    when Typ.Procname.Java.(is_constructor java_pname || is_static java_pname) ->
+      (* analyzing a constructor or static method, so we need the attributes established by the
+         class initializer *)
+      set_class_init_attributes procname astate
+  | Typ.Procname.Java _ ->
+      (* we are analyzing an instance method, so we need constructor-established attributes
+         which will include those by the class initializer *)
+      set_constructor_attributes tenv procname astate
+  | _ ->
+      astate
 
 
 let analyze_procedure {Callbacks.exe_env; summary} =
@@ -362,8 +382,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     let initial =
       Domain.bottom
-      (* set the attributes of instance variables to those achieved by all constructors *)
-      |> add_constructor_attributes tenv procname
+      (* set the attributes of instance variables set up by all constructors or the class initializer *)
+      |> set_initial_attributes tenv procname
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
     Analyzer.compute_post proc_data ~initial
