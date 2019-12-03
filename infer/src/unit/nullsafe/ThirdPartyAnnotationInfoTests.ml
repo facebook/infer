@@ -91,6 +91,25 @@ let basic_find =
   assert_no_info storage {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"; "c.C"]}
 
 
+let disregards_whitespace_lines_and_comments =
+  let open ThirdPartyMethod in
+  "disregards_comments"
+  >:: fun _ ->
+  let lines = [" "; "a.A#foo(b.B)"; ""; "// a.A#bar(b.B)"; "// Hello world"] in
+  (* Load some functions from the file *)
+  let storage =
+    add_from_annot_file_and_check_success ~filename:"test.sig"
+      (ThirdPartyAnnotationInfo.create_storage ())
+      ~lines
+  in
+  assert_has_nullability_info storage
+    {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
+    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_file:"test.sig" ~expected_line:2 ;
+  (* Commented out signatures should be ignored *)
+  assert_no_info storage {class_name= "a.A"; method_name= Method "bar"; param_types= ["b.B"]}
+
+
 let overload_resolution =
   let open ThirdPartyMethod in
   "overload_resolution"
@@ -242,6 +261,7 @@ let test_is_third_party =
 let test =
   "ThirdPartyAnnotationInfoTests"
   >::: [ basic_find
+       ; disregards_whitespace_lines_and_comments
        ; overload_resolution
        ; can_add_several_files
        ; should_not_forgive_unparsable_strings

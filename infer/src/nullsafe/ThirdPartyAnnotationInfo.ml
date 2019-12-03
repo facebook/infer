@@ -32,13 +32,20 @@ let bind_list_with_index ~init list ~f =
       Result.bind acc ~f:(fun acc -> f acc index elem) )
 
 
+let is_whitespace_or_comment line =
+  let stripped_line = String.strip line in
+  String.is_empty stripped_line || String.is_prefix stripped_line ~prefix:"//"
+
+
 let parse_line_and_add_to_storage signature_map ~filename ~line_index line =
   let open Result in
-  ThirdPartyMethod.parse line
-  >>= fun (signature, nullability) ->
-  Ok
-    ( Hashtbl.add signature_map signature {filename; line_number= line_index + 1; nullability} ;
-      signature_map )
+  if is_whitespace_or_comment line then Ok signature_map
+  else
+    ThirdPartyMethod.parse line
+    >>= fun (signature, nullability) ->
+    Ok
+      ( Hashtbl.add signature_map signature {filename; line_number= line_index + 1; nullability} ;
+        signature_map )
 
 
 let add_from_signature_file storage ~filename ~lines =
