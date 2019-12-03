@@ -16,7 +16,9 @@ std::pair<int, int*> pairOfZeroNull() {
 
 std::pair<int, int*> pairOfZeroNull2() { return std::make_pair(0, nullptr); }
 
-int deref_pair_null0_bad() {
+//  there are reported as DANGLING_POINTER_DEREFERENCE
+//  but should really be NULL_DEREFERENCE
+int deref_pair_null0_bad_FN() {
   auto p = pairOfZeroNull();
   // Should report an NPE here as p.second is NULL
   return p.first + *p.second;
@@ -28,13 +30,13 @@ int deref_pair_null1_bad() {
   return std::get<0>(p) + *std::get<1>(p);
 }
 
-int deref_pair_null3_bad() {
+int deref_pair_null3_bad_FN() {
   auto p = pairOfZeroNull2();
   // Should report an NPE here as p.second is NULL
   return p.first + *p.second;
 }
 
-int deref_pair_null_guard_ok() {
+int deref_pair_null_guard_ok_FP() {
   auto p = pairOfZeroNull();
   if (p.second != nullptr) {
     // Should not report an NPE here as p.second is guarded

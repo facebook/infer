@@ -3433,6 +3433,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info
     | ObjCBridgedCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind)
+    | BuiltinBitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXConstCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
@@ -3683,6 +3684,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTaskwaitDirective _
     | OMPTaskyieldDirective _
     | OMPTeamsDirective _
+    | SourceLocExpr _
     | SEHExceptStmt _
     | SEHFinallyStmt _
     | SEHLeaveStmt _

@@ -148,7 +148,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
 let clang_cc1_cmd_sanitizer cmd =
   let replace_args arg = function
     | Some override_regex when Str.string_match override_regex arg 0 ->
-        fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "8.0.0" ^/ "include"
+        fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "9.0.0" ^/ "include"
     | _ ->
         arg
   in

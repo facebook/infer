@@ -14,26 +14,30 @@ digraph cfg {
 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_1" [label="1: Start init_list::list_init\nFormals: \nLocals:  ty:init_list::Y[3*24] yref:init_list::Y& y:init_list::Y ti:int[4*4] \n  " color=yellow style=filled]
 	
 
-	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_1" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" ;
+	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_1" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_7" ;
 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_2" [label="2: Exit init_list::list_init \n  " color=yellow style=filled]
 	
 
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(ty:init_list::Y[3*24]); [line 48, column 3]\n  *&ty[0].z:int=1 [line 48, column 14]\n  *&ty[0].x.a:int=2 [line 48, column 18]\n  *&ty[0].x.p:int*=null [line 48, column 18]\n  n$0=_fun_init_list::Y::Y(&ty[1]:init_list::Y*,&y:init_list::Y&) [line 48, column 33]\n  n$1=*&yref:init_list::Y& [line 48, column 36]\n  n$2=_fun_init_list::Y::Y(&ty[2]:init_list::Y*,n$1:init_list::Y&) [line 48, column 36]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" [label="3:  Destruction(Scope) \n   _=*&y:init_list::Y [line 49, column 1]\n  n$1=_fun_init_list::Y::~Y(&y:init_list::Y*) injected [line 49, column 1]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_2" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(yref:init_list::Y&); [line 47, column 3]\n  *&yref:init_list::Y&=&y [line 47, column 3]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(ty:init_list::Y[3*24]); [line 48, column 3]\n  *&ty[0].z:int=1 [line 48, column 14]\n  *&ty[0].x.a:int=2 [line 48, column 18]\n  *&ty[0].x.p:int*=null [line 48, column 18]\n  n$3=_fun_init_list::Y::Y(&ty[1]:init_list::Y*,&y:init_list::Y&) [line 48, column 33]\n  n$4=*&yref:init_list::Y& [line 48, column 36]\n  n$5=_fun_init_list::Y::Y(&ty[2]:init_list::Y*,n$4:init_list::Y&) [line 48, column 36]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y:init_list::Y); [line 46, column 3]\n  n$3=_fun_init_list::Y::Y(&y:init_list::Y*) [line 46, column 5]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(yref:init_list::Y&); [line 47, column 3]\n  *&yref:init_list::Y&=&y [line 47, column 3]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(ti:int[4*4]); [line 45, column 3]\n  *&ti[0]:int=1 [line 45, column 15]\n  *&ti[1]:int=2 [line 45, column 15]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y:init_list::Y); [line 46, column 3]\n  n$6=_fun_init_list::Y::Y(&y:init_list::Y*) [line 46, column 5]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" ;
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(ti:int[4*4]); [line 45, column 3]\n  *&ti[0]:int=1 [line 45, column 15]\n  *&ti[1]:int=2 [line 45, column 15]\n " shape="box"]
+	
+
+	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_7" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" ;
 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_1" [label="1: Start init_list::record_init\nFormals: \nLocals:  c:init_list::C y2:init_list::Y y1:init_list::Y x:init_list::X \n  " color=yellow style=filled]
 	
 
@@ -41,11 +45,11 @@ digraph cfg {
 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" [label="2: Exit init_list::record_init \n  " color=yellow style=filled]
 	
 
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  Destruction(Scope) \n   _=*&c:init_list::C [line 42, column 1]\n  n$1=_fun_init_list::C::~C(&c:init_list::C*) injected [line 42, column 1]\n  _=*&x:init_list::X [line 42, column 1]\n  n$3=_fun_init_list::X::~X(&x:init_list::X*) injected [line 42, column 1]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  Destruction(Scope) \n   _=*&c:init_list::C [line 42, column 1]\n  n$1=_fun_init_list::C::~C(&c:init_list::C*) injected [line 42, column 1]\n  _=*&y2:init_list::Y [line 42, column 1]\n  n$3=_fun_init_list::Y::~Y(&y2:init_list::Y*) injected [line 42, column 1]\n  _=*&y1:init_list::Y [line 42, column 1]\n  n$5=_fun_init_list::Y::~Y(&y1:init_list::Y*) injected [line 42, column 1]\n  _=*&x:init_list::X [line 42, column 1]\n  n$7=_fun_init_list::X::~X(&x:init_list::X*) injected [line 42, column 1]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 41, column 3]\n  n$5=_fun_init_list::C::C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 41, column 5]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 41, column 3]\n  n$9=_fun_init_list::C::C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 41, column 5]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" ;
@@ -53,7 +57,7 @@ digraph cfg {
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y1:init_list::Y); [line 38, column 3]\n  *&y1.z:int=1 [line 38, column 7]\n  n$6=_fun_init_list::X::X(&y1.x:init_list::X*,&x:init_list::X&) [line 38, column 11]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y1:init_list::Y); [line 38, column 3]\n  *&y1.z:int=1 [line 38, column 7]\n  n$10=_fun_init_list::X::X(&y1.x:init_list::X*,&x:init_list::X&) [line 38, column 11]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" ;
@@ -87,11 +91,11 @@ digraph cfg {
 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" [label="2: Exit init_list::zero_init_record \n  " color=yellow style=filled]
 	
 
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  Destruction(Scope) \n   _=*&c:init_list::C [line 34, column 1]\n  n$1=_fun_init_list::C::~C(&c:init_list::C*) injected [line 34, column 1]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  Destruction(Scope) \n   _=*&c:init_list::C [line 34, column 1]\n  n$1=_fun_init_list::C::~C(&c:init_list::C*) injected [line 34, column 1]\n  _=*&y:init_list::Y [line 34, column 1]\n  n$3=_fun_init_list::Y::~Y(&y:init_list::Y*) injected [line 34, column 1]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" ;
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 33, column 3]\n  n$3=_fun_init_list::C::C(&c:init_list::C*) [line 33, column 5]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 33, column 3]\n  n$5=_fun_init_list::C::C(&c:init_list::C*) [line 33, column 5]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" ;

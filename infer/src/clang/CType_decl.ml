@@ -218,6 +218,9 @@ let get_struct_decls decl =
       decl_list
   | AccessSpecDecl _
   | BlockDecl _
+  | ConceptDecl _
+  | OMPDeclareMapperDecl _
+  | OMPAllocateDecl _
   | ClassScopeFunctionSpecializationDecl _
   | EmptyDecl _
   | ExportDecl _

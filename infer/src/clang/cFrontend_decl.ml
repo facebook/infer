@@ -182,6 +182,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ | ObjCInterfaceDecl _ ->
         ()
     | AccessSpecDecl _
+    | ConceptDecl _
+    | OMPDeclareMapperDecl _
+    | OMPAllocateDecl _
     | BlockDecl _
     | CapturedDecl _
     | ClassScopeFunctionSpecializationDecl _
