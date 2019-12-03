@@ -210,7 +210,7 @@ module TransferFunctions = struct
         astate
 end
 
-let make_trace_mixed_self_weakself domain =
+let make_trace_use_self_weakself domain =
   let trace_elems =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
@@ -240,8 +240,34 @@ let report_mix_self_weakself_issues summary domain =
            unexpected behavior."
           (Pvar.pp Pp.text) weakSelf Location.pp weakLoc (Pvar.pp Pp.text) self Location.pp selfLoc
       in
-      let ltr = make_trace_mixed_self_weakself domain in
+      let ltr = make_trace_use_self_weakself domain in
       Reporting.log_error summary ~ltr ~loc:selfLoc IssueType.mixed_self_weakself message
+  | _ ->
+      ()
+
+
+let report_weakself_multiple_issues summary domain =
+  let weakSelfs =
+    Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain
+    |> Vars.bindings |> List.map ~f:snd
+  in
+  let sorted_WeakSelfs =
+    List.sort weakSelfs ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
+        Location.compare loc1 loc2 )
+  in
+  match sorted_WeakSelfs with
+  | {pvar= weakSelf; loc= weakLoc1} :: {loc= weakLoc2} :: _ ->
+      let message =
+        F.asprintf
+          "This block uses the weak pointer `%a` more than once (%a) and (%a). This could lead to \
+           unexpected behavior. Even if `%a` is not nil in the first use, it could be nil in the \
+           following uses since the object that `%a` points to could be freed anytime; assign it \
+           to a strong variable first."
+          (Pvar.pp Pp.text) weakSelf Location.pp weakLoc1 Location.pp weakLoc2 (Pvar.pp Pp.text)
+          weakSelf (Pvar.pp Pp.text) weakSelf
+      in
+      let ltr = make_trace_use_self_weakself domain in
+      Reporting.log_error summary ~ltr ~loc:weakLoc1 IssueType.multiple_weakself message
   | _ ->
       ()
 
@@ -304,7 +330,8 @@ let checker {Callbacks.exe_env; summary} =
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
         report_mix_self_weakself_issues summary domain.vars ;
-        report_unchecked_strongself_issues summary domain
+        report_unchecked_strongself_issues summary domain ;
+        report_weakself_multiple_issues summary domain.vars
     | None ->
         () ) ;
   summary

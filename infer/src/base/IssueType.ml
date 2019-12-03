@@ -362,6 +362,8 @@ let missing_required_prop = register_from_string "MISSING_REQUIRED_PROP"
 
 let mixed_self_weakself = register_from_string "MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf"
 
+let multiple_weakself = register_from_string "MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use"
+
 let mutable_local_variable_in_component_file =
   register_from_string "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
 

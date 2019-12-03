@@ -3,3 +3,4 @@ codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest::strong
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest::strongSelfCheckOnce_bad_5, 8, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null,Using &strongSelf not checked for null]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest::strongSelfNoCheck2_bad_4, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest::strongSelfNoCheck_bad_3, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null]
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest::wekSelfMultiple_bad_9, 1, MULTIPLE_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]

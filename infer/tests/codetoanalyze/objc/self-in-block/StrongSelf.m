@@ -11,6 +11,8 @@
 
 - (void)foo;
 
+- (void)bar;
+
 @end
 
 @implementation SelfInBlockTest {
@@ -18,6 +20,9 @@
 }
 
 - (void)foo {
+}
+
+- (void)bar {
 }
 
 - (void)mixSelfWeakSelf_bad {
@@ -116,4 +121,12 @@
   };
 }
 
+- (void)wekSelfMultiple_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    [weakSelf foo];
+    [weakSelf bar];
+    return 0;
+  };
+}
 @end
