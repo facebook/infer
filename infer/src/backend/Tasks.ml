@@ -31,7 +31,7 @@ module Runner = struct
 
   let run runner =
     (* Flush here all buffers to avoid passing unflushed data to forked processes, leading to duplication *)
-    Pervasives.flush_all () ;
+    Stdlib.flush_all () ;
     (* Compact heap before forking *)
     Gc.compact () ;
     ProcessPool.run runner

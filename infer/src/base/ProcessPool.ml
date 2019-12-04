@@ -402,7 +402,7 @@ let fork_child ~file_lock ~child_prelude ~slot (updates_r, updates_w) ~f ~epilog
       Out_channel.close updates_oc ;
       In_channel.close orders_ic ;
       Epilogues.run () ;
-      Pervasives.exit 0
+      Stdlib.exit 0
   | `In_the_parent pid ->
       let[@warning "-26"] to_child_r = Unix.close to_child_r in
       {pid; down_pipe= Unix.out_channel_of_descr to_child_w}

@@ -21,7 +21,7 @@ install: [
 ]
 depends: [
   "ANSITerminal" {>="0.7"}
-  "apron"
+  "apron" {<"v0.9.12"}
   "async" {>="v0.12.0" & < "v0.13"}
   "atdgen" {>="2.0.0"}
   "base64" {>="3.0.0"}
@@ -38,7 +38,7 @@ depends: [
   "javalib" {>="3.1.1"}
   "mlgmpidl" {>="1.2.12"}
   "mtime"
-  "ocaml" {>="4.06.0"}
+  "ocaml" {>="4.08.0"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {>="2.0.5"}

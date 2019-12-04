@@ -38,8 +38,8 @@ let compute_statistics values =
         assert (num_elements > 0) ;
         let max_index = num_elements - 1 in
         let pct_index = float_of_int max_index *. pct in
-        let low_index = int_of_float (Pervasives.floor pct_index) in
-        let high_index = int_of_float (Pervasives.ceil pct_index) in
+        let low_index = int_of_float (Stdlib.floor pct_index) in
+        let high_index = int_of_float (Stdlib.ceil pct_index) in
         let low = values_arr.(low_index) in
         let high = values_arr.(high_index) in
         (low +. high) /. 2.0

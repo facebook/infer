@@ -59,7 +59,7 @@ val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 
 type file_lock =
   { file: string
-  ; oc: Pervasives.out_channel
+  ; oc: Stdlib.out_channel
   ; fd: Core.Unix.File_descr.t
   ; lock: unit -> unit
   ; unlock: unit -> unit }

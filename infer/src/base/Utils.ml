@@ -193,7 +193,7 @@ let with_file_out file ~f =
 
 type file_lock =
   { file: string
-  ; oc: Pervasives.out_channel
+  ; oc: Stdlib.out_channel
   ; fd: Core.Unix.File_descr.t
   ; lock: unit -> unit
   ; unlock: unit -> unit }

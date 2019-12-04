@@ -742,7 +742,7 @@ let set_curr_speclist_for_parse_mode ~usage parse_mode =
   let curr_usage status =
     prerr_endline (String.concat_array ~sep:" " !args_to_parse) ;
     prerr_endline usage ;
-    Pervasives.exit status
+    Stdlib.exit status
   in
   (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
      treatment *)
@@ -963,7 +963,7 @@ let parse_args ~usage initial_action ?initial_command args =
           parse_loop () )
         else (
           ANSITerminal.prerr_string L.(term_styles_of_style Fatal) usage_msg ;
-          Pervasives.exit 1 )
+          Stdlib.exit 1 )
     | Arg.Help _ ->
         (* we handle --help by ourselves and error on -help, so Arg has no way to raise Help
            anymore *)

@@ -1931,7 +1931,7 @@ and progress_bar =
 and progress_bar_style =
   CLOpt.mk_symbol ~long:"progress-bar-style"
     ~symbols:[("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)]
-    ~eq:Pervasives.( = ) ~default:`Auto
+    ~eq:Stdlib.( = ) ~default:`Auto
     ~in_help:[(Analyze, manual_generic); (Capture, manual_generic)]
     "Style of the progress bar. $(b,auto) selects $(b,multiline) if connected to a tty, otherwise \
      $(b,plain)."
@@ -2604,7 +2604,7 @@ let post_parsing_initialization command_opt =
         CommandDoc.infer command_opt
   | `None ->
       () ) ;
-  if !version <> `None || !help <> `None then Pervasives.exit 0 ;
+  if !version <> `None || !help <> `None then Stdlib.exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
     let is_infer_exit_zero = match exn with L.InferExit 0 -> true | _ -> false in
     let should_print_backtrace_default =
@@ -2646,7 +2646,7 @@ let post_parsing_initialization command_opt =
     let exitcode = L.exit_code_of_exception exn in
     L.log_uncaught_exception exn ~exitcode ;
     Epilogues.run () ;
-    Pervasives.exit exitcode
+    Stdlib.exit exitcode
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;

@@ -27,7 +27,7 @@ module IO = struct
   let prepare () =
     close () ;
     let fname = events_dir ^/ (Unix.getpid () |> Pid.to_string) ^ log_file_extension in
-    let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
+    let oc = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 fname in
     out_chan := Some oc
 
 
@@ -37,7 +37,7 @@ module IO = struct
 
   let write_skipped_pname pname =
     let fname = events_dir ^/ "skipped_functions" ^ log_file_extension in
-    let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
+    let oc = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 fname in
     Out_channel.output_string oc pname ;
     Out_channel.output_char oc '\n' ;
     Out_channel.close oc

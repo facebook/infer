@@ -29,7 +29,7 @@ let sort_by_decreasing_preference_to_report issues =
     if n <> 0 then n
     else
       let n = String.compare x.hash y.hash in
-      if n <> 0 then n else Pervasives.compare x y
+      if n <> 0 then n else Stdlib.compare x y
   in
   List.sort ~compare issues
 
