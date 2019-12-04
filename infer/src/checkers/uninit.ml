@@ -357,7 +357,4 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   | Some {RecordDomain.prepost} ->
       Payload.update_summary prepost summary
   | None ->
-      if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
-        L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp proc_name ;
-        summary )
-      else summary
+      summary
