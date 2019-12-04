@@ -27,7 +27,7 @@ let should_skip_analysis = MethodMatcher.of_json Config.starvation_skip_analysis
 let android_anr_time_limit = 5.0
 
 (* get time unit in seconds *)
-let timeunit_of_exp =
+let secs_of_timeunit =
   let time_units =
     String.Map.of_alist_exn
       [ ("NANOSECONDS", 0.000_000_001)
@@ -54,41 +54,14 @@ let timeunit_of_exp =
   fun timeunit_exp -> str_of_exp timeunit_exp |> Option.bind ~f:(String.Map.find time_units)
 
 
-(** check whether actuals of a method call either empty, denoting indefinite timeout, or evaluate to
-    a finite timeout greater than the android anr limit *)
-let empty_or_excessive_timeout actuals =
-  let duration_of_exp = function
-    | HilExp.Constant (Const.Cint duration_lit) ->
-        Some (IntLit.to_float duration_lit)
-    | _ ->
-        None
-  in
-  (* all arguments in seconds *)
-  let is_excessive_secs duration = duration >. android_anr_time_limit in
-  match actuals with
-  | [_] ->
-      (* this is a wait or lock call without timeout, thus it can block indefinitely *)
-      true
-  | [_; snd_arg] ->
-      (* this is an Object.wait(_) call, second argument should be a duration in milliseconds *)
-      duration_of_exp snd_arg
-      |> Option.value_map ~default:false ~f:(fun duration -> is_excessive_secs (0.001 *. duration))
-  | [_; snd_arg; third_arg] ->
-      (* this is either a call to Object.wait(_, _) or to a java.util.concurent.lock(_, _) method.
-         In the first case the arguments are a duration in milliseconds and an extra duration in
-         nanoseconds; in the second case, the arguments are a duration and a time unit. *)
-      duration_of_exp snd_arg
-      |> Option.value_map ~default:false ~f:(fun duration ->
-             match timeunit_of_exp third_arg with
-             | Some timeunit ->
-                 is_excessive_secs (timeunit *. duration)
-             | None ->
-                 duration_of_exp third_arg
-                 |> Option.value_map ~default:false ~f:(fun extra ->
-                        is_excessive_secs (0.001 *. (duration +. (0.000_001 *. extra))) ) )
+let float_of_const_int = function
+  | HilExp.Constant (Const.Cint duration_lit) ->
+      Some (IntLit.to_float duration_lit)
   | _ ->
-      false
+      None
 
+
+let is_excessive_secs duration = duration >. android_anr_time_limit
 
 type severity = Low | Medium | High [@@deriving compare]
 
@@ -97,33 +70,66 @@ let pp_severity fmt sev =
   F.pp_print_string fmt msg
 
 
+let no_args_or_excessive_timeout_and_timeunit = function
+  | [_] ->
+      (* no arguments, unconditionally blocks *)
+      true
+  | [_; timeout; timeunit] ->
+      (* two arguments, a timeout and a time unit *)
+      Option.both (float_of_const_int timeout) (secs_of_timeunit timeunit)
+      |> Option.map ~f:(fun (duration, timeunit_secs) -> duration *. timeunit_secs)
+      |> Option.exists ~f:is_excessive_secs
+  | _ ->
+      false
+
+
+let no_args_or_excessive_millis_and_nanos = function
+  | [_] ->
+      (* this is a wait without timeout, it can block indefinitely *)
+      true
+  | [_; snd_arg] ->
+      (* 2nd argument is a duration in milliseconds *)
+      float_of_const_int snd_arg
+      |> Option.exists ~f:(fun duration -> is_excessive_secs (0.001 *. duration))
+  | [_; snd_arg; third_arg] ->
+      (* 2nd argument is a duration in milliseconds, 3rd is extra duration in nanoseconds. *)
+      Option.both (float_of_const_int snd_arg) (float_of_const_int third_arg)
+      |> Option.map ~f:(fun (duration, extra) -> 0.001 *. (duration +. (0.000_001 *. extra)))
+      |> Option.exists ~f:is_excessive_secs
+  | _ ->
+      false
+
+
 let standard_matchers =
   let open MethodMatcher in
   let high_sev =
     [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
     ; { default with
+        classname= "java.lang.Thread"
+      ; methods= ["join"]
+      ; actuals_pred= no_args_or_excessive_millis_and_nanos }
+    ; { default with
         classname= "java.util.concurrent.CountDownLatch"
       ; methods= ["await"]
-      ; actuals_pred= empty_or_excessive_timeout }
+      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
       (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
          is int-zero then a reply is expected and returned from the remote process, thus potentially
          blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
     ; { default with
         classname= "android.os.IBinder"
       ; methods= ["transact"]
-      ; actuals_pred=
-          (fun actuals ->
-            List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) } ]
+      ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero) }
+    ]
   in
   let low_sev =
     [ { default with
         classname= "java.util.concurrent.Future"
       ; methods= ["get"]
-      ; actuals_pred= empty_or_excessive_timeout }
+      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
     ; { default with
         classname= "android.os.AsyncTask"
       ; methods= ["get"]
-      ; actuals_pred= empty_or_excessive_timeout } ]
+      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ]
   in
   let high_sev_matcher = List.map high_sev ~f:of_record |> of_list in
   let low_sev_matcher = List.map low_sev ~f:of_record |> of_list in
@@ -142,7 +148,7 @@ let is_monitor_wait =
       { default with
         classname= "java.lang.Object"
       ; methods= ["wait"]
-      ; actuals_pred= empty_or_excessive_timeout })
+      ; actuals_pred= no_args_or_excessive_millis_and_nanos })
 
 
 (* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
