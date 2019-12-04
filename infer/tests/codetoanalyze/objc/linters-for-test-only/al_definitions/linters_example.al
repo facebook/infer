@@ -890,8 +890,8 @@ DEFINE-CHECKER IVAR_CAPTURED_IN_OBJC_BLOCK = {
 	};
 
 DEFINE-CHECKER CALLS_TO_FUNCTIONS_WITH_CREATE_FUNCTION_PARAMETERS = {
-LET is_create_method_parameter = HOLDS-NEXT WITH-TRANSITION Parameters 
-    (call_function(REGEXP(".*Create.*")) AND has_type("REGEXP('C.*Ref')"));
+LET is_create_method_parameter = HOLDS-NEXT WITH-TRANSITION Parameters
+    (call_function(REGEXP(".*Create.*")) AND has_type("REGEXP('__C.+')*"));
 SET report_when =
     WHEN
       is_create_method_parameter
@@ -915,7 +915,7 @@ DEFINE-CHECKER CLASS_AND_VAR = {
 
 DEFINE-CHECKER CAT_DECL_MACRO = {
 
-  LET is_linkable_var = 
+  LET is_linkable_var =
       is_extern_var() AND
       declaration_has_name(REGEXP("Linkable_.*")) AND
       has_type("char");
@@ -924,12 +924,12 @@ DEFINE-CHECKER CAT_DECL_MACRO = {
 	  		HOLDS-NEXT WITH-TRANSITION Sibling
         (is_node("VarDecl") AND is_linkable_var());
 
-   SET report_when = 
-       WHEN 
+   SET report_when =
+       WHEN
        NOT (
-          is_node("ObjCCategoryDecl") 
+          is_node("ObjCCategoryDecl")
            AND-WITH-WITNESSES var_decls() : decl_name_is_contained_in_name_of_decl()
-      ) 
+      )
       HOLDS-IN-NODE ObjCCategoryDecl;
 
 	 SET message = "A category is defined without the corresponding macro";
@@ -937,7 +937,7 @@ DEFINE-CHECKER CAT_DECL_MACRO = {
 
 DEFINE-CHECKER CAT_IMPL_MACRO = {
 
-  LET is_linkable_var = 
+  LET is_linkable_var =
       has_visibility_attribute("Default") AND
       declaration_has_name(REGEXP("Linkable_.*")) AND
       has_type("char");
@@ -946,10 +946,10 @@ DEFINE-CHECKER CAT_IMPL_MACRO = {
 	  		HOLDS-NEXT WITH-TRANSITION Sibling
         (is_node("VarDecl") AND is_linkable_var());
 
-   SET report_when = 
-       WHEN 
+   SET report_when =
+       WHEN
       NOT (
-          is_node("ObjCCategoryImplDecl") 
+          is_node("ObjCCategoryImplDecl")
            AND-WITH-WITNESSES var_decls() : decl_name_is_contained_in_name_of_decl()
       ) HOLDS-IN-NODE ObjCCategoryImplDecl;
 

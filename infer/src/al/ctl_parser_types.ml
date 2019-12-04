@@ -558,7 +558,8 @@ and c_type_equal c_type abs_ctype =
   | ElaboratedType ti, TypeName _
   | AutoType ti, TypeName _
   | TypedefType (ti, _), ObjCGenProt _
-  | AttributedType (ti, _), Pointer _ -> (
+  | AttributedType (ti, _), Pointer _
+  | TypedefType (ti, _), Pointer _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
   | AttributedType (ti, _), TypeName _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )

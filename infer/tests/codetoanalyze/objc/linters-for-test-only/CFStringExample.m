@@ -9,6 +9,9 @@
 static CFStringRef CreateFoo() {
   return CFStringCreateWithCString(NULL, "Hello", kCFStringEncodingUTF8);
 }
+static _Nullable CFStringRef CreateNullableFoo() {
+  return CFStringCreateWithCString(NULL, "Hello", kCFStringEncodingUTF8);
+}
 
 static void doSomething(CFStringRef s) { CFShow(s); }
 
@@ -18,7 +21,7 @@ static void Foo() {}
 
 int main() {
   doSomething(CreateFoo());
-  doSomethingElse(0, CreateFoo());
+  doSomethingElse(0, CreateNullableFoo());
   Foo();
   return 0;
 }
