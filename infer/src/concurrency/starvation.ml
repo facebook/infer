@@ -256,6 +256,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
+      | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
+          Domain.wait_on_monitor ~loc actuals astate
       | NoEffect when is_java -> (
           let ret_exp = HilExp.AccessExpression.base ret_base in
           let astate = do_work_scheduling tenv callee actuals loc astate in
@@ -540,17 +542,18 @@ end = struct
 end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
+  let open Domain in
   (not Config.deduplicate)
   ||
-  let open Domain in
   match (endpoint_elem.CriticalPair.elem.event, current_elem.CriticalPair.elem.event) with
-  | _, (MayBlock _ | StrictModeCall _) | (MayBlock _ | StrictModeCall _), _ ->
+  | _, (MayBlock _ | StrictModeCall _ | MonitorWait _)
+  | (MayBlock _ | StrictModeCall _ | MonitorWait _), _ ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
   | LockAcquire ((Var.LogicalVar _, _), []), _ ->
       (* first elem is a class object (see [lock_of_class]), so always report because the
-         reverse ordering on the events will not occur -- FIXME WHY? *)
+         reverse ordering on the events will not occur since we don't search the class for static locks *)
       true
   | LockAcquire ((Var.LogicalVar _, _), _ :: _), _ | _, LockAcquire ((Var.LogicalVar _, _), _) ->
       (* first elem has an ident root, but has a non-empty access path, which means we are
@@ -611,6 +614,13 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
     other_pair report_map =
   let open Domain in
   let pname = Procdesc.get_proc_name pdesc in
+  let make_trace_and_loc () =
+    let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
+    let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
+    let ltr = first_trace @ second_trace in
+    let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+    (ltr, loc)
+  in
   if CriticalPair.can_run_in_parallel pair other_pair then
     let acquisitions = other_pair.CriticalPair.elem.acquisitions in
     match other_pair.CriticalPair.elem.event with
@@ -621,25 +631,29 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
             "Method %a runs on UI thread and%a, which may be held by another thread which %s."
             pname_pp pname Lock.pp_locks lock block_descr
         in
-        let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
-        let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
-        let ltr = first_trace @ second_trace in
-        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+        let ltr, loc = make_trace_and_loc () in
         ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
+    | MonitorWait monitor_lock
+      when should_report_starvation
+           && Acquisitions.lock_is_held lock acquisitions
+           && not (Lock.equal lock monitor_lock) ->
+        let error_message =
+          Format.asprintf
+            "Method %a runs on UI thread and%a, which may be held by another thread which %a."
+            pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
+        in
+        let ltr, loc = make_trace_and_loc () in
+        ReportMap.add_starvation High tenv pdesc loc ltr error_message report_map
     | LockAcquire other_lock
       when CriticalPair.may_deadlock pair other_pair
            && should_report_deadlock_on_current_proc pair other_pair ->
-        let open Domain in
         let error_message =
           Format.asprintf
             "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse \
              orders."
             pname_pp pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
         in
-        let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
-        let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
-        let ltr = first_trace @ second_trace in
-        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+        let ltr, loc = make_trace_and_loc () in
         ReportMap.add_deadlock tenv pdesc loc ltr error_message report_map
     | _ ->
         report_map
@@ -654,22 +668,32 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
   let should_report_starvation =
     CriticalPair.is_uithread pair && not (Typ.Procname.is_constructor pname)
   in
+  let make_trace_and_loc () =
+    let loc = CriticalPair.get_loc pair in
+    let ltr = CriticalPair.make_trace ~include_acquisitions:false pname pair in
+    (ltr, loc)
+  in
   match event with
   | MayBlock (_, sev) when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
-      let loc = CriticalPair.get_loc pair in
-      let ltr = CriticalPair.make_trace ~include_acquisitions:false pname pair in
+      let ltr, loc = make_trace_and_loc () in
       ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
+  | MonitorWait _ when should_report_starvation ->
+      let error_message =
+        Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
+          Event.describe event
+      in
+      let ltr, loc = make_trace_and_loc () in
+      ReportMap.add_starvation High tenv pdesc loc ltr error_message report_map
   | StrictModeCall _ when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
           pname Event.describe event
       in
-      let loc = CriticalPair.get_loc pair in
-      let ltr = CriticalPair.make_trace ~include_acquisitions:false pname pair in
+      let ltr, loc = make_trace_and_loc () in
       ReportMap.add_strict_mode_violation tenv pdesc loc ltr error_message report_map
   | LockAcquire _ when StarvationModels.is_annotated_lockless ~attrs_of_pname tenv pname ->
       let error_message =

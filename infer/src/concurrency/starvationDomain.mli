@@ -28,6 +28,8 @@ end
 module Lock : sig
   include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
 
+  val equal : t -> t -> bool
+
   val owner_class : t -> Typ.name option
   (** Class of the root variable of the path representing the lock *)
 
@@ -41,6 +43,7 @@ module Event : sig
     | LockAcquire of Lock.t
     | MayBlock of (string * StarvationModels.severity)
     | StrictModeCall of string
+    | MonitorWait of Lock.t
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
@@ -155,6 +158,8 @@ val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
 val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
+
+val wait_on_monitor : loc:Location.t -> HilExp.t list -> t -> t
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 

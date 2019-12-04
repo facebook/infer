@@ -119,6 +119,7 @@ module Event = struct
     | LockAcquire of Lock.t
     | MayBlock of (string * StarvationModels.severity)
     | StrictModeCall of string
+    | MonitorWait of Lock.t
   [@@deriving compare]
 
   let pp fmt = function
@@ -128,6 +129,8 @@ module Event = struct
         F.fprintf fmt "MayBlock(%s, %a)" msg StarvationModels.pp_severity sev
     | StrictModeCall msg ->
         F.fprintf fmt "StrictModeCall(%s)" msg
+    | MonitorWait lock ->
+        F.fprintf fmt "MonitorWait(%a)" Lock.pp lock
 
 
   let describe fmt elem =
@@ -138,6 +141,8 @@ module Event = struct
         F.pp_print_string fmt msg
     | StrictModeCall msg ->
         F.pp_print_string fmt msg
+    | MonitorWait lock ->
+        F.fprintf fmt "calls `wait` on %a" Lock.describe lock
 
 
   let make_acquire lock = LockAcquire lock
@@ -152,6 +157,9 @@ module Event = struct
   let make_strict_mode_call callee =
     let descr = make_call_descr callee in
     StrictModeCall descr
+
+
+  let make_object_wait lock = MonitorWait lock
 end
 
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
@@ -596,6 +604,16 @@ let make_call_with_event new_event ~loc astate =
 let blocking_call ~callee sev ~loc astate =
   let new_event = Event.make_blocking_call callee sev in
   make_call_with_event new_event ~loc astate
+
+
+let wait_on_monitor ~loc actuals astate =
+  match actuals with
+  | HilExp.AccessExpression exp :: _ ->
+      let lock = HilExp.AccessExpression.to_access_path exp in
+      let new_event = Event.make_object_wait lock in
+      make_call_with_event new_event ~loc astate
+  | _ ->
+      astate
 
 
 let strict_mode_call ~callee ~loc astate =

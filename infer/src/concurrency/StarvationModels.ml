@@ -102,10 +102,6 @@ let standard_matchers =
   let high_sev =
     [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
     ; { default with
-        classname= "java.lang.Object"
-      ; methods= ["wait"]
-      ; actuals_pred= empty_or_excessive_timeout }
-    ; { default with
         classname= "java.util.concurrent.CountDownLatch"
       ; methods= ["await"]
       ; actuals_pred= empty_or_excessive_timeout }
@@ -138,6 +134,15 @@ let standard_matchers =
 let may_block tenv pn actuals =
   List.find_map standard_matchers ~f:(fun (matcher, sev) ->
       Option.some_if (matcher tenv pn actuals) sev )
+
+
+let is_monitor_wait =
+  MethodMatcher.(
+    of_record
+      { default with
+        classname= "java.lang.Object"
+      ; methods= ["wait"]
+      ; actuals_pred= empty_or_excessive_timeout })
 
 
 (* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
@@ -246,8 +251,8 @@ let schedules_work_on_bg_thread =
 type scheduler_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThread
 [@@deriving equal]
 
-(* Executors are sometimes stored in fields and annotated according to what type of thread 
-   they schedule work on.  Given an expression representing such a field, try to find the kind of 
+(* Executors are sometimes stored in fields and annotated according to what type of thread
+   they schedule work on.  Given an expression representing such a field, try to find the kind of
    annotation constraint, if any. *)
 let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.AccessExpression.t) =
   match receiver with

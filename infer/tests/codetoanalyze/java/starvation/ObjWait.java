@@ -54,4 +54,18 @@ class ObjWait {
       }
     }
   }
+
+  Object y;
+
+  @UiThread
+  void indirectWaitSameLockOnMainOk() throws InterruptedException {
+    synchronized (y) {
+    }
+  }
+
+  void lockAndWaitSameLockOnAnyOk() throws InterruptedException {
+    synchronized (y) {
+      y.wait();
+    }
+  }
 }
