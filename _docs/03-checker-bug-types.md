@@ -18,6 +18,7 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Lock Consistency Violation](/docs/checkers-bug-types.html#LOCK_CONSISTENCY_VIOLATION)
   - [Memory leak](/docs/checkers-bug-types.html#MEMORY_LEAK)
   - [Mixed self weakSelf](/docs/checkers-bug-types.html#MIXED_SELF_WEAKSELF)
+  - [Multiple weakSelf Use](/docs/checkers-bug-types.html#MULTIPLE_WEAKSELF)
   - [Null dereference](/docs/checkers-bug-types.html#NULL_DEREFERENCE)
   - [Parameter not null checked](/docs/checkers-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Premature nil termination argument](/docs/checkers-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
@@ -237,6 +238,12 @@ The above may happen through a chain of calls. Above, `x` may also be a containe
 ## Mixed self weakSelf
 
 This happens when an Objective-C block captures both `self` and `weakSelf`, a weak pointer to `self`. Possibly the developer meant to capture only `weakSelf` to avoid a retain cycle, but made a typo and used `self` as well in the block, instead of `strongSelf`. In this case, this could cause a retain cycle. 
+
+<a name="MULTIPLE_WEAKSELF"></a>
+
+## Multiple weakSelf
+
+An Objective-C block uses `weakSelf` more than once. This could lead to unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could be nil in the following uses since the object that `weakSelf` points to could be freed anytime. One should assign it to a strong pointer first, and then use it in the block.
 
 <a name="MEMORY_LEAK"></a>
 
