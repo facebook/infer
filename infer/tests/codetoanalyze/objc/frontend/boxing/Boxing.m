@@ -42,4 +42,10 @@
   ;
 }
 
+- (NSString*)getString {
+  NSString* s = @("hello world");
+  return s;
+  ;
+}
+
 @end

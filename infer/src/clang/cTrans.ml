@@ -3483,12 +3483,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         floatingLiteral_trans trans_state expr_info float_string
     | CXXScalarValueInitExpr (_, _, expr_info) ->
         cxxScalarValueInitExpr_trans trans_state expr_info
-    | ObjCBoxedExpr (stmt_info, stmts, info, boxed_expr_info) -> (
-      match boxed_expr_info.Clang_ast_t.obei_boxing_method with
-      | Some sel ->
-          objCBoxedExpr_trans trans_state info sel stmt_info stmts
-      | None ->
-          assert false )
+    | ObjCBoxedExpr (stmt_info, stmts, info, boxed_expr_info) ->
+        (* Sometimes clang does not return a boxing method (a name of function to apply), e.g.,
+           [@("str")].  In that case, it uses "unknownSelector:" instead of giving up the
+           translation. *)
+        let sel =
+          Option.value boxed_expr_info.Clang_ast_t.obei_boxing_method ~default:"unknownSelector:"
+        in
+        objCBoxedExpr_trans trans_state info sel stmt_info stmts
     | ObjCArrayLiteral (stmt_info, stmts, expr_info, array_literal_info) ->
         objCArrayLiteral_trans trans_state expr_info stmt_info stmts array_literal_info
     | ObjCDictionaryLiteral (stmt_info, stmts, expr_info, dict_literal_info) ->

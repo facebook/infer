@@ -98,4 +98,19 @@ digraph cfg {
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;
+"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_1" [label="1: Start Boxing::getString\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+	
+
+	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_1" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" ;
+"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_2" [label="2: Exit Boxing::getString \n  " color=yellow style=filled]
+	
+
+"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" [label="3:  Return Stmt \n   n$19=*&s:NSString* [line 47, column 10]\n  *&return:NSString*=n$19 [line 47, column 3]\n " shape="box"]
+	
+
+	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_2" ;
+"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 46, column 3]\n  n$20=_fun_NSString::unknownSelector:(\"hello world\":char*) [line 46, column 17]\n  *&s:NSString*=n$20 [line 46, column 3]\n " shape="box"]
+	
+
+	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" ;
 }
