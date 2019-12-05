@@ -48,9 +48,10 @@ module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
 
 module NewDomain = struct
   module CreatedLocation = struct
-    type t = Location.t [@@deriving compare]
+    type t = {location: Location.t; typ_name: Typ.name} [@@deriving compare]
 
-    let pp fmt location = F.fprintf fmt "Created at %a" Location.pp location
+    let pp fmt {location; typ_name} =
+      F.fprintf fmt "Created at %a with type %a" Location.pp location Typ.Name.pp typ_name
   end
 
   module CreatedLocations = AbstractDomain.InvertedSet (CreatedLocation)
@@ -106,24 +107,7 @@ module NewDomain = struct
       if is_build_method_called then x else {x with method_calls= S.add e method_calls}
 
 
-    (* TODO do not add callee to the set *)
-    let set_build_method_called callee x =
-      let x = add callee x in
-      {x with is_build_method_called= true}
-
-
-    let find_client_component_type method_calls =
-      let exception Found of Typ.name in
-      let f MethodCall.{procname} =
-        match procname with
-        | Typ.Procname.Java java_pname ->
-            Typ.Name.Java.get_outer_class (Typ.Procname.Java.get_class_type_name java_pname)
-            |> Option.iter ~f:(fun typ -> raise (Found typ))
-        | _ ->
-            ()
-      in
-      match S.iter f method_calls with () -> None | exception Found typ -> Some typ
-
+    let set_build_method_called x = {x with is_build_method_called= true}
 
     let to_string_set method_calls =
       let accum_as_string method_call acc =
@@ -137,12 +121,12 @@ module NewDomain = struct
       S.elements method_calls
 
 
-    let check_required_props ~check_on_string_set {is_build_method_called; method_calls} =
+    let check_required_props ~check_on_string_set parent_typename
+        {is_build_method_called; method_calls} =
       if is_build_method_called then
-        Option.iter (find_client_component_type method_calls) ~f:(fun parent_typename ->
-            let prop_set = to_string_set method_calls in
-            let call_chain = get_call_chain method_calls in
-            check_on_string_set parent_typename call_chain prop_set )
+        let prop_set = to_string_set method_calls in
+        let call_chain = get_call_chain method_calls in
+        check_on_string_set parent_typename call_chain prop_set
   end
 
   module MethodCalled = struct
@@ -164,20 +148,22 @@ module NewDomain = struct
         created_locations x
 
 
-    let build_method_called_one callee created_location x =
+    let build_method_called_one created_location x =
       let f v =
         let method_calls = Option.value v ~default:MethodCalls.empty in
-        Some (MethodCalls.set_build_method_called callee method_calls)
+        Some (MethodCalls.set_build_method_called method_calls)
       in
       update created_location f x
 
 
-    let build_method_called created_locations callee x =
-      CreatedLocations.fold (build_method_called_one callee) created_locations x
+    let build_method_called created_locations x =
+      CreatedLocations.fold build_method_called_one created_locations x
 
 
     let check_required_props ~check_on_string_set x =
-      let f _ method_calls = MethodCalls.check_required_props ~check_on_string_set method_calls in
+      let f CreatedLocation.{typ_name} method_calls =
+        MethodCalls.check_required_props ~check_on_string_set typ_name method_calls
+      in
       iter f x
   end
 
@@ -210,8 +196,8 @@ module NewDomain = struct
     {x with created= Created.add lhs (Created.lookup rhs created) created}
 
 
-  let call_create lhs location ({created} as x) =
-    {x with created= Created.add lhs (CreatedLocations.singleton location) created}
+  let call_create lhs typ_name location ({created} as x) =
+    {x with created= Created.add lhs (CreatedLocations.singleton {location; typ_name}) created}
 
 
   let call_builder ~ret ~receiver callee {created; method_called} =
@@ -220,10 +206,10 @@ module NewDomain = struct
     ; method_called= MethodCalled.add_all created_locations callee method_called }
 
 
-  let call_build_method ~ret ~receiver callee {created; method_called} =
+  let call_build_method ~ret ~receiver {created; method_called} =
     let created_locations = Created.lookup receiver created in
     { created= Created.add ret created_locations created
-    ; method_called= MethodCalled.build_method_called created_locations callee method_called }
+    ; method_called= MethodCalled.build_method_called created_locations method_called }
 
 
   let check_required_props ~check_on_string_set {method_called} =
@@ -259,13 +245,11 @@ include struct
 
   let assign ~lhs ~rhs = map_new (NewDomain.assign ~lhs ~rhs)
 
-  let call_create ret location = map_new (NewDomain.call_create ret location)
+  let call_create ret typ_name location = map_new (NewDomain.call_create ret typ_name location)
 
   let call_builder ~ret ~receiver callee = map_new (NewDomain.call_builder ~ret ~receiver callee)
 
-  let call_build_method ~ret ~receiver callee =
-    map_new (NewDomain.call_build_method ~ret ~receiver callee)
-
+  let call_build_method ~ret ~receiver = map_new (NewDomain.call_build_method ~ret ~receiver)
 
   let check_required_props ~check_on_string_set =
     lift_new (NewDomain.check_required_props ~check_on_string_set)

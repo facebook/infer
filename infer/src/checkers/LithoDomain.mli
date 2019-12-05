@@ -55,14 +55,13 @@ val bindings : t -> (LocalAccessPath.t * CallSet.t) list
 
 val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 
-val call_create : LocalAccessPath.t -> Location.t -> t -> t
+val call_create : LocalAccessPath.t -> Typ.name -> Location.t -> t -> t
 (** Semantics of builder creation method *)
 
 val call_builder : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> MethodCall.t -> t -> t
 (** Semantics of builder's methods, e.g. [prop] *)
 
-val call_build_method :
-  ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> MethodCall.t -> t -> t
+val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
 (** Semantics of builder's final build method *)
 
 val check_required_props :

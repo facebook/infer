@@ -68,6 +68,14 @@ let is_on_create_layout = function
       false
 
 
+let get_component_create_typ_opt procname tenv =
+  match procname with
+  | Typ.Procname.Java java_pname when is_component_create_method procname tenv ->
+      Some (Typ.Procname.Java.get_class_type_name java_pname)
+  | _ ->
+      None
+
+
 module type LithoContext = sig
   type t
 
@@ -145,20 +153,24 @@ struct
             |> Domain.CallSet.add callee
           in
           let astate = Domain.add return_access_path return_calls astate in
-          if is_component_create_method callee_pname tenv then
-            Domain.call_create return_access_path location astate
-          else if is_component_build_method callee_pname tenv then
-            Domain.call_build_method ~ret:return_access_path ~receiver callee astate
-          else if is_call_build_inside callee_pname tenv then
-            match actuals with
-            | _ :: HilExp.AccessExpression ae :: _ ->
-                let receiver = Domain.LocalAccessPath.make_from_access_expression ae caller_pname in
-                Domain.call_build_method ~ret:return_access_path ~receiver callee astate
-            | _ ->
-                astate
-          else if is_component_builder callee_pname tenv then
-            Domain.call_builder ~ret:return_access_path ~receiver callee astate
-          else astate
+          match get_component_create_typ_opt callee_pname tenv with
+          | Some create_typ ->
+              Domain.call_create return_access_path create_typ location astate
+          | None ->
+              if is_component_build_method callee_pname tenv then
+                Domain.call_build_method ~ret:return_access_path ~receiver astate
+              else if is_call_build_inside callee_pname tenv then
+                match actuals with
+                | _ :: HilExp.AccessExpression ae :: _ ->
+                    let receiver =
+                      Domain.LocalAccessPath.make_from_access_expression ae caller_pname
+                    in
+                    Domain.call_build_method ~ret:return_access_path ~receiver astate
+                | _ ->
+                    astate
+              else if is_component_builder callee_pname tenv then
+                Domain.call_builder ~ret:return_access_path ~receiver callee astate
+              else astate
         else
           (* treat it like a normal call *)
           apply_callee_summary callee_summary_opt caller_pname return_base actuals astate
