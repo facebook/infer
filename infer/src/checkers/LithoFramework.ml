@@ -133,15 +133,18 @@ struct
           && LithoContext.satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
+          let callee = Domain.MethodCall.make receiver callee_pname location in
           let return_calls =
             (try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty)
-            |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_pname location)
+            |> Domain.CallSet.add callee
           in
           let astate = Domain.add return_access_path return_calls astate in
           if is_component_create_method callee_pname tenv then
             Domain.call_create return_access_path location astate
+          else if is_component_build_method callee_pname tenv then
+            Domain.call_build_method ~ret:return_access_path ~receiver astate
           else if is_component_builder callee_pname tenv then
-            Domain.call_builder ~ret:return_access_path ~receiver astate
+            Domain.call_builder ~ret:return_access_path ~receiver callee astate
           else astate
         else
           (* treat it like a normal call *)

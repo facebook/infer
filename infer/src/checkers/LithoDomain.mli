@@ -53,7 +53,9 @@ val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 
 val call_create : LocalAccessPath.t -> Location.t -> t -> t
 
-val call_builder : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
+val call_builder : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> MethodCall.t -> t -> t
+
+val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
 
 val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original

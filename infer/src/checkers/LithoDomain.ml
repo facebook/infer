@@ -54,13 +54,127 @@ module NewDomain = struct
     let lookup k x = Option.value (find_opt k x) ~default:CreatedLocations.empty
   end
 
-  include Created
+  module MethodCalls = struct
+    module IsBuildMethodCalled = AbstractDomain.BooleanAnd
 
-  let assign ~lhs ~rhs x = Created.add lhs (Created.lookup rhs x) x
+    module S = AbstractDomain.InvertedSet (struct
+      include MethodCall
 
-  let call_create lhs location x = Created.add lhs (CreatedLocations.singleton location) x
+      let compare x y =
+        let r = LocalAccessPath.compare x.receiver y.receiver in
+        if r <> 0 then r else Typ.Procname.compare x.procname y.procname
+    end)
 
-  let call_builder ~ret ~receiver x = Created.add ret (Created.lookup receiver x) x
+    type t = {is_build_method_called: IsBuildMethodCalled.t; method_calls: S.t}
+
+    let pp fmt {is_build_method_called; method_calls} =
+      F.fprintf fmt "%a%s" S.pp method_calls
+        (if is_build_method_called then " then build() called" else "")
+
+
+    let leq ~lhs ~rhs =
+      IsBuildMethodCalled.leq ~lhs:lhs.is_build_method_called ~rhs:rhs.is_build_method_called
+      && S.leq ~lhs:lhs.method_calls ~rhs:rhs.method_calls
+
+
+    let join x y =
+      { is_build_method_called=
+          IsBuildMethodCalled.join x.is_build_method_called y.is_build_method_called
+      ; method_calls= S.join x.method_calls y.method_calls }
+
+
+    let widen ~prev ~next ~num_iters =
+      { is_build_method_called=
+          IsBuildMethodCalled.widen ~prev:prev.is_build_method_called
+            ~next:next.is_build_method_called ~num_iters
+      ; method_calls= S.widen ~prev:prev.method_calls ~next:next.method_calls ~num_iters }
+
+
+    let empty = {is_build_method_called= false; method_calls= S.empty}
+
+    let singleton e = {is_build_method_called= false; method_calls= S.singleton e}
+
+    let add e ({is_build_method_called; method_calls} as x) =
+      if is_build_method_called then x else {x with method_calls= S.add e method_calls}
+
+
+    let set_build_method_called x = {x with is_build_method_called= true}
+  end
+
+  module MethodCalled = struct
+    include AbstractDomain.InvertedMap (CreatedLocation) (MethodCalls)
+
+    let add_one k v x =
+      let f = function
+        | None ->
+            Some (MethodCalls.singleton v)
+        | Some method_calls ->
+            Some (MethodCalls.add v method_calls)
+      in
+      update k f x
+
+
+    let add_all created_locations callee x =
+      CreatedLocations.fold
+        (fun created_location acc -> add_one created_location callee acc)
+        created_locations x
+
+
+    let build_method_called_one created_location x =
+      let f v =
+        let method_calls = Option.value v ~default:MethodCalls.empty in
+        Some (MethodCalls.set_build_method_called method_calls)
+      in
+      update created_location f x
+
+
+    let build_method_called created_locations x =
+      CreatedLocations.fold build_method_called_one created_locations x
+  end
+
+  type t = {created: Created.t; method_called: MethodCalled.t}
+
+  let pp fmt {created; method_called} =
+    F.fprintf fmt "@[<v 0>@[Created:@;%a@]@,@[MethodCalled:@;%a@]@]" Created.pp created
+      MethodCalled.pp method_called
+
+
+  let leq ~lhs ~rhs =
+    Created.leq ~lhs:lhs.created ~rhs:rhs.created
+    && MethodCalled.leq ~lhs:lhs.method_called ~rhs:rhs.method_called
+
+
+  let join x y =
+    { created= Created.join x.created y.created
+    ; method_called= MethodCalled.join x.method_called y.method_called }
+
+
+  let widen ~prev ~next ~num_iters =
+    { created= Created.widen ~prev:prev.created ~next:next.created ~num_iters
+    ; method_called= MethodCalled.widen ~prev:prev.method_called ~next:next.method_called ~num_iters
+    }
+
+
+  let empty = {created= Created.empty; method_called= MethodCalled.empty}
+
+  let assign ~lhs ~rhs ({created} as x) =
+    {x with created= Created.add lhs (Created.lookup rhs created) created}
+
+
+  let call_create lhs location ({created} as x) =
+    {x with created= Created.add lhs (CreatedLocations.singleton location) created}
+
+
+  let call_builder ~ret ~receiver callee {created; method_called} =
+    let created_locations = Created.lookup receiver created in
+    { created= Created.add ret created_locations created
+    ; method_called= MethodCalled.add_all created_locations callee method_called }
+
+
+  let call_build_method ~ret ~receiver {created; method_called} =
+    let created_locations = Created.lookup receiver created in
+    { created= Created.add ret created_locations created
+    ; method_called= MethodCalled.build_method_called created_locations method_called }
 end
 
 include struct
@@ -92,7 +206,9 @@ include struct
 
   let call_create ret location = map_new (NewDomain.call_create ret location)
 
-  let call_builder ~ret ~receiver = map_new (NewDomain.call_builder ~ret ~receiver)
+  let call_builder ~ret ~receiver callee = map_new (NewDomain.call_builder ~ret ~receiver callee)
+
+  let call_build_method ~ret ~receiver = map_new (NewDomain.call_build_method ~ret ~receiver)
 end
 
 let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
