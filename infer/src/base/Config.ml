@@ -1740,6 +1740,8 @@ and monitor_prop_size =
 
 and nelseg = CLOpt.mk_bool ~deprecated:["nelseg"] ~long:"nelseg" "Use only nonempty lsegs"
 
+and new_litho_domain = CLOpt.mk_bool ~long:"new-litho-domain" "[EXPERIMENTAL] Use new litho domain"
+
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
@@ -3018,6 +3020,8 @@ and modified_lines = !modified_lines
 and monitor_prop_size = !monitor_prop_size
 
 and nelseg = !nelseg
+
+and new_litho_domain = !new_litho_domain
 
 and nullable_annotation = !nullable_annotation
 

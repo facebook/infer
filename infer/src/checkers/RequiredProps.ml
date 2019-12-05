@@ -154,6 +154,15 @@ module LithoContext = struct
 
 
   let report astate tenv summary =
+    let check_on_string_set parent_typename call_chain prop_set =
+      let required_props = get_required_props parent_typename tenv in
+      List.iter
+        ~f:(fun required_prop ->
+          if not (has_prop prop_set required_prop) then
+            report_missing_required_prop summary required_prop parent_typename
+              (Summary.get_loc summary) call_chain )
+        required_props
+    in
     let check_required_prop_chain _ call_chain =
       let call_chain =
         List.drop_while call_chain ~f:(fun Domain.MethodCall.{procname} ->
@@ -168,25 +177,17 @@ module LithoContext = struct
            ones are annotated with @Prop *)
         match find_client_component_type call_chain with
         | Some parent_typename ->
-            let required_props = get_required_props parent_typename tenv in
             let prop_set =
-              List.map
-                ~f:(fun Domain.MethodCall.{procname} -> Typ.Procname.get_method procname)
-                call_chain
-              |> String.Set.of_list
+              List.map ~f:Domain.MethodCall.procname_to_string call_chain |> String.Set.of_list
             in
-            List.iter
-              ~f:(fun required_prop ->
-                if not (has_prop prop_set required_prop) then
-                  report_missing_required_prop summary required_prop parent_typename
-                    (Summary.get_loc summary) call_chain )
-              required_props
+            check_on_string_set parent_typename call_chain prop_set
         | _ ->
             () )
       | _ ->
           ()
     in
-    Domain.iter_call_chains ~f:check_required_prop_chain astate
+    if Config.new_litho_domain then Domain.check_required_props ~check_on_string_set astate
+    else Domain.iter_call_chains ~f:check_required_prop_chain astate
 
 
   let session_name = "litho required props"

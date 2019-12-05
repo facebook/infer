@@ -15,6 +15,10 @@ module LocalAccessPath = struct
 
   let make access_path parent = {access_path; parent}
 
+  let make_from_access_expression ae parent =
+    make (HilExp.AccessExpression.to_access_path ae) parent
+
+
   let to_formal_option {access_path= ((_, base_typ) as base), accesses; parent} formal_map =
     match FormalMap.get_formal_index base formal_map with
     | Some formal_index ->
@@ -34,6 +38,9 @@ module MethodCall = struct
 
   let pp fmt {receiver; procname} =
     F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
+
+
+  let procname_to_string {procname} = Typ.Procname.get_method procname
 end
 
 module CallSet = AbstractDomain.FiniteSet (MethodCall)
@@ -65,6 +72,7 @@ module NewDomain = struct
         if r <> 0 then r else Typ.Procname.compare x.procname y.procname
     end)
 
+    (* TODO: add return type && and do not add return method to the set *)
     type t = {is_build_method_called: IsBuildMethodCalled.t; method_calls: S.t}
 
     let pp fmt {is_build_method_called; method_calls} =
@@ -98,7 +106,43 @@ module NewDomain = struct
       if is_build_method_called then x else {x with method_calls= S.add e method_calls}
 
 
-    let set_build_method_called x = {x with is_build_method_called= true}
+    (* TODO do not add callee to the set *)
+    let set_build_method_called callee x =
+      let x = add callee x in
+      {x with is_build_method_called= true}
+
+
+    let find_client_component_type method_calls =
+      let exception Found of Typ.name in
+      let f MethodCall.{procname} =
+        match procname with
+        | Typ.Procname.Java java_pname ->
+            Typ.Name.Java.get_outer_class (Typ.Procname.Java.get_class_type_name java_pname)
+            |> Option.iter ~f:(fun typ -> raise (Found typ))
+        | _ ->
+            ()
+      in
+      match S.iter f method_calls with () -> None | exception Found typ -> Some typ
+
+
+    let to_string_set method_calls =
+      let accum_as_string method_call acc =
+        String.Set.add acc (MethodCall.procname_to_string method_call)
+      in
+      S.fold accum_as_string method_calls String.Set.empty
+
+
+    let get_call_chain method_calls =
+      (* TODO: sort chain by inserted order *)
+      S.elements method_calls
+
+
+    let check_required_props ~check_on_string_set {is_build_method_called; method_calls} =
+      if is_build_method_called then
+        Option.iter (find_client_component_type method_calls) ~f:(fun parent_typename ->
+            let prop_set = to_string_set method_calls in
+            let call_chain = get_call_chain method_calls in
+            check_on_string_set parent_typename call_chain prop_set )
   end
 
   module MethodCalled = struct
@@ -120,16 +164,21 @@ module NewDomain = struct
         created_locations x
 
 
-    let build_method_called_one created_location x =
+    let build_method_called_one callee created_location x =
       let f v =
         let method_calls = Option.value v ~default:MethodCalls.empty in
-        Some (MethodCalls.set_build_method_called method_calls)
+        Some (MethodCalls.set_build_method_called callee method_calls)
       in
       update created_location f x
 
 
-    let build_method_called created_locations x =
-      CreatedLocations.fold build_method_called_one created_locations x
+    let build_method_called created_locations callee x =
+      CreatedLocations.fold (build_method_called_one callee) created_locations x
+
+
+    let check_required_props ~check_on_string_set x =
+      let f _ method_calls = MethodCalls.check_required_props ~check_on_string_set method_calls in
+      iter f x
   end
 
   type t = {created: Created.t; method_called: MethodCalled.t}
@@ -171,16 +220,22 @@ module NewDomain = struct
     ; method_called= MethodCalled.add_all created_locations callee method_called }
 
 
-  let call_build_method ~ret ~receiver {created; method_called} =
+  let call_build_method ~ret ~receiver callee {created; method_called} =
     let created_locations = Created.lookup receiver created in
     { created= Created.add ret created_locations created
-    ; method_called= MethodCalled.build_method_called created_locations method_called }
+    ; method_called= MethodCalled.build_method_called created_locations callee method_called }
+
+
+  let check_required_props ~check_on_string_set {method_called} =
+    MethodCalled.check_required_props ~check_on_string_set method_called
 end
 
 include struct
   include AbstractDomain.Pair (OldDomain) (NewDomain)
 
   let lift_old f (o, _) = f o
+
+  let lift_new f (_, n) = f n
 
   let map_old f (o, n) = (f o, n)
 
@@ -208,30 +263,39 @@ include struct
 
   let call_builder ~ret ~receiver callee = map_new (NewDomain.call_builder ~ret ~receiver callee)
 
-  let call_build_method ~ret ~receiver = map_new (NewDomain.call_build_method ~ret ~receiver)
+  let call_build_method ~ret ~receiver callee =
+    map_new (NewDomain.call_build_method ~ret ~receiver callee)
+
+
+  let check_required_props ~check_on_string_set =
+    lift_new (NewDomain.check_required_props ~check_on_string_set)
 end
 
-let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
-  fold
-    (fun original_access_path call_set acc ->
-      let access_path' =
-        match f_sub original_access_path with
-        | Some access_path ->
-            access_path
-        | None ->
-            original_access_path
-      in
-      let call_set' =
-        CallSet.fold
-          (fun ({procname; location} as call) call_set_acc ->
-            let receiver =
-              match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
-            in
-            CallSet.add {receiver; procname; location} call_set_acc )
-          call_set CallSet.empty
-      in
-      add access_path' call_set' acc )
-    astate empty
+let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) ((_, new_astate) as astate)
+    =
+  let old_astate, _ =
+    fold
+      (fun original_access_path call_set acc ->
+        let access_path' =
+          match f_sub original_access_path with
+          | Some access_path ->
+              access_path
+          | None ->
+              original_access_path
+        in
+        let call_set' =
+          CallSet.fold
+            (fun ({procname; location} as call) call_set_acc ->
+              let receiver =
+                match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
+              in
+              CallSet.add {receiver; procname; location} call_set_acc )
+            call_set CallSet.empty
+        in
+        add access_path' call_set' acc )
+      astate empty
+  in
+  (old_astate, new_astate)
 
 
 (** Unroll the domain to enumerate all the call chains ending in [call] and apply [f] to each

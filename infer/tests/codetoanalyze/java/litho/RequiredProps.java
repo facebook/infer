@@ -80,7 +80,7 @@ public class RequiredProps {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
-  public Component setRequiredOnBothBranchesOk_FP(boolean b) {
+  public Component setRequiredOnBothBranchesOk(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder = builder.prop1(new Object());
@@ -102,7 +102,7 @@ public class RequiredProps {
   }
 
   // gets confused at cyclic dependency to builder when setting prop1
-  public Component setRequiredOk_FP(boolean b) {
+  public Component setRequiredOk(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     builder = builder.prop1(new Object());
     return builder.prop2(new Object()).prop3(new Object()).build();

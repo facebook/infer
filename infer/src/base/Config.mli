@@ -492,6 +492,8 @@ val monitor_prop_size : bool
 
 val nelseg : bool
 
+val new_litho_domain : bool
+
 val no_translate_libs : bool
 
 val nullable_annotation : string option

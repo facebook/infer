@@ -41,6 +41,14 @@ let is_component procname tenv =
       false
 
 
+let is_call_build_inside procname tenv =
+  match Typ.Procname.get_method procname with
+  | "child" ->
+      is_component_builder procname tenv
+  | _ ->
+      false
+
+
 let is_component_build_method procname tenv =
   match Typ.Procname.get_method procname with
   | "build" ->
@@ -121,9 +129,7 @@ struct
         , location ) ->
         let callee_summary_opt = Payload.read ~caller_summary:summary ~callee_pname in
         let receiver =
-          Domain.LocalAccessPath.make
-            (HilExp.AccessExpression.to_access_path receiver_ae)
-            caller_pname
+          Domain.LocalAccessPath.make_from_access_expression receiver_ae caller_pname
         in
         if
           ( LithoContext.check_callee ~callee_pname ~tenv callee_summary_opt
@@ -142,7 +148,14 @@ struct
           if is_component_create_method callee_pname tenv then
             Domain.call_create return_access_path location astate
           else if is_component_build_method callee_pname tenv then
-            Domain.call_build_method ~ret:return_access_path ~receiver astate
+            Domain.call_build_method ~ret:return_access_path ~receiver callee astate
+          else if is_call_build_inside callee_pname tenv then
+            match actuals with
+            | _ :: HilExp.AccessExpression ae :: _ ->
+                let receiver = Domain.LocalAccessPath.make_from_access_expression ae caller_pname in
+                Domain.call_build_method ~ret:return_access_path ~receiver callee astate
+            | _ ->
+                astate
           else if is_component_builder callee_pname tenv then
             Domain.call_builder ~ret:return_access_path ~receiver callee astate
           else astate
@@ -179,7 +192,7 @@ struct
 end
 
 module MakeAnalyzer (LithoContext : LithoContext with type t = Domain.t) = struct
-  module TF = TransferFunctions (ProcCfg.Exceptional) (LithoContext)
+  module TF = TransferFunctions (ProcCfg.Normal) (LithoContext)
   module A = LowerHil.MakeAbstractInterpreter (TF)
 
   let checker {Callbacks.summary; exe_env} =
