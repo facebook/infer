@@ -37,7 +37,35 @@ module MethodCall = struct
 end
 
 module CallSet = AbstractDomain.FiniteSet (MethodCall)
-include AbstractDomain.Map (LocalAccessPath) (CallSet)
+module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
+
+module NewDomain = struct
+  include AbstractDomain.Empty
+end
+
+include struct
+  include AbstractDomain.Pair (OldDomain) (NewDomain)
+
+  let lift f (o, _) = f o
+
+  let map_old f (o, n) = (f o, n)
+
+  let empty = (OldDomain.empty, ())
+
+  let add k v = map_old (OldDomain.add k v)
+
+  let remove k = map_old (OldDomain.remove k)
+
+  let bindings = lift OldDomain.bindings
+
+  let find k = lift (OldDomain.find k)
+
+  let mem k = lift (OldDomain.mem k)
+
+  let iter f = lift (OldDomain.iter f)
+
+  let fold f (o, _) init = OldDomain.fold f o init
+end
 
 let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
   fold
