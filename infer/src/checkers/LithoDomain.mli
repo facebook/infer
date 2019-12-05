@@ -21,6 +21,8 @@ module LocalAccessPath : sig
   val pp : F.formatter -> t -> unit
 end
 
+val suffixes : String.Set.t
+
 (** Called procedure & location + its receiver *)
 module MethodCall : sig
   type t = private {receiver: LocalAccessPath.t; procname: Typ.Procname.t; location: Location.t}

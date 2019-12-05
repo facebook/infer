@@ -230,6 +230,26 @@ public class RequiredProps {
     mResPropComponent.create().build();
   }
 
+  public void buildPropResInCondOk_FP(boolean b) {
+    ResPropComponent.Builder builder = mResPropComponent.create();
+    if (b) {
+      builder.propAttr(new Object());
+    } else {
+      builder.propDip(new Object());
+    }
+    builder.build();
+  }
+
+  public void buildPropResInCondOneNormalOk_FP(boolean b) {
+    ResPropComponent.Builder builder = mResPropComponent.create();
+    if (b) {
+      builder.propAttr(new Object());
+    } else {
+      builder.prop(new Object());
+    }
+    builder.build();
+  }
+
   public void buildPropVarArgNormalOk() {
     mVarArgPropComponent.create().props(new ArrayList<Object>()).build();
   }

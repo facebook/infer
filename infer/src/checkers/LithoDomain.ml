@@ -30,6 +30,8 @@ module LocalAccessPath = struct
   let pp fmt t = AccessPath.pp fmt t.access_path
 end
 
+let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
+
 module MethodCall = struct
   type t = {receiver: LocalAccessPath.t; procname: Typ.Procname.t; location: Location.t}
   [@@deriving compare]
@@ -68,9 +70,39 @@ module NewDomain = struct
     module S = AbstractDomain.InvertedSet (struct
       include MethodCall
 
+      let compare_procname p1 p2 =
+        let chopped_opt pname =
+          let method_name = Typ.Procname.get_method pname in
+          String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
+        in
+        let replace_both s p =
+          match p with
+          | Typ.Procname.Java java_pname ->
+              (* This is a bit of a hack to quickly compare based on only
+                 method names *)
+              Typ.Procname.Java
+                ( Typ.Procname.Java.replace_method_name s java_pname
+                |> Typ.Procname.Java.replace_parameters [] )
+          | _ ->
+              p
+        in
+        let p1, p2 =
+          match (chopped_opt p1, chopped_opt p2) with
+          | Some chopped1, Some chopped2 ->
+              (replace_both chopped1 p1, replace_both chopped2 p2)
+          | Some chopped1, None ->
+              (replace_both chopped1 p1, Typ.Procname.replace_parameters [] p2)
+          | None, Some chopped2 ->
+              (Typ.Procname.replace_parameters [] p1, replace_both chopped2 p2)
+          | _ ->
+              (p1, p2)
+        in
+        Typ.Procname.compare p1 p2
+
+
       let compare x y =
         let r = LocalAccessPath.compare x.receiver y.receiver in
-        if r <> 0 then r else Typ.Procname.compare x.procname y.procname
+        if r <> 0 then r else compare_procname x.procname y.procname
     end)
 
     (* TODO: add return type && and do not add return method to the set *)

@@ -92,8 +92,6 @@ let find_client_component_type call_chain =
     call_chain
 
 
-let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
-
 let has_prop prop_set prop =
   let check prop =
     String.Set.mem prop_set prop
@@ -102,7 +100,7 @@ let has_prop prop_set prop =
           that all @Prop's can be set any of these 6 ways. *)
     String.Set.exists prop_set ~f:(fun el ->
         String.chop_prefix el ~prefix:prop
-        |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
+        |> Option.exists ~f:(fun suffix -> String.Set.mem LithoDomain.suffixes suffix) )
   in
   match prop with
   | Prop prop ->

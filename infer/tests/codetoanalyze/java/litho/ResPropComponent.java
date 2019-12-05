@@ -14,7 +14,7 @@ import com.facebook.litho.annotations.ResType;
  * using @Prop(resType = ..) allows you to set the Prop with any of .propname, .propnameRes, or
  * .propnameAttr
  */
-class ResPropComponent extends Component {
+public class ResPropComponent extends Component {
 
   @Prop(resType = ResType.SOME)
   Object prop; // implicitly non-optional with resType
@@ -23,7 +23,7 @@ class ResPropComponent extends Component {
     return new Builder();
   }
 
-  static class Builder extends Component.Builder<Builder> {
+  public static class Builder extends Component.Builder<Builder> {
 
     ResPropComponent mResPropComponent;
 
