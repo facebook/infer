@@ -33,7 +33,7 @@ module CallSet : module type of AbstractDomain.FiniteSet (MethodCall)
 
 module OldDomain : module type of AbstractDomain.Map (LocalAccessPath) (CallSet)
 
-module NewDomain : module type of AbstractDomain.Empty
+module NewDomain : AbstractDomain.S
 
 include module type of AbstractDomain.Pair (OldDomain) (NewDomain)
 
@@ -48,6 +48,12 @@ val mem : LocalAccessPath.t -> t -> bool
 val find : LocalAccessPath.t -> t -> CallSet.t
 
 val bindings : t -> (LocalAccessPath.t * CallSet.t) list
+
+val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
+
+val call_create : LocalAccessPath.t -> Location.t -> t -> t
+
+val call_builder : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
 
 val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original

@@ -137,7 +137,12 @@ struct
             (try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty)
             |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_pname location)
           in
-          Domain.add return_access_path return_calls astate
+          let astate = Domain.add return_access_path return_calls astate in
+          if is_component_create_method callee_pname tenv then
+            Domain.call_create return_access_path location astate
+          else if is_component_builder callee_pname tenv then
+            Domain.call_builder ~ret:return_access_path ~receiver astate
+          else astate
         else
           (* treat it like a normal call *)
           apply_callee_summary callee_summary_opt caller_pname return_base actuals astate
@@ -146,7 +151,7 @@ struct
           Payload.read ~caller_summary:summary ~callee_pname:callee_procname
         in
         apply_callee_summary callee_summary_opt caller_pname ret_id_typ actuals astate
-    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) -> (
+    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) ->
         (* creating an alias for the rhs binding; assume all reads will now occur through the
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
            tmp.getBar() *)
@@ -156,10 +161,13 @@ struct
         let rhs_access_path =
           Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path rhs_ae) caller_pname
         in
-        try
-          let call_set = Domain.find rhs_access_path astate in
-          Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
-        with Caml.Not_found -> astate )
+        let astate =
+          try
+            let call_set = Domain.find rhs_access_path astate in
+            Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
+          with Caml.Not_found -> astate
+        in
+        Domain.assign ~lhs:lhs_access_path ~rhs:rhs_access_path astate
     | _ ->
         astate
 

@@ -40,31 +40,59 @@ module CallSet = AbstractDomain.FiniteSet (MethodCall)
 module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
 
 module NewDomain = struct
-  include AbstractDomain.Empty
+  module CreatedLocation = struct
+    type t = Location.t [@@deriving compare]
+
+    let pp fmt location = F.fprintf fmt "Created at %a" Location.pp location
+  end
+
+  module CreatedLocations = AbstractDomain.InvertedSet (CreatedLocation)
+
+  module Created = struct
+    include AbstractDomain.InvertedMap (LocalAccessPath) (CreatedLocations)
+
+    let lookup k x = Option.value (find_opt k x) ~default:CreatedLocations.empty
+  end
+
+  include Created
+
+  let assign ~lhs ~rhs x = Created.add lhs (Created.lookup rhs x) x
+
+  let call_create lhs location x = Created.add lhs (CreatedLocations.singleton location) x
+
+  let call_builder ~ret ~receiver x = Created.add ret (Created.lookup receiver x) x
 end
 
 include struct
   include AbstractDomain.Pair (OldDomain) (NewDomain)
 
-  let lift f (o, _) = f o
+  let lift_old f (o, _) = f o
 
   let map_old f (o, n) = (f o, n)
 
-  let empty = (OldDomain.empty, ())
+  let map_new f (o, n) = (o, f n)
+
+  let empty = (OldDomain.empty, NewDomain.empty)
 
   let add k v = map_old (OldDomain.add k v)
 
   let remove k = map_old (OldDomain.remove k)
 
-  let bindings = lift OldDomain.bindings
+  let bindings = lift_old OldDomain.bindings
 
-  let find k = lift (OldDomain.find k)
+  let find k = lift_old (OldDomain.find k)
 
-  let mem k = lift (OldDomain.mem k)
+  let mem k = lift_old (OldDomain.mem k)
 
-  let iter f = lift (OldDomain.iter f)
+  let iter f = lift_old (OldDomain.iter f)
 
   let fold f (o, _) init = OldDomain.fold f o init
+
+  let assign ~lhs ~rhs = map_new (NewDomain.assign ~lhs ~rhs)
+
+  let call_create ret location = map_new (NewDomain.call_create ret location)
+
+  let call_builder ~ret ~receiver = map_new (NewDomain.call_builder ~ret ~receiver)
 end
 
 let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
