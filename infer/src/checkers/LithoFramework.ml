@@ -104,29 +104,32 @@ struct
 
   type extras = ProcData.no_extras
 
-  let apply_callee_summary summary_opt caller_pname ret_id_typ actuals astate =
-    match summary_opt with
-    | Some summary ->
-        (* TODO: append paths if the footprint access path is an actual path instead of a var *)
-        let f_sub {Domain.LocalAccessPath.access_path= (var, _), _} =
-          match Var.get_footprint_index var with
-          | Some footprint_index -> (
-            match List.nth actuals footprint_index with
-            | Some (HilExp.AccessExpression actual_access_expr) ->
-                Some
-                  (Domain.LocalAccessPath.make
-                     (HilExp.AccessExpression.to_access_path actual_access_expr)
-                     caller_pname)
-            | _ ->
-                None )
-          | None ->
-              if Var.is_return var then
-                Some (Domain.LocalAccessPath.make (ret_id_typ, []) caller_pname)
-              else None
-        in
-        Domain.substitute ~f_sub summary |> Domain.join astate
-    | None ->
-        astate
+  let apply_callee_summary summary_opt caller_pname ret_id_typ actuals ((_, new_domain) as astate) =
+    let old_domain', _ =
+      match summary_opt with
+      | Some summary ->
+          (* TODO: append paths if the footprint access path is an actual path instead of a var *)
+          let f_sub {Domain.LocalAccessPath.access_path= (var, _), _} =
+            match Var.get_footprint_index var with
+            | Some footprint_index -> (
+              match List.nth actuals footprint_index with
+              | Some (HilExp.AccessExpression actual_access_expr) ->
+                  Some
+                    (Domain.LocalAccessPath.make
+                       (HilExp.AccessExpression.to_access_path actual_access_expr)
+                       caller_pname)
+              | _ ->
+                  None )
+            | None ->
+                if Var.is_return var then
+                  Some (Domain.LocalAccessPath.make (ret_id_typ, []) caller_pname)
+                else None
+          in
+          Domain.substitute ~f_sub summary |> Domain.join astate
+      | None ->
+          astate
+    in
+    (old_domain', new_domain)
 
 
   let exec_instr astate ProcData.{summary; tenv} _ (instr : HilInstr.t) : Domain.t =
