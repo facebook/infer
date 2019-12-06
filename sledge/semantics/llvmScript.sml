@@ -816,10 +816,10 @@ Definition prog_ok_def:
      ∀fname dec.
        alookup p fname = Some dec ⇒
        ∃block. alookup dec.blocks None = Some block ∧ block.h = Entry) ∧
-    ((* All non-entry blocks have a proper header *)
-     ∀fname dec l b.
-       alookup p fname = Some dec ∧ alookup dec.blocks (Some l) = Some b ⇒
-       b.h ≠ Entry) ∧
+    ((* All non-entry blocks have a proper header, and entry blocks don't *)
+     ∀fname dec.
+       alookup p fname = Some dec ⇒
+       (every (\b. fst b = None ⇔ (snd b).h = Entry) dec.blocks)) ∧
      (* There is a main function *)
      ∃dec. alookup p (Fn "main") = Some dec
 End

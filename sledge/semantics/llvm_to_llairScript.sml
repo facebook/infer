@@ -85,7 +85,8 @@ Definition translate_reg_def:
 End
 
 Definition translate_label_def:
-  translate_label f (Lab l) = Lab_name f l
+  (translate_label f None suffix = Lab_name f None suffix) ∧
+  (translate_label f (Some (Lab l)) suffix = Lab_name f (Some l) suffix)
 End
 
 Definition translate_const_def:
@@ -184,7 +185,7 @@ End
  * *)
 
 
-(* TODO *)
+(* TODO: Finish *)
 Definition translate_instr_to_inst_def:
   (translate_instr_to_inst gmap emap (llvm$Store (t1, a1) (t2, a2)) =
     llair$Store (translate_arg gmap emap a2) (translate_arg gmap emap a1) (sizeof t1)) ∧
@@ -192,12 +193,33 @@ Definition translate_instr_to_inst_def:
     Load (translate_reg r t) (translate_arg gmap emap a1) (sizeof t))
 End
 
-(* TODO *)
+Definition dest_label_def:
+  dest_label (Lab s) = s
+End
+
+(* TODO: Finish *)
 Definition translate_instr_to_term_def:
-  (translate_instr_to_term f gmap emap (Br a l1 l2) =
-    Switch (translate_arg gmap emap a) [(0, translate_label f l2)] (translate_label f l1)) ∧
-  (translate_instr_to_term f gmap emap (Exit a) =
+  (* When we branch to a new block, use the label of the move block that
+   * corresponds to the Phi instructions for that control-flow edge *)
+  (translate_instr_to_term lab gmap emap (Br a l1 l2) =
+    let (f,l) = case lab of Lab_name f l _ => (f, l) | Mov_name f l _ => (f, l) in
+    Switch (translate_arg gmap emap a)
+      [(0, Mov_name f l (dest_label l2))]
+      (Mov_name f l (dest_label l1))) ∧
+  (translate_instr_to_term l gmap emap (Exit a) =
     Exit (translate_arg gmap emap a))
+End
+
+Definition dest_fn_def:
+  dest_fn (Fn f) = f
+End
+
+Definition translate_call_def:
+  translate_call gmap emap ret exret (llvm$Call r ty fname args) =
+    llair$Call (translate_reg r ty)
+         (dest_fn fname)
+         (map (λ(t,a). translate_arg gmap emap a) args)
+         (translate_ty ty) ret exret
 End
 
 Datatype:
@@ -250,7 +272,20 @@ End
 
 Definition extend_emap_non_exp_def:
   (extend_emap_non_exp emap (Load r t _) = emap |+ (r, Var (translate_reg r t))) ∧
+  (extend_emap_non_exp emap (Call r t _ _) = emap |+ (r, Var (translate_reg r t))) ∧
   (extend_emap_non_exp emap _ = emap)
+End
+
+
+(* Given a non-empty list of blocks, add an inst to the first one *)
+Definition add_to_first_block_def:
+  (add_to_first_block i [] = []) ∧
+  (add_to_first_block i ((l,b)::bs) = (l, b with cmnd := i::b.cmnd) :: bs)
+End
+
+Definition inc_label_def:
+  (inc_label (Lab_name f l i) = Lab_name f l (i + 1)) ∧
+  (inc_label (Mov_name f _ l) = Lab_name f (Some l) 0)
 End
 
 (* Translate a list of instructions into an block. f is the name of the function
@@ -275,154 +310,123 @@ End
  *
  *)
 Definition translate_instrs_def:
-  (translate_instrs f gmap emap reg_to_keep [] = (<| cmnd := []; term := Unreachable |>, emap)) ∧
-  (translate_instrs f gmap emap reg_to_keep (i :: is) =
+  (translate_instrs l gmap emap reg_to_keep [] = ([], emap)) ∧
+  (translate_instrs l gmap emap reg_to_keep (i :: is) =
     case classify_instr i of
     | Exp r t =>
       let x = translate_reg r t in
       let e = translate_instr_to_exp gmap emap i in
         if r ∈ reg_to_keep then
-          let (b, emap') = translate_instrs f gmap (emap |+ (r, Var x)) reg_to_keep is in
-            (b with cmnd := Move [(x, e)] :: b.cmnd, emap')
+          let (bs, emap') = translate_instrs l gmap (emap |+ (r, Var x)) reg_to_keep is in
+            (add_to_first_block (Move [(x, e)]) bs, emap')
         else
-          translate_instrs f gmap (emap |+ (r, e)) reg_to_keep is
+          translate_instrs l gmap (emap |+ (r, e)) reg_to_keep is
     | Non_exp =>
-        let (b, emap') = translate_instrs f gmap (extend_emap_non_exp emap i) reg_to_keep is in
-          (b with cmnd := translate_instr_to_inst gmap emap i :: b.cmnd, emap')
+        let (bs, emap') = translate_instrs l gmap (extend_emap_non_exp emap i) reg_to_keep is in
+          (add_to_first_block (translate_instr_to_inst gmap emap i) bs, emap')
     | Term =>
-        (<| cmnd := []; term := translate_instr_to_term f gmap emap i |>, emap)
-    (* TODO *)
-    | Call => ARB)
+        ([(l,
+           <| cmnd := []; term := translate_instr_to_term l gmap emap i |>)],
+         emap)
+    | Call =>
+        let (bs, emap') = translate_instrs (inc_label l) gmap (extend_emap_non_exp emap i) reg_to_keep is in
+          (* TODO: exceptional return address *)
+          ((l,
+            <| cmnd := []; term := translate_call gmap emap (inc_label l) ARB i |>) :: bs,
+           emap'))
 End
 
-Definition dest_label_def:
-  dest_label (Lab s) = s
+(* Given a label and phi node, get the assignment for that incoming label. *)
+Definition build_move_for_lab_def:
+  build_move_for_lab gmap emap l (Phi r t largs) =
+    case alookup largs l of
+    | Some a => (translate_reg r t, translate_arg gmap emap a)
+    (* This shouldn't be able happen in a well-formed program *)
+    | None => (translate_reg r t, Nondet)
 End
 
-Definition dest_phi_def:
-  dest_phi (Phi r t largs) = (r, t, largs)
+(* Given a list of phis and a label, get the move block corresponding to
+ * entering the block targeted by l_to from block l_from *)
+Definition generate_move_block_def:
+  generate_move_block f gmap emap phis l_from l_to =
+    <| cmnd := [Move (map (build_move_for_lab gmap emap l_from) phis)];
+       term := Iswitch (Integer 0 (IntegerT 1)) [translate_label f (Some l_to) 0] |>
 End
 
-Definition translate_label_opt_def:
-  (translate_label_opt f entry None = Lab_name f entry) ∧
-  (translate_label_opt f entry (Some l) = translate_label f l)
-End
-
+(* Translate the LHS and args in the phis of a header, but leave the labels
+ * identifying the from-blocks alone for processing later *)
 Definition translate_header_def:
-  (translate_header f gmap emap entry Entry = []) ∧
-  (translate_header f gmap emap entry (Head phis _) =
-    map
-      (λ(r, t, largs).
-        (translate_reg r t,
-         map (λ(l, arg). (translate_label_opt f entry l, translate_arg gmap emap arg)) largs))
-      (map dest_phi phis))
+  (translate_header f from_ls l_to gmap emap Entry = []) ∧
+  (translate_header f from_ls (Some l_to) gmap emap (Head phis _) =
+    map (λl_from.
+          (Mov_name f (option_map dest_label l_from) (dest_label l_to),
+           generate_move_block f gmap emap phis l_from l_to))
+        from_ls)
 End
 
 Definition header_to_emap_upd_def:
   (header_to_emap_upd Entry = []) ∧
   (header_to_emap_upd (Head phis _) =
-    map (λ(r, t, largs). (r, Var (translate_reg r t))) (map dest_phi phis))
+    map (λx. case x of Phi r t largs => (r, Var (translate_reg r t))) phis)
 End
 
 Definition translate_block_def:
-  translate_block f entry_n gmap emap regs_to_keep (l, b) =
-    let (b', emap') = translate_instrs f gmap emap regs_to_keep b.body in
-      ((Lab_name f (the (option_map dest_label l) entry_n),
-       (translate_header f gmap emap entry_n b.h, b')),
-       (emap' |++ header_to_emap_upd b.h))
-End
-
-(* Given a label and phi node, get the assignment for that incoming label. *)
-Definition build_move_for_lab_def:
-  build_move_for_lab l (r, les) =
-    case alookup les l of
-    | Some e => (r,e)
-    (* This shouldn't be able happen in a well-formed program *)
-    | None => (r, Nondet)
-End
-
-(* Given a list of phis and a label, get the move corresponding to entering
- * the block targeted by l_to from block l_from *)
-Definition generate_move_block_def:
-  generate_move_block phis l_from l_to =
-    let t = Iswitch (Integer 0 (IntegerT 1)) [l_to] in
-      case alookup phis l_to of
-      | None => <| cmnd := [Move []]; term := t |>
-      | Some (phis, _) =>
-        <| cmnd := [Move (map (build_move_for_lab l_from) phis)];
-           term := t |>
-End
-
-Definition label_name_def:
-  label_to_name (Lab_name _ l) = l
-End
-
-(* Given association list of labels and phi-block pairs, and a particular block,
- * build the new move blocks for its terminator *)
-Definition generate_move_blocks_def:
-  generate_move_blocks f used_names bs (l_from, (_, body)) =
-    case body.term of
-    | Iswitch e ls =>
-      let (used_names, new_names) = gen_names used_names (map label_to_name ls) in
-      let mb = map2 (λl_to new. (Lab_name f new, generate_move_block bs l_from l_to)) ls new_names in
-      (used_names, (l_from, body with term := Iswitch e (map fst mb)) :: mb)
-End
-
-Definition generate_move_blocks_list_def:
-  (generate_move_blocks_list f used_names bs [] = (used_names, [])) ∧
-  (generate_move_blocks_list f used_names bs (b::bs') =
-    let (used_names, new_blocks) = generate_move_blocks f used_names bs b in
-    let (used_names, new_blocks2) =
-      generate_move_blocks_list f used_names bs bs'
-    in
-      (used_names, new_blocks :: new_blocks2))
-End
-
-(* Given an association list of labels and phi-block pairs, remove the phi's,
- * by generating an extra block along each control flow edge that does the move
- * corresponding to the relevant phis. *)
-Definition remove_phis_def:
-  remove_phis f used_names bs = flat (snd (generate_move_blocks_list f used_names bs bs))
+  translate_block f gmap emap regs_to_keep edges (l, b) =
+    let emap2 = emap |++ header_to_emap_upd b.h in
+    let (bs, emap3) = translate_instrs (Lab_name f (option_map dest_label l) 0) gmap emap2 regs_to_keep b.body in
+      (translate_header f (THE (alookup edges l)) l gmap emap b.h ++ bs, emap3)
 End
 
 Definition translate_param_def:
   translate_param (t, r) = translate_reg r t
 End
 
+Definition get_from_ls_def:
+  (get_from_ls to_l [] = []) ∧
+  (get_from_ls to_l ((from_l, b) :: bs) =
+    if to_l ∈ set (map Some (instr_to_labs (last b.body))) then
+      from_l :: get_from_ls to_l bs
+    else
+      get_from_ls to_l bs)
+End
+
+Definition get_regs_to_keep_def:
+  get_regs_to_keep d = ARB
+End
+
+Definition translate_blocks_def:
+  (translate_blocks f gmap emap regs_to_keep edges [] = []) ∧
+  (translate_blocks f gmap emap regs_to_keep edges (bl::blocks) =
+     let (b,emap') = translate_block f gmap emap regs_to_keep edges bl in
+     let bs = translate_blocks f gmap emap' regs_to_keep edges blocks in
+       b ++ bs)
+End
+
 Definition translate_def_def:
   translate_def f d gmap =
-    let used_names = ARB in
-    let entry_name = gen_name used_names "entry" in
-    (* TODO *)
-    let regs_to_keep = UNIV in
+    let regs_to_keep = get_regs_to_keep d in
+    let edges = map (λ(l, b). (l, get_from_ls l d.blocks)) d.blocks in
     (* We thread a mapping from register names to expressions through. This
      * works assuming that the blocks are in a good ordering, which must exist
      * because the LLVM is in SSA form, and so each definition must dominate all
      * uses.
      * *)
-    let (bs, emap) =
-      foldl
-        (λ(bs, emap) b.
-          let (b', emap') = translate_block f entry_name gmap emap regs_to_keep b in
-            (b'::bs, emap'))
-        ([], fempty) d.blocks
-    in
       <| params := map translate_param d.params;
         (* TODO: calculate these from the produced llair, and not the llvm *)
         locals := ARB;
-        entry := Lab_name f entry_name;
-        cfg := remove_phis f used_names (reverse bs);
+        entry := Lab_name f None 0;
+        cfg := translate_blocks f gmap fempty regs_to_keep edges d.blocks;
         freturn := ARB;
         fthrow := ARB |>
 End
 
-Definition dest_fn_def:
-  dest_fn (Fn f) = f
+Definition get_gmap_def:
+  get_gmap p = ARB
 End
 
 Definition translate_prog_def:
   translate_prog p =
-    let gmap = ARB in
+    let gmap = get_gmap p in
       <| glob_init := ARB;
          functions := map (\(fname, d). (dest_fn fname, translate_def (dest_fn fname) d gmap)) p |>
 End

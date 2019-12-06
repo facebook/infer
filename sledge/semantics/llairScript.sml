@@ -30,8 +30,25 @@ Datatype:
   var = Var_name string typ
 End
 
+(* These labels have more structure than in the OCaml, but this makes it much
+ * easier to reason about generating many labels from a single LLVM label when
+ * splitting blocks at calls and phi instructions. We don't have to worry about
+ * l1, l2, l3, etc already being in use when working from a block labelled l.
+ * The semantics doesn't look inside of labels, other than for the function
+ * name, so the extra structure could be flattened as long as the flattening
+ * doesn't introduce clashes. It's probably not worth the hassle to do so. *)
 Datatype:
-  label = Lab_name string string
+  label =
+  (* Args: function name, block name which is None for the entry block, numerical index *)
+  | Lab_name string (string option) num
+  (* A move block that was created from a phi instruction.
+   * Args: function name, from block label, to block label *)
+  | Mov_name string (string option) string
+End
+
+Definition label_to_fname_def:
+  (label_to_fname (Lab_name fname _ _) = fname) ∧
+  (label_to_fname (Mov_name fname _ _) = fname)
 End
 
 (* Based on the constructor functions in exp.mli rather than the type definition *)
@@ -94,7 +111,7 @@ Datatype:
   | Iswitch exp (label list)
   (* Args:  result reg, function to call, arguments, return type of callee,
    * return target, exception target *)
-  | Call var label (exp list) typ label label
+  | Call var string (exp list) typ label label
   | Return exp
   | Throw exp
   | Unreachable
@@ -462,13 +479,12 @@ End
 
 Inductive step_term:
 
-  (∀prog s e table default idx fname bname idx_size.
-   eval_exp s e (FlatV (IntV idx idx_size)) ∧
-   Lab_name fname bname = (case alookup table idx of Some lab => lab | None => default)
+  (∀prog s e table default idx idx_size.
+   eval_exp s e (FlatV (IntV idx idx_size))
    ⇒
    step_term prog s
      (Switch e table default) Tau
-     (s with bp := Lab_name fname bname)) ∧
+     (s with bp := (case alookup table idx of Some lab => lab | None => default))) ∧
 
   (∀prog s e labs i idx idx_size.
    eval_exp s e (FlatV (IntV (&idx) idx_size)) ∧
@@ -478,14 +494,13 @@ Inductive step_term:
      (Iswitch e labs) Tau
      (s with bp := el i labs)) ∧
 
-  (∀prog s v fname bname es t ret1 ret2 vals f.
-   alookup prog.functions fname = Some f ∧
-   f.entry = Lab_name fname bname ∧
+  (∀prog s v callee es t ret1 ret2 vals f.
+   alookup prog.functions callee = Some f ∧
    list_rel (eval_exp s) es vals
    ⇒
    step_term prog s
-     (Call v (Lab_name fname bname) es t ret1 ret2) Tau
-     <| bp := Lab_name fname bname;
+     (Call v callee es t ret1 ret2) Tau
+     <| bp := f.entry;
         glob_addrs := s.glob_addrs;
         locals := alist_to_fmap (zip (f.params, vals));
         stack :=
@@ -543,9 +558,8 @@ Inductive step_block:
 End
 
 Inductive get_block:
-  ∀prog bp fname bname f b.
-    bp = Lab_name fname bname ∧
-    alookup prog.functions fname = Some f ∧
+  ∀prog bp f b.
+    alookup prog.functions (label_to_fname bp) = Some f ∧
     alookup f.cfg bp = Some b
     ⇒
     get_block prog bp b
