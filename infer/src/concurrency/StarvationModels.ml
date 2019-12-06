@@ -238,7 +238,13 @@ let schedules_work_on_ui_thread =
   let matcher =
     [ { default with
         classname= "java.lang.Object"
-      ; methods= ["postOnUiThread"; "runOnUiThread"; "postOnUiThreadDelayed"] } ]
+      ; methods=
+          [ "postOnUiThread"
+          ; "postOnUiThreadDelayed"
+          ; "postToUiThread"
+          ; "runOnUiThread"
+          ; "runOnUiThreadAsync"
+          ; "runOnUiThreadAsyncWithDelay" ] } ]
     |> of_records
   in
   fun tenv pname -> matcher tenv pname []
@@ -316,6 +322,8 @@ let get_returned_executor ~attrs_of_pname tenv callee actuals =
     match Typ.Procname.Java.get_method java_pname with
     | ("getForegroundExecutor" | "getBackgroundExecutor") when Lazy.force type_check ->
         Some ForNonUIThread
+    | "getUiThreadExecutorService" when Lazy.force type_check ->
+        Some ForUIThread
     | _ ->
         None )
   | _ ->
@@ -324,26 +332,26 @@ let get_returned_executor ~attrs_of_pname tenv callee actuals =
 
 let is_getMainLooper =
   let open MethodMatcher in
-  [ { default with
+  of_record
+    { default with
       classname= "android.os.Looper"
     ; methods= ["getMainLooper"]
-    ; actuals_pred= List.is_empty } ]
-  |> of_records
+    ; actuals_pred= List.is_empty }
 
 
 let is_handler_constructor =
   let open MethodMatcher in
-  [ { default with
+  of_record
+    { default with
       classname= "android.os.Handler"
     ; methods= [Typ.Procname.Java.constructor_method_name]
-    ; actuals_pred= (fun actuals -> not (List.is_empty actuals)) } ]
-  |> of_records
+    ; actuals_pred= (fun actuals -> not (List.is_empty actuals)) }
 
 
 let is_thread_constructor =
   let open MethodMatcher in
-  [ { default with
+  of_record
+    { default with
       classname= "java.lang.Thread"
     ; search_superclasses= false
-    ; methods= [Typ.Procname.Java.constructor_method_name] } ]
-  |> of_records
+    ; methods= [Typ.Procname.Java.constructor_method_name] }

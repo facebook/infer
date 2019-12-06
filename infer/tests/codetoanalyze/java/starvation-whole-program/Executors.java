@@ -23,6 +23,8 @@ class Executors {
 
   public static void postOnUiThread(Runnable runnable) {}
 
+  public static void postToUiThread(Runnable runnable) {}
+
   public static void runOnUiThread(Runnable runnable) {}
 
   public static void postOnUiThreadDelayed(Runnable runnable, long delayMs) {}

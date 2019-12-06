@@ -160,4 +160,14 @@ class ModeledExecutors {
           }
         });
   }
+
+  public void postToUIThreadBad() {
+    Executors.postToUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            doTransact();
+          }
+        });
+  }
 }
