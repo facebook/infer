@@ -175,7 +175,8 @@ struct
                 | _ ->
                     astate
               else if is_component_builder callee_pname tenv then
-                Domain.call_builder ~ret:return_access_path ~receiver callee astate
+                let callee_prefix = Domain.MethodCallPrefix.make receiver callee_pname location in
+                Domain.call_builder ~ret:return_access_path ~receiver callee_prefix astate
               else astate
         else
           (* treat it like a normal call *)

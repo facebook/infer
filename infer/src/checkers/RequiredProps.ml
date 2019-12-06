@@ -160,6 +160,11 @@ module LithoContext = struct
             (Summary.get_loc summary) call_chain )
 
 
+  let check_on_string_set_prefix tenv summary parent_typename call_chain_prefix prop_set =
+    let call_chain = List.map call_chain_prefix ~f:Domain.MethodCallPrefix.to_method_call in
+    check_on_string_set tenv summary parent_typename call_chain prop_set
+
+
   let report_on_post astate tenv summary =
     let check_required_prop_chain _ call_chain =
       let call_chain =
@@ -184,7 +189,10 @@ module LithoContext = struct
       | _ ->
           ()
     in
-    Domain.iter_call_chains ~f:check_required_prop_chain astate
+    if Config.new_litho_domain then
+      let check_on_string_set_prefix = check_on_string_set_prefix tenv summary in
+      Domain.check_required_props ~check_on_string_set:check_on_string_set_prefix astate
+    else Domain.iter_call_chains ~f:check_required_prop_chain astate
 
 
   let report_on_inv_map ~inv_map_iter tenv summary =
@@ -202,10 +210,11 @@ module LithoContext = struct
               None )
     in
     let pname = Summary.get_proc_name summary in
-    let check_on_string_set = check_on_string_set tenv summary in
+    let check_on_string_set_prefix = check_on_string_set_prefix tenv summary in
     inv_map_iter ~f:(fun instrs astate ->
         Option.iter (find_return_instr instrs) ~f:(fun receiver ->
-            Domain.check_required_props_of_receiver ~pname ~check_on_string_set receiver astate ) )
+            Domain.check_required_props_of_receiver ~pname
+              ~check_on_string_set:check_on_string_set_prefix receiver astate ) )
 
 
   let session_name = "litho required props"

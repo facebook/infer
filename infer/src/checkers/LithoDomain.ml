@@ -45,6 +45,34 @@ module MethodCall = struct
   let procname_to_string {procname} = Typ.Procname.get_method procname
 end
 
+module MethodCallPrefix = struct
+  type t =
+    { (* TODO: We can remove the [receiver] field after we replace the old checker *)
+      receiver: LocalAccessPath.t [@compare.ignore]
+    ; prefix: string
+    ; procname: Typ.Procname.t [@compare.ignore]
+    ; location: Location.t [@compare.ignore] }
+  [@@deriving compare]
+
+  let make receiver procname location =
+    let method_name = Typ.Procname.get_method procname in
+    let prefix_opt =
+      String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
+    in
+    let prefix = Option.value prefix_opt ~default:method_name in
+    {receiver; prefix; procname; location}
+
+
+  let pp fmt {receiver; procname} =
+    F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
+
+
+  let procname_to_string {procname} = Typ.Procname.get_method procname
+
+  (* NOTE: This is only for sharing some code with the previous version of the checker. *)
+  let to_method_call {receiver; procname; location} = MethodCall.make receiver procname location
+end
+
 module CallSet = AbstractDomain.FiniteSet (MethodCall)
 module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
 
@@ -66,42 +94,7 @@ module NewDomain = struct
 
   module MethodCalls = struct
     module IsBuildMethodCalled = AbstractDomain.BooleanAnd
-
-    module S = AbstractDomain.InvertedSet (struct
-      include MethodCall
-
-      let compare_procname p1 p2 =
-        let chopped_opt pname =
-          let method_name = Typ.Procname.get_method pname in
-          String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
-        in
-        let replace_both s p =
-          match p with
-          | Typ.Procname.Java java_pname ->
-              (* This is a bit of a hack to quickly compare based on only
-                 method names *)
-              Typ.Procname.Java
-                ( Typ.Procname.Java.replace_method_name s java_pname
-                |> Typ.Procname.Java.replace_parameters [] )
-          | _ ->
-              p
-        in
-        let p1, p2 =
-          match (chopped_opt p1, chopped_opt p2) with
-          | Some chopped1, Some chopped2 ->
-              (replace_both chopped1 p1, replace_both chopped2 p2)
-          | Some chopped1, None ->
-              (replace_both chopped1 p1, Typ.Procname.replace_parameters [] p2)
-          | None, Some chopped2 ->
-              (Typ.Procname.replace_parameters [] p1, replace_both chopped2 p2)
-          | _ ->
-              (p1, p2)
-        in
-        Typ.Procname.compare p1 p2
-
-
-      let compare x y = compare_procname x.procname y.procname
-    end)
+    module S = AbstractDomain.InvertedSet (MethodCallPrefix)
 
     type t = {is_build_method_called: IsBuildMethodCalled.t; method_calls: S.t}
 
@@ -140,7 +133,7 @@ module NewDomain = struct
 
     let to_string_set method_calls =
       let accum_as_string method_call acc =
-        String.Set.add acc (MethodCall.procname_to_string method_call)
+        String.Set.add acc (MethodCallPrefix.procname_to_string method_call)
       in
       S.fold accum_as_string method_calls String.Set.empty
 

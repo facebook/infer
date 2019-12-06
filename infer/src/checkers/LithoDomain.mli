@@ -35,6 +35,18 @@ module MethodCall : sig
   val procname_to_string : t -> string
 end
 
+module MethodCallPrefix : sig
+  type t
+
+  val make : LocalAccessPath.t -> Typ.Procname.t -> Location.t -> t
+
+  val pp : F.formatter -> t -> unit
+
+  val procname_to_string : t -> string
+
+  val to_method_call : t -> MethodCall.t
+end
+
 module CallSet : module type of AbstractDomain.FiniteSet (MethodCall)
 
 module OldDomain : module type of AbstractDomain.Map (LocalAccessPath) (CallSet)
@@ -60,18 +72,19 @@ val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 val call_create : LocalAccessPath.t -> Typ.name -> Location.t -> t -> t
 (** Semantics of builder creation method *)
 
-val call_builder : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> MethodCall.t -> t -> t
+val call_builder :
+  ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> MethodCallPrefix.t -> t -> t
 (** Semantics of builder's methods, e.g. [prop] *)
 
 val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
 (** Semantics of builder's final build method *)
 
 val check_required_props :
-  check_on_string_set:(Typ.name -> MethodCall.t list -> String.Set.t -> unit) -> t -> unit
+  check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit) -> t -> unit
 
 val check_required_props_of_receiver :
      pname:Typ.Procname.t
-  -> check_on_string_set:(Typ.name -> MethodCall.t list -> String.Set.t -> unit)
+  -> check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit)
   -> HilExp.access_expression
   -> t
   -> unit
