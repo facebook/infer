@@ -161,6 +161,27 @@ public class RequiredProps {
     return builder.prop2(new Object()).build();
   }
 
+  public void buildPropInConditionalOk_FP(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object()).prop3(new Object());
+    } else {
+      builder.prop1(new Object()).prop3(new Object());
+    }
+    builder.build();
+  }
+
+  // should be only missing prop3
+  public void buildPropMissingInConditionalBad(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object()).prop3(new Object());
+    } else {
+      builder.prop2(new Object()).prop1(new Object());
+    }
+    builder.build();
+  }
+
   // don't want to report here; want to report at clients that don't pass prop1
   private MyComponent buildSuffix(MyComponent.Builder builder) {
     return builder.prop2(new Object()).prop3(new Object()).build();
@@ -249,6 +270,7 @@ public class RequiredProps {
     }
     builder.build();
   }
+
 
   public void buildPropVarArgNormalOk() {
     mVarArgPropComponent.create().props(new ArrayList<Object>()).build();

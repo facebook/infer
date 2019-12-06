@@ -100,12 +100,9 @@ module NewDomain = struct
         Typ.Procname.compare p1 p2
 
 
-      let compare x y =
-        let r = LocalAccessPath.compare x.receiver y.receiver in
-        if r <> 0 then r else compare_procname x.procname y.procname
+      let compare x y = compare_procname x.procname y.procname
     end)
 
-    (* TODO: add return type && and do not add return method to the set *)
     type t = {is_build_method_called: IsBuildMethodCalled.t; method_calls: S.t}
 
     let pp fmt {is_build_method_called; method_calls} =
