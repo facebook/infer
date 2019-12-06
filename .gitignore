@@ -81,16 +81,15 @@ duplicates.txt
 /infer/tests/.idea/copyright/profiles_settings.xml
 
 # VS code
-.vscode
+.vscode/
+.lsp-buck-out/
+.lsp.buckd/
 
 # Eclipse settings files
 ocaml.prefs
 /infer/.paths
 /infer/src/.paths
 org.eclipse.core.resources.prefs
-
-# vscode
-.vscode/
 
 # Arcanist
 /arcanist/.phutil_module_cache
