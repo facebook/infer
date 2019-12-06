@@ -69,6 +69,13 @@ val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t
 val check_required_props :
   check_on_string_set:(Typ.name -> MethodCall.t list -> String.Set.t -> unit) -> t -> unit
 
+val check_required_props_of_receiver :
+     pname:Typ.Procname.t
+  -> check_on_string_set:(Typ.name -> MethodCall.t list -> String.Set.t -> unit)
+  -> HilExp.access_expression
+  -> t
+  -> unit
+
 val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original
     access path is retained; otherwise, the new one is used *)

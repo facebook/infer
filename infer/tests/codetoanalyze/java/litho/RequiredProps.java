@@ -322,4 +322,12 @@ public class RequiredProps {
       return mMyTreeComponent.create().build();
     }
   }
+
+  public Component buildPropLithoMissingInOneBranchBad(boolean b) {
+    if (b) {
+      return mMyLithoComponent.create().prop1(new Object()).build();
+    } else {
+      return mMyLithoComponent.create().prop1(new Object()).prop2(new Object()).build();
+    }
+  }
 }

@@ -197,6 +197,12 @@ module NewDomain = struct
         MethodCalls.check_required_props ~check_on_string_set typ_name method_calls
       in
       iter f x
+
+
+    let check_required_props_of_created ~check_on_string_set ({CreatedLocation.typ_name} as created)
+        x =
+      Option.iter (find_opt created x) ~f:(fun method_calls ->
+          MethodCalls.check_required_props ~check_on_string_set typ_name method_calls )
   end
 
   type t = {created: Created.t; method_called: MethodCalled.t}
@@ -246,6 +252,16 @@ module NewDomain = struct
 
   let check_required_props ~check_on_string_set {method_called} =
     MethodCalled.check_required_props ~check_on_string_set method_called
+
+
+  let check_required_props_of_receiver ~pname ~check_on_string_set receiver {created; method_called}
+      =
+    let check_on_created_location created =
+      MethodCalled.check_required_props_of_created ~check_on_string_set created method_called
+    in
+    let receiver_path = LocalAccessPath.make_from_access_expression receiver pname in
+    let created_locations = Created.lookup receiver_path created in
+    CreatedLocations.iter check_on_created_location created_locations
 end
 
 include struct
@@ -285,6 +301,10 @@ include struct
 
   let check_required_props ~check_on_string_set =
     lift_new (NewDomain.check_required_props ~check_on_string_set)
+
+
+  let check_required_props_of_receiver ~pname ~check_on_string_set receiver =
+    lift_new (NewDomain.check_required_props_of_receiver ~pname ~check_on_string_set receiver)
 end
 
 let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) ((_, new_astate) as astate)

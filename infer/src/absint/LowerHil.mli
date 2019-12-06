@@ -42,6 +42,13 @@ module type S = sig
   val compute_post :
     Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
   (** compute and return the postcondition for the given procedure starting from [initial]. *)
+
+  val exec_pdesc :
+    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> Interpreter.invariant_map
+  (** compute and return the invariant map for the given procedure starting from [initial]. *)
+
+  val hil_instrs_of_sil : Bindings.t -> Instrs.not_reversed_t -> HilInstr.t list
+  (** construct HIL instructions from SIL instructions with initial bindings. *)
 end
 
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain.
