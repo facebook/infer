@@ -161,6 +161,7 @@ DIRECT_TESTS += \
   java_inefficientKeysetIterator \
   java_infer \
   java_litho \
+  java_litho-required-props \
   java_performance \
   java_purity \
   java_quandary \
