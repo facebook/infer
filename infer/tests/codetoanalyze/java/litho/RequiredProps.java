@@ -364,4 +364,12 @@ public class RequiredProps {
       return mMyLithoComponent.create().prop1(new Object()).prop2(new Object()).build();
     }
   }
+
+  public Component buildPropLithoMissingInOneBranchBeforeBuildBad(boolean b) {
+    MyLithoComponent.Builder builder =
+        b
+            ? mMyLithoComponent.create().prop1(new Object())
+            : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
+    return builder.build();
+  }
 }
