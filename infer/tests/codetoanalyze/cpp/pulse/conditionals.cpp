@@ -103,12 +103,10 @@ void add_test5_bad(int* x, int n) {
   *x = 42;
 }
 
-void add_test6_bad(int* x, int n, int step) {
+void add_test6_bad_FNish(int* x, int n, int step) {
   free(x);
-  // the unknown bound is treated non-deterministically, "bad thing" here as
-  // loop should diverge but arguably the code is wrong and should have a more
-  // explicit "false" condition (so not marking FP because we would want to
-  // report here)
+  // the loop should diverge but arguably the code is wrong and should
+  // have a more explicit "false" condition (hence "FN-ish")
   for (int i = n - 1; i < n;) {
   }
   *x = 42;

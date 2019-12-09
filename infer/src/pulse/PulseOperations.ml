@@ -243,15 +243,17 @@ let eval_arith location exp astate =
         , None
         , Some
             ( Arithmetic.equal_to i
-            , Trace.Immediate {location; history= [ValueHistory.Assignment location]} ) )
+            , Trace.Immediate {location; history= [ValueHistory.Assignment location]} )
+        , Itv.ItvPure.of_int_lit i )
   | exp -> (
       eval location exp astate
       >>| fun (astate, (addr, _)) ->
+      let bo_itv = Memory.get_bo_itv addr astate in
       match Memory.get_arithmetic addr astate with
       | Some a ->
-          (astate, Some addr, Some a)
+          (astate, Some addr, Some a, bo_itv)
       | None ->
-          (astate, Some addr, None) )
+          (astate, Some addr, None, bo_itv) )
 
 
 let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate =
@@ -275,9 +277,9 @@ let prune ~is_then_branch if_kind location ~condition astate =
     match (exp : Exp.t) with
     | BinOp (bop, e1, e2) -> (
         eval_arith location e1 astate
-        >>= fun (astate, addr1, eval1) ->
+        >>= fun (astate, addr1, eval1, evalbo1) ->
         eval_arith location e2 astate
-        >>| fun (astate, addr2, eval2) ->
+        >>| fun (astate, addr2, eval2, evalbo2) ->
         match
           Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst eval1)
             (Option.map ~f:fst eval2)
@@ -290,7 +292,18 @@ let prune ~is_then_branch if_kind location ~condition astate =
               record_abduced event location addr1 eval1 abduced1 astate
               |> record_abduced event location addr2 eval2 abduced2
             in
-            (astate, true) )
+            let satisfiable =
+              match Itv.ItvPure.arith_binop bop evalbo1 evalbo2 |> Itv.ItvPure.to_boolean with
+              | False ->
+                  negated
+              | True ->
+                  not negated
+              | Top ->
+                  true
+              | Bottom ->
+                  false
+            in
+            (astate, satisfiable) )
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->

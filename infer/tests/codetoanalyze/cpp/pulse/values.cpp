@@ -58,10 +58,9 @@ void free_if_deref_bad(int* x) {
   *x = 42;
 }
 
-// Document some limitations, although there are so many for now that
-// it's not really worth it. Add more tests when/if the analysis gets
-// smarter than just constants.
-void FP_infeasible_tricky_ok(int* x) {
+// that was supposed to be a FP due to tricky arithmetic but inferbo is too
+// smart!
+void infeasible_tricky_ok(int* x) {
   free_if(x, x == x);
   int y = 42;
   if (2 * y != y << 1) {
@@ -72,7 +71,7 @@ void FP_infeasible_tricky_ok(int* x) {
 
 int minus(int x, int y) { return x - y; }
 
-void function_call_infeasible_error_path_ok_FP(int* x) {
+void function_call_infeasible_error_path_ok(int* x) {
   free(x);
   if (minus(0, 0) < 0) {
     *x = 42;
