@@ -82,7 +82,7 @@ module Memory : sig
 
   val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
 
-  val get_bo_itv : AbstractValue.t -> t -> Itv.t
+  val get_bo_itv : AbstractValue.t -> t -> Itv.ItvPure.t
 end
 
 val is_local : Var.t -> t -> bool

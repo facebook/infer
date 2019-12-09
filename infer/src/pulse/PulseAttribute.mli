@@ -15,7 +15,7 @@ type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Arithmetic of Arithmetic.t * Trace.t
-  | BoItv of Itv.t
+  | BoItv of Itv.ItvPure.t
   | Closure of Typ.Procname.t
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
@@ -34,7 +34,7 @@ module Attributes : sig
 
   val get_arithmetic : t -> (Arithmetic.t * Trace.t) option
 
-  val get_bo_itv : t -> Itv.t option
+  val get_bo_itv : t -> Itv.ItvPure.t option
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 

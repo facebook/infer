@@ -100,6 +100,16 @@ module ItvPure : sig
   val mult : t -> t -> t
 
   val exists_str : f:(string -> bool) -> t -> bool
+
+  val of_int_lit : IntLit.t -> t
+
+  val of_pulse_value : PulseAbstractValue.t -> t
+
+  val get_bound : t -> Symb.BoundEnd.t -> Bound.t
+
+  val arith_binop : Binop.t -> t -> t -> t option
+
+  val arith_unop : Unop.t -> t -> t option
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)

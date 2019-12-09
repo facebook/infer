@@ -122,11 +122,11 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs astate =
   let bo_itv_of_op op astate =
     match op with
     | LiteralOperand i ->
-        Itv.of_int_lit i
+        Itv.ItvPure.of_int_lit i
     | AbstractValueOperand v ->
         Memory.get_bo_itv v astate
   in
-  match Itv.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate) with
+  match Itv.ItvPure.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate) with
   | None ->
       astate
   | Some itv ->
@@ -155,7 +155,7 @@ let eval_unop_arith location unop_addr unop operand_addr unop_hist astate =
 
 
 let eval_unop_bo_itv unop_addr unop operand_addr astate =
-  match Itv.arith_unop unop (Memory.get_bo_itv operand_addr astate) with
+  match Itv.ItvPure.arith_unop unop (Memory.get_bo_itv operand_addr astate) with
   | None ->
       astate
   | Some itv ->
@@ -212,7 +212,7 @@ let eval location exp0 astate =
           Memory.add_attribute addr
             (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
             astate
-          |> Memory.add_attribute addr (BoItv (Itv.of_int_lit i))
+          |> Memory.add_attribute addr (BoItv (Itv.ItvPure.of_int_lit i))
           |> Memory.invalidate
                (addr, [ValueHistory.Assignment location])
                (ConstantDereference i) location

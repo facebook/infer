@@ -360,6 +360,10 @@ module PrePost = struct
         ; arith_callee: Arithmetic.t option }
         (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
             state *)
+    | ArithmeticBo of
+        {addr_caller: AbstractValue.t; addr_callee: AbstractValue.t; arith_callee: Itv.ItvPure.t}
+        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
+            state *)
 
   let pp_cannot_apply_pre fmt = function
     | Aliasing {addr_caller; addr_callee; addr_callee'} ->
@@ -370,6 +374,10 @@ module PrePost = struct
           AbstractValue.pp addr_caller (Pp.option Arithmetic.pp) arith_caller AbstractValue.pp
           addr_callee (Pp.option Arithmetic.pp) arith_callee AbstractValue.pp addr_caller
           AbstractValue.pp addr_callee
+    | ArithmeticBo {addr_caller; addr_callee; arith_callee} ->
+        F.fprintf fmt
+          "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints"
+          AbstractValue.pp addr_callee Itv.ItvPure.pp arith_callee AbstractValue.pp addr_caller
 
 
   exception CannotApplyPre of cannot_apply_pre
@@ -532,23 +540,29 @@ module PrePost = struct
           ~addr_pre ~addr_hist_caller call_state )
 
 
-  let subst_attributes attrs_callee {astate; subst} =
+  let subst_attributes ~addr_callee ~addr_caller attrs_callee {astate; subst} =
     let eval_sym_of_subst subst s bound_end =
       let v = Symb.Symbol.get_pulse_value_exn s in
       match PulseAbstractValue.Map.find_opt v !subst with
       | Some (v', _) ->
-          Itv.get_bound (Memory.get_bo_itv v' astate) bound_end
+          Itv.ItvPure.get_bound (Memory.get_bo_itv v' astate) bound_end
       | None ->
           let v' = PulseAbstractValue.mk_fresh () in
           subst := PulseAbstractValue.Map.add v (v', []) !subst ;
-          AbstractDomain.Types.NonBottom (Bounds.Bound.of_pulse_value v')
+          Bounds.Bound.of_pulse_value v'
     in
     let subst_attribute subst attr =
       match (attr : Attribute.t) with
-      | BoItv itv ->
+      | BoItv itv -> (
           let subst = ref subst in
-          let itv' = Itv.subst itv (eval_sym_of_subst subst) in
-          (!subst, Attribute.BoItv itv')
+          match
+            Itv.ItvPure.subst itv (fun symb bound ->
+                AbstractDomain.Types.NonBottom (eval_sym_of_subst subst symb bound) )
+          with
+          | NonBottom itv' ->
+              (!subst, Attribute.BoItv itv')
+          | Bottom ->
+              raise (CannotApplyPre (ArithmeticBo {addr_callee; addr_caller; arith_callee= itv})) )
       | AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Arithmetic _
@@ -602,7 +616,10 @@ module PrePost = struct
 
   let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
     let one_address_sat addr_pre callee_attrs addr_hist_caller call_state =
-      let subst, attrs_pre = subst_attributes callee_attrs call_state in
+      let subst, attrs_pre =
+        subst_attributes ~addr_callee:addr_pre ~addr_caller:(fst addr_hist_caller) callee_attrs
+          call_state
+      in
       solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
         ~addr_hist_caller {call_state with subst}
     in
@@ -673,7 +690,8 @@ module PrePost = struct
             old_post_edges edges_pre )
 
 
-  let add_call_to_attributes proc_name call_location caller_history attrs call_state =
+  let add_call_to_attributes proc_name call_location ~addr_callee ~addr_caller caller_history attrs
+      call_state =
     let add_call_to_attribute attr =
       match (attr : Attribute.t) with
       | Invalid (invalidation, trace) ->
@@ -691,7 +709,7 @@ module PrePost = struct
       | WrittenTo _ ->
           attr
     in
-    let call_state, attrs = subst_attributes attrs call_state in
+    let call_state, attrs = subst_attributes ~addr_callee ~addr_caller attrs call_state in
     (call_state, Attributes.map attrs ~f:(fun attr -> add_call_to_attribute attr))
 
 
@@ -703,7 +721,8 @@ module PrePost = struct
     let heap = (call_state.astate.post :> base_domain).heap in
     let subst, heap =
       let subst, attrs_post_caller =
-        add_call_to_attributes callee_proc_name call_loc hist_caller attrs_post call_state
+        add_call_to_attributes ~addr_callee ~addr_caller callee_proc_name call_loc hist_caller
+          attrs_post call_state
       in
       (subst, BaseMemory.set_attrs addr_caller attrs_post_caller heap)
     in
@@ -873,8 +892,8 @@ module PrePost = struct
                 (* callee address has no meaning for the caller *) (subst, heap)
             | Some (addr_caller, history) ->
                 let subst, attrs' =
-                  add_call_to_attributes callee_proc_name call_loc history attrs
-                    {call_state with subst}
+                  add_call_to_attributes callee_proc_name call_loc ~addr_callee ~addr_caller history
+                    attrs {call_state with subst}
                 in
                 (subst, BaseMemory.set_attrs addr_caller attrs' heap) )
         (pre_post.post :> BaseDomain.t).heap (call_state.subst, heap0)

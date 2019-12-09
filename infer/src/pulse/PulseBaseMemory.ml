@@ -93,7 +93,7 @@ let get_arithmetic = get_attribute Attributes.get_arithmetic
 let get_bo_itv v memory =
   match get_attribute Attributes.get_bo_itv v memory with
   | None ->
-      Itv.of_pulse_value v
+      Itv.ItvPure.of_pulse_value v
   | Some itv ->
       itv
 
