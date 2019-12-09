@@ -126,11 +126,10 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs astate =
     | AbstractValueOperand v ->
         Memory.get_bo_itv v astate
   in
-  match Itv.ItvPure.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate) with
-  | None ->
-      astate
-  | Some itv ->
-      Memory.add_attribute binop_addr (BoItv itv) astate
+  let bo_itv =
+    Itv.ItvPure.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate)
+  in
+  Memory.add_attribute binop_addr (BoItv bo_itv) astate
 
 
 let eval_binop location binop op_lhs op_rhs binop_hist astate =

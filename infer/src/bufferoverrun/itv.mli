@@ -107,7 +107,7 @@ module ItvPure : sig
 
   val get_bound : t -> Symb.BoundEnd.t -> Bound.t
 
-  val arith_binop : Binop.t -> t -> t -> t option
+  val arith_binop : Binop.t -> t -> t -> t
 
   val arith_unop : Unop.t -> t -> t option
 end
@@ -233,7 +233,7 @@ val mod_sem : t -> t -> t
 
 val ne_sem : t -> t -> Boolean.t
 
-val arith_binop : Binop.t -> t -> t -> t option
+val arith_binop : Binop.t -> t -> t -> t
 
 val arith_unop : Unop.t -> t -> t option
 

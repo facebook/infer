@@ -201,11 +201,22 @@ module ItvPure = struct
     (l', u')
 
 
-  let to_bool : t -> Boolean.t =
+  let to_boolean : t -> Boolean.t =
    fun x -> if is_false x then Boolean.False else if is_true x then Boolean.True else Boolean.Top
 
 
-  let lnot : t -> Boolean.t = fun x -> to_bool x |> Boolean.not_
+  let of_boolean : Boolean.t -> t bottom_lifted = function
+    | True ->
+        NonBottom (of_int 1)
+    | False ->
+        NonBottom (of_int 0)
+    | Bottom ->
+        Bottom
+    | Top ->
+        NonBottom top
+
+
+  let lnot : t -> Boolean.t = fun x -> to_boolean x |> Boolean.not_
 
   let plus : t -> t -> t =
    fun (l1, u1) (l2, u2) -> (Bound.plus_l ~weak:false l1 l2, Bound.plus_u ~weak:false u1 u2)
@@ -368,9 +379,9 @@ module ItvPure = struct
     else Boolean.Top
 
 
-  let land_sem : t -> t -> Boolean.t = fun x y -> Boolean.and_ (to_bool x) (to_bool y)
+  let land_sem : t -> t -> Boolean.t = fun x y -> Boolean.and_ (to_boolean x) (to_boolean y)
 
-  let lor_sem : t -> t -> Boolean.t = fun x y -> Boolean.or_ (to_bool x) (to_bool y)
+  let lor_sem : t -> t -> Boolean.t = fun x y -> Boolean.or_ (to_boolean x) (to_boolean y)
 
   let lift_minmax_bound ~use_minmax_bound ~mk ~f x y =
     let r = f x y in
@@ -404,8 +415,48 @@ module ItvPure = struct
         Bottom
 
 
+  let assert_no_bottom = function Bottom -> assert false | NonBottom x -> x
+
   let arith_binop (bop : Binop.t) x y =
-    match bop with PlusA _ -> Some (plus x y) | MinusA _ -> Some (minus x y) | _ -> None
+    match bop with
+    | Binop.PlusA _ ->
+        plus x y
+    | Binop.MinusA _ ->
+        minus x y
+    | Binop.Mult _ ->
+        mult x y
+    | Binop.PlusPI | Binop.MinusPI | Binop.MinusPP ->
+        top
+    | Binop.Div ->
+        div x y
+    | Binop.Mod ->
+        mod_sem x y
+    | Binop.Shiftlt ->
+        shiftlt x y
+    | Binop.Shiftrt ->
+        shiftrt x y
+    | Binop.Lt ->
+        of_boolean (lt_sem x y) |> assert_no_bottom
+    | Binop.Gt ->
+        of_boolean (gt_sem x y) |> assert_no_bottom
+    | Binop.Le ->
+        of_boolean (le_sem x y) |> assert_no_bottom
+    | Binop.Ge ->
+        of_boolean (ge_sem x y) |> assert_no_bottom
+    | Binop.Eq ->
+        of_boolean (eq_sem x y) |> assert_no_bottom
+    | Binop.Ne ->
+        of_boolean (ne_sem x y) |> assert_no_bottom
+    | Binop.BAnd ->
+        band_sem x y
+    | Binop.BXor ->
+        top
+    | Binop.BOr ->
+        top
+    | Binop.LAnd ->
+        of_boolean (land_sem x y) |> assert_no_bottom
+    | Binop.LOr ->
+        of_boolean (lor_sem x y) |> assert_no_bottom
 
 
   let arith_unop (unop : Unop.t) x = match unop with Neg -> Some (neg x) | BNot | LNot -> None
@@ -634,15 +685,6 @@ let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
       NonBottom (f x y)
 
 
-let lift2opt : (ItvPure.t -> ItvPure.t -> ItvPure.t option) -> t -> t -> t option =
- fun f x y ->
-  match (x, y) with
-  | Bottom, _ | _, Bottom ->
-      Some Bottom
-  | NonBottom x, NonBottom y ->
-      f x y |> Option.map ~f:(fun v -> NonBottom v)
-
-
 let bind2_gen : bot:'a -> (ItvPure.t -> ItvPure.t -> 'a) -> t -> t -> 'a =
  fun ~bot f x y ->
   match (x, y) with Bottom, _ | _, Bottom -> bot | NonBottom x, NonBottom y -> f x y
@@ -720,7 +762,7 @@ let max_sem : ?use_minmax_bound:bool -> t -> t -> t =
  fun ?use_minmax_bound -> lift2 (ItvPure.max_sem ?use_minmax_bound)
 
 
-let arith_binop : Binop.t -> t -> t -> t option = fun bop -> lift2opt (ItvPure.arith_binop bop)
+let arith_binop : Binop.t -> t -> t -> t = fun bop -> lift2 (ItvPure.arith_binop bop)
 
 let arith_unop : Unop.t -> t -> t option = fun unop -> lift1opt (ItvPure.arith_unop unop)
 
