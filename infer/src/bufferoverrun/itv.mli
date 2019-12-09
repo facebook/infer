@@ -225,6 +225,8 @@ val ne_sem : t -> t -> Boolean.t
 
 val arith_binop : Binop.t -> t -> t -> t option
 
+val arith_unop : Unop.t -> t -> t option
+
 val prune_eq_zero : t -> t
 
 val prune_ne_zero : t -> t

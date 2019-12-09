@@ -142,6 +142,35 @@ let eval_binop location binop op_lhs op_rhs binop_hist astate =
   (astate, (binop_addr, binop_hist))
 
 
+let eval_unop_arith location unop_addr unop operand_addr unop_hist astate =
+  match
+    Memory.get_arithmetic operand_addr astate
+    |> Option.bind ~f:(function a, _ -> Arithmetic.unop unop a)
+  with
+  | None ->
+      astate
+  | Some unop_a ->
+      let unop_trace = Trace.Immediate {location; history= unop_hist} in
+      Memory.add_attribute unop_addr (Arithmetic (unop_a, unop_trace)) astate
+
+
+let eval_unop_bo_itv unop_addr unop operand_addr astate =
+  match Itv.arith_unop unop (Memory.get_bo_itv operand_addr astate) with
+  | None ->
+      astate
+  | Some itv ->
+      Memory.add_attribute unop_addr (BoItv itv) astate
+
+
+let eval_unop location unop addr unop_hist astate =
+  let unop_addr = AbstractValue.mk_fresh () in
+  let astate =
+    eval_unop_arith location unop_addr unop addr unop_hist astate
+    |> eval_unop_bo_itv unop_addr unop addr
+  in
+  (astate, (unop_addr, unop_hist))
+
+
 let eval location exp0 astate =
   let rec eval exp astate =
     match (exp : Exp.t) with
@@ -189,21 +218,8 @@ let eval location exp0 astate =
                (ConstantDereference i) location
         in
         Ok (astate, (addr, []))
-    | UnOp (unop, exp, _typ) -> (
-        eval exp astate
-        >>| fun (astate, (addr, hist)) ->
-        let unop_addr = AbstractValue.mk_fresh () in
-        match
-          Memory.get_arithmetic addr astate
-          |> Option.bind ~f:(function a, _ -> Arithmetic.unop unop a)
-        with
-        | None ->
-            (astate, (unop_addr, (* TODO history *) []))
-        | Some unop_a ->
-            let unop_hist = (* TODO: add event *) hist in
-            let unop_trace = Trace.Immediate {location; history= unop_hist} in
-            let astate = Memory.add_attribute unop_addr (Arithmetic (unop_a, unop_trace)) astate in
-            (astate, (unop_addr, unop_hist)) )
+    | UnOp (unop, exp, _typ) ->
+        eval exp astate >>| fun (astate, (addr, hist)) -> eval_unop location unop addr hist astate
     | BinOp (bop, e_lhs, e_rhs) ->
         eval e_lhs astate
         >>= fun (astate, (addr_lhs, hist_lhs)) ->
