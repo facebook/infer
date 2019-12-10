@@ -9,6 +9,7 @@ package codetoanalyze.java.checkers;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -530,5 +531,24 @@ class OtherObj {
 
   void mutateInConstructorOk() {
     new OtherObj(new Obj());
+  }
+}
+
+@ThreadSafe
+class ContainerOwnership {
+
+  ContainerOwnership() {
+    ArrayList<MyObj> children = new ArrayList<MyObj>();
+    setFirstOk(children);
+  }
+
+  private void setFirstOk(ArrayList<MyObj> children) {
+    MyObj obj = children.get(0);
+
+    if (obj == null) {
+      obj = new MyObj();
+    }
+
+    obj.data = 10;
   }
 }

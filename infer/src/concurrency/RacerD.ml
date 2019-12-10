@@ -54,28 +54,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let make_container_access ret_base callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
       (astate : Domain.t) =
     let open Domain in
-    let callee_access =
-      if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
-      else
+    if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
+    else
+      let callee_access =
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
         let ownership_pre = OwnershipDomain.get_precondition receiver_ap astate.ownership in
         AccessSnapshot.make container_access astate.locks astate.threads ownership_pre caller_pdesc
-    in
-    (* if a container c is owned in cpp, make c[i] owned for all i *)
-    let ownership_value =
-      match callee_pname with
-      | Typ.Procname.ObjC_Cpp _ | C _ ->
-          OwnershipAbstractValue.make_owned_if 0
-      | _ ->
-          OwnershipAbstractValue.unowned
-    in
-    let ownership =
-      OwnershipDomain.add (AccessExpression.base ret_base) ownership_value astate.ownership
-    in
-    let accesses = AccessDomain.add_opt callee_access astate.accesses in
-    Some {astate with accesses; ownership}
+      in
+      let ownership_value = OwnershipDomain.get_owned receiver_ap astate.ownership in
+      let ownership =
+        OwnershipDomain.add (AccessExpression.base ret_base) ownership_value astate.ownership
+      in
+      let accesses = AccessDomain.add_opt callee_access astate.accesses in
+      Some {astate with accesses; ownership}
 
 
   let add_reads exps loc ({accesses; locks; threads; ownership} as astate : Domain.t) proc_data =
