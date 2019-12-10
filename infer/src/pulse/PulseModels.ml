@@ -40,9 +40,10 @@ module Misc = struct
    fun i64 ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
-      Memory.add_attribute ret_addr
-        (Arithmetic (Arithmetic.equal_to (IntLit.of_int64 i64), Immediate {location; history= []}))
-        astate
+      let i = IntLit.of_int64 i64 in
+      Memory.add_attribute ret_addr (BoItv (Itv.ItvPure.of_int_lit i)) astate
+      |> Memory.add_attribute ret_addr
+           (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
     in
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
@@ -57,13 +58,18 @@ end
 module C = struct
   let free deleted_access : model =
    fun ~caller_summary:_ location ~ret:_ astate ->
-    match Memory.get_arithmetic (fst deleted_access) astate with
-    | Some (arith, _) when Arithmetic.is_equal_to_zero arith ->
-        (* freeing 0 is a no-op *)
-        Ok [astate]
-    | _ ->
-        PulseOperations.invalidate location Invalidation.CFree deleted_access astate
-        >>| fun astate -> [astate]
+    (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
+       currently know about the value. This is purely to avoid contributing to path explosion. *)
+    let is_known_zero =
+      ( Memory.get_arithmetic (fst deleted_access) astate
+      |> function Some (arith, _) -> Arithmetic.is_equal_to_zero arith | None -> false )
+      || Itv.ItvPure.is_zero (Memory.get_bo_itv (fst deleted_access) astate)
+    in
+    if is_known_zero then (* freeing 0 is a no-op *)
+      Ok [astate]
+    else
+      PulseOperations.invalidate location Invalidation.CFree deleted_access astate
+      >>| fun astate -> [astate]
 end
 
 module Cplusplus = struct
