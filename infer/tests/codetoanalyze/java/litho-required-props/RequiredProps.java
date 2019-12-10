@@ -362,11 +362,21 @@ public class RequiredProps {
     }
   }
 
-  public Component buildPropLithoMissingInOneBranchBeforeBuildBad_FN(boolean b) {
+  public Component buildPropLithoMissingInOneBranchBeforeBuildBad(boolean b) {
     MyLithoComponent.Builder builder =
         b
             ? mMyLithoComponent.create().prop1(new Object())
             : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
     return builder.build();
+  }
+
+  public Component setRequiredOnOneBothBranchesWithCreateOk(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object());
+    } else {
+      builder = mMyComponent.create().prop1(new Object());
+    }
+    return builder.prop2(new Object()).prop3(new Object()).build();
   }
 }

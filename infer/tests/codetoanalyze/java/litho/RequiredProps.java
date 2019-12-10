@@ -372,4 +372,14 @@ public class RequiredProps {
             : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
     return builder.build();
   }
+
+  public Component setRequiredOnOneBothBranchesWithCreateOk_FP(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object());
+    } else {
+      builder = mMyComponent.create().prop1(new Object());
+    }
+    return builder.prop2(new Object()).prop3(new Object()).build();
+  }
 }

@@ -78,7 +78,7 @@ module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
 
 module NewDomain = struct
   module CreatedLocation = struct
-    type t = {location: Location.t; typ_name: Typ.name} [@@deriving compare]
+    type t = {location: Location.t [@ignore]; typ_name: Typ.name} [@@deriving compare]
 
     let pp fmt {location; typ_name} =
       F.fprintf fmt "Created at %a with type %a" Location.pp location Typ.Name.pp typ_name
