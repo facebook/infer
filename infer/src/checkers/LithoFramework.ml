@@ -41,14 +41,6 @@ let is_component procname tenv =
       false
 
 
-let is_call_build_inside procname tenv =
-  match Typ.Procname.get_method procname with
-  | "child" ->
-      is_component_builder procname tenv
-  | _ ->
-      false
-
-
 let is_component_build_method procname tenv =
   match Typ.Procname.get_method procname with
   | "build" ->
@@ -168,15 +160,6 @@ struct
           | None ->
               if is_component_build_method callee_pname tenv then
                 Domain.call_build_method ~ret:return_access_path ~receiver astate
-              else if is_call_build_inside callee_pname tenv then
-                match actuals with
-                | _ :: HilExp.AccessExpression ae :: _ ->
-                    let receiver =
-                      Domain.LocalAccessPath.make_from_access_expression ae caller_pname
-                    in
-                    Domain.call_build_method ~ret:return_access_path ~receiver astate
-                | _ ->
-                    astate
               else if is_component_builder callee_pname tenv then
                 let callee_prefix = Domain.MethodCallPrefix.make receiver callee_pname location in
                 Domain.call_builder ~ret:return_access_path ~receiver callee_prefix astate

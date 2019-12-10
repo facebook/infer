@@ -122,9 +122,8 @@ module LithoContext = struct
   let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
     (* If the method is build() or create() itself or doesn't contain a build() in
        its summary, we want to track it in the domain. *)
-    ( LithoFramework.is_component_build_method callee_pname tenv
+    LithoFramework.is_component_build_method callee_pname tenv
     || LithoFramework.is_component_create_method callee_pname tenv
-    || (Config.new_litho_domain && LithoFramework.is_call_build_inside callee_pname tenv) )
     ||
     (* check if build()/create() exists in callees *)
     let build_exists_in_callees =
