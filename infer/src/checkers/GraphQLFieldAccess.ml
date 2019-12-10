@@ -54,7 +54,8 @@ module LithoContext = struct
       let ltr = [Errlog.make_trace_element 0 loc message []] in
       Reporting.log_error summary ~loc ~ltr IssueType.graphql_field_access message
     in
-    Domain.iter_call_chains ~f:report_graphql_getter astate
+    Domain.iter_call_chains ~f:report_graphql_getter astate ;
+    astate
 
 
   let session_name = "litho graphql field access"

@@ -44,6 +44,9 @@ val of_pvar : Pvar.t -> Typ.t -> t
 val of_id : Ident.t -> Typ.t -> t
 (** create an access path from an ident *)
 
+val of_var : Var.t -> Typ.t -> t
+(** create an access path from a var *)
+
 val of_exp :
   include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t list
 (** extract the access paths that occur in [exp], resolving identifiers using [f_resolve_id]. don't

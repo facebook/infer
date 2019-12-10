@@ -16,6 +16,8 @@ module LocalAccessPath : sig
 
   val make_from_access_expression : HilExp.AccessExpression.t -> Typ.Procname.t -> t
 
+  val make_from_pvar : Pvar.t -> Typ.t -> Typ.Procname.t -> t
+
   val to_formal_option : t -> FormalMap.t -> t option
 
   val pp : F.formatter -> t -> unit
@@ -51,11 +53,25 @@ module CallSet : module type of AbstractDomain.FiniteSet (MethodCall)
 
 module OldDomain : module type of AbstractDomain.Map (LocalAccessPath) (CallSet)
 
-module NewDomain : AbstractDomain.S
+module NewDomain : sig
+  include AbstractDomain.S
+
+  val subst :
+       formals:(Pvar.t * Typ.t) list
+    -> actuals:HilExp.t list
+    -> ret_id_typ:AccessPath.base
+    -> caller_pname:Typ.Procname.t
+    -> callee_pname:Typ.Procname.t
+    -> caller:t
+    -> callee:t
+    -> t
+end
 
 include module type of AbstractDomain.Pair (OldDomain) (NewDomain)
 
 val empty : t
+
+val init : Tenv.t -> Typ.Procname.t -> (Pvar.t * Typ.t) list -> t
 
 val add : LocalAccessPath.t -> CallSet.t -> t -> t
 
@@ -80,7 +96,7 @@ val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t
 (** Semantics of builder's final build method *)
 
 val check_required_props :
-  check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit) -> t -> unit
+  check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit) -> t -> t
 
 val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original

@@ -192,7 +192,9 @@ module LithoContext = struct
     if Config.new_litho_domain then
       let check_on_string_set_prefix = check_on_string_set_prefix tenv summary in
       Domain.check_required_props ~check_on_string_set:check_on_string_set_prefix astate
-    else Domain.iter_call_chains ~f:check_required_prop_chain astate
+    else (
+      Domain.iter_call_chains ~f:check_required_prop_chain astate ;
+      astate )
 
 
   let session_name = "litho required props"

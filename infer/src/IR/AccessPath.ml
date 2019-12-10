@@ -137,6 +137,10 @@ module Raw = struct
 
   let of_id id typ = (base_of_id id typ, [])
 
+  let of_var var typ =
+    match var with Var.LogicalVar id -> of_id id typ | Var.ProgramVar pvar -> of_pvar pvar typ
+
+
   let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id : Var.t -> t option) =
     (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
     let rec of_exp_ exp typ accesses acc =

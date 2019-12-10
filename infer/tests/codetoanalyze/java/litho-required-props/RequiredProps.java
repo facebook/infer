@@ -68,7 +68,7 @@ public class RequiredProps {
     return setProp3(mMyComponent.create().prop1(new Object()).prop2(new Object())).build();
   }
 
-  public Component setProp3InCalleeButForgetProp1Bad_FN() {
+  public Component setProp3InCalleeButForgetProp1Bad() {
     return setProp3(mMyComponent.create()).prop2(new Object()).build();
   }
 
@@ -203,7 +203,7 @@ public class RequiredProps {
   }
 
   // should report here; forgot prop 1
-  public Component callBuildSuffixWithoutRequiredBad_FN() {
+  public Component callBuildSuffixWithoutRequiredBad() {
     return buildSuffix(mMyComponent.create());
   }
 
@@ -317,7 +317,7 @@ public class RequiredProps {
     return layoutBuilder.build();
   }
 
-  public void castImpossibleOk(Object o1) {
+  public void castImpossibleOk_FP(Object o1) {
     Component.Builder builder = mMyLithoComponent.create();
     if (builder instanceof MyComponent.Builder)
       ((MyComponent.Builder) builder)
@@ -334,7 +334,7 @@ public class RequiredProps {
     return mMyLithoComponent.create();
   }
 
-  void castMissingOneBad_FN(Object o1) {
+  void castMissingOneBad(Object o1) {
     Component.Builder builder = createBuilder();
     if (builder instanceof MyLithoComponent.Builder)
       ((MyLithoComponent.Builder) builder).prop2(new Object()).build(); // this branch will be taken
