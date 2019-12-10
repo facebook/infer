@@ -40,7 +40,7 @@ module LithoContext = struct
     LithoFramework.is_on_create_layout (Procdesc.get_proc_name proc_desc)
 
 
-  let report_on_post astate _tenv summary =
+  let report astate _tenv summary =
     let report_graphql_getter access_path call_chain =
       let call_strings =
         List.map
@@ -56,9 +56,6 @@ module LithoContext = struct
     in
     Domain.iter_call_chains ~f:report_graphql_getter astate
 
-
-  (* This checker will be removed later. *)
-  let report_on_inv_map ~inv_map_iter:_ _tenv _summary = ()
 
   let session_name = "litho graphql field access"
 end

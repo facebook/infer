@@ -414,4 +414,5 @@ public class RequiredProps {
             : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
     return builder.build();
   }
+
 }

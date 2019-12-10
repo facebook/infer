@@ -220,7 +220,7 @@ public class RequiredProps {
     return builder2.build();
   }
 
-  public void buildWithColumnChildBad_FN() {
+  public void buildWithColumnChildBad() {
     Column.Builder builder = Column.create();
     Component.Builder childBuilder = mMyComponent.create().prop1(new Object());
     // forgot prop 3, and builder.child() will invoke build() on childBuilder
@@ -317,7 +317,7 @@ public class RequiredProps {
     return layoutBuilder.build();
   }
 
-  public void castImpossibleOk_FP(Object o1) {
+  public void castImpossibleOk(Object o1) {
     Component.Builder builder = mMyLithoComponent.create();
     if (builder instanceof MyComponent.Builder)
       ((MyComponent.Builder) builder)

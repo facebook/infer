@@ -88,10 +88,7 @@ module type LithoContext = sig
 
   val should_report : Procdesc.t -> Tenv.t -> bool
 
-  val report_on_post : t -> Tenv.t -> Summary.t -> unit
-
-  val report_on_inv_map :
-    inv_map_iter:(f:(HilInstr.t list -> Domain.t -> unit) -> unit) -> Tenv.t -> Summary.t -> unit
+  val report : t -> Tenv.t -> Summary.t -> unit
 
   val session_name : string
 end
@@ -214,40 +211,19 @@ module MakeAnalyzer (LithoContext : LithoContext with type t = Domain.t) = struc
   module TF = TransferFunctions (ProcCfg.Normal) (LithoContext)
   module A = LowerHil.MakeAbstractInterpreter (TF)
 
-  let inv_map_iter proc_desc inv_map ~(f : HilInstr.t list -> Domain.t -> unit) =
-    let f node =
-      let node_id = Procdesc.Node.get_id node in
-      Option.iter (A.Interpreter.extract_state node_id inv_map)
-        ~f:(fun {AbstractInterpreter.State.pre= _, bindings; post= astate, _} ->
-          let sil_instrs = Procdesc.Node.get_instrs node in
-          f (A.hil_instrs_of_sil bindings sil_instrs) astate )
-    in
-    Procdesc.iter_nodes f proc_desc
-
-
   let checker {Callbacks.summary; exe_env} =
     let proc_desc = Summary.get_proc_desc summary in
     let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
     let proc_data = ProcData.make_default summary tenv in
-    let post_opt =
-      if Config.new_litho_domain then (
-        let inv_map = A.exec_pdesc proc_data ~initial:Domain.empty in
-        if LithoContext.should_report proc_desc tenv then
-          LithoContext.report_on_inv_map ~inv_map_iter:(inv_map_iter proc_desc inv_map) tenv summary ;
-        let exit_node_id = Procdesc.Node.get_id (TF.CFG.exit_node proc_desc) in
-        A.Interpreter.extract_post exit_node_id inv_map |> Option.map ~f:fst )
-      else
-        let post_opt = A.compute_post proc_data ~initial:Domain.empty in
-        Option.iter post_opt ~f:(fun post ->
-            if LithoContext.should_report proc_desc tenv then
-              LithoContext.report_on_post post tenv summary ) ;
-        post_opt
-    in
-    Option.value_map post_opt ~default:summary ~f:(fun post ->
+    match A.compute_post proc_data ~initial:Domain.empty with
+    | Some post ->
+        if LithoContext.should_report proc_desc tenv then LithoContext.report post tenv summary ;
         let postprocess astate formal_map : Domain.t =
           let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
           Domain.substitute ~f_sub astate
         in
         let payload = postprocess post (FormalMap.make proc_desc) in
-        TF.Payload.update_summary payload summary )
+        TF.Payload.update_summary payload summary
+    | None ->
+        summary
 end

@@ -84,18 +84,6 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
         (Some instr, bindings)
 
 
-  let hil_instrs_of_sil bindings instrs =
-    let rev_hil_instrs, _bindings =
-      Instrs.fold instrs ~init:([], bindings) ~f:(fun (rev_hil_instrs, bindings) instr ->
-          let hil_instr_opt, bindings = hil_instr_of_sil bindings instr in
-          let rev_hil_instrs =
-            Option.fold hil_instr_opt ~init:rev_hil_instrs ~f:(fun acc hil_instr -> hil_instr :: acc)
-          in
-          (rev_hil_instrs, bindings) )
-    in
-    List.rev rev_hil_instrs
-
-
   let exec_instr ((actual_state, bindings) as astate) extras node instr =
     let actual_state', bindings' =
       match hil_instr_of_sil bindings instr with
@@ -115,11 +103,6 @@ module type S = sig
 
   val compute_post :
     Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
-
-  val exec_pdesc :
-    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> Interpreter.invariant_map
-
-  val hil_instrs_of_sil : Bindings.t -> Instrs.not_reversed_t -> HilInstr.t list
 end
 
 module MakeAbstractInterpreterWithConfig
@@ -144,14 +127,6 @@ module MakeAbstractInterpreterWithConfig
           None
     in
     Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst
-
-
-  let exec_pdesc proc_data ~initial =
-    let initial' = (initial, Bindings.empty) in
-    Interpreter.exec_pdesc proc_data ~initial:initial'
-
-
-  let hil_instrs_of_sil = LowerHilInterpreter.hil_instrs_of_sil
 end
 
 module MakeAbstractInterpreter (TransferFunctions : TransferFunctions.HIL) =
