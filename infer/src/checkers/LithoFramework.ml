@@ -93,13 +93,17 @@ module type LithoContext = sig
   val session_name : string
 end
 
+type get_proc_summary_and_formals = Typ.Procname.t -> (Domain.t * (Pvar.t * Typ.t) list) option
+
+type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals}
+
 module TransferFunctions (CFG : ProcCfg.S) (LithoContext : LithoContext with type t = Domain.t) =
 struct
   module CFG = CFG
   module Domain = Domain
   module Payload = SummaryPayload.Make (LithoContext)
 
-  type extras = ProcData.no_extras
+  type nonrec extras = extras
 
   let apply_callee_summary summary_opt caller_pname ret_id_typ actuals ((_, new_domain) as astate) =
     let old_domain', _ =
@@ -129,7 +133,8 @@ struct
     (old_domain', new_domain)
 
 
-  let exec_instr astate ProcData.{summary; tenv} _ (instr : HilInstr.t) : Domain.t =
+  let exec_instr astate ProcData.{summary; tenv; extras= {get_proc_summary_and_formals}} _
+      (instr : HilInstr.t) : Domain.t =
     let caller_pname = Summary.get_proc_name summary in
     match instr with
     | Call
@@ -138,7 +143,8 @@ struct
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , location ) ->
-        let callee_summary_opt = Payload.read ~caller_summary:summary ~callee_pname in
+        let callee_summary_and_formals_opt = get_proc_summary_and_formals callee_pname in
+        let callee_summary_opt = Option.map callee_summary_and_formals_opt ~f:fst in
         let receiver =
           Domain.LocalAccessPath.make_from_access_expression receiver_ae caller_pname
         in
@@ -178,10 +184,9 @@ struct
         else
           (* treat it like a normal call *)
           apply_callee_summary callee_summary_opt caller_pname return_base actuals astate
-    | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let callee_summary_opt =
-          Payload.read ~caller_summary:summary ~callee_pname:callee_procname
-        in
+    | Call (ret_id_typ, Direct callee_pname, actuals, _, _) ->
+        let callee_summary_and_formals_opt = get_proc_summary_and_formals callee_pname in
+        let callee_summary_opt = Option.map callee_summary_and_formals_opt ~f:fst in
         apply_callee_summary callee_summary_opt caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) ->
         (* creating an alias for the rhs binding; assume all reads will now occur through the
@@ -211,10 +216,21 @@ module MakeAnalyzer (LithoContext : LithoContext with type t = Domain.t) = struc
   module TF = TransferFunctions (ProcCfg.Normal) (LithoContext)
   module A = LowerHil.MakeAbstractInterpreter (TF)
 
+  let init_extras summary =
+    let get_proc_summary_and_formals callee_pname =
+      Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
+      |> Option.bind ~f:(fun summary ->
+             TF.Payload.of_summary summary
+             |> Option.map ~f:(fun payload ->
+                    (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+    in
+    {get_proc_summary_and_formals}
+
+
   let checker {Callbacks.summary; exe_env} =
     let proc_desc = Summary.get_proc_desc summary in
     let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-    let proc_data = ProcData.make_default summary tenv in
+    let proc_data = ProcData.make summary tenv (init_extras summary) in
     match A.compute_post proc_data ~initial:Domain.empty with
     | Some post ->
         if LithoContext.should_report proc_desc tenv then LithoContext.report post tenv summary ;
