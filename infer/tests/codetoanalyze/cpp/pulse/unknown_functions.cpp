@@ -24,12 +24,22 @@ void const_no_init_bad_FN() {
   p->foo();
 }
 
-void unknown_init_value_by_ref(X* x);
+void unknown_init_value_by_ref(X** x);
 
-void wrap_unknown_init(X* x) { unknown_init_value_by_ref(x); }
+void wrap_unknown_init(X** x) { unknown_init_value_by_ref(x); }
 
 void call_unknown_init_interproc_ok() {
   X* p = nullptr;
-  wrap_unknown_init(p);
+  wrap_unknown_init(&p);
+  p->foo();
+}
+
+void unknown_with_pointer_formal(X* x);
+
+void wrap_unknown_no_init(X* x) { unknown_with_pointer_formal(x); }
+
+void call_init_with_pointer_value_bad_FN() {
+  X* p = nullptr;
+  wrap_unknown_no_init(p);
   p->foo();
 }
