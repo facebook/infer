@@ -84,10 +84,10 @@ module NewDomain = struct
       F.fprintf fmt "Created at %a with type %a" Location.pp location Typ.Name.pp typ_name
   end
 
-  module CreatedLocations = AbstractDomain.InvertedSet (CreatedLocation)
+  module CreatedLocations = AbstractDomain.FiniteSet (CreatedLocation)
 
   module Created = struct
-    include AbstractDomain.InvertedMap (LocalAccessPath) (CreatedLocations)
+    include AbstractDomain.Map (LocalAccessPath) (CreatedLocations)
 
     let lookup k x = Option.value (find_opt k x) ~default:CreatedLocations.empty
   end
@@ -152,7 +152,7 @@ module NewDomain = struct
   end
 
   module MethodCalled = struct
-    include AbstractDomain.InvertedMap (CreatedLocation) (MethodCalls)
+    include AbstractDomain.Map (CreatedLocation) (MethodCalls)
 
     let add_one k v x =
       let f = function
@@ -225,7 +225,9 @@ module NewDomain = struct
 
 
   let call_create lhs typ_name location ({created} as x) =
-    {x with created= Created.add lhs (CreatedLocations.singleton {location; typ_name}) created}
+    let created_location = CreatedLocation.{location; typ_name} in
+    { created= Created.add lhs (CreatedLocations.singleton created_location) created
+    ; method_called= MethodCalled.add created_location MethodCalls.empty x.method_called }
 
 
   let call_builder ~ret ~receiver callee {created; method_called} =

@@ -382,4 +382,36 @@ public class RequiredProps {
     }
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
+
+  public Component missingProp3InOneBranchBeforeBuildBad(boolean b) {
+    Component.Builder builder =
+        b
+            ? mMyComponent.create().prop1(new Object())
+            : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
+    return builder.build();
+  }
+
+  public Component missingProp2InOneBranchBeforeBuildBad(boolean b) {
+    Component.Builder builder =
+        b
+            ? mMyComponent.create().prop1(new Object()).prop3(new Object())
+            : mMyLithoComponent.create().prop1(new Object());
+    return builder.build();
+  }
+
+  public Component missingProp1InBothBranchesBeforeBuildBad(boolean b) {
+    Component.Builder builder =
+        b
+            ? mMyComponent.create().prop3(new Object())
+            : mMyLithoComponent.create().prop2(new Object());
+    return builder.build();
+  }
+
+  public Component createDiffferentInBranchesBeforeBuildOk(boolean b) {
+    Component.Builder builder =
+        b
+            ? mMyComponent.create().prop1(new Object()).prop3(new Object())
+            : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
+    return builder.build();
+  }
 }
