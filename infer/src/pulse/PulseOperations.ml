@@ -245,15 +245,10 @@ let eval_arith location exp astate =
             ( Arithmetic.equal_to i
             , Trace.Immediate {location; history= [ValueHistory.Assignment location]} )
         , Itv.ItvPure.of_int_lit i )
-  | exp -> (
+  | exp ->
       eval location exp astate
-      >>| fun (astate, (addr, _)) ->
-      let bo_itv = Memory.get_bo_itv addr astate in
-      match Memory.get_arithmetic addr astate with
-      | Some a ->
-          (astate, Some addr, Some a, bo_itv)
-      | None ->
-          (astate, Some addr, None, bo_itv) )
+      >>| fun (astate, (value, _)) ->
+      (astate, Some value, Memory.get_arithmetic value astate, Memory.get_bo_itv value astate)
 
 
 let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate =
@@ -275,25 +270,25 @@ let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate 
 let prune ~is_then_branch if_kind location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
-    | BinOp (bop, e1, e2) -> (
-        eval_arith location e1 astate
-        >>= fun (astate, addr1, eval1, evalbo1) ->
-        eval_arith location e2 astate
-        >>| fun (astate, addr2, eval2, evalbo2) ->
+    | BinOp (bop, exp_lhs, exp_rhs) -> (
+        eval_arith location exp_lhs astate
+        >>= fun (astate, value_lhs_opt, arith_lhs_opt, bo_itv_lhs) ->
+        eval_arith location exp_rhs astate
+        >>| fun (astate, value_rhs_opt, arith_rhs_opt, bo_itv_rhs) ->
         match
-          Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst eval1)
-            (Option.map ~f:fst eval2)
+          Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
+            (Option.map ~f:fst arith_rhs_opt)
         with
         | Unsatisfiable ->
             (astate, false)
-        | Satisfiable (abduced1, abduced2) ->
+        | Satisfiable (abduced_lhs, abduced_rhs) ->
             let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
             let astate =
-              record_abduced event location addr1 eval1 abduced1 astate
-              |> record_abduced event location addr2 eval2 abduced2
+              record_abduced event location value_lhs_opt arith_lhs_opt abduced_lhs astate
+              |> record_abduced event location value_rhs_opt arith_rhs_opt abduced_rhs
             in
             let satisfiable =
-              match Itv.ItvPure.arith_binop bop evalbo1 evalbo2 |> Itv.ItvPure.to_boolean with
+              match Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean with
               | False ->
                   negated
               | True ->
