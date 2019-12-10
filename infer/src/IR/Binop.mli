@@ -35,6 +35,8 @@ type t =
   | LOr  (** logical or. Does not always evaluate both operands. *)
 [@@deriving compare]
 
+val str : Pp.env -> t -> string
+
 val equal : t -> t -> bool
 
 val injective : t -> bool
@@ -45,5 +47,3 @@ val is_zero_runit : t -> bool
 (** This function returns true if 0 is the right unit of [binop]. The return value false means
     "don't know". *)
 
-val str : Pp.env -> t -> string
-(** String representation of a binary operator. *)

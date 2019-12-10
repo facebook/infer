@@ -49,7 +49,7 @@ let injective = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true
     "don't know". *)
 let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
-let text = function
+let to_string = function
   | PlusA _ ->
       "+"
   | PlusPI ->
@@ -92,7 +92,6 @@ let text = function
       "||"
 
 
-(** Pretty print a binary operator. *)
 let str pe binop =
   match pe.Pp.kind with
   | HTML -> (
@@ -110,6 +109,6 @@ let str pe binop =
     | Shiftrt ->
         " &gt;&gt; "
     | _ ->
-        text binop )
+        to_string binop )
   | _ ->
-      text binop
+      to_string binop
