@@ -94,6 +94,18 @@ let check_not_null_parameter_list, check_not_null_list =
       )
     ; ( 1
       , (o, [x; n])
+      , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [x; n; n])
+      , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [x])
+      , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [x; n])
       , "com.google.common.base.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
       )
     ; ( 1
@@ -145,6 +157,12 @@ let check_state_list =
   ; ( (o, [n; n; n])
     , "com.facebook.common.internal.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
+  ; ((o, [n]), "com.facebook.common.preconditions.Preconditions.checkState(boolean):void")
+  ; ( (o, [n; n])
+    , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.Object):void" )
+  ; ( (o, [n; n; n])
+    , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
+    )
   ; ((o, [n]), "com.google.common.base.Preconditions.checkState(boolean):void")
   ; ((o, [n; n]), "com.google.common.base.Preconditions.checkState(boolean,java.lang.Object):void")
   ; ( (o, [n; n; n])
@@ -164,6 +182,13 @@ let check_argument_list =
     , "com.facebook.common.internal.Preconditions.checkArgument(boolean,java.lang.Object):void" )
   ; ( (o, [n; n; n])
     , "com.facebook.common.internal.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
+    )
+  ; ((o, [n]), "com.facebook.common.preconditions.Preconditions.checkArgument(boolean):void")
+  ; ( (o, [n; n])
+    , "com.facebook.common.preconditions.Preconditions.checkArgument(boolean,java.lang.Object):void"
+    )
+  ; ( (o, [n; n; n])
+    , "com.facebook.common.preconditions.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
     )
   ; ((o, [n]), "com.google.common.base.Preconditions.checkArgument(boolean):void")
   ; ( (o, [n; n])
