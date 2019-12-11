@@ -73,3 +73,6 @@ val is_thread_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 val is_future_get : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 
 val is_future_is_done : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+val is_assume_true : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+(** is the callee equivalent to assuming its first argument true *)

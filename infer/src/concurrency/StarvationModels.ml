@@ -365,3 +365,17 @@ let is_thread_constructor =
       classname= "java.lang.Thread"
     ; search_superclasses= false
     ; methods= [Typ.Procname.Java.constructor_method_name] }
+
+
+let is_assume_true =
+  let open MethodMatcher in
+  of_records
+    [ { default with
+        classname= "com.facebook.common.internal.Preconditions"
+      ; methods= ["checkArgument"; "checkState"] }
+    ; { default with
+        classname= "com.facebook.infer.annotation.Assertions"
+      ; methods= ["assertCondition"; "assumeCondition"] }
+    ; { default with
+        classname= "com.google.common.base.Preconditions"
+      ; methods= ["checkArgument"; "checkState"] } ]

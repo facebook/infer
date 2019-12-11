@@ -210,6 +210,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             None
       else None
     in
+    let treat_assume () =
+      if StarvationModels.is_assume_true tenv callee actuals then
+        List.hd actuals |> Option.map ~f:(fun exp -> do_assume exp astate)
+      else None
+    in
     (* constructor calls are special-cased because they side-effect the receiver and do not
        return anything *)
     let treat_modeled_summaries () =
@@ -223,7 +228,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(Domain.integrate_summary ~tenv ~lhs callsite astate)
     in
     IList.eval_until_first_some
-      [treat_handler_constructor; treat_thread_constructor; treat_modeled_summaries]
+      [treat_handler_constructor; treat_thread_constructor; treat_assume; treat_modeled_summaries]
     |> Option.value ~default:astate
 
 

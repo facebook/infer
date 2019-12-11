@@ -6,7 +6,7 @@
  */
 
 import android.support.annotation.UiThread;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.base.Preconditions;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -103,7 +103,14 @@ class FutureGet {
   }
 
   @UiThread
-  Object getFuturesDoneOk(Future<Object> future) throws ExecutionException {
-    return Futures.getDone(future);
+  Object getFuturesDoneOk(Future<Object> future) throws InterruptedException, ExecutionException {
+    Preconditions.checkState(future.isDone());
+    return future.get();
+  }
+
+  Object assertNotOnUIThreadOk(Future<Object> future)
+      throws InterruptedException, ExecutionException {
+    Preconditions.checkArgument(!OurThreadUtils.isMainThread());
+    return future.get();
   }
 }
