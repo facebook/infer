@@ -112,6 +112,8 @@ module ItvPure : sig
   val arith_unop : Unop.t -> t -> t option
 
   val to_boolean : t -> Boolean.t
+
+  val prune_binop : Binop.t -> t -> t -> t bottom_lifted
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)

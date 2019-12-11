@@ -268,6 +268,24 @@ let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate 
 
 
 let prune ~is_then_branch if_kind location ~condition astate =
+  let prune_with_bop ~negated v_opt arith bop arith' astate =
+    match
+      Option.both v_opt (if negated then Binop.negate bop else Some bop)
+      |> Option.map ~f:(fun (v, positive_bop) ->
+             (v, Itv.ItvPure.prune_binop positive_bop arith arith') )
+    with
+    | None ->
+        (astate, true)
+    | Some (_, Bottom) ->
+        (astate, false)
+    | Some (v, NonBottom arith_pruned) ->
+        let attr_arith = Attribute.BoItv arith_pruned in
+        let astate =
+          Memory.abduce_attribute v attr_arith astate |> Memory.add_attribute v attr_arith
+        in
+        (astate, true)
+  in
+  let bind_satisfiable ~satisfiable astate ~f = if satisfiable then f astate else (astate, false) in
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) -> (
@@ -298,7 +316,13 @@ let prune ~is_then_branch if_kind location ~condition astate =
               | Bottom ->
                   false
             in
-            (astate, satisfiable) )
+            let astate, satisfiable =
+              bind_satisfiable ~satisfiable astate ~f:(fun astate ->
+                  prune_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs astate )
+            in
+            Option.value_map (Binop.symmetric bop) ~default:(astate, satisfiable) ~f:(fun bop' ->
+                bind_satisfiable ~satisfiable astate ~f:(fun astate ->
+                    prune_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs astate ) ) )
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->

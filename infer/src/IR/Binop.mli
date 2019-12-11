@@ -47,3 +47,10 @@ val is_zero_runit : t -> bool
 (** This function returns true if 0 is the right unit of [binop]. The return value false means
     "don't know". *)
 
+val symmetric : t -> t option
+(** [symmetric bop] returns' [Some bop'] if [x bop y] if and only if [y bop' x] for all x, y, or
+    [None] if no such [bop'] exists *)
+
+val negate : t -> t option
+(** [negate bop] returns' [Some bop'] if [not (x bop y)] if and only if [x bop' y] for all x, y, or
+    [None] if no such [bop'] exists *)

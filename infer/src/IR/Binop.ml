@@ -49,6 +49,52 @@ let injective = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true
     "don't know". *)
 let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
+let symmetric = function
+  | (PlusA _ | PlusPI | Mult _ | Eq | Ne | BAnd | BXor | BOr | LAnd | LOr) as symmetric_op ->
+      Some symmetric_op
+  | MinusA _ | MinusPP | MinusPI | Div | Mod | Shiftlt | Shiftrt ->
+      None
+  | Lt ->
+      Some Gt
+  | Gt ->
+      Some Lt
+  | Le ->
+      Some Ge
+  | Ge ->
+      Some Le
+
+
+let negate = function
+  | Eq ->
+      Some Ne
+  | Ne ->
+      Some Eq
+  | Lt ->
+      Some Ge
+  | Gt ->
+      Some Le
+  | Le ->
+      Some Gt
+  | Ge ->
+      Some Lt
+  | LAnd
+  | LOr
+  | PlusA _
+  | PlusPI
+  | Mult _
+  | BAnd
+  | BXor
+  | BOr
+  | MinusA _
+  | MinusPP
+  | MinusPI
+  | Div
+  | Mod
+  | Shiftlt
+  | Shiftrt ->
+      None
+
+
 let to_string = function
   | PlusA _ ->
       "+"
