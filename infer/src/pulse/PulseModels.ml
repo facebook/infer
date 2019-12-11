@@ -348,6 +348,9 @@ module ProcNameDispatcher = struct
       ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+      ; (* consider that all fbstrings are small strings to avoid false positives due to manual
+           ref-counting *)
+        -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
       ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
