@@ -25,6 +25,8 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
+val is_suitable_for_pre : t -> bool
+
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = t
 

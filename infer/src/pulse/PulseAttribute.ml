@@ -158,3 +158,14 @@ module Attributes = struct
 end
 
 include Attribute
+
+let is_suitable_for_pre = function
+  | Arithmetic _ | BoItv _ | MustBeValid _ ->
+      true
+  | AddressOfCppTemporary _
+  | AddressOfStackVariable _
+  | Closure _
+  | Invalid _
+  | StdVectorReserve
+  | WrittenTo _ ->
+      false

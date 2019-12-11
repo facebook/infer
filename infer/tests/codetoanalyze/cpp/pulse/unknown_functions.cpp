@@ -38,7 +38,7 @@ void unknown_with_pointer_formal(X* x);
 
 void wrap_unknown_no_init(X* x) { unknown_with_pointer_formal(x); }
 
-void call_init_with_pointer_value_bad_FN() {
+void call_init_with_pointer_value_bad() {
   X* p = nullptr;
   wrap_unknown_no_init(p);
   p->foo();
