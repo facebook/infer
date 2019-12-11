@@ -354,42 +354,6 @@ module PrePost = struct
   module AddressSet = AbstractValue.Set
   module AddressMap = AbstractValue.Map
 
-  type contradiction =
-    | Aliasing of
-        {addr_caller: AbstractValue.t; addr_callee: AbstractValue.t; addr_callee': AbstractValue.t}
-        (** raised when the precondition and the current state disagree on the aliasing, i.e. some
-            addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
-            single address [caller_addr] in the caller's current state. Typically raised when
-            calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
-    | Arithmetic of
-        { addr_caller: AbstractValue.t
-        ; addr_callee: AbstractValue.t
-        ; arith_caller: Arithmetic.t option
-        ; arith_callee: Arithmetic.t option }
-        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
-            state *)
-    | ArithmeticBo of
-        {addr_caller: AbstractValue.t; addr_callee: AbstractValue.t; arith_callee: Itv.ItvPure.t}
-        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
-            state *)
-
-  let pp_contradiction fmt = function
-    | Aliasing {addr_caller; addr_callee; addr_callee'} ->
-        F.fprintf fmt "address %a in caller already bound to %a, not %a" AbstractValue.pp
-          addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
-    | Arithmetic {addr_caller; addr_callee; arith_caller; arith_callee} ->
-        F.fprintf fmt "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable"
-          AbstractValue.pp addr_caller (Pp.option Arithmetic.pp) arith_caller AbstractValue.pp
-          addr_callee (Pp.option Arithmetic.pp) arith_callee AbstractValue.pp addr_caller
-          AbstractValue.pp addr_callee
-    | ArithmeticBo {addr_caller; addr_callee; arith_callee} ->
-        F.fprintf fmt
-          "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints"
-          AbstractValue.pp addr_callee Itv.ItvPure.pp arith_callee AbstractValue.pp addr_caller
-
-
-  exception Contradiction of contradiction
-
   (** stuff we carry around when computing the result of applying one pre/post pair *)
   type call_state =
     { astate: t  (** caller's abstract state computed so far *)
@@ -417,6 +381,53 @@ module PrePost = struct
       rev_subst AddressSet.pp visited
 
 
+  type contradiction =
+    | Aliasing of
+        { addr_caller: AbstractValue.t
+        ; addr_callee: AbstractValue.t
+        ; addr_callee': AbstractValue.t
+        ; call_state: call_state }
+        (** raised when the precondition and the current state disagree on the aliasing, i.e. some
+            addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
+            single address [caller_addr] in the caller's current state. Typically raised when
+            calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+    | Arithmetic of
+        { addr_caller: AbstractValue.t
+        ; addr_callee: AbstractValue.t
+        ; arith_caller: Arithmetic.t option
+        ; arith_callee: Arithmetic.t option
+        ; call_state: call_state }
+        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
+            state *)
+    | ArithmeticBo of
+        { addr_caller: AbstractValue.t
+        ; addr_callee: AbstractValue.t
+        ; arith_callee: Itv.ItvPure.t
+        ; call_state: call_state }
+        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
+            state *)
+
+  let pp_contradiction fmt = function
+    | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
+        F.fprintf fmt
+          "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
+          AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
+          pp_call_state call_state
+    | Arithmetic {addr_caller; addr_callee; arith_caller; arith_callee; call_state} ->
+        F.fprintf fmt
+          "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable@\n\
+           note: current call state was %a" AbstractValue.pp addr_caller (Pp.option Arithmetic.pp)
+          arith_caller AbstractValue.pp addr_callee (Pp.option Arithmetic.pp) arith_callee
+          AbstractValue.pp addr_caller pp_call_state call_state AbstractValue.pp addr_callee
+    | ArithmeticBo {addr_caller; addr_callee; arith_callee; call_state} ->
+        F.fprintf fmt
+          "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints@\n\
+           note: current call state was %a" AbstractValue.pp addr_callee Itv.ItvPure.pp arith_callee
+          AbstractValue.pp addr_caller pp_call_state call_state
+
+
+  exception Contradiction of contradiction
+
   let fold_globals_of_stack call_loc stack call_state ~f =
     Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:BaseStack.fold)
       stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
@@ -438,7 +449,7 @@ module PrePost = struct
     let addr_caller = fst addr_hist_caller in
     ( match AddressMap.find_opt addr_caller call_state.rev_subst with
     | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
-        raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'}))
+        raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
     | _ ->
         () ) ;
     if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
@@ -559,7 +570,7 @@ module PrePost = struct
         Bounds.Bound.of_pulse_value v'
 
 
-  let subst_attribute subst_ref astate ~addr_caller attr ~addr_callee =
+  let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
     match (attr : Attribute.t) with
     | Arithmetic (arith_callee, hist) -> (
         let arith_caller_opt = Memory.get_arithmetic addr_caller astate |> Option.map ~f:fst in
@@ -573,7 +584,8 @@ module PrePost = struct
                     { addr_caller
                     ; addr_callee
                     ; arith_caller= arith_caller_opt
-                    ; arith_callee= Some arith_callee }))
+                    ; arith_callee= Some arith_callee
+                    ; call_state }))
         | Satisfiable (Some abduce_caller, _abduce_callee) ->
             Attribute.Arithmetic (abduce_caller, hist)
         | Satisfiable (None, _) ->
@@ -586,7 +598,9 @@ module PrePost = struct
       | NonBottom itv' ->
           Attribute.BoItv itv'
       | Bottom ->
-          raise (Contradiction (ArithmeticBo {addr_callee; addr_caller; arith_callee= itv})) )
+          raise
+            (Contradiction (ArithmeticBo {addr_callee; addr_caller; arith_callee= itv; call_state}))
+      )
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
@@ -620,7 +634,9 @@ module PrePost = struct
     let subst_ref = ref call_state.subst in
     let attrs =
       Attributes.map attrs ~f:(fun attr ->
-          let attr = subst_attribute subst_ref call_state.astate ~addr_callee ~addr_caller attr in
+          let attr =
+            subst_attribute call_state subst_ref call_state.astate ~addr_callee ~addr_caller attr
+          in
           add_call_to_attribute attr )
     in
     (!subst_ref, attrs)
