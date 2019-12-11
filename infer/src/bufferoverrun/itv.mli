@@ -245,7 +245,7 @@ val prune_ne_zero : t -> t
 
 val prune_ge_one : t -> t
 
-val prune_comp : Binop.t -> t -> t -> t
+val prune_binop : Binop.t -> t -> t -> t
 
 val prune_eq : t -> t -> t
 

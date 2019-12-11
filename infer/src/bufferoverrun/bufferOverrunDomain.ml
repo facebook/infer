@@ -432,8 +432,8 @@ module Val = struct
 
   let prune_length_ge_one : t -> t = lift_prune_length1 Itv.prune_ge_one
 
-  let prune_comp : Binop.t -> t -> t -> t =
-   fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
+  let prune_binop : Binop.t -> t -> t -> t =
+   fun c -> lift_prune2 (Itv.prune_binop c) (ArrayBlk.prune_binop c)
 
 
   let is_null : t -> bool =

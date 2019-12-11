@@ -484,13 +484,13 @@ module ItvPure = struct
     else
       let x =
         match c with
-        | Binop.Le ->
+        | Le ->
             prune_le x y
-        | Binop.Ge ->
+        | Ge ->
             prune_ge x y
-        | Binop.Lt ->
+        | Lt ->
             prune_lt x y
-        | Binop.Gt ->
+        | Gt ->
             prune_gt x y
         | _ ->
             assert false
@@ -515,6 +515,33 @@ module ItvPure = struct
 
 
   let prune_ge_one : t -> t bottom_lifted = fun x -> prune_comp Binop.Ge x one
+
+  let prune_binop : Binop.t -> t -> t -> t bottom_lifted =
+   fun bop x y ->
+    match bop with
+    | Lt | Gt | Le | Ge ->
+        prune_comp bop x y
+    | Eq ->
+        prune_eq x y
+    | Ne ->
+        prune_ne x y
+    | PlusA _
+    | PlusPI
+    | MinusA _
+    | MinusPI
+    | MinusPP
+    | Mult _
+    | Div
+    | Mod
+    | Shiftlt
+    | Shiftrt
+    | BAnd
+    | BXor
+    | BOr
+    | LAnd
+    | LOr ->
+        NonBottom x
+
 
   let get_symbols : t -> SymbolSet.t =
    fun (l, u) -> SymbolSet.union (Bound.get_symbols l) (Bound.get_symbols u)
@@ -772,7 +799,7 @@ let prune_ne_zero : t -> t = bind1 ItvPure.prune_ne_zero
 
 let prune_ge_one : t -> t = bind1 ItvPure.prune_ge_one
 
-let prune_comp : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_comp comp)
+let prune_binop : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_binop comp)
 
 let prune_lt : t -> t -> t = lift2 ItvPure.prune_lt
 

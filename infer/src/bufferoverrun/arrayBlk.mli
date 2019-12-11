@@ -49,9 +49,8 @@ val lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t ->
 val transform_length : f:(Itv.t -> Itv.t) -> t -> t
 (** Apply [f] to all sizes *)
 
-val prune_comp : Binop.t -> t -> t -> t
-(** [prune_comp comp x y] returns a pruned value of [x] by [comp] and [y]. [comp] should be
-    [Binop.Le], [Ge], [Lt], or [Gt]. *)
+val prune_binop : Binop.t -> t -> t -> t
+(** [prune_binop bop x y] returns a pruned value of [x] by [bop] and [y]. *)
 
 val prune_eq : t -> t -> t
 (** [prune_eq x y] returns a pruned value of [x] by [== y]. *)

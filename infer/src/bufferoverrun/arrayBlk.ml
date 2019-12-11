@@ -189,8 +189,8 @@ module ArrInfo = struct
         arr1
 
 
-  let prune_comp : Binop.t -> t -> t -> t =
-   fun c arr1 arr2 -> prune_offset arr1 arr2 ~f:(Itv.prune_comp c)
+  let prune_binop : Binop.t -> t -> t -> t =
+   fun c arr1 arr2 -> prune_offset arr1 arr2 ~f:(Itv.prune_binop c)
 
 
   let prune_eq : t -> t -> t = fun arr1 arr2 -> prune_offset arr1 arr2 ~f:Itv.prune_eq
@@ -378,7 +378,7 @@ let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> t -> t -> t =
       a1
 
 
-let prune_comp : Binop.t -> t -> t -> t = fun c a1 a2 -> do_prune (ArrInfo.prune_comp c) a1 a2
+let prune_binop : Binop.t -> t -> t -> t = fun c a1 a2 -> do_prune (ArrInfo.prune_binop c) a1 a2
 
 let prune_eq : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
 

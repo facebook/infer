@@ -589,27 +589,27 @@ module Prune = struct
   let gen_prune_alias_functions ~prune_alias_core integer_type_widths comp x e astate =
     (* [val_prune_eq] is applied when the alias type is [AliasTarget.Eq]. *)
     let val_prune_eq =
-      match comp with
-      | Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge ->
-          Val.prune_comp comp
-      | Binop.Eq ->
+      match (comp : Binop.t) with
+      | Lt | Gt | Le | Ge ->
+          Val.prune_binop comp
+      | Eq ->
           Val.prune_eq
-      | Binop.Ne ->
+      | Ne ->
           Val.prune_ne
       | _ ->
           assert false
     in
     (* [val_prune_le] is applied when the alias type is [AliasTarget.Le]. *)
     let val_prune_le =
-      match comp with
-      | Binop.Lt ->
+      match (comp : Binop.t) with
+      | Lt ->
           (* when [alias_target <= alias_key < e], prune [alias_target] with [alias_target < e] *)
-          Some (Val.prune_comp comp)
-      | Binop.Le | Binop.Eq ->
+          Some (Val.prune_binop comp)
+      | Le | Eq ->
           (* when [alias_target <= alias_key = e] or [alias_target <= alias_key <= e], prune
              [alias_target] with [alias_target <= e] *)
-          Some (Val.prune_comp Binop.Le)
-      | Binop.Ne | Binop.Gt | Binop.Ge ->
+          Some (Val.prune_binop Le)
+      | Ne | Gt | Ge ->
           (* when [alias_target <= alias_key != e], [alias_target <= alias_key > e] or [alias_target
              <= alias_key >= e], no prune *)
           None
