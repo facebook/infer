@@ -94,6 +94,15 @@ class FutureGet {
   }
 
   @UiThread
+  Object sensitivityOnIsDoneOk() throws InterruptedException, ExecutionException {
+    if (future.isDone()) {
+      return future.get();
+    } else {
+      return null;
+    }
+  }
+
+  @UiThread
   Object getFuturesDoneOk(Future<Object> future) throws ExecutionException {
     return Futures.getDone(future);
   }

@@ -109,6 +109,8 @@ module Attribute : sig
   type t =
     | Nothing
     | ThreadGuard  (** is boolean equivalent to whether on UI thread *)
+    | FutureDoneGuard of HilExp.AccessExpression.t  (** boolean equivalent to [Future.isDone()] *)
+    | FutureDoneState of bool  (** is a [Future] ready for non-blocking consumption *)
     | Runnable of Typ.Procname.t  (** is a Runnable/Callable with given "run" procname *)
     | WorkScheduler of StarvationModels.scheduler_thread_constraint
         (** exp is something that schedules work on the given thread *)
@@ -128,6 +130,9 @@ module AttributeDomain : sig
 
   val get_scheduler_constraint :
     HilExp.AccessExpression.t -> t -> StarvationModels.scheduler_thread_constraint option
+
+  val is_future_done_guard : HilExp.AccessExpression.t -> t -> bool
+  (** does the given expr has attribute [FutureDone x] return [Some x] else [None] *)
 
   val exit_scope : Var.t list -> t -> t
 end
@@ -160,6 +165,8 @@ val release : t -> Lock.t list -> t
 val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
 
 val wait_on_monitor : loc:Location.t -> HilExp.t list -> t -> t
+
+val future_get : callee:Typ.Procname.t -> loc:Location.t -> HilExp.t list -> t -> t
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 

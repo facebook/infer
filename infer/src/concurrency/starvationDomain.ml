@@ -456,6 +456,8 @@ module Attribute = struct
   type t =
     | Nothing
     | ThreadGuard
+    | FutureDoneGuard of HilExp.AccessExpression.t
+    | FutureDoneState of bool
     | Runnable of Typ.Procname.t
     | WorkScheduler of StarvationModels.scheduler_thread_constraint
     | Looper of StarvationModels.scheduler_thread_constraint
@@ -476,6 +478,10 @@ module Attribute = struct
         F.pp_print_string fmt "Nothing"
     | ThreadGuard ->
         F.pp_print_string fmt "ThreadGuard"
+    | FutureDoneGuard exp ->
+        F.fprintf fmt "FutureDoneGuard(%a)" HilExp.AccessExpression.pp exp
+    | FutureDoneState state ->
+        F.fprintf fmt "FutureDoneState(%b)" state
     | Runnable runproc ->
         F.fprintf fmt "Runnable(%a)" Typ.Procname.pp runproc
     | WorkScheduler c ->
@@ -500,6 +506,11 @@ module AttributeDomain = struct
 
   let get_scheduler_constraint acc_exp t =
     find_opt acc_exp t |> Option.bind ~f:(function Attribute.WorkScheduler c -> Some c | _ -> None)
+
+
+  let is_future_done_guard acc_exp t =
+    find_opt acc_exp t
+    |> Option.exists ~f:(function Attribute.FutureDoneGuard _ -> true | _ -> false)
 
 
   let exit_scope vars t =
@@ -611,6 +622,19 @@ let wait_on_monitor ~loc actuals astate =
   | HilExp.AccessExpression exp :: _ ->
       let lock = HilExp.AccessExpression.to_access_path exp in
       let new_event = Event.make_object_wait lock in
+      make_call_with_event new_event ~loc astate
+  | _ ->
+      astate
+
+
+let future_get ~callee ~loc actuals astate =
+  match actuals with
+  | HilExp.AccessExpression exp :: _
+    when AttributeDomain.find_opt exp astate.attributes
+         |> Option.exists ~f:(function Attribute.FutureDoneState x -> x | _ -> false) ->
+      astate
+  | HilExp.AccessExpression _ :: _ ->
+      let new_event = Event.make_blocking_call callee Low in
       make_call_with_event new_event ~loc astate
   | _ ->
       astate

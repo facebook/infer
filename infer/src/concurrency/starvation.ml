@@ -61,13 +61,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_assume assume_exp (astate : Domain.t) =
     let open Domain in
-    let add_choice (acc : Domain.t) bool_value =
+    let add_thread_choice (acc : Domain.t) bool_value =
       let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
       {acc with thread}
     in
+    let add_future_done_choice acc_exp (acc : Domain.t) bool_value =
+      AttributeDomain.find_opt acc_exp acc.attributes
+      |> Option.bind ~f:(function Attribute.FutureDoneGuard future -> Some future | _ -> None)
+      |> Option.value_map ~default:acc ~f:(fun future ->
+             let attributes =
+               AttributeDomain.add future (Attribute.FutureDoneState bool_value) acc.attributes
+             in
+             {acc with attributes} )
+    in
     match HilExp.get_access_exprs assume_exp with
     | [access_expr] when AttributeDomain.is_thread_guard access_expr astate.attributes ->
-        HilExp.eval_boolean_exp access_expr assume_exp |> Option.fold ~init:astate ~f:add_choice
+        HilExp.eval_boolean_exp access_expr assume_exp
+        |> Option.fold ~init:astate ~f:add_thread_choice
+    | [access_expr] when AttributeDomain.is_future_done_guard access_expr astate.attributes ->
+        HilExp.eval_boolean_exp access_expr assume_exp
+        |> Option.fold ~init:astate ~f:(add_future_done_choice access_expr)
     | _ ->
         astate
 
@@ -142,6 +155,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | UnknownThread ->
           None
     in
+    let get_future_is_done_summary () =
+      match actuals with
+      | HilExp.AccessExpression future :: _
+        when StarvationModels.is_future_is_done tenv callee actuals ->
+          Some (make_ret_attr (FutureDoneGuard future))
+      | _ ->
+          None
+    in
     let get_mainLooper_summary () =
       if StarvationModels.is_getMainLooper tenv callee actuals then
         Some (make_ret_attr (Looper ForUIThread))
@@ -196,6 +217,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       IList.eval_until_first_some
         [ get_returned_executor_summary
         ; get_thread_assert_summary
+        ; get_future_is_done_summary
         ; get_mainLooper_summary
         ; get_callee_summary ]
       |> Option.map ~f:(Domain.integrate_summary ~tenv ~lhs callsite astate)
@@ -258,6 +280,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
           Domain.wait_on_monitor ~loc actuals astate
+      | NoEffect when is_java && is_future_get tenv callee actuals ->
+          Domain.future_get ~callee ~loc actuals astate
       | NoEffect when is_java -> (
           let ret_exp = HilExp.AccessExpression.base ret_base in
           let astate = do_work_scheduling tenv callee actuals loc astate in

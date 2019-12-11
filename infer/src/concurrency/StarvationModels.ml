@@ -123,10 +123,6 @@ let standard_matchers =
   in
   let low_sev =
     [ { default with
-        classname= "java.util.concurrent.Future"
-      ; methods= ["get"]
-      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
-    ; { default with
         classname= "android.os.AsyncTask"
       ; methods= ["get"]
       ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ]
@@ -134,6 +130,20 @@ let standard_matchers =
   let high_sev_matcher = List.map high_sev ~f:of_record |> of_list in
   let low_sev_matcher = List.map low_sev ~f:of_record |> of_list in
   [(high_sev_matcher, High); (low_sev_matcher, Low)]
+
+
+let is_future_get =
+  let open MethodMatcher in
+  of_record
+    { default with
+      classname= "java.util.concurrent.Future"
+    ; methods= ["get"]
+    ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
+
+
+let is_future_is_done =
+  MethodMatcher.(
+    of_record {default with classname= "java.util.concurrent.Future"; methods= ["isDone"]})
 
 
 (* sort from High to Low *)

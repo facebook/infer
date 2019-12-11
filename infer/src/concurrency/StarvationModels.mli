@@ -69,3 +69,7 @@ val is_getMainLooper : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 val is_handler_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 
 val is_thread_constructor : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+val is_future_get : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+val is_future_is_done : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
