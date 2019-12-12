@@ -370,7 +370,7 @@ public class RequiredProps {
     return builder.build();
   }
 
-  public Component setRequiredOnOneBothBranchesWithCreateOk(boolean b) {
+  public Component setRequiredOnOneBothBranchesWithCreateOk_FP(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder.prop1(new Object());
@@ -463,5 +463,29 @@ public class RequiredProps {
   public Component callCreateJoinOk_FP(boolean b) {
 
     return createJoin(b).prop1(new Object()).build();
+  }
+
+  private static Component setProp3AndBuild(MyComponent.Builder builder) {
+    return setProp3(builder).build();
+  }
+
+  public void unionAtFunctionCallOk() {
+    MyComponent.Builder builder1 = mMyComponent.create().prop1(new Object()).prop3(new Object());
+    builder1.build();
+    MyComponent.Builder builder2 = mMyComponent.create().prop1(new Object());
+    MyComponent.Builder builder3 = mMyComponent.create();
+    setProp3AndBuild(builder2);
+  }
+
+  public void ignoreLocationOk() {
+    MyComponent.Builder builder1 = mMyComponent.create().prop1(new Object());
+    MyComponent.Builder builder2 = mMyComponent.create();
+    setProp3AndBuild(builder1);
+  }
+
+  public void ignoreLocationBad() {
+    MyComponent.Builder builder1 = mMyComponent.create();
+    MyComponent.Builder builder2 = mMyComponent.create().prop1(new Object());
+    setProp3AndBuild(builder1);
   }
 }

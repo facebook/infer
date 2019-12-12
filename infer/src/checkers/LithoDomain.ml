@@ -83,7 +83,7 @@ module OldDomain = AbstractDomain.Map (LocalAccessPath) (CallSet)
 module NewDomain = struct
   module CreatedLocation = struct
     type t =
-      | ByCreateMethod of {location: Location.t [@ignore]; typ_name: Typ.name}
+      | ByCreateMethod of {location: Location.t; typ_name: Typ.name}
       | ByParameter of LocalAccessPath.t
     [@@deriving compare]
 
