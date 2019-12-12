@@ -419,43 +419,41 @@ module ItvPure = struct
 
   let arith_binop (bop : Binop.t) x y =
     match bop with
-    | Binop.PlusA _ ->
+    | PlusA _ | PlusPI ->
         plus x y
-    | Binop.MinusA _ ->
+    | MinusA _ | MinusPI | MinusPP ->
         minus x y
-    | Binop.Mult _ ->
+    | Mult _ ->
         mult x y
-    | Binop.PlusPI | Binop.MinusPI | Binop.MinusPP ->
-        top
-    | Binop.Div ->
+    | Div ->
         div x y
-    | Binop.Mod ->
+    | Mod ->
         mod_sem x y
-    | Binop.Shiftlt ->
+    | Shiftlt ->
         shiftlt x y
-    | Binop.Shiftrt ->
+    | Shiftrt ->
         shiftrt x y
-    | Binop.Lt ->
+    | Lt ->
         of_boolean (lt_sem x y) |> assert_no_bottom
-    | Binop.Gt ->
+    | Gt ->
         of_boolean (gt_sem x y) |> assert_no_bottom
-    | Binop.Le ->
+    | Le ->
         of_boolean (le_sem x y) |> assert_no_bottom
-    | Binop.Ge ->
+    | Ge ->
         of_boolean (ge_sem x y) |> assert_no_bottom
-    | Binop.Eq ->
+    | Eq ->
         of_boolean (eq_sem x y) |> assert_no_bottom
-    | Binop.Ne ->
+    | Ne ->
         of_boolean (ne_sem x y) |> assert_no_bottom
-    | Binop.BAnd ->
+    | BAnd ->
         band_sem x y
-    | Binop.BXor ->
+    | BXor ->
         top
-    | Binop.BOr ->
+    | BOr ->
         top
-    | Binop.LAnd ->
+    | LAnd ->
         of_boolean (land_sem x y) |> assert_no_bottom
-    | Binop.LOr ->
+    | LOr ->
         of_boolean (lor_sem x y) |> assert_no_bottom
 
 

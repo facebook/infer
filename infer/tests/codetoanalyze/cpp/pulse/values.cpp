@@ -77,3 +77,41 @@ void function_call_infeasible_error_path_ok(int* x) {
     *x = 42;
   }
 }
+
+// somewhat like folly::Range<char const*>
+struct StringRange {
+  char const *b_, *e_;
+  StringRange() : b_(), e_(){};
+  char const* data() const { return b_; }
+  std::size_t size() const { return std::size_t(e_ - b_); }
+};
+
+void function_empty_range_ok() {
+  StringRange x{};
+  auto b = x.data(), past = x.data() + x.size();
+  for (;; ++b) {
+    if (b >= past) {
+      return;
+    }
+    if (*b != ' ') {
+      break;
+    }
+  }
+}
+
+void find_first_non_space(StringRange& x) {
+  auto b = x.data(), past = x.data() + x.size();
+  for (;; ++b) {
+    if (b >= past) {
+      return;
+    }
+    if (*b != ' ') {
+      break;
+    }
+  }
+}
+
+void function_empty_range_interproc_ok_FP() {
+  StringRange x{};
+  find_first_non_space(x);
+}
