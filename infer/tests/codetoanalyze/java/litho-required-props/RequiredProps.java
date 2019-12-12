@@ -421,4 +421,47 @@ public class RequiredProps {
     }
     return builder.build();
   }
+
+  public void buildJoinVoidOk(boolean b, String s) {
+    MyComponent.Builder builder = mMyComponent.create().prop1(new Object());
+    if (b) {
+      builder.prop3(new Object());
+    } else {
+      return;
+    }
+    builder.build();
+  }
+
+  public MyComponent.Builder createJoin(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop3(new Object());
+    } else {
+      return null;
+    }
+    return builder;
+  }
+
+  // should only miss prop1
+  public Component callCreateJoinBad(boolean b) {
+
+    return createJoin(b).build();
+  }
+
+  public MyComponent.Builder createInsideJoinBad(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop3(new Object());
+    } else {
+      Component.Builder resBuilder = mResPropComponent.create();
+      resBuilder.build();
+      return null;
+    }
+    return builder;
+  }
+
+  public Component callCreateJoinOk_FP(boolean b) {
+
+    return createJoin(b).prop1(new Object()).build();
+  }
 }
