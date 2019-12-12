@@ -68,6 +68,9 @@ val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
 val cli_args : F.formatter -> string list -> unit
 (** pretty print command line arguments, expanding argument files to print their contents *)
 
+val cli_args_with_verbosity : verbose:bool -> F.formatter -> string list -> unit
+(** pretty print command line arguments, and expand argument files if [verbose] is true *)
+
 val seq :
      ?print_env:env
   -> ?sep:string

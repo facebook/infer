@@ -136,7 +136,7 @@ let of_string ~f fmt x = F.pp_print_string fmt (f x)
 
 let string_of_pp pp = Format.asprintf "%a" pp
 
-let cli_args fmt args =
+let cli_args_with_verbosity ~verbose fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;
     seq ~sep:"" ~print_env:text_break F.pp_print_string fmt args ;
@@ -168,8 +168,10 @@ let cli_args fmt args =
             Exn.pp exn
   in
   pp_args fmt args ;
-  pp_argfile_args String.Set.empty fmt args
+  if verbose then pp_argfile_args String.Set.empty fmt args
 
+
+let cli_args fmt args = cli_args_with_verbosity ~verbose:true fmt args
 
 let pair ~fst ~snd fmt (a, b) = F.fprintf fmt "(%a,@,%a)" fst a snd b
 

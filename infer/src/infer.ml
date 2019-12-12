@@ -87,8 +87,12 @@ let log_environment_info () =
     |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
     |> Option.value ~default:["<not set>"]
   in
-  L.environment_info "INFER_ARGS = %a@\n" Pp.cli_args infer_args ;
-  L.environment_info "command line arguments: %a@\n" Pp.cli_args (Array.to_list Sys.argv) ;
+  L.environment_info "INFER_ARGS = %a@\n"
+    (Pp.cli_args_with_verbosity ~verbose:Config.debug_mode)
+    infer_args ;
+  L.environment_info "command line arguments: %a@\n"
+    (Pp.cli_args_with_verbosity ~verbose:Config.debug_mode)
+    (Array.to_list Sys.argv) ;
   ( match Utils.get_available_memory_MB () with
   | None ->
       L.environment_info "Could not retrieve available memory (possibly not on Linux)@\n"
