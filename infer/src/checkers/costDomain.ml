@@ -15,11 +15,11 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 1
+  let version = 2
 end
 
 (**
-  Module to simulate a record 
+  Module to simulate a record
     {OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t} with a map
     {OperationCost, AllocationCost, IOCost} -> BasicCost.t
 *)

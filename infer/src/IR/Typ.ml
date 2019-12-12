@@ -1420,9 +1420,10 @@ module Procname = struct
 end
 
 module Fieldname = struct
-  type t = Clang of {class_name: Name.t; field_name: string} | Java of string [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t =
+    | Clang of {class_name: Name.t; field_name: string}
+    | Java of {class_name: string; field_name: string}
+  [@@deriving compare, equal]
 
   let is_java = function Java _ -> true | Clang _ -> false
 
@@ -1435,34 +1436,43 @@ module Fieldname = struct
   module Set = Caml.Set.Make (T)
   module Map = Caml.Map.Make (T)
 
-  (** Convert a fieldname to a string. *)
-  let to_string = function Java fname -> fname | Clang {field_name} -> field_name
+  let dot_join s1 s2 = String.concat ~sep:"." [s1; s2]
 
-  (** Convert a fieldname to a simplified string with at most one-level path. *)
-  let to_simplified_string fn =
-    let s = to_string fn in
-    match String.rsplit2 s ~on:'.' with
-    | Some (s1, s2) -> (
-      match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> s4 ^ "." ^ s2 | _ -> s )
-    | _ ->
-        s
+  let to_string = function
+    | Java {class_name; field_name} when String.is_empty class_name ->
+        field_name
+    | Java {class_name; field_name} ->
+        dot_join class_name field_name
+    | Clang {field_name} ->
+        field_name
 
 
-  let to_full_string fname =
-    match fname with
+  let to_simplified_string = function
+    | Java {class_name; field_name} ->
+        String.rsplit2 class_name ~on:'.'
+        |> Option.value_map ~default:field_name ~f:(fun (_, class_only) ->
+               dot_join class_only field_name )
+    | Clang {field_name} ->
+        field_name
+
+
+  let to_full_string = function
     | Clang {class_name; field_name} ->
         Name.to_string class_name ^ "::" ^ field_name
-    | _ ->
-        to_string fname
+    | Java {class_name; field_name} ->
+        dot_join class_name field_name
 
 
-  (** Convert a fieldname to a flat string without path. *)
-  let to_flat_string fn =
-    let s = to_string fn in
-    match String.rsplit2 s ~on:'.' with Some (_, s2) -> s2 | _ -> s
+  let to_flat_string = function Java {field_name} -> field_name | Clang {field_name} -> field_name
 
+  let pp f = function
+    | Java {class_name; field_name} when String.is_empty class_name ->
+        Format.pp_print_string f field_name
+    | Java {class_name; field_name} ->
+        F.pp_print_string f (dot_join class_name field_name)
+    | Clang {field_name} ->
+        Format.pp_print_string f field_name
 
-  let pp f = function Java field_name | Clang {field_name} -> Format.pp_print_string f field_name
 
   let clang_get_qual_class = function
     | Clang {class_name} ->
@@ -1476,37 +1486,46 @@ module Fieldname = struct
   end
 
   module Java = struct
-    let from_string n = Java n
+    let from_string full_fieldname =
+      let class_name, field_name =
+        match String.rsplit2 full_fieldname ~on:'.' with
+        | None ->
+            ("", full_fieldname)
+        | Some split ->
+            split
+      in
+      Java {class_name; field_name}
 
-    let is_captured_parameter field_name =
-      match field_name with
-      | Java _ ->
-          String.is_prefix ~prefix:"val$" (to_flat_string field_name)
+
+    let is_captured_parameter = function
+      | Java {field_name} ->
+          String.is_prefix ~prefix:"val$" field_name
       | Clang _ ->
           false
 
 
-    let get_class fn =
-      let fn = to_string fn in
-      let ri = String.rindex_exn fn '.' in
-      String.slice fn 0 ri
+    let get_class = function
+      | Java {class_name} ->
+          class_name
+      | Clang _ as field ->
+          L.die InternalError "get_class: fieldname %a is not Java@\n" pp field
 
 
-    let get_field fn =
-      let fn = to_string fn in
-      let ri = 1 + String.rindex_exn fn '.' in
-      String.slice fn ri 0
+    let get_field = function
+      | Java {field_name} ->
+          field_name
+      | Clang _ as field ->
+          L.die InternalError "get_field: fieldname %a is not Java@\n" pp field
 
 
-    let is_outer_instance fn =
-      let fn = to_string fn in
-      let fn_len = String.length fn in
-      fn_len <> 0
-      &&
-      let this = ".this$" in
-      let last_char = fn.[fn_len - 1] in
-      (last_char >= '0' && last_char <= '9')
-      && String.is_suffix fn ~suffix:(this ^ String.of_char last_char)
+    let is_outer_instance = function
+      | Java {field_name} ->
+          let this = "this$" in
+          let last_char = field_name.[String.length field_name - 1] in
+          (last_char >= '0' && last_char <= '9')
+          && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
+      | Clang _ ->
+          false
   end
 end
 
