@@ -114,6 +114,8 @@ let has_prop prop_set prop =
 module LithoContext = struct
   type t = Domain.t
 
+  type summary = Domain.summary
+
   let check_callee ~callee_pname ~tenv _ =
     LithoFramework.is_component_builder callee_pname tenv
     || LithoFramework.is_component_create_method callee_pname tenv

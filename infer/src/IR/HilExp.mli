@@ -69,6 +69,8 @@ module AccessExpression : sig
 
   val is_base : access_expression -> bool
 
+  val is_return_var : access_expression -> bool
+
   val get_typ : access_expression -> Tenv.t -> Typ.t option
 
   val pp : Format.formatter -> access_expression -> unit

@@ -411,4 +411,14 @@ public class RequiredProps {
             : mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
     return builder.build();
   }
+
+  public Component buildJoinOk(boolean b, String s) {
+    MyComponent.Builder builder = mMyComponent.create().prop1(new Object());
+    if (b) {
+      builder.prop3(new Object());
+    } else {
+      return null;
+    }
+    return builder.build();
+  }
 }

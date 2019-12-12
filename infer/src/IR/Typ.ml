@@ -576,6 +576,8 @@ let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_clas
 
 let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true | _ -> false
 
+let is_void typ = match typ.desc with Tvoid -> true | _ -> false
+
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false
 
 let is_int typ = match typ.desc with Tint _ -> true | _ -> false

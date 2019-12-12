@@ -54,6 +54,10 @@ module CallSet : module type of AbstractDomain.FiniteSet (MethodCall)
 module OldDomain : module type of AbstractDomain.Map (LocalAccessPath) (CallSet)
 
 module NewDomain : sig
+  module Mem : sig
+    type t
+  end
+
   include AbstractDomain.S
 
   val subst :
@@ -63,11 +67,14 @@ module NewDomain : sig
     -> caller_pname:Typ.Procname.t
     -> callee_pname:Typ.Procname.t
     -> caller:t
-    -> callee:t
+    -> callee:Mem.t
     -> t
 end
 
 include module type of AbstractDomain.Pair (OldDomain) (NewDomain)
+
+(** type for saving in summary payload *)
+type summary = OldDomain.t * NewDomain.Mem.t
 
 val empty : t
 
@@ -81,7 +88,7 @@ val mem : LocalAccessPath.t -> t -> bool
 
 val find : LocalAccessPath.t -> t -> CallSet.t
 
-val bindings : t -> (LocalAccessPath.t * CallSet.t) list
+val bindings : summary -> (LocalAccessPath.t * CallSet.t) list
 
 val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 
@@ -95,12 +102,21 @@ val call_builder :
 val call_build_method : ret:LocalAccessPath.t -> receiver:LocalAccessPath.t -> t -> t
 (** Semantics of builder's final build method *)
 
-val check_required_props :
-  check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit) -> t -> t
+val call_return : t -> t
+(** Semantics of return method *)
 
-val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
+val pp_summary : Format.formatter -> summary -> unit
+
+val get_summary : is_void_func:bool -> t -> summary
+
+val check_required_props :
+     check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit)
+  -> summary
+  -> summary
+
+val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> OldDomain.t -> OldDomain.t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the original
     access path is retained; otherwise, the new one is used *)
 
-val iter_call_chains : f:(AccessPath.t -> MethodCall.t list -> unit) -> t -> unit
+val iter_call_chains : f:(AccessPath.t -> MethodCall.t list -> unit) -> summary -> unit
 (** Apply [f] to each maximal call chain encoded in [t] *)

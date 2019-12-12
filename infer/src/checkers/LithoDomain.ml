@@ -145,60 +145,41 @@ module NewDomain = struct
   end
 
   module MethodCalls = struct
-    module IsBuildMethodCalled = AbstractDomain.BooleanOr
-    (** if the build method has been called on the builder object *)
-
     module IsChecked = AbstractDomain.BooleanOr
     (** if the method calls are checked and reported *)
 
     module S = AbstractDomain.InvertedSet (MethodCallPrefix)
 
-    type t =
-      {is_build_method_called: IsBuildMethodCalled.t; is_checked: IsChecked.t; method_calls: S.t}
+    type t = {is_checked: IsChecked.t; method_calls: S.t}
 
-    let pp fmt {is_build_method_called; is_checked; method_calls} =
-      F.fprintf fmt "%a%s" S.pp method_calls
-        ( if is_checked then " checked"
-        else if is_build_method_called then " then build() called"
-        else "" )
+    let pp fmt {is_checked; method_calls} =
+      F.fprintf fmt "%a%s" S.pp method_calls (if is_checked then " checked" else "")
 
 
     let leq ~lhs ~rhs =
-      IsBuildMethodCalled.leq ~lhs:lhs.is_build_method_called ~rhs:rhs.is_build_method_called
-      && IsChecked.leq ~lhs:lhs.is_checked ~rhs:rhs.is_checked
+      IsChecked.leq ~lhs:lhs.is_checked ~rhs:rhs.is_checked
       && S.leq ~lhs:lhs.method_calls ~rhs:rhs.method_calls
 
 
     let join x y =
-      { is_build_method_called=
-          IsBuildMethodCalled.join x.is_build_method_called y.is_build_method_called
-      ; is_checked= IsChecked.join x.is_checked y.is_checked
+      { is_checked= IsChecked.join x.is_checked y.is_checked
       ; method_calls= S.join x.method_calls y.method_calls }
 
 
     let widen ~prev ~next ~num_iters =
-      { is_build_method_called=
-          IsBuildMethodCalled.widen ~prev:prev.is_build_method_called
-            ~next:next.is_build_method_called ~num_iters
-      ; is_checked= IsChecked.widen ~prev:prev.is_checked ~next:next.is_checked ~num_iters
+      { is_checked= IsChecked.widen ~prev:prev.is_checked ~next:next.is_checked ~num_iters
       ; method_calls= S.widen ~prev:prev.method_calls ~next:next.method_calls ~num_iters }
 
 
-    let empty = {is_build_method_called= false; is_checked= false; method_calls= S.empty}
+    let empty = {is_checked= false; method_calls= S.empty}
 
-    let singleton e = {is_build_method_called= false; is_checked= false; method_calls= S.singleton e}
+    let singleton e = {is_checked= false; method_calls= S.singleton e}
 
-    let add e ({is_build_method_called; method_calls} as x) =
-      if is_build_method_called then x else {x with method_calls= S.add e method_calls}
-
+    let add e ({method_calls} as x) = {x with method_calls= S.add e method_calls}
 
     let merge x y =
-      { is_build_method_called= x.is_build_method_called || y.is_build_method_called
-      ; is_checked= x.is_checked || y.is_checked
-      ; method_calls= S.union x.method_calls y.method_calls }
+      {is_checked= x.is_checked || y.is_checked; method_calls= S.union x.method_calls y.method_calls}
 
-
-    let set_build_method_called x = {x with is_build_method_called= true}
 
     let to_string_set method_calls =
       let accum_as_string method_call acc =
@@ -212,9 +193,9 @@ module NewDomain = struct
       S.elements method_calls
 
 
-    let check_required_props ~check_on_string_set parent_typename
-        ({is_build_method_called; is_checked; method_calls} as x) =
-      if is_build_method_called && not is_checked then (
+    let check_required_props ~check_on_string_set parent_typename ({is_checked; method_calls} as x)
+        =
+      if not is_checked then (
         let prop_set = to_string_set method_calls in
         let call_chain = get_call_chain method_calls in
         check_on_string_set parent_typename call_chain prop_set ;
@@ -223,16 +204,32 @@ module NewDomain = struct
   end
 
   module MethodCalled = struct
-    include AbstractDomain.Map (CreatedLocation) (MethodCalls)
+    module Key = struct
+      type t =
+        { created_location: CreatedLocation.t
+        ; is_build_called: bool  (** if the build method has been called on the builder object *) }
+      [@@deriving compare]
 
-    let add_one k v x =
+      let pp fmt {created_location; is_build_called} =
+        F.fprintf fmt "%a%s" CreatedLocation.pp created_location
+          (if is_build_called then " with build() called" else "")
+
+
+      let no_build_called created_location = {created_location; is_build_called= false}
+
+      let build_called created_location = {created_location; is_build_called= true}
+    end
+
+    include AbstractDomain.Map (Key) (MethodCalls)
+
+    let add_one created_location v x =
       let f = function
         | None ->
             Some (MethodCalls.singleton v)
         | Some method_calls ->
             Some (MethodCalls.add v method_calls)
       in
-      update k f x
+      update (Key.no_build_called created_location) f x
 
 
     let add_all created_locations callee x =
@@ -242,11 +239,18 @@ module NewDomain = struct
 
 
     let build_method_called_one created_location x =
-      let f v =
-        let method_calls = Option.value v ~default:MethodCalls.empty in
-        Some (MethodCalls.set_build_method_called method_calls)
+      let k_no_build_called = Key.no_build_called created_location in
+      let k_build_called = Key.build_called created_location in
+      let method_calls =
+        match (find_opt k_no_build_called x, find_opt k_build_called x) with
+        | None, None ->
+            MethodCalls.empty
+        | Some x, None | None, Some x ->
+            x
+        | Some method_calls_no_build_called, Some method_calls_build_called ->
+            MethodCalls.join method_calls_no_build_called method_calls_build_called
       in
-      update created_location f x
+      remove k_no_build_called x |> add k_build_called method_calls
 
 
     let build_method_called created_locations x =
@@ -254,153 +258,230 @@ module NewDomain = struct
 
 
     let check_required_props ~check_on_string_set x =
-      let f created_location method_calls =
-        match created_location with
-        | CreatedLocation.ByCreateMethod {typ_name} ->
-            MethodCalls.check_required_props ~check_on_string_set typ_name method_calls
-        | CreatedLocation.ByParameter _ ->
-            method_calls
+      let f {Key.created_location; is_build_called} method_calls =
+        if is_build_called then
+          match created_location with
+          | CreatedLocation.ByCreateMethod {typ_name} ->
+              MethodCalls.check_required_props ~check_on_string_set typ_name method_calls
+          | CreatedLocation.ByParameter _ ->
+              method_calls
+        else method_calls
       in
       mapi f x
 
 
     let subst ~is_reachable map ~find_caller_created ~caller ~callee =
-      let accum_substed created_location callee_method_calls acc =
-        let merge_method_calls caller_created acc =
-          let method_calls =
-            Option.value_map (find_opt caller_created caller) ~default:callee_method_calls
-              ~f:(fun caller_method_calls ->
-                MethodCalls.merge caller_method_calls callee_method_calls )
-          in
-          update caller_created
-            (function
-              | None ->
-                  Some method_calls
-              | Some acc_method_calls ->
-                  Some (MethodCalls.merge acc_method_calls method_calls) )
-            acc
+      let merge_method_calls ~callee_method_calls ({Key.created_location} as caller_key) acc =
+        let method_calls =
+          Option.value_map
+            (find_opt (Key.no_build_called created_location) caller)
+            ~default:callee_method_calls
+            ~f:(fun caller_method_calls -> MethodCalls.merge caller_method_calls callee_method_calls)
         in
+        update caller_key
+          (function
+            | None ->
+                Some method_calls
+            | Some acc_method_calls ->
+                Some (MethodCalls.merge acc_method_calls method_calls) )
+          acc
+      in
+      let merge_method_calls_on_substed ~callee_method_calls ~is_build_called caller_created acc =
+        CreatedLocations.fold
+          (fun created_location acc ->
+            merge_method_calls ~callee_method_calls {Key.created_location; is_build_called} acc )
+          caller_created acc
+      in
+      let accum_substed ({Key.created_location; is_build_called} as callee_key) callee_method_calls
+          acc =
         match created_location with
         | CreatedLocation.ByCreateMethod _ ->
-            if is_reachable created_location then merge_method_calls created_location acc else acc
+            if is_reachable created_location then
+              merge_method_calls ~callee_method_calls callee_key acc
+            else acc
         | CreatedLocation.ByParameter path ->
             Option.value_map (SubstPathMap.find_opt path map) ~default:acc ~f:(fun caller_path ->
                 Option.value_map (find_caller_created caller_path) ~default:acc
                   ~f:(fun caller_created ->
-                    CreatedLocations.fold merge_method_calls caller_created acc ) )
+                    merge_method_calls_on_substed ~callee_method_calls ~is_build_called
+                      caller_created acc ) )
       in
       let caller' = fold accum_substed callee empty in
       merge (fun _ v v' -> match v' with Some _ -> v' | None -> v) caller caller'
   end
 
-  type t = {created: Created.t; method_called: MethodCalled.t}
+  module Mem = struct
+    type t = {created: Created.t; method_called: MethodCalled.t}
 
-  let pp fmt {created; method_called} =
-    F.fprintf fmt "@[<v 0>@[Created:@;%a@]@,@[MethodCalled:@;%a@]@]" Created.pp created
-      MethodCalled.pp method_called
+    let pp fmt {created; method_called} =
+      F.fprintf fmt "@[<v 0>@[Created:@;%a@]@,@[MethodCalled:@;%a@]@]" Created.pp created
+        MethodCalled.pp method_called
 
+
+    let leq ~lhs ~rhs =
+      Created.leq ~lhs:lhs.created ~rhs:rhs.created
+      && MethodCalled.leq ~lhs:lhs.method_called ~rhs:rhs.method_called
+
+
+    let join x y =
+      { created= Created.join x.created y.created
+      ; method_called= MethodCalled.join x.method_called y.method_called }
+
+
+    let widen ~prev ~next ~num_iters =
+      { created= Created.widen ~prev:prev.created ~next:next.created ~num_iters
+      ; method_called=
+          MethodCalled.widen ~prev:prev.method_called ~next:next.method_called ~num_iters }
+
+
+    let empty = {created= Created.empty; method_called= MethodCalled.empty}
+
+    let init tenv pname formals =
+      List.fold formals ~init:empty ~f:(fun ({created; method_called} as acc) (pvar, ptr_typ) ->
+          match ptr_typ with
+          | Typ.{desc= Tptr (typ, _)} -> (
+            match Typ.name typ with
+            | Some typ_name
+              when PatternMatch.is_subtype_of_str tenv typ_name
+                     "com.facebook.litho.Component$Builder" ->
+                let formal_ae = LocalAccessPath.make_from_pvar pvar ptr_typ pname in
+                let created_location = CreatedLocation.ByParameter formal_ae in
+                { created=
+                    Created.add formal_ae (CreatedLocations.singleton created_location) created
+                ; method_called=
+                    MethodCalled.add
+                      (MethodCalled.Key.no_build_called created_location)
+                      MethodCalls.empty method_called }
+            | _ ->
+                acc )
+          | _ ->
+              acc )
+
+
+    let assign ~lhs ~rhs ({created} as x) =
+      {x with created= Created.add lhs (Created.lookup rhs created) created}
+
+
+    let call_create lhs typ_name location ({created} as x) =
+      let created_location = CreatedLocation.ByCreateMethod {location; typ_name} in
+      { created= Created.add lhs (CreatedLocations.singleton created_location) created
+      ; method_called=
+          MethodCalled.add
+            (MethodCalled.Key.no_build_called created_location)
+            MethodCalls.empty x.method_called }
+
+
+    let call_builder ~ret ~receiver callee {created; method_called} =
+      let created_locations = Created.lookup receiver created in
+      { created= Created.add ret created_locations created
+      ; method_called= MethodCalled.add_all created_locations callee method_called }
+
+
+    let call_build_method ~ret ~receiver {created; method_called} =
+      let created_locations = Created.lookup receiver created in
+      { created= Created.add ret created_locations created
+      ; method_called= MethodCalled.build_method_called created_locations method_called }
+
+
+    let check_required_props ~check_on_string_set ({method_called} as x) =
+      {x with method_called= MethodCalled.check_required_props ~check_on_string_set method_called}
+
+
+    let subst ~formals ~actuals ~ret_id_typ:(ret_var, ret_typ) ~caller_pname ~callee_pname ~caller
+        ~callee =
+      let callee_return =
+        LocalAccessPath.make_from_pvar (Pvar.get_ret_pvar callee_pname) ret_typ callee_pname
+      in
+      let caller_return = LocalAccessPath.make (AccessPath.of_var ret_var ret_typ) caller_pname in
+      let formals =
+        List.map formals ~f:(fun (pvar, typ) -> LocalAccessPath.make_from_pvar pvar typ callee_pname)
+      in
+      let actuals =
+        List.map actuals ~f:(function
+          | HilExp.AccessExpression actual ->
+              Some (LocalAccessPath.make_from_access_expression actual caller_pname)
+          | _ ->
+              None )
+      in
+      let map = SubstPathMap.make ~formals ~actuals ~caller_return ~callee_return in
+      let created =
+        Created.subst map ~caller_return ~callee_return ~caller:caller.created
+          ~callee:callee.created
+      in
+      let is_reachable =
+        let reachable_paths =
+          LocalAccessPathSet.of_list formals |> LocalAccessPathSet.add callee_return
+        in
+        let reachable_locations =
+          let accum_reachable_location path locations acc =
+            if LocalAccessPathSet.mem path reachable_paths then CreatedLocations.union acc locations
+            else acc
+          in
+          Created.fold accum_reachable_location callee.created CreatedLocations.empty
+        in
+        fun created_location -> CreatedLocations.mem created_location reachable_locations
+      in
+      let method_called =
+        let find_caller_created path = Created.find_opt path caller.created in
+        MethodCalled.subst ~is_reachable map ~find_caller_created ~caller:caller.method_called
+          ~callee:callee.method_called
+      in
+      {created; method_called}
+  end
+
+  type t = {no_return_called: Mem.t; return_called: Mem.t}
+
+  let pp fmt {no_return_called; return_called} =
+    F.fprintf fmt "@[<v 0>@[NoReturnCalled:@;%a@]@,@[ReturnCalled:@;%a@]@]" Mem.pp no_return_called
+      Mem.pp return_called
+
+
+  let get_summary ~is_void_func x = if is_void_func then x.no_return_called else x.return_called
 
   let leq ~lhs ~rhs =
-    Created.leq ~lhs:lhs.created ~rhs:rhs.created
-    && MethodCalled.leq ~lhs:lhs.method_called ~rhs:rhs.method_called
+    Mem.leq ~lhs:lhs.no_return_called ~rhs:rhs.no_return_called
+    && Mem.leq ~lhs:lhs.return_called ~rhs:rhs.return_called
 
 
   let join x y =
-    { created= Created.join x.created y.created
-    ; method_called= MethodCalled.join x.method_called y.method_called }
+    { no_return_called= Mem.join x.no_return_called y.no_return_called
+    ; return_called= Mem.join x.return_called y.return_called }
 
 
   let widen ~prev ~next ~num_iters =
-    { created= Created.widen ~prev:prev.created ~next:next.created ~num_iters
-    ; method_called= MethodCalled.widen ~prev:prev.method_called ~next:next.method_called ~num_iters
-    }
+    { no_return_called= Mem.widen ~prev:prev.no_return_called ~next:next.no_return_called ~num_iters
+    ; return_called= Mem.widen ~prev:prev.return_called ~next:next.return_called ~num_iters }
 
 
-  let empty = {created= Created.empty; method_called= MethodCalled.empty}
+  let empty = {no_return_called= Mem.empty; return_called= Mem.empty}
 
   let init tenv pname formals =
-    List.fold formals ~init:empty ~f:(fun ({created; method_called} as acc) (pvar, ptr_typ) ->
-        match ptr_typ with
-        | Typ.{desc= Tptr (typ, _)} -> (
-          match Typ.name typ with
-          | Some typ_name
-            when PatternMatch.is_subtype_of_str tenv typ_name "com.facebook.litho.Component$Builder"
-            ->
-              let formal_ae = LocalAccessPath.make_from_pvar pvar ptr_typ pname in
-              let created_location = CreatedLocation.ByParameter formal_ae in
-              { created= Created.add formal_ae (CreatedLocations.singleton created_location) created
-              ; method_called= MethodCalled.add created_location MethodCalls.empty method_called }
-          | _ ->
-              acc )
-        | _ ->
-            acc )
+    {no_return_called= Mem.init tenv pname formals; return_called= Mem.empty}
 
 
-  let assign ~lhs ~rhs ({created} as x) =
-    {x with created= Created.add lhs (Created.lookup rhs created) created}
+  let map_no_return_called f x = {x with no_return_called= f x.no_return_called}
+
+  let assign ~lhs ~rhs = map_no_return_called (Mem.assign ~lhs ~rhs)
+
+  let call_create lhs typ_name location =
+    map_no_return_called (Mem.call_create lhs typ_name location)
 
 
-  let call_create lhs typ_name location ({created} as x) =
-    let created_location = CreatedLocation.ByCreateMethod {location; typ_name} in
-    { created= Created.add lhs (CreatedLocations.singleton created_location) created
-    ; method_called= MethodCalled.add created_location MethodCalls.empty x.method_called }
+  let call_builder ~ret ~receiver callee =
+    map_no_return_called (Mem.call_builder ~ret ~receiver callee)
 
 
-  let call_builder ~ret ~receiver callee {created; method_called} =
-    let created_locations = Created.lookup receiver created in
-    { created= Created.add ret created_locations created
-    ; method_called= MethodCalled.add_all created_locations callee method_called }
+  let call_build_method ~ret ~receiver = map_no_return_called (Mem.call_build_method ~ret ~receiver)
+
+  let call_return {no_return_called; return_called} =
+    {no_return_called= Mem.empty; return_called= Mem.join no_return_called return_called}
 
 
-  let call_build_method ~ret ~receiver {created; method_called} =
-    let created_locations = Created.lookup receiver created in
-    { created= Created.add ret created_locations created
-    ; method_called= MethodCalled.build_method_called created_locations method_called }
-
-
-  let check_required_props ~check_on_string_set ({method_called} as x) =
-    {x with method_called= MethodCalled.check_required_props ~check_on_string_set method_called}
-
-
-  let subst ~formals ~actuals ~ret_id_typ:(ret_var, ret_typ) ~caller_pname ~callee_pname ~caller
-      ~callee =
-    let callee_return =
-      LocalAccessPath.make_from_pvar (Pvar.get_ret_pvar callee_pname) ret_typ callee_pname
-    in
-    let caller_return = LocalAccessPath.make (AccessPath.of_var ret_var ret_typ) caller_pname in
-    let formals =
-      List.map formals ~f:(fun (pvar, typ) -> LocalAccessPath.make_from_pvar pvar typ callee_pname)
-    in
-    let actuals =
-      List.map actuals ~f:(function
-        | HilExp.AccessExpression actual ->
-            Some (LocalAccessPath.make_from_access_expression actual caller_pname)
-        | _ ->
-            None )
-    in
-    let map = SubstPathMap.make ~formals ~actuals ~caller_return ~callee_return in
-    let created =
-      Created.subst map ~caller_return ~callee_return ~caller:caller.created ~callee:callee.created
-    in
-    let is_reachable =
-      let reachable_paths =
-        LocalAccessPathSet.of_list formals |> LocalAccessPathSet.add callee_return
-      in
-      let reachable_locations =
-        let accum_reachable_location path locations acc =
-          if LocalAccessPathSet.mem path reachable_paths then CreatedLocations.union acc locations
-          else acc
-        in
-        Created.fold accum_reachable_location callee.created CreatedLocations.empty
-      in
-      fun created_location -> CreatedLocations.mem created_location reachable_locations
-    in
-    let method_called =
-      let find_caller_created path = Created.find_opt path caller.created in
-      MethodCalled.subst ~is_reachable map ~find_caller_created ~caller:caller.method_called
-        ~callee:callee.method_called
-    in
-    {created; method_called}
+  let subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller ~callee =
+    { caller with
+      no_return_called=
+        Mem.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
+          ~caller:caller.no_return_called ~callee }
 end
 
 include struct
@@ -428,8 +509,6 @@ include struct
 
   let iter f = lift_old (OldDomain.iter f)
 
-  let fold f (o, _) init = OldDomain.fold f o init
-
   let assign ~lhs ~rhs = map_new (NewDomain.assign ~lhs ~rhs)
 
   let call_create ret typ_name location = map_new (NewDomain.call_create ret typ_name location)
@@ -438,35 +517,41 @@ include struct
 
   let call_build_method ~ret ~receiver = map_new (NewDomain.call_build_method ~ret ~receiver)
 
+  let call_return = map_new NewDomain.call_return
+
+  type summary = OldDomain.t * NewDomain.Mem.t
+
+  let pp_summary fmt (o, n) =
+    F.fprintf fmt "@[<v 2>@[Old:@;%a@]@,@[New:@;%a@]@]" OldDomain.pp o NewDomain.Mem.pp n
+
+
+  let get_summary ~is_void_func = map_new (NewDomain.get_summary ~is_void_func)
+
   let check_required_props ~check_on_string_set =
-    map_new (NewDomain.check_required_props ~check_on_string_set)
+    map_new (NewDomain.Mem.check_required_props ~check_on_string_set)
 end
 
-let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) ((_, new_astate) as astate)
-    =
-  let old_astate, _ =
-    fold
-      (fun original_access_path call_set acc ->
-        let access_path' =
-          match f_sub original_access_path with
-          | Some access_path ->
-              access_path
-          | None ->
-              original_access_path
-        in
-        let call_set' =
-          CallSet.fold
-            (fun ({procname; location} as call) call_set_acc ->
-              let receiver =
-                match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
-              in
-              CallSet.add {receiver; procname; location} call_set_acc )
-            call_set CallSet.empty
-        in
-        add access_path' call_set' acc )
-      astate empty
-  in
-  (old_astate, new_astate)
+let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) old_astate =
+  OldDomain.fold
+    (fun original_access_path call_set acc ->
+      let access_path' =
+        match f_sub original_access_path with
+        | Some access_path ->
+            access_path
+        | None ->
+            original_access_path
+      in
+      let call_set' =
+        CallSet.fold
+          (fun ({procname; location} as call) call_set_acc ->
+            let receiver =
+              match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
+            in
+            CallSet.add {receiver; procname; location} call_set_acc )
+          call_set CallSet.empty
+      in
+      OldDomain.add access_path' call_set' acc )
+    old_astate OldDomain.empty
 
 
 (** Unroll the domain to enumerate all the call chains ending in [call] and apply [f] to each

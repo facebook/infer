@@ -71,35 +71,45 @@ let get_component_create_typ_opt procname tenv =
 module type LithoContext = sig
   type t
 
-  val field : (Payloads.t, t option) Field.t
+  type summary
 
-  val check_callee : callee_pname:Typ.Procname.t -> tenv:Tenv.t -> t option -> bool
+  val field : (Payloads.t, summary option) Field.t
+
+  val check_callee : callee_pname:Typ.Procname.t -> tenv:Tenv.t -> summary option -> bool
 
   val satisfies_heuristic :
-    callee_pname:Typ.Procname.t -> callee_summary_opt:t option -> Tenv.t -> bool
+    callee_pname:Typ.Procname.t -> callee_summary_opt:summary option -> Tenv.t -> bool
 
   val should_report : Procdesc.t -> Tenv.t -> bool
 
-  val report : t -> Tenv.t -> Summary.t -> t
+  val report : summary -> Tenv.t -> Summary.t -> summary
 
   val session_name : string
 end
 
-type get_proc_summary_and_formals = Typ.Procname.t -> (Domain.t * (Pvar.t * Typ.t) list) option
+type get_proc_summary_and_formals =
+  Typ.Procname.t -> (Domain.summary * (Pvar.t * Typ.t) list) option
 
 type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals}
 
-module TransferFunctions (CFG : ProcCfg.S) (LithoContext : LithoContext with type t = Domain.t) =
+module TransferFunctions
+    (CFG : ProcCfg.S)
+    (LithoContext : LithoContext with type summary = Domain.summary) =
 struct
   module CFG = CFG
   module Domain = Domain
-  module Payload = SummaryPayload.Make (LithoContext)
+
+  module Payload = SummaryPayload.Make (struct
+    type t = LithoContext.summary
+
+    let field = LithoContext.field
+  end)
 
   type nonrec extras = extras
 
   let apply_callee_summary summary_opt ~caller_pname ~callee_pname ret_id_typ formals actuals
-      ((_, new_domain) as astate) =
-    Option.value_map summary_opt ~default:astate ~f:(fun summary ->
+      ((old_domain, new_domain) as astate) =
+    Option.value_map summary_opt ~default:astate ~f:(fun (old_callee, new_callee) ->
         (* TODO: append paths if the footprint access path is an actual path instead of a var *)
         let f_sub {Domain.LocalAccessPath.access_path= (var, _), _} =
           match Var.get_footprint_index var with
@@ -117,10 +127,10 @@ struct
                 Some (Domain.LocalAccessPath.make (ret_id_typ, []) caller_pname)
               else None
         in
-        let astate_old, _ = Domain.substitute ~f_sub summary |> Domain.join astate in
+        let astate_old = Domain.substitute ~f_sub old_callee |> Domain.OldDomain.join old_domain in
         let astate_new =
           Domain.NewDomain.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
-            ~caller:new_domain ~callee:(snd summary)
+            ~caller:new_domain ~callee:new_callee
         in
         (astate_old, astate_new) )
 
@@ -175,23 +185,34 @@ struct
         Option.value_map callee_summary_and_formals_opt ~default:astate ~f:(fun (_, formals) ->
             apply_callee_summary callee_summary_opt ~caller_pname ~callee_pname ret_id_typ formals
               actuals astate )
-    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) ->
-        (* creating an alias for the rhs binding; assume all reads will now occur through the
-           alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
-           tmp.getBar() *)
-        let lhs_access_path =
-          Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path lhs_ae) caller_pname
-        in
-        let rhs_access_path =
-          Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path rhs_ae) caller_pname
-        in
+    | Assign (lhs_ae, rhs, _) ->
         let astate =
-          try
-            let call_set = Domain.find rhs_access_path astate in
-            Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
-          with Caml.Not_found -> astate
+          match rhs with
+          | HilExp.AccessExpression rhs_ae ->
+              (* creating an alias for the rhs binding; assume all reads will now occur through the
+                 alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
+                 tmp.getBar() *)
+              let lhs_access_path =
+                Domain.LocalAccessPath.make
+                  (HilExp.AccessExpression.to_access_path lhs_ae)
+                  caller_pname
+              in
+              let rhs_access_path =
+                Domain.LocalAccessPath.make
+                  (HilExp.AccessExpression.to_access_path rhs_ae)
+                  caller_pname
+              in
+              let astate =
+                try
+                  let call_set = Domain.find rhs_access_path astate in
+                  Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
+                with Caml.Not_found -> astate
+              in
+              Domain.assign ~lhs:lhs_access_path ~rhs:rhs_access_path astate
+          | _ ->
+              astate
         in
-        Domain.assign ~lhs:lhs_access_path ~rhs:rhs_access_path astate
+        if HilExp.AccessExpression.is_return_var lhs_ae then Domain.call_return astate else astate
     | _ ->
         astate
 
@@ -199,7 +220,7 @@ struct
   let pp_session_name _node fmt = F.pp_print_string fmt LithoContext.session_name
 end
 
-module MakeAnalyzer (LithoContext : LithoContext with type t = Domain.t) = struct
+module MakeAnalyzer (LithoContext : LithoContext with type summary = Domain.summary) = struct
   module TF = TransferFunctions (ProcCfg.Normal) (LithoContext)
   module A = LowerHil.MakeAbstractInterpreter (TF)
 
@@ -222,13 +243,15 @@ module MakeAnalyzer (LithoContext : LithoContext with type t = Domain.t) = struc
     let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) in
     match A.compute_post proc_data ~initial with
     | Some post ->
+        let is_void_func = Procdesc.get_ret_type proc_desc |> Typ.is_void in
+        let post = Domain.get_summary ~is_void_func post in
         let post =
           if LithoContext.should_report proc_desc tenv then LithoContext.report post tenv summary
           else post
         in
-        let postprocess astate formal_map : Domain.t =
+        let postprocess (old_astate, new_astate) formal_map : Domain.summary =
           let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
-          Domain.substitute ~f_sub astate
+          (Domain.substitute ~f_sub old_astate, new_astate)
         in
         let payload = postprocess post (FormalMap.make proc_desc) in
         TF.Payload.update_summary payload summary

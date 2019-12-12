@@ -371,6 +371,9 @@ module AccessExpression = struct
     to_accesses y |> snd
     |> List.fold ~init:(Some onto) ~f:(fun acc access ->
            match acc with None -> acc | Some exp -> add_access exp access )
+
+
+  let is_return_var = function Base (var, _) -> Var.is_return var | _ -> false
 end
 
 let rec get_typ tenv = function
