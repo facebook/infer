@@ -20,7 +20,6 @@ include sig
     ; class_loads: ClassLoadsDomain.summary option
     ; cost: CostDomain.summary option
     ; lab_resource_leaks: ResourceLeakDomain.summary option
-    ; litho_graphql_field_access: LithoDomain.t option
     ; litho_required_props: LithoDomain.t option
     ; pulse: PulseSummary.t option
     ; purity: PurityDomain.summary option

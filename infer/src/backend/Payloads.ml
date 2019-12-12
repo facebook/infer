@@ -16,7 +16,6 @@ type t =
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
-  ; litho_graphql_field_access: LithoDomain.t option
   ; litho_required_props: LithoDomain.t option
   ; pulse: PulseSummary.t option
   ; purity: PurityDomain.summary option
@@ -44,7 +43,6 @@ let fields =
     ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
     ~class_loads:(fun f -> mk f "ClassLoads" ClassLoadsDomain.pp_summary)
     ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
-    ~litho_graphql_field_access:(fun f -> mk f "Litho GraphQL Field Access" LithoDomain.pp)
     ~litho_required_props:(fun f -> mk f "Litho Required Props" LithoDomain.pp)
     ~pulse:(fun f -> mk f "Pulse" PulseSummary.pp)
     ~purity:(fun f -> mk f "Purity" PurityDomain.pp_summary)
@@ -71,7 +69,6 @@ let empty =
   ; class_loads= None
   ; cost= None
   ; lab_resource_leaks= None
-  ; litho_graphql_field_access= None
   ; litho_required_props= None
   ; pulse= None
   ; purity= None

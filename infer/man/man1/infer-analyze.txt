@@ -176,14 +176,6 @@ OPTIONS
            Activates: Enable --linters and disable all other checkers
            (Conversely: --no-linters-only)
 
-       --litho-graphql-field-access
-           Activates: [EXPERIMENTAL] GraphQL field access check for Litho
-           (Conversely: --no-litho-graphql-field-access)
-
-       --litho-graphql-field-access-only
-           Activates: Enable --litho-graphql-field-access and disable all
-           other checkers (Conversely: --no-litho-graphql-field-access-only)
-
        --litho-required-props
            Activates: [EXPERIMENTAL] Required Prop check for Litho
            (Conversely: --no-litho-required-props)

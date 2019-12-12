@@ -461,8 +461,6 @@ val linters_ignore_clang_failures : bool
 
 val linters_validate_syntax_only : bool
 
-val litho_graphql_field_access : bool
-
 val litho_required_props : bool
 
 val liveness : bool

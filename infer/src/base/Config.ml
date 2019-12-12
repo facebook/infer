@@ -30,7 +30,6 @@ type checkers =
   ; impurity: bool ref
   ; inefficient_keyset_iterator: bool ref
   ; linters: bool ref
-  ; litho_graphql_field_access: bool ref
   ; litho_required_props: bool ref
   ; liveness: bool ref
   ; loop_hoisting: bool ref
@@ -638,7 +637,6 @@ and { annotation_reachability
     ; impurity
     ; inefficient_keyset_iterator
     ; linters
-    ; litho_graphql_field_access
     ; litho_required_props
     ; liveness
     ; loop_hoisting
@@ -687,9 +685,6 @@ and { annotation_reachability
     mk_checker ~long:"inefficient-keyset-iterator" ~default:true
       "Check for inefficient uses of keySet iterator that access both the key and the value."
   and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"
-  and litho_graphql_field_access =
-    mk_checker ~long:"litho-graphql-field-access"
-      "[EXPERIMENTAL] GraphQL field access check for Litho"
   and litho_required_props =
     mk_checker ~long:"litho-required-props" "[EXPERIMENTAL] Required Prop check for Litho"
   and liveness =
@@ -769,7 +764,6 @@ and { annotation_reachability
   ; impurity
   ; inefficient_keyset_iterator
   ; linters
-  ; litho_graphql_field_access
   ; litho_required_props
   ; liveness
   ; loop_hoisting
@@ -2984,8 +2978,6 @@ and linters_developer_mode = !linters_developer_mode
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
 
 and linters_validate_syntax_only = !linters_validate_syntax_only
-
-and litho_graphql_field_access = !litho_graphql_field_access
 
 and litho_required_props = !litho_required_props
 

@@ -109,9 +109,6 @@ let all_checkers =
   ; { name= "litho-required-props"
     ; active= Config.litho_required_props
     ; callbacks= [(Procedure RequiredProps.checker, Language.Java)] }
-  ; { name= "litho-graphql-field-access"
-    ; active= Config.litho_graphql_field_access
-    ; callbacks= [(Procedure GraphQLFieldAccess.checker, Language.Java)] }
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Language.Clang)]}
   ; { name= "uninitialized variables"
     ; active= Config.uninit
