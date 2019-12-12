@@ -3,7 +3,7 @@
 
   <groupId>com.facebook.infer.annotation</groupId>
   <artifactId>infer-annotation</artifactId>
-  <version>0.17.1-SNAPSHOT</version>
+  <version>0.17.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Annotations for the Infer static analyzer</description>
   <url>http://fbinfer.com/</url>
@@ -55,7 +55,7 @@
     <repository>
       <id>sonatype-nexus-staging</id>
       <name>Nexus Release Repository</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
 
@@ -84,6 +84,11 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.1.1</version>
       </plugin>
     </plugins>
   </build>
