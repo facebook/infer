@@ -18,12 +18,11 @@ end
 
 val suffixes : String.Set.t
 
-(** Called procedure & location + its receiver *)
+(** Called procedure & location *)
 module MethodCallPrefix : sig
-  type t = private
-    {receiver: LocalAccessPath.t; prefix: string; procname: Typ.Procname.t; location: Location.t}
+  type t = private {prefix: string; procname: Typ.Procname.t; location: Location.t}
 
-  val make : LocalAccessPath.t -> Typ.Procname.t -> Location.t -> t
+  val make : Typ.Procname.t -> Location.t -> t
 end
 
 module Mem : sig

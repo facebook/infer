@@ -28,25 +28,21 @@ let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
 
 module MethodCallPrefix = struct
   type t =
-    { (* TODO: We can remove the [receiver] field after we replace the old checker *)
-      receiver: LocalAccessPath.t [@compare.ignore]
-    ; prefix: string
+    { prefix: string
     ; procname: Typ.Procname.t [@compare.ignore]
     ; location: Location.t [@compare.ignore] }
   [@@deriving compare]
 
-  let make receiver procname location =
+  let make procname location =
     let method_name = Typ.Procname.get_method procname in
     let prefix_opt =
       String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
     in
     let prefix = Option.value prefix_opt ~default:method_name in
-    {receiver; prefix; procname; location}
+    {prefix; procname; location}
 
 
-  let pp fmt {receiver; procname} =
-    F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
-
+  let pp fmt {procname} = Typ.Procname.pp fmt procname
 
   let procname_to_string {procname} = Typ.Procname.get_method procname
 end
