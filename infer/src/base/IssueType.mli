@@ -173,8 +173,6 @@ val failure_exe : t
 
 val field_not_null_checked : t
 
-val graphql_field_access : t
-
 val guardedby_violation_racerd : t
 
 val impure_function : t

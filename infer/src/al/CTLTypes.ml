@@ -70,8 +70,6 @@ type t =
   | InObjCClass of t * t
 [@@deriving compare]
 
-let equal = [%compare.equal: t]
-
 let has_transition phi =
   match phi with
   | True

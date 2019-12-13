@@ -21,8 +21,6 @@ val ast_node_type : ast_node -> string
 
 val ast_node_kind : ast_node -> string
 
-val ast_node_pointer : ast_node -> int
-
 val ast_node_has_kind : ALVar.alexp list -> ast_node -> bool
 
 val ast_node_unique_string_id : ast_node -> string

@@ -359,13 +359,6 @@ module Symbol = struct
         SymbolPath.is_global path
 
 
-  let is_pulse_value : t -> bool = function
-    | PulseValue _ ->
-        true
-    | OneValue _ | BoundEnd _ ->
-        false
-
-
   let get_pulse_value_exn : t -> PulseAbstractValue.t = function
     | PulseValue v ->
         v

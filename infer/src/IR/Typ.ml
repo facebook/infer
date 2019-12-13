@@ -904,8 +904,6 @@ module Procname = struct
 
     let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
-    let is_operator_equal {method_name} = String.is_substring ~substring:"operator=" method_name
-
     let pp_verbose_kind fmt = function
       | CPPMethod {mangled} | CPPDestructor {mangled} ->
           F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)

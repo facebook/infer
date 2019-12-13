@@ -298,8 +298,6 @@ let _global_variable_initialized_with_function_or_method_call =
   register_from_string ~enabled:false "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
 
 
-let graphql_field_access = register_from_string "GRAPHQL_FIELD_ACCESS"
-
 let guardedby_violation_racerd =
   register_from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
 

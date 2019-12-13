@@ -36,9 +36,11 @@ default: detect_dead_code
 
 ml_src_files_from_mlly:=$(shell find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml[ly]')
 
-ml_src_files:=$(shell find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.mli')
+ml_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do echo $${i\#"../"}; done)
 
-ml_src_files_without_mli:=$(shell cd .. && for i in $$(find . -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $$i; done)
+mli_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.mli'); do echo $${i\#"../"}; done)
+
+ml_src_files_without_mli:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $${i\#"../"}; done)
 
 .PHONY: depend
 depend:
@@ -48,7 +50,7 @@ depend:
 	  -I c_stubs -I checkers -I clang -I concurrency -I facebook -I integration -I istd -I java \
 	  -I labs -I nullsafe -I pulse -I scuba -I quandary -I topl -I unit -I unit/clang -I unit/nullsafe -I deadcode \
 	  -I test_determinator \
-	   $(ml_src_files) > deadcode/.depend
+	  $(ml_src_files) $(mli_src_files) > deadcode/.depend
 
 # circular dependency... not sure how to fix properly
 %.cmi: %.cmx

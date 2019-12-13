@@ -128,9 +128,6 @@ module AttributeDomain : sig
 
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
 
-  val get_scheduler_constraint :
-    HilExp.AccessExpression.t -> t -> StarvationModels.scheduler_thread_constraint option
-
   val is_future_done_guard : HilExp.AccessExpression.t -> t -> bool
   (** does the given expr has attribute [FutureDone x] return [Some x] else [None] *)
 

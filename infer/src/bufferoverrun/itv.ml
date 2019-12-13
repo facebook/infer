@@ -662,8 +662,6 @@ let of_big_int : Z.t -> t = fun n -> NonBottom (ItvPure.of_big_int n)
 
 let of_int_lit : IntLit.t -> t = fun n -> NonBottom (ItvPure.of_int_lit n)
 
-let of_pulse_value : PulseAbstractValue.t -> t = fun v -> NonBottom (ItvPure.of_pulse_value v)
-
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
 let le : lhs:t -> rhs:t -> bool = leq
@@ -679,14 +677,6 @@ let range loop_head : t -> ItvRange.t = function
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
-
-
-let lift1opt : (ItvPure.t -> ItvPure.t option) -> t -> t option =
- fun f -> function
-  | Bottom ->
-      Some Bottom
-  | NonBottom x ->
-      f x |> Option.map ~f:(fun v -> NonBottom v)
 
 
 let bind1_gen : bot:'a -> (ItvPure.t -> 'a) -> t -> 'a =
@@ -786,10 +776,6 @@ let min_sem : ?use_minmax_bound:bool -> t -> t -> t =
 let max_sem : ?use_minmax_bound:bool -> t -> t -> t =
  fun ?use_minmax_bound -> lift2 (ItvPure.max_sem ?use_minmax_bound)
 
-
-let arith_binop : Binop.t -> t -> t -> t = fun bop -> lift2 (ItvPure.arith_binop bop)
-
-let arith_unop : Unop.t -> t -> t option = fun unop -> lift1opt (ItvPure.arith_unop unop)
 
 let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 

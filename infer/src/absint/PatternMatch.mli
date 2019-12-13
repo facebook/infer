@@ -22,9 +22,6 @@ val get_vararg_type_names : Tenv.t -> Procdesc.Node.t -> Pvar.t -> string list
 val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
 (** Check if the method is one of the known initializer methods. *)
 
-val is_getter : Typ.Procname.Java.t -> bool
-(** Is this a getter proc name? *)
-
 val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 (** Is the type a transitive subtype of the typename? *)
 

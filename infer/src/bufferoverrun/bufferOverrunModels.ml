@@ -16,11 +16,6 @@ module Sem = BufferOverrunSemantics
 module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
 open BoUtils.ModelEnv
-
-module Val = struct
-  type t = unit
-end
-
 open ProcnameDispatcher.Call.FuncArg
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t

@@ -418,7 +418,6 @@ OPTIONS
              Failure_exe (enabled by default),
              GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
            (disabled by default),
-             GRAPHQL_FIELD_ACCESS (enabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
              IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),

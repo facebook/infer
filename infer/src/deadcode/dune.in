@@ -21,5 +21,5 @@ Format.sprintf
 |}
   (String.concat " " common_cflags)
   (String.concat " " common_optflags)
-  (String.concat " " common_libraries)
+  (String.concat " " ("InferCStubs" :: common_libraries))
 |> Jbuild_plugin.V1.send

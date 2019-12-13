@@ -68,8 +68,6 @@ val is_transition_to_successor : transitions -> bool
 
 val has_transition : t -> bool
 
-val equal : t -> t -> bool
-
 val pp_transition : Format.formatter -> transitions option -> unit
 
 val pp_formula : Format.formatter -> t -> unit

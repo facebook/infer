@@ -16,8 +16,6 @@ module LocalAccessPath : sig
 
   val make_from_access_expression : HilExp.AccessExpression.t -> Typ.Procname.t -> t
 
-  val make_from_pvar : Pvar.t -> Typ.t -> Typ.Procname.t -> t
-
   val to_formal_option : t -> FormalMap.t -> t option
 
   val pp : F.formatter -> t -> unit
@@ -41,10 +39,6 @@ module MethodCallPrefix : sig
   type t
 
   val make : LocalAccessPath.t -> Typ.Procname.t -> Location.t -> t
-
-  val pp : F.formatter -> t -> unit
-
-  val procname_to_string : t -> string
 
   val to_method_call : t -> MethodCall.t
 end
@@ -75,8 +69,6 @@ include module type of AbstractDomain.Pair (OldDomain) (NewDomain)
 
 (** type for saving in summary payload *)
 type summary = OldDomain.t * NewDomain.Mem.t
-
-val empty : t
 
 val init : Tenv.t -> Typ.Procname.t -> (Pvar.t * Typ.t) list -> t
 

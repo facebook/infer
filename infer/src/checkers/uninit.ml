@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module D = UninitDomain.Domain
 (** Forward analysis to compute uninitialized variables at each program point *)

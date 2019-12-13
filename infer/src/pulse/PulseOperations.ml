@@ -365,10 +365,6 @@ let write_field location addr_trace_ref field addr_trace_obj astate =
   write_access location addr_trace_ref (FieldAccess field) addr_trace_obj astate
 
 
-let havoc_deref location addr_trace trace_obj astate =
-  write_deref location ~ref:addr_trace ~obj:(AbstractValue.mk_fresh (), trace_obj) astate
-
-
 let havoc_field location addr_trace field trace_obj astate =
   write_field location addr_trace field (AbstractValue.mk_fresh (), trace_obj) astate
 

@@ -453,8 +453,6 @@ module NewDomain = struct
     ; return_called= Mem.widen ~prev:prev.return_called ~next:next.return_called ~num_iters }
 
 
-  let empty = {no_return_called= Mem.empty; return_called= Mem.empty}
-
   let init tenv pname formals =
     {no_return_called= Mem.init tenv pname formals; return_called= Mem.empty}
 
@@ -492,8 +490,6 @@ include struct
   let map_old f (o, n) = (f o, n)
 
   let map_new f (o, n) = (o, f n)
-
-  let empty = (OldDomain.empty, NewDomain.empty)
 
   let init tenv pname formals = (OldDomain.empty, NewDomain.init tenv pname formals)
 

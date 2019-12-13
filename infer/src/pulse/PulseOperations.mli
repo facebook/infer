@@ -58,9 +58,6 @@ val eval_binop :
 
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
-val havoc_deref :
-  Location.t -> AbstractValue.t * ValueHistory.t -> ValueHistory.t -> t -> t access_result
-
 val havoc_field :
      Location.t
   -> AbstractValue.t * ValueHistory.t

@@ -128,8 +128,6 @@ let find_opt addr memory =
 
 let fold_attrs f memory init = Graph.fold f (snd memory) init
 
-let set_attrs addr attrs memory = (fst memory, Graph.add addr attrs (snd memory))
-
 let set_edges addr edges memory = (Graph.add addr edges (fst memory), snd memory)
 
 let set_cell addr (edges, attrs) memory =

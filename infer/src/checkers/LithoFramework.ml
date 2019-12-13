@@ -53,13 +53,6 @@ let is_component_create_method procname tenv =
   match Typ.Procname.get_method procname with "create" -> is_component procname tenv | _ -> false
 
 
-let is_on_create_layout = function
-  | Typ.Procname.Java java_pname -> (
-    match Typ.Procname.Java.get_method java_pname with "onCreateLayout" -> true | _ -> false )
-  | _ ->
-      false
-
-
 let get_component_create_typ_opt procname tenv =
   match procname with
   | Typ.Procname.Java java_pname when is_component_create_method procname tenv ->

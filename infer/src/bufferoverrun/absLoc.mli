@@ -39,8 +39,6 @@ module Allocsite : sig
 
   val literal_string : string -> t
 
-  val get_literal_string : t -> string option
-
   val get_param_path : t -> Symb.SymbolPath.partial option
 
   val eq : t -> t -> Boolean.t

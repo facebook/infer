@@ -240,8 +240,6 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
   type_names [] call_node
 
 
-let is_getter pname_java = String.is_prefix ~prefix:"get" (Typ.Procname.Java.get_method pname_java)
-
 let type_is_class typ =
   match typ.Typ.desc with
   | Tptr ({desc= Tstruct _}, _) ->

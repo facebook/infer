@@ -120,8 +120,6 @@ module Symbol : sig
 
   val exists_str : f:(string -> bool) -> t -> bool
 
-  val is_pulse_value : t -> bool
-
   val get_pulse_value_exn : t -> PulseAbstractValue.t
 end
 

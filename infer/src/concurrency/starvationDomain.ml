@@ -504,10 +504,6 @@ module AttributeDomain = struct
     find_opt acc_exp t |> Option.exists ~f:(function Attribute.ThreadGuard -> true | _ -> false)
 
 
-  let get_scheduler_constraint acc_exp t =
-    find_opt acc_exp t |> Option.bind ~f:(function Attribute.WorkScheduler c -> Some c | _ -> None)
-
-
   let is_future_done_guard acc_exp t =
     find_opt acc_exp t
     |> Option.exists ~f:(function Attribute.FutureDoneGuard _ -> true | _ -> false)

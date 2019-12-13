@@ -478,9 +478,6 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
     val is_cpp_lambda : t -> bool
     (** Return whether the procname is a cpp lambda. *)
-
-    val is_operator_equal : t -> bool
-    (** Return true if the procname is operator= *)
   end
 
   module C : sig

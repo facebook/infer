@@ -32,8 +32,6 @@ val find_opt : AbstractValue.t -> t -> cell option
 
 val fold_attrs : (AbstractValue.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
 
-val set_attrs : AbstractValue.t -> Attributes.t -> t -> t
-
 val set_edges : AbstractValue.t -> edges -> t -> t
 
 val set_cell : AbstractValue.t -> cell -> t -> t
