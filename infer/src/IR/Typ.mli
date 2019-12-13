@@ -653,8 +653,7 @@ module Fieldname : sig
   end
 
   module Java : sig
-    val from_string : string -> t
-    (** Create a java field name from string *)
+    val from_class_and_field : class_name:string -> field_name:string -> t
 
     val is_captured_parameter : t -> bool
     (** Check if field is a captured parameter *)

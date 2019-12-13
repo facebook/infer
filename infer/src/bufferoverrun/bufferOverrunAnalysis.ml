@@ -214,7 +214,10 @@ module TransferFunctions = struct
     match Typ.Procname.get_class_type_name callee_pname with
     | Some (JavaClass class_name) ->
         let class_var = Loc.of_var (Var.of_pvar (Pvar.mk_global class_name)) in
-        let fn = Typ.Fieldname.Java.from_string (Mangled.to_string class_name ^ ".$VALUES") in
+        let fn =
+          Typ.Fieldname.Java.from_class_and_field ~class_name:(Mangled.to_string class_name)
+            ~field_name:"$VALUES"
+        in
         let v = Dom.Mem.find (Loc.append_field class_var ~fn) mem in
         Dom.Mem.add_stack (Loc.of_id id) v mem
     | _ ->

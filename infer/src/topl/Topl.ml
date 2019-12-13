@@ -137,17 +137,13 @@ let add_types tenv =
     Hashtbl.keys h
   in
   let transition_field i =
-    (Typ.Fieldname.Java.from_string (ToplName.transition i), Typ.mk (Tint IBool), [])
+    (ToplUtils.make_field (ToplName.transition i), Typ.mk (Tint IBool), [])
   in
-  let saved_arg_field i =
-    (Typ.Fieldname.Java.from_string (ToplName.saved_arg i), ToplUtils.any_type, [])
-  in
-  let register_field name =
-    (Typ.Fieldname.Java.from_string (ToplName.reg name), ToplUtils.any_type, [])
-  in
+  let saved_arg_field i = (ToplUtils.make_field (ToplName.saved_arg i), ToplUtils.any_type, []) in
+  let register_field name = (ToplUtils.make_field (ToplName.reg name), ToplUtils.any_type, []) in
   let statics =
-    let state = (Typ.Fieldname.Java.from_string ToplName.state, Typ.mk (Tint IInt), []) in
-    let retval = (Typ.Fieldname.Java.from_string ToplName.retval, ToplUtils.any_type, []) in
+    let state = (ToplUtils.make_field ToplName.state, Typ.mk (Tint IInt), []) in
+    let retval = (ToplUtils.make_field ToplName.retval, ToplUtils.any_type, []) in
     let transitions = List.init (get_transitions_count ()) ~f:transition_field in
     let saved_args = List.init (get_max_args ()) ~f:saved_arg_field in
     let registers = List.map ~f:register_field (get_registers ()) in

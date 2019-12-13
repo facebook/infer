@@ -1486,16 +1486,7 @@ module Fieldname = struct
   end
 
   module Java = struct
-    let from_string full_fieldname =
-      let class_name, field_name =
-        match String.rsplit2 full_fieldname ~on:'.' with
-        | None ->
-            ("", full_fieldname)
-        | Some split ->
-            split
-      in
-      Java {class_name; field_name}
-
+    let from_class_and_field ~class_name ~field_name = Java {class_name; field_name}
 
     let is_captured_parameter = function
       | Java {field_name} ->

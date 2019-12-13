@@ -2292,17 +2292,14 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
       | Clang ->
           Sil.Earray (Exp.int len, [(index, Sil.Eexp (Exp.zero, Sil.inst_none))], Sil.inst_none)
       | Java ->
-          let mk_fld_sexp s =
-            let fld = Typ.Fieldname.Java.from_string s in
+          let mk_fld_sexp field_name =
+            let fld =
+              Typ.Fieldname.Java.from_class_and_field ~class_name:"java.lang.String" ~field_name
+            in
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
             (fld, se)
           in
-          let fields =
-            [ "java.lang.String.count"
-            ; "java.lang.String.hash"
-            ; "java.lang.String.offset"
-            ; "java.lang.String.value" ]
-          in
+          let fields = ["count"; "hash"; "offset"; "value"] in
           Sil.Estruct (List.map ~f:mk_fld_sexp fields, Sil.inst_none)
     in
     let const_string_texp =
@@ -2329,7 +2326,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let sexp =
       (* TODO: add appropriate fields *)
       Sil.Estruct
-        ( [ ( Typ.Fieldname.Java.from_string "java.lang.Class.name"
+        ( [ ( Typ.Fieldname.Java.from_class_and_field ~class_name:"java.lang.Class"
+                ~field_name:"name"
             , Sil.Eexp (Exp.Const (Const.Cstr s), Sil.Inone) ) ]
         , Sil.inst_none )
     in

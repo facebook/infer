@@ -30,3 +30,5 @@ val topl_call : Ident.t -> Typ.desc -> Location.t -> string -> (Exp.t * Typ.t) l
 val is_synthesized : Typ.Procname.t -> bool
 
 val debug : ('a, Format.formatter, unit) IStd.format -> 'a
+
+val make_field : string -> Typ.Fieldname.t

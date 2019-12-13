@@ -26,14 +26,14 @@ let pp ~pp_lhs ~pp_lhs_alone ~sep f lhs fn =
 
 
 let mk, get_type =
-  let classname = "__infer__" in
+  let class_name = "__infer__" in
   let types = ref Typ.Fieldname.Map.empty in
   let mk ?cpp_classname name typ =
     let fieldname =
       match cpp_classname with
       | None ->
-          let fullname = Format.sprintf "%s.%s" classname name in
-          Typ.Fieldname.Java.from_string fullname
+          let class_name, field_name = String.rsplit2_exn ~on:'.' (class_name ^ "." ^ name) in
+          Typ.Fieldname.Java.from_class_and_field ~class_name ~field_name
       | Some classname ->
           Typ.Fieldname.Clang.from_class_name classname name
     in

@@ -34,9 +34,11 @@ let topl_class_exp =
   Exp.Lvar var_name
 
 
-let static_var x : Exp.t =
-  Exp.Lfield (topl_class_exp, Typ.Fieldname.Java.from_string x, topl_class_typ)
+let make_field field_name =
+  Typ.Fieldname.Java.from_class_and_field ~class_name:ToplName.topl_property ~field_name
 
+
+let static_var x : Exp.t = Exp.Lfield (topl_class_exp, make_field x, topl_class_typ)
 
 let local_var proc_name x : Exp.t = Exp.Lvar (Pvar.mk (Mangled.from_string x) proc_name)
 

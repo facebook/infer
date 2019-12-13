@@ -201,9 +201,9 @@ let get_method_kind m =
 
 
 let create_fieldname cn fs =
-  let fieldname = JBasics.fs_name fs in
-  let classname = JBasics.cn_name cn in
-  Typ.Fieldname.Java.from_string (classname ^ "." ^ fieldname)
+  let field_name = JBasics.fs_name fs in
+  let class_name = JBasics.cn_name cn in
+  Typ.Fieldname.Java.from_class_and_field ~class_name ~field_name
 
 
 let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
