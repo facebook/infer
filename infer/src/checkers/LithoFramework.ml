@@ -100,32 +100,11 @@ struct
 
   type nonrec extras = extras
 
-  let apply_callee_summary summary_opt ~caller_pname ~callee_pname ret_id_typ formals actuals
-      ((old_domain, new_domain) as astate) =
-    Option.value_map summary_opt ~default:astate ~f:(fun (old_callee, new_callee) ->
-        (* TODO: append paths if the footprint access path is an actual path instead of a var *)
-        let f_sub {Domain.LocalAccessPath.access_path= (var, _), _} =
-          match Var.get_footprint_index var with
-          | Some footprint_index -> (
-            match List.nth actuals footprint_index with
-            | Some (HilExp.AccessExpression actual_access_expr) ->
-                Some
-                  (Domain.LocalAccessPath.make
-                     (HilExp.AccessExpression.to_access_path actual_access_expr)
-                     caller_pname)
-            | _ ->
-                None )
-          | None ->
-              if Var.is_return var then
-                Some (Domain.LocalAccessPath.make (ret_id_typ, []) caller_pname)
-              else None
-        in
-        let astate_old = Domain.substitute ~f_sub old_callee |> Domain.OldDomain.join old_domain in
-        let astate_new =
-          Domain.NewDomain.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
-            ~caller:new_domain ~callee:new_callee
-        in
-        (astate_old, astate_new) )
+  let apply_callee_summary summary_opt ~caller_pname ~callee_pname ret_id_typ formals actuals astate
+      =
+    Option.value_map summary_opt ~default:astate ~f:(fun callee_summary ->
+        Domain.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller:astate
+          ~callee:callee_summary )
 
 
   let exec_instr astate ProcData.{summary; tenv; extras= {get_proc_summary_and_formals}} _
@@ -144,19 +123,11 @@ struct
           Domain.LocalAccessPath.make_from_access_expression receiver_ae caller_pname
         in
         if
-          ( LithoContext.check_callee ~callee_pname ~tenv callee_summary_opt
-          || (* track callee in order to report respective errors *)
-          Domain.mem receiver astate
-          (* track anything called on a receiver we're already tracking *) )
+          LithoContext.check_callee ~callee_pname ~tenv callee_summary_opt
+          (* track callee in order to report respective errors *)
           && LithoContext.satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
-          let callee = Domain.MethodCall.make receiver callee_pname location in
-          let return_calls =
-            (try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty)
-            |> Domain.CallSet.add callee
-          in
-          let astate = Domain.add return_access_path return_calls astate in
           match get_component_create_typ_opt callee_pname tenv with
           | Some create_typ ->
               Domain.call_create return_access_path create_typ location astate
@@ -194,12 +165,6 @@ struct
                 Domain.LocalAccessPath.make
                   (HilExp.AccessExpression.to_access_path rhs_ae)
                   caller_pname
-              in
-              let astate =
-                try
-                  let call_set = Domain.find rhs_access_path astate in
-                  Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
-                with Caml.Not_found -> astate
               in
               Domain.assign ~lhs:lhs_access_path ~rhs:rhs_access_path astate
           | _ ->
@@ -242,12 +207,7 @@ module MakeAnalyzer (LithoContext : LithoContext with type summary = Domain.summ
           if LithoContext.should_report proc_desc tenv then LithoContext.report post tenv summary
           else post
         in
-        let postprocess (old_astate, new_astate) formal_map : Domain.summary =
-          let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
-          (Domain.substitute ~f_sub old_astate, new_astate)
-        in
-        let payload = postprocess post (FormalMap.make proc_desc) in
-        TF.Payload.update_summary payload summary
+        TF.Payload.update_summary post summary
     | None ->
         summary
 end

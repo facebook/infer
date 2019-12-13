@@ -1529,10 +1529,6 @@ INTERNAL OPTIONS
        --never-returning-null json
            Matcher or list of matchers for functions that never return null.
 
-       --new-litho-domain
-           Activates: [EXPERIMENTAL] Use new litho domain (Conversely:
-           --no-new-litho-domain)
-
        --nullable-annotation-name string
            Specify custom nullable annotation name
 
