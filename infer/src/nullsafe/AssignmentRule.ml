@@ -175,7 +175,7 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
                 Logging.die InternalError "Invariant violation: unexpected nullability"
           in
           Format.asprintf "%a is declared non-nullable but is assigned %s%s." MF.pp_monospaced
-            (Typ.Fieldname.to_flat_string field_name)
+            (Typ.Fieldname.get_field_name field_name)
             rhs_description nullability_evidence_as_suffix
       | ReturningFromFunction function_proc_name ->
           let return_description =

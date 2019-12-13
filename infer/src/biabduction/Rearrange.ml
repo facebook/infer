@@ -790,7 +790,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let is_guarded_by_fld guarded_by_str fld _ =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
-      String.equal (Typ.Fieldname.to_flat_string fld) guarded_by_str
+      String.equal (Typ.Fieldname.get_field_name fld) guarded_by_str
       || String.equal (Typ.Fieldname.to_string fld) guarded_by_str
     in
     let get_fld_strexp_and_typ typ f flds =

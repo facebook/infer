@@ -33,7 +33,7 @@ module Raw = struct
 
   let rec pp_access fmt = function
     | FieldAccess field_name ->
-        F.pp_print_string fmt (Typ.Fieldname.to_flat_string field_name)
+        F.pp_print_string fmt (Typ.Fieldname.get_field_name field_name)
     | ArrayAccess (typ, []) ->
         F.pp_print_string fmt "[_]" ; may_pp_typ fmt typ
     | ArrayAccess (typ, index_aps) ->
@@ -310,7 +310,7 @@ let inner_class_normalize p =
         |> Option.bind ~f:(fun outer_name ->
                let outer_class = mk ~default:cls (Tstruct outer_name) in
                let outer_ptr = mk ~default:ptr (Tptr (outer_class, pkind)) in
-               let varname = Fieldname.to_flat_string first |> Mangled.from_string in
+               let varname = Fieldname.get_field_name first |> Mangled.from_string in
                mk_pvar_as varname pvar
                |> Option.map ~f:(fun new_pvar ->
                       let base = base_of_pvar new_pvar outer_ptr in

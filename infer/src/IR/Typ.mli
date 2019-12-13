@@ -669,9 +669,6 @@ module Fieldname : sig
   val to_simplified_string : t -> string
   (** Convert a fieldname to a simplified string with at most one-level path. *)
 
-  val to_flat_string : t -> string
-  (** Convert a fieldname to a flat string without path. *)
-
   val pp : Format.formatter -> t -> unit
   (** Pretty print a field name. *)
 end

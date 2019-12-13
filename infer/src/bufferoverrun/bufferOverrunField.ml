@@ -13,7 +13,7 @@ module L = Logging
     Create invisible phantom fields by giving them a name ending in '.' The name preceeding the '.'
     will be used in debug mode. *)
 let pp ~pp_lhs ~pp_lhs_alone ~sep f lhs fn =
-  let fieldname = Typ.Fieldname.to_flat_string fn in
+  let fieldname = Typ.Fieldname.get_field_name fn in
   if String.is_empty fieldname then
     if Config.bo_debug > 0 then
       let fieldname =

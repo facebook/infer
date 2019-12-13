@@ -232,7 +232,7 @@ let get_error_info err_instance =
           "Field %a is declared non-nullable, so it should be initialized in the constructor or in \
            an `@Initializer` method"
           MF.pp_monospaced
-          (Typ.Fieldname.to_flat_string field_name)
+          (Typ.Fieldname.get_field_name field_name)
       , IssueType.eradicate_field_not_initialized
       , None )
   | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->

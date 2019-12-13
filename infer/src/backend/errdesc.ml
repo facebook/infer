@@ -32,7 +32,7 @@ let is_method_of_objc_cpp_class pname matcher =
 let is_vector_method pname = is_method_of_objc_cpp_class pname vector_matcher
 
 let is_special_field matcher field_name_opt field =
-  let field_name = Typ.Fieldname.to_flat_string field in
+  let field_name = Typ.Fieldname.get_field_name field in
   let field_ok =
     match field_name_opt with
     | Some field_name' ->

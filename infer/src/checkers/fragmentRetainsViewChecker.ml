@@ -41,7 +41,7 @@ let report_warning class_name fld fld_typ summary =
        the back stack, a reference to this (probably dead) View will be retained. In general, it \
        is a good idea to initialize View's in %a, then nullify them in %a."
       pp_m (Typ.Name.name class_name) pp_m
-      (Typ.Fieldname.to_flat_string fld)
+      (Typ.Fieldname.get_field_name fld)
       pp_m (format_typ fld_typ) pp_m (format_method pname) pp_m on_create_view pp_m on_destroy_view
   in
   Reporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description

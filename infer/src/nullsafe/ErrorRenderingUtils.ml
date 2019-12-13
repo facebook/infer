@@ -31,7 +31,7 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
   | TypeOrigin.Field {field_name} ->
       (* Either local variable or expression like `<smth>.field_name`. Latter case is trivial:
          the user can quickly go to field_name definition and see if its annotation. *)
-      let field_name_str = Typ.Fieldname.to_flat_string field_name in
+      let field_name_str = Typ.Fieldname.get_field_name field_name in
       String.is_suffix object_expression ~suffix:field_name_str
   | TypeOrigin.MethodCall {pname; annotated_signature= {model_source}} ->
       let is_modelled = Option.is_some model_source in

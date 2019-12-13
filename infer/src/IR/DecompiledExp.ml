@@ -100,14 +100,14 @@ let rec pp fmt = function
       F.pp_print_string fmt (Typ.Fieldname.to_simplified_string f)
   | Darrow (de, f) ->
       if Language.curr_language_is Java then
-        F.fprintf fmt "%a.%s" pp de (Typ.Fieldname.to_flat_string f)
+        F.fprintf fmt "%a.%s" pp de (Typ.Fieldname.get_field_name f)
       else F.fprintf fmt "%a->%s" pp de (Typ.Fieldname.to_string f)
   | Ddot (Dpvar _, fe) when eradicate_java () ->
       (* static field access *)
       F.pp_print_string fmt (Typ.Fieldname.to_simplified_string fe)
   | Ddot (de, f) ->
       let field_text =
-        if Language.curr_language_is Java then Typ.Fieldname.to_flat_string f
+        if Language.curr_language_is Java then Typ.Fieldname.get_field_name f
         else Typ.Fieldname.to_string f
       in
       F.fprintf fmt "%a.%s" pp de field_text

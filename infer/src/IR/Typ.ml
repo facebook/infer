@@ -1460,16 +1460,10 @@ module Fieldname = struct
 
 
   let to_full_string fld =
-    if is_java fld then dot_join (Name.name fld.class_name) fld.field_name
-    else cc_join (Name.to_string fld.class_name) fld.field_name
+    (if is_java fld then dot_join else cc_join) (Name.name fld.class_name) fld.field_name
 
 
-  let to_flat_string {field_name} = field_name
-
-  let pp f ({class_name; field_name} as field) =
-    F.pp_print_string f
-      (if is_java field then dot_join (Name.name class_name) field_name else field_name)
-
+  let pp f fld = F.pp_print_string f fld.field_name
 
   let is_java_captured_parameter ({field_name} as field) =
     is_java field && String.is_prefix ~prefix:"val$" field_name
