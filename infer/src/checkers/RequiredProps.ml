@@ -64,7 +64,7 @@ let get_required_props typename tenv =
       []
 
 
-let report_missing_required_prop summary prop parent_typename loc call_chain =
+let report_missing_required_prop summary prop parent_typename ~loc ~create_loc call_chain =
   let message =
     let prop_string =
       match prop with
@@ -76,10 +76,15 @@ let report_missing_required_prop summary prop parent_typename loc call_chain =
     F.asprintf "%s is required for component %s, but is not set before the call to build()"
       prop_string (Typ.Name.name parent_typename)
   in
+  let make_single_trace loc message = Errlog.make_trace_element 0 loc message [] in
+  let create_message = F.asprintf "calls %s.create(...)" (Typ.Name.name parent_typename) in
   let ltr =
-    Errlog.make_trace_element 0 loc message []
+    make_single_trace loc message
+    :: make_single_trace create_loc create_message
     :: List.map call_chain ~f:(fun Domain.MethodCallPrefix.{procname; location} ->
-           let call_msg = F.asprintf "calls %a" Typ.Procname.pp procname in
+           let call_msg =
+             F.asprintf "calls %a" (Typ.Procname.pp_simplified_string ~withclass:false) procname
+           in
            Errlog.make_trace_element 0 location call_msg [] )
   in
   Reporting.log_error summary ~loc ~ltr IssueType.missing_required_prop message
@@ -181,12 +186,12 @@ let should_report proc_desc tenv =
 
 
 let report astate tenv summary =
-  let check_on_string_set parent_typename call_chain prop_set =
+  let check_on_string_set parent_typename create_loc call_chain prop_set =
     let required_props = get_required_props parent_typename tenv in
     List.iter required_props ~f:(fun required_prop ->
         if not (has_prop prop_set required_prop) then
-          report_missing_required_prop summary required_prop parent_typename
-            (Summary.get_loc summary) call_chain )
+          report_missing_required_prop summary required_prop parent_typename ~create_loc
+            ~loc:(Summary.get_loc summary) call_chain )
   in
   Domain.check_required_props ~check_on_string_set astate
 

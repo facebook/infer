@@ -68,6 +68,6 @@ val pp_summary : Format.formatter -> summary -> unit
 val get_summary : is_void_func:bool -> t -> summary
 
 val check_required_props :
-     check_on_string_set:(Typ.name -> MethodCallPrefix.t list -> String.Set.t -> unit)
+     check_on_string_set:(Typ.name -> Location.t -> MethodCallPrefix.t list -> String.Set.t -> unit)
   -> summary
   -> summary

@@ -159,11 +159,12 @@ module MethodCalls = struct
     S.elements method_calls
 
 
-  let check_required_props ~check_on_string_set parent_typename ({is_checked; method_calls} as x) =
+  let check_required_props ~check_on_string_set parent_typename create_loc
+      ({is_checked; method_calls} as x) =
     if not is_checked then (
       let prop_set = to_string_set method_calls in
       let call_chain = get_call_chain method_calls in
-      check_on_string_set parent_typename call_chain prop_set ;
+      check_on_string_set parent_typename create_loc call_chain prop_set ;
       {x with is_checked= true} )
     else x
 end
@@ -226,8 +227,8 @@ module MethodCalled = struct
     let f {Key.created_location; is_build_called} method_calls =
       if is_build_called then
         match created_location with
-        | CreatedLocation.ByCreateMethod {typ_name} ->
-            MethodCalls.check_required_props ~check_on_string_set typ_name method_calls
+        | CreatedLocation.ByCreateMethod {typ_name; location} ->
+            MethodCalls.check_required_props ~check_on_string_set typ_name location method_calls
         | CreatedLocation.ByParameter _ ->
             method_calls
       else method_calls
