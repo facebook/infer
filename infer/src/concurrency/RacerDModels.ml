@@ -455,7 +455,7 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
     with
     | Access.FieldAccess base_field :: Access.FieldAccess container_field :: _
       when Typ.Procname.is_java callee_pname ->
-        let base_typename = Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class base_field) in
+        let base_typename = Typ.Fieldname.get_class_name base_field in
         is_annotated_synchronized base_typename container_field tenv
     | [Access.FieldAccess container_field] -> (
       match (AccessExpression.get_base access_exp |> snd).desc with

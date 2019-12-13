@@ -47,7 +47,7 @@ let get_required_props typename tenv =
       List.filter_map
         ~f:(fun (fieldname, _, annot) ->
           if is_required annot then
-            let prop = Typ.Fieldname.Java.get_field fieldname in
+            let prop = Typ.Fieldname.get_field_name fieldname in
             let var_prop_opt = get_var_args annot in
             Some
               (Option.value_map var_prop_opt ~default:(Prop prop) ~f:(fun var_prop ->

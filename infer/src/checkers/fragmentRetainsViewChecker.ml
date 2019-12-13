@@ -61,7 +61,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
   in
   (* is [fldname] a View type declared by [class_typename]? *)
   let is_declared_view_typ class_typename (fldname, fld_typ, _) =
-    let fld_classname = Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class fldname) in
+    let fld_classname = Typ.Fieldname.get_class_name fldname in
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
   if is_on_destroy_view then

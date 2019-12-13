@@ -473,6 +473,8 @@ module Name = struct
 
     let java_lang_object = from_string "java.lang.Object"
 
+    let java_lang_string = from_string "java.lang.String"
+
     let split_typename typename = Split.of_string (name typename)
 
     let get_outer_class class_name =
@@ -1422,6 +1424,12 @@ end
 module Fieldname = struct
   type t = {class_name: Name.t; field_name: string} [@@deriving compare, equal]
 
+  let make class_name field_name = {class_name; field_name}
+
+  let get_class_name {class_name} = class_name
+
+  let get_field_name {field_name} = field_name
+
   let is_java {class_name} = Name.Java.is_class class_name
 
   module T = struct
@@ -1463,43 +1471,17 @@ module Fieldname = struct
       (if is_java field then dot_join (Name.name class_name) field_name else field_name)
 
 
-  let clang_get_qual_class ({class_name} as field) =
-    if is_java field then None else Some (Name.qual_name class_name)
+  let is_java_captured_parameter ({field_name} as field) =
+    is_java field && String.is_prefix ~prefix:"val$" field_name
 
 
-  module Clang = struct
-    let from_class_name class_name field_name = {class_name; field_name}
-  end
-
-  module Java = struct
-    let from_class_and_field ~class_name ~field_name =
-      if String.is_empty class_name then
-        L.die InternalError "Typ.Fieldname.Java classname cannot be empty@\n"
-      else {class_name= Name.Java.from_string class_name; field_name}
-
-
-    let is_captured_parameter ({field_name} as field) =
-      is_java field && String.is_prefix ~prefix:"val$" field_name
-
-
-    let get_class ({class_name} as field) =
-      if is_java field then Name.name class_name
-      else L.die InternalError "get_class: fieldname %a is not Java@\n" pp field
-
-
-    let get_field ({field_name} as field) =
-      if is_java field then field_name
-      else L.die InternalError "get_field: fieldname %a is not Java@\n" pp field
-
-
-    let is_outer_instance ({field_name} as field) =
-      is_java field
-      &&
-      let this = "this$" in
-      let last_char = field_name.[String.length field_name - 1] in
-      (last_char >= '0' && last_char <= '9')
-      && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
-  end
+  let is_java_outer_instance ({field_name} as field) =
+    is_java field
+    &&
+    let this = "this$" in
+    let last_char = field_name.[String.length field_name - 1] in
+    (last_char >= '0' && last_char <= '9')
+    && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
 end
 
 module Struct = struct

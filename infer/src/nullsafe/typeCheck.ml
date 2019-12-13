@@ -320,7 +320,7 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
               update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
             in
             (Exp.Lvar pvar, typestate')
-        | Exp.Lfield (_exp', fn', _) when Typ.Fieldname.Java.is_outer_instance fn' ->
+        | Exp.Lfield (_exp', fn', _) when Typ.Fieldname.is_java_outer_instance fn' ->
             (* handle double dereference when accessing a field from an outer class *)
             let fld_name = Typ.Fieldname.to_string fn' ^ "_" ^ Typ.Fieldname.to_string fn in
             let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in

@@ -2293,9 +2293,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
           Sil.Earray (Exp.int len, [(index, Sil.Eexp (Exp.zero, Sil.inst_none))], Sil.inst_none)
       | Java ->
           let mk_fld_sexp field_name =
-            let fld =
-              Typ.Fieldname.Java.from_class_and_field ~class_name:"java.lang.String" ~field_name
-            in
+            let fld = Typ.Fieldname.make Typ.Name.Java.java_lang_string field_name in
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
             (fld, se)
           in
@@ -2311,7 +2309,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; dynamic_length= None
             ; subtype= Subtype.exact }
       | Java ->
-          let object_type = Typ.Name.Java.from_string "java.lang.String" in
+          let object_type = Typ.Name.Java.java_lang_string in
           Exp.Sizeof
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
@@ -2326,13 +2324,12 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let sexp =
       (* TODO: add appropriate fields *)
       Sil.Estruct
-        ( [ ( Typ.Fieldname.Java.from_class_and_field ~class_name:"java.lang.Class"
-                ~field_name:"name"
+        ( [ ( Typ.Fieldname.make Typ.Name.Java.java_lang_class "name"
             , Sil.Eexp (Exp.Const (Const.Cstr s), Sil.Inone) ) ]
         , Sil.inst_none )
     in
     let class_texp =
-      let class_type = Typ.Name.Java.from_string "java.lang.Class" in
+      let class_type = Typ.Name.Java.java_lang_class in
       Exp.Sizeof
         { typ= Typ.mk (Tstruct class_type)
         ; nbytes= None

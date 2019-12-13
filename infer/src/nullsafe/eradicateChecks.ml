@@ -158,7 +158,7 @@ let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pd
       let should_report =
         (not (AndroidFramework.is_destroy_method curr_pname))
         && PatternMatch.type_is_class t_lhs
-        && (not (Typ.Fieldname.Java.is_outer_instance fname))
+        && (not (Typ.Fieldname.is_java_outer_instance fname))
         && (not (field_is_injector_readwrite ()))
         && not (field_is_in_cleanup_context ())
       in
@@ -281,14 +281,14 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
             in
             let should_check_field_initialization =
               let in_current_class =
-                let fld_cname = Typ.Fieldname.Java.get_class field_name in
-                String.equal (Typ.Name.name name) fld_cname
+                let fld_cname = Typ.Fieldname.get_class_name field_name in
+                Typ.Name.equal name fld_cname
               in
               (not is_injector_readonly_annotated)
               (* primitive types can not be null so initialization check is not needed *)
               && PatternMatch.type_is_class field_type
               && in_current_class
-              && not (Typ.Fieldname.Java.is_outer_instance field_name)
+              && not (Typ.Fieldname.is_java_outer_instance field_name)
             in
             if should_check_field_initialization then (
               (* Check if non-null field is not initialized. *)

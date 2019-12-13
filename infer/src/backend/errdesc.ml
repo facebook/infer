@@ -33,7 +33,6 @@ let is_vector_method pname = is_method_of_objc_cpp_class pname vector_matcher
 
 let is_special_field matcher field_name_opt field =
   let field_name = Typ.Fieldname.to_flat_string field in
-  let class_qual_opt = Typ.Fieldname.clang_get_qual_class field in
   let field_ok =
     match field_name_opt with
     | Some field_name' ->
@@ -41,7 +40,9 @@ let is_special_field matcher field_name_opt field =
     | None ->
         true
   in
-  field_ok && Option.value_map ~f:(is_one_of_classes matcher) ~default:false class_qual_opt
+  field_ok
+  && (not (Typ.Fieldname.is_java field))
+  && Typ.Fieldname.get_class_name field |> Typ.Name.qual_name |> is_one_of_classes matcher
 
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)

@@ -475,7 +475,7 @@ module Split = struct
   let std_vector ~adds_at_least_one {exp= vector_exp; typ= vector_typ} location mem =
     let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
-    let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
+    let size_field = Typ.Fieldname.make vector_type_name "infer_size" in
     let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
     let f_trace _ traces = Trace.(Set.add_elem location (through ~risky_fun:None)) traces in
     Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem

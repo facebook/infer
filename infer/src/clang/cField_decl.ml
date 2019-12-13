@@ -123,7 +123,7 @@ let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =
     if String.equal class_name class_name_info.Clang_ast_t.ni_name then
       let class_tname = Typ.Name.Objc.from_string class_name in
-      let name = Typ.Fieldname.Clang.from_class_name class_tname field_name in
+      let name = Typ.Fieldname.make class_tname field_name in
       (name, typ, Annot.Item.empty) :: res
     else res
   in

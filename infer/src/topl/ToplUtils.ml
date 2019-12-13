@@ -35,7 +35,7 @@ let topl_class_exp =
 
 
 let make_field field_name =
-  Typ.Fieldname.Java.from_class_and_field ~class_name:ToplName.topl_property ~field_name
+  Typ.Fieldname.make (Typ.Name.Java.from_string ToplName.topl_property) field_name
 
 
 let static_var x : Exp.t = Exp.Lfield (topl_class_exp, make_field x, topl_class_typ)

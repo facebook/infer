@@ -63,9 +63,7 @@ let list_range i j =
   aux j []
 
 
-let mk_class_field_name class_tname field_name =
-  Typ.Fieldname.Clang.from_class_name class_tname field_name
-
+let mk_class_field_name class_tname field_name = Typ.Fieldname.make class_tname field_name
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in

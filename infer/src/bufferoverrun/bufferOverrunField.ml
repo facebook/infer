@@ -33,9 +33,9 @@ let mk, get_type =
       match cpp_classname with
       | None ->
           let class_name, field_name = String.rsplit2_exn ~on:'.' (class_name ^ "." ^ name) in
-          Typ.Fieldname.Java.from_class_and_field ~class_name ~field_name
+          Typ.Fieldname.make (Typ.Name.Java.from_string class_name) field_name
       | Some classname ->
-          Typ.Fieldname.Clang.from_class_name classname name
+          Typ.Fieldname.make classname name
     in
     types := Typ.Fieldname.Map.add fieldname typ !types ;
     fieldname

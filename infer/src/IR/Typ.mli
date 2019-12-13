@@ -237,6 +237,8 @@ module Name : sig
     val java_lang_cloneable : t
 
     val java_lang_class : t
+
+    val java_lang_string : t
   end
 
   module Cpp : sig
@@ -637,6 +639,13 @@ module Fieldname : sig
   (** Names for fields of class/struct/union *)
   type t [@@deriving compare, equal]
 
+  val make : Name.t -> string -> t
+  (**  create a field of the given class and fieldname *)
+
+  val get_class_name : t -> Name.t
+
+  val get_field_name : t -> string
+
   val is_java : t -> bool
 
   module Set : Caml.Set.S with type elt = t
@@ -645,26 +654,12 @@ module Fieldname : sig
   module Map : Caml.Map.S with type key = t
   (** Map for fieldnames *)
 
-  module Clang : sig
-    val from_class_name : Name.t -> string -> t
-  end
+  val is_java_captured_parameter : t -> bool
+  (** Check if field is a captured parameter *)
 
-  module Java : sig
-    val from_class_and_field : class_name:string -> field_name:string -> t
-
-    val is_captured_parameter : t -> bool
-    (** Check if field is a captured parameter *)
-
-    val get_class : t -> string
-    (** The class part of the fieldname *)
-
-    val get_field : t -> string
-    (** The last component of the fieldname *)
-
-    val is_outer_instance : t -> bool
-    (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
+  val is_java_outer_instance : t -> bool
+  (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
         instance. *)
-  end
 
   val to_string : t -> string
   (** Convert a field name to a string. *)
@@ -679,9 +674,6 @@ module Fieldname : sig
 
   val pp : Format.formatter -> t -> unit
   (** Pretty print a field name. *)
-
-  val clang_get_qual_class : t -> QualifiedCppName.t option
-  (** get qualified classname of a field if it's coming from clang frontend. returns None otherwise *)
 end
 
 module Struct : sig

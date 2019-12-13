@@ -13,7 +13,7 @@ let make_base ?(typ = Typ.mk Tvoid) base_str = AccessPath.base_of_pvar (make_var
 
 let make_fieldname field_name =
   assert (not (String.contains field_name '.')) ;
-  Typ.Fieldname.Java.from_class_and_field ~class_name:"SomeClass" ~field_name
+  Typ.Fieldname.make (Typ.Name.Java.from_string "SomeClass") field_name
 
 
 let make_field_access access_str = AccessPath.FieldAccess (make_fieldname access_str)

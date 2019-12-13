@@ -779,7 +779,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       match extract_guarded_by_str item_annot with
       | Some "this" ->
           (* expand "this" into <classname>.this *)
-          Some (Printf.sprintf "%s.this" (Typ.Fieldname.Java.get_class fld))
+          Some (Printf.sprintf "%s.this" (Typ.Name.name (Typ.Fieldname.get_class_name fld)))
       | guarded_by_str_opt ->
           guarded_by_str_opt )
     | _ ->
@@ -846,7 +846,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
               (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
                  note that this is a bit sketchy when there are mutliple this$n's, but there's
                  nothing we can do to disambiguate them. *)
-              get_fld_strexp_and_typ typ (fun f _ -> Typ.Fieldname.Java.is_outer_instance f) flds
+              get_fld_strexp_and_typ typ (fun f _ -> Typ.Fieldname.is_java_outer_instance f) flds
           | None ->
               (* can't find an exact match. try a different convention. *)
               match_on_field_type typ flds

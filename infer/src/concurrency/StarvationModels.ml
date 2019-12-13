@@ -40,8 +40,9 @@ let secs_of_timeunit =
   in
   let str_of_access_path = function
     | _, [AccessPath.FieldAccess field]
-      when String.equal "java.util.concurrent.TimeUnit" (Typ.Fieldname.Java.get_class field) ->
-        Some (Typ.Fieldname.Java.get_field field)
+      when String.equal "java.util.concurrent.TimeUnit"
+             (Typ.Name.name (Typ.Fieldname.get_class_name field)) ->
+        Some (Typ.Fieldname.get_field_name field)
     | _ ->
         None
   in
@@ -279,8 +280,8 @@ type scheduler_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThre
 let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.AccessExpression.t) =
   match receiver with
   | FieldOffset (_, field_name) when Typ.Fieldname.is_java field_name ->
-      Typ.Fieldname.Java.get_class field_name
-      |> Typ.Name.Java.from_string |> Tenv.lookup tenv
+      Typ.Fieldname.get_class_name field_name
+      |> Tenv.lookup tenv
       |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.fields @ tstruct.statics)
       |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Typ.Fieldname.equal fld field_name))
       |> Option.bind ~f:(fun (_, _, annot) ->

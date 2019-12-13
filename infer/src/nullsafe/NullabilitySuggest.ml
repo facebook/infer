@@ -162,7 +162,7 @@ let pretty_field_name proc_data field_name =
   match Summary.get_proc_name proc_data.ProcData.summary with
   | Typ.Procname.Java jproc_name ->
       let proc_class_name = Typ.Procname.Java.get_class_name jproc_name in
-      let field_class_name = Typ.Fieldname.Java.get_class field_name in
+      let field_class_name = Typ.Fieldname.get_class_name field_name |> Typ.Name.name in
       if String.equal proc_class_name field_class_name then Typ.Fieldname.to_flat_string field_name
       else Typ.Fieldname.to_simplified_string field_name
   | _ ->
@@ -174,7 +174,7 @@ let pretty_field_name proc_data field_name =
 let is_outside_codebase proc_name field_name =
   match proc_name with
   | Typ.Procname.Java _ ->
-      Typ.Name.Java.is_external_classname (Typ.Fieldname.Java.get_class field_name)
+      Typ.Name.Java.is_external_classname (Typ.Name.name (Typ.Fieldname.get_class_name field_name))
   | _ ->
       false
 
@@ -199,7 +199,7 @@ let checker {Callbacks.summary; exe_env} =
              do, so let's do it in ad hoc way.
           *)
           ()
-      | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->
+      | Some (field_name, _) when Typ.Fieldname.is_java_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)
           ()
       | Some (field_name, _) ->
