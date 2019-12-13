@@ -635,10 +635,7 @@ end
 
 module Fieldname : sig
   (** Names for fields of class/struct/union *)
-  type t [@@deriving compare]
-
-  val equal : t -> t -> bool
-  (** Equality for field names. *)
+  type t [@@deriving compare, equal]
 
   val is_java : t -> bool
 
