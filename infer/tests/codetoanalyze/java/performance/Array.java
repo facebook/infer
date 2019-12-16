@@ -87,4 +87,8 @@ public class Array {
     String[] r2 = gen_and_iter_types(y);
     for (int i = 0; i < r2.length; i++) {} // should not be infinite execution time
   }
+
+  void toArray_linear(java.util.ArrayList<String> list) {
+    for (int i = 0; i < list.toArray().length; i++) {}
+  }
 }

@@ -1193,6 +1193,7 @@ module Call = struct
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; +PatternMatch.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
+      ; +PatternMatch.implements_collection &:: "toArray" <>$ capt_exp $+...$--> create_copy_array
       ; +PatternMatch.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp
         $+...$--> Collection.copyOf
       ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
