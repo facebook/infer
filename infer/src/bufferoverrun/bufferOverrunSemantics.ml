@@ -11,6 +11,8 @@ open! IStd
 open AbsLoc
 open! AbstractDomain.Types
 open BufferOverrunDomain
+module L = Logging
+module TraceSet = BufferOverrunTrace.Set
 
 let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
  fun integer_type_widths -> function

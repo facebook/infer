@@ -329,16 +329,16 @@ let check_instrs :
   match state with
   | _ when Instrs.is_empty instrs ->
       checks
-  | {AbstractInterpreter.State.pre= Bottom | ExcRaised} ->
+  | {AbstractInterpreter.State.pre= Dom.Mem.(Bottom | ExcRaised)} ->
       checks
-  | {AbstractInterpreter.State.pre= NonBottom _ as pre; post} ->
+  | {AbstractInterpreter.State.pre= Dom.Mem.NonBottom _ as pre; post} ->
       if Instrs.nth_exists instrs 1 then L.(die InternalError) "Did not expect several instructions" ;
       let instr = Instrs.nth_exn instrs 0 in
       let checks =
         match post with
-        | Bottom | ExcRaised ->
+        | Dom.Mem.(Bottom | ExcRaised) ->
             add_unreachable_code cfg node instr Instrs.empty checks
-        | NonBottom _ ->
+        | Dom.Mem.NonBottom _ ->
             checks
       in
       let cond_set =

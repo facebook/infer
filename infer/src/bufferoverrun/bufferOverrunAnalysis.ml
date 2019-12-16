@@ -15,7 +15,9 @@ module Dom = BufferOverrunDomain
 module F = Format
 module L = Logging
 module Models = BufferOverrunModels
+module OndemandEnv = BufferOverrunOndemandEnv
 module Sem = BufferOverrunSemantics
+module Trace = BufferOverrunTrace
 
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunAnalysisSummary.t
@@ -27,7 +29,7 @@ type summary_and_formals = BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) lis
 
 type get_proc_summary_and_formals = Typ.Procname.t -> summary_and_formals option
 
-type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv: Dom.OndemandEnv.t}
+type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv: OndemandEnv.t}
 
 module CFG = ProcCfg.NormalOneInstrPerNode
 
@@ -38,7 +40,7 @@ module Init = struct
       let model_env =
         let node_hash = CFG.Node.hash start_node in
         let location = CFG.Node.loc start_node in
-        let integer_type_widths = oenv.Dom.OndemandEnv.integer_type_widths in
+        let integer_type_widths = oenv.OndemandEnv.integer_type_widths in
         BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
       in
       fun (mem, inst_num) {ProcAttributes.name; typ} ->
@@ -320,7 +322,7 @@ module TransferFunctions = struct
           in
           PowLoc.singleton (Loc.of_allocsite allocsite)
         in
-        Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Dom.TraceSet.bottom tgt_deref) mem
+        Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
         |> Models.JavaString.constructor_from_char_ptr model_env tgt_deref src
     | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
         let locs = Sem.eval_locs exp1 mem in
@@ -426,7 +428,7 @@ let compute_invariant_map :
   let pdesc = Summary.get_proc_desc summary in
   let cfg = CFG.from_pdesc pdesc in
   let pdata =
-    let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
+    let oenv = OndemandEnv.mk pdesc tenv integer_type_widths in
     ProcData.make summary tenv {get_proc_summary_and_formals; oenv}
   in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in

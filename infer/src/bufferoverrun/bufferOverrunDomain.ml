@@ -2046,7 +2046,7 @@ module MemReach = struct
 
   let range :
          filter_loc:(Loc.t -> LoopHeadLoc.t option)
-      -> node_id:ProcCfg.Normal.Node.id
+      -> node_id:Procdesc.Node.id
       -> t
       -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc ~node_id {mem_pure} -> MemPure.range ~filter_loc ~node_id mem_pure
