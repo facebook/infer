@@ -78,9 +78,7 @@ let rec to_string = function
   | NonnullConst _ ->
       "Const (nonnull)"
   | Field {object_origin; field_name} ->
-      "Field "
-      ^ Typ.Fieldname.to_simplified_string field_name
-      ^ " (object: " ^ to_string object_origin ^ ")"
+      "Field " ^ Typ.Fieldname.to_string field_name ^ " (object: " ^ to_string object_origin ^ ")"
   | MethodParameter {mangled; param_annotated_type= {nullability}} ->
       Format.asprintf "Param %s <%a>" (Mangled.to_string mangled) AnnotatedNullability.pp
         nullability

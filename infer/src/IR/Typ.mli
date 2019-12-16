@@ -711,6 +711,11 @@ module Struct : sig
   val get_extensible_array_element_typ : lookup:lookup -> typ -> typ option
   (** the element typ of the final extensible array in the given typ, if any *)
 
+  type field_info = {typ: typ; annotations: Annot.Item.t; is_static: bool}
+
+  val get_field_info : lookup:lookup -> Fieldname.t -> typ -> field_info option
+  (** Lookup for info associated with the field [fn]. None if [typ] has no field named [fn] *)
+
   val fld_typ : lookup:lookup -> default:typ -> Fieldname.t -> typ -> typ
   (** If a struct type with field f, return the type of f.
       If not, return the default type if given, otherwise raise an exception *)

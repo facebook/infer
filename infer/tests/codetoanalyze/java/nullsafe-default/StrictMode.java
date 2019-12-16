@@ -141,6 +141,21 @@ class Strict {
     return NonStrict.getPrimitiveTypeValue();
   }
 
+  // We don't require strictifying enums: their values are non-nullables
+  private SomeEnum usingEnumValuesAsNonnullIsOK() {
+    String str = SomeEnum.FIRST_VALUE.toString(); // can dereference
+    SomeEnum.FIRST_VALUE.someMethod(); // can dereference via calling a enum-specific method
+    return SomeEnum.SECOND_VALUE; // can convert to nonnull
+  }
+
+  // FAKE_VALUE is not a value, but just a static fields so should require strictification
+  // (but it does not)
+  private SomeEnum FN_usingNonStrictifiedStaticFieldsInEnumsShouldBeBad() {
+    String str = SomeEnum.FAKE_VALUE.toString(); // should not be able to dereference
+    SomeEnum.FAKE_VALUE.someMethod(); // should not be able to dereference
+    return SomeEnum.FAKE_VALUE; // should not be able to convert to nonnull
+  }
+
   private String nonStrictClass_convertingNonnullToNonnullIsBad() {
     // even that it is declared as nonnull, can not convert it to nonnull it without checking before
     return (new NonStrict()).getNonnull();
@@ -245,4 +260,16 @@ class NonStrict {
   public static int getPrimitiveTypeValue() {
     return 0;
   }
+}
+
+enum SomeEnum {
+  FIRST_VALUE,
+  SECOND_VALUE;
+
+  public void someMethod() {}
+
+  // We currently have no way to distinct that guy from enum value.
+  // Using it will lead to NPE, but we won't detect it
+  // This should not occur in practice often, hopefully :)
+  public static SomeEnum FAKE_VALUE;
 }

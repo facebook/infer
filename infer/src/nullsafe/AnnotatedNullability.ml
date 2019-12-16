@@ -43,6 +43,8 @@ and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
   | PrimitiveType  (** Primitive types are non-nullable by language design *)
+  | EnumValue
+      (** Java enum value are statically initialized with non-nulls according to language semantics *)
 [@@deriving compare]
 
 let get_nullability = function
@@ -77,6 +79,8 @@ let pp fmt t =
         "strict"
     | PrimitiveType ->
         "primitive"
+    | EnumValue ->
+        "enum"
   in
   match t with
   | Nullable origin ->

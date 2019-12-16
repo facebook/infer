@@ -136,6 +136,9 @@ val get_fields_nullified : Procdesc.t -> Typ.Fieldname.Set.t
 val is_throwable : Tenv.t -> Typ.Name.t -> bool
 (** [is_throwable tenv class_name] checks if class_name is of type java.lang.Throwable *)
 
+val is_java_enum : Tenv.t -> Typ.Name.t -> bool
+(** Checks if the type is Java enum (extends java.lang.Enum) *)
+
 val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, including
     supertypes*)

@@ -1566,6 +1566,8 @@ module Struct = struct
 
   (** If a struct type with field f, return the type of f. If not, return the default *)
   let fld_typ ~lookup ~default fn (typ : T.t) =
+    (* Note: would be nice migrate it to get_field_info
+       (for that one needs to ensure adding Tptr to pattern match does not break thing) *)
     match typ.desc with
     | Tstruct name -> (
       match lookup name with
@@ -1578,19 +1580,36 @@ module Struct = struct
         default
 
 
-  let get_field_type_and_annotation ~lookup fn (typ : T.t) =
+  type field_info = {typ: typ; annotations: Annot.Item.t; is_static: bool}
+
+  let find_field field_list field_name_to_lookup =
+    List.find_map
+      ~f:(fun (field_name, typ, annotations) ->
+        if Fieldname.equal field_name field_name_to_lookup then Some (typ, annotations) else None )
+      field_list
+
+
+  let get_field_info ~lookup field_name_to_lookup (typ : T.t) =
+    let find_field_info field_list ~is_static =
+      find_field field_list field_name_to_lookup
+      |> Option.map ~f:(fun (typ, annotations) -> {typ; annotations; is_static})
+    in
     match typ.desc with
     | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
       match lookup name with
-      | Some {fields; statics} ->
-          List.find_map
-            ~f:(fun (f, t, a) ->
-              match Fieldname.equal f fn with true -> Some (t, a) | false -> None )
-            (fields @ statics)
+      | Some {fields= non_statics; statics} ->
+          (* Search in both lists and return the first found *)
+          find_field_info statics ~is_static:true
+          |> IOption.if_none_evalopt ~f:(fun () -> find_field_info non_statics ~is_static:false)
       | None ->
           None )
     | _ ->
         None
+
+
+  let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
+    get_field_info ~lookup field_name_to_lookup typ
+    |> Option.map ~f:(fun {typ; annotations} -> (typ, annotations))
 
 
   let is_dummy {dummy} = dummy

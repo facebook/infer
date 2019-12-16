@@ -416,6 +416,8 @@ let get_fields_nullified procdesc =
 (** Checks if the class name is a Java exception *)
 let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
 
+let is_java_enum tenv typename = is_subtype_of_str tenv typename "java.lang.Enum"
+
 (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, including
     for supertypes*)
 let check_class_attributes check tenv = function
