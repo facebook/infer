@@ -1312,7 +1312,13 @@ module Call = struct
         (* model sets as lists *)
       ; +PatternMatch.implements_collections &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
       ; +PatternMatch.implements_collections &:: "singleton" <>--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections
+        &:: "singletonList" <>--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections
+        &:: "singletonMap" <>--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections &:: "emptyList" <>--> Collection.new_collection
       ; +PatternMatch.implements_collections &:: "emptySet" <>--> Collection.new_collection
+      ; +PatternMatch.implements_collections &:: "emptyMap" <>--> Collection.new_collection
         (* model maps as lists *)
       ; +PatternMatch.implements_collections
         &:: "singletonMap" <>--> Collection.singleton_collection
