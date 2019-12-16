@@ -132,16 +132,13 @@ module SymbolPath = struct
     | Deref ((Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer), p) ->
         pp_pointer ~paren fmt p
     | Field {fn; prefix= Deref ((Deref_COneValuePointer | Deref_CPointer), p)} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
-          ~pp_lhs_alone:(pp_pointer ~paren) ~sep:"->" fmt p fn
+        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true) ~sep:"->" fmt p fn
     | Field {fn; prefix= p} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
-          ~pp_lhs_alone:(pp_partial_paren ~paren) ~sep:"." fmt p fn
+        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true) ~sep:"." fmt p fn
     | Callsite {cs} ->
         Typ.Procname.pp_simplified_string ~withclass:true fmt (CallSite.pname cs)
     | StarField {last_field; prefix} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~pp_lhs_alone:(pp_star ~paren) ~sep:"."
-          fmt prefix last_field
+        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
 
 
   and pp_pointer ~paren fmt p =

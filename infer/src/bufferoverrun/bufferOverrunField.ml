@@ -8,22 +8,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** If fn is empty, prints [pp_lhs_alone lhs] Otherwise prints [pp_lhs lhs ^ sep ^ fn]
-
-    Create invisible phantom fields by giving them a name ending in '.' The name preceeding the '.'
-    will be used in debug mode. *)
-let pp ~pp_lhs ~pp_lhs_alone ~sep f lhs fn =
-  let fieldname = Typ.Fieldname.get_field_name fn in
-  if String.is_empty fieldname then
-    if Config.bo_debug > 0 then
-      let fieldname =
-        Option.value ~default:""
-          (Typ.Fieldname.to_simplified_string fn |> String.chop_suffix ~suffix:".")
-      in
-      F.fprintf f "%a%s%s" pp_lhs lhs sep fieldname
-    else pp_lhs_alone f lhs
-  else F.fprintf f "%a%s%s" pp_lhs lhs sep fieldname
-
+let pp ~pp_lhs ~sep f lhs fn = F.fprintf f "%a%s%s" pp_lhs lhs sep (Typ.Fieldname.get_field_name fn)
 
 let mk, get_type =
   let class_name = "__infer__" in

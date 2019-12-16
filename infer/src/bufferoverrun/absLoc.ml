@@ -227,14 +227,11 @@ module Loc = struct
               (Allocsite.Known
                 {path= Some (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))})
         ; fn= f } ->
-        BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true)
-          ~pp_lhs_alone:(SP.pp_pointer ~paren) ~sep:"->" fmt p f
+        BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true) ~sep:"->" fmt p f
     | Field {prefix= l; fn= f} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~pp_lhs_alone:(pp_paren ~paren)
-          ~sep:"." fmt l f
+        BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~sep:"." fmt l f
     | StarField {prefix; last_field} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~pp_lhs_alone:(pp_star ~paren) ~sep:"."
-          fmt prefix last_field
+        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
 
 
   and pp_star ~paren fmt l = pp_paren ~paren fmt l ; F.pp_print_string fmt ".*"
