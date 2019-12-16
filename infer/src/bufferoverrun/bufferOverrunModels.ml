@@ -13,7 +13,6 @@ module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
-module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
 open BoUtils.ModelEnv
 open ProcnameDispatcher.Call.FuncArg
@@ -128,10 +127,6 @@ let malloc ~can_be_zero size_exp =
     let allocsite =
       Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
     in
-    let size_exp_opt =
-      let size_exp = Option.value dyn_length ~default:length0 in
-      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
-    in
     if Language.curr_language_is Java then
       let internal_arr =
         let allocsite =
@@ -148,7 +143,6 @@ let malloc ~can_be_zero size_exp =
       let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
       mem
       |> Dom.Mem.add_stack (Loc.of_id id) v
-      |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
       |> BoUtils.Exec.init_c_array_fields model_env path typ (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size ~can_be_zero size_exp in
   {exec; check}
@@ -203,11 +197,10 @@ let strcpy dest_exp src_exp =
   and check {integer_type_widths; location} mem cond_set =
     let access_last_char =
       let idx = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
-      let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
       fun arr cond_set ->
-        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
-          ~last_included:false ~latest_prune location cond_set
+        BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune
+          location cond_set
     in
     cond_set
     |> access_last_char (Sem.eval integer_type_widths dest_exp mem)
@@ -246,10 +239,9 @@ let strcat dest_exp src_exp =
     |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
   and check {integer_type_widths; location} mem cond_set =
     let access_last_char arr idx cond_set =
-      let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
-        ~last_included:false ~latest_prune location cond_set
+      BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune location
+        cond_set
     in
     let src_strlen =
       let str_loc = Sem.eval_locs src_exp mem in
@@ -575,10 +567,9 @@ module ArrObjCommon = struct
     and check ({location; integer_type_widths} as model_env) mem cond_set =
       let idx = Sem.eval integer_type_widths index_exp mem in
       let arr = Dom.Mem.find_set (deref_of model_env arr_exp ~fn mem) mem in
-      let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
-        ~last_included:false ~latest_prune location cond_set
+      BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune location
+        cond_set
     in
     {exec; check}
 
@@ -978,13 +969,9 @@ module Collection = struct
       Dom.Mem.find_set arr_locs mem
     in
     let idx = Sem.eval integer_type_widths index_exp mem in
-    let idx_sym_exp =
-      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) index_exp
-    in
-    let relation = Dom.Mem.get_relation mem in
     let latest_prune = Dom.Mem.get_latest_prune mem in
-    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included
-      ~latest_prune location cond_set
+    BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included ~latest_prune location
+      cond_set
 
 
   let add_at_index (coll_id : Ident.t) index_exp =

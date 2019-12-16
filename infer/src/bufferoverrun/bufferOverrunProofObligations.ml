@@ -13,7 +13,6 @@ module Bound = Bounds.Bound
 module Dom = BufferOverrunDomain
 module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
-module Relation = BufferOverrunDomainRelation
 module Sem = BufferOverrunSemantics
 module ValTrace = BufferOverrunTrace
 
@@ -195,15 +194,7 @@ module AllocSizeCondition = struct
 end
 
 module ArrayAccessCondition = struct
-  type t =
-    { offset: ItvPure.t
-    ; idx: ItvPure.t
-    ; size: ItvPure.t
-    ; last_included: bool
-    ; idx_sym_exp: Relation.SymExp.t option
-    ; size_sym_exp: Relation.SymExp.t option
-    ; relation: Relation.t
-    ; void_ptr: bool }
+  type t = {offset: ItvPure.t; idx: ItvPure.t; size: ItvPure.t; last_included: bool; void_ptr: bool}
   [@@deriving compare]
 
   let get_symbols c =
@@ -218,10 +209,7 @@ module ArrayAccessCondition = struct
     in
     let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
-      (ItvPure.make_positive c.size) ;
-    if Option.is_some Config.bo_relational_domain then
-      F.fprintf fmt "@,%a %s %a when %a" Relation.SymExp.pp_opt c.idx_sym_exp cmp
-        Relation.SymExp.pp_opt c.size_sym_exp Relation.pp c.relation
+      (ItvPure.make_positive c.size)
 
 
   let pp_description : markup:bool -> F.formatter -> t -> unit =
@@ -239,20 +227,12 @@ module ArrayAccessCondition = struct
       pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
 
 
-  let make :
-         offset:ItvPure.t
-      -> idx:ItvPure.t
-      -> size:ItvPure.t
-      -> last_included:bool
-      -> idx_sym_exp:Relation.SymExp.t option
-      -> size_sym_exp:Relation.SymExp.t option
-      -> relation:Relation.t
-      -> t option =
-   fun ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp ~relation ->
+  let make : offset:ItvPure.t -> idx:ItvPure.t -> size:ItvPure.t -> last_included:bool -> t option =
+   fun ~offset ~idx ~size ~last_included ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
     else
       let void_ptr = ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb size in
-      Some {offset; idx; size; last_included; idx_sym_exp; size_sym_exp; relation; void_ptr}
+      Some {offset; idx; size; last_included; void_ptr}
 
 
   let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; last_included= lcol}
@@ -365,14 +345,8 @@ module ArrayAccessCondition = struct
       if c.last_included then ItvPure.succ size_pos else size_pos
     in
     (* if sl < 0, use sl' = 0 *)
-    let not_overrun =
-      if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Boolean.True
-      else ItvPure.lt_sem real_idx size
-    in
-    let not_underrun =
-      if Relation.le_sat_opt (Some Relation.SymExp.zero) c.idx_sym_exp c.relation then Boolean.True
-      else ItvPure.le_sem ItvPure.zero real_idx
-    in
+    let not_overrun = ItvPure.lt_sem real_idx size in
+    let not_underrun = ItvPure.le_sem ItvPure.zero real_idx in
     (* il >= 0 and iu < sl, definitely not an error *)
     if Boolean.is_true not_overrun && Boolean.is_true not_underrun then
       {report_issue_type= NotIssue; propagate= false} (* iu < 0 or il >= su, definitely an error *)
@@ -400,30 +374,19 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst : Bound.eval_sym -> Relation.SubstMap.t -> Relation.t -> t -> t option =
-   fun eval_sym rel_map caller_relation c ->
+  let subst : Bound.eval_sym -> t -> t option =
+   fun eval_sym c ->
     match
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
     with
     | NonBottom offset, NonBottom idx, NonBottom size ->
-        let idx_sym_exp, size_sym_exp, relation =
-          if Option.is_none Config.bo_relational_domain then (None, None, Relation.bot)
-          else
-            ( Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp
-            , Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp
-            , Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation )
-        in
         let void_ptr =
           c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
           || ItvPure.has_void_ptr_symb size
         in
-        Some {c with offset; idx; size; idx_sym_exp; size_sym_exp; relation; void_ptr}
+        Some {c with offset; idx; size; void_ptr}
     | _ ->
         None
-
-
-  let relation_forget_locs : AbsLoc.PowLoc.t -> t -> t =
-   fun locs c -> {c with relation= Relation.forget_locs locs c.relation}
 end
 
 module BinaryOperationCondition = struct
@@ -631,11 +594,11 @@ module Condition = struct
         BinaryOperationCondition.get_symbols c
 
 
-  let subst eval_sym rel_map caller_relation = function
+  let subst eval_sym = function
     | AllocSize c ->
         AllocSizeCondition.subst eval_sym c |> make_alloc_size
     | ArrayAccess c ->
-        ArrayAccessCondition.subst eval_sym rel_map caller_relation c |> make_array_access
+        ArrayAccessCondition.subst eval_sym c |> make_array_access
     | BinaryOperation c ->
         BinaryOperationCondition.subst eval_sym c |> make_binary_operation
 
@@ -701,14 +664,6 @@ module Condition = struct
         BinaryOperationCondition.check c trace
 
 
-  let relation_forget_locs locs x =
-    match x with
-    | ArrayAccess c ->
-        ArrayAccess (ArrayAccessCondition.relation_forget_locs locs c)
-    | AllocSize _ | BinaryOperation _ ->
-        x
-
-
   let is_array_access_of_void_ptr = function ArrayAccess {void_ptr} -> void_ptr | _ -> false
 end
 
@@ -756,7 +711,7 @@ module ConditionWithTrace = struct
     else `NotComparable
 
 
-  let subst eval_sym_trace rel_map caller_relation callee_pname call_site cwt =
+  let subst eval_sym_trace callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if Symb.SymbolSet.is_empty symbols then
       L.(die InternalError)
@@ -770,7 +725,7 @@ module ConditionWithTrace = struct
     with
     | `Reachable reachability -> (
         let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
-        match Condition.subst eval_sym rel_map caller_relation cwt.cond with
+        match Condition.subst eval_sym cwt.cond with
         | None ->
             None
         | Some cond ->
@@ -834,7 +789,7 @@ module ConditionWithTrace = struct
         report cwt.cond cwt.trace issue_type
 
 
-  let for_summary ~relation_forget_locs = function
+  let for_summary = function
     | _, {propagate= false} | _, {report_issue_type= NotIssue} ->
         None
     | {cond; trace; reported; reachability}, {report_issue_type} ->
@@ -847,7 +802,6 @@ module ConditionWithTrace = struct
           | Issue issue_type ->
               Some (Reported.make issue_type)
         in
-        let cond = Condition.relation_forget_locs relation_forget_locs cond in
         let trace = ConditionTrace.for_summary trace in
         Some {cond; trace; reported; reachability}
 end
@@ -926,9 +880,9 @@ module ConditionSet = struct
         join_one condset (check_one cwt)
 
 
-  let add_array_access location ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
-      ~relation ~idx_traces ~arr_traces ~latest_prune condset =
-    ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp ~relation
+  let add_array_access location ~offset ~idx ~size ~last_included ~idx_traces ~arr_traces
+      ~latest_prune condset =
+    ArrayAccessCondition.make ~offset ~idx ~size ~last_included
     |> Condition.make_array_access
     |> add_opt location
          (ValTrace.Issue.(binary location ArrayAccess) idx_traces arr_traces)
@@ -950,13 +904,9 @@ module ConditionSet = struct
          latest_prune condset
 
 
-  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site latest_prune
-      =
+  let subst condset eval_sym_trace callee_pname call_site latest_prune =
     let subst_add_cwt condset cwt =
-      match
-        ConditionWithTrace.subst eval_sym_trace rel_subst_map caller_relation callee_pname call_site
-          cwt
-      with
+      match ConditionWithTrace.subst eval_sym_trace callee_pname call_site cwt with
       | None ->
           condset
       | Some cwt ->
@@ -970,9 +920,7 @@ module ConditionSet = struct
     List.iter condset ~f:(ConditionWithTrace.report_errors ~report)
 
 
-  let for_summary ~relation_forget_locs condset =
-    List.filter_map condset ~f:(ConditionWithTrace.for_summary ~relation_forget_locs)
-
+  let for_summary condset = List.filter_map condset ~f:ConditionWithTrace.for_summary
 
   let pp_summary : F.formatter -> _ t0 -> unit =
    fun fmt condset ->

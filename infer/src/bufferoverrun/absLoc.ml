@@ -65,8 +65,6 @@ module Allocsite = struct
 
   let is_unknown = function Unknown -> true | Symbol _ | Known _ | LiteralString _ -> false
 
-  let to_string x = F.asprintf "%a" pp x
-
   let make :
          Typ.Procname.t
       -> node_hash:int
@@ -242,8 +240,6 @@ module Loc = struct
   and pp_star ~paren fmt l = pp_paren ~paren fmt l ; F.pp_print_string fmt ".*"
 
   let pp = pp_paren ~paren:false
-
-  let to_string x = F.asprintf "%a" pp x
 
   let is_var = function Var _ -> true | _ -> false
 

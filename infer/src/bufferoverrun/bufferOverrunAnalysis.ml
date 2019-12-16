@@ -137,12 +137,6 @@ module TransferFunctions = struct
     |> instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location
 
 
-  let forget_ret_relation ret callee_pname mem =
-    let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-    let ret_var = Loc.of_var (Var.of_id (fst ret)) in
-    Dom.Mem.relation_forget_locs (PowLoc.add ret_loc (PowLoc.singleton ret_var)) mem
-
-
   let is_external pname =
     match pname with
     | Typ.Procname.Java java_pname ->
@@ -160,8 +154,7 @@ module TransferFunctions = struct
 
 
   let instantiate_mem :
-         Tenv.t
-      -> Typ.IntegerWidths.t
+         Typ.IntegerWidths.t
       -> Ident.t * Typ.t
       -> (Pvar.t * Typ.t) list
       -> Typ.Procname.t
@@ -170,23 +163,14 @@ module TransferFunctions = struct
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun tenv integer_type_widths ret callee_formals callee_pname params caller_mem callee_exit_mem
+   fun integer_type_widths ret callee_formals callee_pname params caller_mem callee_exit_mem
        location ->
     let eval_sym_trace =
       Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
         ~mode:Sem.EvalNormal
     in
-    let caller_mem' =
-      instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
-        caller_mem location
-      |> forget_ret_relation ret callee_pname
-    in
-    Option.value_map Config.bo_relational_domain ~default:caller_mem' ~f:(fun _ ->
-        let rel_subst_map =
-          Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem
-            callee_exit_mem
-        in
-        Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem' ~callee:callee_exit_mem )
+    instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
+      caller_mem location
 
 
   let rec is_array_access_exp = function
@@ -331,16 +315,6 @@ module TransferFunctions = struct
         let v =
           Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
         in
-        let mem =
-          let sym_exps =
-            Dom.Relation.SymExp.of_exps
-              ~get_int_sym_f:(Sem.get_sym_f integer_type_widths mem)
-              ~get_offset_sym_f:(Sem.get_offset_sym_f integer_type_widths mem)
-              ~get_size_sym_f:(Sem.get_size_sym_f integer_type_widths mem)
-              exp2
-          in
-          Dom.Mem.store_relation locs sym_exps mem
-        in
         let mem = Dom.Mem.update_mem locs v mem in
         let mem =
           if Language.curr_language_is Clang && Typ.is_char typ then
@@ -378,7 +352,7 @@ module TransferFunctions = struct
           | None -> (
             match get_proc_summary_and_formals callee_pname with
             | Some (callee_exit_mem, callee_formals) ->
-                instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
+                instantiate_mem integer_type_widths ret callee_formals callee_pname params mem
                   callee_exit_mem location
             | None ->
                 (* This may happen for procedures with a biabduction model too. *)
@@ -417,8 +391,6 @@ module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 type invariant_map = Analyzer.invariant_map
 
-type local_decls = PowLoc.t
-
 type memory_summary = BufferOverrunAnalysisSummary.t
 
 let extract_pre = Analyzer.extract_pre
@@ -426,17 +398,6 @@ let extract_pre = Analyzer.extract_pre
 let extract_post = Analyzer.extract_post
 
 let extract_state = Analyzer.extract_state
-
-let get_local_decls : Procdesc.t -> local_decls =
- fun proc_desc ->
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let accum_local_decls acc {ProcAttributes.name} =
-    let pvar = Pvar.mk name proc_name in
-    let loc = Loc.of_pvar pvar in
-    PowLoc.add loc acc
-  in
-  Procdesc.get_locals proc_desc |> List.fold ~init:PowLoc.empty ~f:accum_local_decls
-
 
 let compute_invariant_map :
     Summary.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
@@ -484,16 +445,12 @@ let cached_compute_invariant_map =
         inv_map
 
 
-let compute_summary :
-    local_decls -> (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
- fun locals formals cfg inv_map ->
+let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
+ fun formals cfg inv_map ->
   let exit_node_id = CFG.exit_node cfg |> CFG.Node.id in
   match extract_post exit_node_id inv_map with
   | Some exit_mem ->
-      exit_mem
-      |> Dom.Mem.forget_unreachable_locs ~formals
-      |> Dom.Mem.relation_forget_locs locals
-      |> Dom.Mem.unset_oenv
+      exit_mem |> Dom.Mem.forget_unreachable_locs ~formals |> Dom.Mem.unset_oenv
   | None ->
       Bottom
 
@@ -505,8 +462,7 @@ let do_analysis : Callbacks.proc_callback_args -> Summary.t =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let inv_map = cached_compute_invariant_map summary tenv integer_type_widths in
-  let locals = get_local_decls proc_desc in
   let formals = Procdesc.get_pvar_formals proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  let payload = compute_summary locals formals cfg inv_map in
+  let payload = compute_summary formals cfg inv_map in
   Payload.update_summary payload summary

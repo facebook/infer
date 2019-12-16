@@ -475,12 +475,6 @@ let mk_eval_sym_mode ~mode integer_type_widths callee_formals actual_exps caller
 
 let mk_eval_sym_cost = mk_eval_sym_mode ~mode:EvalCost
 
-let get_sym_f integer_type_widths mem e = Val.get_sym (eval integer_type_widths e mem)
-
-let get_offset_sym_f integer_type_widths mem e = Val.get_offset_sym (eval integer_type_widths e mem)
-
-let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
-
 (* This function evaluates the array length conservatively, which is useful when there are multiple
    array locations and their lengths are joined to top.  For example, if the [arr_locs] points to
    two arrays [a] and [b] and if their lengths are [a.length] and [b.length], this function
@@ -732,9 +726,7 @@ module Prune = struct
 
   let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
-    if is_unreachable_constant integer_type_widths e mem || Mem.is_relation_unsat mem then
-      {astate with mem= Mem.bot}
-    else astate
+    if is_unreachable_constant integer_type_widths e mem then {astate with mem= Mem.bot} else astate
 
 
   let rec prune_helper integer_type_widths e astate =
@@ -779,129 +771,6 @@ module Prune = struct
   let prune : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Mem.t =
    fun integer_type_widths e mem ->
     let mem, prune_pairs = Mem.apply_latest_prune e mem in
-    let mem =
-      let constrs = Relation.Constraints.of_exp e ~get_sym_f:(get_sym_f integer_type_widths mem) in
-      Mem.meet_constraints constrs mem
-    in
     let {mem; prune_pairs} = prune_helper integer_type_widths e {mem; prune_pairs} in
     if PrunePairs.is_reachable prune_pairs then Mem.set_prune_pairs prune_pairs mem else Mem.bot
 end
-
-let get_matching_pairs :
-       Tenv.t
-    -> Typ.IntegerWidths.t
-    -> Val.t
-    -> Val.t
-    -> Exp.t option
-    -> Typ.t
-    -> Mem.t
-    -> _ Mem.t0
-    -> (Relation.Var.t * Relation.SymExp.t option) list =
- fun tenv integer_type_widths callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
-  let get_offset_sym v = Val.get_offset_sym v in
-  let get_size_sym v = Val.get_size_sym v in
-  let get_field_name (fn, _, _) = fn in
-  let append_field v fn = PowLoc.append_field (Val.get_all_locs v) ~fn in
-  let deref_field v fn mem = Mem.find_set (append_field v fn) mem in
-  let deref_ptr v mem =
-    let array_locs = Val.get_array_locs v in
-    let locs = if PowLoc.is_empty array_locs then Val.get_pow_loc v else array_locs in
-    Mem.find_set locs mem
-  in
-  let add_pair_sym_main_value v1 v2 ~e2_opt l =
-    Option.value_map (Val.get_sym_var v1) ~default:l ~f:(fun var ->
-        let sym_exp_opt =
-          Option.first_some
-            (Relation.SymExp.of_exp_opt
-               ~get_sym_f:(get_sym_f integer_type_widths caller_mem)
-               e2_opt)
-            (Relation.SymExp.of_sym (Val.get_sym v2))
-        in
-        (var, sym_exp_opt) :: l )
-  in
-  let add_pair_sym s1 s2 l =
-    Option.value_map (Relation.Sym.get_var s1) ~default:l ~f:(fun var ->
-        (var, Relation.SymExp.of_sym s2) :: l )
-  in
-  let add_pair_val v1 v2 ~e2_opt rel_pairs =
-    rel_pairs
-    |> add_pair_sym_main_value v1 v2 ~e2_opt
-    |> add_pair_sym (get_offset_sym v1) (get_offset_sym v2)
-    |> add_pair_sym (get_size_sym v1) (get_size_sym v2)
-  in
-  let add_pair_field v1 v2 pairs fn =
-    let v1' = deref_field v1 fn callee_exit_mem in
-    let v2' = deref_field v2 fn caller_mem in
-    add_pair_val v1' v2' ~e2_opt:None pairs
-  in
-  let add_pair_ptr typ v1 v2 pairs =
-    match typ.Typ.desc with
-    | Typ.Tptr ({desc= Tstruct typename}, _) -> (
-      match Tenv.lookup tenv typename with
-      | Some str ->
-          let fns = List.map ~f:get_field_name str.Typ.Struct.fields in
-          List.fold ~f:(add_pair_field v1 v2) ~init:pairs fns
-      | _ ->
-          pairs )
-    | Typ.Tptr (_, _) ->
-        let v1' = deref_ptr v1 callee_exit_mem in
-        let v2' = deref_ptr v2 caller_mem in
-        add_pair_val v1' v2' ~e2_opt:None pairs
-    | _ ->
-        pairs
-  in
-  [] |> add_pair_val callee_v actual ~e2_opt:actual_exp_opt |> add_pair_ptr typ callee_v actual
-
-
-let subst_map_of_rel_pairs : (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t
-    =
- fun pairs ->
-  let add_pair rel_map (x, e) = Relation.SubstMap.add x e rel_map in
-  List.fold pairs ~init:Relation.SubstMap.empty ~f:add_pair
-
-
-let rec list_fold2_def :
-       default:Val.t * Exp.t option
-    -> f:('a -> Val.t * Exp.t option -> 'b -> 'b)
-    -> 'a list
-    -> (Val.t * Exp.t option) list
-    -> init:'b
-    -> 'b =
- fun ~default ~f xs ys ~init:acc ->
-  match (xs, ys) with
-  | [], _ ->
-      acc
-  | x :: xs', [] ->
-      list_fold2_def ~default ~f xs' ys ~init:(f x default acc)
-  | [x], _ :: _ ->
-      let v = List.fold ys ~init:Val.bot ~f:(fun acc (y, _) -> Val.join y acc) in
-      let exp_opt = match ys with [(_, exp_opt)] -> exp_opt | _ -> None in
-      f x (v, exp_opt) acc
-  | x :: xs', y :: ys' ->
-      list_fold2_def ~default ~f xs' ys' ~init:(f x y acc)
-
-
-let get_subst_map :
-       Tenv.t
-    -> Typ.IntegerWidths.t
-    -> (Pvar.t * Typ.t) list
-    -> (Exp.t * 'a) list
-    -> Mem.t
-    -> _ Mem.t0
-    -> Relation.SubstMap.t =
- fun tenv integer_type_widths callee_formals params caller_mem callee_exit_mem ->
-  let add_pair (formal, typ) (actual, actual_exp) rel_l =
-    let callee_v = Mem.find (Loc.of_pvar formal) callee_exit_mem in
-    let new_rel_matching =
-      get_matching_pairs tenv integer_type_widths callee_v actual actual_exp typ caller_mem
-        callee_exit_mem
-    in
-    List.rev_append new_rel_matching rel_l
-  in
-  let actuals =
-    List.map ~f:(fun (a, _) -> (eval integer_type_widths a caller_mem, Some a)) params
-  in
-  let rel_pairs =
-    list_fold2_def ~default:(Val.Itv.top, None) ~f:add_pair callee_formals actuals ~init:[]
-  in
-  subst_map_of_rel_pairs rel_pairs

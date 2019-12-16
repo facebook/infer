@@ -16,7 +16,6 @@ module F = Format
 module L = Logging
 module Models = BufferOverrunModels
 module PO = BufferOverrunProofObligations
-module Relation = BufferOverrunDomainRelation
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 
@@ -133,11 +132,8 @@ let check_binop_array_access :
  fun integer_type_widths ~is_plus ~e1 ~e2 location mem cond_set ->
   let arr = Sem.eval integer_type_widths e1 mem in
   let idx = Sem.eval integer_type_widths e2 mem in
-  let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) e2 in
-  let relation = Dom.Mem.get_relation mem in
   let latest_prune = Dom.Mem.get_latest_prune mem in
-  BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included:false
-    ~latest_prune location cond_set
+  BoUtils.Check.array_access ~arr ~idx ~is_plus ~last_included:false ~latest_prune location cond_set
 
 
 let check_binop :
@@ -189,11 +185,10 @@ let check_expr_for_array_access :
   match exp with
   | Exp.Var _ ->
       let arr = Sem.eval integer_type_widths exp mem in
-      let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
-      let relation = Dom.Mem.get_relation mem in
+      let idx = Dom.Val.Itv.zero in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included:false
-        ~latest_prune location cond_set
+      BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune location
+        cond_set
   | Exp.BinOp (bop, e1, e2) ->
       check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
   | _ ->
@@ -239,34 +234,23 @@ let rec check_expr_for_integer_overflow integer_type_widths exp location mem con
 
 
 let instantiate_cond :
-       Tenv.t
-    -> Typ.IntegerWidths.t
+       Typ.IntegerWidths.t
     -> Typ.Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
     -> Dom.Mem.t
-    -> BufferOverrunAnalysisSummary.t
     -> BufferOverrunCheckerSummary.t
     -> Location.t
     -> PO.ConditionSet.checked_t =
- fun tenv integer_type_widths callee_pname callee_formals params caller_mem callee_exit_mem
-     callee_cond location ->
-  let rel_subst_map =
-    Option.value_map Config.bo_relational_domain ~default:Relation.SubstMap.empty ~f:(fun _ ->
-        Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
-    )
-  in
-  let caller_rel = Dom.Mem.get_relation caller_mem in
+ fun integer_type_widths callee_pname callee_formals params caller_mem callee_cond location ->
   let eval_sym_trace = Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem in
   let latest_prune = Dom.Mem.get_latest_prune caller_mem in
-  PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel callee_pname location
-    latest_prune
+  PO.ConditionSet.subst callee_cond eval_sym_trace callee_pname location latest_prune
 
 
 type checks_summary = BufferOverrunCheckerSummary.t
 
-type get_proc_summary =
-  Typ.Procname.t -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list * checks_summary) option
+type get_proc_summary = Typ.Procname.t -> ((Pvar.t * Typ.t) list * checks_summary) option
 
 let check_instr :
        get_proc_summary
@@ -308,9 +292,9 @@ let check_instr :
           check model_env mem cond_set
       | None -> (
         match get_proc_summary callee_pname with
-        | Some (callee_mem, callee_formals, callee_condset) ->
-            instantiate_cond tenv integer_type_widths callee_pname callee_formals params mem
-              callee_mem callee_condset location
+        | Some (callee_formals, callee_condset) ->
+            instantiate_cond integer_type_widths callee_pname callee_formals params mem
+              callee_condset location
             |> PO.ConditionSet.join cond_set
         | None ->
             (* unknown call / no inferbo payload *) cond_set ) )
@@ -416,13 +400,12 @@ let report_errors : Tenv.t -> checks -> Summary.t -> unit =
   PO.ConditionSet.report_errors ~report cond_set
 
 
-let get_checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_summary =
- fun locals
-     Checks.
+let get_checks_summary : checks -> checks_summary =
+ fun Checks.
        { cond_set
        ; unused_branches= _ (* intra-procedural *)
        ; unreachable_statements= _ (* intra-procedural *) } ->
-  PO.ConditionSet.for_summary ~relation_forget_locs:locals cond_set
+  PO.ConditionSet.for_summary cond_set
 
 
 let checker : Callbacks.proc_callback_args -> Summary.t =
@@ -442,17 +425,13 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
         let get_proc_summary callee_pname =
           Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
           |> Option.bind ~f:(fun summary ->
-                 let analysis_payload = BufferOverrunAnalysis.Payload.of_summary summary in
                  let checker_payload = Payload.of_summary summary in
-                 Option.map2 analysis_payload checker_payload
-                   ~f:(fun analysis_payload checker_payload ->
-                     ( analysis_payload
-                     , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals
-                     , checker_payload ) ) )
+                 Option.map checker_payload ~f:(fun checker_payload ->
+                     (Summary.get_proc_desc summary |> Procdesc.get_pvar_formals, checker_payload)
+                 ) )
         in
         compute_checks get_proc_summary proc_desc tenv integer_type_widths cfg inv_map
       in
       report_errors tenv checks summary ;
-      let locals = BufferOverrunAnalysis.get_local_decls proc_desc in
-      let cond_set = get_checks_summary locals checks in
+      let cond_set = get_checks_summary checks in
       Payload.update_summary cond_set summary )

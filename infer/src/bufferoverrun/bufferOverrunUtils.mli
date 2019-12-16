@@ -8,7 +8,6 @@
 open! IStd
 open AbsLoc
 module Dom = BufferOverrunDomain
-module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 
 module ModelEnv : sig
@@ -56,8 +55,6 @@ module Check : sig
   val array_access :
        arr:Dom.Val.t
     -> idx:Dom.Val.t
-    -> idx_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.t
     -> is_plus:bool
     -> last_included:bool
     -> latest_prune:Dom.LatestPrune.t

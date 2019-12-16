@@ -22,8 +22,6 @@ module Allocsite : sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val to_string : t -> string
-
   val unknown : t
 
   val make :
@@ -58,8 +56,6 @@ module Loc : sig
   [@@deriving equal]
 
   include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val to_string : t -> string
 
   val of_allocsite : Allocsite.t -> t
 

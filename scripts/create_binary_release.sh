@@ -46,7 +46,7 @@ touch .release
     --prefix="/$RELEASE_NAME"
 
 make -j "$JOBS" \
-    install-with-libs \
+    install \
     BUILD_MODE=opt \
     DESTDIR="$ROOT_DIR" \
     libdir_relative_to_bindir=../lib

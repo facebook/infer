@@ -851,13 +851,6 @@ and biabduction_model_free_pattern =
     "Regex of methods that should be modelled as free if definition is missing"
 
 
-and bo_relational_domain =
-  CLOpt.mk_symbol_opt ~long:"bo-relational-domain"
-    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
-    ~symbols:[("oct", `Bo_relational_domain_oct); ("poly", `Bo_relational_domain_poly)]
-    "Select a relational domain being used in the bufferoverrun checker (experimental)"
-
-
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -2755,8 +2748,6 @@ and biabduction_models_mode = !biabduction_models_mode
 and bootclasspath = !bootclasspath
 
 and bo_debug = !bo_debug
-
-and bo_relational_domain = !bo_relational_domain
 
 and buck = !buck
 

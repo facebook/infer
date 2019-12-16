@@ -356,10 +356,6 @@ BUCK FLAVORS OPTIONS
 BUFFER OVERRUN OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)
-
-       --bo-relational-domain { oct | poly }
-           Select a relational domain being used in the bufferoverrun checker
-           (experimental)
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on

@@ -233,8 +233,6 @@ val biabduction_models_mode : bool
 
 val bo_debug : int
 
-val bo_relational_domain : [`Bo_relational_domain_oct | `Bo_relational_domain_poly] option
-
 val bootclasspath : string option
 
 val buck : bool

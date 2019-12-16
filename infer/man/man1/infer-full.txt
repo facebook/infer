@@ -129,10 +129,6 @@ OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
-       --bo-relational-domain { oct | poly }
-           Select a relational domain being used in the bufferoverrun checker
-           (experimental)           See also infer-analyze(1).
-
        --bootclasspath string
            Specify the Java bootclasspath           See also infer-capture(1).
 
@@ -1187,9 +1183,6 @@ INTERNAL OPTIONS
        --biabduction-models-mode
            Activates: Mode for analyzing the biabduction models (Conversely:
            --no-biabduction-models-mode)
-
-       --bo-relational-domain-reset
-           Cancel the effect of --bo-relational-domain.
 
        --bootclasspath-reset
            Cancel the effect of --bootclasspath.
