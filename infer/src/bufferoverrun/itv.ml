@@ -149,7 +149,7 @@ module ItvPure = struct
 
   let zero_one = (Bound.zero, Bound.one)
 
-  let get_iterator_itv = set_lb_zero
+  let get_range_of_iterator = set_lb_zero
 
   let true_sem = one
 
@@ -723,7 +723,7 @@ let set_lb lb = lift1 (ItvPure.set_lb lb)
 
 let set_lb_zero = lift1 ItvPure.set_lb_zero
 
-let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
+let get_range_of_iterator : t -> t = lift1 ItvPure.get_range_of_iterator
 
 let get_const : t -> Z.t option = bind1zo ItvPure.get_const
 

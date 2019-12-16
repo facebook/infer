@@ -305,7 +305,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id ->
-      let alias_loc = AliasTargets.find_first_simple_zero_alias (Mem.find_alias_id id mem) in
+      let alias_loc = AliasTargets.find_simple_alias (Mem.find_alias_id id mem) in
       Option.value_map alias_loc ~default:Val.bot ~f:(fun loc -> Mem.find loc mem)
   | Exp.Lvar pvar ->
       Mem.find (Loc.of_pvar pvar) mem
@@ -484,7 +484,7 @@ let mk_eval_sym_cost = mk_eval_sym_mode ~mode:EvalCost
 let conservative_array_length ?traces arr_locs mem =
   let accum_add arr_loc acc = Mem.find arr_loc mem |> Val.array_sizeof |> Itv.plus acc in
   PowLoc.fold accum_add arr_locs Itv.zero
-  |> Val.of_itv ?traces |> Val.get_iterator_itv |> Val.set_itv_updated_by_addition
+  |> Val.of_itv ?traces |> Val.get_range_of_iterator |> Val.set_itv_updated_by_addition
 
 
 let eval_array_locs_length arr_locs mem =

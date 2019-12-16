@@ -100,7 +100,7 @@ module Val : sig
 
   val get_array_blk : t -> ArrayBlk.t
 
-  val get_iterator_itv : t -> t
+  val get_range_of_iterator : t -> t
   (** Get a range of an iterator value, for example, if iterator value is [\[lb,ub\]], it returns
       [\[0,ub\]]. *)
 
@@ -332,7 +332,7 @@ module AliasTargets : sig
 
   val exists2 : (key -> value -> key -> value -> bool) -> t -> t -> bool
 
-  val find_first_simple_zero_alias : t -> key option
+  val find_simple_alias : t -> key option
   (** Find a simple alias from the set of aliases *)
 
   val subst : subst_loc:(key -> key option) -> t -> t

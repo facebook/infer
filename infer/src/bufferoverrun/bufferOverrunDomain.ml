@@ -301,9 +301,9 @@ module Val = struct
 
   let minus_a = lift_itv Itv.minus
 
-  let get_iterator_itv : t -> t =
+  let get_range_of_iterator : t -> t =
    fun i ->
-    let itv = Itv.get_iterator_itv i.itv in
+    let itv = Itv.get_range_of_iterator i.itv in
     of_itv itv ~traces:i.traces
 
 
@@ -1053,7 +1053,7 @@ module AliasTargets = struct
 
   let exists2 f x y = exists (fun k v -> exists (f k v) y) x
 
-  let find_first_simple_zero_alias x =
+  let find_simple_alias x =
     let exception Found of KeyRhs.t in
     let is_simple_zero rhs = function
       | AliasTarget.Simple {i} when IntLit.iszero i ->
