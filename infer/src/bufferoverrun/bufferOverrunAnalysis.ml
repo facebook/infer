@@ -238,6 +238,18 @@ module TransferFunctions = struct
               mem )
 
 
+  let modeled_load_of_empty_collection_opt =
+    let known_empty_collections = String.Set.of_list ["EMPTY_LIST"; "EMPTY_SET"; "EMPTY_MAP"] in
+    fun exp model_env ret mem ->
+      match exp with
+      | Exp.Lfield (_, fieldname, typ)
+        when String.Set.mem known_empty_collections (Typ.Fieldname.get_field_name fieldname)
+             && String.equal "java.util.Collections" (Typ.to_string typ) ->
+          Models.Collection.create_collection model_env ~ret mem ~length:Itv.zero |> Option.some
+      | _ ->
+          None
+
+
   let modeled_range_of_exp location exp mem =
     match exp with
     | Exp.Lindex (arr_exp, _) ->
@@ -272,16 +284,25 @@ module TransferFunctions = struct
           L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
-    | Load {id; e= exp; typ; loc= location} ->
-        let mem =
-          if Language.curr_language_is Java then
-            join_java_static_final tenv get_proc_summary_and_formals exp mem
-          else mem
+    | Load {id; e= exp; typ; loc= location} -> (
+        let model_env =
+          let pname = Summary.get_proc_name summary in
+          let node_hash = CFG.Node.hash node in
+          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
         in
-        let represents_multiple_values = is_array_access_exp exp in
-        let modeled_range = modeled_range_of_exp location exp mem in
-        BoUtils.Exec.load_locs ~represents_multiple_values ~modeled_range id typ
-          (Sem.eval_locs exp mem) mem
+        match modeled_load_of_empty_collection_opt exp model_env (id, typ) mem with
+        | Some mem' ->
+            mem'
+        | None ->
+            let mem =
+              if Language.curr_language_is Java then
+                join_java_static_final tenv get_proc_summary_and_formals exp mem
+              else mem
+            in
+            let represents_multiple_values = is_array_access_exp exp in
+            let modeled_range = modeled_range_of_exp location exp mem in
+            BoUtils.Exec.load_locs ~represents_multiple_values ~modeled_range id typ
+              (Sem.eval_locs exp mem) mem )
     | Store {e2= Exn _} when Language.curr_language_is Java ->
         Dom.Mem.exc_raised
     | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}
