@@ -387,6 +387,7 @@ let annotated_list_nullability =
     ; (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object")
     ; (cg, "java.util.HashMap.get(java.lang.Object):java.lang.Object")
     ; (cr, "java.util.HashMap.remove(java.lang.Object):java.lang.Object")
+    ; (cp, "java.util.HashMap.put(java.lang.Object,java.lang.Object):java.lang.Object")
     ; (cg, "java.util.concurrent.ConcurrentHashMap.get(java.lang.Object):java.lang.Object")
     ; (cr, "java.util.concurrent.ConcurrentHashMap.remove(java.lang.Object):java.lang.Object")
     ; (cg, "java.util.AbstractMap.get(java.lang.Object):java.lang.Object")
