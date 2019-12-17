@@ -39,14 +39,6 @@ let get_proc_attr proc_name =
   Option.map ~f:Procdesc.get_attributes (get_proc_desc proc_name)
 
 
-let max_args = ref 0
-
-let get_max_args () =
-  let instrument_max_args = !max_args in
-  let automaton_max_args = ToplAutomaton.max_args (Lazy.force automaton) in
-  Int.max instrument_max_args automaton_max_args
-
-
 let get_transitions_count () = ToplAutomaton.tcount (Lazy.force automaton)
 
 (** Checks whether the method name and the number of arguments matches the conditions in a
@@ -103,18 +95,15 @@ let call_execute loc =
   [|ToplUtils.topl_call dummy_ret_id Tvoid loc ToplName.execute []|]
 
 
-(* Side-effect: increases [!max_args] when it sees a call with more arguments. *)
 let instrument_instruction = function
   | Sil.Call ((ret_id, ret_typ), e_fun, arg_ts, loc, _call_flags) as i ->
       let active_transitions = get_active_transitions e_fun arg_ts in
       if not (Array.exists ~f:(fun x -> x) active_transitions) then [|i|]
-      else (
-        max_args := Int.max !max_args (List.length arg_ts) ;
-        tt "found %d arguments@\n" (List.length arg_ts) ;
+      else
         let i1s = set_transitions loc active_transitions in
         let i2s = call_save_args loc ret_id ret_typ arg_ts in
         let i3s = call_execute loc in
-        Array.concat [[|i|]; i1s; i2s; i3s] )
+        Array.concat [[|i|]; i1s; i2s; i3s]
   | i ->
       [|i|]
 
@@ -145,7 +134,7 @@ let add_types tenv =
     let state = (ToplUtils.make_field ToplName.state, Typ.mk (Tint IInt), []) in
     let retval = (ToplUtils.make_field ToplName.retval, ToplUtils.any_type, []) in
     let transitions = List.init (get_transitions_count ()) ~f:transition_field in
-    let saved_args = List.init (get_max_args ()) ~f:saved_arg_field in
+    let saved_args = List.init (ToplAutomaton.max_args (Lazy.force automaton)) ~f:saved_arg_field in
     let registers = List.map ~f:register_field (get_registers ()) in
     List.concat [[retval; state]; transitions; saved_args; registers]
   in
@@ -158,7 +147,7 @@ let instrument tenv procdesc =
     let f _node = instrument_instruction in
     tt "instrument@\n" ;
     let _updated = Procdesc.replace_instrs_by procdesc ~f in
-    tt "add types %d@\n" !max_args ; add_types tenv ; tt "done@\n" )
+    tt "add types@\n" ; add_types tenv ; tt "done@\n" )
 
 
 (** [lookup_static_var var prop] expects [var] to have the form [Exp.Lfield (obj, fieldname)], and
