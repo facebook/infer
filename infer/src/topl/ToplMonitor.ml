@@ -214,9 +214,20 @@ let generate_save_args automaton proc_name =
 
 
 let generate_execute automaton proc_name =
-  let n = ToplAutomaton.vcount automaton in
   let call_execute_state i = simple_call (ToplName.execute_state i) in
-  procedure proc_name (sequence (List.init n ~f:call_execute_state))
+  let fresh_var () = Exp.Var (Ident.create_fresh Ident.knormal) in
+  let calls = List.init (ToplAutomaton.vcount automaton) ~f:call_execute_state in
+  let havoc_event_data =
+    assign (ToplUtils.static_var ToplName.retval) (fresh_var ())
+    :: List.init (ToplAutomaton.max_args automaton) ~f:(fun i ->
+           assign (ToplUtils.static_var (ToplName.saved_arg i)) (fresh_var ()) )
+  in
+  let havoc_transitions =
+    List.init (ToplAutomaton.tcount automaton) ~f:(fun i ->
+        assign (ToplUtils.static_var (ToplName.transition i)) (fresh_var ()) )
+  in
+  let all = List.concat [calls; havoc_event_data; havoc_transitions] in
+  procedure proc_name (sequence all)
 
 
 let generate_execute_state automaton proc_name =
