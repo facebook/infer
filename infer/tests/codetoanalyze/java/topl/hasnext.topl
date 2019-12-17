@@ -3,6 +3,6 @@ property HasNext
   prefix "List"
   start -> start: *
   start -> invalid: I = iterator(*)
-  invalid -> valid: hasNext(i)
+  invalid -> valid: B = hasNext(i) if B != 0 // in SIL, "true" is encoded as "not 0"
   valid -> invalid: next(i)
   invalid -> error: next(i)

@@ -27,14 +27,13 @@
   open! Caml
 }
 
-let id_head = ['a'-'z' 'A'-'Z']
 let id_tail = ['a'-'z' 'A'-'Z' '0'-'9']*
 let integer = ['0' - '9']+
 
-rule topl_token lexing_sil = parse
+rule raw_token = parse
   | '\t' { raise Error }
   | ((' '* ("//" [^ '\n']*)? '\n')+ as x) (' '* as y) { new_line x y lexbuf }
-  | ' '+ { topl_token lexing_sil lexbuf }
+  | ' '+ { raw_token lexbuf }
   | "->" { ARROW }
   | '='  { ASGN }
   | ':'  { COLON }
@@ -43,25 +42,26 @@ rule topl_token lexing_sil = parse
   | ')'  { RP }
   | '*'  { STAR }
   | '"'  (([^ '"' '\n' '\\'] | ('\\' _))* as x) '"' { STRING (unquote x) }
-  | '<'  { lexing_sil := true ; LT }
+  | integer as x { INTEGER (int_of_string x) }
+  | '<'  { LT }
+  | '>'  { GT }
+  | "<=" { LE }
+  | ">=" { GE }
+  | "==" { EQ }
+  | "!=" { NE }
+  | "if" { IF }
+  | "&&" { AND }
   | "prefix" { PREFIX }
   | "property" { PROPERTY }
   | "message" { MESSAGE }
-  | id_head id_tail as id { ID id }
+  | ['a'-'z'] id_tail as id { LID id }
+  | ['A'-'Z'] id_tail as id { UID id }
   | eof { EOF }
   | _ { raise Error }
-
-and sil_token lexing_sil = parse
-  | '>'  { lexing_sil := false ; GT }
-  | "true" { TRUE }
-  | "false" { FALSE }
-  | integer as x { INTEGER (int_of_string x) }
 
 
 {
   let token () =
-    let lexing_sil = ref false in
-    let raw_token lexbuf = (if !lexing_sil then sil_token else topl_token) lexbuf in
     let indents = ref [0] in
     let scheduled_rc = ref 0 in
     let last_indent () = match !indents with
@@ -76,7 +76,7 @@ and sil_token lexing_sil = parse
     in
     let rec step lexbuf =
       if !scheduled_rc > 0 then (decr scheduled_rc; RC)
-      else match raw_token lexing_sil lexbuf with
+      else match raw_token lexbuf with
         | INDENT n when n > last_indent () -> (add_indent n; LC)
         | INDENT n when n < last_indent () -> (drop_to_indent n; step lexbuf)
         | INDENT _ -> step lexbuf

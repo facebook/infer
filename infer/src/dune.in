@@ -57,7 +57,7 @@ let stanzas =
   ( if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
   else [] )
   @ [ "(ocamllex ToplLexer)"
-    ; "(menhir (flags --unused-token INDENT) (modules ToplParser))"
+    ; "(menhir (flags --unused-token INDENT --explain) (modules ToplParser))"
     ; Format.sprintf
         {|
 (library

@@ -7,24 +7,26 @@
 
 open! IStd
 
-val topl_property : string
+type t = string
 
-val transition : int -> string
+val topl_property : t
 
-val arg : int -> string
+val transition : int -> t
 
-val retval : string
+val arg : int -> t
 
-val saved_arg : int -> string
+val retval : t
 
-val reg : string -> string
+val saved_arg : int -> t
 
-val state : string
+val reg : string -> t
 
-val maybe : string
+val state : t
 
-val execute : string
+val maybe : t
 
-val execute_state : int -> string
+val execute : t
 
-val save_args : string
+val execute_state : int -> t
+
+val save_args : t

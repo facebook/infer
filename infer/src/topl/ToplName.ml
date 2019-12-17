@@ -7,6 +7,8 @@
 
 open! IStd
 
+type t = string
+
 let p = Printf.sprintf
 
 let topl_property = "topl.Property"

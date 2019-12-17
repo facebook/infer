@@ -232,15 +232,61 @@ let generate_execute_state automaton proc_name =
           [] (* true *)
       | EqualToRegister i ->
           [Exp.eq variable (ToplUtils.static_var (ToplName.reg i))]
-      | EqualToConstant ct ->
-          [Exp.eq variable ct]
     in
     let label = (ToplAutomaton.transition automaton t).label in
+    let explicit_condition =
+      (* computed from label.ToplAst.condition *)
+      let binding_of : ToplAst.register_name -> ToplName.t =
+        (* The _exn functions here should fail only if [label] is ill-formed. *)
+        let table = String.Table.create () in
+        let add n = function
+          | ToplAst.SaveInRegister i ->
+              Hashtbl.add_exn ~key:i ~data:n table
+          | _ ->
+              ()
+        in
+        add ToplName.retval label.ToplAst.return ;
+        Option.iter ~f:(List.iteri ~f:(fun i -> add (ToplName.saved_arg i))) label.ToplAst.arguments ;
+        Hashtbl.find_exn table
+      in
+      let exp_of_value =
+        let open ToplAst in
+        function
+        | Constant c ->
+            c
+        | Register i ->
+            ToplUtils.static_var (ToplName.reg i)
+        | Binding v ->
+            ToplUtils.static_var (binding_of v)
+      in
+      let expbinop = function
+        | ToplAst.OpEq ->
+            Binop.Eq
+        | ToplAst.OpNe ->
+            Binop.Ne
+        | ToplAst.OpGe ->
+            Binop.Ge
+        | ToplAst.OpGt ->
+            Binop.Gt
+        | ToplAst.OpLe ->
+            Binop.Le
+        | ToplAst.OpLt ->
+            Binop.Lt
+      in
+      let predicate = function
+        | ToplAst.Binop (op, v1, v2) ->
+            Exp.BinOp (expbinop op, exp_of_value v1, exp_of_value v2)
+        | ToplAst.Value v ->
+            exp_of_value v
+      in
+      List.map ~f:predicate label.ToplAst.condition
+    in
     let all_conjuncts =
       let arg_conjunct i pattern = conjunct (ToplUtils.static_var (ToplName.saved_arg i)) pattern in
       List.concat
         ( Option.value_map ~default:[] ~f:(fun x -> [x]) maybe
         :: [ToplUtils.static_var (ToplName.transition t)]
+        :: explicit_condition
         :: conjunct (ToplUtils.static_var ToplName.retval) label.ToplAst.return
         :: Option.value_map ~default:[] ~f:(List.mapi ~f:arg_conjunct) label.ToplAst.arguments )
     in
