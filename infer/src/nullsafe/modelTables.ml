@@ -94,7 +94,7 @@ let check_not_null_parameter_list, check_not_null_list =
       )
     ; ( 1
       , (o, [x; n])
-      , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
+      , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.String):java.lang.Object"
       )
     ; ( 1
       , (o, [x; n; n])
