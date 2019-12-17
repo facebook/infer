@@ -27,11 +27,15 @@ type tindex = int
 type transition = {source: vindex; target: vindex; label: ToplAst.label}
 
 (** - INV1: Array.length states = Array.length outgoing
-    - INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
-    - INV3: max_args is the maximum length of the arguments list in a label on a transition *)
+    - INV2: Array.length transitions = Array.length skips
+    - INV3: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
+    - INV4: max_args is the maximum length of the arguments list in a label on a transition The
+      fields marked as redundant are computed from the others (when the automaton is built), and are
+      cached for speed. *)
 type t =
   { states: vname array
   ; transitions: transition array
+  ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
   ; vindex: vname -> vindex
   ; max_args: int (* redundant; cached for speed *) }
@@ -57,7 +61,8 @@ let make properties =
   let transitions : transition array =
     let f p =
       let prefix_pname pname =
-        "^\\(\\|" ^ String.concat ~sep:"\\|" p.ToplAst.prefixes ^ "\\)\\." ^ pname ^ "("
+        if String.equal ".*" pname then pname
+        else "^\\(\\|" ^ String.concat ~sep:"\\|" p.ToplAst.prefixes ^ "\\)\\." ^ pname ^ "("
       in
       let f t =
         let source = vindex ToplAst.(p.name, t.source) in
@@ -86,7 +91,19 @@ let make properties =
     in
     Array.fold ~init:0 ~f transitions
   in
-  {states; transitions; outgoing; vindex; max_args}
+  let skips : bool array =
+    let is_skip {source; target; label} =
+      let r = Int.equal source target in
+      let r = r && match label.return with Ignore -> true | _ -> false in
+      let r = r && Option.is_none label.arguments in
+      (* The next line conservatively evaluates if the regex on the label includes
+       * all other regexes. *)
+      let r = r && String.equal ".*" label.procedure_name in
+      r
+    in
+    Array.map ~f:is_skip transitions
+  in
+  {states; transitions; skips; outgoing; vindex; max_args}
 
 
 let outgoing a i = a.outgoing.(i)
@@ -96,6 +113,8 @@ let vname a i = a.states.(i)
 let vcount a = Array.length a.states
 
 let transition a i = a.transitions.(i)
+
+let is_skip a i = a.skips.(i)
 
 let tcount a = Array.length a.transitions
 

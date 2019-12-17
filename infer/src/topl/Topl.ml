@@ -98,7 +98,12 @@ let call_execute loc =
 let instrument_instruction = function
   | Sil.Call ((ret_id, ret_typ), e_fun, arg_ts, loc, _call_flags) as i ->
       let active_transitions = get_active_transitions e_fun arg_ts in
-      if not (Array.exists ~f:(fun x -> x) active_transitions) then [|i|]
+      let instrument =
+        let a = Lazy.force automaton in
+        let is_interesting t active = active && not (ToplAutomaton.is_skip a t) in
+        Array.existsi ~f:is_interesting active_transitions
+      in
+      if not instrument then (* optimization*) [|i|]
       else
         let i1s = set_transitions loc active_transitions in
         let i2s = call_save_args loc ret_id ret_typ arg_ts in

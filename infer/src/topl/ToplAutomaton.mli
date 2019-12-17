@@ -41,6 +41,10 @@ val vcount : t -> int
 
 val transition : t -> tindex -> transition
 
+val is_skip : t -> tindex -> bool
+(** A transition is *skip* when it has no action, its guard is implied by all other guards, and its
+    target equals its source. [is_skip automaton t] returns true when it can prove that [t] is skip.*)
+
 val tcount : t -> int
 
 val max_args : t -> int
