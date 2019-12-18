@@ -269,7 +269,7 @@ let pp_spec0 pe num_opt fmt spec =
       F.fprintf fmt "--------------------------- %a ---------------------------@\n" pp_num_opt
         num_opt ;
       F.fprintf fmt "PRE:@\n" ;
-      Io_infer.Html.with_color Blue (Prop.pp_prop (Pp.html Blue)) fmt pre ;
+      Pp.html_with_color Blue (Prop.pp_prop (Pp.html Blue)) fmt pre ;
       F.pp_force_newline fmt () ;
       Propgraph.pp_proplist pe_post "POST" (pre, true) fmt post_list ;
       F.pp_print_string fmt "----------------------------------------------------------------"

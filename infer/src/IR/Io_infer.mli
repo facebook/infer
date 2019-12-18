@@ -66,9 +66,6 @@ module Html : sig
     -> int * int * int
     -> unit
   (** Print an html link given node id and session *)
-
-  val with_color : Pp.color -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
-  (** Print using color *)
 end
 
 (** Create and print xml trees *)

@@ -121,7 +121,7 @@ let pp_text fmt summary =
 
 let pp_html source fmt summary =
   F.pp_force_newline fmt () ;
-  Io_infer.Html.with_color Black pp_no_stats_specs fmt summary ;
+  Pp.html_with_color Black pp_no_stats_specs fmt summary ;
   F.fprintf fmt "<br />%a<br />@\n" Stats.pp summary.stats ;
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;

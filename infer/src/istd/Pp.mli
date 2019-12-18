@@ -45,11 +45,10 @@ val set_obj_sub : env -> ('a -> 'a) -> env
 (** Set the object substitution, which is supposed to preserve the type. Currently only used for a
     map from (identifier) expressions to the program var containing them *)
 
-val colormap_red : colormap
-(** red colormap *)
-
 val extend_colormap : env -> Obj.t -> color -> env
 (** Extend the normal colormap for the given object with the given color *)
+
+val color_wrapper : env -> F.formatter -> 'a -> f:(env -> F.formatter -> 'a -> unit) -> unit
 
 val text : env
 (** Default text print environment *)
@@ -62,6 +61,8 @@ val html : color -> env
 
 val color_string : color -> string
 (** string representation of colors *)
+
+val html_with_color : color -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
 
 val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
 
@@ -84,6 +85,8 @@ val seq :
 
 val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a comma-separated sequence. *)
+
+val comma_seq_diff : (F.formatter -> 'a -> unit) -> env -> F.formatter -> 'a list -> unit
 
 val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a ;-separated sequence *)

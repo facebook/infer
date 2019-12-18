@@ -259,9 +259,6 @@ val add_with_block_parameters_flag : instr -> instr
 
 (** {2 Pretty Printing} *)
 
-val color_wrapper : Pp.env -> F.formatter -> 'a -> f:(Pp.env -> F.formatter -> 'a -> unit) -> unit
-(** Wraps a printing function with an updated printenv when using diff printing *)
-
 val pp_exp_printenv : ?print_types:bool -> Pp.env -> F.formatter -> Exp.t -> unit
 (** Pretty print an expression. *)
 

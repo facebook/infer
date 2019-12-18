@@ -113,7 +113,7 @@ let pp_texp_simple pe =
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
 let pp_hpred_stackvar =
-  Sil.color_wrapper ~f:(fun pe f (hpred : Sil.hpred) ->
+  Pp.color_wrapper ~f:(fun pe f (hpred : Sil.hpred) ->
       match hpred with
       | Hpointsto (Exp.Lvar pvar, se, te) ->
           let pe' =
@@ -139,7 +139,7 @@ let pp_sub pe f sub =
 let d_sub (sub : Sil.subst) = L.d_pp_with_pe pp_sub sub
 
 let pp_sub_entry =
-  Sil.color_wrapper ~f:(fun pe f entry ->
+  Pp.color_wrapper ~f:(fun pe f entry ->
       let x, e = entry in
       F.fprintf f "%a = %a" Ident.pp x (Sil.pp_exp_printenv pe) e )
 
@@ -313,11 +313,7 @@ let pp_prop pe0 f prop =
     F.fprintf f "%a%a%a%a" pp_pure () (pp_sigma_simple pe env) prop.sigma
       (pp_footprint_simple pe env) prop pp_predicates ()
   in
-  match pe0.Pp.kind with
-  | Pp.HTML ->
-      Io_infer.Html.with_color Blue do_print f ()
-  | TEXT ->
-      do_print f ()
+  match pe0.Pp.kind with HTML -> Pp.html_with_color Blue do_print f () | TEXT -> do_print f ()
 
 
 let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p
