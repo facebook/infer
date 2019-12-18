@@ -654,7 +654,7 @@ let execute_pthread_create ({Builtin.tenv; summary; prop_; path; args; exe_env} 
       match pname with
       | None ->
           L.d_str "pthread_create: unknown function " ;
-          Sil.d_exp routine_name ;
+          Exp.d_exp routine_name ;
           L.d_strln ", skipping call." ;
           [(prop_, path)]
       | Some pname -> (

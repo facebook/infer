@@ -11,6 +11,7 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module F = Format
+module L = Logging
 
 (* reverse the natural order on Var *)
 type ident_ = Ident.t
@@ -270,6 +271,53 @@ let pp_printenv ~print_types pe f e =
 let pp f e = pp_printenv ~print_types:false Pp.text f e
 
 let to_string e = F.asprintf "%a" pp e
+
+let color_wrapper ~f = if Config.print_using_diff then Pp.color_wrapper ~f else f
+
+let pp_diff ?(print_types = false) =
+  color_wrapper ~f:(fun pe f e0 ->
+      let e =
+        match pe.Pp.obj_sub with
+        | Some sub ->
+            (* apply object substitution to expression *) Obj.obj (sub (Obj.repr e0))
+        | None ->
+            e0
+      in
+      if not (equal e0 e) then match e with Lvar pvar -> Pvar.pp_value f pvar | _ -> assert false
+      else pp_printenv ~print_types pe f e )
+
+
+(** dump an expression. *)
+let d_exp (e : t) = L.d_pp_with_pe pp_diff e
+
+(** Pretty print a list of expressions. *)
+let pp_list pe f expl = Pp.seq (pp_diff pe) f expl
+
+(** dump a list of expressions. *)
+let d_list (el : t list) = L.d_pp_with_pe pp_list el
+
+let pp_texp pe f = function
+  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
+      let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" (pp_diff pe)) l in
+      let pp_size f size = Option.iter ~f:(Int.pp f) size in
+      F.fprintf f "%a%a%a%a" (Typ.pp pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
+  | e ->
+      pp_diff pe f e
+
+
+(** Pretty print a type with all the details. *)
+let pp_texp_full pe f = function
+  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
+      let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" (pp_diff pe)) l in
+      let pp_size f size = Option.iter ~f:(Int.pp f) size in
+      F.fprintf f "%a%a%a%a" (Typ.pp_full pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp
+        subtype
+  | e ->
+      pp_diff ~print_types:true pe f e
+
+
+(** Dump a type expression with all the details. *)
+let d_texp_full (te : t) = L.d_pp_with_pe pp_texp_full te
 
 let is_objc_block_closure = function
   | Closure {name} ->

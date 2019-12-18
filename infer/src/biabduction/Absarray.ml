@@ -522,7 +522,7 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
     (p3, changed2 || changed3)
   in
   let prune_and_blur_indices =
-    prune_and_blur Sil.d_exp_list (keep_only_indices tenv) (blur_array_indices tenv)
+    prune_and_blur Exp.d_list (keep_only_indices tenv) (blur_array_indices tenv)
   in
   let partition_abstract should_keep abstract ksel default_keys =
     let keep_ksel, remove_ksel = List.partition_tf ~f:should_keep ksel in
@@ -565,7 +565,7 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
           false
     in
     let abstract = prune_and_blur_indices path in
-    filter_abstract Sil.d_exp_list should_keep abstract esel []
+    filter_abstract Exp.d_list should_keep abstract esel []
   in
   let do_reexecution () =
     match se_in with Sil.Earray (_, esel, _) -> do_array_reexecution esel | _ -> assert false
@@ -655,7 +655,7 @@ let remove_redundant_elements tenv prop =
   let filter_redundant_e_se fp_part (e, se) =
     let remove () =
       L.d_strln "kill_redundant: removing " ;
-      Sil.d_exp e ;
+      Exp.d_exp e ;
       L.d_str " " ;
       Sil.d_sexp se ;
       L.d_ln () ;

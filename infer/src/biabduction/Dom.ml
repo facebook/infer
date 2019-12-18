@@ -244,9 +244,9 @@ module CheckJoinPre : InfoLossCheckerSig = struct
           let r = List.exists ~f:(fun e' -> not (Dangling.check side_op e')) es in
           if r then (
             L.d_str ".... Dangling Check (dang e:" ;
-            Sil.d_exp e ;
+            Exp.d_exp e ;
             L.d_str ") (? es:" ;
-            Sil.d_exp_list es ;
+            Exp.d_list es ;
             L.d_strln ") ...." ;
             L.d_ln () ) ;
           r )
@@ -254,9 +254,9 @@ module CheckJoinPre : InfoLossCheckerSig = struct
           let r = List.exists ~f:(Dangling.check side_op) es in
           if r then (
             L.d_str ".... Dangling Check (notdang e:" ;
-            Sil.d_exp e ;
+            Exp.d_exp e ;
             L.d_str ") (? es:" ;
-            Sil.d_exp_list es ;
+            Exp.d_list es ;
             L.d_strln ") ...." ;
             L.d_ln () ) ;
           r
@@ -568,7 +568,7 @@ end = struct
             List.map ~f:(fun (e1, e2, _) -> select side_op e1 e2) assoc
         | _ ->
             L.d_str "no pattern match in check lost_little e: " ;
-            Sil.d_exp e ;
+            Exp.d_exp e ;
             L.d_ln () ;
             raise Sil.JoinFail
       in
@@ -750,7 +750,7 @@ end = struct
 
   let get_other_atoms tenv side atom_in =
     let build_other_atoms construct side e =
-      if Config.trace_join then (L.d_str "build_other_atoms: " ; Sil.d_exp e ; L.d_ln ()) ;
+      if Config.trace_join then (L.d_str "build_other_atoms: " ; Exp.d_exp e ; L.d_ln ()) ;
       let others1 = get_others_direct_or_induced side e in
       let others2 = match others1 with None -> get_others_deep side e | Some _ -> others1 in
       match others2 with
@@ -968,7 +968,7 @@ let const_partial_join c1 c2 =
 
 
 let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
-  (* L.d_str "exp_partial_join "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)
+  (* L.d_str "exp_partial_join "; Exp.d_exp e1; L.d_str " "; Exp.d_exp e2; L.d_ln (); *)
   match (e1, e2) with
   | Exp.Var id1, Exp.Var id2 ->
       ident_partial_join id1 id2
@@ -1039,9 +1039,9 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
         ; subtype= Subtype.join st1 st2 }
   | _ ->
       L.d_str "exp_partial_join no match " ;
-      Sil.d_exp e1 ;
+      Exp.d_exp e1 ;
       L.d_str " " ;
-      Sil.d_exp e2 ;
+      Exp.d_exp e2 ;
       L.d_ln () ;
       raise Sil.JoinFail
 
@@ -1525,11 +1525,11 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
     if Config.trace_join then (
       L.d_strln ".... sigma_partial_join' ...." ;
       L.d_str "TODO: " ;
-      Sil.d_exp e1 ;
+      Exp.d_exp e1 ;
       L.d_str "," ;
-      Sil.d_exp e2 ;
+      Exp.d_exp e2 ;
       L.d_str "," ;
-      Sil.d_exp e ;
+      Exp.d_exp e ;
       L.d_ln () ;
       L.d_strln "SIGMA1 =" ;
       Prop.d_sigma sigma1_in ;
@@ -1628,11 +1628,11 @@ let rec sigma_partial_meet' tenv (sigma_acc : Prop.sigma) (sigma1_in : Prop.sigm
     let e1, e2, e = todo_curr in
     L.d_strln ".... sigma_partial_meet' ...." ;
     L.d_str "TODO: " ;
-    Sil.d_exp e1 ;
+    Exp.d_exp e1 ;
     L.d_str "," ;
-    Sil.d_exp e2 ;
+    Exp.d_exp e2 ;
     L.d_str "," ;
-    Sil.d_exp e ;
+    Exp.d_exp e ;
     L.d_ln () ;
     L.d_str "PROP1=" ;
     Prop.d_sigma sigma1_in ;

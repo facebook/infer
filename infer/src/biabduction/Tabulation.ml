@@ -247,22 +247,22 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
           List.map ~f:(fun id -> Exp.Var id) (Ident.HashQueue.keys fav_actual_pre)
         in
         L.d_str "fav_actual_pre: " ;
-        Sil.d_exp_list vars_actual_pre ;
+        Exp.d_list vars_actual_pre ;
         L.d_ln () ;
         L.d_str "Dom(Sub1): " ;
-        Sil.d_exp_list (List.map ~f:(fun id -> Exp.Var id) dom1) ;
+        Exp.d_list (List.map ~f:(fun id -> Exp.Var id) dom1) ;
         L.d_ln () ;
         L.d_str "Ran(Sub1): " ;
-        Sil.d_exp_list rng1 ;
+        Exp.d_list rng1 ;
         L.d_ln () ;
         L.d_str "Dom(Sub2): " ;
-        Sil.d_exp_list (List.map ~f:(fun id -> Exp.Var id) dom2) ;
+        Exp.d_list (List.map ~f:(fun id -> Exp.Var id) dom2) ;
         L.d_ln () ;
         L.d_str "Ran(Sub2): " ;
-        Sil.d_exp_list rng2 ;
+        Exp.d_list rng2 ;
         L.d_ln () ;
         L.d_str "Don't know about id: " ;
-        Sil.d_exp (Exp.Var id) ;
+        Exp.d_exp (Exp.Var id) ;
         L.d_ln () ;
         assert false
     in
@@ -372,7 +372,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
       Prop.d_prop spec_pre ;
       L.d_ln () ;
       L.d_str "exp " ;
-      Sil.d_exp e ;
+      Exp.d_exp e ;
       L.d_printfln " desc: %a" Localise.pp_error_desc error_desc ;
       error_desc
     in

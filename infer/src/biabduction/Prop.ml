@@ -108,7 +108,7 @@ let compare_prop p1 p2 = compare (fun _ _ -> 0) p1 p2
 (** {1 Functions for Pretty Printing} *)
 
 let pp_texp_simple pe =
-  match pe.Pp.opt with SIM_DEFAULT -> Sil.pp_texp pe | SIM_WITH_TYP -> Sil.pp_texp_full pe
+  match pe.Pp.opt with SIM_DEFAULT -> Exp.pp_texp pe | SIM_WITH_TYP -> Exp.pp_texp_full pe
 
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
@@ -141,7 +141,7 @@ let d_sub (sub : Sil.subst) = L.d_pp_with_pe pp_sub sub
 let pp_sub_entry =
   Pp.color_wrapper ~f:(fun pe f entry ->
       let x, e = entry in
-      F.fprintf f "%a = %a" Ident.pp x (Sil.pp_exp_printenv pe) e )
+      F.fprintf f "%a = %a" Ident.pp x (Exp.pp_diff pe) e )
 
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
@@ -1358,7 +1358,7 @@ module Normalize = struct
       | Var _ ->
           Estruct ([], inst)
       | te ->
-          L.internal_error "trying to create ptsto with type: %a@." (Sil.pp_texp_full Pp.text) te ;
+          L.internal_error "trying to create ptsto with type: %a@." (Exp.pp_texp_full Pp.text) te ;
           assert false
     in
     let strexp : Sil.strexp =

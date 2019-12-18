@@ -1064,7 +1064,7 @@ exception MISSING_EXC of string
 type check = Bounds_check | Class_cast_check of Exp.t * Exp.t * Exp.t
 
 let d_typings typings =
-  let d_elem (exp, texp) = Sil.d_exp exp ; L.d_str ": " ; Sil.d_texp_full texp ; L.d_str " " in
+  let d_elem (exp, texp) = Exp.d_exp exp ; L.d_str ": " ; Exp.d_texp_full texp ; L.d_str " " in
   List.iter ~f:d_elem typings
 
 
@@ -1279,7 +1279,7 @@ end = struct
       | EXC_FALSE_HPRED hpred ->
           L.d_str " on " ; Sil.d_hpred hpred
       | EXC_FALSE_EXPS (e1, e2) ->
-          L.d_str " on " ; Sil.d_exp e1 ; L.d_str "," ; Sil.d_exp e2
+          L.d_str " on " ; Exp.d_exp e1 ; L.d_str "," ; Exp.d_exp e2
       | EXC_FALSE_SEXPS (se1, se2) ->
           L.d_str " on " ; Sil.d_sexp se1 ; L.d_str "," ; Sil.d_sexp se2
       | EXC_FALSE_ATOM a ->
@@ -1333,9 +1333,9 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
   in
   let rec do_imply subs e1 e2 : subst2 =
     L.d_str "do_imply " ;
-    Sil.d_exp e1 ;
+    Exp.d_exp e1 ;
     L.d_str " " ;
-    Sil.d_exp e2 ;
+    Exp.d_exp e2 ;
     L.d_ln () ;
     match (e1, e2) with
     | Exp.Var v1, Exp.Var v2 ->
@@ -1450,7 +1450,7 @@ let path_to_id path =
         None
     | _ ->
         L.d_str "path_to_id undefined on " ;
-        Sil.d_exp path ;
+        Exp.d_exp path ;
         L.d_ln () ;
         assert false
     (* None *)
@@ -1631,8 +1631,8 @@ and sexp_imply_nolhs tenv source calc_missing (subs : subst2) se2 typ2 =
       match e2 with
       | Exp.Var v2 when Ident.is_primed v2 ->
           let v2' = path_to_id source in
-          (* L.d_str "called path_to_id on "; Sil.d_exp e2; *)
-          (* L.d_str " returns "; Sil.d_exp (Exp.Var v2'); L.d_ln (); *)
+          (* L.d_str "called path_to_id on "; Exp.d_exp e2; *)
+          (* L.d_str " returns "; Exp.d_exp (Exp.Var v2'); L.d_ln (); *)
           let sub2' = extend_sub (snd subs) v2 (Exp.Var v2') in
           (fst subs, sub2')
       | Exp.Var _ ->
@@ -2490,7 +2490,7 @@ let check_array_bounds tenv (sub1, sub2) prop =
         let len1 = Sil.exp_sub sub1 len1_ in
         let len2 = Sil.exp_sub sub2 len2_ in
         (* L.d_strln ~color:Orange "check_bound ";
-           Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
+           Exp.d_exp len1; L.d_str " "; Exp.d_exp len2; L.d_ln(); *)
         let indices_to_check =
           [Exp.BinOp (Binop.PlusA None, len2, Exp.minus_one)]
           (* only check len *)

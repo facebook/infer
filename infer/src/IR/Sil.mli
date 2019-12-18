@@ -259,24 +259,6 @@ val add_with_block_parameters_flag : instr -> instr
 
 (** {2 Pretty Printing} *)
 
-val pp_exp_printenv : ?print_types:bool -> Pp.env -> F.formatter -> Exp.t -> unit
-(** Pretty print an expression. *)
-
-val d_exp : Exp.t -> unit
-(** dump an expression. *)
-
-val pp_texp : Pp.env -> F.formatter -> Exp.t -> unit
-(** Pretty print a type. *)
-
-val pp_texp_full : Pp.env -> F.formatter -> Exp.t -> unit
-(** Pretty print a type with all the details. *)
-
-val d_texp_full : Exp.t -> unit
-(** Dump a type expression with all the details. *)
-
-val d_exp_list : Exp.t list -> unit
-(** Dump a list of expressions. *)
-
 val pp_offset : Pp.env -> F.formatter -> offset -> unit
 
 val d_offset_list : offset list -> unit

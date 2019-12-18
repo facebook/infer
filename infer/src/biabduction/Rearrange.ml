@@ -73,7 +73,7 @@ let check_bad_index tenv pname p len index loc =
 (** Perform bounds checking *)
 let bounds_check tenv pname prop len e =
   if Config.trace_rearrange then (
-    L.d_str "Bounds check index:" ; Sil.d_exp e ; L.d_str " len: " ; Sil.d_exp len ; L.d_ln () ) ;
+    L.d_str "Bounds check index:" ; Exp.d_exp e ; L.d_str " len: " ; Exp.d_exp len ; L.d_ln () ) ;
   check_bad_index tenv pname prop len e
 
 
@@ -526,7 +526,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
 let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_str "entering prop_iter_extend_ptsto lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ) ;
   let offset = Sil.exp_get_offsets lexp in
   let max_stamp = Prop.prop_iter_max_stamp iter in
@@ -574,11 +574,11 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     if Config.trace_rearrange then (
       L.d_strln "entering do_extend" ;
       L.d_str "e: " ;
-      Sil.d_exp e ;
+      Exp.d_exp e ;
       L.d_str " se : " ;
       Sil.d_sexp se ;
       L.d_str " te: " ;
-      Sil.d_texp_full te ;
+      Exp.d_texp_full te ;
       L.d_ln () ;
       L.d_ln () ) ;
     let extend_kind =
@@ -623,7 +623,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
                 List.map ~f:(fun (atoms, hpred') -> (atoms, hpred' :: sigma_rest)) atoms_hpred_list
             | _ ->
                 L.d_warning "Cannot extend " ;
-                Sil.d_exp lexp ;
+                Exp.d_exp lexp ;
                 L.d_strln " in" ;
                 Prop.d_prop (Prop.prop_iter_to_prop tenv iter) ;
                 L.d_ln () ;
@@ -644,7 +644,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     in
     let res_prop_list = List.map ~f:(Prop.prop_iter_to_prop tenv) res_iter_list in
     L.d_str "in prop_iter_extend_ptsto lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ;
     L.d_strln "prop before:" ;
     let prop_before = Prop.prop_iter_to_prop tenv iter in
@@ -1034,7 +1034,7 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   if Config.trace_rearrange then (
     L.d_strln "entering prop_iter_add_hpred_footprint" ;
     L.d_str "lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ;
     L.d_str "typ:" ;
     Typ.d_full typ ;
@@ -1063,7 +1063,7 @@ let rearrange_arith tenv lexp prop =
   if Config.trace_rearrange then (
     L.d_strln "entering rearrange_arith" ;
     L.d_str "lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ;
     L.d_str "prop: " ;
     L.d_ln () ;
@@ -1080,7 +1080,7 @@ let rearrange_arith tenv lexp prop =
 let pp_rearrangement_error message prop lexp =
   L.d_printfln ".... Rearrangement Error .... %s" message ;
   L.d_str "Exp:" ;
-  Sil.d_exp lexp ;
+  Exp.d_exp lexp ;
   L.d_ln () ;
   L.d_str "Prop:" ;
   L.d_ln () ;
@@ -1095,7 +1095,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
     L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange_ptsto" ;
     L.d_str "lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ;
     L.d_strln "prop:" ;
     Prop.d_prop orig_prop ;
@@ -1332,7 +1332,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
         in
         Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
   | None ->
-      L.d_str "texp: " ; Sil.d_texp_full texp ; L.d_ln ()
+      L.d_str "texp: " ; Exp.d_texp_full texp ; L.d_ln ()
 
 
 (** Exposes lexp |->- from iter. In case that it is not possible to
@@ -1372,7 +1372,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange" ;
     L.d_str "lexp: " ;
-    Sil.d_exp lexp ;
+    Exp.d_exp lexp ;
     L.d_ln () ;
     L.d_str "typ: " ;
     Typ.d_full typ ;
@@ -1721,7 +1721,7 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   let inst = Sil.inst_rearrange (not ptr_tested_for_zero) loc (State.get_path_pos ()) in
   L.d_strln ".... Rearrangement Start ...." ;
   L.d_str "Exp: " ;
-  Sil.d_exp nlexp ;
+  Exp.d_exp nlexp ;
   L.d_ln () ;
   L.d_strln "Prop:" ;
   Prop.d_prop prop ;

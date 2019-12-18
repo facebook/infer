@@ -138,11 +138,26 @@ val rename_pvars : f:(string -> string) -> t -> t
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)
 
-val pp_printenv : print_types:bool -> Pp.env -> F.formatter -> t -> unit
+val pp_diff : ?print_types:bool -> Pp.env -> F.formatter -> t -> unit
 
 val pp : F.formatter -> t -> unit
 
 val to_string : t -> string
+
+val d_exp : t -> unit
+(** dump an expression. *)
+
+val pp_texp : Pp.env -> F.formatter -> t -> unit
+(** Pretty print a type. *)
+
+val pp_texp_full : Pp.env -> F.formatter -> t -> unit
+(** Pretty print a type with all the details. *)
+
+val d_texp_full : t -> unit
+(** Dump a type expression with all the details. *)
+
+val d_list : t list -> unit
+(** Dump a list of expressions. *)
 
 val is_objc_block_closure : t -> bool
 

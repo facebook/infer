@@ -150,7 +150,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
       | None ->
           (* return a nondeterministic value if the index is not found after rearrangement *)
           L.d_str "apply_offlist: index " ;
-          Sil.d_exp idx ;
+          Exp.d_exp idx ;
           L.d_strln " not materialized -- returning nondeterministic value" ;
           let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
           (res_e', strexp, typ, None) )
@@ -1466,7 +1466,7 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
       then Rearrange.check_call_to_objc_block_error tenv current_pdesc prop_r fun_exp loc ;
       Rearrange.check_dereference_error tenv current_pdesc prop_r fun_exp loc ;
       L.d_str "Unknown function pointer " ;
-      Sil.d_exp fun_exp ;
+      Exp.d_exp fun_exp ;
       L.d_strln ", returning undefined value." ;
       let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
       unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" (snd ret_id_typ)
@@ -1619,7 +1619,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
           let is_const = List.mem ~equal:Int.equal attrs.ProcAttributes.const_formals i in
           if is_const then (
             L.d_printf "Not havocing const argument number %d: " i ;
-            Sil.d_exp e ;
+            Exp.d_exp e ;
             L.d_ln () ) ;
           not is_const
       | None ->
@@ -1862,7 +1862,7 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
         L.d_warning "likely use of variable-arguments function, or function prototype missing" ;
         L.d_ln () ;
         L.d_str "actual parameters: " ;
-        Sil.d_exp_list (List.map ~f:fst actual_pars) ;
+        Exp.d_list (List.map ~f:fst actual_pars) ;
         L.d_ln () ;
         L.d_str "formal parameters: " ;
         Typ.d_list formal_types ;
@@ -1872,7 +1872,7 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
         L.d_printfln "**** ERROR: Procedure %a mismatch in the number of parameters ****"
           Typ.Procname.pp callee_pname ;
         L.d_str "actual parameters: " ;
-        Sil.d_exp_list (List.map ~f:fst actual_pars) ;
+        Exp.d_list (List.map ~f:fst actual_pars) ;
         L.d_ln () ;
         L.d_str "formal parameters: " ;
         Typ.d_list formal_types ;

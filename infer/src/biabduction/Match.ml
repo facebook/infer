@@ -153,9 +153,9 @@ and isel_match isel1 sub vars isel2 =
       if not sanity_check then (
         let pe = Pp.text in
         L.internal_error "@[.... Sanity Check Failure while Matching Index-Strexps ....@\n" ;
-        L.internal_error "@[<4>    IDX1: %a, STREXP1: %a@\n" (Sil.pp_exp_printenv pe) idx1
-          (Sil.pp_sexp pe) se1' ;
-        L.internal_error "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp_printenv pe) idx2
+        L.internal_error "@[<4>    IDX1: %a, STREXP1: %a@\n" (Exp.pp_diff pe) idx1 (Sil.pp_sexp pe)
+          se1' ;
+        L.internal_error "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Exp.pp_diff pe) idx2
           (Sil.pp_sexp pe) se2' ;
         assert false )
       else if Exp.equal idx1 idx2 then

@@ -132,11 +132,11 @@ let rec strexp_to_string pe coo f se =
   | Sil.Eexp (Exp.Var id, _) ->
       if !print_full_prop then Ident.pp f id else ()
   | Sil.Eexp (e, _) ->
-      if !print_full_prop then (Sil.pp_exp_printenv pe) f e else F.pp_print_char f '_'
+      if !print_full_prop then (Exp.pp_diff pe) f e else F.pp_print_char f '_'
   | Sil.Estruct (ls, _) ->
       F.fprintf f " STRUCT | { %a } " (struct_to_dotty_str pe coo) ls
   | Sil.Earray (e, idx, _) ->
-      F.fprintf f " ARRAY[%a] | { %a } " (Sil.pp_exp_printenv pe) e (get_contents pe coo) idx
+      F.fprintf f " ARRAY[%a] | { %a } " (Exp.pp_diff pe) e (get_contents pe coo) idx
 
 
 and struct_to_dotty_str pe coo f ls : unit =
@@ -154,20 +154,19 @@ and struct_to_dotty_str pe coo f ls : unit =
 and get_contents_sexp pe coo f se =
   match se with
   | Sil.Eexp (e', _) ->
-      (Sil.pp_exp_printenv pe) f e'
+      (Exp.pp_diff pe) f e'
   | Sil.Estruct (se', _) ->
       F.fprintf f "| { %a }" (struct_to_dotty_str pe coo) se'
   | Sil.Earray (e', [], _) ->
-      F.fprintf f "(ARRAY Size: %a) | { }" (Sil.pp_exp_printenv pe) e'
+      F.fprintf f "(ARRAY Size: %a) | { }" (Exp.pp_diff pe) e'
   | Sil.Earray (e', (idx, a) :: linner, _) ->
-      F.fprintf f "(ARRAY Size: %a) | { %a: %a | %a }" (Sil.pp_exp_printenv pe) e'
-        (Sil.pp_exp_printenv pe) idx (strexp_to_string pe coo) a (get_contents pe coo) linner
+      F.fprintf f "(ARRAY Size: %a) | { %a: %a | %a }" (Exp.pp_diff pe) e' (Exp.pp_diff pe) idx
+        (strexp_to_string pe coo) a (get_contents pe coo) linner
 
 
 and get_contents_single pe coo f (e, se) =
   let e_no_special_char = strip_special_chars (Exp.to_string e) in
-  F.fprintf f "{ <%s> %a : %a }" e_no_special_char (Sil.pp_exp_printenv pe) e
-    (get_contents_sexp pe coo) se
+  F.fprintf f "{ <%s> %a : %a }" e_no_special_char (Exp.pp_diff pe) e (get_contents_sexp pe coo) se
 
 
 and get_contents pe coo f = function
@@ -832,7 +831,7 @@ let rec print_struct f pe e te l coo c =
   if !print_full_prop then
     F.fprintf f
       " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s@\n"
-      "shape=record" n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e
+      "shape=record" n lambda e_no_special_char n lambda (Exp.pp_diff pe) e
       (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
@@ -848,8 +847,7 @@ and print_array f pe e1 e2 l coo c =
   F.fprintf f "subgraph structs_%iL%i {@\n" n lambda ;
   F.fprintf f
     " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s@\n"
-    "shape=record" n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e2
-    (get_contents pe coo) l c ;
+    "shape=record" n lambda e_no_special_char n lambda (Exp.pp_diff pe) e2 (get_contents pe coo) l c ;
   F.fprintf f "}@\n"
 
 
@@ -866,7 +864,7 @@ and print_sll f pe nesting k e1 coo =
       F.fprintf f
         "subgraph cluster_%iL%i { %s node [style=filled,color=white];   label=\"list PE\";" n'
         lambda "style=filled; color=lightgrey;" ) ;
-  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1 ;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Exp.pp_diff pe) e1 ;
   let n' = !dotty_state_count in
   incr dotty_state_count ;
   F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] @\n" n' lambda ;
@@ -892,13 +890,13 @@ and print_dll f pe nesting k e1 e4 coo =
   | Sil.Lseg_PE ->
       F.fprintf f "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"%s\";" n'
         lambda "style=filled; color=lightgrey;" "doubly-linked list PE" ) ;
-  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1 ;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Exp.pp_diff pe) e1 ;
   let n' = !dotty_state_count in
   incr dotty_state_count ;
   F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] @\n" n' lambda ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" n lambda n' lambda ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" n' lambda n lambda ;
-  F.fprintf f "state%iL%i [label=\"%a\"]@\n" (n + 1) lambda (Sil.pp_exp_printenv pe) e4 ;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" (n + 1) lambda (Exp.pp_diff pe) e4 ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" (n + 1) lambda n' lambda ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]}@\n" n' lambda (n + 1) lambda ;
   incr lambda_counter ;
@@ -914,9 +912,8 @@ and dotty_pp_state f pe cycle dotnode =
     let lambda = coo.lambda in
     if is_dangling then
       F.fprintf f "state%iL%i [label=\"%a \", color=red, style=dashed, fontcolor=%s]@\n" n lambda
-        (Sil.pp_exp_printenv pe) e c
-    else
-      F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]@\n" n lambda (Sil.pp_exp_printenv pe) e c
+        (Exp.pp_diff pe) e c
+    else F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]@\n" n lambda (Exp.pp_diff pe) e c
   in
   match dotnode with
   | Dotnil coo when !print_full_prop ->
@@ -948,10 +945,10 @@ and build_visual_graph f pe p cycle =
   compute_fields_struct sigma ;
   compute_struct_exp_nodes sigma ;
   (* L.out "@\n@\n Computed fields structs: ";
-     List.iter ~f:(fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !fields_structs;
+     List.iter ~f:(fun e -> L.out " %a " (Exp.pp_diff pe) e) !fields_structs;
      L.out "@\n@.";
      L.out "@\n@\n Computed exp structs nodes: ";
-     List.iter ~f:(fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !struct_exp_nodes;
+     List.iter ~f:(fun e -> L.out " %a " (Exp.pp_diff pe) e) !struct_exp_nodes;
      L.out "@\n@."; *)
   let sigma_lambda = List.map ~f:(fun hp -> (hp, !lambda_counter)) sigma in
   let nodes = dotty_mk_node pe sigma_lambda in
