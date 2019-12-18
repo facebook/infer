@@ -1,7 +1,7 @@
 language: c
 sudo: required
 env:
-  - OCAML_VERSION=4.07.1
+  - OCAML_VERSION=4.08.1
 cache:
   directories:
     - ${HOME}/.opam
