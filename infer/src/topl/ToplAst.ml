@@ -22,9 +22,7 @@ type value = Constant of constant | Register of register_name | Binding of regis
 type binop = (* all return booleans *)
   | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt
 
-type predicate = Binop of binop * value * value | Value of value
-
-(* here, value should be a boolean *)
+type predicate = Binop of binop * value * value | Value of (* bool *) value
 
 type condition = predicate list (* conjunction *)
 
