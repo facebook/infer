@@ -114,7 +114,7 @@ let fgets str_exp num_exp =
 
 let malloc ~can_be_zero size_exp =
   let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
-    let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+    let size_exp = Prop.exp_normalize_noabs tenv Predicates.sub_empty size_exp in
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
@@ -263,7 +263,7 @@ let strcat dest_exp src_exp =
 
 let realloc src_exp size_exp =
   let exec ({location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
-    let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+    let size_exp = Prop.exp_normalize_noabs tenv Predicates.sub_empty size_exp in
     let typ, _, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let v = Sem.eval integer_type_widths src_exp mem |> Dom.Val.set_array_length location ~length in

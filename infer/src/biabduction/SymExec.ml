@@ -20,7 +20,7 @@ let rec fldlist_assoc fld = function
       if Typ.Fieldname.equal fld fld' then x else fldlist_assoc fld l
 
 
-let unroll_type tenv (typ : Typ.t) (off : Sil.offset) =
+let unroll_type tenv (typ : Typ.t) (off : Predicates.offset) =
   let fail pp_fld fld =
     L.d_strln ".... Invalid Field Access ...." ;
     L.d_printfln "Fld : %a" pp_fld fld ;
@@ -41,7 +41,7 @@ let unroll_type tenv (typ : Typ.t) (off : Sil.offset) =
   | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
-      fail (Sil.pp_offset Pp.text) off
+      fail (Predicates.pp_offset Pp.text) off
 
 
 (** Apply function [f] to the expression at position [offlist] in [strexp]. If not found, expand
@@ -60,10 +60,10 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
   let pp_error () =
     L.d_strln ".... Invalid Field ...." ;
     L.d_str "strexp : " ;
-    Sil.d_sexp strexp ;
+    Predicates.d_sexp strexp ;
     L.d_ln () ;
     L.d_str "offlist : " ;
-    Sil.d_offset_list offlist ;
+    Predicates.d_offset_list offlist ;
     L.d_ln () ;
     L.d_str "type : " ;
     Typ.d_full typ ;
@@ -74,38 +74,40 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
     L.d_ln ()
   in
   match (offlist, strexp, typ.Typ.desc) with
-  | [], Sil.Eexp (e, inst_curr), _ ->
+  | [], Predicates.Eexp (e, inst_curr), _ ->
       let inst_new =
         match inst with
-        | Sil.Ilookup ->
+        | Predicates.Ilookup ->
             (* a lookup does not change an inst unless it is inst_initial *)
             lookup_inst := Some inst_curr ;
             inst_curr
         | _ ->
-            Sil.update_inst inst_curr inst
+            Predicates.update_inst inst_curr inst
       in
       let e' = f (Some e) in
-      (e', Sil.Eexp (e', inst_new), typ, None)
-  | [], Sil.Estruct (fesl, inst'), _ ->
-      if not nullify_struct then (f None, Sil.Estruct (fesl, inst'), typ, None)
+      (e', Predicates.Eexp (e', inst_new), typ, None)
+  | [], Predicates.Estruct (fesl, inst'), _ ->
+      if not nullify_struct then (f None, Predicates.Estruct (fesl, inst'), typ, None)
       else if fp_root then (
         pp_error () ;
         assert false )
       else (
         L.d_strln "WARNING: struct assignment treated as nondeterministic assignment" ;
         (f None, Prop.create_strexp_of_type tenv Prop.Fld_init typ None inst, typ, None) )
-  | [], Sil.Earray _, _ ->
-      let offlist' = Sil.Off_index Exp.zero :: offlist in
+  | [], Predicates.Earray _, _ ->
+      let offlist' = Predicates.Off_index Exp.zero :: offlist in
       apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst
         lookup_inst
-  | Sil.Off_fld _ :: _, Sil.Earray _, _ ->
-      let offlist_new = Sil.Off_index Exp.zero :: offlist in
+  | Predicates.Off_fld _ :: _, Predicates.Earray _, _ ->
+      let offlist_new = Predicates.Off_index Exp.zero :: offlist in
       apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst
         lookup_inst
-  | Sil.Off_fld (fld, fld_typ) :: offlist', Sil.Estruct (fsel, inst'), Typ.Tstruct name -> (
+  | ( Predicates.Off_fld (fld, fld_typ) :: offlist'
+    , Predicates.Estruct (fsel, inst')
+    , Typ.Tstruct name ) -> (
     match Tenv.lookup tenv name with
     | Some ({fields} as struct_typ) -> (
-        let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
+        let t' = unroll_type tenv typ (Predicates.Off_fld (fld, fld_typ)) in
         match List.find ~f:(fun fse -> Typ.Fieldname.equal fld (fst fse)) fsel with
         | Some (_, se') ->
             let res_e', res_se', res_t', res_pred_insts_op' =
@@ -115,7 +117,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
             let replace_fse fse =
               if Typ.Fieldname.equal fld (fst fse) then (fld, res_se') else fse
             in
-            let res_se = Sil.Estruct (List.map ~f:replace_fse fsel, inst') in
+            let res_se = Predicates.Estruct (List.map ~f:replace_fse fsel, inst') in
             let replace_fta (f, t, a) =
               if Typ.Fieldname.equal fld f then (fld, res_t', a) else (f, t, a)
             in
@@ -130,11 +132,11 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
     | None ->
         pp_error () ;
         assert false )
-  | Sil.Off_fld _ :: _, _, _ ->
+  | Predicates.Off_fld _ :: _, _, _ ->
       pp_error () ;
       assert false
-  | ( Sil.Off_index idx :: offlist'
-    , Sil.Earray (len, esel, inst1)
+  | ( Predicates.Off_index idx :: offlist'
+    , Predicates.Earray (len, esel, inst1)
     , Typ.Tarray {elt= t'; length= len'; stride= stride'} ) -> (
       let nidx = Prop.exp_normalize_prop tenv p idx in
       match List.find ~f:(fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel with
@@ -144,7 +146,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
               lookup_inst
           in
           let replace_ese ese = if Exp.equal idx_ese' (fst ese) then (idx_ese', res_se') else ese in
-          let res_se = Sil.Earray (len, List.map ~f:replace_ese esel, inst1) in
+          let res_se = Predicates.Earray (len, List.map ~f:replace_ese esel, inst1) in
           let res_t = Typ.mk_array ~default:typ res_t' ?length:len' ?stride:stride' in
           (res_e', res_se, res_t, res_pred_insts_op')
       | None ->
@@ -154,7 +156,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
           L.d_strln " not materialized -- returning nondeterministic value" ;
           let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
           (res_e', strexp, typ, None) )
-  | Sil.Off_index _ :: _, _, _ ->
+  | Predicates.Off_index _ :: _, _, _ ->
       (* This case should not happen. The rearrangement should
          have materialized all the accessed cells. *)
       pp_error () ;
@@ -176,12 +178,16 @@ let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
   let fp_root = match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
   let lookup_inst = ref None in
   let e', se', typ', pred_insts_op' =
-    apply_offlist pdesc tenv p fp_root false (lexp, se, sizeof.Exp.typ) offlist f Sil.inst_lookup
-      lookup_inst
+    apply_offlist pdesc tenv p fp_root false (lexp, se, sizeof.Exp.typ) offlist f
+      Predicates.inst_lookup lookup_inst
   in
   let lookup_uninitialized =
     (* true if we have looked up an uninitialized value *)
-    match !lookup_inst with Some (Sil.Iinitial | Sil.Ialloc | Sil.Ilookup) -> true | _ -> false
+    match !lookup_inst with
+    | Some (Predicates.Iinitial | Predicates.Ialloc | Predicates.Ilookup) ->
+        true
+    | _ ->
+        false
   in
   let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof {sizeof with typ= typ'}) in
   (e', ptsto', pred_insts_op', lookup_uninitialized)
@@ -214,14 +220,14 @@ let update_iter iter pi sigma =
 
 (** Precondition: se should not include hpara_psto that could mean nonempty heaps. *)
 let rec execute_nullify_se = function
-  | Sil.Eexp _ ->
-      Sil.Eexp (Exp.zero, Sil.inst_nullify)
-  | Sil.Estruct (fsel, _) ->
+  | Predicates.Eexp _ ->
+      Predicates.Eexp (Exp.zero, Predicates.inst_nullify)
+  | Predicates.Estruct (fsel, _) ->
       let fsel' = List.map ~f:(fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
-      Sil.Estruct (fsel', Sil.inst_nullify)
-  | Sil.Earray (len, esel, _) ->
+      Predicates.Estruct (fsel', Predicates.inst_nullify)
+  | Predicates.Earray (len, esel, _) ->
       let esel' = List.map ~f:(fun (idx, se) -> (idx, execute_nullify_se se)) esel in
-      Sil.Earray (len, esel', Sil.inst_nullify)
+      Predicates.Earray (len, esel', Predicates.inst_nullify)
 
 
 (** Do pruning for conditional [if (e1 != e2)] if [positive] is true and [(if (e1 == e2)] if
@@ -422,7 +428,7 @@ let check_arith_norm_exp tenv pname exp prop =
 let check_already_dereferenced tenv pname cond prop =
   let find_hpred lhs =
     List.find
-      ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e lhs | _ -> false)
+      ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e lhs | _ -> false)
       prop.Prop.sigma
   in
   let rec is_check_zero = function
@@ -452,7 +458,7 @@ let check_already_dereferenced tenv pname cond prop =
     match is_check_zero cond with
     | Some id -> (
       match find_hpred (Prop.exp_normalize_prop tenv prop (Exp.Var id)) with
-      | Some (Sil.Hpointsto (_, se, _)) -> (
+      | Some (Predicates.Hpointsto (_, se, _)) -> (
         match Tabulation.find_dereference_without_null_check_in_sexp se with
         | Some n ->
             Some (id, n)
@@ -479,11 +485,11 @@ let check_already_dereferenced tenv pname cond prop =
     exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
-    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [Lvar pv])
+    | Predicates.Apred (Aresource ({ra_kind= Rrelease} as ra), [Lvar pv])
       when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [Const (Cstr s)]) ->
+    | Predicates.Apred (Aresource ({ra_kind= Rrelease} as ra), [Const (Cstr s)]) ->
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ ->
@@ -543,7 +549,7 @@ let resolve_typename prop receiver_exp =
     let rec loop = function
       | [] ->
           None
-      | Sil.Hpointsto (e, _, typexp) :: _ when Exp.equal e receiver_exp ->
+      | Predicates.Hpointsto (e, _, typexp) :: _ when Exp.equal e receiver_exp ->
           Some typexp
       | _ :: hpreds ->
           loop hpreds
@@ -760,7 +766,7 @@ let receiver_self receiver prop =
   List.exists
     ~f:(fun hpred ->
       match hpred with
-      | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->
+      | Predicates.Hpointsto (Lvar pv, Eexp (e, _), _) ->
           Exp.equal e receiver && Pvar.is_seed pv && Pvar.is_self pv
       | _ ->
           false )
@@ -890,7 +896,7 @@ let add_strexp_to_footprint tenv strexp abduced_pv typ prop =
 let add_to_footprint tenv abduced_pv typ prop =
   let fresh_fp_var = Exp.Var (Ident.create_fresh Ident.kfootprint) in
   let prop' =
-    add_strexp_to_footprint tenv (Sil.Eexp (fresh_fp_var, Sil.Inone)) abduced_pv typ prop
+    add_strexp_to_footprint tenv (Eexp (fresh_fp_var, Predicates.Inone)) abduced_pv typ prop
   in
   (prop', fresh_fp_var)
 
@@ -900,7 +906,7 @@ let add_to_footprint tenv abduced_pv typ prop =
    footprint. regular abduction just adds a fresh footprint value of the correct type to the
    footprint. we can get rid of this special case if we fix the abduction on struct values *)
 let add_struct_value_to_footprint tenv abduced_pv typ prop =
-  let struct_strexp = Prop.create_strexp_of_type tenv Prop.Fld_init typ None Sil.inst_none in
+  let struct_strexp = Prop.create_strexp_of_type tenv Prop.Fld_init typ None Predicates.inst_none in
   let prop' = add_strexp_to_footprint tenv struct_strexp abduced_pv typ prop in
   (prop', struct_strexp)
 
@@ -918,7 +924,8 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
       List.find_map
         ~f:(fun hpred ->
           match hpred with
-          | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (exp, _), _) when Pvar.equal pv abduced_ret_pv ->
+          | Predicates.Hpointsto (Exp.Lvar pv, Eexp (exp, _), _) when Pvar.equal pv abduced_ret_pv
+            ->
               Some exp
           | _ ->
               None )
@@ -927,7 +934,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
     (* find an hpred [abduced] |-> A in [prop] and add [exp] = A to prop *)
     let bind_exp_to_abduced_val exp_to_bind abduced prop =
       let bind_exp prop = function
-        | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (rhs, _), _) when Pvar.equal pv abduced ->
+        | Predicates.Hpointsto (Exp.Lvar pv, Eexp (rhs, _), _) when Pvar.equal pv abduced ->
             Prop.conjoin_eq tenv exp_to_bind rhs prop
         | _ ->
             prop
@@ -968,7 +975,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
     let iter_ren = Prop.prop_iter_make_id_primed tenv id iter in
     let prop_ren = Prop.prop_iter_to_prop tenv iter_ren in
     match Prop.prop_iter_current tenv iter_ren with
-    | Sil.Hpointsto (lexp, strexp, Exp.Sizeof sizeof_data), offlist -> (
+    | Predicates.Hpointsto (lexp, strexp, Exp.Sizeof sizeof_data), offlist -> (
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
           ptsto_lookup pdesc tenv prop_ren (lexp, strexp, sizeof_data) offlist id
         in
@@ -980,7 +987,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
               false
         in
         let update acc (pi, sigma) =
-          let pi' = Sil.Aeq (Exp.Var id, contents) :: pi in
+          let pi' = Predicates.Aeq (Exp.Var id, contents) :: pi in
           let sigma' = new_ptsto :: sigma in
           let iter' = update_iter iter_ren pi' sigma' in
           let prop' = Prop.prop_iter_to_prop tenv iter' in
@@ -997,7 +1004,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
             update acc_in ([], [])
         | Some pred_insts ->
             List.rev (List.fold ~f:update ~init:acc_in pred_insts) )
-    | Sil.Hpointsto _, _ ->
+    | Predicates.Hpointsto _, _ ->
         Errdesc.warning_err loc "no offset access in execute_load -- treating as skip@." ;
         Prop.prop_iter_to_prop tenv iter_ren :: acc_in
     | _ ->
@@ -1043,7 +1050,7 @@ let execute_store ?(report_deref_errors = true) pname pdesc tenv lhs_exp typ rhs
   let execute_store_ pdesc tenv rhs_exp acc_in iter =
     let lexp, strexp, sizeof, offlist =
       match Prop.prop_iter_current tenv iter with
-      | Sil.Hpointsto (lexp, strexp, Exp.Sizeof sizeof), offlist ->
+      | Predicates.Hpointsto (lexp, strexp, Exp.Sizeof sizeof), offlist ->
           (lexp, strexp, sizeof, offlist)
       | _ ->
           assert false
@@ -1154,7 +1161,7 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
       let ptsto =
         (pvar, Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, None)
       in
-      Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial ptsto
+      Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_initial ptsto
     in
     let sigma_locals_and_ret () =
       let pname = Procdesc.get_proc_name pdesc in
@@ -1486,13 +1493,14 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
       let eprop = Prop.expose prop_ in
       match
         List.partition_tf
-          ~f:(function Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar' | _ -> false)
+          ~f:(function
+            | Predicates.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar' | _ -> false )
           eprop.Prop.sigma
       with
-      | [Sil.Hpointsto (e, se, typ)], sigma' ->
+      | [Predicates.Hpointsto (e, se, typ)], sigma' ->
           let sigma'' =
             let se' = execute_nullify_se se in
-            Sil.Hpointsto (e, se', typ) :: sigma'
+            Predicates.Hpointsto (e, se', typ) :: sigma'
           in
           let eprop_res = Prop.set eprop ~sigma:sigma'' in
           ret_old_path [Prop.normalize tenv eprop_res]
@@ -1561,8 +1569,11 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
     let already_has_abduced_retval p =
       List.exists
         ~f:(fun hpred ->
-          match hpred with Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced | _ -> false
-          )
+          match hpred with
+          | Predicates.Hpointsto (Exp.Lvar pv, _, _) ->
+              Pvar.equal pv abduced
+          | _ ->
+              false )
         p.Prop.sigma_fp
     in
     (* prevent introducing multiple abduced retvals for a single call site in a loop *)
@@ -1577,7 +1588,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
         | Typ.Tptr (typ, _) ->
             (* for pointer types passed by reference, do abduction directly on the pointer *)
             let prop', fresh_fp_var = add_to_footprint tenv abduced typ prop in
-            (prop', Sil.Eexp (fresh_fp_var, Sil.Inone))
+            (prop', Predicates.Eexp (fresh_fp_var, Predicates.Inone))
         | _ ->
             L.(die InternalError)
               "No need for abduction on non-pointer type %s" (Typ.to_string actual_typ)
@@ -1585,8 +1596,8 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
       let filtered_sigma =
         List.map
           ~f:(function
-            | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
-                Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
+            | Predicates.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
+                Predicates.Hpointsto (lhs, abduced_strexp, typ_exp)
             | hpred ->
                 hpred )
           prop'.Prop.sigma
@@ -1597,7 +1608,8 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
       let prop' =
         let filtered_sigma =
           List.filter
-            ~f:(function Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual -> false | _ -> true)
+            ~f:(function
+              | Predicates.Hpointsto (lhs, _, _) when Exp.equal lhs actual -> false | _ -> true )
             prop.Prop.sigma
         in
         Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma)
@@ -1605,8 +1617,8 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
       List.fold
         ~f:(fun p hpred ->
           match hpred with
-          | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced ->
-              let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+          | Predicates.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced ->
+              let new_hpred = Predicates.Hpointsto (actual, rhs, texp) in
               Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
           | _ ->
               p )
@@ -1638,7 +1650,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
     let do_exp p (e, _) =
       let do_attribute q atom =
         match atom with
-        | Sil.Apred ((Aresource {ra_res= Rfile} as res), _) ->
+        | Predicates.Apred ((Aresource {ra_res= Rfile} as res), _) ->
             Attribute.remove_for_attr tenv q res
         | _ ->
             q
@@ -1913,7 +1925,8 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
       List.map ~f:(fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed
     in
     let ren_sub =
-      Sil.subst_of_list (List.map ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal)
+      Predicates.subst_of_list
+        (List.map ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal)
     in
     let p' = Prop.normalize tenv (Prop.prop_sub ren_sub p) in
     let fav_normal = List.map ~f:snd ids_primed_normal in

@@ -9,7 +9,7 @@ open! IStd
 
 type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t}
 
-type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}
+type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Predicates.inst}
 
 type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 

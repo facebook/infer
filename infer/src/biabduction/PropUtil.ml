@@ -23,7 +23,7 @@ let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
         []
   in
   let hpred_local_static hpred =
-    match hpred with Sil.Hpointsto (e, _, _) -> [local_static e] | _ -> []
+    match hpred with Predicates.Hpointsto (e, _, _) -> [local_static e] | _ -> []
   in
   let vars_sigma = List.map ~f:hpred_local_static p.Prop.sigma in
   List.concat (List.concat vars_sigma)
@@ -35,7 +35,7 @@ let get_name_of_objc_block_locals p =
     match e with Exp.Lvar pvar when Pvar.is_block_pvar pvar -> [pvar] | _ -> []
   in
   let hpred_local_blocks hpred =
-    match hpred with Sil.Hpointsto (e, _, _) -> [local_blocks e] | _ -> []
+    match hpred with Predicates.Hpointsto (e, _, _) -> [local_blocks e] | _ -> []
   in
   let vars_sigma = List.map ~f:hpred_local_blocks p.Prop.sigma in
   List.concat (List.concat vars_sigma)
@@ -45,32 +45,34 @@ let remove_abduced_retvars tenv p =
   (* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] *)
   let compute_reachable p seed_exps =
     let sigma, pi = (p.Prop.sigma, p.Prop.pi) in
-    let rec collect_exps exps = function
-      | Sil.Eexp (Exp.Exn e, _) ->
+    let rec collect_exps exps (sexp : Predicates.strexp) =
+      match sexp with
+      | Eexp (Exp.Exn e, _) ->
           Exp.Set.add e exps
-      | Sil.Eexp (e, _) ->
+      | Eexp (e, _) ->
           Exp.Set.add e exps
-      | Sil.Estruct (flds, _) ->
+      | Estruct (flds, _) ->
           List.fold ~f:(fun exps (_, strexp) -> collect_exps exps strexp) ~init:exps flds
-      | Sil.Earray (_, elems, _) ->
+      | Earray (_, elems, _) ->
           List.fold ~f:(fun exps (_, strexp) -> collect_exps exps strexp) ~init:exps elems
     in
     let rec compute_reachable_hpreds_rec sigma (reach, exps) =
-      let add_hpred_if_reachable (reach, exps) = function
-        | Sil.Hpointsto (lhs, rhs, _) as hpred when Exp.Set.mem lhs exps ->
-            let reach' = Sil.HpredSet.add hpred reach in
+      let add_hpred_if_reachable (reach, exps) (hpred : Predicates.hpred) =
+        match hpred with
+        | Hpointsto (lhs, rhs, _) as hpred when Exp.Set.mem lhs exps ->
+            let reach' = Predicates.HpredSet.add hpred reach in
             let exps' = collect_exps exps rhs in
             (reach', exps')
-        | Sil.Hlseg (_, _, exp1, exp2, exp_l) as hpred ->
-            let reach' = Sil.HpredSet.add hpred reach in
+        | Hlseg (_, _, exp1, exp2, exp_l) as hpred ->
+            let reach' = Predicates.HpredSet.add hpred reach in
             let exps' =
               List.fold
                 ~f:(fun exps_acc exp -> Exp.Set.add exp exps_acc)
                 ~init:exps (exp1 :: exp2 :: exp_l)
             in
             (reach', exps')
-        | Sil.Hdllseg (_, _, exp1, exp2, exp3, exp4, exp_l) as hpred ->
-            let reach' = Sil.HpredSet.add hpred reach in
+        | Hdllseg (_, _, exp1, exp2, exp3, exp4, exp_l) as hpred ->
+            let reach' = Predicates.HpredSet.add hpred reach in
             let exps' =
               List.fold
                 ~f:(fun exps_acc exp -> Exp.Set.add exp exps_acc)
@@ -82,11 +84,12 @@ let remove_abduced_retvars tenv p =
             (reach, exps)
       in
       let reach', exps' = List.fold ~f:add_hpred_if_reachable ~init:(reach, exps) sigma in
-      if Int.equal (Sil.HpredSet.cardinal reach) (Sil.HpredSet.cardinal reach') then (reach, exps)
+      if Int.equal (Predicates.HpredSet.cardinal reach) (Predicates.HpredSet.cardinal reach') then
+        (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps')
     in
     let reach_hpreds, reach_exps =
-      compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, seed_exps)
+      compute_reachable_hpreds_rec sigma (Predicates.HpredSet.empty, seed_exps)
     in
     (* filter away the pure atoms without reachable exps *)
     let reach_pi =
@@ -102,20 +105,20 @@ let remove_abduced_retvars tenv p =
       in
       List.filter
         ~f:(function
-          | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) ->
+          | Predicates.Aeq (lhs, rhs) | Predicates.Aneq (lhs, rhs) ->
               exp_contains lhs || exp_contains rhs
-          | Sil.Apred (_, es) | Sil.Anpred (_, es) ->
+          | Predicates.Apred (_, es) | Predicates.Anpred (_, es) ->
               List.exists ~f:exp_contains es )
         pi
     in
-    (Sil.HpredSet.elements reach_hpreds, reach_pi)
+    (Predicates.HpredSet.elements reach_hpreds, reach_pi)
   in
   (* separate the abduced pvars from the normal ones, deallocate the abduced ones*)
   let abduceds, normal_pvars =
     List.fold
       ~f:(fun pvars hpred ->
         match hpred with
-        | Sil.Hpointsto (Exp.Lvar pvar, _, _) ->
+        | Predicates.Hpointsto (Exp.Lvar pvar, _, _) ->
             let abduceds, normal_pvars = pvars in
             if Pvar.is_abduced pvar then (pvar :: abduceds, normal_pvars)
             else (abduceds, pvar :: normal_pvars)
@@ -180,7 +183,7 @@ let remove_locals_formals tenv (curr_f : Procdesc.t) p =
 (** remove seed vars from a prop *)
 let remove_seed_vars tenv (prop : 'a Prop.t) : Prop.normal Prop.t =
   let hpred_not_seed = function
-    | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar pv, _, _) ->
         not (Pvar.is_seed pv)
     | _ ->
         true

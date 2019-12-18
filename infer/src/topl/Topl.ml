@@ -161,16 +161,16 @@ let instrument tenv procdesc =
     + one cannot do boolean-conjunction on symbolic heaps; and
     + the prover fails to see that 0!=o.f * o|-f->0 is inconsistent *)
 let lookup_static_var env (var : Exp.t) (prop : 'a Prop.t) : Exp.t option =
-  let from_strexp = function Sil.Eexp (e, _) -> Some e | _ -> None in
+  let from_strexp = function Predicates.Eexp (e, _) -> Some e | _ -> None in
   let get_field field (f, e) = if Typ.Fieldname.equal field f then from_strexp e else None in
   let get_strexp field = function
-    | Sil.Estruct (fs, _inst) ->
+    | Predicates.Estruct (fs, _inst) ->
         List.find_map ~f:(get_field field) fs
     | _ ->
         None
   in
   let get_hpred obj field = function
-    | Sil.Hpointsto (obj', se, _typ) when Exp.equal obj obj' ->
+    | Predicates.Hpointsto (obj', se, _typ) when Exp.equal obj obj' ->
         get_strexp field se
     | _ ->
         None

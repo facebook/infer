@@ -136,7 +136,7 @@ let get_weak_alias_type prop e =
   let sigma = prop.Prop.sigma in
   let check_weak_alias hpred =
     match hpred with
-    | Sil.Hpointsto (_, Sil.Eexp (e', _), Sizeof {typ}) -> (
+    | Predicates.Hpointsto (_, Eexp (e', _), Sizeof {typ}) -> (
       match typ.Typ.desc with
       | (Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained))
         when Exp.equal e' e ->
@@ -154,7 +154,8 @@ let get_cycles found_cycles root tenv prop =
   let sigma = prop.Prop.sigma in
   let get_points_to e =
     List.find
-      ~f:(fun hpred -> match hpred with Sil.Hpointsto (e', _, _) -> Exp.equal e' e | _ -> false)
+      ~f:(fun hpred ->
+        match hpred with Predicates.Hpointsto (e', _, _) -> Exp.equal e' e | _ -> false )
       sigma
   in
   (* Perform a dfs of a graph stopping when e_root is reached. Returns the set of cycles reached. *)
@@ -169,7 +170,7 @@ let get_cycles found_cycles root tenv prop =
     match fields with
     | [] ->
         found_cycles
-    | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
+    | (field, Predicates.Eexp (f_exp, f_inst)) :: el' ->
         let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
         let obj_edge = {rc_from= from_node; rc_field} in
         let edge = Object obj_edge in
@@ -191,7 +192,7 @@ let get_cycles found_cycles root tenv prop =
               match get_points_to f_exp with
               | None ->
                   found_cycles
-              | Some (Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}))
+              | Some (Predicates.Hpointsto (_, Estruct (new_fields, _), Exp.Sizeof {typ= te}))
                 when edge_is_strong tenv obj_edge ->
                   let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
                   dfs ~found_cycles ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path)
@@ -205,8 +206,8 @@ let get_cycles found_cycles root tenv prop =
         found_cycles
   in
   match root with
-  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) when Sil.is_objc_object root
-    ->
+  | Predicates.Hpointsto (e_root, Estruct (fl, _), Exp.Sizeof {typ= te})
+    when Predicates.is_objc_object root ->
       let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
       dfs ~found_cycles ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]

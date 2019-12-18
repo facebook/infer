@@ -8,7 +8,7 @@ open! IStd
 
 type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t}
 
-type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}
+type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Predicates.inst}
 
 type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 
@@ -58,7 +58,7 @@ end)
 let is_inst_rearrange node =
   match node with
   | Object obj -> (
-    match obj.rc_field.rc_field_inst with Sil.Irearrange _ -> true | _ -> false )
+    match obj.rc_field.rc_field_inst with Predicates.Irearrange _ -> true | _ -> false )
   | Block _ ->
       false
 
@@ -99,7 +99,8 @@ let pp_retain_cycle_node f (node : retain_cycle_node) =
 
 
 let pp_retain_cycle_field f (field : retain_cycle_field) =
-  Format.fprintf f "%a[%a]" Typ.Fieldname.pp field.rc_field_name Sil.pp_inst field.rc_field_inst
+  Format.fprintf f "%a[%a]" Typ.Fieldname.pp field.rc_field_name Predicates.pp_inst
+    field.rc_field_inst
 
 
 let pp_retain_cycle_edge f (edge : retain_cycle_edge) =

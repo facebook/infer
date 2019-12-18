@@ -292,8 +292,8 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
     let prop_incons =
       let mk_incons prop =
         let p_abs = Abs.abstract pname tenv prop in
-        let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
-        Prop.normalize tenv (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)])
+        let p_zero = Prop.set p_abs ~sub:Predicates.sub_empty ~sigma:[] in
+        Prop.normalize tenv (Prop.set p_zero ~pi:[Predicates.Aneq (Exp.zero, Exp.zero)])
       in
       Paths.PathSet.map mk_incons diverging_states
     in
@@ -581,7 +581,7 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
       |> Ident.HashQueue.keys
     in
     let sub_list = List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.knormal))) fav in
-    Sil.subst_of_list sub_list
+    Predicates.subst_of_list sub_list
   in
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
@@ -679,8 +679,8 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
 
 let create_seed_vars sigma =
   let hpred_add_seed sigma = function
-    | Sil.Hpointsto (Exp.Lvar pv, se, typ) when not (Pvar.is_abduced pv) ->
-        Sil.Hpointsto (Exp.Lvar (Pvar.to_seed pv), se, typ) :: sigma
+    | Predicates.Hpointsto (Exp.Lvar pv, se, typ) when not (Pvar.is_abduced pv) ->
+        Predicates.Hpointsto (Exp.Lvar (Pvar.to_seed pv), se, typ) :: sigma
     | _ ->
         sigma
   in
@@ -700,7 +700,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
         | Java ->
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
       in
-      Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None)
+      Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_formal (pv, texp, None)
     in
     List.map ~f:do_formal new_formals
   in
@@ -723,7 +723,9 @@ let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) ~add_formals : Pr
     (* no new formals added *)
   in
   let prop1 =
-    Prop.prop_reset_inst (fun inst_old -> Sil.update_inst inst_old Sil.inst_formal) prop
+    Prop.prop_reset_inst
+      (fun inst_old -> Predicates.update_inst inst_old Predicates.inst_formal)
+      prop
   in
   let prop2 = prop_init_formals_seed tenv new_formals prop1 in
   Prop.prop_rename_primed_footprint_vars tenv (Prop.normalize tenv prop2)
@@ -740,7 +742,7 @@ let initial_prop_from_pre tenv curr_f pre =
     let sub_list =
       List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.kfootprint))) vars
     in
-    let sub = Sil.subst_of_list sub_list in
+    let sub = Predicates.subst_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
     let pre3 = Prop.set pre2 ~pi_fp:(Prop.get_pure pre2) ~sigma_fp:pre2.Prop.sigma in
     initial_prop tenv curr_f pre3 ~add_formals:false
@@ -936,14 +938,14 @@ let custom_error_preconditions summary =
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
 let remove_this_not_null tenv prop =
   let collect_hpred (var_option, hpreds) = function
-    | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
+    | Predicates.Hpointsto (Exp.Lvar pvar, Eexp (Exp.Var var, _), _)
       when Language.curr_language_is Java && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred ->
         (var_option, hpred :: hpreds)
   in
   let collect_atom var atoms = function
-    | Sil.Aneq (Exp.Var v, e) when Ident.equal v var && Exp.equal e Exp.null ->
+    | Predicates.Aneq (Exp.Var v, e) when Ident.equal v var && Exp.equal e Exp.null ->
         atoms
     | a ->
         a :: atoms
@@ -1175,7 +1177,7 @@ let analyze_procedure_aux summary exe_env tenv : Summary.t =
   let summary_compact =
     match summaryre.Summary.payloads.biabduction with
     | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->
-        let sharing_env = Sil.create_sharing_env () in
+        let sharing_env = Predicates.create_sharing_env () in
         let compact_preposts =
           List.map ~f:(BiabductionSummary.NormSpec.compact sharing_env) preposts
         in

@@ -7,10 +7,9 @@
  *)
 
 open! IStd
+open Predicates
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
-
-open Sil
 
 (** kind for normal props, i.e. normalized *)
 type normal
@@ -23,14 +22,14 @@ type sorted
 
 (** Proposition. *)
 
-type pi = Sil.atom list
+type pi = atom list
 
-type sigma = Sil.hpred list
+type sigma = hpred list
 
 (** the kind 'a should range over [normal] and [exposed] *)
 type 'a t = private
   { sigma: sigma  (** spatial part *)
-  ; sub: Sil.subst  (** substitution *)
+  ; sub: subst  (** substitution *)
   ; pi: pi  (** pure part *)
   ; sigma_fp: sigma  (** abduced spatial part *)
   ; pi_fp: pi  (** abduced pure part *) }
@@ -77,7 +76,7 @@ val prop_update_obj_sub : Pp.env -> 'a t -> Pp.env
 val pp_prop : Pp.env -> Format.formatter -> 'a t -> unit
 (** Pretty print a proposition. *)
 
-val prop_pred_env : 'a t -> Sil.Predicates.env
+val prop_pred_env : 'a t -> Predicates.Env.t
 (** Create a predicate environment for a prop *)
 
 val d_prop : 'a t -> unit
@@ -119,16 +118,16 @@ val sigma_replace_exp : Tenv.t -> (Exp.t * Exp.t) list -> hpred list -> hpred li
 
 (** {2 Normalization} *)
 
-val mk_inequality : Tenv.t -> Exp.t -> Sil.atom
+val mk_inequality : Tenv.t -> Exp.t -> atom
 (** Turn an inequality expression into an atom *)
 
-val atom_is_inequality : Sil.atom -> bool
+val atom_is_inequality : atom -> bool
 (** Return [true] if the atom is an inequality *)
 
-val atom_exp_le_const : Sil.atom -> (Exp.t * IntLit.t) option
+val atom_exp_le_const : atom -> (Exp.t * IntLit.t) option
 (** If the atom is [e<=n] return [e,n] *)
 
-val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
+val atom_const_lt_exp : atom -> (IntLit.t * Exp.t) option
 (** If the atom is [n<e] return [n,e] *)
 
 val exp_normalize_prop : ?destructive:bool -> Tenv.t -> 'a t -> Exp.t -> Exp.t
@@ -138,7 +137,7 @@ val exp_normalize_prop : ?destructive:bool -> Tenv.t -> 'a t -> Exp.t -> Exp.t
     If [destructive] is true then normalize more aggressively, which may lose some useful structure
     or types. *)
 
-val exp_normalize_noabs : Tenv.t -> Sil.subst -> Exp.t -> Exp.t
+val exp_normalize_noabs : Tenv.t -> subst -> Exp.t -> Exp.t
 (** Normalize the expression without abstracting complex subexpressions *)
 
 val exp_collapse_consecutive_indices_prop : Typ.t -> Exp.t -> Exp.t
@@ -184,18 +183,17 @@ val mk_pred : Tenv.t -> PredSymb.t -> Exp.t list -> atom
 val mk_npred : Tenv.t -> PredSymb.t -> Exp.t list -> atom
 (** Construct a negative pred. *)
 
-val create_strexp_of_type :
-  Tenv.t -> struct_init_mode -> Typ.t -> Exp.t option -> Sil.inst -> Sil.strexp
+val create_strexp_of_type : Tenv.t -> struct_init_mode -> Typ.t -> Exp.t option -> inst -> strexp
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 
 val mk_ptsto : Tenv.t -> Exp.t -> strexp -> Exp.t -> hpred
 (** Construct a pointsto. *)
 
-val mk_ptsto_exp : Tenv.t -> struct_init_mode -> Exp.t * Exp.t * Exp.t option -> Sil.inst -> hpred
+val mk_ptsto_exp : Tenv.t -> struct_init_mode -> Exp.t * Exp.t * Exp.t option -> inst -> hpred
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
     base for fresh identifiers. *)
 
-val mk_ptsto_lvar : Tenv.t -> struct_init_mode -> Sil.inst -> Pvar.t * Exp.t * Exp.t option -> hpred
+val mk_ptsto_lvar : Tenv.t -> struct_init_mode -> inst -> Pvar.t * Exp.t * Exp.t option -> hpred
 (** Construct a points-to predicate for a single program variable. If [expand_structs] is true,
     initialize the fields of structs with fresh variables. *)
 
@@ -209,7 +207,7 @@ val mk_dllseg :
 val prop_emp : normal t
 (** Proposition [true /\ emp]. *)
 
-val prop_reset_inst : (Sil.inst -> Sil.inst) -> 'a t -> exposed t
+val prop_reset_inst : (inst -> inst) -> 'a t -> exposed t
 (** Reset every inst in the prop using the given map *)
 
 val prop_hpred_star : 'a t -> hpred -> exposed t
@@ -260,8 +258,7 @@ val from_pi : pi -> exposed t
 val from_sigma : sigma -> exposed t
 (** Build an exposed prop from sigma *)
 
-val set :
-  ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t -> exposed t
+val set : ?sub:subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t -> exposed t
 (** Set individual fields of the prop. *)
 
 (** {2 Prop iterators} *)

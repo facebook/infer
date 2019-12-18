@@ -22,7 +22,7 @@ val get_diverging_states_node : unit -> Paths.PathSet.t
 val get_diverging_states_proc : unit -> Paths.PathSet.t
 (** Get the diverging states for the procedure *)
 
-val get_inst_update : PredSymb.path_pos -> Sil.inst
+val get_inst_update : PredSymb.path_pos -> Predicates.inst
 (** Get update instrumentation for the current loc *)
 
 val get_instr : unit -> Sil.instr option

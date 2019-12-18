@@ -120,7 +120,7 @@ let pure_exp e : Exp.t * Sil.instr list =
   let es = List.dedup_and_sort ~compare:Exp.compare es in
   let pairs = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) es in
   let subst = List.map ~f:(function e, id -> (e, Exp.Var id)) pairs in
-  let e' = Sil.exp_replace_exp subst e in
+  let e' = Predicates.exp_replace_exp subst e in
   let mk_load (e, id) =
     Sil.Load
       {id; e; root_typ= ToplUtils.any_type; typ= ToplUtils.any_type; loc= sourcefile_location ()}

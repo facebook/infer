@@ -17,7 +17,7 @@ type 'a t = 'a Prop.t
 
 type sub_entry = Ident.t * Exp.t
 
-type edge = Ehpred of Sil.hpred | Eatom of Sil.atom | Esub_entry of sub_entry
+type edge = Ehpred of Predicates.hpred | Eatom of Predicates.atom | Esub_entry of sub_entry
 
 let from_prop p = p
 
@@ -26,19 +26,19 @@ let edge_is_hpred = function Ehpred _ -> true | Eatom _ -> false | Esub_entry _ 
 
 (** Return the source of the edge *)
 let edge_get_source = function
-  | Ehpred (Sil.Hpointsto (e, _, _)) ->
+  | Ehpred (Hpointsto (e, _, _)) ->
       Some e
-  | Ehpred (Sil.Hlseg (_, _, e, _, _)) ->
+  | Ehpred (Hlseg (_, _, e, _, _)) ->
       Some e
-  | Ehpred (Sil.Hdllseg (_, _, e1, _, _, _, _)) ->
+  | Ehpred (Hdllseg (_, _, e1, _, _, _, _)) ->
       Some e1 (* only one direction supported for now *)
-  | Eatom (Sil.Aeq (e1, _)) ->
+  | Eatom (Aeq (e1, _)) ->
       Some e1
-  | Eatom (Sil.Aneq (e1, _)) ->
+  | Eatom (Aneq (e1, _)) ->
       Some e1
-  | Eatom (Sil.Apred (_, e :: _) | Anpred (_, e :: _)) ->
+  | Eatom (Apred (_, e :: _) | Anpred (_, e :: _)) ->
       Some e
-  | Eatom (Sil.Apred (_, []) | Anpred (_, [])) ->
+  | Eatom (Apred (_, []) | Anpred (_, [])) ->
       None
   | Esub_entry (x, _) ->
       Some (Exp.Var x)
@@ -48,7 +48,7 @@ let get_sigma footprint_part g = if footprint_part then g.Prop.sigma_fp else g.P
 
 let get_pi footprint_part g = if footprint_part then g.Prop.pi_fp else g.Prop.pi
 
-let get_subl footprint_part g = if footprint_part then [] else Sil.sub_to_list g.Prop.sub
+let get_subl footprint_part g = if footprint_part then [] else Predicates.sub_to_list g.Prop.sub
 
 (** [edge_from_source g n footprint_part is_hpred] finds and edge with the given source [n] in prop
     [g]. [footprint_part] indicates whether to search the edge in the footprint part, and [is_pred]
@@ -80,9 +80,9 @@ let get_edges footprint_part g =
 let edge_equal e1 e2 =
   match (e1, e2) with
   | Ehpred hp1, Ehpred hp2 ->
-      Sil.equal_hpred hp1 hp2
+      Predicates.equal_hpred hp1 hp2
   | Eatom a1, Eatom a2 ->
-      Sil.equal_atom a1 a2
+      Predicates.equal_atom a1 a2
   | Esub_entry (x1, e1), Esub_entry (x2, e2) ->
       Ident.equal x1 x2 && Exp.equal e1 e2
   | _ ->
@@ -109,13 +109,13 @@ let compute_exp_diff (e1 : Exp.t) (e2 : Exp.t) : Obj.t list =
 
 
 (** Compute the subobjects in [se2] which are different from those in [se1] *)
-let rec compute_sexp_diff (se1 : Sil.strexp) (se2 : Sil.strexp) : Obj.t list =
+let rec compute_sexp_diff (se1 : Predicates.strexp) (se2 : Predicates.strexp) : Obj.t list =
   match (se1, se2) with
-  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) ->
+  | Eexp (e1, _), Eexp (e2, _) ->
       if Exp.equal e1 e2 then [] else [Obj.repr se2]
-  | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, _) ->
+  | Estruct (fsel1, _), Estruct (fsel2, _) ->
       compute_fsel_diff fsel1 fsel2
-  | Sil.Earray (e1, esel1, _), Sil.Earray (e2, esel2, _) ->
+  | Earray (e1, esel1, _), Earray (e2, esel2, _) ->
       compute_exp_diff e1 e2 @ compute_esel_diff esel1 esel2
   | _ ->
       [Obj.repr se2]
@@ -156,14 +156,14 @@ and compute_esel_diff esel1 esel2 : Obj.t list =
 (** Compute the subobjects in [newedge] which are different from those in [oldedge] *)
 let compute_edge_diff (oldedge : edge) (newedge : edge) : Obj.t list =
   match (oldedge, newedge) with
-  | Ehpred (Sil.Hpointsto (_, se1, e1)), Ehpred (Sil.Hpointsto (_, se2, e2)) ->
+  | Ehpred (Hpointsto (_, se1, e1)), Ehpred (Hpointsto (_, se2, e2)) ->
       compute_sexp_diff se1 se2 @ compute_exp_diff e1 e2
-  | Eatom (Sil.Aeq (_, e1)), Eatom (Sil.Aeq (_, e2)) ->
+  | Eatom (Aeq (_, e1)), Eatom (Aeq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
+  | Eatom (Aneq (_, e1)), Eatom (Aneq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom (Sil.Apred (_, es1)), Eatom (Sil.Apred (_, es2))
-  | Eatom (Sil.Anpred (_, es1)), Eatom (Sil.Anpred (_, es2)) ->
+  | Eatom (Apred (_, es1)), Eatom (Apred (_, es2))
+  | Eatom (Anpred (_, es1)), Eatom (Anpred (_, es2)) ->
       List.concat (try List.map2_exn ~f:compute_exp_diff es1 es2 with Invalid_argument _ -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2

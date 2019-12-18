@@ -15,12 +15,12 @@ open! IStd
 module L = Logging
 
 type splitting =
-  { sub: Sil.subst
-  ; frame: Sil.hpred list
-  ; missing_pi: Sil.atom list
-  ; missing_sigma: Sil.hpred list
-  ; frame_fld: Sil.hpred list
-  ; missing_fld: Sil.hpred list
+  { sub: Predicates.subst
+  ; frame: Predicates.hpred list
+  ; missing_pi: Predicates.atom list
+  ; missing_sigma: Predicates.hpred list
+  ; frame_fld: Predicates.hpred list
+  ; missing_fld: Predicates.hpred list
   ; frame_typ: (Exp.t * Exp.t) list
   ; missing_typ: (Exp.t * Exp.t) list }
 
@@ -60,8 +60,8 @@ type invalid_res =
 
 type valid_res =
   { incons_pre_missing: bool  (** whether the actual pre is consistent with the missing part *)
-  ; vr_pi: Sil.atom list  (** missing pi *)
-  ; vr_sigma: Sil.hpred list  (** missing sigma *)
+  ; vr_pi: Predicates.atom list  (** missing pi *)
+  ; vr_sigma: Predicates.hpred list  (** missing sigma *)
   ; vr_cons_res: (Prop.normal Prop.t * Paths.Path.t) list  (** consistent result props *)
   ; vr_incons_res: (Prop.normal Prop.t * Paths.Path.t) list  (** inconsistent result props *) }
 
@@ -144,7 +144,7 @@ let spec_rename_vars pname spec =
   in
   let ids = Ident.HashQueue.keys fav in
   let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
+  let ren_sub = Predicates.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
   let pre' = BiabductionSummary.Jprop.jprop_sub ren_sub spec.BiabductionSummary.pre in
   let posts' =
     List.map ~f:(fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.BiabductionSummary.posts
@@ -188,22 +188,22 @@ let spec_find_rename trace_call summary :
 let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
     frame_typ missing_typ =
   let hpred_has_only_footprint_vars hpred =
-    Sil.hpred_free_vars hpred |> Sequence.for_all ~f:Ident.is_footprint
+    Predicates.hpred_free_vars hpred |> Sequence.for_all ~f:Ident.is_footprint
   in
-  let sub = Sil.sub_join sub1 sub2 in
+  let sub = Predicates.sub_join sub1 sub2 in
   let sub1_inverse =
-    let sub1_list = Sil.sub_to_list sub1 in
+    let sub1_list = Predicates.sub_to_list sub1 in
     let sub1_list' = List.filter ~f:(function _, Exp.Var _ -> true | _ -> false) sub1_list in
     let sub1_inverse_list =
       List.map ~f:(function id, Exp.Var id' -> (id', Exp.Var id) | _ -> assert false) sub1_list'
     in
-    Sil.subst_of_list_duplicates sub1_inverse_list
+    Predicates.subst_of_list_duplicates sub1_inverse_list
   in
   let fav_actual_pre =
     let fav_pre = Prop.free_vars actual_pre |> Ident.hashqueue_of_sequence in
     let filter id = Int.equal (Ident.get_stamp id) (-1) in
     (* vars which represent expansions of fields *)
-    Sil.sub_range sub2
+    Predicates.sub_range sub2
     |> List.fold_left ~init:fav_pre ~f:(fun res e ->
            Exp.free_vars e |> Sequence.filter ~f:filter |> Ident.hashqueue_of_sequence ~init:res )
   in
@@ -221,7 +221,7 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
     Prop.sigma_sub sub missing_fld |> Prop.sigma_free_vars |> Ident.hashqueue_of_sequence
   in
   let map_var_to_pre_var_or_fresh id =
-    match Sil.exp_sub sub1_inverse (Exp.Var id) with
+    match Predicates.exp_sub sub1_inverse (Exp.Var id) with
     | Exp.Var id' ->
         if
           Ident.HashQueue.mem fav_actual_pre id' || Ident.is_path id'
@@ -231,7 +231,7 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
     | _ ->
         assert false
   in
-  let sub_list = Sil.sub_to_list sub in
+  let sub_list = Predicates.sub_to_list sub in
   let sub1 =
     let f id =
       if Ident.HashQueue.mem fav_actual_pre id then (id, Exp.Var id)
@@ -239,10 +239,10 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
       else if Ident.HashQueue.mem fav_missing_fld id then (id, Exp.Var id)
       else if Ident.is_footprint id then (id, Exp.Var id)
       else
-        let dom1 = Sil.sub_domain sub1 in
-        let rng1 = Sil.sub_range sub1 in
-        let dom2 = Sil.sub_domain sub2 in
-        let rng2 = Sil.sub_range sub2 in
+        let dom1 = Predicates.sub_domain sub1 in
+        let rng1 = Predicates.sub_range sub1 in
+        let dom2 = Predicates.sub_domain sub2 in
+        let rng2 = Predicates.sub_range sub2 in
         let vars_actual_pre =
           List.map ~f:(fun id -> Exp.Var id) (Ident.HashQueue.keys fav_actual_pre)
         in
@@ -271,41 +271,41 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
           Exp.free_vars e |> Ident.hashqueue_of_sequence ~init:fav )
       |> Ident.HashQueue.keys
     in
-    Sil.subst_of_list (List.map ~f fav_sub_list)
+    Predicates.subst_of_list (List.map ~f fav_sub_list)
   in
   let sub2_list =
     let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint)) in
     List.map ~f fav_missing_primed
   in
-  let sub_list' = List.map ~f:(fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
-  let sub' = Sil.subst_of_list (sub2_list @ sub_list') in
+  let sub_list' = List.map ~f:(fun (id, e) -> (id, Predicates.exp_sub sub1 e)) sub_list in
+  let sub' = Predicates.subst_of_list (sub2_list @ sub_list') in
   (* normalize everything w.r.t sub' *)
   let norm_missing_pi = Prop.pi_sub sub' missing_pi in
   let norm_missing_sigma = Prop.sigma_sub sub' missing_sigma in
   let norm_frame_fld = Prop.sigma_sub sub' frame_fld in
   let norm_frame_typ =
-    List.map ~f:(fun (e, te) -> (Sil.exp_sub sub' e, Sil.exp_sub sub' te)) frame_typ
+    List.map ~f:(fun (e, te) -> (Predicates.exp_sub sub' e, Predicates.exp_sub sub' te)) frame_typ
   in
   let norm_missing_typ =
-    List.map ~f:(fun (e, te) -> (Sil.exp_sub sub' e, Sil.exp_sub sub' te)) missing_typ
+    List.map ~f:(fun (e, te) -> (Predicates.exp_sub sub' e, Predicates.exp_sub sub' te)) missing_typ
   in
   let norm_missing_fld =
     let sigma = Prop.sigma_sub sub' missing_fld in
     let filter hpred =
       if not (hpred_has_only_footprint_vars hpred) then (
         L.d_warning "Missing fields hpred has non-footprint vars: " ;
-        Sil.d_hpred hpred ;
+        Predicates.d_hpred hpred ;
         L.d_ln () ;
         false )
       else
         match hpred with
-        | Sil.Hpointsto (Exp.Var _, _, _) ->
+        | Predicates.Hpointsto (Exp.Var _, _, _) ->
             true
-        | Sil.Hpointsto (Exp.Lvar pvar, _, _) ->
+        | Predicates.Hpointsto (Exp.Lvar pvar, _, _) ->
             Pvar.is_global pvar
         | _ ->
             L.d_warning "Missing fields in complex pred: " ;
-            Sil.d_hpred hpred ;
+            Predicates.d_hpred hpred ;
             L.d_ln () ;
             false
     in
@@ -325,7 +325,7 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
 (** Check whether an inst represents a dereference without null check,
     and return the line number and path position *)
 let find_dereference_without_null_check_in_inst = function
-  | Sil.Iupdate (Some true, _, n, pos) | Sil.Irearrange (Some true, _, n, pos) ->
+  | Predicates.Iupdate (Some true, _, n, pos) | Predicates.Irearrange (Some true, _, n, pos) ->
       Some (n, pos)
   | _ ->
       None
@@ -334,13 +334,13 @@ let find_dereference_without_null_check_in_inst = function
 (** Check whether a sexp contains a dereference without null check,
     and return the line number and path position *)
 let rec find_dereference_without_null_check_in_sexp = function
-  | Sil.Eexp (_, inst) ->
+  | Predicates.Eexp (_, inst) ->
       find_dereference_without_null_check_in_inst inst
-  | Sil.Estruct (fsel, inst) ->
+  | Predicates.Estruct (fsel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
       if is_none res then find_dereference_without_null_check_in_sexp_list (List.map ~f:snd fsel)
       else res
-  | Sil.Earray (_, esel, inst) ->
+  | Predicates.Earray (_, esel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
       if is_none res then find_dereference_without_null_check_in_sexp_list (List.map ~f:snd esel)
       else res
@@ -361,7 +361,7 @@ and find_dereference_without_null_check_in_sexp_list = function
     In case of dereference error, return [Some(deref_error, description)], otherwise [None] *)
 let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre formal_params =
   let check_dereference e sexp =
-    let e_sub = Sil.exp_sub sub e in
+    let e_sub = Predicates.exp_sub sub e in
     let desc use_buckets deref_str =
       let error_desc =
         Errdesc.explain_dereference_as_caller_expression caller_pname tenv ~use_buckets deref_str
@@ -412,7 +412,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
             None )
   in
   let check_hpred = function
-    | Sil.Hpointsto (lexp, se, _) ->
+    | Predicates.Hpointsto (lexp, se, _) ->
         check_dereference (Exp.root_of_lexp lexp) se
     | _ ->
         None
@@ -441,9 +441,9 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
         Some deref_err )
 
 
-let post_process_sigma tenv (sigma : Sil.hpred list) loc : Sil.hpred list =
-  let map_inst inst = Sil.inst_new_loc loc inst in
-  let do_hpred (_, _, hpred) = Sil.hpred_instmap map_inst hpred in
+let post_process_sigma tenv (sigma : Predicates.hpred list) loc : Predicates.hpred list =
+  let map_inst inst = Predicates.inst_new_loc loc inst in
+  let do_hpred (_, _, hpred) = Predicates.hpred_instmap map_inst hpred in
   (* update the location of instrumentations *)
   List.map ~f:(fun hpred -> do_hpred (Prover.expand_hpred_pointer tenv false hpred)) sigma
 
@@ -452,7 +452,7 @@ let post_process_sigma tenv (sigma : Sil.hpred list) loc : Sil.hpred list =
 let check_path_errors_in_post tenv caller_pname post post_path =
   let check_attr atom =
     match atom with
-    | Sil.Apred (Adiv0 path_pos, [e]) ->
+    | Predicates.Apred (Adiv0 path_pos, [e]) ->
         if Prover.check_zero tenv e then (
           let desc =
             Errdesc.explain_divide_by_zero tenv e (State.get_node_exn ()) (State.get_loc_exn ())
@@ -485,14 +485,14 @@ let post_process_post tenv caller_pname callee_pname loc actual_pre
         false
   in
   let atom_update_alloc_attribute = function
-    | Sil.Apred (Aresource ra, [e])
+    | Predicates.Apred (Aresource ra, [e])
       when not
              ( PredSymb.equal_res_act_kind ra.ra_kind PredSymb.Rrelease
              && actual_pre_has_freed_attribute e ) ->
         (* unless it was already freed before the call *)
         let vpath, _ = Errdesc.vpath_find tenv post e in
         let ra' = {ra with ra_pname= callee_pname; ra_loc= loc; ra_vpath= vpath} in
-        Sil.Apred (Aresource ra', [e])
+        Predicates.Apred (Aresource ra', [e])
     | a ->
         a
   in
@@ -506,24 +506,24 @@ let post_process_post tenv caller_pname callee_pname loc actual_pre
 
 let hpred_lhs_compare hpred1 hpred2 =
   match (hpred1, hpred2) with
-  | Sil.Hpointsto (e1, _, _), Sil.Hpointsto (e2, _, _) ->
+  | Predicates.Hpointsto (e1, _, _), Predicates.Hpointsto (e2, _, _) ->
       Exp.compare e1 e2
-  | Sil.Hpointsto _, _ ->
+  | Predicates.Hpointsto _, _ ->
       -1
-  | _, Sil.Hpointsto _ ->
+  | _, Predicates.Hpointsto _ ->
       1
   | hpred1, hpred2 ->
-      Sil.compare_hpred hpred1 hpred2
+      Predicates.compare_hpred hpred1 hpred2
 
 
 (** set the inst everywhere in a sexp *)
 let rec sexp_set_inst inst = function
-  | Sil.Eexp (e, _) ->
-      Sil.Eexp (e, inst)
-  | Sil.Estruct (fsel, _) ->
-      Sil.Estruct (List.map ~f:(fun (f, se) -> (f, sexp_set_inst inst se)) fsel, inst)
-  | Sil.Earray (len, esel, _) ->
-      Sil.Earray (len, List.map ~f:(fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
+  | Predicates.Eexp (e, _) ->
+      Predicates.Eexp (e, inst)
+  | Predicates.Estruct (fsel, _) ->
+      Predicates.Estruct (List.map ~f:(fun (f, se) -> (f, sexp_set_inst inst se)) fsel, inst)
+  | Predicates.Earray (len, esel, _) ->
+      Predicates.Earray (len, List.map ~f:(fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
 
 
 let rec fsel_star_fld fsel1 fsel2 =
@@ -551,7 +551,7 @@ and esel_star_fld esel1 esel2 =
   match (esel1, esel2) with
   | [], esel2 ->
       (* don't know whether element is read or written in fun call with array *)
-      List.map ~f:(fun (e, se) -> (e, sexp_set_inst Sil.Inone se)) esel2
+      List.map ~f:(fun (e, se) -> (e, sexp_set_inst Predicates.Inone se)) esel2
   | esel1, [] ->
       esel1
   | (e1, se1) :: esel1', (e2, se2) :: esel2' -> (
@@ -561,26 +561,26 @@ and esel_star_fld esel1 esel2 =
     | n when n < 0 ->
         (e1, se1) :: esel_star_fld esel1' esel2
     | _ ->
-        let se2' = sexp_set_inst Sil.Inone se2 in
+        let se2' = sexp_set_inst Predicates.Inone se2 in
         (* don't know whether element is read or written in fun call with array *)
         (e2, se2') :: esel_star_fld esel1 esel2' )
 
 
-and sexp_star_fld se1 se2 : Sil.strexp =
-  (* L.d_str "sexp_star_fld "; Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2; L.d_ln (); *)
+and sexp_star_fld se1 se2 : Predicates.strexp =
+  (* L.d_str "sexp_star_fld "; Predicates.d_sexp se1; L.d_str " "; Predicates.d_sexp se2; L.d_ln (); *)
   match (se1, se2) with
-  | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, inst2) ->
-      Sil.Estruct (fsel_star_fld fsel1 fsel2, inst2)
-  | Sil.Earray (len1, esel1, _), Sil.Earray (_, esel2, inst2) ->
-      Sil.Earray (len1, esel_star_fld esel1 esel2, inst2)
-  | Sil.Eexp (_, inst1), Sil.Earray (len2, esel2, _) ->
+  | Predicates.Estruct (fsel1, _), Predicates.Estruct (fsel2, inst2) ->
+      Predicates.Estruct (fsel_star_fld fsel1 fsel2, inst2)
+  | Predicates.Earray (len1, esel1, _), Predicates.Earray (_, esel2, inst2) ->
+      Predicates.Earray (len1, esel_star_fld esel1 esel2, inst2)
+  | Predicates.Eexp (_, inst1), Predicates.Earray (len2, esel2, _) ->
       let esel1 = [(Exp.zero, se1)] in
-      Sil.Earray (len2, esel_star_fld esel1 esel2, inst1)
+      Predicates.Earray (len2, esel_star_fld esel1 esel2, inst1)
   | _ ->
       L.d_str "cannot star " ;
-      Sil.d_sexp se1 ;
+      Predicates.d_sexp se1 ;
       L.d_str " and " ;
-      Sil.d_sexp se2 ;
+      Predicates.d_sexp se2 ;
       L.d_ln () ;
       assert false
 
@@ -619,22 +619,23 @@ let texp_star tenv texp1 texp2 =
       texp1
 
 
-let hpred_star_fld tenv (hpred1 : Sil.hpred) (hpred2 : Sil.hpred) : Sil.hpred =
+let hpred_star_fld tenv (hpred1 : Predicates.hpred) (hpred2 : Predicates.hpred) : Predicates.hpred =
   match (hpred1, hpred2) with
-  | Sil.Hpointsto (e1, se1, t1), Sil.Hpointsto (_, se2, t2) ->
+  | Hpointsto (e1, se1, t1), Hpointsto (_, se2, t2) ->
       (* L.d_str "hpred_star_fld t1: "; Sil.d_texp_full t1; L.d_str " t2: "; Sil.d_texp_full t2;
          L.d_str " se1: "; Sil.d_sexp se1; L.d_str " se2: "; Sil.d_sexp se2; L.d_ln (); *)
-      Sil.Hpointsto (e1, sexp_star_fld se1 se2, texp_star tenv t1 t2)
+      Hpointsto (e1, sexp_star_fld se1 se2, texp_star tenv t1 t2)
   | _ ->
       assert false
 
 
 (** Implementation of [*] for the field-splitting model *)
-let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpred list =
+let sigma_star_fld tenv (sigma1 : Predicates.hpred list) (sigma2 : Predicates.hpred list) :
+    Predicates.hpred list =
   let sigma1 = List.stable_sort ~compare:hpred_lhs_compare sigma1 in
   let sigma2 = List.stable_sort ~compare:hpred_lhs_compare sigma2 in
   (* L.out "@.@. computing %a@.STAR @.%a@.@." pp_sigma sigma1 pp_sigma sigma2; *)
-  let rec star sg1 sg2 : Sil.hpred list =
+  let rec star sg1 sg2 : Predicates.hpred list =
     match (sg1, sg2) with
     | [], _ ->
         []
@@ -660,19 +661,20 @@ let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Si
 
 
 let hpred_typing_lhs_compare hpred1 (e2, _) =
-  match hpred1 with Sil.Hpointsto (e1, _, _) -> Exp.compare e1 e2 | _ -> -1
+  match hpred1 with Predicates.Hpointsto (e1, _, _) -> Exp.compare e1 e2 | _ -> -1
 
 
-let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
-  match hpred1 with Sil.Hpointsto (e1, se1, _) -> Sil.Hpointsto (e1, se1, te2) | _ -> assert false
+let hpred_star_typing (hpred1 : Predicates.hpred) (_, te2) : Predicates.hpred =
+  match hpred1 with Hpointsto (e1, se1, _) -> Hpointsto (e1, se1, te2) | _ -> assert false
 
 
 (** Implementation of [*] between predicates and typings *)
-let sigma_star_typ (sigma1 : Sil.hpred list) (typings2 : (Exp.t * Exp.t) list) : Sil.hpred list =
+let sigma_star_typ (sigma1 : Predicates.hpred list) (typings2 : (Exp.t * Exp.t) list) :
+    Predicates.hpred list =
   let typing_lhs_compare (e1, _) (e2, _) = Exp.compare e1 e2 in
   let sigma1 = List.stable_sort ~compare:hpred_lhs_compare sigma1 in
   let typings2 = List.stable_sort ~compare:typing_lhs_compare typings2 in
-  let rec star sg1 typ2 : Sil.hpred list =
+  let rec star sg1 typ2 : Predicates.hpred list =
     match (sg1, typ2) with
     | [], _ ->
         []
@@ -715,10 +717,11 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop : 'a Prop.t) pi_new sig
     | [] ->
         current_pi
     | a :: new_pi' ->
-        if Sil.atom_free_vars a |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id)) then (
+        if Predicates.atom_free_vars a |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
+        then (
           L.d_warning "dropping atom with non-footprint variable" ;
           L.d_ln () ;
-          Sil.d_atom a ;
+          Predicates.d_atom a ;
           L.d_ln () ;
           extend_pi current_pi new_pi' )
         else extend_pi (a :: current_pi) new_pi'
@@ -770,7 +773,7 @@ let exp_is_exn = function Exp.Exn _ -> true | _ -> false
 let prop_is_exn pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let is_exn = function
-    | Sil.Hpointsto (e1, Sil.Eexp (e2, _), _) when Exp.equal e1 ret_pvar ->
+    | Predicates.Hpointsto (e1, Predicates.Eexp (e2, _), _) when Exp.equal e1 ret_pvar ->
         exp_is_exn e2
     | _ ->
         false
@@ -784,7 +787,7 @@ let prop_get_exn_name pname prop =
   let rec search_exn e = function
     | [] ->
         None
-    | Sil.Hpointsto (e1, _, Sizeof {typ= {desc= Tstruct name}}) :: _ when Exp.equal e1 e ->
+    | Predicates.Hpointsto (e1, _, Sizeof {typ= {desc= Tstruct name}}) :: _ when Exp.equal e1 e ->
         Some name
     | _ :: tl ->
         search_exn e tl
@@ -792,7 +795,7 @@ let prop_get_exn_name pname prop =
   let rec find_exn_name hpreds = function
     | [] ->
         None
-    | Sil.Hpointsto (e1, Sil.Eexp (Exp.Exn e2, _), _) :: _ when Exp.equal e1 ret_pvar ->
+    | Predicates.Hpointsto (e1, Eexp (Exp.Exn e2, _), _) :: _ when Exp.equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl ->
         find_exn_name hpreds tl
@@ -806,8 +809,8 @@ let lookup_custom_errors prop =
   let rec search_error = function
     | [] ->
         None
-    | Sil.Hpointsto (Exp.Lvar var, Sil.Eexp (Exp.Const (Const.Cstr error_str), _), _) :: _
-      when Pvar.equal var Sil.custom_error ->
+    | Predicates.Hpointsto (Exp.Lvar var, Eexp (Exp.Const (Const.Cstr error_str), _), _) :: _
+      when Pvar.equal var Predicates.custom_error ->
         Some error_str
     | _ :: tl ->
         search_error tl
@@ -819,8 +822,8 @@ let lookup_custom_errors prop =
 let prop_set_exn tenv pname prop se_exn =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let map_hpred = function
-    | Sil.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
-        Sil.Hpointsto (e, se_exn, t)
+    | Predicates.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
+        Predicates.Hpointsto (e, se_exn, t)
     | hpred ->
         hpred
   in
@@ -847,7 +850,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
       if !BiabductionConfig.footprint && List.is_empty posts then
         (* in case of divergence, produce a prop *)
         (* with updated footprint and inconsistent current *)
-        [(Prop.set Prop.prop_emp ~pi:[Sil.Aneq (Exp.zero, Exp.zero)], path_pre)]
+        [(Prop.set Prop.prop_emp ~pi:[Predicates.Aneq (Exp.zero, Exp.zero)], path_pre)]
       else
         List.map
           ~f:(fun (p, path_post) ->
@@ -896,7 +899,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
         let filter = function
-          | Sil.Aeq (Exp.Var id', Exp.Const (Const.Cint i)) ->
+          | Predicates.Aeq (Exp.Var id', Exp.Const (Const.Cint i)) ->
               Ident.equal id id' && IntLit.isnull i
           | _ ->
               false
@@ -906,12 +909,12 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
       let f (e, inst_opt) =
         match (e, inst_opt) with
         | Exp.Var id, Some inst when id_assigned_to_null id ->
-            let inst' = Sil.inst_set_null_case_flag inst in
+            let inst' = Predicates.inst_set_null_case_flag inst in
             (e, Some inst')
         | _ ->
             (e, inst_opt)
       in
-      Sil.hpred_list_expmap f sigma
+      Predicates.hpred_list_expmap f sigma
     in
     let post_p2 =
       let post_p1_sigma = post_p1.Prop.sigma in
@@ -929,7 +932,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
           post_p2
       | Some iter -> (
           let filter = function
-            | Sil.Hpointsto (e, _, _) when Exp.equal e callee_ret_pvar ->
+            | Predicates.Hpointsto (e, _, _) when Exp.equal e callee_ret_pvar ->
                 Some ()
             | _ ->
                 None
@@ -939,14 +942,14 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
               post_p2
           | Some iter' -> (
             match fst (Prop.prop_iter_current tenv iter') with
-            | Sil.Hpointsto (_, Sil.Eexp (e', inst), _) when exp_is_exn e' ->
+            | Predicates.Hpointsto (_, Eexp (e', inst), _) when exp_is_exn e' ->
                 (* resuls is an exception: set in caller *)
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
-                prop_set_exn tenv caller_pname p (Sil.Eexp (e', inst))
-            | Sil.Hpointsto (_, Sil.Eexp (e', _), _) ->
+                prop_set_exn tenv caller_pname p (Eexp (e', inst))
+            | Predicates.Hpointsto (_, Eexp (e', _), _) ->
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                 Prop.conjoin_eq tenv e' (Exp.Var ret_id) p
-            | Sil.Hpointsto _ ->
+            | Predicates.Hpointsto _ ->
                 (* returning nothing or unexpected sexp, turning into nondet *)
                 Prop.prop_iter_remove_curr_then_to_prop tenv iter'
             | _ ->
@@ -998,7 +1001,7 @@ let mk_actual_precondition tenv prop actual_params formal_params =
   in
   let mk_instantiation (formal_var, (actual_e, actual_t)) =
     Prop.mk_ptsto tenv (Exp.Lvar formal_var)
-      (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
+      (Eexp (actual_e, Predicates.inst_actual_precondition))
       (Exp.Sizeof {typ= actual_t; nbytes= None; dynamic_length= None; subtype= Subtype.exact})
   in
   let instantiated_formals = List.map ~f:mk_instantiation formals_actuals in
@@ -1015,7 +1018,8 @@ let mk_posts tenv prop callee_pname posts =
     let last_call_ret_non_null =
       List.exists
         ~f:(function
-          | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname ->
+          | Predicates.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname
+            ->
               Prover.check_disequal tenv prop exp Exp.zero
           | _ ->
               false )
@@ -1025,7 +1029,7 @@ let mk_posts tenv prop callee_pname posts =
       let returns_null prop =
         List.exists
           ~f:(function
-            | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
+            | Predicates.Hpointsto (Exp.Lvar pvar, Eexp (e, _), _) when Pvar.is_return pvar ->
                 Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
             | _ ->
                 false )
@@ -1089,8 +1093,8 @@ let missing_sigma_need_adding_to_tenv tenv hpreds =
   in
   let missing_hpred_need_adding_to_tenv hpred =
     match hpred with
-    | Sil.Hpointsto (_, Sil.Estruct (missing_fields, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}})
-      -> (
+    | Predicates.Hpointsto
+        (_, Estruct (missing_fields, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) -> (
       match Tenv.lookup tenv name with
       | Some struc ->
           List.exists ~f:(field_is_missing struc) missing_fields
@@ -1123,7 +1127,8 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
     | Some callee_tenv ->
         let add_field_in_hpred hpred =
           match hpred with
-          | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) -> (
+          | Predicates.Hpointsto (_, Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}})
+            -> (
             match Tenv.lookup callee_tenv name with
             | Some {fields} ->
                 List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
@@ -1172,7 +1177,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
       , missing_typ ) -> (
       (* check if a missing_fld hpred is from a dyn language (ObjC) *)
       let hpred_missing_objc_class = function
-        | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ}) ->
+        | Predicates.Hpointsto (_, Estruct (_, _), Exp.Sizeof {typ}) ->
             Typ.is_objc_class typ
         | _ ->
             false
@@ -1250,7 +1255,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
 
 let remove_constant_string_class tenv prop =
   let filter = function
-    | Sil.Hpointsto (Exp.Const (Const.Cstr _ | Const.Cclass _), _, _) ->
+    | Predicates.Hpointsto (Const (Cstr _ | Cclass _), _, _) ->
         false
     | _ ->
         true
@@ -1276,7 +1281,8 @@ let quantify_path_idents_remove_constant_strings tenv (prop : Prop.normal Prop.t
 (** Strengthen the footprint by adding pure facts from the current part *)
 let prop_pure_to_footprint tenv (p : 'a Prop.t) : Prop.normal Prop.t =
   let is_footprint_atom_not_attribute a =
-    (not (Attribute.is_pred a)) && Sil.atom_free_vars a |> Sequence.for_all ~f:Ident.is_footprint
+    (not (Attribute.is_pred a))
+    && Predicates.atom_free_vars a |> Sequence.for_all ~f:Ident.is_footprint
   in
   let pure = Prop.get_pure p in
   let new_footprint_atoms = List.filter ~f:is_footprint_atom_not_attribute pure in
@@ -1284,7 +1290,8 @@ let prop_pure_to_footprint tenv (p : 'a Prop.t) : Prop.normal Prop.t =
   else
     (* add pure fact to footprint *)
     let filtered_pi_fp =
-      List.filter (p.Prop.pi_fp @ new_footprint_atoms) ~f:(fun a -> not (Sil.atom_has_local_addr a))
+      List.filter (p.Prop.pi_fp @ new_footprint_atoms) ~f:(fun a ->
+          not (Predicates.atom_has_local_addr a) )
     in
     Prop.normalize tenv (Prop.set p ~pi_fp:filtered_pi_fp)
 

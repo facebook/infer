@@ -25,13 +25,14 @@ let execute___builtin_va_arg {Builtin.summary; tenv; prop_; path; args; loc; exe
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let mk_empty_array len = Sil.Earray (len, [], Sil.inst_none)
+let mk_empty_array len = Predicates.Earray (len, [], Predicates.inst_none)
 
 (* Make a rearranged array. As it is rearranged when it appears in a precondition
    it requires that the function is called with the array allocated. If not infer
    return a null pointer deref *)
 let mk_empty_array_rearranged len =
-  Sil.Earray (len, [], Sil.inst_rearrange true (State.get_loc_exn ()) (State.get_path_pos ()))
+  Predicates.Earray
+    (len, [], Predicates.inst_rearrange true (State.get_loc_exn ()) (State.get_path_pos ()))
 
 
 let extract_array_type typ =
@@ -58,11 +59,11 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
   let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
   let hpred_opt =
     List.find
-      ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
+      ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
       prop.Prop.sigma
   in
   match hpred_opt with
-  | Some (Sil.Hpointsto (_, Sil.Earray (len, _, _), _)) ->
+  | Some (Predicates.Hpointsto (_, Predicates.Earray (len, _, _), _)) ->
       Some (len, prop)
   | Some _ ->
       None (* e points to something but not an array *)
@@ -125,12 +126,12 @@ let execute___set_array_length {Builtin.tenv; summary; prop_; path; args} : Buil
         let n_len, prop = check_arith_norm_exp tenv pname len prop__ in
         let hpred, sigma' =
           List.partition_tf
-            ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
+            ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
             prop.Prop.sigma
         in
         match hpred with
-        | [Sil.Hpointsto (e, Sil.Earray (_, esel, inst), t)] ->
-            let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
+        | [Predicates.Hpointsto (e, Earray (_, esel, inst), t)] ->
+            let hpred' = Predicates.Hpointsto (e, Earray (n_len, esel, inst), t) in
             let prop' = Prop.set prop ~sigma:(hpred' :: sigma') in
             [(Prop.normalize tenv prop', path)]
         | _ ->
@@ -160,7 +161,7 @@ let create_type tenv n_lexp typ prop =
   let prop_type =
     match
       List.find
-        ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
+        ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
         prop.Prop.sigma
     with
     | Some _ ->
@@ -169,7 +170,7 @@ let create_type tenv n_lexp typ prop =
         let mhpred =
           match typ.Typ.desc with
           | Typ.Tptr (typ', _) ->
-              let sexp = Sil.Estruct ([], Sil.inst_none) in
+              let sexp = Predicates.Estruct ([], Predicates.inst_none) in
               let texp =
                 Exp.Sizeof {typ= typ'; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
               in
@@ -222,7 +223,8 @@ let execute___get_type_of {Builtin.summary; tenv; prop_; path; ret_id_typ; args}
         let hpred_opt =
           List.find_map
             ~f:(function
-              | Sil.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None )
+              | Predicates.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None
+              )
             prop.Prop.sigma
         in
         match hpred_opt with
@@ -241,12 +243,12 @@ let replace_ptsto_texp tenv prop root_e texp =
   let process_sigma sigma =
     let sigma1, sigma2 =
       List.partition_tf
-        ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e root_e | _ -> false)
+        ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e root_e | _ -> false)
         sigma
     in
     match sigma1 with
-    | [Sil.Hpointsto (e, se, _)] ->
-        Sil.Hpointsto (e, se, texp) :: sigma2
+    | [Predicates.Hpointsto (e, se, _)] ->
+        Predicates.Hpointsto (e, se, texp) :: sigma2
     | _ ->
         sigma
   in
@@ -278,10 +280,10 @@ let execute___instanceof_cast ~instof {Builtin.summary; tenv; prop_; path; ret_i
         else
           let res_opt =
             List.find
-              ~f:(function Sil.Hpointsto (e1, _, _) -> Exp.equal e1 val1 | _ -> false)
+              ~f:(function Predicates.Hpointsto (e1, _, _) -> Exp.equal e1 val1 | _ -> false)
               prop.Prop.sigma
             |> Option.map ~f:(function
-                 | Sil.Hpointsto (_, _, texp1) -> (
+                 | Predicates.Hpointsto (_, _, texp1) -> (
                      let pos_type_opt, neg_type_opt =
                        Prover.Subtyping_check.subtype_case_analysis tenv texp1 texp2
                      in
@@ -438,7 +440,7 @@ let execute_exit {Builtin.prop_; path} : Builtin.ret_typ = SymExec.diverge prop_
 
 let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
   match Prop.prop_iter_current tenv iter with
-  | Sil.Hpointsto (lexp, _, _), [] ->
+  | Predicates.Hpointsto (lexp, _, _), [] ->
       let prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
       if mark_as_freed then
         let pname = PredSymb.mem_dealloc_pname mk in
@@ -456,7 +458,7 @@ let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
         in
         p_res :: acc
       else prop :: acc
-  | Sil.Hpointsto _, _ :: _ ->
+  | Predicates.Hpointsto _, _ :: _ ->
       assert false (* alignment error *)
   | _ ->
       assert false
@@ -581,7 +583,7 @@ let execute_alloc mk can_return_null {Builtin.summary; tenv; prop_; path; ret_id
   in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in
-  let ptsto_new = Prop.mk_ptsto_exp tenv Prop.Fld_init (exp_new, cnt_te, None) Sil.Ialloc in
+  let ptsto_new = Prop.mk_ptsto_exp tenv Prop.Fld_init (exp_new, cnt_te, None) Predicates.Ialloc in
   let prop_plus_ptsto =
     let prop' = Prop.normalize tenv (Prop.prop_sigma_star prop [ptsto_new]) in
     let ra =
@@ -612,10 +614,10 @@ let execute___cxx_typeid ({Builtin.summary; tenv; prop_; args; loc; exe_env} as 
           let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
           let typ =
             List.find
-              ~f:(function Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
+              ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
               prop.Prop.sigma
             |> Option.value_map
-                 ~f:(function Sil.Hpointsto (_, _, Exp.Sizeof {typ}) -> typ | _ -> typ_)
+                 ~f:(function Predicates.Hpointsto (_, _, Exp.Sizeof {typ}) -> typ | _ -> typ_)
                  ~default:typ_
           in
           let typ_string = Typ.to_string typ in
@@ -763,7 +765,7 @@ let execute___infer_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env
   in
   let set_instr =
     Sil.Store
-      { e1= Exp.Lvar Sil.custom_error
+      { e1= Exp.Lvar Predicates.custom_error
       ; root_typ= Typ.mk Tvoid
       ; typ= Typ.mk Tvoid
       ; e2= Exp.Const (Const.Cstr error_str)
@@ -784,7 +786,7 @@ let execute___assert_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_en
   in
   let set_instr =
     Sil.Store
-      { e1= Exp.Lvar Sil.custom_error
+      { e1= Exp.Lvar Predicates.custom_error
       ; root_typ= Typ.mk Tvoid
       ; typ= Typ.mk Tvoid
       ; e2= Exp.Const (Const.Cstr error_str)

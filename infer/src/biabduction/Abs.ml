@@ -19,9 +19,9 @@ type rule =
   ; r_root: Match.hpred_pat
   ; r_sigma: Match.hpred_pat list
   ; (* sigma should be in a specific order *)
-    r_new_sigma: Sil.hpred list
-  ; r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Sil.subst -> Sil.atom list
-  ; r_condition: Prop.normal Prop.t -> Sil.subst -> bool }
+    r_new_sigma: Predicates.hpred list
+  ; r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Predicates.subst -> Predicates.atom list
+  ; r_condition: Prop.normal Prop.t -> Predicates.subst -> bool }
 
 let sigma_rewrite tenv p r : Prop.normal Prop.t option =
   match Match.prop_match_with_impl tenv p r.r_condition r.r_vars r.r_root r.r_sigma with
@@ -43,7 +43,7 @@ let create_fresh_primeds_ls para =
   let id_next = Ident.create_fresh Ident.kprimed in
   let id_end = Ident.create_fresh Ident.kprimed in
   let ids_shared =
-    let svars = para.Sil.svars in
+    let svars = para.Predicates.svars in
     let f _ = Ident.create_fresh Ident.kprimed in
     List.map ~f svars
   in
@@ -56,15 +56,16 @@ let create_fresh_primeds_ls para =
   (ids_tuple, exps_tuple)
 
 
-let create_condition_ls ids_private id_base p_leftover (inst : Sil.subst) =
+let create_condition_ls ids_private id_base p_leftover (inst : Predicates.subst) =
   let insts_of_private_ids, insts_of_public_ids, inst_of_base =
     let f id' = List.exists ~f:(fun id'' -> Ident.equal id' id'') ids_private in
-    let inst_private, inst_public = Sil.sub_domain_partition f inst in
-    let insts_of_public_ids = Sil.sub_range inst_public in
+    let inst_private, inst_public = Predicates.sub_domain_partition f inst in
+    let insts_of_public_ids = Predicates.sub_range inst_public in
     let inst_of_base =
-      try Sil.sub_find (Ident.equal id_base) inst_public with Caml.Not_found -> assert false
+      try Predicates.sub_find (Ident.equal id_base) inst_public
+      with Caml.Not_found -> assert false
     in
-    let insts_of_private_ids = Sil.sub_range inst_private in
+    let insts_of_private_ids = Predicates.sub_range inst_private in
     (insts_of_private_ids, insts_of_public_ids, inst_of_base)
   in
   (*
@@ -94,16 +95,16 @@ let create_condition_ls ids_private id_base p_leftover (inst : Sil.subst) =
       Exp.free_vars e |> Fn.non intersects_fav_insts_of_private_ids )
 
 
-let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Sil.hpara) =
+let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Predicates.hpara) =
   let ids_tuple, exps_tuple = create_fresh_primeds_ls para in
   let id_base, id_next, id_end, ids_shared = ids_tuple in
   let exp_base, exp_next, exp_end, exps_shared = exps_tuple in
-  let ids_exist_fst, para_fst = Sil.hpara_instantiate para exp_base exp_next exps_shared in
+  let ids_exist_fst, para_fst = Predicates.hpara_instantiate para exp_base exp_next exps_shared in
   let para_fst_start, para_fst_rest =
     let mark_impl_flag hpred = {Match.hpred; Match.flag= impl_ok1} in
     match para_fst with
     | [] ->
-        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Sil.pp_hpara Pp.text) para ;
+        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Predicates.pp_hpara Pp.text) para ;
         assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
@@ -112,12 +113,12 @@ let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Sil.hpara) =
   in
   let ids_exist_snd, para_snd =
     let mark_impl_flag hpred = {Match.hpred; Match.flag= impl_ok2} in
-    let ids, para_body = Sil.hpara_instantiate para exp_next exp_end exps_shared in
+    let ids, para_body = Predicates.hpara_instantiate para exp_next exp_end exps_shared in
     let para_body_hpats = List.map ~f:mark_impl_flag para_body in
     (ids, para_body_hpats)
   in
-  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let lseg_res = Prop.mk_lseg tenv Lseg_NE para exp_base exp_end exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = id_next :: (ids_exist_fst @ ids_exist_snd) in
     create_condition_ls ids_private id_base
@@ -134,11 +135,11 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
   let ids_tuple, exps_tuple = create_fresh_primeds_ls para in
   let id_base, id_next, id_end, ids_shared = ids_tuple in
   let exp_base, exp_next, exp_end, exps_shared = exps_tuple in
-  let ids_exist, para_inst = Sil.hpara_instantiate para exp_base exp_next exps_shared in
+  let ids_exist, para_inst = Predicates.hpara_instantiate para exp_base exp_next exps_shared in
   let para_inst_start, para_inst_rest =
     match para_inst with
     | [] ->
-        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Sil.pp_hpara Pp.text) para ;
+        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Predicates.pp_hpara Pp.text) para ;
         assert false
     | hpred :: hpreds ->
         let allow_impl hpred = {Match.hpred; Match.flag= impl_ok1} in
@@ -147,8 +148,8 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
   let lseg_pat =
     {Match.hpred= Prop.mk_lseg tenv k2 para exp_next exp_end exps_shared; Match.flag= impl_ok2}
   in
-  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let lseg_res = Prop.mk_lseg tenv Lseg_NE para exp_base exp_end exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
@@ -169,13 +170,13 @@ let mk_rule_lspts_ls tenv k1 impl_ok1 impl_ok2 para =
     {Match.hpred= Prop.mk_lseg tenv k1 para exp_base exp_next exps_shared; Match.flag= impl_ok1}
   in
   let ids_exist, para_inst_pat =
-    let ids, para_body = Sil.hpara_instantiate para exp_next exp_end exps_shared in
+    let ids, para_body = Predicates.hpara_instantiate para exp_next exp_end exps_shared in
     let allow_impl hpred = {Match.hpred; Match.flag= impl_ok2} in
     let para_body_pat = List.map ~f:allow_impl para_body in
     (ids, para_body_pat)
   in
-  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let lseg_res = Prop.mk_lseg tenv Lseg_NE para exp_base exp_end exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
@@ -188,12 +189,12 @@ let mk_rule_lspts_ls tenv k1 impl_ok1 impl_ok2 para =
   ; r_condition= condition }
 
 
-let lseg_kind_add k1 k2 =
+let lseg_kind_add (k1 : Predicates.lseg_kind) (k2 : Predicates.lseg_kind) : Predicates.lseg_kind =
   match (k1, k2) with
-  | Sil.Lseg_NE, Sil.Lseg_NE | Sil.Lseg_NE, Sil.Lseg_PE | Sil.Lseg_PE, Sil.Lseg_NE ->
-      Sil.Lseg_NE
-  | Sil.Lseg_PE, Sil.Lseg_PE ->
-      Sil.Lseg_PE
+  | Lseg_NE, Lseg_NE | Lseg_NE, Lseg_PE | Lseg_PE, Lseg_NE ->
+      Lseg_NE
+  | Lseg_PE, Lseg_PE ->
+      Lseg_PE
 
 
 let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
@@ -208,7 +209,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_lseg tenv k_res para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) =
+  let gen_pi_res _ _ (_ : Predicates.subst) =
     []
     (*
   let inst_base, inst_next, inst_end =
@@ -217,7 +218,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   (find id_base, find id_next, find id_end)
   with Not_found -> assert false in
   let spooky_case _ =
-  (equal_lseg_kind Sil.Lseg_PE k_res)
+  (equal_lseg_kind Lseg_PE k_res)
   && (check_allocatedness p_leftover inst_end)
   && ((check_disequal p_start inst_base inst_next)
   || (check_disequal p_start inst_next inst_end)) in
@@ -240,20 +241,20 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   ; r_condition= condition }
 
 
-let mk_rules_for_sll tenv (para : Sil.hpara) : rule list =
+let mk_rules_for_sll tenv (para : Predicates.hpara) : rule list =
   if not Config.nelseg then
     let pts_pts = mk_rule_ptspts_ls tenv true true para in
-    let pts_pels = mk_rule_ptsls_ls tenv Sil.Lseg_PE true false para in
-    let pels_pts = mk_rule_lspts_ls tenv Sil.Lseg_PE false true para in
-    let pels_nels = mk_rule_lsls_ls tenv Sil.Lseg_PE Sil.Lseg_NE false false para in
-    let nels_pels = mk_rule_lsls_ls tenv Sil.Lseg_NE Sil.Lseg_PE false false para in
-    let pels_pels = mk_rule_lsls_ls tenv Sil.Lseg_PE Sil.Lseg_PE false false para in
+    let pts_pels = mk_rule_ptsls_ls tenv Lseg_PE true false para in
+    let pels_pts = mk_rule_lspts_ls tenv Lseg_PE false true para in
+    let pels_nels = mk_rule_lsls_ls tenv Lseg_PE Lseg_NE false false para in
+    let nels_pels = mk_rule_lsls_ls tenv Lseg_NE Lseg_PE false false para in
+    let pels_pels = mk_rule_lsls_ls tenv Lseg_PE Lseg_PE false false para in
     [pts_pts; pts_pels; pels_pts; pels_nels; nels_pels; pels_pels]
   else
     let pts_pts = mk_rule_ptspts_ls tenv true true para in
-    let pts_nels = mk_rule_ptsls_ls tenv Sil.Lseg_NE true false para in
-    let nels_pts = mk_rule_lspts_ls tenv Sil.Lseg_NE false true para in
-    let nels_nels = mk_rule_lsls_ls tenv Sil.Lseg_NE Sil.Lseg_NE false false para in
+    let pts_nels = mk_rule_ptsls_ls tenv Lseg_NE true false para in
+    let nels_pts = mk_rule_lspts_ls tenv Lseg_NE false true para in
+    let nels_nels = mk_rule_lsls_ls tenv Lseg_NE Lseg_NE false false para in
     [pts_pts; pts_nels; nels_pts; nels_nels]
 
 
@@ -267,7 +268,7 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let id_oB = Ident.create_fresh Ident.kprimed in
   let id_oF = Ident.create_fresh Ident.kprimed in
   let ids_shared =
-    let svars = para.Sil.svars_dll in
+    let svars = para.Predicates.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     List.map ~f svars
   in
@@ -276,12 +277,15 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let exp_oB = Exp.Var id_oB in
   let exp_oF = Exp.Var id_oF in
   let exps_shared = List.map ~f:(fun id -> Exp.Var id) ids_shared in
-  let ids_exist_fst, para_fst = Sil.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared in
+  let ids_exist_fst, para_fst =
+    Predicates.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared
+  in
   let para_fst_start, para_fst_rest =
     let mark_impl_flag hpred = {Match.hpred; Match.flag= impl_ok1} in
     match para_fst with
     | [] ->
-        L.internal_error "@\n@\nERROR (Empty DLL Para): %a@\n@." (Sil.pp_hpara_dll Pp.text) para ;
+        L.internal_error "@\n@\nERROR (Empty DLL Para): %a@\n@." (Predicates.pp_hpara_dll Pp.text)
+          para ;
         assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
@@ -290,12 +294,12 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   in
   let ids_exist_snd, para_snd =
     let mark_impl_flag hpred = {Match.hpred; Match.flag= impl_ok2} in
-    let ids, para_body = Sil.hpara_dll_instantiate para exp_iF' exp_iF exp_oF exps_shared in
+    let ids, para_body = Predicates.hpara_dll_instantiate para exp_iF' exp_iF exp_oF exps_shared in
     let para_body_hpats = List.map ~f:mark_impl_flag para_body in
     (ids, para_body_hpats)
   in
-  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let dllseg_res = Prop.mk_dllseg tenv Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     (* for the case of ptspts since iF'=iB therefore iF' cannot be private*)
     let ids_private = ids_exist_fst @ ids_exist_snd in
@@ -322,7 +326,7 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
   let id_oF = Ident.create_fresh Ident.kprimed in
   let id_iB = Ident.create_fresh Ident.kprimed in
   let ids_shared =
-    let svars = para.Sil.svars_dll in
+    let svars = para.Predicates.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     List.map ~f svars
   in
@@ -332,7 +336,9 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
   let exp_oF = Exp.Var id_oF in
   let exp_iB = Exp.Var id_iB in
   let exps_shared = List.map ~f:(fun id -> Exp.Var id) ids_shared in
-  let ids_exist, para_inst = Sil.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared in
+  let ids_exist, para_inst =
+    Predicates.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared
+  in
   let para_inst_start, para_inst_rest =
     match para_inst with
     | [] ->
@@ -345,8 +351,8 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
     { Match.hpred= Prop.mk_dllseg tenv k2 para exp_iF' exp_iF exp_oF exp_iB exps_shared
     ; Match.flag= impl_ok2 }
   in
-  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let dllseg_res = Prop.mk_dllseg tenv Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = id_iF' :: ids_exist in
     create_condition_dll ids_private id_iF
@@ -366,7 +372,7 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
   let id_oB' = Ident.create_fresh Ident.kprimed in
   let id_oF = Ident.create_fresh Ident.kprimed in
   let ids_shared =
-    let svars = para.Sil.svars_dll in
+    let svars = para.Predicates.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     List.map ~f svars
   in
@@ -376,7 +382,9 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
   let exp_oB' = Exp.Var id_oB' in
   let exp_oF = Exp.Var id_oF in
   let exps_shared = List.map ~f:(fun id -> Exp.Var id) ids_shared in
-  let ids_exist, para_inst = Sil.hpara_dll_instantiate para exp_iF' exp_oB' exp_oF exps_shared in
+  let ids_exist, para_inst =
+    Predicates.hpara_dll_instantiate para exp_iF' exp_oB' exp_oF exps_shared
+  in
   let para_inst_pat =
     let allow_impl hpred = {Match.hpred; Match.flag= impl_ok2} in
     List.map ~f:allow_impl para_inst
@@ -385,8 +393,8 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
     { Match.hpred= Prop.mk_dllseg tenv k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared
     ; Match.flag= impl_ok1 }
   in
-  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let dllseg_res = Prop.mk_dllseg tenv Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = id_oB' :: ids_exist in
     create_condition_dll ids_private id_iF
@@ -407,7 +415,7 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   let id_oF = Ident.create_fresh Ident.kprimed in
   let id_iB = Ident.create_fresh Ident.kprimed in
   let ids_shared =
-    let svars = para.Sil.svars_dll in
+    let svars = para.Predicates.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     List.map ~f svars
   in
@@ -428,7 +436,7 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_dllseg tenv k_res para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res _ _ (_ : Sil.subst) = [] in
+  let gen_pi_res _ _ (_ : Predicates.subst) = [] in
   let condition =
     let ids_private = [id_iF'; id_oB'] in
     create_condition_dll ids_private id_iF
@@ -441,20 +449,20 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   ; r_condition= condition }
 
 
-let mk_rules_for_dll tenv (para : Sil.hpara_dll) : rule list =
+let mk_rules_for_dll tenv (para : Predicates.hpara_dll) : rule list =
   if not Config.nelseg then
     let pts_pts = mk_rule_ptspts_dll tenv true true para in
-    let pts_pedll = mk_rule_ptsdll_dll tenv Sil.Lseg_PE true false para in
-    let pedll_pts = mk_rule_dllpts_dll tenv Sil.Lseg_PE false true para in
-    let pedll_nedll = mk_rule_dlldll_dll tenv Sil.Lseg_PE Sil.Lseg_NE false false para in
-    let nedll_pedll = mk_rule_dlldll_dll tenv Sil.Lseg_NE Sil.Lseg_PE false false para in
-    let pedll_pedll = mk_rule_dlldll_dll tenv Sil.Lseg_PE Sil.Lseg_PE false false para in
+    let pts_pedll = mk_rule_ptsdll_dll tenv Lseg_PE true false para in
+    let pedll_pts = mk_rule_dllpts_dll tenv Lseg_PE false true para in
+    let pedll_nedll = mk_rule_dlldll_dll tenv Lseg_PE Lseg_NE false false para in
+    let nedll_pedll = mk_rule_dlldll_dll tenv Lseg_NE Lseg_PE false false para in
+    let pedll_pedll = mk_rule_dlldll_dll tenv Lseg_PE Lseg_PE false false para in
     [pts_pts; pts_pedll; pedll_pts; pedll_nedll; nedll_pedll; pedll_pedll]
   else
     let ptspts_dll = mk_rule_ptspts_dll tenv true true para in
-    let ptsdll_dll = mk_rule_ptsdll_dll tenv Sil.Lseg_NE true false para in
-    let dllpts_dll = mk_rule_dllpts_dll tenv Sil.Lseg_NE false true para in
-    let dlldll_dll = mk_rule_dlldll_dll tenv Sil.Lseg_NE Sil.Lseg_NE false false para in
+    let ptsdll_dll = mk_rule_ptsdll_dll tenv Lseg_NE true false para in
+    let dllpts_dll = mk_rule_dllpts_dll tenv Lseg_NE false true para in
+    let dlldll_dll = mk_rule_dlldll_dll tenv Lseg_NE Lseg_NE false false para in
     [ptspts_dll; ptsdll_dll; dllpts_dll; dlldll_dll]
 
 
@@ -493,7 +501,7 @@ let typ_get_recursive_flds tenv typ_exp =
       assert false
 
 
-let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =
+let discover_para_roots tenv p root1 next1 root2 next2 : Predicates.hpara option =
   let eq_arg1 = Exp.equal root1 next1 in
   let eq_arg2 = Exp.equal root2 next2 in
   let precondition_check = (not eq_arg1) && not eq_arg2 in
@@ -510,7 +518,8 @@ let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =
         Some hpara
 
 
-let discover_para_dll_roots tenv p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpara_dll option =
+let discover_para_dll_roots tenv p root1 blink1 flink1 root2 blink2 flink2 :
+    Predicates.hpara_dll option =
   let eq_arg1 = Exp.equal root1 blink1 in
   let eq_arg1' = Exp.equal root1 flink1 in
   let eq_arg2 = Exp.equal root2 blink2 in
@@ -535,21 +544,21 @@ let discover_para_candidates tenv p =
   let get_edges_strexp rec_flds root se =
     let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
     match se with
-    | Sil.Eexp _ | Sil.Earray _ ->
+    | Predicates.Eexp _ | Predicates.Earray _ ->
         ()
-    | Sil.Estruct (fsel, _) ->
+    | Predicates.Estruct (fsel, _) ->
         let fsel' = List.filter ~f:(fun (fld, _) -> is_rec_fld fld) fsel in
         let process (_, nextse) =
-          match nextse with Sil.Eexp (next, _) -> add_edge (root, next) | _ -> assert false
+          match nextse with Predicates.Eexp (next, _) -> add_edge (root, next) | _ -> assert false
         in
         List.iter ~f:process fsel'
   in
   let rec get_edges_sigma = function
     | [] ->
         ()
-    | Sil.Hlseg _ :: sigma_rest | Sil.Hdllseg _ :: sigma_rest ->
+    | Predicates.Hlseg _ :: sigma_rest | Predicates.Hdllseg _ :: sigma_rest ->
         get_edges_sigma sigma_rest
-    | Sil.Hpointsto (root, se, te) :: sigma_rest ->
+    | Predicates.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
         get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
   in
@@ -577,12 +586,12 @@ let discover_para_dll_candidates tenv p =
   let get_edges_strexp rec_flds root se =
     let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
     match se with
-    | Sil.Eexp _ | Sil.Earray _ ->
+    | Predicates.Eexp _ | Predicates.Earray _ ->
         ()
-    | Sil.Estruct (fsel, _) ->
+    | Predicates.Estruct (fsel, _) ->
         let fsel' = List.rev_filter ~f:(fun (fld, _) -> is_rec_fld fld) fsel in
         let convert_to_exp acc (_, se) =
-          match se with Sil.Eexp (e, _) -> e :: acc | _ -> assert false
+          match se with Predicates.Eexp (e, _) -> e :: acc | _ -> assert false
         in
         let links = List.fold ~f:convert_to_exp ~init:[] fsel' in
         let rec iter_pairs = function
@@ -597,9 +606,9 @@ let discover_para_dll_candidates tenv p =
   let rec get_edges_sigma = function
     | [] ->
         ()
-    | Sil.Hlseg _ :: sigma_rest | Sil.Hdllseg _ :: sigma_rest ->
+    | Predicates.Hlseg _ :: sigma_rest | Predicates.Hdllseg _ :: sigma_rest ->
         get_edges_sigma sigma_rest
-    | Sil.Hpointsto (root, se, te) :: sigma_rest ->
+    | Predicates.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
         get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
   in
@@ -659,7 +668,7 @@ let discover_para_dll tenv p =
 (****************** Start of the ADT abs_rules ******************)
 
 (** Type of parameter for abstraction rules *)
-type para_ty = SLL of Sil.hpara | DLL of Sil.hpara_dll
+type para_ty = SLL of Predicates.hpara | DLL of Predicates.hpara_dll
 
 (** Rule set: a list of rules of a given type *)
 type rule_set = para_ty * rule list
@@ -677,16 +686,16 @@ let set_current_rules rules = Global.current_rules := rules
 let reset_current_rules () = Global.current_rules := []
 
 let eqs_sub subst eqs =
-  List.map ~f:(fun (e1, e2) -> (Sil.exp_sub subst e1, Sil.exp_sub subst e2)) eqs
+  List.map ~f:(fun (e1, e2) -> (Predicates.exp_sub subst e1, Predicates.exp_sub subst e2)) eqs
 
 
 let eqs_solve ids_in eqs_in =
-  let rec solve (sub : Sil.subst) (eqs : (Exp.t * Exp.t) list) : Sil.subst option =
+  let rec solve (sub : Predicates.subst) (eqs : (Exp.t * Exp.t) list) : Predicates.subst option =
     let do_default id e eqs_rest =
       if not (List.exists ~f:(fun id' -> Ident.equal id id') ids_in) then None
       else
         let sub' =
-          match Sil.extend_sub sub id e with
+          match Predicates.extend_sub sub id e with
           | None ->
               L.internal_error "@\n@\nERROR : Buggy Implementation.@\n@." ;
               assert false
@@ -714,32 +723,36 @@ let eqs_solve ids_in eqs_in =
         None
   in
   let compute_ids sub =
-    let sub_list = Sil.sub_to_list sub in
+    let sub_list = Predicates.sub_to_list sub in
     let sub_dom = List.map ~f:fst sub_list in
     let filter id = not (List.exists ~f:(fun id' -> Ident.equal id id') sub_dom) in
     List.filter ~f:filter ids_in
   in
-  match solve Sil.sub_empty eqs_in with None -> None | Some sub -> Some (compute_ids sub, sub)
+  match solve Predicates.sub_empty eqs_in with
+  | None ->
+      None
+  | Some sub ->
+      Some (compute_ids sub, sub)
 
 
 let sigma_special_cases_eqs sigma =
   let rec f ids_acc eqs_acc sigma_acc = function
     | [] ->
         [(List.rev ids_acc, List.rev eqs_acc, List.rev sigma_acc)]
-    | (Sil.Hpointsto _ as hpred) :: sigma_rest ->
+    | (Predicates.Hpointsto _ as hpred) :: sigma_rest ->
         f ids_acc eqs_acc (hpred :: sigma_acc) sigma_rest
-    | (Sil.Hlseg (_, para, e1, e2, es) as hpred) :: sigma_rest ->
+    | (Predicates.Hlseg (_, para, e1, e2, es) as hpred) :: sigma_rest ->
         let empty_case = f ids_acc ((e1, e2) :: eqs_acc) sigma_acc sigma_rest in
         let pointsto_case =
-          let eids, para_inst = Sil.hpara_instantiate para e1 e2 es in
+          let eids, para_inst = Predicates.hpara_instantiate para e1 e2 es in
           f (eids @ ids_acc) eqs_acc sigma_acc (para_inst @ sigma_rest)
         in
         let general_case = f ids_acc eqs_acc (hpred :: sigma_acc) sigma_rest in
         empty_case @ pointsto_case @ general_case
-    | (Sil.Hdllseg (_, para, e1, e2, e3, e4, es) as hpred) :: sigma_rest ->
+    | (Predicates.Hdllseg (_, para, e1, e2, e3, e4, es) as hpred) :: sigma_rest ->
         let empty_case = f ids_acc ((e1, e3) :: (e2, e4) :: eqs_acc) sigma_acc sigma_rest in
         let pointsto_case =
-          let eids, para_inst = Sil.hpara_dll_instantiate para e1 e2 e3 es in
+          let eids, para_inst = Predicates.hpara_dll_instantiate para e1 e2 e3 es in
           f (eids @ ids_acc) eqs_acc sigma_acc (para_inst @ sigma_rest)
         in
         let general_case = f ids_acc eqs_acc (hpred :: sigma_acc) sigma_rest in
@@ -748,7 +761,7 @@ let sigma_special_cases_eqs sigma =
   f [] [] [] sigma
 
 
-let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
+let sigma_special_cases ids sigma : (Ident.t list * Predicates.hpred list) list =
   let special_cases_eqs = sigma_special_cases_eqs sigma in
   let special_cases_rev =
     let f acc (eids_cur, eqs_cur, sigma_cur) =
@@ -757,22 +770,24 @@ let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
       | None ->
           acc
       | Some (ids_res, sub) ->
-          (ids_res, List.map ~f:(Sil.hpred_sub sub) sigma_cur) :: acc
+          (ids_res, List.map ~f:(Predicates.hpred_sub sub) sigma_cur) :: acc
     in
     List.fold ~f ~init:[] special_cases_eqs
   in
   List.rev special_cases_rev
 
 
-let hpara_special_cases hpara : Sil.hpara list =
-  let update_para (evars', body') = {hpara with Sil.evars= evars'; Sil.body= body'} in
-  let special_cases = sigma_special_cases hpara.Sil.evars hpara.Sil.body in
+let hpara_special_cases hpara : Predicates.hpara list =
+  let update_para (evars', body') = {hpara with Predicates.evars= evars'; Predicates.body= body'} in
+  let special_cases = sigma_special_cases hpara.Predicates.evars hpara.Predicates.body in
   List.map ~f:update_para special_cases
 
 
-let hpara_special_cases_dll hpara : Sil.hpara_dll list =
-  let update_para (evars', body') = {hpara with Sil.evars_dll= evars'; Sil.body_dll= body'} in
-  let special_cases = sigma_special_cases hpara.Sil.evars_dll hpara.Sil.body_dll in
+let hpara_special_cases_dll hpara : Predicates.hpara_dll list =
+  let update_para (evars', body') =
+    {hpara with Predicates.evars_dll= evars'; Predicates.body_dll= body'}
+  in
+  let special_cases = sigma_special_cases hpara.Predicates.evars_dll hpara.Predicates.body_dll in
   List.map ~f:update_para special_cases
 
 
@@ -861,7 +876,7 @@ let abstract_pure_part tenv p ~(from_abstract_footprint : bool) =
       let fav_nonpure = Prop.non_pure_free_vars p |> Ident.set_of_sequence in
       (* vars in current and footprint sigma *)
       let filter atom =
-        Sil.atom_free_vars atom
+        Predicates.atom_free_vars atom
         |> Sequence.for_all ~f:(fun id ->
                if Ident.is_primed id then Ident.Set.mem id fav_sigma
                else if Ident.is_footprint id then Ident.Set.mem id fav_nonpure
@@ -872,26 +887,26 @@ let abstract_pure_part tenv p ~(from_abstract_footprint : bool) =
     let new_pure =
       List.fold
         ~f:(fun pi a ->
-          match a with
+          match (a : Predicates.atom) with
           (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-          | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, _, _))
-          | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i))
-          | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, _, _))
-          | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i))
+          | Aeq (Const (Cint i), BinOp (Lt, _, _))
+          | Aeq (BinOp (Lt, _, _), Const (Cint i))
+          | Aeq (Const (Cint i), BinOp (Le, _, _))
+          | Aeq (BinOp (Le, _, _), Const (Cint i))
             when IntLit.isone i ->
               a :: pi
-          | Sil.Aeq (Exp.Var name, e) when not (Ident.is_primed name) -> (
-            match e with Exp.Var _ | Exp.Const _ -> a :: pi | _ -> pi )
-          | Sil.Aneq (Var _, _) | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) ->
+          | Aeq (Var name, e) when not (Ident.is_primed name) -> (
+            match e with Var _ | Const _ -> a :: pi | _ -> pi )
+          | Aneq (Var _, _) | Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) ->
               a :: pi
-          | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ ->
+          | Aeq _ | Aneq _ | Apred _ | Anpred _ ->
               pi )
         ~init:[] pi_filtered
     in
     List.rev new_pure
   in
   let new_pure = do_pure (Prop.get_pure p) in
-  let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.sub_empty in
+  let eprop' = Prop.set p ~pi:new_pure ~sub:Predicates.sub_empty in
   let eprop'' =
     if !BiabductionConfig.footprint && not from_abstract_footprint then
       let new_pi_footprint = do_pure p.Prop.pi_fp in
@@ -915,10 +930,10 @@ let abstract_gc tenv p =
     Sequence.exists fav_seq ~f:(fun id -> Ident.Set.mem id fav_p_without_pi)
   in
   let strong_filter = function
-    | Sil.Aeq (e1, e2) | Sil.Aneq (e1, e2) ->
+    | Predicates.Aeq (e1, e2) | Predicates.Aneq (e1, e2) ->
         check (Exp.free_vars e1) && check (Exp.free_vars e2)
-    | (Sil.Apred _ | Anpred _) as a ->
-        check (Sil.atom_free_vars a)
+    | (Predicates.Apred _ | Anpred _) as a ->
+        check (Predicates.atom_free_vars a)
   in
   let new_pi = List.filter ~f:strong_filter pi in
   let prop = Prop.normalize tenv (Prop.set p ~pi:new_pi) in
@@ -934,9 +949,9 @@ let sigma_reachable root_fav sigma =
   let reach_set = ref root_fav in
   let edges = ref [] in
   let do_hpred hpred =
-    let hp_fav_set = Sil.hpred_free_vars hpred |> Ident.set_of_sequence in
+    let hp_fav_set = Predicates.hpred_free_vars hpred |> Ident.set_of_sequence in
     let add_entry e = edges := (e, hp_fav_set) :: !edges in
-    List.iter ~f:add_entry (Sil.hpred_entries hpred)
+    List.iter ~f:add_entry (Predicates.hpred_entries hpred)
   in
   List.iter ~f:do_hpred sigma ;
   let edge_fires (e, _) =
@@ -962,7 +977,7 @@ let sigma_reachable root_fav sigma =
   in
   find_fixpoint !edges ;
   (* L.d_str "reachable: ";
-     Ident.Set.iter (fun id -> Sil.d_exp (Exp.Var id); L.d_str " ") !reach_set;
+     Ident.Set.iter (fun id -> Predicates.d_exp (Exp.Var id); L.d_str " ") !reach_set;
      L.d_ln (); *)
   !reach_set
 
@@ -1015,7 +1030,7 @@ let check_junk pname tenv prop =
       | [] ->
           List.rev sigma_done
       | hpred :: sigma_todo' ->
-          let entries = Sil.hpred_entries hpred in
+          let entries = Predicates.hpred_entries hpred in
           if should_remove_hpred entries then (
             let part = if fp_part then "footprint" else "normal" in
             L.d_printfln ".... Prop with garbage in %s part ...." part ;
@@ -1139,7 +1154,7 @@ let check_junk pname tenv prop =
     else remove_junk fp_part fav_root sigma'
   in
   let sigma_new =
-    let fav_sub = Sil.subst_free_vars prop.Prop.sub |> Ident.set_of_sequence in
+    let fav_sub = Predicates.subst_free_vars prop.Prop.sub |> Ident.set_of_sequence in
     let fav_sub_sigmafp =
       Prop.sigma_free_vars prop.Prop.sigma_fp |> Ident.set_of_sequence ~init:fav_sub
     in
@@ -1164,9 +1179,9 @@ let remove_pure_garbage tenv ?(count = fun _ -> 0) prop =
   let changed = ref false in
   let rec go prop =
     let propcount = prop |> Prop.free_vars |> Ident.counts_of_sequence in
-    let prop = Prop.set prop ~pi:(Prop.get_pure prop) ~sub:Sil.sub_empty in
+    let prop = Prop.set prop ~pi:(Prop.get_pure prop) ~sub:Predicates.sub_empty in
     let drop id = Int.equal 1 (count id + propcount id) in
-    let keep atom = not (Sequence.exists ~f:drop (Sil.atom_free_vars atom)) in
+    let keep atom = not (Sequence.exists ~f:drop (Predicates.atom_free_vars atom)) in
     let pi = List.filter ~f:keep prop.Prop.pi in
     let dropped = List.length pi < List.length prop.Prop.pi in
     changed := !changed || dropped ;
@@ -1209,9 +1224,9 @@ let abstract_spec pname tenv spec =
          a disequality. As a workaround, here we drop pure facts from the consequent that are known to
          be true. *)
       let module AtomSet = Caml.Set.Make (struct
-        type t = Sil.atom
+        type t = Predicates.atom
 
-        let compare = Sil.compare_atom
+        let compare = Predicates.compare_atom
       end) in
       let pre_pure =
         let pre = Jprop.to_prop spec.pre in
@@ -1272,21 +1287,21 @@ let abstract_prop pname tenv ~(rename_primed : bool) ~(from_abstract_footprint :
 
 let get_local_stack cur_sigma init_sigma =
   let filter_stack = function
-    | Sil.Hpointsto (Exp.Lvar _, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar _, _, _) ->
         true
-    | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ ->
+    | Predicates.Hpointsto _ | Predicates.Hlseg _ | Predicates.Hdllseg _ ->
         false
   in
   let get_stack_var = function
-    | Sil.Hpointsto (Exp.Lvar pvar, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar pvar, _, _) ->
         pvar
-    | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ ->
+    | Predicates.Hpointsto _ | Predicates.Hlseg _ | Predicates.Hdllseg _ ->
         assert false
   in
   let filter_local_stack olds = function
-    | Sil.Hpointsto (Exp.Lvar pvar, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar pvar, _, _) ->
         not (List.exists ~f:(Pvar.equal pvar) olds)
-    | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ ->
+    | Predicates.Hpointsto _ | Predicates.Hlseg _ | Predicates.Hdllseg _ ->
         false
   in
   let init_stack = List.filter ~f:filter_stack init_sigma in
@@ -1309,9 +1324,9 @@ let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Pvar.t lis
 
 let remove_local_stack sigma pvars =
   let filter_non_stack = function
-    | Sil.Hpointsto (Exp.Lvar pvar, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar pvar, _, _) ->
         not (List.exists ~f:(Pvar.equal pvar) pvars)
-    | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ ->
+    | Predicates.Hpointsto _ | Predicates.Hlseg _ | Predicates.Hdllseg _ ->
         true
   in
   List.filter ~f:filter_non_stack sigma

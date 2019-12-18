@@ -11,12 +11,12 @@ open! IStd
 (** Attribute manipulation in Propositions (i.e., Symbolic Heaps) *)
 
 (** Check whether an atom is used to mark an attribute *)
-let is_pred atom = match atom with Sil.Apred _ | Anpred _ -> true | _ -> false
+let is_pred atom = match atom with Predicates.Apred _ | Anpred _ -> true | _ -> false
 
 (** Add an attribute associated to the argument expressions *)
 let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
   Prop.prop_atom_and tenv ~footprint prop
-    (if polarity then Sil.Apred (attr, args) else Sil.Anpred (attr, args))
+    (if polarity then Predicates.Apred (attr, args) else Predicates.Anpred (attr, args))
 
 
 let attributes_in_same_category attr1 attr2 =
@@ -28,19 +28,19 @@ let attributes_in_same_category attr1 attr2 =
 (** Replace an attribute associated to the expression *)
 let add_or_replace_check_changed tenv check_attribute_change prop atom =
   match atom with
-  | Sil.Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0)) ->
+  | Predicates.Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0)) ->
       let pairs = List.map ~f:(fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
       let _, nexp = List.hd_exn pairs in
       (* len exps0 > 0 by match *)
       let atom_map = function
-        | (Sil.Apred (att, exp :: _) | Anpred (att, exp :: _))
+        | (Predicates.Apred (att, exp :: _) | Anpred (att, exp :: _))
           when Exp.equal nexp exp && attributes_in_same_category att att0 ->
             check_attribute_change att att0 ; atom
         | atom' ->
             atom'
       in
       let pi = prop.Prop.pi in
-      let pi' = IList.map_changed ~equal:Sil.equal_atom ~f:atom_map pi in
+      let pi' = IList.map_changed ~equal:Predicates.equal_atom ~f:atom_map pi in
       if phys_equal pi pi' then Prop.prop_atom_and tenv prop atom
       else Prop.normalize tenv (Prop.set prop ~pi:pi')
   | _ ->
@@ -65,7 +65,7 @@ let get_for_exp tenv (prop : 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
     match atom with
-    | (Sil.Apred (_, es) | Anpred (_, es)) when List.mem ~equal:Exp.equal es nexp ->
+    | (Predicates.Apred (_, es) | Anpred (_, es)) when List.mem ~equal:Exp.equal es nexp ->
         atom :: attributes
     | _ ->
         attributes
@@ -77,7 +77,7 @@ let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
   List.find
     ~f:(function
-      | Sil.Apred (att, _) | Anpred (att, _) ->
+      | Predicates.Apred (att, _) | Anpred (att, _) ->
           PredSymb.equal_category (PredSymb.to_category att) category
       | _ ->
           false )
@@ -97,7 +97,7 @@ let get_wontleak tenv prop exp = get tenv prop exp ACwontleak
 let has_dangling_uninit tenv prop exp =
   let la = get_for_exp tenv prop exp in
   List.exists
-    ~f:(function Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit) | _ -> false)
+    ~f:(function Predicates.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit) | _ -> false)
     la
 
 
@@ -110,7 +110,7 @@ let filter_atoms tenv ~f prop =
 let remove tenv prop atom =
   if is_pred atom then
     let natom = Prop.atom_normalize_prop tenv prop atom in
-    let f a = not (Sil.equal_atom natom a) in
+    let f a = not (Predicates.equal_atom natom a) in
     filter_atoms tenv ~f prop
   else prop
 
@@ -118,7 +118,7 @@ let remove tenv prop atom =
 (** Remove an attribute from all the atoms in the heap *)
 let remove_for_attr tenv prop att0 =
   let f = function
-    | Sil.Apred (att, _) | Anpred (att, _) ->
+    | Predicates.Apred (att, _) | Anpred (att, _) ->
         not (PredSymb.equal att0 att)
     | _ ->
         true
@@ -128,7 +128,7 @@ let remove_for_attr tenv prop att0 =
 
 let remove_resource tenv ra_kind ra_res =
   let f = function
-    | Sil.Apred (Aresource res_action, _) ->
+    | Predicates.Apred (Aresource res_action, _) ->
         PredSymb.compare_res_act_kind res_action.ra_kind ra_kind <> 0
         || PredSymb.compare_resource res_action.ra_res ra_res <> 0
     | _ ->
@@ -146,15 +146,15 @@ let map_resource tenv prop f =
         att
   in
   let atom_map = function
-    | Sil.Apred (att, ([e] as es)) ->
-        Sil.Apred (attribute_map e att, es)
-    | Sil.Anpred (att, ([e] as es)) ->
-        Sil.Anpred (attribute_map e att, es)
+    | Predicates.Apred (att, ([e] as es)) ->
+        Predicates.Apred (attribute_map e att, es)
+    | Predicates.Anpred (att, ([e] as es)) ->
+        Predicates.Anpred (attribute_map e att, es)
     | atom ->
         atom
   in
   let pi0 = prop.Prop.pi in
-  let pi1 = IList.map_changed ~equal:Sil.equal_atom ~f:atom_map pi0 in
+  let pi1 = IList.map_changed ~equal:Predicates.equal_atom ~f:atom_map pi0 in
   if phys_equal pi1 pi0 then prop else Prop.normalize tenv (Prop.set prop ~pi:pi1)
 
 
@@ -165,7 +165,7 @@ let replace_objc_null tenv prop lhs_exp rhs_exp =
   | Some atom, Exp.Var _ ->
       let prop = remove tenv prop atom in
       let prop = Prop.conjoin_eq tenv rhs_exp Exp.zero prop in
-      let natom = Sil.atom_replace_exp [(rhs_exp, lhs_exp)] atom in
+      let natom = Predicates.atom_replace_exp [(rhs_exp, lhs_exp)] atom in
       add_or_replace tenv prop natom
   | _ ->
       prop
@@ -281,7 +281,7 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
     of stack variables whose address was still present after deallocation. *)
 let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   let filter = function
-    | Sil.Hpointsto (Exp.Lvar v, _, _) ->
+    | Predicates.Hpointsto (Exp.Lvar v, _, _) ->
         List.exists ~f:(Pvar.equal v) pvars
     | _ ->
         false
@@ -294,7 +294,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   let exp_replace =
     List.map
       ~f:(function
-        | Sil.Hpointsto (Exp.Lvar v, _, _) ->
+        | Predicates.Hpointsto (Exp.Lvar v, _, _) ->
             let freshv = Ident.create_fresh Ident.kprimed in
             fresh_address_vars := (v, freshv) :: !fresh_address_vars ;
             (Exp.Lvar v, Exp.Var freshv)
@@ -302,11 +302,14 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
             assert false )
       sigma_stack
   in
-  let pi1 = List.map ~f:(fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in
-  let pi = List.map ~f:(Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
+  let pi1 =
+    List.map ~f:(fun (id, e) -> Predicates.Aeq (Exp.Var id, e)) (Predicates.sub_to_list p.sub)
+  in
+  let pi = List.map ~f:(Predicates.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' =
     Prop.normalize tenv
-      (Prop.set p ~sub:Sil.sub_empty ~sigma:(Prop.sigma_replace_exp tenv exp_replace sigma_other))
+      (Prop.set p ~sub:Predicates.sub_empty
+         ~sigma:(Prop.sigma_replace_exp tenv exp_replace sigma_other))
   in
   let p'' =
     let res = ref p' in
@@ -317,7 +320,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
         (* the address of a de-allocated stack var in in the post *)
         if Ident.Set.mem freshv p'_fav then (
           stack_vars_address_in_post := v :: !stack_vars_address_in_post ;
-          let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
+          let pred = Predicates.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
           res := add_or_replace tenv !res pred )
     in
     List.iter ~f:do_var !fresh_address_vars ;
@@ -326,7 +329,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   (* Filter out local addresses in p'' *)
   let filtered_pi, changed =
     List.fold_right p''.pi ~init:([], false) ~f:(fun a (filtered, changed) ->
-        if Sil.atom_has_local_addr a then (filtered, true) else (a :: filtered, changed) )
+        if Predicates.atom_has_local_addr a then (filtered, true) else (a :: filtered, changed) )
   in
   (* Avoid normalization when p'' does not change *)
   let p''' = if changed then Prop.normalize tenv (Prop.set p'' ~pi:filtered_pi) else p'' in
@@ -339,18 +342,18 @@ let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
     List.fold_right
       ~f:(fun hpred res ->
-        if List.mem ~equal:Sil.equal_hpred seen_hpreds hpred then None
+        if List.mem ~equal:Predicates.equal_hpred seen_hpreds hpred then None
         else
           let seen_hpreds = hpred :: seen_hpreds in
           match res with
           | Some _ ->
               res
           | None -> (
-            match hpred with
-            | Sil.Hpointsto (Exp.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal (_, _)), _)
+            match (hpred : Predicates.hpred) with
+            | Hpointsto (Exp.Lvar pvar1, Eexp (exp2, Predicates.Iformal (_, _)), _)
               when Exp.equal exp2 e && (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
                 Some (Exp.Lvar pvar1)
-            | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
+            | Hpointsto (exp1, Estruct (fields, _), _) ->
                 List.fold_right
                   ~f:(fun (field, strexp) res ->
                     match res with
@@ -358,7 +361,7 @@ let find_equal_formal_path tenv e prop =
                         res
                     | None -> (
                       match strexp with
-                      | Sil.Eexp (exp2, _) when Exp.equal exp2 e -> (
+                      | Predicates.Eexp (exp2, _) when Exp.equal exp2 e -> (
                         match find_in_sigma exp1 seen_hpreds with
                         | Some vfs ->
                             Some (Exp.Lfield (vfs, field, Typ.mk Tvoid))

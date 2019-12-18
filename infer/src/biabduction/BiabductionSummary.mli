@@ -31,7 +31,7 @@ module Jprop : sig
       applies it to the subparts if the result is [None]. Returns the most absract results which
       pass [filter]. *)
 
-  val jprop_sub : Sil.subst -> Prop.normal t -> Prop.exposed t
+  val jprop_sub : Predicates.subst -> Prop.normal t -> Prop.exposed t
   (** apply a substitution to a jprop *)
 
   val map : ('a Prop.t -> 'b Prop.t) -> 'a t -> 'b t
@@ -58,7 +58,7 @@ type 'a spec = {pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited
 module NormSpec : sig
   type t
 
-  val compact : Sil.sharing_env -> t -> t
+  val compact : Predicates.sharing_env -> t -> t
   (** Return a compact representation of the spec *)
 
   val erase_join_info_pre : Tenv.t -> t -> t

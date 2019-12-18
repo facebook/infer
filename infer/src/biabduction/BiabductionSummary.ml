@@ -175,7 +175,7 @@ module NormSpec : sig
 
   val normalize : Tenv.t -> Prop.normal spec -> t
 
-  val compact : Sil.sharing_env -> t -> t
+  val compact : Predicates.sharing_env -> t -> t
   (** Return a compact representation of the spec *)
 
   val tospec : t -> Prop.normal spec
@@ -208,7 +208,7 @@ end = struct
     let idlist = free_vars tenv spec |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let count = ref 0 in
     let sub =
-      Sil.subst_of_list
+      Predicates.subst_of_list
         (List.map
            ~f:(fun id ->
              incr count ;

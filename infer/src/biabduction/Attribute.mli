@@ -10,7 +10,7 @@ open! IStd
 
 (** Attribute manipulation in Propositions (i.e., Symbolic Heaps) *)
 
-val is_pred : Sil.atom -> bool
+val is_pred : Predicates.atom -> bool
 (** Check whether an atom is used to mark an attribute *)
 
 val add :
@@ -23,43 +23,43 @@ val add :
   -> Prop.normal Prop.t
 (** Add an attribute associated to the argument expressions *)
 
-val add_or_replace : Tenv.t -> Prop.normal Prop.t -> Sil.atom -> Prop.normal Prop.t
+val add_or_replace : Tenv.t -> Prop.normal Prop.t -> Predicates.atom -> Prop.normal Prop.t
 (** Replace an attribute associated to the expression *)
 
 val add_or_replace_check_changed :
      Tenv.t
   -> (PredSymb.t -> PredSymb.t -> unit)
   -> Prop.normal Prop.t
-  -> Sil.atom
+  -> Predicates.atom
   -> Prop.normal Prop.t
 (** Replace an attribute associated to the expression, and call the given function with new and old
     attributes if they changed. *)
 
-val get_all : 'a Prop.t -> Sil.atom list
+val get_all : 'a Prop.t -> Predicates.atom list
 (** Get all the attributes of the prop *)
 
-val get_for_exp : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom list
+val get_for_exp : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom list
 (** Get the attributes associated to the expression, if any *)
 
-val get_objc_null : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+val get_objc_null : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom option
 (** Get the objc null attribute associated to the expression, if any *)
 
-val get_observer : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+val get_observer : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom option
 (** Get the observer attribute associated to the expression, if any *)
 
-val get_resource : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+val get_resource : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom option
 (** Get the resource attribute associated to the expression, if any *)
 
-val get_undef : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+val get_undef : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom option
 (** Get the undef attribute associated to the expression, if any *)
 
-val get_wontleak : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+val get_wontleak : Tenv.t -> 'a Prop.t -> Exp.t -> Predicates.atom option
 (** Get the wontleak attribute associated to the expression, if any *)
 
 val has_dangling_uninit : Tenv.t -> 'a Prop.t -> Exp.t -> bool
 (** Test for existence of an Adangling DAuninit attribute associated to the exp *)
 
-val remove : Tenv.t -> Prop.normal Prop.t -> Sil.atom -> Prop.normal Prop.t
+val remove : Tenv.t -> Prop.normal Prop.t -> Predicates.atom -> Prop.normal Prop.t
 (** Remove an attribute *)
 
 val remove_for_attr : Tenv.t -> Prop.normal Prop.t -> PredSymb.t -> Prop.normal Prop.t

@@ -110,9 +110,9 @@ let instrs_normalize instrs =
   let subst =
     let count = ref Int.min_value in
     let gensym id = incr count ; Ident.set_stamp id !count in
-    Sil.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
+    Predicates.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
-  let subst_and_add acc instr = Sil.instr_sub subst instr :: acc in
+  let subst_and_add acc instr = Predicates.instr_sub subst instr :: acc in
   Instrs.fold instrs ~init:[] ~f:subst_and_add
 
 
@@ -167,7 +167,7 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
 
 let get_inst_update pos =
   let loc = get_loc_exn () in
-  Sil.inst_update loc pos
+  Predicates.inst_update loc pos
 
 
 let get_path () =
@@ -191,7 +191,7 @@ let extract_pre p tenv pdesc abstract_fun =
   let sub =
     let idlist = Prop.free_vars p |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let count = ref 0 in
-    Sil.subst_of_list
+    Predicates.subst_of_list
       (List.map
          ~f:(fun id ->
            incr count ;

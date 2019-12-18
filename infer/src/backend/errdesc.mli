@@ -14,7 +14,7 @@ val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t opt
 (** find the dexp, if any, where the given value is stored also return the type of the value if
     found *)
 
-val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Sil.hpred -> PredSymb.resource option
+val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Predicates.hpred -> PredSymb.resource option
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 
 val find_normal_variable_funcall :
@@ -107,7 +107,7 @@ val explain_unary_minus_applied_to_unsigned_expression :
 
 val explain_leak :
      Tenv.t
-  -> Sil.hpred
+  -> Predicates.hpred
   -> 'a Prop.t
   -> PredSymb.t option
   -> string option
@@ -125,4 +125,4 @@ val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
 
 val find_outermost_dereference : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 
-val access_opt : ?is_nullable:bool -> Sil.inst -> Localise.access option
+val access_opt : ?is_nullable:bool -> Predicates.inst -> Localise.access option
