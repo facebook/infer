@@ -1076,7 +1076,7 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
     ~f:(fun (p, _) ->
       match check_dereferences caller_pname tenv callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc) ->
-          raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
+          raise (Exceptions.Dangling_pointer_dereference (true, desc, __POS__))
       | _ ->
           () )
     props
@@ -1333,13 +1333,11 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             | Dereference_error (Deref_minusone, desc, path_opt) ->
                 trace_call CR_not_met ;
                 extend_path path_opt None ;
-                raise
-                  (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAminusone, desc, __POS__))
+                raise (Exceptions.Dangling_pointer_dereference (true, desc, __POS__))
             | Dereference_error (Deref_undef_exp, desc, path_opt) ->
                 trace_call CR_not_met ;
                 extend_path path_opt None ;
-                raise
-                  (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
+                raise (Exceptions.Dangling_pointer_dereference (true, desc, __POS__))
             | Dereference_error (Deref_null pos, desc, path_opt) ->
                 trace_call CR_not_met ;
                 extend_path path_opt (Some pos) ;

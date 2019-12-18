@@ -61,7 +61,7 @@ exception Dummy_exception of Localise.error_desc
 
 exception
   Dangling_pointer_dereference of
-    PredSymb.dangling_kind option * Localise.error_desc * Logging.ocaml_pos
+    bool (* is it user visible? *) * Localise.error_desc * Logging.ocaml_pos
 
 exception Deallocate_stack_variable of Localise.error_desc
 

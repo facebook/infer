@@ -451,7 +451,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
       let err_desc =
         Errdesc.explain_dereference pname tenv deref_str orig_prop (State.get_loc_exn ())
       in
-      raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__)) ) ;
+      raise (Exceptions.Dangling_pointer_dereference (false, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let subtype =
     match !Language.curr_language with Clang -> Subtype.exact | Java -> Subtype.subtypes
@@ -1598,7 +1598,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   | Some (Apred (Adangling dk, _)) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in
       let err_desc = Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc_exn ()) in
-      raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
+      raise (Exceptions.Dangling_pointer_dereference (true, err_desc, __POS__))
   | Some (Apred (Aundef _, _)) ->
       ()
   | Some (Apred (Aresource ({ra_kind= Rrelease} as ra), _)) ->
@@ -1609,7 +1609,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
       if Prover.check_equal tenv Prop.prop_emp (Exp.root_of_lexp root) Exp.minus_one then
         let deref_str = Localise.deref_str_dangling None in
         let err_desc = Errdesc.explain_dereference pname tenv deref_str prop loc in
-        raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__))
+        raise (Exceptions.Dangling_pointer_dereference (false, err_desc, __POS__))
 
 
 (* Check that an expression representin an objc block can be null and raise a [B1] null exception.*)

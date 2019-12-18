@@ -60,7 +60,7 @@ exception Custom_error of string * Localise.error_desc
 exception Dummy_exception of Localise.error_desc
 
 exception
-  Dangling_pointer_dereference of PredSymb.dangling_kind option * Localise.error_desc * L.ocaml_pos
+  Dangling_pointer_dereference of bool (* is it user visible? *) * Localise.error_desc * L.ocaml_pos
 
 exception Deallocate_stack_variable of Localise.error_desc
 
@@ -256,14 +256,8 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= Some Info
       ; category= Checker }
-  | Dangling_pointer_dereference (dko, desc, ocaml_pos) ->
-      let visibility =
-        match dko with
-        | Some _ ->
-            Exn_user (* only show to the user if the category was identified *)
-        | None ->
-            Exn_developer
-      in
+  | Dangling_pointer_dereference (user_visible, desc, ocaml_pos) ->
+      let visibility = if user_visible then Exn_user else Exn_developer in
       { name= IssueType.dangling_pointer_dereference
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
