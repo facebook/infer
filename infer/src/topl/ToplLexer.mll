@@ -54,6 +54,7 @@ rule raw_token = parse
   | "prefix" { PREFIX }
   | "property" { PROPERTY }
   | "message" { MESSAGE }
+  | "nondet" { NONDET }
   | ['a'-'z'] id_tail as id { LID id }
   | ['A'-'Z'] id_tail as id { UID id }
   | eof { EOF }

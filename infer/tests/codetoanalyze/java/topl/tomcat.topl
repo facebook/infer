@@ -4,12 +4,13 @@ property ForwardUncommitted
   prefix "javax.servlet"
   prefix "javax.servlet.{ServletOutputStream,ServletResponse}"
   prefix "java.io.PrintWriter"
+  nondet (start)
   start -> start: *
   start -> tracking: R = "ServletResponse.\<init\>"
   tracking -> ok: flushBuffer(r)
   tracking -> gotWriter: W = getWriter(r)
   gotWriter -> ok: flush(w)
-  gotWrite -> ok: flushBuffer(r)
+  gotWriter -> ok: flushBuffer(r)
   tracking -> gotStream: S = getOutputStream(r)
   gotStream -> ok: flush(s)
   gotStream -> ok: flushBuffer(r)
@@ -24,6 +25,7 @@ property ForwardUncommitted
 property InterleavedResponse1
   message "A ServletResponse was asked for both a writer and a stream."
   prefix "javax.servlet.ServletResponse"
+  nondet (start)
   start -> start: *
   start -> gotWriter: W = getWriter(R)
   start -> gotStream: S = getOutputStream(R)
@@ -34,6 +36,7 @@ property InterleavedResponse2
   // vertex names: w = got writer; W = used writer; similarly for s, S
   message "Incompatible methods for putting data into a response were used."
   prefix "javax.servlet.ServletResponse"
+  nondet (start)
   start -> start: *
   start -> w: W = getWriter(R)
   start -> s: S = getOutputStream(R)

@@ -1,6 +1,7 @@
 property HasNext
   prefix "Iterator"
   prefix "List"
+  nondet (start)
   start -> start: *
   start -> invalid: I = iterator(*)
   invalid -> valid: <true> = hasNext(i) // treat as shorthand for <B> = hasNext if (b)
@@ -10,12 +11,15 @@ property HasNext
 property UnsafeIterator
   prefix "Collection"
   prefix "Iterator"
+  nondet (start)
+  start -> start: *
   start -> iterating: I = iterator(C)
   iterating -> modified: remove(c, *)
   iterating -> modified: add(c, *)
   modified -> error: next(i)
 
 property UnsafeMapIterator
+  nondet (start)
   start -> start: *
   start -> gotView: View = keySet(M)
   start -> gotView: View = values(M)
@@ -25,7 +29,8 @@ property UnsafeMapIterator
 
 property SkipIndexAfterRemove
   prefix "ArrayList"
+  nondet (start)
   start -> start: *
   start -> removed: remove(Collection, Index)
   removed -> ok:    get(collection, index)
-  removed -> error: get(collection, J) // TODO: if (j!=index)
+  removed -> error: get(collection, J) if J != index

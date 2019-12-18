@@ -1,5 +1,6 @@
 property SkipAfterRemove
   prefix "ArrayList"
+  nondet (start)
   start -> start: *
   start -> removed: remove(Collection, Index)
   removed -> ok:    get(collection, index)

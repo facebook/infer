@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 let tt = ToplUtils.debug
 
@@ -26,25 +27,39 @@ type tindex = int
 
 type transition = {source: vindex; target: vindex; label: ToplAst.label}
 
-(** - INV1: Array.length states = Array.length outgoing
+(** - INV1: Array.length states = Array.length outgoing = Array.length nondets
     - INV2: Array.length transitions = Array.length skips
     - INV3: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
-    - INV4: max_args is the maximum length of the arguments list in a label on a transition The
-      fields marked as redundant are computed from the others (when the automaton is built), and are
-      cached for speed. *)
+    - INV4: max_args is the maximum length of the arguments list in a label on a transition
+
+    The fields marked as redundant are computed from the others (when the automaton is built), and
+    are cached for speed. *)
 type t =
   { states: vname array
+  ; nondets: bool array (* redundant *)
   ; transitions: transition array
   ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
   ; vindex: vname -> vindex
-  ; max_args: int (* redundant; cached for speed *) }
+  ; max_args: int (* redundant *) }
 
-(** [index_in H a x] is the (last) index of [x] in array [a]. *)
-let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array) : k -> int =
+(** [index_in H a] returns a pair of functions [(opt, err)] that lookup the (last) index of an
+    element in [a]. The difference is that [opt x] returns an option, while [err msg x] makes Infer
+    die, mentioning [msg].*)
+let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array) :
+    (k -> int option) * (string -> k -> int) =
   let h = H.create ~size:(2 * Array.length a) () in
   let f i x = H.set h ~key:x ~data:i in
-  Array.iteri ~f a ; H.find_exn h
+  Array.iteri ~f a ;
+  let opt = H.find h in
+  let err msg x =
+    match opt x with
+    | Some x ->
+        x
+    | None ->
+        L.die InternalError "ToplAutomaton.index_in out of bounds (%s)" msg
+  in
+  (opt, err)
 
 
 let make properties =
@@ -57,7 +72,8 @@ let make properties =
     Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_map ~f properties))
   in
   Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)@\n" i p v) states ;
-  let vindex = index_in (module Vname.Table) states in
+  let vindex_opt, vindex = index_in (module Vname.Table) states in
+  let vindex = vindex "vertex" in
   let transitions : transition array =
     let f p =
       let prefix_pname pname =
@@ -92,6 +108,23 @@ let make properties =
     in
     Array.fold ~init:0 ~f transitions
   in
+  let nondets : bool array =
+    let vcount = Array.length states in
+    let a = Array.create ~len:vcount false in
+    let f ToplAst.{nondet; name; _} =
+      let set_nondet state =
+        match vindex_opt (name, state) with
+        | Some i ->
+            a.(i) <- true
+        | None ->
+            L.user_warning
+              "TOPL: %s declared as nondet, but it appears in no transition of property %s" state
+              name
+      in
+      List.iter ~f:set_nondet nondet
+    in
+    List.iter ~f properties ; a
+  in
   let skips : bool array =
     let is_skip {source; target; label} =
       let r = Int.equal source target in
@@ -104,12 +137,14 @@ let make properties =
     in
     Array.map ~f:is_skip transitions
   in
-  {states; transitions; skips; outgoing; vindex; max_args}
+  {states; nondets; transitions; skips; outgoing; vindex; max_args}
 
 
 let outgoing a i = a.outgoing.(i)
 
 let vname a i = a.states.(i)
+
+let is_nondet a i = a.nondets.(i)
 
 let vcount a = Array.length a.states
 

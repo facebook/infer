@@ -42,4 +42,8 @@ type vertex = string [@@deriving compare, hash, sexp]
 type transition = {source: vertex; target: vertex; label: label}
 
 type t =
-  {name: property_name; message: string option; prefixes: string list; transitions: transition list}
+  { name: property_name
+  ; message: string option
+  ; prefixes: string list
+  ; nondet: string list
+  ; transitions: transition list }

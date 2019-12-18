@@ -341,7 +341,9 @@ let generate_execute_state automaton proc_name =
     in
     let transitions = ToplAutomaton.outgoing automaton state in
     let fold f init = List.fold_right ~init ~f transitions in
-    fold check_transition_maybe (fold check_transition skip)
+    let detbranches = fold check_transition skip in
+    if ToplAutomaton.is_nondet automaton state then fold check_transition_maybe detbranches
+    else detbranches
   in
   let body =
     gen_if

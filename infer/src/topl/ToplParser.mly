@@ -29,6 +29,7 @@
 %token LT
 %token MESSAGE
 %token NE
+%token NONDET
 %token PREFIX
 %token PROPERTY
 %token RC
@@ -42,16 +43,21 @@
 properties: ps=one_property* EOF { ps }
 
 one_property:
-    PROPERTY name=identifier LC message=message? prefixes=prefix* transitions=transition* RC
-    { ToplAst.{name; message; prefixes; transitions} }
+    PROPERTY name=identifier LC message=message? prefixes=prefix* nondet=nondet
+      transitions=transition* RC
+    { ToplAst.{name; message; prefixes; nondet; transitions} }
 
 message: MESSAGE s=STRING { s }
 
 prefix: PREFIX s=STRING { s }
 
+nondet: NONDET LP ns=state* RP { ns }
+
 transition:
-    source=identifier ARROW target=identifier COLON label=label
+    source=state ARROW target=state COLON label=label
     { ToplAst.{source; target; label} }
+
+state: i=identifier { i }
 
 label:
     return=value_pattern ASGN cp=call_pattern condition=condition?

@@ -37,6 +37,8 @@ val outgoing : t -> vindex -> tindex list
 
 val vname : t -> vindex -> vname
 
+val is_nondet : t -> vindex -> bool
+
 val vcount : t -> int
 
 val transition : t -> tindex -> transition
