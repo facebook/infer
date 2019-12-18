@@ -500,7 +500,7 @@ public class RequiredProps {
     builder2.prop3(new Object()).build();
   }
 
-  public void twoBuildersBad_FN() {
+  public void twoBuildersBad() {
     MyComponent.Builder builder1 = createWrapper();
     MyComponent.Builder builder2 = createWrapper();
     builder1.prop1(new Object()).prop3(new Object()).build();

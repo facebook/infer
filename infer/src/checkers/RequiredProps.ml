@@ -205,11 +205,11 @@ module TransferFunctions = struct
 
   type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals}
 
-  let apply_callee_summary summary_opt ~caller_pname ~callee_pname ret_id_typ formals actuals astate
-      =
+  let apply_callee_summary summary_opt callsite ~caller_pname ~callee_pname ret_id_typ formals
+      actuals astate =
     Option.value_map summary_opt ~default:astate ~f:(fun callee_summary ->
-        Domain.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller:astate
-          ~callee:callee_summary )
+        Domain.subst ~callsite ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
+          ~caller:astate ~callee:callee_summary )
 
 
   let exec_instr astate ProcData.{summary; tenv; extras= {get_proc_summary_and_formals}} _
@@ -246,14 +246,14 @@ module TransferFunctions = struct
         else
           (* treat it like a normal call *)
           Option.value_map callee_summary_and_formals_opt ~default:astate ~f:(fun (_, formals) ->
-              apply_callee_summary callee_summary_opt ~caller_pname ~callee_pname return_base
-                formals actuals astate )
-    | Call (ret_id_typ, Direct callee_pname, actuals, _, _) ->
+              apply_callee_summary callee_summary_opt location ~caller_pname ~callee_pname
+                return_base formals actuals astate )
+    | Call (ret_id_typ, Direct callee_pname, actuals, _, location) ->
         let callee_summary_and_formals_opt = get_proc_summary_and_formals callee_pname in
         let callee_summary_opt = Option.map callee_summary_and_formals_opt ~f:fst in
         Option.value_map callee_summary_and_formals_opt ~default:astate ~f:(fun (_, formals) ->
-            apply_callee_summary callee_summary_opt ~caller_pname ~callee_pname ret_id_typ formals
-              actuals astate )
+            apply_callee_summary callee_summary_opt location ~caller_pname ~callee_pname ret_id_typ
+              formals actuals astate )
     | Assign (lhs_ae, rhs, _) ->
         let astate =
           match rhs with

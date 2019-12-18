@@ -49,18 +49,39 @@ end
 
 module CreatedLocation = struct
   type t =
-    | ByCreateMethod of {location: Location.t; typ_name: Typ.name}
+    | ByCreateMethod of {location: Location.t; typ_name: Typ.name; latest_callsite: Location.t}
     | ByParameter of LocalAccessPath.t
   [@@deriving compare]
 
-  let pp fmt = function
-    | ByCreateMethod {location; typ_name} ->
-        F.fprintf fmt "Created at %a with type %a" Location.pp location Typ.Name.pp typ_name
-    | ByParameter path ->
-        F.fprintf fmt "Given by parameter %a" LocalAccessPath.pp path
+  let pp =
+    let pp_latest_callsite location latest_callsite fmt =
+      if not (Location.equal location latest_callsite) then
+        F.fprintf fmt "(via %a)" Location.pp latest_callsite
+    in
+    fun fmt -> function
+      | ByCreateMethod {location; typ_name; latest_callsite} ->
+          F.fprintf fmt "Created at %a%t with type %a" Location.pp location
+            (pp_latest_callsite location latest_callsite)
+            Typ.Name.pp typ_name
+      | ByParameter path ->
+          F.fprintf fmt "Given by parameter %a" LocalAccessPath.pp path
+
+
+  let update_latest_callsite callsite x =
+    match x with ByCreateMethod x -> ByCreateMethod {x with latest_callsite= callsite} | _ -> x
 end
 
-module CreatedLocations = AbstractDomain.FiniteSet (CreatedLocation)
+module CreatedLocations = struct
+  include AbstractDomain.FiniteSet (CreatedLocation)
+
+  let update_latest_callsite callsite ~to_update x =
+    map
+      (fun created_location ->
+        if mem created_location to_update then
+          CreatedLocation.update_latest_callsite callsite created_location
+        else created_location )
+      x
+end
 
 (** Map from access paths of callee parameters and return variable to caller's corresponding access
     paths *)
@@ -108,6 +129,14 @@ module Created = struct
                   append caller_return caller_created acc )
         in
         CreatedLocations.fold accum_subst callee_returns acc )
+
+
+  let get_all_created_locations x =
+    fold (fun _ v acc -> CreatedLocations.union acc v) x CreatedLocations.empty
+
+
+  let update_latest_callsite callsite to_update x =
+    map (fun v -> CreatedLocations.update_latest_callsite callsite ~to_update v) x
 end
 
 module MethodCalls = struct
@@ -184,6 +213,11 @@ module MethodCalled = struct
     let no_build_called created_location = {created_location; is_build_called= false}
 
     let build_called created_location = {created_location; is_build_called= true}
+
+    let update_latest_callsite callsite to_update k =
+      if CreatedLocations.mem k.created_location to_update then
+        {k with created_location= CreatedLocation.update_latest_callsite callsite k.created_location}
+      else k
   end
 
   include AbstractDomain.Map (Key) (MethodCalls)
@@ -274,6 +308,20 @@ module MethodCalled = struct
     in
     let caller' = fold accum_substed callee empty in
     merge (fun _ v v' -> match v' with Some _ -> v' | None -> v) caller caller'
+
+
+  let get_all_created_locations x =
+    fold
+      (fun {created_location} _ acc -> CreatedLocations.add created_location acc)
+      x CreatedLocations.empty
+
+
+  let update_latest_callsite callsite to_update x =
+    fold
+      (fun k v acc ->
+        let k = Key.update_latest_callsite callsite to_update k in
+        add k v acc )
+      x empty
 end
 
 module Mem = struct
@@ -332,7 +380,9 @@ module Mem = struct
 
 
   let call_create lhs typ_name location ({created} as x) =
-    let created_location = CreatedLocation.ByCreateMethod {location; typ_name} in
+    let created_location =
+      CreatedLocation.ByCreateMethod {location; typ_name; latest_callsite= location}
+    in
     { created= Created.add lhs (CreatedLocations.singleton created_location) created
     ; method_called=
         MethodCalled.add
@@ -356,8 +406,25 @@ module Mem = struct
     {x with method_called= MethodCalled.check_required_props ~check_on_string_set method_called}
 
 
-  let subst ~formals ~actuals ~ret_id_typ:(ret_var, ret_typ) ~caller_pname ~callee_pname ~caller
-      ~callee =
+  let get_all_created_locations {created; method_called} =
+    CreatedLocations.union
+      (Created.get_all_created_locations created)
+      (MethodCalled.get_all_created_locations method_called)
+
+
+  let update_latest_callsite callsite ~prev ~next =
+    let prev_created_locations = get_all_created_locations prev in
+    let next_created_locations = get_all_created_locations next in
+    let new_created_locations =
+      CreatedLocations.diff next_created_locations prev_created_locations
+    in
+    { created= Created.update_latest_callsite callsite new_created_locations next.created
+    ; method_called=
+        MethodCalled.update_latest_callsite callsite new_created_locations next.method_called }
+
+
+  let subst ~callsite ~formals ~actuals ~ret_id_typ:(ret_var, ret_typ) ~caller_pname ~callee_pname
+      ~caller ~callee =
     let callee_return =
       LocalAccessPath.make_from_pvar (Pvar.get_ret_pvar callee_pname) ret_typ callee_pname
     in
@@ -394,7 +461,8 @@ module Mem = struct
       MethodCalled.subst ~is_reachable map ~find_caller_created ~caller:caller.method_called
         ~callee:callee.method_called
     in
-    {created; method_called}
+    let next = {created; method_called} in
+    update_latest_callsite callsite ~prev:caller ~next
 end
 
 type t = {no_return_called: Mem.t; return_called: Mem.t}
@@ -441,10 +509,10 @@ let call_return {no_return_called; return_called} =
   {no_return_called= Mem.empty; return_called= Mem.join no_return_called return_called}
 
 
-let subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller ~callee =
+let subst ~callsite ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller ~callee =
   { caller with
     no_return_called=
-      Mem.subst ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
+      Mem.subst ~callsite ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname
         ~caller:caller.no_return_called ~callee }
 
 
