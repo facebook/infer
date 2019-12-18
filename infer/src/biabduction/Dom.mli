@@ -23,11 +23,6 @@ val pathset_join :
 val proplist_collapse_pre :
   Tenv.t -> Prop.normal Prop.t list -> Prop.normal BiabductionSummary.Jprop.t list
 
-val pathset_collapse : Tenv.t -> Paths.PathSet.t -> Paths.PathSet.t
-
-val pathset_collapse_impl : Typ.Procname.t -> Tenv.t -> Paths.PathSet.t -> Paths.PathSet.t
-(** reduce the pathset only based on implication checking. *)
-
 (** {2 Meet Operators} *)
 
 val propset_meet_generate_pre : Tenv.t -> Propset.t -> Prop.normal Prop.t list

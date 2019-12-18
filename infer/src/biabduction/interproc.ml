@@ -173,20 +173,17 @@ let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
 
 
 let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.PathSet.t =
-  let abs_option p =
+  if !BiabductionConfig.footprint then
+    L.die InternalError
+      "Interproc.collect_do_abstract_post ignores the _fp part of propositions, so it should only \
+       be used during re-execution." ;
+  let abstract_o p =
     if Prover.check_inconsistency tenv p then None else Some (Abs.abstract pname tenv p)
   in
-  if !BiabductionConfig.footprint then
-    BiabductionConfig.run_in_re_execution_mode (Paths.PathSet.map_option abs_option) pathset
-  else Paths.PathSet.map_option abs_option pathset
+  Paths.PathSet.map_option abstract_o pathset
 
 
 let do_join_pre plist = Dom.proplist_collapse_pre plist
-
-let do_join_post pname tenv (pset : Paths.PathSet.t) =
-  if Config.spec_abs_level <= 0 then Dom.pathset_collapse tenv pset
-  else Dom.pathset_collapse tenv (Dom.pathset_collapse_impl pname tenv pset)
-
 
 let do_meet_pre tenv pset =
   if Config.meet_level > 0 then Dom.propset_meet_generate_pre tenv pset
@@ -537,12 +534,6 @@ let collect_analysis_result tenv wl proc_cfg : Paths.PathSet.t =
   Paths.PathSet.map (remove_locals_formals_and_check tenv proc_cfg) pathset
 
 
-module Pmap = Caml.Map.Make (struct
-  type t = Prop.normal Prop.t
-
-  let compare = Prop.compare_prop
-end)
-
 let vset_add_path vset path =
   Paths.Path.fold_all_nodes_nocalls path ~init:vset ~f:(fun vset n -> Procdesc.NodeSet.add n vset)
 
@@ -570,9 +561,13 @@ let compute_visited vset =
   !res
 
 
-(** Extract specs from a pathset *)
+(* Extract specs from a pathset, after the footprint phase. The postconditions will be thrown away
+  by the re-execution phase, but they are first used to detect custom errors. *)
 let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list =
-  let pname = Procdesc.get_proc_name pdesc in
+  if not !BiabductionConfig.footprint then
+    L.die InternalError
+      "Interproc.extract_specs should not be used for footprint but not for re-execution, because \
+       it does not optimize postconditions." ;
   let sub =
     let fav =
       Paths.PathSet.fold
@@ -583,54 +578,35 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
     let sub_list = List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.knormal))) fav in
     Predicates.subst_of_list sub_list
   in
-  let pre_post_visited_list =
-    let pplist = Paths.PathSet.elements pathset in
+  let pre_post_list =
     let f (prop, path) =
-      let _, prop' = PropUtil.remove_locals_formals tenv pdesc prop in
-      let prop'' = Abs.abstract pname tenv prop' in
-      let pre, post = Prop.extract_spec prop'' in
-      let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
-      let post' =
-        if Prover.check_inconsistency_base tenv prop then None
-        else Some (Prop.normalize tenv (Prop.prop_sub sub post), path)
-      in
-      let visited =
-        let vset = vset_add_path Procdesc.NodeSet.empty path in
-        compute_visited vset
-      in
-      (pre', post', visited)
+      let _remaining, prop = PropUtil.remove_locals_formals tenv pdesc prop in
+      let prop = Abs.abstract (Procdesc.get_proc_name pdesc) tenv prop in
+      let pre, post = Prop.extract_spec prop in
+      let pre = Prop.normalize tenv (Prop.prop_sub sub pre) in
+      let post = PropUtil.remove_seed_vars tenv (Prop.prop_sub sub post) in
+      (pre, (post, path))
     in
-    List.map ~f pplist
-  in
-  let pre_post_map =
-    let add map (pre, post, visited) =
-      let current_posts, current_visited =
-        try Pmap.find pre map
-        with Caml.Not_found -> (Paths.PathSet.empty, BiabductionSummary.Visitedset.empty)
+    let compare (prop1, _) (prop2, _) = Prop.compare_prop prop1 prop2 in
+    let break a b = not (Int.equal 0 (compare a b)) in
+    let separate ps =
+      let pre =
+        match ps with
+        | (pre, _) :: _ ->
+            pre
+        | [] ->
+            L.die InternalError "Interproc.extract_specs: List.group outputs empty list??"
       in
-      let new_posts =
-        match post with
-        | None ->
-            current_posts
-        | Some (post, path) ->
-            Paths.PathSet.add_renamed_prop post path current_posts
-      in
-      let new_visited = BiabductionSummary.Visitedset.union visited current_visited in
-      Pmap.add pre (new_posts, new_visited) map
+      let pposts = List.map ~f:snd ps in
+      (pre, pposts)
     in
-    List.fold ~f:add ~init:Pmap.empty pre_post_visited_list
+    pathset |> Paths.PathSet.elements |> List.map ~f |> List.sort ~compare |> List.group ~break
+    |> List.map ~f:separate
   in
-  let specs = ref [] in
-  let add_spec pre ((posts : Paths.PathSet.t), visited) =
-    let posts' =
-      List.map
-        ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
-        (Paths.PathSet.elements (do_join_post pname tenv posts))
-    in
-    let spec = BiabductionSummary.{pre= Jprop.Prop (1, pre); posts= posts'; visited} in
-    specs := spec :: !specs
+  let mk_spec (pre, posts) =
+    BiabductionSummary.{pre= Jprop.Prop (1, pre); posts; visited= Visitedset.empty}
   in
-  Pmap.iter add_spec pre_post_map ; !specs
+  List.map ~f:mk_spec pre_post_list
 
 
 let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSummary.Visitedset.t =

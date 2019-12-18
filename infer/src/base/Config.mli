@@ -652,8 +652,6 @@ val source_files_type_environment : bool
 
 val source_preview : bool
 
-val spec_abs_level : int
-
 val specs_library : string list
 
 val sqlite_cache_size : int

@@ -2048,17 +2048,6 @@ let list_reduce name dd f list =
   reduce [] list
 
 
-let pathset_collapse_impl pname tenv pset =
-  let f x y =
-    if Prover.check_implication pname tenv x (Prop.expose y) then Some y
-    else if Prover.check_implication pname tenv y (Prop.expose x) then Some x
-    else None
-  in
-  let plist = Paths.PathSet.elements pset in
-  let plist' = list_reduce "JOIN_IMPL" Prop.d_prop f plist in
-  Paths.PathSet.from_renamed_list plist'
-
-
 let jprop_partial_join tenv mode jp1 jp2 =
   let p1, p2 =
     ( Prop.expose (BiabductionSummary.Jprop.to_prop jp1)
@@ -2101,13 +2090,6 @@ let proplist_collapse tenv mode plist =
 let proplist_collapse_pre tenv plist =
   let plist' = List.map ~f:(fun p -> (p, ())) plist in
   List.map ~f:fst (proplist_collapse tenv JoinState.Pre plist')
-
-
-let pathset_collapse tenv pset =
-  let plist = Paths.PathSet.elements pset in
-  let plist' = proplist_collapse tenv JoinState.Post plist in
-  Paths.PathSet.from_renamed_list
-    (List.map ~f:(fun (p, path) -> (BiabductionSummary.Jprop.to_prop p, path)) plist')
 
 
 let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) :

@@ -1725,12 +1725,6 @@ INTERNAL OPTIONS
        --sources-reset
            Set --sources to the empty list.
 
-       --spec-abs-level int
-           Set the level of abstracting the postconditions of discovered
-           specs:           - 0 = nothing special
-           - 1 = filter out redundant posts implied by other posts
-           
-
        --specs-library,-L +dir|jar
            Search for .spec files in given directory or jar file
 

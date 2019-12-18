@@ -2221,14 +2221,6 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
-and spec_abs_level =
-  CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1 ~meta:"int"
-    {|Set the level of abstracting the postconditions of discovered specs:
-- 0 = nothing special
-- 1 = filter out redundant posts implied by other posts
-|}
-
-
 and specs_library =
   let specs_library =
     CLOpt.mk_path_list ~deprecated:["lib"] ~long:"specs-library" ~short:'L' ~meta:"dir|jar"
@@ -3193,8 +3185,6 @@ and source_files_freshly_captured = !source_files_freshly_captured
 and sources = !sources
 
 and sourcepath = !sourcepath
-
-and spec_abs_level = !spec_abs_level
 
 and sqlite_cache_size = !sqlite_cache_size
 
