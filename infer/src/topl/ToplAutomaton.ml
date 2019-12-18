@@ -56,7 +56,7 @@ let make properties =
     in
     Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_map ~f properties))
   in
-  if Config.trace_topl then Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)@\n" i p v) states ;
+  Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)@\n" i p v) states ;
   let vindex = index_in (module Vname.Table) states in
   let transitions : transition array =
     let f p =
@@ -77,9 +77,8 @@ let make properties =
     in
     Array.of_list (List.concat_map ~f properties)
   in
-  if Config.trace_topl then
-    Array.iteri transitions ~f:(fun i {source; target; label} ->
-        tt "transition%d %d -> %d on %s@\n" i source target label.ToplAst.procedure_name ) ;
+  Array.iteri transitions ~f:(fun i {source; target; label} ->
+      tt "transition%d %d -> %d on %s@\n" i source target label.ToplAst.procedure_name ) ;
   let outgoing : tindex list array =
     let vcount = Array.length states in
     let a = Array.create ~len:vcount [] in

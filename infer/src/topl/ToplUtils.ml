@@ -52,5 +52,6 @@ let is_synthesized = function
 
 
 let debug fmt =
-  Logging.debug Analysis Verbose "ToplTrace: " ;
-  Logging.debug Analysis Verbose fmt
+  let mode = if Config.trace_topl then Logging.Quiet else Logging.Verbose in
+  Logging.debug Analysis mode "ToplTrace: " ;
+  Logging.debug Analysis mode fmt
