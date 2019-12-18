@@ -1074,7 +1074,6 @@ let check_junk pname tenv prop =
             let exn_leak =
               Exceptions.Leak
                 ( fp_part
-                , hpred
                 , Errdesc.explain_leak tenv hpred prop alloc_attribute ml_bucket_opt
                 , !Absarray.array_abstraction_performed
                 , resource

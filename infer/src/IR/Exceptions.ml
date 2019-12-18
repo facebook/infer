@@ -86,9 +86,7 @@ exception Internal_error of Localise.error_desc
 
 exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 
-exception
-  Leak of
-    bool * Sil.hpred * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
+exception Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
 
 exception Missing_fld of Typ.Fieldname.t * L.ocaml_pos
 
@@ -378,7 +376,7 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= None
       ; category= Prover }
-  | Leak (fp_part, _, (exn_vis, error_desc), done_array_abstraction, resource, ocaml_pos) ->
+  | Leak (fp_part, (exn_vis, error_desc), done_array_abstraction, resource, ocaml_pos) ->
       if done_array_abstraction then
         { name= IssueType.leak_after_array_abstraction
         ; description= error_desc
