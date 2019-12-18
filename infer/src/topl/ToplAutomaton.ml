@@ -62,7 +62,9 @@ let make properties =
     let f p =
       let prefix_pname pname =
         if String.equal ".*" pname then pname
-        else "^\\(\\|" ^ String.concat ~sep:"\\|" p.ToplAst.prefixes ^ "\\)\\." ^ pname ^ "("
+        else
+          let ps = List.map ~f:(fun p -> "\\|" ^ p ^ "\\.") p.ToplAst.prefixes in
+          "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "("
       in
       let f t =
         let source = vindex ToplAst.(p.name, t.source) in

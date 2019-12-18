@@ -1,8 +1,11 @@
 property HasNext
   prefix "Iterator"
   prefix "List"
+  prefix "Scanner"
   start -> start: *
   start -> invalid: I = iterator(*)
+  start -> invalid: Scanner(I, *)  // For constructors, biabduction has "this" as first argument
   invalid -> valid: B = hasNext(i) if B != 0 // in SIL, "true" is encoded as "not 0"
   valid -> invalid: next(i)
   invalid -> error: next(i)
+
