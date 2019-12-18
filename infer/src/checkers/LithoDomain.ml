@@ -216,7 +216,7 @@ module MethodCalled = struct
       | Some method_calls_no_build_called, Some method_calls_build_called ->
           MethodCalls.join method_calls_no_build_called method_calls_build_called
     in
-    remove k_no_build_called x |> add k_build_called method_calls
+    add k_build_called method_calls x
 
 
   let build_method_called created_locations x =

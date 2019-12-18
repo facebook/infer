@@ -488,4 +488,22 @@ public class RequiredProps {
     MyComponent.Builder builder2 = mMyComponent.create().prop1(new Object());
     setProp3AndBuild(builder1);
   }
+
+  public MyComponent.Builder createWrapper() {
+    return mMyComponent.create();
+  }
+
+  public void twoBuildersOk() {
+    MyComponent.Builder builder1 = createWrapper();
+    MyComponent.Builder builder2 = createWrapper().prop1(new Object());
+    builder1.prop1(new Object()).prop3(new Object()).build();
+    builder2.prop3(new Object()).build();
+  }
+
+  public void twoBuildersBad_FN() {
+    MyComponent.Builder builder1 = createWrapper();
+    MyComponent.Builder builder2 = createWrapper();
+    builder1.prop1(new Object()).prop3(new Object()).build();
+    builder2.prop3(new Object()).build();
+  }
 }
