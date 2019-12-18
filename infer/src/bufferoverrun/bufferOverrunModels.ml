@@ -1059,6 +1059,11 @@ module JavaString = struct
     |> BufferOverrunDomain.Val.get_itv |> Itv.set_lb_zero |> Itv.decr
 
 
+  (** Given a string of length n, return itv [1, n_u -1]. *)
+  let range_itv_one_mone v =
+    BufferOverrunDomain.Val.get_itv v |> Itv.decr |> Itv.set_lb Itv.Bound.one
+
+
   let indexOf exp =
     let exec model_env ~ret:(ret_id, _) mem =
       (* if not found, indexOf returns -1. *)
@@ -1078,6 +1083,36 @@ module JavaString = struct
   let constructor tgt_exp src =
     let exec model_env ~ret:_ mem =
       constructor_from_char_ptr model_env (Sem.eval_locs tgt_exp mem) src mem
+    in
+    {exec; check= no_check}
+
+
+  let malloc_and_set_length exp ({location} as model_env) ~ret:((id, _) as ret) length mem =
+    let {exec} = malloc ~can_be_zero:false exp in
+    let mem = exec model_env ~ret mem in
+    let underlying_arr_loc = Dom.Mem.find_stack (Loc.of_id id) mem |> Dom.Val.get_pow_loc in
+    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) underlying_arr_loc mem
+
+
+  (** If the expression does not match any part of the input then the resulting array has just one
+      element. *)
+  let split exp =
+    let exec model_env ~ret mem =
+      let length =
+        ArrObjCommon.eval_size model_env exp ~fn mem |> range_itv_one_mone |> Dom.Val.of_itv
+      in
+      malloc_and_set_length exp model_env ~ret length mem
+    in
+    {exec; check= no_check}
+
+
+  let split_with_limit limit_exp =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let dummy_exp = Exp.zero in
+      let length =
+        Sem.eval integer_type_widths dummy_exp mem |> range_itv_one_mone |> Dom.Val.of_itv
+      in
+      malloc_and_set_length limit_exp model_env ~ret length mem
     in
     {exec; check= no_check}
 
@@ -1219,6 +1254,10 @@ module Call = struct
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
       ; +PatternMatch.implements_lang "String"
         &:: "indexOf" <>$ capt_exp $+ any_arg $--> JavaString.indexOf
+      ; +PatternMatch.implements_lang "String"
+        &:: "split" <>$ any_arg $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
+      ; +PatternMatch.implements_lang "String"
+        &:: "split" <>$ capt_exp $+ any_arg $--> JavaString.split
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf

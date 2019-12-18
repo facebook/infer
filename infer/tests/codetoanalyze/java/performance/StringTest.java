@@ -34,4 +34,19 @@ class StringTest {
     String s = "";
     return s.startsWith(",") ? s.substring(1) : s;
   }
+
+  void split_linear(String s) {
+    String[] list = s.split(",");
+    for (int i = 0; i < list.length; i++) {}
+  }
+
+  void split_with_limit_linear(String s, int limit) {
+    String[] list = s.split(",", limit);
+    for (int i = 0; i < list.length; i++) {}
+  }
+
+  void call_split_constant() {
+    String s = new String("hello");
+    split_linear(s);
+  }
 }
