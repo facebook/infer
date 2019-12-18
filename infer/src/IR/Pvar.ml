@@ -300,3 +300,12 @@ let rename ~f {pv_name; pv_kind} =
   let pv_name = Mangled.rename ~f pv_name in
   let pv_hash = name_hash pv_name in
   {pv_hash; pv_name; pv_kind}
+
+
+let is_objc_static_local_of_proc_name pname pvar =
+  (* local static name is of the form procname_varname *)
+  let var_name = Mangled.to_string (get_name pvar) in
+  match Str.split_delim (Str.regexp_string pname) var_name with [_; _] -> true | _ -> false
+
+
+let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (get_name pvar))

@@ -214,14 +214,8 @@ let compare_hpara_dll = compare_hpara_dll0 (fun _ _ -> 0)
 let equal_hpara_dll = [%compare.equal: hpara_dll]
 
 (** {2 Comparision and Inspection Functions} *)
+
 let is_objc_object = function Hpointsto (_, _, Sizeof {typ}) -> Typ.is_objc_class typ | _ -> false
-
-(** Check if a pvar is a local static in objc *)
-let is_static_local_name pname pvar =
-  (* local static name is of the form procname_varname *)
-  let var_name = Mangled.to_string (Pvar.get_name pvar) in
-  match Str.split_delim (Str.regexp_string pname) var_name with [_; _] -> true | _ -> false
-
 
 (** {2 Sets of heap predicates} *)
 module HpredSet = Caml.Set.Make (struct
@@ -375,9 +369,6 @@ let add_with_block_parameters_flag instr =
   | _ ->
       instr
 
-
-(** Check if a pvar is a local pointing to a block in objc *)
-let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
 (** Dump an instruction. *)
 let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i

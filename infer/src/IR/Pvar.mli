@@ -86,6 +86,12 @@ val is_cpp_temporary : t -> bool
 (** return true if this pvar represents a C++ temporary object (see
     http://en.cppreference.com/w/cpp/language/lifetime) *)
 
+val is_objc_static_local_of_proc_name : string -> t -> bool
+(** Check if a pvar is a local static in objc *)
+
+val is_block_pvar : t -> bool
+(** Check if a pvar is a local pointing to a block in objc *)
+
 val mk : Mangled.t -> Typ.Procname.t -> t
 (** [mk name proc_name] creates a program var with the given function name *)
 

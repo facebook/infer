@@ -16,7 +16,7 @@ let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
   let local_static e =
     match e with
     | Exp.Lvar pvar
-      when Pvar.is_global pvar && Sil.is_static_local_name pname pvar
+      when Pvar.is_global pvar && Pvar.is_objc_static_local_of_proc_name pname pvar
            (* is a local static if it's a global and it has a static local name *) ->
         [pvar]
     | _ ->
@@ -32,7 +32,7 @@ let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
 (* returns a list of local variables that points to an objc block in a proposition *)
 let get_name_of_objc_block_locals p =
   let local_blocks e =
-    match e with Exp.Lvar pvar when Sil.is_block_pvar pvar -> [pvar] | _ -> []
+    match e with Exp.Lvar pvar when Pvar.is_block_pvar pvar -> [pvar] | _ -> []
   in
   let hpred_local_blocks hpred =
     match hpred with Sil.Hpointsto (e, _, _) -> [local_blocks e] | _ -> []

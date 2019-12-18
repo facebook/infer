@@ -247,12 +247,6 @@ val hpred_compact : sharing_env -> hpred -> hpred
 val is_objc_object : hpred -> bool
 (** {2 Comparision And Inspection Functions} *)
 
-val is_static_local_name : string -> Pvar.t -> bool
-(** Check if a pvar is a local static in objc *)
-
-val is_block_pvar : Pvar.t -> bool
-(** Check if a pvar is a local pointing to a block in objc *)
-
 val add_with_block_parameters_flag : instr -> instr
 (** Adds a with_blocks_parameters flag to a method call, when the arguments contain an Objective-C
     block, and the method is an Objective-C method (to be extended to other methods) *)
