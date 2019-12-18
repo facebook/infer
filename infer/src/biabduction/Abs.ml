@@ -1152,6 +1152,92 @@ let check_junk pname tenv prop =
   else Prop.normalize tenv (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
 
 
+(** Removes (pure) atoms (such as v=E) containing a variable v that (a) has no other occurrence and
+    (b) [count v] is 0. The default count is the constant 0. One should use the argument count if
+    the proposition being simplified should make sense in a larger scope, which is not seen;
+    [count v] should give the number of occurrences of v in the context. *)
+let remove_pure_garbage tenv ?(count = fun _ -> 0) prop =
+  if Prop.has_footprint prop then L.d_warning "Abs.remove_pure_garbage ignores footprint" ;
+  (* Normalization may change counts of occurrences. Which free variables we drop depends on counts.
+     Dropping variables involves exposing the Prop.t, so we must necessarily re-normalize. Since we change
+     counts again, other variables may become dropable. We start with normalization, which empirically leads
+     to more dropping. *)
+  let changed = ref false in
+  let rec go prop =
+    let propcount = prop |> Prop.free_vars |> Ident.counts_of_sequence in
+    let prop = Prop.set prop ~pi:(Prop.get_pure prop) ~sub:Sil.sub_empty in
+    let drop id = Int.equal 1 (count id + propcount id) in
+    let keep atom = not (Sequence.exists ~f:drop (Sil.atom_free_vars atom)) in
+    let pi = List.filter ~f:keep prop.Prop.pi in
+    let dropped = List.length pi < List.length prop.Prop.pi in
+    changed := !changed || dropped ;
+    let prop = Prop.set ~pi prop in
+    let prop = Prop.normalize tenv prop in
+    if dropped then go prop else prop
+  in
+  (go prop, !changed)
+
+
+(* During re-execution, free variables in Prop.t have the whole spec as their scope. Thus, most
+functions in Prop abstain from dropping free variables. Here, however, we can do it. Let's call an
+atom an orphan when it contains a variable v that does not occur anywhere else in the spec. Orphans
+can be dropped. Alpha-renaming can create orphans. Thus, we will perform a best-effort fixpoint
+computation (rename, drop)*, stopping when the last drop is a no-op. *)
+let abstract_spec pname tenv spec =
+  let open BiabductionSummary in
+  let rename spec = spec_normalize tenv spec in
+  let drop spec =
+    let changed = ref false in
+    let precount = spec.pre |> Jprop.to_prop |> Prop.free_vars |> Ident.counts_of_sequence in
+    let update_post (p, path) =
+      let p, dropped = remove_pure_garbage tenv p ~count:precount in
+      changed := !changed || dropped ;
+      (p, path)
+    in
+    let posts = List.map ~f:update_post spec.posts in
+    let spec = {spec with posts} in
+    (spec, !changed)
+  in
+  let rec loop spec =
+    let s1 = rename spec in
+    let s2, changed = drop (expose s1) in
+    if changed then loop s2 else s1
+  in
+  let collapse_posts spec =
+    let spec = expose spec in
+    let implies (prop1, _path1) (prop2, _path2) =
+      (* TODO(rgrigore): [Prover.check_implication] gives up immediately if the consequence contains
+         a disequality. As a workaround, here we drop pure facts from the consequent that are known to
+         be true. *)
+      let module AtomSet = Caml.Set.Make (struct
+        type t = Sil.atom
+
+        let compare = Sil.compare_atom
+      end) in
+      let pre_pure =
+        let pre = Jprop.to_prop spec.pre in
+        AtomSet.of_list (Prop.get_pure pre)
+      in
+      let prop1_pure = AtomSet.of_list (Prop.get_pure prop1) in
+      let known = AtomSet.union pre_pure prop1_pure in
+      let toprove = AtomSet.of_list prop2.Prop.pi in
+      let toprove = AtomSet.diff toprove known in
+      let prop2 = Prop.set prop2 ~pi:(AtomSet.elements toprove) in
+      Prover.check_implication pname tenv prop1 prop2
+    in
+    let rec filter kept x unseen =
+      (* INV: if a is kept and b is kept or unseen then (not (implies a b)).
+         We keep x unless that would break the invariant. *)
+      let others = List.rev_append kept unseen in
+      let kept = if List.exists ~f:(implies x) others then kept else x :: kept in
+      match unseen with [] -> kept | y :: unseen -> filter kept y unseen
+    in
+    let posts = match spec.posts with [] | [_] -> spec.posts | p :: posts -> filter [] p posts in
+    {spec with posts}
+  in
+  rename (collapse_posts (loop spec))
+
+
 (** Check whether the prop contains junk. If it does, and [Config.allowleak] is true, remove the
     junk, otherwise raise a Leak exception. *)
 let abstract_junk pname tenv prop =

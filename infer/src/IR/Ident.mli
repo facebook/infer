@@ -139,3 +139,5 @@ val to_string : t -> string
 val hashqueue_of_sequence : ?init:unit HashQueue.t -> t Sequence.t -> unit HashQueue.t
 
 val set_of_sequence : ?init:Set.t -> t Sequence.t -> Set.t
+
+val counts_of_sequence : t Sequence.t -> t -> int

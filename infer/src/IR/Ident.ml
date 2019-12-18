@@ -256,3 +256,9 @@ let hashqueue_of_sequence ?init s =
 
 
 let set_of_sequence ?(init = Set.empty) s = Sequence.fold s ~init ~f:(fun ids id -> Set.add id ids)
+
+let counts_of_sequence seq =
+  let h = Hash.create (Sequence.length seq) in
+  let get id = Option.value (Hash.find_opt h id) ~default:0 in
+  let bump id = Hash.replace h id (1 + get id) in
+  Sequence.iter ~f:bump seq ; get

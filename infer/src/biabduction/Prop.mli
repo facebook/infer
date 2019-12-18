@@ -43,6 +43,9 @@ type struct_init_mode = No_init | Fld_init
 
 (** {2 Basic Functions for propositions} *)
 
+val has_footprint : 'a t -> bool
+(** sigma_fp is nonempty or pi_fp is nonempty *)
+
 val compare_prop : 'a t -> 'a t -> int
 (** Compare propositions *)
 

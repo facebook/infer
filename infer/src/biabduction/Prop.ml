@@ -47,6 +47,8 @@ module Core : sig
     ; pi_fp: pi  (** abduced pure part *) }
   [@@deriving compare]
 
+  val has_footprint : 'a t -> bool
+
   val prop_emp : normal t
   (** Proposition [true /\ emp]. *)
 
@@ -71,6 +73,8 @@ end = struct
     ; sigma_fp: sigma  (** abduced spatial part *)
     ; pi_fp: pi  (** abduced pure part *) }
   [@@deriving compare]
+
+  let has_footprint {sigma_fp; pi_fp} = not (List.is_empty sigma_fp && List.is_empty pi_fp)
 
   (** Proposition [true /\ emp]. *)
   let prop_emp : normal t = {sub= Sil.sub_empty; pi= []; sigma= []; pi_fp= []; sigma_fp= []}

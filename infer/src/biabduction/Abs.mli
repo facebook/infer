@@ -16,6 +16,11 @@ type rules
 val abstract : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Abstract a proposition. *)
 
+val abstract_spec :
+  Typ.Procname.t -> Tenv.t -> Prop.normal BiabductionSummary.spec -> BiabductionSummary.NormSpec.t
+(** Normalizes names and applies simplifications, soem of which require looking at both pre and
+    post. *)
+
 val abstract_junk : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Check whether the prop contains junk. If it does, and [Config.allowleak] is true, remove the
     junk, otherwise raise a Leak exception. *)

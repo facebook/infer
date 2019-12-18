@@ -789,14 +789,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
       (plist, visited)
     in
     let pre =
-      let p =
-        PropUtil.remove_locals_ret tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
-      in
-      match precondition with
-      | BiabductionSummary.Jprop.Prop (n, _) ->
-          BiabductionSummary.Jprop.Prop (n, p)
-      | BiabductionSummary.Jprop.Joined (n, _, jp1, jp2) ->
-          BiabductionSummary.Jprop.Joined (n, p, jp1, jp2)
+      BiabductionSummary.Jprop.shallow_map ~f:(PropUtil.remove_locals_ret tenv pdesc) precondition
     in
     let spec = BiabductionSummary.{pre; posts; visited} in
     L.d_decrease_indent () ; do_after_node init_node ; Some spec
@@ -867,7 +860,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
               (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint")
           in
           Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
-          (* retuning no specs *) []
+          (* returning no specs *) []
       in
       (specs, BiabductionSummary.FOOTPRINT)
     in
@@ -1050,8 +1043,9 @@ let update_specs tenv prev_summary phase (new_specs : BiabductionSummary.NormSpe
   in
   let res = ref [] in
   let convert pre (post_set, visited) =
+    let pname = Summary.get_proc_name prev_summary in
     res :=
-      BiabductionSummary.spec_normalize tenv
+      Abs.abstract_spec pname tenv
         BiabductionSummary.{pre; posts= Paths.PathSet.elements post_set; visited}
       :: !res
   in
