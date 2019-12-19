@@ -60,9 +60,8 @@ let merge_captured_targets () =
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
   DBWriter.merge ~infer_deps_file ;
-  if Config.genrule_master_mode then
-    ScubaLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
-        merge_global_tenvs infer_deps_file ) ;
+  ScubaLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
+      merge_global_tenvs infer_deps_file ) ;
   let targets_num =
     let counter = ref 0 in
     let incr_counter _line = incr counter in
