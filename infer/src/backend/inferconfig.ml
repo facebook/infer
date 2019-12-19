@@ -13,7 +13,7 @@ type path_filter = SourceFile.t -> bool
 
 type error_filter = IssueType.t -> bool
 
-type proc_filter = Typ.Procname.t -> bool
+type proc_filter = Procname.t -> bool
 
 type filters = {path_filter: path_filter; error_filter: error_filter; proc_filter: proc_filter}
 
@@ -46,8 +46,8 @@ let is_matching patterns source_file =
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   (not (BuiltinDecl.is_declared proc_name))
-  && Language.equal (Typ.Procname.get_language proc_name) language
-  && String.equal (Typ.Procname.get_method proc_name) method_name
+  && Language.equal (Procname.get_language proc_name) language
+  && String.equal (Procname.get_method proc_name) method_name
 
 
 (* Module to create matcher based on strings present in the source file *)
@@ -92,7 +92,7 @@ type pattern =
 
 (* Module to create matcher based on source file names or class names and method names *)
 module FileOrProcMatcher = struct
-  type matcher = SourceFile.t -> Typ.Procname.t -> bool
+  type matcher = SourceFile.t -> Procname.t -> bool
 
   let default_matcher : matcher = fun _ _ -> false
 
@@ -110,8 +110,8 @@ module FileOrProcMatcher = struct
           ~init:String.Map.empty m_patterns
       in
       let do_java pname_java =
-        let class_name = Typ.Procname.Java.get_class_name pname_java
-        and method_name = Typ.Procname.Java.get_method pname_java in
+        let class_name = Procname.Java.get_class_name pname_java
+        and method_name = Procname.Java.get_method pname_java in
         try
           let class_patterns = String.Map.find_exn pattern_map class_name in
           List.exists
@@ -121,7 +121,7 @@ module FileOrProcMatcher = struct
         with Not_found_s _ | Caml.Not_found -> false
       in
       fun _ proc_name ->
-        match proc_name with Typ.Procname.Java pname_java -> do_java pname_java | _ -> false
+        match proc_name with Procname.Java pname_java -> do_java pname_java | _ -> false
 
 
   let create_file_matcher patterns =

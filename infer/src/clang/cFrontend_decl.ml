@@ -21,24 +21,24 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
   let add_method ?(is_destructor_wrapper = false) trans_unit_ctx tenv cfg class_decl_opt procname
       body ms has_return_param outer_context_opt extra_instrs =
     L.(debug Capture Verbose)
-      "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
+      "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Procname.pp procname ;
     incr CFrontend_config.procedures_attempted ;
     let recover () =
       incr CFrontend_config.procedures_failed ;
-      Typ.Procname.Hash.remove cfg procname ;
+      Procname.Hash.remove cfg procname ;
       let method_kind = ms.CMethodSignature.method_kind in
       CMethod_trans.create_external_procdesc trans_unit_ctx cfg procname method_kind None
     in
     let pp_context fmt () =
-      F.fprintf fmt "Aborting translation of method '%a' in file '%a'" Typ.Procname.pp procname
+      F.fprintf fmt "Aborting translation of method '%a' in file '%a'" Procname.pp procname
         SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     in
     let f () =
-      match Typ.Procname.Hash.find cfg procname with
+      match Procname.Hash.find cfg procname with
       | procdesc when Procdesc.is_defined procdesc && not (model_exists procname) -> (
           L.(debug Capture Verbose)
             "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
-            (Typ.Procname.to_string procname) ;
+            (Procname.to_string procname) ;
           let vars_to_destroy = CScope.Variables.compute_vars_to_destroy_map body in
           let context =
             CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt has_return_param
@@ -123,10 +123,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                 add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
                   None extra_instrs ~is_destructor_wrapper:true ;
               let new_method_name =
-                Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
+                Config.clang_inner_destructor_prefix ^ Procname.get_method procname
               in
               let ms' =
-                {ms with name= Typ.Procname.objc_cpp_replace_method_name procname new_method_name}
+                {ms with name= Procname.objc_cpp_replace_method_name procname new_method_name}
               in
               let procname' = ms'.CMethodSignature.name in
               (ms', procname') )

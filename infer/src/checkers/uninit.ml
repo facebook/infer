@@ -25,7 +25,7 @@ module Models = struct
   let initializing_all_args = [BuiltinDecl.__set_array_length]
 
   let is_initializing_all_args pname =
-    List.exists initializing_all_args ~f:(fun fname -> Typ.Procname.equal pname fname)
+    List.exists initializing_all_args ~f:(fun fname -> Procname.equal pname fname)
 end
 
 let should_report_on_type t =
@@ -122,7 +122,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           false
     in
-    Typ.Procname.is_constructor call && is_dummy_constructor_of_struct
+    Procname.is_constructor call && is_dummy_constructor_of_struct
 
 
   let is_pointer_assignment tenv lhs rhs =
@@ -225,7 +225,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let prepost = update_prepost lhs_access_expr rhs_expr in
         {astate with maybe_uninit_vars; prepost}
     | Call (_, Direct callee_pname, _, _, _)
-      when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
+      when Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with maybe_uninit_vars= MaybeUninitVars.empty}
     | Call (_, HilInstr.Direct call, [HilExp.AccessExpression (AddressOf (Base base))], _, _)
       when is_dummy_constructor_of_a_struct call ->
@@ -270,7 +270,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         remove_initialized_params summary pname acc idx access_expr_to_remove false
                     | _ ->
                         MaybeUninitVars.remove access_expr_to_remove acc )
-                  | base when Option.exists pname_opt ~f:Typ.Procname.is_constructor ->
+                  | base when Option.exists pname_opt ~f:Procname.is_constructor ->
                       MaybeUninitVars.remove_all_fields tenv base
                         (MaybeUninitVars.remove access_expr_to_remove acc)
                   | _, {Typ.desc= Tptr _} -> (

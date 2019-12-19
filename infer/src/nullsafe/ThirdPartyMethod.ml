@@ -60,13 +60,13 @@ let java_type_to_string java_type =
 
 
 let unique_repr_of_java_proc_name java_proc_name =
-  let class_name = Typ.Procname.Java.get_class_name java_proc_name in
+  let class_name = Procname.Java.get_class_name java_proc_name in
   let method_name =
-    if Typ.Procname.Java.is_constructor java_proc_name then Constructor
-    else Method (Typ.Procname.Java.get_method java_proc_name)
+    if Procname.Java.is_constructor java_proc_name then Constructor
+    else Method (Procname.Java.get_method java_proc_name)
   in
   let param_types =
-    Typ.Procname.Java.get_parameters java_proc_name |> List.map ~f:java_type_to_string
+    Procname.Java.get_parameters java_proc_name |> List.map ~f:java_type_to_string
   in
   {class_name; method_name; param_types}
 

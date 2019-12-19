@@ -17,7 +17,7 @@ module Sem = BufferOverrunSemantics
 module ValTrace = BufferOverrunTrace
 
 module ConditionTrace = struct
-  type intra_cond_trace = Intra | Inter of {call_site: Location.t; callee_pname: Typ.Procname.t}
+  type intra_cond_trace = Intra | Inter of {call_site: Location.t; callee_pname: Procname.t}
   [@@deriving compare]
 
   type 'cond_trace t0 =
@@ -38,7 +38,7 @@ module ConditionTrace = struct
     if Config.bo_debug > 1 then
       match ct.cond_trace with
       | Inter {callee_pname; call_site} ->
-          let pname = Typ.Procname.to_string callee_pname in
+          let pname = Procname.to_string callee_pname in
           F.fprintf fmt " by call to %s at %a (%a)" pname Location.pp_file_pos call_site
             ValTrace.Issue.pp ct.val_traces
       | Intra ->
@@ -49,7 +49,7 @@ module ConditionTrace = struct
    fun fmt ct ->
     match ct.cond_trace with
     | Inter {callee_pname} ->
-        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string callee_pname)
+        F.fprintf fmt " by call to %a " MF.pp_monospaced (Procname.to_string callee_pname)
     | _ ->
         ()
 
@@ -717,7 +717,7 @@ module ConditionWithTrace = struct
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
-        pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
+        pp_summary cwt Procname.pp callee_pname Location.pp call_site ;
     match
       Dom.Reachability.subst cwt.reachability
         (eval_sym_trace ~mode:Sem.EvalPOReachability)

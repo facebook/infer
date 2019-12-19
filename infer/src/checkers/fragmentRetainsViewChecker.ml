@@ -25,10 +25,10 @@ let rec format_typ typ =
 
 let format_method pname =
   match pname with
-  | Typ.Procname.Java pname_java ->
-      Typ.Procname.Java.get_method pname_java
+  | Procname.Java pname_java ->
+      Procname.Java.get_method pname_java
   | _ ->
-      Typ.Procname.to_string pname
+      Procname.to_string pname
 
 
 let report_warning class_name fld fld_typ summary =
@@ -50,7 +50,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  let is_on_destroy_view = String.equal (Typ.Procname.Java.get_method java_pname) on_destroy_view in
+  let is_on_destroy_view = String.equal (Procname.Java.get_method java_pname) on_destroy_view in
   let fld_typ_is_view typ =
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct tname}, _) ->
@@ -64,7 +64,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
   if is_on_destroy_view then
-    let class_name = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
+    let class_name = Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname) in
     match Tenv.lookup tenv class_name with
     | Some {fields} when AndroidFramework.is_fragment tenv class_name ->
         let declared_view_fields = List.filter ~f:(is_declared_view_typ class_name) fields in
@@ -85,7 +85,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
 let callback_fragment_retains_view ({Callbacks.summary} as args) : Summary.t =
   let proc_name = Summary.get_proc_name summary in
   ( match proc_name with
-  | Typ.Procname.Java java_pname ->
+  | Procname.Java java_pname ->
       callback_fragment_retains_view_java java_pname args
   | _ ->
       () ) ;

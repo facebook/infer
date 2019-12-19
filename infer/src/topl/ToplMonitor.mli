@@ -7,7 +7,7 @@
 
 open! IStd
 
-val generate : ToplAutomaton.t -> Typ.Procname.t -> Procdesc.t option
+val generate : ToplAutomaton.t -> Procname.t -> Procdesc.t option
 (** [generate automaton proc_name] returns a CFG, provided that [proc_name] is a recognized
     procedure name *)
 

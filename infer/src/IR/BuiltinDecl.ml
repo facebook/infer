@@ -7,28 +7,28 @@
 
 open! IStd
 
-type t = Typ.Procname.t
+type t = Procname.t
 
-let builtin_decls = ref Typ.Procname.Set.empty
+let builtin_decls = ref Procname.Set.empty
 
-let register pname = builtin_decls := Typ.Procname.Set.add pname !builtin_decls
+let register pname = builtin_decls := Procname.Set.add pname !builtin_decls
 
 let create_procname name =
-  let pname = Typ.Procname.from_string_c_fun name in
+  let pname = Procname.from_string_c_fun name in
   register pname ; pname
 
 
 let create_objc_class_method class_name method_name parameters =
-  let method_kind = Typ.Procname.ObjC_Cpp.ObjCClassMethod in
+  let method_kind = Procname.ObjC_Cpp.ObjCClassMethod in
   let tname = Typ.Name.Objc.from_string class_name in
   let pname =
-    Typ.Procname.ObjC_Cpp
-      (Typ.Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate parameters)
+    Procname.ObjC_Cpp
+      (Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate parameters)
   in
   register pname ; pname
 
 
-let is_declared pname = Typ.Procname.Set.mem pname !builtin_decls
+let is_declared pname = Procname.Set.mem pname !builtin_decls
 
 let __array_access = create_procname "__array_access"
 

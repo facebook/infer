@@ -14,9 +14,9 @@ module type S = sig
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list
 
-  val get_reportable_sink_paths : t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path list
+  val get_reportable_sink_paths : t -> trace_of_pname:(Procname.t -> t) -> sink_path list
 
-  val get_reportable_sink_path : Sink.t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path option
+  val get_reportable_sink_path : Sink.t -> trace_of_pname:(Procname.t -> t) -> sink_path option
 
   val with_callsite : t -> CallSite.t -> t
 

@@ -89,7 +89,7 @@ val mark_vars_as_undefined :
   -> Prop.normal Prop.t
   -> ret_exp:Exp.t
   -> undefined_actuals_by_ref:Exp.t list
-  -> Typ.Procname.t
+  -> Procname.t
   -> Annot.Item.t
   -> Location.t
   -> PredSymb.path_pos

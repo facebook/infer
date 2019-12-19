@@ -29,7 +29,7 @@ end = struct
       L.(die InternalError)
         "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
          operator or increase the threshold"
-        Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
+        Config.max_widens Procname.pp (Procdesc.get_proc_name pdesc) ;
     visit_count'
 end
 
@@ -217,7 +217,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         else if is_narrowing && not (Domain.leq ~lhs:new_pre ~rhs:old_state.State.pre) then (
           L.(debug Analysis Verbose)
             "Terminate narrowing because old and new states are not comparable at %a:%a@."
-            Typ.Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;
+            Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;
           (inv_map, ReachedFixPoint) )
         else
           let visit_count' =

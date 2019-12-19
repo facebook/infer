@@ -28,15 +28,14 @@ val get_inv_vars_in_loop :
   -> ReachingDefs.invariant_map
   -> is_pure_by_default:bool
   -> get_callee_purity:
-       (   Typ.Procname.t
-        -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option)
+       (Procname.t -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option)
   -> Procdesc.Node.t
   -> LoopNodes.t
   -> VarSet.t
 
 val get_loop_inv_var_map :
      Tenv.t
-  -> (Typ.Procname.t -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option)
+  -> (Procname.t -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option)
   -> ReachingDefs.invariant_map
   -> LoopNodes.t LoopHeadToInvVars.t
   -> invariant_map

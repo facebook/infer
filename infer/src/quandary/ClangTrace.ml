@@ -67,19 +67,19 @@ module SourceKind = struct
   let get ~caller_pname:_ pname actuals tenv =
     let return = None in
     match pname with
-    | Typ.Procname.ObjC_Cpp cpp_name -> (
-        let qualified_pname = Typ.Procname.get_qualifiers pname in
+    | Procname.ObjC_Cpp cpp_name -> (
+        let qualified_pname = Procname.get_qualifiers pname in
         match
           ( QualifiedCppName.to_list
-              (Typ.Name.unqualified_name (Typ.Procname.ObjC_Cpp.get_class_type_name cpp_name))
-          , Typ.Procname.get_method pname )
+              (Typ.Name.unqualified_name (Procname.ObjC_Cpp.get_class_type_name cpp_name))
+          , Procname.get_method pname )
         with
         | ( ["std"; ("basic_istream" | "basic_iostream")]
           , ("getline" | "read" | "readsome" | "operator>>") ) ->
             [(ReadFile, Some 1)]
         | _ ->
             get_external_source qualified_pname )
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
+    | Procname.C _ when Procname.equal pname BuiltinDecl.__global_access -> (
         (* is this var a command line flag created by the popular C++ gflags library for creating
            command-line flags (https://github.com/gflags/gflags)? *)
         let is_gflag access_path =
@@ -109,16 +109,16 @@ module SourceKind = struct
             else []
         | _ ->
             [] )
-    | Typ.Procname.C _ -> (
-      match Typ.Procname.to_string pname with
+    | Procname.C _ -> (
+      match Procname.to_string pname with
       | "getenv" ->
           [(EnvironmentVariable, return)]
       | _ ->
-          get_external_source (Typ.Procname.get_qualifiers pname) )
-    | Typ.Procname.Block _ ->
+          get_external_source (Procname.get_qualifiers pname) )
+    | Procname.Block _ ->
         []
     | pname ->
-        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Procname.pp pname
 
 
   let get_tainted_formals pdesc tenv =
@@ -128,8 +128,8 @@ module SourceKind = struct
       let overrides_service_method pname tenv =
         PatternMatch.override_exists
           (function
-            | Typ.Procname.ObjC_Cpp cpp_pname ->
-                let class_name = Typ.Procname.ObjC_Cpp.get_class_name cpp_pname in
+            | Procname.ObjC_Cpp cpp_pname ->
+                let class_name = Procname.ObjC_Cpp.get_class_name cpp_pname in
                 let res =
                   String.is_suffix ~suffix:"SvIf" class_name
                   || String.is_suffix ~suffix:"SvAsyncIf" class_name
@@ -156,11 +156,11 @@ module SourceKind = struct
           (Procdesc.get_formals pdesc)
       in
       match Procdesc.get_proc_name pdesc with
-      | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
+      | Procname.ObjC_Cpp cpp_pname as pname ->
           let qualified_pname =
             F.sprintf "%s::%s"
-              (Typ.Procname.ObjC_Cpp.get_class_name cpp_pname)
-              (Typ.Procname.get_method pname)
+              (Procname.ObjC_Cpp.get_class_name cpp_pname)
+              (Procname.get_method pname)
           in
           if QuandaryConfig.is_endpoint qualified_pname then
             taint_all_but_this_and_return ~make_source:(fun name desc ->
@@ -265,7 +265,7 @@ module SinkKind = struct
 
   (* return Some(sink kinds) if [procedure_name] is in the list of externally specified sinks *)
   let get_external_sink pname actuals =
-    let qualified_pname = Typ.Procname.get_qualifiers pname in
+    let qualified_pname = Procname.get_qualifiers pname in
     List.find_map
       ~f:(fun (qualifiers, kinds, index) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then
@@ -288,7 +288,7 @@ module SinkKind = struct
          report on accesses to maps etc., but also want to recognize custom vectors like fbvector
          rather than overfitting to std::vector *)
       let typename =
-        Typ.Procname.get_qualifiers pname |> QualifiedCppName.strip_template_args
+        Procname.get_qualifiers pname |> QualifiedCppName.strip_template_args
         |> QualifiedCppName.to_qual_string |> String.lowercase
       in
       String.is_substring ~substring:"vec" typename
@@ -296,11 +296,11 @@ module SinkKind = struct
       || String.is_substring ~substring:"string" typename
     in
     match pname with
-    | Typ.Procname.ObjC_Cpp cpp_name -> (
+    | Procname.ObjC_Cpp cpp_name -> (
       match
         ( QualifiedCppName.to_list
-            (Typ.Name.unqualified_name (Typ.Procname.ObjC_Cpp.get_class_type_name cpp_name))
-        , Typ.Procname.get_method pname )
+            (Typ.Name.unqualified_name (Procname.ObjC_Cpp.get_class_type_name cpp_name))
+        , Procname.get_method pname )
       with
       | ( ["std"; ("basic_fstream" | "basic_ifstream" | "basic_ofstream")]
         , ("basic_fstream" | "basic_ifstream" | "basic_ofstream" | "open") ) ->
@@ -309,17 +309,16 @@ module SinkKind = struct
           taint_nth 1 [BufferAccess] actuals
       | _ ->
           get_external_sink pname actuals )
-    | Typ.Procname.C _
-      when String.is_substring ~substring:"SetCommandLineOption" (Typ.Procname.to_string pname) ->
+    | Procname.C _
+      when String.is_substring ~substring:"SetCommandLineOption" (Procname.to_string pname) ->
         taint_nth 1 [EnvironmentChange] actuals
-    | Typ.Procname.C _
-      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access ->
+    | Procname.C _ when Config.developer_mode && Procname.equal pname BuiltinDecl.__array_access ->
         taint_all [BufferAccess] actuals
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length ->
+    | Procname.C _ when Procname.equal pname BuiltinDecl.__set_array_length ->
         (* called when creating a stack-allocated array *)
         taint_nth 1 [StackAllocation] actuals
-    | Typ.Procname.C _ -> (
-      match Typ.Procname.to_string pname with
+    | Procname.C _ -> (
+      match Procname.to_string pname with
       | "creat" | "fopen" | "freopen" | "open" ->
           taint_nth 0 [CreateFile] actuals
       | "curl_easy_setopt" -> (
@@ -365,10 +364,10 @@ module SinkKind = struct
           taint_nth 2 [BufferAccess] actuals
       | _ ->
           get_external_sink pname actuals )
-    | Typ.Procname.Block _ ->
+    | Procname.Block _ ->
         []
     | pname ->
-        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Procname.pp pname
 
 
   let pp fmt kind =
@@ -429,7 +428,7 @@ module CppSanitizer = struct
 
 
   let get pname _tenv =
-    let qualified_pname = Typ.Procname.get_qualifiers pname in
+    let qualified_pname = Procname.get_qualifiers pname in
     List.find_map
       ~f:(fun (qualifiers, kind) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some kind

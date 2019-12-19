@@ -11,7 +11,7 @@ module F = Format
 module type S = sig
   type t [@@deriving compare]
 
-  val get : Typ.Procname.t -> Tenv.t -> t option
+  val get : Procname.t -> Tenv.t -> t option
 
   val pp : F.formatter -> t -> unit
 end

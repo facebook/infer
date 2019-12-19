@@ -13,7 +13,7 @@ module F = Format
 
 type t =
   | Cint of IntLit.t  (** integer constants *)
-  | Cfun of Typ.Procname.t  (** function names *)
+  | Cfun of Procname.t  (** function names *)
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)
@@ -43,9 +43,9 @@ let pp pe f = function
   | Cfun fn -> (
     match pe.Pp.kind with
     | HTML ->
-        F.fprintf f "_fun_%s" (Escape.escape_xml (F.asprintf "%a" Typ.Procname.pp fn))
+        F.fprintf f "_fun_%s" (Escape.escape_xml (F.asprintf "%a" Procname.pp fn))
     | _ ->
-        F.fprintf f "_fun_%a" Typ.Procname.pp fn )
+        F.fprintf f "_fun_%a" Procname.pp fn )
   | Cstr s ->
       F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v ->

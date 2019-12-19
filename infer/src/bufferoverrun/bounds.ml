@@ -1236,7 +1236,7 @@ type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
 module BoundTrace = struct
   type t =
     | Loop of Location.t
-    | Call of {callee_pname: Typ.Procname.t; callee_trace: t; location: Location.t}
+    | Call of {callee_pname: Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
   [@@deriving compare]
 
@@ -1257,7 +1257,7 @@ module BoundTrace = struct
     | ModeledFunction {pname; location} ->
         F.fprintf f "ModeledFunction `%s` (%a)" pname Location.pp location
     | Call {callee_pname; callee_trace; location} ->
-        F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Typ.Procname.pp callee_pname Location.pp
+        F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Procname.pp callee_pname Location.pp
           location
 
 
@@ -1269,7 +1269,7 @@ module BoundTrace = struct
         let desc = F.asprintf "Loop at %a" Location.pp loop_head_loc in
         [Errlog.make_trace_element depth loop_head_loc desc []]
     | Call {callee_pname; location; callee_trace} ->
-        let desc = F.asprintf "call to %a" Typ.Procname.pp callee_pname in
+        let desc = F.asprintf "call to %a" Procname.pp callee_pname in
         Errlog.make_trace_element depth location desc []
         :: make_err_trace ~depth:(depth + 1) callee_trace
     | ModeledFunction {pname; location} ->

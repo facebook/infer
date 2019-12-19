@@ -45,9 +45,9 @@ type violation_type =
 let violation_description _ violation_type ~base_proc_name ~overridden_proc_name =
   let module MF = MarkupFormatter in
   let nullable_annotation = "@Nullable" in
-  let base_method_descr = Typ.Procname.to_simplified_string ~withclass:true base_proc_name in
+  let base_method_descr = Procname.to_simplified_string ~withclass:true base_proc_name in
   let overridden_method_descr =
-    Typ.Procname.to_simplified_string ~withclass:true overridden_proc_name
+    Procname.to_simplified_string ~withclass:true overridden_proc_name
   in
   match violation_type with
   | InconsistentReturn ->

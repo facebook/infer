@@ -53,7 +53,7 @@ module StructuredSil = struct
 
   let dummy_loc = Location.dummy
 
-  let dummy_procname = Typ.Procname.empty_block
+  let dummy_procname = Procname.empty_block
 
   let label_counter = ref 0
 
@@ -293,7 +293,7 @@ module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
 
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
-  let create_tests ?(test_pname = Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
+  let create_tests ?(test_pname = Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
     List.concat_map
       ~f:(fun (name, test_program) ->

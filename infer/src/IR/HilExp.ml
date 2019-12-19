@@ -48,7 +48,7 @@ module T : sig
     | UnaryOperator of Unop.t * t * Typ.t option
     | BinaryOperator of Binop.t * t * t
     | Exception of t
-    | Closure of Typ.Procname.t * (AccessPath.base * t) list
+    | Closure of Procname.t * (AccessPath.base * t) list
     | Constant of Const.t
     | Cast of Typ.t * t
     | Sizeof of Typ.t * t option
@@ -83,7 +83,7 @@ end = struct
     | UnaryOperator of Unop.t * t * Typ.t option
     | BinaryOperator of Binop.t * t * t
     | Exception of t
-    | Closure of Typ.Procname.t * (AccessPath.base * t) list
+    | Closure of Procname.t * (AccessPath.base * t) list
     | Constant of Const.t
     | Cast of Typ.t * t
     | Sizeof of Typ.t * t option
@@ -181,7 +181,7 @@ and pp fmt = function
         | _ ->
             F.fprintf fmt "%a captured as %a" AccessPath.pp_base base pp exp
       in
-      F.fprintf fmt "closure(%a, %a)" Typ.Procname.pp pname
+      F.fprintf fmt "closure(%a, %a)" Procname.pp pname
         (PrettyPrintable.pp_collection ~pp_item)
         captured
   | Constant c ->

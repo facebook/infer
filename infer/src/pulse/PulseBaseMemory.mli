@@ -56,7 +56,7 @@ val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
 
-val get_closure_proc_name : AbstractValue.t -> t -> Typ.Procname.t option
+val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
 

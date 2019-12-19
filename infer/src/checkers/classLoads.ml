@@ -36,7 +36,7 @@ let rec load_class summary tenv loc astate class_name =
     let astate1 = ClassLoadsDomain.add_typename loc astate class_name in
     (* load classes referenced by the class initializer *)
     let astate2 =
-      let class_initializer = Typ.Procname.(Java (Java.get_class_initializer class_name)) in
+      let class_initializer = Procname.(Java (Java.get_class_initializer class_name)) in
       (* NB may recurse if we are in class init but the shortcircuiting above makes it a no-op *)
       do_call summary class_initializer loc astate1
     in
@@ -86,7 +86,7 @@ let rec add_loads_of_exp summary tenv loc (exp : Exp.t) astate =
 
 let exec_call summary tenv callee args loc astate =
   match args with
-  | [_; (Exp.Sizeof {typ}, _)] when Typ.Procname.equal callee BuiltinDecl.__instanceof ->
+  | [_; (Exp.Sizeof {typ}, _)] when Procname.equal callee BuiltinDecl.__instanceof ->
       (* this matches downcasts/instanceof and exception handlers *)
       load_type summary tenv loc typ astate
   | _ ->
@@ -118,9 +118,9 @@ let report_loads summary astate =
       Reporting.log_warning summary ~loc ~ltr IssueType.class_load msg
   in
   let pname = Summary.get_proc_name summary in
-  Typ.Procname.get_class_name pname
+  Procname.get_class_name pname
   |> Option.iter ~f:(fun clazz ->
-         let method_strname = Typ.Procname.get_method pname in
+         let method_strname = Procname.get_method pname in
          let fullname = clazz ^ "." ^ method_strname in
          if String.Set.mem Config.class_loads_roots fullname then
            ClassLoadsDomain.iter report_load astate )
@@ -130,15 +130,15 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  L.debug Analysis Verbose "CL: ANALYZING %a@." Typ.Procname.pp proc_name ;
+  L.debug Analysis Verbose "CL: ANALYZING %a@." Procname.pp proc_name ;
   let loc = Procdesc.get_loc proc_desc in
   (* load the method's class *)
   let init =
-    Typ.Procname.get_class_type_name proc_name
+    Procname.get_class_type_name proc_name
     |> Option.fold ~init:ClassLoadsDomain.bottom ~f:(load_class summary tenv loc)
   in
   let post = Procdesc.fold_instrs proc_desc ~init ~f:(exec_instr summary tenv) in
   report_loads summary post ;
   let result = Payload.update_summary post summary in
-  L.debug Analysis Verbose "CL: FINISHED ANALYZING %a@." Typ.Procname.pp proc_name ;
+  L.debug Analysis Verbose "CL: FINISHED ANALYZING %a@." Procname.pp proc_name ;
   result

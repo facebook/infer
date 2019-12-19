@@ -147,7 +147,7 @@ type control =
 type trans_result =
   { control: control
   ; return: Exp.t * Typ.t
-  ; method_name: Typ.Procname.t option
+  ; method_name: Procname.t option
   ; is_cpp_call_virtual: bool }
 
 let empty_control = {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []}
@@ -329,7 +329,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let method_kind = ClangMethodKind.OBJC_INSTANCE in
   let pname =
     CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
-      Typ.Procname.ObjC_Cpp.ObjCInstanceMethod
+      Procname.ObjC_Cpp.ObjCInstanceMethod
   in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.translation_unit_context
     trans_state.context.CContext.cfg pname method_kind None ;

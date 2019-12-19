@@ -81,8 +81,8 @@ let lookup_related_sig_file {filenames} ~package =
 let lookup_related_sig_file_by_package storage procname =
   let package =
     match procname with
-    | Typ.Procname.Java java_pname ->
-        Typ.Procname.Java.get_package java_pname
+    | Procname.Java java_pname ->
+        Procname.Java.get_package java_pname
     | _ ->
         None
   in

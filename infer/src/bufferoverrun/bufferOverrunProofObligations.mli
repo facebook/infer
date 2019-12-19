@@ -70,7 +70,7 @@ module ConditionSet : sig
   val subst :
        summary_t
     -> (mode:BufferOverrunSemantics.eval_mode -> BufferOverrunDomain.eval_sym_trace)
-    -> Typ.Procname.t
+    -> Procname.t
     -> Location.t
     -> BufferOverrunDomain.LatestPrune.t
     -> checked_t

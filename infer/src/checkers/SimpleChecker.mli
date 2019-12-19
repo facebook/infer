@@ -12,9 +12,9 @@ module type Spec = sig
 
   val initial : t
 
-  val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> t
+  val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Procname.t -> Tenv.t -> t
 
-  val report : t -> Location.t -> Typ.Procname.t -> unit
+  val report : t -> Location.t -> Procname.t -> unit
 
   val compare : t -> t -> int
 end

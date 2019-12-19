@@ -69,7 +69,7 @@ module Memory : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val get_closure_proc_name : AbstractValue.t -> t -> Typ.Procname.t option
+  val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
@@ -97,7 +97,7 @@ module PrePost : sig
   val of_post : Procdesc.t -> domain_t -> t
 
   val apply :
-       Typ.Procname.t
+       Procname.t
     -> Location.t
     -> t
     -> formals:Var.t list

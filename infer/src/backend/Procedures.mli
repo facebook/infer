@@ -7,7 +7,7 @@
 
 open! IStd
 
-val get_all : filter:Filtering.procedures_filter -> unit -> Typ.Procname.t list
+val get_all : filter:Filtering.procedures_filter -> unit -> Procname.t list
 
 val pp_all :
      filter:Filtering.procedures_filter

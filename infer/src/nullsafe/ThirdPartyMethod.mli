@@ -25,7 +25,7 @@ type unique_repr =
 
 and method_name = Constructor | Method of string
 
-val unique_repr_of_java_proc_name : Typ.Procname.Java.t -> unique_repr
+val unique_repr_of_java_proc_name : Procname.Java.t -> unique_repr
 
 val pp_unique_repr : Format.formatter -> unique_repr -> unit
 

@@ -123,7 +123,7 @@ let report_errors summary modified_opt =
   let pdesc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name pdesc in
   let pname_loc = Procdesc.get_loc pdesc in
-  let impure_fun_desc = F.asprintf "Impure function %a" Typ.Procname.pp proc_name in
+  let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
   let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
   ( match modified_opt with
   | None ->

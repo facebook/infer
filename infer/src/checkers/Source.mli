@@ -14,11 +14,7 @@ module type Kind = sig
   include TraceElem.Kind
 
   val get :
-       caller_pname:Typ.Procname.t
-    -> Typ.Procname.t
-    -> HilExp.t list
-    -> Tenv.t
-    -> (t * int option) list
+    caller_pname:Procname.t -> Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) list
   (** return Some (kind) if the procedure with the given actuals is a taint source, None otherwise *)
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
@@ -33,7 +29,7 @@ module type S = sig
     { source: t  (** type of the returned source *)
     ; index: int option  (** index of the returned source if Some; return value if None *) }
 
-  val get : caller_pname:Typ.Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
+  val get : caller_pname:Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
   (** return Some (taint spec) if the call site with the given actuals is a taint source, None
       otherwise *)
 

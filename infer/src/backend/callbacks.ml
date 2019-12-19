@@ -10,7 +10,7 @@ open! IStd
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args =
-  {get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
+  {get_procs_in_file: Procname.t -> Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
@@ -49,7 +49,7 @@ let get_procedure_definition exe_env proc_name =
 let iterate_procedure_callbacks exe_env summary =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let procedure_language = Typ.Procname.get_language proc_name in
+  let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let get_procs_in_file proc_name =
     let source_file =
@@ -68,7 +68,7 @@ let iterate_procedure_callbacks exe_env summary =
         PerfEvent.(
           log (fun logger ->
               log_begin_event logger ~name ~categories:["backend"]
-                ~arguments:[("proc", `String (Typ.Procname.to_string proc_name))]
+                ~arguments:[("proc", `String (Procname.to_string proc_name))]
                 () )) ;
         let summary = callback {get_procs_in_file; summary; exe_env} in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
@@ -85,7 +85,7 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
     let language_matches language =
       match procedures with
       | (_, summary) :: _ ->
-          Language.equal language (Typ.Procname.get_language (Summary.get_proc_name summary))
+          Language.equal language (Procname.get_language (Summary.get_proc_name summary))
       | _ ->
           true
     in

@@ -79,7 +79,7 @@ module ModeledRange = struct
   end)
 
   let of_modeled_function pname location bound =
-    let pname = Typ.Procname.to_simplified_string pname in
+    let pname = Procname.to_simplified_string pname in
     NonBottom (Bounds.NonNegativeBound.of_modeled_function pname location bound)
 
 
@@ -1902,8 +1902,8 @@ module MemReach = struct
     PowLoc.fold (fun l acc -> add_heap ?represents_multiple_values l v acc) locs m
 
 
-  let add_unknown_from :
-      Ident.t -> callee_pname:Typ.Procname.t option -> location:Location.t -> t -> t =
+  let add_unknown_from : Ident.t -> callee_pname:Procname.t option -> location:Location.t -> t -> t
+      =
    fun id ~callee_pname ~location m ->
     let val_unknown = Val.unknown_from ~callee_pname ~location in
     add_stack (Loc.of_id id) val_unknown m |> add_heap Loc.unknown val_unknown
@@ -2266,7 +2266,7 @@ module Mem = struct
     map ~f:(MemReach.add_heap_set ?represents_multiple_values ploc v)
 
 
-  let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
+  let add_unknown_from : Ident.t -> callee_pname:Procname.t -> location:Location.t -> t -> t =
    fun id ~callee_pname ~location ->
     map ~f:(MemReach.add_unknown_from id ~callee_pname:(Some callee_pname) ~location)
 

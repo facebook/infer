@@ -32,7 +32,7 @@ module MethodRangeMap = struct
               L.die UserError "Could not read file %s" code_graph_file
         in
         let method_decls = java_method_decls_of_string json_string in
-        List.fold method_decls ~init:Typ.Procname.Map.empty ~f:(fun acc decl ->
+        List.fold method_decls ~init:Procname.Map.empty ~f:(fun acc decl ->
             let start_location =
               { Location.line= decl.start_line
               ; col= -1
@@ -50,7 +50,7 @@ module MethodRangeMap = struct
                 let key =
                   JProcname.create_procname ~use_signature ~classname ~methodname ~signature
                 in
-                Typ.Procname.Map.add key (range, ()) acc
+                Procname.Map.add key (range, ()) acc
             | None ->
                 acc )
     | _ ->
@@ -88,8 +88,8 @@ end
 [@@@warning "-32"]
 
 let pp_profiler_sample_set fmt s =
-  F.fprintf fmt " (set size = %i) " (Typ.Procname.Set.cardinal s) ;
-  Typ.Procname.Set.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Typ.Procname.pp m) s
+  F.fprintf fmt " (set size = %i) " (Procname.Set.cardinal s) ;
+  Procname.Set.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Procname.pp m) s
 
 
 module TestSample = struct
@@ -130,19 +130,19 @@ let is_file_in_changed_lines file_changed_lines changed_lines range =
 
 
 let affected_methods method_range_map file_changed_lines changed_lines =
-  Typ.Procname.Map.fold
+  Procname.Map.fold
     (fun key (range, _) acc ->
       if is_file_in_changed_lines file_changed_lines changed_lines range then
-        Typ.Procname.Set.add key acc
+        Procname.Set.add key acc
       else acc )
-    method_range_map Typ.Procname.Set.empty
+    method_range_map Procname.Set.empty
 
 
 let compute_affected_methods_java changed_lines_map method_range_map =
-  String.Map.fold changed_lines_map ~init:Typ.Procname.Set.empty
+  String.Map.fold changed_lines_map ~init:Procname.Set.empty
     ~f:(fun ~key:file_changed_lines ~data acc ->
       let am = affected_methods method_range_map file_changed_lines data in
-      Typ.Procname.Set.union am acc )
+      Procname.Set.union am acc )
 
 
 let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map =
@@ -151,14 +151,14 @@ let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_
   | Some changed_lines ->
       affected_methods clang_range_map fname changed_lines
   | None ->
-      Typ.Procname.Set.empty
+      Procname.Set.empty
 
 
 let compute_affected_proc_names_clang ~clang_range_map ~source_file ~changed_lines_map =
   let fname = SourceFile.to_rel_path source_file in
   match String.Map.find changed_lines_map fname with
   | Some changed_lines ->
-      Typ.Procname.Map.fold
+      Procname.Map.fold
         (fun _ (range, clang_proc) acc ->
           if is_file_in_changed_lines fname changed_lines range then clang_proc :: acc else acc )
         clang_range_map []
@@ -169,7 +169,7 @@ let compute_affected_proc_names_clang ~clang_range_map ~source_file ~changed_lin
 let emit_relevant_methods relevant_methods =
   let cleaned_methods =
     List.dedup_and_sort ~compare:String.compare
-      (List.map (Typ.Procname.Set.elements relevant_methods) ~f:Typ.Procname.to_string)
+      (List.map (Procname.Set.elements relevant_methods) ~f:Procname.to_string)
   in
   let json = `List (List.map ~f:(fun t -> `String t) cleaned_methods) in
   let outpath = Config.results_dir ^/ Config.export_changed_functions_output in
@@ -194,11 +194,11 @@ let java_test_to_run () =
   let method_range = MethodRangeMap.create_java_method_range_map code_graph_file in
   let affected_methods = compute_affected_methods_java changed_lines_map method_range in
   let profiler_samples = TestSample.read_java_test_sample test_samples_file in
-  if Typ.Procname.Set.is_empty affected_methods then []
+  if Procname.Set.is_empty affected_methods then []
   else
     List.fold profiler_samples ~init:[] ~f:(fun acc (label, profiler_samples) ->
-        let intersection = Typ.Procname.Set.inter affected_methods profiler_samples in
-        if Typ.Procname.Set.is_empty intersection then acc else label :: acc )
+        let intersection = Procname.Set.inter affected_methods profiler_samples in
+        if Procname.Set.is_empty intersection then acc else label :: acc )
 
 
 let remove_llvm_suffix_native_symbols native_symbols =

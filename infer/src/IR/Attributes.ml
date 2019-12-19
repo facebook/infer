@@ -33,10 +33,10 @@ let proc_kind_of_attr (proc_attributes : ProcAttributes.t) =
 
 
 let replace pname pname_blob akind source_file attributes proc_desc callees =
-  let pname_str = Typ.Procname.to_string pname in
+  let pname_str = Procname.to_string pname in
   let akind_int64 = int64_of_attributes_kind akind in
   let proc_desc_blob = Procdesc.SQLite.serialize proc_desc in
-  let callees_blob = Typ.Procname.SQLiteList.serialize callees in
+  let callees_blob = Procname.SQLiteList.serialize callees in
   DBWriter.replace_attributes ~pname_str ~pname:pname_blob ~akind:akind_int64 ~source_file
     ~attributes ~proc_desc:proc_desc_blob ~callees:callees_blob
 
@@ -82,11 +82,11 @@ let find ~defined pname_blob =
          |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
-let load pname = Typ.Procname.SQLite.serialize pname |> find ~defined:false
+let load pname = Procname.SQLite.serialize pname |> find ~defined:false
 
 let store ~proc_desc (attr : ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
-  let key = Typ.Procname.SQLite.serialize attr.proc_name in
+  let key = Procname.SQLite.serialize attr.proc_name in
   if should_try_to_update key pkind then
     replace attr.proc_name key pkind
       (SourceFile.SQLite.serialize attr.loc.Location.file)
@@ -95,7 +95,7 @@ let store ~proc_desc (attr : ProcAttributes.t) =
       (Option.map proc_desc ~f:Procdesc.get_static_callees |> Option.value ~default:[])
 
 
-let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:true
+let load_defined pname = Procname.SQLite.serialize pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =
   Option.map (load pname) ~f:(fun proc_attributes ->

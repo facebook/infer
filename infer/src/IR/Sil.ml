@@ -194,7 +194,7 @@ let add_with_block_parameters_flag instr =
   | Call (ret_id_typ, Exp.Const (Const.Cfun pname), arg_ts, loc, cf) ->
       if
         List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
-        && Typ.Procname.is_clang pname
+        && Procname.is_clang pname
         (* to be extended to other methods *)
       then
         let cf' = {cf with cf_with_block_parameters= true} in

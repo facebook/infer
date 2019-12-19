@@ -29,7 +29,7 @@ include TaintAnalysis.Make (struct
           [TaintSpec.Propagate_to_return]
       | Tvoid, [] ->
           []
-      | Tvoid, _ when Typ.Procname.is_constructor pname ->
+      | Tvoid, _ when Procname.is_constructor pname ->
           (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
       | Tvoid, HilExp.AccessExpression access_expr :: _ -> (
@@ -49,7 +49,7 @@ include TaintAnalysis.Make (struct
     in
     (* if we have a specific model for a procedure, use that. otherwise, use the generic
        heuristics for dealing with unknown code *)
-    match Typ.Procname.get_method pname with
+    match Procname.get_method pname with
     | "operator+="
     | "operator-="
     | "operator*="
@@ -85,14 +85,14 @@ include TaintAnalysis.Make (struct
        from comstructor parameters to the constructed object. so we treat the empty constructor
        as a skip function instead *)
     let is_default_constructor pname =
-      Typ.Procname.is_c_method pname && Typ.Procname.is_constructor pname
+      Procname.is_c_method pname && Procname.is_constructor pname
       && AccessTree.BaseMap.is_empty summary
     in
     match pname with
-    | Typ.Procname.ObjC_Cpp _
+    | Procname.ObjC_Cpp _
       when is_default_constructor pname
-           || QualifiedCppName.Match.match_qualifiers models_matcher
-                (Typ.Procname.get_qualifiers pname) ->
+           || QualifiedCppName.Match.match_qualifiers models_matcher (Procname.get_qualifiers pname)
+      ->
         Some (handle_unknown_call pname ret_typ actuals tenv)
     | _ ->
         None

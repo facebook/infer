@@ -32,17 +32,17 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
           (* peek at the results to know if capture succeeded, but only in debug mode *)
           L.(debug Capture Verbose)
             "Captured file %a to get procedure %a but it wasn't found there@\n" SourceFile.pp
-            definition_file Typ.Procname.pp attributes.proc_name )
+            definition_file Procname.pp attributes.proc_name )
       else
         L.(debug Capture Verbose)
           "Wanted to capture file %a to get procedure %a but file was already captured@\n"
-          SourceFile.pp definition_file Typ.Procname.pp attributes.proc_name
+          SourceFile.pp definition_file Procname.pp attributes.proc_name
     in
     match definition_file_opt with
     | None ->
         L.(debug Capture Medium)
-          "Couldn't find source file for %a (declared in %a)@\n" Typ.Procname.pp
-          attributes.proc_name SourceFile.pp decl_file
+          "Couldn't find source file for %a (declared in %a)@\n" Procname.pp attributes.proc_name
+          SourceFile.pp decl_file
     | Some file ->
         try_compile file ) ;
   (* It's important to call load_defined_attributes again in all cases to make sure we try

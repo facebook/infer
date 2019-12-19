@@ -12,8 +12,8 @@ open! IStd
 type node_tag =
   | Condition of bool
   | Exception of Typ.name
-  | Procedure_start of Typ.Procname.t
-  | Procedure_end of Typ.Procname.t
+  | Procedure_start of Procname.t
+  | Procedure_end of Procname.t
 
 (** Element of a loc trace *)
 type loc_trace_elem = private
@@ -109,7 +109,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-     Typ.Procname.t
+     Procname.t
   -> clang_method_kind:ClangMethodKind.t option
   -> Exceptions.severity
   -> t

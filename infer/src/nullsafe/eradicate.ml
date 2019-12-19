@@ -192,9 +192,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let filter_special_cases () =
       if
         ( match proc_name with
-        | Typ.Procname.Java java_pname ->
-            Typ.Procname.Java.is_access_method java_pname
-            || Typ.Procname.Java.is_external java_pname
+        | Procname.Java java_pname ->
+            Procname.Java.is_access_method java_pname || Procname.Java.is_external java_pname
         | _ ->
             false )
         || (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method

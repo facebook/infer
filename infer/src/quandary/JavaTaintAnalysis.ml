@@ -40,18 +40,16 @@ include TaintAnalysis.Make (struct
           false
     in
     match pname with
-    | Typ.Procname.Java java_pname -> (
-        let is_static = Typ.Procname.Java.is_static java_pname in
+    | Procname.Java java_pname -> (
+        let is_static = Procname.Java.is_static java_pname in
         match
-          ( Typ.Procname.Java.get_class_name java_pname
-          , Typ.Procname.Java.get_method java_pname
-          , ret_typ )
+          (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname, ret_typ)
         with
         | "android.content.Intent", ("putExtra" | "putExtras"), _ ->
             (* don't care about tainted extras. instead. we'll check that result of getExtra is
                always used safely *)
             []
-        | _ when Typ.Procname.is_constructor pname ->
+        | _ when Procname.is_constructor pname ->
             [TaintSpec.Propagate_to_receiver]
         | _, _, {Typ.desc= Tvoid | Tint _ | Tfloat _} when not is_static ->
             (* for instance methods with a non-Object return value, propagate the taint to the
@@ -74,7 +72,7 @@ include TaintAnalysis.Make (struct
     | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->
-        L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
+        L.(die InternalError) "Non-Java procname %a in Java analysis" Procname.pp pname
 
 
   let get_model _ _ _ _ _ = None

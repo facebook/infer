@@ -15,21 +15,21 @@ let is_modelled_static_function name =
 let class_equal class_typename class_name = String.equal (Typ.Name.name class_typename) class_name
 
 let is_builtin_expect pname =
-  String.equal (Typ.Procname.to_string pname) CFrontend_config.builtin_expect
+  String.equal (Procname.to_string pname) CFrontend_config.builtin_expect
 
 
 let is_builtin_object_size pname =
-  String.equal (Typ.Procname.to_string pname) CFrontend_config.builtin_object_size
+  String.equal (Procname.to_string pname) CFrontend_config.builtin_object_size
 
 
 let is_std_addressof pname =
   (* since std_addressof is a template function, matching it requires QualifiedCppName *)
   QualifiedCppName.Match.match_qualifiers CFrontend_config.std_addressof
-    (Typ.Procname.get_qualifiers pname)
+    (Procname.get_qualifiers pname)
 
 
 let is_replace_with_deref_first_arg pname =
-  String.equal (Typ.Procname.to_string pname) CFrontend_config.replace_with_deref_first_arg_attr
+  String.equal (Procname.to_string pname) CFrontend_config.replace_with_deref_first_arg_attr
 
 
 let is_modeled_builtin funct = String.equal funct CFrontend_config.builtin_memset_chk
@@ -55,10 +55,10 @@ let is_handleFailureInMethod funct =
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let is_assert_log pname =
   match pname with
-  | Typ.Procname.ObjC_Cpp _ ->
-      is_assert_log_method (Typ.Procname.to_string pname)
-  | Typ.Procname.C _ ->
-      is_assert_log_s (Typ.Procname.to_string pname)
+  | Procname.ObjC_Cpp _ ->
+      is_assert_log_method (Procname.to_string pname)
+  | Procname.C _ ->
+      is_assert_log_s (Procname.to_string pname)
   | _ ->
       false
 
@@ -94,7 +94,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname =
   in
   let param_name = Mangled.from_string "x" in
   let params = [CMethodSignature.mk_param_type param_name char_star_type] in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjC_Cpp.ObjCClassMethod
+  get_predefined_ms_method condition class_name method_name Procname.ObjC_Cpp.ObjCClassMethod
     mk_procname params (id_type, Annot.Item.empty) [] None
 
 
@@ -104,7 +104,7 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname =
   let name = Mangled.from_string CFrontend_config.self in
   let params = [CMethodSignature.mk_param_type name class_type] in
   let bool_type = CType_to_sil_type.type_of_builtin_type_kind `Bool in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjC_Cpp.ObjCInstanceMethod
+  get_predefined_ms_method condition class_name method_name Procname.ObjC_Cpp.ObjCInstanceMethod
     mk_procname params (bool_type, Annot.Item.empty) [] (Some BuiltinDecl.__instanceof)
 
 

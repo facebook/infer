@@ -18,6 +18,6 @@ type model = exec_fun
 
 val dispatch :
      Tenv.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> model option

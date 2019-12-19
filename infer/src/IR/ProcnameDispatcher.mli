@@ -141,8 +141,7 @@ module type NameCommon = sig
 end
 
 module ProcName :
-  NameCommon
-    with type ('context, 'f, 'arg_payload) dispatcher = 'context -> Typ.Procname.t -> 'f option
+  NameCommon with type ('context, 'f, 'arg_payload) dispatcher = 'context -> Procname.t -> 'f option
 
 module TypName :
   NameCommon with type ('context, 'f, 'arg_payload) dispatcher = 'context -> Typ.name -> 'f option
@@ -156,7 +155,7 @@ module Call : sig
   include
     Common
       with type ('context, 'f, 'arg_payload) dispatcher =
-            'context -> Typ.Procname.t -> 'arg_payload FuncArg.t list -> 'f option
+            'context -> Procname.t -> 'arg_payload FuncArg.t list -> 'f option
 
   val merge_dispatchers :
        ('context, 'f, 'arg_payload) dispatcher

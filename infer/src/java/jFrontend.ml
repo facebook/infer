@@ -143,7 +143,7 @@ let create_icfg source_file linereader program tenv icfg cn node =
     JClasspath.set_callee_translated program proc_name ;
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
-      L.debug Capture Verbose "Skipping method with a model: %a@." Typ.Procname.pp proc_name
+      L.debug Capture Verbose "Skipping method with a model: %a@." Procname.pp proc_name
     else
       try
         (* each procedure has different scope: start names from id 0 *)
@@ -157,7 +157,7 @@ let create_icfg source_file linereader program tenv icfg cn node =
             add_cmethod source_file program linereader icfg cm proc_name
       with JBasics.Class_structure_error error ->
         L.internal_error "create_icfg raised JBasics.Class_structure_error %s on %a@." error
-          Typ.Procname.pp proc_name
+          Procname.pp proc_name
   in
   Javalib.m_iter translate node
 

@@ -16,11 +16,10 @@ module Access : sig
   type t =
     | Read of {exp: AccessExpression.t}  (** Field or array read *)
     | Write of {exp: AccessExpression.t}  (** Field or array write *)
-    | ContainerRead of {exp: AccessExpression.t; pname: Typ.Procname.t}
-        (** Read of container object *)
-    | ContainerWrite of {exp: AccessExpression.t; pname: Typ.Procname.t}
+    | ContainerRead of {exp: AccessExpression.t; pname: Procname.t}  (** Read of container object *)
+    | ContainerWrite of {exp: AccessExpression.t; pname: Procname.t}
         (** Write to container object *)
-    | InterfaceCall of Typ.Procname.t
+    | InterfaceCall of Procname.t
         (** Call to method of interface not annotated with [@ThreadSafe] *)
   [@@deriving compare]
 
@@ -39,8 +38,7 @@ module TraceElem : sig
 
   val map : f:(AccessExpression.t -> AccessExpression.t) -> t -> t
 
-  val make_container_access :
-    AccessExpression.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
+  val make_container_access : AccessExpression.t -> Procname.t -> is_write:bool -> Location.t -> t
 
   val make_field_access : AccessExpression.t -> is_write:bool -> Location.t -> t
 end
@@ -224,4 +222,4 @@ include AbstractDomain.WithBottom with type t := t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val add_unannotated_call_access : Typ.Procname.t -> Location.t -> Procdesc.t -> t -> t
+val add_unannotated_call_access : Procname.t -> Location.t -> Procdesc.t -> t -> t

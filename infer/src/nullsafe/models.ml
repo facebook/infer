@@ -13,14 +13,14 @@ open ModelTables
 
 let match_method_name pn name =
   match pn with
-  | Typ.Procname.Java pn_java ->
-      String.equal (Typ.Procname.Java.get_method pn_java) name
+  | Procname.Java pn_java ->
+      String.equal (Procname.Java.get_method pn_java) name
   | _ ->
       false
 
 
 let table_has_procedure table proc_name =
-  let proc_id = Typ.Procname.to_unique_id proc_name in
+  let proc_id = Procname.to_unique_id proc_name in
   try
     ignore (Hashtbl.find table proc_id) ;
     true
@@ -34,7 +34,7 @@ let table_has_procedure table proc_name =
 let get_modelled_annotated_signature_for_biabduction proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let annotated_signature = AnnotatedSignature.get ~is_strict_mode:false proc_attributes in
-  let proc_id = Typ.Procname.to_unique_id proc_name in
+  let proc_id = Procname.to_unique_id proc_name in
   let lookup_models_nullable ann_sig =
     try
       let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
@@ -47,7 +47,7 @@ let get_modelled_annotated_signature_for_biabduction proc_attributes =
 
 let get_unique_repr proc_name =
   let java_proc_name =
-    match proc_name with Typ.Procname.Java java_proc_name -> Some java_proc_name | _ -> None
+    match proc_name with Procname.Java java_proc_name -> Some java_proc_name | _ -> None
   in
   Option.map java_proc_name ~f:ThirdPartyMethod.unique_repr_of_java_proc_name
 
@@ -70,7 +70,7 @@ let get_modelled_annotated_signature tenv proc_attributes =
     PatternMatch.check_current_class_attributes Annotations.ia_is_nullsafe_strict tenv proc_name
   in
   let annotated_signature = AnnotatedSignature.get ~is_strict_mode proc_attributes in
-  let proc_id = Typ.Procname.to_unique_id proc_name in
+  let proc_id = Procname.to_unique_id proc_name in
   (* Look in the infer internal models *)
   let correct_by_internal_models ann_sig =
     try
@@ -107,7 +107,7 @@ let is_check_not_null proc_name =
 
 (** Parameter number for a procedure known to be a checkNotNull *)
 let get_check_not_null_parameter proc_name =
-  let proc_id = Typ.Procname.to_unique_id proc_name in
+  let proc_id = Procname.to_unique_id proc_name in
   Hashtbl.find_opt check_not_null_parameter_table proc_id
 
 

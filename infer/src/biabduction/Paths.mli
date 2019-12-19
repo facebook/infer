@@ -16,11 +16,11 @@ module Path : sig
 
   type session = int
 
-  val add_call : bool -> t -> Typ.Procname.t -> t -> t
+  val add_call : bool -> t -> Procname.t -> t -> t
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure
       should be included *)
 
-  val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
+  val add_skipped_call : t -> Procname.t -> string -> Location.t option -> t
   (** add a call to a procname that's had to be skipped, along with the reason and the location of
       the procname when known *)
 

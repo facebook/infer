@@ -27,7 +27,7 @@ let no_check _model_env _mem cond_set = cond_set
 
 let no_model =
   let exec {pname; location} ~ret:(id, _) mem =
-    L.d_printfln_escaped "No model for %a" Typ.Procname.pp pname ;
+    L.d_printfln_escaped "No model for %a" Procname.pp pname ;
     Dom.Mem.add_unknown_from id ~callee_pname:pname ~location mem
   in
   {exec; check= no_check}

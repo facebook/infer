@@ -8,9 +8,9 @@ open! IStd
 module L = Logging
 
 module PerfProfilerDataMap = Caml.Map.Make (struct
-  type t = Typ.Procname.t
+  type t = Procname.t
 
-  let compare = Typ.Procname.compare
+  let compare = Procname.compare
 end)
 
 let global_perf_profiler_data : Perf_profiler_t.perf_profiler_item PerfProfilerDataMap.t ref =

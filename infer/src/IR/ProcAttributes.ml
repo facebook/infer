@@ -60,7 +60,7 @@ type t =
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
-  ; proc_name: Typ.Procname.t  (** name of the procedure *)
+  ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
 
@@ -126,8 +126,8 @@ let pp f
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
   in
-  F.fprintf f "@[<v>{ proc_name= %a@,; translation_unit= %a@," Typ.Procname.pp proc_name
-    SourceFile.pp translation_unit ;
+  F.fprintf f "@[<v>{ proc_name= %a@,; translation_unit= %a@," Procname.pp proc_name SourceFile.pp
+    translation_unit ;
   if not (PredSymb.equal_access default.access access) then
     F.fprintf f "; access= %a@," (Pp.of_string ~f:PredSymb.string_of_access) access ;
   if not ([%compare.equal: (Mangled.t * Typ.t) list] default.captured captured) then
@@ -173,7 +173,7 @@ let pp f
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
-  F.fprintf f "; proc_id= %a }@]" Typ.Procname.pp_unique_id proc_name
+  F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name
 
 
 module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct

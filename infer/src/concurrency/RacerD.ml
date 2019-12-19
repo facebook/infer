@@ -246,7 +246,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               (Summary.get_proc_desc summary) astate
         | _ ->
             L.internal_error "Call to %a is marked as a container write, but has no receiver"
-              Typ.Procname.pp callee_pname ;
+              Procname.pp callee_pname ;
             None )
 
 
@@ -439,7 +439,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> IOption.if_none_eval
              ~f:(do_proc_call ret_base callee_pname actuals call_flags loc proc_data astate)
     | Call (_, Indirect _, _, _, _) ->
-        if Typ.Procname.is_java (Summary.get_proc_name summary) then
+        if Procname.is_java (Summary.get_proc_name summary) then
           L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
         else astate
     | Assign (lhs_access_expr, rhs_exp, loc) ->
@@ -463,7 +463,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
   let is_initializer tenv proc_name =
-    Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
+    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open RacerDDomain in
   if should_analyze_proc tenv proc_name then
@@ -628,7 +628,7 @@ let get_reporting_explanation_cpp = (IssueType.lock_consistency_violation, "")
 
 (** Explain why we are reporting this access *)
 let get_reporting_explanation report_kind tenv pname thread =
-  if Typ.Procname.is_java pname then get_reporting_explanation_java report_kind tenv pname thread
+  if Procname.is_java pname then get_reporting_explanation_java report_kind tenv pname thread
   else get_reporting_explanation_cpp
 
 
@@ -636,7 +636,7 @@ let pp_container_access fmt (access_exp, access_pname) =
   F.fprintf fmt "container %a via call to %s"
     (MF.wrap_monospaced RacerDDomain.pp_exp)
     access_exp
-    (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
+    (MF.monospaced_to_string (Procname.get_method access_pname))
 
 
 let pp_access fmt (t : RacerDDomain.TraceElem.t) =
@@ -682,7 +682,7 @@ type reported_access =
   { threads: RacerDDomain.ThreadsDomain.t
   ; snapshot: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
-  ; procname: Typ.Procname.t }
+  ; procname: Procname.t }
 
 let report_thread_safety_violation ~issue_log ~make_description ~report_kind
     ({threads; snapshot; tenv; procname= pname} : reported_access) =
@@ -705,14 +705,14 @@ let report_thread_safety_violation ~issue_log ~make_description ~report_kind
 
 let report_unannotated_interface_violation ~issue_log reported_pname reported_access =
   match reported_pname with
-  | Typ.Procname.Java java_pname ->
-      let class_name = Typ.Procname.Java.get_class_name java_pname in
+  | Procname.Java java_pname ->
+      let class_name = Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
           "Unprotected call to method %a of un-annotated interface %a. Consider annotating the \
            class with %a, adding a lock, or using an interface that is known to be thread-safe."
-          (MF.wrap_monospaced Typ.Procname.pp)
-          reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
+          (MF.wrap_monospaced Procname.pp) reported_pname MF.pp_monospaced class_name
+          MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation ~issue_log ~make_description ~report_kind:UnannotatedInterface
         reported_access
@@ -723,8 +723,7 @@ let report_unannotated_interface_violation ~issue_log reported_pname reported_ac
 
 let make_unprotected_write_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
-    (MF.wrap_monospaced Typ.Procname.pp)
-    pname
+    (MF.wrap_monospaced Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if RacerDDomain.TraceElem.is_container_write final_sink then "mutates" else "writes to field")
     pp_access final_sink
@@ -733,8 +732,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
 let make_guardedby_violation_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf
     "GuardedBy violation. Non-private method %a%s accesses %a outside of synchronization."
-    (MF.wrap_monospaced Typ.Procname.pp)
-    pname
+    (MF.wrap_monospaced Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     pp_access final_sink
 
@@ -742,7 +740,7 @@ let make_guardedby_violation_description pname final_sink_site initial_sink_site
 let make_read_write_race_description ~read_is_sync (conflict : reported_access) pname
     final_sink_site initial_sink_site final_sink =
   let pp_conflict fmt {procname} =
-    F.pp_print_string fmt (Typ.Procname.to_simplified_string ~withclass:true procname)
+    F.pp_print_string fmt (Procname.to_simplified_string ~withclass:true procname)
   in
   let conflicts_description =
     Format.asprintf "Potentially races with%s write in method %a"
@@ -750,8 +748,7 @@ let make_read_write_race_description ~read_is_sync (conflict : reported_access) 
       (MF.wrap_monospaced pp_conflict) conflict
   in
   Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
-    (MF.wrap_monospaced Typ.Procname.pp)
-    pname
+    (MF.wrap_monospaced Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
     pp_access final_sink conflicts_description
@@ -763,15 +760,15 @@ let make_read_write_race_description ~read_is_sync (conflict : reported_access) 
     report one of each kind of access *)
 type reported =
   { reported_sites: CallSite.Set.t
-  ; reported_writes: Typ.Procname.Set.t
-  ; reported_reads: Typ.Procname.Set.t
-  ; reported_unannotated_calls: Typ.Procname.Set.t }
+  ; reported_writes: Procname.Set.t
+  ; reported_reads: Procname.Set.t
+  ; reported_unannotated_calls: Procname.Set.t }
 
 let empty_reported =
   let reported_sites = CallSite.Set.empty in
-  let reported_writes = Typ.Procname.Set.empty in
-  let reported_reads = Typ.Procname.Set.empty in
-  let reported_unannotated_calls = Typ.Procname.Set.empty in
+  let reported_writes = Procname.Set.empty in
+  let reported_reads = Procname.Set.empty in
+  let reported_unannotated_calls = Procname.Set.empty in
   {reported_sites; reported_reads; reported_writes; reported_unannotated_calls}
 
 
@@ -814,7 +811,7 @@ end = struct
   end
 
   module Key = struct
-    type t = Location of PathModuloThis.t | Container of PathModuloThis.t | Call of Typ.Procname.t
+    type t = Location of PathModuloThis.t | Container of PathModuloThis.t | Call of Procname.t
     [@@deriving compare]
 
     let of_access (access : RacerDDomain.Access.t) =
@@ -854,7 +851,7 @@ let should_report_on_proc tenv procdesc =
          requested via @ThreadSafe in java *)
       RacerDModels.is_thread_safe_method proc_name tenv
       || Procdesc.get_access procdesc <> PredSymb.Private
-         && (not (Typ.Procname.Java.is_autogen_method java_pname))
+         && (not (Procname.Java.is_autogen_method java_pname))
          && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
   | ObjC_Cpp {kind; class_name} ->
       ( match kind with
@@ -863,7 +860,7 @@ let should_report_on_proc tenv procdesc =
       | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
           Tenv.lookup tenv class_name
           |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
-                 List.mem ~equal:Typ.Procname.equal exported_objc_methods proc_name ) )
+                 List.mem ~equal:Procname.equal exported_objc_methods proc_name ) )
       &&
       let matcher = ConcurrencyModels.cpp_lock_types_matcher in
       Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
@@ -891,7 +888,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} 
   in
   (not snapshot.lock)
   && RacerDDomain.TraceElem.is_write snapshot.access
-  && Typ.Procname.is_java procname
+  && Procname.is_java procname
   &&
   (* restrict check to access paths of length one *)
   match
@@ -953,11 +950,11 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
       ||
       match snapshot.access.TraceElem.elem with
       | Access.Write _ | Access.ContainerWrite _ ->
-          Typ.Procname.Set.mem pname reported_writes
+          Procname.Set.mem pname reported_writes
       | Access.Read _ | Access.ContainerRead _ ->
-          Typ.Procname.Set.mem pname reported_reads
+          Procname.Set.mem pname reported_reads
       | Access.InterfaceCall _ ->
-          Typ.Procname.Set.mem pname reported_unannotated_calls
+          Procname.Set.mem pname reported_unannotated_calls
     else false
   in
   let update_reported ({snapshot; procname= pname} : reported_access) reported =
@@ -966,14 +963,14 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
       let reported_sites = CallSite.Set.add call_site reported.reported_sites in
       match snapshot.access.TraceElem.elem with
       | Access.Write _ | Access.ContainerWrite _ ->
-          let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
+          let reported_writes = Procname.Set.add pname reported.reported_writes in
           {reported with reported_writes; reported_sites}
       | Access.Read _ | Access.ContainerRead _ ->
-          let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
+          let reported_reads = Procname.Set.add pname reported.reported_reads in
           {reported with reported_reads; reported_sites}
       | Access.InterfaceCall _ ->
           let reported_unannotated_calls =
-            Typ.Procname.Set.add pname reported.reported_unannotated_calls
+            Procname.Set.add pname reported.reported_unannotated_calls
           in
           {reported with reported_unannotated_calls; reported_sites}
     else reported
@@ -1006,7 +1003,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
         report_unannotated_interface_violation ~acc reported_pname reported_access
     | Access.InterfaceCall _ ->
         acc
-    | (Access.Write _ | ContainerWrite _) when Typ.Procname.is_java pname ->
+    | (Access.Write _ | ContainerWrite _) when Procname.is_java pname ->
         let conflict =
           if ThreadsDomain.is_any threads then
             (* unprotected write in method that may run in parallel with itself. warn *)
@@ -1036,7 +1033,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
         let is_conflict {snapshot; threads= other_threads} =
           TraceElem.is_write snapshot.access
           &&
-          if Typ.Procname.is_java pname then
+          if Procname.is_java pname then
             ThreadsDomain.is_any threads || ThreadsDomain.is_any other_threads
           else not (AccessSnapshot.is_unprotected snapshot)
         in
@@ -1087,7 +1084,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   let report grouped_accesses (reported, issue_log) =
     (* reset the reported reads and writes for each memory location *)
     let reported =
-      {reported with reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty}
+      {reported with reported_writes= Procname.Set.empty; reported_reads= Procname.Set.empty}
     in
     report_guardedby_violations_on_location grouped_accesses (reported, issue_log)
     |> report_accesses_on_location grouped_accesses
@@ -1117,7 +1114,7 @@ let aggregate_by_class file_env =
   List.fold file_env ~init:String.Map.empty ~f:(fun acc ((tenv, summary) as proc) ->
       let pdesc = Summary.get_proc_desc summary in
       if should_report_on_proc tenv pdesc then
-        Procdesc.get_proc_name pdesc |> Typ.Procname.get_class_name
+        Procdesc.get_proc_name pdesc |> Procname.get_class_name
         |> Option.fold ~init:acc ~f:(fun acc classname ->
                String.Map.add_multi acc ~key:classname ~data:proc )
       else acc )

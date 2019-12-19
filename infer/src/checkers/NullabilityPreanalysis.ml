@@ -94,7 +94,7 @@ let add_nonnull_to_fields fields tenv =
 let analysis cfg tenv =
   let initial = FieldsAssignedInConstructors.empty in
   let f proc_name pdesc domain =
-    if Procdesc.is_defined pdesc && Typ.Procname.is_constructor proc_name then
+    if Procdesc.is_defined pdesc && Procname.is_constructor proc_name then
       match
         FieldsAssignedInConstructorsChecker.compute_post ~initial
           (ProcData.make (Summary.OnDisk.reset pdesc) tenv (Ident.Hash.create 10))
@@ -105,5 +105,5 @@ let analysis cfg tenv =
           domain
     else domain
   in
-  let fields_assigned_in_constructor = Typ.Procname.Hash.fold f cfg initial in
+  let fields_assigned_in_constructor = Procname.Hash.fold f cfg initial in
   add_nonnull_to_fields fields_assigned_in_constructor tenv

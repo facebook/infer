@@ -395,7 +395,7 @@ let rec eval_sympath_partial ~mode params p mem =
   | Symb.SymbolPath.Callsite {cs} -> (
     match mode with
     | EvalNormal | EvalCost ->
-        L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Typ.Procname.pp
+        L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Procname.pp
           (CallSite.pname cs) ;
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->

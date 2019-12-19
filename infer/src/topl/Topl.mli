@@ -10,10 +10,10 @@ open! IStd
 val is_active : unit -> bool
 (** Returns whether the TOPL analysis is active. *)
 
-val get_proc_attr : Typ.Procname.t -> ProcAttributes.t option
+val get_proc_attr : Procname.t -> ProcAttributes.t option
 (** [get_proc_attr proc_name] returns the attributes of [get_proc_desc proc_name] *)
 
-val get_proc_desc : Typ.Procname.t -> Procdesc.t option
+val get_proc_desc : Procname.t -> Procdesc.t option
 (** Returns a synthesized Procdesc.t, when it corresponds to instrumentation for a TOPL property. *)
 
 val instrument : Tenv.t -> Procdesc.t -> unit

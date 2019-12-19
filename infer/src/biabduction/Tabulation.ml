@@ -46,7 +46,7 @@ type deref_error =
   | Deref_freed of PredSymb.res_action  (** dereference a freed pointer *)
   | Deref_minusone  (** dereference -1 *)
   | Deref_null of PredSymb.path_pos  (** dereference null *)
-  | Deref_undef of Typ.Procname.t * Location.t * PredSymb.path_pos
+  | Deref_undef of Procname.t * Location.t * PredSymb.path_pos
       (** dereference a value coming from the given undefined function *)
   | Deref_undef_exp  (** dereference an undefined expression *)
 
@@ -107,9 +107,9 @@ let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic
         ; call_result= string_of_call_result res
         ; callee_clang_method_kind
         ; callee_source_file
-        ; callee_name= Typ.Procname.to_string callee_name
-        ; caller_name= Typ.Procname.to_string caller_name
-        ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string
+        ; callee_name= Procname.to_string callee_name
+        ; caller_name= Procname.to_string caller_name
+        ; lang= Procname.get_language caller_name |> Language.to_explicit_string
         ; reason
         ; dynamic_dispatch }
     in
@@ -171,14 +171,14 @@ let spec_find_rename trace_call summary :
       trace_call CR_not_found ;
       raise
         (Exceptions.Precondition_not_found
-           (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__)) ) ;
+           (Localise.verbatim_desc (Procname.to_string proc_name), __POS__)) ) ;
     let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
     (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->
-    L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Typ.Procname.pp proc_name ;
+    L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Procname.pp proc_name ;
     raise
       (Exceptions.Precondition_not_found
-         (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__))
+         (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
 
 
 (** Process a splitting coming straight from a call to the prover:
@@ -1018,8 +1018,7 @@ let mk_posts tenv prop callee_pname posts =
     let last_call_ret_non_null =
       List.exists
         ~f:(function
-          | Predicates.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname
-            ->
+          | Predicates.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
               Prover.check_disequal tenv prop exp Exp.zero
           | _ ->
               false )
@@ -1432,8 +1431,8 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
   let should_add_ret_attr _ =
     let is_likely_getter = function
-      | Typ.Procname.Java pn_java ->
-          List.is_empty (Typ.Procname.Java.get_parameters pn_java)
+      | Procname.Java pn_java ->
+          List.is_empty (Procname.Java.get_parameters pn_java)
       | _ ->
           false
     in
@@ -1461,8 +1460,8 @@ let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id calle
   in
   let spec_list, formal_params = spec_find_rename trace_call callee_summary in
   let nspecs = List.length spec_list in
-  L.d_printfln "Found %d specs for function %s" nspecs (Typ.Procname.to_unique_id callee_pname) ;
-  L.d_printfln "START EXECUTING SPECS FOR %s from state" (Typ.Procname.to_unique_id callee_pname) ;
+  L.d_printfln "Found %d specs for function %s" nspecs (Procname.to_unique_id callee_pname) ;
+  L.d_printfln "START EXECUTING SPECS FOR %s from state" (Procname.to_unique_id callee_pname) ;
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =

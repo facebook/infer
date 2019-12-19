@@ -27,7 +27,7 @@ val compare_modulo_this : t -> t -> int
 val equal : t -> t -> bool
 (** Equality for pvar's *)
 
-val get_declaring_function : t -> Typ.Procname.t option
+val get_declaring_function : t -> Procname.t option
 (** if not a global, return function declaring var *)
 
 val d : t -> unit
@@ -36,10 +36,10 @@ val d : t -> unit
 val get_name : t -> Mangled.t
 (** Get the name component of a program variable. *)
 
-val get_ret_pvar : Typ.Procname.t -> t
+val get_ret_pvar : Procname.t -> t
 (** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
 
-val get_ret_param_pvar : Typ.Procname.t -> t
+val get_ret_param_pvar : Procname.t -> t
 (** [get_ret_param_pvar proc_name] retuns the return_param pvar associated with the procedure name *)
 
 val get_simplified_name : t -> string
@@ -92,16 +92,16 @@ val is_objc_static_local_of_proc_name : string -> t -> bool
 val is_block_pvar : t -> bool
 (** Check if a pvar is a local pointing to a block in objc *)
 
-val mk : Mangled.t -> Typ.Procname.t -> t
+val mk : Mangled.t -> Procname.t -> t
 (** [mk name proc_name] creates a program var with the given function name *)
 
-val mk_abduced_ref_param : Typ.Procname.t -> int -> Location.t -> t
+val mk_abduced_ref_param : Procname.t -> int -> Location.t -> t
 (** create an abduced variable for a parameter passed by reference *)
 
-val mk_abduced_ret : Typ.Procname.t -> Location.t -> t
+val mk_abduced_ret : Procname.t -> Location.t -> t
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 
-val mk_callee : Mangled.t -> Typ.Procname.t -> t
+val mk_callee : Mangled.t -> Procname.t -> t
 (** [mk_callee name proc_name] creates a program var for a callee function with the given function
     name *)
 
@@ -116,7 +116,7 @@ val mk_global :
   -> t
 (** create a global variable with the given name *)
 
-val mk_tmp : string -> Typ.Procname.t -> t
+val mk_tmp : string -> Procname.t -> t
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 
 val pp : Pp.env -> F.formatter -> t -> unit
@@ -130,7 +130,7 @@ val pp_value_non_verbose : F.formatter -> t -> unit
 
 val pp_translation_unit : F.formatter -> translation_unit -> unit
 
-val to_callee : Typ.Procname.t -> t -> t
+val to_callee : Procname.t -> t -> t
 (** Turn an ordinary program variable into a callee program variable *)
 
 val to_seed : t -> t
@@ -154,7 +154,7 @@ val is_pod : t -> bool
 (** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
     [true] for non-globals. *)
 
-val get_initializer_pname : t -> Typ.Procname.t option
+val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
 val get_name_of_local_with_procname : t -> Mangled.t

@@ -22,8 +22,8 @@ let topl_call ret_id (ret_typ : Typ.desc) loc name arg_ts : Sil.instr =
     let args_typ = List.map arg_ts ~f:(fun _ -> Typ.Name.Java.Split.java_lang_object) in
     Exp.Const
       (Const.Cfun
-         (Typ.Procname.Java
-            (Typ.Procname.Java.make topl_class_name ret_typ name args_typ Typ.Procname.Java.Static)))
+         (Procname.Java
+            (Procname.Java.make topl_class_name ret_typ name args_typ Procname.Java.Static)))
   in
   Sil.Call ((ret_id, Typ.mk ret_typ), e_fun, arg_ts, loc, CallFlags.default)
 
@@ -45,8 +45,8 @@ let local_var proc_name x : Exp.t = Exp.Lvar (Pvar.mk (Mangled.from_string x) pr
 let constant_int (x : int) : Exp.t = Exp.int (IntLit.of_int x)
 
 let is_synthesized = function
-  | Typ.Procname.Java j ->
-      String.equal ToplName.topl_property (Typ.Procname.Java.get_class_name j)
+  | Procname.Java j ->
+      String.equal ToplName.topl_property (Procname.Java.get_class_name j)
   | _ ->
       false
 

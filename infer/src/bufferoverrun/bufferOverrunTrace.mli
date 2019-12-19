@@ -17,7 +17,7 @@ val strndup : lib_fun
 val vsnprintf : lib_fun
 
 (** Final unknown function in trace *)
-type final = UnknownFrom of Typ.Procname.t option
+type final = UnknownFrom of Procname.t option
 
 (** Trace elements *)
 type elem =

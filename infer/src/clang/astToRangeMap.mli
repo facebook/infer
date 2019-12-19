@@ -9,4 +9,4 @@ open! IStd
 val process_ast :
      Clang_ast_t.decl
   -> SourceFile.t
-  -> ((Location.t * Location.t) * ClangProc.t option) Typ.Procname.Map.t
+  -> ((Location.t * Location.t) * ClangProc.t option) Procname.Map.t

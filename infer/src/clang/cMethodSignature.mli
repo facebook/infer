@@ -13,7 +13,7 @@ open! IStd
 type param_type = {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; annot: Annot.Item.t}
 
 type t =
-  { name: Typ.Procname.t
+  { name: Procname.t
   ; access: Clang_ast_t.access_specifier
   ; class_param: param_type option
   ; params: param_type list
@@ -36,7 +36,7 @@ val is_getter : t -> bool
 val is_setter : t -> bool
 
 val mk :
-     Typ.Procname.t
+     Procname.t
   -> param_type option
   -> param_type list
   -> Typ.t * Annot.Item.t

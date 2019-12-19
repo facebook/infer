@@ -83,7 +83,7 @@ let report_missing_required_prop summary prop parent_typename ~create_loc call_c
     :: make_single_trace create_loc create_message
     :: List.map call_chain ~f:(fun Domain.MethodCallPrefix.{procname; location} ->
            let call_msg =
-             F.asprintf "calls %a" (Typ.Procname.pp_simplified_string ~withclass:false) procname
+             F.asprintf "calls %a" (Procname.pp_simplified_string ~withclass:false) procname
            in
            Errlog.make_trace_element 0 location call_msg [] )
   in
@@ -111,8 +111,8 @@ let has_prop prop_set prop =
 
 (** return true if this function is part of the Litho framework code rather than client code *)
 let is_litho_function = function
-  | Typ.Procname.Java java_procname -> (
-    match Typ.Procname.Java.get_package java_procname with
+  | Procname.Java java_procname -> (
+    match Procname.Java.get_package java_procname with
     | Some "com.facebook.litho" ->
         true
     | _ ->
@@ -123,9 +123,9 @@ let is_litho_function = function
 
 let is_component_builder procname tenv =
   match procname with
-  | Typ.Procname.Java java_procname ->
+  | Procname.Java java_procname ->
       PatternMatch.is_subtype_of_str tenv
-        (Typ.Procname.Java.get_class_type_name java_procname)
+        (Procname.Java.get_class_type_name java_procname)
         "com.facebook.litho.Component$Builder"
   | _ ->
       false
@@ -133,16 +133,16 @@ let is_component_builder procname tenv =
 
 let is_component procname tenv =
   match procname with
-  | Typ.Procname.Java java_procname ->
+  | Procname.Java java_procname ->
       PatternMatch.is_subtype_of_str tenv
-        (Typ.Procname.Java.get_class_type_name java_procname)
+        (Procname.Java.get_class_type_name java_procname)
         "com.facebook.litho.Component"
   | _ ->
       false
 
 
 let is_component_build_method procname tenv =
-  match Typ.Procname.get_method procname with
+  match Procname.get_method procname with
   | "build" ->
       is_component_builder procname tenv
   | _ ->
@@ -150,13 +150,13 @@ let is_component_build_method procname tenv =
 
 
 let is_component_create_method procname tenv =
-  match Typ.Procname.get_method procname with "create" -> is_component procname tenv | _ -> false
+  match Procname.get_method procname with "create" -> is_component procname tenv | _ -> false
 
 
 let get_component_create_typ_opt procname tenv =
   match procname with
-  | Typ.Procname.Java java_pname when is_component_create_method procname tenv ->
-      Some (Typ.Procname.Java.get_class_type_name java_pname)
+  | Procname.Java java_pname when is_component_create_method procname tenv ->
+      Some (Procname.Java.get_class_type_name java_pname)
   | _ ->
       None
 
@@ -172,8 +172,8 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
   || is_component_create_method callee_pname tenv
   ||
   match callee_pname with
-  | Typ.Procname.Java java_callee_procname ->
-      not (Typ.Procname.Java.is_static java_callee_procname || build_exists_in_callees)
+  | Procname.Java java_callee_procname ->
+      not (Procname.Java.is_static java_callee_procname || build_exists_in_callees)
   | _ ->
       not build_exists_in_callees
 
@@ -196,8 +196,7 @@ let report astate tenv summary =
   Domain.check_required_props ~check_on_string_set astate
 
 
-type get_proc_summary_and_formals =
-  Typ.Procname.t -> (Domain.summary * (Pvar.t * Typ.t) list) option
+type get_proc_summary_and_formals = Procname.t -> (Domain.summary * (Pvar.t * Typ.t) list) option
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal

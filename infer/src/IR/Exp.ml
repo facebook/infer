@@ -18,7 +18,7 @@ type ident_ = Ident.t
 
 let compare_ident_ x y = Ident.compare y x
 
-type closure = {name: Typ.Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
+type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -319,12 +319,7 @@ let pp_texp_full pe f = function
 (** Dump a type expression with all the details. *)
 let d_texp_full (te : t) = L.d_pp_with_pe pp_texp_full te
 
-let is_objc_block_closure = function
-  | Closure {name} ->
-      Typ.Procname.is_objc_block name
-  | _ ->
-      false
-
+let is_objc_block_closure = function Closure {name} -> Procname.is_objc_block name | _ -> false
 
 let rec gen_free_vars =
   let open Sequence.Generator in
@@ -416,11 +411,7 @@ let rec get_java_class_initializer tenv = function
     match Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) fn typ with
     | Some (field_typ, annot) when Annot.Item.is_final annot ->
         let java_class = Typ.JavaClass (Pvar.get_name pvar) in
-        Some
-          ( Typ.Procname.Java (Typ.Procname.Java.get_class_initializer java_class)
-          , pvar
-          , fn
-          , field_typ )
+        Some (Procname.Java (Procname.Java.get_class_initializer java_class), pvar, fn, field_typ)
     | _ ->
         None )
   | Cast (_, e) | Lfield (e, _, _) ->

@@ -25,7 +25,7 @@ module Allocsite : sig
   val unknown : t
 
   val make :
-       Typ.Procname.t
+       Procname.t
     -> node_hash:int
     -> inst_num:int
     -> dimension:int

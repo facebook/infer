@@ -12,7 +12,7 @@ module F = Format
 module type S = sig
   type t [@@deriving compare]
 
-  val get : Typ.Procname.t -> Tenv.t -> t option
+  val get : Procname.t -> Tenv.t -> t option
   (** Get the sanitizer that should be applied to the return value of given procedure, if any *)
 
   val pp : F.formatter -> t -> unit

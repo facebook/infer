@@ -9,9 +9,9 @@ open! IStd
 module F = Format
 
 module Procname = struct
-  type t = Typ.Procname.t [@@deriving compare]
+  type t = Procname.t [@@deriving compare]
 
-  let pp = Typ.Procname.pp
+  let pp = Procname.pp
 end
 
 module ProcnameSet = AbstractDomain.FiniteSet (Procname)

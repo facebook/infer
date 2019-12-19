@@ -19,5 +19,5 @@ val is_view : Tenv.t -> Typ.Name.t -> bool
 
 val is_fragment : Tenv.t -> Typ.Name.t -> bool
 
-val is_destroy_method : Typ.Procname.t -> bool
+val is_destroy_method : Procname.t -> bool
 (** return true if [procname] is a special lifecycle cleanup method *)

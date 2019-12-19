@@ -9,7 +9,7 @@ open! IStd
 module L = Logging
 
 type t =
-  { proc_name: Typ.Procname.t
+  { proc_name: Procname.t
   ; proc_location: Location.t
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
@@ -23,7 +23,7 @@ let compare_err_data_ (err_data1 : Errlog.err_data) (err_data2 : Errlog.err_data
   Location.compare err_data1.loc err_data2.loc
 
 
-type proc_name_ = Typ.Procname.t
+type proc_name_ = Procname.t
 
 (* ignore proc name *)
 let compare_proc_name_ _ _ = 0

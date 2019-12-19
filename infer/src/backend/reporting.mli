@@ -13,7 +13,7 @@ type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> 
 
 val log_issue_deprecated_using_state :
      Exceptions.severity
-  -> Typ.Procname.t
+  -> Procname.t
   -> ?node:Procdesc.Node.t
   -> ?loc:Location.t
   -> ?ltr:Errlog.loc_trace
@@ -23,7 +23,7 @@ val log_issue_deprecated_using_state :
     DEPRECATED as it can create race conditions between checkers. Use log_error/warning instead *)
 
 val log_frontend_issue :
-     Typ.Procname.t
+     Procname.t
   -> Exceptions.severity
   -> Errlog.t
   -> loc:Location.t
@@ -43,7 +43,7 @@ val log_error_using_state : Summary.t -> exn -> unit
 (** Add an error to the given summary using biabduction state (DO NOT USE ELSEWHERE). *)
 
 val log_issue_external :
-     Typ.Procname.t
+     Procname.t
   -> issue_log:IssueLog.t
   -> Exceptions.severity
   -> loc:Location.t

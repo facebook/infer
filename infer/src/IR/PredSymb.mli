@@ -42,7 +42,7 @@ type dangling_kind =
   | DAminusone  (** pointer is -1 *)
 
 (** position in a path: proc name, node id *)
-type path_pos = Typ.Procname.t * int [@@deriving compare]
+type path_pos = Procname.t * int [@@deriving compare]
 
 val equal_path_pos : path_pos -> path_pos -> bool
 
@@ -50,7 +50,7 @@ val equal_path_pos : path_pos -> path_pos -> bool
 type res_action =
   { ra_kind: res_act_kind  (** kind of action *)
   ; ra_res: resource  (** kind of resource *)
-  ; ra_pname: Typ.Procname.t  (** name of the procedure used to acquire/release the resource *)
+  ; ra_pname: Procname.t  (** name of the procedure used to acquire/release the resource *)
   ; ra_loc: Location.t  (** location of the acquire/release *)
   ; ra_vpath: DecompiledExp.vpath  (** vpath of the resource value *) }
 
@@ -66,13 +66,13 @@ type t =
   | Aresource of res_action  (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind  (** dangling pointer *)
-  | Aundef of Typ.Procname.t * Annot.Item.t * Location.t * path_pos
+  | Aundef of Procname.t * Annot.Item.t * Location.t * path_pos
   | Alocked
   | Aunlocked
   | Adiv0 of path_pos  (** value appeared in second argument of division at given path position *)
   | Aobjc_null
       (** attributed exp is null due to a call to a method with given path as null receiver *)
-  | Aretval of Typ.Procname.t * Annot.Item.t
+  | Aretval of Procname.t * Annot.Item.t
       (** value was returned from a call to the given procedure, plus the annots of the return value *)
   | Aobserver  (** denotes an object registered as an observers to a notification center *)
   | Aunsubscribed_observer
@@ -82,10 +82,10 @@ type t =
 
 val equal : t -> t -> bool
 
-val mem_alloc_pname : mem_kind -> Typ.Procname.t
+val mem_alloc_pname : mem_kind -> Procname.t
 (** name of the allocation function for the given memory kind *)
 
-val mem_dealloc_pname : mem_kind -> Typ.Procname.t
+val mem_dealloc_pname : mem_kind -> Procname.t
 (** name of the deallocation function for the given memory kind *)
 
 (** Categories of attributes *)

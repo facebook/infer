@@ -20,7 +20,7 @@ module Html : sig
   val modified_during_analysis : SourceFile.t -> DB.Results_dir.path -> bool
   (** Return true if the html file was modified since the beginning of the analysis *)
 
-  val node_filename : Typ.Procname.t -> int -> string
+  val node_filename : Procname.t -> int -> string
   (** File name for the node, given the procedure name and node id *)
 
   val open_out : SourceFile.t -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
@@ -41,7 +41,7 @@ module Html : sig
 
   val pp_node_link :
        DB.Results_dir.path
-    -> Typ.Procname.t
+    -> Procname.t
     -> description:string
     -> preds:int list
     -> succs:int list
@@ -54,12 +54,12 @@ module Html : sig
       [path_to_root] is the path to the dir for the procedure in the spec db. [id] is the node
       identifier. *)
 
-  val pp_proc_link : DB.Results_dir.path -> Typ.Procname.t -> Format.formatter -> string -> unit
+  val pp_proc_link : DB.Results_dir.path -> Procname.t -> Format.formatter -> string -> unit
   (** Print an html link to the given proc *)
 
   val pp_session_link :
        ?with_name:bool
-    -> ?proc_name:Typ.Procname.t
+    -> ?proc_name:Procname.t
     -> SourceFile.t
     -> string list
     -> Format.formatter

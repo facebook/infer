@@ -136,7 +136,7 @@ module SymbolPath = struct
     | Field {fn; prefix= p} ->
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true) ~sep:"." fmt p fn
     | Callsite {cs} ->
-        Typ.Procname.pp_simplified_string ~withclass:true fmt (CallSite.pname cs)
+        Procname.pp_simplified_string ~withclass:true fmt (CallSite.pname cs)
     | StarField {last_field; prefix} ->
         BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
 

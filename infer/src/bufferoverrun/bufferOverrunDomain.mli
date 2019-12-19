@@ -36,7 +36,7 @@ module ModeledRange : sig
 
   val of_big_int : trace:Bounds.BoundTrace.t -> Z.t -> t
 
-  val of_modeled_function : Typ.Procname.t -> Location.t -> Bounds.Bound.t -> t
+  val of_modeled_function : Procname.t -> Location.t -> Bounds.Bound.t -> t
 end
 
 module Val : sig
@@ -83,7 +83,7 @@ module Val : sig
 
   val unknown_locs : t
 
-  val unknown_from : callee_pname:Typ.Procname.t option -> location:Location.t -> t
+  val unknown_from : callee_pname:Procname.t option -> location:Location.t -> t
   (** Unknown return value of [callee_pname] *)
 
   val is_mone : t -> bool
@@ -495,7 +495,7 @@ module Mem : sig
   val add_unknown : Ident.t -> location:Location.t -> t -> t
   (** Add an unknown value for stack variables *)
 
-  val add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t
+  val add_unknown_from : Ident.t -> callee_pname:Procname.t -> location:Location.t -> t -> t
   (** Add an unknown return value of [callee_pname] for stack variables *)
 
   val remove_temps : Ident.t list -> t -> t

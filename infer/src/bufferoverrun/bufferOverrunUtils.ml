@@ -18,7 +18,7 @@ module TypModels = BufferOverrunTypModels
 
 module ModelEnv = struct
   type model_env =
-    { pname: Typ.Procname.t
+    { pname: Procname.t
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
@@ -78,7 +78,7 @@ module Exec = struct
     let mem =
       let arr =
         let traces = Trace.(Set.singleton location ArrayDeclaration) in
-        match Typ.Procname.get_language pname with
+        match Procname.get_language pname with
         | Language.Clang ->
             let offset = Itv.zero in
             Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces

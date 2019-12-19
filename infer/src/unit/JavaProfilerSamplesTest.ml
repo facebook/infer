@@ -137,7 +137,7 @@ let test_jni_to_java_type_with_valid_input =
       Format.fprintf fmt "Expected: '(%s, %s)', found: '(%s, %s)'" exp_pkg exp_cl actual_pkg
         actual_cl
     in
-    let cmp a b = Int.equal 0 (Typ.Procname.Java.compare_java_type a b) in
+    let cmp a b = Int.equal 0 (Procname.Java.compare_java_type a b) in
     assert_equal ~cmp ~pp_diff expected found
   in
   [ ("test_jni_to_java_type_1", T.Boolean, mk_split (None, "bool"))
@@ -163,7 +163,7 @@ let test_from_json_string_with_valid_input =
     assert_equal ~cmp:(List.equal JavaProfilerSamples.equal_labeled_profiler_sample) expected found
   in
   let input1 = "[{\"test\": \"label1\",\"methods\": []}]" in
-  let expected1 = [("label1", Typ.Procname.Set.of_list [])] in
+  let expected1 = [("label1", Procname.Set.of_list [])] in
   let input2 =
     Printf.sprintf
       "[{\"foo\":{},\"test\": \"label1\",\"methods\": [{\"class\": \"ggg.hhh.Iii\", \"boo\": \"\", \
@@ -178,8 +178,8 @@ let test_from_json_string_with_valid_input =
   in
   let expected2 =
     [ ( "label1"
-      , Typ.Procname.Set.of_list
-          [ Typ.Procname.(
+      , Procname.Set.of_list
+          [ Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "lll.mmm.Nnn")
@@ -188,7 +188,7 @@ let test_from_json_string_with_valid_input =
                    ; mk_split (None, "int[]")
                    ; mk_split (None, "long") ]
                    Java.Non_Static))
-          ; Typ.Procname.(
+          ; Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "ggg.hhh.Iii")
@@ -198,8 +198,8 @@ let test_from_json_string_with_valid_input =
                    ; mk_split (None, "long") ]
                    Java.Non_Static)) ] )
     ; ( "label2"
-      , Typ.Procname.Set.of_list
-          [ Typ.Procname.(
+      , Procname.Set.of_list
+          [ Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "ddd.eee.Fff")
@@ -209,7 +209,7 @@ let test_from_json_string_with_valid_input =
                    ; mk_split (None, "int[]")
                    ; mk_split (None, "long") ]
                    Java.Non_Static))
-          ; Typ.Procname.(
+          ; Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "aaa.bbb.Ccc")
@@ -218,26 +218,26 @@ let test_from_json_string_with_valid_input =
   in
   let expected3 =
     [ ( "label1"
-      , Typ.Procname.Set.of_list
-          [ Typ.Procname.(
+      , Procname.Set.of_list
+          [ Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "lll.mmm.Nnn")
                    None "<init>" [] Java.Non_Static))
-          ; Typ.Procname.(
+          ; Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "ggg.hhh.Iii")
                    None "<clinit>" [] Java.Non_Static)) ] )
     ; ( "label2"
-      , Typ.Procname.Set.of_list
-          [ Typ.Procname.(
+      , Procname.Set.of_list
+          [ Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "ddd.eee.Fff")
                    (Some (mk_split (None, "void")))
                    "methodTwo" [] Java.Non_Static))
-          ; Typ.Procname.(
+          ; Procname.(
               Java
                 (Java.make
                    (Typ.Name.Java.from_string "aaa.bbb.Ccc")

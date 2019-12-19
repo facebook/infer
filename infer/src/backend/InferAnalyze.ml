@@ -13,9 +13,7 @@ module F = Format
 module L = Logging
 
 let clear_caches () =
-  Ondemand.LocalCache.clear () ;
-  Summary.OnDisk.clear_cache () ;
-  Typ.Procname.SQLite.clear_cache ()
+  Ondemand.LocalCache.clear () ; Summary.OnDisk.clear_cache () ; Procname.SQLite.clear_cache ()
 
 
 let analyze_target : SchedulerTypes.target Tasks.doer =
@@ -37,7 +35,7 @@ let analyze_target : SchedulerTypes.target Tasks.doer =
     decr procs_left ;
     if Int.( <= ) !procs_left 0 then (
       L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
-        Typ.Procname.pp proc_name ;
+        Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
     Ondemand.analyze_proc_name_toplevel exe_env proc_name
   in

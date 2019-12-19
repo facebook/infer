@@ -13,7 +13,7 @@ module DExp = DecompiledExp
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
-  let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
+  let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
 
   let procname_is_false_on_null tenv pn =
     match PatternMatch.lookup_attributes tenv pn with
@@ -62,7 +62,7 @@ module ComplexExpressions = struct
       | DExp.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ Binop.str Pp.text op ^ dexp_to_string de2 ^ ")"
       | DExp.Dconst (Const.Cfun pn) ->
-          Typ.Procname.to_unique_id pn
+          Procname.to_unique_id pn
       | DExp.Dconst c ->
           F.asprintf "%a" (Const.pp Pp.text) c
       | DExp.Dderef de ->
@@ -101,7 +101,7 @@ end
 
 (* ComplexExpressions *)
 
-type check_return_type = Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+type check_return_type = Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -349,11 +349,11 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
 
 let constructor_check_calls_this curr_pname calls_this pn =
   match (curr_pname, pn) with
-  | Typ.Procname.Java curr_pname_java, Typ.Procname.Java pn_java ->
+  | Procname.Java curr_pname_java, Procname.Java pn_java ->
       if
         String.equal
-          (Typ.Procname.Java.get_class_name curr_pname_java)
-          (Typ.Procname.Java.get_class_name pn_java)
+          (Procname.Java.get_class_name curr_pname_java)
+          (Procname.Java.get_class_name pn_java)
       then calls_this := true
   | _ ->
       ()
@@ -362,7 +362,7 @@ let constructor_check_calls_this curr_pname calls_this pn =
 (* Drops hidden and synthetic parameters which we do not check in a call. *)
 let drop_unchecked_params calls_this curr_pname proc_attributes params =
   let pname = proc_attributes.ProcAttributes.proc_name in
-  if Typ.Procname.is_constructor pname then
+  if Procname.is_constructor pname then
     match PatternMatch.get_this_type_nonstatic_methods_only proc_attributes with
     | Some _ ->
         constructor_check_calls_this curr_pname calls_this pname ;
@@ -387,7 +387,7 @@ let drop_unchecked_params calls_this curr_pname proc_attributes params =
 (* Drop parameters from the signature which we do not check in a call. *)
 let drop_unchecked_signature_params proc_attributes annotated_signature =
   if
-    Typ.Procname.is_constructor proc_attributes.ProcAttributes.proc_name
+    Procname.is_constructor proc_attributes.ProcAttributes.proc_name
     && proc_attributes.ProcAttributes.is_synthetic_method
   then
     List.take annotated_signature.AnnotatedSignature.params
@@ -562,17 +562,17 @@ let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc call
     let object_t = Typ.Name.Java.Split.java_lang_object in
     let parameters = [object_t] in
     pname_put
-    |> Typ.Procname.Java.replace_method_name "get"
-    |> Typ.Procname.Java.replace_return_type object_t
-    |> Typ.Procname.Java.replace_parameters parameters
+    |> Procname.Java.replace_method_name "get"
+    |> Procname.Java.replace_return_type object_t
+    |> Procname.Java.replace_parameters parameters
   in
   match call_params with
   | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _ -> (
       (* Convert the dexp for k to the dexp for m.get(k) *)
       let convert_dexp_key_to_dexp_get dopt =
         match (dopt, callee_pname) with
-        | Some dexp_key, Typ.Procname.Java callee_pname_java ->
-            let pname_get = Typ.Procname.Java (pname_get_from_pname_put callee_pname_java) in
+        | Some dexp_key, Procname.Java callee_pname_java ->
+            let pname_get = Procname.Java (pname_get_from_pname_put callee_pname_java) in
             let dexp_get = DExp.Dconst (Const.Cfun pname_get) in
             let dexp_map = DExp.Dpvar pv_map in
             let args = [dexp_map; dexp_key] in
@@ -680,14 +680,14 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
     let map_dexp = function
       | Some
           (DExp.Dretcall
-            (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
+            (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
           let pname_java' =
             let object_t = Typ.Name.Java.Split.java_lang_object in
             pname_java
-            |> Typ.Procname.Java.replace_method_name "get"
-            |> Typ.Procname.Java.replace_return_type object_t
+            |> Procname.Java.replace_method_name "get"
+            |> Procname.Java.replace_return_type object_t
           in
-          let fun_dexp = DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java')) in
+          let fun_dexp = DExp.Dconst (Const.Cfun (Procname.Java pname_java')) in
           Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
       | _ ->
           None
@@ -911,7 +911,7 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
             do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
               curr_pdesc curr_pname curr_annotated_signature checks call_params idenv index
               ~is_vararg:false typestate1
-        | None when Typ.Procname.Java.is_vararg callee_pname_java ->
+        | None when Procname.Java.is_vararg callee_pname_java ->
             let last_parameter = List.length call_params in
             do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
               curr_pdesc curr_pname curr_annotated_signature checks call_params idenv last_parameter
@@ -946,14 +946,14 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
           List.mapi
             ~f:(fun i (_, typ) ->
               let arg =
-                if Int.equal i 0 && not (Typ.Procname.Java.is_static callee_pname_java) then
+                if Int.equal i 0 && not (Procname.Java.is_static callee_pname_java) then
                   Mangled.this
                 else Printf.sprintf "arg%d" i |> Mangled.from_string
               in
               (arg, typ) )
             etl_
         in
-        let ret_type = Typ.Procname.Java.get_return_typ callee_pname_java in
+        let ret_type = Procname.Java.get_return_typ callee_pname_java in
         let proc_attributes =
           { (ProcAttributes.default (SourceFile.invalid __FILE__) callee_pname) with
             ProcAttributes.formals
@@ -979,7 +979,7 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
     drop_unchecked_signature_params callee_attributes callee_annotated_signature
   in
   let is_anonymous_inner_class_constructor =
-    Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
+    Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
   in
   let do_return (ret_ta, ret_typ) typestate' =
     let mk_return_range () = (ret_typ, ret_ta) in
@@ -1061,12 +1061,12 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       check_field_assign () ; typestate2
   (* Java `new` operators *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
-    when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
+    when Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array ->
       (* new never returns null *)
       TypeState.add_id id (typ, InferredNullability.create TypeOrigin.New) typestate
   (* Type cast *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
-    when Typ.Procname.equal pn BuiltinDecl.__cast ->
+    when Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this
         checks tenv node instr_ref typestate e loc ;
       let e', typestate' =
@@ -1080,7 +1080,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         typestate'
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
-    when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
+    when Procname.equal pn BuiltinDecl.__get_array_length ->
       let _, ta =
         typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node
           instr_ref curr_pdesc typestate array_exp
@@ -1100,7 +1100,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   (* Normal call of a function *)
   | Sil.Call
       ( ret_id_typ
-      , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java as callee_pname))
+      , Exp.Const (Const.Cfun (Procname.Java callee_pname_java as callee_pname))
       , etl_
       , loc
       , cflags ) ->

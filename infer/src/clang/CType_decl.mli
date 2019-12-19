@@ -11,13 +11,13 @@ module CProcname : sig
   val from_decl :
        ?tenv:Tenv.t
     -> ?block_return_type:Clang_ast_t.qual_type
-    -> ?outer_proc:Typ.Procname.t
+    -> ?outer_proc:Procname.t
     -> Clang_ast_t.decl
-    -> Typ.Procname.t
+    -> Procname.t
   (** Given decl, return its procname. This function should be used for all procedures present in
       original AST *)
 
-  val from_decl_for_linters : Clang_ast_t.decl -> Typ.Procname.t
+  val from_decl_for_linters : Clang_ast_t.decl -> Procname.t
   (** This is used for bug hashing for linters. In ObjC the method names contain the parameter
       names, thus if people add new parameters, any bug about the method will be considered
       different which means reporting on unchanged code. So, in the ObjC method case, we create the
@@ -25,12 +25,11 @@ module CProcname : sig
 
   (** WARNING: functions from this module should not be used if full decl is available in AST *)
   module NoAstDecl : sig
-    val c_function_of_string : Tenv.t -> string -> Typ.Procname.t
+    val c_function_of_string : Tenv.t -> string -> Procname.t
 
-    val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Typ.Procname.t
+    val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Procname.t
 
-    val objc_method_of_string_kind :
-      Typ.Name.t -> string -> Typ.Procname.ObjC_Cpp.kind -> Typ.Procname.t
+    val objc_method_of_string_kind : Typ.Name.t -> string -> Procname.ObjC_Cpp.kind -> Procname.t
   end
 end
 
@@ -54,14 +53,14 @@ val method_signature_of_decl :
      Tenv.t
   -> Clang_ast_t.decl
   -> ?block_return_type:Clang_ast_t.qual_type
-  -> Typ.Procname.t
+  -> Procname.t
   -> CMethodSignature.t
 
 val method_signature_body_of_decl :
      Tenv.t
   -> Clang_ast_t.decl
   -> ?block_return_type:Clang_ast_t.qual_type
-  -> Typ.Procname.t
+  -> Procname.t
   -> CMethodSignature.t
      * Clang_ast_t.stmt option
      * [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list

@@ -111,7 +111,7 @@ let add_unreachable_code (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs (che
       {checks with unused_branches= unused_branch :: checks.unused_branches}
   (* special case for `exit` when we're at the end of a block / procedure *)
   | Sil.Call (_, Const (Cfun pname), _, _, _)
-    when String.equal (Typ.Procname.get_method pname) "exit"
+    when String.equal (Procname.get_method pname) "exit"
          && ExitStatement.is_end_of_block_or_procedure cfg node rem_instrs ->
       checks
   | _ ->
@@ -235,7 +235,7 @@ let rec check_expr_for_integer_overflow integer_type_widths exp location mem con
 
 let instantiate_cond :
        Typ.IntegerWidths.t
-    -> Typ.Procname.t
+    -> Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
     -> Dom.Mem.t
@@ -250,7 +250,7 @@ let instantiate_cond :
 
 type checks_summary = BufferOverrunCheckerSummary.t
 
-type get_proc_summary = Typ.Procname.t -> ((Pvar.t * Typ.t) list * checks_summary) option
+type get_proc_summary = Procname.t -> ((Pvar.t * Typ.t) list * checks_summary) option
 
 let check_instr :
        get_proc_summary

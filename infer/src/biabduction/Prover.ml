@@ -947,7 +947,7 @@ let check_inconsistency_base tenv prop =
         false
     | Some (_, _, pdesc) ->
         let procedure_attr = Procdesc.get_attributes pdesc in
-        let language = Typ.Procname.get_language (Procdesc.get_proc_name pdesc) in
+        let language = Procname.get_language (Procdesc.get_proc_name pdesc) in
         let is_java_this pvar = Language.equal language Java && Pvar.is_this pvar in
         let is_objc_instance_self pvar =
           Language.equal language Clang && Pvar.is_self pvar

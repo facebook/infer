@@ -11,7 +11,7 @@ module L = Logging
 module MF = MarkupFormatter
 module CallSites = AbstractDomain.FiniteSet (CallSite)
 module NullableAP = AbstractDomain.Map (AccessPath) (CallSites)
-module NullCheckedPname = AbstractDomain.InvertedSet (Typ.Procname)
+module NullCheckedPname = AbstractDomain.InvertedSet (Procname)
 module Domain = AbstractDomain.Pair (NullableAP) (NullCheckedPname)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -34,8 +34,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_non_objc_instance_method callee_pname =
     match callee_pname with
-    | Typ.Procname.Java java_pname ->
-        not (Typ.Procname.Java.is_static java_pname)
+    | Procname.Java java_pname ->
+        not (Procname.Java.is_static java_pname)
     | _ ->
         Option.exists
           ~f:(fun attributes ->
@@ -52,10 +52,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (Summary.OnDisk.proc_resolve_attributes callee_pname)
 
 
-  let is_blacklisted_method : Typ.Procname.t -> bool =
+  let is_blacklisted_method : Procname.t -> bool =
     let blacklist = ["URLWithString:"; "objectForKeyedSubscript:"] in
     fun proc_name ->
-      let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
+      let simplified_callee_pname = Procname.to_simplified_string proc_name in
       List.exists ~f:(String.equal simplified_callee_pname) blacklist
 
 
@@ -68,7 +68,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_objc_container_add_method proc_name =
-    let callee_pname = Typ.Procname.to_string proc_name in
+    let callee_pname = Procname.to_string proc_name in
     Str.string_match container_method_regex callee_pname 0
 
 
@@ -90,7 +90,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
      Here, we explicitely want to lookup the annotations locally: either form
      the implementation when defined locally, or from the included headers *)
   let lookup_local_attributes = function
-    | Typ.Procname.Java _ as pname ->
+    | Procname.Java _ as pname ->
         (* Looking up the attribute according to the classpath *)
         Summary.OnDisk.proc_resolve_attributes pname
     | pname ->
@@ -107,11 +107,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         try CallSites.min_elt call_sites
         with Caml.Not_found ->
           L.(die InternalError)
-            "Expecting a least one element in the set of call sites when analyzing %a"
-            Typ.Procname.pp pname
+            "Expecting a least one element in the set of call sites when analyzing %a" Procname.pp
+            pname
       in
       let simplified_pname =
-        Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)
+        Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)
       in
       let is_direct_dereference =
         match ap with
@@ -144,9 +144,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               []
           | Some attributes ->
-              let description =
-                F.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
-              in
+              let description = F.asprintf "definition of %s" (Procname.get_method callee_pname) in
               let trace_element =
                 Errlog.make_trace_element 1 attributes.ProcAttributes.loc description []
               in

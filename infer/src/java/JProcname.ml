@@ -267,14 +267,13 @@ let create_procname ~classname ~methodname ~signature ~use_signature =
   let java_type_args = List.map ~f:JNI.to_java_type args in
   let java_type_ret_typ =
     if
-      String.equal methodname Typ.Procname.Java.constructor_method_name
-      || String.equal methodname Typ.Procname.Java.class_initializer_method_name
+      String.equal methodname Procname.Java.constructor_method_name
+      || String.equal methodname Procname.Java.class_initializer_method_name
     then None
     else Some (JNI.to_java_type ret_typ)
   in
-  Typ.Procname.Java
-    (Typ.Procname.Java.make name java_type_ret_typ methodname java_type_args
-       Typ.Procname.Java.Non_Static)
+  Procname.Java
+    (Procname.Java.make name java_type_ret_typ methodname java_type_args Procname.Java.Non_Static)
 
 
 let make_void_signature_procname ~classname ~methodname =

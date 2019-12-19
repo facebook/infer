@@ -8,13 +8,13 @@
 open! IStd
 
 val compute_and_emit_test_to_run :
-     ?clang_range_map:((Location.t * Location.t) * ClangProc.t option) Typ.Procname.Map.t
+     ?clang_range_map:((Location.t * Location.t) * ClangProc.t option) Procname.Map.t
   -> ?source_file:SourceFile.t
   -> unit
   -> unit
 
 val compute_and_emit_relevant_methods :
-     clang_range_map:((Location.t * Location.t) * ClangProc.t option) Typ.Procname.Map.t
+     clang_range_map:((Location.t * Location.t) * ClangProc.t option) Procname.Map.t
   -> source_file:SourceFile.t
   -> unit
 

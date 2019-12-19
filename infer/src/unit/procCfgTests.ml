@@ -15,7 +15,7 @@ let tests =
   let cfg = Cfg.create () in
   let test_pdesc =
     Cfg.create_proc_desc cfg
-      (ProcAttributes.default (SourceFile.invalid __FILE__) Typ.Procname.empty_block)
+      (ProcAttributes.default (SourceFile.invalid __FILE__) Procname.empty_block)
   in
   let dummy_instr1 = Sil.skip_instr in
   let dummy_instr2 = Sil.Metadata (Abstract Location.dummy) in

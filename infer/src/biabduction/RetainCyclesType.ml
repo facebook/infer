@@ -12,7 +12,7 @@ type retain_cycle_field = {rc_field_name: Fieldname.t; rc_field_inst: Predicates
 
 type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 
-type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Typ.Procname.t * Pvar.t
+type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Procname.t * Pvar.t
 
 type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
 
@@ -36,7 +36,7 @@ let compare_retain_cycle_edge (edge1 : retain_cycle_edge) (edge2 : retain_cycle_
   | Object edge_obj1, Object edge_obj2 ->
       compare_retain_cycle_edge_obj edge_obj1 edge_obj2
   | Block (procname1, _), Block (procname2, _) ->
-      Typ.Procname.compare procname1 procname2
+      Procname.compare procname1 procname2
   | Object _, Block _ ->
       1
   | Block _, Object _ ->
@@ -173,7 +173,7 @@ let pp_dotty fmt cycle =
           (Typ.to_string obj.rc_from.rc_node_typ)
           Fieldname.pp obj.rc_field.rc_field_name
     | Block (name, _) ->
-        Typ.Procname.pp_unique_id fmt name
+        Procname.pp_unique_id fmt name
   in
   let pp_dotty_field fmt element =
     match element with

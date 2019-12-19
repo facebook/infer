@@ -6,10 +6,10 @@
  *)
 open! IStd
 
-(* Builds a clang procedure, following the format required to match with profiler samples: 
-C Functions: name, mangled name optional 
-ObjC Methods: mangled_name  
-ObjC Blocks: mangled_name 
+(* Builds a clang procedure, following the format required to match with profiler samples:
+C Functions: name, mangled name optional
+ObjC Methods: mangled_name
+ObjC Blocks: mangled_name
 C++ methods: mangled_name (For us mangled name is optional, but if it is not there then we can't match the method) *)
 let clang_proc_of_decl decl =
   let open Clang_ast_t in
@@ -63,7 +63,7 @@ and process_proc_decl default_source_file ast_range decl =
       let range = CLocation.location_of_decl_info default_source_file di in
       let procname = CType_decl.CProcname.from_decl decl in
       let clang_proc = clang_proc_of_decl decl in
-      let ast_range' = Typ.Procname.Map.add procname (range, clang_proc) ast_range in
+      let ast_range' = Procname.Map.add procname (range, clang_proc) ast_range in
       match CAst_utils.get_method_body_opt decl with
       | Some stmt ->
           process_block_decls_in_stmts default_source_file ast_range' [stmt]
@@ -81,7 +81,7 @@ let process_ast ast default_source_file =
   let open Clang_ast_t in
   match ast with
   | TranslationUnitDecl (_, decl_list, _, _) ->
-      List.fold decl_list ~init:Typ.Procname.Map.empty ~f:(fun map decl ->
+      List.fold decl_list ~init:Procname.Map.empty ~f:(fun map decl ->
           let info = Clang_ast_proj.get_decl_tuple decl in
           let source_range = info.di_source_range in
           if

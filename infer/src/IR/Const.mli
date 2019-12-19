@@ -14,7 +14,7 @@ module F = Format
 (** Constants *)
 type t =
   | Cint of IntLit.t  (** integer constants *)
-  | Cfun of Typ.Procname.t  (** function names *)
+  | Cfun of Procname.t  (** function names *)
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)

@@ -46,7 +46,7 @@ type control =
 type trans_result =
   { control: control
   ; return: Exp.t * Typ.t  (** value returned by the translated statement *)
-  ; method_name: Typ.Procname.t option
+  ; method_name: Procname.t option
         (** in the specific case of translating a method call in C++, we get the method name called
             at the same time we get the [this] object that contains the method. The [this] instance
             object is returned as the [return] field, while the method to call is filled in here.
@@ -100,7 +100,7 @@ val builtin_trans :
   -> Clang_ast_t.source_range
   -> Location.t
   -> trans_result list
-  -> Typ.Procname.t
+  -> Procname.t
   -> trans_result option
 
 val cxx_method_builtin_trans :
@@ -108,7 +108,7 @@ val cxx_method_builtin_trans :
   -> Clang_ast_t.source_range
   -> Location.t
   -> trans_result list
-  -> Typ.Procname.t
+  -> Procname.t
   -> trans_result option
 
 val new_or_alloc_trans :
@@ -230,7 +230,7 @@ module Self : sig
   val add_self_parameter_for_super_instance :
        Clang_ast_t.stmt_info
     -> CContext.t
-    -> Typ.Procname.t
+    -> Procname.t
     -> Location.t
     -> Clang_ast_t.obj_c_message_expr_info
     -> trans_result option

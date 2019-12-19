@@ -527,5 +527,5 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
               post :: posts )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
-      L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
+      L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       Ok [unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals astate]

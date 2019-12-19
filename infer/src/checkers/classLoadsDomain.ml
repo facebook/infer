@@ -45,7 +45,7 @@ let mem_typename name astate =
 let add_typename loc astate name = Typ.Name.name name |> add_string loc astate
 
 let integrate_summary callee_pname loc astate callee_summary =
-  L.debug Analysis Verbose "CL: ADDING SUMMARY OF %a@." Typ.Procname.pp callee_pname ;
+  L.debug Analysis Verbose "CL: ADDING SUMMARY OF %a@." Procname.pp callee_pname ;
   let callsite = CallSite.make callee_pname loc in
   let summary = with_callsite callee_summary callsite in
   union astate summary

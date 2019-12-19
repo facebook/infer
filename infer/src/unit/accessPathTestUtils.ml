@@ -7,7 +7,7 @@
 
 open! IStd
 
-let make_var var_str = Pvar.mk (Mangled.from_string var_str) Typ.Procname.empty_block
+let make_var var_str = Pvar.mk (Mangled.from_string var_str) Procname.empty_block
 
 let make_base ?(typ = Typ.mk Tvoid) base_str = AccessPath.base_of_pvar (make_var base_str) typ
 

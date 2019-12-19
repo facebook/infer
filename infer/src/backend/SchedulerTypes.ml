@@ -6,4 +6,4 @@
  *)
 open! IStd
 
-type target = Procname of Typ.Procname.t | File of SourceFile.t
+type target = Procname of Procname.t | File of SourceFile.t

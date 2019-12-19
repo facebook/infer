@@ -13,8 +13,8 @@ module GlobalVarSet = SiofTrace.GlobalVarSet
 
 let methods_whitelist = QualifiedCppName.Match.of_fuzzy_qual_names Config.siof_safe_methods
 
-let is_whitelisted (pname : Typ.Procname.t) =
-  Typ.Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers methods_whitelist
+let is_whitelisted (pname : Procname.t) =
+  Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers methods_whitelist
 
 
 type siof_model =
@@ -53,7 +53,7 @@ let is_modelled =
     List.map models ~f:(fun {qual_name} -> qual_name) |> QualifiedCppName.Match.of_fuzzy_qual_names
   in
   fun pname ->
-    Typ.Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers models_matcher
+    Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers models_matcher
 
 
 module Payload = SummaryPayload.Make (struct
@@ -139,7 +139,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr astate {ProcData.summary} _ (instr : Sil.instr) =
     match instr with
     | Store {e1= Lvar global; typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}
-      when (Option.equal Typ.Procname.equal)
+      when (Option.equal Procname.equal)
              (Pvar.get_initializer_pname global)
              (Some (Summary.get_proc_name summary)) ->
         (* if we are just taking the reference of another global then we are not really accessing
@@ -162,14 +162,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               if
                 QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
                 |> Fn.flip QualifiedCppName.Match.match_qualifiers
-                     (Typ.Procname.get_qualifiers callee_pname)
+                     (Procname.get_qualifiers callee_pname)
               then Some initialized_globals
               else None )
         in
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
-      when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
-      ->
+      when Procname.is_constructor callee_pname && Procname.ObjC_Cpp.is_constexpr cpp_pname ->
         add_actuals_globals astate summary loc actuals_without_self
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
@@ -283,7 +282,7 @@ let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
                  "__infer_translation_unit_init_streams")
           |> Pvar.get_initializer_pname )
       in
-      get_procs_in_file pname |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)
+      get_procs_in_file pname |> List.exists ~f:(Procname.equal magic_iostream_marker)
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
@@ -299,11 +298,7 @@ let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
     if
-      match pname with
-      | ObjC_Cpp cpp_pname ->
-          Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
-      | _ ->
-          false
+      match pname with ObjC_Cpp cpp_pname -> Procname.ObjC_Cpp.is_constexpr cpp_pname | _ -> false
     then Payload.update_summary initial summary
     else
       match Analyzer.compute_post proc_data ~initial with
@@ -312,7 +307,7 @@ let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
       | None ->
           summary
   in
-  ( match Typ.Procname.get_global_name_of_initializer pname with
+  ( match Procname.get_global_name_of_initializer pname with
   | Some gname ->
       siof_check gname updated_summary
   | None ->

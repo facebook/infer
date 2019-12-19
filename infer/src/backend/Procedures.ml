@@ -13,7 +13,7 @@ let get_all ~filter () =
   SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
     ~f:(fun rev_results stmt ->
       let source_file = Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize in
-      let proc_name = Sqlite3.column stmt 1 |> Typ.Procname.SQLite.deserialize in
+      let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
       if filter source_file proc_name then proc_name :: rev_results else rev_results )
 
 
@@ -35,7 +35,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
     Format.fprintf fmt "@[<v2>%s@,%a%a%a%a@]@\n" proc_name_hum
       (pp_if source_file_cond "source_file" SourceFile.pp)
       source_file
-      (pp_if proc_name_cond "proc_name" Typ.Procname.pp)
+      (pp_if proc_name_cond "proc_name" Procname.pp)
       proc_name
       (pp_column_if stmt attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
          Attributes.pp_attributes_kind)
@@ -50,6 +50,6 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
     "SELECT proc_name, proc_name_hum, attr_kind, source_file, proc_attributes FROM procedures"
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")
        ~f:(fun stmt ->
-         let proc_name = Sqlite3.column stmt 0 |> Typ.Procname.SQLite.deserialize in
+         let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
          let source_file = Sqlite3.column stmt 3 |> SourceFile.SQLite.deserialize in
          if filter source_file proc_name then pp_row stmt fmt source_file proc_name )

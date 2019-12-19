@@ -16,7 +16,7 @@ type t =
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Arithmetic of Arithmetic.t * Trace.t
   | BoItv of Itv.ItvPure.t
-  | Closure of Typ.Procname.t
+  | Closure of Procname.t
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
@@ -32,7 +32,7 @@ module Attributes : sig
 
   val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
 
-  val get_closure_proc_name : t -> Typ.Procname.t option
+  val get_closure_proc_name : t -> Procname.t option
 
   val get_arithmetic : t -> (Arithmetic.t * Trace.t) option
 

@@ -9,7 +9,7 @@ open! IStd
 
 (** Module type for the type checking functions. *)
 
-type check_return_type = Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+type check_return_type = Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -20,7 +20,7 @@ val typecheck_node :
   -> bool ref
   -> checks
   -> Idenv.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> Procdesc.t
   -> find_canonical_duplicate
   -> AnnotatedSignature.t

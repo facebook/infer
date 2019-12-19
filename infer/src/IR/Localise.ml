@@ -138,7 +138,7 @@ let line_ tags loc = line_tag_ tags Tags.line loc
 let at_line tags loc = at_line_tag tags Tags.line loc
 
 let call_to proc_name =
-  let proc_name_str = Typ.Procname.to_simplified_string proc_name in
+  let proc_name_str = Procname.to_simplified_string proc_name in
   "call to " ^ MF.monospaced_to_string proc_name_str
 
 
@@ -203,14 +203,14 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
 let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   let function_method, nil_null =
-    if Typ.Procname.is_c_method pn then ("method", "nil") else ("function", "null")
+    if Procname.is_c_method pn then ("method", "nil") else ("function", "null")
   in
   let problem_str =
     Printf.sprintf
       "could be %s which results in a call to %s with %d arguments instead of %d (%s indicates \
        that the last argument of this variadic %s has been reached)"
       nil_null
-      (Typ.Procname.to_simplified_string pn)
+      (Procname.to_simplified_string pn)
       arg_number (total_args - 1) nil_null function_method
   in
   deref_str_null_ None problem_str
@@ -219,7 +219,7 @@ let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
 (** dereference strings for an undefined value coming from the given procedure *)
 let deref_str_undef (proc_name, loc) =
   let tags = Tags.create () in
-  let proc_name_str = Typ.Procname.to_simplified_string proc_name in
+  let proc_name_str = Procname.to_simplified_string proc_name in
   { tags
   ; value_pre= Some (pointer_or_object ())
   ; value_post= None
@@ -345,7 +345,7 @@ let nullable_annotation_name proc_name =
   match Config.nullable_annotation with
   | Some name ->
       name
-  | None when Typ.Procname.is_java proc_name ->
+  | None when Procname.is_java proc_name ->
       "@Nullable"
   | None (* default Clang annotation name *) ->
       "_Nullable"
@@ -460,11 +460,11 @@ let desc_allocation_mismatch alloc dealloc =
   let tags = Tags.create () in
   let using (primitive_pname, called_pname, loc) =
     let by_call =
-      if Typ.Procname.equal primitive_pname called_pname then ""
-      else " by call to " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
+      if Procname.equal primitive_pname called_pname then ""
+      else " by call to " ^ MF.monospaced_to_string (Procname.to_simplified_string called_pname)
     in
     "using "
-    ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)
+    ^ MF.monospaced_to_string (Procname.to_simplified_string primitive_pname)
     ^ by_call ^ " "
     ^ at_line (Tags.create ()) (* ignore the tag *) loc
   in
@@ -688,13 +688,13 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
 
 let desc_skip_function proc_name =
   let tags = Tags.create () in
-  let proc_name_str = Typ.Procname.to_string proc_name in
+  let proc_name_str = Procname.to_string proc_name in
   Tags.update tags Tags.value proc_name_str ;
   {no_desc with descriptions= [proc_name_str]; tags= !tags}
 
 
 let desc_inherently_dangerous_function proc_name =
-  let proc_name_str = Typ.Procname.to_string proc_name in
+  let proc_name_str = Procname.to_string proc_name in
   let tags = Tags.create () in
   Tags.update tags Tags.value proc_name_str ;
   {no_desc with descriptions= [MF.monospaced_to_string proc_name_str]; tags= !tags}

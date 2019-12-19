@@ -31,6 +31,6 @@ val check : type_role -> base:Nullability.t -> overridden:Nullability.t -> (unit
 val violation_description :
      violation
   -> violation_type
-  -> base_proc_name:Typ.Procname.t
-  -> overridden_proc_name:Typ.Procname.t
+  -> base_proc_name:Procname.t
+  -> overridden_proc_name:Procname.t
   -> string

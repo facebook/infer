@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-let pname_pp = MF.wrap_monospaced Typ.Procname.pp
+let pname_pp = MF.wrap_monospaced Procname.pp
 
 module ThreadDomain = struct
   type t = UnknownThread | UIThread | BGThread | AnyThread [@@deriving compare, equal]
@@ -165,8 +165,7 @@ end
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
     are *ignored* for comparisons, and are only for reporting. *)
 module Acquisition = struct
-  type t =
-    {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Typ.Procname.t [@compare.ignore]}
+  type t = {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Procname.t [@compare.ignore]}
   [@@deriving compare]
 
   let pp fmt {lock} = Lock.pp_locks fmt lock
@@ -180,7 +179,7 @@ module Acquisition = struct
     Errlog.make_trace_element 0 acquisition.loc description []
 
 
-  let make_dummy lock = {lock; loc= Location.dummy; procname= Typ.Procname.Linters_dummy_method}
+  let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.Linters_dummy_method}
 end
 
 (** Set of acquisitions; due to order over acquisitions, each lock appears at most once. *)
@@ -194,7 +193,7 @@ end
 module LockState : sig
   include AbstractDomain.WithTop
 
-  val acquire : procname:Typ.Procname.t -> loc:Location.t -> Lock.t -> t -> t
+  val acquire : procname:Procname.t -> loc:Location.t -> Lock.t -> t -> t
 
   val release : Lock.t -> t -> t
 
@@ -342,8 +341,7 @@ module CriticalPair = struct
     let initial_loc = get_loc t in
     Acquisitions.fold
       (fun {procname= acq_procname; loc= acq_loc} acc ->
-        if
-          Typ.Procname.equal procname acq_procname && Int.is_negative (Location.compare acq_loc acc)
+        if Procname.equal procname acq_procname && Int.is_negative (Location.compare acq_loc acc)
         then acq_loc
         else acc )
       acquisitions initial_loc
@@ -355,11 +353,11 @@ module CriticalPair = struct
       if include_acquisitions then
         Acquisitions.fold
           (fun ({procname} as acq : Acquisition.t) acc ->
-            Typ.Procname.Map.update procname
+            Procname.Map.update procname
               (function None -> Some [acq] | Some acqs -> Some (acq :: acqs))
               acc )
-          acquisitions Typ.Procname.Map.empty
-      else Typ.Procname.Map.empty
+          acquisitions Procname.Map.empty
+      else Procname.Map.empty
     in
     let header_step =
       let description = F.asprintf "%s%a" header pname_pp top_pname in
@@ -370,7 +368,7 @@ module CriticalPair = struct
     let make_call_stack_step fake_first_call call_site =
       let procname = CallSite.pname call_site in
       let trace =
-        Typ.Procname.Map.find_opt procname acquisitions_map
+        Procname.Map.find_opt procname acquisitions_map
         |> Option.value ~default:[]
         (* many acquisitions can be on same line (eg, std::lock) so use stable sort
            to produce a deterministic trace *)
@@ -458,7 +456,7 @@ module Attribute = struct
     | ThreadGuard
     | FutureDoneGuard of HilExp.AccessExpression.t
     | FutureDoneState of bool
-    | Runnable of Typ.Procname.t
+    | Runnable of Procname.t
     | WorkScheduler of StarvationModels.scheduler_thread_constraint
     | Looper of StarvationModels.scheduler_thread_constraint
   [@@deriving equal]
@@ -483,7 +481,7 @@ module Attribute = struct
     | FutureDoneState state ->
         F.fprintf fmt "FutureDoneState(%b)" state
     | Runnable runproc ->
-        F.fprintf fmt "Runnable(%a)" Typ.Procname.pp runproc
+        F.fprintf fmt "Runnable(%a)" Procname.pp runproc
     | WorkScheduler c ->
         F.fprintf fmt "WorkScheduler(%a)" pp_constr c
     | Looper c ->
@@ -519,10 +517,10 @@ module AttributeDomain = struct
 end
 
 module ScheduledWorkItem = struct
-  type t = {procname: Typ.Procname.t; loc: Location.t; thread: ThreadDomain.t} [@@deriving compare]
+  type t = {procname: Procname.t; loc: Location.t; thread: ThreadDomain.t} [@@deriving compare]
 
   let pp fmt {procname; loc; thread} =
-    F.fprintf fmt "{procname= %a; loc= %a; thread= %a}" Typ.Procname.pp procname Location.pp loc
+    F.fprintf fmt "{procname= %a; loc= %a; thread= %a}" Procname.pp procname Location.pp loc
       ThreadDomain.pp thread
 end
 
@@ -731,10 +729,10 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   let attributes =
     let var_predicate =
       match proc_name with
-      | Typ.Procname.Java jname when Typ.Procname.Java.is_class_initializer jname ->
+      | Procname.Java jname when Procname.Java.is_class_initializer jname ->
           (* only keep static attributes for the class initializer *)
           fun v -> Var.is_global v
-      | Typ.Procname.Java jname when Typ.Procname.Java.is_constructor jname ->
+      | Procname.Java jname when Procname.Java.is_constructor jname ->
           (* only keep static attributes or ones that have [this] as their root *)
           fun v -> Var.is_this v || Var.is_global v
       | _ ->

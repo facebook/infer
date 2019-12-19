@@ -188,10 +188,10 @@ let () =
                 DB.Results_dir.init ~debug:true source_file ;
                 (* collect the CFGs for all the procedures in [source_file] *)
                 let proc_names = SourceFiles.proc_names_of_source source_file in
-                let cfgs = Typ.Procname.Hash.create (List.length proc_names) in
+                let cfgs = Procname.Hash.create (List.length proc_names) in
                 List.iter proc_names ~f:(fun proc_name ->
                     Procdesc.load proc_name
-                    |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
+                    |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
                 (* emit the dot file in captured/... *)
                 DotCfg.emit_frontend_cfg source_file cfgs ) ;
             L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_frontend_output )

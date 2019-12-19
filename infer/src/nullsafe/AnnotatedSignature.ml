@@ -134,7 +134,7 @@ let pp proc_name fmt annotated_signature =
   let mode_as_string = if annotated_signature.is_strict_mode then "Strict" else "Def" in
   F.fprintf fmt "[%s] %a%a %a (%a )" mode_as_string pp_ia ret_annotation_deprecated AnnotatedType.pp
     ret_annotated_type
-    (Typ.Procname.pp_simplified_string ~withclass:false)
+    (Procname.pp_simplified_string ~withclass:false)
     proc_name (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
 
@@ -175,7 +175,7 @@ let set_modelled_nullability proc_name asig model_source (nullability_for_ret, p
     let fail () =
       L.die InternalError
         "Annotation for procedure %a has wrong number of arguments.@\n  Annotated signature: %a"
-        Typ.Procname.pp_unique_id proc_name (pp proc_name) asig
+        Procname.pp_unique_id proc_name (pp proc_name) asig
     in
     let rec model_param_nullability original_params params_nullability =
       match (original_params, params_nullability) with

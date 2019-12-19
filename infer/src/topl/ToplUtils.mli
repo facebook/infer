@@ -19,7 +19,7 @@ val topl_class_typ : Typ.t
 
 val static_var : string -> Exp.t
 
-val local_var : Typ.Procname.t -> string -> Exp.t
+val local_var : Procname.t -> string -> Exp.t
 
 val constant_int : int -> Exp.t
 
@@ -27,7 +27,7 @@ val topl_call : Ident.t -> Typ.desc -> Location.t -> string -> (Exp.t * Typ.t) l
 (** Call a TOPL function; that is, a static member of "topl.Property" with java.lang.Object
     arguments and return [ret_id] of type [ret_typ].*)
 
-val is_synthesized : Typ.Procname.t -> bool
+val is_synthesized : Procname.t -> bool
 
 val debug : ('a, Format.formatter, unit) IStd.format -> 'a
 

@@ -19,7 +19,7 @@ let mk_param_type ?(is_pointer_to_const = false) ?(annot = Annot.Item.empty) nam
 
 
 type t =
-  { name: Typ.Procname.t
+  { name: Procname.t
   ; access: Clang_ast_t.access_specifier
   ; class_param: param_type option
   ; params: param_type list
@@ -73,7 +73,7 @@ let mk name class_param params ret_type ?(has_added_return_param = false) attrib
 let pp fmt ms =
   let pp_param fmt {name; typ} = F.fprintf fmt "%a, %a" Mangled.pp name (Typ.pp Pp.text) typ in
   Format.fprintf fmt "Method %a [%a]->%a %a"
-    (Pp.of_string ~f:Typ.Procname.to_string)
+    (Pp.of_string ~f:Procname.to_string)
     ms.name (Pp.comma_seq pp_param) ms.params (Typ.pp Pp.text) (fst ms.ret_type)
     (Pp.of_string ~f:Clang_ast_j.string_of_source_range)
     ms.loc

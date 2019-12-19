@@ -16,11 +16,10 @@ type translation_unit = SourceFile.t option [@@deriving compare]
 
 (** Kind of global variables *)
 type pvar_kind =
-  | Local_var of Typ.Procname.t  (** local variable belonging to a function *)
-  | Callee_var of Typ.Procname.t  (** local variable belonging to a callee *)
-  | Abduced_retvar of Typ.Procname.t * Location.t
-      (** synthetic variable to represent return value *)
-  | Abduced_ref_param of Typ.Procname.t * int * Location.t
+  | Local_var of Procname.t  (** local variable belonging to a function *)
+  | Callee_var of Procname.t  (** local variable belonging to a callee *)
+  | Abduced_retvar of Procname.t * Location.t  (** synthetic variable to represent return value *)
+  | Abduced_ref_param of Procname.t * int * Location.t
       (** synthetic variable to represent param passed by reference *)
   | Global_var of
       { translation_unit: translation_unit
@@ -38,7 +37,7 @@ type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving comp
 let get_name_of_local_with_procname var =
   match var.pv_kind with
   | Local_var pname ->
-      Mangled.from_string (F.asprintf "%s_%a" (Mangled.to_string var.pv_name) Typ.Procname.pp pname)
+      Mangled.from_string (F.asprintf "%s_%a" (Mangled.to_string var.pv_name) Procname.pp pname)
   | _ ->
       var.pv_name
 
@@ -131,7 +130,7 @@ let is_frontend_tmp pvar =
   ||
   match pvar.pv_kind with
   | Local_var pname ->
-      Typ.Procname.is_java pname && is_bytecode_tmp name
+      Procname.is_java pname && is_bytecode_tmp name
   | _ ->
       false
 
@@ -218,7 +217,7 @@ let to_callee pname pvar =
 let name_hash (name : Mangled.t) = Hashtbl.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
-let mk (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
+let mk (name : Mangled.t) (proc_name : Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name}
 
 
@@ -228,7 +227,7 @@ let get_ret_param_pvar pname = mk Ident.name_return_param pname
 
 (** [mk_callee name proc_name] creates a program var for a callee function with the given function
     name *)
-let mk_callee (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
+let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name}
 
 
@@ -250,15 +249,13 @@ let mk_tmp name pname =
 
 
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
-let mk_abduced_ret (proc_name : Typ.Procname.t) (loc : Location.t) : t =
-  let name = Mangled.from_string (F.asprintf "$RET_%a" Typ.Procname.pp_unique_id proc_name) in
+let mk_abduced_ret (proc_name : Procname.t) (loc : Location.t) : t =
+  let name = Mangled.from_string (F.asprintf "$RET_%a" Procname.pp_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
 
 
-let mk_abduced_ref_param (proc_name : Typ.Procname.t) (index : int) (loc : Location.t) : t =
-  let name =
-    Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Typ.Procname.pp_unique_id proc_name)
-  in
+let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.t) : t =
+  let name = Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Procname.pp_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
 
 
@@ -286,12 +283,12 @@ let get_initializer_pname {pv_name; pv_kind} =
         match translation_unit with
         | Some file ->
             let mangled = SourceFile.to_string file |> Utils.string_crc_hex32 in
-            Typ.Procname.C
-              (Typ.Procname.C.c (QualifiedCppName.of_qual_string name) mangled [] Typ.NoTemplate)
+            Procname.C
+              (Procname.C.c (QualifiedCppName.of_qual_string name) mangled [] Typ.NoTemplate)
             |> Option.return
         | None ->
             None
-      else Some (Typ.Procname.from_string_c_fun name)
+      else Some (Procname.from_string_c_fun name)
   | _ ->
       None
 

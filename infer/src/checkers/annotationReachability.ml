@@ -22,13 +22,11 @@ module Payload = SummaryPayload.Make (struct
 end)
 
 let is_modeled_expensive tenv = function
-  | Typ.Procname.Java proc_name_java as proc_name ->
+  | Procname.Java proc_name_java as proc_name ->
       (not (BuiltinDecl.is_declared proc_name))
       &&
       let is_subclass =
-        let classname =
-          Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java)
-        in
+        let classname = Typ.Name.Java.from_string (Procname.Java.get_class_name proc_name_java) in
         PatternMatch.is_subtype_of_str tenv classname
       in
       Inferconfig.modeled_expensive_matcher is_subclass proc_name
@@ -38,12 +36,12 @@ let is_modeled_expensive tenv = function
 
 let is_allocator tenv pname =
   match pname with
-  | Typ.Procname.Java pname_java ->
+  | Procname.Java pname_java ->
       let is_throwable () =
-        let class_name = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname_java) in
+        let class_name = Typ.Name.Java.from_string (Procname.Java.get_class_name pname_java) in
         PatternMatch.is_throwable tenv class_name
       in
-      Typ.Procname.is_constructor pname
+      Procname.is_constructor pname
       && (not (BuiltinDecl.is_declared pname))
       && not (is_throwable ())
   | _ ->
@@ -81,7 +79,7 @@ let update_trace loc trace =
   else Errlog.make_trace_element 0 loc "" [] :: trace
 
 
-let string_of_pname = Typ.Procname.to_simplified_string ~withclass:true
+let string_of_pname = Procname.to_simplified_string ~withclass:true
 
 let report_allocation_stack src_annot summary fst_call_loc trace stack_str constructor_pname
     call_loc =
@@ -90,7 +88,7 @@ let report_allocation_stack src_annot summary fst_call_loc trace stack_str const
   let constr_str = string_of_pname constructor_pname in
   let description =
     Format.asprintf "Method %a annotated with %a allocates %a via %a" MF.pp_monospaced
-      (Typ.Procname.to_simplified_string pname)
+      (Procname.to_simplified_string pname)
       MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
       (stack_str ^ "new " ^ constr_str)
   in
@@ -108,7 +106,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
     let description =
       Format.asprintf "Method %a annotated with %a calls %a where %a is annotated with %a"
         MF.pp_monospaced
-        (Typ.Procname.to_simplified_string src_pname)
+        (Procname.to_simplified_string src_pname)
         MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced (stack_str ^ exp_pname_str)
         MF.pp_monospaced exp_pname_str MF.pp_monospaced ("@" ^ snk_annot)
     in
@@ -148,8 +146,8 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
               let call_site = Domain.CallSites.min_elt call_sites in
               let p = CallSite.pname call_site in
               let loc = CallSite.loc call_site in
-              if Typ.Procname.Set.mem p visited then accu
-              else ((p, loc) :: unseen, Typ.Procname.Set.add p visited)
+              if Procname.Set.mem p visited then accu
+              else ((p, loc) :: unseen, Procname.Set.add p visited)
             with Caml.Not_found -> accu )
           next_calls ([], visited_pnames)
       in
@@ -162,7 +160,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
-        loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc)
+        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc)
       with Caml.Not_found -> () )
     sink_map
 
@@ -189,7 +187,7 @@ let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
 let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}
 
 module AnnotationSpec = struct
-  type predicate = Tenv.t -> Typ.Procname.t -> bool
+  type predicate = Tenv.t -> Procname.t -> bool
 
   type t =
     { description: string  (** for debugging *)
@@ -248,7 +246,7 @@ module CxxAnnotationSpecs = struct
     let chop_prefix s =
       String.chop_prefix s ~prefix:Config.clang_inner_destructor_prefix |> Option.value ~default:s
     in
-    let pname_str = Typ.Procname.to_string pname in
+    let pname_str = Procname.to_string pname in
     let i = Option.value (String.rindex pname_str ':') ~default:(-1) + 1 in
     let slen = String.length pname_str in
     String.sub pname_str ~pos:0 ~len:i
@@ -257,7 +255,7 @@ module CxxAnnotationSpecs = struct
 
 
   let debug_pred ~spec_name ~desc pred pname =
-    L.d_printf "%s: Checking if `%a` is a %s... " spec_name Typ.Procname.pp pname desc ;
+    L.d_printf "%s: Checking if `%a` is a %s... " spec_name Procname.pp pname desc ;
     let r = pred pname in
     L.d_printf "%b %s.@." r desc ; r
 
@@ -270,7 +268,7 @@ module CxxAnnotationSpecs = struct
 
   let spec_from_config spec_name spec_cfg source_overrides =
     let src = option_name ^ " -> " ^ spec_name in
-    let make_pname_pred entry ~src : Typ.Procname.t -> bool =
+    let make_pname_pred entry ~src : Procname.t -> bool =
       let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
       let symbol_regexps =
         U.yojson_lookup entry "symbol_regexps" ~src ~default:None ~f:(fun json ~src ->
@@ -289,7 +287,7 @@ module CxxAnnotationSpecs = struct
       in
       let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
       fun pname ->
-        let pname_string = Typ.Procname.to_string pname in
+        let pname_string = Procname.to_string pname in
         sym_pred pname_string || sym_regexp_pred pname_string || path_pred pname
     in
     let sources, sources_src =
@@ -306,8 +304,8 @@ module CxxAnnotationSpecs = struct
       make_pname_pred sources ~src:sources_src pname
       &&
       match pname with
-      | Typ.Procname.ObjC_Cpp cname ->
-          not (Typ.Procname.ObjC_Cpp.is_inner_destructor cname)
+      | Procname.ObjC_Cpp cname ->
+          not (Procname.ObjC_Cpp.is_inner_destructor cname)
       | _ ->
           true
     in
@@ -423,10 +421,8 @@ module ExpensiveAnnotationSpec = struct
     if not (method_is_expensive tenv overridden_pname) then
       let description =
         Format.asprintf "Method %a overrides unannotated method %a and cannot be annotated with %a"
-          MF.pp_monospaced
-          (Typ.Procname.to_string proc_name)
-          MF.pp_monospaced
-          (Typ.Procname.to_string overridden_pname)
+          MF.pp_monospaced (Procname.to_string proc_name) MF.pp_monospaced
+          (Procname.to_string overridden_pname)
           MF.pp_monospaced ("@" ^ Annotations.expensive)
       in
       Reporting.log_error summary ~loc IssueType.checkers_expensive_overrides_unexpensive
@@ -488,12 +484,12 @@ let annot_specs =
 let get_annot_specs pname =
   let language =
     match pname with
-    | Typ.Procname.Java _ ->
+    | Procname.Java _ ->
         Language.Java
-    | Typ.Procname.ObjC_Cpp _ | Typ.Procname.C _ | Typ.Procname.Block _ ->
+    | Procname.ObjC_Cpp _ | Procname.C _ | Procname.Block _ ->
         Language.Clang
     | _ ->
-        L.die InternalError "Cannot find language for proc %s" (Typ.Procname.to_string pname)
+        L.die InternalError "Cannot find language for proc %s" (Procname.to_string pname)
   in
   List.Assoc.find_exn ~equal:Language.equal annot_specs language
 
@@ -513,8 +509,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let check_call tenv ~caller_pname ~callee_pname call_site astate specs =
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
         if is_sink tenv spec ~caller_pname ~callee_pname then (
-          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.description Typ.Procname.pp
-            caller_pname Typ.Procname.pp callee_pname ;
+          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.description Procname.pp caller_pname
+            Procname.pp callee_pname ;
           Domain.add_call_site spec.sink_annotation callee_pname call_site astate )
         else astate )
 
@@ -524,7 +520,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None ->
         astate
     | Some callee_call_map ->
-        L.d_printf "Applying summary for `%a`@\n" Typ.Procname.pp callee_pname ;
+        L.d_printf "Applying summary for `%a`@\n" Procname.pp callee_pname ;
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate
           else
@@ -535,8 +531,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
                 if is_sink tenv spec ~caller_pname ~callee_pname:sink then (
                   L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n"
-                    spec.description Typ.Procname.pp callee_pname Typ.Procname.pp caller_pname
-                    Typ.Procname.pp sink ;
+                    spec.description Procname.pp callee_pname Procname.pp caller_pname Procname.pp
+                    sink ;
                   Domain.add_call_site annot sink call_site astate )
                 else astate )
         in

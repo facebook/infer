@@ -12,11 +12,11 @@ type t [@@deriving compare]
 
 val equal : t -> t -> bool
 
-val pname : t -> Typ.Procname.t
+val pname : t -> Procname.t
 
 val loc : t -> Location.t
 
-val make : Typ.Procname.t -> Location.t -> t
+val make : Procname.t -> Location.t -> t
 
 val dummy : t
 

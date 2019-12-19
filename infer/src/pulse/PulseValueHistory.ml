@@ -40,7 +40,7 @@ let pp_event_no_location fmt event =
   | FormalDeclared (pvar, _) ->
       let pp_proc fmt pvar =
         Pvar.get_declaring_function pvar
-        |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Typ.Procname.pp proc_name)
+        |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
   | VariableAccessed (pvar, _) ->

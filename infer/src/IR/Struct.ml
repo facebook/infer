@@ -17,9 +17,8 @@ type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
-  ; methods: Typ.Procname.t list  (** methods defined *)
-  ; exported_objc_methods: Typ.Procname.t list
-        (** methods in ObjC interface, subset of [methods] *)
+  ; methods: Procname.t list  (** methods defined *)
+  ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
@@ -49,9 +48,9 @@ let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
       fields
       (Pp.seq (fun f n -> F.fprintf f "@\n\t\t%a" Typ.Name.pp n))
       supers
-      (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Typ.Procname.pp m))
+      (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Procname.pp m))
       methods
-      (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Typ.Procname.pp m))
+      (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Procname.pp m))
       exported_objc_methods Annot.Item.pp annots
   else Typ.Name.pp f name
 

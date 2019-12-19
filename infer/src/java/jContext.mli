@@ -69,5 +69,5 @@ val reset_pvar_type : t -> unit
 val reset_exn_node_table : unit -> unit
 (** resets the hashtable mapping methods to their exception nodes *)
 
-val add_exn_node : Typ.Procname.t -> Procdesc.Node.t -> unit
+val add_exn_node : Procname.t -> Procdesc.Node.t -> unit
 (** adds the exception node for a given method *)

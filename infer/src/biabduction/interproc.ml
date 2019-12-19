@@ -209,7 +209,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
     let f p = Prop.prop_normal_vars_to_primed_vars tenv p in
     Propset.map tenv f pset
   in
-  L.d_printfln "#### Extracted footprint of %a:  ####" Typ.Procname.pp proc_name ;
+  L.d_printfln "#### Extracted footprint of %a:  ####" Procname.pp proc_name ;
   L.d_increase_indent () ;
   Propset.d Prop.prop_emp pset' ;
   L.d_decrease_indent () ;
@@ -217,7 +217,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   L.d_ln () ;
   let pset'' = collect_do_abstract_pre proc_name tenv pset' in
   let plist_meet = do_meet_pre tenv pset'' in
-  L.d_printfln "#### Footprint of %a after Meet  ####" Typ.Procname.pp proc_name ;
+  L.d_printfln "#### Footprint of %a after Meet  ####" Procname.pp proc_name ;
   L.d_increase_indent () ;
   Propgraph.d_proplist Prop.prop_emp plist_meet ;
   L.d_decrease_indent () ;
@@ -228,7 +228,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   let jplist = do_join_pre tenv plist_meet in
   L.d_decrease_indent () ;
   L.d_ln () ;
-  L.d_printfln "#### Footprint of %a after Join  ####" Typ.Procname.pp proc_name ;
+  L.d_printfln "#### Footprint of %a after Join  ####" Procname.pp proc_name ;
   L.d_increase_indent () ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist ;
   L.d_decrease_indent () ;
@@ -236,7 +236,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   let jplist' =
     List.map ~f:(BiabductionSummary.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist
   in
-  L.d_printfln "#### Renamed footprint of %a:  ####" Typ.Procname.pp proc_name ;
+  L.d_printfln "#### Renamed footprint of %a:  ####" Procname.pp proc_name ;
   L.d_increase_indent () ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist' ;
   L.d_decrease_indent () ;
@@ -247,7 +247,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
     in
     List.map ~f:(BiabductionSummary.Jprop.map f) jplist'
   in
-  L.d_printfln "#### Abstracted footprint of %a:  ####" Typ.Procname.pp proc_name ;
+  L.d_printfln "#### Abstracted footprint of %a:  ####" Procname.pp proc_name ;
   L.d_increase_indent () ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist'' ;
   L.d_decrease_indent () ;
@@ -435,10 +435,10 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       in
       let status = Summary.get_status summary in
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
-        (Typ.Procname.to_string proc_name)
+        (Procname.to_string proc_name)
     in
     L.d_printfln "**** %s Node: %a, Procedure: %a, Session: %d, Todo: %d ****" (log_string pname)
-      Procdesc.Node.pp curr_node Typ.Procname.pp pname session (Paths.PathSet.size pathset_todo) ;
+      Procdesc.Node.pp curr_node Procname.pp pname session (Paths.PathSet.size pathset_todo) ;
     L.d_increase_indent () ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
     L.d_strln ".... Instructions: ...." ;
@@ -615,8 +615,8 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
   let pathset =
     match pname with
-    | Typ.Procname.ObjC_Cpp _ ->
-        if Typ.Procname.is_constructor pname then
+    | Procname.ObjC_Cpp _ ->
+        if Procname.is_constructor pname then
           Paths.PathSet.map
             (fun prop ->
               Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
@@ -627,7 +627,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
     | _ ->
         pathset
   in
-  L.d_printfln "#### [FUNCTION %a] Analysis result ####" Typ.Procname.pp pname ;
+  L.d_printfln "#### [FUNCTION %a] Analysis result ####" Procname.pp pname ;
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset) ;
   L.d_ln () ;
   let res =
@@ -645,7 +645,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
       L.d_strln "Leak in post collection" ;
       assert false
   in
-  L.d_printfln "#### [FUNCTION %a] Postconditions after join ####" Typ.Procname.pp pname ;
+  L.d_printfln "#### [FUNCTION %a] Postconditions after join ####" Procname.pp pname ;
   L.d_increase_indent () ;
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv (fst res)) ;
   L.d_decrease_indent () ;
@@ -734,7 +734,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
-  L.d_printfln "#### Start: RE-execution for %a ####" Typ.Procname.pp pname ;
+  L.d_printfln "#### Start: RE-execution for %a ####" Procname.pp pname ;
   L.d_indent 1 ;
   L.d_strln "Precond:" ;
   BiabductionSummary.Jprop.d_shallow precondition ;
@@ -752,7 +752,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
     ignore (path_set_put_todo wl init_node init_edgeset) ;
     forward_tabulate summary exe_env tenv proc_cfg wl ;
     do_before_node 0 init_node ;
-    L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Typ.Procname.pp pname ;
+    L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Procname.pp pname ;
     L.d_increase_indent () ;
     L.d_strln "Precond:" ;
     Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
@@ -774,7 +774,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   with RE_EXE_ERROR ->
     do_before_node 0 init_node ;
     Printer.force_delayed_prints () ;
-    L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Typ.Procname.pp pname ;
+    L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Procname.pp pname ;
     L.d_increase_indent () ;
     L.d_strln "when starting from pre:" ;
     Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
@@ -865,7 +865,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
       let source = (Procdesc.get_loc (ProcCfg.Exceptional.proc_desc proc_cfg)).file in
       let filename =
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
-          [Typ.Procname.to_filename pname]
+          [Procname.to_filename pname]
       in
       if Config.write_dotty then DotBiabduction.emit_specs_to_file filename specs ;
       (specs, BiabductionSummary.RE_EXECUTION)
@@ -880,7 +880,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
 
 
 let set_current_language proc_desc =
-  let language = Typ.Procname.get_language (Procdesc.get_proc_name proc_desc) in
+  let language = Procname.get_language (Procdesc.get_proc_name proc_desc) in
   Language.curr_language := language
 
 
@@ -1123,8 +1123,7 @@ let perform_transition proc_cfg tenv proc_name summary =
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node ;
         BiabductionConfig.allow_leak := allow_leak ;
-        L.(debug Analysis Medium)
-          "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name ;
+        L.(debug Analysis Medium) "Error in collect_preconditions for %a@." Procname.pp proc_name ;
         let error = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ error.name.IssueType.unique_id in
         L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;

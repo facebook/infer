@@ -33,7 +33,7 @@ let get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname =
   | Some callee_purity ->
       callee_purity
   | None -> (
-      debug "No model for %a \n" Typ.Procname.pp callee_pname ;
+      debug "No model for %a \n" Procname.pp callee_pname ;
       (* If there is no model, invoke purity analysis to see if function is pure *)
       match get_callee_purity callee_pname with
       | Some purity_summary ->

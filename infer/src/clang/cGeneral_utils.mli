@@ -15,7 +15,7 @@ val add_no_duplicates_fields : Struct.field -> Struct.field list -> Struct.field
 
 val append_no_duplicates_fields : Struct.field list -> Struct.field list -> Struct.field list
 
-val append_no_duplicates_methods : Typ.Procname.t list -> Typ.Procname.t list -> Typ.Procname.t list
+val append_no_duplicates_methods : Procname.t list -> Procname.t list -> Procname.t list
 
 val swap_elements_list : 'a list -> 'a list
 
@@ -42,8 +42,8 @@ val mk_sil_var :
      CFrontend_config.translation_unit_context
   -> Clang_ast_t.named_decl_info
   -> var_info option
-  -> Typ.Procname.t
-  -> Typ.Procname.t
+  -> Procname.t
+  -> Procname.t
   -> Pvar.t
 
 val is_cpp_translation : CFrontend_config.translation_unit_context -> bool

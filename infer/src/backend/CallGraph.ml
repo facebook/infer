@@ -8,9 +8,9 @@ open! IStd
 module F = Format
 
 module type NodeSig = sig
-  type t = private {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
+  type t = private {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
 
-  val make : int -> Typ.Procname.t -> int list -> t
+  val make : int -> Procname.t -> int list -> t
 
   val add_successor : t -> int -> unit
 
@@ -22,7 +22,7 @@ module type NodeSig = sig
 end
 
 module Node : NodeSig = struct
-  type t = {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
+  type t = {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
 
   let make id pname successors = {id; pname; successors; flag= false}
 
@@ -37,13 +37,13 @@ module Node : NodeSig = struct
     let pp_edge fmt src dst = F.fprintf fmt "  %a -> %a ;@\n" pp_id src pp_id dst in
     let pp_flag fmt flag = F.fprintf fmt "%B" flag in
     F.fprintf fmt "  %a [ label = %S, flag = %a ];@\n" pp_id id
-      (F.asprintf "%a" Typ.Procname.pp pname)
+      (F.asprintf "%a" Procname.pp pname)
       pp_flag flag ;
     List.iter successors ~f:(pp_edge fmt id) ;
     F.pp_print_newline fmt ()
 end
 
-module IdMap = Typ.Procname.Hash
+module IdMap = Procname.Hash
 module NodeMap = Caml.Hashtbl.Make (Int)
 
 (** [node_map] is a map from ids (unique ints) to nodes corresponding to defined procedures.

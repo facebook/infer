@@ -480,7 +480,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
     | Some method_decl ->
         CType_decl.CProcname.from_decl_for_linters method_decl
     | None ->
-        Typ.Procname.Linters_dummy_method
+        Procname.Linters_dummy_method
   in
   let issue_log', errlog = IssueLog.get_or_add ~proc:procname !issue_log in
   issue_log := issue_log' ;

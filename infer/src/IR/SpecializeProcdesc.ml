@@ -104,7 +104,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
       when call_flags.CallFlags.cf_virtual && redirect_typename id <> None ->
         let redirected_typename = Option.value_exn (redirect_typename id) in
         let redirected_typ = mk_ptr_typ redirected_typename in
-        let redirected_pname = Typ.Procname.replace_class callee_pname redirected_typename in
+        let redirected_pname = Procname.replace_class callee_pname redirected_typename in
         let args =
           let other_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
           (Exp.Var id, redirected_typ) :: other_args
@@ -152,8 +152,8 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
         result
     | Unequal_lengths ->
         L.(debug Analysis Medium)
-          "Call mismatch: method %a has %i paramters but is called with %i arguments@."
-          Typ.Procname.pp resolved_pname
+          "Call mismatch: method %a has %i paramters but is called with %i arguments@." Procname.pp
+          resolved_pname
           (List.length callee_attributes.formals)
           (List.length args) ;
         raise UnmatchedParameters
@@ -171,7 +171,7 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
           Logging.die InternalError
             "specialize_types should only be called with defined procedures, but we cannot find \
              the captured file of procname %a"
-            Typ.Procname.pp pname
+            Procname.pp pname
     else callee_attributes.translation_unit
   in
   let resolved_attributes =
@@ -185,7 +185,7 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
   let resolved_proc_desc = with_formals_types_proc callee_pdesc resolved_proc_desc substitutions in
   (* The attributes here are used to retrieve the per-file type environment for Clang languages.
      The analysis for Java is using a global type environment *)
-  if not (Typ.Procname.is_java resolved_pname) then
+  if not (Procname.is_java resolved_pname) then
     Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
   resolved_proc_desc
 
@@ -298,7 +298,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   (* Substitution from a block parameter to the block name and the new formals
      that correspond to the captured variables *)
-  let substitutions : (Typ.Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t =
+  let substitutions : (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t =
     List.fold2_exn callee_attributes.formals block_args ~init:Mangled.Map.empty
       ~f:(fun subts (param_name, _) block_arg_opt ->
         match block_arg_opt with
@@ -341,7 +341,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
         Logging.die InternalError
           "specialize_with_block_args ahould only be called with defined procedures, but we cannot \
            find the captured file of procname %a"
-          Typ.Procname.pp pname
+          Procname.pp pname
   in
   let resolved_attributes =
     { callee_attributes with

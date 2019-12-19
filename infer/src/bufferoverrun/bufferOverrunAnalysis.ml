@@ -27,7 +27,7 @@ end)
 
 type summary_and_formals = BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list
 
-type get_proc_summary_and_formals = Typ.Procname.t -> summary_and_formals option
+type get_proc_summary_and_formals = Procname.t -> summary_and_formals option
 
 type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv: OndemandEnv.t}
 
@@ -140,17 +140,13 @@ module TransferFunctions = struct
 
 
   let is_external pname =
-    match pname with
-    | Typ.Procname.Java java_pname ->
-        Typ.Procname.Java.is_external java_pname
-    | _ ->
-        false
+    match pname with Procname.Java java_pname -> Procname.Java.is_external java_pname | _ -> false
 
 
   let is_non_static pname =
     match pname with
-    | Typ.Procname.Java java_pname ->
-        not (Typ.Procname.Java.is_static java_pname)
+    | Procname.Java java_pname ->
+        not (Procname.Java.is_static java_pname)
     | _ ->
         false
 
@@ -159,7 +155,7 @@ module TransferFunctions = struct
          Typ.IntegerWidths.t
       -> Ident.t * Typ.t
       -> (Pvar.t * Typ.t) list
-      -> Typ.Procname.t
+      -> Procname.t
       -> (Exp.t * Typ.t) list
       -> Dom.Mem.t
       -> BufferOverrunAnalysisSummary.t
@@ -186,18 +182,18 @@ module TransferFunctions = struct
 
   let is_java_enum_values ~caller_pname ~callee_pname =
     match
-      (Typ.Procname.get_class_type_name caller_pname, Typ.Procname.get_class_type_name callee_pname)
+      (Procname.get_class_type_name caller_pname, Procname.get_class_type_name callee_pname)
     with
     | Some caller_class_name, Some callee_class_name
       when Typ.equal_name caller_class_name callee_class_name ->
-        Typ.Procname.is_java_class_initializer caller_pname
-        && String.equal (Typ.Procname.get_method callee_pname) "values"
+        Procname.is_java_class_initializer caller_pname
+        && String.equal (Procname.get_method callee_pname) "values"
     | _, _ ->
         false
 
 
   let assign_java_enum_values id callee_pname mem =
-    match Typ.Procname.get_class_type_name callee_pname with
+    match Procname.get_class_type_name callee_pname with
     | Some (JavaClass class_name as typename) ->
         let class_var = Loc.of_var (Var.of_pvar (Pvar.mk_global class_name)) in
         let fn = Fieldname.make typename "$VALUES" in
@@ -379,14 +375,14 @@ module TransferFunctions = struct
                   callee_exit_mem location
             | None ->
                 (* This may happen for procedures with a biabduction model too. *)
-                L.d_printfln_escaped "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
+                L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
                 if is_external callee_pname then (
                   L.(debug BufferOverrun Verbose)
-                    "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                    "/!\\ External call to unknown  %a \n\n" Procname.pp callee_pname ;
                   assign_symbolic_pname_value callee_pname ret location mem )
                 else if is_non_static callee_pname then (
                   L.(debug BufferOverrun Verbose)
-                    "/!\\ Non-static call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                    "/!\\ Non-static call to unknown  %a \n\n" Procname.pp callee_pname ;
                   assign_symbolic_pname_value callee_pname ret location mem )
                 else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
@@ -438,9 +434,9 @@ let compute_invariant_map :
 let cached_compute_invariant_map =
   (* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily keeps invariant maps around) *)
   let module WeakInvMapHashTbl = Caml.Weak.Make (struct
-    type t = Typ.Procname.t * invariant_map option
+    type t = Procname.t * invariant_map option
 
-    let equal (pname1, _) (pname2, _) = Typ.Procname.equal pname1 pname2
+    let equal (pname1, _) (pname2, _) = Procname.equal pname1 pname2
 
     let hash (pname, _) = Hashtbl.hash pname
   end) in

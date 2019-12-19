@@ -8,14 +8,14 @@ open! IStd
 module F = Format
 
 type t =
-  | Call of Typ.Procname.t
+  | Call of Procname.t
   | Model of string
-  | SkippedKnownCall of Typ.Procname.t
+  | SkippedKnownCall of Procname.t
   | SkippedUnknownCall of Exp.t
 [@@deriving compare]
 
 let pp_config ~verbose fmt =
-  let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
+  let pp_proc_name = if verbose then Procname.pp else Procname.describe in
   function
   | Call proc_name ->
       F.fprintf fmt "`%a`" pp_proc_name proc_name

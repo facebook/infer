@@ -9,11 +9,11 @@ open! IStd
 module F = Format
 module L = Logging
 
-type call = Direct of Typ.Procname.t | Indirect of HilExp.AccessExpression.t [@@deriving compare]
+type call = Direct of Procname.t | Indirect of HilExp.AccessExpression.t [@@deriving compare]
 
 let pp_call fmt = function
   | Direct pname ->
-      Typ.Procname.pp fmt pname
+      Procname.pp fmt pname
   | Indirect access_expr ->
       F.fprintf fmt "*%a" HilExp.AccessExpression.pp access_expr
 
@@ -70,7 +70,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       , (target_exp, _) :: (Sizeof {typ= cast_typ}, _) :: _
       , loc
       , _ )
-    when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
+    when Procname.equal callee_pname BuiltinDecl.__cast ->
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store {e1= lhs_exp; typ; e2= rhs_exp; loc} ->
       let lhs_access_expr =

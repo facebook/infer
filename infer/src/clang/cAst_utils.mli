@@ -66,9 +66,9 @@ type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 type procname_from_decl =
      ?tenv:Tenv.t
   -> ?block_return_type:Clang_ast_t.qual_type
-  -> ?outer_proc:Typ.Procname.t
+  -> ?outer_proc:Procname.t
   -> Clang_ast_t.decl
-  -> Typ.Procname.t
+  -> Procname.t
 
 val qual_type_of_decl_ptr : Clang_ast_t.pointer -> Clang_ast_t.qual_type
 

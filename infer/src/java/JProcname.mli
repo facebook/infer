@@ -33,13 +33,13 @@ module JNI : sig
 
     val parse_method_str : string -> t list * t
 
-    val to_java_type : t -> Typ.Procname.Java.java_type
+    val to_java_type : t -> Procname.Java.java_type
 
     val pp : Format.formatter -> t -> unit
   end
 end
 
 val create_procname :
-  classname:string -> methodname:string -> signature:string -> use_signature:bool -> Typ.Procname.t
+  classname:string -> methodname:string -> signature:string -> use_signature:bool -> Procname.t
 
-val make_void_signature_procname : classname:string -> methodname:string -> Typ.Procname.t
+val make_void_signature_procname : classname:string -> methodname:string -> Procname.t

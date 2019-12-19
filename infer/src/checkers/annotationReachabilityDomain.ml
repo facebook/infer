@@ -7,7 +7,7 @@
 
 open! IStd
 module CallSites = AbstractDomain.FiniteSetOfPPSet (CallSite.Set)
-module SinkMap = AbstractDomain.MapOfPPMap (Typ.Procname.Map) (CallSites)
+module SinkMap = AbstractDomain.MapOfPPMap (Procname.Map) (CallSites)
 include AbstractDomain.Map (Annot) (SinkMap)
 
 let add_call_site annot sink call_site annot_map =

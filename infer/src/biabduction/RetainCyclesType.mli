@@ -13,7 +13,7 @@ type retain_cycle_field = {rc_field_name: Fieldname.t; rc_field_inst: Predicates
 
 type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 
-type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Typ.Procname.t * Pvar.t
+type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Procname.t * Pvar.t
 
 (** A retain cycle is a non-empty list of paths. It also contains a pointer to the head of the list
     to model the cycle structure. The next element from the end of the list is the head. *)

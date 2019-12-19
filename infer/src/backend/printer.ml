@@ -131,7 +131,7 @@ end = struct
         line ;
       F.fprintf fmt "PROC: %a LINE: %a@\n"
         (Io_infer.Html.pp_proc_link [".."] proc_name)
-        (Escape.escape_xml (Typ.Procname.to_string proc_name))
+        (Escape.escape_xml (Procname.to_string proc_name))
         (Io_infer.Html.pp_line_link source [".."])
         line ;
       F.fprintf fmt "<br>PREDS:@\n" ;
@@ -174,10 +174,10 @@ end = struct
     let source = loc.file in
     let nodes = List.sort ~compare:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
     let linenum = loc.Location.line in
-    let fd, fmt = Io_infer.Html.create source [Typ.Procname.to_filename pname] in
+    let fd, fmt = Io_infer.Html.create source [Procname.to_filename pname] in
     F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
       (Io_infer.Html.pp_line_link source
-         ~text:(Some (Escape.escape_xml (Typ.Procname.to_string pname)))
+         ~text:(Some (Escape.escape_xml (Procname.to_string pname)))
          [])
       linenum ;
     pp_node_link_seq [] ~description:true fmt nodes ;
@@ -257,7 +257,7 @@ end = struct
               match Procdesc.Node.get_kind n with
               | Procdesc.Node.Start_node ->
                   let proc_name = Procdesc.Node.get_proc_name n in
-                  let proc_name_escaped = Escape.escape_xml (Typ.Procname.to_string proc_name) in
+                  let proc_name_escaped = Escape.escape_xml (Procname.to_string proc_name) in
                   if Summary.OnDisk.get proc_name |> Option.is_some then (
                     F.pp_print_char fmt ' ' ;
                     let label = F.asprintf "summary for %s" proc_name_escaped in
@@ -309,9 +309,9 @@ end = struct
                 if is_whitelisted file then (
                   let pdescs_in_file =
                     try Hashtbl.find pdescs_in_source file
-                    with Caml.Not_found -> Typ.Procname.Map.empty
+                    with Caml.Not_found -> Procname.Map.empty
                   in
-                  let pdescs_in_file = Typ.Procname.Map.add proc_name proc_desc pdescs_in_file in
+                  let pdescs_in_file = Procname.Map.add proc_name proc_desc pdescs_in_file in
                   Hashtbl.replace pdescs_in_source file pdescs_in_file ;
                   SourceFile.Set.add file files )
                 else files
@@ -324,7 +324,7 @@ end = struct
         let pdescs_in_file =
           match Hashtbl.find pdescs_in_source file with
           | pdescs_map ->
-              Typ.Procname.Map.bindings pdescs_map |> List.map ~f:snd
+              Procname.Map.bindings pdescs_map |> List.map ~f:snd
           | exception Caml.Not_found ->
               []
         in

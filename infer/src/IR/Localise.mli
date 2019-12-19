@@ -63,13 +63,13 @@ val error_desc_get_dotty : error_desc -> string option
 (** dereference strings used to explain a dereference action in an error message *)
 type deref_str
 
-val deref_str_null : Typ.Procname.t option -> deref_str
+val deref_str_null : Procname.t option -> deref_str
 (** dereference strings for null dereference *)
 
-val deref_str_nullable : Typ.Procname.t option -> string -> deref_str
+val deref_str_nullable : Procname.t option -> string -> deref_str
 (** dereference strings for null dereference due to Nullable annotation *)
 
-val deref_str_undef : Typ.Procname.t * Location.t -> deref_str
+val deref_str_undef : Procname.t * Location.t -> deref_str
 (** dereference strings for an undefined value coming from the given procedure *)
 
 val deref_str_freed : PredSymb.res_action -> deref_str
@@ -81,7 +81,7 @@ val deref_str_dangling : PredSymb.dangling_kind option -> deref_str
 val deref_str_array_bound : IntLit.t option -> IntLit.t option -> deref_str
 (** dereference strings for an array out of bound access *)
 
-val deref_str_nil_argument_in_variadic_method : Typ.Procname.t -> int -> int -> deref_str
+val deref_str_nil_argument_in_variadic_method : Procname.t -> int -> int -> deref_str
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
 
 val deref_str_pointer_size_mismatch : Typ.t -> Typ.t -> deref_str
@@ -94,11 +94,11 @@ type access =
   | Initialized_automatically
   | Returned_from_call of int
 
-val nullable_annotation_name : Typ.Procname.t -> string
+val nullable_annotation_name : Procname.t -> string
 (** Name of the nullable annotation *)
 
 val dereference_string :
-  Typ.Procname.t -> deref_str -> string -> access option -> Location.t -> error_desc
+  Procname.t -> deref_str -> string -> access option -> Location.t -> error_desc
 
 val parameter_field_not_null_checked_desc : error_desc -> Exp.t -> error_desc
 
@@ -107,22 +107,20 @@ val is_parameter_not_null_checked_desc : error_desc -> bool
 val is_field_not_null_checked_desc : error_desc -> bool
 
 val desc_allocation_mismatch :
-     Typ.Procname.t * Typ.Procname.t * Location.t
-  -> Typ.Procname.t * Typ.Procname.t * Location.t
-  -> error_desc
+  Procname.t * Procname.t * Location.t -> Procname.t * Procname.t * Location.t -> error_desc
 
 val desc_class_cast_exception :
-  Typ.Procname.t option -> string -> string -> string option -> Location.t -> error_desc
+  Procname.t option -> string -> string -> string option -> Location.t -> error_desc
 
 val desc_condition_always_true_false : IntLit.t -> string option -> Location.t -> error_desc
 
-val desc_deallocate_stack_variable : string -> Typ.Procname.t -> Location.t -> error_desc
+val desc_deallocate_stack_variable : string -> Procname.t -> Location.t -> error_desc
 
-val desc_deallocate_static_memory : string -> Typ.Procname.t -> Location.t -> error_desc
+val desc_deallocate_static_memory : string -> Procname.t -> Location.t -> error_desc
 
 val desc_divide_by_zero : string -> Location.t -> error_desc
 
-val desc_empty_vector_access : Typ.Procname.t option -> string -> Location.t -> error_desc
+val desc_empty_vector_access : Procname.t option -> string -> Location.t -> error_desc
 
 val is_empty_vector_access_desc : error_desc -> bool
 
@@ -145,7 +143,7 @@ val desc_custom_error : Location.t -> error_desc
 (** kind of precondition not met *)
 type pnm_kind = Pnm_bounds | Pnm_dangling
 
-val desc_precondition_not_met : pnm_kind option -> Typ.Procname.t -> Location.t -> error_desc
+val desc_precondition_not_met : pnm_kind option -> Procname.t -> Location.t -> error_desc
 
 val desc_retain_cycle : string -> Location.t -> string option -> error_desc
 
@@ -153,9 +151,9 @@ val desc_registered_observer_being_deallocated : Pvar.t -> Location.t -> error_d
 
 val desc_stack_variable_address_escape : Pvar.t -> string option -> Location.t -> error_desc
 
-val desc_skip_function : Typ.Procname.t -> error_desc
+val desc_skip_function : Procname.t -> error_desc
 
-val desc_inherently_dangerous_function : Typ.Procname.t -> error_desc
+val desc_inherently_dangerous_function : Procname.t -> error_desc
 
 val desc_unary_minus_applied_to_unsigned_expression :
   string option -> string -> Location.t -> error_desc

@@ -160,8 +160,8 @@ let make_error_trace astate ap ud =
 
 let pretty_field_name proc_data field_name =
   match Summary.get_proc_name proc_data.ProcData.summary with
-  | Typ.Procname.Java jproc_name ->
-      let proc_class_name = Typ.Procname.Java.get_class_name jproc_name in
+  | Procname.Java jproc_name ->
+      let proc_class_name = Procname.Java.get_class_name jproc_name in
       let field_class_name = Fieldname.get_class_name field_name |> Typ.Name.name in
       if String.equal proc_class_name field_class_name then Fieldname.get_field_name field_name
       else Fieldname.to_simplified_string field_name
@@ -173,7 +173,7 @@ let pretty_field_name proc_data field_name =
 (* Checks if a field name stems from a class outside the domain of what is analyzed by Infer *)
 let is_outside_codebase proc_name field_name =
   match proc_name with
-  | Typ.Procname.Java _ ->
+  | Procname.Java _ ->
       Typ.Name.Java.is_external_classname (Typ.Name.name (Fieldname.get_class_name field_name))
   | _ ->
       false
@@ -232,5 +232,5 @@ let checker {Callbacks.summary; exe_env} =
     | Some post ->
         report post proc_data
     | None ->
-        L.internal_error "Analyzer failed to compute post for %a@." Typ.Procname.pp proc_name ) ;
+        L.internal_error "Analyzer failed to compute post for %a@." Procname.pp proc_name ) ;
     summary

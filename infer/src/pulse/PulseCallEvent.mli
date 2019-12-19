@@ -9,9 +9,9 @@ open! IStd
 module F = Format
 
 type t =
-  | Call of Typ.Procname.t  (** known function with summary *)
+  | Call of Procname.t  (** known function with summary *)
   | Model of string  (** hardcoded model *)
-  | SkippedKnownCall of Typ.Procname.t  (** known function without summary *)
+  | SkippedKnownCall of Procname.t  (** known function without summary *)
   | SkippedUnknownCall of Exp.t  (** couldn't link the expression to a proc name *)
 [@@deriving compare]
 

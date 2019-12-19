@@ -28,7 +28,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CMethod_trans.get_objc_method_data obj_c_message_expr_info
     in
     let is_instance = mc_type <> CMethod_trans.MCStatic in
-    let objc_method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
+    let objc_method_kind = Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
     let method_kind =
       if is_instance then ClangMethodKind.OBJC_INSTANCE else ClangMethodKind.OBJC_CLASS
     in
@@ -54,8 +54,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let predefined_ms_opt =
       match proc_name with
-      | Typ.Procname.ObjC_Cpp objc_cpp ->
-          let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
+      | Procname.ObjC_Cpp objc_cpp ->
+          let class_name = Procname.ObjC_Cpp.get_class_type_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
             CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind
       | _ ->
@@ -481,9 +481,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let function_attr_opt = Option.bind decl_opt ~f:get_annotate_attr_arg in
     match function_attr_opt with
     | Some attr when CTrans_models.is_modeled_attribute attr ->
-        Some (Typ.Procname.from_string_c_fun attr)
+        Some (Procname.from_string_c_fun attr)
     | _ when CTrans_models.is_modeled_builtin name ->
-        Some (Typ.Procname.from_string_c_fun (CFrontend_config.infer ^ name))
+        Some (Procname.from_string_c_fun (CFrontend_config.infer ^ name))
     | _
       when String.equal name CFrontend_config.malloc
            && CGeneral_utils.is_objc_extension trans_unit_ctx ->
@@ -634,10 +634,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | Some ms ->
                 let procname = ms.CMethodSignature.name in
                 let new_method_name =
-                  Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
+                  Config.clang_inner_destructor_prefix ^ Procname.get_method procname
                 in
                 let ms' =
-                  {ms with name= Typ.Procname.objc_cpp_replace_method_name procname new_method_name}
+                  {ms with name= Procname.objc_cpp_replace_method_name procname new_method_name}
                 in
                 ignore
                   (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
@@ -2568,8 +2568,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       check_destructor_translation destr_trans_result ;
       let is_destructor =
         match procname with
-        | Typ.Procname.ObjC_Cpp cpp_pname ->
-            Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+        | Procname.ObjC_Cpp cpp_pname ->
+            Procname.ObjC_Cpp.is_destructor cpp_pname
         | _ ->
             false
       in
@@ -3066,13 +3066,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and gccAsmStmt_trans trans_state stmt_info stmts =
-    let pname = Typ.Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
+    let pname = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
     call_function_with_args Procdesc.Node.GCCAsmStmt pname trans_state stmt_info (Typ.mk Tvoid)
       stmts
 
 
   and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
-    let pname = Typ.Procname.from_string_c_fun CFrontend_config.infer_generic_selection_expr in
+    let pname = Procname.from_string_c_fun CFrontend_config.infer_generic_selection_expr in
     call_function_with_args Procdesc.Node.GenericSelectionExpr pname trans_state stmt_info
       (Typ.mk Tvoid) stmts
 
@@ -3083,7 +3083,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and cxxPseudoDestructorExpr_trans () =
-    let fun_name = Typ.Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     mk_trans_result (Exp.Const (Const.Cfun fun_name), Typ.mk Tvoid) empty_control
 
 
@@ -3143,7 +3143,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmt_info
     in
     let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
-    let fun_name = Typ.Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = {trans_state_pri with succ_nodes= []} in
     let res_trans_subexpr_list = List.map ~f:(instruction trans_state_param) stmts in
@@ -3807,8 +3807,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let is_destructor =
       match procname with
-      | Typ.Procname.ObjC_Cpp cpp_pname ->
-          Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+      | Procname.ObjC_Cpp cpp_pname ->
+          Procname.ObjC_Cpp.is_destructor cpp_pname
       | _ ->
           false
     in

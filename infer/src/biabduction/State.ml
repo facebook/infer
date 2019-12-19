@@ -223,7 +223,7 @@ let get_path_pos () =
     | Some (_, _, pdesc) ->
         Procdesc.get_proc_name pdesc
     | None ->
-        Typ.Procname.from_string_c_fun "unknown_procedure"
+        Procname.from_string_c_fun "unknown_procedure"
   in
   let nid = Procdesc.Node.get_id (get_node_exn ()) in
   (pname, (nid :> int))
@@ -260,7 +260,7 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
+  Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
 
 let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =

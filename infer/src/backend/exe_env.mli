@@ -14,14 +14,14 @@ open! IStd
 type file_data
 
 type t = private
-  { proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
+  { proc_map: file_data Procname.Hash.t  (** map from procedure name to file data *)
   ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *) }
 
 val mk : unit -> t
 (** Create a new cache *)
 
-val get_tenv : t -> Typ.Procname.t -> Tenv.t
+val get_tenv : t -> Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
 
-val get_integer_type_widths : t -> Typ.Procname.t -> Typ.IntegerWidths.t
+val get_integer_type_widths : t -> Procname.t -> Typ.IntegerWidths.t
 (** return the integer type widths associated with the procedure *)

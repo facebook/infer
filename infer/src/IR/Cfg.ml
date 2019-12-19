@@ -11,15 +11,15 @@ module L = Logging
 module F = Format
 
 (** data type for the control flow graph *)
-type t = Procdesc.t Typ.Procname.Hash.t
+type t = Procdesc.t Procname.Hash.t
 
-let create () = Typ.Procname.Hash.create 16
+let create () = Procname.Hash.create 16
 
 let iter_over_sorted_procs cfg ~f =
   let compare_proc_desc_by_proc_name pdesc1 pdesc2 =
-    Typ.Procname.compare (Procdesc.get_proc_name pdesc1) (Procdesc.get_proc_name pdesc2)
+    Procname.compare (Procdesc.get_proc_name pdesc1) (Procdesc.get_proc_name pdesc2)
   in
-  Typ.Procname.Hash.fold (fun _ pdesc acc -> pdesc :: acc) cfg []
+  Procname.Hash.fold (fun _ pdesc acc -> pdesc :: acc) cfg []
   |> List.sort ~compare:compare_proc_desc_by_proc_name
   |> List.iter ~f
 
@@ -27,16 +27,16 @@ let iter_over_sorted_procs cfg ~f =
 let get_all_defined_proc_names cfg =
   let procs = ref [] in
   let f pname pdesc = if Procdesc.is_defined pdesc then procs := pname :: !procs in
-  Typ.Procname.Hash.iter f cfg ; !procs
+  Procname.Hash.iter f cfg ; !procs
 
 
 (** Create a new procdesc *)
 let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   let pdesc = Procdesc.from_proc_attributes proc_attributes in
   let pname = proc_attributes.proc_name in
-  if Typ.Procname.Hash.mem cfg pname then
+  if Procname.Hash.mem cfg pname then
     L.die InternalError "Creating two procdescs for the same procname." ;
-  Typ.Procname.Hash.add cfg pname pdesc ;
+  Procname.Hash.add cfg pname pdesc ;
   pdesc
 
 
@@ -53,7 +53,7 @@ let store source_file cfg =
     Procdesc.set_attributes proc_desc attributes' ;
     Attributes.store ~proc_desc:(Some proc_desc) attributes'
   in
-  Typ.Procname.Hash.iter save_proc cfg
+  Procname.Hash.iter save_proc cfg
 
 
 (** Inline a synthetic (access or bridge) method. *)
@@ -121,11 +121,10 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
 let proc_inline_synthetic_methods cfg pdesc : unit =
   let instr_inline_synthetic_method _node instr =
     match instr with
-    | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _)
-      -> (
-      match Typ.Procname.Hash.find cfg pn with
+    | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun (Procname.Java java_pn as pn)), etl, loc, _) -> (
+      match Procname.Hash.find cfg pn with
       | pd ->
-          let is_access = Typ.Procname.Java.is_access_method java_pn in
+          let is_access = Procname.Java.is_access_method java_pn in
           let attributes = Procdesc.get_attributes pd in
           let is_synthetic = attributes.is_synthetic_method in
           let is_bridge = attributes.is_bridge_method in
@@ -142,8 +141,8 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
 
 
 let inline_java_synthetic_methods cfg =
-  let f pname pdesc = if Typ.Procname.is_java pname then proc_inline_synthetic_methods cfg pdesc in
-  Typ.Procname.Hash.iter f cfg
+  let f pname pdesc = if Procname.is_java pname then proc_inline_synthetic_methods cfg pdesc in
+  Procname.Hash.iter f cfg
 
 
 let pp_proc_signatures fmt cfg =

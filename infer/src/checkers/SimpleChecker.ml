@@ -19,11 +19,11 @@ module type Spec = sig
   val initial : t
   (** implement the state the analysis should start from here *)
 
-  val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> t
+  val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Procname.t -> Tenv.t -> t
   (** implement how an instruction changes your state here. input is the previous state, current
       instruction, current node kind, current procedure and type environment. *)
 
-  val report : t -> Location.t -> Typ.Procname.t -> unit
+  val report : t -> Location.t -> Procname.t -> unit
   (** log errors here. input is a state, location where the state occurs in the source, and the
       current procedure. *)
 

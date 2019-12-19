@@ -25,7 +25,7 @@ type t =
   ; return_param_typ: Typ.t option
   ; outer_context: t option
         (** in case of objc blocks, the context of the method containing the block *)
-  ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
+  ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
         (** mapping from a statement to a list of variables, that go out of scope after the end of
@@ -53,6 +53,6 @@ val create_context :
   -> Clang_ast_t.decl list StmtMap.t
   -> t
 
-val add_block_static_var : t -> Typ.Procname.t -> Pvar.t * Typ.t -> unit
+val add_block_static_var : t -> Procname.t -> Pvar.t * Typ.t -> unit
 
-val get_outer_procname : t -> Typ.Procname.t
+val get_outer_procname : t -> Procname.t

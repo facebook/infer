@@ -43,7 +43,7 @@ module ProcName = struct
       ; -"__new_array" <>--> PurityDomain.pure
       ; -"__cast" <>--> PurityDomain.pure
       ; -"__variable_initialization" <>--> PurityDomain.pure
-      ; +(fun _ name -> BuiltinDecl.is_declared (Typ.Procname.from_string_c_fun name))
+      ; +(fun _ name -> BuiltinDecl.is_declared (Procname.from_string_c_fun name))
         <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_android "text.TextUtils" &:: "isEmpty" <>--> PurityDomain.pure
       ; +PatternMatch.implements_android "view.ViewGroup" &:: "getChildAt" <>--> PurityDomain.pure

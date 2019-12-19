@@ -12,4 +12,4 @@ open! IStd
 
 val is_core_lib_type : Typ.t -> bool
 
-val is_malloc_model : Typ.t -> Typ.Procname.t -> bool
+val is_malloc_model : Typ.t -> Procname.t -> bool

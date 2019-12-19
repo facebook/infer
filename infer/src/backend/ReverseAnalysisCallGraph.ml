@@ -9,7 +9,7 @@ open! IStd
 let register_summary graph summary =
   let caller_pname = Summary.get_proc_name summary in
   let callee_pnames = summary.Summary.callee_pnames in
-  Typ.Procname.Set.iter
+  Procname.Set.iter
     (fun callee_pname -> CallGraph.add_edge graph ~pname:callee_pname ~successor_pname:caller_pname)
     callee_pnames
 

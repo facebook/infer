@@ -117,7 +117,7 @@ module Node : sig
   val d_instrs : highlight:Sil.instr option -> t -> unit
   (** Dump instructions for the node, highlighting the given subinstruction if present *)
 
-  val dummy : Typ.Procname.t -> t
+  val dummy : Procname.t -> t
   (** Create a dummy node *)
 
   val equal : t -> t -> bool
@@ -156,7 +156,7 @@ module Node : sig
   val get_siblings : t -> t Sequence.t
   (** Get siblings of the current node *)
 
-  val get_proc_name : t -> Typ.Procname.t
+  val get_proc_name : t -> Procname.t
   (** Get the name of the procedure the node belongs to *)
 
   val get_succs : t -> t list
@@ -245,7 +245,7 @@ val get_nodes : t -> Node.t list
 
 val get_nodes_num : t -> int
 
-val get_proc_name : t -> Typ.Procname.t
+val get_proc_name : t -> Procname.t
 
 val get_ret_type : t -> Typ.t
 (** Return the return type of the procedure and type string *)
@@ -256,7 +256,7 @@ val get_ret_var : t -> Pvar.t
 
 val get_start_node : t -> Node.t
 
-val get_static_callees : t -> Typ.Procname.t list
+val get_static_callees : t -> Procname.t list
 (** get a list of unique static callees excluding self *)
 
 val is_defined : t -> bool
@@ -321,4 +321,4 @@ module SQLite : SqliteUtils.Data with type t = t option
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)
 
-val load : Typ.Procname.t -> t option
+val load : Procname.t -> t option

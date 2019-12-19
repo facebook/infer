@@ -90,7 +90,7 @@ let do_all_files sources program =
         Config.skip_analysis_in_path
     in
     is_path_matching (SourceFile.to_rel_path source_file)
-    || Inferconfig.skip_translation_matcher source_file Typ.Procname.empty_block
+    || Inferconfig.skip_translation_matcher source_file Procname.empty_block
   in
   let translate_source_file basename (package_opt, _) source_file =
     if not (skip source_file) then

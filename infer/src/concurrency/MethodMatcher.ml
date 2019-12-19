@@ -13,8 +13,8 @@ let template_arg = Str.regexp "<[^<>]*>"
 let rec strip_template_args str =
   if
     (not (String.contains str '<'))
-    || String.equal str Typ.Procname.Java.constructor_method_name
-    || String.equal str Typ.Procname.Java.class_initializer_method_name
+    || String.equal str Procname.Java.constructor_method_name
+    || String.equal str Procname.Java.class_initializer_method_name
   then str
   else
     let result = Str.global_replace template_arg "" str in
@@ -43,21 +43,21 @@ let call_matches ~search_superclasses ~method_prefix ~actuals_pred clazz methods
         Typ.Name.to_string tname |> strip_template_args |> String.equal target
       in
       fun tenv pname ->
-        Typ.Procname.get_class_type_name pname
+        Procname.get_class_type_name pname
         |> Option.exists ~f:(PatternMatch.supertype_exists tenv is_target)
     else fun _tenv pname ->
-      Typ.Procname.get_class_name pname |> Option.map ~f:strip_template_args
+      Procname.get_class_name pname |> Option.map ~f:strip_template_args
       |> Option.exists ~f:(String.equal clazz)
   in
   (fun tenv pn actuals ->
     actuals_pred actuals
     &&
-    let mthd = Typ.Procname.get_method pn |> strip_template_args in
+    let mthd = Procname.get_method pn |> strip_template_args in
     List.exists methods ~f:(method_matcher mthd) && class_matcher tenv pn )
   |> Staged.stage
 
 
-type t = Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+type t = Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 type record =
   { search_superclasses: bool

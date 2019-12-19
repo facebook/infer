@@ -7,7 +7,7 @@
 
 open! IStd
 
-type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
+type labeled_profiler_sample = string * Procname.Set.t [@@deriving compare]
 
 val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_sample -> bool
 

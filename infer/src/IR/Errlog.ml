@@ -13,8 +13,8 @@ module F = Format
 type node_tag =
   | Condition of bool
   | Exception of Typ.name
-  | Procedure_start of Typ.Procname.t
-  | Procedure_end of Typ.Procname.t
+  | Procedure_start of Procname.t
+  | Procedure_end of Procname.t
 
 (** Element of a loc trace *)
 type loc_trace_elem =
@@ -261,7 +261,7 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
   in
   ( if exn_developer then
     let issue =
-      let lang = Typ.Procname.get_language procname in
+      let lang = Procname.get_language procname in
       let clang_method_kind =
         match lang with
         | Language.Clang ->
@@ -275,7 +275,7 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
         ; clang_method_kind
         ; exception_triggered_location= error.ocaml_pos
         ; lang= Language.to_explicit_string lang
-        ; procedure_name= Typ.Procname.to_string procname
+        ; procedure_name= Procname.to_string procname
         ; source_location= loc }
     in
     EventLogger.log issue ) ;

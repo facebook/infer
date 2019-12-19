@@ -13,7 +13,7 @@ val add_models : string -> unit
 (** Adds the set of procnames for the models of Java libraries so that methods with similar names
     are skipped during the capture *)
 
-val is_model : Typ.Procname.t -> bool
+val is_model : Procname.t -> bool
 (** Check if there is a model for the given procname *)
 
 (** map entry for source files with potential basename collision within the same compiler call *)
@@ -46,11 +46,11 @@ val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface
 (** retrieve a Java node from the classname *)
 
 val add_missing_callee :
-  program -> Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit
+  program -> Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit
 (** add the class name of method signature to the list of callees *)
 
-val set_callee_translated : program -> Typ.Procname.t -> unit
+val set_callee_translated : program -> Procname.t -> unit
 (** set that the CFG for the procedure has been created *)
 
 val iter_missing_callees :
-  program -> f:(Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit) -> unit
+  program -> f:(Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit) -> unit

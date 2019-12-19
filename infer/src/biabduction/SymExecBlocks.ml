@@ -61,7 +61,7 @@ let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params 
          containing either a Closure or None. *)
       let block_args =
         List.map act_params ~f:(function
-          | Exp.Closure cl, _ when Typ.Procname.is_objc_block cl.name ->
+          | Exp.Closure cl, _ when Procname.is_objc_block cl.name ->
               Some cl
           | _ ->
               None )
@@ -71,11 +71,11 @@ let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params 
         let block_name_args =
           List.filter_map block_args ~f:(function
             | Some (cl : Exp.closure) ->
-                Some (Typ.Procname.block_name_of_procname cl.name)
+                Some (Procname.block_name_of_procname cl.name)
             | None ->
                 None )
         in
-        Typ.Procname.with_block_parameters pname block_name_args
+        Procname.with_block_parameters pname block_name_args
       in
       (* new procdesc cloned from the original one, where the block parameters have been
          replaced by the block arguments. The formals have also been expanded with the captured variables *)

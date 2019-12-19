@@ -197,7 +197,7 @@ let method_signature_names ms =
 
 
 let get_method_kind m =
-  if Javalib.is_static_method m then Typ.Procname.Java.Static else Typ.Procname.Java.Non_Static
+  if Javalib.is_static_method m then Procname.Java.Static else Procname.Java.Non_Static
 
 
 let create_fieldname cn fs =
@@ -282,9 +282,9 @@ let rec get_method_procname program tenv cn ms method_kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
   let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
   let proc_name_java =
-    Typ.Procname.Java.make class_name return_type_name method_name args_type_name method_kind
+    Procname.Java.make class_name return_type_name method_name args_type_name method_kind
   in
-  Typ.Procname.Java proc_name_java
+  Procname.Java proc_name_java
 
 
 (* create a mangled procname from an abstract or concrete method *)

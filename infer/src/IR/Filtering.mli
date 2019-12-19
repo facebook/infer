@@ -9,7 +9,7 @@ open! IStd
 
 type source_files_filter = SourceFile.t -> bool
 
-type procedures_filter = SourceFile.t -> Typ.Procname.t -> bool
+type procedures_filter = SourceFile.t -> Procname.t -> bool
 
 val source_files_filter : source_files_filter Lazy.t
 (** filter corresponding to `--source-files-filter` *)

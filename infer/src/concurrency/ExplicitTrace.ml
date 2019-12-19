@@ -26,7 +26,7 @@ module DefaultCallPrinter : CallPrinter = struct
   type t = CallSite.t
 
   let pp fmt callsite =
-    F.fprintf fmt "Method call: %a" (MF.wrap_monospaced Typ.Procname.pp) (CallSite.pname callsite)
+    F.fprintf fmt "Method call: %a" (MF.wrap_monospaced Procname.pp) (CallSite.pname callsite)
 end
 
 type 'a comparator = 'a -> Location.t -> 'a -> Location.t -> int

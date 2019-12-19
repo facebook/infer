@@ -66,7 +66,7 @@ module Allocsite = struct
   let is_unknown = function Unknown -> true | Symbol _ | Known _ | LiteralString _ -> false
 
   let make :
-         Typ.Procname.t
+         Procname.t
       -> node_hash:int
       -> inst_num:int
       -> dimension:int
@@ -75,7 +75,7 @@ module Allocsite = struct
       -> t =
    fun proc_name ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
     Known
-      { proc_name= Typ.Procname.to_string proc_name
+      { proc_name= Procname.to_string proc_name
       ; node_hash
       ; inst_num
       ; dimension

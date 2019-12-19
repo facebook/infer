@@ -259,8 +259,8 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
       in
       let msg =
         (* Java Only *)
-        if String.equal method_name Typ.Procname.Java.constructor_method_name then "constructor"
-        else if String.equal method_name Typ.Procname.Java.class_initializer_method_name then
+        if String.equal method_name Procname.Java.constructor_method_name then "constructor"
+        else if String.equal method_name Procname.Java.class_initializer_method_name then
           "class initializer"
         else "this function"
       in

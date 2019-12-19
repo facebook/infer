@@ -11,7 +11,7 @@ open! IStd
 
 val report_error :
      Tenv.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> Procdesc.t
   -> IssueType.t
   -> Location.t

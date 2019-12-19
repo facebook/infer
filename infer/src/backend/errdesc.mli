@@ -40,12 +40,12 @@ val explain_allocation_mismatch : PredSymb.res_action -> PredSymb.res_action -> 
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 
 val explain_array_access :
-  Typ.Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
+  Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
 (** Produce a description of the array access performed in the current instruction, if any. *)
 
 val explain_class_cast_exception :
      Tenv.t
-  -> Typ.Procname.t option
+  -> Procname.t option
   -> Exp.t
   -> Exp.t
   -> Exp.t
@@ -61,7 +61,7 @@ val explain_deallocate_constant_string : string -> PredSymb.res_action -> Locali
 (** Explain a deallocate constant string error *)
 
 val explain_dereference :
-     Typ.Procname.t
+     Procname.t
   -> Tenv.t
   -> ?use_buckets:bool
   -> ?is_nullable:bool
@@ -73,7 +73,7 @@ val explain_dereference :
 (** Produce a description of which expression is dereferenced in the current instruction, if any. *)
 
 val explain_dereference_as_caller_expression :
-     Typ.Procname.t
+     Procname.t
   -> Tenv.t
   -> ?use_buckets:bool
   -> Localise.deref_str

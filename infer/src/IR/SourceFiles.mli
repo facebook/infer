@@ -13,7 +13,7 @@ val add : SourceFile.t -> Cfg.t -> Tenv.per_file -> Typ.IntegerWidths.t option -
 val get_all : filter:Filtering.source_files_filter -> unit -> SourceFile.t list
 (** get all the source files in the database *)
 
-val proc_names_of_source : SourceFile.t -> Typ.Procname.t list
+val proc_names_of_source : SourceFile.t -> Procname.t list
 (** list of all the proc names (declared and defined) found in a source file *)
 
 val is_captured : SourceFile.t -> bool

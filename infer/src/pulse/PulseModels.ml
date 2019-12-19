@@ -339,7 +339,7 @@ end
 module ProcNameDispatcher = struct
   let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
-    let match_builtin builtin _ s = String.equal s (Typ.Procname.get_method builtin) in
+    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
       ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete

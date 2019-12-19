@@ -14,6 +14,6 @@ val iter_from_config : f:(Summary.t -> unit) -> unit
 (** Iterates over all sumaries from the .specs files unless a list of specs files has been passed on
     the command line *)
 
-val delete : Typ.Procname.t -> unit
+val delete : Procname.t -> unit
 (** Delete the .specs file associated with a summary and remove the summary from the caches in
     Summary.ml and ondemand.ml *)

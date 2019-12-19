@@ -7,7 +7,7 @@
 
 open! IStd
 
-type init = Typ.Procname.t * Procdesc.t
+type init = Procname.t * Procdesc.t
 
 let equal_class_opt = [%compare.equal: string option]
 
@@ -23,8 +23,8 @@ let final_typestates initializers_current_class tenv typecheck_proc =
         let same_class =
           let get_class_opt pn =
             match pn with
-            | Typ.Procname.Java pn_java ->
-                Some (Typ.Procname.Java.get_class_name pn_java)
+            | Procname.Java pn_java ->
+                Some (Procname.Java.get_class_name pn_java)
             | _ ->
                 None
           in
@@ -51,15 +51,15 @@ let final_typestates initializers_current_class tenv typecheck_proc =
   let initializers_recursive : init list =
     let initializers_base_case = initializers_current_class in
     let res = ref [] in
-    let seen = ref Typ.Procname.Set.empty in
+    let seen = ref Procname.Set.empty in
     let mark_seen (initializers : init list) : unit =
-      List.iter ~f:(fun (pn, _) -> seen := Typ.Procname.Set.add pn !seen) initializers ;
+      List.iter ~f:(fun (pn, _) -> seen := Procname.Set.add pn !seen) initializers ;
       res := !res @ initializers
     in
     let rec fixpoint initializers_old =
       let initializers_new = get_private_called initializers_old in
       let initializers_new' =
-        List.filter ~f:(fun (pn, _) -> not (Typ.Procname.Set.mem pn !seen)) initializers_new
+        List.filter ~f:(fun (pn, _) -> not (Procname.Set.mem pn !seen)) initializers_new
       in
       mark_seen initializers_new' ;
       if initializers_new' <> [] then fixpoint initializers_new'
@@ -101,11 +101,7 @@ let pname_and_pdescs_with tenv curr_pname get_procs_in_file f =
 
 
 let get_class pn =
-  match pn with
-  | Typ.Procname.Java pn_java ->
-      Some (Typ.Procname.Java.get_class_name pn_java)
-  | _ ->
-      None
+  match pn with Procname.Java pn_java -> Some (Procname.Java.get_class_name pn_java) | _ -> None
 
 
 (** Typestates after the current procedure and all initializer procedures. *)
@@ -134,7 +130,7 @@ let final_constructor_typestates_lazy tenv curr_pname get_procs_in_file typechec
   lazy
     (let constructors_current_class =
        pname_and_pdescs_with tenv curr_pname get_procs_in_file (fun (pname, _) ->
-           Typ.Procname.is_constructor pname
-           && equal_class_opt (get_class pname) (get_class curr_pname) )
+           Procname.is_constructor pname && equal_class_opt (get_class pname) (get_class curr_pname)
+       )
      in
      final_typestates constructors_current_class tenv typecheck_proc )

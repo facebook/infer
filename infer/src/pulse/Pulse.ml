@@ -54,8 +54,8 @@ module PulseTransferFunctions = struct
     (* injected destructors are precisely inserted where an object goes out of scope *)
     if flags.cf_injected_destructor then
       match (proc_name_of_call call_exp, actuals) with
-      | Some (Typ.Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
-        when Pvar.is_local pvar && not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
+      | Some (Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
+        when Pvar.is_local pvar && not (Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
           Some (pvar, typ)
       | _ ->

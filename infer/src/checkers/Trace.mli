@@ -78,7 +78,7 @@ module type S = sig
       reported paths to ones introduced by the call at [cur_site] *)
 
   val get_reportable_paths :
-    ?cur_site:CallSite.t -> t -> trace_of_pname:(Typ.Procname.t -> t) -> path list
+    ?cur_site:CallSite.t -> t -> trace_of_pname:(Procname.t -> t) -> path list
   (** get a path for each of the reportable source -> sink flows in this trace. specifying
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
 
@@ -121,7 +121,7 @@ module type S = sig
 
   val pp : F.formatter -> t -> unit
 
-  val pp_path : Typ.Procname.t -> F.formatter -> path -> unit
+  val pp_path : Procname.t -> F.formatter -> path -> unit
   (** pretty-print a path in the context of the given procname *)
 end
 

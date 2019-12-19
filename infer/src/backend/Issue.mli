@@ -8,7 +8,7 @@
 open! IStd
 
 type t =
-  { proc_name: Typ.Procname.t
+  { proc_name: Procname.t
   ; proc_location: Location.t
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }

@@ -11,7 +11,7 @@ module F = Format
 
 let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
   F.fprintf fmt "\"%s_%d\""
-    (Escape.escape_dotty (Typ.Procname.to_filename pname))
+    (Escape.escape_dotty (Procname.to_filename pname))
     (Procdesc.Node.get_id n :> int)
 
 
@@ -32,7 +32,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
     match Procdesc.Node.get_kind n with
     | Start_node ->
         let pname = Procdesc.Node.get_proc_name n in
-        let pname_string = Escape.escape_dotty (Typ.Procname.to_string pname) in
+        let pname_string = Escape.escape_dotty (Procname.to_string pname) in
         let attributes = Procdesc.get_attributes pdesc in
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string pp_etlist
           (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
@@ -43,7 +43,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
           Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation
     | Exit_node ->
         let pname = Procdesc.Node.get_proc_name n in
-        Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
+        Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Procname.to_string pname))
     | Join_node ->
         Format.pp_print_char fmt '+'
     | Prune_node (is_true_branch, if_kind, _) ->
@@ -135,7 +135,7 @@ let emit_proc_desc source proc_desc =
   let filename =
     let db_name =
       DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
-        [Typ.Procname.to_filename (Procdesc.get_proc_name proc_desc)]
+        [Procname.to_filename (Procdesc.get_proc_name proc_desc)]
     in
     DB.filename_to_string db_name ^ ".dot"
   in

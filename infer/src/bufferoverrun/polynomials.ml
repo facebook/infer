@@ -67,7 +67,7 @@ module type NonNegativeSymbol = sig
   val mask_min_max_constant : t -> t
 
   val subst :
-       Typ.Procname.t
+       Procname.t
     -> Location.t
     -> t
     -> Bound.eval_sym
@@ -454,7 +454,7 @@ module TopTrace = struct
   type t =
     | UnboundedLoop of {bound_trace: Bounds.BoundTrace.t}
     | UnboundedSymbol of {location: Location.t; symbol: S.t; bound_trace: Bounds.BoundTrace.t}
-    | Call of {location: Location.t; callee_pname: Typ.Procname.t; callee_trace: t}
+    | Call of {location: Location.t; callee_pname: Procname.t; callee_trace: t}
   [@@deriving compare]
 
   let rec length = function
@@ -481,7 +481,7 @@ module TopTrace = struct
         F.fprintf f "%a -> UnboundedSymbol (%a): %a" Bounds.BoundTrace.pp bound_trace Location.pp
           location (S.pp ~hum:false) symbol
     | Call {callee_pname; callee_trace; location} ->
-        F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Typ.Procname.pp callee_pname Location.pp
+        F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Procname.pp callee_pname Location.pp
           location
 
 
@@ -495,7 +495,7 @@ module TopTrace = struct
         Errlog.make_trace_element depth location desc []
         :: Bounds.BoundTrace.make_err_trace ~depth bound_trace
     | Call {location; callee_pname; callee_trace} ->
-        let desc = F.asprintf "Call to %a" Typ.Procname.pp callee_pname in
+        let desc = F.asprintf "Call to %a" Procname.pp callee_pname in
         Errlog.make_trace_element depth location desc []
         :: make_err_trace ~depth:(depth + 1) callee_trace
 end

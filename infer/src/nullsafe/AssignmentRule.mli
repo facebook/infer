@@ -18,7 +18,7 @@ val check :
 type assignment_type =
   | PassingParamToFunction of function_info
   | AssigningToField of Fieldname.t
-  | ReturningFromFunction of Typ.Procname.t
+  | ReturningFromFunction of Procname.t
 [@@deriving compare]
 
 and function_info =
@@ -26,7 +26,7 @@ and function_info =
   ; model_source: AnnotatedSignature.model_source option
   ; actual_param_expression: string
   ; param_position: int
-  ; function_procname: Typ.Procname.t }
+  ; function_procname: Procname.t }
 
 val violation_description :
      violation

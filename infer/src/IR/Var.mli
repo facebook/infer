@@ -33,7 +33,7 @@ val get_pvar : t -> Pvar.t option
 
 val is_global : t -> bool
 
-val is_local_to_procedure : Typ.Procname.t -> t -> bool
+val is_local_to_procedure : Procname.t -> t -> bool
 
 val is_return : t -> bool
 

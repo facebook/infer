@@ -21,11 +21,11 @@ and non_empty
 
 type typ = Typ.t
 
-type c = Typ.Procname.C.t
+type c = Procname.C.t
 
-type objc_cpp = Typ.Procname.ObjC_Cpp.t
+type objc_cpp = Procname.ObjC_Cpp.t
 
-type java = Typ.Procname.Java.t
+type java = Procname.Java.t
 
 type qual_name = QualifiedCppName.t
 
@@ -53,8 +53,7 @@ let templated_name_of_class_name class_name =
 
 let templated_name_of_java java =
   let qual_name =
-    QualifiedCppName.of_list
-      [Typ.Procname.Java.get_class_name java; Typ.Procname.Java.get_method java]
+    QualifiedCppName.of_list [Procname.Java.get_class_name java; Procname.Java.get_method java]
   in
   (qual_name, [])
 
@@ -117,7 +116,7 @@ let name_cons :
     | _ ->
         None
   in
-  let on_objc_cpp context f (objc_cpp : Typ.Procname.ObjC_Cpp.t) =
+  let on_objc_cpp context f (objc_cpp : Procname.ObjC_Cpp.t) =
     if match_fuzzy_name objc_cpp.method_name then
       on_templated_name context f (templated_name_of_class_name objc_cpp.class_name)
     else None
@@ -138,7 +137,7 @@ let name_cons_f :
     | _ ->
         None
   in
-  let on_objc_cpp context f (objc_cpp : Typ.Procname.ObjC_Cpp.t) =
+  let on_objc_cpp context f (objc_cpp : Procname.ObjC_Cpp.t) =
     if f_name context objc_cpp.method_name then
       on_templated_name context f (templated_name_of_class_name objc_cpp.class_name)
     else None
@@ -164,7 +163,7 @@ let all_names_cons :
             on_templated_name_rec context f (rest, []) )
   in
   let on_templated_name = on_templated_name_rec in
-  let on_objc_cpp context f (objc_cpp : Typ.Procname.ObjC_Cpp.t) =
+  let on_objc_cpp context f (objc_cpp : Procname.ObjC_Cpp.t) =
     match on_objc_cpp context f objc_cpp with
     | Some _ as some ->
         some
@@ -182,7 +181,7 @@ let templ_begin :
   let on_templated_name context f (qual_name, template_args) =
     match on_qual_name context f qual_name with None -> None | Some f -> Some (f, template_args)
   in
-  let on_objc_cpp context f (objc_cpp : Typ.Procname.ObjC_Cpp.t) =
+  let on_objc_cpp context f (objc_cpp : Procname.ObjC_Cpp.t) =
     match on_objc_cpp context f objc_cpp with
     | None ->
         None
@@ -468,7 +467,7 @@ module Call = struct
         -> ('context, 'f_out, 'arg_payload) pre_result }
 
   type ('context, 'f, 'arg_payload) dispatcher =
-    'context -> Typ.Procname.t -> 'arg_payload FuncArg.t list -> 'f option
+    'context -> Procname.t -> 'arg_payload FuncArg.t list -> 'f option
 
   let args_begin :
          ('context, 'f_in, 'f_out, non_empty, 'arg_payload) path_matcher
@@ -785,8 +784,7 @@ module Call = struct
 
   let wrong_args_internal_error : _ matcher =
     let on_procname procname =
-      Logging.(die InternalError)
-        "Unexpected number/types of arguments for %a" Typ.Procname.pp procname
+      Logging.(die InternalError) "Unexpected number/types of arguments for %a" Procname.pp procname
     in
     let on_c _context c _args = on_procname (C c) in
     let on_java _context java _args = on_procname (Java java) in
@@ -907,7 +905,7 @@ end
 module ProcName = struct
   include NameCommon
 
-  type ('context, 'f, 'arg_payload) dispatcher = 'context -> Typ.Procname.t -> 'f option
+  type ('context, 'f, 'arg_payload) dispatcher = 'context -> Procname.t -> 'f option
 
   let make_dispatcher :
       ('context, 'f, 'arg_payload) matcher list -> ('context, 'f, 'arg_payload) dispatcher =
@@ -919,7 +917,7 @@ module ProcName = struct
       List.find_map matchers ~f:(fun (matcher : _ matcher) ->
           matcher.on_templated_name context templated_name )
     in
-    let on_java context (java : Typ.Procname.Java.t) =
+    let on_java context (java : Procname.Java.t) =
       let templated_name = templated_name_of_java java in
       on_templated_name context templated_name
     in

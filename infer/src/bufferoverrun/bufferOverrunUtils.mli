@@ -12,14 +12,14 @@ module PO = BufferOverrunProofObligations
 
 module ModelEnv : sig
   type model_env =
-    { pname: Typ.Procname.t
+    { pname: Procname.t
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
     ; integer_type_widths: Typ.IntegerWidths.t }
 
   val mk_model_env :
-    Typ.Procname.t -> node_hash:int -> Location.t -> Tenv.t -> Typ.IntegerWidths.t -> model_env
+    Procname.t -> node_hash:int -> Location.t -> Tenv.t -> Typ.IntegerWidths.t -> model_env
 end
 
 module Exec : sig

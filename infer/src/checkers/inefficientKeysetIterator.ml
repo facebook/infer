@@ -19,8 +19,8 @@ let find_loaded_pvar id = function
 let find_first_arg_id ~fun_name ~class_name_f ~lhs_f = function
   | Sil.Call ((lhs_id, _), Exp.Const (Const.Cfun pname), (Exp.Var rhs_id, _) :: _, _, _)
     when lhs_f lhs_id
-         && String.equal fun_name (Typ.Procname.get_method pname)
-         && Typ.Procname.get_class_name pname |> Option.exists ~f:class_name_f ->
+         && String.equal fun_name (Procname.get_method pname)
+         && Procname.get_class_name pname |> Option.exists ~f:class_name_f ->
       Some rhs_id
   | _ ->
       None
@@ -35,7 +35,7 @@ let implements_map tenv s =
 
     {v
      n$X      = *&$bcvarY
-       _      = *n$X 
+       _      = *n$X
      n$X+1    = fun_name(n$X,....)
     *&$irvarZ = n$X+1
     v} *)

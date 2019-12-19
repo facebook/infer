@@ -33,9 +33,9 @@ module Access = struct
   type t =
     | Read of {exp: AccessExpression.t}
     | Write of {exp: AccessExpression.t}
-    | ContainerRead of {exp: AccessExpression.t; pname: Typ.Procname.t}
-    | ContainerWrite of {exp: AccessExpression.t; pname: Typ.Procname.t}
-    | InterfaceCall of Typ.Procname.t
+    | ContainerRead of {exp: AccessExpression.t; pname: Procname.t}
+    | ContainerWrite of {exp: AccessExpression.t; pname: Procname.t}
+    | InterfaceCall of Procname.t
   [@@deriving compare]
 
   let make_field_access exp ~is_write = if is_write then Write {exp} else Read {exp}
@@ -89,11 +89,11 @@ module Access = struct
     | Write {exp} ->
         F.fprintf fmt "Write to %a" AccessExpression.pp exp
     | ContainerRead {exp; pname} ->
-        F.fprintf fmt "Read of container %a via %a" AccessExpression.pp exp Typ.Procname.pp pname
+        F.fprintf fmt "Read of container %a via %a" AccessExpression.pp exp Procname.pp pname
     | ContainerWrite {exp; pname} ->
-        F.fprintf fmt "Write to container %a via %a" AccessExpression.pp exp Typ.Procname.pp pname
+        F.fprintf fmt "Write to container %a via %a" AccessExpression.pp exp Procname.pp pname
     | InterfaceCall pname ->
-        F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
+        F.fprintf fmt "Call to un-annotated interface method %a" Procname.pp pname
 
 
   let mono_lang_pp = MF.wrap_monospaced pp_exp
@@ -103,18 +103,18 @@ module Access = struct
         F.fprintf fmt "access to %a" mono_lang_pp exp
     | ContainerRead {exp; pname} ->
         F.fprintf fmt "Read of container %a via call to %s" mono_lang_pp exp
-          (MF.monospaced_to_string (Typ.Procname.get_method pname))
+          (MF.monospaced_to_string (Procname.get_method pname))
     | ContainerWrite {exp; pname} ->
         F.fprintf fmt "Write to container %a via call to %s" mono_lang_pp exp
-          (MF.monospaced_to_string (Typ.Procname.get_method pname))
+          (MF.monospaced_to_string (Procname.get_method pname))
     | InterfaceCall pname ->
-        F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
+        F.fprintf fmt "Call to un-annotated interface method %a" Procname.pp pname
 end
 
 module CallPrinter = struct
   type t = CallSite.t
 
-  let pp fmt cs = F.fprintf fmt "call to %a" Typ.Procname.pp (CallSite.pname cs)
+  let pp fmt cs = F.fprintf fmt "call to %a" Procname.pp (CallSite.pname cs)
 end
 
 module TraceElem = struct

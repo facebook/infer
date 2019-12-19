@@ -29,9 +29,9 @@ let printf_like_functions =
       ; vararg_pos= Some 3 } ]
 
 
-let printf_like_function (proc_name : Typ.Procname.t) : printf_signature option =
+let printf_like_function (proc_name : Procname.t) : printf_signature option =
   List.find
-    ~f:(fun printf -> String.equal printf.unique_id (Typ.Procname.to_unique_id proc_name))
+    ~f:(fun printf -> String.equal printf.unique_id (Procname.to_unique_id proc_name))
     !printf_like_functions
 
 
@@ -97,11 +97,11 @@ let rec format_string_type_names (fmt_string : string) (start : int) : string li
   with Caml.Not_found -> []
 
 
-let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
-    (proc_name : Typ.Procname.t) (proc_desc : Procdesc.t) summary : unit =
+let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc_name : Procname.t)
+    (proc_desc : Procdesc.t) summary : unit =
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
-    let instr_name = Typ.Procname.to_simplified_string instr_proc_name in
+    let instr_name = Procname.to_simplified_string instr_proc_name in
     let instr_line = Location.to_string instr_loc in
     match (fmt_type_names, arg_type_names) with
     | ft :: fs, gt :: gs ->
@@ -160,9 +160,8 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
                 "Format string must be string literal"
       with e ->
         L.internal_error "%s Exception when analyzing %s: %s@."
-          IssueType.checkers_printf_args.unique_id
-          (Typ.Procname.to_string proc_name)
-          (Exn.to_string e) )
+          IssueType.checkers_printf_args.unique_id (Procname.to_string proc_name) (Exn.to_string e)
+      )
     | None ->
         () )
   | _ ->

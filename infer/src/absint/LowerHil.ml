@@ -36,7 +36,7 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
 
   let is_java_unlock pname actuals =
     (* would check is_java, but we want to include builtins too *)
-    (not (Typ.Procname.is_c_method pname))
+    (not (Procname.is_c_method pname))
     && match ConcurrencyModels.get_lock_effect pname actuals with Unlock _ -> true | _ -> false
 
 

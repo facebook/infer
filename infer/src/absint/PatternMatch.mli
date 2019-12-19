@@ -105,22 +105,22 @@ val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 
 val proc_calls :
-     (Typ.Procname.t -> ProcAttributes.t option)
+     (Procname.t -> ProcAttributes.t option)
   -> Procdesc.t
-  -> (Typ.Procname.t -> ProcAttributes.t -> bool)
-  -> (Typ.Procname.t * ProcAttributes.t) list
+  -> (Procname.t -> ProcAttributes.t -> bool)
+  -> (Procname.t * ProcAttributes.t) list
 (** Return the callees that satisfy [filter]. *)
 
 val override_exists :
-  ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
+  ?check_current_type:bool -> (Procname.t -> bool) -> Tenv.t -> Procname.t -> bool
 (** Return true if applying the given predicate to an override of [procname] (including [procname]
     itself when [check_current_type] is true, which it is by default) returns true. *)
 
-val override_iter : (Typ.Procname.t -> unit) -> Tenv.t -> Typ.Procname.t -> unit
+val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
     works for Java *)
 
-val lookup_attributes : Tenv.t -> Typ.Procname.t -> ProcAttributes.t option
+val lookup_attributes : Tenv.t -> Procname.t -> ProcAttributes.t option
 
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
 
@@ -139,11 +139,11 @@ val is_throwable : Tenv.t -> Typ.Name.t -> bool
 val is_java_enum : Tenv.t -> Typ.Name.t -> bool
 (** Checks if the type is Java enum (extends java.lang.Enum) *)
 
-val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
+val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> bool
 (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, including
     supertypes*)
 
-val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
+val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> bool
 (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, for
     current class only*)
 
@@ -151,4 +151,4 @@ val find_superclasses_with_attributes :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Name.t -> Typ.Name.t list
 (** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
 
-val is_override_of : Typ.Procname.t -> (Typ.Procname.t -> bool) Staged.t
+val is_override_of : Procname.t -> (Procname.t -> bool) Staged.t

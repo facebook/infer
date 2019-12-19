@@ -54,7 +54,7 @@ let get_declaring_function = function
 
 
 let is_local_to_procedure proc_name var =
-  get_declaring_function var |> Option.exists ~f:(Typ.Procname.equal proc_name)
+  get_declaring_function var |> Option.exists ~f:(Procname.equal proc_name)
 
 
 let get_all_vars_in_exp e =

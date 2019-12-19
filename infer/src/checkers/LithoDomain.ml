@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module LocalAccessPath = struct
-  type t = {access_path: AccessPath.t; parent: Typ.Procname.t} [@@deriving compare]
+  type t = {access_path: AccessPath.t; parent: Procname.t} [@@deriving compare]
 
   let make access_path parent = {access_path; parent}
 
@@ -28,13 +28,11 @@ let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
 
 module MethodCallPrefix = struct
   type t =
-    { prefix: string
-    ; procname: Typ.Procname.t [@compare.ignore]
-    ; location: Location.t [@compare.ignore] }
+    {prefix: string; procname: Procname.t [@compare.ignore]; location: Location.t [@compare.ignore]}
   [@@deriving compare]
 
   let make procname location =
-    let method_name = Typ.Procname.get_method procname in
+    let method_name = Procname.get_method procname in
     let prefix_opt =
       String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
     in
@@ -42,9 +40,9 @@ module MethodCallPrefix = struct
     {prefix; procname; location}
 
 
-  let pp fmt {procname} = Typ.Procname.pp fmt procname
+  let pp fmt {procname} = Procname.pp fmt procname
 
-  let procname_to_string {procname} = Typ.Procname.get_method procname
+  let procname_to_string {procname} = Procname.get_method procname
 end
 
 module CreatedLocation = struct

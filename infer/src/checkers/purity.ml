@@ -23,7 +23,7 @@ end)
 type purity_extras =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; formals: Var.t list
-  ; get_callee_summary: Typ.Procname.t -> PurityDomain.summary option }
+  ; get_callee_summary: Procname.t -> PurityDomain.summary option }
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
@@ -166,11 +166,11 @@ module TransferFunctions = struct
           | None -> (
             match get_callee_summary called_pname with
             | Some callee_summary ->
-                debug "Reading from %a \n" Typ.Procname.pp called_pname ;
+                debug "Reading from %a \n" Procname.pp called_pname ;
                 find_modified_if_impure inferbo_mem formals args callee_summary
             | None ->
-                if Typ.Procname.is_constructor called_pname then Domain.pure
-                else Domain.impure_global ) )
+                if Procname.is_constructor called_pname then Domain.pure else Domain.impure_global )
+          )
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java *)
         debug "Unexpected indirect call %a" HilInstr.pp instr ;
@@ -186,17 +186,16 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
 let should_report pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
-  (not (Typ.Procname.is_constructor proc_name))
+  (not (Procname.is_constructor proc_name))
   &&
   match proc_name with
-  | Typ.Procname.Java java_pname ->
+  | Procname.Java java_pname ->
       not
-        ( Typ.Procname.Java.is_class_initializer java_pname
-        || Typ.Procname.Java.is_access_method java_pname )
-  | Typ.Procname.ObjC_Cpp name ->
+        (Procname.Java.is_class_initializer java_pname || Procname.Java.is_access_method java_pname)
+  | Procname.ObjC_Cpp name ->
       not
-        ( Typ.Procname.ObjC_Cpp.is_destructor name
-        || Typ.Procname.ObjC_Cpp.is_objc_constructor name.method_name )
+        ( Procname.ObjC_Cpp.is_destructor name
+        || Procname.ObjC_Cpp.is_objc_constructor name.method_name )
   | _ ->
       true
 
@@ -208,11 +207,11 @@ let report_errors astate summary =
   | Some astate ->
       if should_report pdesc && PurityDomain.is_pure astate then
         let loc = Procdesc.get_loc pdesc in
-        let exp_desc = F.asprintf "Side-effect free function %a" Typ.Procname.pp proc_name in
+        let exp_desc = F.asprintf "Side-effect free function %a" Procname.pp proc_name in
         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
         Reporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
   | None ->
-      L.internal_error "Analyzer failed to compute purity information for %a@." Typ.Procname.pp
+      L.internal_error "Analyzer failed to compute purity information for %a@." Procname.pp
         proc_name
 
 

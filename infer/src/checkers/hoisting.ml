@@ -12,14 +12,14 @@ module BasicCost = CostDomain.BasicCost
 module Call = struct
   type t =
     { loc: Location.t
-    ; pname: Typ.Procname.t
+    ; pname: Procname.t
     ; node: Procdesc.Node.t
     ; params: (Exp.t * Typ.t) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
 
   let pp fmt {pname; loc} =
-    F.fprintf fmt "loop-invariant call to %a, at %a " Typ.Procname.pp pname Location.pp loc
+    F.fprintf fmt "loop-invariant call to %a, at %a " Procname.pp pname Location.pp loc
 end
 
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
@@ -72,7 +72,7 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
 
 let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop_head_loc =
   let exp_desc =
-    F.asprintf "The call to %a at %a is loop-invariant" Typ.Procname.pp pname Location.pp loc
+    F.asprintf "The call to %a at %a is loop-invariant" Procname.pp pname Location.pp loc
   in
   let loop_inv_trace_elem = Errlog.make_trace_element 0 loc exp_desc [] in
   let issue, cost_msg, ltr =

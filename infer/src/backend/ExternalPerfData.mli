@@ -7,4 +7,4 @@
 
 open! IStd
 
-val in_profiler_data_map : Typ.Procname.t -> bool
+val in_profiler_data_map : Procname.t -> bool

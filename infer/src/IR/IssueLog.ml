@@ -9,28 +9,28 @@
 
 open! IStd
 
-type t = Errlog.t Typ.Procname.Map.t
+type t = Errlog.t Procname.Map.t
 
-let empty = Typ.Procname.Map.empty
+let empty = Procname.Map.empty
 
 let get_or_add ~proc m =
-  match Typ.Procname.Map.find_opt proc m with
+  match Procname.Map.find_opt proc m with
   | Some errlog ->
       (m, errlog)
   | None ->
       let errlog = Errlog.empty () in
-      let m = Typ.Procname.Map.add proc errlog m in
+      let m = Procname.Map.add proc errlog m in
       (m, errlog)
 
 
-let issues_serializer : Errlog.t Typ.Procname.Map.t Serialization.serializer =
+let issues_serializer : Errlog.t Procname.Map.t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.issues
 
 
-let iter ~f m = Typ.Procname.Map.iter f m
+let iter ~f m = Procname.Map.iter f m
 
 let store ~dir ~file m =
-  if not (Typ.Procname.Map.is_empty m) then (
+  if not (Procname.Map.is_empty m) then (
     let abbrev_source_file = DB.source_file_encoding file in
     let issues_dir = Config.results_dir ^/ dir in
     Utils.create_dir issues_dir ;
@@ -51,7 +51,7 @@ let load dir =
     let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
     load_issues file
     |> Option.fold ~init ~f:(fun acc map ->
-           Typ.Procname.Map.merge
+           Procname.Map.merge
              (fun _ issues1 issues2 ->
                match (issues1, issues2) with
                | Some issues1, Some issues2 ->

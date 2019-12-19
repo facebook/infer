@@ -12,7 +12,7 @@ module F = Format
 module BoTrace = struct
   type lib_fun = Snprintf | Strndup | Vsnprintf [@@deriving compare]
 
-  type final = UnknownFrom of Typ.Procname.t option [@@deriving compare]
+  type final = UnknownFrom of Procname.t option [@@deriving compare]
 
   type elem =
     | ArrayDeclaration
@@ -56,7 +56,7 @@ module BoTrace = struct
     | None ->
         F.fprintf fmt "non-const function"
     | Some pname ->
-        Typ.Procname.pp fmt pname
+        Procname.pp fmt pname
 
 
   let pp_location = Location.pp_file_pos

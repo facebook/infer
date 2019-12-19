@@ -37,8 +37,8 @@ val mk_struct :
   -> ?default:Struct.t
   -> ?fields:Struct.fields
   -> ?statics:Struct.fields
-  -> ?methods:Typ.Procname.t list
-  -> ?exported_objc_methods:Typ.Procname.t list
+  -> ?methods:Procname.t list
+  -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?dummy:bool

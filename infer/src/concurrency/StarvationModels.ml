@@ -11,11 +11,11 @@ module F = Format
 let is_synchronized_library_call =
   let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
   fun tenv pn ->
-    (not (Typ.Procname.is_constructor pn))
+    (not (Procname.is_constructor pn))
     &&
     match pn with
-    | Typ.Procname.Java java_pname ->
-        let classname = Typ.Procname.Java.get_class_type_name java_pname in
+    | Procname.Java java_pname ->
+        let classname = Procname.Java.get_class_type_name java_pname in
         List.exists targets ~f:(PatternMatch.is_subtype_of_str tenv classname)
     | _ ->
         false
@@ -182,7 +182,7 @@ let strict_mode_matcher =
       (* all public constructors of Socket with two or more arguments call connect *)
     ; { dont_search_superclasses with
         classname= "java.net.Socket"
-      ; methods= [Typ.Procname.Java.constructor_method_name]
+      ; methods= [Procname.Java.constructor_method_name]
       ; actuals_pred= (function [] | [_] -> false | _ -> true) }
     ; {dont_search_superclasses with classname= "java.net.DatagramSocket"; methods= ["connect"]}
     ; { dont_search_superclasses with
@@ -298,9 +298,9 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
 let get_run_method_from_runnable tenv runnable =
   let run_like_methods = ["run"; "call"] in
   let is_run_method = function
-    | Typ.Procname.Java pname when Typ.Procname.Java.(not (is_static pname)) ->
+    | Procname.Java pname when Procname.Java.(not (is_static pname)) ->
         (* confusingly, the parameter list in (non-static?) Java procnames does not contain [this] *)
-        Typ.Procname.Java.(
+        Procname.Java.(
           List.is_empty (get_parameters pname)
           &&
           let methodname = get_method pname in
@@ -329,8 +329,8 @@ let get_returned_executor ~attrs_of_pname tenv callee actuals =
                  false ) )
   in
   match (callee, actuals) with
-  | Typ.Procname.Java java_pname, [] -> (
-    match Typ.Procname.Java.get_method java_pname with
+  | Procname.Java java_pname, [] -> (
+    match Procname.Java.get_method java_pname with
     | ("getForegroundExecutor" | "getBackgroundExecutor") when Lazy.force type_check ->
         Some ForNonUIThread
     | "getUiThreadExecutorService" when Lazy.force type_check ->
@@ -355,7 +355,7 @@ let is_handler_constructor =
   of_record
     { default with
       classname= "android.os.Handler"
-    ; methods= [Typ.Procname.Java.constructor_method_name]
+    ; methods= [Procname.Java.constructor_method_name]
     ; actuals_pred= (fun actuals -> not (List.is_empty actuals)) }
 
 
@@ -365,7 +365,7 @@ let is_thread_constructor =
     { default with
       classname= "java.lang.Thread"
     ; search_superclasses= false
-    ; methods= [Typ.Procname.Java.constructor_method_name] }
+    ; methods= [Procname.Java.constructor_method_name] }
 
 
 let is_assume_true =

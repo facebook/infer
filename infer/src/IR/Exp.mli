@@ -13,7 +13,7 @@
 open! IStd
 module F = Format
 
-type closure = {name: Typ.Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
+type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -170,6 +170,5 @@ val ignore_cast : t -> t
 
 val ignore_integer_cast : t -> t
 
-val get_java_class_initializer :
-  Tenv.t -> t -> (Typ.Procname.t * Pvar.t * Fieldname.t * Typ.t) option
+val get_java_class_initializer : Tenv.t -> t -> (Procname.t * Pvar.t * Fieldname.t * Typ.t) option
 (** Returns the class initializer of the given expression in Java *)

@@ -18,9 +18,8 @@ type t = private
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** supers *)
-  ; methods: Typ.Procname.t list  (** methods defined *)
-  ; exported_objc_methods: Typ.Procname.t list
-        (** methods in ObjC interface, subset of [methods] *)
+  ; methods: Procname.t list  (** methods defined *)
+  ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
@@ -35,8 +34,8 @@ val internal_mk_struct :
      ?default:t
   -> ?fields:fields
   -> ?statics:fields
-  -> ?methods:Typ.Procname.t list
-  -> ?exported_objc_methods:Typ.Procname.t list
+  -> ?methods:Procname.t list
+  -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?dummy:bool

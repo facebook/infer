@@ -7,10 +7,10 @@
 
 open! IStd
 
-val is_custom_init : Tenv.t -> Typ.Procname.t -> bool
+val is_custom_init : Tenv.t -> Procname.t -> bool
 
-val is_logging_method : Typ.Procname.t -> bool
+val is_logging_method : Procname.t -> bool
 
-val get_fbthreadsafe_class_annot : Typ.Procname.t -> Tenv.t -> (string * string) option
+val get_fbthreadsafe_class_annot : Procname.t -> Tenv.t -> (string * string) option
 
 val message_fbthreadsafe_class : string -> string -> string

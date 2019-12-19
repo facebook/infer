@@ -177,7 +177,7 @@ module NonNegativeBound : sig
   val classify : t -> (Ints.NonNegativeInt.t, t, BoundTrace.t) valclass
 
   val subst :
-       Typ.Procname.t
+       Procname.t
     -> Location.t
     -> t
     -> Bound.eval_sym

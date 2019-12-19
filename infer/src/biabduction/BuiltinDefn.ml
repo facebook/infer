@@ -647,7 +647,7 @@ let execute_pthread_create ({Builtin.tenv; summary; prop_; path; args; exe_env} 
         | Exp.Lvar pvar, _ ->
             let fun_name = Pvar.get_name pvar in
             let fun_string = Mangled.to_string fun_name in
-            Some (Typ.Procname.from_string_c_fun fun_string)
+            Some (Procname.from_string_c_fun fun_string)
         | Exp.Const (Cfun pname), _ ->
             Some pname
         | _ ->
@@ -660,7 +660,7 @@ let execute_pthread_create ({Builtin.tenv; summary; prop_; path; args; exe_env} 
           L.d_strln ", skipping call." ;
           [(prop_, path)]
       | Some pname -> (
-          L.d_printfln "pthread_create: calling function %a" Typ.Procname.pp pname ;
+          L.d_printfln "pthread_create: calling function %a" Procname.pp pname ;
           match Ondemand.analyze_proc_name ~caller_summary:summary pname with
           | None ->
               (* no precondition to check, skip *)

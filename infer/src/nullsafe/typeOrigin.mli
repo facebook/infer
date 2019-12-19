@@ -36,7 +36,7 @@ and field_origin =
   ; access_loc: Location.t }
 
 and method_call_origin =
-  { pname: Typ.Procname.t
+  { pname: Procname.t
   ; call_loc: Location.t
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }

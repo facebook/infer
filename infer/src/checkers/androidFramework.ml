@@ -18,8 +18,8 @@ let drawable_prefix = "R$drawable"
 (** return true if [pname] is a special lifecycle cleanup method *)
 let is_destroy_method pname =
   match pname with
-  | Typ.Procname.Java pname_java ->
-      let method_name = Typ.Procname.Java.get_method pname_java in
+  | Procname.Java pname_java ->
+      let method_name = Procname.Java.get_method pname_java in
       String.equal method_name on_destroy || String.equal method_name on_destroy_view
   | _ ->
       false

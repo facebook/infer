@@ -38,7 +38,7 @@ and field_origin =
   ; access_loc: Location.t }
 
 and method_call_origin =
-  { pname: Typ.Procname.t
+  { pname: Procname.t
   ; call_loc: Location.t
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }
@@ -85,7 +85,7 @@ let rec to_string = function
   | This ->
       "this"
   | MethodCall {pname} ->
-      Printf.sprintf "Fun %s" (Typ.Procname.to_simplified_string pname)
+      Printf.sprintf "Fun %s" (Procname.to_simplified_string pname)
   | New ->
       "New"
   | ArrayLengthResult ->
@@ -133,7 +133,7 @@ let get_method_ret_description pname call_loc
           line_number
   in
   Format.sprintf "call to %s%s%s"
-    (Typ.Procname.to_simplified_string ~withclass:should_show_class_name pname)
+    (Procname.to_simplified_string ~withclass:should_show_class_name pname)
     (atline call_loc) model_info
 
 

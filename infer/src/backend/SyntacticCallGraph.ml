@@ -6,11 +6,11 @@
  *)
 open! IStd
 module L = Logging
-module IdMap = Typ.Procname.Hash
+module IdMap = Procname.Hash
 
 let build_from_captured_procs g =
   let hashcons_pname =
-    let pname_tbl : Typ.Procname.t IdMap.t = IdMap.create 1001 in
+    let pname_tbl : Procname.t IdMap.t = IdMap.create 1001 in
     fun pname ->
       match IdMap.find_opt pname_tbl pname with
       | Some pname' ->
@@ -21,9 +21,9 @@ let build_from_captured_procs g =
   let db = ResultsDatabase.get_database () in
   let stmt = Sqlite3.prepare db "SELECT proc_name, callees FROM procedures" in
   SqliteUtils.result_fold_rows db ~log:"creating call graph" stmt ~init:() ~f:(fun () stmt ->
-      let proc_name = Sqlite3.column stmt 0 |> Typ.Procname.SQLite.deserialize |> hashcons_pname in
+      let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize |> hashcons_pname in
       let callees =
-        Sqlite3.column stmt 1 |> Typ.Procname.SQLiteList.deserialize |> List.map ~f:hashcons_pname
+        Sqlite3.column stmt 1 |> Procname.SQLiteList.deserialize |> List.map ~f:hashcons_pname
       in
       CallGraph.create_node g proc_name callees )
 
@@ -66,9 +66,9 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
   let syntactic_call_graph = CallGraph.create CallGraph.default_initial_capacity in
   let initialized = ref false in
   let pending : CallGraph.Node.t list ref = ref [] in
-  let scheduled = ref Typ.Procname.Set.empty in
+  let scheduled = ref Procname.Set.empty in
   let is_empty () =
-    let empty = !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled in
+    let empty = !initialized && List.is_empty !pending && Procname.Set.is_empty !scheduled in
     if empty then (
       remaining := 0 ;
       L.progress "Finished call graph scheduling, %d procs remaining (in, or reaching, cycles).@."
@@ -88,7 +88,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
         next_aux ()
     | n :: ns ->
         pending := ns ;
-        scheduled := Typ.Procname.Set.add n.pname !scheduled ;
+        scheduled := Procname.Set.add n.pname !scheduled ;
         CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
@@ -97,7 +97,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
         assert false
     | Procname pname ->
         decr remaining ;
-        scheduled := Typ.Procname.Set.remove pname !scheduled ;
+        scheduled := Procname.Set.remove pname !scheduled ;
         CallGraph.remove syntactic_call_graph pname
   in
   let next () =

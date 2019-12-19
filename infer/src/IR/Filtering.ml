@@ -8,7 +8,7 @@ open! IStd
 
 type source_files_filter = SourceFile.t -> bool
 
-type procedures_filter = SourceFile.t -> Typ.Procname.t -> bool
+type procedures_filter = SourceFile.t -> Procname.t -> bool
 
 let filter_of_regexp_opt ~to_string r =
   match r with
@@ -44,7 +44,7 @@ let mk_procedure_name_filter ~filter =
   let source_file_filter =
     filter_of_regexp_opt ~to_string:SourceFile.to_string source_file_regexp
   in
-  let proc_name_filter = filter_of_regexp_opt ~to_string:Typ.Procname.to_string proc_name_regexp in
+  let proc_name_filter = filter_of_regexp_opt ~to_string:Procname.to_string proc_name_regexp in
   source_file_filter &&& proc_name_filter
 
 

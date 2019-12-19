@@ -964,7 +964,7 @@ module PrePost = struct
      is for a path where [formal != 0] and we pass [0] then it will be an FP. Maybe the solution is
      to bake in some value analysis. *)
   let apply callee_proc_name call_location pre_post ~formals ~actuals astate =
-    L.d_printfln "Applying pre/post for %a(%a):@\n%a" Typ.Procname.pp callee_proc_name
+    L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
       (Pp.seq ~sep:"," Var.pp) formals pp pre_post ;
     let empty_call_state =
       {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}

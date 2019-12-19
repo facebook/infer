@@ -493,8 +493,8 @@ module ConstraintSolver = struct
   let collect_constraints ~debug node_cfg =
     let equalities = Equalities.create () in
     Container.iter node_cfg ~fold:NodeCFG.fold_nodes ~f:(collect_on_node ~debug equalities) ;
-    debug.f "[ConstraintSolver] Procedure %a @@ %a@\n" Typ.Procname.pp
-      (Procdesc.get_proc_name node_cfg) Location.pp_file_pos (Procdesc.get_loc node_cfg) ;
+    debug.f "[ConstraintSolver] Procedure %a @@ %a@\n" Procname.pp (Procdesc.get_proc_name node_cfg)
+      Location.pp_file_pos (Procdesc.get_loc node_cfg) ;
     debug.f "[ConstraintSolver][EInit] %a@\n" Equalities.pp_equalities equalities ;
     Equalities.normalize_sums equalities ;
     debug.f "[ConstraintSolver][ENorm] %a@\n" Equalities.pp_equalities equalities ;
@@ -524,7 +524,7 @@ type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t
-  ; get_callee_summary_and_formals: Typ.Procname.t -> callee_summary_and_formals option }
+  ; get_callee_summary_and_formals: Procname.t -> callee_summary_and_formals option }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
@@ -550,7 +550,7 @@ module InstrBasicCost = struct
 
 
   let is_allocation_function callee_pname =
-    List.exists allocation_functions ~f:(fun f -> Typ.Procname.equal callee_pname f)
+    List.exists allocation_functions ~f:(fun f -> Procname.equal callee_pname f)
 
 
   let get_instr_cost_record tenv extras instr_node instr =
@@ -716,8 +716,7 @@ module Check = struct
       ~threshold ~is_on_ui_thread =
     let pname = Procdesc.get_proc_name proc_desc in
     let report_issue_type =
-      L.(debug Analysis Medium)
-        "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp pname ;
+      L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
       let is_on_cold_start =
         ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc)
       in
@@ -749,7 +748,7 @@ module Check = struct
   let report_top_and_bottom proc_desc summary ~name ~cost CostIssues.{zero_issue; infinite_issue} =
     let report issue suffix =
       let message =
-        F.asprintf "%s of the function %a %s" name Typ.Procname.pp
+        F.asprintf "%s of the function %a %s" name Procname.pp
           (Procdesc.get_proc_name proc_desc)
           suffix
       in
@@ -764,7 +763,7 @@ module Check = struct
 
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
-    if not (Typ.Procname.is_java_access_method pname) then (
+    if not (Procname.is_java_access_method pname) then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
         ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
         | ThresholdReports.Threshold _ ->
@@ -870,7 +869,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let () =
     let exit_cost_record = astate.WorstCaseCost.costs in
     L.(debug Analysis Verbose)
-      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp proc_name
+      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Procname.pp proc_name
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
       CostDomain.VariantCostMap.pp exit_cost_record
   in

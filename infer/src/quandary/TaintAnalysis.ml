@@ -114,8 +114,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let is_endpoint source =
       match CallSite.pname (TraceDomain.Source.call_site source) with
-      | Typ.Procname.Java java_pname ->
-          QuandaryConfig.is_endpoint (Typ.Procname.Java.get_class_name java_pname)
+      | Procname.Java java_pname ->
+          QuandaryConfig.is_endpoint (Procname.Java.get_class_name java_pname)
       | _ ->
           false
 
@@ -123,7 +123,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     (** log any new reportable source-sink flows in [trace] *)
     let report_trace ?(sink_indexes = IntSet.empty) trace cur_site (proc_data : extras ProcData.t) =
       let get_summary pname =
-        if Typ.Procname.equal pname (Summary.get_proc_name proc_data.summary) then
+        if Procname.equal pname (Summary.get_proc_name proc_data.summary) then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.bottom
         else
@@ -135,12 +135,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       let get_caller_string caller_site =
         let caller_pname = CallSite.pname caller_site in
-        F.sprintf " in procedure %s"
-          (Typ.Procname.to_simplified_string ~withclass:true caller_pname)
+        F.sprintf " in procedure %s" (Procname.to_simplified_string ~withclass:true caller_pname)
       in
       let pp_trace_elem site fmt caller_string =
         F.fprintf fmt "(%s)%s at %a"
-          (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname site))
+          (Procname.to_simplified_string ~withclass:true (CallSite.pname site))
           caller_string Location.pp (CallSite.loc site)
       in
       let pp_source source_caller_opt fmt initial_source =
@@ -267,7 +266,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             ~f:(fun (access_path_opt, path_source) ->
               let desc, loc =
                 let call_site = Source.call_site path_source in
-                ( Format.asprintf "Return from %a%a" Typ.Procname.pp (CallSite.pname call_site)
+                ( Format.asprintf "Return from %a%a" Procname.pp (CallSite.pname call_site)
                     pp_access_path_opt access_path_opt
                 , CallSite.loc call_site )
               in
@@ -291,8 +290,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                       (IntSet.elements indexes)
               in
               let desc =
-                Format.asprintf "Call to %a%s" Typ.Procname.pp (CallSite.pname call_site)
-                  indexes_str
+                Format.asprintf "Call to %a%s" Procname.pp (CallSite.pname call_site) indexes_str
               in
               Errlog.make_trace_element 0 (CallSite.loc call_site) desc [] )
             expanded_sinks
@@ -515,8 +513,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let handle_model callee_pname access_tree model =
         let is_variadic =
           match callee_pname with
-          | Typ.Procname.Java pname ->
-              Typ.Procname.Java.is_vararg pname
+          | Procname.Java pname ->
+              Procname.Java.is_vararg pname
           | _ ->
               false
         in
@@ -581,8 +579,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         List.fold ~f:handle_model_ ~init:access_tree model
       in
       let handle_unknown_call callee_pname access_tree =
-        match Typ.Procname.get_method callee_pname with
-        | "operator=" when not (Typ.Procname.is_java callee_pname) -> (
+        match Procname.get_method callee_pname with
+        | "operator=" when not (Procname.is_java callee_pname) -> (
           (* treat unknown calls to C++ operator= as assignment *)
           match List.map actuals ~f:HilExp.ignore_cast with
           | [AccessExpression lhs_access_expr; rhs_exp] ->
@@ -611,7 +609,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       let dummy_ret_opt =
         match ret_ap with
-        | _, {Typ.desc= Tvoid} when not (Typ.Procname.is_java callee_pname) -> (
+        | _, {Typ.desc= Tvoid} when not (Procname.is_java callee_pname) -> (
           (* the C++ frontend handles returns of non-pointers by adding a dummy
              pass-by-reference variable as the last actual, then returning the value by
              assigning to it. understand this pattern by pretending it's the return value *)
@@ -767,7 +765,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
   let make_summary {ProcData.summary; extras= {formal_map}} access_tree =
-    let is_java = Typ.Procname.is_java (Summary.get_proc_name summary) in
+    let is_java = Procname.is_java (Summary.get_proc_name summary) in
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
       TaintDomain.fold
@@ -871,8 +869,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         Payload.update_summary (make_summary proc_data access_tree) summary
     | None ->
         if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
-          L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp
-            pname ;
+          L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Procname.pp pname ;
           summary )
         else summary
 end

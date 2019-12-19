@@ -7,13 +7,13 @@
 
 open! IStd
 
-type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
+type labeled_profiler_sample = string * Procname.Set.t [@@deriving compare]
 
 let equal_labeled_profiler_sample = [%compare.equal: labeled_profiler_sample]
 
 let from_java_profiler_samples j ~use_signature =
   let process_methods methods =
-    Typ.Procname.Set.of_list
+    Procname.Set.of_list
       (List.map
          ~f:(fun {Java_profiler_samples_t.classname; methodname; signature} ->
            JProcname.create_procname ~classname ~methodname ~signature ~use_signature )

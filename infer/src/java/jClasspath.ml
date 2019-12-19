@@ -38,7 +38,7 @@ let add_models jar_filename =
   else L.(die InternalError) "Java model file not found"
 
 
-let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
+let is_model procname = String.Set.mem !models_specs_filenames (Procname.to_filename procname)
 
 let split_classpath = String.split ~on:JFile.sep
 
@@ -245,7 +245,7 @@ type program =
   { classpath: classpath
   ; models: classmap
   ; mutable classmap: classmap
-  ; callees: callee_status Typ.Procname.Hash.t }
+  ; callees: callee_status Procname.Hash.t }
 
 let get_classmap program = program.classmap
 
@@ -259,16 +259,16 @@ let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
 
 
-let set_callee_translated program pname = Typ.Procname.Hash.replace program.callees pname Translated
+let set_callee_translated program pname = Procname.Hash.replace program.callees pname Translated
 
 let add_missing_callee program pname cn ms =
-  if not (Typ.Procname.Hash.mem program.callees pname) then
-    Typ.Procname.Hash.add program.callees pname (Missing (cn, ms))
+  if not (Procname.Hash.mem program.callees pname) then
+    Procname.Hash.add program.callees pname (Missing (cn, ms))
 
 
 let iter_missing_callees program ~f =
   let select proc_name = function Translated -> () | Missing (cn, ms) -> f proc_name cn ms in
-  Typ.Procname.Hash.iter select program.callees
+  Procname.Hash.iter select program.callees
 
 
 let cleanup program = Javalib.close_class_path program.classpath.channel
@@ -309,7 +309,7 @@ let load_program classpath classes =
     { classpath= {path= classpath; channel= Javalib.class_path classpath}
     ; models
     ; classmap= JBasics.ClassMap.empty
-    ; callees= Typ.Procname.Hash.create 128 }
+    ; callees= Procname.Hash.create 128 }
   in
   JBasics.ClassSet.iter (fun cn -> ignore (lookup_node cn program)) classes ;
   L.(debug Capture Medium) "done@." ;

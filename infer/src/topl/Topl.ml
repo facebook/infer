@@ -48,7 +48,7 @@ let evaluate_static_guard label (e_fun, arg_ts) =
     match e_fun with
     | Exp.Const (Const.Cfun n) ->
         (* TODO: perhaps handle inheritance *)
-        let name = Typ.Procname.hashable_name n in
+        let name = Procname.hashable_name n in
         let re = Str.regexp label.ToplAst.procedure_name in
         let result = Str.string_match re name 0 in
         tt "match name='%s' re='%s' result=%b@\n" name label.ToplAst.procedure_name result ;

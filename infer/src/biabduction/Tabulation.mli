@@ -16,8 +16,8 @@ type call_result =
   | CR_skip  (** the callee was skipped *)
 
 val log_call_trace :
-     caller_name:Typ.Procname.t
-  -> callee_name:Typ.Procname.t
+     caller_name:Procname.t
+  -> callee_name:Procname.t
   -> ?callee_attributes:ProcAttributes.t
   -> ?reason:string
   -> ?dynamic_dispatch:EventLogger.dynamic_dispatch
@@ -40,13 +40,13 @@ val find_dereference_without_null_check_in_sexp :
     path position *)
 
 val create_cast_exception :
-  Tenv.t -> Logging.ocaml_pos -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
+  Tenv.t -> Logging.ocaml_pos -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
 (** raise a cast exception *)
 
-val prop_is_exn : Typ.Procname.t -> 'a Prop.t -> bool
+val prop_is_exn : Procname.t -> 'a Prop.t -> bool
 (** check if a prop is an exception *)
 
-val prop_get_exn_name : Typ.Procname.t -> 'a Prop.t -> Typ.Name.t option
+val prop_get_exn_name : Procname.t -> 'a Prop.t -> Typ.Name.t option
 (** when prop is an exception, return the exception name *)
 
 val lookup_custom_errors : 'a Prop.t -> string option
@@ -59,7 +59,7 @@ val exe_function_call :
   -> Tenv.t
   -> Ident.t
   -> Procdesc.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> Location.t
   -> (Exp.t * Typ.t) list
   -> Prop.normal Prop.t

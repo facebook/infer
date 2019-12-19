@@ -105,7 +105,7 @@ val check_address_escape :
 val call :
      caller_summary:Summary.t
   -> Location.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t

@@ -10,7 +10,7 @@ open! IStd
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args =
-  {get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
+  {get_procs_in_file: Procname.t -> Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
 
 (** Type of a procedure callback:
 
@@ -35,5 +35,5 @@ val register_cluster_callback : name:string -> Language.t -> cluster_callback_t 
 val iterate_procedure_callbacks : Exe_env.t -> Summary.t -> Summary.t
 (** Invoke all registered procedure callbacks on the given procedure. *)
 
-val iterate_cluster_callbacks : Typ.Procname.t list -> Exe_env.t -> SourceFile.t -> unit
+val iterate_cluster_callbacks : Procname.t list -> Exe_env.t -> SourceFile.t -> unit
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)

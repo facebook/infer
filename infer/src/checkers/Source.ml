@@ -17,11 +17,7 @@ module type Kind = sig
   include TraceElem.Kind
 
   val get :
-       caller_pname:Typ.Procname.t
-    -> Typ.Procname.t
-    -> HilExp.t list
-    -> Tenv.t
-    -> (t * int option) list
+    caller_pname:Procname.t -> Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) list
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -31,7 +27,7 @@ module type S = sig
 
   type spec = {source: t; index: int option}
 
-  val get : caller_pname:Typ.Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
+  val get : caller_pname:Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end

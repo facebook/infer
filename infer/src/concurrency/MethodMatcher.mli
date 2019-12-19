@@ -9,7 +9,7 @@ open! IStd
 
 (** pattern matcher for Java/C++ methods NB matching is modulo template arguments in C++ classes and
     functions *)
-type t = Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+type t = Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 type record =
   { search_superclasses: bool

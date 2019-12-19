@@ -196,4 +196,4 @@ end
 let is_core_lib_type typ = Core_foundation_model.is_core_lib_type typ
 
 let is_malloc_model return_type pname =
-  Core_foundation_model.is_core_lib_create return_type (Typ.Procname.to_string pname)
+  Core_foundation_model.is_core_lib_create return_type (Procname.to_string pname)

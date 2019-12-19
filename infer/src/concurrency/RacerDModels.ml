@@ -98,7 +98,7 @@ let is_cpp_container_read =
   in
   let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
   fun pname ->
-    let pname_qualifiers = Typ.Procname.get_qualifiers pname in
+    let pname_qualifiers = Procname.get_qualifiers pname in
     QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
     || is_container_operator pname_qualifiers
 
@@ -107,23 +107,23 @@ let is_cpp_container_write =
   let matcher =
     QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
   in
-  fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+  fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
 
 let get_container_access pn tenv =
   match pn with
-  | Typ.Procname.Java _ when is_java_container_write tenv pn [] ->
+  | Procname.Java _ when is_java_container_write tenv pn [] ->
       Some ContainerWrite
-  | Typ.Procname.Java _ when is_java_container_read tenv pn [] ->
+  | Procname.Java _ when is_java_container_read tenv pn [] ->
       Some ContainerRead
-  | Typ.Procname.Java _ ->
+  | Procname.Java _ ->
       None
   (* The following order matters: we want to check if pname is a container write
      before we check if pname is a container read. This is due to a different
      treatment between std::map::operator[] and all other operator[]. *)
-  | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
+  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
       Some ContainerWrite
-  | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_read pn ->
+  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_read pn ->
       Some ContainerRead
   | _ ->
       None
@@ -148,10 +148,10 @@ let should_skip =
          ; "std::vector" ])
   in
   function
-  | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
-      Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+  | Procname.ObjC_Cpp cpp_pname as pname ->
+      Procname.ObjC_Cpp.is_destructor cpp_pname
       || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-           (Typ.Procname.get_qualifiers pname)
+           (Procname.get_qualifiers pname)
   | _ ->
       false
 
@@ -161,10 +161,8 @@ let has_return_annot predicate pn = Annotations.pname_has_return_annot pn ~attrs
 let is_functional pname =
   let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
   let is_modeled_functional = function
-    | Typ.Procname.Java java_pname -> (
-      match
-        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-      with
+    | Procname.Java java_pname -> (
+      match (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname) with
       | "android.content.res.Resources", method_name ->
           (* all methods of Resources are considered @Functional except for the ones in this
              blacklist *)
@@ -189,23 +187,21 @@ let nsobject = Typ.Name.Objc.from_qual_name (QualifiedCppName.of_qual_string "NS
 
 let acquires_ownership pname tenv =
   let is_nsobject_init = function
-    | Typ.Procname.ObjC_Cpp
-        {kind= Typ.Procname.ObjC_Cpp.ObjCInstanceMethod; method_name= "init"; class_name} ->
+    | Procname.ObjC_Cpp {kind= Procname.ObjC_Cpp.ObjCInstanceMethod; method_name= "init"; class_name}
+      ->
         Typ.Name.equal class_name nsobject
     | _ ->
         false
   in
   let is_allocation pn =
-    Typ.Procname.equal pn BuiltinDecl.__new
-    || Typ.Procname.equal pn BuiltinDecl.__new_array
+    Procname.equal pn BuiltinDecl.__new
+    || Procname.equal pn BuiltinDecl.__new_array
     || is_nsobject_init pn
   in
   (* identify library functions that maintain ownership invariants behind the scenes *)
   let is_owned_in_library = function
-    | Typ.Procname.Java java_pname -> (
-      match
-        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-      with
+    | Procname.Java java_pname -> (
+      match (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname) with
       | "javax.inject.Provider", "get" ->
           (* in dependency injection, the library allocates fresh values behind the scenes *)
           true
@@ -241,10 +237,8 @@ let acquires_ownership pname tenv =
 
 (* return true if the given procname boxes a primitive type into a reference type *)
 let is_box = function
-  | Typ.Procname.Java java_pname -> (
-    match
-      (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-    with
+  | Procname.Java java_pname -> (
+    match (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname) with
     | ( ( "java.lang.Boolean"
         | "java.lang.Byte"
         | "java.lang.Char"
@@ -322,9 +316,9 @@ let is_assumed_thread_safe tenv pname =
 let should_analyze_proc tenv pn =
   (not
      ( match pn with
-     | Typ.Procname.Java java_pname ->
-         Typ.Procname.Java.is_class_initializer java_pname
-         || Typ.Name.Java.is_external (Typ.Procname.Java.get_class_type_name java_pname)
+     | Procname.Java java_pname ->
+         Procname.Java.is_class_initializer java_pname
+         || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
      (* third party code may be hard to change, not useful to report races there *)
      | _ ->
          false ))
@@ -371,9 +365,7 @@ let is_safe_access (access : 'a HilExp.Access.t) prefix_exp tenv =
 
 let is_builder_class tname = String.is_suffix ~suffix:"$Builder" (Typ.Name.to_string tname)
 
-let is_builder_method java_pname =
-  is_builder_class (Typ.Procname.Java.get_class_type_name java_pname)
-
+let is_builder_method java_pname = is_builder_class (Procname.Java.get_class_type_name java_pname)
 
 let should_flag_interface_call tenv exps call_flags pname =
   let thread_safe_or_thread_confined annot =
@@ -381,7 +373,7 @@ let should_flag_interface_call tenv exps call_flags pname =
   in
   (* is this function in library code from the JDK core libraries or Android? *)
   let is_java_library java_pname =
-    Typ.Procname.Java.get_package java_pname
+    Procname.Java.get_package java_pname
     |> Option.exists ~f:(fun package_name ->
            String.is_prefix ~prefix:"java." package_name
            || String.is_prefix ~prefix:"android." package_name
@@ -399,11 +391,11 @@ let should_flag_interface_call tenv exps call_flags pname =
   in
   let implements_threadsafe_interface java_pname tenv =
     (* generated classes implementing this interface are always threadsafe *)
-    Typ.Procname.Java.get_class_type_name java_pname
+    Procname.Java.get_class_type_name java_pname
     |> fun tname -> PatternMatch.is_subtype_of_str tenv tname "android.os.IInterface"
   in
   match pname with
-  | Typ.Procname.Java java_pname ->
+  | Procname.Java java_pname ->
       call_flags.CallFlags.cf_interface
       && (not (is_java_library java_pname))
       && (not (is_builder_method java_pname))
@@ -421,8 +413,8 @@ let should_flag_interface_call tenv exps call_flags pname =
 let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression.t) tenv =
   let is_threadsafe_collection pn tenv =
     match pn with
-    | Typ.Procname.Java java_pname ->
-        let typename = Typ.Procname.Java.get_class_type_name java_pname in
+    | Procname.Java java_pname ->
+        let typename = Procname.Java.get_class_type_name java_pname in
         let aux tn _ =
           match Typ.Name.name tn with
           | "java.util.concurrent.ConcurrentMap"
@@ -454,7 +446,7 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
       |> List.rev_filter ~f:Access.is_field_or_array_access
     with
     | Access.FieldAccess base_field :: Access.FieldAccess container_field :: _
-      when Typ.Procname.is_java callee_pname ->
+      when Procname.is_java callee_pname ->
         let base_typename = Fieldname.get_class_name base_field in
         is_annotated_synchronized base_typename container_field tenv
     | [Access.FieldAccess container_field] -> (
@@ -482,8 +474,8 @@ let is_abstract_getthis_like callee =
 
 
 let creates_builder callee =
-  (match callee with Typ.Procname.Java jpname -> Typ.Procname.Java.is_static jpname | _ -> false)
-  && String.equal "create" (Typ.Procname.get_method callee)
+  (match callee with Procname.Java jpname -> Procname.Java.is_static jpname | _ -> false)
+  && String.equal "create" (Procname.get_method callee)
   && attrs_of_pname callee
      |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
             match attrs.ret_type with
@@ -495,8 +487,8 @@ let creates_builder callee =
 
 let is_builder_passthrough callee =
   match callee with
-  | Typ.Procname.Java java_pname ->
-      (not (Typ.Procname.Java.is_static java_pname))
+  | Procname.Java java_pname ->
+      (not (Procname.Java.is_static java_pname))
       && is_builder_method java_pname
       && attrs_of_pname callee
          |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->

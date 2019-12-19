@@ -38,16 +38,16 @@ let create_file_data table source =
 
 
 type t =
-  { proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
+  { proc_map: file_data Procname.Hash.t  (** map from procedure name to file data *)
   ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *) }
 
 let get_file_data exe_env pname =
-  try Some (Typ.Procname.Hash.find exe_env.proc_map pname)
+  try Some (Procname.Hash.find exe_env.proc_map pname)
   with Caml.Not_found ->
     let source_file_opt =
       match Attributes.load pname with
       | None ->
-          L.debug Analysis Medium "can't find attributes for %a@." Typ.Procname.pp pname ;
+          L.debug Analysis Medium "can't find attributes for %a@." Procname.pp pname ;
           None
       | Some proc_attributes when Config.reactive_capture ->
           let get_captured_file {ProcAttributes.translation_unit} = translation_unit in
@@ -57,7 +57,7 @@ let get_file_data exe_env pname =
     in
     let get_file_data_for_source source_file =
       let file_data = create_file_data exe_env.file_map source_file in
-      Typ.Procname.Hash.replace exe_env.proc_map pname file_data ;
+      Procname.Hash.replace exe_env.proc_map pname file_data ;
       file_data
     in
     Option.map ~f:get_file_data_for_source source_file_opt
@@ -92,7 +92,7 @@ let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env pro
         ()
   in
   match proc_name with
-  | Typ.Procname.Java _ ->
+  | Procname.Java _ ->
       Lazy.force value_on_java
   | _ -> (
     match get_file_data exe_env proc_name with
@@ -102,12 +102,12 @@ let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env pro
           v
       | None ->
           let loc_opt = State.get_loc () in
-          L.die InternalError "get_column_value: %s not found for %a%a" column_name Typ.Procname.pp
+          L.die InternalError "get_column_value: %s not found for %a%a" column_name Procname.pp
             proc_name pp_loc_opt loc_opt )
     | None ->
         let loc_opt = State.get_loc () in
-        L.die InternalError "get_column_value: file_data not found for %a%a" Typ.Procname.pp
-          proc_name pp_loc_opt loc_opt )
+        L.die InternalError "get_column_value: file_data not found for %a%a" Procname.pp proc_name
+          pp_loc_opt loc_opt )
 
 
 (** return the type environment associated to the procedure *)
@@ -123,4 +123,4 @@ let get_integer_type_widths =
     ~file_data_to_value:file_data_to_integer_type_widths ~column_name:"integer type widths"
 
 
-let mk () = {proc_map= Typ.Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}
+let mk () = {proc_map= Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}

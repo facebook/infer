@@ -38,7 +38,7 @@ let split_var_clang var_name =
 
 
 let builtin_functions_to_string pn =
-  if Typ.Procname.equal pn BuiltinDecl.__objc_alloc_no_fail then Some "alloc" else None
+  if Procname.equal pn BuiltinDecl.__objc_alloc_no_fail then Some "alloc" else None
 
 
 let rec pp fmt = function
@@ -51,10 +51,10 @@ let rec pp fmt = function
     | Some str ->
         F.pp_print_string fmt str
     | None -> (
-        let procname_str = Typ.Procname.to_simplified_string pn in
+        let procname_str = Procname.to_simplified_string pn in
         match pn with
-        | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
-        | Typ.Procname.ObjC_Cpp {kind= ObjCClassMethod} -> (
+        | Procname.ObjC_Cpp {kind= ObjCInstanceMethod} | Procname.ObjC_Cpp {kind= ObjCClassMethod}
+          -> (
           match String.lsplit2 ~on:':' procname_str with
           | Some (base_name, _) ->
               F.pp_print_string fmt base_name
@@ -75,10 +75,10 @@ let rec pp fmt = function
         | Dconst (Cfun pname) ->
             let s =
               match pname with
-              | Typ.Procname.Java pname_java ->
-                  Typ.Procname.Java.get_method pname_java
+              | Procname.Java pname_java ->
+                  Procname.Java.get_method pname_java
               | _ ->
-                  Typ.Procname.to_string pname
+                  Procname.to_string pname
             in
             F.pp_print_string fmt s
         | de ->

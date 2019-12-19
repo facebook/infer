@@ -21,6 +21,6 @@ val mem_typename : Typ.Name.t -> t -> bool
 
 val add_typename : Location.t -> t -> Typ.Name.t -> t
 
-val integrate_summary : Typ.Procname.t -> Location.t -> t -> summary -> t
+val integrate_summary : Procname.t -> Location.t -> t -> summary -> t
 
 val iter : (Event.t -> unit) -> t -> unit

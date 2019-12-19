@@ -71,7 +71,7 @@ include struct
     ; status: Status.t
     ; proc_desc: Procdesc.t
     ; err_log: Errlog.t
-    ; mutable callee_pnames: Typ.Procname.Set.t }
+    ; mutable callee_pnames: Procname.Set.t }
   [@@deriving fields]
 end
 
@@ -102,7 +102,7 @@ let pp_errlog fmt err_log =
 
 let pp_signature fmt summary =
   let pp_formal fmt (p, typ) = F.fprintf fmt "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
-  F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
+  F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Procname.pp
     (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
 
 
@@ -133,21 +133,21 @@ let pp_html source fmt summary =
 module OnDisk = struct
   open PolyVariantEqual
 
-  type cache = t Typ.Procname.Hash.t
+  type cache = t Procname.Hash.t
 
-  let cache : cache = Typ.Procname.Hash.create 128
+  let cache : cache = Procname.Hash.create 128
 
-  let clear_cache () = Typ.Procname.Hash.clear cache
+  let clear_cache () = Procname.Hash.clear cache
 
-  let remove_from_cache pname = Typ.Procname.Hash.remove cache pname
+  let remove_from_cache pname = Procname.Hash.remove cache pname
 
   (** Add the summary to the table for the given function *)
-  let add (proc_name : Typ.Procname.t) (summary : t) : unit =
-    Typ.Procname.Hash.replace cache proc_name summary
+  let add (proc_name : Procname.t) (summary : t) : unit =
+    Procname.Hash.replace cache proc_name summary
 
 
   let specs_filename pname =
-    let pname_file = Typ.Procname.to_filename pname in
+    let pname_file = Procname.to_filename pname in
     pname_file ^ Config.specs_files_suffix
 
 
@@ -213,7 +213,7 @@ module OnDisk = struct
 
 
   let get proc_name =
-    match Typ.Procname.Hash.find cache proc_name with
+    match Procname.Hash.find cache proc_name with
     | summary ->
         BackendStats.incr_summary_cache_hits () ;
         Some summary
@@ -258,15 +258,15 @@ module OnDisk = struct
       ; status= Status.Pending
       ; proc_desc
       ; err_log= Errlog.empty ()
-      ; callee_pnames= Typ.Procname.Set.empty }
+      ; callee_pnames= Procname.Set.empty }
     in
-    Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
+    Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
     summary
 
 
   let dummy =
     let dummy_attributes =
-      ProcAttributes.default (SourceFile.invalid __FILE__) Typ.Procname.empty_block
+      ProcAttributes.default (SourceFile.invalid __FILE__) Procname.empty_block
     in
     let dummy_proc_desc = Procdesc.from_proc_attributes dummy_attributes in
     reset dummy_proc_desc

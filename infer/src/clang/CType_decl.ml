@@ -374,8 +374,8 @@ let get_record_definition decl =
 
 
 let mk_objc_method class_typename method_name method_kind parameters =
-  Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate parameters)
+  Procname.ObjC_Cpp
+    (Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate parameters)
 
 
 let rec get_mangled_method_name function_decl_info method_decl_info =
@@ -579,9 +579,8 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
         Typ.NoTemplate
   in
   let mangled = file ^ mangled_name in
-  if String.is_empty mangled then
-    Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Typ.Procname.C (Typ.Procname.C.c name mangled parameters template_info)
+  if String.is_empty mangled then Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
+  else Procname.C (Procname.C.c name mangled parameters template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
@@ -589,11 +588,11 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let method_kind =
     match meth_decl with
     | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
-        Typ.Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
+        Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
-        Typ.Procname.ObjC_Cpp.CPPDestructor {mangled}
+        Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
-        Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
+        Procname.ObjC_Cpp.CPPMethod {mangled}
   in
   let template_info =
     match meth_decl with
@@ -606,8 +605,8 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
     | _ ->
         Typ.NoTemplate
   in
-  Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info parameters)
+  Procname.ObjC_Cpp
+    (Procname.ObjC_Cpp.make class_name method_name method_kind template_info parameters)
 
 
 and get_class_typename ?tenv method_decl_info =
@@ -623,18 +622,18 @@ and get_class_typename ?tenv method_decl_info =
 and objc_method_procname ?tenv decl_info method_name mdi =
   let class_typename = get_class_typename ?tenv decl_info in
   let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-  let method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
+  let method_kind = Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
   mk_objc_method class_typename method_name method_kind
 
 
 and objc_block_procname outer_proc_opt parameters =
-  let outer_proc_string = Option.value_map ~f:Typ.Procname.to_string outer_proc_opt ~default:"" in
+  let outer_proc_string = Option.value_map ~f:Procname.to_string outer_proc_opt ~default:"" in
   let block_procname_with_index i =
     Printf.sprintf "%s%s%s%d" Config.anonymous_block_prefix outer_proc_string
       Config.anonymous_block_num_sep i
   in
   let name = block_procname_with_index (CFrontend_config.get_fresh_block_index ()) in
-  Typ.Procname.Block (Typ.Procname.Block.make name parameters)
+  Procname.Block (Procname.Block.make name parameters)
 
 
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
@@ -652,7 +651,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
         let captured_vars_types =
           BuildMethodSignature.types_of_captured_vars qual_type_to_sil_type tenv meth_decl
         in
-        List.map ~f:Typ.Procname.Parameter.of_typ (captured_vars_types @ parameter_types)
+        List.map ~f:Procname.Parameter.of_typ (captured_vars_types @ parameter_types)
     | None ->
         []
   in
@@ -773,7 +772,7 @@ module CProcname = struct
         in
         objc_method_procname decl_info method_name mdi []
     | BlockDecl _ ->
-        Typ.Procname.Block (Typ.Procname.Block.make Config.anonymous_block_prefix [])
+        Procname.Block (Procname.Block.make Config.anonymous_block_prefix [])
     | _ ->
         from_decl method_decl
 end

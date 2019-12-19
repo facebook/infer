@@ -22,8 +22,8 @@ let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 
 let is_method_of_objc_cpp_class pname matcher =
   match pname with
-  | Typ.Procname.ObjC_Cpp objc_cpp ->
-      let class_qual_opt = Typ.Procname.ObjC_Cpp.get_class_qualifiers objc_cpp in
+  | Procname.ObjC_Cpp objc_cpp ->
+      let class_qual_opt = Procname.ObjC_Cpp.get_class_qualifiers objc_cpp in
       is_one_of_classes matcher class_qual_opt
   | _ ->
       false
@@ -166,7 +166,7 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
           L.d_ln () ) ;
         exp_lv_dexp_ tenv seen node e
     | Sil.Call ((id0, _), Exp.Const (Const.Cfun pn), (e, _) :: _, _, _)
-      when Ident.equal id id0 && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__cast") ->
+      when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose then (
           L.d_str "find_normal_variable_load cast on " ;
           Exp.d_exp e ;
@@ -962,7 +962,7 @@ let explain_access_ proc_name tenv ?(use_buckets = false) ?(outermost_array = fa
           L.d_ln () ) ;
         Some e
     | Some (Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _))
-      when List.exists ~f:(Typ.Procname.equal fn)
+      when List.exists ~f:(Procname.equal fn)
              [BuiltinDecl.free; BuiltinDecl.__delete; BuiltinDecl.__delete_array] ->
         if verbose then (
           L.d_str "explain_dereference Sil.Call " ;

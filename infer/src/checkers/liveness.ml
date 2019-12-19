@@ -37,7 +37,7 @@ let string_list_of_json ~option_name ~init = function
 
 
 module type LivenessConfig = sig
-  val is_blacklisted_destructor : Typ.Procname.t -> bool
+  val is_blacklisted_destructor : Procname.t -> bool
 end
 
 (** Use this config to get a reliable liveness pre-analysis that tells you which variables are live
@@ -77,9 +77,9 @@ module CheckerMode : LivenessConfig = struct
         false
 
 
-  let is_blacklisted_destructor (callee_pname : Typ.Procname.t) =
+  let is_blacklisted_destructor (callee_pname : Procname.t) =
     match callee_pname with
-    | ObjC_Cpp cpp_pname when Typ.Procname.ObjC_Cpp.is_destructor cpp_pname ->
+    | ObjC_Cpp cpp_pname when Procname.ObjC_Cpp.is_destructor cpp_pname ->
         is_blacklisted_class_name cpp_pname.class_name
         || is_wrapper_of_blacklisted_class_name cpp_pname.class_name
     | _ ->
@@ -111,8 +111,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
     in
     let actuals = List.map actuals ~f:(fun (e, _) -> Exp.ignore_cast e) in
     match Exp.ignore_cast call_exp with
-    | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname
-      -> (
+    | Exp.Const (Cfun (Procname.ObjC_Cpp _ as pname)) when Procname.is_constructor pname -> (
       (* first actual passed to a C++ constructor is actually written, not read *)
       match actuals with
       | Exp.Lvar pvar :: exps ->
@@ -141,7 +140,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         exp_add_live exp astate
     | Sil.Call ((ret_id, _), Const (Cfun callee_pname), _, _, _)
       when LConfig.is_blacklisted_destructor callee_pname ->
-        Logging.d_printfln_escaped "Blacklisted destructor %a, ignoring reads@\n" Typ.Procname.pp
+        Logging.d_printfln_escaped "Blacklisted destructor %a, ignoring reads@\n" Procname.pp
           callee_pname ;
         Domain.remove (Var.of_id ret_id) astate
     | Sil.Call ((ret_id, _), call_exp, actuals, _, {CallFlags.cf_assign_last_arg}) ->
@@ -268,9 +267,9 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
         log_report pvar typ loc
     | Sil.Call (_, e_fun, (arg, typ) :: _, loc, _) -> (
       match (Exp.ignore_cast e_fun, Exp.ignore_cast arg) with
-      | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)), Exp.Lvar pvar
-        when Typ.Procname.is_constructor pname
-             && should_report pvar typ live_vars captured_by_ref_vars ->
+      | Exp.Const (Cfun (Procname.ObjC_Cpp _ as pname)), Exp.Lvar pvar
+        when Procname.is_constructor pname && should_report pvar typ live_vars captured_by_ref_vars
+        ->
           log_report pvar typ loc
       | _, _ ->
           () )

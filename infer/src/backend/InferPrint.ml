@@ -23,16 +23,16 @@ let error_desc_to_plain_string error_desc =
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
 
-let compute_key (bug_type : string) (proc_name : Typ.Procname.t) (filename : string) =
+let compute_key (bug_type : string) (proc_name : Procname.t) (filename : string) =
   let base_filename = Filename.basename filename
-  and simple_procedure_name = Typ.Procname.get_method proc_name in
+  and simple_procedure_name = Procname.get_method proc_name in
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
-let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Typ.Procname.t)
+let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t)
     ~(file : string) ~(qualifier : string) =
   let base_filename = Filename.basename file in
-  let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
+  let hashable_procedure_name = Procname.hashable_name proc_name in
   let location_independent_qualifier =
     (* Removing the line,column, and infer temporary variable (e.g., n$67) information from the
        error message as well as the index of the annonymmous class to make the hash invariant
@@ -97,8 +97,8 @@ let summary_values summary =
     let pp fmt = Pp.seq pp_line fmt lines_visited in
     F.asprintf "%t" pp
   in
-  { vname= Typ.Procname.to_string proc_name
-  ; vname_id= Typ.Procname.to_filename proc_name
+  { vname= Procname.to_string proc_name
+  ; vname_id= Procname.to_filename proc_name
   ; vspecs= List.length specs
   ; vto= Summary.Stats.failure_kind_to_string stats
   ; vsymop= Summary.Stats.symops stats
@@ -213,17 +213,17 @@ end
 
 type json_issue_printer_typ =
   { error_filter: SourceFile.t -> IssueType.t -> bool
-  ; proc_name: Typ.Procname.t
+  ; proc_name: Procname.t
   ; proc_loc_opt: Location.t option
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
 
 let procedure_id_of_procname proc_name =
-  match Typ.Procname.get_language proc_name with
+  match Procname.get_language proc_name with
   | Language.Java ->
-      Typ.Procname.to_unique_id proc_name
+      Procname.to_unique_id proc_name
   | _ ->
-      Typ.Procname.to_string proc_name
+      Procname.to_string proc_name
 
 
 module JsonIssuePrinter = MakeJsonListPrinter (struct
@@ -314,14 +314,14 @@ module IssuesJson = struct
 end
 
 type json_costs_printer_typ =
-  {loc: Location.t; proc_name: Typ.Procname.t; cost_opt: CostDomain.summary option}
+  {loc: Location.t; proc_name: Procname.t; cost_opt: CostDomain.summary option}
 
 module JsonCostsPrinter = MakeJsonListPrinter (struct
   type elt = json_costs_printer_typ
 
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
-    | Some {post; is_on_ui_thread} when not (Typ.Procname.is_java_access_method proc_name) ->
+    | Some {post; is_on_ui_thread} when not (Procname.is_java_access_method proc_name) ->
         let hum cost =
           let degree_with_term = CostDomain.BasicCost.get_degree_with_term cost in
           { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
@@ -344,7 +344,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           let file = SourceFile.to_rel_path loc.Location.file in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
-          ; procedure_name= Typ.Procname.get_method proc_name
+          ; procedure_name= Procname.get_method proc_name
           ; procedure_id= procedure_id_of_procname proc_name
           ; is_on_ui_thread
           ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post)
@@ -599,7 +599,7 @@ module StatsLogs = struct
       ClangMethodKind.to_string (Summary.get_attributes summary).clang_method_kind
     in
     let proc_name = Summary.get_proc_name summary in
-    let lang = Typ.Procname.get_language proc_name in
+    let lang = Procname.get_language proc_name in
     let stats =
       EventLogger.AnalysisStats
         { analysis_nodes_visited= Summary.Stats.nb_visited summary.stats
@@ -608,7 +608,7 @@ module StatsLogs = struct
         ; clang_method_kind= (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
         ; lang= Language.to_explicit_string lang
         ; method_location= Summary.get_loc summary
-        ; method_name= Typ.Procname.to_string proc_name
+        ; method_name= Procname.to_string proc_name
         ; num_preposts
         ; symops= Summary.Stats.symops summary.stats }
     in
@@ -642,16 +642,16 @@ module PreconditionStats = struct
     match Prop.CategorizePreconditions.categorize preconditions with
     | Prop.CategorizePreconditions.Empty ->
         incr nr_empty ;
-        L.result "Procedure: %a footprint:Empty@." Typ.Procname.pp proc_name
+        L.result "Procedure: %a footprint:Empty@." Procname.pp proc_name
     | Prop.CategorizePreconditions.OnlyAllocation ->
         incr nr_onlyallocation ;
-        L.result "Procedure: %a footprint:OnlyAllocation@." Typ.Procname.pp proc_name
+        L.result "Procedure: %a footprint:OnlyAllocation@." Procname.pp proc_name
     | Prop.CategorizePreconditions.NoPres ->
         incr nr_nopres ;
-        L.result "Procedure: %a footprint:NoPres@." Typ.Procname.pp proc_name
+        L.result "Procedure: %a footprint:NoPres@." Procname.pp proc_name
     | Prop.CategorizePreconditions.DataConstraints ->
         incr nr_dataconstraints ;
-        L.result "Procedure: %a footprint:DataConstraints@." Typ.Procname.pp proc_name
+        L.result "Procedure: %a footprint:DataConstraints@." Procname.pp proc_name
 
 
   let pp_stats () =
@@ -819,7 +819,7 @@ module SummaryStats = struct
 
   let do_summary proc_name summary = results := MetricResults.add !results proc_name summary
 
-  let pp_stats () = L.result "%a@\n" (MetricResults.pp ~pp_k:Typ.Procname.pp) !results
+  let pp_stats () = L.result "%a@\n" (MetricResults.pp ~pp_k:Procname.pp) !results
 end
 
 let error_filter filters proc_name file error_name =
@@ -953,7 +953,7 @@ let pp_stats error_filter linereader summary stats stats_format_list =
 
 
 let pp_summary summary =
-  L.result "Procedure: %a@\n%a@." Typ.Procname.pp (Summary.get_proc_name summary) Summary.pp_text
+  L.result "Procedure: %a@\n%a@." Procname.pp (Summary.get_proc_name summary) Summary.pp_text
     summary
 
 

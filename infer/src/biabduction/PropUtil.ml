@@ -12,7 +12,7 @@ let get_name_of_local (curr_f : Procdesc.t) (var_data : ProcAttributes.var_data)
 
 (* returns a list of local static variables (ie local variables defined static) in a proposition *)
 let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
-  let pname = Typ.Procname.to_string (Procdesc.get_proc_name curr_f) in
+  let pname = Procname.to_string (Procdesc.get_proc_name curr_f) in
   let local_static e =
     match e with
     | Exp.Lvar pvar

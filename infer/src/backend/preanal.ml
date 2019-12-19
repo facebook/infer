@@ -74,7 +74,7 @@ module Liveness = struct
           astate
 
 
-    let cache_node = ref (Procdesc.Node.dummy Typ.Procname.Linters_dummy_method)
+    let cache_node = ref (Procdesc.Node.dummy Procname.Linters_dummy_method)
 
     let cache_instr = ref Sil.skip_instr
 
@@ -129,7 +129,7 @@ module Liveness = struct
 
   let add_nullify_instrs summary tenv liveness_inv_map =
     let address_taken_vars =
-      if Typ.Procname.is_java (Summary.get_proc_name summary) then AddressTaken.Domain.empty
+      if Procname.is_java (Summary.get_proc_name summary) then AddressTaken.Domain.empty
         (* can't take the address of a variable in Java *)
       else
         let initial = AddressTaken.Domain.empty in
@@ -236,9 +236,7 @@ end
 let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
   let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
-  if
-    Config.function_pointer_specialization
-    && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))
+  if Config.function_pointer_specialization && not (Procname.is_java (Procdesc.get_proc_name pdesc))
   then FunctionPointerSubstitution.process summary tenv ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;

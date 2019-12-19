@@ -35,21 +35,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_closeable_procname tenv procname =
     match procname with
-    | Typ.Procname.Java java_procname ->
+    | Procname.Java java_procname ->
         is_closeable_typename tenv
-          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_procname))
+          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_procname))
     | _ ->
         false
 
 
   let _acquires_resource tenv procname =
     (* We assume all constructors of a subclass of Closeable acquire a resource *)
-    Typ.Procname.is_constructor procname && is_closeable_procname tenv procname
+    Procname.is_constructor procname && is_closeable_procname tenv procname
 
 
   let _releases_resource tenv procname =
     (* We assume the close method of a Closeable releases all of its resources *)
-    String.equal "close" (Typ.Procname.get_method procname) && is_closeable_procname tenv procname
+    String.equal "close" (Procname.get_method procname) && is_closeable_procname tenv procname
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
@@ -94,5 +94,5 @@ let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
       Payload.update_summary post summary
   | None ->
       L.(die InternalError)
-        "Analyzer failed to compute post for %a" Typ.Procname.pp
+        "Analyzer failed to compute post for %a" Procname.pp
         (Procdesc.get_proc_name proc_data.pdesc)

@@ -24,8 +24,8 @@ module SourceKind = struct
 
   let is_exposed ~caller_pname =
     match caller_pname with
-    | Typ.Procname.Java java_pname ->
-        let class_name = Typ.Procname.Java.get_class_name java_pname in
+    | Procname.Java java_pname ->
+        let class_name = Procname.Java.get_class_name java_pname in
         QuandaryConfig.is_endpoint class_name
     | _ ->
         false
@@ -88,8 +88,8 @@ module SourceKind = struct
       Option.some_if (not (List.is_empty sources)) sources
     in
     match pname with
-    | Typ.Procname.Java pname ->
-        let method_name = Typ.Procname.Java.get_method pname in
+    | Procname.Java pname ->
+        let method_name = Procname.Java.get_method pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", "getIntent" ->
@@ -136,9 +136,9 @@ module SourceKind = struct
               get_external_source class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname))
+          (Typ.Name.Java.from_string (Procname.Java.get_class_name pname))
         |> Option.value ~default:[]
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
+    | Procname.C _ when Procname.equal pname BuiltinDecl.__global_access -> (
       (* accessed global will be passed to us as the only parameter *)
       match List.map actuals ~f:HilExp.ignore_cast with
       | [HilExp.AccessExpression access_expr] -> (
@@ -157,7 +157,7 @@ module SourceKind = struct
     | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->
-        L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
+        L.(die InternalError) "Non-Java procname %a in Java analysis" Procname.pp pname
 
 
   let get_tainted_formals pdesc tenv =
@@ -185,8 +185,8 @@ module SourceKind = struct
     in
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.Java java_pname as pname -> (
-        let method_name = Typ.Procname.Java.get_method java_pname in
+    | Procname.Java java_pname as pname -> (
+        let method_name = Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | ( ( "android.app.Activity"
@@ -237,7 +237,7 @@ module SourceKind = struct
                   Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
                   && PatternMatch.override_exists ~check_current_type:false
                        (fun superclass_pname ->
-                         String.equal (Typ.Procname.get_method superclass_pname) method_name )
+                         String.equal (Procname.get_method superclass_pname) method_name )
                        tenv pname
                 then
                   (* assume every non-this formal of a Thrift service is tainted *)
@@ -249,7 +249,7 @@ module SourceKind = struct
         in
         match
           PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-            (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
+            (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
         with
         | Some tainted_formals ->
             tainted_formals
@@ -257,7 +257,7 @@ module SourceKind = struct
             Source.all_formals_untainted pdesc )
     | procname ->
         L.(die InternalError)
-          "Non-Java procedure %a where only Java procedures are expected" Typ.Procname.pp procname
+          "Non-Java procedure %a where only Java procedures are expected" Procname.pp procname
 
 
   let pp fmt kind =
@@ -344,12 +344,12 @@ module SinkKind = struct
 
   let get pname actuals _ tenv =
     match pname with
-    | Typ.Procname.Java java_pname ->
+    | Procname.Java java_pname ->
         (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter
            only if [taint_this] is true. *)
         let taint_all ?(taint_this = false) kinds =
           let actuals_to_taint, offset =
-            if Typ.Procname.Java.is_static java_pname || taint_this then (actuals, 0)
+            if Procname.Java.is_static java_pname || taint_this then (actuals, 0)
             else (List.tl_exn actuals, 1)
           in
           let indexes =
@@ -359,7 +359,7 @@ module SinkKind = struct
         in
         (* taint the nth non-"this" parameter (0-indexed) *)
         let taint_nth n kinds =
-          let first_index = if Typ.Procname.Java.is_static java_pname then n else n + 1 in
+          let first_index = if Procname.Java.is_static java_pname then n else n + 1 in
           if first_index < List.length actuals then
             let first_index = IntSet.singleton first_index in
             Some (List.rev_map kinds ~f:(fun kind -> (kind, first_index)))
@@ -385,7 +385,7 @@ module SinkKind = struct
           in
           Option.some_if (not (List.is_empty sinks)) sinks
         in
-        let method_name = Typ.Procname.Java.get_method java_pname in
+        let method_name = Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
@@ -480,12 +480,12 @@ module SinkKind = struct
               get_external_sink class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
+          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
         |> Option.value ~default:[]
     | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->
-        L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
+        L.(die InternalError) "Non-Java procname %a in Java analysis" Procname.pp pname
 
 
   let pp fmt kind =
@@ -544,8 +544,8 @@ module JavaSanitizer = struct
 
   let get pname tenv =
     match pname with
-    | Typ.Procname.Java java_pname ->
-        let method_name = Typ.Procname.Java.get_method java_pname in
+    | Procname.Java java_pname ->
+        let method_name = Procname.Java.get_method java_pname in
         let sanitizer_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           (* string concatenation is translated differently by invokedynamic in JDK11 *)
@@ -557,7 +557,7 @@ module JavaSanitizer = struct
               get_external_sanitizer class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv sanitizer_matching_supertype
-          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
+          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
     | _ ->
         None
 

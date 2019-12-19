@@ -73,7 +73,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
     in
     let do_instr = function
       | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof {typ}, _)], _, _)
-        when Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ ->
+        when Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ ->
           throwable_found := true
       | _ ->
           ()
@@ -238,7 +238,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
     curr_constructor_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
     ~typestates_for_all_constructors_incl_current loc : unit =
   State.set_node start_node ;
-  if Typ.Procname.is_constructor curr_constructor_pname then
+  if Procname.is_constructor curr_constructor_pname then
     match
       PatternMatch.get_this_type_nonstatic_methods_only
         (Procdesc.get_attributes curr_constructor_pdesc)
@@ -366,8 +366,8 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
     when match curr_pname with
-         | Typ.Procname.Java java_pname ->
-             Typ.Procname.Java.is_lambda java_pname
+         | Procname.Java java_pname ->
+             Procname.Java.is_lambda java_pname
          | _ ->
              false ->
       ()
@@ -417,11 +417,11 @@ let is_third_party_via_sig_files proc_name =
 
 let is_marked_third_party_in_config proc_name =
   match proc_name with
-  | Typ.Procname.Java java_pname ->
+  | Procname.Java java_pname ->
       (* TODO: migrate to the new way of checking for third party: use
          signatures repository instead of looking it up in config params.
       *)
-      Typ.Procname.Java.is_external java_pname
+      Procname.Java.is_external java_pname
   | _ ->
       false
 
@@ -549,7 +549,7 @@ let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~base
   (* Check return value *)
   match base_proc_name with
   (* TODO model this as unknown nullability and get rid of that check *)
-  | Typ.Procname.Java java_pname when not (Typ.Procname.Java.is_external java_pname) ->
+  | Procname.Java java_pname when not (Procname.Java.is_external java_pname) ->
       (* Check if return value is consistent with the base *)
       let base_nullability =
         AnnotatedNullability.get_nullability

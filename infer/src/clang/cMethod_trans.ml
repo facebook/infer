@@ -41,7 +41,7 @@ let get_method_name_from_clang tenv ms_opt =
         match ObjcCategory_decl.get_base_class_name_from_category decl with
         | Some class_typename ->
             let procname = ms.CMethodSignature.name in
-            let new_procname = Typ.Procname.replace_class procname class_typename in
+            let new_procname = Procname.replace_class procname class_typename in
             Some new_procname
         | None ->
             Some ms.CMethodSignature.name )
@@ -82,8 +82,8 @@ let get_class_name_method_call_from_clang tenv obj_c_message_expr_info =
     match method_signature_of_pointer tenv pointer with
     | Some ms -> (
       match ms.CMethodSignature.name with
-      | Typ.Procname.ObjC_Cpp objc_cpp ->
-          Some (Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp)
+      | Procname.ObjC_Cpp objc_cpp ->
+          Some (Procname.ObjC_Cpp.get_class_type_name objc_cpp)
       | _ ->
           None )
     | None ->
@@ -123,12 +123,11 @@ let get_objc_method_data obj_c_message_expr_info =
 
 
 let should_create_procdesc cfg procname defined set_objc_accessor_attr =
-  match Typ.Procname.Hash.find cfg procname with
+  match Procname.Hash.find cfg procname with
   | previous_procdesc ->
       let is_defined_previous = Procdesc.is_defined previous_procdesc in
       if (defined || set_objc_accessor_attr) && not is_defined_previous then (
-        Typ.Procname.Hash.remove cfg procname ;
-        true )
+        Procname.Hash.remove cfg procname ; true )
       else false
   | exception Caml.Not_found ->
       true
@@ -224,7 +223,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
     let const_formals = get_const_params_indices ~shift:(List.length captured_mangled) all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
-      "@\nCreating a new procdesc for function: '%a'@\n@." Typ.Procname.pp proc_name ;
+      "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;
     L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
     let loc_start =
       CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
@@ -273,7 +272,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
 let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type_opt =
-  if not (Typ.Procname.Hash.mem cfg proc_name) then
+  if not (Procname.Hash.mem cfg proc_name) then
     let ret_type, formals =
       match type_opt with
       | Some (ret_type, arg_types) ->

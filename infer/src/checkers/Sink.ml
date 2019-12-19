@@ -11,7 +11,7 @@ module F = Format
 module type Kind = sig
   include TraceElem.Kind
 
-  val get : Typ.Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
+  val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
 end
 
 module type S = sig

@@ -27,7 +27,7 @@ type t =
       (** Unary operator with type of the result if known *)
   | BinaryOperator of Binop.t * t * t  (** Binary operator *)
   | Exception of t  (** Exception *)
-  | Closure of Typ.Procname.t * (AccessPath.base * t) list  (** Name of function + environment *)
+  | Closure of Procname.t * (AccessPath.base * t) list  (** Name of function + environment *)
   | Constant of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Sizeof of Typ.t * t option

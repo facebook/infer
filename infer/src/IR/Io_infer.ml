@@ -109,7 +109,7 @@ h1 { font-size:14pt }
 
 
   (** File name for the node, given the procedure name and node id *)
-  let node_filename pname id = F.sprintf "%s_node%d" (Typ.Procname.to_filename pname) id
+  let node_filename pname id = F.sprintf "%s_node%d" (Procname.to_filename pname) id
 
   (** Print an html link to the given node. *)
   let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited fmt id =
@@ -129,7 +129,7 @@ h1 { font-size:14pt }
 
   (** Print an html link to the given proc *)
   let pp_proc_link path_to_root proc_name fmt text =
-    pp_link ~path:(path_to_root @ [Typ.Procname.to_filename proc_name]) fmt text
+    pp_link ~path:(path_to_root @ [Procname.to_filename proc_name]) fmt text
 
 
   (** Print an html link to the given line number of the current source file *)

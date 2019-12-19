@@ -22,21 +22,21 @@ type lock_effect =
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
 let is_thread_utils_type java_pname =
-  let pn = Typ.Procname.Java.get_class_name java_pname in
+  let pn = Procname.Java.get_class_name java_pname in
   String.is_suffix ~suffix:"ThreadUtils" pn || String.is_suffix ~suffix:"ThreadUtil" pn
 
 
 let is_thread_utils_method method_name_str = function
-  | Typ.Procname.Java java_pname ->
+  | Procname.Java java_pname ->
       is_thread_utils_type java_pname
-      && String.equal (Typ.Procname.Java.get_method java_pname) method_name_str
+      && String.equal (Procname.Java.get_method java_pname) method_name_str
   | _ ->
       false
 
 
 let get_thread_assert_effect = function
-  | Typ.Procname.Java java_pname when is_thread_utils_type java_pname -> (
-    match Typ.Procname.Java.get_method java_pname with
+  | Procname.Java java_pname when is_thread_utils_type java_pname -> (
+    match Procname.Java.get_method java_pname with
     | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread" | "checkIsOnMainThread" ->
         MainThread
     | "isMainThread" | "isOnMainThread" | "isUiThread" ->
@@ -53,7 +53,7 @@ let get_thread_assert_effect = function
 
 
 module Clang : sig
-  val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
+  val get_lock_effect : Procname.t -> HilExp.t list -> lock_effect
 
   val lock_types_matcher : QualifiedCppName.Match.quals_matcher
 
@@ -115,7 +115,7 @@ end = struct
 
   let mk_matcher methods =
     let matcher = QualifiedCppName.Match.of_fuzzy_qual_names methods in
-    fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
 
   let is_lock, is_unlock, is_trylock, is_std_lock =
@@ -214,7 +214,7 @@ end = struct
 
   let get_lock_effect pname actuals =
     let log_parse_error error =
-      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Procname.pp pname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
         actuals
     in
@@ -247,7 +247,7 @@ end = struct
 end
 
 module Java : sig
-  val get_lock_effect : Typ.Procname.t -> Typ.Procname.Java.t -> HilExp.t list -> lock_effect
+  val get_lock_effect : Procname.t -> Procname.Java.t -> HilExp.t list -> lock_effect
 end = struct
   let std_locks =
     [ "java.util.concurrent.locks.Lock"
@@ -275,8 +275,8 @@ end = struct
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
     if is_thread_utils_method "assertHoldsLock" pname then Lock fst_arg
     else
-      let classname = Typ.Procname.Java.get_class_name java_pname in
-      let methodname = Typ.Procname.Java.get_method java_pname in
+      let classname = Procname.Java.get_class_name java_pname in
+      let methodname = Procname.Java.get_method java_pname in
       if is_lock classname methodname then Lock fst_arg
       else if is_unlock classname methodname then Unlock fst_arg
       else if is_trylock classname methodname then LockedIfTrue fst_arg
@@ -285,13 +285,13 @@ end
 
 let get_lock_effect pname actuals =
   let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
-  if Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute then Lock fst_arg
-  else if Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute then Unlock fst_arg
+  if Procname.equal pname BuiltinDecl.__set_locked_attribute then Lock fst_arg
+  else if Procname.equal pname BuiltinDecl.__delete_locked_attribute then Unlock fst_arg
   else
     match pname with
-    | Typ.Procname.Java java_pname ->
+    | Procname.Java java_pname ->
         Java.get_lock_effect pname java_pname actuals
-    | Typ.Procname.(ObjC_Cpp _ | C _) ->
+    | Procname.(ObjC_Cpp _ | C _) ->
         Clang.get_lock_effect pname actuals
     | _ ->
         NoEffect
@@ -299,8 +299,8 @@ let get_lock_effect pname actuals =
 
 let get_current_class_and_annotated_superclasses is_annot tenv pname =
   match pname with
-  | Typ.Procname.Java java_pname ->
-      let current_class = Typ.Procname.Java.get_class_type_name java_pname in
+  | Procname.Java java_pname ->
+      let current_class = Procname.Java.get_class_type_name java_pname in
       let annotated_classes =
         PatternMatch.find_superclasses_with_attributes is_annot tenv current_class
       in
@@ -357,7 +357,7 @@ let is_modeled_ui_method =
   fun tenv pname -> MethodMatcher.of_list matchers tenv pname []
 
 
-type annotation_trail = DirectlyAnnotated | Override of Typ.Procname.t | SuperClass of Typ.name
+type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name
 [@@deriving compare]
 
 let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_name =
@@ -380,7 +380,7 @@ let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_nam
           List.find_map tstruct.supers ~f:find_override_or_superclass_aux )
   in
   if is_annotated proc_name then Some DirectlyAnnotated
-  else Typ.Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
+  else Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
 let annotated_as ~attrs_of_pname predicate tenv pname =

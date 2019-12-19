@@ -42,7 +42,7 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
            Latter case is self-explanatory: it is easy to the user to jump to definition
            and check out the method annotation.
         *)
-        let method_name = Typ.Procname.to_simplified_string pname in
+        let method_name = Procname.to_simplified_string pname in
         String.is_suffix object_expression ~suffix:method_name
   (* These cases are not yet supported because they normally mean non-nullable case, for which
      we don't render important messages yet.
@@ -68,8 +68,8 @@ type message_info =
 
 let get_method_class_name procname =
   match procname with
-  | Typ.Procname.Java java_pname ->
-      Some (Typ.Procname.Java.get_simple_class_name java_pname)
+  | Procname.Java java_pname ->
+      Some (Procname.Java.get_simple_class_name java_pname)
   | _ ->
       None
 
@@ -85,7 +85,7 @@ let get_info object_origin =
   | TypeOrigin.MethodCall {pname; call_loc} ->
       let offending_object =
         Format.asprintf "%a" MarkupFormatter.pp_monospaced
-          (Typ.Procname.to_simplified_string ~withclass:true pname)
+          (Procname.to_simplified_string ~withclass:true pname)
       in
       let object_loc = call_loc in
       let suggested_third_party_sig_file =

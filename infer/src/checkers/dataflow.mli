@@ -26,7 +26,7 @@ module type DFStateType = sig
   val do_node : Tenv.t -> Procdesc.Node.t -> t -> t list * t list
   (** Perform a state transition on a node. *)
 
-  val proc_throws : Typ.Procname.t -> throws
+  val proc_throws : Procname.t -> throws
   (** Can proc throw an exception? *)
 end
 

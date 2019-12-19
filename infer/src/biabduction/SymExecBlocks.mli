@@ -9,7 +9,7 @@ open! IStd
 
 val resolve_method_with_block_args_and_analyze :
      caller_summary:Summary.t
-  -> Typ.Procname.t
+  -> Procname.t
   -> (Exp.t * Typ.t) list
   -> (Summary.t * (Exp.t * Typ.t) list) option
 (** [resolve_method_with_block_args_and_analyze caller_pdesc pname args] create a copy of the method

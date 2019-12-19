@@ -9,7 +9,7 @@ open! IStd
 type violation = Nullability.t [@@deriving compare]
 
 type dereference_type =
-  | MethodCall of Typ.Procname.t
+  | MethodCall of Procname.t
   | AccessToField of Fieldname.t
   | AccessByIndex of {index_desc: string}
   | ArrayLengthAccess
@@ -67,7 +67,7 @@ let violation_description nullability ~dereference_location dereference_type ~nu
         match dereference_type with
         | MethodCall method_name ->
             Format.sprintf "calling %s"
-              (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
+              (MF.monospaced_to_string (Procname.to_simplified_string method_name))
         | AccessToField field_name ->
             Format.sprintf "accessing field %s"
               (MF.monospaced_to_string (Fieldname.to_simplified_string field_name))

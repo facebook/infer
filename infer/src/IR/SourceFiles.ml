@@ -23,7 +23,7 @@ let get_existing_data source_file =
       SqliteUtils.result_option ~finalize:false db ~log:"looking for pre-existing source file data"
         stmt ~read_row:(fun stmt ->
           let tenv = Sqlite3.column stmt 0 |> Tenv.SQLite.deserialize
-          and proc_names = Sqlite3.column stmt 1 |> Typ.Procname.SQLiteList.deserialize in
+          and proc_names = Sqlite3.column stmt 1 |> Procname.SQLiteList.deserialize in
           (tenv, proc_names) ) )
 
 
@@ -64,7 +64,7 @@ let add source_file cfg tenv integer_type_widths =
     ~source_file:(SourceFile.SQLite.serialize source_file)
     ~tenv:(Tenv.SQLite.serialize tenv)
     ~integer_type_widths:(Typ.IntegerWidths.SQLite.serialize integer_type_widths)
-    ~proc_names:(Typ.Procname.SQLiteList.serialize proc_names)
+    ~proc_names:(Procname.SQLiteList.serialize proc_names)
 
 
 let get_all ~filter () =
@@ -91,7 +91,7 @@ let proc_names_of_source source =
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false db
         ~log:"SourceFiles.proc_names_of_source" load_stmt
-      |> Option.value_map ~default:[] ~f:Typ.Procname.SQLiteList.deserialize )
+      |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
 
 
 let exists_source_statement =
@@ -152,7 +152,7 @@ let select_all_source_files_statement =
 let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
   let pp_procnames fmt procs =
     F.fprintf fmt "@[<v>" ;
-    List.iter ~f:(F.fprintf fmt "%a@," Typ.Procname.pp) procs ;
+    List.iter ~f:(F.fprintf fmt "%a@," Procname.pp) procs ;
     F.fprintf fmt "@]"
   in
   let pp_if stmt title condition deserialize pp fmt column =
@@ -163,8 +163,7 @@ let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
     F.fprintf fmt "%a@,%a%a%a" SourceFile.pp source_file
       (pp_if stmt "type_environment" type_environment Tenv.SQLite.deserialize Tenv.pp_per_file)
       1
-      (pp_if stmt "procedure_names" procedure_names Typ.Procname.SQLiteList.deserialize
-         pp_procnames)
+      (pp_if stmt "procedure_names" procedure_names Procname.SQLiteList.deserialize pp_procnames)
       2
       (pp_if stmt "freshly_captured" freshly_captured deserialize_freshly_captured
          Format.pp_print_bool)

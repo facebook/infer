@@ -132,7 +132,7 @@ module Node = struct
     ; kind: nodekind  (** kind of node *)
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
-    ; pname: Typ.Procname.t  (** name of the procedure the node belongs to *)
+    ; pname: Procname.t  (** name of the procedure the node belongs to *)
     ; mutable succs: t list  (** successor nodes in the cfg *) }
 
   let exn_handler_kind = Stmt_node ExceptionHandler
@@ -534,14 +534,14 @@ let fold_instrs pdesc ~init ~f =
 
 let get_static_callees pdesc =
   let callees =
-    fold_instrs pdesc ~init:Typ.Procname.Set.empty ~f:(fun acc _node instr ->
+    fold_instrs pdesc ~init:Procname.Set.empty ~f:(fun acc _node instr ->
         match instr with
         | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
-            Typ.Procname.Set.add callee_pn acc
+            Procname.Set.add callee_pn acc
         | _ ->
             acc )
   in
-  Typ.Procname.Set.remove (get_proc_name pdesc) callees |> Typ.Procname.Set.elements
+  Procname.Set.remove (get_proc_name pdesc) callees |> Procname.Set.elements
 
 
 let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
@@ -741,7 +741,7 @@ let pp_signature fmt pdesc =
   let attributes = get_attributes pdesc in
   let pname = get_proc_name pdesc in
   let defined_string = match is_defined pdesc with true -> "defined" | false -> "undefined" in
-  Format.fprintf fmt "@[%a [%s, Return type: %a, %aFormals: %a, Locals: %a" Typ.Procname.pp pname
+  Format.fprintf fmt "@[%a [%s, Return type: %a, %aFormals: %a, Locals: %a" Procname.pp pname
     defined_string (Typ.pp_full Pp.text) (get_ret_type pdesc) pp_objc_accessor
     attributes.ProcAttributes.objc_accessor pp_variable_list (get_formals pdesc) pp_locals_list
     (get_locals pdesc) ;
@@ -749,7 +749,7 @@ let pp_signature fmt pdesc =
     Format.fprintf fmt ", Captured: %a" pp_variable_list (get_captured pdesc) ;
   let method_annotation = attributes.ProcAttributes.method_annotation in
   ( if not (Annot.Method.is_empty method_annotation) then
-    let pname_string = Typ.Procname.to_string pname in
+    let pname_string = Procname.to_string pname in
     Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation ) ;
   Format.fprintf fmt "]@]@;"
 
@@ -769,9 +769,9 @@ let is_captured_pvar procdesc pvar =
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
     match procname with
-    | Typ.Procname.ObjC_Cpp cpp_pname ->
+    | Procname.ObjC_Cpp cpp_pname ->
         (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
-        Typ.Procname.ObjC_Cpp.is_cpp_lambda cpp_pname
+        Procname.ObjC_Cpp.is_cpp_lambda cpp_pname
         && not
              ( List.exists ~f:pvar_local_matches (get_locals procdesc)
              || List.exists ~f:pvar_matches (get_formals procdesc) )
@@ -780,7 +780,7 @@ let is_captured_pvar procdesc pvar =
   in
   let is_captured_var_objc_block =
     (* var is captured if the procedure is a objc block and the var is in the captured *)
-    Typ.Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
+    Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
   in
   is_captured_var_cpp_lambda || is_captured_var_objc_block
 
@@ -871,8 +871,7 @@ let load_statement =
 
 let load pname =
   ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
-      Typ.Procname.SQLite.serialize pname
-      |> Sqlite3.bind stmt 1
+      Procname.SQLite.serialize pname |> Sqlite3.bind stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind proc name" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
       |> Option.bind ~f:SQLite.deserialize )
