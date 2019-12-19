@@ -31,4 +31,4 @@ val is_synthesized : Typ.Procname.t -> bool
 
 val debug : ('a, Format.formatter, unit) IStd.format -> 'a
 
-val make_field : string -> Typ.Fieldname.t
+val make_field : string -> Fieldname.t

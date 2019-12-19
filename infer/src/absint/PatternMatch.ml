@@ -138,12 +138,12 @@ let rec get_type_name {Typ.desc} =
       "_"
 
 
-let get_field_type_name tenv (typ : Typ.t) (fieldname : Typ.Fieldname.t) : string option =
+let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string option =
   match typ.desc with
   | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields} -> (
-      match List.find ~f:(function fn, _, _ -> Typ.Fieldname.equal fn fieldname) fields with
+      match List.find ~f:(function fn, _, _ -> Fieldname.equal fn fieldname) fields with
       | Some (_, ft, _) ->
           Some (get_type_name ft)
       | None ->
@@ -400,7 +400,7 @@ let get_fields_nullified procdesc =
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
     | Sil.Store {e1= Exp.Lfield (Exp.Var lhs, fld, _); e2= rhs}
       when Exp.is_null_literal rhs && Ident.Set.mem lhs this_ids ->
-        (Typ.Fieldname.Set.add fld nullified_flds, this_ids)
+        (Fieldname.Set.add fld nullified_flds, this_ids)
     | Sil.Load {id; e= rhs} when Exp.is_this rhs ->
         (nullified_flds, Ident.Set.add id this_ids)
     | _ ->
@@ -408,7 +408,7 @@ let get_fields_nullified procdesc =
   in
   let nullified_flds, _ =
     Procdesc.fold_instrs procdesc ~f:collect_nullified_flds
-      ~init:(Typ.Fieldname.Set.empty, Ident.Set.empty)
+      ~init:(Fieldname.Set.empty, Ident.Set.empty)
   in
   nullified_flds
 

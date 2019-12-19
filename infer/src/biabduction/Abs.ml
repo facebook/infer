@@ -542,7 +542,7 @@ let discover_para_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = edges := edg :: !edges in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
+    let is_rec_fld fld = List.exists ~f:(Fieldname.equal fld) rec_flds in
     match se with
     | Predicates.Eexp _ | Predicates.Earray _ ->
         ()
@@ -584,7 +584,7 @@ let discover_para_dll_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = edges := edg :: !edges in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
+    let is_rec_fld fld = List.exists ~f:(Fieldname.equal fld) rec_flds in
     match se with
     | Predicates.Eexp _ | Predicates.Earray _ ->
         ()

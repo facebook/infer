@@ -41,8 +41,8 @@ let secs_of_timeunit =
   let str_of_access_path = function
     | _, [AccessPath.FieldAccess field]
       when String.equal "java.util.concurrent.TimeUnit"
-             (Typ.Name.name (Typ.Fieldname.get_class_name field)) ->
-        Some (Typ.Fieldname.get_field_name field)
+             (Typ.Name.name (Fieldname.get_class_name field)) ->
+        Some (Fieldname.get_field_name field)
     | _ ->
         None
   in
@@ -279,11 +279,11 @@ type scheduler_thread_constraint = ForUIThread | ForNonUIThread | ForUnknownThre
    annotation constraint, if any. *)
 let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.AccessExpression.t) =
   match receiver with
-  | FieldOffset (_, field_name) when Typ.Fieldname.is_java field_name ->
-      Typ.Fieldname.get_class_name field_name
+  | FieldOffset (_, field_name) when Fieldname.is_java field_name ->
+      Fieldname.get_class_name field_name
       |> Tenv.lookup tenv
       |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.fields @ tstruct.statics)
-      |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Typ.Fieldname.equal fld field_name))
+      |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Fieldname.equal fld field_name))
       |> Option.bind ~f:(fun (_, _, annot) ->
              if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
              else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread

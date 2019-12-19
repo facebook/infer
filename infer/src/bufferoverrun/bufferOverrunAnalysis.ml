@@ -200,7 +200,7 @@ module TransferFunctions = struct
     match Typ.Procname.get_class_type_name callee_pname with
     | Some (JavaClass class_name as typename) ->
         let class_var = Loc.of_var (Var.of_pvar (Pvar.mk_global class_name)) in
-        let fn = Typ.Fieldname.make typename "$VALUES" in
+        let fn = Fieldname.make typename "$VALUES" in
         let v = Dom.Mem.find (Loc.append_field class_var ~fn) mem in
         Dom.Mem.add_stack (Loc.of_id id) v mem
     | _ ->
@@ -210,7 +210,7 @@ module TransferFunctions = struct
   let join_java_static_final =
     let known_java_static_fields = String.Set.of_list [".EMPTY"] in
     let is_known_java_static_field fn =
-      let fieldname = Typ.Fieldname.to_string fn in
+      let fieldname = Fieldname.to_string fn in
       String.Set.exists known_java_static_fields ~f:(fun suffix ->
           String.is_suffix fieldname ~suffix )
     in
@@ -245,7 +245,7 @@ module TransferFunctions = struct
     fun exp model_env ret mem ->
       match exp with
       | Exp.Lfield (_, fieldname, typ)
-        when String.Set.mem known_empty_collections (Typ.Fieldname.get_field_name fieldname)
+        when String.Set.mem known_empty_collections (Fieldname.get_field_name fieldname)
              && String.equal "java.util.Collections" (Typ.to_string typ) ->
           Models.Collection.create_collection model_env ~ret mem ~length:Itv.zero |> Option.some
       | _ ->

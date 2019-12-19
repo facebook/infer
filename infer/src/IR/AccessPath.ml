@@ -19,7 +19,7 @@ module Raw = struct
 
   let equal_base = [%compare.equal: base]
 
-  type access = ArrayAccess of typ_ * t list | FieldAccess of Typ.Fieldname.t
+  type access = ArrayAccess of typ_ * t list | FieldAccess of Fieldname.t
 
   and t = base * access list [@@deriving compare]
 
@@ -33,7 +33,7 @@ module Raw = struct
 
   let rec pp_access fmt = function
     | FieldAccess field_name ->
-        F.pp_print_string fmt (Typ.Fieldname.get_field_name field_name)
+        F.pp_print_string fmt (Fieldname.get_field_name field_name)
     | ArrayAccess (typ, []) ->
         F.pp_print_string fmt "[_]" ; may_pp_typ fmt typ
     | ArrayAccess (typ, index_aps) ->

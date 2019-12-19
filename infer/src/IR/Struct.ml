@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type field = Typ.Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
@@ -26,7 +26,7 @@ type t =
 type lookup = Typ.Name.t -> t option
 
 let pp_field pe f (field_name, typ, ann) =
-  F.fprintf f "@\n\t\t%a %a %a" (Typ.pp_full pe) typ Typ.Fieldname.pp field_name Annot.Item.pp ann
+  F.fprintf f "@\n\t\t%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
 
 
 let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
@@ -102,7 +102,7 @@ let fld_typ ~lookup ~default fn (typ : Typ.t) =
   | Tstruct name -> (
     match lookup name with
     | Some {fields} ->
-        List.find ~f:(fun (f, _, _) -> Typ.Fieldname.equal f fn) fields
+        List.find ~f:(fun (f, _, _) -> Fieldname.equal f fn) fields
         |> Option.value_map ~f:snd3 ~default
     | None ->
         default )
@@ -115,8 +115,7 @@ type field_info = {typ: Typ.t; annotations: Annot.Item.t; is_static: bool}
 let find_field field_list field_name_to_lookup =
   List.find_map
     ~f:(fun (field_name, typ, annotations) ->
-      if Typ.Fieldname.equal field_name field_name_to_lookup then Some (typ, annotations) else None
-      )
+      if Fieldname.equal field_name field_name_to_lookup then Some (typ, annotations) else None )
     field_list
 
 

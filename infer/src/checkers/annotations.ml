@@ -163,9 +163,7 @@ let pname_has_return_annot pname ~attrs_of_pname predicate =
 
 
 let field_has_annot fieldname (struct_typ : Struct.t) predicate =
-  let fld_has_taint_annot (fname, _, annot) =
-    Typ.Fieldname.equal fieldname fname && predicate annot
-  in
+  let fld_has_taint_annot (fname, _, annot) = Fieldname.equal fieldname fname && predicate annot in
   List.exists ~f:fld_has_taint_annot struct_typ.fields
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
 

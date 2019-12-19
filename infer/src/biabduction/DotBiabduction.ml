@@ -53,7 +53,7 @@ type dotty_node =
   (* Dotpointsto(coo,e,c): basic memory cell box for expression e at coordinate coo and color c *)
   | Dotpointsto of coordinate * Exp.t * string
   (* Dotstruct(coo,e,l,c): struct box for expression e  with field list l at coordinate coo and color c *)
-  | Dotstruct of coordinate * Exp.t * (Typ.Fieldname.t * Predicates.strexp) list * string * Exp.t
+  | Dotstruct of coordinate * Exp.t * (Fieldname.t * Predicates.strexp) list * string * Exp.t
   (* Dotarray(coo,e1,e2,l,t,c): array box for expression e1  with field list l at coordinate coo and color c*)
   (* e2 is the len and t is the type *)
   | Dotarray of coordinate * Exp.t * Exp.t * (Exp.t * Predicates.strexp) list * Typ.t * string
@@ -151,11 +151,11 @@ and struct_to_dotty_str pe coo f ls : unit =
   | [] ->
       ()
   | [(fn, se)] ->
-      F.fprintf f "{ <%s%iL%i> %s: %a } " (Typ.Fieldname.to_string fn) coo.id coo.lambda
-        (Typ.Fieldname.to_string fn) (strexp_to_string pe coo) se
+      F.fprintf f "{ <%s%iL%i> %s: %a } " (Fieldname.to_string fn) coo.id coo.lambda
+        (Fieldname.to_string fn) (strexp_to_string pe coo) se
   | (fn, se) :: ls' ->
-      F.fprintf f " { <%s%iL%i> %s: %a } | %a" (Typ.Fieldname.to_string fn) coo.id coo.lambda
-        (Typ.Fieldname.to_string fn) (strexp_to_string pe coo) se (struct_to_dotty_str pe coo) ls'
+      F.fprintf f " { <%s%iL%i> %s: %a } | %a" (Fieldname.to_string fn) coo.id coo.lambda
+        (Fieldname.to_string fn) (strexp_to_string pe coo) se (struct_to_dotty_str pe coo) ls'
 
 
 and get_contents_sexp pe coo f se =
@@ -456,7 +456,7 @@ let in_cycle cycle edge =
   | Some cycle' ->
       let fn, se = edge in
       List.exists
-        ~f:(fun (_, fn', se') -> Typ.Fieldname.equal fn fn' && Predicates.equal_strexp se se')
+        ~f:(fun (_, fn', se') -> Fieldname.equal fn fn' && Predicates.equal_strexp se se')
         cycle'
   | _ ->
       false
@@ -478,7 +478,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
     | Eexp (e, _) -> (
         if is_nil e p then
           let n' = make_nil_node lambda in
-          if !print_full_prop then [(LinkStructToExp, Typ.Fieldname.to_string fn, n', "")] else []
+          if !print_full_prop then [(LinkStructToExp, Fieldname.to_string fn, n', "")] else []
         else
           let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
           match nodes_e with
@@ -487,7 +487,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
             | None ->
                 []
             | Some n' ->
-                [(LinkStructToExp, Typ.Fieldname.to_string fn, n', "")] )
+                [(LinkStructToExp, Fieldname.to_string fn, n', "")] )
           | [node] | [Dotpointsto _; node] | [node; Dotpointsto _] ->
               let n = get_coordinate_id node in
               if List.mem ~equal:Exp.equal !struct_exp_nodes e then
@@ -496,8 +496,8 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                   if in_cycle cycle (fn, se) && not !print_full_prop then LinkRetainCycle
                   else LinkStructToStruct
                 in
-                [(link_kind, Typ.Fieldname.to_string fn, n, e_no_special_char)]
-              else [(LinkStructToExp, Typ.Fieldname.to_string fn, n, "")]
+                [(link_kind, Fieldname.to_string fn, n, e_no_special_char)]
+              else [(LinkStructToExp, Fieldname.to_string fn, n, "")]
           | _ ->
               (* by construction there must be at most 2 nodes for an expression*)
               L.internal_error "@\n Too many nodes! Error! @\n@." ;

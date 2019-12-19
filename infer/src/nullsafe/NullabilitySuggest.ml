@@ -125,7 +125,7 @@ let make_error_trace astate ap ud =
   let name_of ap =
     match AccessPath.get_last_access ap with
     | Some (AccessPath.FieldAccess field_name) ->
-        "Field " ^ Typ.Fieldname.get_field_name field_name
+        "Field " ^ Fieldname.get_field_name field_name
     | Some (AccessPath.ArrayAccess _) ->
         "Some array element"
     | None ->
@@ -162,19 +162,19 @@ let pretty_field_name proc_data field_name =
   match Summary.get_proc_name proc_data.ProcData.summary with
   | Typ.Procname.Java jproc_name ->
       let proc_class_name = Typ.Procname.Java.get_class_name jproc_name in
-      let field_class_name = Typ.Fieldname.get_class_name field_name |> Typ.Name.name in
-      if String.equal proc_class_name field_class_name then Typ.Fieldname.get_field_name field_name
-      else Typ.Fieldname.to_simplified_string field_name
+      let field_class_name = Fieldname.get_class_name field_name |> Typ.Name.name in
+      if String.equal proc_class_name field_class_name then Fieldname.get_field_name field_name
+      else Fieldname.to_simplified_string field_name
   | _ ->
       (* This format is subject to change once this checker gets to run on C/Cpp/ObjC *)
-      Typ.Fieldname.to_string field_name
+      Fieldname.to_string field_name
 
 
 (* Checks if a field name stems from a class outside the domain of what is analyzed by Infer *)
 let is_outside_codebase proc_name field_name =
   match proc_name with
   | Typ.Procname.Java _ ->
-      Typ.Name.Java.is_external_classname (Typ.Name.name (Typ.Fieldname.get_class_name field_name))
+      Typ.Name.Java.is_external_classname (Typ.Name.name (Fieldname.get_class_name field_name))
   | _ ->
       false
 
@@ -199,7 +199,7 @@ let checker {Callbacks.summary; exe_env} =
              do, so let's do it in ad hoc way.
           *)
           ()
-      | Some (field_name, _) when Typ.Fieldname.is_java_captured_parameter field_name ->
+      | Some (field_name, _) when Fieldname.is_java_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)
           ()
       | Some (field_name, _) ->

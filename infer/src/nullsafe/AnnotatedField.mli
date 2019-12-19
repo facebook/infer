@@ -11,5 +11,5 @@ open! IStd
 
 type t = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
 
-val get : Tenv.t -> Typ.Fieldname.t -> Typ.t -> t option
+val get : Tenv.t -> Fieldname.t -> Typ.t -> t option
 (** Looks up for a field declaration and, in case of success, converts it to [t] *)

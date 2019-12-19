@@ -38,7 +38,7 @@ let add_no_duplicates_fields field_tuple l =
     match (field_tuple, l) with
     | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple) :: rest ->
         let ret_list, ret_found = replace_field field_tuple rest found in
-        if Typ.Fieldname.equal field old_field && Typ.equal typ old_typ then
+        if Fieldname.equal field old_field && Typ.equal typ old_typ then
           let annotations = append_no_duplicates_annotations annot old_annot in
           ((field, typ, annotations) :: ret_list, true)
         else (old_field_tuple :: ret_list, ret_found)
@@ -63,7 +63,7 @@ let list_range i j =
   aux j []
 
 
-let mk_class_field_name class_tname field_name = Typ.Fieldname.make class_tname field_name
+let mk_class_field_name class_tname field_name = Fieldname.make class_tname field_name
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in

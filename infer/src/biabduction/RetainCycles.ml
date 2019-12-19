@@ -45,7 +45,7 @@ let desc_retain_cycle tenv (cycle : RetainCyclesType.t) =
       match edge with
       | Object obj ->
           Format.sprintf "%s --> %s" (from_exp_str obj)
-            (MF.monospaced_to_string (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
+            (MF.monospaced_to_string (Fieldname.to_string obj.rc_field.rc_field_name))
       | Block (_, var) ->
           Format.sprintf "a block that captures %s" (MF.monospaced_to_string (Pvar.to_string var))
     in
@@ -76,9 +76,7 @@ let edge_is_strong tenv obj_edge =
     | Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          List.find
-            ~f:(fun (fn, _, _) -> Typ.Fieldname.equal obj_edge.rc_field.rc_field_name fn)
-            fields
+          List.find ~f:(fun (fn, _, _) -> Fieldname.equal obj_edge.rc_field.rc_field_name fn) fields
       | None ->
           None )
     | _ ->

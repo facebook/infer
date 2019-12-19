@@ -67,7 +67,7 @@ let rec exp_match e1 sub vars e2 : (Predicates.subst * Ident.t list) option =
       check_equal sub vars e1 e2
   | Exp.Lvar _, _ | _, Exp.Lvar _ ->
       check_equal sub vars e1 e2
-  | Exp.Lfield (e1', fld1, _), Exp.Lfield (e2', fld2, _) when Typ.Fieldname.equal fld1 fld2 ->
+  | Exp.Lfield (e1', fld1, _), Exp.Lfield (e2', fld2, _) when Fieldname.equal fld1 fld2 ->
       exp_match e1' sub vars e2'
   | Exp.Lfield _, _ | _, Exp.Lfield _ ->
       None
@@ -128,7 +128,7 @@ and fsel_match fsel1 sub vars fsel2 =
       if Config.abs_struct <= 0 then None
       else Some (sub, vars) (* This can lead to great information loss *)
   | (fld1, se1') :: fsel1', (fld2, se2') :: fsel2' ->
-      let n = Typ.Fieldname.compare fld1 fld2 in
+      let n = Fieldname.compare fld1 fld2 in
       if Int.equal n 0 then
         match strexp_match se1' sub vars se2' with
         | None ->
@@ -600,7 +600,7 @@ and generate_todos_from_fel mode todos fel1 fel2 =
   | _, [] ->
       if equal_iso_mode mode LFieldForget then Some todos else None
   | (fld1, strexp1) :: fel1', (fld2, strexp2) :: fel2' ->
-      let n = Typ.Fieldname.compare fld1 fld2 in
+      let n = Fieldname.compare fld1 fld2 in
       if Int.equal n 0 then
         match generate_todos_from_strexp mode todos strexp1 strexp2 with
         | None ->

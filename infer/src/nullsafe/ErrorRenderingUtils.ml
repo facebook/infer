@@ -31,7 +31,7 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
   | TypeOrigin.Field {field_name} ->
       (* Either local variable or expression like `<smth>.field_name`. Latter case is trivial:
          the user can quickly go to field_name definition and see if its annotation. *)
-      let field_name_str = Typ.Fieldname.get_field_name field_name in
+      let field_name_str = Fieldname.get_field_name field_name in
       String.is_suffix object_expression ~suffix:field_name_str
   | TypeOrigin.MethodCall {pname; annotated_signature= {model_source}} ->
       let is_modelled = Option.is_some model_source in
@@ -75,7 +75,7 @@ let get_method_class_name procname =
 
 
 let get_field_class_name field_name =
-  let class_with_field = Typ.Fieldname.to_simplified_string field_name in
+  let class_with_field = Fieldname.to_simplified_string field_name in
   String.rsplit2 class_with_field ~on:'.'
   |> Option.value_map ~f:(fun (classname, _) -> classname) ~default:"the field class"
 
@@ -122,7 +122,7 @@ let get_info object_origin =
   | TypeOrigin.Field {field_name; access_loc} ->
       let offending_object =
         Format.asprintf "%a" MarkupFormatter.pp_monospaced
-          (Typ.Fieldname.to_simplified_string field_name)
+          (Fieldname.to_simplified_string field_name)
       in
       let object_loc = access_loc in
       (* TODO: currently we do not support third-party annotations for fields. Because of this,

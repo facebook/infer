@@ -40,7 +40,7 @@ type err_instance =
       ; violation_type: InheritanceRule.violation_type
       ; base_proc_name: Typ.Procname.t
       ; overridden_proc_name: Typ.Procname.t }
-  | Field_not_initialized of Typ.Fieldname.t
+  | Field_not_initialized of Fieldname.t
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }
@@ -64,7 +64,7 @@ type st_report_error =
   -> Procdesc.t
   -> IssueType.t
   -> Location.t
-  -> ?field_name:Typ.Fieldname.t option
+  -> ?field_name:Fieldname.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
   -> ?severity:Exceptions.severity
   -> string

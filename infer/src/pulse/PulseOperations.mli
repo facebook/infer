@@ -61,7 +61,7 @@ val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 val havoc_field :
      Location.t
   -> AbstractValue.t * ValueHistory.t
-  -> Typ.Fieldname.t
+  -> Fieldname.t
   -> ValueHistory.t
   -> t
   -> t access_result

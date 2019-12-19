@@ -8,7 +8,7 @@ open! IStd
 
 type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t}
 
-type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Predicates.inst}
+type retain_cycle_field = {rc_field_name: Fieldname.t; rc_field_inst: Predicates.inst}
 
 type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 
@@ -21,7 +21,7 @@ let compare_retain_cycle_node (node1 : retain_cycle_node) (node2 : retain_cycle_
 
 
 let compare_retain_cycle_field (node1 : retain_cycle_field) (node2 : retain_cycle_field) =
-  Typ.Fieldname.compare node1.rc_field_name node2.rc_field_name
+  Fieldname.compare node1.rc_field_name node2.rc_field_name
 
 
 let compare_retain_cycle_edge_obj (obj1 : retain_cycle_edge_obj) (obj2 : retain_cycle_edge_obj) =
@@ -66,7 +66,7 @@ let is_inst_rearrange node =
 let is_isa_field node =
   match node with
   | Object obj ->
-      String.equal (Typ.Fieldname.to_string obj.rc_field.rc_field_name) "isa"
+      String.equal (Fieldname.to_string obj.rc_field.rc_field_name) "isa"
   | Block _ ->
       false
 
@@ -99,8 +99,7 @@ let pp_retain_cycle_node f (node : retain_cycle_node) =
 
 
 let pp_retain_cycle_field f (field : retain_cycle_field) =
-  Format.fprintf f "%a[%a]" Typ.Fieldname.pp field.rc_field_name Predicates.pp_inst
-    field.rc_field_inst
+  Format.fprintf f "%a[%a]" Fieldname.pp field.rc_field_name Predicates.pp_inst field.rc_field_inst
 
 
 let pp_retain_cycle_edge f (edge : retain_cycle_edge) =
@@ -172,14 +171,14 @@ let pp_dotty fmt cycle =
     | Object obj ->
         Format.fprintf fmt "%s_%a"
           (Typ.to_string obj.rc_from.rc_node_typ)
-          Typ.Fieldname.pp obj.rc_field.rc_field_name
+          Fieldname.pp obj.rc_field.rc_field_name
     | Block (name, _) ->
         Typ.Procname.pp_unique_id fmt name
   in
   let pp_dotty_field fmt element =
     match element with
     | Object obj ->
-        Typ.Fieldname.pp fmt obj.rc_field.rc_field_name
+        Fieldname.pp fmt obj.rc_field.rc_field_name
     | Block _ ->
         Format.fprintf fmt ""
   in

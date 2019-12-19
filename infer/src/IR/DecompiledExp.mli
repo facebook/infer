@@ -19,8 +19,8 @@ type t =
   | Dsizeof of Typ.t * t option * Subtype.t
   | Dderef of t
   | Dfcall of t * t list * Location.t * CallFlags.t
-  | Darrow of t * Typ.Fieldname.t
-  | Ddot of t * Typ.Fieldname.t
+  | Darrow of t * Fieldname.t
+  | Ddot of t * Fieldname.t
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
   | Dunop of Unop.t * t

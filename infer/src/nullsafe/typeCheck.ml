@@ -58,7 +58,7 @@ module ComplexExpressions = struct
       | DExp.Darray (de1, de2) ->
           dexp_to_string de1 ^ "[" ^ dexp_to_string de2 ^ "]"
       | DExp.Darrow (de, f) | DExp.Ddot (de, f) ->
-          dexp_to_string de ^ "." ^ Typ.Fieldname.to_string f
+          dexp_to_string de ^ "." ^ Fieldname.to_string f
       | DExp.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ Binop.str Pp.text op ^ dexp_to_string de2 ^ ")"
       | DExp.Dconst (Const.Cfun pn) ->
@@ -314,15 +314,15 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
       let res =
         match exp' with
         | Exp.Lvar pv when is_parameter_field pv || is_static_field pv ->
-            let fld_name = pvar_to_str pv ^ Typ.Fieldname.to_string fn in
+            let fld_name = pvar_to_str pv ^ Fieldname.to_string fn in
             let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
             let typestate' =
               update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
             in
             (Exp.Lvar pvar, typestate')
-        | Exp.Lfield (_exp', fn', _) when Typ.Fieldname.is_java_outer_instance fn' ->
+        | Exp.Lfield (_exp', fn', _) when Fieldname.is_java_outer_instance fn' ->
             (* handle double dereference when accessing a field from an outer class *)
-            let fld_name = Typ.Fieldname.to_string fn' ^ "_" ^ Typ.Fieldname.to_string fn in
+            let fld_name = Fieldname.to_string fn' ^ "_" ^ Fieldname.to_string fn in
             let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
             let typestate' =
               update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ

@@ -64,7 +64,7 @@ module StrexpMatch : sig
   (** Replace the index in the array at a given position with the new index *)
 end = struct
   (** syntactic offset *)
-  type syn_offset = Field of Typ.Fieldname.t * Typ.t | Index of Exp.t
+  type syn_offset = Field of Fieldname.t * Typ.t | Index of Exp.t
 
   (** path through an Estruct *)
   type path = Exp.t * syn_offset list
@@ -87,8 +87,8 @@ end = struct
     | Predicates.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          let se' = snd (List.find_exn ~f:(fun (f', _) -> Typ.Fieldname.equal f' fld) fsel) in
-          let t' = snd3 (List.find_exn ~f:(fun (f', _, _) -> Typ.Fieldname.equal f' fld) fields) in
+          let se' = snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
+          let t' = snd3 (List.find_exn ~f:(fun (f', _, _) -> Fieldname.equal f' fld) fields) in
           get_strexp_at_syn_offsets tenv se' t' syn_offs'
       | None ->
           fail () )
@@ -107,16 +107,15 @@ end = struct
     | Predicates.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          let se' = snd (List.find_exn ~f:(fun (f', _) -> Typ.Fieldname.equal f' fld) fsel) in
+          let se' = snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
           let t' =
             (fun (_, y, _) -> y)
-              (List.find_exn ~f:(fun (f', _, _) -> Typ.Fieldname.equal f' fld) fields)
+              (List.find_exn ~f:(fun (f', _, _) -> Fieldname.equal f' fld) fields)
           in
           let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
           let fsel' =
             List.map
-              ~f:(fun (f'', se'') ->
-                if Typ.Fieldname.equal f'' fld then (fld, se_mod) else (f'', se'') )
+              ~f:(fun (f'', se'') -> if Fieldname.equal f'' fld then (fld, se_mod) else (f'', se''))
               fsel
           in
           Predicates.Estruct (fsel', inst)
@@ -197,11 +196,11 @@ end = struct
       | [] ->
           ()
       | (f, se) :: fsel' ->
-          ( match List.find ~f:(fun (f', _, _) -> Typ.Fieldname.equal f' f) ftal with
+          ( match List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) ftal with
           | Some (_, t, _) ->
               find_offset_sexp sigma_other hpred root (Field (f, typ) :: offs) se t
           | None ->
-              L.d_printfln "Can't find field %a in StrexpMatch.find" Typ.Fieldname.pp f ) ;
+              L.d_printfln "Can't find field %a in StrexpMatch.find" Fieldname.pp f ) ;
           find_offset_fsel sigma_other hpred root offs fsel' ftal typ
     and find_offset_esel sigma_other hpred root offs esel t =
       match esel with

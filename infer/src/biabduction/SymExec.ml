@@ -17,7 +17,7 @@ let rec fldlist_assoc fld = function
   | [] ->
       raise Caml.Not_found
   | (fld', x, _) :: l ->
-      if Typ.Fieldname.equal fld fld' then x else fldlist_assoc fld l
+      if Fieldname.equal fld fld' then x else fldlist_assoc fld l
 
 
 let unroll_type tenv (typ : Typ.t) (off : Predicates.offset) =
@@ -33,9 +33,9 @@ let unroll_type tenv (typ : Typ.t) (off : Predicates.offset) =
   | Tstruct name, Off_fld (fld, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields; statics} -> (
-      try fldlist_assoc fld (fields @ statics) with Caml.Not_found -> fail Typ.Fieldname.pp fld )
+      try fldlist_assoc fld (fields @ statics) with Caml.Not_found -> fail Fieldname.pp fld )
     | None ->
-        fail Typ.Fieldname.pp fld )
+        fail Fieldname.pp fld )
   | Tarray {elt}, Off_index _ ->
       elt
   | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
@@ -108,18 +108,16 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
     match Tenv.lookup tenv name with
     | Some ({fields} as struct_typ) -> (
         let t' = unroll_type tenv typ (Predicates.Off_fld (fld, fld_typ)) in
-        match List.find ~f:(fun fse -> Typ.Fieldname.equal fld (fst fse)) fsel with
+        match List.find ~f:(fun fse -> Fieldname.equal fld (fst fse)) fsel with
         | Some (_, se') ->
             let res_e', res_se', res_t', res_pred_insts_op' =
               apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f inst
                 lookup_inst
             in
-            let replace_fse fse =
-              if Typ.Fieldname.equal fld (fst fse) then (fld, res_se') else fse
-            in
+            let replace_fse fse = if Fieldname.equal fld (fst fse) then (fld, res_se') else fse in
             let res_se = Predicates.Estruct (List.map ~f:replace_fse fsel, inst') in
             let replace_fta (f, t, a) =
-              if Typ.Fieldname.equal fld f then (fld, res_t', a) else (f, t, a)
+              if Fieldname.equal fld f then (fld, res_t', a) else (f, t, a)
             in
             let fields' = List.map ~f:replace_fta fields in
             ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
@@ -1781,7 +1779,7 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
 and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom getter found. Executing the ObjC builtin getter with ivar %a."
-    Typ.Fieldname.pp field_name ;
+    Fieldname.pp field_name ;
   match args with
   | [ ( lexp
       , ( ({Typ.desc= Tstruct struct_name} as typ)
@@ -1797,7 +1795,7 @@ and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
 and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom setter found. Executing the ObjC builtin setter with ivar %a."
-    Typ.Fieldname.pp field_name ;
+    Fieldname.pp field_name ;
   match args with
   | ( lexp1
     , ( ({Typ.desc= Tstruct struct_name} as typ1)

@@ -10,7 +10,7 @@ type violation = Nullability.t [@@deriving compare]
 
 type dereference_type =
   | MethodCall of Typ.Procname.t
-  | AccessToField of Typ.Fieldname.t
+  | AccessToField of Fieldname.t
   | AccessByIndex of {index_desc: string}
   | ArrayLengthAccess
 [@@deriving compare]
@@ -70,7 +70,7 @@ let violation_description nullability ~dereference_location dereference_type ~nu
               (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
         | AccessToField field_name ->
             Format.sprintf "accessing field %s"
-              (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
+              (MF.monospaced_to_string (Fieldname.to_simplified_string field_name))
         | AccessByIndex {index_desc} ->
             Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
         | ArrayLengthAccess ->

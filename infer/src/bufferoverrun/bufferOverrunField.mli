@@ -11,24 +11,24 @@ val pp :
   -> sep:string
   -> Format.formatter
   -> 'a
-  -> Typ.Fieldname.t
+  -> Fieldname.t
   -> unit
 (** A parameterized pretty printer for field appended values *)
 
-val get_type : Typ.Fieldname.t -> Typ.t option
+val get_type : Fieldname.t -> Typ.t option
 (** Get type of field that is constructed in this module. This does not work in Java at the moment. *)
 
-val c_strlen : unit -> Typ.Fieldname.t
+val c_strlen : unit -> Fieldname.t
 (** Field for C string's length *)
 
-val cpp_vector_elem : vec_typ:Typ.t -> elt_typ:Typ.t -> Typ.Fieldname.t
+val cpp_vector_elem : vec_typ:Typ.t -> elt_typ:Typ.t -> Fieldname.t
 (** Field for C++ vector's elements *)
 
-val java_collection_internal_array : Typ.Fieldname.t
+val java_collection_internal_array : Fieldname.t
 (** Field for Java collection's elements *)
 
-val is_cpp_vector_elem : Typ.Fieldname.t -> bool
+val is_cpp_vector_elem : Fieldname.t -> bool
 (** Check if the field is for C++ vector's elements *)
 
-val is_java_collection_internal_array : Typ.Fieldname.t -> bool
+val is_java_collection_internal_array : Fieldname.t -> bool
 (** Check if the field is for Java collection's elements *)

@@ -440,7 +440,7 @@ let rec pp_path f = function
   | [] ->
       ()
   | (name, fld) :: path ->
-      F.fprintf f "%a.%a: " Typ.Name.pp name Typ.Fieldname.pp fld ;
+      F.fprintf f "%a.%a: " Typ.Name.pp name Fieldname.pp fld ;
       pp_path f path
 
 
@@ -1240,7 +1240,7 @@ module Normalize = struct
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
       | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
-          if Typ.Fieldname.equal fld1 fld2 then normalize_eq (e1', e2') else eq
+          if Fieldname.equal fld1 fld2 then normalize_eq (e1', e2') else eq
       | Lindex (e1', idx1), Lindex (e2', idx2) ->
           if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
           else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
@@ -1321,18 +1321,18 @@ module Normalize = struct
           se
       | _ :: _ ->
           let fld_cnts' =
-            IList.map_changed fld_cnts ~equal:[%compare.equal: Typ.Fieldname.t * Predicates.strexp]
+            IList.map_changed fld_cnts ~equal:[%compare.equal: Fieldname.t * Predicates.strexp]
               ~f:(fun ((fld, cnt) as x) ->
                 let cnt' = strexp_normalize tenv sub cnt in
                 if phys_equal cnt cnt' then x else (fld, cnt') )
           in
           if
             phys_equal fld_cnts fld_cnts'
-            && List.is_sorted ~compare:[%compare: Typ.Fieldname.t * Predicates.strexp] fld_cnts
+            && List.is_sorted ~compare:[%compare: Fieldname.t * Predicates.strexp] fld_cnts
           then se
           else
             let fld_cnts'' =
-              List.sort ~compare:[%compare: Typ.Fieldname.t * Predicates.strexp] fld_cnts'
+              List.sort ~compare:[%compare: Fieldname.t * Predicates.strexp] fld_cnts'
             in
             Estruct (fld_cnts'', inst) )
     | Earray (len, idx_cnts, inst) -> (
@@ -2544,7 +2544,7 @@ let rec strexp_gc_fields (se : Predicates.strexp) =
         let fselo' = List.filter ~f:(function _, Some _ -> true | _ -> false) fselo in
         List.map ~f:(function f, seo -> (f, unSome seo)) fselo'
       in
-      if [%compare.equal: (Typ.Fieldname.t * Predicates.strexp) list] fsel fsel' then Some se
+      if [%compare.equal: (Fieldname.t * Predicates.strexp) list] fsel fsel' then Some se
       else Some (Predicates.Estruct (fsel', inst))
   | Earray _ ->
       Some se

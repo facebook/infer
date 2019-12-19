@@ -42,7 +42,7 @@ and t =
   | Const of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Lvar of Pvar.t  (** The address of a program variable *)
-  | Lfield of t * Typ.Fieldname.t * Typ.t
+  | Lfield of t * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
@@ -240,7 +240,7 @@ let rec pp_ pe pp_t f e =
   | Lvar pv ->
       Pvar.pp pe f pv
   | Lfield (e, fld, _) ->
-      F.fprintf f "%a.%a" pp_exp e Typ.Fieldname.pp fld
+      F.fprintf f "%a.%a" pp_exp e Fieldname.pp fld
   | Lindex (e1, e2) ->
       F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
   | Sizeof {typ; nbytes; dynamic_length; subtype} ->

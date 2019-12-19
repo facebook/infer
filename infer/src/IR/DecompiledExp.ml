@@ -19,8 +19,8 @@ type t =
   | Dsizeof of Typ.t * t option * Subtype.t
   | Dderef of t
   | Dfcall of t * t list * Location.t * CallFlags.t
-  | Darrow of t * Typ.Fieldname.t
-  | Ddot of t * Typ.Fieldname.t
+  | Darrow of t * Fieldname.t
+  | Ddot of t * Fieldname.t
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
   | Dunop of Unop.t * t
@@ -97,18 +97,17 @@ let rec pp fmt = function
       F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args'
   | Darrow (Dpvar pv, f) when Pvar.is_this pv ->
       (* this->fieldname *)
-      F.pp_print_string fmt (Typ.Fieldname.to_simplified_string f)
+      F.pp_print_string fmt (Fieldname.to_simplified_string f)
   | Darrow (de, f) ->
       if Language.curr_language_is Java then
-        F.fprintf fmt "%a.%s" pp de (Typ.Fieldname.get_field_name f)
-      else F.fprintf fmt "%a->%s" pp de (Typ.Fieldname.to_string f)
+        F.fprintf fmt "%a.%s" pp de (Fieldname.get_field_name f)
+      else F.fprintf fmt "%a->%s" pp de (Fieldname.to_string f)
   | Ddot (Dpvar _, fe) when eradicate_java () ->
       (* static field access *)
-      F.pp_print_string fmt (Typ.Fieldname.to_simplified_string fe)
+      F.pp_print_string fmt (Fieldname.to_simplified_string fe)
   | Ddot (de, f) ->
       let field_text =
-        if Language.curr_language_is Java then Typ.Fieldname.get_field_name f
-        else Typ.Fieldname.to_string f
+        if Language.curr_language_is Java then Fieldname.get_field_name f else Fieldname.to_string f
       in
       F.fprintf fmt "%a.%s" pp de field_text
   | Dpvar pv ->

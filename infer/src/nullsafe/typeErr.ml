@@ -64,7 +64,7 @@ type err_instance =
       ; violation_type: InheritanceRule.violation_type
       ; base_proc_name: Typ.Procname.t
       ; overridden_proc_name: Typ.Procname.t }
-  | Field_not_initialized of Typ.Fieldname.t
+  | Field_not_initialized of Fieldname.t
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }
@@ -190,7 +190,7 @@ type st_report_error =
   -> Procdesc.t
   -> IssueType.t
   -> Location.t
-  -> ?field_name:Typ.Fieldname.t option
+  -> ?field_name:Fieldname.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
   -> ?severity:Exceptions.severity
   -> string
@@ -232,7 +232,7 @@ let get_error_info err_instance =
           "Field %a is declared non-nullable, so it should be initialized in the constructor or in \
            an `@Initializer` method"
           MF.pp_monospaced
-          (Typ.Fieldname.get_field_name field_name)
+          (Fieldname.get_field_name field_name)
       , IssueType.eradicate_field_not_initialized
       , None )
   | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->

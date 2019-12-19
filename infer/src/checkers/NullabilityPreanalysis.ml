@@ -10,10 +10,10 @@ open! IStd
 module F = Format
 
 module FieldsAssignedInConstructors = AbstractDomain.FiniteSet (struct
-  type t = Typ.Fieldname.t * Typ.t [@@deriving compare]
+  type t = Fieldname.t * Typ.t [@@deriving compare]
 
   let pp fmt (fieldname, typ) =
-    F.fprintf fmt "(%a, %a)" Typ.Fieldname.pp fieldname (Typ.pp_full Pp.text) typ
+    F.fprintf fmt "(%a, %a)" Fieldname.pp fieldname (Typ.pp_full Pp.text) typ
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -67,7 +67,7 @@ module FieldsAssignedInConstructorsChecker =
 let add_annot annot annot_name = ({Annot.class_name= annot_name; parameters= []}, true) :: annot
 
 let add_nonnull_to_selected_field given_field ((fieldname, typ, annot) as field) =
-  if Typ.Fieldname.equal fieldname given_field && not (Annotations.ia_is_nullable annot) then
+  if Fieldname.equal fieldname given_field && not (Annotations.ia_is_nullable annot) then
     let new_annot = add_annot annot Annotations.nonnull in
     (fieldname, typ, new_annot)
   else field

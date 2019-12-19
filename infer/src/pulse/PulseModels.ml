@@ -90,7 +90,7 @@ end
 
 module StdAtomicInteger = struct
   let internal_int =
-    Typ.Fieldname.make
+    Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "atomic"]))
       "__infer_model_backing_int"
 
@@ -213,7 +213,7 @@ end
 
 module StdBasicString = struct
   let internal_string =
-    Typ.Fieldname.make
+    Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "basic_string"]))
       "__infer_model_backing_string"
 
@@ -270,7 +270,7 @@ end
 
 module StdVector = struct
   let internal_array =
-    Typ.Fieldname.make
+    Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "vector"]))
       "__infer_model_backing_array"
 

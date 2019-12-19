@@ -53,7 +53,7 @@ let lookup tenv name : Struct.t option =
         None )
 
 
-let compare_fields (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2
+let compare_fields (name1, _, _) (name2, _, _) = Fieldname.compare name1 name2
 
 let equal_fields f1 f2 = Int.equal (compare_fields f1 f2) 0
 

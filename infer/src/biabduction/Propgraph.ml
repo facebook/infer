@@ -124,7 +124,7 @@ let rec compute_sexp_diff (se1 : Predicates.strexp) (se2 : Predicates.strexp) : 
 and compute_fsel_diff fsel1 fsel2 : Obj.t list =
   match (fsel1, fsel2) with
   | (f1, se1) :: fsel1', ((f2, se2) as x) :: fsel2' -> (
-    match Typ.Fieldname.compare f1 f2 with
+    match Fieldname.compare f1 f2 with
     | n when n < 0 ->
         compute_fsel_diff fsel1' fsel2
     | 0 ->

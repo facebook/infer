@@ -48,9 +48,9 @@ module Loc : sig
   type t = private
     | Var of Var.t  (** abstract location of variable *)
     | Allocsite of Allocsite.t  (** abstract location of allocsites *)
-    | Field of {prefix: t; fn: Typ.Fieldname.t; typ: field_typ}
+    | Field of {prefix: t; fn: Fieldname.t; typ: field_typ}
         (** field appended abstract locations, i.e., [prefix.fn] *)
-    | StarField of {prefix: t; last_field: Typ.Fieldname.t}
+    | StarField of {prefix: t; last_field: Fieldname.t}
         (** field appended abstract locations, but some of intermediate fields are abstracted, i.e.,
             [prefix.*.fn] *)
   [@@deriving equal]
@@ -100,16 +100,16 @@ module Loc : sig
 
   val represents_multiple_values : t -> bool
 
-  val append_field : ?typ:Typ.typ -> t -> fn:Typ.Fieldname.t -> t
+  val append_field : ?typ:Typ.typ -> t -> fn:Fieldname.t -> t
   (** It appends field. [typ] is the type of [fn]. *)
 end
 
 module PowLoc : sig
   include AbstractDomain.FiniteSetS with type elt = Loc.t
 
-  val append_field : t -> fn:Typ.Fieldname.t -> t
+  val append_field : t -> fn:Fieldname.t -> t
 
-  val append_star_field : t -> fn:Typ.Fieldname.t -> t
+  val append_star_field : t -> fn:Fieldname.t -> t
 
   val bot : t
 

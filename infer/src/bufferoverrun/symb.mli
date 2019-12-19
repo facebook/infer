@@ -21,9 +21,9 @@ module SymbolPath : sig
   type partial = private
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
-    | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: Typ.t option}
+    | Field of {fn: Fieldname.t; prefix: partial; typ: Typ.t option}
     | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
-    | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
+    | StarField of {last_field: Fieldname.t; prefix: partial}
         (** Represents a path starting with [prefix] and ending with the field [last_field], the
             middle can be anything. Invariants:
 
@@ -52,9 +52,9 @@ module SymbolPath : sig
 
   val deref : deref_kind:deref_kind -> partial -> partial
 
-  val field : ?typ:Typ.t -> partial -> Typ.Fieldname.t -> partial
+  val field : ?typ:Typ.t -> partial -> Fieldname.t -> partial
 
-  val star_field : partial -> Typ.Fieldname.t -> partial
+  val star_field : partial -> Fieldname.t -> partial
 
   val normal : partial -> t
 

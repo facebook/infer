@@ -47,7 +47,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
   | Exp.Lvar x1, Exp.Lvar x2 ->
       Pvar.equal x1 x2
   | Exp.Lfield (e1, fld1, _), Exp.Lfield (e2, fld2, _) ->
-      must_alias e1 e2 m && Typ.Fieldname.equal fld1 fld2
+      must_alias e1 e2 m && Fieldname.equal fld1 fld2
   | Exp.Lindex (e11, e12), Exp.Lindex (e21, e22) ->
       must_alias e11 e21 m && must_alias e12 e22 m
   | Exp.Sizeof {nbytes= Some nbytes1}, Exp.Sizeof {nbytes= Some nbytes2} ->

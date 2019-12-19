@@ -33,7 +33,7 @@ type t =
 
 and field_origin =
   { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
-  ; field_name: Typ.Fieldname.t
+  ; field_name: Fieldname.t
   ; field_type: AnnotatedType.t
   ; access_loc: Location.t }
 
@@ -78,7 +78,7 @@ let rec to_string = function
   | NonnullConst _ ->
       "Const (nonnull)"
   | Field {object_origin; field_name} ->
-      "Field " ^ Typ.Fieldname.to_string field_name ^ " (object: " ^ to_string object_origin ^ ")"
+      "Field " ^ Fieldname.to_string field_name ^ " (object: " ^ to_string object_origin ^ ")"
   | MethodParameter {mangled; param_annotated_type= {nullability}} ->
       Format.asprintf "Param %s <%a>" (Mangled.to_string mangled) AnnotatedNullability.pp
         nullability
@@ -142,7 +142,7 @@ let get_description origin =
   | NullConst loc ->
       Some ("null constant" ^ atline loc)
   | Field {field_name; access_loc} ->
-      Some ("field " ^ Typ.Fieldname.get_field_name field_name ^ atline access_loc)
+      Some ("field " ^ Fieldname.get_field_name field_name ^ atline access_loc)
   | MethodParameter {mangled} ->
       Some ("method parameter " ^ Mangled.to_string mangled)
   | MethodCall {pname; call_loc; annotated_signature} ->

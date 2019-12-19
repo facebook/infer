@@ -17,7 +17,7 @@ val check :
 
 type assignment_type =
   | PassingParamToFunction of function_info
-  | AssigningToField of Typ.Fieldname.t
+  | AssigningToField of Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
 

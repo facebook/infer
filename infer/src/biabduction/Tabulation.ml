@@ -533,7 +533,7 @@ let rec fsel_star_fld fsel1 fsel2 =
   | fsel1, [] ->
       fsel1
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' -> (
-    match Typ.Fieldname.compare f1 f2 with
+    match Fieldname.compare f1 f2 with
     | 0 ->
         (f1, sexp_star_fld se1 se2) :: fsel_star_fld fsel1' fsel2'
     | n when n < 0 ->
@@ -593,7 +593,7 @@ let texp_star tenv texp1 texp2 =
     | _, [] ->
         false
     | (f1, _, _) :: ftal1', (f2, _, _) :: ftal2' -> (
-      match Typ.Fieldname.compare f1 f2 with
+      match Fieldname.compare f1 f2 with
       | n when n < 0 ->
           false
       | 0 ->
@@ -1088,7 +1088,7 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
 
 let missing_sigma_need_adding_to_tenv tenv hpreds =
   let field_is_missing struc (field, _) =
-    not (List.exists struc.Struct.fields ~f:(fun (fname, _, _) -> Typ.Fieldname.equal fname field))
+    not (List.exists struc.Struct.fields ~f:(fun (fname, _, _) -> Fieldname.equal fname field))
   in
   let missing_hpred_need_adding_to_tenv hpred =
     match hpred with

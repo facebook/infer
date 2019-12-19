@@ -32,7 +32,7 @@ let is_method_of_objc_cpp_class pname matcher =
 let is_vector_method pname = is_method_of_objc_cpp_class pname vector_matcher
 
 let is_special_field matcher field_name_opt field =
-  let field_name = Typ.Fieldname.get_field_name field in
+  let field_name = Fieldname.get_field_name field in
   let field_ok =
     match field_name_opt with
     | Some field_name' ->
@@ -41,8 +41,8 @@ let is_special_field matcher field_name_opt field =
         true
   in
   field_ok
-  && (not (Typ.Fieldname.is_java field))
-  && Typ.Fieldname.get_class_name field |> Typ.Name.qual_name |> is_one_of_classes matcher
+  && (not (Fieldname.is_java field))
+  && Fieldname.get_class_name field |> Typ.Name.qual_name |> is_one_of_classes matcher
 
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
@@ -268,7 +268,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         if verbose then (
           L.d_str "exp_lv_dexp: Lfield with var " ;
           Exp.d_exp (Exp.Var id) ;
-          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
+          L.d_printfln " %a" Fieldname.pp f ) ;
         match find_normal_variable_load_ tenv seen node id with
         | None ->
             None
@@ -276,9 +276,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
             Some (DExp.Darrow (de, f)) )
     | Exp.Lfield (e1, f, _) -> (
         if verbose then (
-          L.d_str "exp_lv_dexp: Lfield " ;
-          Exp.d_exp e1 ;
-          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
+          L.d_str "exp_lv_dexp: Lfield " ; Exp.d_exp e1 ; L.d_printfln " %a" Fieldname.pp f ) ;
         match exp_lv_dexp_ tenv seen node e1 with
         | None ->
             None
@@ -332,9 +330,7 @@ and exp_rv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         find_normal_variable_load_ tenv seen node id
     | Exp.Lfield (e1, f, _) -> (
         if verbose then (
-          L.d_str "exp_rv_dexp: Lfield " ;
-          Exp.d_exp e1 ;
-          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
+          L.d_str "exp_rv_dexp: Lfield " ; Exp.d_exp e1 ; L.d_printfln " %a" Fieldname.pp f ) ;
         match exp_rv_dexp_ tenv seen node e1 with
         | None ->
             None
@@ -583,7 +579,7 @@ let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
                 | Exp.Sizeof {typ= {Typ.desc= Tstruct name}} -> (
                   match Tenv.lookup tenv name with
                   | Some {fields} ->
-                      List.find ~f:(fun (f', _, _) -> Typ.Fieldname.equal f' f) fields
+                      List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) fields
                       |> Option.map ~f:snd3
                   | _ ->
                       None )
@@ -719,10 +715,10 @@ let explain_dexp_access prop dexp is_nullable =
   let rec lookup_fld fsel f =
     match fsel with
     | [] ->
-        if verbose then L.d_printfln "lookup_fld: can't find field %a" Typ.Fieldname.pp f ;
+        if verbose then L.d_printfln "lookup_fld: can't find field %a" Fieldname.pp f ;
         None
     | (f1, se) :: fsel' ->
-        if Typ.Fieldname.equal f1 f then Some se else lookup_fld fsel' f
+        if Fieldname.equal f1 f then Some se else lookup_fld fsel' f
   in
   let rec lookup_esel esel e =
     match esel with
@@ -1016,7 +1012,7 @@ type pvar_off =
   (* value of a pvar *)
   | Fpvar
   (* value obtained by dereferencing the pvar and following a sequence of fields *)
-  | Fstruct of Typ.Fieldname.t list
+  | Fstruct of Fieldname.t list
 
 let dexp_apply_pvar_off dexp pvar_off =
   let rec add_ddot de = function [] -> de | f :: fl -> add_ddot (DExp.Ddot (de, f)) fl in

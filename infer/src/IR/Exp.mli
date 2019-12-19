@@ -37,7 +37,7 @@ and t =
   | Const of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Lvar of Pvar.t  (** The address of a program variable *)
-  | Lfield of t * Typ.Fieldname.t * Typ.t
+  | Lfield of t * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
@@ -171,5 +171,5 @@ val ignore_cast : t -> t
 val ignore_integer_cast : t -> t
 
 val get_java_class_initializer :
-  Tenv.t -> t -> (Typ.Procname.t * Pvar.t * Typ.Fieldname.t * Typ.t) option
+  Tenv.t -> t -> (Typ.Procname.t * Pvar.t * Fieldname.t * Typ.t) option
 (** Returns the class initializer of the given expression in Java *)

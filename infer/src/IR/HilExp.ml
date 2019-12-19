@@ -15,7 +15,7 @@ let compare_typ_ _ _ = 0
 
 module Access = struct
   type 'array_index t =
-    | FieldAccess of Typ.Fieldname.t
+    | FieldAccess of Fieldname.t
     | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
@@ -23,7 +23,7 @@ module Access = struct
 
   let pp pp_array_index fmt = function
     | FieldAccess field_name ->
-        Typ.Fieldname.pp fmt field_name
+        Fieldname.pp fmt field_name
     | ArrayAccess (_, index) ->
         F.fprintf fmt "[%a]" pp_array_index index
     | TakeAddress ->
@@ -55,7 +55,7 @@ module T : sig
 
   and access_expression = private
     | Base of AccessPath.base
-    | FieldOffset of access_expression * Typ.Fieldname.t
+    | FieldOffset of access_expression * Fieldname.t
     | ArrayOffset of access_expression * typ_ * t option
     | AddressOf of access_expression
     | Dereference of access_expression
@@ -64,7 +64,7 @@ module T : sig
   module UnsafeAccessExpression : sig
     val base : AccessPath.base -> access_expression
 
-    val field_offset : access_expression -> Typ.Fieldname.t -> access_expression
+    val field_offset : access_expression -> Fieldname.t -> access_expression
 
     val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
@@ -90,7 +90,7 @@ end = struct
 
   and access_expression =
     | Base of AccessPath.base
-    | FieldOffset of access_expression * Typ.Fieldname.t
+    | FieldOffset of access_expression * Fieldname.t
     | ArrayOffset of access_expression * typ_ * t option
     | AddressOf of access_expression
     | Dereference of access_expression
@@ -149,9 +149,9 @@ let rec pp_access_expr fmt = function
   | Base (pvar, typ) ->
       Var.pp fmt pvar ; may_pp_typ fmt typ
   | FieldOffset (Dereference ae, fld) ->
-      F.fprintf fmt "%a->%a" pp_access_expr ae Typ.Fieldname.pp fld
+      F.fprintf fmt "%a->%a" pp_access_expr ae Fieldname.pp fld
   | FieldOffset (ae, fld) ->
-      F.fprintf fmt "%a.%a" pp_access_expr ae Typ.Fieldname.pp fld
+      F.fprintf fmt "%a.%a" pp_access_expr ae Fieldname.pp fld
   | ArrayOffset (ae, typ, index) ->
       F.fprintf fmt "%a[%a]%a" pp_access_expr ae (pp_array_offset_opt pp) index may_pp_typ typ
   | AddressOf (Base _ as ae) ->
@@ -215,7 +215,7 @@ module AccessExpression = struct
 
   type nonrec t = access_expression = private
     | Base of AccessPath.base
-    | FieldOffset of access_expression * Typ.Fieldname.t
+    | FieldOffset of access_expression * Fieldname.t
     | ArrayOffset of access_expression * typ_ * t option
     | AddressOf of access_expression
     | Dereference of access_expression

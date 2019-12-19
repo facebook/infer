@@ -701,7 +701,7 @@ let check_disequal tenv prop e1 e2 =
     | Exp.UnOp (op1, e1, _), Exp.UnOp (op2, e2, _) ->
         if Unop.equal op1 op2 then check_expr_disequal e1 e2 else false
     | Exp.Lfield (e1, f1, _), Exp.Lfield (e2, f2, _) ->
-        if Typ.Fieldname.equal f1 f2 then check_expr_disequal e1 e2 else false
+        if Fieldname.equal f1 f2 then check_expr_disequal e1 e2 else false
     | Exp.Exn e1, Exp.Exn e2 ->
         check_expr_disequal e1 e2
     | _, _ ->
@@ -1396,7 +1396,7 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
         raise (IMPL_EXC ("expressions not equal", subs, EXC_FALSE_EXPS (e1, e2)))
     | e1, Exp.Const _ ->
         raise (IMPL_EXC ("lhs not constant", subs, EXC_FALSE_EXPS (e1, e2)))
-    | Exp.Lfield (e1, fd1, _), Exp.Lfield (e2, fd2, _) when Typ.Fieldname.equal fd1 fd2 ->
+    | Exp.Lfield (e1, fd1, _), Exp.Lfield (e2, fd2, _) when Fieldname.equal fd1 fd2 ->
         do_imply subs e1 e2
     | Exp.Lindex (e1, f1), Exp.Lindex (e2, f2) ->
         do_imply (do_imply subs e1 e2) f1 f2
@@ -1418,7 +1418,7 @@ let path_to_id path =
         if Ident.is_footprint id then None
         else Some (Ident.name_to_string (Ident.get_name id) ^ string_of_int (Ident.get_stamp id))
     | Exp.Lfield (e, fld, _) -> (
-      match f e with None -> None | Some s -> Some (s ^ "_" ^ Typ.Fieldname.to_string fld) )
+      match f e with None -> None | Some s -> Some (s ^ "_" ^ Fieldname.to_string fld) )
     | Exp.Lindex (e, ind) -> (
       match f e with None -> None | Some s -> Some (s ^ "_" ^ Exp.to_string ind) )
     | Exp.Lvar _ ->
@@ -1532,14 +1532,13 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
 
 
 and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
-    subst2 * (Typ.Fieldname.t * Predicates.strexp) list * (Typ.Fieldname.t * Predicates.strexp) list
-    =
+    subst2 * (Fieldname.t * Predicates.strexp) list * (Fieldname.t * Predicates.strexp) list =
   let lookup = Tenv.lookup tenv in
   match (fsel1, fsel2) with
   | _, [] ->
       (subs, fsel1, [])
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' -> (
-    match Typ.Fieldname.compare f1 f2 with
+    match Fieldname.compare f1 f2 with
     | 0 ->
         let typ' = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f2 typ2 in
         let subs', se_frame, se_missing =
@@ -2286,7 +2285,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             , Predicates.inst_none )
       | Java ->
           let mk_fld_sexp field_name =
-            let fld = Typ.Fieldname.make Typ.Name.Java.java_lang_string field_name in
+            let fld = Fieldname.make Typ.Name.Java.java_lang_string field_name in
             let se =
               Predicates.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Predicates.Inone)
             in
@@ -2319,7 +2318,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let sexp =
       (* TODO: add appropriate fields *)
       Predicates.Estruct
-        ( [ ( Typ.Fieldname.make Typ.Name.Java.java_lang_class "name"
+        ( [ ( Fieldname.make Typ.Name.Java.java_lang_class "name"
             , Predicates.Eexp (Exp.Const (Const.Cstr s), Predicates.Inone) ) ]
         , Predicates.inst_none )
     in

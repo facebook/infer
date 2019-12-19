@@ -781,7 +781,7 @@ let empty_reported =
 let should_filter_access exp_opt =
   let check_access = function
     | HilExp.Access.FieldAccess fld ->
-        String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld)
+        String.is_substring ~substring:"$SwitchMap" (Fieldname.to_string fld)
     | _ ->
         false
   in
@@ -884,7 +884,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} 
         false
   in
   let field_is_annotated_guardedby field_name (f, _, a) =
-    Typ.Fieldname.equal f field_name
+    Fieldname.equal f field_name
     && List.exists a ~f:(fun ((annot : Annot.t), _) ->
            Annotations.annot_ends_with annot Annotations.guarded_by
            && match annot.parameters with [param] -> not (is_uitthread param.value) | _ -> false )

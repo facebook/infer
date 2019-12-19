@@ -11,7 +11,7 @@ module F = Format
 module L = Logging
 
 (** offset for an lvalue *)
-type offset = Off_fld of Typ.Fieldname.t * Typ.t | Off_index of Exp.t
+type offset = Off_fld of Fieldname.t * Typ.t | Off_index of Exp.t
 
 (** {2 Components of Propositions} *)
 
@@ -68,7 +68,7 @@ let equal_inst = [%compare.equal: inst]
 (** structured expressions represent a value of structured type, such as an array or a struct. *)
 type 'inst strexp0 =
   | Eexp of Exp.t * 'inst  (** Base case: expression with instrumentation *)
-  | Estruct of (Typ.Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
+  | Estruct of (Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
   | Earray of Exp.t * (Exp.t * 'inst strexp0) list * 'inst
       (** Array of given length There are two conditions imposed / used in the array case. First, if
           some index and value pair appears inside an array in a strexp, then the index is less than
@@ -152,7 +152,7 @@ end)
 (** Pretty print an offset *)
 let pp_offset pe f = function
   | Off_fld (fld, _) ->
-      Typ.Fieldname.pp f fld
+      Fieldname.pp f fld
   | Off_index exp ->
       (Exp.pp_diff pe) f exp
 
@@ -530,7 +530,7 @@ let rec pp_sexp_env pe0 envo f se =
       | Eexp (e, inst) ->
           F.fprintf f "%a%a" (Exp.pp_diff pe) e (pp_inst_if_trace pe) inst
       | Estruct (fel, inst) ->
-          let pp_diff f (n, se) = F.fprintf f "%a:%a" Typ.Fieldname.pp n (pp_sexp_env pe envo) se in
+          let pp_diff f (n, se) = F.fprintf f "%a:%a" Fieldname.pp n (pp_sexp_env pe envo) se in
           F.fprintf f "{%a}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
       | Earray (len, nel, inst) ->
           let pp_diff f (i, se) = F.fprintf f "%a:%a" (Exp.pp_diff pe) i (pp_sexp_env pe envo) se in

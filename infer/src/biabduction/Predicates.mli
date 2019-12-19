@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 (** Offset for an lvalue. *)
-type offset = Off_fld of Typ.Fieldname.t * Typ.t | Off_index of Exp.t
+type offset = Off_fld of Fieldname.t * Typ.t | Off_index of Exp.t
 
 (** {2 Components of Propositions} *)
 
@@ -96,7 +96,7 @@ val inst_partial_meet : inst -> inst -> inst
 (** structured expressions represent a value of structured type, such as an array or a struct. *)
 type 'inst strexp0 =
   | Eexp of Exp.t * 'inst  (** Base case: expression with instrumentation *)
-  | Estruct of (Typ.Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
+  | Estruct of (Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
   | Earray of Exp.t * (Exp.t * 'inst strexp0) list * 'inst
       (** Array of given length There are two conditions imposed / used in the array case. First, if
           some index and value pair appears inside an array in a strexp, then the index is less than

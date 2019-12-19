@@ -311,7 +311,7 @@ let deref_str_array_bound size_opt index_opt =
 
 let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
-  let accessed_fld_str = Typ.Fieldname.to_string accessed_fld in
+  let accessed_fld_str = Fieldname.to_string accessed_fld in
   let annot_str = Printf.sprintf "@GuardedBy(\"%s\")" guarded_by_str in
   let syncronized_str =
     MF.monospaced_to_string (Printf.sprintf "synchronized(%s)" guarded_by_str)
@@ -424,7 +424,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
     let rec exp_to_string exp =
       match exp with
       | Exp.Lfield (exp', field, _) ->
-          exp_to_string exp' ^ " -> " ^ Typ.Fieldname.to_string field
+          exp_to_string exp' ^ " -> " ^ Fieldname.to_string field
       | Exp.Lvar pvar ->
           Mangled.to_string (Pvar.get_name pvar)
       | _ ->

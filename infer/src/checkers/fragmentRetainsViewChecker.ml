@@ -40,9 +40,8 @@ let report_warning class_name fld fld_typ summary =
       "Fragment %a does not nullify View field %a (type %a) in %a. If this Fragment is placed on \
        the back stack, a reference to this (probably dead) View will be retained. In general, it \
        is a good idea to initialize View's in %a, then nullify them in %a."
-      pp_m (Typ.Name.name class_name) pp_m
-      (Typ.Fieldname.get_field_name fld)
-      pp_m (format_typ fld_typ) pp_m (format_method pname) pp_m on_create_view pp_m on_destroy_view
+      pp_m (Typ.Name.name class_name) pp_m (Fieldname.get_field_name fld) pp_m (format_typ fld_typ)
+      pp_m (format_method pname) pp_m on_create_view pp_m on_destroy_view
   in
   Reporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
 
@@ -61,7 +60,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
   in
   (* is [fldname] a View type declared by [class_typename]? *)
   let is_declared_view_typ class_typename (fldname, fld_typ, _) =
-    let fld_classname = Typ.Fieldname.get_class_name fldname in
+    let fld_classname = Fieldname.get_class_name fldname in
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
   if is_on_destroy_view then
@@ -76,7 +75,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
             if
               not
                 ( Annotations.ia_ends_with ia Annotations.auto_cleanup
-                || Typ.Fieldname.Set.mem fname fields_nullified )
+                || Fieldname.Set.mem fname fields_nullified )
             then report_warning class_name fname fld_typ summary )
           declared_view_fields
     | _ ->

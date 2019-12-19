@@ -88,7 +88,7 @@ exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 
 exception Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
 
-exception Missing_fld of Typ.Fieldname.t * L.ocaml_pos
+exception Missing_fld of Fieldname.t * L.ocaml_pos
 
 exception Premature_nil_termination of Localise.error_desc * L.ocaml_pos
 
@@ -404,7 +404,7 @@ let recognize_exception exn =
         ; severity= None
         ; category= Prover }
   | Missing_fld (fld, ocaml_pos) ->
-      let desc = Localise.verbatim_desc (Typ.Fieldname.to_full_string fld) in
+      let desc = Localise.verbatim_desc (Fieldname.to_full_string fld) in
       { name= IssueType.missing_fld
       ; description= desc
       ; ocaml_pos= Some ocaml_pos

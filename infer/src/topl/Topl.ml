@@ -162,7 +162,7 @@ let instrument tenv procdesc =
     + the prover fails to see that 0!=o.f * o|-f->0 is inconsistent *)
 let lookup_static_var env (var : Exp.t) (prop : 'a Prop.t) : Exp.t option =
   let from_strexp = function Predicates.Eexp (e, _) -> Some e | _ -> None in
-  let get_field field (f, e) = if Typ.Fieldname.equal field f then from_strexp e else None in
+  let get_field field (f, e) = if Fieldname.equal field f then from_strexp e else None in
   let get_strexp field = function
     | Predicates.Estruct (fs, _inst) ->
         List.find_map ~f:(get_field field) fs

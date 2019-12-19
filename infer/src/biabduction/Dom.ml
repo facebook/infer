@@ -1023,7 +1023,7 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
         L.d_strln "failure reason 25" ; raise Predicates.JoinFail )
       else e1
   | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
-      if not (Typ.Fieldname.equal f1 f2) then (
+      if not (Fieldname.equal f1 f2) then (
         L.d_strln "failure reason 26" ; raise Predicates.JoinFail )
       else Exp.Lfield (exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
@@ -1133,7 +1133,7 @@ let rec exp_partial_meet (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
         L.d_strln "failure reason 35" ; raise Predicates.JoinFail )
       else e1
   | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
-      if not (Typ.Fieldname.equal f1 f2) then (
+      if not (Fieldname.equal f1 f2) then (
         L.d_strln "failure reason 36" ; raise Predicates.JoinFail )
       else Exp.Lfield (exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
@@ -1163,7 +1163,7 @@ let rec strexp_partial_join mode (strexp1 : Predicates.strexp) (strexp2 : Predic
       | JoinState.Post ->
           Predicates.Estruct (List.rev acc, inst) )
     | (fld1, se1) :: fld_se_list1', (fld2, se2) :: fld_se_list2' -> (
-        let comparison = Typ.Fieldname.compare fld1 fld2 in
+        let comparison = Fieldname.compare fld1 fld2 in
         if Int.equal comparison 0 then
           let strexp' = strexp_partial_join mode se1 se2 in
           let fld_se_list_new = (fld1, strexp') :: acc in
@@ -1225,7 +1225,7 @@ let rec strexp_partial_meet (strexp1 : Predicates.strexp) (strexp2 : Predicates.
     | _, [] ->
         Predicates.Estruct (construct Lhs acc fld_se_list1, inst)
     | (fld1, se1) :: fld_se_list1', (fld2, se2) :: fld_se_list2' ->
-        let comparison = Typ.Fieldname.compare fld1 fld2 in
+        let comparison = Fieldname.compare fld1 fld2 in
         if comparison < 0 then
           let se' = strexp_construct_fresh Lhs se1 in
           let acc_new = (fld1, se') :: acc in

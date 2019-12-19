@@ -28,7 +28,7 @@ module Closures = struct
   let fake_capture_field_prefix = "__capture_"
 
   let mk_fake_field ~id =
-    Typ.Fieldname.make
+    Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
       (Printf.sprintf "%s%d" fake_capture_field_prefix id)
 
@@ -36,7 +36,7 @@ module Closures = struct
   let is_captured_fake_access (access : _ HilExp.Access.t) =
     match access with
     | FieldAccess fieldname
-      when String.is_prefix ~prefix:fake_capture_field_prefix (Typ.Fieldname.to_string fieldname) ->
+      when String.is_prefix ~prefix:fake_capture_field_prefix (Fieldname.to_string fieldname) ->
         true
     | _ ->
         false

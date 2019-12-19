@@ -10,7 +10,7 @@ type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t} 
 
 type assignment_type =
   | PassingParamToFunction of function_info
-  | AssigningToField of Typ.Fieldname.t
+  | AssigningToField of Fieldname.t
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
 
@@ -175,7 +175,7 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
                 Logging.die InternalError "Invariant violation: unexpected nullability"
           in
           Format.asprintf "%a is declared non-nullable but is assigned %s%s." MF.pp_monospaced
-            (Typ.Fieldname.get_field_name field_name)
+            (Fieldname.get_field_name field_name)
             rhs_description nullability_evidence_as_suffix
       | ReturningFromFunction function_proc_name ->
           let return_description =

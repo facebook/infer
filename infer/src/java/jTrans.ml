@@ -72,7 +72,7 @@ let get_exit_location source_file bytecode =
 
 
 let retrieve_fieldname fieldname =
-  let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
+  let subs = Str.split (Str.regexp (Str.quote ".")) (Fieldname.to_string fieldname) in
   List.last_exn subs
 
 

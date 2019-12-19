@@ -11,7 +11,7 @@ open! IStd
 
 module L = Logging
 
-type field_type = Typ.Fieldname.t * Typ.t * (Annot.t * bool) list
+type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
   L.(debug Capture Verbose)
@@ -123,7 +123,7 @@ let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =
     if String.equal class_name class_name_info.Clang_ast_t.ni_name then
       let class_tname = Typ.Name.Objc.from_string class_name in
-      let name = Typ.Fieldname.make class_tname field_name in
+      let name = Fieldname.make class_tname field_name in
       (name, typ, Annot.Item.empty) :: res
     else res
   in

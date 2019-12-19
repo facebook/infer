@@ -67,7 +67,7 @@ let mk pdesc =
     in
     let is_last_field fn (fields : Struct.field list) =
       Option.value_map (List.last fields) ~default:false ~f:(fun (last_fn, _, _) ->
-          Typ.Fieldname.equal fn last_fn )
+          Fieldname.equal fn last_fn )
     in
     let rec may_last_field = function
       | SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _ ->

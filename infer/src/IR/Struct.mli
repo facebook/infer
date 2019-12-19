@@ -9,7 +9,7 @@
 open! IStd
 module F = Format
 
-type field = Typ.Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
@@ -49,15 +49,15 @@ val get_extensible_array_element_typ : lookup:lookup -> Typ.t -> Typ.t option
 
 type field_info = {typ: Typ.t; annotations: Annot.Item.t; is_static: bool}
 
-val get_field_info : lookup:lookup -> Typ.Fieldname.t -> Typ.t -> field_info option
+val get_field_info : lookup:lookup -> Fieldname.t -> Typ.t -> field_info option
 (** Lookup for info associated with the field [fn]. None if [typ] has no field named [fn] *)
 
-val fld_typ : lookup:lookup -> default:Typ.t -> Typ.Fieldname.t -> Typ.t -> Typ.t
+val fld_typ : lookup:lookup -> default:Typ.t -> Fieldname.t -> Typ.t -> Typ.t
 (** If a struct type with field f, return the type of f. If not, return the default type if given,
     otherwise raise an exception *)
 
 val get_field_type_and_annotation :
-  lookup:lookup -> Typ.Fieldname.t -> Typ.t -> (Typ.t * Annot.Item.t) option
+  lookup:lookup -> Fieldname.t -> Typ.t -> (Typ.t * Annot.Item.t) option
 (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
 
 val is_dummy : t -> bool
