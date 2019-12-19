@@ -96,7 +96,7 @@
 /* associativity and priority (lower to higher) of operators */
 %nonassoc IMPLIES
 %left OR
-%left AND
+%left AND, AND_WITH_WITNESSES
 %left AU, EU
 %right NOT, AX, EX, AF, EF, EG, AG, EH
 
