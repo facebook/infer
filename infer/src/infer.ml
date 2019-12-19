@@ -47,7 +47,7 @@ let setup () =
              [Driver.clean_results_dir ()]). *)
           (buck && flavors) || genrule_mode)
         || not
-             ( Driver.(equal_mode driver_mode Analyze)
+             ( Driver.is_analyze_mode driver_mode
              || Config.(
                   continue_capture || infer_is_clang || infer_is_javac || reactive_mode
                   || incremental_analysis) )
@@ -55,7 +55,7 @@ let setup () =
       ResultsDir.create_results_dir () ;
       if
         CLOpt.is_originator && (not Config.continue_capture)
-        && not Driver.(equal_mode driver_mode Analyze)
+        && not (Driver.is_analyze_mode driver_mode)
       then ( db_start () ; SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"

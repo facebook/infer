@@ -18,7 +18,6 @@ type compilation_database_dependencies =
       (** get the compilation database of the dependencies up to depth n by [Deps (Some n)], or all
           by [Deps None] *)
   | NoDeps
-[@@deriving compare]
 
 type build_system =
   | BAnt
@@ -31,7 +30,6 @@ type build_system =
   | BMvn
   | BNdk
   | BXcode
-[@@deriving compare]
 
 val equal_build_system : build_system -> build_system -> bool
 

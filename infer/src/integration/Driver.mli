@@ -22,9 +22,8 @@ type mode =
   | Maven of string * string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
-[@@deriving compare]
 
-val equal_mode : mode -> mode -> bool
+val is_analyze_mode : mode -> bool
 
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)

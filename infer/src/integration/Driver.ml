@@ -25,9 +25,8 @@ type mode =
   | Maven of string * string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
-[@@deriving compare]
 
-let equal_mode = [%compare.equal: mode]
+let is_analyze_mode = function Analyze -> true | _ -> false
 
 let pp_mode fmt = function
   | Analyze ->
