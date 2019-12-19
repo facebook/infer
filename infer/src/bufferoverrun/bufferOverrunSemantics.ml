@@ -518,19 +518,25 @@ module Prune = struct
 
 
   let prune_has_next ~true_branch iterator ({mem} as astate) =
-    let accum_pruned arr_loc tgt acc =
+    let accum_prune_common ~prune_f loc acc =
+      let length = collection_length_of_iterator iterator mem in
+      let v = prune_f (Mem.find loc mem) length in
+      update_mem_in_prune loc v acc
+    in
+    let accum_pruned loc tgt acc =
       match tgt with
+      | AliasTarget.IteratorSimple {i} when IntLit.(eq i zero) ->
+          let prune_f = if true_branch then Val.prune_lt else Val.prune_eq in
+          accum_prune_common ~prune_f loc acc
       | AliasTarget.IteratorOffset {alias_typ; i} when IntLit.(eq i zero) ->
-          let length = collection_length_of_iterator iterator mem |> Val.get_itv in
-          let v = Mem.find arr_loc mem in
-          let v =
-            let prune_f =
+          let prune_f v length =
+            let f =
               if true_branch then Val.prune_length_lt
               else match alias_typ with Eq -> Val.prune_length_eq | Le -> Val.prune_length_le
             in
-            prune_f v length
+            f v (Val.get_itv length)
           in
-          update_mem_in_prune arr_loc v acc
+          accum_prune_common ~prune_f loc acc
       | _ ->
           acc
     in

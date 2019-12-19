@@ -887,7 +887,7 @@ module Collection = struct
   let iterator coll_exp =
     let exec {integer_type_widths} ~ret:(ret_id, _) mem =
       let itr = Sem.eval integer_type_widths coll_exp mem in
-      model_by_value itr ret_id mem |> Dom.Mem.add_iterator_offset_alias ret_id
+      model_by_value itr ret_id mem |> Dom.Mem.add_iterator_alias ret_id
     in
     {exec; check= no_check}
 

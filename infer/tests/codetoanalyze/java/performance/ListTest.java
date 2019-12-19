@@ -98,4 +98,28 @@ class ListTest {
     a.addAll(l);
     for (Integer i : a) {}
   }
+
+  void iter_relation_with_var(List<Integer> a) {
+    int k = 0;
+    for (Integer i : a) {
+      k += 1;
+    }
+    for (int i = 0; i < k; i++) {}
+  }
+
+  class MyOwnObj {
+    int my_size = 0;
+
+    void my_put() {
+      my_size += 1;
+    }
+  }
+
+  void iter_my_own_obj_FP(List<Integer> a) {
+    MyOwnObj o = new MyOwnObj();
+    for (Integer i : a) {
+      o.my_put();
+    }
+    for (int i = 0; i < o.my_size; i++) {}
+  }
 }

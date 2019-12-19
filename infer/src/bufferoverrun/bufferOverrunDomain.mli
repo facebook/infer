@@ -214,6 +214,10 @@ module Val : sig
   (** Pruning semantics for [Binop.Ne]. This prunes value of [x] when given [x != y], i.e.,
       [prune_ne x y]. *)
 
+  val prune_lt : t -> t -> t
+  (** Pruning semantics for [Binop.Lt]. This prunes value of [x] when given [x < y], i.e.,
+      [prune_lt x y]. *)
+
   val prune_ne_zero : t -> t
   (** Prune value of [x] when given [x != 0] *)
 
@@ -313,6 +317,10 @@ module AliasTarget : sig
     | Fgets
         (** This is for pruning return values of [fgets]. If the result of [fgets] is not null, the
             length of return value will be pruned to greater than or equal to 1. *)
+    | IteratorSimple of {i: IntLit.t; java_tmp: AbsLoc.Loc.t option}
+        (** This is for tracking a relation between an iterator offset and an integer value. If [%r]
+            has an alias to [IteratorSimple {l; i}], which means that [%r's iterator offset] is same
+            to [l]. *)
     | IteratorOffset of {alias_typ: alias_typ; i: IntLit.t; java_tmp: AbsLoc.Loc.t option}
         (** This is for tracking a relation between an iterator offset and the length of the
             underlying collection. If [%r] has an alias to [IteratorOffset {l; i}], which means that
@@ -565,8 +573,9 @@ module Mem : sig
   val add_iterator_has_next_alias : Ident.t -> Exp.t -> t -> t
   (** Add an [AliasTarget.IteratorHasNext] alias when [ident = iterator.hasNext()] is called *)
 
-  val add_iterator_offset_alias : Ident.t -> t -> t
-  (** Add [AliasTarget.IteratorOffset] alias when [Iteratable.iterator()] is called *)
+  val add_iterator_alias : Ident.t -> t -> t
+  (** Add [AliasTarget.IteratorSimple] and [AliasTarget.IteratorOffset] aliases when
+      [Iteratable.iterator()] is called *)
 
   val incr_iterator_offset_alias : Exp.t -> t -> t
   (** Update iterator offset alias when [iterator.next()] is called *)
