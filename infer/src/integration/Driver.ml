@@ -398,13 +398,16 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
   let should_analyze = should_analyze && Config.capture in
   let should_merge =
     match mode with
+    | _ when Config.merge ->
+        (* [--merge] overrides other behaviors *)
+        true
     | PythonCapture (BBuck, _) when Config.flavors && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
     | Analyze | BuckGenruleMaster _ ->
         RunState.get_merge_capture ()
     | _ ->
-        (* else rely on the command line value *) Config.merge
+        false
   in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
