@@ -27,7 +27,6 @@ BUILD_SYSTEMS_TESTS += \
   ck_analytics ck_imports \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
-  clang_test_determinator \
   clang_translation \
   clang_unknown_ext \
   clang_with_blacklisted_flags \
@@ -98,7 +97,13 @@ ifneq ($(PYTHON_lxml),no)
 BUILD_SYSTEMS_TESTS += results_xml
 endif
 ifeq ($(HAS_OBJC),yes)
-BUILD_SYSTEMS_TESTS += objc_getters_setters objc_missing_fld objc_retain_cycles objc_retain_cycles_weak
+BUILD_SYSTEMS_TESTS += \
+  clang_test_determinator \
+  objc_getters_setters \
+  objc_missing_fld \
+  objc_retain_cycles \
+  objc_retain_cycles_weak
+
 DIRECT_TESTS += \
   objc_errors \
   objc_frontend \
