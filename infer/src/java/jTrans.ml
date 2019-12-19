@@ -77,7 +77,7 @@ let retrieve_fieldname fieldname =
 
 
 let get_field_name program static tenv cn fs =
-  let {Typ.Struct.fields; statics} = JTransType.get_class_struct_typ program tenv cn in
+  let {Struct.fields; statics} = JTransType.get_class_struct_typ program tenv cn in
   match
     List.find
       ~f:(fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))

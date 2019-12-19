@@ -348,7 +348,7 @@ let override_find ?(check_current_type = true) f tenv proc_name =
   let is_override = Staged.unstage (is_override_of proc_name) in
   let rec find_super_type super_class_name =
     Tenv.lookup tenv super_class_name
-    |> Option.bind ~f:(fun {Typ.Struct.methods; supers} ->
+    |> Option.bind ~f:(fun {Struct.methods; supers} ->
            match List.find ~f:(fun pname -> is_override pname && f pname) methods with
            | None ->
                List.find_map ~f:find_super_type supers
@@ -422,7 +422,7 @@ let is_java_enum tenv typename = is_subtype_of_str tenv typename "java.lang.Enum
     for supertypes*)
 let check_class_attributes check tenv = function
   | Typ.Procname.Java java_pname ->
-      let check_class_annots _ {Typ.Struct.annots} = check annots in
+      let check_class_annots _ {Struct.annots} = check annots in
       supertype_exists tenv check_class_annots (Typ.Procname.Java.get_class_type_name java_pname)
   | _ ->
       false

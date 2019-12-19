@@ -94,7 +94,7 @@ val implements_android : string -> Tenv.t -> string -> bool
 val implements_xmob_utils : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class of xmod.utils *)
 
-val supertype_exists : Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> bool) -> Typ.Name.t -> bool
+val supertype_exists : Tenv.t -> (Typ.Name.t -> Struct.t -> bool) -> Typ.Name.t -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 
 val supertype_find_map_opt : Tenv.t -> (Typ.Name.t -> 'a option) -> Typ.Name.t -> 'a option

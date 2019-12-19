@@ -136,7 +136,7 @@ module Exec = struct
         match Tenv.lookup tenv typename with
         | Some str ->
             let f = init_field path locs (dimension + 1) in
-            IList.fold_last ~f ~f_last:(f ?dyn_length) ~init:(mem, 1) str.Typ.Struct.fields |> fst
+            IList.fold_last ~f ~f_last:(f ?dyn_length) ~init:(mem, 1) str.Struct.fields |> fst
         | None ->
             mem )
       | _ ->

@@ -613,7 +613,7 @@ let check_after_array_abstraction tenv prop =
     | Predicates.Estruct (fsel, _) ->
         List.iter
           ~f:(fun (f, se) ->
-            let typ_f = Typ.Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f typ in
+            let typ_f = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f typ in
             check_se root (offs @ [Predicates.Off_fld (f, typ)]) typ_f se )
           fsel
   in

@@ -162,7 +162,7 @@ let pname_has_return_annot pname ~attrs_of_pname predicate =
       false
 
 
-let field_has_annot fieldname (struct_typ : Typ.Struct.t) predicate =
+let field_has_annot fieldname (struct_typ : Struct.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
     Typ.Fieldname.equal fieldname fname && predicate annot
   in
@@ -170,7 +170,7 @@ let field_has_annot fieldname (struct_typ : Typ.Struct.t) predicate =
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
 
 
-let struct_typ_has_annot (struct_typ : Typ.Struct.t) predicate = predicate struct_typ.annots
+let struct_typ_has_annot (struct_typ : Struct.t) predicate = predicate struct_typ.annots
 
 let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
 

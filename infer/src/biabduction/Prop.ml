@@ -835,7 +835,7 @@ module Normalize = struct
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
             Option.value_map ~f:(Typ.equal elt) ~default:false
-              (Typ.Struct.get_extensible_array_element_typ ~lookup typ)
+              (Struct.get_extensible_array_element_typ ~lookup typ)
           in
           match (e1', e2') with
           (* pattern for arrays and extensible structs:

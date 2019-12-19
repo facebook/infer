@@ -115,7 +115,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
               if Typ.Fieldname.equal f f' then (f, res_t', a') else (f', t', a')
             in
             let fields' =
-              List.sort ~compare:Typ.Struct.compare_field (List.map ~f:replace_typ_of_f fields)
+              List.sort ~compare:Struct.compare_field (List.map ~f:replace_typ_of_f fields)
             in
             ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
             (atoms', se, t)
@@ -223,7 +223,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
                 if Typ.Fieldname.equal f f1 then (f1, res_typ', a1) else fta1
               in
               let fields' =
-                List.sort ~compare:Typ.Struct.compare_field (List.map ~f:replace_fta fields)
+                List.sort ~compare:Struct.compare_field (List.map ~f:replace_fta fields)
               in
               ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
               (res_atoms', Predicates.Estruct (res_fsel', inst'), typ) :: acc
@@ -240,7 +240,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
               if Typ.Fieldname.equal f' f then (f, res_typ', a') else (f', t', a')
             in
             let fields' =
-              List.sort ~compare:Typ.Struct.compare_field (List.map ~f:replace_fta fields)
+              List.sort ~compare:Struct.compare_field (List.map ~f:replace_fta fields)
             in
             ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
             [(atoms', Predicates.Estruct (res_fsel', inst'), typ)] )
@@ -776,7 +776,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
-    match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
+    match Struct.get_field_type_and_annotation ~lookup fld typ with
     | Some (_, item_annot) -> (
       match extract_guarded_by_str item_annot with
       | Some "this" ->
@@ -797,7 +797,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     in
     let get_fld_strexp_and_typ typ f flds =
       let match_one (fld, strexp) =
-        match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
+        match Struct.get_field_type_and_annotation ~lookup fld typ with
         | Some (fld_typ, _) when f fld fld_typ ->
             Some (strexp, fld_typ)
         | _ ->
@@ -1482,7 +1482,7 @@ let attr_has_annot is_annotation tenv prop exp =
 let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp (fld, strexp) =
   let lookup = Tenv.lookup tenv in
   let fld_has_annot fld =
-    match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
+    match Struct.get_field_type_and_annotation ~lookup fld typ with
     | Some (_, annot) ->
         is_annotation annot
     | _ ->

@@ -1088,8 +1088,7 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
 
 let missing_sigma_need_adding_to_tenv tenv hpreds =
   let field_is_missing struc (field, _) =
-    not
-      (List.exists struc.Typ.Struct.fields ~f:(fun (fname, _, _) -> Typ.Fieldname.equal fname field))
+    not (List.exists struc.Struct.fields ~f:(fun (fname, _, _) -> Typ.Fieldname.equal fname field))
   in
   let missing_hpred_need_adding_to_tenv hpred =
     match hpred with

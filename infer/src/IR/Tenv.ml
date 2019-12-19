@@ -15,13 +15,13 @@ module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 module TypenameHashNormalizer = MaximumSharing.ForHashtbl (TypenameHash)
 
 (** Type for type environment. *)
-type t = Typ.Struct.t TypenameHash.t
+type t = Struct.t TypenameHash.t
 
 let pp fmt (tenv : t) =
   TypenameHash.iter
     (fun name typ ->
       Format.fprintf fmt "@[<6>NAME: %s@]@," (Typ.Name.to_string name) ;
-      Format.fprintf fmt "@[<6>TYPE: %a@]@," (Typ.Struct.pp Pp.text name) typ )
+      Format.fprintf fmt "@[<6>TYPE: %a@]@," (Struct.pp Pp.text name) typ )
     tenv
 
 
@@ -32,7 +32,7 @@ let create () = TypenameHash.create 1000
 let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy
     name =
   let struct_typ =
-    Typ.Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
+    Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
       ?annots ?dummy ()
   in
   TypenameHash.replace tenv name struct_typ ;
@@ -40,7 +40,7 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
 
 
 (** Look up a name in the global type environment. *)
-let lookup tenv name : Typ.Struct.t option =
+let lookup tenv name : Struct.t option =
   try Some (TypenameHash.find tenv name)
   with Caml.Not_found -> (
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
@@ -103,7 +103,7 @@ end
 let merge ~src ~dst =
   TypenameHash.iter
     (fun pname cfg ->
-      if (not (Typ.Struct.is_dummy cfg)) || not (TypenameHash.mem dst pname) then
+      if (not (Struct.is_dummy cfg)) || not (TypenameHash.mem dst pname) then
         TypenameHash.replace dst pname cfg )
     src
 

@@ -282,7 +282,7 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
   | FieldOffset (_, field_name) when Typ.Fieldname.is_java field_name ->
       Typ.Fieldname.get_class_name field_name
       |> Tenv.lookup tenv
-      |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.fields @ tstruct.statics)
+      |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.fields @ tstruct.statics)
       |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Typ.Fieldname.equal fld field_name))
       |> Option.bind ~f:(fun (_, _, annot) ->
              if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
@@ -312,7 +312,7 @@ let get_run_method_from_runnable tenv runnable =
   |> Option.map ~f:(function Typ.{desc= Tptr (typ, _)} -> typ | typ -> typ)
   |> Option.bind ~f:Typ.name
   |> Option.bind ~f:(Tenv.lookup tenv)
-  |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.methods)
+  |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.methods)
   |> Option.bind ~f:(List.find ~f:is_run_method)
 
 

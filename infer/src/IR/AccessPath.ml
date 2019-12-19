@@ -65,7 +65,7 @@ module Raw = struct
 
   let lookup_field_type_annot tenv base_typ field_name =
     let lookup = Tenv.lookup tenv in
-    Typ.Struct.get_field_type_and_annotation ~lookup field_name base_typ
+    Struct.get_field_type_and_annotation ~lookup field_name base_typ
 
 
   (* Get the type of an access, or None if the type cannot be determined *)

@@ -278,7 +278,7 @@ let add_model_fields program classpath_fields cn =
 
 
 let rec get_method_procname program tenv cn ms method_kind =
-  let (_ : Typ.Struct.t) = get_class_struct_typ program tenv cn in
+  let (_ : Struct.t) = get_class_struct_typ program tenv cn in
   let return_type_name, method_name, args_type_name = method_signature_names ms in
   let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
   let proc_name_java =
@@ -297,7 +297,7 @@ and translate_method_name program tenv m =
 
 and get_all_fields program tenv cn =
   let extract_class_fields classname =
-    let {Typ.Struct.fields; statics} = get_class_struct_typ program tenv classname in
+    let {Struct.fields; statics} = get_class_struct_typ program tenv classname in
     (statics, fields)
   in
   let trans_fields classname =

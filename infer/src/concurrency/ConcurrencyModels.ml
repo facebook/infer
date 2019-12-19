@@ -369,7 +369,7 @@ let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_nam
         None
     | Some tstruct when Annotations.struct_typ_has_annot tstruct is_annot ->
         Some (SuperClass class_name)
-    | Some (tstruct : Typ.Struct.t) -> (
+    | Some (tstruct : Struct.t) -> (
       match
         List.find_map tstruct.methods ~f:(fun pn ->
             if is_override pn && is_annotated pn then Some (Override pn) else None )

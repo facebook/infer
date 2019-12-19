@@ -29,24 +29,24 @@ val load_global : unit -> t option
 val store_global : t -> unit
 (** save a global type environment (Java) *)
 
-val lookup : t -> Typ.Name.t -> Typ.Struct.t option
+val lookup : t -> Typ.Name.t -> Struct.t option
 (** Look up a name in the global type environment. *)
 
 val mk_struct :
      t
-  -> ?default:Typ.Struct.t
-  -> ?fields:Typ.Struct.fields
-  -> ?statics:Typ.Struct.fields
+  -> ?default:Struct.t
+  -> ?fields:Struct.fields
+  -> ?statics:Struct.fields
   -> ?methods:Typ.Procname.t list
   -> ?exported_objc_methods:Typ.Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?dummy:bool
   -> Typ.Name.t
-  -> Typ.Struct.t
+  -> Struct.t
 (** Construct a struct_typ, normalizing field types *)
 
-val add_field : t -> Typ.Name.t -> Typ.Struct.field -> unit
+val add_field : t -> Typ.Name.t -> Struct.field -> unit
 (** Add a field to a given struct in the global type environment. *)
 
 val pp : Format.formatter -> t -> unit [@@warning "-32"]

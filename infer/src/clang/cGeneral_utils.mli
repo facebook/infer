@@ -11,10 +11,9 @@ open! IStd
 
 type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
-val add_no_duplicates_fields : Typ.Struct.field -> Typ.Struct.field list -> Typ.Struct.field list
+val add_no_duplicates_fields : Struct.field -> Struct.field list -> Struct.field list
 
-val append_no_duplicates_fields :
-  Typ.Struct.field list -> Typ.Struct.field list -> Typ.Struct.field list
+val append_no_duplicates_fields : Struct.field list -> Struct.field list -> Struct.field list
 
 val append_no_duplicates_methods : Typ.Procname.t list -> Typ.Procname.t list -> Typ.Procname.t list
 

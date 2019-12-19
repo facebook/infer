@@ -7,13 +7,13 @@
 open! IStd
 module L = Logging
 
-(* Sources: Java Virtual Machine Specification 
+(* Sources: Java Virtual Machine Specification
    - Chapter 5. Loading, Linking and Initializing
    - Chapter 6. The Java Virtual Machine Instruction Set
 *)
 
-(* TODO 
-  - catch / throw with exception classes 
+(* TODO
+  - catch / throw with exception classes
 *)
 
 module Payload = SummaryPayload.Make (struct
@@ -42,7 +42,7 @@ let rec load_class summary tenv loc astate class_name =
     in
     (* finally, recursively load all superclasses *)
     Tenv.lookup tenv class_name
-    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.supers)
+    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.supers)
     |> List.fold ~init:astate2 ~f:(load_class summary tenv loc)
 
 

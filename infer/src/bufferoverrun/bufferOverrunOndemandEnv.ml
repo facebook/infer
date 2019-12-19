@@ -57,7 +57,7 @@ let mk pdesc =
         match BufferOverrunField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
-            Option.map (typ_of_param_path x) ~f:(Typ.Struct.fld_typ ~lookup ~default:Typ.void fn)
+            Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:Typ.void fn)
         | some_typ ->
             some_typ )
       | SPath.StarField {last_field} ->
@@ -65,7 +65,7 @@ let mk pdesc =
       | SPath.Callsite {ret_typ} ->
           Some ret_typ
     in
-    let is_last_field fn (fields : Typ.Struct.field list) =
+    let is_last_field fn (fields : Struct.field list) =
       Option.value_map (List.last fields) ~default:false ~f:(fun (last_fn, _, _) ->
           Typ.Fieldname.equal fn last_fn )
     in
@@ -79,7 +79,7 @@ let mk pdesc =
                  | Tstruct typename ->
                      let opt_struct = Tenv.lookup tenv typename in
                      Option.value_map opt_struct ~default:false ~f:(fun str ->
-                         is_last_field fn str.Typ.Struct.fields )
+                         is_last_field fn str.Struct.fields )
                  | _ ->
                      true )
     in

@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 (** Type for ObjC accessors *)
-type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
+type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
 [@@deriving compare]
 
 let kind_of_objc_accessor_type accessor =

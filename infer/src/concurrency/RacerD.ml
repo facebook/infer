@@ -862,13 +862,13 @@ let should_report_on_proc tenv procdesc =
           Procdesc.get_access procdesc <> PredSymb.Private
       | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
           Tenv.lookup tenv class_name
-          |> Option.exists ~f:(fun {Typ.Struct.exported_objc_methods} ->
+          |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
                  List.mem ~equal:Typ.Procname.equal exported_objc_methods proc_name ) )
       &&
       let matcher = ConcurrencyModels.cpp_lock_types_matcher in
       Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
           (* check if the class contains a lock member *)
-          List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
+          List.exists class_str.Struct.fields ~f:(fun (_, ft, _) ->
               Option.exists (Typ.name ft) ~f:(fun name ->
                   QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
   | _ ->
@@ -906,7 +906,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} 
         (* is the base class a subclass of the one containing the GuardedBy annotation? *)
         PatternMatch.is_subtype tenv base_name (Typ.Name.Java.from_string classname_str)
         && Tenv.lookup tenv base_name
-           |> Option.exists ~f:(fun ({fields; statics} : Typ.Struct.t) ->
+           |> Option.exists ~f:(fun ({fields; statics} : Struct.t) ->
                   let f fld = field_is_annotated_guardedby field_name fld in
                   List.exists fields ~f || List.exists statics ~f )
     | _ ->

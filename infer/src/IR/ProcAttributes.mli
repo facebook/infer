@@ -9,7 +9,7 @@ open! IStd
 
 (** Attributes of a procedure. *)
 
-type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
+type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
 

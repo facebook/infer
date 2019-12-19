@@ -28,7 +28,7 @@ val translate_method_name :
   JClasspath.program -> Tenv.t -> JCode.jcode Javalib.jmethod -> Typ.Procname.t
 (** translate the SIL procedure name of the Java method *)
 
-val get_class_struct_typ : JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.Struct.t
+val get_class_struct_typ : JClasspath.program -> Tenv.t -> JBasics.class_name -> Struct.t
 (** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
 
 val get_class_type_no_pointer : JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.t
