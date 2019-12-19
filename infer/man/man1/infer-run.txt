@@ -179,15 +179,15 @@ BUCK FLAVORS OPTIONS
            Skip capture of files matched by the specified regular expression
            (only the "flavors (C++)" Buck integration is supported, not
            Java).
-
-       --capture-blacklist regex
-           Skip capture of files matched by the specified OCaml regular
-           expression (only supported by the javac integration for now).
 CLANG OPTIONS
        --compute-analytics
            Activates: Emit analytics as info-level issues, like component kit
            line count and component kit file cyclomatic complexity
            (Conversely: --no-compute-analytics)
+JAVA OPTIONS
+       --capture-blacklist regex
+           Skip capture of files matched by the specified OCaml regular
+           expression (only supported by the javac integration for now).
 
 
 ENVIRONMENT

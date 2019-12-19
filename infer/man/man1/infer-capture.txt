@@ -134,10 +134,6 @@ BUCK FLAVORS OPTIONS
            Use this flag if infer doesn't find any files to analyze after a
            successful capture. (Conversely: --no-buck-merge-all-deps)
 
-       --capture-blacklist regex
-           Skip capture of files matched by the specified OCaml regular
-           expression (only supported by the javac integration for now).
-
        --flavors
            Activates: Buck integration using the infer-capture-all Buck
            flavor (clang only). Use for clang-based Buck projects (as opposed
@@ -256,6 +252,10 @@ CLANG OPTIONS
 JAVA OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath
+
+       --capture-blacklist regex
+           Skip capture of files matched by the specified OCaml regular
+           expression (only supported by the javac integration for now).
 
        --dependencies
            Activates: Translate all the dependencies during the capture. The

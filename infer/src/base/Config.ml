@@ -928,7 +928,7 @@ and capture =
 
 and capture_blacklist =
   CLOpt.mk_string_opt ~long:"capture-blacklist"
-    ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
+    ~in_help:InferCommand.[(Run, manual_java); (Capture, manual_java)]
     ~meta:"regex"
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
      the javac integration for now)."
