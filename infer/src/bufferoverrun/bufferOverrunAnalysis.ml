@@ -167,8 +167,13 @@ module TransferFunctions = struct
       Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
         ~mode:Sem.EvalNormal
     in
-    instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
-      caller_mem location
+    let mem =
+      instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
+        caller_mem location
+    in
+    if Language.curr_language_is Java then
+      Dom.Mem.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem mem
+    else mem
 
 
   let rec is_array_access_exp = function

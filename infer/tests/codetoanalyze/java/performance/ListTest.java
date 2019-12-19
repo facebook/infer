@@ -115,7 +115,7 @@ class ListTest {
     }
   }
 
-  void iter_my_own_obj_FP(List<Integer> a) {
+  void iter_my_own_obj(List<Integer> a) {
     MyOwnObj o = new MyOwnObj();
     for (Integer i : a) {
       o.my_put();

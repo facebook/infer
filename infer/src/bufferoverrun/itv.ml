@@ -586,6 +586,8 @@ module ItvPure = struct
 
 
   let has_void_ptr_symb x = Bound.has_void_ptr_symb (lb x) || Bound.has_void_ptr_symb (ub x)
+
+  let is_incr_of path x = Bound.is_incr_of path (lb x) && Bound.is_incr_of path (ub x)
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -827,3 +829,5 @@ let is_offset_path_of path = bind1_gen ~bot:false (ItvPure.is_offset_path_of pat
 let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of path)
 
 let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols
+
+let is_incr_of path = bind1bool (ItvPure.is_incr_of path)

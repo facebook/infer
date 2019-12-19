@@ -573,6 +573,9 @@ module Mem : sig
   val add_iterator_has_next_alias : Ident.t -> Exp.t -> t -> t
   (** Add an [AliasTarget.IteratorHasNext] alias when [ident = iterator.hasNext()] is called *)
 
+  val incr_iterator_simple_alias_on_call : eval_sym_trace -> callee_exit_mem:no_oenv_t -> t -> t
+  (** Update [AliasTarget.IteratorSimple] alias at function calls *)
+
   val add_iterator_alias : Ident.t -> t -> t
   (** Add [AliasTarget.IteratorSimple] and [AliasTarget.IteratorOffset] aliases when
       [Iteratable.iterator()] is called *)

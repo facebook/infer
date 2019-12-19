@@ -374,6 +374,15 @@ module Bound = struct
         is_symbolic x || is_symbolic y
 
 
+  let is_incr_of path = function
+    | Linear (i, se) ->
+        Z.(equal i one)
+        && Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun sym ->
+               Symb.SymbolPath.equal (Symb.SymbolPath.normal path) (Symb.Symbol.path sym) )
+    | _ ->
+        false
+
+
   let mk_MinMax (c, sign, m, d, s) =
     if Symb.Symbol.is_unsigned s && Z.(d <= zero) then
       match m with

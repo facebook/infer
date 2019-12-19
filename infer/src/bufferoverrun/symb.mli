@@ -37,6 +37,7 @@ module SymbolPath : sig
     | Offset of {p: partial; is_void: bool}
     | Length of {p: partial; is_void: bool}
     | Modeled of partial
+  [@@deriving equal]
 
   val equal_partial : partial -> partial -> bool
 

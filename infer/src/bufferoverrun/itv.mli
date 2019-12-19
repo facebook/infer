@@ -268,3 +268,6 @@ val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
 val is_length_path_of : Symb.SymbolPath.partial -> t -> bool
 
 val has_only_non_int_symbols : t -> bool
+
+val is_incr_of : Symb.SymbolPath.partial -> t -> bool
+(** Check if [itv] is [path+1] when called [is_incr_of path itv] *)

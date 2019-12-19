@@ -500,6 +500,10 @@ module Val = struct
 
   let is_mone x = Itv.is_mone (get_itv x)
 
+  let is_incr_of l {itv} =
+    Option.value_map (Loc.get_path l) ~default:false ~f:(fun path -> Itv.is_incr_of path itv)
+
+
   let cast typ v = {v with powloc= PowLoc.cast typ v.powloc}
 
   let of_path tenv ~may_last_field integer_type_widths location typ path =
@@ -686,6 +690,8 @@ module MVal = struct
   let get_rep_multi (represents_multiple_values, _) = represents_multiple_values
 
   let get_val (_, v) = v
+
+  let is_incr_of l (m, v) = (not m) && Val.is_incr_of l v
 end
 
 module MemPure = struct
@@ -772,6 +778,11 @@ module MemPure = struct
 
 
   let is_rep_multi_loc l m = Option.value_map ~default:false (find_opt l m) ~f:MVal.get_rep_multi
+
+  (** Collect the location that was increased by one, i.e., [x -> x+1] *)
+  let get_incr_locs m =
+    fold (fun l v acc -> if MVal.is_incr_of l v then PowLoc.add l acc else acc) m PowLoc.empty
+
 
   let find_opt l m = Option.map (find_opt l m) ~f:MVal.get_val
 
@@ -1163,6 +1174,18 @@ module AliasMap = struct
     M.fold accum_tgts prev x
 
 
+  let incr_iterator_simple_alias_on_call {eval_locpath} ~callee_locs x =
+    let accum_increased_alias callee_loc acc =
+      Option.value_map (Loc.get_path callee_loc) ~default:acc ~f:(fun callee_path ->
+          match PowLoc.is_singleton_or_more (eval_locpath callee_path) with
+          | IContainer.Singleton loc ->
+              incr_iterator_simple_alias ~prev:x loc IntLit.one acc
+          | IContainer.Empty | IContainer.More ->
+              acc )
+    in
+    PowLoc.fold accum_increased_alias callee_locs x
+
+
   let store_n ~prev loc id n x =
     let accum_size_alias rhs tgt acc =
       match tgt with
@@ -1369,6 +1392,9 @@ module Alias = struct
   let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove (KeyLhs.of_id temp))
 
   let forget_size_alias arr_locs = lift_map (AliasMap.forget_size_alias arr_locs)
+
+  let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_locs =
+    lift_map (AliasMap.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_locs)
 end
 
 module CoreVal = struct
@@ -1928,6 +1954,11 @@ module MemReach = struct
     {m with alias= Alias.add_iterator_has_next_alias ~ret_id ~iterator m.alias}
 
 
+  let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m =
+    let callee_locs = MemPure.get_incr_locs callee_exit_mem.mem_pure in
+    {m with alias= Alias.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_locs m.alias}
+
+
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
 
   let add_stack : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
@@ -2294,6 +2325,14 @@ module Mem = struct
     | Exp.Var iterator ->
         map ~f:(MemReach.add_iterator_has_next_alias ~ret_id ~iterator) m
     | _ ->
+        m
+
+
+  let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m =
+    match (callee_exit_mem, m) with
+    | NonBottom callee_exit_mem, NonBottom m ->
+        NonBottom (MemReach.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m)
+    | _, _ ->
         m
 
 
