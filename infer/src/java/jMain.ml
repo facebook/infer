@@ -27,12 +27,11 @@ let store_icfg source_file cfg =
 
 (* Given a source file, its code is translated, and the call-graph, control-flow-graph and type *)
 (* environment are obtained and saved. *)
-let do_source_file linereader classes program tenv source_basename package_opt source_file =
+let do_source_file linereader program tenv source_basename package_opt source_file =
   L.(debug Capture Medium) "@\nfilename: %a (%s)@." SourceFile.pp source_file source_basename ;
   init_global_state source_file ;
   let cfg =
-    JFrontend.compute_source_icfg linereader classes program tenv source_basename package_opt
-      source_file
+    JFrontend.compute_source_icfg linereader program tenv source_basename package_opt source_file
   in
   store_icfg source_file cfg
 
@@ -81,11 +80,7 @@ let store_callee_attributes tenv program =
 
 
 (* The program is loaded and translated *)
-let do_all_files classpath sources classes =
-  L.(debug Capture Quiet)
-    "Translating %d source files (%d classes)@." (String.Map.length sources)
-    (JBasics.ClassSet.cardinal classes) ;
-  let program = JClasspath.load_program classpath classes in
+let do_all_files sources program =
   let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
   let skip source_file =
@@ -99,7 +94,7 @@ let do_all_files classpath sources classes =
   in
   let translate_source_file basename (package_opt, _) source_file =
     if not (skip source_file) then
-      do_source_file linereader classes program tenv basename package_opt source_file
+      do_source_file linereader program tenv basename package_opt source_file
   in
   String.Map.iteri
     ~f:(fun ~key:basename ~data:file_entry ->
@@ -139,7 +134,11 @@ let main load_sources_and_classes =
         JClasspath.load_from_arguments path
   in
   if String.Map.is_empty sources then L.(die InternalError) "Failed to load any Java source code" ;
-  do_all_files classpath sources classes
+  L.(debug Capture Quiet)
+    "Translating %d source files (%d classes)@." (String.Map.length sources)
+    (JBasics.ClassSet.cardinal classes) ;
+  let program = JClasspath.load_program classpath classes in
+  do_all_files sources program
 
 
 let from_arguments path = main (`FromArguments path)

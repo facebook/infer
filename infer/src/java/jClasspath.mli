@@ -33,6 +33,8 @@ type program
 
 val get_classmap : program -> classmap
 
+val mem_classmap : JBasics.class_name -> program -> bool
+
 val get_models : program -> classmap
 
 val cleanup : program -> unit

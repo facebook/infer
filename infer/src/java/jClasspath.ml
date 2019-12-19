@@ -249,6 +249,8 @@ type program =
 
 let get_classmap program = program.classmap
 
+let mem_classmap cn program = JBasics.ClassMap.mem cn program.classmap
+
 let get_classpath_channel program = program.classpath.channel
 
 let get_models program = program.models

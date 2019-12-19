@@ -162,8 +162,9 @@ let create_icfg source_file linereader program tenv icfg cn node =
   Javalib.m_iter translate node
 
 
-(* returns true for the set of classes that are selected to be translated *)
-let should_capture classes package_opt source_basename node =
+(* returns true for the set of classes that are selected to be translated in the given
+   progam *)
+let should_capture program package_opt source_basename node =
   let classname = Javalib.get_name node in
   let match_package pkg cn =
     match JTransType.package_to_string (JBasics.cn_package cn) with
@@ -172,7 +173,7 @@ let should_capture classes package_opt source_basename node =
     | Some found_pkg ->
         String.equal found_pkg pkg
   in
-  if JBasics.ClassSet.mem classname classes then
+  if JClasspath.mem_classmap classname program then
     match Javalib.get_sourcefile node with
     | None ->
         false
@@ -186,9 +187,9 @@ let should_capture classes package_opt source_basename node =
 
 
 (* Computes the control - flow graph and call - graph of a given source file.
-   In the standard - mode, it translated all the classes that correspond to this
+   In the standard - mode, it translated all the classes of [program] that correspond to this
    source file. *)
-let compute_source_icfg linereader classes program tenv source_basename package_opt source_file =
+let compute_source_icfg linereader program tenv source_basename package_opt source_file =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
@@ -196,7 +197,7 @@ let compute_source_icfg linereader classes program tenv source_basename package_
   let () =
     JBasics.ClassMap.iter
       (select
-         (should_capture classes package_opt source_basename)
+         (should_capture program package_opt source_basename)
          (create_icfg source_file linereader program tenv icfg))
       (JClasspath.get_classmap program)
   in
