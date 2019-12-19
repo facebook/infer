@@ -18,9 +18,6 @@ module LineReader : sig
   val create : unit -> t
   (** create a line reader *)
 
-  val from_file_linenum : t -> SourceFile.t -> int -> string option
-  (** get the line from a source file and line number *)
-
   val from_loc : t -> Location.t -> string option
   (** get the line from a location looking for the copy of the file in the results dir *)
 end

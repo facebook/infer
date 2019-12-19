@@ -15,39 +15,6 @@ type invoke_kind = I_Virtual | I_Interface | I_Special | I_Static
 
 exception Frontend_error of string
 
-(** Fix the line associated to a method definition. Since Sawja often reports a method off by a few
-    lines, we search backwards for a line where the method name is. *)
-let fix_method_definition_line linereader proc_name loc =
-  let proc_name_java = match proc_name with Procname.Java p -> p | _ -> assert false in
-  let method_name =
-    if Procname.is_constructor proc_name then
-      let inner_class_name cname =
-        match String.rsplit2 cname ~on:'$' with Some (_, icn) -> icn | None -> cname
-      in
-      inner_class_name (Procname.Java.get_simple_class_name proc_name_java)
-    else Procname.Java.get_method proc_name_java
-  in
-  let regex = Str.regexp (Str.quote method_name) in
-  let method_is_defined_here linenum =
-    match Printer.LineReader.from_file_linenum linereader loc.Location.file linenum with
-    | None ->
-        raise Caml.Not_found
-    | Some line -> (
-      try
-        ignore (Str.search_forward regex line 0) ;
-        true
-      with Caml.Not_found -> false )
-  in
-  let line = ref loc.Location.line in
-  try
-    while not (method_is_defined_here !line) do
-      line := !line - 1 ;
-      if !line < 0 then raise Caml.Not_found
-    done ;
-    {loc with Location.line= !line}
-  with Caml.Not_found -> loc
-
-
 let get_location source_file impl pc =
   let line_number =
     let ln = try JBir.get_source_line_number pc impl with Invalid_argument _ -> None in
@@ -379,14 +346,12 @@ let create_native_procdesc source_file program icfg cm proc_name =
   create_empty_cfg source_file procdesc
 
 
-let create_empty_procdesc source_file program linereader icfg cm proc_name =
+let create_empty_procdesc source_file program icfg cm proc_name =
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   let bytecode = get_bytecode cm in
-  let loc_start =
-    get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
-  in
+  let loc_start = get_start_location source_file bytecode in
   let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
   let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
   let proc_attributes =
@@ -407,7 +372,7 @@ let create_empty_procdesc source_file program linereader icfg cm proc_name =
 
 
 (** Creates a procedure description. *)
-let create_cm_procdesc source_file program linereader icfg cm proc_name =
+let create_cm_procdesc source_file program icfg cm proc_name =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
@@ -415,9 +380,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
   try
     let bytecode = get_bytecode cm in
     let jbir_code = get_jbir_representation cm bytecode in
-    let loc_start =
-      get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
-    in
+    let loc_start = get_start_location source_file bytecode in
     let loc_exit = get_exit_location source_file bytecode in
     let formals = translate_formals program tenv cn jbir_code in
     let locals_ = translate_locals program tenv formals bytecode jbir_code in

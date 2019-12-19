@@ -86,12 +86,12 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
 
 
 (** Add a concrete method. *)
-let add_cmethod source_file program linereader icfg cm proc_name =
+let add_cmethod source_file program icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   if Inferconfig.skip_implementation_matcher source_file proc_name then
-    ignore (JTrans.create_empty_procdesc source_file program linereader icfg cm proc_name)
+    ignore (JTrans.create_empty_procdesc source_file program icfg cm proc_name)
   else
-    match JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name with
+    match JTrans.create_cm_procdesc source_file program icfg cm proc_name with
     | None ->
         ()
     | Some (procdesc, start_node, exit_node, exn_node, jbir_code) ->
@@ -135,7 +135,7 @@ let is_classname_cached cn = Sys.file_exists (path_of_cached_classname cn) = `Ye
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
-let create_icfg source_file linereader program tenv icfg cn node =
+let create_icfg source_file program tenv icfg cn node =
   L.(debug Capture Verbose) "\tclassname: %s@." (JBasics.cn_name cn) ;
   if Config.dependency_mode && not (is_classname_cached cn) then cache_classname cn ;
   let translate m =
@@ -154,7 +154,7 @@ let create_icfg source_file linereader program tenv icfg cn node =
         | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
             ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
         | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program linereader icfg cm proc_name
+            add_cmethod source_file program icfg cm proc_name
       with JBasics.Class_structure_error error ->
         L.internal_error "create_icfg raised JBasics.Class_structure_error %s on %a@." error
           Procname.pp proc_name
@@ -189,7 +189,7 @@ let should_capture program package_opt source_basename node =
 (* Computes the control - flow graph and call - graph of a given source file.
    In the standard - mode, it translated all the classes of [program] that correspond to this
    source file. *)
-let compute_source_icfg linereader program tenv source_basename package_opt source_file =
+let compute_source_icfg program tenv source_basename package_opt source_file =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
@@ -198,14 +198,14 @@ let compute_source_icfg linereader program tenv source_basename package_opt sour
     JBasics.ClassMap.iter
       (select
          (should_capture program package_opt source_basename)
-         (create_icfg source_file linereader program tenv icfg))
+         (create_icfg source_file program tenv icfg))
       (JClasspath.get_classmap program)
   in
   icfg.JContext.cfg
 
 
-let compute_class_icfg source_file linereader program tenv node =
+let compute_class_icfg source_file program tenv node =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
-  ( try create_icfg source_file linereader program tenv icfg (Javalib.get_name node) node
+  ( try create_icfg source_file program tenv icfg (Javalib.get_name node) node
     with Bir.Subroutine -> () ) ;
   icfg.JContext.cfg

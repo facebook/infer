@@ -1,2 +1,2 @@
-RESOURCE_LEAK, no_bucket, src/DiffExample.java, DiffExample.openResource():void, 5
-NULL_DEREFERENCE, no_bucket, src/DiffExampleTwo.java, DiffExampleTwo.doSomethingTwo():void, 1
+RESOURCE_LEAK, no_bucket, src/DiffExample.java, DiffExample.openResource():void, 3
+NULL_DEREFERENCE, no_bucket, src/DiffExampleTwo.java, DiffExampleTwo.doSomethingTwo():void, 0

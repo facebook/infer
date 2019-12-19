@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, no_bucket, src/DiffExample.java, DiffExample$3$1.doSomething():void, 1
+NULL_DEREFERENCE, no_bucket, src/DiffExample.java, DiffExample$3$1.doSomething():void, 0

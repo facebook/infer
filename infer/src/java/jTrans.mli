@@ -48,7 +48,6 @@ val create_native_procdesc :
 val create_empty_procdesc :
      SourceFile.t
   -> JClasspath.program
-  -> Printer.LineReader.t
   -> JContext.icfg
   -> JCode.jcode Javalib.concrete_method
   -> Procname.t
@@ -57,7 +56,6 @@ val create_empty_procdesc :
 val create_cm_procdesc :
      SourceFile.t
   -> JClasspath.program
-  -> Printer.LineReader.t
   -> JContext.icfg
   -> JCode.jcode Javalib.concrete_method
   -> Procname.t

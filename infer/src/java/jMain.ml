@@ -27,16 +27,14 @@ let store_icfg source_file cfg =
 
 (* Given a source file, its code is translated, and the call-graph, control-flow-graph and type *)
 (* environment are obtained and saved. *)
-let do_source_file linereader program tenv source_basename package_opt source_file =
+let do_source_file program tenv source_basename package_opt source_file =
   L.(debug Capture Medium) "@\nfilename: %a (%s)@." SourceFile.pp source_file source_basename ;
   init_global_state source_file ;
-  let cfg =
-    JFrontend.compute_source_icfg linereader program tenv source_basename package_opt source_file
-  in
+  let cfg = JFrontend.compute_source_icfg program tenv source_basename package_opt source_file in
   store_icfg source_file cfg
 
 
-let capture_libs linereader program tenv =
+let capture_libs program tenv =
   let capture_class tenv cn node =
     match node with
     | Javalib.JInterface _ ->
@@ -46,7 +44,7 @@ let capture_libs linereader program tenv =
     | Javalib.JClass _ ->
         let fake_source_file = SourceFile.from_abs_path (JFrontend.path_of_cached_classname cn) in
         init_global_state fake_source_file ;
-        let cfg = JFrontend.compute_class_icfg fake_source_file linereader program tenv node in
+        let cfg = JFrontend.compute_class_icfg fake_source_file program tenv node in
         store_icfg fake_source_file cfg ; JFrontend.cache_classname cn
   in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
@@ -82,7 +80,6 @@ let store_callee_attributes tenv program =
 (* The program is loaded and translated *)
 let do_all_files sources program =
   let tenv = load_tenv () in
-  let linereader = Printer.LineReader.create () in
   let skip source_file =
     let is_path_matching path =
       List.exists
@@ -93,8 +90,7 @@ let do_all_files sources program =
     || Inferconfig.skip_translation_matcher source_file Procname.empty_block
   in
   let translate_source_file basename (package_opt, _) source_file =
-    if not (skip source_file) then
-      do_source_file linereader program tenv basename package_opt source_file
+    if not (skip source_file) then do_source_file program tenv basename package_opt source_file
   in
   String.Map.iteri
     ~f:(fun ~key:basename ~data:file_entry ->
@@ -107,7 +103,7 @@ let do_all_files sources program =
               translate_source_file basename (Some package, source_file) source_file )
             source_files )
     sources ;
-  if Config.dependency_mode then capture_libs linereader program tenv ;
+  if Config.dependency_mode then capture_libs program tenv ;
   store_callee_attributes tenv program ;
   save_tenv tenv ;
   JClasspath.cleanup program ;
