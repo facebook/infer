@@ -9,7 +9,7 @@ import java.util.Iterator;
 
 class Localities {
   // @pure
-  boolean contains_pure_FP(Integer i, ArrayList<Integer> list) {
+  boolean contains_pure(Integer i, ArrayList<Integer> list) {
     Iterator<Integer> listIterator = list.iterator();
     while (listIterator.hasNext()) {
       Integer el = listIterator.next();
@@ -74,7 +74,7 @@ class Localities {
   }
 
   // @pure, @loc:{}
-  int length_pure_FP(ArrayList<Integer> list) {
+  int length_pure(ArrayList<Integer> list) {
     Counter c = new Counter();
     for (Integer i : list) {
       c.inc_impure();

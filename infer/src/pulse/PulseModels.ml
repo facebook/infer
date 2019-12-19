@@ -50,6 +50,12 @@ module Misc = struct
 
   let skip : model = fun ~caller_summary:_ _ ~ret:_ astate -> Ok [astate]
 
+  let nondet ~fn_name : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
+    Ok [PulseOperations.havoc_id ret_id [event] astate]
+
+
   let id_first_arg arg_access_hist : model =
    fun ~caller_summary:_ _ ~ret astate ->
     Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
@@ -404,7 +410,16 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.at ~desc:"Collection.get()" ]
+        $--> StdVector.at ~desc:"Collection.get()"
+      ; +PatternMatch.implements_iterator &:: "hasNext"
+        &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
+      ; +PatternMatch.implements_lang "Object"
+        &:: "equals"
+        &--> Misc.nondet ~fn_name:"Object.equals"
+      ; +PatternMatch.implements_lang "Iterable"
+        &:: "iterator" <>$ capt_arg_payload $+...$--> Misc.id_first_arg
+      ; ( +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
+        $!--> fun x -> StdVector.at ~desc:"Iterator.next" x (AbstractValue.mk_fresh (), []) ) ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
