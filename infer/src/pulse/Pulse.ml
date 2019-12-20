@@ -35,7 +35,7 @@ let proc_name_of_call call_exp =
 
 
 module PulseTransferFunctions = struct
-  module CFG = ProcCfg.Exceptional
+  module CFG = ProcCfg.Normal
   module Domain = PulseAbductiveDomain
 
   type extras = unit
