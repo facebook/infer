@@ -1,4 +1,0 @@
-java_library(
-    name = 'target',
-    srcs = glob(['*.java']),
-)

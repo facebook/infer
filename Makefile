@@ -186,7 +186,7 @@ endif
 
 
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck genrule genrulecapture buck_javac_jar
+BUILD_SYSTEMS_TESTS += genrule genrulecapture
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn

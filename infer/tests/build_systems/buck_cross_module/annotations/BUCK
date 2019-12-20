@@ -1,7 +1,0 @@
-java_library(
-    name='annotations',
-    srcs=['Nullable.java'],
-    visibility=[
-        'PUBLIC'
-    ],
-)

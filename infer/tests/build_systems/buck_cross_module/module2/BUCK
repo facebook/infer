@@ -1,7 +1,0 @@
-java_library(
-    name='module2',
-    srcs=['Class2.java'],
-    deps=[
-        '//module1:module1'
-    ]
-)

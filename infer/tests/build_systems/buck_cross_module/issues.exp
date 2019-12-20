@@ -1,2 +1,0 @@
-module2/Class2.java, crossmodule.module2.Class2.crossModuleNPE1():void, 1, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure crossModuleNPE1(),start of procedure returnsNull(),return from a call to String Class1.returnsNull()]
-module2/Class2.java, crossmodule.module2.Class2.crossModuleNPE2(crossmodule.module1.Class1):void, 1, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure crossModuleNPE2(...)]
