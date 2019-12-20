@@ -11,6 +11,11 @@ open BufferOverrunUtils.ModelEnv
 
 type model = model_env -> ret:Ident.t * Typ.t -> BufferOverrunDomain.Mem.t -> BasicCost.t
 
+let unit_cost_of ~of_function loc =
+  Bounds.NonNegativeBound.of_modeled_function of_function loc Bounds.Bound.one
+  |> BasicCost.of_non_negative_bound ~degree_kind:Polynomials.DegreeKind.Linear
+
+
 let of_itv ~(itv : Itv.t) ~degree_kind ~of_function loc =
   let upper_bound =
     match itv with Bottom -> Bounds.Bound.pinf | NonBottom itv_pure -> Itv.ItvPure.ub itv_pure
