@@ -23,7 +23,7 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck flavors integration,\
-	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out \
+	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out \
 	  @blacklist.txt --buck-blacklist '.*src/hello2\.c' \
 	  -- $(BUCK) build --no-cache $(BUCK_TARGET) &&\
 	$(INFER_BIN) $(INFER_OPTIONS) --merge analyze)

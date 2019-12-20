@@ -10,7 +10,7 @@ TARGET = //src:target
 SOURCES = src/UsingJavacJar.java
 OBJECTS = buck-out/gen/src/lib__target__output/target.jar
 BUCKCONFIG = .buckconfig
-INFER_OPTIONS = --eradicate-only
+INFER_OPTIONS = --eradicate-only --buck-java-deprecated
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 

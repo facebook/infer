@@ -12,7 +12,7 @@ CLEAN_EXTRA = buck-out
 SOURCES = $(shell find . -name '*.java')
 
 INFERPRINT_OPTIONS = --issues-tests
-INFER_OPTIONS = --genrule-master-mode --debug-exceptions
+INFER_OPTIONS = --buck-java --debug-exceptions
 
 include $(TESTS_DIR)/infer.make
 

@@ -14,7 +14,7 @@ include $(TESTS_DIR)/differential.make
 $(CURRENT_REPORT) $(PREVIOUS_REPORT): $(CLANG_DEPS)
 
 BUCK_TARGET = //src:hello
-INFER_OPTIONS = $(DIFFERENTIAL_ARGS) --flavors --reactive --debug-exceptions --no-linters
+INFER_OPTIONS = $(DIFFERENTIAL_ARGS) --buck-clang --reactive --debug-exceptions --no-linters
 
 .PHONY: compare_reports
 compare_reports: current.exp.test previous.exp.test

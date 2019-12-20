@@ -32,14 +32,14 @@ module Target = struct
     else {target with flavors= flavor :: target.flavors}
 
 
-  let add_flavor ~extra_flavors target =
+  let add_flavor (mode : BuckMode.t) (command : InferCommand.t) ~extra_flavors target =
     let target = List.fold_left ~f:add_flavor_internal ~init:target extra_flavors in
-    match (Config.buck_compilation_database, Config.command) with
-    | Some _, _ ->
+    match (mode, command) with
+    | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | None, Compile ->
+    | ClangFlavors, Compile | JavaGenruleMaster, _ ->
         target
-    | None, _ ->
+    | ClangFlavors, _ ->
         add_flavor_internal target "infer-capture-all"
 end
 
@@ -87,7 +87,7 @@ module Query = struct
 
   let kind ~pattern expr = Kind {pattern= quote_if_needed pattern; expr}
 
-  let deps ?depth expr = Deps {depth; expr}
+  let deps depth expr = Deps {depth; expr}
 
   let set exprs =
     match List.rev_map exprs ~f:(function Target t -> t | _ -> raise NotATarget) with
@@ -147,23 +147,19 @@ let parameters_with_argument =
   ; "--verbose" ]
 
 
-let get_accepted_buck_kinds_pattern () =
-  if Option.is_some Config.buck_compilation_database then "^(apple|cxx)_(binary|library|test)$"
-  else if Config.genrule_master_mode then "^(java|android)_library$"
-  else "^(apple|cxx)_(binary|library)$"
+let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
+  match mode with
+  | ClangCompilationDB _ ->
+      "^(apple|cxx)_(binary|library|test)$"
+  | JavaGenruleMaster ->
+      "^(java|android)_library$"
+  | ClangFlavors ->
+      "^(apple|cxx)_(binary|library)$"
 
 
 let max_command_line_length = 50
 
 let die_if_empty f = function [] -> f L.(die UserError) | l -> l
-
-let buck_config =
-  lazy
-    ( if Config.genrule_master_mode then
-      ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
-      |> List.fold ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
-    else [] )
-
 
 (** for genrule_master_mode, this is the label expected on the capture genrules *)
 let infer_enabled_label = "infer_enabled"
@@ -171,13 +167,30 @@ let infer_enabled_label = "infer_enabled"
 (** for genrule_master_mode, this is the target name suffix for the capture genrules *)
 let genrule_suffix = "_infer"
 
-let resolve_pattern_targets ~filter_kind ~dep_depth targets =
+let buck_config buck_mode =
+  if BuckMode.is_java_genrule_master buck_mode then
+    ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
+    |> List.fold ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
+  else []
+
+
+let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
-  |> (match dep_depth with None -> Fn.id | Some depth -> Query.deps ?depth)
-  |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern ()) else Fn.id)
-  |> (if Config.genrule_master_mode then Query.label_filter ~label:infer_enabled_label else Fn.id)
-  |> Query.exec ~buck_config:(Lazy.force buck_config)
-  |> if Config.genrule_master_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix) else Fn.id
+  |> ( match buck_mode with
+     | ClangFlavors | ClangCompilationDB NoDependencies ->
+         Fn.id
+     | JavaGenruleMaster | ClangCompilationDB DepsAllDepths ->
+         Query.deps None
+     | ClangCompilationDB (DepsUpToDepth depth) ->
+         Query.deps (Some depth) )
+  |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode) else Fn.id)
+  |> ( if BuckMode.is_java_genrule_master buck_mode then
+       Query.label_filter ~label:infer_enabled_label
+     else Fn.id )
+  |> Query.exec ~buck_config:(buck_config buck_mode)
+  |>
+  if BuckMode.is_java_genrule_master buck_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix)
+  else Fn.id
 
 
 let resolve_alias_targets aliases =
@@ -233,7 +246,7 @@ let inline_argument_files buck_args =
   List.concat_map ~f:expand_buck_arg buck_args
 
 
-let parse_command_and_targets ~filter_kind ~dep_depth original_buck_args =
+let parse_command_and_targets (buck_mode : BuckMode.t) ~filter_kind original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_blacklist_regexp =
@@ -265,15 +278,18 @@ let parse_command_and_targets ~filter_kind ~dep_depth original_buck_args =
   in
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
-    match (filter_kind, dep_depth, parsed_args) with
-    | (`No | `Auto), None, {pattern_targets= []; alias_targets= []; normal_targets} ->
+    match (filter_kind, buck_mode, parsed_args) with
+    | ( (`No | `Auto)
+      , (ClangFlavors | JavaGenruleMaster)
+      , {pattern_targets= []; alias_targets= []; normal_targets} ) ->
         normal_targets
-    | `No, None, {pattern_targets= []; alias_targets; normal_targets} ->
+    | `No, (ClangFlavors | JavaGenruleMaster), {pattern_targets= []; alias_targets; normal_targets}
+      ->
         alias_targets |> resolve_alias_targets |> List.rev_append normal_targets
     | (`Yes | `No | `Auto), _, {pattern_targets; alias_targets; normal_targets} ->
         let filter_kind = match filter_kind with `No -> false | `Yes | `Auto -> true in
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-        |> resolve_pattern_targets ~filter_kind ~dep_depth
+        |> resolve_pattern_targets buck_mode ~filter_kind
   in
   let targets =
     Option.value_map ~default:targets
@@ -285,13 +301,14 @@ let parse_command_and_targets ~filter_kind ~dep_depth original_buck_args =
 
 type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
 
-let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors original_buck_args =
+let add_flavors_to_buck_arguments buck_mode ~filter_kind ~extra_flavors original_buck_args =
   let command, rev_not_targets, targets =
-    parse_command_and_targets ~filter_kind ~dep_depth original_buck_args
+    parse_command_and_targets buck_mode ~filter_kind original_buck_args
   in
   let targets =
     List.rev_map targets ~f:(fun t ->
-        Target.(t |> of_string |> add_flavor ~extra_flavors |> to_string) )
+        Target.(t |> of_string |> add_flavor ~extra_flavors buck_mode Config.command |> to_string)
+    )
   in
   {command; rev_not_targets; targets}
 

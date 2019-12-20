@@ -7,19 +7,19 @@
 
 open! IStd
 
-val buck_config : string list Lazy.t
+val buck_config : BuckMode.t -> string list
 
 val parse_command_and_targets :
-     filter_kind:[< `Yes | `No | `Auto]
-  -> dep_depth:int option option
+     BuckMode.t
+  -> filter_kind:[< `Yes | `No | `Auto]
   -> string list
   -> string * string list * string list
 
 type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
 
 val add_flavors_to_buck_arguments :
-     filter_kind:[< `Yes | `No | `Auto]
-  -> dep_depth:int option option
+     BuckMode.t
+  -> filter_kind:[< `Yes | `No | `Auto]
   -> extra_flavors:string list
   -> string list
   -> flavored_arguments

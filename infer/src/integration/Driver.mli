@@ -15,7 +15,7 @@ type mode =
   | Analyze
   | BuckGenrule of string
   | BuckGenruleMaster of string list
-  | BuckCompilationDB of string * string list
+  | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
   | Clang of Clang.compiler * string * string list
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
   | Javac of Javac.compiler * string * string list

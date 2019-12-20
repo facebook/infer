@@ -163,7 +163,8 @@ let clang_cc1_cmd_sanitizer cmd =
         (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
         Unix.mkdir_p (Filename.dirname arg) ;
         arg
-    | "-dependency-file" :: _, _ when Option.is_some Config.buck_compilation_database ->
+    | "-dependency-file" :: _, _
+      when Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db ->
         (* In compilation database mode, dependency files are not assumed to exist *)
         "/dev/null"
     | "-idirafter" :: _, arg ->

@@ -13,12 +13,6 @@ open! IStd
 
 type os_type = Unix | Win32 | Cygwin
 
-type compilation_database_dependencies =
-  | Deps of int option
-      (** get the compilation database of the dependencies up to depth n by [Deps (Some n)], or all
-          by [Deps None] *)
-  | NoDeps
-
 type build_system =
   | BAnt
   | BBuck
@@ -243,9 +237,9 @@ val buck_build_args_no_inline : string list
 
 val buck_cache_mode : bool
 
-val buck_compilation_database : compilation_database_dependencies option
-
 val buck_merge_all_deps : bool
+
+val buck_mode : BuckMode.t option
 
 val buck_out : string option
 
@@ -356,8 +350,6 @@ val filter_paths : bool
 
 val filtering : bool
 
-val flavors : bool
-
 val force_delete_results_dir : bool
 
 val force_integration : build_system option
@@ -373,8 +365,6 @@ val frontend_tests : bool
 val function_pointer_specialization : bool
 
 val generated_classes : string option
-
-val genrule_master_mode : bool
 
 val genrule_mode : bool
 

@@ -17,5 +17,5 @@ infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java cross module integration,\
 	INFER_BIN=$(INFER_BIN) \
-	$(INFER_BIN) --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) --buck-java-deprecated --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

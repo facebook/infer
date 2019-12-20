@@ -27,7 +27,7 @@ MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
 buck [options] [target]
 
 Analysis examples:
-infer -- buck build HelloWorld'''
+infer --buck-clang -- buck build HelloWorld'''
 LANG = ['clang', 'java']
 
 KEEP_GOING_OPTION = "--keep-going"

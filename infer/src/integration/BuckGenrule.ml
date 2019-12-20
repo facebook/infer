@@ -57,14 +57,14 @@ let capture build_cmd =
   L.progress "Querying buck for genrule capture targets...@." ;
   let time0 = Mtime_clock.counter () in
   let command, args, targets =
-    Buck.parse_command_and_targets ~filter_kind:`Yes ~dep_depth:(Some None) buck_cmd
+    Buck.parse_command_and_targets JavaGenruleMaster ~filter_kind:`Yes buck_cmd
   in
   L.progress "Found %d genrule capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
   let all_args = List.rev_append args targets in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    (prog :: command :: "--show-output" :: Lazy.force Buck.buck_config)
+    (prog :: command :: "--show-output" :: Buck.buck_config JavaGenruleMaster)
     @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
   in
   L.(debug Capture Quiet)

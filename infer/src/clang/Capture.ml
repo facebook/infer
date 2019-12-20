@@ -201,7 +201,7 @@ let capture clang_cmd =
     (* this command compiles some code; replace the invocation of clang with our own clang and
        plugin *)
     cc1_capture clang_cmd
-  else if Option.is_some Config.buck_compilation_database then
+  else if Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db then
     (* when running with buck's compilation-database, skip commands where frontend cannot be
        attached, as they may cause unnecessary compilation errors *)
     ()

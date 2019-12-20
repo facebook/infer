@@ -6,11 +6,10 @@
 TESTS_DIR = ../..
 
 BUCK_TARGET = //module2:module2
-INFER_OPTIONS = --eradicate --no-linters
+INFER_OPTIONS = --eradicate --no-linters --buck-java-deprecated
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 SOURCES = $(shell find . -name '*.java')
-
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make

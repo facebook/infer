@@ -9,7 +9,7 @@ ROOT_DIR = $(TESTS_DIR)/../..
 BUCK_TARGET = //src:hello
 SOURCES = src/hello.c src/hello2.c
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --developer-mode --no-linters
+INFER_OPTIONS = --report-custom-error --developer-mode --no-linters --buck-clang
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 
@@ -22,5 +22,5 @@ $(OBJECTS): $(SOURCES)
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing infer-run Buck flavors integration,\
-	$(INFER_BIN) $(INFER_OPTIONS) run --flavors --results-dir $(CURDIR)/infer-out --reactive -- \
+	$(INFER_BIN) $(INFER_OPTIONS) run --results-dir $(CURDIR)/infer-out --reactive -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

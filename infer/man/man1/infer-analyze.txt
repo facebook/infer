@@ -349,10 +349,10 @@ BIABDUCTION CHECKER OPTIONS
        --biabduction-fallback-model-free-pattern string
            Regex of methods that should be modelled as free if definition is
            missing
-BUCK FLAVORS OPTIONS
+BUCK OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the
-           dependency file (Conversely: --no-merge)
+           dependency file. (Conversely: --no-merge)
 BUFFER OVERRUN OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)

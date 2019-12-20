@@ -22,12 +22,12 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 differences.exp.test: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Running Buck flavors capture a first time,\
-	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
 	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-1.sha)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Running Buck flavors capture a second time,\
-	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
 	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-2.sha)
 	$(QUIET)$(call silent_on_success,Computing difference,\

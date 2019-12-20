@@ -58,8 +58,8 @@ let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
     ~short_description:"capture source files for later analysis"
     ~synopsis:
-      {|$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,buck) $(i,...)
-$(b,infer) $(b,capture) $(b,--flavors) $(i,[options]) $(b,--) $(b,buck) $(i,...)
+      {|$(b,infer) $(b,capture) $(b,--buck-java) $(i,[options]) $(b,--) $(b,buck) $(i,...)
+$(b,infer) $(b,capture) $(b,--buck-clang) $(i,[options]) $(b,--) $(b,buck) $(i,...)
 $(b,infer) $(b,capture) $(b,--buck-compilation-database) $(i,[no-]deps) $(i,[options]) $(b,--) $(b,buck) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database) $(i,file)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database-escaped) $(i,file)

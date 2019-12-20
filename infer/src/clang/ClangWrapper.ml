@@ -21,34 +21,37 @@ type action_item =
 let clang_ignore_regex = Option.map ~f:Str.regexp Config.clang_ignore_regex
 
 let check_for_existing_file args =
-  if Option.is_some clang_ignore_regex && Option.is_none Config.buck_compilation_database then
-    let arg_files, args_list = List.partition_tf ~f:(String.is_prefix ~prefix:"@") args in
-    let read_arg_files args_list arg_file_at =
-      let file = String.slice arg_file_at 1 (String.length arg_file_at) in
-      let args_list_file = In_channel.read_lines file in
-      List.append args_list args_list_file
-    in
-    let all_args_ = List.fold_left ~f:read_arg_files ~init:args_list arg_files in
-    let all_args = List.map ~f:String.strip all_args_ in
-    let rec check_for_existing_file_arg args =
-      match args with
-      | [] ->
-          ()
-      | option :: rest ->
-          if String.equal option "-c" then
-            (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
-               Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
-            match (clang_ignore_regex, List.hd rest) with
-            | Some regexp, Some arg ->
-                if Str.string_match regexp arg 0 && Sys.file_exists arg <> `Yes then (
-                  Unix.mkdir_p (Filename.dirname arg) ;
-                  let file = Unix.openfile ~mode:[Unix.O_CREAT; Unix.O_RDONLY] arg in
-                  Unix.close file )
-            | _ ->
-                ()
-          else check_for_existing_file_arg rest
-    in
-    check_for_existing_file_arg all_args
+  match (Config.buck_mode, clang_ignore_regex) with
+  | Some (ClangCompilationDB _), Some clang_ignore_regex ->
+      let arg_files, args_list = List.partition_tf ~f:(String.is_prefix ~prefix:"@") args in
+      let read_arg_files args_list arg_file_at =
+        let file = String.slice arg_file_at 1 (String.length arg_file_at) in
+        let args_list_file = In_channel.read_lines file in
+        List.append args_list args_list_file
+      in
+      let all_args_ = List.fold_left ~f:read_arg_files ~init:args_list arg_files in
+      let all_args = List.map ~f:String.strip all_args_ in
+      let rec check_for_existing_file_arg args =
+        match args with
+        | [] ->
+            ()
+        | option :: rest ->
+            if String.equal option "-c" then
+              (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
+                 Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
+              match List.hd rest with
+              | Some arg ->
+                  if Str.string_match clang_ignore_regex arg 0 && Sys.file_exists arg <> `Yes then (
+                    Unix.mkdir_p (Filename.dirname arg) ;
+                    let file = Unix.openfile ~mode:[Unix.O_CREAT; Unix.O_RDONLY] arg in
+                    Unix.close file )
+              | None ->
+                  ()
+            else check_for_existing_file_arg rest
+      in
+      check_for_existing_file_arg all_args
+  | _ ->
+      ()
 
 
 (** Given a clang command, return a list of new commands to run according to the results of `clang
@@ -149,8 +152,8 @@ let exec_action_item ~prog ~args = function
       Capture.capture clang_cmd
   | DriverCommand clang_cmd ->
       if
-        Option.is_none Config.buck_compilation_database
-        || Config.skip_analysis_in_path_skips_compilation
+        Config.skip_analysis_in_path_skips_compilation
+        || Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db
       then Capture.run_clang clang_cmd Utils.echo_in
       else
         L.debug Capture Quiet "Skipping seemingly uninteresting clang driver command %s@\n"
