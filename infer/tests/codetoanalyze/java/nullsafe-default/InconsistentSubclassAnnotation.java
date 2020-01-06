@@ -10,66 +10,133 @@ package codetoanalyze.java.nullsafe_default;
 import external.library.SomeExternalClass;
 import javax.annotation.Nullable;
 
-class SubclassExample {
+interface VariousMethods {
+  String valBoth(String arg);
 
-  class T {
-    public void f() {}
-  }
+  @Nullable
+  String nullableReturn(String arg);
 
-  class A {
+  String nullableArg(@Nullable String arg);
 
-    public T foo() {
-      return new T();
-    }
+  @Nullable
+  String nullableBoth(@Nullable String arg);
+}
 
-    public @Nullable T bar() {
-      return null;
-    }
+interface Overloads {
+  String overload(int arg);
 
-    public void deref(@Nullable T t) {
-      if (t != null) {
-        t.f();
-      }
-    }
+  String overload(@Nullable String arg);
 
-    public void noDeref(T t) {}
-  }
+  String overload(String arg1, int arg2);
 
-  class B extends A {
+  String overload(String arg1, String arg2);
+}
 
-    public @Nullable T foo() {
-      return null;
-    }
+// Check return annotations
 
-    public T bar() {
-      return new T();
-    }
-  }
-
-  interface I {
-    public T baz();
-  }
-
-  class C implements I {
-
-    public @Nullable T baz() {
-      return null;
-    }
-  }
-
-  class D extends A {
-
-    public void deref(T t) {
-      t.f();
-    }
-
-    public void noDeref(@Nullable T t) {
-      if (t != null) {
-        t.f();
-      }
-    }
+abstract class ReturnValToNullBAD implements VariousMethods {
+  @Nullable
+  public String valBoth(String arg) {
+    return null;
   }
 }
+
+abstract class ReturnNullToValOK implements VariousMethods {
+  public abstract String nullableReturn(String arg);
+}
+
+abstract class ReturnValFromValAndNullFromNullOK implements VariousMethods {
+  @Nullable
+  public String nullableReturn(String arg) {
+    return null;
+  }
+
+  public String valBoth(String arg) {
+    return arg;
+  }
+}
+
+abstract class AbstractReturnValToNullFN implements VariousMethods {
+  // An abstract override method with inconsistent signature is not reported
+  @Nullable
+  public abstract String valBoth(String arg);
+}
+
+// Check parameter annotations
+
+abstract class ArgValToNullOK implements VariousMethods {
+  public String valBoth(@Nullable String arg) {
+    return "OK";
+  }
+}
+
+abstract class ArgNullToValBAD implements VariousMethods {
+  public String nullableArg(String arg) {
+    return arg;
+  }
+}
+
+abstract class ArgNullToValForInterfaceInAnotherFileBAD
+    implements InconsistentSubclassAnnotationInterface {
+  public String implementInAnotherFile(String s) {
+    return "BAD";
+  }
+}
+
+abstract class ArgValToValAndNullToNullOK implements VariousMethods {
+  public String valBoth(String arg) {
+    return arg;
+  }
+
+  @Nullable
+  public String nullableBoth(@Nullable String arg) {
+    return arg;
+  }
+}
+
+// Check overrides + overloads
+
+// This is 'good' cases (should be OK except 1 FP due to broken is_override logic)
+abstract class OverrideExistingCorrectlyOK implements Overloads {
+  // This is FP
+  public String overload(int arg) {
+    return "OK";
+  }
+
+  public String overload(@Nullable String arg) {
+    return arg;
+  }
+
+  public String overload(String arg1, int arg2) {
+    return arg1;
+  }
+
+  public String overload(String arg1, String arg2) {
+    return arg1;
+  }
+}
+
+// These are FP cases that get reported due to broken is_override logic
+abstract class NoOverrideSinceDifferentTypesFP implements Overloads {
+  @Nullable
+  public String overload(Object arg) {
+    return arg.toString();
+  }
+
+  public String overload(Double arg) {
+    return arg.toString();
+  }
+}
+
+// This is just a smoke test to check that incorrect overrides of overloaded methods get reported
+abstract class OverloadExistingIncorrectBAD implements Overloads {
+  @Nullable
+  public String overload(String arg1, String arg2) {
+    return null;
+  }
+}
+
+// Check constructors
 
 class ConstructorsAreExcluded {
   class Base {
@@ -83,6 +150,8 @@ class ConstructorsAreExcluded {
   }
 }
 
+// Check interop with external libraries
+
 class ExtendsExternalLibrary extends SomeExternalClass {
 
   @Override
@@ -95,42 +164,5 @@ class ExtendsExternalLibrary extends SomeExternalClass {
   @Override
   public void externalMethod2(Object object) {
     // subtyping error on the parameter type are reported
-  }
-}
-
-public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnotationInterface {
-
-  public static void callFromSuperclass(SubclassExample.A a) {
-    SubclassExample.T t = a.foo();
-    t.f();
-  }
-
-  public static void callWithNullableParam(SubclassExample.A a, @Nullable SubclassExample.T t) {
-    a.deref(t);
-  }
-
-  public String implementInAnotherFile(String s) {
-    return "";
-  }
-
-  public @Nullable Object overloadedMethod() {
-    return null;
-  }
-
-  public Object overloadedMethod(Object object) {
-    return object;
-  }
-}
-
-class Super {
-  String overloadingMethodLookupFP(int i) {
-    return Integer.toString(i);
-  }
-}
-
-class Sub extends Super {
-  @Nullable
-  String overloadingMethodLookupFP(Object object) {
-    return null;
   }
 }
