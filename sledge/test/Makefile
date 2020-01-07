@@ -23,6 +23,9 @@ DIFF?=diff
 # configure the non-host llvm and clang
 export PATH := $(CURDIR)/../.llvm_install/sledge/bin:$(PATH)
 
+# configure sort
+export LANG := C
+
 default: test
 
 # all analyze tests
