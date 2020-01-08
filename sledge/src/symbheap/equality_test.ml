@@ -348,4 +348,49 @@ let%test_module _ =
 
     let%test _ = entails_eq r15 b (Term.signed 1 !1)
     let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
+
+    (* f(x−1)−1=x+1, f(y)+1=y−1, y+1=x ⊢ false *)
+    let r16 =
+      of_eqs [(f (x - !1) - !1, x + !1); (f y + !1, y - !1); (y + !1, x)]
+
+    let%expect_test _ =
+      pp r16 ;
+      [%expect
+        {|
+        {sat= false;
+         rep= [[%x_5 ↦ (((u8) %y_6) + 3)];
+               [%y_6 ↦ (((u8) %y_6) + 2)];
+               [((u8) (%x_5 + -1)) ↦ (((u8) %y_6) + 5)];
+               [((u8) %y_6) ↦ ]]} |}]
+
+    let%test _ = is_false r16
+
+    (* f(x) = x, f(y) = y − 1, y = x ⊢ false *)
+    let r17 = of_eqs [(f x, x); (f y, y - !1); (y, x)]
+
+    let%expect_test _ =
+      pp r17 ;
+      [%expect
+        {|
+        {sat= false;
+         rep= [[%x_5 ↦ (((u8) %y_6) + 1)];
+               [%y_6 ↦ (((u8) %y_6) + 1)];
+               [((u8) %x_5) ↦ (((u8) %y_6) + 1)];
+               [((u8) %y_6) ↦ ]]} |}]
+
+    let%test _ = is_false r17
+
+    let%expect_test _ =
+      let r18 = of_eqs [(f x, x); (f y, y - !1)] in
+      pp r18 ;
+      pp_classes r18 ;
+      [%expect
+        {|
+        {sat= true;
+         rep= [[%y_6 ↦ (((u8) %y_6) + 1)];
+               [((u8) %x_5) ↦ %x_5];
+               [((u8) %y_6) ↦ ]]}
+
+        (((u8) %y_6) + 1) = %y_6
+        ∧ %x_5 = ((u8) %x_5) |}]
   end )
