@@ -200,16 +200,22 @@ let close r =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
+(** Exposed interface *)
+
 let and_eq a b r =
-  if not r.sat then r
+  [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp a Term.pp b pp r]
+  ;
+  ( if not r.sat then r
   else
     let a' = canon r a in
     let b' = canon r b in
     let r = extend a' r in
     let r = extend b' r in
-    if Term.equal a' b' then r else close (merge a' b' r)
-
-(** Exposed interface *)
+    if Term.equal a' b' then r else close (merge a' b' r) )
+  |>
+  [%Trace.retn fun {pf} r' ->
+    pf "%a" pp_diff (r, r') ;
+    invariant r']
 
 let is_true {sat; rep} =
   sat && Map.for_alli rep ~f:(fun ~key:a ~data:a' -> Term.equal a a')
