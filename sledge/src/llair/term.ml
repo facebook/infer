@@ -111,7 +111,17 @@ type _t = T0.t
 
 include T
 
-let empty_map = Map.empty (module T)
+module Map = struct
+  include (
+    Map :
+      module type of Map
+        with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
+
+  type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
+
+  let empty = empty (module T)
+end
+
 let empty_qset = Qset.empty (module T)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
@@ -294,6 +304,8 @@ module Var = struct
 
   let pp = pp
 
+  module Map = Map
+
   module Set = struct
     include (
       Set :
@@ -308,15 +320,6 @@ module Var = struct
     let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
     let of_vector = Set.of_vector (module T)
-  end
-
-  module Map = struct
-    include (
-      Map :
-        module type of Map
-          with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
-
-    type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
   end
 
   let invariant x =
@@ -360,7 +363,7 @@ module Var = struct
              Format.fprintf fs "@[%a ↦ %a@]" pp_t k pp_t v ))
         (Map.to_alist s)
 
-    let empty = empty_map
+    let empty = Map.empty
     let is_empty = Map.is_empty
 
     let freshen vs ~wrt =
@@ -1070,7 +1073,7 @@ let solve e f =
       | _ -> solve_uninterp e f )
     | _ -> solve_uninterp e f
   in
-  solve_ e f empty_map
+  solve_ e f Map.empty
   |>
   [%Trace.retn fun {pf} ->
     function Some s -> pf "%a" Var.Subst.pp s | None -> pf "false"]

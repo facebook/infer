@@ -109,6 +109,15 @@ module Var : sig
     val of_vector : var vector -> t
   end
 
+  module Map : sig
+    type var := t
+
+    type 'a t = (var, 'a, comparator_witness) Map.t
+    [@@deriving compare, equal, sexp]
+
+    val empty : 'a t
+  end
+
   val pp : t pp
 
   include Invariant.S with type t := t
@@ -134,6 +143,15 @@ module Var : sig
     val apply_set : t -> Set.t -> Set.t
     val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
   end
+end
+
+module Map : sig
+  type term := t
+
+  type 'a t = (term, 'a, comparator_witness) Map.t
+  [@@deriving compare, equal, sexp]
+
+  val empty : 'a t
 end
 
 (** Construct *)
@@ -225,4 +243,4 @@ val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
 val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
-val solve : t -> t -> (t, t, comparator_witness) Map.t option
+val solve : t -> t -> t Map.t option
