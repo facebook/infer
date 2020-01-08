@@ -48,7 +48,7 @@ let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
   let all_xs = Set.union all_xs xs in
   let is_x var = Set.mem all_xs (Option.value_exn (Var.of_term var)) in
   pp_us fs us ;
-  let xs_i_vs, xs_d_vs = Set.inter_diff vs xs in
+  let xs_d_vs, xs_i_vs = Set.diff_inter xs vs in
   if not (Set.is_empty xs_i_vs) then (
     Format.fprintf fs "@<2>∃ @[%a@] ." (Var.Set.pp_full ~is_x) xs_i_vs ;
     if not (Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;

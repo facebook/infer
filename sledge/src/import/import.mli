@@ -231,11 +231,11 @@ module Set : sig
   val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool
   val add_option : 'e option -> ('e, 'c) t -> ('e, 'c) t
   val add_list : 'e list -> ('e, 'c) t -> ('e, 'c) t
+  val diff_inter : ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t
 
   val diff_inter_diff :
     ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t * ('e, 'c) t
 
-  val inter_diff : ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t
   val of_vector : ('e, 'c) comparator -> 'e vector -> ('e, 'c) t
   val to_tree : ('e, 'c) t -> ('e, 'c) tree
 end
