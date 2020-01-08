@@ -94,7 +94,10 @@ val with_process_lines :
     information, and [tmp_prefix] as a prefix for temporary files. *)
 
 val create_dir : string -> unit
-(** create a directory if it does not exist already *)
+(** recursively create a directory if it does not exist already *)
+
+val out_channel_create_with_dir : Filename.t -> Out_channel.t
+(** create an out channel with creating missing directories *)
 
 val realpath : ?warn_on_error:bool -> string -> string
 (** [realpath warn_on_error path] returns path with all symbolic links resolved. It caches results

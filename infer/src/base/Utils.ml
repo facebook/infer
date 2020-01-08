@@ -265,19 +265,26 @@ let with_process_lines ~(debug : ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp
         shell_cmd output
 
 
-(** Create a directory if it does not exist already. *)
+(** Recursively create a directory if it does not exist already. *)
 let create_dir dir =
   try
     if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
   with Unix.Unix_error _ -> (
-    try Unix.mkdir dir ~perm:0o700
+    try Unix.mkdir_p dir ~perm:0o700
     with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
         try Poly.equal (Unix.stat dir).Unix.st_kind Unix.S_DIR with Unix.Unix_error _ -> false
       in
       if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir )
+
+
+let out_channel_create_with_dir fname =
+  try Out_channel.create fname
+  with Sys_error _ ->
+    Unix.mkdir_p ~perm:0o700 (Filename.dirname fname) ;
+    Out_channel.create fname
 
 
 let realpath_cache = Hashtbl.create 1023
