@@ -39,6 +39,63 @@ let pp_seg ?is_x fs {loc; bas; len; siz; arr} =
 let pp_seg_norm cong fs seg =
   pp_seg fs (map_seg seg ~f:(Equality.normalize cong))
 
+let pp_block ?is_x fs segs =
+  let is_full_alloc segs =
+    match segs with
+    | {loc; bas; len; _} :: _ -> (
+        Term.equal loc bas
+        &&
+        match len with
+        | Integer {data} -> (
+          match
+            List.fold segs ~init:(Some Z.zero) ~f:(fun len seg ->
+                match (len, seg.siz) with
+                | Some len, Integer {data} -> Some (Z.add len data)
+                | _ -> None )
+          with
+          | Some blk_len -> Z.equal data blk_len
+          | _ -> false )
+        | _ -> false )
+    | [] -> false
+  in
+  let term_pp = Term.pp_full ?is_x in
+  let pp_mems =
+    List.pp "@,^" (fun fs seg ->
+        term_pp fs (Term.memory ~siz:seg.siz ~arr:seg.arr) )
+  in
+  match segs with
+  | {loc; bas; len; _} :: _ ->
+      Format.fprintf fs "@[<2>%a@ @[@[-[%t)->@]@ @[%a@]@]@]" term_pp loc
+        (fun fs ->
+          if not (is_full_alloc segs) then
+            Format.fprintf fs " %a, %a " term_pp bas term_pp len )
+        pp_mems segs
+  | [] -> ()
+
+let pp_heap ?is_x ?pre cong fs heap =
+  let bas_off = function
+    | Term.Add poly as sum ->
+        let const = Qset.count poly Term.one in
+        (Term.sub sum (Term.rational const), const)
+    | e -> (e, Q.zero)
+  in
+  let compare s1 s2 =
+    [%compare: Term.t * (Term.t * Q.t)]
+      (s1.bas, bas_off s1.loc)
+      (s2.bas, bas_off s2.loc)
+  in
+  let break s1 s2 =
+    (not (Term.equal s1.bas s2.bas))
+    || (not (Term.equal s1.len s2.len))
+    || not (Term.is_constant (Term.sub s2.loc s1.loc))
+  in
+  let blocks =
+    List.group ~break
+      (List.sort ~compare
+         (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap))
+  in
+  List.pp ?pre "@ * " (pp_block ?is_x) fs blocks
+
 let pp_us ?(pre = ("" : _ fmt)) fs us =
   if not (Set.is_empty us) then
     [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
@@ -71,21 +128,7 @@ let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
       ( if first then if List.is_empty djns then "  emp" else ""
       else "@ @<5>∧ emp" )
   else
-    List.pp
-      ~pre:(if first then "  " else "@ @<2>∧ ")
-      "@ * " (pp_seg ~is_x) fs
-      (List.sort
-         (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap)
-         ~compare:(fun s1 s2 ->
-           let b_o = function
-             | Term.Add poly as sum ->
-                 let const = Qset.count poly Term.one in
-                 (Term.sub sum (Term.rational const), const)
-             | e -> (e, Q.zero)
-           in
-           [%compare: Term.t * (Term.t * Q.t)]
-             (s1.bas, b_o s1.loc)
-             (s2.bas, b_o s2.loc) )) ;
+    pp_heap ~is_x ~pre:(if first then "  " else "@ @<2>∧ ") cong fs heap ;
   let first = first && List.is_empty heap in
   List.pp
     ~pre:(if first then "  " else "@ * ")

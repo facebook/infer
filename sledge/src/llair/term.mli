@@ -242,5 +242,6 @@ val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
+val is_constant : t -> bool
 val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
 val solve : t -> t -> t Map.t option

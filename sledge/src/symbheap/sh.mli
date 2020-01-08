@@ -25,7 +25,6 @@ and disjunction = starjunction list
 
 type t = starjunction [@@deriving equal, compare, sexp]
 
-val pp_seg : ?is_x:(Term.t -> bool) -> seg pp
 val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
