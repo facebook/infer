@@ -999,8 +999,8 @@ let fold_terms e ~init ~f =
   fix fold_terms_ (fun _ s -> s) e init
 
 let fold_vars e ~init ~f =
-  fold_terms e ~init ~f:(fun z -> function
-    | Var _ as v -> f z (v :> Var.t) | _ -> z )
+  fold_terms e ~init ~f:(fun s -> function
+    | Var _ as v -> f s (v :> Var.t) | _ -> s )
 
 (** Query *)
 

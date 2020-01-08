@@ -107,7 +107,7 @@ let pp = pp Var.Set.empty Var.Set.empty
 let pp_djn = pp_djn Var.Set.empty Var.Set.empty
 
 let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
-  let f b z = Term.fold_terms b ~init:z ~f in
+  let f b s = f s b in
   f loc (f bas (f len (f siz (f arr init))))
 
 let fold_vars_seg seg ~init ~f =
@@ -115,20 +115,17 @@ let fold_vars_seg seg ~init ~f =
 
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
-let fold_terms fold_terms {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
-  Equality.fold_terms ~init cong ~f
+let fold_vars fold_vars {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
+  Equality.fold_terms ~init cong ~f:(fun init -> Term.fold_vars ~f ~init)
   |> fun init ->
-  List.fold ~init pure ~f:(fun init -> Term.fold_terms ~f ~init)
+  List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
   |> fun init ->
-  List.fold ~init heap ~f:(fun init -> fold_terms_seg ~f ~init)
+  List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
   |> fun init ->
-  List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_terms)
+  List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
 
 let rec fv_union init q =
-  Set.diff
-    (fold_terms fv_union q ~init ~f:(fun init ->
-         Term.fold_vars ~f:Set.add ~init ))
-    q.xs
+  Set.diff (fold_vars fv_union q ~init ~f:Set.add) q.xs
 
 let fv q = fv_union Var.Set.empty q
 
