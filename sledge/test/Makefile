@@ -85,6 +85,12 @@ report-summary:
 %.bc : %.cpp
 	@(cd $(dir $*) && clang++ -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
 
+%.llair : %.bc
+	$(SLEDGE_EXE) llvm translate $< -llair-output $@
+
+%.llair.txt : %.llair
+	$(SLEDGE_EXE) disassemble $< -llair-txt-output $@
+
 # code to test analyze
 AnalyzeCs:=$(shell find * -not -path 'llvm/*' -name '*.c')
 AnalyzeCPPs:=$(shell find * -not -path 'llvm/*' -name '*.cpp')
