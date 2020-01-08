@@ -10,3 +10,5 @@ open! IStd
 type t = BufferOverrunDomain.Mem.no_oenv_t
 
 val pp : Format.formatter -> t -> unit
+
+type get_summary = Procname.t -> t option

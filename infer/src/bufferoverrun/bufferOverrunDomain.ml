@@ -2229,6 +2229,8 @@ module Mem = struct
         if phys_equal m' m then x else NonBottom m'
 
 
+  type get_summary = Procname.t -> no_oenv_t option
+
   let init : OndemandEnv.t -> t = fun oenv -> NonBottom (MemReach.init oenv)
 
   let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =

@@ -250,10 +250,10 @@ let instantiate_cond :
 
 type checks_summary = BufferOverrunCheckerSummary.t
 
-type get_proc_summary = Procname.t -> ((Pvar.t * Typ.t) list * checks_summary) option
+type get_checks_summary = Procname.t -> ((Pvar.t * Typ.t) list * checks_summary) option
 
 let check_instr :
-       get_proc_summary
+       get_checks_summary
     -> Procdesc.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
@@ -262,7 +262,7 @@ let check_instr :
     -> Dom.Mem.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t =
- fun get_proc_summary pdesc tenv integer_type_widths node instr mem cond_set ->
+ fun get_checks_summary pdesc tenv integer_type_widths node instr mem cond_set ->
   match instr with
   | Sil.Load {e= exp; loc= location} ->
       cond_set
@@ -291,7 +291,7 @@ let check_instr :
           in
           check model_env mem cond_set
       | None -> (
-        match get_proc_summary callee_pname with
+        match get_checks_summary callee_pname with
         | Some (callee_formals, callee_condset) ->
             instantiate_cond integer_type_widths callee_pname callee_formals params mem
               callee_condset location
@@ -315,7 +315,7 @@ let print_debug_info : Sil.instr -> Dom.Mem.t -> PO.ConditionSet.checked_t -> un
 
 
 let check_instrs :
-       get_proc_summary
+       get_checks_summary
     -> Procdesc.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
@@ -325,7 +325,7 @@ let check_instrs :
     -> Dom.Mem.t AbstractInterpreter.State.t
     -> Checks.t
     -> Checks.t =
- fun get_proc_summary pdesc tenv integer_type_widths cfg node instrs state checks ->
+ fun get_checks_summary pdesc tenv integer_type_widths cfg node instrs state checks ->
   match state with
   | _ when Instrs.is_empty instrs ->
       checks
@@ -342,14 +342,14 @@ let check_instrs :
             checks
       in
       let cond_set =
-        check_instr get_proc_summary pdesc tenv integer_type_widths node instr pre checks.cond_set
+        check_instr get_checks_summary pdesc tenv integer_type_widths node instr pre checks.cond_set
       in
       print_debug_info instr pre cond_set ;
       {checks with cond_set}
 
 
 let check_node :
-       get_proc_summary
+       get_checks_summary
     -> Procdesc.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
@@ -358,11 +358,11 @@ let check_node :
     -> Checks.t
     -> CFG.Node.t
     -> Checks.t =
- fun get_proc_summary pdesc tenv integer_type_widths cfg inv_map checks node ->
+ fun get_checks_summary pdesc tenv integer_type_widths cfg inv_map checks node ->
   match BufferOverrunAnalysis.extract_state (CFG.Node.id node) inv_map with
   | Some state ->
       let instrs = CFG.instrs node in
-      check_instrs get_proc_summary pdesc tenv integer_type_widths cfg node instrs state checks
+      check_instrs get_checks_summary pdesc tenv integer_type_widths cfg node instrs state checks
   | _ ->
       checks
 
@@ -370,16 +370,16 @@ let check_node :
 type checks = Checks.t
 
 let compute_checks :
-       get_proc_summary
+       get_checks_summary
     -> Procdesc.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> CFG.t
     -> BufferOverrunAnalysis.invariant_map
     -> checks =
- fun get_proc_summary pdesc tenv integer_type_widths cfg inv_map ->
+ fun get_checks_summary pdesc tenv integer_type_widths cfg inv_map ->
   CFG.fold_nodes cfg
-    ~f:(check_node get_proc_summary pdesc tenv integer_type_widths cfg inv_map)
+    ~f:(check_node get_checks_summary pdesc tenv integer_type_widths cfg inv_map)
     ~init:Checks.empty
 
 
@@ -422,7 +422,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
   NodePrinter.with_session ~pp_name underlying_exit_node ~f:(fun () ->
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
-        let get_proc_summary callee_pname =
+        let get_checks_summary callee_pname =
           Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
           |> Option.bind ~f:(fun summary ->
                  let checker_payload = Payload.of_summary summary in
@@ -430,7 +430,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
                      (Summary.get_proc_desc summary |> Procdesc.get_pvar_formals, checker_payload)
                  ) )
         in
-        compute_checks get_proc_summary proc_desc tenv integer_type_widths cfg inv_map
+        compute_checks get_checks_summary proc_desc tenv integer_type_widths cfg inv_map
       in
       report_errors tenv checks summary ;
       let cond_set = get_checks_summary checks in

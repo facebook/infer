@@ -11,3 +11,5 @@ module DomMem = BufferOverrunDomain.Mem
 type t = DomMem.no_oenv_t
 
 let pp = DomMem.pp
+
+type get_summary = DomMem.get_summary

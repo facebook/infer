@@ -25,11 +25,12 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.buffer_overrun_analysis
 end)
 
-type summary_and_formals = BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list
+type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
 
-type get_proc_summary_and_formals = Procname.t -> summary_and_formals option
-
-type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv: OndemandEnv.t}
+type extras =
+  { get_summary: BufferOverrunAnalysisSummary.get_summary
+  ; get_formals: get_formals
+  ; oenv: OndemandEnv.t }
 
 module CFG = ProcCfg.NormalOneInstrPerNode
 
@@ -223,7 +224,7 @@ module TransferFunctions = struct
       let reachable_locs = Dom.Mem.get_reachable_locs_from [] (PowLoc.singleton loc) from_mem in
       PowLoc.fold copy reachable_locs to_mem
     in
-    fun tenv get_proc_summary_and_formals exp mem ->
+    fun tenv get_summary exp mem ->
       Option.value_map (Exp.get_java_class_initializer tenv exp) ~default:mem
         ~f:(fun (clinit_pname, pvar, fn, field_typ) ->
           match field_typ.Typ.desc with
@@ -231,8 +232,7 @@ module TransferFunctions = struct
               (* It copies all of the reachable values when the contents of the field are commonly
                  used as immutable, e.g., values of enum.  Otherwise, it copies only the size of
                  static final array. *)
-              Option.value_map (get_proc_summary_and_formals clinit_pname) ~default:mem
-                ~f:(fun (clinit_mem, _) ->
+              Option.value_map (get_summary clinit_pname) ~default:mem ~f:(fun clinit_mem ->
                   let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) ~fn in
                   if is_known_java_static_field fn then
                     copy_reachable_locs_from field_loc ~from_mem:clinit_mem ~to_mem:mem
@@ -266,7 +266,7 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}} node
+   fun mem {summary; tenv; extras= {get_summary; get_formals; oenv= {integer_type_widths}}} node
        instr ->
     match instr with
     | Load {id} when Ident.is_none id ->
@@ -275,8 +275,8 @@ module TransferFunctions = struct
       when Pvar.is_compile_constant pvar || Pvar.is_ice pvar -> (
       match Pvar.get_initializer_pname pvar with
       | Some callee_pname -> (
-        match get_proc_summary_and_formals callee_pname with
-        | Some (callee_mem, _) ->
+        match get_summary callee_pname with
+        | Some callee_mem ->
             let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
             Dom.Mem.add_stack (Loc.of_id id) v mem
         | None ->
@@ -298,8 +298,7 @@ module TransferFunctions = struct
             mem'
         | None ->
             let mem =
-              if Language.curr_language_is Java then
-                join_java_static_final tenv get_proc_summary_and_formals exp mem
+              if Language.curr_language_is Java then join_java_static_final tenv get_summary exp mem
               else mem
             in
             let represents_multiple_values = is_array_access_exp exp in
@@ -374,11 +373,11 @@ module TransferFunctions = struct
               in
               exec model_env ~ret mem
           | None -> (
-            match get_proc_summary_and_formals callee_pname with
-            | Some (callee_exit_mem, callee_formals) ->
+            match (get_summary callee_pname, get_formals callee_pname) with
+            | Some callee_exit_mem, Some callee_formals ->
                 instantiate_mem integer_type_widths ret callee_formals callee_pname params mem
                   callee_exit_mem location
-            | None ->
+            | _, _ ->
                 (* This may happen for procedures with a biabduction model too. *)
                 L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
                 if is_external callee_pname then (
@@ -424,13 +423,18 @@ let extract_post = Analyzer.extract_post
 let extract_state = Analyzer.extract_state
 
 let compute_invariant_map :
-    Summary.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
- fun summary tenv integer_type_widths get_proc_summary_and_formals ->
+       Summary.t
+    -> Tenv.t
+    -> Typ.IntegerWidths.t
+    -> BufferOverrunAnalysisSummary.get_summary
+    -> get_formals
+    -> invariant_map =
+ fun summary tenv integer_type_widths get_summary get_formals ->
   let pdesc = Summary.get_proc_desc summary in
   let cfg = CFG.from_pdesc pdesc in
   let pdata =
     let oenv = OndemandEnv.mk pdesc tenv integer_type_widths in
-    ProcData.make summary tenv {get_proc_summary_and_formals; oenv}
+    ProcData.make summary tenv {get_summary; get_formals; oenv}
   in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
   Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
@@ -455,15 +459,17 @@ let cached_compute_invariant_map =
         (* this should never happen *)
         assert false
     | None ->
-        let get_proc_summary_and_formals callee_pname =
+        let get_summary callee_pname =
           Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-          |> Option.bind ~f:(fun summary ->
-                 Payload.of_summary summary
-                 |> Option.map ~f:(fun payload ->
-                        (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+          |> Option.bind ~f:Payload.of_summary
+        in
+        let get_formals callee_pname =
+          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
+          |> Option.map ~f:Summary.get_proc_desc
+          |> Option.map ~f:Procdesc.get_pvar_formals
         in
         let inv_map =
-          compute_invariant_map summary tenv integer_type_widths get_proc_summary_and_formals
+          compute_invariant_map summary tenv integer_type_widths get_summary get_formals
         in
         WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map) ;
         inv_map
