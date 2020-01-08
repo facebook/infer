@@ -927,7 +927,7 @@ let map e ~f =
         xs == Vector.map_preserving_phys_equal ~f xs
         || fail "Term.map does not support updating subterms of RecN." () ) ;
       e
-  | _ -> e
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> e
 
 (** Pre-order transformation that preserves cycles. Each subterm [x] from
     root to leaves is presented to [f]. If [f x = Some x'] then the subterms
@@ -972,7 +972,7 @@ let iter e ~f =
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
   | ApN (_, xs) | RecN (_, xs) -> Vector.iter ~f xs
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | _ -> ()
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> ()
 
 let fold e ~init:s ~f =
   match e with
@@ -982,7 +982,7 @@ let fold e ~init:s ~f =
   | ApN (_, xs) | RecN (_, xs) ->
       Vector.fold ~f:(fun s x -> f x s) xs ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | _ -> s
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> s
 
 let fold_terms e ~init ~f =
   let fold_terms_ fold_terms_ e s =
@@ -995,7 +995,7 @@ let fold_terms e ~init ~f =
           Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
       | Add args | Mul args ->
           Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
-      | _ -> s
+      | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> s
     in
     f s e
   in
@@ -1020,7 +1020,7 @@ let rec is_constant e =
   | ApN (_, xs) | RecN (_, xs) -> Vector.for_all ~f:is_constant xs
   | Add args | Mul args ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | _ -> true
+  | Label _ | Float _ | Integer _ -> true
 
 let classify = function
   | Add _ | Mul _ -> `Interpreted
