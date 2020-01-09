@@ -337,7 +337,7 @@ module Var = struct
   let program ?global name =
     Var {name; id= (if Option.is_some global then -1 else 0)}
 
-  let fresh name ~(wrt : Set.t) =
+  let fresh name ~wrt =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
     let x' = Var {name; id= max + 1} in
     (x', Set.add wrt x')
@@ -368,12 +368,15 @@ module Var = struct
 
     let freshen vs ~wrt =
       let xs = Set.inter wrt vs in
-      let wrt = Set.union wrt vs in
-      Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
-          let x', wrt = fresh (name x) ~wrt in
-          let sub = Map.add_exn sub ~key:x ~data:x' in
-          (sub, wrt) )
-      |> fst |> check invariant
+      ( if Set.is_empty xs then empty
+      else
+        let wrt = Set.union wrt vs in
+        Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
+            let x', wrt = fresh (name x) ~wrt in
+            let sub = Map.add_exn sub ~key:x ~data:x' in
+            (sub, wrt) )
+        |> fst )
+      |> check invariant
 
     let fold sub ~init ~f =
       Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
