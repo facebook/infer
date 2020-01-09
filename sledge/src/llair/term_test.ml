@@ -151,7 +151,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp (z = y) ;
-      [%expect {| (%z_2 = %y_1) |}]
+      [%expect {| (%y_1 = %z_2) |}]
 
     let%expect_test _ =
       pp (z = z) ;
@@ -191,7 +191,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp (y = (!(-3) * y) + !4) ;
-      [%expect {| (%y_1 = (-3 × %y_1 + 4)) |}]
+      [%expect {| ((-3 × %y_1 + 4) = %y_1) |}]
 
     let%expect_test _ =
       pp ((!(-3) * y) + !4 = y) ;
@@ -207,23 +207,23 @@ let%test_module _ =
 
     let%expect_test _ =
       pp ((!13 * z) + !42 = (!3 * y) + (!13 * z)) ;
-      [%expect {| ((13 × %z_2 + 42) = (3 × %y_1 + 13 × %z_2)) |}]
+      [%expect {| ((3 × %y_1 + 13 × %z_2) = (13 × %z_2 + 42)) |}]
 
     let%expect_test _ =
       pp ((!13 * z) + !(-42) = (!3 * y) + (!13 * z)) ;
-      [%expect {| ((13 × %z_2 + -42) = (3 × %y_1 + 13 × %z_2)) |}]
+      [%expect {| ((3 × %y_1 + 13 × %z_2) = (13 × %z_2 + -42)) |}]
 
     let%expect_test _ =
       pp ((!13 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
-      [%expect {| ((13 × %z_2 + 42) = (-3 × %y_1 + 13 × %z_2)) |}]
+      [%expect {| ((-3 × %y_1 + 13 × %z_2) = (13 × %z_2 + 42)) |}]
 
     let%expect_test _ =
       pp ((!10 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
-      [%expect {| ((10 × %z_2 + 42) = (-3 × %y_1 + 13 × %z_2)) |}]
+      [%expect {| ((-3 × %y_1 + 13 × %z_2) = (10 × %z_2 + 42)) |}]
 
     let%expect_test _ =
       pp ~~((!13 * z) + !(-42) != (!3 * y) + (!13 * z)) ;
-      [%expect {| ((13 × %z_2 + -42) = (3 × %y_1 + 13 × %z_2)) |}]
+      [%expect {| ((3 × %y_1 + 13 × %z_2) = (13 × %z_2 + -42)) |}]
 
     let%expect_test _ =
       pp ~~(!2 < y && z <= !3) ;
@@ -241,9 +241,9 @@ let%test_module _ =
         {|
         (%z_2 = 0)
 
-        (0 = %z_2)
+        (%z_2 = 0)
 
-        (0 = %z_2) |}]
+        (%z_2 = 0) |}]
 
     let%expect_test _ =
       let z1 = z + !1 in

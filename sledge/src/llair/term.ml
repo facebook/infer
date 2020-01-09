@@ -680,9 +680,12 @@ let rec simp_eq x y =
   (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
   | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
       simp_cond c (simp_eq e t) (simp_eq e f)
-  (* e = e ==> true *)
-  | x, y when equal x y -> bool true
-  | x, y -> Ap2 (Eq, x, y)
+  | x, y -> (
+    match Int.sign (compare x y) with
+    (* e = e ==> true *)
+    | Zero -> bool true
+    | Neg -> Ap2 (Eq, x, y)
+    | Pos -> Ap2 (Eq, y, x) )
 
 and simp_dq x y =
   match (x, y) with
