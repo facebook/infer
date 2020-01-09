@@ -274,11 +274,7 @@ let threadsafe_annotations =
    as an alias of @ThreadSafe in a .inferconfig file. *)
 let is_thread_safe item_annot =
   let f ((annot : Annot.t), _) =
-    List.exists
-      ~f:(fun annot_string ->
-        Annotations.annot_ends_with annot annot_string || String.equal annot.class_name annot_string
-        )
-      threadsafe_annotations
+    List.exists ~f:(Annotations.annot_ends_with annot) threadsafe_annotations
     &&
     match annot.Annot.parameters with
     | [Annot.{name= Some "enableChecks"; value= "false"}] ->
