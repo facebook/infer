@@ -140,8 +140,8 @@ let%test_module _ =
       pp r3 ;
       [%expect
         {|
-      %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = (%y_6 rem %v_3)
-      = (%y_6 rem %z_7)
+      %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = (%y_6 rem %t_1)
+      = (%y_6 rem %t_1)
 
       {sat= true;
        rep= [[%u_2 ↦ %t_1];
@@ -343,8 +343,7 @@ let%test_module _ =
     let r15 = of_eqs [(b, b); (x, !1)]
 
     let%expect_test _ =
-      pp r15 ; [%expect {|
-          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
+      pp r15 ; [%expect {| {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
     let%test _ = entails_eq r15 b (Term.signed 1 !1)
     let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
@@ -391,6 +390,6 @@ let%test_module _ =
                [((u8) %x_5) ↦ %x_5];
                [((u8) %y_6) ↦ ]]}
 
-        (((u8) %y_6) + 1) = %y_6
-        ∧ %x_5 = ((u8) %x_5) |}]
+        (((u8) %y_6) + 1) = %y_6 ∧ %x_5 = ((u8) %x_5)
+        ∧ ((u8) %y_6) = ((u8) (((u8) %y_6) + 1)) |}]
   end )

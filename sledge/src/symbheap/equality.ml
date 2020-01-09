@@ -22,10 +22,19 @@ type t =
             'rep(resentative)' of [a] *) }
 [@@deriving compare, equal, sexp]
 
+(** apply a subst to a term *)
+let apply s a = Map.find s a |> Option.value ~default:a
+
 let classes r =
+  let add key data cls =
+    if Term.equal key data then cls
+    else Map.add_multi cls ~key:data ~data:key
+  in
   Map.fold r.rep ~init:empty_map ~f:(fun ~key ~data cls ->
-      if Term.equal key data then cls
-      else Map.add_multi cls ~key:data ~data:key )
+      match Term.classify key with
+      | `Interpreted | `Atomic -> add key data cls
+      | `Simplified | `Uninterpreted ->
+          add (Term.map ~f:(apply r.rep) key) data cls )
 
 (** Pretty-printing *)
 
@@ -105,9 +114,6 @@ let invariant r =
 (** Core operations *)
 
 let true_ = {sat= true; rep= empty_map} |> check invariant
-
-(** apply a subst to a term *)
-let apply s a = Map.find s a |> Option.value ~default:a
 
 (** apply a subst to maximal non-interpreted subterms *)
 let rec norm s a =
