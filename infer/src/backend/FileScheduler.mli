@@ -6,4 +6,4 @@
  *)
 open! IStd
 
-val schedule : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t
+val make : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t

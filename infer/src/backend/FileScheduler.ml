@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-let of_sources sources =
+let make sources =
   let open SchedulerTypes in
   let gen =
     List.rev_map sources ~f:(fun sf -> File sf)
@@ -18,9 +18,3 @@ let of_sources sources =
     match res with None -> None | Some (Procname _) -> assert false | Some (File _) as v -> v
   in
   {gen with next}
-
-
-let schedule sources =
-  if Config.call_graph_schedule then
-    ProcessPool.TaskGenerator.chain (SyntacticCallGraph.bottom_up sources) (of_sources sources)
-  else of_sources sources

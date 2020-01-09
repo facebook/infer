@@ -112,6 +112,14 @@ let get_source_files_to_analyze ~changed_files =
   source_files_to_analyze
 
 
+let schedule sources =
+  if Config.call_graph_schedule then
+    ProcessPool.TaskGenerator.chain
+      (SyntacticCallGraph.bottom_up sources)
+      (FileScheduler.make sources)
+  else FileScheduler.make sources
+
+
 let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
     let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> SchedulerTypes.File sf) in
@@ -119,7 +127,7 @@ let analyze source_files_to_analyze =
     BackendStats.get () )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
-    let tasks = TaskScheduler.schedule source_files_to_analyze in
+    let tasks = schedule source_files_to_analyze in
     (* Prepare tasks one cluster at a time while executing in parallel *)
     let runner =
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
