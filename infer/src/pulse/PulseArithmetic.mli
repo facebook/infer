@@ -35,3 +35,5 @@ val abduce_binop_is_true : negated:bool -> Binop.t -> t option -> t option -> ab
 val binop : Binop.t -> t -> t -> t option
 
 val unop : Unop.t -> t -> t option
+
+val zero_inf : t

@@ -15,4 +15,8 @@ class PurityModeled {
     // copies an array from the specified source array
     System.arraycopy(src, 0, dst, 0, 1);
   }
+
+  public void array_length_loop_pure(Integer[] array) {
+    for (int i = 0; i < array.length; i++) {}
+  }
 }

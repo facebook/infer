@@ -48,6 +48,17 @@ module Misc = struct
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
 
+  let return_unknown_size : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let astate =
+      Memory.add_attribute ret_addr (BoItv Itv.ItvPure.nat) astate
+      |> Memory.add_attribute ret_addr
+           (Arithmetic (Arithmetic.zero_inf, Immediate {location; history= []}))
+    in
+    Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
+
+
   let skip : model = fun ~caller_summary:_ _ ~ret:_ astate -> Ok [astate]
 
   let nondet ~fn_name : model =
@@ -354,6 +365,7 @@ module ProcNameDispatcher = struct
       ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+      ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
       ; (* consider that all fbstrings are small strings to avoid false positives due to manual
            ref-counting *)
         -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
