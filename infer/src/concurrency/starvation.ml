@@ -20,16 +20,6 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.starvation
 end)
 
-(* using an indentifier for a class object, create an access path representing that lock;
-   this is for synchronizing on Java class objects only *)
-let lock_of_class =
-  let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
-  let typ' = Typ.(mk (Tptr (typ, Pk_pointer))) in
-  fun class_id ->
-    let ident = Ident.create_normal class_id 0 in
-    AccessPath.of_id ident typ'
-
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
@@ -40,23 +30,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Procname.pp pname
       (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
       actuals
-
-
-  (** convert an expression to a canonical form for a lock identifier *)
-  let get_lock_path extras = function
-    | HilExp.AccessExpression access_exp -> (
-      match HilExp.AccessExpression.to_access_path access_exp with
-      | (((Var.ProgramVar pvar, _) as base), _) as path
-        when FormalMap.is_formal base extras || Pvar.is_global pvar ->
-          Some (AccessPath.inner_class_normalize path)
-      | _ ->
-          (* ignore paths on local or logical variables *)
-          None )
-    | HilExp.Constant (Const.Cclass class_id) ->
-        (* this is a synchronized/lock(CLASSNAME.class) construct *)
-        Some (lock_of_class class_id)
-    | _ ->
-        None
 
 
   let do_assume assume_exp (astate : Domain.t) =
@@ -236,7 +209,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
-    let get_lock_path = get_lock_path extras in
+    let get_lock_path = Domain.Lock.make extras in
     let procname = Summary.get_proc_name summary in
     let is_java = Procname.is_java procname in
     let do_lock locks loc astate =
@@ -384,16 +357,9 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let loc = Procdesc.get_loc proc_desc in
     let set_lock_state_for_synchronized_proc astate =
       if Procdesc.is_java_synchronized proc_desc then
-        let lock =
-          match procname with
-          | Procname.Java java_pname when Procname.Java.is_static java_pname ->
-              (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
-              Procname.Java.get_class_type_name java_pname
-              |> Typ.Name.name |> Ident.string_to_name |> lock_of_class |> Option.some
-          | _ ->
-              FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
-        in
-        Domain.acquire ~tenv astate ~procname ~loc (Option.to_list lock)
+        Domain.Lock.make_java_synchronized formals procname
+        |> Option.to_list
+        |> Domain.acquire ~tenv astate ~procname ~loc
       else astate
     in
     let set_thread_status_by_annotation (astate : Domain.t) =
@@ -580,23 +546,25 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
-  | LockAcquire ((Var.LogicalVar _, _), []), _ ->
-      (* first elem is a class object (see [lock_of_class]), so always report because the
-         reverse ordering on the events will not occur since we don't search the class for static locks *)
-      true
-  | LockAcquire ((Var.LogicalVar _, _), _ :: _), _ | _, LockAcquire ((Var.LogicalVar _, _), _) ->
-      (* first elem has an ident root, but has a non-empty access path, which means we are
-         not filtering out local variables (see [exec_instr]), or,
-         second elem has an ident root, which should not happen if we are filtering locals *)
-      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." CriticalPair.pp
-        current_elem
-  | LockAcquire ((_, typ1), _), LockAcquire ((_, typ2), _) ->
-      (* use string comparison on types as a stable order to decide whether to report a deadlock *)
-      let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
-      c < 0
-      || Int.equal 0 c
-         && (* same class, so choose depending on location *)
-         Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
+  | LockAcquire endpoint_lock, LockAcquire current_lock -> (
+    match (Lock.get_access_path endpoint_lock, Lock.get_access_path current_lock) with
+    | ((Var.LogicalVar _, _), []), _ ->
+        (* first elem is a class object (see [lock_of_class]), so always report because the
+           reverse ordering on the events will not occur since we don't search the class for static locks *)
+        true
+    | ((Var.LogicalVar _, _), _ :: _), _ | _, ((Var.LogicalVar _, _), _) ->
+        (* first elem has an ident root, but has a non-empty access path, which means we are
+           not filtering out local variables (see [exec_instr]), or,
+           second elem has an ident root, which should not happen if we are filtering locals *)
+        L.die InternalError "Deadlock cannot occur on these logical variables: %a @."
+          CriticalPair.pp current_elem
+    | ((_, typ1), _), ((_, typ2), _) ->
+        (* use string comparison on types as a stable order to decide whether to report a deadlock *)
+        let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
+        c < 0
+        || Int.equal 0 c
+           && (* same class, so choose depending on location *)
+           Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0 )
 
 
 let should_report pdesc =

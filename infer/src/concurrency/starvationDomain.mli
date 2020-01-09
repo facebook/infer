@@ -26,7 +26,7 @@ end
 (** Abstraction of a path that represents a lock, special-casing comparison to work over type, base
     variable modulo this and access list *)
 module Lock : sig
-  include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
+  include PrettyPrintable.PrintableOrderedType
 
   val equal : t -> t -> bool
 
@@ -36,6 +36,15 @@ module Lock : sig
   val pp_locks : F.formatter -> t -> unit
 
   val describe : F.formatter -> t -> unit
+
+  val make : FormalMap.t -> HilExp.t -> t option
+  (** make a lock if the expression is rooted at a global or a formal parameter, or represents a
+      class object *)
+
+  val get_access_path : t -> AccessPath.t
+
+  val make_java_synchronized : FormalMap.t -> Procname.t -> t option
+  (** create the monitor locked when entering a synchronized java method *)
 end
 
 module Event : sig

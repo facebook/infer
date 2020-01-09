@@ -98,6 +98,45 @@ module Lock = struct
 
   let equal = [%compare.equal: t]
 
+  (* using an indentifier for a class object, create an access path representing that lock;
+     this is for synchronizing on Java class objects only *)
+  let lock_of_java_class =
+    let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
+    let typ' = Typ.(mk (Tptr (typ, Pk_pointer))) in
+    fun class_id ->
+      let ident = Ident.create_normal class_id 0 in
+      AccessPath.of_id ident typ'
+
+
+  (** convert an expression to a canonical form for a lock identifier *)
+  let make formal_map = function
+    | HilExp.AccessExpression access_exp -> (
+      match HilExp.AccessExpression.to_access_path access_exp with
+      | (((Var.ProgramVar pvar, _) as base), _) as path
+        when FormalMap.is_formal base formal_map || Pvar.is_global pvar ->
+          Some (AccessPath.inner_class_normalize path)
+      | _ ->
+          (* ignore paths on local or logical variables *)
+          None )
+    | HilExp.Constant (Const.Cclass class_id) ->
+        (* this is a synchronized/lock(CLASSNAME.class) construct *)
+        Some (lock_of_java_class class_id)
+    | _ ->
+        None
+
+
+  let make_java_synchronized formals procname =
+    match procname with
+    | Procname.Java java_pname when Procname.Java.is_static java_pname ->
+        (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
+        Procname.Java.get_class_type_name java_pname
+        |> Typ.Name.name |> Ident.string_to_name |> lock_of_java_class |> Option.some
+    | _ ->
+        FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
+
+
+  let get_access_path path = path
+
   let pp = AccessPath.pp
 
   let owner_class ((_, {Typ.desc}), _) =
