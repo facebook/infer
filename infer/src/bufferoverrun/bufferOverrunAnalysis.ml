@@ -466,13 +466,9 @@ let cached_compute_invariant_map =
         (* this should never happen *)
         assert false
     | None ->
-        let get_summary callee_pname =
-          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-          |> Option.bind ~f:Payload.of_summary
-        in
+        let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
         let get_formals callee_pname =
-          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-          |> Option.map ~f:Summary.get_proc_desc
+          Payload.read_proc_desc ~caller_summary:summary ~callee_pname
           |> Option.map ~f:Procdesc.get_pvar_formals
         in
         let inv_map =

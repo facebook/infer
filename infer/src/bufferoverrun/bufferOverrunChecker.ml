@@ -423,12 +423,9 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
         let get_checks_summary callee_pname =
-          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-          |> Option.bind ~f:(fun summary ->
-                 let checker_payload = Payload.of_summary summary in
-                 Option.map checker_payload ~f:(fun checker_payload ->
-                     (Summary.get_proc_desc summary |> Procdesc.get_pvar_formals, checker_payload)
-                 ) )
+          Payload.read_full ~caller_summary:summary ~callee_pname
+          |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
+                 (Procdesc.get_pvar_formals callee_pdesc, callee_summary) )
         in
         compute_checks get_checks_summary proc_desc tenv integer_type_widths cfg inv_map
       in

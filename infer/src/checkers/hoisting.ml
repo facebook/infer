@@ -168,12 +168,9 @@ let checker Callbacks.{summary; exe_env} : Summary.t =
         BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
       in
       let get_callee_cost_summary_and_formals callee_pname =
-        Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-        |> Option.bind ~f:(fun summary ->
-               summary.Summary.payloads.Payloads.cost
-               |> Option.map ~f:(fun cost_summary ->
-                      (cost_summary, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) )
-           )
+        Cost.Payload.read_full ~caller_summary:summary ~callee_pname
+        |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
+               (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
       in
       get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
         inferbo_invariant_map

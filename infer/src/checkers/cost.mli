@@ -7,6 +7,8 @@
 
 open! IStd
 
+module Payload : SummaryPayload.S with type t = CostDomain.summary
+
 val checker : Callbacks.proc_callback_t
 
 val instantiate_cost :

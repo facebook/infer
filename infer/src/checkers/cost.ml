@@ -855,11 +855,9 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let get_callee_summary_and_formals callee_pname =
-      Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-      |> Option.bind ~f:(fun summary ->
-             Payload.of_summary summary
-             |> Option.map ~f:(fun payload ->
-                    (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+      Payload.read_full ~caller_summary:summary ~callee_pname
+      |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
+             (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
