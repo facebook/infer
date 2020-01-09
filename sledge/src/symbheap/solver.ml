@@ -38,8 +38,6 @@ let pp fs {com; min; xs; sub; pgs} =
     (if pgs then "t" else "f")
     Sh.pp com Sh.pp min pp_xs xs Sh.pp sub
 
-open Option.Monad_infix
-
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
   let vs = Set.add vs v in
