@@ -33,13 +33,13 @@ module SymbolPath = struct
         | Pvar of Pvar.t
         | Deref of deref_kind * partial
         | Field of {fn: Fieldname.t; prefix: partial; typ: field_typ}
-        | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+        | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option [@compare.ignore]}
         | StarField of {last_field: Fieldname.t; prefix: partial}
       [@@deriving compare]
 
       let of_pvar pvar = Pvar pvar
 
-      let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
+      let of_callsite ?obj_path ~ret_typ cs = Callsite {ret_typ; cs; obj_path}
 
       let deref ~deref_kind p = Deref (deref_kind, p)
 
@@ -77,13 +77,13 @@ module SymbolPath = struct
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
           | Field of {fn: Fieldname.t; prefix: partial; typ: field_typ}
-          | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+          | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option}
           | StarField of {last_field: Fieldname.t; prefix: partial}
         [@@deriving compare]
 
         val of_pvar : Pvar.t -> partial
 
-        val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial
+        val of_callsite : ?obj_path:partial -> ret_typ:Typ.t -> CallSite.t -> partial
 
         val deref : deref_kind:deref_kind -> partial -> partial
 
@@ -135,7 +135,13 @@ module SymbolPath = struct
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true) ~sep:"->" fmt p fn
     | Field {fn; prefix= p} ->
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true) ~sep:"." fmt p fn
-    | Callsite {cs} ->
+    | Callsite {cs; obj_path= Some obj_path} ->
+        if paren then F.pp_print_string fmt "(" ;
+        F.fprintf fmt "%a.%a" (pp_partial_paren ~paren:false) obj_path
+          (Procname.pp_simplified_string ~withclass:false)
+          (CallSite.pname cs) ;
+        if paren then F.pp_print_string fmt ")"
+    | Callsite {cs; obj_path= None} ->
         Procname.pp_simplified_string ~withclass:true fmt (CallSite.pname cs)
     | StarField {last_field; prefix} ->
         BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field

@@ -392,11 +392,17 @@ let rec eval_sympath_partial ~mode params p mem =
     with Caml.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
-  | Symb.SymbolPath.Callsite {cs} -> (
+  | Symb.SymbolPath.Callsite {ret_typ; cs; obj_path} -> (
     match mode with
     | EvalNormal | EvalCost ->
         L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Procname.pp
           (CallSite.pname cs) ;
+        let obj_path =
+          Option.bind obj_path ~f:(fun obj_path ->
+              eval_sympath_partial ~mode params obj_path mem
+              |> Val.get_pow_loc |> PowLoc.min_elt_opt |> Option.bind ~f:Loc.get_path )
+        in
+        let p = Symb.SymbolPath.of_callsite ?obj_path ~ret_typ cs in
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )

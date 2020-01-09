@@ -79,18 +79,25 @@ module TransferFunctions = struct
         mem
 
 
-  let symbolic_pname_value pname typ location mem =
-    let path = CallSite.make pname location |> Symb.SymbolPath.of_callsite ~ret_typ:typ in
+  let symbolic_pname_value pname params typ location mem =
+    let obj_path =
+      match params with
+      | (param, _) :: _ ->
+          PowLoc.min_elt_opt (Sem.eval_locs param mem) |> Option.bind ~f:Loc.get_path
+      | _ ->
+          None
+    in
+    let path = Symb.SymbolPath.of_callsite ?obj_path ~ret_typ:typ (CallSite.make pname location) in
     Dom.Mem.find (Loc.of_allocsite (Allocsite.make_symbol path)) mem
 
 
-  let assign_symbolic_pname_value pname (id, typ) location mem =
-    let v = symbolic_pname_value pname typ location mem in
+  let assign_symbolic_pname_value pname params (id, typ) location mem =
+    let v = symbolic_pname_value pname params typ location mem in
     Dom.Mem.add_stack (Loc.of_id id) v mem
 
 
-  let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname ~callee_exit_mem
-      ({Dom.eval_locpath} as eval_sym_trace) mem location =
+  let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname params
+      ~callee_exit_mem ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
       List.fold callee_formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
           PowLoc.add (Loc.of_pvar formal) acc )
@@ -131,7 +138,7 @@ module TransferFunctions = struct
           Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname))
       | _ ->
           if Language.curr_language_is Java && Dom.Mem.is_exc_raised callee_exit_mem then
-            symbolic_pname_value callee_pname ret_typ location mem
+            symbolic_pname_value callee_pname params ret_typ location mem
           else Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
     in
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
@@ -169,8 +176,8 @@ module TransferFunctions = struct
         ~mode:Sem.EvalNormal
     in
     let mem =
-      instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
-        caller_mem location
+      instantiate_mem_reachable ret callee_formals callee_pname params ~callee_exit_mem
+        eval_sym_trace caller_mem location
     in
     if Language.curr_language_is Java then
       Dom.Mem.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem mem
@@ -382,12 +389,12 @@ module TransferFunctions = struct
                 L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
                 if is_external callee_pname then (
                   L.(debug BufferOverrun Verbose)
-                    "/!\\ External call to unknown  %a \n\n" Procname.pp callee_pname ;
-                  assign_symbolic_pname_value callee_pname ret location mem )
+                    "/!\\ External call to unknown %a \n\n" Procname.pp callee_pname ;
+                  assign_symbolic_pname_value callee_pname params ret location mem )
                 else if is_non_static callee_pname then (
                   L.(debug BufferOverrun Verbose)
-                    "/!\\ Non-static call to unknown  %a \n\n" Procname.pp callee_pname ;
-                  assign_symbolic_pname_value callee_pname ret location mem )
+                    "/!\\ Non-static call to unknown %a \n\n" Procname.pp callee_pname ;
+                  assign_symbolic_pname_value callee_pname params ret location mem )
                 else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in

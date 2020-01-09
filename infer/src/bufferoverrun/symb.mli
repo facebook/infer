@@ -22,7 +22,9 @@ module SymbolPath : sig
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
     | Field of {fn: Fieldname.t; prefix: partial; typ: Typ.t option}
-    | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+    | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option}
+        (** [obj_path] represents the varaible name object when a method of which is called at the
+            [cs] callsite. *)
     | StarField of {last_field: Fieldname.t; prefix: partial}
         (** Represents a path starting with [prefix] and ending with the field [last_field], the
             middle can be anything. Invariants:
@@ -49,7 +51,7 @@ module SymbolPath : sig
 
   val of_pvar : Pvar.t -> partial
 
-  val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial
+  val of_callsite : ?obj_path:partial -> ret_typ:Typ.t -> CallSite.t -> partial
 
   val deref : deref_kind:deref_kind -> partial -> partial
 
