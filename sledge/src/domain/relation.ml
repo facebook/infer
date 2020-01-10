@@ -24,9 +24,11 @@ module Make (State_domain : State_domain_sig) = struct
 
   let embed b = (b, b)
 
+  let pp_entry fs entry =
+    [%Trace.fprintf fs "entry: %a@ current: " State_domain.pp entry]
+
   let pp fs (entry, curr) =
-    Format.fprintf fs "@[<v>entry: %a@ current: %a@]" State_domain.pp entry
-      State_domain.pp curr
+    Format.fprintf fs "@[%a%a@]" pp_entry entry State_domain.pp curr
 
   let report_fmt_thunk (_, curr) fs = State_domain.pp fs curr
   let init globals = embed (State_domain.init globals)

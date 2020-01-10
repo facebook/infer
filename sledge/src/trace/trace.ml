@@ -85,17 +85,16 @@ let parse s =
 
 let pp_styled style fmt fs =
   Format.pp_open_box fs 2 ;
-  if (not !config.colors) || match style with `None -> true | _ -> false
-  then Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+  if not !config.colors then
+    Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
   else (
     ( match style with
-    | `Bold -> Format.fprintf fs "\027[1m"
-    | `Cyan -> Format.fprintf fs "\027[36m"
-    | `Magenta -> Format.fprintf fs "\027[95m"
-    | _ -> () ) ;
+    | `Bold -> Format.fprintf fs "@<0>\027[1m"
+    | `Cyan -> Format.fprintf fs "@<0>\027[36m"
+    | `Magenta -> Format.fprintf fs "@<0>\027[95m" ) ;
     Format.kfprintf
       (fun fs ->
-        Format.fprintf fs "\027[0m" ;
+        Format.fprintf fs "@<0>\027[0m" ;
         Format.pp_close_box fs () )
       fs fmt )
 

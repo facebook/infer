@@ -11,7 +11,8 @@
 type t [@@deriving compare, equal, sexp]
 
 val pp : t pp
-val pp_classes : ?is_x:(Term.t -> bool) -> t pp
+val pp_classes : Var.strength -> t pp
+val pp_classes_diff : Var.strength -> (t * t) pp
 
 include Invariant.S with type t := t
 

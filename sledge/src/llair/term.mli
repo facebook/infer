@@ -82,11 +82,6 @@ and t = private
   | Integer of {data: Z.t}  (** Integer constant *)
 [@@deriving compare, equal, hash, sexp]
 
-val comparator : (t, comparator_witness) Comparator.t
-val pp_full : ?is_x:(t -> bool) -> t pp
-val pp : t pp
-val invariant : t -> unit
-
 (** Term.Var is re-exported as Var *)
 module Var : sig
   type term := t
@@ -94,14 +89,17 @@ module Var : sig
 
   include Comparator.S with type t := t
 
+  type strength = t -> [`Universal | `Existential | `Anonymous] option
+
   module Set : sig
     type var := t
 
     type t = (var, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
-    val pp_full : ?is_x:(term -> bool) -> t pp
+    val ppx : strength -> t pp
     val pp : t pp
+    val pp_xs : t pp
     val empty : t
     val of_ : var -> t
     val of_option : var option -> t
@@ -153,6 +151,11 @@ module Map : sig
 
   val empty : 'a t
 end
+
+val comparator : (t, comparator_witness) Comparator.t
+val ppx : Var.strength -> t pp
+val pp : t pp
+val invariant : t -> unit
 
 (** Construct *)
 

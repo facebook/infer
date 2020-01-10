@@ -28,3 +28,5 @@ let pp fs {dir; file; line; col} =
   if col > 0 then (
     Format.pp_print_int fs col ;
     Format.pp_print_char fs ':' )
+
+let pp fs l = Format.pp_print_as fs 0 (Format.asprintf "%a" pp l)

@@ -140,24 +140,21 @@ let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
 let fix_flip (f : ('z -> t -> 'a as 'f) -> 'f) (bot : 'f) (z : 'z) (e : t) =
   fix (fun f' e z -> f (fun z e -> f' e z) z e) (fun e z -> bot z e) e z
 
-let rec pp ?is_x fs term =
-  let get_var_style var =
-    match is_x with
-    | None -> `None
-    | Some is_x -> if not (is_x var) then `Bold else `Cyan
-  in
+let rec ppx strength fs term =
   let pp_ pp fs term =
     let pf fmt =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match term with
-    | Var {name; id= -1} as var ->
-        Trace.pp_styled (get_var_style var) "%@%s" fs name
-    | Var {name; id= 0} as var ->
-        Trace.pp_styled (get_var_style var) "%%%s" fs name
-    | Var {name; id} as var ->
-        Trace.pp_styled (get_var_style var) "%%%s_%d" fs name id
+    | Var {name; id= -1} -> Trace.pp_styled `Bold "%@%s" fs name
+    | Var {name; id= 0} -> Trace.pp_styled `Bold "%%%s" fs name
+    | Var {name; id} -> (
+      match strength term with
+      | None -> pf "%%%s_%d" name id
+      | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" fs name id
+      | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" fs name id
+      | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
     | Nondet {msg} -> pf "nondet \"%s\"" msg
@@ -202,7 +199,7 @@ let rec pp ?is_x fs term =
     | Ap2 (Splat, byt, siz) -> pf "%a^%a" pp byt pp siz
     | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
     | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
-    | ApN (Record, elts) -> pf "{%a}" pp_record elts
+    | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
     | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, rcd, elt) ->
@@ -211,7 +208,7 @@ let rec pp ?is_x fs term =
   fix_flip pp_ (fun _ _ -> ()) fs term
   [@@warning "-9"]
 
-and pp_record fs elts =
+and pp_record strength fs elts =
   [%Trace.fprintf
     fs "%a"
       (fun fs elts ->
@@ -223,12 +220,13 @@ and pp_record fs elts =
         with
         | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
         | exception _ ->
-            Format.fprintf fs "@[<h>%a@]" (Vector.pp ",@ " pp) elts )
+            Format.fprintf fs "@[<h>%a@]"
+              (Vector.pp ",@ " (ppx strength))
+              elts )
       elts]
 
-let pp_t = pp ?is_x:None
-let pp_full = pp
-let pp = pp_t
+let pp = ppx (fun _ -> None)
+let pp_t = pp
 
 (** Invariant *)
 
@@ -304,6 +302,8 @@ module Var = struct
 
   let pp = pp
 
+  type strength = t -> [`Universal | `Existential | `Anonymous] option
+
   module Map = Map
 
   module Set = struct
@@ -313,8 +313,13 @@ module Var = struct
 
     type t = Set.M(T).t [@@deriving compare, equal, sexp]
 
-    let pp_full ?is_x vs = Set.pp (pp_full ?is_x) vs
-    let pp = pp_full ?is_x:None
+    let pp vs = Set.pp pp_t vs
+    let ppx strength vs = Set.pp (ppx strength) vs
+
+    let pp_xs fs xs =
+      if not (is_empty xs) then
+        Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
+
     let empty = Set.empty (module T)
     let of_ = Set.add empty
     let of_option = Option.fold ~f:Set.add ~init:empty

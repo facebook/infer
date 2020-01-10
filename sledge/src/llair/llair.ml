@@ -198,8 +198,8 @@ let pp_term fs term =
 let pp_cmnd = Vector.pp "@ " pp_inst
 
 let pp_block fs {lbl; cmnd; term; parent= _; sort_index} =
-  Format.fprintf fs "@[<v 2>%s: #%i@ @[<v>%a%t%a@]@]" lbl sort_index pp_cmnd
-    cmnd
+  Format.fprintf fs "@[<v 2>%%%s: #%i@ @[<v>%a%t%a@]@]" lbl sort_index
+    pp_cmnd cmnd
     (fun fs -> if Vector.is_empty cmnd then () else Format.fprintf fs "@ ")
     pp_term term
 

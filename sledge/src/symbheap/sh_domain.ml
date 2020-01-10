@@ -26,7 +26,13 @@ let init globals =
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )
 
-let join l r = Some (Sh.or_ l r)
+let join p q =
+  [%Trace.call fun {pf} -> pf "{ %a@ }@ { %a@ }" Sh.pp p Sh.pp q]
+  ;
+  Some (Sh.or_ p q)
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)]
+
 let is_false = Sh.is_false
 let dnf = Sh.dnf
 let exec_assume q b = Exec.assume q (Exp.term b)
@@ -36,8 +42,6 @@ let exec_move q res =
   Exec.move q (Vector.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
 
 let exec_inst pre inst =
-  [%Trace.info
-    "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
   match (inst : Llair.inst) with
   | Move {reg_exps; _} ->
       Some

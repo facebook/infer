@@ -29,14 +29,10 @@ type judgment =
   ; zs: Var.Set.t  (** existentials over remainder *)
   ; pgs: bool  (** indicates whether a deduction rule has been applied *) }
 
-let pp_xs fs xs =
-  if not (Set.is_empty xs) then
-    Format.fprintf fs "∃ @[%a@] .@;<1 2>" Var.Set.pp xs
-
 let pp fs {com; min; xs; sub; pgs} =
   Format.fprintf fs "@[%s %a@ | %a@ \\- %a%a@]"
     (if pgs then "t" else "f")
-    Sh.pp com Sh.pp min pp_xs xs Sh.pp sub
+    Sh.pp com Sh.pp min Var.Set.pp_xs xs Sh.pp sub
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
@@ -66,7 +62,6 @@ let special_cases xs = function
 let excise_term ({us; min; xs} as goal) pure term =
   let term' = Equality.normalize min.cong term in
   let term' = special_cases xs term' in
-  [%Trace.info "term': %a" Term.pp term'] ;
   if Term.is_true term' then Some ({goal with pgs= true}, pure)
   else
     match single_existential_occurrence xs term' with
@@ -614,7 +609,8 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   [%Trace.call fun {pf} ->
-    pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend pp_xs xs Sh.pp subtrahend]
+    pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
+      subtrahend]
   ;
   assert (Set.disjoint minuend.us xs) ;
   assert (Set.is_subset xs ~of_:subtrahend.us) ;

@@ -170,9 +170,9 @@ module Make (Dom : Domain_sig.Dom) = struct
       include Comparator.Make (T)
 
       let pp fs {dst; src} =
-        Format.fprintf fs "#%i %s <--%a" dst.sort_index dst.lbl
+        Format.fprintf fs "#%i %%%s <--%a" dst.sort_index dst.lbl
           (Option.pp "%a" (fun fs (src : Llair.Block.t) ->
-               Format.fprintf fs " #%i %s" src.sort_index src.lbl ))
+               Format.fprintf fs " #%i %%%s" src.sort_index src.lbl ))
           src
     end
 
@@ -383,7 +383,8 @@ module Make (Dom : Domain_sig.Dom) = struct
   let exec_term :
       exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =
    fun opts pgm stk state block ->
-    [%Trace.info "exec %a" Llair.Term.pp block.term] ;
+    [%Trace.info
+      "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
     match block.term with
     | Switch {key; tbl; els} ->
         Vector.fold tbl
@@ -446,12 +447,14 @@ module Make (Dom : Domain_sig.Dom) = struct
   let exec_inst : Dom.t -> Llair.inst -> (Dom.t, Dom.t * Llair.inst) result
       =
    fun state inst ->
+    [%Trace.info
+      "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
     Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
 
   let exec_block :
       exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =
    fun opts pgm stk state block ->
-    [%Trace.info "exec %a" Llair.Block.pp block] ;
+    [%Trace.info "exec block %%%s" block.lbl] ;
     match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
     | Ok state -> exec_term opts pgm stk state block
     | Error (state, inst) ->
@@ -476,13 +479,9 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let exec_pgm : exec_opts -> Llair.t -> unit =
    fun opts pgm ->
-    [%Trace.call fun {pf} -> pf "@]@,@["]
-    ;
-    ( match harness opts pgm with
+    match harness opts pgm with
     | Some work -> Work.run ~f:(exec_block opts pgm) (work opts.bound)
-    | None -> fail "no applicable harness" () )
-    |>
-    [%Trace.retn fun {pf} _ -> pf ""]
+    | None -> fail "no applicable harness" ()
 
   let compute_summaries opts pgm : Dom.summary list Reg.Map.t =
     assert opts.function_summaries ;

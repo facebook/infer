@@ -50,15 +50,6 @@ let pp fs {sat; rep} =
     (pp_alist Term.pp pp_term_v)
     (Map.to_alist rep)
 
-let pp_classes ?is_x fs r =
-  List.pp "@ @<2>∧ "
-    (fun fs (key, data) ->
-      Format.fprintf fs "@[%a@ = %a@]" (Term.pp_full ?is_x) key
-        (List.pp "@ = " (Term.pp_full ?is_x))
-        (List.sort ~compare:Term.compare data) )
-    fs
-    (Map.to_alist (classes r))
-
 let pp_diff fs (r, s) =
   let pp_sdiff_map pp_elt_diff equal nam fs x y =
     let sd = Sequence.to_list (Map.symmetric_diff ~data_equal:equal x y) in
@@ -313,3 +304,29 @@ let fold_vars r ~init ~f =
   fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
 let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
+
+let pp_classes x fs r =
+  List.pp "@ @<2>∧ "
+    (fun fs (key, data) ->
+      Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) key
+        (List.pp "@ = " (Term.ppx x))
+        (List.sort ~compare:Term.compare data) )
+    fs
+    (Map.to_alist (classes r))
+
+let pp_classes_diff x fs (r, s) =
+  let clss = classes s in
+  let clss =
+    Map.filter_mapi clss ~f:(fun ~key:rep ~data:cls ->
+        match
+          List.filter cls ~f:(fun exp -> not (entails_eq r rep exp))
+        with
+        | [] -> None
+        | cls -> Some cls )
+  in
+  List.pp "@ @<2>∧ "
+    (fun fs (rep, cls) ->
+      Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep
+        (List.pp "@ = " (Term.ppx x))
+        (List.sort ~compare:Term.compare cls) )
+    fs (Map.to_alist clss)

@@ -33,7 +33,7 @@ type 'a printf = ('a, Formatter.t, unit) format -> 'a
 type pf = {pf: 'a. 'a printf}
 
 val pp_styled :
-     [> `Bold | `Cyan | `Magenta | `None]
+     [`Bold | `Cyan | `Magenta]
   -> ('a, Format.formatter, unit, unit) format4
   -> Format.formatter
   -> 'a
