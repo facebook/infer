@@ -286,11 +286,9 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
 let init_extras summary =
   let get_proc_summary_and_formals callee_pname =
-    Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
-    |> Option.bind ~f:(fun summary ->
-           Payload.of_summary summary
-           |> Option.map ~f:(fun payload ->
-                  (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+    Payload.read_full ~caller_summary:summary ~callee_pname
+    |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
+           (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
   in
   TransferFunctions.{get_proc_summary_and_formals}
 
