@@ -146,6 +146,9 @@ let info mod_name fun_name fmt =
     Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
   else Format.ifprintf fs fmt
 
+let infok mod_name fun_name k =
+  k {pf= (fun fmt -> info mod_name fun_name fmt)}
+
 let incf mod_name fun_name fmt =
   if enabled mod_name fun_name then (
     Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:@ " fun_name ;

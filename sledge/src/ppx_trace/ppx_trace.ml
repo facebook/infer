@@ -88,8 +88,8 @@ let mapper =
     | Pexp_extension ({txt= "debug"; loc}, PStr []) -> ebool ~loc !debug
     | Pexp_extension
         ( { txt=
-              ( "Trace.info" | "Trace.printf" | "Trace.fprintf"
-              | "Trace.kprintf" ) as txt
+              ( "Trace.info" | "Trace.infok" | "Trace.printf"
+              | "Trace.fprintf" | "Trace.kprintf" ) as txt
           ; loc }
         , PStr [{pstr_desc= Pstr_eval (arg, []); _}] ) ->
         if not !debug then eunit ~loc:exp.pexp_loc
