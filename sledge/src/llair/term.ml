@@ -913,9 +913,9 @@ let map e ~f =
     let z' = f z in
     if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
   in
-  let mapN mk ~f xs =
+  let mapN op ~f xs =
     let xs' = Vector.map_preserving_phys_equal ~f xs in
-    if xs' == xs then e else mk xs'
+    if xs' == xs then e else normN op xs'
   in
   let map_qset mk ~f args =
     let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
@@ -927,7 +927,7 @@ let map e ~f =
   | Ap1 (op, x) -> map1 op ~f x
   | Ap2 (op, x, y) -> map2 op ~f x y
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
-  | ApN (op, xs) -> mapN (normN op) ~f xs
+  | ApN (op, xs) -> mapN op ~f xs
   | RecN (_, xs) ->
       assert (
         xs == Vector.map_preserving_phys_equal ~f xs
