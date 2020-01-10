@@ -24,8 +24,6 @@ module type S = sig
 
   val read : caller_summary:Summary.t -> callee_pname:Procname.t -> t option
 
-  val read_proc_desc : caller_summary:Summary.t -> callee_pname:Procname.t -> Procdesc.t option
-
   val read_toplevel_procedure : Procname.t -> t option
 end
 
@@ -54,10 +52,6 @@ module Make (P : Payload) : S with type t = P.t = struct
 
   let read ~caller_summary ~callee_pname =
     Ondemand.analyze_proc_name ~caller_summary callee_pname |> get_payload |> Option.map ~f:snd
-
-
-  let read_proc_desc ~caller_summary ~callee_pname =
-    Ondemand.analyze_proc_name ~caller_summary callee_pname |> get_payload |> Option.map ~f:fst
 
 
   let read_toplevel_procedure callee_pname =

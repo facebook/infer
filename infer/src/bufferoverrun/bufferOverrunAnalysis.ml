@@ -468,8 +468,7 @@ let cached_compute_invariant_map =
     | None ->
         let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
         let get_formals callee_pname =
-          Payload.read_proc_desc ~caller_summary:summary ~callee_pname
-          |> Option.map ~f:Procdesc.get_pvar_formals
+          Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
         in
         let inv_map =
           compute_invariant_map summary tenv integer_type_widths get_summary get_formals
