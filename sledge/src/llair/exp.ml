@@ -17,6 +17,7 @@ module T = struct
       | Unsigned of {bits: int}
       | Convert of {src: Typ.t}
       (* array/struct operations *)
+      | Splat
       | Select of int
     [@@deriving compare, equal, hash, sexp]
 
@@ -50,7 +51,6 @@ module T = struct
       | Lshr
       | Ashr
       (* array/struct operations *)
-      | Splat
       | Update of int
     [@@deriving compare, equal, hash, sexp]
 
@@ -133,7 +133,6 @@ let pp_op2 fs op =
   | Shl -> pf "shl"
   | Lshr -> pf "lshr"
   | Ashr -> pf "ashr"
-  | Splat -> pf "^"
   | Update idx -> pf "[_|%i→_]" idx
 
 let rec pp fs exp =
@@ -158,8 +157,8 @@ let rec pp fs exp =
         pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
     | Ap1 (Convert {src}, dst, arg) ->
         pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
+    | Ap1 (Splat, _, byt) -> pf "%a^" pp byt
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
-    | Ap2 (Splat, _, byt, siz) -> pf "%a^%a" pp byt pp siz
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Ap2 (Xor, Integer {bits= 1}, {desc= Integer {data}}, x)
@@ -232,13 +231,9 @@ let rec invariant exp =
       | Array _ -> assert true
       | Tuple {elts} | Struct {elts} -> assert (valid_idx idx elts)
       | _ -> assert false )
-  | Ap2 (Splat, typ, byt, siz) -> (
+  | Ap1 (Splat, typ, byt) ->
       assert (Typ.convertible Typ.byt (typ_of byt)) ;
-      assert (Typ.convertible Typ.siz (typ_of siz)) ;
-      assert (Typ.is_sized typ) ;
-      match siz.desc with
-      | Integer {data} -> assert (Z.equal (Z.of_int (Typ.size_of typ)) data)
-      | _ -> () )
+      assert (Typ.is_sized typ)
   | Ap2 (Update idx, typ, rcd, elt) -> (
       assert (Typ.castable typ (typ_of rcd)) ;
       match typ with
@@ -284,7 +279,7 @@ and typ_of exp =
   match exp.desc with
   | Reg {typ} | Nondet {typ} | Integer {typ} | Float {typ} -> typ
   | Label _ -> Typ.ptr
-  | Ap1 ((Signed _ | Unsigned _ | Convert _), dst, _) -> dst
+  | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array {elt} -> elt
@@ -298,7 +293,7 @@ and typ_of exp =
       Typ.bool
   | Ap2
       ( ( Add | Sub | Mul | Div | Rem | Udiv | Urem | And | Or | Xor | Shl
-        | Lshr | Ashr | Splat | Update _ )
+        | Lshr | Ashr | Update _ )
       , typ
       , _
       , _ )
@@ -489,9 +484,8 @@ let conditional ?typ ~cnd ~thn ~els =
 
 (* memory *)
 
-let splat typ ~byt ~siz =
-  { desc= Ap2 (Splat, typ, byt, siz)
-  ; term= Term.splat ~byt:byt.term ~siz:siz.term }
+let splat typ byt =
+  {desc= Ap1 (Splat, typ, byt); term= Term.splat byt.term}
   |> check invariant
 
 (* records (struct / array values) *)

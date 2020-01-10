@@ -13,6 +13,7 @@ type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}
   | Convert of {src: Typ.t; dst: Typ.t}
+  | Splat
   | Select of int
 [@@deriving compare, equal, hash, sexp]
 
@@ -31,7 +32,6 @@ type op2 =
   | Shl
   | Lshr
   | Ashr
-  | Splat
   | Memory
   | Update of int
 [@@deriving compare, equal, hash, sexp]
@@ -196,7 +196,7 @@ let rec ppx strength fs term =
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | Ap2 (Splat, byt, siz) -> pf "%a^%a" pp byt pp siz
+    | Ap1 (Splat, byt) -> pf "%a^" pp byt
     | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
     | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
     | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
@@ -283,7 +283,6 @@ let invariant e =
   match e with
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
-  | Ap2 (Splat, _, Integer {data}) -> assert (not (Z.equal Z.zero data))
   | ApN (Concat, mems) -> assert (Vector.length mems <> 1)
   | ApN (Record, elts) | RecN (Record, elts) ->
       assert (not (Vector.is_empty elts))
@@ -792,11 +791,7 @@ let simp_concat xs =
     in
     ApN (Concat, args)
 
-let simp_splat byt siz =
-  match siz with
-  | Integer {data} when Z.equal Z.zero data -> simp_concat Vector.empty
-  | _ -> Ap2 (Splat, byt, siz)
-
+let simp_splat byt = Ap1 (Splat, byt)
 let simp_memory siz arr = Ap2 (Memory, siz, arr)
 
 (* records *)
@@ -834,12 +829,12 @@ let norm1 op x =
   | Signed {bits} -> simp_signed bits x
   | Unsigned {bits} -> simp_unsigned bits x
   | Convert {src; dst} -> simp_convert src dst x
+  | Splat -> simp_splat x
   | Select idx -> simp_select idx x )
   |> check invariant
 
 let norm2 op x y =
   ( match op with
-  | Splat -> simp_splat x y
   | Memory -> simp_memory x y
   | Eq -> simp_eq x y
   | Dq -> simp_dq x y
@@ -892,7 +887,7 @@ let shl = norm2 Shl
 let lshr = norm2 Lshr
 let ashr = norm2 Ashr
 let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
-let splat ~byt ~siz = norm2 Splat byt siz
+let splat byt = norm1 Splat byt
 let memory ~siz ~arr = norm2 Memory siz arr
 let concat xs = normN Concat (Vector.of_array xs)
 let record elts = normN Record elts

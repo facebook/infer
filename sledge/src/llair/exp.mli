@@ -30,6 +30,7 @@ type op1 =
           to type [dst], possibly with loss of information. The [src] and
           [dst] types must be [Typ.convertible] and must not both be
           [Integer] types. *)
+  | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -59,7 +60,6 @@ type op2 =
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
-  | Splat  (** Iterated concatenation of a single byte *)
   | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -194,7 +194,7 @@ val ashr : ?typ:Typ.t -> t -> t -> t
 val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
 
 (* memory *)
-val splat : Typ.t -> byt:t -> siz:t -> t
+val splat : Typ.t -> t -> t
 
 (* records (struct / array values) *)
 val record : Typ.t -> t vector -> t

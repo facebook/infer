@@ -399,11 +399,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         | Integer _ -> Exp.integer typ Z.zero
         | Pointer _ -> Exp.null
         | Array _ | Tuple _ | Struct _ ->
-            let siz = Typ.size_of typ in
-            if siz = 0 then todo "ConstantAggregateZero of size 0" () ;
-            Exp.splat typ
-              ~byt:(Exp.integer Typ.byt Z.zero)
-              ~siz:(Exp.integer Typ.siz (Z.of_int siz))
+            Exp.splat typ (Exp.integer Typ.byt Z.zero)
         | _ -> fail "ConstantAggregateZero of type %a" Typ.pp typ () )
     | ConstantVector | ConstantArray ->
         let typ = xlate_type x (Llvm.type_of llv) in

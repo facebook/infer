@@ -94,12 +94,12 @@ let store_spec us ptr exp len =
 
 (* { d-[b;m)->⟨l,α⟩ }
  *   memset l d b
- * { d-[b;m)->⟨l,b^l⟩ }
+ * { d-[b;m)->⟨l,b^⟩ }
  *)
 let memset_spec us dst byt len =
   let {us= _; xs; seg} = fresh_seg ~loc:dst ~siz:len us in
   let foot = Sh.seg seg in
-  let post = Sh.seg {seg with arr= Term.splat ~byt ~siz:len} in
+  let post = Sh.seg {seg with arr= Term.splat byt} in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d=s * l=0 * d-[b;m)->⟨l,α⟩ }
@@ -305,7 +305,7 @@ let mallocx_spec us reg siz =
 
 (* { emp }
  *   calloc r [n × l]
- * { r=0 ∨ r-[r;(n×l)Θ)->⟨(n×l)Θ,0^(n×l)Θ⟩ }
+ * { r=0 ∨ r-[r;(n×l)Θ)->⟨(n×l)Θ,0^⟩ }
  *)
 let calloc_spec us reg num len =
   let foot = Sh.emp in
@@ -313,7 +313,7 @@ let calloc_spec us reg num len =
   let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
-  let arr = Term.splat ~byt:Term.zero ~siz in
+  let arr = Term.splat Term.zero in
   let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~arr us in
   let post = Sh.or_ (null_eq (Term.var reg)) (Sh.seg seg) in
   {xs; foot; sub; ms; post}
