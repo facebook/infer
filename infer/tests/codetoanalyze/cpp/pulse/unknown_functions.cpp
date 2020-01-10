@@ -18,7 +18,7 @@ void init_ok() {
   p->foo();
 }
 
-void const_no_init_bad_FN() {
+void const_no_init_bad() {
   X* p = nullptr;
   unknown_no_init_ptr(&p);
   p->foo();

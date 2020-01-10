@@ -481,13 +481,18 @@ let remove_vars vars location astate =
   if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
 
 
-let unknown_call call_loc reason ~ret ~actuals astate =
+let is_ptr_to_const formal_typ_opt =
+  Option.value_map formal_typ_opt ~default:false ~f:(fun (formal_typ : Typ.t) ->
+      match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
+
+
+let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
   let havoc_ret (ret, _) astate = havoc_id ret [event] astate in
-  let havoc_actual_if_ptr (actual, typ) astate =
-    if Typ.is_pointer typ then
-      (* TODO: to avoid false negatives, we should not havoc when the corresponding formal is a
-         pointer to const *)
+  let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
+    (* We should not havoc when the corresponding formal is a
+       pointer to const *)
+    if Typ.is_pointer actual_typ && not (is_ptr_to_const formal_typ_opt) then
       (* HACK: write through the pointer even if it is invalid. This is to avoid raising issues when
          havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
       let fresh_value = AbstractValue.mk_fresh () in
@@ -495,11 +500,20 @@ let unknown_call call_loc reason ~ret ~actuals astate =
     else astate
   in
   L.d_printfln "skipping unknown procedure@." ;
-  List.fold actuals ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ astate) ~init:astate
+  ( match formals_opt with
+  | None ->
+      List.fold actuals
+        ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ None astate)
+        ~init:astate
+  | Some formals ->
+      List.fold2_exn actuals formals
+        ~f:(fun astate actual_typ (_, formal_typ) ->
+          havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
+        ~init:astate )
   |> havoc_ret ret
 
 
-let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
+let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate =
   match PulsePayload.read_full ~caller_summary ~callee_pname with
   | Some (callee_proc_desc, preposts) ->
       let formals =
@@ -528,4 +542,4 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
-      Ok [unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals astate]
+      Ok [unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate]

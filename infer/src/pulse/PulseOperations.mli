@@ -108,6 +108,7 @@ val call :
   -> Procname.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
+  -> formals_opt:(Pvar.t * Typ.t) list option
   -> t
   -> t list access_result
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if
@@ -118,6 +119,7 @@ val unknown_call :
   -> CallEvent.t
   -> ret:Ident.t * 'a
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
+  -> formals_opt:(Pvar.t * Typ.t) list option
   -> t
   -> t
 (** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and

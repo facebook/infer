@@ -282,7 +282,8 @@ module StdFunction = struct
           List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
               (arg_payload, typ) )
         in
-        PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals astate
+        PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals
+          ~formals_opt:None astate
 end
 
 module StdVector = struct

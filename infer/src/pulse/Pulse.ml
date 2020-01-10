@@ -34,19 +34,24 @@ let proc_name_of_call call_exp =
       None
 
 
+type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = PulseAbductiveDomain
 
-  type extras = unit
+  type extras = get_formals
 
-  let interprocedural_call caller_summary ret call_exp actuals call_loc astate =
+  let interprocedural_call caller_summary ret call_exp actuals call_loc get_formals astate =
     match proc_name_of_call call_exp with
     | Some callee_pname ->
-        PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals astate
+        let formals_opt = get_formals callee_pname in
+        PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate
     | None ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
-        Ok [PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals astate]
+        Ok
+          [ PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
+              ~formals_opt:None astate ]
 
 
   (** has an object just gone out of scope? *)
@@ -72,7 +77,7 @@ module PulseTransferFunctions = struct
     PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
 
 
-  let dispatch_call tenv summary ret call_exp actuals call_loc flags astate =
+  let dispatch_call tenv summary ret call_exp actuals call_loc flags get_formals astate =
     (* evaluate all actuals *)
     List.fold_result actuals ~init:(astate, [])
       ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
@@ -105,7 +110,10 @@ module PulseTransferFunctions = struct
               ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} -> (arg_payload, typ))
               func_args
           in
-          let r = interprocedural_call summary ret call_exp only_actuals_evaled call_loc astate in
+          let r =
+            interprocedural_call summary ret call_exp only_actuals_evaled call_loc get_formals
+              astate
+          in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
     in
@@ -120,7 +128,8 @@ module PulseTransferFunctions = struct
         posts
 
 
-  let exec_instr (astate : Domain.t) {tenv; ProcData.summary} _cfg_node (instr : Sil.instr) =
+  let exec_instr (astate : Domain.t) {tenv; ProcData.summary; extras= get_formals} _cfg_node
+      (instr : Sil.instr) =
     match instr with
     | Load {id= lhs_id; e= rhs_exp; loc} ->
         (* [lhs_id := *rhs_exp] *)
@@ -157,7 +166,8 @@ module PulseTransferFunctions = struct
           [post]
         else (* [condition] is known to be unsatisfiable: prune path *) []
     | Call (ret, call_exp, actuals, loc, call_flags) ->
-        dispatch_call tenv summary ret call_exp actuals loc call_flags astate |> check_error summary
+        dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
+        |> check_error summary
     | Metadata (ExitScope (vars, location)) ->
         [PulseOperations.remove_vars vars location astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
@@ -184,12 +194,15 @@ module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFun
 
 let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  let proc_data = ProcData.make summary tenv () in
   AbstractValue.init () ;
   let pdesc = Summary.get_proc_desc summary in
   let initial =
     DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial pdesc)
   in
+  let get_formals callee_pname =
+    Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
+  in
+  let proc_data = ProcData.make summary tenv get_formals in
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
       PulsePayload.update_summary
