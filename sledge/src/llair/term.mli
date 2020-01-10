@@ -213,8 +213,7 @@ val conditional : cnd:t -> thn:t -> els:t -> t
 
 (* memory contents *)
 val splat : t -> t
-val memory : siz:t -> arr:t -> t
-val concat : t array -> t
+val eq_concat : t * t -> (t * t) array -> t
 
 (* records (struct / array values) *)
 val record : t vector -> t

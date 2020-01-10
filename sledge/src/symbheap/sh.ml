@@ -58,13 +58,17 @@ let var_strength q =
   in
   var_strength_ Var.Set.empty Var.Map.empty q
 
+let pp_memory x fs (siz, arr) =
+  let term_pp = Term.ppx x in
+  Format.fprintf fs "@<1>⟨%a,%a@<1>⟩" term_pp siz term_pp arr
+
 let pp_seg x fs {loc; bas; len; siz; arr} =
   let term_pp = Term.ppx x in
   Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" term_pp loc
     (fun fs (bas, len) ->
       if (not (Term.equal loc bas)) || not (Term.equal len siz) then
         Format.fprintf fs " %a, %a " term_pp bas term_pp len )
-    (bas, len) term_pp (Term.memory ~siz ~arr)
+    (bas, len) (pp_memory x) (siz, arr)
 
 let pp_seg_norm cong fs seg =
   let x _ = None in
@@ -91,8 +95,7 @@ let pp_block x fs segs =
   in
   let term_pp = Term.ppx x in
   let pp_mems =
-    List.pp "@,^" (fun fs seg ->
-        term_pp fs (Term.memory ~siz:seg.siz ~arr:seg.arr) )
+    List.pp "@,^" (fun fs seg -> pp_memory x fs (seg.siz, seg.arr))
   in
   match segs with
   | {loc; bas; len; _} :: _ ->

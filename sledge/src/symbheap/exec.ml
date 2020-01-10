@@ -159,16 +159,15 @@ let memmov_foot us dst src len =
   let arr_mid, us, xs = fresh_var "a" us xs in
   let arr_src, us, xs = fresh_var "a" us xs in
   let src_dst = Term.sub src dst in
-  let mem_dst = Term.memory ~siz:src_dst ~arr:arr_dst in
+  let mem_dst = (src_dst, arr_dst) in
   let siz_mid = Term.sub len src_dst in
-  let mem_mid = Term.memory ~siz:siz_mid ~arr:arr_mid in
-  let mem_src = Term.memory ~siz:src_dst ~arr:arr_src in
-  let mem_dst_mid_src = Term.concat [|mem_dst; mem_mid; mem_src|] in
+  let mem_mid = (siz_mid, arr_mid) in
+  let mem_src = (src_dst, arr_src) in
+  let mem_dst_mid_src = [|mem_dst; mem_mid; mem_src|] in
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
   let arr_dst_mid_src, _, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
-    Term.eq mem_dst_mid_src
-      (Term.memory ~siz:siz_dst_mid_src ~arr:arr_dst_mid_src)
+    Term.eq_concat (siz_dst_mid_src, arr_dst_mid_src) mem_dst_mid_src
   in
   let seg =
     Sh.seg
@@ -189,12 +188,11 @@ let memmov_dn_spec us dst src len =
   let xs, bas, siz, _, mem_mid, mem_src, foot =
     memmov_foot us dst src len
   in
-  let mem_mid_src_src = Term.concat [|mem_mid; mem_src; mem_src|] in
+  let mem_mid_src_src = [|mem_mid; mem_src; mem_src|] in
   let siz_mid_src_src, us, xs = fresh_var "m" us xs in
   let arr_mid_src_src, _, xs = fresh_var "a" us xs in
   let eq_mem_mid_src_src =
-    Term.eq mem_mid_src_src
-      (Term.memory ~siz:siz_mid_src_src ~arr:arr_mid_src_src)
+    Term.eq_concat (siz_mid_src_src, arr_mid_src_src) mem_mid_src_src
   in
   let post =
     Sh.and_ eq_mem_mid_src_src
@@ -215,12 +213,11 @@ let memmov_up_spec us dst src len =
   let xs, bas, siz, mem_src, mem_mid, _, foot =
     memmov_foot us src dst len
   in
-  let mem_src_src_mid = Term.concat [|mem_src; mem_src; mem_mid|] in
+  let mem_src_src_mid = [|mem_src; mem_src; mem_mid|] in
   let siz_src_src_mid, us, xs = fresh_var "m" us xs in
   let arr_src_src_mid, _, xs = fresh_var "a" us xs in
   let eq_mem_src_src_mid =
-    Term.eq mem_src_src_mid
-      (Term.memory ~siz:siz_src_src_mid ~arr:arr_src_src_mid)
+    Term.eq_concat (siz_src_src_mid, arr_src_src_mid) mem_src_src_mid
   in
   let post =
     Sh.and_ eq_mem_src_src_mid
@@ -375,16 +372,8 @@ let realloc_spec us reg ptr siz =
       (Sh.and_
          Term.(
            conditional ~cnd:(le len siz)
-             ~thn:
-               (eq (memory ~siz ~arr:a1)
-                  (concat
-                     [| memory ~siz:len ~arr:a0
-                      ; memory ~siz:(sub siz len) ~arr:a2 |]))
-             ~els:
-               (eq (memory ~siz:len ~arr:a0)
-                  (concat
-                     [| memory ~siz ~arr:a1
-                      ; memory ~siz:(sub len siz) ~arr:a2 |])))
+             ~thn:(eq_concat (siz, a1) [|(len, a0); (sub siz len, a2)|])
+             ~els:(eq_concat (len, a0) [|(siz, a1); (sub len siz, a2)|]))
          (Sh.seg rseg))
   in
   {xs; foot; sub; ms; post}
@@ -415,16 +404,8 @@ let rallocx_spec us reg ptr siz =
       (Sh.and_
          Term.(
            conditional ~cnd:(le len siz)
-             ~thn:
-               (eq (memory ~siz ~arr:a1)
-                  (concat
-                     [| memory ~siz:len ~arr:a0
-                      ; memory ~siz:(sub siz len) ~arr:a2 |]))
-             ~els:
-               (eq (memory ~siz:len ~arr:a0)
-                  (concat
-                     [| memory ~siz ~arr:a1
-                      ; memory ~siz:(sub len siz) ~arr:a2 |])))
+             ~thn:(eq_concat (siz, a1) [|(len, a0); (sub siz len, a2)|])
+             ~els:(eq_concat (len, a0) [|(siz, a1); (sub len siz, a2)|]))
          (Sh.seg rseg))
   in
   {xs; foot; sub; ms; post}
@@ -458,16 +439,8 @@ let xallocx_spec us reg ptr siz ext =
       Term.(
         and_
           (conditional ~cnd:(le len siz)
-             ~thn:
-               (eq (memory ~siz ~arr:a1)
-                  (concat
-                     [| memory ~siz:len ~arr:a0
-                      ; memory ~siz:(sub siz len) ~arr:a2 |]))
-             ~els:
-               (eq (memory ~siz:len ~arr:a0)
-                  (concat
-                     [| memory ~siz ~arr:a1
-                      ; memory ~siz:(sub len siz) ~arr:a2 |])))
+             ~thn:(eq_concat (siz, a1) [|(len, a0); (sub siz len, a2)|])
+             ~els:(eq_concat (len, a0) [|(siz, a1); (sub len siz, a2)|]))
           (and_ (le siz reg) (le reg (add siz ext))))
       (Sh.seg seg')
   in
