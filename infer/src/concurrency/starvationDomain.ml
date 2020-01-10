@@ -115,8 +115,9 @@ module Lock = struct
   let make_class path typename = {root= Class typename; path}
 
   (** convert an expression to a canonical form for a lock identifier *)
-  let make formal_map = function
-    | HilExp.AccessExpression access_exp -> (
+  let rec make formal_map (hilexp : HilExp.t) =
+    match hilexp with
+    | AccessExpression access_exp -> (
         let path = HilExp.AccessExpression.to_access_path access_exp in
         match fst (fst path) with
         | Var.LogicalVar _ ->
@@ -129,12 +130,14 @@ module Lock = struct
             FormalMap.get_formal_index (fst norm_path) formal_map
             (* ignores non-formals *)
             |> Option.map ~f:(make_parameter norm_path) )
-    | HilExp.Constant (Const.Cclass class_id) ->
+    | Constant (Cclass class_id) ->
         (* this is a synchronized/lock(CLASSNAME.class) construct *)
         let path = path_of_java_class class_id in
         let typename = Ident.name_to_string class_id |> Typ.Name.Java.from_string in
         Some (make_class path typename)
-    | _ ->
+    | Cast (_, hilexp) | Exception hilexp | UnaryOperator (_, hilexp, _) ->
+        make formal_map hilexp
+    | BinaryOperator _ | Closure _ | Constant _ | Sizeof _ ->
         None
 
 
