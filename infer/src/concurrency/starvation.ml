@@ -257,7 +257,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
-          Domain.wait_on_monitor ~loc actuals astate
+          Domain.wait_on_monitor ~loc extras actuals astate
       | NoEffect when is_java && is_future_get tenv callee actuals ->
           Domain.future_get ~callee ~loc actuals astate
       | NoEffect when is_java -> (

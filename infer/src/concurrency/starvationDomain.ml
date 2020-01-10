@@ -83,24 +83,24 @@ module ThreadDomain = struct
 end
 
 module Lock = struct
-  (* TODO (T37174859): change to [HilExp.t] *)
-  type t = AccessPath.t
-
   type var = Var.t
 
   let compare_var = Var.compare_modulo_this
 
-  (* compare type, base variable modulo this and access list *)
-  let compare lock lock' =
-    if phys_equal lock lock' then 0
-    else [%compare: (var * Typ.t) * AccessPath.access list] lock lock'
+  type path = (var * Typ.t) * AccessPath.access list [@@deriving compare]
 
+  type root =
+    | Global of Mangled.t
+    | Class of Typ.name
+    | Parameter of int  (** method parameter represented by its 0-indexed position *)
+
+  type t = {root: root [@compare.ignore]; path: path} [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
   (* using an indentifier for a class object, create an access path representing that lock;
      this is for synchronizing on Java class objects only *)
-  let lock_of_java_class =
+  let path_of_java_class =
     let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
     let typ' = Typ.(mk (Tptr (typ, Pk_pointer))) in
     fun class_id ->
@@ -108,19 +108,32 @@ module Lock = struct
       AccessPath.of_id ident typ'
 
 
+  let make_global path mangled = {root= Global mangled; path}
+
+  let make_parameter path index = {root= Parameter index; path}
+
+  let make_class path typename = {root= Class typename; path}
+
   (** convert an expression to a canonical form for a lock identifier *)
   let make formal_map = function
     | HilExp.AccessExpression access_exp -> (
-      match HilExp.AccessExpression.to_access_path access_exp with
-      | (((Var.ProgramVar pvar, _) as base), _) as path
-        when FormalMap.is_formal base formal_map || Pvar.is_global pvar ->
-          Some (AccessPath.inner_class_normalize path)
-      | _ ->
-          (* ignore paths on local or logical variables *)
-          None )
+        let path = HilExp.AccessExpression.to_access_path access_exp in
+        match fst (fst path) with
+        | Var.LogicalVar _ ->
+            (* ignore logical variables *)
+            None
+        | Var.ProgramVar pvar when Pvar.is_global pvar ->
+            Some (make_global path (Pvar.get_name pvar))
+        | Var.ProgramVar _ ->
+            let norm_path = AccessPath.inner_class_normalize path in
+            FormalMap.get_formal_index (fst norm_path) formal_map
+            (* ignores non-formals *)
+            |> Option.map ~f:(make_parameter norm_path) )
     | HilExp.Constant (Const.Cclass class_id) ->
         (* this is a synchronized/lock(CLASSNAME.class) construct *)
-        Some (lock_of_java_class class_id)
+        let path = path_of_java_class class_id in
+        let typename = Ident.name_to_string class_id |> Typ.Name.Java.from_string in
+        Some (make_class path typename)
     | _ ->
         None
 
@@ -129,17 +142,21 @@ module Lock = struct
     match procname with
     | Procname.Java java_pname when Procname.Java.is_static java_pname ->
         (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
-        Procname.Java.get_class_type_name java_pname
-        |> Typ.Name.name |> Ident.string_to_name |> lock_of_java_class |> Option.some
+        let typename = Procname.Java.get_class_type_name java_pname in
+        let path = Typ.Name.name typename |> Ident.string_to_name |> path_of_java_class in
+        Some (make_class path typename)
+    | Procname.Java _ ->
+        FormalMap.get_formal_base 0 formals
+        |> Option.map ~f:(fun base -> make_parameter (base, []) 0)
     | _ ->
-        FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
+        L.die InternalError "Non-Java methods cannot be synchronized.@\n"
 
 
-  let get_access_path path = path
+  let get_access_path {path} = path
 
-  let pp = AccessPath.pp
+  let pp fmt {path} = AccessPath.pp fmt path
 
-  let owner_class ((_, {Typ.desc}), _) =
+  let owner_class {path= (_, {Typ.desc}), _} =
     match desc with Typ.Tstruct name | Typ.Tptr ({desc= Tstruct name}, _) -> Some name | _ -> None
 
 
@@ -449,7 +466,7 @@ let is_recursive_lock event tenv =
   in
   match event with
   | Event.LockAcquire lock_path ->
-      AccessPath.get_typ lock_path tenv |> Option.exists ~f:is_class_and_recursive_lock
+      AccessPath.get_typ lock_path.path tenv |> Option.exists ~f:is_class_and_recursive_lock
   | _ ->
       false
 
@@ -650,12 +667,13 @@ let blocking_call ~callee sev ~loc astate =
   make_call_with_event new_event ~loc astate
 
 
-let wait_on_monitor ~loc actuals astate =
+let wait_on_monitor ~loc formals actuals astate =
   match actuals with
-  | HilExp.AccessExpression exp :: _ ->
-      let lock = HilExp.AccessExpression.to_access_path exp in
-      let new_event = Event.make_object_wait lock in
-      make_call_with_event new_event ~loc astate
+  | exp :: _ ->
+      Lock.make formals exp
+      |> Option.value_map ~default:astate ~f:(fun lock ->
+             let new_event = Event.make_object_wait lock in
+             make_call_with_event new_event ~loc astate )
   | _ ->
       astate
 

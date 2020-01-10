@@ -170,7 +170,7 @@ val release : t -> Lock.t list -> t
 
 val blocking_call : callee:Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
 
-val wait_on_monitor : loc:Location.t -> HilExp.t list -> t -> t
+val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 
 val future_get : callee:Procname.t -> loc:Location.t -> HilExp.t list -> t -> t
 
