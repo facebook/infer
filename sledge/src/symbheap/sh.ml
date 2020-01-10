@@ -190,9 +190,10 @@ and pp_djn ?var_strength:parent_var_strength vs cong fs = function
                {sjn with us= Set.diff sjn.us vs} ))
         djn
 
-let pp fs q =
-  pp_ ~var_strength:(var_strength q) Var.Set.empty Equality.true_ fs q
+let pp_diff_eq cong fs q =
+  pp_ ~var_strength:(var_strength q) Var.Set.empty cong fs q
 
+let pp fs q = pp_diff_eq Equality.true_ fs q
 let pp_djn fs d = pp_djn Var.Set.empty Equality.true_ fs d
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 

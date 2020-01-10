@@ -28,6 +28,7 @@ type t = starjunction [@@deriving equal, compare, sexp]
 val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
+val pp_diff_eq : Equality.t -> t pp
 val pp_djn : disjunction pp
 val simplify : t -> t
 
