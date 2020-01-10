@@ -500,67 +500,68 @@ let excise_seg ({sub} as goal) msg ssg =
       { goal with
         sub= Sh.and_ (Term.eq b b') (Sh.and_ (Term.eq m m') goal.sub) }
   else
-    match[@warning "-p"] Z.sign k_l with
+    match Int.sign (Z.sign k_l) with
     (* k-l < 0 so k < l *)
-    | -1 -> (
+    | Neg -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
         let* ko_ln = Equality.difference sub.cong ko ln in
-        match[@warning "-p"] Z.sign ko_ln with
+        match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0 so k+o < l+n *)
-        | -1 -> (
+        | Neg -> (
             let* l_ko = Equality.difference sub.cong l ko in
-            match[@warning "-p"] Z.sign l_ko with
+            match Int.sign (Z.sign l_ko) with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
-            | -1 ->
+            | Neg ->
                 Some
                   (excise_seg_min_skew goal msg ssg (Z.neg k_l) (Z.neg l_ko)
                      (Z.neg ko_ln))
-            | _ -> None )
+            | Zero | Pos -> None )
         (* k+o-(l+n) = 0     [k;    o)
          * so k+o = l+n    ⊢    [l; n) *)
-        | 0 -> Some (excise_seg_sub_suffix goal msg ssg (Z.neg k_l))
+        | Zero -> Some (excise_seg_sub_suffix goal msg ssg (Z.neg k_l))
         (* k+o-(l+n) > 0     [k;      o)
          * so k+o > l+n    ⊢    [l; n) *)
-        | 1 -> Some (excise_seg_sub_infix goal msg ssg (Z.neg k_l) ko_ln) )
+        | Pos -> Some (excise_seg_sub_infix goal msg ssg (Z.neg k_l) ko_ln)
+        )
     (* k-l = 0 so k = l *)
-    | 0 -> (
+    | Zero -> (
       match Equality.difference sub.cong o n with
       | None -> Some {goal with sub= Sh.and_ (Term.eq o n) goal.sub}
       | Some o_n -> (
-        match[@warning "-p"] Z.sign o_n with
+        match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
-        | -1 -> Some (excise_seg_min_prefix goal msg ssg (Z.neg o_n))
+        | Neg -> Some (excise_seg_min_prefix goal msg ssg (Z.neg o_n))
         (* o-n = 0      [k; o)
          * so o = n   ⊢ [l; n) *)
-        | 0 -> Some (excise_seg_same goal msg ssg)
+        | Zero -> Some (excise_seg_same goal msg ssg)
         (* o-n > 0      [k;   o)
          * so o > n   ⊢ [l; n) *)
-        | 1 -> Some (excise_seg_sub_prefix goal msg ssg o_n) ) )
+        | Pos -> Some (excise_seg_sub_prefix goal msg ssg o_n) ) )
     (* k-l > 0 so k > l *)
-    | 1 -> (
+    | Pos -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
         let* ko_ln = Equality.difference sub.cong ko ln in
-        match[@warning "-p"] Z.sign ko_ln with
+        match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
-        | -1 -> Some (excise_seg_min_infix goal msg ssg k_l (Z.neg ko_ln))
+        | Neg -> Some (excise_seg_min_infix goal msg ssg k_l (Z.neg ko_ln))
         (* k+o-(l+n) = 0        [k; o)
          * so k+o = l+n    ⊢ [l;    n) *)
-        | 0 -> Some (excise_seg_min_suffix goal msg ssg k_l)
+        | Zero -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
-        | 1 -> (
+        | Pos -> (
             let* k_ln = Equality.difference sub.cong k ln in
-            match[@warning "-p"] Z.sign k_ln with
+            match Int.sign (Z.sign k_ln) with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
-            | -1 ->
+            | Neg ->
                 Some
                   (excise_seg_sub_skew goal msg ssg k_l (Z.neg k_ln) ko_ln)
-            | _ -> None ) )
+            | Zero | Pos -> None ) )
 
 let excise_heap ({min; sub} as goal) =
   [%Trace.info "@[<2>excise_heap@ %a@]" pp goal] ;
