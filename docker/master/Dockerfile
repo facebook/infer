@@ -22,7 +22,6 @@ RUN apt-get update && \
       make \
       openjdk-8-jdk-headless \
       patch \
-      patchelf \
       pkg-config \
       python2.7 \
       unzip \
@@ -57,9 +56,8 @@ RUN cd /infer && \
 
 # Generate a release
 RUN cd /infer && \
-    make install-with-libs \
+    make install \
     BUILD_MODE=opt \
-    PATCHELF=patchelf \
     DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
 
