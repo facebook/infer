@@ -505,11 +505,19 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
       List.fold actuals
         ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ None astate)
         ~init:astate
-  | Some formals ->
-      List.fold2_exn actuals formals
+  | Some formals -> (
+    match
+      List.fold2 actuals formals
         ~f:(fun astate actual_typ (_, formal_typ) ->
           havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
-        ~init:astate )
+        ~init:astate
+    with
+    | Unequal_lengths ->
+        L.d_printfln "ERROR: formals have length %d but actuals have length %d"
+          (List.length formals) (List.length actuals) ;
+        astate
+    | Ok result ->
+        result ) )
   |> havoc_ret ret
 
 
