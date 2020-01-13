@@ -122,7 +122,7 @@ let get_objc_method_data obj_c_message_expr_info =
       (selector, pointer, MCStatic)
 
 
-let should_create_procdesc cfg procname defined set_objc_accessor_attr =
+let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
   match Procname.Hash.find cfg procname with
   | previous_procdesc ->
       let is_defined_previous = Procdesc.is_defined previous_procdesc in
@@ -152,7 +152,7 @@ let get_objc_property_accessor tenv ms =
   match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
   | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info)) -> (
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
-      match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
+      match CAst_utils.get_decl_opt_with_decl_ref_opt ivar_decl_ref with
       | Some (ObjCIvarDecl (_, name_decl_info, _, _, _)) -> (
           let class_tname =
             Typ.Name.Objc.from_qual_name
@@ -265,7 +265,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
       Procdesc.set_start_node procdesc start_node ;
       Procdesc.set_exit_node procdesc exit_node )
   in
-  if should_create_procdesc cfg proc_name defined set_objc_accessor_attr then (
+  if should_create_procdesc cfg proc_name ~defined ~set_objc_accessor_attr then (
     create_new_procdesc () ; true )
   else false
 

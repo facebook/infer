@@ -252,7 +252,9 @@ let component_with_unconventional_superclass_advice context an =
   in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
-      let if_decl_opt = CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+      let if_decl_opt =
+        CAst_utils.get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_class_interface
+      in
       if Option.is_some if_decl_opt && is_ck_context context an then
         check_interface (Option.value_exn if_decl_opt)
       else None
@@ -306,7 +308,9 @@ let component_with_multiple_factory_methods_advice context an =
   in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) -> (
-      let if_decl_opt = CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+      let if_decl_opt =
+        CAst_utils.get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_class_interface
+      in
       match if_decl_opt with Some d when is_ck_context context an -> check_interface d | _ -> [] )
   | _ ->
       []
@@ -322,7 +326,7 @@ let is_in_factory_method (context : CLintersContext.context) =
   let interface_decl_opt =
     match context.current_objc_class with
     | Some (ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
-        CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
+        CAst_utils.get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_class_interface
     | _ ->
         None
   in

@@ -151,10 +151,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
   let process_property_implementation trans_unit_ctx tenv cfg curr_class
       obj_c_property_impl_decl_info =
     let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
-    match CAst_utils.get_decl_opt_with_decl_ref property_decl_opt with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt property_decl_opt with
     | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info)) ->
         let process_accessor pointer =
-          match CAst_utils.get_decl_opt_with_decl_ref pointer with
+          match CAst_utils.get_decl_opt_with_decl_ref_opt pointer with
           | Some (ObjCMethodDecl _ as dec) ->
               process_method_decl ~set_objc_accessor_attr:true trans_unit_ctx tenv cfg curr_class
                 dec
@@ -389,16 +389,22 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (* safe to Option.get because it's a global *)
             Option.value_exn (Pvar.get_initializer_pname global)
           in
-          let ms =
-            CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
-              decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None `None
-          in
-          let stmt_info =
-            {si_pointer= CAst_utils.get_fresh_pointer (); si_source_range= decl_info.di_source_range}
-          in
-          let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
-          ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
-          add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None []
+          if
+            CMethod_trans.should_create_procdesc cfg procname ~defined:true
+              ~set_objc_accessor_attr:false
+          then (
+            let ms =
+              CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
+                decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None
+                `None
+            in
+            let stmt_info =
+              { si_pointer= CAst_utils.get_fresh_pointer ()
+              ; si_source_range= decl_info.di_source_range }
+            in
+            let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
+            ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
+            add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None [] )
       (* Note that C and C++ records are treated the same way
          Skip translating implicit struct declarations, unless they have
          full definition (which happens with C++ lambdas) *)

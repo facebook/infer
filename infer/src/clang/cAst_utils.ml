@@ -127,13 +127,13 @@ let get_stmt_opt stmt_ptr_opt source_range =
   match stmt_ptr_opt with Some stmt_ptr -> get_stmt stmt_ptr source_range | None -> None
 
 
-let get_decl_opt_with_decl_ref decl_ref_opt =
-  match decl_ref_opt with
-  | Some decl_ref ->
-      L.debug Capture Verbose "#####POINTER LOOK UP: '%i'@\n" decl_ref.Clang_ast_t.dr_decl_pointer ;
-      get_decl decl_ref.Clang_ast_t.dr_decl_pointer
-  | None ->
-      None
+let get_decl_opt_with_decl_ref decl_ref =
+  L.debug Capture Verbose "#####POINTER LOOK UP: '%i'@\n" decl_ref.Clang_ast_t.dr_decl_pointer ;
+  get_decl decl_ref.Clang_ast_t.dr_decl_pointer
+
+
+let get_decl_opt_with_decl_ref_opt decl_ref_opt =
+  Option.bind decl_ref_opt ~f:get_decl_opt_with_decl_ref
 
 
 let get_property_of_ivar decl_ptr = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr
@@ -350,24 +350,24 @@ let rec get_super_if decl =
   | Some (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       (* Try getting the super ref through the impl info, and fall back to
          getting the if decl first and getting the super ref through it. *)
-      let super_ref = get_decl_opt_with_decl_ref impl_decl_info.oidi_super in
+      let super_ref = get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_super in
       if Option.is_some super_ref then super_ref
-      else get_super_if (get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface)
+      else get_super_if (get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_class_interface)
   | Some (Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
-      get_decl_opt_with_decl_ref interface_decl_info.otdi_super
+      get_decl_opt_with_decl_ref_opt interface_decl_info.otdi_super
   | _ ->
       None
 
 
 let get_super_ObjCImplementationDecl impl_decl_info =
   let objc_interface_decl_current =
-    get_decl_opt_with_decl_ref impl_decl_info.Clang_ast_t.oidi_class_interface
+    get_decl_opt_with_decl_ref_opt impl_decl_info.Clang_ast_t.oidi_class_interface
   in
   let objc_interface_decl_super = get_super_if objc_interface_decl_current in
   let objc_implementation_decl_super =
     match objc_interface_decl_super with
     | Some (ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
-        get_decl_opt_with_decl_ref interface_decl_info.otdi_implementation
+        get_decl_opt_with_decl_ref_opt interface_decl_info.otdi_implementation
     | _ ->
         None
   in

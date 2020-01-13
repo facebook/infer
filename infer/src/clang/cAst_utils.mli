@@ -25,7 +25,9 @@ val get_stmt_exn : Clang_ast_t.pointer -> Clang_ast_t.source_range -> Clang_ast_
 
 val get_stmt_opt : Clang_ast_t.pointer option -> Clang_ast_t.source_range -> Clang_ast_t.stmt option
 
-val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
+val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref -> Clang_ast_t.decl option
+
+val get_decl_opt_with_decl_ref_opt : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
 
 val get_property_of_ivar : Clang_ast_t.pointer -> Clang_ast_t.decl option
 

@@ -109,7 +109,7 @@ let captured_variables_cxx_ref an =
   let open Clang_ast_t in
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
-    match CAst_utils.get_decl_opt_with_decl_ref decl_ref_opt with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt decl_ref_opt with
     | Some (VarDecl (_, named_decl_info, qual_type, _))
     | Some (ParmVarDecl (_, named_decl_info, qual_type, _))
     | Some (ImplicitParamDecl (_, named_decl_info, qual_type, _)) -> (
@@ -163,7 +163,7 @@ let rec is_subclass_of decl name =
       let ndi = match super_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
       if ALVar.compare_str_with_alexp ndi.ni_name name then true
       else
-        match CAst_utils.get_decl_opt_with_decl_ref (Some super_ref) with
+        match CAst_utils.get_decl_opt_with_decl_ref_opt (Some super_ref) with
         | Some decl ->
             is_subclass_of decl name
         | None ->
@@ -196,7 +196,7 @@ let is_objc_class_named an re = is_objc_interface_named an re || is_objc_impleme
 let is_objc_category_interface_on_class_named an expected_name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryDecl (_, _, _, _, ocdi)) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref ocdi.odi_class_interface with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt ocdi.odi_class_interface with
     | Some decl_ref ->
         is_objc_interface_named (Decl decl_ref) expected_name
     | _ ->
@@ -209,7 +209,7 @@ let is_objc_category_interface_on_class_named an expected_name =
 let is_objc_category_implementation_on_class_named an expected_name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt ocidi.ocidi_class_interface with
     | Some decl_ref ->
         is_objc_interface_named (Decl decl_ref) expected_name
     | _ ->
@@ -227,7 +227,7 @@ let is_objc_category_on_class_named an re =
 let is_objc_category_interface_on_subclass_of an expected_name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryDecl (_, _, _, _, ocdi)) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref ocdi.odi_class_interface with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt ocdi.odi_class_interface with
     | Some decl_ref ->
         is_subclass_of decl_ref expected_name
     | _ ->
@@ -240,7 +240,7 @@ let is_objc_category_interface_on_subclass_of an expected_name =
 let is_objc_category_implementation_on_subclass_of an expected_name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt ocidi.ocidi_class_interface with
     | Some decl_ref ->
         is_subclass_of decl_ref expected_name
     | _ ->
@@ -349,7 +349,7 @@ let is_objc_method_exposed context an =
         let is_instance_method = mdi.omdi_is_instance_method in
         match current_objc_container context with
         | Some (ObjCImplementationDecl (_, _, _, _, oidi)) -> (
-          match CAst_utils.get_decl_opt_with_decl_ref oidi.oidi_class_interface with
+          match CAst_utils.get_decl_opt_with_decl_ref_opt oidi.oidi_class_interface with
           | Some (ObjCInterfaceDecl (_, _, decl_list, _, otdi)) ->
               decl_list_has_objc_method decl_list method_name is_instance_method
               || List.exists
@@ -364,7 +364,7 @@ let is_objc_method_exposed context an =
           | _ ->
               false )
         | Some (ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
-          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_category_decl with
+          match CAst_utils.get_decl_opt_with_decl_ref_opt ocidi.ocidi_category_decl with
           | Some (ObjCCategoryDecl (_, _, decl_list, _, _)) ->
               decl_list_has_objc_method decl_list method_name is_instance_method
           | _ ->
@@ -419,7 +419,7 @@ let objc_message_receiver context an =
       match current_objc_container context with
       | Some container ->
           let decl_ref_opt = CAst_utils.get_superclass_curr_class_objc_from_decl container in
-          CAst_utils.get_decl_opt_with_decl_ref decl_ref_opt
+          CAst_utils.get_decl_opt_with_decl_ref_opt decl_ref_opt
       | _ ->
           None )
     | `Class qt ->
@@ -739,7 +739,7 @@ let is_method_property_accessor_of_ivar an context =
       | Some (ObjCMethodDecl (_, _, mdi)) ->
           if mdi.omdi_is_property_accessor then
             let property_opt = mdi.omdi_property_decl in
-            match CAst_utils.get_decl_opt_with_decl_ref property_opt with
+            match CAst_utils.get_decl_opt_with_decl_ref_opt property_opt with
             | Some (ObjCPropertyDecl (_, _, pdi)) -> (
               match pdi.opdi_ivar_decl with
               | Some decl_ref ->
@@ -1400,7 +1400,7 @@ let rec get_decl_attributes an =
   | Stmt (ImplicitCastExpr (_, [stmt], _, _)) ->
       get_decl_attributes (Stmt stmt)
   | Stmt (DeclRefExpr (_, _, _, drti)) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
+    match CAst_utils.get_decl_opt_with_decl_ref_opt drti.drti_decl_ref with
     | Some decl ->
         get_decl_attributes (Decl decl)
     | None ->
@@ -1423,7 +1423,7 @@ let rec get_decl_attributes_for_callexpr_param an =
       get_decl_attributes_for_callexpr_param (Stmt stmt)
   | Stmt (DeclRefExpr (si, _, _, drti)) -> (
       L.debug Linters Verbose "#####POINTER LOOP UP: '%i'@\n" si.si_pointer ;
-      match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
+      match CAst_utils.get_decl_opt_with_decl_ref_opt drti.drti_decl_ref with
       | Some (FunctionDecl (_, _, _, fdi)) ->
           List.fold fdi.fdi_parameters ~f:(fun acc p -> List.append (get_attr_param p) acc) ~init:[]
       | Some (ParmVarDecl _ as d) ->

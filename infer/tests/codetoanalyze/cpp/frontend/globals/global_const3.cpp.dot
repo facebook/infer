@@ -1,0 +1,25 @@
+/* @generated */
+digraph cfg {
+"__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_1" [label="1: Start __infer_globals_initializer_G\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_1" -> "__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_3" ;
+"__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_2" [label="2: Exit __infer_globals_initializer_G \n  " color=yellow style=filled]
+	
+
+"__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const3.cpp|ice>$G:int const ); [line 8, column 1]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const3.cpp|ice>$G:int=0 [line 8, column 1]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_3" -> "__infer_globals_initializer_G.b72b93e9e8b8fb24886062df626ec074_2" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  i:int \n  " color=yellow style=filled]
+	
+
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
+	
+
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 15]\n  n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const3.cpp|ice>$G:int [line 10, column 23]\n  *&i:int=n$0 [line 10, column 15]\n " shape="box"]
+	
+
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
+}

@@ -168,14 +168,14 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
     match decl_opt with
     | Some (ObjCCategoryImplDecl (_, _, _, _, ocidi)) ->
         let category_decls =
-          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_category_decl with
+          match CAst_utils.get_decl_opt_with_decl_ref_opt ocidi.ocidi_category_decl with
           | Some (ObjCCategoryDecl (_, _, decls, _, _)) ->
               List.filter ~f:decl_matches decls
           | _ ->
               []
         in
         let class_decls =
-          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+          match CAst_utils.get_decl_opt_with_decl_ref_opt ocidi.ocidi_class_interface with
           | Some (ObjCInterfaceDecl (_, _, decls, _, _)) ->
               List.filter ~f:decl_matches decls
           | _ ->
@@ -183,7 +183,7 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
         in
         category_decls @ class_decls
     | Some (ObjCImplementationDecl (_, _, _, _, oidi)) -> (
-      match CAst_utils.get_decl_opt_with_decl_ref oidi.oidi_class_interface with
+      match CAst_utils.get_decl_opt_with_decl_ref_opt oidi.oidi_class_interface with
       | Some (ObjCInterfaceDecl (_, _, decls, _, _)) ->
           List.filter ~f:decl_matches decls
       | _ ->
@@ -207,7 +207,7 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
       in
       if not (ALVar.compare_str_with_alexp actual_kind desired_kind) then []
       else
-        match CAst_utils.get_decl_opt_with_decl_ref mdi.omdi_property_decl with
+        match CAst_utils.get_decl_opt_with_decl_ref_opt mdi.omdi_property_decl with
         | Some property_decl ->
             (* clang handles most cases: property declarations with
                accessor method declarations in the inferface; property
@@ -245,7 +245,7 @@ let transition_decl_to_decl_via_super d =
   | Clang_ast_t.ObjCImplementationDecl _ ->
       do_ObjCImplementationDecl d
   | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, idi) ->
-      decl_opt_to_ast_node_opt (CAst_utils.get_decl_opt_with_decl_ref idi.otdi_super)
+      decl_opt_to_ast_node_opt (CAst_utils.get_decl_opt_with_decl_ref_opt idi.otdi_super)
   | _ ->
       []
 
@@ -286,7 +286,9 @@ let transition_stmt_to_decl_via_pointer stmt =
     | None ->
         [] )
   | DeclRefExpr (_, _, _, decl_ref_expr_info) -> (
-    match CAst_utils.get_decl_opt_with_decl_ref decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+    match
+      CAst_utils.get_decl_opt_with_decl_ref_opt decl_ref_expr_info.Clang_ast_t.drti_decl_ref
+    with
     | Some decl ->
         [Decl decl]
     | None ->

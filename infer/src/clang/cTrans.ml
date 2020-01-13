@@ -188,13 +188,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     else f {trans_state with priority= Free} e
 
 
+  (* Translation will reset Ident counter, save it's state and restore it afterwards *)
+  let keep_ident_counter ~f =
+    let ident_state = Ident.NameGenerator.get_current () in
+    f () ;
+    Ident.NameGenerator.set_current ident_state
+
+
   let call_translation context decl =
     let open CContext in
-    (* translation will reset Ident counter, save it's state and restore it afterwards *)
-    let ident_state = Ident.NameGenerator.get_current () in
-    F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
-      `Translation decl ;
-    Ident.NameGenerator.set_current ident_state
+    keep_ident_counter ~f:(fun () ->
+        F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
+          `Translation decl )
+
+
+  let global_var_decl_translation context decl_ref =
+    let open CContext in
+    keep_ident_counter ~f:(fun () ->
+        CAst_utils.get_decl_opt_with_decl_ref decl_ref
+        |> Option.iter ~f:(fun decl ->
+               F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
+                 `Translation decl ) )
 
 
   let create_var_exp_tmp_var trans_state expr_info ~clang_pointer ~var_name =
@@ -782,12 +796,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     L.(debug Capture Verbose) "@\n@\n PVAR ='%s'@\n@\n" (Pvar.to_string pvar) ;
     let res_trans = mk_trans_result return empty_control in
-    match typ.desc with
-    | Tptr (_, Pk_reference) ->
-        (* dereference pvar due to the behavior of reference types in clang's AST *)
-        dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
-    | _ ->
-        res_trans
+    let res_trans =
+      match typ.desc with
+      | Tptr (_, Pk_reference) ->
+          (* dereference pvar due to the behavior of reference types in clang's AST *)
+          dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
+      | _ ->
+          res_trans
+    in
+    (* TODO: For now, it does not generate the initializers for static local variables. This is
+       unsound because a static local varaible should be initialized once globally.  On the other
+       hand, currently static local variables are initialized in the function body, i.e.,
+       initializing every time the function is called.
+
+       While we should move the initialization out the function body to solve the issue, it is not
+       good at the moment due to the name conflict of the initializers.  Infer introduces the
+       initializer names like [__infer_globals_initializer_\[var\]].  Thus, if multiple functions
+       have static local variables with the same name, their initializer names will conflict. *)
+    if Pvar.is_global pvar && not (Pvar.is_static_local pvar) then
+      global_var_decl_translation context decl_ref ;
+    res_trans
 
 
   and decl_ref_trans ?(is_constructor_init = false) ~context trans_state stmt_info decl_ref =
