@@ -177,8 +177,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open RacerDModels in
     let open RacerDDomain in
     let should_assume_returns_ownership callee_pname (call_flags : CallFlags.t) actuals =
+      Config.racerd_unknown_returns_owned
       (* non-interface methods with no summary and no parameters *)
-      ((not call_flags.cf_interface) && List.is_empty actuals)
+      || ((not call_flags.cf_interface) && List.is_empty actuals)
       || (* static [$Builder] creation methods *)
       creates_builder callee_pname
     in

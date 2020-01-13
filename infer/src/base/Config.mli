@@ -572,6 +572,8 @@ val racerd : bool
 
 val racerd_guardedby : bool
 
+val racerd_unknown_returns_owned : bool
+
 val reactive_capture : bool
 
 val reactive_mode : bool
