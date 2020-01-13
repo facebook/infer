@@ -1021,25 +1021,7 @@ let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
-let rec is_constant e =
-  match e with
-  | Var _ | Nondet _ -> false
-  | Ap1 (_, x) -> is_constant x
-  | Ap2 (_, x, y) -> is_constant x && is_constant y
-  | Ap3 (_, x, y, z) -> is_constant x && is_constant y && is_constant z
-  | ApN (_, xs) | RecN (_, xs) -> Vector.for_all ~f:is_constant xs
-  | Add args | Mul args ->
-      Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | Label _ | Float _ | Integer _ -> true
-
-type kind = Interpreted | Simplified | Atomic | Uninterpreted
-[@@deriving compare]
-
-let classify = function
-  | Add _ | Mul _ -> Interpreted
-  | Ap2 ((Eq | Dq), _, _) -> Simplified
-  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
-  | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
+(** Solve *)
 
 let solve_zero_eq = function
   | Add args ->
@@ -1049,49 +1031,3 @@ let solve_zero_eq = function
       let r = div n d in
       Some (c, r)
   | _ -> None
-
-let solve e f =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
-  ;
-  let rec solve_ e f s =
-    let solve_uninterp e f =
-      match (e, f) with
-      | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
-      | _ -> (
-        match (is_constant e, is_constant f) with
-        (* orient equation to discretionarily prefer term that is constant
-           or compares smaller as class representative *)
-        | true, false -> Some (Map.add_exn s ~key:f ~data:e)
-        | false, true -> Some (Map.add_exn s ~key:e ~data:f)
-        | _ ->
-            let key, data = if compare e f > 0 then (e, f) else (f, e) in
-            Some (Map.add_exn s ~key ~data) )
-    in
-    let concat_size args =
-      Vector.fold_until args ~init:zero
-        ~f:(fun sum -> function
-          | Ap2 (Memory, siz, _) -> Continue (add siz sum) | _ -> Stop None
-          )
-        ~finish:(fun _ -> None)
-    in
-    match (e, f) with
-    | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
-        let e_f = sub e f in
-        match solve_zero_eq e_f with
-        | Some (key, data) -> Some (Map.add_exn s ~key ~data)
-        | None -> solve_uninterp e_f zero )
-    | ApN (Concat, ms), ApN (Concat, ns) -> (
-      match (concat_size ms, concat_size ns) with
-      | Some p, Some q -> solve_uninterp e f >>= solve_ p q
-      | _ -> solve_uninterp e f )
-    | Ap2 (Memory, m, _), ApN (Concat, ns)
-     |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
-      match concat_size ns with
-      | Some p -> solve_uninterp e f >>= solve_ p m
-      | _ -> solve_uninterp e f )
-    | _ -> solve_uninterp e f
-  in
-  solve_ e f Map.empty
-  |>
-  [%Trace.retn fun {pf} ->
-    function Some s -> pf "%a" Var.Subst.pp s | None -> pf "false"]

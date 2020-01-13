@@ -244,9 +244,9 @@ val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
-val is_constant : t -> bool
 
-type kind = Interpreted | Simplified | Atomic | Uninterpreted
+(** Solve *)
 
-val classify : t -> kind
-val solve : t -> t -> t Map.t option
+val solve_zero_eq : t -> (t * t) option
+(** [solve_zero_eq d] is [Some (e, f)] if [d = 0] can be equivalently
+    expressed as [e = f] for some monomial subterm [e] of [d]. *)
