@@ -298,7 +298,12 @@ let checker {Callbacks.summary; exe_env} =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let proc_data = ProcData.make summary tenv (init_extras summary) in
-  let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) in
+  let ret_path =
+    let ret_var = Procdesc.get_ret_var proc_desc in
+    let ret_typ = Procdesc.get_ret_type proc_desc in
+    Domain.LocalAccessPath.make_from_pvar ret_var ret_typ proc_name
+  in
+  let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) ret_path in
   match Analyzer.compute_post proc_data ~initial with
   | Some post ->
       let is_void_func = Procdesc.get_ret_type proc_desc |> Typ.is_void in

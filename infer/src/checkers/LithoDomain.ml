@@ -220,6 +220,22 @@ module MethodCalled = struct
 
   include AbstractDomain.Map (Key) (MethodCalls)
 
+  let join_ignore_null_ret =
+    let override created_locations ~from ~to_ =
+      let f k from_v to_v =
+        if CreatedLocations.mem k.Key.created_location created_locations then from_v else to_v
+      in
+      merge f from to_
+    in
+    fun ~ret_x ~ret_y ~x ~y ->
+      let res = join x y in
+      let is_null_x = CreatedLocations.is_empty ret_x in
+      let is_null_y = CreatedLocations.is_empty ret_y in
+      if is_null_x && not is_null_y then override ret_y ~from:y ~to_:res
+      else if is_null_y && not is_null_x then override ret_x ~from:x ~to_:res
+      else res
+
+
   let add_one created_location v x =
     let f = function
       | None ->
@@ -338,6 +354,14 @@ module Mem = struct
   let join x y =
     { created= Created.join x.created y.created
     ; method_called= MethodCalled.join x.method_called y.method_called }
+
+
+  let join_ignore_null_ret ret_path x y =
+    { created= Created.join x.created y.created
+    ; method_called=
+        (let ret_x = Created.lookup ret_path x.created in
+         let ret_y = Created.lookup ret_path y.created in
+         MethodCalled.join_ignore_null_ret ~ret_x ~ret_y ~x:x.method_called ~y:y.method_called ) }
 
 
   let widen ~prev ~next ~num_iters =
@@ -463,7 +487,7 @@ module Mem = struct
     update_latest_callsite callsite ~prev:caller ~next
 end
 
-type t = {no_return_called: Mem.t; return_called: Mem.t}
+type t = {ret_path: LocalAccessPath.t; no_return_called: Mem.t; return_called: Mem.t}
 
 let pp fmt {no_return_called; return_called} =
   F.fprintf fmt "@[<v 0>@[NoReturnCalled:@;%a@]@,@[ReturnCalled:@;%a@]@]" Mem.pp no_return_called
@@ -478,17 +502,19 @@ let leq ~lhs ~rhs =
 
 
 let join x y =
-  { no_return_called= Mem.join x.no_return_called y.no_return_called
-  ; return_called= Mem.join x.return_called y.return_called }
+  { ret_path= x.ret_path
+  ; no_return_called= Mem.join x.no_return_called y.no_return_called
+  ; return_called= Mem.join_ignore_null_ret x.ret_path x.return_called y.return_called }
 
 
 let widen ~prev ~next ~num_iters =
-  { no_return_called= Mem.widen ~prev:prev.no_return_called ~next:next.no_return_called ~num_iters
+  { ret_path= prev.ret_path
+  ; no_return_called= Mem.widen ~prev:prev.no_return_called ~next:next.no_return_called ~num_iters
   ; return_called= Mem.widen ~prev:prev.return_called ~next:next.return_called ~num_iters }
 
 
-let init tenv pname formals =
-  {no_return_called= Mem.init tenv pname formals; return_called= Mem.empty}
+let init tenv pname formals ret_path =
+  {ret_path; no_return_called= Mem.init tenv pname formals; return_called= Mem.empty}
 
 
 let map_no_return_called f x = {x with no_return_called= f x.no_return_called}
@@ -503,8 +529,8 @@ let call_builder ~ret ~receiver callee =
 
 let call_build_method ~ret ~receiver = map_no_return_called (Mem.call_build_method ~ret ~receiver)
 
-let call_return {no_return_called; return_called} =
-  {no_return_called= Mem.empty; return_called= Mem.join no_return_called return_called}
+let call_return {ret_path; no_return_called; return_called} =
+  {ret_path; no_return_called= Mem.empty; return_called= Mem.join no_return_called return_called}
 
 
 let subst ~callsite ~formals ~actuals ~ret_id_typ ~caller_pname ~callee_pname ~caller ~callee =

@@ -13,6 +13,8 @@ module LocalAccessPath : sig
 
   val make : AccessPath.t -> Procname.t -> t
 
+  val make_from_pvar : Pvar.t -> Typ.t -> Procname.t -> t
+
   val make_from_access_expression : HilExp.AccessExpression.t -> Procname.t -> t
 end
 
@@ -47,7 +49,7 @@ val subst :
 (** type for saving in summary payload *)
 type summary = Mem.t
 
-val init : Tenv.t -> Procname.t -> (Pvar.t * Typ.t) list -> t
+val init : Tenv.t -> Procname.t -> (Pvar.t * Typ.t) list -> LocalAccessPath.t -> t
 
 val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 

@@ -460,9 +460,24 @@ public class RequiredProps {
     return builder;
   }
 
-  public Component callCreateJoinOk_FP(boolean b) {
+  public Component callCreateJoinOk(boolean b) {
 
     return createJoin(b).prop1(new Object()).build();
+  }
+
+  public MyComponent.Builder returnNullWithProp3(boolean b, MyComponent.Builder builder) {
+    if (b) {
+      builder.prop3(new Object());
+      return null;
+    }
+    return builder;
+  }
+
+  public void callReturnNullWithProp3_FP(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (returnNullWithProp3(b, builder) == null) {
+      builder.prop1(new Object()).build();
+    }
   }
 
   private static Component setProp3AndBuild(MyComponent.Builder builder) {
