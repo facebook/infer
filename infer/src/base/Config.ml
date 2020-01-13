@@ -92,6 +92,8 @@ type build_system =
   | BXcode
 [@@deriving compare]
 
+type scheduler = File | SyntacticCallGraph [@@deriving equal]
+
 let equal_build_system = [%compare.equal: build_system]
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
@@ -2353,6 +2355,12 @@ and export_changed_functions_output =
     "Name of file for export-changed-functions results"
 
 
+and scheduler =
+  CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
+    ~symbols:[("File", File); ("SyntacticCallGraph", SyntacticCallGraph)]
+    "Specify the scheduler used for the analysis phase"
+
+
 and test_filtering =
   CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
     "List all the files Infer can report on (should be called from the root of the project)"
@@ -3167,13 +3175,15 @@ and resource_leak = !resource_leak
 
 and results_dir = !results_dir
 
-and seconds_per_iteration = !seconds_per_iteration
-
-and select = !select
+and scheduler = !scheduler
 
 and scuba_logging = !scuba_logging
 
 and scuba_normals = !scuba_normals
+
+and seconds_per_iteration = !seconds_per_iteration
+
+and select = !select
 
 and show_buckets = !print_buckets
 

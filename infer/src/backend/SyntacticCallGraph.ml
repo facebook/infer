@@ -108,3 +108,6 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
     next_aux ()
   in
   {remaining_tasks; is_empty; finished; next}
+
+
+let make sources = ProcessPool.TaskGenerator.chain (bottom_up sources) (FileScheduler.make sources)

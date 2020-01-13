@@ -25,6 +25,8 @@ type build_system =
   | BNdk
   | BXcode
 
+type scheduler = File | SyntacticCallGraph [@@deriving equal]
+
 val equal_build_system : build_system -> build_system -> bool
 
 val build_system_of_exe_name : string -> build_system
@@ -603,6 +605,8 @@ val resource_leak : bool
 val rest : string list
 
 val results_dir : string
+
+val scheduler : scheduler
 
 val scuba_logging : bool
 

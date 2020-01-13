@@ -11,6 +11,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module CLOpt = CommandLineOption
 
 let clear_caches () =
   Ondemand.LocalCache.clear () ; Summary.OnDisk.clear_cache () ; Procname.SQLite.clear_cache ()
@@ -113,11 +114,15 @@ let get_source_files_to_analyze ~changed_files =
 
 
 let schedule sources =
-  if Config.call_graph_schedule then
-    ProcessPool.TaskGenerator.chain
-      (SyntacticCallGraph.bottom_up sources)
-      (FileScheduler.make sources)
-  else FileScheduler.make sources
+  if Config.call_graph_schedule then (
+    CLOpt.warnf "WARNING: '--call-graph-schedule' is deprecated. Use '--scheduler' instead.@." ;
+    SyntacticCallGraph.make sources )
+  else
+    match Config.scheduler with
+    | SyntacticCallGraph ->
+        SyntacticCallGraph.make sources
+    | File ->
+        FileScheduler.make sources
 
 
 let analyze source_files_to_analyze =
