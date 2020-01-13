@@ -46,8 +46,7 @@ val fold_until :
   -> finish:('accum -> 'final)
   -> 'final
 
-(* val exists : 'a t -> f:('a -> bool) -> bool *)
-
+val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 
 (* val count : 'a t -> f:('a -> bool) -> int *)
@@ -87,10 +86,8 @@ val init : int -> f:(int -> 'a) -> 'a t
 
 val concat : 'a t list -> 'a t
 val copy : 'a t -> 'a t
-
-(* val sub : ('a t, 'a t) Base__Blit_intf.sub *)
-(* val subo : ('a t, 'a t) Base__Blit_intf.subo *)
-
+val sub : pos:int -> len:int -> 'a t -> 'a t
+val subo : ?pos:int -> ?len:int -> 'a t -> 'a t
 val of_ : 'a -> 'a t
 
 val of_array : 'a array -> 'a t
@@ -148,8 +145,7 @@ val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
 (* val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool *)
 (* val filter : 'a t -> f:('a -> bool) -> 'a t *)
-(* val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t *)
-
+val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 val of_list_rev : 'a list -> 'a t
 
 (* val of_list_map : 'a list -> f:('a -> 'b) -> 'b t *)
@@ -182,8 +178,7 @@ val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 val unzip : ('a * 'b) t -> 'a t * 'b t
 
 (* val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t *)
-(* val last : 'a t -> 'a *)
-
+val last : 'a t -> 'a
 val empty : 'a t
 
 (* val to_sequence : 'a t -> 'a Sequence.t *)

@@ -44,11 +44,14 @@ let fold_right x ~f ~init = Array.fold_right (a x) ~f ~init
 let fold_result x ~init ~f = Array.fold_result (a x) ~init ~f
 let fold_until x ~init ~f ~finish = Array.fold_until (a x) ~init ~f ~finish
 let fold2_exn x y ~init ~f = Array.fold2_exn (a x) (a y) ~init ~f
+let exists x ~f = Array.exists (a x) ~f
 let for_all x ~f = Array.for_all (a x) ~f
 let for_all2_exn x y ~f = Array.for_all2_exn (a x) (a y) ~f
+let filteri x ~f = v (Array.filteri (a x) ~f)
 
 external get : 'a t -> int -> 'a = "%array_safe_get"
 
+let last x = Array.last (a x)
 let init n ~f = v (Array.init n ~f)
 let is_empty x = Array.is_empty (a x)
 let iter x ~f = Array.iter (a x) ~f
@@ -78,6 +81,8 @@ let fold_map x ~init ~f =
 
 let concat xs = v (Array.concat (al xs))
 let copy x = v (Array.copy (a x))
+let sub ~pos ~len x = v (Array.sub ~pos ~len (a x))
+let subo ?pos ?len x = v (Array.subo ?pos ?len (a x))
 let of_ x = v [|x|]
 let of_array = v
 let of_list x = v (Array.of_list x)
