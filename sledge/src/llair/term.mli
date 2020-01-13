@@ -245,5 +245,8 @@ val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
 val is_constant : t -> bool
-val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
+
+type kind = Interpreted | Simplified | Atomic | Uninterpreted
+
+val classify : t -> kind
 val solve : t -> t -> t Map.t option

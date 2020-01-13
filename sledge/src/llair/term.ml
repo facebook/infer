@@ -1032,11 +1032,14 @@ let rec is_constant e =
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Label _ | Float _ | Integer _ -> true
 
+type kind = Interpreted | Simplified | Atomic | Uninterpreted
+[@@deriving compare]
+
 let classify = function
-  | Add _ | Mul _ -> `Interpreted
-  | Ap2 ((Eq | Dq), _, _) -> `Simplified
-  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> `Uninterpreted
-  | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> `Atomic
+  | Add _ | Mul _ -> Interpreted
+  | Ap2 ((Eq | Dq), _, _) -> Simplified
+  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
+  | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
 
 let solve e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]

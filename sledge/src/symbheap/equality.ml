@@ -32,8 +32,8 @@ let classes r =
   in
   Map.fold r.rep ~init:empty_map ~f:(fun ~key ~data cls ->
       match Term.classify key with
-      | `Interpreted | `Atomic -> add key data cls
-      | `Simplified | `Uninterpreted ->
+      | Interpreted | Atomic -> add key data cls
+      | Simplified | Uninterpreted ->
           add (Term.map ~f:(apply r.rep) key) data cls )
 
 (** Pretty-printing *)
@@ -86,7 +86,7 @@ let in_car r e = Map.mem r.rep e
 
 let rec iter_max_solvables e ~f =
   match Term.classify e with
-  | `Interpreted -> Term.iter ~f:(iter_max_solvables ~f) e
+  | Interpreted -> Term.iter ~f:(iter_max_solvables ~f) e
   | _ -> f e
 
 let invariant r =
@@ -94,7 +94,7 @@ let invariant r =
   @@ fun () ->
   Map.iteri r.rep ~f:(fun ~key:a ~data:_ ->
       (* no interpreted terms in carrier *)
-      assert (Poly.(Term.classify a <> `Interpreted)) ;
+      assert (Poly.(Term.classify a <> Interpreted)) ;
       (* carrier is closed under subterms *)
       iter_max_solvables a ~f:(fun b ->
           assert (
@@ -109,9 +109,9 @@ let true_ = {sat= true; rep= empty_map} |> check invariant
 (** apply a subst to maximal non-interpreted subterms *)
 let rec norm s a =
   match Term.classify a with
-  | `Interpreted -> Term.map ~f:(norm s) a
-  | `Simplified -> apply s (Term.map ~f:(norm s) a)
-  | `Atomic | `Uninterpreted -> apply s a
+  | Interpreted -> Term.map ~f:(norm s) a
+  | Simplified -> apply s (Term.map ~f:(norm s) a)
+  | Atomic | Uninterpreted -> apply s a
 
 (** terms are congruent if equal after normalizing subterms *)
 let congruent r a b =
@@ -131,20 +131,20 @@ let lookup r a =
     terms, congruence composed with rep *)
 let rec canon r a =
   match Term.classify a with
-  | `Interpreted -> Term.map ~f:(canon r) a
-  | `Simplified | `Uninterpreted -> lookup r (Term.map ~f:(canon r) a)
-  | `Atomic -> apply r.rep a
+  | Interpreted -> Term.map ~f:(canon r) a
+  | Simplified | Uninterpreted -> lookup r (Term.map ~f:(canon r) a)
+  | Atomic -> apply r.rep a
 
 (** add a term to the carrier *)
 let rec extend a r =
   match Term.classify a with
-  | `Interpreted | `Simplified -> Term.fold ~f:extend a ~init:r
-  | `Uninterpreted ->
+  | Interpreted | Simplified -> Term.fold ~f:extend a ~init:r
+  | Uninterpreted ->
       Map.find_or_add r.rep a
         ~if_found:(fun _ -> r)
         ~default:a
         ~if_added:(fun rep -> Term.fold ~f:extend a ~init:{r with rep})
-  | `Atomic -> r
+  | Atomic -> r
 
 let extend a r = extend a r |> check invariant
 
