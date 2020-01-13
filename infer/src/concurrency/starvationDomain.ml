@@ -83,20 +83,26 @@ module ThreadDomain = struct
 end
 
 module Lock = struct
-  type var = Var.t
+  (** var type used only for printing, not comparisons *)
+  module IgnoreVar = struct
+    type t = Var.t
 
-  let compare_var = Var.compare_modulo_this
+    let compare _x _y = 0
 
-  type path = (var * Typ.t) * AccessPath.access list [@@deriving compare]
+    let equal _x _y = true
+  end
+
+  (** access path that does not ignore the type (like the original AccessPath.t) but which instead
+      ignores the root variable for comparisons; this is taken care of by the root type *)
+  type path = (IgnoreVar.t * Typ.t) * AccessPath.access list [@@deriving compare, equal]
 
   type root =
     | Global of Mangled.t
     | Class of Typ.name
     | Parameter of int  (** method parameter represented by its 0-indexed position *)
+  [@@deriving compare, equal]
 
-  type t = {root: root [@compare.ignore]; path: path} [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = {root: root; path: path} [@@deriving compare, equal]
 
   (* using an indentifier for a class object, create an access path representing that lock;
      this is for synchronizing on Java class objects only *)
