@@ -48,7 +48,7 @@ let templated_name_of_class_name class_name =
   | CppClass (qual_name, template_spec_info) ->
       (qual_name, template_args_of_template_spec_info template_spec_info)
   | JavaClass mangled_name ->
-      (QualifiedCppName.of_list [Mangled.to_string mangled_name], [])
+      (QualifiedCppName.of_list [JavaClassName.to_string mangled_name], [])
 
 
 let templated_name_of_java java =

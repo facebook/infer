@@ -410,7 +410,9 @@ let rec get_java_class_initializer tenv = function
   | Lfield (Lvar pvar, fn, typ) when Pvar.is_global pvar -> (
     match Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) fn typ with
     | Some (field_typ, annot) when Annot.Item.is_final annot ->
-        let java_class = Typ.JavaClass (Pvar.get_name pvar) in
+        let java_class =
+          Typ.JavaClass (JavaClassName.from_string (Mangled.to_string_full (Pvar.get_name pvar)))
+        in
         Some (Procname.Java (Procname.Java.get_class_initializer java_class), pvar, fn, field_typ)
     | _ ->
         None )

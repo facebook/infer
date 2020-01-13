@@ -109,7 +109,7 @@ and name =
      args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
      "MyClass<int>", "InnerClass" *)
   | CppClass of QualifiedCppName.t * template_spec_info
-  | JavaClass of Mangled.t
+  | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
 [@@deriving compare]

@@ -66,7 +66,7 @@ let rec add_loads_of_exp summary tenv loc (exp : Exp.t) astate =
   match exp with
   | Const (Cclass class_ident) ->
       (* [X.class] expressions *)
-      let class_str = Ident.name_to_string class_ident |> Mangled.from_string in
+      let class_str = Ident.name_to_string class_ident |> JavaClassName.from_string in
       let class_name = Typ.JavaClass class_str in
       load_class summary tenv loc astate class_name
   | Sizeof {typ= {desc= Tarray {elt}}} ->

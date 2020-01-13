@@ -208,7 +208,11 @@ module TransferFunctions = struct
   let assign_java_enum_values id callee_pname mem =
     match Procname.get_class_type_name callee_pname with
     | Some (JavaClass class_name as typename) ->
-        let class_var = Loc.of_var (Var.of_pvar (Pvar.mk_global class_name)) in
+        let class_var =
+          Loc.of_var
+            (Var.of_pvar
+               (Pvar.mk_global (Mangled.from_string (JavaClassName.to_string class_name))))
+        in
         let fn = Fieldname.make typename "$VALUES" in
         let v = Dom.Mem.find (Loc.append_field class_var ~fn) mem in
         Dom.Mem.add_stack (Loc.of_id id) v mem

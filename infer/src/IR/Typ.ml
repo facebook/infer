@@ -191,7 +191,7 @@ module T = struct
     | CStruct of QualifiedCppName.t
     | CUnion of QualifiedCppName.t
     | CppClass of QualifiedCppName.t * template_spec_info
-    | JavaClass of Mangled.t
+    | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
   [@@deriving compare]
@@ -333,7 +333,7 @@ and pp_name_c_syntax pe f = function
   | CppClass (name, template_spec) ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
   | JavaClass name ->
-      Mangled.pp f name
+      JavaClassName.pp f name
 
 
 and pp_template_spec_info pe f = function
@@ -396,7 +396,7 @@ module Name = struct
     | CStruct _ | CUnion _ | CppClass _ | ObjcClass _ | ObjcProtocol _ ->
         qual_name n |> QualifiedCppName.to_qual_string
     | JavaClass name ->
-        Mangled.to_string name
+        JavaClassName.to_string name
 
 
   let pp fmt tname =
@@ -478,7 +478,7 @@ module Name = struct
             F.pp_print_string fmt type_name
     end
 
-    let from_string name_str = JavaClass (Mangled.from_string name_str)
+    let from_string name_str = JavaClass (JavaClassName.from_string name_str)
 
     let from_package_class package_name class_name =
       if String.equal package_name "" then from_string class_name
