@@ -1041,6 +1041,15 @@ let classify = function
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
 
+let solve_zero_eq = function
+  | Add args ->
+      let c, q = Qset.min_elt_exn args in
+      let n = Sum.to_term (Qset.remove args c) in
+      let d = rational (Q.neg q) in
+      let r = div n d in
+      Some (c, r)
+  | _ -> None
+
 let solve e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
   ;
@@ -1067,14 +1076,10 @@ let solve e f =
     in
     match (e, f) with
     | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
-      match sub e f with
-      | Add args ->
-          let c, q = Qset.min_elt_exn args in
-          let n = Sum.to_term (Qset.remove args c) in
-          let d = rational (Q.neg q) in
-          let r = div n d in
-          Some (Map.add_exn s ~key:c ~data:r)
-      | e_f -> solve_uninterp e_f zero )
+        let e_f = sub e f in
+        match solve_zero_eq e_f with
+        | Some (key, data) -> Some (Map.add_exn s ~key ~data)
+        | None -> solve_uninterp e_f zero )
     | ApN (Concat, ms), ApN (Concat, ns) -> (
       match (concat_size ms, concat_size ns) with
       | Some p, Some q -> solve_uninterp e f >>= solve_ p q
