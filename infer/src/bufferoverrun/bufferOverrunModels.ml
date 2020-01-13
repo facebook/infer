@@ -347,6 +347,14 @@ let cast exp size_exp =
   {exec; check= no_check}
 
 
+let id exp =
+  let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+    let v = Sem.eval integer_type_widths exp mem in
+    model_by_value v ret_id mem
+  in
+  {exec; check= no_check}
+
+
 let by_value =
   let exec ~value _ ~ret:(ret_id, _) mem = model_by_value value ret_id mem in
   fun value -> {exec= exec ~value; check= no_check}
@@ -1398,7 +1406,11 @@ module Call = struct
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
       ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_google "common.base.Preconditions"
-        &:: "checkArgument" <>$ capt_exp $--> Preconditions.check_argument
+        &:: "checkArgument" <>$ capt_exp $+...$--> Preconditions.check_argument
+      ; +PatternMatch.implements_google "common.base.Preconditions"
+        &:: "checkState" <>$ capt_exp $+...$--> Preconditions.check_argument
+      ; +PatternMatch.implements_google "common.base.Preconditions"
+        &:: "checkNotNull" <>$ capt_exp $+...$--> id
       ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
