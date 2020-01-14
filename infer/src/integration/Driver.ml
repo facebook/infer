@@ -242,11 +242,6 @@ let python_capture build_system build_cmd =
                 [] )
           @ (if not Config.debug_mode then [] else ["--debug"])
           @ (if Config.filtering then [] else ["--no-filtering"])
-          @ ( if
-              (not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode))
-              || not in_buck_mode
-            then []
-            else ["--use-flavors"] )
           @ "-j" :: string_of_int Config.jobs
             :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
           @ (if not Config.pmd_xml then [] else ["--pmd-xml"])

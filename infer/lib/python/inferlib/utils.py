@@ -95,25 +95,6 @@ def dump_json_to_path(
                   default=default, sort_keys=sort_keys, **kw)
 
 
-class Timer:
-    """Simple logging timer. Initialize with a printf like logging function."""
-    def __init__(self, logger=lambda x: None):
-        self._logger = logger
-        self._start = 0
-
-    def start(self, message=None, *args):
-        self._start = time.time()
-        if message:
-            self._logger(message, *args)
-
-    def stop(self, message=None, *args):
-        self._stop = time.time()
-        self._dt = self._stop - self._start
-        if message:
-            self._logger(message + ' (%.2fs)', *(args + (self._dt,)))
-        return self._dt
-
-
 def mkdir_if_not_exists(path):
     try:
         os.mkdir(path)
