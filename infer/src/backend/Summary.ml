@@ -157,11 +157,6 @@ module OnDisk = struct
       [Config.specs_dir_name; specs_filename pname]
 
 
-  (** paths to the .specs file for the given procedure in the current spec libraries *)
-  let specs_library_filename specs_dir pname =
-    DB.filename_from_string (Filename.concat specs_dir (specs_filename pname))
-
-
   (** paths to the .specs file for the given procedure in the models folder *)
   let specs_models_filename pname =
     DB.filename_from_string (Filename.concat Config.biabduction_models_dir (specs_filename pname))
@@ -186,14 +181,6 @@ module OnDisk = struct
 
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table =
-    let rec or_load_summary_libs specs_dirs proc_name summ_opt =
-      match (summ_opt, specs_dirs) with
-      | Some _, _ | _, [] ->
-          summ_opt
-      | None, specs_dir :: specs_dirs ->
-          load_from_file (specs_library_filename specs_dir proc_name)
-          |> or_load_summary_libs specs_dirs proc_name
-    in
     let load_summary_ziplibs zip_specs_filename =
       let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
       ZipLib.load summary_serializer zip_specs_path
@@ -206,7 +193,6 @@ module OnDisk = struct
         load_from_file (specs_filename_of_procname proc_name)
         |> or_from load_from_file specs_models_filename proc_name
         |> or_from load_summary_ziplibs specs_filename proc_name
-        |> or_load_summary_libs Config.specs_library proc_name
       in
       Option.iter ~f:(add proc_name) summ_opt ;
       summ_opt

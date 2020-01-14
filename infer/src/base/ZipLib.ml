@@ -32,35 +32,17 @@ let zip_libraries =
   (* delay until load is called, to avoid stating/opening files at init time *)
   lazy
     (let mk_zip_lib zip_filename = {zip_filename; zip_channel= lazy (Zip.open_in zip_filename)} in
-     let zip_libs =
-       let load_zip fname =
-         if Filename.check_suffix fname ".jar" then
-           (* fname is a zip of specs *)
-           Some (mk_zip_lib fname)
-         else (* fname is a dir of specs *)
-           None
-       in
-       (* Order matters: jar files should appear in the order in which they should be searched for
-          specs files. [Config.specs_library] is in reverse order of appearance on the command
-          line. *)
-       List.rev_filter_map Config.specs_library ~f:load_zip
-     in
      if
        Config.biabduction
        && (not Config.biabduction_models_mode)
        && Sys.file_exists Config.biabduction_models_jar = `Yes
-     then mk_zip_lib Config.biabduction_models_jar :: zip_libs
-     else zip_libs )
+     then Some (mk_zip_lib Config.biabduction_models_jar)
+     else None )
 
 
-(** Search path in the list of zip libraries and use a cache directory to save already deserialized
-    data *)
 let load serializer path =
-  let rec loop = function
-    | [] ->
-        None
-    | zip_library :: other_libraries ->
-        let opt = load_data serializer path zip_library in
-        if Option.is_some opt then opt else loop other_libraries
-  in
-  loop (Lazy.force zip_libraries)
+  (* NOTE: This and [zib_libraries] used to also work with a list of where to find "zip libraries"
+     but now this only handles at most one such library: the biabduction models. There's a chance
+     that this code looks weirder than it should as a result. *)
+  Option.bind (Lazy.force zip_libraries) ~f:(fun zip_library ->
+      load_data serializer path zip_library )

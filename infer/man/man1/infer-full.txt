@@ -1737,12 +1737,6 @@ INTERNAL OPTIONS
        --sources-reset
            Set --sources to the empty list.
 
-       --specs-library,-L +dir|jar
-           Search for .spec files in given directory or jar file
-
-       --specs-library-reset
-           Set --specs-library to the empty list.
-
        --sqlite-vfs string
            VFS for SQLite
 

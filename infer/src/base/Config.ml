@@ -7,7 +7,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 
 (** Configuration values: either constant, determined at compile time, or set at startup time by
     system calls, environment variables, or command line options *)
@@ -2239,35 +2238,6 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
-and specs_library =
-  let specs_library =
-    CLOpt.mk_path_list ~deprecated:["lib"] ~long:"specs-library" ~short:'L' ~meta:"dir|jar"
-      "Search for .spec files in given directory or jar file"
-  in
-  let (_ : string ref) =
-    (* Given a filename with a list of paths, convert it into a list of string iff they are
-       absolute *)
-    let read_specs_dir_list_file fname =
-      match Utils.read_file (resolve fname) with
-      | Ok pathlist ->
-          pathlist
-      | Error error ->
-          L.(die UserError) "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
-    in
-    (* Add the newline-separated directories listed in <file> to the list of directories to be
-       searched for .spec files *)
-    CLOpt.mk_path
-      ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
-      ~long:"specs-library-index" ~default:""
-      ~f:(fun file ->
-        specs_library := read_specs_dir_list_file file @ !specs_library ;
-        "" )
-      ~in_help:InferCommand.[(Analyze, manual_generic)]
-      ~meta:"file" ""
-  in
-  specs_library
-
-
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -2515,18 +2485,6 @@ let javac_classes_out =
         CLOpt.extend_env_args ["--results-dir"; classes_out_infer] ;
         results_dir := classes_out_infer ) ;
       classes_out )
-    ""
-
-
-and _ =
-  CLOpt.mk_string_opt ~parse_mode:CLOpt.Javac ~deprecated:["classpath"; "cp"] ~long:""
-    ~f:(fun classpath ->
-      if !buck then (
-        let paths = String.split classpath ~on:':' in
-        let files = List.filter paths ~f:(fun path -> Sys.is_file path = `Yes) in
-        CLOpt.extend_env_args (List.concat_map files ~f:(fun file -> ["--specs-library"; file])) ;
-        specs_library := List.rev_append files !specs_library ) ;
-      classpath )
     ""
 
 
@@ -3340,8 +3298,6 @@ let clang_frontend_action_string =
    JVM semantics and creates procedure descriptions during symbolic execution using the type
    information found in the abstract state *)
 let dynamic_dispatch = biabduction
-
-let specs_library = !specs_library
 
 let quandaryBO_filtered_issues =
   if quandaryBO then
