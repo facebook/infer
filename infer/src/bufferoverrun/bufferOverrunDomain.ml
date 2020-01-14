@@ -119,7 +119,7 @@ module Val = struct
         F.fprintf fmt " (modeled_range:%a)" ModeledRange.pp range
     in
     let trace_pp fmt traces =
-      if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
+      if Config.bo_debug >= 3 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
     F.fprintf fmt "(%a%a%a%a, %a, %a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
       itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range PowLoc.pp x.powloc
