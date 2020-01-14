@@ -22,7 +22,7 @@ module Java = struct
   [@@deriving compare]
 
   (* TODO: use Mangled.t here *)
-  type java_type = Typ.Name.Java.Split.t [@@deriving compare]
+  type java_type = Typ.Name.Java.Split.t [@@deriving compare, equal]
 
   let java_void = Typ.Name.Java.Split.make "void"
 
@@ -209,11 +209,11 @@ module Parameter = struct
   (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to
       struct, with [name] being the name of the struct, [None] means the parameter is of some other
       type. *)
-  type clang_parameter = Typ.Name.t option [@@deriving compare]
+  type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
   type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let of_typ typ =
     match typ.Typ.desc with Typ.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None

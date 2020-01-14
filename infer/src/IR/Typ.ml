@@ -364,7 +364,7 @@ let to_string typ =
 
 
 module Name = struct
-  type t = name [@@deriving compare]
+  type t = name [@@deriving compare, equal]
 
   let equal = [%compare.equal: t]
 
@@ -447,7 +447,7 @@ module Name = struct
       (** e.g. {type_name="int"; package=None} for primitive types
       * or {type_name="PrintWriter"; package=Some "java.io"} for objects.
       *)
-      type t = {package: string option; type_name: string} [@@deriving compare]
+      type t = {package: string option; type_name: string} [@@deriving compare, equal]
 
       let make ?package type_name = {type_name; package}
 

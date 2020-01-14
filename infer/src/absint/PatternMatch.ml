@@ -334,13 +334,20 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
 
 
 let is_override_of proc_name =
-  let method_name = Procname.get_method proc_name in
-  let parameter_length = List.length (Procname.get_parameters proc_name) in
-  Staged.stage (fun pname ->
-      (not (Procname.is_constructor pname))
-      && String.equal (Procname.get_method pname) method_name
-      (* TODO (T32979782): match parameter types, taking subtyping and type erasure into account *)
-      && Int.equal (List.length (Procname.get_parameters pname)) parameter_length )
+  let sub_method_name = Procname.get_method proc_name in
+  let sub_params = Procname.get_parameters proc_name in
+  Staged.stage (fun super_pname ->
+      let super_method_name = Procname.get_method super_pname in
+      let super_params = Procname.get_parameters super_pname in
+      (not (Procname.is_constructor super_pname))
+      && String.equal super_method_name sub_method_name
+      (* Check that parameter types match exactly (no subtyping or what not). *)
+      &&
+      match List.for_all2 sub_params super_params ~f:Procname.Parameter.equal with
+      | List.Or_unequal_lengths.Ok res ->
+          res
+      | List.Or_unequal_lengths.Unequal_lengths ->
+          false )
 
 
 let override_find ?(check_current_type = true) f tenv proc_name =

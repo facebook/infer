@@ -215,7 +215,7 @@ module Name : sig
 
   module Java : sig
     module Split : sig
-      type t [@@deriving compare]
+      type t [@@deriving compare, equal]
 
       val make : ?package:string -> string -> t
 

@@ -30,6 +30,8 @@ interface Overloads {
   String overload(String arg1, int arg2);
 
   String overload(String arg1, String arg2);
+
+  void notOverload(@Nullable Object arg);
 }
 
 // Check return annotations
@@ -96,15 +98,14 @@ abstract class ArgValToValAndNullToNullOK implements VariousMethods {
 
 // Check overrides + overloads
 
-// This is 'good' cases (should be OK except 1 FP due to broken is_override logic)
+// These are 'good' cases with real overrides
 abstract class OverrideExistingCorrectlyOK implements Overloads {
-  // This is FP
   public String overload(int arg) {
     return "OK";
   }
 
   public String overload(@Nullable String arg) {
-    return arg;
+    return "OK";
   }
 
   public String overload(String arg1, int arg2) {
@@ -116,15 +117,19 @@ abstract class OverrideExistingCorrectlyOK implements Overloads {
   }
 }
 
-// These are FP cases that get reported due to broken is_override logic
-abstract class NoOverrideSinceDifferentTypesFP implements Overloads {
+abstract class NoOverrideSinceDifferentTypesOK implements Overloads {
   @Nullable
   public String overload(Object arg) {
-    return arg.toString();
+    return null;
   }
 
   public String overload(Double arg) {
     return arg.toString();
+  }
+
+  // Although, String is a subtype of Object, this method is not an override
+  public void notOverload(String arg) {
+    return;
   }
 }
 

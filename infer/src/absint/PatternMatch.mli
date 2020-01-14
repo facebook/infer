@@ -152,3 +152,5 @@ val find_superclasses_with_attributes :
 (** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
 
 val is_override_of : Procname.t -> (Procname.t -> bool) Staged.t
+(** For a given [procname] checks if it's an override of some other [procname]. NOTE: the
+    implementation is not complete with respect to Java's generics and type erasure. *)
