@@ -482,6 +482,13 @@ let assert_supported_mode required_analyzer requested_mode_string =
       requested_mode_string analyzer_string analyzer_string
 
 
+let error_no_buck_mode_specified () =
+  L.die UserError
+    "`buck` command detected on the command line but no Buck integration has been selected. Please \
+     specify `--buck-clang`, `--buck-java`, or `--buck-compilation-database`. See `infer capture \
+     --help` for more information."
+
+
 let assert_supported_build_system build_system =
   match (build_system : Config.build_system) with
   | BAnt | BGradle | BJava | BJavac | BMvn ->
@@ -494,7 +501,7 @@ let assert_supported_build_system build_system =
       let analyzer, build_string =
         match Config.buck_mode with
         | None ->
-            (`Java, "buck default java integration")
+            error_no_buck_mode_specified ()
         | Some ClangFlavors ->
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
@@ -522,6 +529,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       in
       assert_supported_build_system build_system ;
       match ((build_system : Config.build_system), buck_mode) with
+      | BBuck, None ->
+          error_no_buck_mode_specified ()
       | BBuck, Some (ClangCompilationDB deps) ->
           BuckCompilationDB (deps, prog, List.append args (List.rev Config.buck_build_args))
       | BBuck, Some ClangFlavors when Config.linters ->
@@ -543,7 +552,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Maven (prog, args)
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty (prog, args)
-      | (BBuck as build_system), (None | Some ClangFlavors)
+      | (BBuck as build_system), Some ClangFlavors
       | ((BAnt | BGradle | BNdk | BXcode) as build_system), _ ->
           PythonCapture (build_system, build_cmd) )
 
