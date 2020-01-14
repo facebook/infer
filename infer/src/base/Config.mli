@@ -25,7 +25,7 @@ type build_system =
   | BNdk
   | BXcode
 
-type scheduler = File | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
 val equal_build_system : build_system -> build_system -> bool
 

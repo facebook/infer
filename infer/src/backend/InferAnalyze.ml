@@ -119,10 +119,12 @@ let schedule sources =
     SyntacticCallGraph.make sources )
   else
     match Config.scheduler with
-    | SyntacticCallGraph ->
-        SyntacticCallGraph.make sources
     | File ->
         FileScheduler.make sources
+    | Restart ->
+        RestartScheduler.make sources
+    | SyntacticCallGraph ->
+        SyntacticCallGraph.make sources
 
 
 let analyze source_files_to_analyze =

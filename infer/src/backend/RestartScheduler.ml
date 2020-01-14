@@ -6,10 +6,11 @@
  *)
 open! IStd
 
+(** This behaves exactly the same as the FileScheduler so far. The goal is that it will use a work
+    queue and proc locking to avoid repeating work and hopefully get some in process cache hits. *)
 let make sources =
-  let open SchedulerTypes in
   let gen =
-    List.rev_map sources ~f:(fun sf -> File sf)
+    List.rev_map sources ~f:(fun sf -> SchedulerTypes.File sf)
     |> List.permute ~random_state:(Random.State.make (Array.create ~len:1 0))
     |> ProcessPool.TaskGenerator.of_list
   in

@@ -1690,7 +1690,7 @@ INTERNAL OPTIONS
            Reset the list of folders containing linters definitions to be
            empty (see linters-def-folder).
 
-       --scheduler { File | SyntacticCallGraph }
+       --scheduler { file | restart | callgraph }
            Specify the scheduler used for the analysis phase
 
        --scuba-logging

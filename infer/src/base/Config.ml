@@ -92,7 +92,7 @@ type build_system =
   | BXcode
 [@@deriving compare]
 
-type scheduler = File | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
 let equal_build_system = [%compare.equal: build_system]
 
@@ -2357,7 +2357,7 @@ and export_changed_functions_output =
 
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
-    ~symbols:[("File", File); ("SyntacticCallGraph", SyntacticCallGraph)]
+    ~symbols:[("file", File); ("restart", Restart); ("callgraph", SyntacticCallGraph)]
     "Specify the scheduler used for the analysis phase"
 
 
