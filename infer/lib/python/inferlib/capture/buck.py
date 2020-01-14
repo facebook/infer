@@ -157,14 +157,6 @@ class BuckAnalyzer:
         utils.merge_and_dedup_files_into_path(dep_files, merged_out_path)
 
     @staticmethod
-    def _merge_infer_report_files(root_paths, merged_out_path):
-        potential_report_files = [os.path.join(p, config.JSON_REPORT_FILENAME)
-                                  for p in root_paths]
-        report_files = filter(os.path.exists, potential_report_files)
-        all_results = issues.merge_reports_from_paths(report_files)
-        utils.dump_json_to_path(all_results, merged_out_path)
-
-    @staticmethod
     def _find_deps_and_merge(merged_out_path):
         """This function is used to compute the infer-deps.txt file that
         contains the location of the infer-out folders with the captured
@@ -250,21 +242,12 @@ class BuckAnalyzer:
         if result_paths is None:
             # huho, the Buck command to extract results paths failed
             return os.EX_SOFTWARE
-        merged_reports_path = os.path.join(
-            self.args.infer_out, config.JSON_REPORT_FILENAME)
         merged_deps_path = os.path.join(
             self.args.infer_out, config.INFER_BUCK_DEPS_FILENAME)
-        self._merge_infer_report_files(result_paths, merged_reports_path)
         if (not ret == os.EX_OK and self.keep_going):
             self._find_deps_and_merge(merged_deps_path)
         elif self.args.buck_merge_all_deps:
             self._find_depsfiles_and_merge(merged_deps_path)
         else:
             self._merge_infer_dep_files(result_paths, merged_deps_path)
-        infer_out = self.args.infer_out
-        json_report = os.path.join(infer_out, config.JSON_REPORT_FILENAME)
-        bugs_out = os.path.join(infer_out, config.BUGS_FILENAME)
-        issues.print_and_save_errors(infer_out, self.args.project_root,
-                                     json_report, bugs_out, self.args.pmd_xml,
-                                     console_out=not self.args.quiet)
         return os.EX_OK
