@@ -276,6 +276,23 @@ module TransferFunctions = struct
         None
 
 
+  let load_global_constant get_summary id pvar location mem ~find_from_initializer =
+    match Pvar.get_initializer_pname pvar with
+    | Some callee_pname -> (
+      match get_summary callee_pname with
+      | Some callee_mem ->
+          let v = find_from_initializer callee_mem in
+          Dom.Mem.add_stack (Loc.of_id id) v mem
+      | None ->
+          L.d_printfln_escaped "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text)
+            pvar ;
+          Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+    | None ->
+        L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
+          (Pvar.pp Pp.text) pvar ;
+        Dom.Mem.add_unknown id ~location mem
+
+
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
    fun mem {summary; tenv; extras= {get_summary; get_formals; oenv= {integer_type_widths}}} node
        instr ->
@@ -283,21 +300,15 @@ module TransferFunctions = struct
     | Load {id} when Ident.is_none id ->
         mem
     | Load {id; e= Exp.Lvar pvar; loc= location}
-      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar -> (
-      match Pvar.get_initializer_pname pvar with
-      | Some callee_pname -> (
-        match get_summary callee_pname with
-        | Some callee_mem ->
-            let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
-            Dom.Mem.add_stack (Loc.of_id id) v mem
-        | None ->
-            L.d_printfln_escaped "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text)
-              pvar ;
-            Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
-      | None ->
-          L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
-            (Pvar.pp Pp.text) pvar ;
-          Dom.Mem.add_unknown id ~location mem )
+      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
+        load_global_constant get_summary id pvar location mem
+          ~find_from_initializer:(fun callee_mem -> Dom.Mem.find (Loc.of_pvar pvar) callee_mem)
+    | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); loc= location}
+      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
+        load_global_constant get_summary id pvar location mem
+          ~find_from_initializer:(fun callee_mem ->
+            let locs = Dom.Mem.find (Loc.of_pvar pvar) callee_mem |> Dom.Val.get_all_locs in
+            Dom.Mem.find_set locs callee_mem )
     | Load {id; e= exp; typ; loc= location} -> (
         let model_env =
           let pname = Summary.get_proc_name summary in
