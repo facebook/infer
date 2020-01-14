@@ -329,21 +329,23 @@ let set_constructor_attributes tenv procname (astate : Domain.t) =
 
 
 let set_initial_attributes tenv procname astate =
-  match procname with
-  | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
-      (* we are analyzing the class initializer, don't go through on-demand again *)
-      astate
-  | Procname.Java java_pname when Procname.Java.(is_constructor java_pname || is_static java_pname)
-    ->
-      (* analyzing a constructor or static method, so we need the attributes established by the
-         class initializer *)
-      set_class_init_attributes procname astate
-  | Procname.Java _ ->
-      (* we are analyzing an instance method, so we need constructor-established attributes
-         which will include those by the class initializer *)
-      set_constructor_attributes tenv procname astate
-  | _ ->
-      astate
+  if not Config.starvation_whole_program then astate
+  else
+    match procname with
+    | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
+        (* we are analyzing the class initializer, don't go through on-demand again *)
+        astate
+    | Procname.Java java_pname
+      when Procname.Java.(is_constructor java_pname || is_static java_pname) ->
+        (* analyzing a constructor or static method, so we need the attributes established by the
+           class initializer *)
+        set_class_init_attributes procname astate
+    | Procname.Java _ ->
+        (* we are analyzing an instance method, so we need constructor-established attributes
+           which will include those by the class initializer *)
+        set_constructor_attributes tenv procname astate
+    | _ ->
+        astate
 
 
 let analyze_procedure {Callbacks.exe_env; summary} =
