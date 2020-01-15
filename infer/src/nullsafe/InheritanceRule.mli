@@ -26,7 +26,12 @@ type violation_type =
 
 type type_role = Param | Ret
 
-val check : type_role -> base:Nullability.t -> overridden:Nullability.t -> (unit, violation) result
+val check :
+     is_strict_mode:bool
+  -> type_role
+  -> base:Nullability.t
+  -> overridden:Nullability.t
+  -> (unit, violation) result
 
 val violation_description :
      violation
@@ -34,3 +39,5 @@ val violation_description :
   -> base_proc_name:Procname.t
   -> overridden_proc_name:Procname.t
   -> string
+
+val violation_severity : violation -> Exceptions.severity

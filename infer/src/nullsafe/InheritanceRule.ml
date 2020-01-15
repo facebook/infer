@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type violation = {base: Nullability.t; overridden: Nullability.t} [@@deriving compare]
+type violation = {is_strict_mode: bool; base: Nullability.t; overridden: Nullability.t}
+[@@deriving compare]
 
 type type_role = Param | Ret
 
@@ -22,7 +23,7 @@ let is_whitelisted_violation ~subtype ~supertype =
       false
 
 
-let check type_role ~base ~overridden =
+let check ~is_strict_mode type_role ~base ~overridden =
   let subtype, supertype =
     match type_role with
     | Ret ->
@@ -34,7 +35,7 @@ let check type_role ~base ~overridden =
   in
   Result.ok_if_true
     (Nullability.is_subtype ~subtype ~supertype || is_whitelisted_violation ~subtype ~supertype)
-    ~error:{base; overridden}
+    ~error:{is_strict_mode; base; overridden}
 
 
 type violation_type =
@@ -70,3 +71,7 @@ let violation_description _ violation_type ~base_proc_name ~overridden_proc_name
         (translate_position param_position)
         MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr MF.pp_monospaced
         nullable_annotation MF.pp_monospaced nullable_annotation MF.pp_monospaced base_method_descr
+
+
+let violation_severity {is_strict_mode} =
+  if is_strict_mode then Exceptions.Error else Exceptions.Warning

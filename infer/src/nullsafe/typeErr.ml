@@ -193,9 +193,8 @@ module Severity = struct
         None
     | Bad_assignment {assignment_violation} ->
         Some (AssignmentRule.violation_severity assignment_violation)
-    | Inconsistent_subclass _ ->
-        (* TODO: show strict mode violations as errors *)
-        None
+    | Inconsistent_subclass {inheritance_violation} ->
+        Some (InheritanceRule.violation_severity inheritance_violation)
 end
 
 (* Severity *)
