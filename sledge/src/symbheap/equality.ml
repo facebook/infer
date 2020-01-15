@@ -15,7 +15,8 @@ type kind = Interpreted | Simplified | Atomic | Uninterpreted
 let classify e =
   match (e : Term.t) with
   | Add _ | Mul _ -> Interpreted
-  | Ap2 ((Eq | Dq), _, _) -> Simplified
+  | Ap2 ((Eq | Dq), _, _) | Ap2 (Memory, _, _) | ApN (Concat, _) ->
+      Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
 
@@ -266,8 +267,8 @@ let rec canon r a =
 (** add a term to the carrier *)
 let rec extend a r =
   match classify a with
-  | Interpreted | Simplified -> Term.fold ~f:extend a ~init:r
-  | Uninterpreted -> (
+  | Interpreted -> Term.fold ~f:extend a ~init:r
+  | Simplified | Uninterpreted -> (
     match Subst.extend a r.rep with
     | Some rep -> Term.fold ~f:extend a ~init:{r with rep}
     | None -> r )
