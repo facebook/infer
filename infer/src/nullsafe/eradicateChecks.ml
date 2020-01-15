@@ -297,9 +297,18 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                 is_field_declared_as_nonnull annotated_field
                 && not is_initialized_in_either_constructor_or_initializer
               then
-                report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_not_initialized {is_strict_mode; field_name})
-                  None loc curr_constructor_pdesc ;
+                if
+                  Config.nullsafe_disable_field_not_initialized_in_nonstrict_classes
+                  && not is_strict_mode
+                then
+                  (* Behavior needed for backward compatibility, where we are not ready to surface this type of errors by default.
+                     Hovewer, this error should be always turned on for @NullsafeStrict classes.
+                  *)
+                  ()
+                else
+                  report_error tenv find_canonical_duplicate
+                    (TypeErr.Field_not_initialized {is_strict_mode; field_name})
+                    None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               match annotated_field with
               | None ->

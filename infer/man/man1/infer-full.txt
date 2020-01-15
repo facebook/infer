@@ -1537,6 +1537,12 @@ INTERNAL OPTIONS
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
 
+       --nullsafe-disable-field-not-initialized-in-nonstrict-classes
+           Activates: Nullsafe: In this mode field not initialized issues
+           won't be reported unless the class is marked as @NullsafeStrict.
+           This feature is needed for compatibility reasons. (Conversely:
+           --no-nullsafe-disable-field-not-initialized-in-nonstrict-classes)
+
        --no-nullsafe-optimistic-third-party-params-in-non-strict
            Deactivates: Nullsafe: in this mode we treat non annotated third
            party method params as if they were annotated as nullable.
