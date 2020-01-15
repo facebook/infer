@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = Nullability.t [@@deriving compare]
+type violation = {is_strict_mode: bool; nullability: Nullability.t} [@@deriving compare]
 
 type dereference_type =
   | MethodCall of Procname.t
@@ -18,9 +18,9 @@ type dereference_type =
 let check ~is_strict_mode nullability =
   match nullability with
   | Nullability.Nullable | Nullability.Null ->
-      Error nullability
+      Error {is_strict_mode; nullability}
   | Nullability.DeclaredNonnull ->
-      if is_strict_mode then Error nullability else Ok ()
+      if is_strict_mode then Error {is_strict_mode; nullability} else Ok ()
   | Nullability.Nonnull ->
       Ok ()
 
@@ -36,8 +36,8 @@ let get_origin_opt ~nullable_object_descr origin =
   if should_show_origin then Some origin else None
 
 
-let violation_description nullability ~dereference_location dereference_type ~nullable_object_descr
-    ~nullable_object_origin =
+let violation_description {nullability} ~dereference_location dereference_type
+    ~nullable_object_descr ~nullable_object_origin =
   let module MF = MarkupFormatter in
   match nullability with
   | Nullability.DeclaredNonnull ->
@@ -95,3 +95,7 @@ let violation_description nullability ~dereference_location dereference_type ~nu
             Logging.die InternalError "Invariant violation: unexpected nullability"
       in
       (description, IssueType.eradicate_nullable_dereference, dereference_location)
+
+
+let violation_severity {is_strict_mode} =
+  if is_strict_mode then Exceptions.Error else Exceptions.Warning

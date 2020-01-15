@@ -36,3 +36,5 @@ val violation_description :
   -> string * IssueType.t * Location.t
 (** Given context around violation, return error message together with the info where to put this
     message *)
+
+val violation_severity : violation -> Exceptions.severity

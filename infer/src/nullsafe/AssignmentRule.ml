@@ -195,3 +195,7 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
     in
     let issue_type = get_issue_type assignment_type in
     (error_message, issue_type, assignment_location)
+
+
+let violation_severity {is_strict_mode} =
+  if is_strict_mode then Exceptions.Error else Exceptions.Warning

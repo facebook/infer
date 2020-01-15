@@ -177,9 +177,24 @@ module Severity = struct
 
   let err_instance_get_severity tenv err_instance : Exceptions.severity option =
     match err_instance with
-    | Nullable_dereference {nullable_object_origin} ->
+    | Nullable_dereference {dereference_violation; nullable_object_origin} ->
+        (* A special hacky case: raise severity for violations of @GeneratedGraphQL method.
+           We might want to reevaluate if we still need this / make this behavior dependent on config.
+        *)
         origin_get_severity tenv nullable_object_origin
-    | _ ->
+        |> IOption.if_none_evalopt ~f:(fun _ ->
+               Some (DereferenceRule.violation_severity dereference_violation) )
+    | Condition_redundant _ ->
+        None
+    | Over_annotation _ ->
+        None
+    | Field_not_initialized _ ->
+        (* TODO: show strict mode violations as errors *)
+        None
+    | Bad_assignment {assignment_violation} ->
+        Some (AssignmentRule.violation_severity assignment_violation)
+    | Inconsistent_subclass _ ->
+        (* TODO: show strict mode violations as errors *)
         None
 end
 
