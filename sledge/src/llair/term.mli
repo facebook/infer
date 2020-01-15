@@ -155,6 +155,7 @@ end
 val comparator : (t, comparator_witness) Comparator.t
 val ppx : Var.strength -> t pp
 val pp : t pp
+val pp_diff : (t * t) pp
 val invariant : t -> unit
 
 (** Construct *)

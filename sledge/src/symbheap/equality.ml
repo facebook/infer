@@ -24,8 +24,9 @@ module Subst : sig
   type t [@@deriving compare, equal, sexp]
 
   val pp : t pp
-  val pp_sdiff : ?pre:string -> Format.formatter -> t -> t -> unit
+  val pp_diff : (t * t) pp
   val empty : t
+  val is_empty : t -> bool
   val length : t -> int
   val mem : t -> Term.t -> bool
   val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
@@ -43,30 +44,11 @@ end = struct
 
   let pp = Map.pp Term.pp Term.pp
 
-  let pp_sdiff ?(pre = "") =
-    let pp_sdiff_elt pp_key pp_val pp_sdiff_val fs = function
-      | k, `Left v ->
-          Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
-      | k, `Right v ->
-          Format.fprintf fs "++ [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
-      | k, `Unequal vv ->
-          Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_sdiff_val vv
-    in
-    let pp_sdiff_map pp_elt_diff equal fs x y =
-      let sd =
-        Sequence.to_list (Map.symmetric_diff ~data_equal:equal x y)
-      in
-      if not (List.is_empty sd) then
-        Format.fprintf fs "%s[@[<hv>%a@]];@ " pre
-          (List.pp ";@ " pp_elt_diff)
-          sd
-    in
-    let pp_sdiff_term fs (u, v) =
-      Format.fprintf fs "-- %a ++ %a" Term.pp u Term.pp v
-    in
-    pp_sdiff_map (pp_sdiff_elt Term.pp Term.pp pp_sdiff_term) Term.equal
+  let pp_diff =
+    Map.pp_diff ~data_equal:Term.equal Term.pp Term.pp Term.pp_diff
 
   let empty = Term.Map.empty
+  let is_empty = Map.is_empty
   let length = Map.length
   let mem = Map.mem
   let fold = Map.fold
@@ -222,7 +204,10 @@ let pp_diff fs (r, s) =
     if not (Bool.equal r.sat s.sat) then
       Format.fprintf fs "sat= @[-- %b@ ++ %b@];@ " r.sat s.sat
   in
-  let pp_rep fs = Subst.pp_sdiff ~pre:"rep= " fs r.rep s.rep in
+  let pp_rep fs =
+    if not (Subst.is_empty r.rep) then
+      Format.fprintf fs "rep= %a" Subst.pp_diff (r.rep, s.rep)
+  in
   Format.fprintf fs "@[{@[<hv>%t%t@]}@]" pp_sat pp_rep
 
 (** Invariant *)

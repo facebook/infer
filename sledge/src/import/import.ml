@@ -234,6 +234,14 @@ module List = struct
       | [], ys -> map ~f:Either.second ys
     in
     symmetric_diff_ (sort ~compare xs) (sort ~compare ys)
+
+  let pp_diff ~compare sep pp_elt fs (xs, ys) =
+    let pp_diff_elt fs elt =
+      match (elt : _ Either.t) with
+      | First x -> Format.fprintf fs "-- %a" pp_elt x
+      | Second y -> Format.fprintf fs "++ %a" pp_elt y
+    in
+    pp sep pp_diff_elt fs (symmetric_diff ~compare xs ys)
 end
 
 module Map = struct
@@ -244,6 +252,19 @@ module Map = struct
       (List.pp ",@ " (fun fs (k, v) ->
            Format.fprintf fs "@[%a @<2>↦ %a@]" pp_k k pp_v v ))
       (to_alist m)
+
+  let pp_diff ~data_equal pp_key pp_val pp_diff_val fs (x, y) =
+    let pp_diff_elt fs = function
+      | k, `Left v ->
+          Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
+      | k, `Right v ->
+          Format.fprintf fs "++ [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
+      | k, `Unequal vv ->
+          Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
+    in
+    let sd = Sequence.to_list (symmetric_diff ~data_equal x y) in
+    if not (List.is_empty sd) then
+      Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
 
   let equal_m__t (module Elt : Compare_m) equal_v = equal equal_v
 

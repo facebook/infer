@@ -148,6 +148,12 @@ module List : sig
     -> 'a list pp
   (** Pretty-print a list. *)
 
+  val pp_diff :
+       compare:('a -> 'a -> int)
+    -> (unit, unit) fmt
+    -> 'a pp
+    -> ('a list * 'a list) pp
+
   val pop_exn : 'a list -> 'a * 'a list
 
   val find_map_remove :
@@ -181,6 +187,13 @@ module Map : sig
   include module type of Base.Map
 
   val pp : 'k pp -> 'v pp -> ('k, 'v, 'c) t pp
+
+  val pp_diff :
+       data_equal:('v -> 'v -> bool)
+    -> 'k pp
+    -> 'v pp
+    -> ('v * 'v) pp
+    -> (('k, 'v, 'c) t * ('k, 'v, 'c) t) pp
 
   val equal_m__t :
        (module Compare_m)

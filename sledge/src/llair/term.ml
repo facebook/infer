@@ -227,6 +227,7 @@ and pp_record strength fs elts =
 
 let pp = ppx (fun _ -> None)
 let pp_t = pp
+let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
 
 (** Invariant *)
 
