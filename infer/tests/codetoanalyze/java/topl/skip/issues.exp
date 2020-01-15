@@ -1,0 +1,2 @@
+codetoanalyze/java/topl/skip/IndexSkip.java, IndexSkip.foo(java.util.ArrayList):void, 0, TOPL_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/skip/IndirectSkip.java, View.setCapacityBad(int):void, 0, TOPL_ERROR, no_bucket, ERROR, []
