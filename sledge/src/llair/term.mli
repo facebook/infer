@@ -248,6 +248,7 @@ val is_false : t -> bool
 
 (** Solve *)
 
-val solve_zero_eq : t -> (t * t) option
+val solve_zero_eq : ?for_:t -> t -> (t * t) option
 (** [solve_zero_eq d] is [Some (e, f)] if [d = 0] can be equivalently
-    expressed as [e = f] for some monomial subterm [e] of [d]. *)
+    expressed as [e = f] for some monomial subterm [e] of [d]. If [for_] is
+    passed, then the subterm [e] must be [for_]. *)
