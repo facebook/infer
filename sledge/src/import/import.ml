@@ -239,6 +239,12 @@ end
 module Map = struct
   include Base.Map
 
+  let pp pp_k pp_v fs m =
+    Format.fprintf fs "@[<1>[%a]@]"
+      (List.pp ",@ " (fun fs (k, v) ->
+           Format.fprintf fs "@[%a @<2>↦ %a@]" pp_k k pp_v v ))
+      (to_alist m)
+
   let equal_m__t (module Elt : Compare_m) equal_v = equal equal_v
 
   let find_and_remove m k =

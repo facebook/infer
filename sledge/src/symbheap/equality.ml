@@ -41,11 +41,7 @@ module Subst : sig
 end = struct
   type t = Term.t Term.Map.t [@@deriving compare, equal, sexp]
 
-  let pp fs s =
-    Format.fprintf fs "@[<1>[%a]@]"
-      (List.pp ",@ " (fun fs (k, v) ->
-           Format.fprintf fs "@[%a ↦ %a@]" Term.pp k Term.pp v ))
-      (Map.to_alist s)
+  let pp = Map.pp Term.pp Term.pp
 
   let pp_sdiff ?(pre = "") =
     let pp_sdiff_elt pp_key pp_val pp_sdiff_val fs = function

@@ -180,6 +180,8 @@ end
 module Map : sig
   include module type of Base.Map
 
+  val pp : 'k pp -> 'v pp -> ('k, 'v, 'c) t pp
+
   val equal_m__t :
        (module Compare_m)
     -> ('v -> 'v -> bool)

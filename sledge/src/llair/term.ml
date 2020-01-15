@@ -361,12 +361,7 @@ module Var = struct
       in
       assert (Set.disjoint domain range)
 
-    let pp fs s =
-      Format.fprintf fs "@[<1>[%a]@]"
-        (List.pp ",@ " (fun fs (k, v) ->
-             Format.fprintf fs "@[%a ↦ %a@]" pp_t k pp_t v ))
-        (Map.to_alist s)
-
+    let pp = Map.pp pp_t pp_t
     let empty = Map.empty
     let is_empty = Map.is_empty
 
