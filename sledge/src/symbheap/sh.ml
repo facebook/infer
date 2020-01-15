@@ -59,9 +59,7 @@ let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fold_vars fold_vars {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
-  Equality.fold_terms ~init cong ~f:(fun init -> Term.fold_vars ~f ~init)
-  |> fun init ->
+let fold_vars fold_vars {us= _; xs= _; cong= _; pure; heap; djns} ~init ~f =
   List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
   |> fun init ->
   List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
@@ -73,8 +71,7 @@ let fold_vars fold_vars {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
 let var_strength q =
   let rec var_strength_ xs m q =
     let xs = Set.union xs q.xs in
-    fold_vars (var_strength_ xs) {q with cong= Equality.true_} ~init:m
-      ~f:(fun m var ->
+    fold_vars (var_strength_ xs) q ~init:m ~f:(fun m var ->
         if not (Set.mem xs var) then Map.set m ~key:var ~data:`Universal
         else
           match Map.find m var with
@@ -249,6 +246,11 @@ let rec invariant q =
     assert (
       Set.is_subset (fv q) ~of_:us
       || fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us) () ) ;
+    assert (
+      Set.is_subset
+        (Equality.fold_terms ~init:Var.Set.empty cong ~f:(fun init ->
+             Term.fold_vars ~f:Set.add ~init ))
+        ~of_:(Set.union us xs) ) ;
     Equality.invariant cong ;
     ( match djns with
     | [[]] ->
