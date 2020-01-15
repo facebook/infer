@@ -235,7 +235,8 @@ let get_nullability_upper_bound field_name typestate_list =
 
 (** Check field initialization for a given constructor *)
 let check_constructor_initialization tenv find_canonical_duplicate curr_constructor_pname
-    curr_constructor_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
+    curr_constructor_pdesc start_node ~is_strict_mode
+    ~typestates_for_curr_constructor_and_all_initializer_methods
     ~typestates_for_all_constructors_incl_current loc : unit =
   State.set_node start_node ;
   if Procname.is_constructor curr_constructor_pname then
@@ -297,7 +298,8 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                 && not is_initialized_in_either_constructor_or_initializer
               then
                 report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_not_initialized field_name) None loc curr_constructor_pdesc ;
+                  (TypeErr.Field_not_initialized {is_strict_mode; field_name})
+                  None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               match annotated_field with
               | None ->

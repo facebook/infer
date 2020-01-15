@@ -40,7 +40,7 @@ type err_instance =
       ; violation_type: InheritanceRule.violation_type
       ; base_proc_name: Procname.t
       ; overridden_proc_name: Procname.t }
-  | Field_not_initialized of Fieldname.t
+  | Field_not_initialized of {is_strict_mode: bool; field_name: Fieldname.t}
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }

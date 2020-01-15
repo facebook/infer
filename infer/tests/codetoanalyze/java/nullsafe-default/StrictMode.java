@@ -14,6 +14,8 @@ import javax.annotation.Nullable;
 @NullsafeStrict
 class Strict {
 
+  public String notInitializedIsBAD;
+
   public @Nullable String nullable;
   public @Nonnull String nonnull = "";
 

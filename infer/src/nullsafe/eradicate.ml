@@ -163,7 +163,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
               typecheck_proc
           in
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
-            curr_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
+            curr_pdesc start_node
+            ~is_strict_mode:annotated_signature.AnnotatedSignature.is_strict_mode
+            ~typestates_for_curr_constructor_and_all_initializer_methods
             ~typestates_for_all_constructors_incl_current proc_loc ;
           if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate
           )
