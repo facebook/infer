@@ -5,9 +5,19 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --seconds-per-iteration 100 --symops-per-iteration 10000 --topl-properties hasnext.topl --topl-properties SkipAfterRemove.topl --biabduction-only
-INFERPRINT_OPTIONS = --issues-tests
+SUBDIRS = hasnext skip tomcat
 
-SOURCES = $(wildcard *.java)
+test-%:
+	$(MAKE) -C $* test
 
-include $(TESTS_DIR)/javac.make
+test: $(SUBDIRS:%=test-%)
+
+replace-%:
+	$(MAKE) -C $* replace
+
+replace: $(SUBDIRS:%=replace-%)
+
+clean-%:
+	$(MAKE) -C $* clean
+
+clean: $(SUBDIRS:%=clean-%)
