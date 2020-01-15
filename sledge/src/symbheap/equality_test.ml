@@ -14,10 +14,7 @@ let%test_module _ =
     (* let () = Trace.init ~margin:160 ~config:all () *)
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf pp
-
-    let pp_classes =
-      Format.printf "@\n@[<hv>  %a@]@." (pp_classes (fun _ -> None))
-
+    let pp_classes = Format.printf "@\n@[<hv>  %a@]@." pp_classes
     let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add

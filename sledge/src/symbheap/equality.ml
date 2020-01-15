@@ -430,7 +430,7 @@ let fold_vars r ~init ~f =
 
 let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 
-let pp_classes x fs r =
+let ppx_classes x fs r =
   List.pp "@ @<2>∧ "
     (fun fs (key, data) ->
       Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) key
@@ -439,7 +439,9 @@ let pp_classes x fs r =
     fs
     (Map.to_alist (classes r))
 
-let pp_classes_diff x fs (r, s) =
+let pp_classes fs r = ppx_classes (fun _ -> None) fs r
+
+let ppx_classes_diff x fs (r, s) =
   let clss = classes s in
   let clss =
     Map.filter_mapi clss ~f:(fun ~key:rep ~data:cls ->

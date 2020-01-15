@@ -150,7 +150,7 @@ let rec pp_ ?var_strength vs parent_cong fs {us; xs; cong; pure; heap; djns}
     Format.fprintf fs "@<2>∃ @[%a@] .@ " (Var.Set.ppx x) xs_d_vs ;
   let first = Equality.entails parent_cong cong in
   if not first then Format.fprintf fs "  " ;
-  Equality.pp_classes_diff x fs (parent_cong, cong) ;
+  Equality.ppx_classes_diff x fs (parent_cong, cong) ;
   let pure =
     List.filter_map pure ~f:(fun e ->
         let e' = Equality.normalize cong e in
