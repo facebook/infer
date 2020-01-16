@@ -122,4 +122,17 @@ class Array {
       arr[idx] = 0;
     }
   }
+
+  enum MyEnum {
+    MyEnumA
+  };
+
+  void array_length_Bad() {
+    int[] arr = new int[5];
+    if (MyEnum.values().length == 0) {
+      arr[10] = 0;
+    } else {
+      arr[10] = 0;
+    }
+  }
 }
