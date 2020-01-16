@@ -184,20 +184,18 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
-let should_report pdesc =
-  let proc_name = Procdesc.get_proc_name pdesc in
-  (not (Procname.is_constructor proc_name))
-  &&
-  match proc_name with
-  | Procname.Java java_pname ->
-      not
-        (Procname.Java.is_class_initializer java_pname || Procname.Java.is_access_method java_pname)
-  | Procname.ObjC_Cpp name ->
-      not
-        ( Procname.ObjC_Cpp.is_destructor name
-        || Procname.ObjC_Cpp.is_objc_constructor name.method_name )
-  | _ ->
-      true
+let should_report proc_name =
+  not
+    ( Procname.is_constructor proc_name
+    ||
+    match proc_name with
+    | Procname.Java java_pname ->
+        Procname.Java.is_class_initializer java_pname || Procname.Java.is_access_method java_pname
+    | Procname.ObjC_Cpp name ->
+        Procname.ObjC_Cpp.is_destructor name
+        || Procname.ObjC_Cpp.is_objc_constructor name.method_name
+    | _ ->
+        false )
 
 
 let report_errors astate summary =
@@ -205,7 +203,7 @@ let report_errors astate summary =
   let proc_name = Procdesc.get_proc_name pdesc in
   match astate with
   | Some astate ->
-      if should_report pdesc && PurityDomain.is_pure astate then
+      if should_report proc_name && PurityDomain.is_pure astate then
         let loc = Procdesc.get_loc pdesc in
         let exp_desc = F.asprintf "Side-effect free function %a" Procname.pp proc_name in
         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in

@@ -9,4 +9,4 @@ open! IStd
 
 val checker : Callbacks.proc_callback_t
 
-val should_report : Procdesc.t -> bool
+val should_report : Procname.t -> bool
