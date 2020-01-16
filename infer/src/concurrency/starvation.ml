@@ -32,6 +32,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       actuals
 
 
+  let rec get_access_expr (hilexp : HilExp.t) =
+    match hilexp with
+    | AccessExpression access_exp ->
+        Some access_exp
+    | Cast (_, hilexp) | Exception hilexp | UnaryOperator (_, hilexp, _) ->
+        get_access_expr hilexp
+    | BinaryOperator _ | Closure _ | Constant _ | Sizeof _ ->
+        None
+
+
+  let get_access_expr_list actuals = List.map actuals ~f:get_access_expr
+
   let do_assume assume_exp (astate : Domain.t) =
     let open Domain in
     let add_thread_choice (acc : Domain.t) bool_value =
@@ -79,20 +91,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.fold ~init:astate ~f:(Domain.schedule_work loc thread)
     in
     let work_opt =
-      match actuals with
-      | HilExp.AccessExpression executor :: HilExp.AccessExpression runnable :: _
-        when StarvationModels.schedules_work tenv callee ->
+      match get_access_expr_list actuals with
+      | Some executor :: Some runnable :: _ when StarvationModels.schedules_work tenv callee ->
           let thread =
             get_exp_attributes tenv executor astate
             |> Option.bind ~f:(function Attribute.WorkScheduler c -> Some c | _ -> None)
             |> Option.value ~default:StarvationModels.ForUnknownThread
           in
           Some (runnable, thread)
-      | HilExp.AccessExpression runnable :: _
-        when StarvationModels.schedules_work_on_ui_thread tenv callee ->
+      | Some runnable :: _ when StarvationModels.schedules_work_on_ui_thread tenv callee ->
           Some (runnable, StarvationModels.ForUIThread)
-      | HilExp.AccessExpression runnable :: _
-        when StarvationModels.schedules_work_on_bg_thread tenv callee ->
+      | Some runnable :: _ when StarvationModels.schedules_work_on_bg_thread tenv callee ->
           Some (runnable, StarvationModels.ForNonUIThread)
       | _ ->
           None
@@ -101,9 +110,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let do_assignment tenv lhs_access_exp rhs_exp (astate : Domain.t) =
-    HilExp.get_access_exprs rhs_exp
-    |> List.filter_map ~f:(fun exp -> get_exp_attributes tenv exp astate)
-    |> List.reduce ~f:Domain.Attribute.join
+    get_access_expr rhs_exp
+    |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
     |> Option.value_map ~default:astate ~f:(fun attribute ->
            let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
            {astate with attributes} )
@@ -113,6 +121,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
+    let actuals_acc_exps = get_access_expr_list actuals in
     let get_returned_executor_summary () =
       StarvationModels.get_returned_executor ~attrs_of_pname tenv callee actuals
       |> Option.map ~f:(fun thread_constraint -> make_ret_attr (WorkScheduler thread_constraint))
@@ -129,12 +138,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           None
     in
     let get_future_is_done_summary () =
-      match actuals with
-      | HilExp.AccessExpression future :: _
-        when StarvationModels.is_future_is_done tenv callee actuals ->
-          Some (make_ret_attr (FutureDoneGuard future))
-      | _ ->
-          None
+      if StarvationModels.is_future_is_done tenv callee actuals then
+        List.hd actuals_acc_exps |> Option.join
+        |> Option.map ~f:(fun future -> make_ret_attr (FutureDoneGuard future))
+      else None
     in
     let get_mainLooper_summary () =
       if StarvationModels.is_getMainLooper tenv callee actuals then
@@ -144,10 +151,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let get_callee_summary () = Payload.read ~caller_summary:summary ~callee_pname:callee in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
-        match actuals with
-        | HilExp.AccessExpression receiver :: HilExp.AccessExpression exp :: _ ->
+        match actuals_acc_exps with
+        | Some receiver :: Some looper :: _ ->
             let constr =
-              AttributeDomain.find_opt exp astate.attributes
+              AttributeDomain.find_opt looper astate.attributes
               |> Option.bind ~f:(function Attribute.Looper c -> Some c | _ -> None)
               |> Option.value ~default:StarvationModels.ForUnknownThread
             in
@@ -161,13 +168,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let treat_thread_constructor () =
       if StarvationModels.is_thread_constructor tenv callee actuals then
-        match actuals with
-        | HilExp.AccessExpression receiver :: rest ->
+        match actuals_acc_exps with
+        | Some receiver :: rest ->
             ( match rest with
-            | HilExp.AccessExpression exp1 :: HilExp.AccessExpression exp2 :: _ ->
+            | Some exp1 :: Some exp2 :: _ ->
                 (* two additional arguments, either could be a runnable, see docs *)
                 [exp1; exp2]
-            | HilExp.AccessExpression runnable :: _ ->
+            | Some runnable :: _ ->
                 (* either just one argument, or more but 2nd is not an access expression *)
                 [runnable]
             | _ ->
