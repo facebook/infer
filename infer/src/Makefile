@@ -122,6 +122,11 @@ test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)dune build @$(INFER_BUILD_DIR)/doc
 
+.PHONY: check
+check: src_build_common
+	dune build @check
+
+
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
 
 $(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
