@@ -23,8 +23,16 @@ module ThreadDomain : sig
   include AbstractDomain.WithBottom with type t := t
 end
 
-(** Abstraction of a path that represents a lock, special-casing comparison to work over type, base
-    variable modulo this and access list *)
+(** Abstract address for a lock. There are two notions of equality:
+
+    - Equality for comparing two addresses within the same thread/process/trace. Under this,
+      identical globals and identical class objects compare equal. Locks represented by access paths
+      rooted at method parameters must have equal access paths to compare equal. Paths rooted at
+      locals are ignored.
+    - Equality for comparing two addresses in two distinct threads/traces. Globals and class objects
+      are compared in the same way, but locks represented by access paths rooted at parameters need
+      only have equal access lists (ie [x.f.g == y.f.g]). This allows demonically aliasing
+      parameters in *distinct* threads. This relation is used in [may_deadlock]. *)
 module Lock : sig
   include PrettyPrintable.PrintableOrderedType
 
@@ -73,6 +81,9 @@ module Acquisitions : sig
 
   val lock_is_held : Lock.t -> t -> bool
   (** is the given lock in the set *)
+
+  val lock_is_held_in_other_thread : Lock.t -> t -> bool
+  (** is the given lock held, modulo memory abstraction across threads *)
 end
 
 (** An event and the currently-held locks at the time it occurred. *)

@@ -7,10 +7,10 @@
 
 class Interproc {
   synchronized void interproc1Bad(InterprocA a) {
-    interproc2Bad(a);
+    interproc2(a);
   }
 
-  void interproc2Bad(InterprocA b) {
+  void interproc2(InterprocA b) {
     synchronized (b) {
     }
   }
@@ -36,11 +36,11 @@ class Interproc {
 }
 
 class InterprocA {
-  synchronized void FN_interproc1Bad(Interproc c) {
-    interproc2Bad(c);
+  synchronized void interproc1Bad(Interproc c) {
+    interproc2(c);
   }
 
-  void interproc2Bad(Interproc d) {
+  void interproc2(Interproc d) {
     synchronized (d) {
     }
   }

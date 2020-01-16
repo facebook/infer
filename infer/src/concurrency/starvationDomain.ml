@@ -104,6 +104,18 @@ module Lock = struct
 
   type t = {root: root; path: path} [@@deriving compare, equal]
 
+  let equal_across_threads t1 t2 =
+    match (t1.root, t2.root) with
+    | Global _, Global _ | Class _, Class _ ->
+        (* globals and class objects must be identical across threads *)
+        equal t1 t2
+    | Parameter _, Parameter _ ->
+        (* parameter position/names can be ignored across threads, if types and accesses are equal *)
+        equal_path t1.path t2.path
+    | _, _ ->
+        false
+
+
   (* using an indentifier for a class object, create an access path representing that lock;
      this is for synchronizing on Java class objects only *)
   let path_of_java_class =
@@ -253,6 +265,13 @@ module Acquisitions = struct
 
   (* use the fact that location/procname are ignored in comparisons *)
   let lock_is_held lock acquisitions = mem (Acquisition.make_dummy lock) acquisitions
+
+  let lock_is_held_in_other_thread lock acquisitions =
+    exists (fun acq -> Lock.equal_across_threads lock acq.lock) acquisitions
+
+
+  let no_locks_common_across_threads acqs1 acqs2 =
+    for_all (fun acq1 -> not (lock_is_held_in_other_thread acq1.lock acqs2)) acqs1
 end
 
 module LockState : sig
@@ -384,10 +403,10 @@ module CriticalPair = struct
     ThreadDomain.can_run_in_parallel pair1.thread pair2.thread
     && Option.both (get_final_acquire t1) (get_final_acquire t2)
        |> Option.exists ~f:(fun (lock1, lock2) ->
-              (not (Lock.equal lock1 lock2))
-              && Acquisitions.lock_is_held lock2 pair1.acquisitions
-              && Acquisitions.lock_is_held lock1 pair2.acquisitions
-              && Acquisitions.inter pair1.acquisitions pair2.acquisitions |> Acquisitions.is_empty
+              (not (Lock.equal_across_threads lock1 lock2))
+              && Acquisitions.lock_is_held_in_other_thread lock2 pair1.acquisitions
+              && Acquisitions.lock_is_held_in_other_thread lock1 pair2.acquisitions
+              && Acquisitions.no_locks_common_across_threads pair1.acquisitions pair2.acquisitions
           )
 
 
