@@ -144,11 +144,11 @@ let report_errors summary modified_opt =
   summary
 
 
-let checker ({Callbacks.summary} as callback) : Summary.t =
-  let pulse_summary = Pulse.checker callback in
-  pulse_summary.payloads.pulse
-  |> Option.map ~f:(fun pre_posts ->
+let checker {Callbacks.summary} : Summary.t =
+  let pdesc = Summary.get_proc_desc summary in
+  summary.payloads.pulse
+  |> Option.map ~f:(fun (pre_posts : PulseSummary.t) ->
          List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
-             let modified = extract_impurity (Summary.get_proc_desc summary) pre_post in
+             let modified = extract_impurity pdesc pre_post in
              ImpurityDomain.join acc modified ) )
   |> report_errors summary

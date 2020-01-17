@@ -81,6 +81,11 @@ let all_checkers =
     ; callbacks=
         [ (Procedure NullabilitySuggest.checker, Language.Java)
         ; (Procedure NullabilitySuggest.checker, Language.Clang) ] }
+  ; { name= "impurity"
+    ; active= Config.impurity
+    ; callbacks=
+        [(Procedure Impurity.checker, Language.Java); (Procedure Impurity.checker, Language.Clang)]
+    }
   ; { name= "pulse"
     ; active= Config.pulse || Config.impurity
     ; callbacks=
@@ -129,11 +134,6 @@ let all_checkers =
         ; (Cluster Starvation.reporting, Language.Java)
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
         ; (Cluster Starvation.reporting, Language.Clang) ] }
-  ; { name= "impurity"
-    ; active= Config.impurity
-    ; callbacks=
-        [(Procedure Impurity.checker, Language.Java); (Procedure Impurity.checker, Language.Clang)]
-    }
   ; { name= "purity"
     ; active= Config.purity || Config.loop_hoisting
     ; callbacks=
