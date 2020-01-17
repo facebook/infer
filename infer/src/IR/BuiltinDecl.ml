@@ -68,7 +68,13 @@ let __infer_assume = create_procname "__infer_assume"
 
 let __infer_fail = create_procname "__infer_fail"
 
+let __infer_generic_selection_expr = Procname.from_string_c_fun "__infer_generic_selection_expr"
+
 let __infer_skip = create_procname "__infer_skip"
+
+let __infer_skip_function = Procname.from_string_c_fun "__infer_skip_function"
+
+let __infer_skip_gcc_asm_stmt = Procname.from_string_c_fun "__infer_skip_gcc_asm_stmt"
 
 let __instanceof = create_procname "__instanceof"
 

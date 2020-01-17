@@ -3094,15 +3094,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and gccAsmStmt_trans trans_state stmt_info stmts =
-    let pname = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
-    call_function_with_args Procdesc.Node.GCCAsmStmt pname trans_state stmt_info (Typ.mk Tvoid)
-      stmts
+    call_function_with_args Procdesc.Node.GCCAsmStmt BuiltinDecl.__infer_skip_gcc_asm_stmt
+      trans_state stmt_info (Typ.mk Tvoid) stmts
 
 
   and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
-    let pname = Procname.from_string_c_fun CFrontend_config.infer_generic_selection_expr in
-    call_function_with_args Procdesc.Node.GenericSelectionExpr pname trans_state stmt_info
-      (Typ.mk Tvoid) stmts
+    call_function_with_args Procdesc.Node.GenericSelectionExpr
+      BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info (Typ.mk Tvoid) stmts
 
 
   and objc_cxx_throw_trans trans_state stmt_info stmts =
@@ -3111,8 +3109,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and cxxPseudoDestructorExpr_trans () =
-    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
-    mk_trans_result (Exp.Const (Const.Cfun fun_name), Typ.mk Tvoid) empty_control
+    mk_trans_result
+      (Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function), Typ.mk Tvoid)
+      empty_control
 
 
   and cxxTypeidExpr_trans trans_state stmt_info stmts expr_info =
@@ -3171,12 +3170,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmt_info
     in
     let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
-    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = {trans_state_pri with succ_nodes= []} in
     let res_trans_subexpr_list = List.map ~f:(instruction trans_state_param) stmts in
     let params = collect_returns res_trans_subexpr_list in
-    let sil_fun = Exp.Const (Const.Cfun fun_name) in
+    let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Exp.Var ret_id in
     let call_instr = Sil.Call ((ret_id, typ), sil_fun, params, sil_loc, CallFlags.default) in
