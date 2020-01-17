@@ -14,6 +14,14 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   std::cout << *y << "\n";
 }
 
+// slight variation of above, in particular use vector::at()
+void deref_vector_pointer_element_after_push_back_bad(std::vector<int>* vec) {
+  int* elt = &vec->at(1);
+  int* y = elt;
+  vec->push_back(42);
+  std::cout << *y << "\n";
+}
+
 void deref_local_vector_element_after_push_back_bad() {
   std::vector<int> vec = {0, 0};
   int* elt = &vec[1];

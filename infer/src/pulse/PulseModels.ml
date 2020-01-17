@@ -407,6 +407,8 @@ module ProcNameDispatcher = struct
         <>--> Misc.return_int
       ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
         $+...$--> StdVector.invalidate_references Assign
+      ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
+        $--> StdVector.at ~desc:"std::vector::at()"
       ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
         $--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
