@@ -9,15 +9,19 @@ open! IStd
 module BuiltinPureMethods = Caml.Set.Make (String)
 
 let pure_builtins =
-  BuiltinPureMethods.of_list
-    [ "__instanceof"
-    ; "__cast"
-    ; "__get_array_length"
-    ; "__set_array_length"
-    ; "__get_type_of"
-    ; "__infer_assume"
-    ; "__infer_skip"
-    ; "__infer_fail" ]
+  List.map ~f:Procname.get_method
+    [ BuiltinDecl.__instanceof
+    ; BuiltinDecl.__cast
+    ; BuiltinDecl.__get_array_length
+    ; BuiltinDecl.__set_array_length
+    ; BuiltinDecl.__get_type_of
+    ; BuiltinDecl.__infer_assume
+    ; BuiltinDecl.__infer_skip
+    ; BuiltinDecl.__infer_skip_gcc_asm_stmt
+    ; BuiltinDecl.__infer_generic_selection_expr
+    ; BuiltinDecl.__infer_skip_function
+    ; BuiltinDecl.__infer_fail ]
+  |> BuiltinPureMethods.of_list
 
 
 let modifies_first = PurityDomain.impure_params (PurityDomain.ModifiedParamIndices.of_list [0])
