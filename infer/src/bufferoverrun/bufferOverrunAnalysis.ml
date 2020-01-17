@@ -25,11 +25,9 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.buffer_overrun_analysis
 end)
 
-type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
-
 type extras =
   { get_summary: BufferOverrunAnalysisSummary.get_summary
-  ; get_formals: get_formals
+  ; get_formals: BoUtils.get_formals
   ; oenv: OndemandEnv.t }
 
 module CFG = ProcCfg.NormalOneInstrPerNode
@@ -449,7 +447,7 @@ let compute_invariant_map :
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> BufferOverrunAnalysisSummary.get_summary
-    -> get_formals
+    -> BoUtils.get_formals
     -> invariant_map =
  fun summary tenv integer_type_widths get_summary get_formals ->
   let pdesc = Summary.get_proc_desc summary in

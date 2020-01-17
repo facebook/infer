@@ -92,3 +92,5 @@ module Check : sig
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t
 end
+
+type get_formals = Procname.t -> (Pvar.t * Typ.t) list option

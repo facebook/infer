@@ -328,3 +328,5 @@ module Check = struct
     | _, _ ->
         cond_set
 end
+
+type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
