@@ -546,3 +546,29 @@ void shift_right_zero_Bad(int x) {
 void use_intended_integer_underflow_Good() {
   unsigned long long x = INTENDED_INTEGER_UNDERFLOW;
 }
+
+void ptr_band1_Bad(int x, int* q) {
+  int a[5];
+  int* p;
+  if (x) {
+    p = q;
+  } else {
+    p = 0;
+  }
+  if ((int)p & x) {
+    a[10] = 0;
+  }
+}
+
+void ptr_band2_Bad(int x, int* q) {
+  int a[5];
+  int* p;
+  if (x) {
+    p = q;
+  } else {
+    p = 0;
+  }
+  if ((int)p & x) {
+  }
+  a[10] = 0;
+}

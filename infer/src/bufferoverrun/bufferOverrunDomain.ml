@@ -252,26 +252,27 @@ module Val = struct
 
   let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool}
 
-  let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> ?f_trace:_ -> t -> t -> t =
-   fun f ?f_trace x y ->
-    let itv = f x.itv y.itv in
-    let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
-    let itv_updated_by = ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by in
-    let modeled_range = ModeledRange.join x.modeled_range y.modeled_range in
-    let traces =
-      match f_trace with
-      | Some f_trace ->
-          f_trace x.traces y.traces
-      | None -> (
-        match (Itv.eq itv x.itv, Itv.eq itv y.itv) with
-        | true, false ->
-            x.traces
-        | false, true ->
-            y.traces
-        | true, true | false, false ->
-            TraceSet.join x.traces y.traces )
-    in
-    {bot with itv; itv_thresholds; itv_updated_by; modeled_range; traces}
+  let lift_itv : ?may_ptr:bool -> (Itv.t -> Itv.t -> Itv.t) -> ?f_trace:_ -> t -> t -> t =
+    let no_ptr {powloc; arrayblk} = PowLoc.is_bot powloc && ArrayBlk.is_bot arrayblk in
+    fun ?(may_ptr = false) f ?f_trace x y ->
+      let itv = if (not may_ptr) || (no_ptr x && no_ptr y) then f x.itv y.itv else Itv.top in
+      let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
+      let itv_updated_by = ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by in
+      let modeled_range = ModeledRange.join x.modeled_range y.modeled_range in
+      let traces =
+        match f_trace with
+        | Some f_trace ->
+            f_trace x.traces y.traces
+        | None -> (
+          match (Itv.eq itv x.itv, Itv.eq itv y.itv) with
+          | true, false ->
+              x.traces
+          | false, true ->
+              y.traces
+          | true, true | false, false ->
+              TraceSet.join x.traces y.traces )
+      in
+      {bot with itv; itv_thresholds; itv_updated_by; modeled_range; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
@@ -318,7 +319,7 @@ module Val = struct
 
   let shiftrt = lift_itv Itv.shiftrt
 
-  let band_sem = lift_itv Itv.band_sem
+  let band_sem = lift_itv ~may_ptr:true Itv.band_sem
 
   let lt_sem : t -> t -> t = lift_cmp_itv Itv.lt_sem Boolean.EqualOrder.strict_cmp
 

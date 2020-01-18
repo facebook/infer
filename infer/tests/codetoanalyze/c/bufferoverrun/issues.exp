@@ -30,6 +30,8 @@ codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min2_Good_FP, 2, BUFFER_OVERR
 codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min3_Good_FP, 2, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: [0, 25] Size: 20]
 codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min_Bad, 2, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: [0, 19] Size: 19]
 codetoanalyze/c/bufferoverrun/arith.c, plus_one_Bad, 3, INTEGER_OVERFLOW_L2, no_bucket, ERROR, [<LHS trace>,Unknown value from: unknown_int,Assignment,Binary operation: ([-oo, 9223372036854775807] + 1):signed64]
+codetoanalyze/c/bufferoverrun/arith.c, ptr_band1_Bad, 9, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
+codetoanalyze/c/bufferoverrun/arith.c, ptr_band2_Bad, 10, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/c/bufferoverrun/arith.c, recover_integer_underflow_Bad, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([-oo, 9] - 2):unsigned32]
 codetoanalyze/c/bufferoverrun/arith.c, recover_integer_underflow_Good_FP, 3, INTEGER_OVERFLOW_L2, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, 9] - 1):unsigned32]
 codetoanalyze/c/bufferoverrun/arith.c, scan_hex_Good, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
