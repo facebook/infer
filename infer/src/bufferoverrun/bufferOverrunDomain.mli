@@ -83,7 +83,7 @@ module Val : sig
 
   val unknown_locs : t
 
-  val unknown_from : callee_pname:Procname.t option -> location:Location.t -> t
+  val unknown_from : Typ.t -> callee_pname:Procname.t option -> location:Location.t -> t
   (** Unknown return value of [callee_pname] *)
 
   val is_mone : t -> bool
@@ -502,10 +502,10 @@ module Mem : sig
 
   val add_heap_set : ?represents_multiple_values:bool -> AbsLoc.PowLoc.t -> Val.t -> t -> t
 
-  val add_unknown : Ident.t -> location:Location.t -> t -> t
+  val add_unknown : Ident.t * Typ.t -> location:Location.t -> t -> t
   (** Add an unknown value for stack variables *)
 
-  val add_unknown_from : Ident.t -> callee_pname:Procname.t -> location:Location.t -> t -> t
+  val add_unknown_from : Ident.t * Typ.t -> callee_pname:Procname.t -> location:Location.t -> t -> t
   (** Add an unknown return value of [callee_pname] for stack variables *)
 
   val remove_temps : Ident.t list -> t -> t

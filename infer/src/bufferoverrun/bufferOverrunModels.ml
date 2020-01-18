@@ -26,9 +26,9 @@ type model = {exec: exec_fun; check: check_fun}
 let no_check _model_env _mem cond_set = cond_set
 
 let no_model =
-  let exec {pname; location} ~ret:(id, _) mem =
+  let exec {pname; location} ~ret mem =
     L.d_printfln_escaped "No model for %a" Procname.pp pname ;
-    Dom.Mem.add_unknown_from id ~callee_pname:pname ~location mem
+    Dom.Mem.add_unknown_from ret ~callee_pname:pname ~location mem
   in
   {exec; check= no_check}
 
@@ -565,10 +565,10 @@ module ArrObjCommon = struct
 
 
   let at arr_exp ~fn index_exp =
-    let exec ({pname; location} as model_env) ~ret:(id, _) mem =
+    let exec ({pname; location} as model_env) ~ret:(id, typ) mem =
       let array_v =
         let locs = deref_of model_env arr_exp ~fn mem in
-        if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
+        if PowLoc.is_bot locs then Dom.Val.unknown_from typ ~callee_pname:(Some pname) ~location
         else Dom.Mem.find_set locs mem
       in
       Dom.Mem.add_stack (Loc.of_id id) array_v mem

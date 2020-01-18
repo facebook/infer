@@ -126,15 +126,16 @@ module Val = struct
       ArrayBlk.pp x.arrayblk trace_pp x.traces
 
 
-  let unknown_from : callee_pname:_ -> location:_ -> t =
-   fun ~callee_pname ~location ->
+  let unknown_from : Typ.t -> callee_pname:_ -> location:_ -> t =
+   fun typ ~callee_pname ~location ->
+    let is_int = Typ.is_int typ in
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
     { itv= Itv.top
     ; itv_thresholds= ItvThresholds.empty
     ; itv_updated_by= ItvUpdatedBy.Top
     ; modeled_range= ModeledRange.bottom
-    ; powloc= PowLoc.unknown
-    ; arrayblk= ArrayBlk.unknown
+    ; powloc= (if is_int then PowLoc.bottom else PowLoc.unknown)
+    ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
     ; traces }
 
 
@@ -1984,10 +1985,10 @@ module MemReach = struct
     PowLoc.fold (fun l acc -> add_heap ?represents_multiple_values l v acc) locs m
 
 
-  let add_unknown_from : Ident.t -> callee_pname:Procname.t option -> location:Location.t -> t -> t
-      =
-   fun id ~callee_pname ~location m ->
-    let val_unknown = Val.unknown_from ~callee_pname ~location in
+  let add_unknown_from :
+      Ident.t * Typ.t -> callee_pname:Procname.t option -> location:Location.t -> t -> t =
+   fun (id, typ) ~callee_pname ~location m ->
+    let val_unknown = Val.unknown_from typ ~callee_pname ~location in
     add_stack (Loc.of_id id) val_unknown m |> add_heap Loc.unknown val_unknown
 
 
@@ -2356,13 +2357,14 @@ module Mem = struct
     map ~f:(MemReach.add_heap_set ?represents_multiple_values ploc v)
 
 
-  let add_unknown_from : Ident.t -> callee_pname:Procname.t -> location:Location.t -> t -> t =
-   fun id ~callee_pname ~location ->
-    map ~f:(MemReach.add_unknown_from id ~callee_pname:(Some callee_pname) ~location)
+  let add_unknown_from : Ident.t * Typ.t -> callee_pname:Procname.t -> location:Location.t -> t -> t
+      =
+   fun ret ~callee_pname ~location ->
+    map ~f:(MemReach.add_unknown_from ret ~callee_pname:(Some callee_pname) ~location)
 
 
-  let add_unknown : Ident.t -> location:Location.t -> t -> t =
-   fun id ~location -> map ~f:(MemReach.add_unknown_from id ~callee_pname:None ~location)
+  let add_unknown : Ident.t * Typ.t -> location:Location.t -> t -> t =
+   fun ret ~location -> map ~f:(MemReach.add_unknown_from ret ~callee_pname:None ~location)
 
 
   let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> map ~f:(MemReach.strong_update p v)

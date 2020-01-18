@@ -274,7 +274,7 @@ module TransferFunctions = struct
         None
 
 
-  let load_global_constant get_summary id pvar location mem ~find_from_initializer =
+  let load_global_constant get_summary ((id, _) as ret) pvar location mem ~find_from_initializer =
     match Pvar.get_initializer_pname pvar with
     | Some callee_pname -> (
       match get_summary callee_pname with
@@ -284,11 +284,11 @@ module TransferFunctions = struct
       | None ->
           L.d_printfln_escaped "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text)
             pvar ;
-          Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+          Dom.Mem.add_unknown_from ret ~callee_pname ~location mem )
     | None ->
         L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
           (Pvar.pp Pp.text) pvar ;
-        Dom.Mem.add_unknown id ~location mem
+        Dom.Mem.add_unknown ret ~location mem
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
@@ -297,13 +297,13 @@ module TransferFunctions = struct
     match instr with
     | Load {id} when Ident.is_none id ->
         mem
-    | Load {id; e= Exp.Lvar pvar; loc= location}
+    | Load {id; e= Exp.Lvar pvar; typ; loc= location}
       when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
-        load_global_constant get_summary id pvar location mem
+        load_global_constant get_summary (id, typ) pvar location mem
           ~find_from_initializer:(fun callee_mem -> Dom.Mem.find (Loc.of_pvar pvar) callee_mem)
-    | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); loc= location}
+    | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); typ; loc= location}
       when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
-        load_global_constant get_summary id pvar location mem
+        load_global_constant get_summary (id, typ) pvar location mem
           ~find_from_initializer:(fun callee_mem ->
             let locs = Dom.Mem.find (Loc.of_pvar pvar) callee_mem |> Dom.Val.get_all_locs in
             Dom.Mem.find_set locs callee_mem )
@@ -408,11 +408,11 @@ module TransferFunctions = struct
                   L.(debug BufferOverrun Verbose)
                     "/!\\ Non-static call to unknown %a \n\n" Procname.pp callee_pname ;
                   assign_symbolic_pname_value callee_pname params ret location mem )
-                else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
-    | Call ((id, _), fun_exp, _, location, _) ->
+                else Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
+    | Call (((id, _) as ret), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
-        Dom.Mem.add_unknown id ~location mem
+        Dom.Mem.add_unknown ret ~location mem
     | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
         let model_env =
           let pname = Summary.get_proc_name summary in
