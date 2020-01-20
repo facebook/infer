@@ -608,7 +608,7 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
   | C osig ->
       C.pp Simple fmt osig
   | ObjC_Cpp osig ->
-      ObjC_Cpp.pp Simple fmt osig
+      ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
       Block.pp Simple fmt bsig
   | WithBlockParameters (base, _) ->

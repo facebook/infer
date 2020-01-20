@@ -1,1 +1,1 @@
-codetoanalyze/objcpp/nullable/Examples.mm, stdStringBad, 1, NULLSAFE_NULLABLE_DEREFERENCE, no_bucket, ERROR, [dereferencing the return of toString,assignment of the nullable value,definition of toString]
+codetoanalyze/objcpp/nullable/Examples.mm, stdStringBad, 1, NULLSAFE_NULLABLE_DEREFERENCE, no_bucket, ERROR, [dereferencing the return of A::toString,assignment of the nullable value,definition of toString]

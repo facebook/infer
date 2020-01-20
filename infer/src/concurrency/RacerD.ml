@@ -512,7 +512,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
               acc
         in
         let ownership =
-          (* if a constructer is called via DI, all of its formals will be freshly allocated and
+          (* if a constructor is called via DI, all of its formals will be freshly allocated and
              therefore owned. we assume that constructors annotated with @Inject will only be
              called via DI or using fresh parameters. *)
           if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
@@ -633,19 +633,16 @@ let get_reporting_explanation report_kind tenv pname thread =
   else get_reporting_explanation_cpp
 
 
-let pp_container_access fmt (access_exp, access_pname) =
-  F.fprintf fmt "container %a via call to %s"
-    (MF.wrap_monospaced RacerDDomain.pp_exp)
-    access_exp
-    (MF.monospaced_to_string (Procname.get_method access_pname))
+let describe_exp = MF.wrap_monospaced RacerDDomain.pp_exp
 
+let describe_pname = MF.wrap_monospaced (Procname.pp_simplified_string ~withclass:true)
 
 let pp_access fmt (t : RacerDDomain.TraceElem.t) =
   match t.elem with
   | Read {exp} | Write {exp} ->
-      (MF.wrap_monospaced RacerDDomain.pp_exp) fmt exp
+      describe_exp fmt exp
   | ContainerRead {exp; pname} | ContainerWrite {exp; pname} ->
-      pp_container_access fmt (exp, pname)
+      F.fprintf fmt "container %a via call to %a" describe_exp exp describe_pname pname
   | InterfaceCall _ as access ->
       RacerDDomain.Access.pp fmt access
 
@@ -712,8 +709,7 @@ let report_unannotated_interface_violation ~issue_log reported_pname reported_ac
         F.asprintf
           "Unprotected call to method %a of un-annotated interface %a. Consider annotating the \
            class with %a, adding a lock, or using an interface that is known to be thread-safe."
-          (MF.wrap_monospaced Procname.pp) reported_pname MF.pp_monospaced class_name
-          MF.pp_monospaced "@ThreadSafe"
+          describe_pname reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation ~issue_log ~make_description ~report_kind:UnannotatedInterface
         reported_access
@@ -724,7 +720,7 @@ let report_unannotated_interface_violation ~issue_log reported_pname reported_ac
 
 let make_unprotected_write_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
-    (MF.wrap_monospaced Procname.pp) pname
+    describe_pname pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if RacerDDomain.TraceElem.is_container_write final_sink then "mutates" else "writes to field")
     pp_access final_sink
@@ -733,7 +729,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
 let make_guardedby_violation_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf
     "GuardedBy violation. Non-private method %a%s accesses %a outside of synchronization."
-    (MF.wrap_monospaced Procname.pp) pname
+    describe_pname pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     pp_access final_sink
 
@@ -748,8 +744,8 @@ let make_read_write_race_description ~read_is_sync (conflict : reported_access) 
       (if read_is_sync then " unsynchronized" else "")
       (MF.wrap_monospaced pp_conflict) conflict
   in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
-    (MF.wrap_monospaced Procname.pp) pname
+  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s." describe_pname
+    pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
     pp_access final_sink conflicts_description
@@ -1105,8 +1101,9 @@ let make_results_table file_env =
       accesses acc
   in
   List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, summary) ->
-      Payload.read_toplevel_procedure (Summary.get_proc_name summary)
-      |> Option.fold ~init:acc ~f:(aggregate_post tenv (Summary.get_proc_name summary)) )
+      let procname = Summary.get_proc_name summary in
+      Payload.read_toplevel_procedure procname
+      |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
