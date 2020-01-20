@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-let pname_pp = MF.wrap_monospaced Procname.pp
+let describe_pname = MF.wrap_monospaced Procname.pp
 
 module ThreadDomain = struct
   type t = UnknownThread | UIThread | BGThread | AnyThread [@@deriving compare, equal]
@@ -175,17 +175,31 @@ module Lock = struct
 
   let get_access_path {path} = path
 
-  let pp fmt {path} = AccessPath.pp fmt path
+  let pp fmt {root; path} =
+    let pp_path fmt ((var, typ), accesses) =
+      F.fprintf fmt "(%a:%a)" Var.pp var (Typ.pp_full Pp.text) typ ;
+      if not (List.is_empty accesses) then F.fprintf fmt ".%a" AccessPath.pp_access_list accesses
+    in
+    match root with
+    | Global mangled ->
+        F.fprintf fmt "G<%a>{%a}" Mangled.pp mangled pp_path path
+    | Class typename ->
+        F.fprintf fmt "C<%a>{%a}" Typ.Name.pp typename pp_path path
+    | Parameter idx ->
+        F.fprintf fmt "P<%i>{%a}" idx pp_path path
+
 
   let owner_class {path= (_, {Typ.desc}), _} =
     match desc with Typ.Tstruct name | Typ.Tptr ({desc= Tstruct name}, _) -> Some name | _ -> None
 
 
   let describe fmt lock =
-    let pp_owner fmt lock =
-      owner_class lock |> Option.iter ~f:(F.fprintf fmt " in %a" (MF.wrap_monospaced Typ.Name.pp))
+    let describe_lock fmt lock = (MF.wrap_monospaced AccessPath.pp) fmt lock.path in
+    let describe_typename = MF.wrap_monospaced Typ.Name.pp in
+    let describe_owner fmt lock =
+      owner_class lock |> Option.iter ~f:(F.fprintf fmt " in %a" describe_typename)
     in
-    F.fprintf fmt "%a%a" (MF.wrap_monospaced pp) lock pp_owner lock
+    F.fprintf fmt "%a%a" describe_lock lock describe_owner lock
 
 
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
@@ -224,7 +238,7 @@ module Event = struct
 
   let make_acquire lock = LockAcquire lock
 
-  let make_call_descr callee = F.asprintf "calls %a" pname_pp callee
+  let make_call_descr callee = F.asprintf "calls %a" describe_pname callee
 
   let make_blocking_call callee sev =
     let descr = make_call_descr callee in
@@ -245,14 +259,16 @@ module Acquisition = struct
   type t = {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Procname.t [@compare.ignore]}
   [@@deriving compare]
 
-  let pp fmt {lock} = Lock.pp_locks fmt lock
+  let pp fmt {lock} = Lock.pp fmt lock
+
+  let describe fmt {lock} = Lock.pp_locks fmt lock
 
   let make ~procname ~loc lock = {lock; loc; procname}
 
   let compare_loc {loc= loc1} {loc= loc2} = Location.compare loc1 loc2
 
   let make_trace_step acquisition =
-    let description = F.asprintf "%a" pp acquisition in
+    let description = F.asprintf "%a" describe acquisition in
     Errlog.make_trace_element 0 acquisition.loc description []
 
 
@@ -444,7 +460,7 @@ module CriticalPair = struct
       else Procname.Map.empty
     in
     let header_step =
-      let description = F.asprintf "%s%a" header pname_pp top_pname in
+      let description = F.asprintf "%s%a" header describe_pname top_pname in
       let loc = get_loc pair in
       Errlog.make_trace_element 0 loc description []
     in
@@ -789,10 +805,12 @@ let empty_summary : summary =
 
 let pp_summary fmt (summary : summary) =
   F.fprintf fmt
-    "{thread= %a; critical_pairs= %a; scheduled_work= %a; attributes= %a; return_attributes= %a}"
-    ThreadDomain.pp summary.thread CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp
-    summary.scheduled_work AttributeDomain.pp summary.attributes Attribute.pp
-    summary.return_attribute
+    "{@[<v>thread= %a; return_attributes= %a;@;\
+     critical_pairs=%a;@;\
+     scheduled_work= %a;@;\
+     attributes= %a@]}" ThreadDomain.pp summary.thread Attribute.pp summary.return_attribute
+    CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp summary.scheduled_work
+    AttributeDomain.pp summary.attributes
 
 
 let integrate_summary ?tenv ?lhs callsite (astate : t) (summary : summary) =
