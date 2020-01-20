@@ -101,7 +101,7 @@ class Localities {
   }
 
   // @loc: T
-  private int newHashCode_impure_FN() {
+  private int newHashCode_impure() {
     return new Object().hashCode();
   }
 

@@ -8,4 +8,4 @@
 
 void output_stream_impure() { std::cout << "Hello, world!" << std::endl; }
 
-int random_impure_FN() { std::rand(); }
+int random_impure() { std::rand(); }

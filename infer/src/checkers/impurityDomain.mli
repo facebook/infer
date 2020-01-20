@@ -18,7 +18,10 @@ module ModifiedVarSet : sig
   include AbstractDomain.FiniteSetS with type elt = ModifiedVar.t
 end
 
-type t = {modified_params: ModifiedVarSet.t; modified_globals: ModifiedVarSet.t}
+type t =
+  { modified_params: ModifiedVarSet.t
+  ; modified_globals: ModifiedVarSet.t
+  ; skipped_calls_map: PulseBaseDomain.SkippedCallsMap.t }
 
 val pure : t
 

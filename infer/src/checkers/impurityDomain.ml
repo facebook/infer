@@ -21,22 +21,34 @@ end
 
 module ModifiedVarSet = AbstractDomain.FiniteSet (ModifiedVar)
 
-type t = {modified_params: ModifiedVarSet.t; modified_globals: ModifiedVarSet.t}
+type t =
+  { modified_params: ModifiedVarSet.t
+  ; modified_globals: ModifiedVarSet.t
+  ; skipped_calls_map: PulseBaseDomain.SkippedCallsMap.t }
 
-let is_pure {modified_globals; modified_params} =
-  ModifiedVarSet.is_empty modified_globals && ModifiedVarSet.is_empty modified_params
+let is_pure {modified_globals; modified_params; skipped_calls_map} =
+  ModifiedVarSet.is_empty modified_globals
+  && ModifiedVarSet.is_empty modified_params
+  && PulseBaseDomain.SkippedCallsMap.is_empty skipped_calls_map
 
 
-let pure = {modified_params= ModifiedVarSet.empty; modified_globals= ModifiedVarSet.empty}
+let pure =
+  { modified_params= ModifiedVarSet.empty
+  ; modified_globals= ModifiedVarSet.empty
+  ; skipped_calls_map= PulseBaseDomain.SkippedCallsMap.empty }
+
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
-    let {modified_globals= mg1; modified_params= mp1} = astate1 in
-    let {modified_globals= mg2; modified_params= mp2} = astate2 in
+    let {modified_globals= mg1; modified_params= mp1; skipped_calls_map= uk1} = astate1 in
+    let {modified_globals= mg2; modified_params= mp2; skipped_calls_map= uk2} = astate2 in
     PhysEqual.optim2
       ~res:
-        {modified_globals= ModifiedVarSet.join mg1 mg2; modified_params= ModifiedVarSet.join mp1 mp2}
+        { modified_globals= ModifiedVarSet.join mg1 mg2
+        ; modified_params= ModifiedVarSet.join mp1 mp2
+        ; skipped_calls_map=
+            PulseBaseDomain.SkippedCallsMap.union (fun _pname t1 _ -> Some t1) uk1 uk2 }
       astate1 astate2
 
 

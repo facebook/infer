@@ -85,7 +85,7 @@ class Test {
   }
 
   // All unmodeled calls should be considered impure
-  static long systemNanoTime_impure_FN() {
+  static long systemNanoTime_impure() {
     return System.nanoTime();
   }
 }

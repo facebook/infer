@@ -6,8 +6,15 @@
  */
 class PurityModeled {
 
-  double math_random_impure_FN() {
+  double math_random_impure() {
     return Math.random();
+  }
+
+  double math_random_infeasible_pure(int x) {
+    if (x > 1 && x < 2) {
+      return Math.random(); // this path will never be taken
+    }
+    return 0;
   }
 
   void arraycopy_pure_FP(int[] src) {
@@ -18,5 +25,24 @@ class PurityModeled {
 
   public void array_length_loop_pure(Integer[] array) {
     for (int i = 0; i < array.length; i++) {}
+  }
+
+  void write_impure() {
+    byte[] temp = new byte[4];
+    System.out.write(temp, 0, 4);
+  }
+
+  void call_write_impure() {
+    write_impure();
+  }
+
+  int math_random_in_loop_impure(int x) {
+    int p = 0;
+    for (int i = 0; i < x; i++) {
+      p += Math.random();
+      call_write_impure();
+    }
+
+    return p;
   }
 }
