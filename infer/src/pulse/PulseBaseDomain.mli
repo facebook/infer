@@ -8,7 +8,14 @@
 open! IStd
 open PulseBasicInterface
 
-type t = {heap: PulseBaseMemory.t; stack: PulseBaseStack.t}
+module SkippedTrace : sig
+  type t = PulseTrace.t
+end
+
+module SkippedCallsMap :
+  PrettyPrintable.PPMonoMap with type key = Procname.t and type value = SkippedTrace.t
+
+type t = {heap: PulseBaseMemory.t; stack: PulseBaseStack.t; skipped_calls_map: SkippedCallsMap.t}
 
 val empty : t
 

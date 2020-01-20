@@ -11,16 +11,27 @@ open PulseBasicInterface
 module Memory = PulseBaseMemory
 module Stack = PulseBaseStack
 
+module SkippedTrace = struct
+  type t = PulseTrace.t [@@deriving compare]
+
+  let pp fmt =
+    PulseTrace.pp fmt ~pp_immediate:(fun fmt ->
+        F.pp_print_string fmt "call to skipped function occurs here" )
+end
+
+module SkippedCallsMap = PrettyPrintable.MakePPMonoMap (Procname) (SkippedTrace)
+
 (* {2 Abstract domain description } *)
 
-type t = {heap: Memory.t; stack: Stack.t}
+type t = {heap: Memory.t; stack: Stack.t; skipped_calls_map: SkippedCallsMap.t}
 
 let empty =
   { heap=
       Memory.empty
       (* TODO: we could record that 0 is an invalid address at this point but this makes the
          analysis go a bit overboard with the Nullptr reports. *)
-  ; stack= Stack.empty }
+  ; stack= Stack.empty
+  ; skipped_calls_map= SkippedCallsMap.empty }
 
 
 (** comparison between two elements of the domain to determine the [<=] relation
@@ -172,9 +183,11 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
 
 
-let pp fmt {heap; stack} =
-  F.fprintf fmt "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@]}" Stack.pp stack
-    Memory.pp_heap heap Memory.pp_attributes heap
+let pp fmt {heap; stack; skipped_calls_map} =
+  F.fprintf fmt
+    "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@;skipped_calls=@[<hv>%a@];@]}"
+    Stack.pp stack Memory.pp_heap heap Memory.pp_attributes heap SkippedCallsMap.pp
+    skipped_calls_map
 
 
 module GraphVisit : sig

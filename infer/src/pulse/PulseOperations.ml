@@ -499,6 +499,15 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
       Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
     else astate
   in
+  let add_skipped_proc astate =
+    match reason with
+    | PulseCallEvent.SkippedKnownCall proc_name ->
+        AbductiveDomain.add_skipped_calls_map proc_name
+          (Trace.Immediate {location= call_loc; history= []})
+          astate
+    | _ ->
+        astate
+  in
   L.d_printfln "skipping unknown procedure@." ;
   ( match formals_opt with
   | None ->
@@ -518,7 +527,7 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
         astate
     | Ok result ->
         result ) )
-  |> havoc_ret ret
+  |> havoc_ret ret |> add_skipped_proc
 
 
 let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate =

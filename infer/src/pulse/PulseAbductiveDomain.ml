@@ -11,6 +11,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
+module BaseSkippedCallsMap = BaseDomain.SkippedCallsMap
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [InvertedDomain], representing the inferred pre-condition*)
@@ -21,27 +22,34 @@ module type BaseDomain = sig
 
   val empty : t
 
-  val make : BaseStack.t -> BaseMemory.t -> t
+  val make : BaseStack.t -> BaseMemory.t -> BaseSkippedCallsMap.t -> t
 
-  val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> t -> t
+  val update :
+    ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?skipped_calls_map:BaseSkippedCallsMap.t -> t -> t
 
   include AbstractDomain.NoJoin with type t := t
 end
 
 (* just to expose the [heap] and [stack] record field names without having to type
    [BaseDomain.heap] *)
-type base_domain = BaseDomain.t = {heap: BaseMemory.t; stack: BaseStack.t}
+type base_domain = BaseDomain.t =
+  {heap: BaseMemory.t; stack: BaseStack.t; skipped_calls_map: BaseSkippedCallsMap.t}
 
 (** operations common to [Domain] and [InvertedDomain], see also the [BaseDomain] signature *)
 module BaseDomainCommon = struct
-  let make stack heap = {stack; heap}
+  let make stack heap skipped_calls_map = {stack; heap; skipped_calls_map}
 
-  let update ?stack ?heap foot =
-    let new_stack, new_heap =
-      (Option.value ~default:foot.stack stack, Option.value ~default:foot.heap heap)
+  let update ?stack ?heap ?skipped_calls_map foot =
+    let new_stack, new_heap, new_skipped_calls_map =
+      ( Option.value ~default:foot.stack stack
+      , Option.value ~default:foot.heap heap
+      , Option.value ~default:foot.skipped_calls_map skipped_calls_map )
     in
-    if phys_equal new_stack foot.stack && phys_equal new_heap foot.heap then foot
-    else {stack= new_stack; heap= new_heap}
+    if
+      phys_equal new_stack foot.stack && phys_equal new_heap foot.heap
+      && phys_equal new_skipped_calls_map foot.skipped_calls_map
+    then foot
+    else {stack= new_stack; heap= new_heap; skipped_calls_map= new_skipped_calls_map}
 end
 
 (** represents the post abstract state at each program point *)
@@ -112,7 +120,8 @@ module Stack = struct
             (* HACK: do not record the history of values in the pre as they are unused *)
             let foot_stack = BaseStack.add var (addr, []) (astate.pre :> base_domain).stack in
             let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
-            InvertedDomain.make foot_stack foot_heap
+            let pre_skipped_calls_map = (astate.pre :> base_domain).skipped_calls_map in
+            InvertedDomain.make foot_stack foot_heap pre_skipped_calls_map
           else astate.pre
         in
         ({post= Domain.update astate.post ~stack:post_stack; pre}, addr_hist)
@@ -265,10 +274,24 @@ let mk_initial proc_desc =
       List.fold formals ~init:(InvertedDomain.empty :> base_domain).heap
         ~f:(fun heap (_, (addr, _)) -> BaseMemory.register_address addr heap)
     in
-    InvertedDomain.make initial_stack initial_heap
+    let initial_skipped_map = (InvertedDomain.empty :> BaseDomain.t).skipped_calls_map in
+    InvertedDomain.make initial_stack initial_heap initial_skipped_map
   in
   let post = Domain.update ~stack:initial_stack Domain.empty in
   {pre; post}
+
+
+(** [astate] with [astate.post.skipped_calls_map = f astate.post.skipped_calls_map] *)
+let map_post_skipped_calls_map ~f astate =
+  let new_post =
+    Domain.update astate.post ~skipped_calls_map:(f (astate.post :> base_domain).skipped_calls_map)
+  in
+  if phys_equal new_post astate.post then astate else {astate with post= new_post}
+
+
+let add_skipped_calls_map pname trace astate =
+  map_post_skipped_calls_map astate ~f:(fun skipped_call_map ->
+      BaseSkippedCallsMap.add pname trace skipped_call_map )
 
 
 let discard_unreachable ({pre; post} as astate) =
@@ -285,8 +308,7 @@ let discard_unreachable ({pre; post} as astate) =
   in
   if phys_equal pre_new_heap pre_old_heap && phys_equal post_new_heap post_old_heap then astate
   else
-    { pre= InvertedDomain.make (pre :> BaseDomain.t).stack pre_new_heap
-    ; post= Domain.make (post :> BaseDomain.t).stack post_new_heap }
+    {pre= InvertedDomain.update pre ~heap:pre_new_heap; post= Domain.update post ~heap:post_new_heap}
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -774,7 +796,8 @@ module PrePost = struct
       BaseMemory.set_edges addr_caller edges_post_caller heap
       |> BaseMemory.add_attribute addr_caller written_to
     in
-    let caller_post = Domain.make (call_state.astate.post :> base_domain).stack heap in
+    let call_post = (call_state.astate.post :> base_domain) in
+    let caller_post = Domain.make call_post.stack heap call_post.skipped_calls_map in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}
 
 
@@ -908,6 +931,21 @@ module PrePost = struct
       (pre_post.post :> BaseDomain.t).heap call_state
 
 
+  let record_skipped_calls callee_proc_name call_loc pre_post call_state =
+    let callee_skipped_map = (pre_post.post :> BaseDomain.t).skipped_calls_map in
+    let caller_skipped_map =
+      BaseSkippedCallsMap.map
+        (fun trace -> add_call_to_trace callee_proc_name call_loc [] trace)
+        callee_skipped_map
+      |> (* favor calls we already knew about somewhat arbitrarily *)
+      BaseSkippedCallsMap.union
+        (fun _ orig_call _callee_call -> Some orig_call)
+        (call_state.astate.post :> BaseDomain.t).skipped_calls_map
+    in
+    { call_state with
+      astate= map_post_skipped_calls_map ~f:(fun _ -> caller_skipped_map) call_state.astate }
+
+
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
     let r =
@@ -916,6 +954,7 @@ module PrePost = struct
       |> record_post_for_return callee_proc_name call_location pre_post
       |> fun (call_state, return_caller) ->
       ( record_post_remaining_attributes callee_proc_name call_location pre_post call_state
+        |> record_skipped_calls callee_proc_name call_location pre_post
       , return_caller )
       |> fun ({astate}, return_caller) -> (astate, return_caller)
     in
