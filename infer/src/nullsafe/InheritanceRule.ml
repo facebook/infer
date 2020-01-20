@@ -67,10 +67,12 @@ let violation_description _ violation_type ~base_proc_name ~overridden_proc_name
             string_of_int n ^ "th"
       in
       Format.asprintf
-        "%s parameter %a of method %a is not %a but is declared %ain the parent class method %a."
+        "%s parameter %a of method %a is missing %a declaration when overriding %a. The parent \
+         method declared it can handle `null` for this param, so the child should also declare \
+         that."
         (translate_position param_position)
         MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr MF.pp_monospaced
-        nullable_annotation MF.pp_monospaced nullable_annotation MF.pp_monospaced base_method_descr
+        nullable_annotation MF.pp_monospaced base_method_descr
 
 
 let violation_severity {is_strict_mode} =
