@@ -208,18 +208,18 @@ end
 module Event = struct
   type t =
     | LockAcquire of Lock.t
-    | MayBlock of (string * StarvationModels.severity)
-    | StrictModeCall of string
+    | MayBlock of (Procname.t * StarvationModels.severity)
+    | StrictModeCall of Procname.t
     | MonitorWait of Lock.t
   [@@deriving compare]
 
   let pp fmt = function
     | LockAcquire lock ->
         F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
-    | MayBlock (msg, sev) ->
-        F.fprintf fmt "MayBlock(%s, %a)" msg StarvationModels.pp_severity sev
-    | StrictModeCall msg ->
-        F.fprintf fmt "StrictModeCall(%s)" msg
+    | MayBlock (pname, sev) ->
+        F.fprintf fmt "MayBlock(%a, %a)" Procname.pp pname StarvationModels.pp_severity sev
+    | StrictModeCall pname ->
+        F.fprintf fmt "StrictModeCall(%a)" Procname.pp pname
     | MonitorWait lock ->
         F.fprintf fmt "MonitorWait(%a)" Lock.pp lock
 
@@ -228,27 +228,17 @@ module Event = struct
     match elem with
     | LockAcquire lock ->
         Lock.pp_locks fmt lock
-    | MayBlock (msg, _) ->
-        F.pp_print_string fmt msg
-    | StrictModeCall msg ->
-        F.pp_print_string fmt msg
+    | MayBlock (pname, _) | StrictModeCall pname ->
+        F.fprintf fmt "calls %a" describe_pname pname
     | MonitorWait lock ->
         F.fprintf fmt "calls `wait` on %a" Lock.describe lock
 
 
   let make_acquire lock = LockAcquire lock
 
-  let make_call_descr callee = F.asprintf "calls %a" describe_pname callee
+  let make_blocking_call callee sev = MayBlock (callee, sev)
 
-  let make_blocking_call callee sev =
-    let descr = make_call_descr callee in
-    MayBlock (descr, sev)
-
-
-  let make_strict_mode_call callee =
-    let descr = make_call_descr callee in
-    StrictModeCall descr
-
+  let make_strict_mode_call callee = StrictModeCall callee
 
   let make_object_wait lock = MonitorWait lock
 end

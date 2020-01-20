@@ -58,8 +58,8 @@ end
 module Event : sig
   type t =
     | LockAcquire of Lock.t
-    | MayBlock of (string * StarvationModels.severity)
-    | StrictModeCall of string
+    | MayBlock of (Procname.t * StarvationModels.severity)
+    | StrictModeCall of Procname.t
     | MonitorWait of Lock.t
   [@@deriving compare]
 

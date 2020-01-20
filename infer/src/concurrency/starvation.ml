@@ -630,13 +630,13 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
   if CriticalPair.can_run_in_parallel pair other_pair then
     let acquisitions = other_pair.CriticalPair.elem.acquisitions in
     match other_pair.CriticalPair.elem.event with
-    | MayBlock (block_descr, sev)
+    | MayBlock (_, sev) as event
       when should_report_starvation && Acquisitions.lock_is_held_in_other_thread lock acquisitions
       ->
         let error_message =
           Format.asprintf
-            "Method %a runs on UI thread and%a, which may be held by another thread which %s."
-            pname_pp pname Lock.pp_locks lock block_descr
+            "Method %a runs on UI thread and%a, which may be held by another thread which %a."
+            pname_pp pname Lock.pp_locks lock Event.describe event
         in
         let ltr, loc = make_trace_and_loc () in
         ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
