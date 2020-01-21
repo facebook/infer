@@ -49,10 +49,15 @@ module Lock : sig
   (** make a lock if the expression is rooted at a global or a formal parameter, or represents a
       class object *)
 
-  val get_access_path : t -> AccessPath.t
-
   val make_java_synchronized : FormalMap.t -> Procname.t -> t option
   (** create the monitor locked when entering a synchronized java method *)
+
+  val is_class_object : t -> bool
+  (** is the lock a class object such as in [synchronized(MyClass.class){}] or
+      [static synchronized void foo()] *)
+
+  val compare_wrt_reporting : t -> t -> int
+  (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
 end
 
 module Event : sig

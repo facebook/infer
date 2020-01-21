@@ -116,6 +116,8 @@ module Lock = struct
         false
 
 
+  let is_class_object = function {root= Class _} -> true | _ -> false
+
   (* using an indentifier for a class object, create an access path representing that lock;
      this is for synchronizing on Java class objects only *)
   let path_of_java_class =
@@ -173,8 +175,6 @@ module Lock = struct
         L.die InternalError "Non-Java methods cannot be synchronized.@\n"
 
 
-  let get_access_path {path} = path
-
   let pp fmt {root; path} =
     let pp_path fmt ((var, typ), accesses) =
       F.fprintf fmt "(%a:%a)" Var.pp var (Typ.pp_full Pp.text) typ ;
@@ -203,6 +203,10 @@ module Lock = struct
 
 
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
+
+  let compare_wrt_reporting {path= (_, typ1), _} {path= (_, typ2), _} =
+    (* use string comparison on types as a stable order to decide whether to report a deadlock *)
+    String.compare (Typ.to_string typ1) (Typ.to_string typ2)
 end
 
 module Event = struct

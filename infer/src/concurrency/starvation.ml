@@ -556,24 +556,15 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
   | LockAcquire endpoint_lock, LockAcquire current_lock -> (
-    match (Lock.get_access_path endpoint_lock, Lock.get_access_path current_lock) with
-    | ((Var.LogicalVar _, _), []), _ ->
-        (* first elem is a class object (see [lock_of_class]), so always report because the
-           reverse ordering on the events will not occur since we don't search the class for static locks *)
-        true
-    | ((Var.LogicalVar _, _), _ :: _), _ | _, ((Var.LogicalVar _, _), _) ->
-        (* first elem has an ident root, but has a non-empty access path, which means we are
-           not filtering out local variables (see [exec_instr]), or,
-           second elem has an ident root, which should not happen if we are filtering locals *)
-        L.die InternalError "Deadlock cannot occur on these logical variables: %a @."
-          CriticalPair.pp current_elem
-    | ((_, typ1), _), ((_, typ2), _) ->
-        (* use string comparison on types as a stable order to decide whether to report a deadlock *)
-        let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
-        c < 0
-        || Int.equal 0 c
-           && (* same class, so choose depending on location *)
-           Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0 )
+      (* first elem is a class object (see [lock_of_class]), so always report because the
+         reverse ordering on the events will not occur since we don't search the class for static locks *)
+      Lock.is_class_object endpoint_lock
+      ||
+      match Lock.compare_wrt_reporting endpoint_lock current_lock with
+      | 0 ->
+          Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
+      | c ->
+          c < 0 )
 
 
 let should_report pdesc =
