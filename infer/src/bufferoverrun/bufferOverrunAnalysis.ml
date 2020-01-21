@@ -33,7 +33,7 @@ type extras =
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 module Init = struct
-  let initial_state {ProcData.summary; tenv; extras= {oenv}} start_node =
+  let initial_state {ProcData.summary; tenv; extras= {get_summary; oenv}} start_node =
     let try_decl_local =
       let pname = Summary.get_proc_name summary in
       let model_env =
@@ -46,7 +46,7 @@ module Init = struct
         let loc = Loc.of_pvar (Pvar.mk name pname) in
         BoUtils.Exec.decl_local model_env (mem, inst_num) (loc, typ)
     in
-    let mem = Dom.Mem.init oenv in
+    let mem = Dom.Mem.init get_summary oenv in
     let mem, _ =
       List.fold ~f:try_decl_local ~init:(mem, 1)
         (Procdesc.get_locals (Summary.get_proc_desc summary))

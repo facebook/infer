@@ -91,6 +91,10 @@ module Loc : sig
 
   val is_global : t -> bool
 
+  val get_global_array_initializer : t -> Procname.t option
+  (** Return the name of global initializer when given abstract location represents a global
+      constant array value *)
+
   val is_pretty : t -> bool
   (** It checks if it is representable with pretty form, e.g., with a path or with a variable name. *)
 

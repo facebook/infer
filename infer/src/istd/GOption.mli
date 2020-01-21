@@ -14,3 +14,6 @@ type (_, _) t = GNone : (none, _) t | GSome : 'a -> (some, 'a) t
 val value : (some, 'a) t -> 'a
 
 val value_map : (_, 'a) t -> default:'b -> f:('a -> 'b) -> 'b
+
+val value_map_f : (_, 'a) t -> default:(unit -> 'b) -> f:('a -> 'b) -> 'b
+(** Like [value_map] but the default value is evaluated lazily *)

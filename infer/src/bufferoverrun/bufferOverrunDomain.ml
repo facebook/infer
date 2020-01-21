@@ -1792,20 +1792,12 @@ module MemReach = struct
     ; mem_pure: MemPure.t
     ; alias: Alias.t
     ; latest_prune: LatestPrune.t
-    ; oenv: ('has_oenv, OndemandEnv.t) GOption.t }
+    ; oenv: ('has_oenv, OndemandEnv.t) GOption.t
+    ; find_global_array: ('has_oenv, Loc.t -> Val.t option) GOption.t }
 
   type no_oenv_t = GOption.none t0
 
   type t = GOption.some t0
-
-  let init : OndemandEnv.t -> t =
-   fun oenv ->
-    { stack_locs= StackLocs.bot
-    ; mem_pure= MemPure.bot
-    ; alias= Alias.init
-    ; latest_prune= LatestPrune.top
-    ; oenv= GOption.GSome oenv }
-
 
   let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -1825,7 +1817,8 @@ module MemReach = struct
       ; mem_pure= MemPure.widen oenv ~prev:prev.mem_pure ~next:next.mem_pure ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters
       ; latest_prune= LatestPrune.widen ~prev:prev.latest_prune ~next:next.latest_prune ~num_iters
-      ; oenv= prev.oenv } )
+      ; oenv= prev.oenv
+      ; find_global_array= prev.find_global_array } )
 
 
   let join : t -> t -> t =
@@ -1836,7 +1829,8 @@ module MemReach = struct
     ; mem_pure= MemPure.join oenv x.mem_pure y.mem_pure
     ; alias= Alias.join x.alias y.alias
     ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune
-    ; oenv= x.oenv }
+    ; oenv= x.oenv
+    ; find_global_array= x.find_global_array }
 
 
   let pp : F.formatter -> _ t0 -> unit =
@@ -1845,7 +1839,9 @@ module MemReach = struct
       MemPure.pp x.mem_pure Alias.pp x.alias LatestPrune.pp x.latest_prune
 
 
-  let unset_oenv : t -> no_oenv_t = function x -> {x with oenv= GOption.GNone}
+  let unset_oenv : t -> no_oenv_t =
+   fun x -> {x with oenv= GOption.GNone; find_global_array= GOption.GNone}
+
 
   let is_stack_loc : Loc.t -> _ t0 -> bool = fun l m -> StackLocs.mem l m.stack_locs
 
@@ -1855,10 +1851,17 @@ module MemReach = struct
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
+  (** Find heap values from: (1) given abstract memory [m] (2) initializers of global array values
+      (3) otherwise, it generates symbolic or unknown values ondemand *)
   let find_heap_default : default:Val.t -> ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
    fun ~default ?typ l m ->
+    let ondemand_fallback () =
+      GOption.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default ?typ oenv l)
+    in
     IOption.value_default_f (find_opt l m) ~f:(fun () ->
-        GOption.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default ?typ oenv l) )
+        GOption.value_map_f m.find_global_array ~default:ondemand_fallback
+          ~f:(fun find_global_array ->
+            IOption.value_default_f (find_global_array l) ~f:ondemand_fallback ) )
 
 
   let find_heap : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
@@ -1899,6 +1902,22 @@ module MemReach = struct
 
 
   let find_ret_alias : _ t0 -> AliasTargets.t = fun m -> Alias.find_ret m.alias
+
+  type get_summary = Procname.t -> no_oenv_t option
+
+  let init : get_summary -> OndemandEnv.t -> t =
+   fun get_summary oenv ->
+    let find_global_array loc =
+      Option.bind (Loc.get_global_array_initializer loc) ~f:(fun pname ->
+          Option.bind (get_summary pname) ~f:(find_opt loc) )
+    in
+    { stack_locs= StackLocs.bot
+    ; mem_pure= MemPure.bot
+    ; alias= Alias.init
+    ; latest_prune= LatestPrune.top
+    ; oenv= GOption.GSome oenv
+    ; find_global_array= GOption.GSome find_global_array }
+
 
   let load_alias : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
    fun id loc tgt m -> {m with alias= Alias.load id loc tgt m.alias}
@@ -2235,7 +2254,13 @@ module Mem = struct
 
   type get_summary = Procname.t -> no_oenv_t option
 
-  let init : OndemandEnv.t -> t = fun oenv -> NonBottom (MemReach.init oenv)
+  let init : get_summary -> OndemandEnv.t -> t =
+   fun get_summary oenv ->
+    let get_summary pname =
+      match get_summary pname with Some (NonBottom m) -> Some m | _ -> None
+    in
+    NonBottom (MemReach.init get_summary oenv)
+
 
   let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =
    fun ~default f m -> match m with Bottom | ExcRaised -> default | NonBottom m' -> f m'

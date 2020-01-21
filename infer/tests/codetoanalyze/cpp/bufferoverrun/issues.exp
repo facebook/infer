@@ -50,6 +50,7 @@ codetoanalyze/cpp/bufferoverrun/folly_split.cpp, folly_split::do_not_ignore_empt
 codetoanalyze/cpp/bufferoverrun/function_call.cpp, call_by_ref_bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: -1 Size: 10]
 codetoanalyze/cpp/bufferoverrun/function_call.cpp, call_loop_with_init_S_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Parameter `length`,Assignment,<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/cpp/bufferoverrun/global.cpp, access_constant_global_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 5]
+codetoanalyze/cpp/bufferoverrun/global.cpp, access_static_global2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Assignment,Array access: Offset: 5 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_flexible_array_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 7 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_struct1_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Assignment,Array access: Offset: 5 Size: 5]

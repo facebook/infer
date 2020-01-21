@@ -457,7 +457,7 @@ module Mem : sig
 
   type get_summary = Procname.t -> no_oenv_t option
 
-  val init : BufferOverrunOndemandEnv.t -> t
+  val init : get_summary -> BufferOverrunOndemandEnv.t -> t
 
   val exc_raised : t
 

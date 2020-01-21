@@ -16,4 +16,4 @@ static int StaticGlobal[][3] = {
 
 void access_static_global1_Bad_FN() { int* p = StaticGlobal[10]; }
 
-void access_static_global2_Bad_FN() { int a = StaticGlobal[0][10]; }
+void access_static_global2_Bad() { int a = StaticGlobal[0][10]; }

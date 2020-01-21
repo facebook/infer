@@ -119,13 +119,13 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
   in
   let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
   let is_ice = var_decl_info.Clang_ast_t.vdi_is_init_ice in
+  let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
   let is_pod =
-    CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr
-    |> Option.bind ~f:(function
-         | Clang_ast_t.RecordType (_, decl_ptr) ->
-             CAst_utils.get_decl decl_ptr
-         | _ ->
-             None )
+    Option.bind desugared_type ~f:(function
+      | Clang_ast_t.RecordType (_, decl_ptr) ->
+          CAst_utils.get_decl decl_ptr
+      | _ ->
+          None )
     |> Option.value_map ~default:true ~f:(function
          | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
          | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
@@ -139,9 +139,12 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
     && (not var_decl_info.Clang_ast_t.vdi_is_static_data_member)
     && var_decl_info.Clang_ast_t.vdi_is_static
   in
+  let is_constant_array =
+    Option.exists desugared_type ~f:(function Clang_ast_t.ConstantArrayType _ -> true | _ -> false)
+  in
   Pvar.mk_global ~is_constexpr ~is_ice ~is_pod
     ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
-    ?translation_unit (mk_name name_string simple_name)
+    ~is_constant_array ?translation_unit (mk_name name_string simple_name)
 
 
 let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =

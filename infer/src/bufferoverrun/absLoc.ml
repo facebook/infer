@@ -312,6 +312,23 @@ module Loc = struct
         is_global loc
 
 
+  let rec get_global_array_initializer =
+    let initializer_of_pvar pvar =
+      if Pvar.is_constant_array pvar then Pvar.get_initializer_pname pvar else None
+    in
+    function
+    | Var (Var.ProgramVar pvar) ->
+        initializer_of_pvar pvar
+    | Var (Var.LogicalVar _) ->
+        None
+    | Allocsite allocsite ->
+        Allocsite.get_path allocsite
+        |> Option.bind ~f:Symb.SymbolPath.get_pvar
+        |> Option.bind ~f:initializer_of_pvar
+    | Field {prefix= loc} | StarField {prefix= loc} ->
+        get_global_array_initializer loc
+
+
   let rec get_path = function
     | Var (LogicalVar _) ->
         None

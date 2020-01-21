@@ -57,6 +57,9 @@ val is_global : t -> bool
 val is_static_local : t -> bool
 (** Check if the pvar is a static variable declared inside a function *)
 
+val is_constant_array : t -> bool
+(** Check if the pvar has a constant array type *)
+
 val is_local : t -> bool
 (** Check if the pvar is a (non-static) local var *)
 
@@ -111,6 +114,7 @@ val mk_global :
   -> ?is_pod:bool
   -> ?is_static_local:bool
   -> ?is_static_global:bool
+  -> ?is_constant_array:bool
   -> ?translation_unit:SourceFile.t
   -> Mangled.t
   -> t
