@@ -45,16 +45,17 @@ type violation_type =
 
 let violation_description _ violation_type ~base_proc_name ~overridden_proc_name =
   let module MF = MarkupFormatter in
-  let nullable_annotation = "@Nullable" in
   let base_method_descr = Procname.to_simplified_string ~withclass:true base_proc_name in
   let overridden_method_descr =
     Procname.to_simplified_string ~withclass:true overridden_proc_name
   in
   match violation_type with
   | InconsistentReturn ->
-      Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
-        MF.pp_monospaced overridden_method_descr MF.pp_monospaced nullable_annotation
-        MF.pp_monospaced base_method_descr
+      Format.asprintf
+        "Child method %a is not substitution-compatible with its parent: the return type is \
+         declared as nullable, but parent method %a is missing `@Nullable` declaration. Either \
+         mark the parent as `@Nullable` or ensure the child does not return `null`."
+        MF.pp_monospaced overridden_method_descr MF.pp_monospaced base_method_descr
   | InconsistentParam {param_description; param_position} ->
       let translate_position = function
         | 1 ->
@@ -67,12 +68,12 @@ let violation_description _ violation_type ~base_proc_name ~overridden_proc_name
             string_of_int n ^ "th"
       in
       Format.asprintf
-        "%s parameter %a of method %a is missing %a declaration when overriding %a. The parent \
-         method declared it can handle `null` for this param, so the child should also declare \
-         that."
+        "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. The \
+         parent method declared it can handle `null` for this param, so the child should also \
+         declare that."
         (translate_position param_position)
         MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr MF.pp_monospaced
-        nullable_annotation MF.pp_monospaced base_method_descr
+        base_method_descr
 
 
 let violation_severity {is_strict_mode} =
