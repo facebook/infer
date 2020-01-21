@@ -43,6 +43,17 @@ type violation_type =
   | InconsistentReturn
 [@@deriving compare]
 
+let is_java_lang_object_equals = function
+  | Procname.Java java_procname -> (
+    match (Procname.Java.get_class_name java_procname, Procname.Java.get_method java_procname) with
+    | "java.lang.Object", "equals" ->
+        true
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let violation_description _ violation_type ~base_proc_name ~overridden_proc_name =
   let module MF = MarkupFormatter in
   let base_method_descr = Procname.to_simplified_string ~withclass:true base_proc_name in
@@ -57,23 +68,30 @@ let violation_description _ violation_type ~base_proc_name ~overridden_proc_name
          mark the parent as `@Nullable` or ensure the child does not return `null`."
         MF.pp_monospaced overridden_method_descr MF.pp_monospaced base_method_descr
   | InconsistentParam {param_description; param_position} ->
-      let translate_position = function
-        | 1 ->
-            "First"
-        | 2 ->
-            "Second"
-        | 3 ->
-            "Third"
-        | n ->
-            string_of_int n ^ "th"
-      in
-      Format.asprintf
-        "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. The \
-         parent method declared it can handle `null` for this param, so the child should also \
-         declare that."
-        (translate_position param_position)
-        MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr MF.pp_monospaced
-        base_method_descr
+      if is_java_lang_object_equals base_proc_name then
+        (* This is a popular enough case to make error message specific *)
+        Format.asprintf
+          "Parameter %a is missing `@Nullable` declaration: according to the Java Specification, \
+           for any object `x` call `x.equals(null)` should properly return false."
+          MF.pp_monospaced param_description
+      else
+        let translate_position = function
+          | 1 ->
+              "First"
+          | 2 ->
+              "Second"
+          | 3 ->
+              "Third"
+          | n ->
+              string_of_int n ^ "th"
+        in
+        Format.asprintf
+          "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. The \
+           parent method declared it can handle `null` for this param, so the child should also \
+           declare that."
+          (translate_position param_position)
+          MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
+          MF.pp_monospaced base_method_descr
 
 
 let violation_severity {is_strict_mode} =

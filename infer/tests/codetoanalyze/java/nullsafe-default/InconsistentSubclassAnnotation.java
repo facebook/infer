@@ -171,3 +171,11 @@ class ExtendsExternalLibrary extends SomeExternalClass {
     // subtyping error on the parameter type are reported
   }
 }
+
+// Check that we have a special error message for this method
+class JavaLangEquals {
+  @Override
+  public boolean equals(Object x) {
+    return false;
+  }
+}
