@@ -1642,6 +1642,11 @@ INTERNAL OPTIONS
        --profiler-samples-reset
            Cancel the effect of --profiler-samples.
 
+       --pulse-intraprocedural-only
+           Activates: Disable inter-procedural analysis in Pulse. Used for
+           experimentations only. (Conversely:
+           --no-pulse-intraprocedural-only)
+
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 

@@ -44,10 +44,10 @@ module PulseTransferFunctions = struct
 
   let interprocedural_call caller_summary ret call_exp actuals call_loc get_formals astate =
     match proc_name_of_call call_exp with
-    | Some callee_pname ->
+    | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_formals callee_pname in
         PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate
-    | None ->
+    | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         Ok
           [ PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals

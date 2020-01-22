@@ -550,6 +550,8 @@ val project_root : string
 
 val pulse : bool
 
+val pulse_intraprocedural_only : bool
+
 val pulse_max_disjuncts : int
 
 val pulse_widen_threshold : int

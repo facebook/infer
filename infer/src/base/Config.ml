@@ -1955,6 +1955,11 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
+and pulse_intraprocedural_only =
+  CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
+    "Disable inter-procedural analysis in Pulse. Used for experimentations only."
+
+
 and pulse_max_disjuncts =
   CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:20
     "Under-approximate after $(i,int) disjunctions in the domain"
@@ -3076,6 +3081,8 @@ and procs_csv = !procs_csv
 and project_root = !project_root
 
 and pulse = !pulse
+
+and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
