@@ -1,0 +1,25 @@
+// TODO: Checking any one of {InterleavedResponse, ForwardUncommited} is relatively fast. But,
+// checking both is very slow.
+
+// According to the Servlet API, one should use
+//  - a writer for a textual response
+//  - a stream for a binary response, or for a mixed binary+textual response
+// but never both a writer and a stream.
+property InterleavedResponse
+  message "A ServletResponse was asked for both a writer and a stream."
+  prefix "ServletResponse"
+  nondet (start)
+  start -> start: *
+  start -> gotWriter: getWriter(R)
+  start -> gotStream: getOutputStream(R)
+  gotWriter -> error: getOutputStream(r)
+  gotStream -> error: getWriter(r)
+
+property ForwardUncommitted
+  message "A ServletResponse was forwarded before being committed."
+  nondet (start)
+  start -> start: *
+  start -> gotChannel: C = "ServletResponse.\\(getWriter\\|getOutputStream\\)"(R)
+  gotChannel -> ok: "\\(PrintWriter\\|ServletOutputStream\\).flush.*"(c)
+  gotChannel -> error: "RequestDispatcher.forward"(*, *, r)
+

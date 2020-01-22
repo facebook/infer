@@ -5,8 +5,9 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --seconds-per-iteration 100 --symops-per-iteration 10000 --topl-properties tomcat.topl --biabduction-only
+INFER_OPTIONS = --seconds-per-iteration 20 --symops-per-iteration 60000 --topl-properties servlet.topl --biabduction-only
 INFERPRINT_OPTIONS = --issues-tests
+TEST_CLASSPATH = javax.servlet-api-4.0.1.jar
 
 SOURCES = $(wildcard *.java)
 
