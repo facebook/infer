@@ -183,7 +183,7 @@ let capture_with_compilation_database db_files =
           `Escaped (Utils.filename_to_absolute ~root fname)
       | `Raw fname ->
           `Raw (Utils.filename_to_absolute ~root fname) ) ;
-  let compilation_database = CompilationDatabase.from_json_files db_files in
+  let compilation_database = CompilationDatabase.from_json_files !Config.clang_compilation_dbs in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 
