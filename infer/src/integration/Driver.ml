@@ -176,7 +176,7 @@ let check_xcpretty () =
 
 
 let capture_with_compilation_database db_files =
-  let root = Unix.getcwd () in
+  let root = Config.project_root in
   Config.clang_compilation_dbs :=
     List.map db_files ~f:(function
       | `Escaped fname ->
