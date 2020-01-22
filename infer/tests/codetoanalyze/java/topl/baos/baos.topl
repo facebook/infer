@@ -1,0 +1,11 @@
+property BaosRetrieveWithoutFlush
+  nondet (start)
+  start -> start: *
+  start -> valid: ".*OutputStream"(X, Y)
+  valid -> invalid: ".*OutputStream.write.*"(x, *)
+  valid -> invalid: ".*OutputStream.write.*"(x, *, *)
+  valid -> invalid: ".*OutputStream.write.*"(x, *, *, *)
+  invalid -> valid: ".*OutputStream.flush"(x)
+  invalid -> valid: ".*OutputStream.close"(x)
+  invalid -> error: "ByteArrayOutputStream.toByteArray"(y)
+  invalid -> error: "ByteArrayOutputStream.toString"(y)

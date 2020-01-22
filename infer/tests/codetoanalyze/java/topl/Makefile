@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-SUBDIRS = hasnext skip tomcat
+SUBDIRS = baos hasnext skip tomcat
 
 test-%:
 	$(MAKE) -C $* test
