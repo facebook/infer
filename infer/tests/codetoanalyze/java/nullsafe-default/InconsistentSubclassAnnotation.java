@@ -179,3 +179,26 @@ class JavaLangEquals {
     return false;
   }
 }
+
+// Check multiple interfaces in the inheritance chain
+interface NullableGetter {
+  @Nullable
+  String get();
+}
+
+interface NonNullableInterfaceGetterOK extends NullableGetter {
+  String get();
+}
+
+class NonNullableConcreteGetterOK implements NonNullableInterfaceGetterOK {
+  public String get() {
+    return "OK";
+  }
+}
+
+class NullableConcreteGetterBAD implements NonNullableInterfaceGetterOK {
+  @Nullable
+  public String get() {
+    return null;
+  }
+}
