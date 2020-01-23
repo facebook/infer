@@ -92,13 +92,13 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
         CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
-  let finished = function
-    | File _ ->
-        assert false
+  let finished ~completed:_ = function
     | Procname pname ->
         decr remaining ;
         scheduled := Procname.Set.remove pname !scheduled ;
         CallGraph.remove syntactic_call_graph pname
+    | File _ ->
+        L.die InternalError "Only Procnames are scheduled but File target was received"
   in
   let next () =
     (* do construction here, to avoid having the call graph into forked workers *)

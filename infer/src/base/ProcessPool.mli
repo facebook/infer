@@ -15,7 +15,7 @@ module TaskGenerator : sig
               not a bug *)
     ; is_empty: unit -> bool
           (** when should the main loop of the task manager stop expecting new tasks *)
-    ; finished: 'a -> unit
+    ; finished: completed:bool -> 'a -> unit
           (** Process pool calls [finished x] when a worker finishes item [x]. This is only called
               if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
     ; next: unit -> 'a option

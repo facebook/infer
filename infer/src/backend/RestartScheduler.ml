@@ -8,10 +8,10 @@ open! IStd
 
 let of_list (lst : 'a list) : 'a ProcessPool.TaskGenerator.t =
   let content = Queue.of_list lst in
-  let length = ref (Queue.length content) in
-  let remaining_tasks () = !length in
+  let remaining = ref (Queue.length content) in
+  let remaining_tasks () = !remaining in
   let is_empty () = Queue.is_empty content in
-  let finished _finished_item = decr length in
+  let finished ~completed:_ _work = decr remaining in
   let next () = Queue.dequeue content in
   {remaining_tasks; is_empty; finished; next}
 
