@@ -1651,7 +1651,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            * she need to change both the codes here and the `match` in
            * binaryOperator_trans_with_cond *)
           match cond with
-          | BinaryOperator (si, ss, ei, boi) ->
+          | BinaryOperator (si, ss, ei, boi)
+          | ExprWithCleanups (_, [BinaryOperator (si, ss, ei, boi)], _, _) ->
               binaryOperator_trans trans_state boi si ei ss
           | _ ->
               instruction trans_state cond
@@ -1719,7 +1720,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     L.(debug Capture Verbose) "Translating Condition for If-then-else/Loop/Conditional Operator @\n" ;
     let open Clang_ast_t in
     match cond with
-    | BinaryOperator (_, [s1; s2], _, boi) -> (
+    | BinaryOperator (_, [s1; s2], _, boi)
+    | ExprWithCleanups (_, [BinaryOperator (_, [s1; s2], _, boi)], _, _) -> (
       match boi.boi_kind with
       | `LAnd ->
           short_circuit (if negate_cond then Binop.LOr else Binop.LAnd) s1 s2

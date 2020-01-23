@@ -15,6 +15,11 @@
 
 - (void)use_self_in_block_test_nullable:(int)x
                                     and:(_Nullable SelfInBlockTest*)test;
+@end
+
+@interface A
+
+@property(nonatomic, strong) id image;
 
 @end
 
@@ -141,6 +146,17 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     __strong __typeof(weakSelf) strongSelf = weakSelf;
     if (!strongSelf) {
     } else {
+    }
+    return 0;
+  };
+}
+
+- (void)strongSelfNotCheck5_good:(A*)a {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf && a.image) {
+      int x = strongSelf->x; // no bug here
     }
     return 0;
   };
