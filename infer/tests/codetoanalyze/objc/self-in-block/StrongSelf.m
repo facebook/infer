@@ -7,13 +7,30 @@
 
 #include <Foundation/NSObject.h>
 
+@class SelfInBlockTest;
+
+@interface SelfInBlockTestUser
+
+- (void)use_self_in_block_test:(SelfInBlockTest*)test;
+
+- (void)use_self_in_block_test_nullable:(int)x
+                                    and:(_Nullable SelfInBlockTest*)test;
+
+@end
+
 @interface SelfInBlockTest : NSObject
+
+@property(nonatomic, weak) SelfInBlockTestUser* user;
 
 - (void)foo;
 
 - (void)bar;
 
 @end
+
+void m(SelfInBlockTest* obj) {}
+
+void m2(_Nullable SelfInBlockTest* obj) {}
 
 @implementation SelfInBlockTest {
   int x;
@@ -74,7 +91,15 @@
       [strongSelf foo];
       int x = strongSelf->x;
     } else {
-      strongSelf->x;
+      strongSelf->x; // bug here
+      [strongSelf foo]; // no bug here
+      m(strongSelf); // bug here
+      m2(strongSelf); // no bug here because of _Nullable annotation
+      [strongSelf.user use_self_in_block_test:strongSelf]; // bug here
+      [strongSelf.user
+          use_self_in_block_test_nullable:1
+                                      and:strongSelf]; // no bug here because of
+                                                       // _Nullable annotation
     }
     [strongSelf foo];
     if (strongSelf != nil) {

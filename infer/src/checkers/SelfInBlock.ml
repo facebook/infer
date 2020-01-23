@@ -226,6 +226,56 @@ module TransferFunctions = struct
     List.iter ~f:report_unchecked_strongself_issues_on_exp exps
 
 
+  let is_objc_instance proc_desc_opt =
+    match proc_desc_opt with
+    | Some proc_desc -> (
+        let proc_attrs = Procdesc.get_attributes proc_desc in
+        match proc_attrs.ProcAttributes.clang_method_kind with
+        | ClangMethodKind.OBJC_INSTANCE ->
+            true
+        | _ ->
+            false )
+    | None ->
+        false
+
+
+  let get_annotations proc_desc_opt =
+    match proc_desc_opt with
+    | Some proc_desc ->
+        let proc_attrs = Procdesc.get_attributes proc_desc in
+        Some proc_attrs.ProcAttributes.method_annotation.params
+    | None ->
+        None
+
+
+  let report_unchecked_strongself_issues_on_args (domain : Domain.t) summary pname args =
+    let report_issue var =
+      report_unchecked_strongself_issues summary domain
+        (F.sprintf "passed to %s" (Procname.to_simplified_string pname))
+        var
+    in
+    let rec report_on_non_nullable_arg ?(annots = []) args =
+      match (annots, args) with
+      | annot :: annot_rest, (Exp.Var var, _) :: rest when not (Annotations.ia_is_nullable annot) ->
+          report_issue var ;
+          report_on_non_nullable_arg ~annots:annot_rest rest
+      | [], (Exp.Var var, _) :: rest ->
+          report_issue var ; report_on_non_nullable_arg rest
+      | _ ->
+          ()
+    in
+    let proc_desc_opt = Ondemand.get_proc_desc pname in
+    let args =
+      if is_objc_instance proc_desc_opt then match args with _ :: rest -> rest | [] -> []
+      else args
+    in
+    match get_annotations proc_desc_opt with
+    | Some annotations ->
+        report_on_non_nullable_arg ~annots:annotations args
+    | None ->
+        report_on_non_nullable_arg args
+
+
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
     let attributes = Summary.get_attributes summary in
     report_unchecked_strongself_issues_on_exps astate summary instr ;
@@ -262,6 +312,9 @@ module TransferFunctions = struct
     (* If (!(strongSelf == nil)) or equivalent else branch *)
     | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, Sil.Ik_if) ->
         if Exp.is_null_literal e then exec_null_check_id astate id else astate
+    | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
+        report_unchecked_strongself_issues_on_args astate summary callee_pn args ;
+        astate
     | _ ->
         astate
 end
