@@ -171,8 +171,64 @@ module TransferFunctions = struct
     with Not_found_s _ | Caml.Not_found -> astate
 
 
+  let make_trace_unchecked_strongself (domain : Domain.t) =
+    let trace_elems_strongVars =
+      StrongEqualToWeakCapturedVars.fold
+        (fun pvar {loc} trace_elems ->
+          let trace_elem_desc = F.asprintf "%a assigned here" (Pvar.pp Pp.text) pvar in
+          let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+          trace_elem :: trace_elems )
+        domain.strongVars []
+    in
+    let trace_elems_vars =
+      Vars.fold
+        (fun _ {pvar; loc; kind} trace_elems ->
+          match kind with
+          | UNCHECKED_STRONG_SELF ->
+              let trace_elem_desc =
+                F.asprintf "Using %a not checked for null" (Pvar.pp Pp.text) pvar
+              in
+              let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+              trace_elem :: trace_elems
+          | _ ->
+              trace_elems )
+        domain.vars []
+    in
+    let trace_elems = List.append trace_elems_strongVars trace_elems_vars in
+    List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
+        Location.compare loc1 loc2 )
+
+
+  let report_unchecked_strongself_issues summary (domain : Domain.t) var_use var =
+    try
+      let {DomainData.pvar; loc; kind} = Vars.find var domain.vars in
+      if DomainData.is_unchecked_strong_self kind then
+        let message =
+          F.asprintf
+            "The variable `%a`, equal to a weak pointer to `self`, is %s without a check for null \
+             at %a. This could cause a crash or unexpected behavior."
+            (Pvar.pp Pp.text) pvar var_use Location.pp loc
+        in
+        let ltr = make_trace_unchecked_strongself domain in
+        Reporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message
+    with Not_found_s _ | Caml.Not_found -> ()
+
+
+  let report_unchecked_strongself_issues_on_exps (domain : Domain.t) summary (instr : Sil.instr) =
+    let report_unchecked_strongself_issues_on_exp (exp : Exp.t) =
+      match exp with
+      | Lfield (Var var, _, _) ->
+          report_unchecked_strongself_issues summary domain "dereferenced" var
+      | _ ->
+          ()
+    in
+    let exps = Sil.exps_of_instr instr in
+    List.iter ~f:report_unchecked_strongself_issues_on_exp exps
+
+
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
     let attributes = Summary.get_attributes summary in
+    report_unchecked_strongself_issues_on_exps astate summary instr ;
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
         let vars =
@@ -272,53 +328,6 @@ let report_weakself_multiple_issues summary domain =
       ()
 
 
-let make_trace_unchecked_strongself (domain : Domain.t) =
-  let trace_elems_strongVars =
-    StrongEqualToWeakCapturedVars.fold
-      (fun pvar {loc} trace_elems ->
-        let trace_elem_desc = F.asprintf "%a assigned here" (Pvar.pp Pp.text) pvar in
-        let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
-        trace_elem :: trace_elems )
-      domain.strongVars []
-  in
-  let trace_elems_vars =
-    Vars.fold
-      (fun _ {pvar; loc; kind} trace_elems ->
-        match kind with
-        | UNCHECKED_STRONG_SELF ->
-            let trace_elem_desc =
-              F.asprintf "Using %a not checked for null" (Pvar.pp Pp.text) pvar
-            in
-            let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
-            trace_elem :: trace_elems
-        | _ ->
-            trace_elems )
-      domain.vars []
-  in
-  let trace_elems = List.append trace_elems_strongVars trace_elems_vars in
-  List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
-      Location.compare loc1 loc2 )
-
-
-let report_unchecked_strongself_issues summary (domain : Domain.t) =
-  let unchecked_strongSelf_opt =
-    Vars.filter (fun _ {kind} -> DomainData.is_unchecked_strong_self kind) domain.vars
-    |> Vars.choose_opt
-  in
-  match unchecked_strongSelf_opt with
-  | Some (_, {pvar; loc}) ->
-      let message =
-        F.asprintf
-          "The variable `%a`, equal to a weak pointer to `self`, is used without a check for null \
-           at %a. This could cause a crash or unexpected behavior."
-          (Pvar.pp Pp.text) pvar Location.pp loc
-      in
-      let ltr = make_trace_unchecked_strongself domain in
-      Reporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message
-  | _ ->
-      ()
-
-
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let checker {Callbacks.exe_env; summary} =
@@ -330,7 +339,6 @@ let checker {Callbacks.exe_env; summary} =
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
         report_mix_self_weakself_issues summary domain.vars ;
-        report_unchecked_strongself_issues summary domain ;
         report_weakself_multiple_issues summary domain.vars
     | None ->
         () ) ;

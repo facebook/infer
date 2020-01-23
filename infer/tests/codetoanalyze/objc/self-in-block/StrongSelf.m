@@ -46,7 +46,7 @@
   };
 }
 
-- (void)strongSelfNoCheck_bad {
+- (void)strongSelfNoCheck_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -57,7 +57,7 @@
 
 // very unlikely pattern, but still complies with invariant:
 // any use of strongSelf is bad unless checked for null beforehand
-- (void)strongSelfNoCheck2_bad {
+- (void)strongSelfNoCheck2_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -74,7 +74,7 @@
       [strongSelf foo];
       int x = strongSelf->x;
     } else {
-      [strongSelf foo];
+      strongSelf->x;
     }
     [strongSelf foo];
     if (strongSelf != nil) {
