@@ -106,8 +106,14 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
   in
   let is_always_true = not case_zero in
   if should_report then
+    (* TODO(T61051649) this is not really condition. This is an expression.
+       This leads to inconsistent messaging like "condition `some_variable` is always true".
+       So Condition_redundant should either accept expression, or this should pass a condition.
+    *)
+    let condition_descr = explain_expr tenv node e in
+    let nonnull_origin = InferredNullability.get_origin inferred_nullability in
     report_error tenv find_canonical_duplicate
-      (TypeErr.Condition_redundant (is_always_true, explain_expr tenv node e))
+      (TypeErr.Condition_redundant {is_always_true; condition_descr; nonnull_origin})
       (Some instr_ref) loc curr_pdesc
 
 

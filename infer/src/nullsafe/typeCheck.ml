@@ -455,7 +455,10 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
         ( if checks.eradicate && should_report then
           let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
           EradicateChecks.report_error tenv find_canonical_duplicate
-            (TypeErr.Condition_redundant (true, EradicateChecks.explain_expr tenv node cond))
+            (TypeErr.Condition_redundant
+               { is_always_true= true
+               ; condition_descr= EradicateChecks.explain_expr tenv node cond
+               ; nonnull_origin= InferredNullability.get_origin nullability })
             (Some instr_ref) loc curr_pdesc ) ;
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in

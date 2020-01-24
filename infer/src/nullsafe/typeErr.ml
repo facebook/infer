@@ -58,7 +58,8 @@ end
 
 (** Instance of an error *)
 type err_instance =
-  | Condition_redundant of (bool * string option)
+  | Condition_redundant of
+      {is_always_true: bool; condition_descr: string option; nonnull_origin: TypeOrigin.t}
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
       ; violation_type: InheritanceRule.violation_type
@@ -228,9 +229,10 @@ let get_field_name_for_error_suppressing = function
 
 let get_error_info err_instance =
   match err_instance with
-  | Condition_redundant (is_always_true, s_opt) ->
+  | Condition_redundant {is_always_true; condition_descr} ->
       ( P.sprintf "The condition %s is always %b according to the existing annotations."
-          (Option.value s_opt ~default:"") is_always_true
+          (Option.value condition_descr ~default:"")
+          is_always_true
       , IssueType.eradicate_condition_redundant
       , None )
   | Over_annotation {over_annotated_violation; violation_type} ->

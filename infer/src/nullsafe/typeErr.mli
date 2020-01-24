@@ -34,7 +34,8 @@ module InstrRef : InstrRefT
 
 (** Instance of an error *)
 type err_instance =
-  | Condition_redundant of (bool * string option)
+  | Condition_redundant of
+      {is_always_true: bool; condition_descr: string option; nonnull_origin: TypeOrigin.t}
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
       ; violation_type: InheritanceRule.violation_type
