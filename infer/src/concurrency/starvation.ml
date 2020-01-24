@@ -732,14 +732,15 @@ let reporting {Callbacks.procedures; exe_env} =
     let report_on_summary tenv summary report_map (payload : Domain.summary) =
       Domain.CriticalPairs.fold (report_on_pair tenv summary) payload.critical_pairs report_map
     in
-    let report_procedure report_map summary =
-      let proc_desc = Summary.get_proc_desc summary in
-      let procname = Summary.get_proc_name summary in
-      let tenv = Exe_env.get_tenv exe_env procname in
-      if should_report proc_desc then
-        Payload.read_toplevel_procedure procname
-        |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
-      else report_map
+    let report_procedure report_map procname =
+      Ondemand.analyze_proc_name_no_caller procname
+      |> Option.value_map ~default:report_map ~f:(fun summary ->
+             let proc_desc = Summary.get_proc_desc summary in
+             let tenv = Exe_env.get_tenv exe_env procname in
+             if should_report proc_desc then
+               Payload.read_toplevel_procedure procname
+               |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
+             else report_map )
     in
     List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store
 

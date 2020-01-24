@@ -1110,15 +1110,16 @@ let make_results_table exe_env summaries =
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
 let aggregate_by_class exe_env file_env =
-  List.fold file_env ~init:String.Map.empty ~f:(fun acc summary ->
-      let pdesc = Summary.get_proc_desc summary in
-      let procname = Summary.get_proc_name summary in
-      let tenv = Exe_env.get_tenv exe_env procname in
-      if should_report_on_proc tenv pdesc then
-        Procdesc.get_proc_name pdesc |> Procname.get_class_name
-        |> Option.fold ~init:acc ~f:(fun acc classname ->
-               String.Map.add_multi acc ~key:classname ~data:summary )
-      else acc )
+  List.fold file_env ~init:String.Map.empty ~f:(fun acc procname ->
+      Ondemand.analyze_proc_name_no_caller procname
+      |> Option.value_map ~default:acc ~f:(fun summary ->
+             let pdesc = Summary.get_proc_desc summary in
+             let tenv = Exe_env.get_tenv exe_env procname in
+             if should_report_on_proc tenv pdesc then
+               Procdesc.get_proc_name pdesc |> Procname.get_class_name
+               |> Option.fold ~init:acc ~f:(fun acc classname ->
+                      String.Map.add_multi acc ~key:classname ~data:summary )
+             else acc ) )
 
 
 (* Gathers results by analyzing all the methods in a file, then

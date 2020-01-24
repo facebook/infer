@@ -21,7 +21,7 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
-  {procedures: Summary.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
+  {procedures: Procname.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
 type cluster_callback_t = cluster_callback_args -> unit
 
