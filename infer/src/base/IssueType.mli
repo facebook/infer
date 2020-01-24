@@ -70,6 +70,8 @@ val buffer_overrun_u5 : t
 
 val cannot_star : t
 
+val captured_strong_self : t
+
 val checkers_allocates_memory : t
 (** Warning name when a performance critical method directly or indirectly calls a method allocating
     memory *)

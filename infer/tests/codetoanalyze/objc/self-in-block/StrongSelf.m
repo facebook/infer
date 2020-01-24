@@ -178,4 +178,20 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     return 0;
   };
 }
+
+- (void)capturedStrongSelf_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      int (^my_block)() = ^() {
+        int x = strongSelf->x; // bug here
+        return 0;
+      };
+      int x = strongSelf->x;
+    }
+    return 0;
+  };
+}
+
 @end

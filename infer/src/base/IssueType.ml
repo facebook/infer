@@ -141,6 +141,8 @@ let buffer_overrun_u5 = register_from_string ~enabled:false "BUFFER_OVERRUN_U5"
 
 let cannot_star = register_from_string "Cannot_star"
 
+let captured_strong_self = register_from_string "CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf"
+
 let checkers_allocates_memory =
   register_from_string "CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory"
 

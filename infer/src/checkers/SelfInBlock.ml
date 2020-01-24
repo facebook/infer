@@ -8,7 +8,12 @@ open! IStd
 module F = Format
 
 module DomainData = struct
-  type self_pointer_kind = SELF | UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF | WEAK_SELF
+  type self_pointer_kind =
+    | CAPTURED_STRONG_SELF
+    | CHECKED_STRONG_SELF
+    | SELF
+    | UNCHECKED_STRONG_SELF
+    | WEAK_SELF
   [@@deriving compare]
 
   let is_self kind = match kind with SELF -> true | _ -> false
@@ -17,9 +22,13 @@ module DomainData = struct
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
 
+  let is_captured_strong_self kind = match kind with CAPTURED_STRONG_SELF -> true | _ -> false
+
   let pp_self_pointer_kind fmt kind =
     let s =
       match kind with
+      | CAPTURED_STRONG_SELF ->
+          "CAPTURED_STRONG_SELF"
       | CHECKED_STRONG_SELF ->
           "CHECKED_STRONG_SELF"
       | SELF ->
@@ -134,11 +143,22 @@ module TransferFunctions = struct
 
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
-  let is_captured_strong_self attributes pvar =
+  let is_captured_self attributes pvar =
     let pvar_name = Pvar.get_name pvar in
     Pvar.is_self pvar
     && List.exists
          ~f:(fun (captured, typ) -> Mangled.equal captured pvar_name && Typ.is_strong_pointer typ)
+         attributes.ProcAttributes.captured
+
+
+  (* The variable is captured in the block, contains self in the name, is not self, and it's strong. *)
+  let is_captured_strong_self attributes pvar =
+    (not (Pvar.is_self pvar))
+    && List.exists
+         ~f:(fun (captured, typ) ->
+           Typ.is_strong_pointer typ
+           && Mangled.equal captured (Pvar.get_name pvar)
+           && String.is_suffix ~suffix:"self" (String.lowercase (Mangled.to_string captured)) )
          attributes.ProcAttributes.captured
 
 
@@ -282,8 +302,10 @@ module TransferFunctions = struct
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
         let vars =
-          if is_captured_strong_self attributes pvar then
+          if is_captured_self attributes pvar then
             Vars.add id {pvar; typ; loc; kind= SELF} astate.vars
+          else if is_captured_strong_self attributes pvar then
+            Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
           else if is_captured_weak_self attributes pvar then
             Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
           else
@@ -381,6 +403,42 @@ let report_weakself_multiple_issues summary domain =
       ()
 
 
+let make_trace_captured_strong_self domain =
+  let trace_elems =
+    Vars.fold
+      (fun _ {pvar; loc; kind} trace_elems ->
+        match kind with
+        | CAPTURED_STRONG_SELF ->
+            let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
+            let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+            trace_elem :: trace_elems
+        | _ ->
+            trace_elems )
+      domain []
+  in
+  List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
+      Location.compare loc1 loc2 )
+
+
+let report_captured_strongself_issues summary domain =
+  let capturedStrongSelf_opt =
+    Vars.filter (fun _ {kind} -> DomainData.is_captured_strong_self kind) domain |> Vars.choose_opt
+  in
+  match capturedStrongSelf_opt with
+  | Some (_, {pvar; loc}) ->
+      let message =
+        F.asprintf
+          "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \
+           This could lead to retain cycles or unexpected behavior since to avoid retain cycles \
+           one usually uses a local strong pointer or a captured weak pointer instead."
+          (Pvar.pp Pp.text) pvar Location.pp loc
+      in
+      let ltr = make_trace_captured_strong_self domain in
+      Reporting.log_error summary ~ltr ~loc IssueType.captured_strong_self message
+  | _ ->
+      ()
+
+
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let checker {Callbacks.exe_env; summary} =
@@ -392,7 +450,8 @@ let checker {Callbacks.exe_env; summary} =
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
         report_mix_self_weakself_issues summary domain.vars ;
-        report_weakself_multiple_issues summary domain.vars
+        report_weakself_multiple_issues summary domain.vars ;
+        report_captured_strongself_issues summary domain.vars
     | None ->
         () ) ;
   summary
