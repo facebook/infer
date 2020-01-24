@@ -1093,37 +1093,40 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
    may touch that memory loc. the abstraction of a location is an access
    path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
-let make_results_table file_env =
+let make_results_table exe_env summaries =
   let open RacerDDomain in
   let aggregate_post tenv procname acc {threads; accesses} =
     AccessDomain.fold
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
       accesses acc
   in
-  List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, summary) ->
+  List.fold summaries ~init:ReportMap.empty ~f:(fun acc summary ->
       let procname = Summary.get_proc_name summary in
+      let tenv = Exe_env.get_tenv exe_env procname in
       Payload.read_toplevel_procedure procname
       |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
-let aggregate_by_class file_env =
-  List.fold file_env ~init:String.Map.empty ~f:(fun acc ((tenv, summary) as proc) ->
+let aggregate_by_class exe_env file_env =
+  List.fold file_env ~init:String.Map.empty ~f:(fun acc summary ->
       let pdesc = Summary.get_proc_desc summary in
+      let procname = Summary.get_proc_name summary in
+      let tenv = Exe_env.get_tenv exe_env procname in
       if should_report_on_proc tenv pdesc then
         Procdesc.get_proc_name pdesc |> Procname.get_class_name
         |> Option.fold ~init:acc ~f:(fun acc classname ->
-               String.Map.add_multi acc ~key:classname ~data:proc )
+               String.Map.add_multi acc ~key:classname ~data:summary )
       else acc )
 
 
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
-let file_analysis ({procedures; source_file} : Callbacks.cluster_callback_args) =
+let file_analysis ({procedures; source_file; exe_env} : Callbacks.cluster_callback_args) =
   let init = IssueLog.empty in
-  aggregate_by_class procedures
-  |> String.Map.fold ~init ~f:(fun ~key:classname ~data:class_env issue_log ->
-         make_results_table class_env |> report_unsafe_accesses ~issue_log classname )
+  aggregate_by_class exe_env procedures
+  |> String.Map.fold ~init ~f:(fun ~key:classname ~data:summaries issue_log ->
+         make_results_table exe_env summaries |> report_unsafe_accesses ~issue_log classname )
   |> IssueLog.store ~dir:Config.racerd_issues_dir_name ~file:source_file

@@ -658,7 +658,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
   else report_map
 
 
-let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
   let pdesc = Summary.get_proc_desc summary in
   let pname = Summary.get_proc_name summary in
@@ -716,7 +716,7 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
                 and retrieve all the summaries of the methods of that class;
                 then, report on the parallel composition of the current pair and any pair in these
                 summaries that can indeed run in parallel *)
-             fold_reportable_summaries env other_class ~init:report_map
+             fold_reportable_summaries (tenv, summary) other_class ~init:report_map
                ~f:(fun acc (other_pname, {critical_pairs}) ->
                  CriticalPairs.fold
                    (report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock
@@ -726,17 +726,19 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
       report_map
 
 
-let reporting {Callbacks.procedures} =
+let reporting {Callbacks.procedures; exe_env} =
   if Config.starvation_whole_program then ()
   else
-    let report_on_summary env report_map (summary : Domain.summary) =
-      Domain.CriticalPairs.fold (report_on_pair env) summary.critical_pairs report_map
+    let report_on_summary tenv summary report_map (payload : Domain.summary) =
+      Domain.CriticalPairs.fold (report_on_pair tenv summary) payload.critical_pairs report_map
     in
-    let report_procedure report_map ((_, summary) as env) =
+    let report_procedure report_map summary =
       let proc_desc = Summary.get_proc_desc summary in
+      let procname = Summary.get_proc_name summary in
+      let tenv = Exe_env.get_tenv exe_env procname in
       if should_report proc_desc then
-        Payload.read_toplevel_procedure (Procdesc.get_proc_name proc_desc)
-        |> Option.fold ~init:report_map ~f:(report_on_summary env)
+        Payload.read_toplevel_procedure procname
+        |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
       else report_map
     in
     List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store
@@ -793,7 +795,7 @@ let report exe_env work_set =
     |> Option.fold ~init ~f:(fun acc summary ->
            let pdesc = Summary.get_proc_desc summary in
            let tenv = Exe_env.get_tenv exe_env procname in
-           let acc = report_on_pair (tenv, summary) pair acc in
+           let acc = report_on_pair tenv summary pair acc in
            match pair.elem.event with
            | LockAcquire lock ->
                let should_report_starvation =

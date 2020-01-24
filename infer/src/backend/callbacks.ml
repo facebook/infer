@@ -15,7 +15,7 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
-  {procedures: (Tenv.t * Summary.t) list; source_file: SourceFile.t; exe_env: Exe_env.t}
+  {procedures: Summary.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
 type cluster_callback_t = cluster_callback_args -> unit
 
@@ -37,12 +37,8 @@ let register_cluster_callback ~name language (callback : cluster_callback_t) =
   cluster_callbacks := {name; language; callback} :: !cluster_callbacks
 
 
-(** Collect what we need to know about a procedure for the analysis. *)
-let get_procedure_definition exe_env proc_name =
-  Procdesc.load proc_name
-  |> Option.map ~f:(fun proc_desc ->
-         let tenv = Exe_env.get_tenv exe_env proc_name in
-         (tenv, Summary.OnDisk.reset proc_desc) )
+let get_procedure_definition proc_name =
+  Procdesc.load proc_name |> Option.map ~f:Summary.OnDisk.reset
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
@@ -80,11 +76,11 @@ let iterate_procedure_callbacks exe_env summary =
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env source_file =
   if !cluster_callbacks <> [] then
-    let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
+    let procedures = List.filter_map ~f:get_procedure_definition all_procs in
     let environment = {procedures; source_file; exe_env} in
     let language_matches language =
       match procedures with
-      | (_, summary) :: _ ->
+      | summary :: _ ->
           Language.equal language (Procname.get_language (Summary.get_proc_name summary))
       | _ ->
           true
