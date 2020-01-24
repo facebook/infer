@@ -186,7 +186,12 @@ module Severity = struct
         |> IOption.if_none_evalopt ~f:(fun _ ->
                Some (DereferenceRule.violation_severity dereference_violation) )
     | Condition_redundant _ ->
-        None
+        (* Condition redundant is a very non-precise warning. Depending on the origin of what is compared with null,
+           this can have a lot of reasons to be actually nullable.
+           Until it is made non-precise, it is recommended to not turn this warning on.
+           But even when it is on, this should not be more than advice.
+        *)
+        Some Exceptions.Advice
     | Over_annotation _ ->
         None
     | Field_not_initialized {is_strict_mode} ->
@@ -227,12 +232,42 @@ let get_field_name_for_error_suppressing = function
       None
 
 
+(* The condition is redundant because a non-nullable object was (implicitly or explicitly) compared with null.
+   Describes what exactly made nullsafe believe this is indeed a non-nullable.
+ *)
+let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.t) =
+  match nonnull_origin with
+  | MethodCall {pname} ->
+      Format.asprintf ": %a is not annotated as `@Nullable`" MF.pp_monospaced
+        (Procname.to_simplified_string ~withclass:true pname)
+  | NullConst _ ->
+      Logging.die Logging.InternalError
+        "Unexpected origin NullConst: this is for nullable types, should not lead to condition \
+         redundant"
+  | ArrayLengthResult ->
+      Logging.die Logging.InternalError
+        "Unexpected origin ArrayLengthAccess: the result is integer, should not be compared with \
+         null"
+  (* TODO: this could be specified more precisely *)
+  | NonnullConst _
+  | Field _
+  | MethodParameter _
+  | This
+  | New
+  | ArrayAccess
+  | InferredNonnull _
+  | OptimisticFallback
+  | Undef ->
+      " according to the existing annotations"
+
+
 let get_error_info err_instance =
   match err_instance with
-  | Condition_redundant {is_always_true; condition_descr} ->
-      ( P.sprintf "The condition %s is always %b according to the existing annotations."
+  | Condition_redundant {is_always_true; condition_descr; nonnull_origin} ->
+      ( P.sprintf "The condition %s might be always %b%s."
           (Option.value condition_descr ~default:"")
           is_always_true
+          (get_nonnull_explanation_for_condition_redudant nonnull_origin)
       , IssueType.eradicate_condition_redundant
       , None )
   | Over_annotation {over_annotated_violation; violation_type} ->
