@@ -162,6 +162,14 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+- (void)strongSelfCheck6_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    return strongSelf ? strongSelf->x : 0; // no bug here
+  };
+}
+
 - (void)wekSelfMultiple_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {

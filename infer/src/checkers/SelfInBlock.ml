@@ -305,12 +305,12 @@ module TransferFunctions = struct
           with Not_found_s _ | Caml.Not_found -> astate.strongVars
         in
         {astate with strongVars}
-    | Prune (Var id, _, _, Sil.Ik_if) ->
+    | Prune (Var id, _, _, _) ->
         exec_null_check_id astate id
     (* If (strongSelf != nil) or equivalent else branch *)
-    | Prune (BinOp (Binop.Ne, Var id, e), _, _, Sil.Ik_if)
+    | Prune (BinOp (Binop.Ne, Var id, e), _, _, _)
     (* If (!(strongSelf == nil)) or equivalent else branch *)
-    | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, Sil.Ik_if) ->
+    | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, _) ->
         if Exp.is_null_literal e then exec_null_check_id astate id else astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
         report_unchecked_strongself_issues_on_args astate summary callee_pn args ;
