@@ -51,6 +51,7 @@ module Subst : sig
   val extend : Term.t -> t -> t option
   val map_entries : f:(Term.t -> Term.t) -> t -> t
   val to_alist : t -> (Term.t * Term.t) list
+  val trim : bound:Var.Set.t -> Var.Set.t -> t -> t
 end = struct
   type t = Term.t Term.Map.t [@@deriving compare, equal, sexp]
 
@@ -111,6 +112,21 @@ end = struct
         if Term.equal key' key then
           if Term.equal data' data then s else Map.set s ~key ~data:data'
         else Map.remove s key |> Map.add_exn ~key:key' ~data:data' )
+
+  (** [trim bound kills subst] is [subst] without mappings that mention
+      [kills] or [bound ∩ fv x] for removed entries [x ↦ u] *)
+  let rec trim ~bound ks s =
+    let ks', s' =
+      Map.fold s ~init:(ks, s) ~f:(fun ~key ~data (ks, s) ->
+          let fv_key = Term.fv key in
+          let fv_data = Term.fv data in
+          if Set.disjoint ks (Set.union fv_key fv_data) then (ks, s)
+          else
+            let ks = Set.union ks (Set.inter bound fv_key) in
+            let s = Map.remove s key in
+            (ks, s) )
+    in
+    if s' != s then trim ~bound ks' s' else s'
 end
 
 (** Theory Solver *)
