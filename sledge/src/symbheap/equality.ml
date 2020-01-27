@@ -577,8 +577,8 @@ type 'a zom = Zero | One of 'a | Many
 (* try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q] has at
    most one maximal solvable subterm, [kill], where [fv kill ⊈ us]; solve [p
    = q] for [kill]; extend subst mapping [kill] to the solution *)
-let solve_poly_eq us p q subst =
-  let diff = Subst.norm subst (Term.sub p q) in
+let solve_poly_eq us p' q' subst =
+  let diff = Term.sub p' q' in
   let max_solvables_not_ito_us =
     fold_max_solvables diff ~init:Zero ~f:(fun solvable_subterm -> function
       | Many -> Many
@@ -592,16 +592,17 @@ let solve_poly_eq us p q subst =
       Subst.compose1 ~key:kill ~data:keep subst
   | Many | Zero -> None
 
-let solve_interp_eq us us_xs e (cls, subst) =
+let solve_interp_eq us us_xs e' (cls, subst) =
   [%Trace.call fun {pf} ->
-    pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp e pp_cls cls
+    pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp e' pp_cls cls
       Subst.pp subst]
   ;
-  ( if not (Set.is_subset (Term.fv e) ~of_:us_xs) then None
+  ( if not (Set.is_subset (Term.fv e') ~of_:us_xs) then None
   else
     List.find_map cls ~f:(fun f ->
-        if not (Set.is_subset (Term.fv f) ~of_:us_xs) then None
-        else solve_poly_eq us e f subst ) )
+        let f' = Subst.norm subst f in
+        if not (Set.is_subset (Term.fv f') ~of_:us_xs) then None
+        else solve_poly_eq us e' f' subst ) )
   |>
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
@@ -627,12 +628,9 @@ let rec solve_interp_eqs us us_xs (cls, subst) =
         let trm' = Subst.norm subst trm in
         match classify trm' with
         | Interpreted -> (
-          match solve_interp_eq us us_xs trm' (cls', subst) with
-          | None -> (
-            match solve_interp_eq us us_xs trm' (cls, subst) with
-            | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst)
-            | Some subst -> solve_interp_eqs_ cls' (cls, subst) )
-          | Some subst -> solve_interp_eqs_ cls' (cls, subst) )
+          match solve_interp_eq us us_xs trm' (cls, subst) with
+          | Some subst -> solve_interp_eqs_ cls' (cls, subst)
+          | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
         | _ -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
   in
   let cls', subst' = solve_interp_eqs_ [] (cls, subst) in
