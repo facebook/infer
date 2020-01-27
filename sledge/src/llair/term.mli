@@ -7,10 +7,8 @@
 
 (** Terms
 
-    Pure (heap-independent) terms are complex arithmetic, bitwise-logical,
-    etc. operations over literal values and variables. *)
-
-type comparator_witness
+    Pure (heap-independent) terms are arithmetic, bitwise-logical, etc.
+    operations over literal values and variables. *)
 
 type op1 =
   | Signed of {bits: int}
@@ -61,6 +59,8 @@ type opN =
 
 type recN = Record  (** Recursive record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
+
+type comparator_witness
 
 type qset = (t, comparator_witness) Qset.t
 
@@ -122,6 +122,7 @@ module Var : sig
 
   include Invariant.S with type t := t
 
+  val of_ : term -> t
   val of_term : term -> t option
   val program : ?global:unit -> string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
@@ -214,9 +215,15 @@ val ashr : t -> t -> t
 (* if-then-else *)
 val conditional : cnd:t -> thn:t -> els:t -> t
 
-(* memory contents *)
+(* aggregate sizes *)
+val agg_size_exn : t -> t
+val agg_size : t -> t option
+
+(* aggregates (memory contents) *)
 val splat : t -> t
+val memory : siz:t -> arr:t -> t
 val extract : agg:t -> off:t -> len:t -> t
+val concat : t array -> t
 val eq_concat : t * t -> (t * t) array -> t
 
 (* records (struct / array values) *)

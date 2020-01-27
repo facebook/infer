@@ -81,9 +81,7 @@ let var_strength q =
   in
   var_strength_ Var.Set.empty Var.Map.empty q
 
-let pp_memory x fs (siz, arr) =
-  let term_pp = Term.ppx x in
-  Format.fprintf fs "@<1>⟨%a,%a@<1>⟩" term_pp siz term_pp arr
+let pp_memory x fs (siz, arr) = Term.ppx x fs (Term.memory ~siz ~arr)
 
 let pp_seg x fs {loc; bas; len; siz; arr} =
   let term_pp = Term.ppx x in

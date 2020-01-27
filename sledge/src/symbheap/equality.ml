@@ -15,8 +15,9 @@ type kind = Interpreted | Simplified | Atomic | Uninterpreted
 let classify e =
   match (e : Term.t) with
   | Add _ | Mul _ -> Interpreted
-  | Ap2 ((Eq | Dq), _, _) | Ap2 (Memory, _, _) | ApN (Concat, _) ->
-      Simplified
+  | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
+      Interpreted
+  | Ap2 ((Eq | Dq), _, _) -> Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
 
@@ -131,65 +132,143 @@ end
 
 (** Theory Solver *)
 
-let rec is_constant e =
-  match (e : Term.t) with
-  | Var _ | Nondet _ -> false
-  | Ap1 (_, x) -> is_constant x
-  | Ap2 (_, x, y) -> is_constant x && is_constant y
-  | Ap3 (_, x, y, z) -> is_constant x && is_constant y && is_constant z
-  | ApN (_, xs) | RecN (_, xs) -> Vector.for_all ~f:is_constant xs
-  | Add args | Mul args ->
-      Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | Label _ | Float _ | Integer _ -> true
-
+(* orient equations s.t. Var < Memory < Extract < Concat < others, then
+   using height of aggregate nesting, and then using Term.compare *)
 let orient e f =
-  match (is_constant e, is_constant f) with
-  (* orient equation to discretionarily prefer term that is constant or
-     compares smaller as class representative *)
-  | true, false -> (f, e)
-  | false, true -> (e, f)
-  | _ -> if Term.compare e f > 0 then (e, f) else (f, e)
+  let compare e f =
+    let rank e =
+      match (e : Term.t) with
+      | Var _ -> 0
+      | Ap2 (Memory, _, _) -> 1
+      | Ap3 (Extract, _, _, _) -> 2
+      | ApN (Concat, _) -> 3
+      | _ -> 4
+    in
+    let rec height e =
+      match (e : Term.t) with
+      | Ap2 (Memory, _, x) -> 1 + height x
+      | Ap3 (Extract, x, _, _) -> 1 + height x
+      | ApN (Concat, xs) ->
+          1 + Vector.fold ~init:0 ~f:(fun h x -> max h (height x)) xs
+      | _ -> 0
+    in
+    let o = compare (rank e) (rank f) in
+    if o <> 0 then o
+    else
+      let o = compare (height e) (height f) in
+      if o <> 0 then o else Term.compare e f
+  in
+  match Ordering.of_int (compare e f) with
+  | Less -> Some (e, f)
+  | Equal -> None
+  | Greater -> Some (f, e)
 
-let rec solve_ e f s =
-  let extend ~trm ~rep (us, xs, s) =
-    Some (us, xs, Subst.compose1 ~key:trm ~data:rep s)
+let norm (_, _, s) e = Subst.norm s e
+
+let extend ~var ~rep (us, xs, s) =
+  Some (us, xs, Subst.compose1 ~key:var ~data:rep s)
+
+let fresh name (us, xs, s) =
+  let x, us = Var.fresh name ~wrt:us in
+  let xs = Set.add xs x in
+  (Term.var x, (us, xs, s))
+
+let solve_poly p q s =
+  match Term.sub p q with
+  | Integer {data} -> if Z.equal Z.zero data then Some s else None
+  | Var _ as var -> extend ~var ~rep:Term.zero s
+  | p_q -> (
+    match Term.solve_zero_eq p_q with
+    | Some (var, rep) -> extend ~var ~rep s
+    | None -> extend ~var:p_q ~rep:Term.zero s )
+
+(* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
+   = |α| and c fresh *)
+let rec solve_extract a o l b s =
+  let n = Term.agg_size_exn a in
+  let c, s = fresh "c" s in
+  let n_c = Term.memory ~siz:n ~arr:c in
+  let o_l = Term.add o l in
+  let n_o_l = Term.sub n o_l in
+  let c0 = Term.extract ~agg:n_c ~off:Term.zero ~len:o in
+  let c1 = Term.extract ~agg:n_c ~off:o_l ~len:n_o_l in
+  let b, s =
+    match Term.agg_size b with
+    | None -> (Term.memory ~siz:l ~arr:b, Some s)
+    | Some m -> (b, solve_ l m s)
   in
-  let fresh name (us, xs, s) =
-    let x, us = Var.fresh name ~wrt:us in
-    let xs = Set.add xs x in
-    (Term.var x, (us, xs, s))
-  in
-  let solve_uninterp e f s =
-    match ((e : Term.t), (f : Term.t)) with
-    | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
-    | _ ->
-        let trm, rep = orient e f in
-        extend ~trm ~rep s
-  in
-  let concat_size args =
-    Vector.fold_until args ~init:Term.zero
-      ~f:(fun sum m ->
-        match (m : Term.t) with
-        | Ap2 (Memory, siz, _) -> Continue (Term.add siz sum)
-        | _ -> Stop None )
-      ~finish:(fun _ -> None)
-  in
-  match ((e : Term.t), (f : Term.t)) with
-  | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
-      let e_f = Term.sub e f in
-      match Term.solve_zero_eq e_f with
-      | Some (trm, rep) -> extend ~trm ~rep s
-      | None -> s |> solve_uninterp e_f Term.zero )
-  | ApN (Concat, ms), ApN (Concat, ns) -> (
-    match (concat_size ms, concat_size ns) with
-    | Some p, Some q -> s |> solve_uninterp e f >>= solve_ p q
-    | _ -> s |> solve_uninterp e f )
-  | Ap2 (Memory, m, _), ApN (Concat, ns)
-   |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
-    match concat_size ns with
-    | Some p -> s |> solve_uninterp e f >>= solve_ p m
-    | _ -> s |> solve_uninterp e f )
-  | _ -> s |> solve_uninterp e f
+  s >>= solve_ a (Term.concat [|c0; b; c1|])
+
+(* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
+   where nₓ ≡ |αₓ| and m = |β| *)
+and solve_concat a0V b m s =
+  Vector.fold_until a0V ~init:(s, Term.zero)
+    ~f:(fun (s, oI) aJ ->
+      let nJ = Term.agg_size_exn aJ in
+      let oJ = Term.add oI nJ in
+      match solve_ aJ (Term.extract ~agg:b ~off:oI ~len:nJ) s with
+      | Some s -> Continue (s, oJ)
+      | None -> Stop None )
+    ~finish:(fun (s, n0V) -> solve_ n0V m s)
+
+and solve_ e f s =
+  [%Trace.call fun {pf} ->
+    pf "%a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Term.pp e Term.pp f
+      Subst.pp (trd3 s)]
+  ;
+  ( match orient (norm s e) (norm s f) with
+  (* e' = f' ==> true when e' ≡ f' *)
+  | None -> Some s
+  (* i = j ==> false when i ≠ j *)
+  | Some (Integer _, Integer _) -> None
+  (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
+  | Some (Ap2 (Memory, n, a), b) when Term.equal n Term.zero ->
+      s |> solve_ a (Term.concat [||]) >>= solve_ b (Term.concat [||])
+  | Some (b, Ap2 (Memory, n, a)) when Term.equal n Term.zero ->
+      s |> solve_ a (Term.concat [||]) >>= solve_ b (Term.concat [||])
+  (* v = ⟨n,a⟩ ==> v = a *)
+  | Some ((Var _ as v), Ap2 (Memory, _, a)) -> s |> solve_ v a
+  (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
+  | Some (Ap2 (Memory, n, a), Ap2 (Memory, m, b)) ->
+      s |> solve_ n m >>= solve_ a b
+  (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
+  | Some (Ap2 (Memory, n, a), b) ->
+      (match Term.agg_size b with None -> Some s | Some m -> solve_ n m s)
+      >>= solve_ a b
+  | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
+      if not (Set.mem (Term.fv e) (Var.of_ v)) then
+        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
+        extend ~var:v ~rep:e s
+      else
+        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
+        extend ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
+  | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
+      if not (Set.mem (Term.fv c) (Var.of_ v)) then
+        (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
+        extend ~var:v ~rep:c s
+      else
+        (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
+        let m = Term.agg_size_exn c in
+        solve_concat a0V (Term.memory ~siz:m ~arr:v) m s
+  | Some ((Ap3 (Extract, _, _, l) as e), ApN (Concat, a0V)) ->
+      solve_concat a0V e l s
+  | Some (ApN (Concat, a0V), (ApN (Concat, _) as c)) ->
+      solve_concat a0V c (Term.agg_size_exn c) s
+  | Some (Ap3 (Extract, a, o, l), e) -> solve_extract a o l e s
+  (* p = q ==> p-q = 0 *)
+  | Some
+      ( ((Add _ | Mul _ | Integer _) as p), q
+      | q, ((Add _ | Mul _ | Integer _) as p) ) ->
+      solve_poly p q s
+  | Some (rep, var) ->
+      assert (Poly.(classify var <> Interpreted)) ;
+      assert (Poly.(classify rep <> Interpreted)) ;
+      extend ~var ~rep s )
+  |>
+  [%Trace.retn fun {pf} ->
+    function
+    | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
+    | None -> pf "false"]
 
 let solve ~us ~xs e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
@@ -318,8 +397,8 @@ let rec canon r a =
 (** add a term to the carrier *)
 let rec extend a r =
   match classify a with
-  | Interpreted -> Term.fold ~f:extend a ~init:r
-  | Simplified | Uninterpreted -> (
+  | Interpreted | Simplified -> Term.fold ~f:extend a ~init:r
+  | Uninterpreted -> (
     match Subst.extend a r.rep with
     | Some rep -> Term.fold ~f:extend a ~init:{r with rep}
     | None -> r )
@@ -672,7 +751,10 @@ let solve_for_vars vss r =
   [%Trace.retn fun {pf} subst ->
     pf "%a" Subst.pp subst ;
     Subst.iteri subst ~f:(fun ~key ~data ->
-        assert (entails_eq r key data) ;
+        assert (
+          entails_eq r key data
+          || fail "@[%a = %a not entailed by@ %a@]" Term.pp key Term.pp data
+               pp_classes r () ) ;
         assert (
           List.exists vss ~f:(fun vs ->
               match

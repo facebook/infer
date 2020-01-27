@@ -347,6 +347,7 @@ module Var = struct
   let id = function Var v -> v.id | x -> violates invariant x
   let name = function Var v -> v.name | x -> violates invariant x
   let global = function Var v -> v.id = -1 | x -> violates invariant x
+  let of_ = function Var _ as v -> v | _ -> invalid_arg "Var.of_"
 
   let of_term = function
     | Var _ as v -> Some (v |> check invariant)

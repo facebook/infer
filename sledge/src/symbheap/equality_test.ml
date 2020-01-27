@@ -11,7 +11,11 @@ let%test_module _ =
 
     let () = Trace.init ~margin:68 ~config:Trace.none ()
 
-    (* let () = Trace.init ~margin:160 ~config:all () *)
+    (* let () =
+     *   Trace.init ~margin:160
+     *     ~config:(Result.ok_exn (Trace.parse "+Equality"))
+     *     () *)
+
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf pp
     let pp_classes = Format.printf "@\n@[<hv>  %a@]@." pp_classes
@@ -329,9 +333,7 @@ let%test_module _ =
     let r14 = of_eqs [(a, a); (x, !1)]
 
     let%expect_test _ =
-      pp r14 ;
-      [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]]} |}]
+      pp r14 ; [%expect {| {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
     let%test _ = entails_eq r14 a Term.true_
 
@@ -342,7 +344,7 @@ let%test_module _ =
       pp r14 ;
       [%expect
         {|
-          {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
+          {sat= true; rep= [[%x_5 ↦ 1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
 
     let%test _ = entails_eq r14 a Term.true_
     let%test _ = entails_eq r14 b Term.true_
@@ -351,9 +353,7 @@ let%test_module _ =
     let r15 = of_eqs [(b, b); (x, !1)]
 
     let%expect_test _ =
-      pp r15 ;
-      [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]]} |}]
+      pp r15 ; [%expect {| {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
     let%test _ = entails_eq r15 b (Term.signed 1 !1)
     let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
