@@ -621,6 +621,17 @@ let simp_cond cnd thn els =
   | Integer {data} when Z.is_false data -> els
   | _ -> Ap3 (Conditional, cnd, thn, els)
 
+(* aggregate sizes *)
+
+let rec agg_size_exn = function
+  | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
+  | ApN (Concat, a0U) ->
+      Vector.fold a0U ~init:zero ~f:(fun a0I aJ ->
+          simp_add2 a0I (agg_size_exn aJ) )
+  | _ -> invalid_arg "agg_size_exn"
+
+let agg_size e = try Some (agg_size_exn e) with Invalid_argument _ -> None
+
 (* boolean / bitwise *)
 
 let rec is_boolean = function
@@ -682,24 +693,37 @@ let simp_ord x y = Ap2 (Ord, x, y)
 let simp_uno x y = Ap2 (Uno, x, y)
 
 let rec simp_eq x y =
-  match (x, y) with
-  (* i = j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
-  (* b = false ==> ¬b *)
-  | b, Integer {data} when Z.is_false data && is_boolean b -> simp_not b
-  | Integer {data}, b when Z.is_false data && is_boolean b -> simp_not b
-  (* b = true ==> b *)
-  | b, Integer {data} when Z.is_true data && is_boolean b -> b
-  | Integer {data}, b when Z.is_true data && is_boolean b -> b
-  (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
-  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
-      simp_cond c (simp_eq e t) (simp_eq e f)
-  | x, y -> (
-    match Int.sign (compare x y) with
-    (* e = e ==> true *)
-    | Zero -> bool true
-    | Neg -> Ap2 (Eq, x, y)
-    | Pos -> Ap2 (Eq, y, x) )
+  match
+    match Ordering.of_int (compare x y) with
+    | Equal -> None
+    | Less -> Some (x, y)
+    | Greater -> Some (y, x)
+  with
+  (* e = e ==> true *)
+  | None -> bool true
+  | Some (x, y) -> (
+    match (x, y) with
+    (* i = j ==> false when i ≠ j *)
+    | Integer _, Integer _ -> bool false
+    (* b = false ==> ¬b *)
+    | b, Integer {data} when Z.is_false data && is_boolean b -> simp_not b
+    (* b = true ==> b *)
+    | b, Integer {data} when Z.is_true data && is_boolean b -> b
+    (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
+    | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
+        simp_cond c (simp_eq e t) (simp_eq e f)
+    | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
+      , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
+        Ap2 (Eq, x, y)
+    (* x = α ==> ⟨x,|α|⟩ = α *)
+    | ( x
+      , ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
+        a ) )
+     |( ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
+        a )
+      , x ) ->
+        simp_eq (Ap2 (Memory, agg_size_exn a, x)) a
+    | x, y -> Ap2 (Eq, x, y) )
 
 and simp_dq x y =
   match (x, y) with
@@ -780,17 +804,6 @@ let simp_ashr x y =
   (* e ashr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> Ap2 (Ashr, x, y)
-
-(* aggregate sizes *)
-
-let rec agg_size_exn = function
-  | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
-  | ApN (Concat, a0U) ->
-      Vector.fold a0U ~init:zero ~f:(fun a0I aJ ->
-          simp_add2 a0I (agg_size_exn aJ) )
-  | _ -> invalid_arg "agg_size_exn"
-
-let agg_size e = try Some (agg_size_exn e) with Invalid_argument _ -> None
 
 (* memory *)
 

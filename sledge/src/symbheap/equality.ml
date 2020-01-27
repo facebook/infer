@@ -468,7 +468,7 @@ let is_true {sat; rep} =
   sat && Subst.for_alli rep ~f:(fun ~key:a ~data:a' -> Term.equal a a')
 
 let is_false {sat} = not sat
-let entails_eq r d e = Term.equal (canon r d) (canon r e)
+let entails_eq r d e = Term.is_true (canon r (Term.eq d e))
 
 let entails r s =
   Subst.for_alli s.rep ~f:(fun ~key:e ~data:e' -> entails_eq r e e')
