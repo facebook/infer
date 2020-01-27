@@ -1067,9 +1067,11 @@ module JavaString = struct
     |> BufferOverrunDomain.Val.get_itv |> Itv.set_lb_zero |> Itv.decr
 
 
-  (** Given a string of length n, return itv [1, n_u -1]. *)
-  let range_itv_one_mone v =
-    BufferOverrunDomain.Val.get_itv v |> Itv.decr |> Itv.set_lb Itv.Bound.one
+  (** Given a string of length n, return itv [1, max(1, n_u -1)]. *)
+  let range_itv_one_max_one_mone v =
+    let itv_mone = BufferOverrunDomain.Val.get_itv v |> Itv.decr in
+    let max_length_mone = Itv.max_sem ~use_minmax_bound:true itv_mone (Itv.of_int 1) in
+    Itv.set_lb Itv.Bound.one max_length_mone
 
 
   let indexOf exp =
@@ -1107,7 +1109,7 @@ module JavaString = struct
   let split exp =
     let exec model_env ~ret mem =
       let length =
-        ArrObjCommon.eval_size model_env exp ~fn mem |> range_itv_one_mone |> Dom.Val.of_itv
+        ArrObjCommon.eval_size model_env exp ~fn mem |> range_itv_one_max_one_mone |> Dom.Val.of_itv
       in
       malloc_and_set_length exp model_env ~ret length mem
     in
@@ -1118,7 +1120,7 @@ module JavaString = struct
     let exec ({integer_type_widths} as model_env) ~ret mem =
       let dummy_exp = Exp.zero in
       let length =
-        Sem.eval integer_type_widths dummy_exp mem |> range_itv_one_mone |> Dom.Val.of_itv
+        Sem.eval integer_type_widths dummy_exp mem |> range_itv_one_max_one_mone |> Dom.Val.of_itv
       in
       malloc_and_set_length limit_exp model_env ~ret length mem
     in
