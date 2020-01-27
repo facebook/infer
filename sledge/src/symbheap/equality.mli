@@ -66,6 +66,12 @@ val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
 (** Solution Substitutions *)
 module Subst : sig
   type t [@@deriving compare, equal, sexp]
+
+  val pp : t pp
+  val is_empty : t -> bool
+  val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
+  val norm : t -> Term.t -> Term.t
+  val trim : bound:Var.Set.t -> Var.Set.t -> t -> t
 end
 
 val solve_for_vars : Var.Set.t list -> t -> Subst.t

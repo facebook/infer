@@ -576,3 +576,12 @@ let dnf q =
   fold_dnf ~conj ~disj q (Var.Set.empty, []) []
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_djn]
+
+(** Simplify *)
+
+let rec norm s q =
+  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp q]
+  ;
+  map q ~f_sjn:(norm s) ~f_cong:Fn.id ~f_trm:(Equality.Subst.norm s)
+  |>
+  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']

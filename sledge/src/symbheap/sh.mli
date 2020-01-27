@@ -79,6 +79,10 @@ val rem_seg : seg -> t -> t
 val filter_heap : f:(seg -> bool) -> t -> t
 (** [filter_heap q f] Remove all segments in [q] for which [f] returns false *)
 
+val norm : Equality.Subst.t -> t -> t
+(** [norm s q] is [q] where subterms have been normalized with a
+    substitution. *)
+
 (** Quantification and Vocabulary *)
 
 val exists : Var.Set.t -> t -> t

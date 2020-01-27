@@ -44,40 +44,48 @@ let fresh_var name vs zs ~wrt =
 let excise k = [%Trace.infok k]
 let trace k = [%Trace.infok k]
 
-type occurrences = Zero | One of Var.t | Many
-
-let single_existential_occurrence xs term =
-  let exception Multiple_existential_occurrences in
-  try
-    Term.fold_vars term ~init:Zero ~f:(fun seen var ->
-        if not (Set.mem xs var) then seen
-        else
-          match seen with
-          | Zero -> One var
-          | _ -> raise Multiple_existential_occurrences )
-  with Multiple_existential_occurrences -> Many
+let excise_exists goal =
+  trace (fun {pf} -> pf "@[<2>excise_exists@ %a@]" pp goal) ;
+  if Set.is_empty goal.xs then goal
+  else
+    let solutions_for_xs =
+      Equality.solve_for_vars [goal.us; goal.xs] goal.sub.cong
+    in
+    if Equality.Subst.is_empty solutions_for_xs then goal
+    else
+      let sub = Sh.norm solutions_for_xs goal.sub in
+      let removed, survived = Set.diff_inter goal.xs (Sh.fv sub) in
+      if Set.is_empty removed then goal
+      else
+        let witnesses =
+          Equality.Subst.trim ~bound:goal.xs survived solutions_for_xs
+        in
+        if Equality.Subst.is_empty witnesses then goal
+        else (
+          excise (fun {pf} ->
+              pf "@[<2>excise_exists @[%a%a@]@]" Var.Set.pp_xs removed
+                Equality.Subst.pp witnesses ) ;
+          let us = Set.union goal.us removed in
+          let xs = survived in
+          let min =
+            Equality.Subst.fold
+              ~f:(fun ~key ~data -> Sh.and_ (Term.eq key data))
+              witnesses ~init:goal.min
+          in
+          {goal with us; min; xs; sub; pgs= true} )
 
 let special_cases xs = function
   | Term.Ap2 (Eq, Var _, Var _) as e ->
       if Set.is_subset (Term.fv e) ~of_:xs then Term.true_ else e
   | e -> e
 
-let excise_term ({us; min; xs} as goal) pure term =
+let excise_term ({min; xs} as goal) pure term =
   let term' = Equality.normalize min.cong term in
   let term' = special_cases xs term' in
-  if Term.is_true term' then Some ({goal with pgs= true}, pure)
-  else
-    match single_existential_occurrence xs term' with
-    | Zero -> None
-    | One x ->
-        Some
-          ( { goal with
-              us= Set.add us x
-            ; min= Sh.and_ term' min
-            ; xs= Set.remove xs x
-            ; pgs= true }
-          , pure )
-    | Many -> Some (goal, term' :: pure)
+  if Term.is_true term' then (
+    excise (fun {pf} -> pf "excise_pure %a" Term.pp term) ;
+    Some ({goal with pgs= true}, pure) )
+  else Some (goal, term' :: pure)
 
 let excise_pure ({sub} as goal) =
   trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
@@ -546,7 +554,8 @@ let rec excise ({min; xs; sub; zs; pgs} as goal) =
   else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
-    {goal with pgs= false} |> excise_pure >>= excise_heap >>= excise
+    {goal with pgs= false} |> excise_exists |> excise_pure >>= excise_heap
+    >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
 
 let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
