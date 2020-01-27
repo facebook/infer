@@ -142,58 +142,56 @@ let rec is_constant e =
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Label _ | Float _ | Integer _ -> true
 
+let rec solve_ e f s =
+  let extend ~trm ~rep (us, xs, s) =
+    Some (us, xs, Subst.compose1 ~key:trm ~data:rep s)
+  in
+  let fresh name (us, xs, s) =
+    let x, us = Var.fresh name ~wrt:us in
+    let xs = Set.add xs x in
+    (Term.var x, (us, xs, s))
+  in
+  let solve_uninterp e f =
+    match ((e : Term.t), (f : Term.t)) with
+    | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
+    | _ -> (
+      match (is_constant e, is_constant f) with
+      (* orient equation to discretionarily prefer term that is constant or
+         compares smaller as class representative *)
+      | true, false -> extend ~trm:f ~rep:e s
+      | false, true -> extend ~trm:e ~rep:f s
+      | _ ->
+          let trm, rep = if Term.compare e f > 0 then (e, f) else (f, e) in
+          extend ~trm ~rep s )
+  in
+  let concat_size args =
+    Vector.fold_until args ~init:Term.zero
+      ~f:(fun sum m ->
+        match (m : Term.t) with
+        | Ap2 (Memory, siz, _) -> Continue (Term.add siz sum)
+        | _ -> Stop None )
+      ~finish:(fun _ -> None)
+  in
+  match ((e : Term.t), (f : Term.t)) with
+  | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
+      let e_f = Term.sub e f in
+      match Term.solve_zero_eq e_f with
+      | Some (trm, rep) -> extend ~trm ~rep s
+      | None -> solve_uninterp e_f Term.zero )
+  | ApN (Concat, ms), ApN (Concat, ns) -> (
+    match (concat_size ms, concat_size ns) with
+    | Some p, Some q -> solve_uninterp e f >>= solve_ p q
+    | _ -> solve_uninterp e f )
+  | Ap2 (Memory, m, _), ApN (Concat, ns)
+   |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
+    match concat_size ns with
+    | Some p -> solve_uninterp e f >>= solve_ p m
+    | _ -> solve_uninterp e f )
+  | _ -> solve_uninterp e f
+
 let solve ~us ~xs e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
   ;
-  let rec solve_ e f s =
-    let extend ~trm ~rep (us, xs, s) =
-      Some (us, xs, Subst.compose1 ~key:trm ~data:rep s)
-    in
-    let fresh name (us, xs, s) =
-      let x, us = Var.fresh name ~wrt:us in
-      let xs = Set.add xs x in
-      (Term.var x, (us, xs, s))
-    in
-    let solve_uninterp e f =
-      match ((e : Term.t), (f : Term.t)) with
-      | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
-      | _ -> (
-        match (is_constant e, is_constant f) with
-        (* orient equation to discretionarily prefer term that is constant
-           or compares smaller as class representative *)
-        | true, false -> extend ~trm:f ~rep:e s
-        | false, true -> extend ~trm:e ~rep:f s
-        | _ ->
-            let trm, rep =
-              if Term.compare e f > 0 then (e, f) else (f, e)
-            in
-            extend ~trm ~rep s )
-    in
-    let concat_size args =
-      Vector.fold_until args ~init:Term.zero
-        ~f:(fun sum m ->
-          match (m : Term.t) with
-          | Ap2 (Memory, siz, _) -> Continue (Term.add siz sum)
-          | _ -> Stop None )
-        ~finish:(fun _ -> None)
-    in
-    match ((e : Term.t), (f : Term.t)) with
-    | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
-        let e_f = Term.sub e f in
-        match Term.solve_zero_eq e_f with
-        | Some (trm, rep) -> extend ~trm ~rep s
-        | None -> solve_uninterp e_f Term.zero )
-    | ApN (Concat, ms), ApN (Concat, ns) -> (
-      match (concat_size ms, concat_size ns) with
-      | Some p, Some q -> solve_uninterp e f >>= solve_ p q
-      | _ -> solve_uninterp e f )
-    | Ap2 (Memory, m, _), ApN (Concat, ns)
-     |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
-      match concat_size ns with
-      | Some p -> solve_uninterp e f >>= solve_ p m
-      | _ -> solve_uninterp e f )
-    | _ -> solve_uninterp e f
-  in
   (solve_ e f (us, xs, Subst.empty) >>| fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
