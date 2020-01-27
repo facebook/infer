@@ -592,23 +592,19 @@ let solve_poly_eq us p' q' subst =
       Subst.compose1 ~key:kill ~data:keep subst
   | Many | Zero -> None
 
-let solve_interp_eq us us_xs e' (cls, subst) =
+let solve_interp_eq us e' (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp e' pp_cls cls
       Subst.pp subst]
   ;
-  ( if not (Set.is_subset (Term.fv e') ~of_:us_xs) then None
-  else
-    List.find_map cls ~f:(fun f ->
-        let f' = Subst.norm subst f in
-        if not (Set.is_subset (Term.fv f') ~of_:us_xs) then None
-        else solve_poly_eq us e' f' subst ) )
+  List.find_map cls ~f:(fun f ->
+      let f' = Subst.norm subst f in
+      solve_poly_eq us e' f' subst )
   |>
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
     Option.iter subst' ~f:(fun subst' ->
         Subst.iteri subst' ~f:(fun ~key ~data ->
-            assert (Set.is_subset (Term.fv key) ~of_:us_xs) ;
             assert (
               Subst.mem subst key
               || not (Set.is_subset (Term.fv key) ~of_:us) ) ;
@@ -617,7 +613,7 @@ let solve_interp_eq us us_xs e' (cls, subst) =
 (* move equations from [cls] to [subst] which are between [Interpreted]
    terms and can be expressed, after normalizing with [subst], as [x ↦ u]
    where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
-let rec solve_interp_eqs us us_xs (cls, subst) =
+let rec solve_interp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
   ;
@@ -628,13 +624,13 @@ let rec solve_interp_eqs us us_xs (cls, subst) =
         let trm' = Subst.norm subst trm in
         match classify trm' with
         | Interpreted -> (
-          match solve_interp_eq us us_xs trm' (cls, subst) with
+          match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
           | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
         | _ -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
   in
   let cls', subst' = solve_interp_eqs_ [] (cls, subst) in
-  ( if subst' != subst then solve_interp_eqs us us_xs (cls', subst')
+  ( if subst' != subst then solve_interp_eqs us (cls', subst')
   else (cls', subst') )
   |>
   [%Trace.retn fun {pf} (cls', subst') ->
@@ -644,7 +640,7 @@ let rec solve_interp_eqs us us_xs (cls, subst) =
 (* move equations from [cls] (which is assumed to be normalized by [subst])
    to [subst] which are between non-[Interpreted] terms and can be expressed
    as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
-let solve_uninterp_eqs us us_xs (cls, subst) =
+let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
   ;
@@ -652,16 +648,13 @@ let solve_uninterp_eqs us us_xs (cls, subst) =
     List.fold cls ~init:(None, [], [])
       ~f:(fun (rep_ito_us, cls_not_ito_us, cls_delay) trm ->
         if not (equal_kind (classify trm) Interpreted) then
-          let fv_trm = Term.fv trm in
-          if Set.is_subset fv_trm ~of_:us then
+          if Set.is_subset (Term.fv trm) ~of_:us then
             match rep_ito_us with
             | Some rep when Term.compare rep trm <= 0 ->
                 (rep_ito_us, cls_not_ito_us, trm :: cls_delay)
             | Some rep -> (Some trm, cls_not_ito_us, rep :: cls_delay)
             | None -> (Some trm, cls_not_ito_us, cls_delay)
-          else if Set.is_subset fv_trm ~of_:us_xs then
-            (rep_ito_us, trm :: cls_not_ito_us, cls_delay)
-          else (rep_ito_us, cls_not_ito_us, trm :: cls_delay)
+          else (rep_ito_us, trm :: cls_not_ito_us, cls_delay)
         else (rep_ito_us, cls_not_ito_us, trm :: cls_delay) )
   in
   ( match rep_ito_us with
@@ -680,7 +673,6 @@ let solve_uninterp_eqs us us_xs (cls, subst) =
     pf "cls: @[%a@]@ subst: @[%a@]" pp_diff_cls (cls, cls') Subst.pp_diff
       (subst, subst') ;
     Subst.iteri subst' ~f:(fun ~key ~data ->
-        assert (Set.is_subset (Term.fv key) ~of_:us_xs) ;
         assert (
           Subst.mem subst key || not (Set.is_subset (Term.fv key) ~of_:us)
         ) ;
@@ -695,8 +687,12 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
     pf "rep: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp rep pp_cls cls
       Subst.pp subst]
   ;
-  let cls, subst = solve_interp_eqs us us_xs (rep :: cls, subst) in
-  let cls, subst = solve_uninterp_eqs us us_xs (cls, subst) in
+  let cls, cls_not_ito_us_xs =
+    List.partition_tf ~f:(fun e -> Set.is_subset (Term.fv e) ~of_:us_xs) cls
+  in
+  let cls, subst = solve_interp_eqs us (rep :: cls, subst) in
+  let cls, subst = solve_uninterp_eqs us (cls, subst) in
+  let cls = List.rev_append cls_not_ito_us_xs cls in
   let cls =
     List.remove ~equal:Term.equal cls (Subst.norm subst rep)
     |> Option.value ~default:cls
