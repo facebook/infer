@@ -592,6 +592,17 @@ let solve_poly_eq us p' q' subst =
       Subst.compose1 ~key:kill ~data:keep subst
   | Many | Zero -> None
 
+let solve_memory_eq us e' f' subst =
+  match ((e' : Term.t), (f' : Term.t)) with
+  | (Ap2 (Memory, _, (Var _ as v)) as m), u
+   |u, (Ap2 (Memory, _, (Var _ as v)) as m) ->
+      if
+        (not (Set.is_subset (Term.fv m) ~of_:us))
+        && Set.is_subset (Term.fv u) ~of_:us
+      then Some (Subst.compose1 ~key:v ~data:u subst)
+      else None
+  | _ -> None
+
 let solve_interp_eq us e' (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp e' pp_cls cls
@@ -599,7 +610,9 @@ let solve_interp_eq us e' (cls, subst) =
   ;
   List.find_map cls ~f:(fun f ->
       let f' = Subst.norm subst f in
-      solve_poly_eq us e' f' subst )
+      match solve_memory_eq us e' f' subst with
+      | Some subst -> Some subst
+      | None -> solve_poly_eq us e' f' subst )
   |>
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
