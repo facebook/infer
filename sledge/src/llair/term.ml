@@ -280,13 +280,24 @@ let assert_polynomial poly =
       Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fn.id)
   | _ -> assert false
 
+(* aggregate args of Extract and Concat must be aggregate terms, in
+   particular, not variables *)
+let rec assert_aggregate = function
+  | Ap2 (Memory, _, _) -> ()
+  | Ap3 (Extract, a, _, _) -> assert_aggregate a
+  | ApN (Concat, a0N) ->
+      assert (Vector.length a0N <> 1) ;
+      Vector.iter ~f:assert_aggregate a0N
+  | _ -> assert false
+
 let invariant e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
   match e with
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
-  | ApN (Concat, mems) -> assert (Vector.length mems <> 1)
+  | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
+      assert_aggregate e
   | ApN (Record, elts) | RecN (Record, elts) ->
       assert (not (Vector.is_empty elts))
   | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
