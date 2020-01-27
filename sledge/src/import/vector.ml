@@ -27,6 +27,28 @@ module Infix = struct
 end
 
 let concat_map x ~f = v (Array.concat_map (a x) ~f:(fun y -> a (f y)))
+
+let map_adjacent ~f dummy xs_v =
+  let xs0 = a xs_v in
+  let copy_xs = lazy (Array.copy xs0) in
+  let n = Array.length xs0 - 1 in
+  let rec map_adjacent_ i xs =
+    if i < n then
+      let xs =
+        match f xs.(i) xs.(i + 1) with
+        | None -> xs
+        | Some x ->
+            let xs = Lazy.force copy_xs in
+            xs.(i) <- dummy ;
+            xs.(i + 1) <- x ;
+            xs
+      in
+      map_adjacent_ (i + 1) xs
+    else if phys_equal xs xs0 then xs
+    else Array.filter xs ~f:(fun x -> not (phys_equal dummy x))
+  in
+  v (map_adjacent_ 0 xs0)
+
 let create ~len x = v (Array.create ~len x)
 let empty = v [||]
 
