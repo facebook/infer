@@ -574,35 +574,34 @@ let ppx_classes_diff x fs (r, s) =
 
 type 'a zom = Zero | One of 'a | Many
 
-(* try to find a [term] in [cls] such that [fv (poly - term) ⊆ us ∪ xs] and
-   [poly - term] has at most one maximal solvable subterm, [kill], where [fv
-   kill ⊈ us]; solve [poly = term] for [kill]; extend subst mapping [kill]
-   to the solution *)
-let solve_interp_eq us us_xs poly (cls, subst) =
+(* try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q] has at
+   most one maximal solvable subterm, [kill], where [fv kill ⊈ us]; solve [p
+   = q] for [kill]; extend subst mapping [kill] to the solution *)
+let solve_poly_eq us p q subst =
+  let diff = Subst.norm subst (Term.sub p q) in
+  let max_solvables_not_ito_us =
+    fold_max_solvables diff ~init:Zero ~f:(fun solvable_subterm -> function
+      | Many -> Many
+      | zom when Set.is_subset (Term.fv solvable_subterm) ~of_:us -> zom
+      | One _ -> Many
+      | Zero -> One solvable_subterm )
+  in
+  match max_solvables_not_ito_us with
+  | One kill ->
+      let+ kill, keep = Term.solve_zero_eq diff ~for_:kill in
+      Subst.compose1 ~key:kill ~data:keep subst
+  | Many | Zero -> None
+
+let solve_interp_eq us us_xs e (cls, subst) =
   [%Trace.call fun {pf} ->
-    pf "poly: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp poly pp_cls cls
+    pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Term.pp e pp_cls cls
       Subst.pp subst]
   ;
-  ( if not (Set.is_subset (Term.fv poly) ~of_:us_xs) then None
+  ( if not (Set.is_subset (Term.fv e) ~of_:us_xs) then None
   else
-    List.find_map cls ~f:(fun trm ->
-        if not (Set.is_subset (Term.fv trm) ~of_:us_xs) then None
-        else
-          let diff = Subst.norm subst (Term.sub poly trm) in
-          let max_solvables_not_ito_us =
-            fold_max_solvables diff ~init:Zero ~f:(fun solvable_subterm ->
-              function
-              | Many -> Many
-              | zom when Set.is_subset (Term.fv solvable_subterm) ~of_:us ->
-                  zom
-              | One _ -> Many
-              | Zero -> One solvable_subterm )
-          in
-          match max_solvables_not_ito_us with
-          | One kill ->
-              let+ kill, keep = Term.solve_zero_eq diff ~for_:kill in
-              Subst.compose1 ~key:kill ~data:keep subst
-          | Many | Zero -> None ) )
+    List.find_map cls ~f:(fun f ->
+        if not (Set.is_subset (Term.fv f) ~of_:us_xs) then None
+        else solve_poly_eq us e f subst ) )
   |>
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
