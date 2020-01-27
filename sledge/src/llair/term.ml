@@ -1020,6 +1020,8 @@ let is_false = function Integer {data} -> Z.is_false data | _ -> false
 (** Solve *)
 
 let solve_zero_eq ?for_ e =
+  [%Trace.call fun {pf} -> pf "%a%a" pp e (Option.pp " for %a" pp) for_]
+  ;
   ( match e with
   | Add args ->
       let+ c, q =
@@ -1034,7 +1036,12 @@ let solve_zero_eq ?for_ e =
       let r = div n d in
       (c, r)
   | _ -> None )
-  |> check (fun soln ->
-         match (for_, soln) with
-         | Some f, Some (c, _) -> assert (equal f c)
-         | _ -> () )
+  |>
+  [%Trace.retn fun {pf} s ->
+    pf "%a"
+      (Option.pp "%a" (fun fs (c, r) ->
+           Format.fprintf fs "%a ↦ %a" pp c pp r ))
+      s ;
+    match (for_, s) with
+    | Some f, Some (c, _) -> assert (equal f c)
+    | _ -> ()]

@@ -215,6 +215,9 @@ module List = struct
     in
     remove_ [] xs
 
+  let remove ?equal xs x =
+    try Some (remove_exn ?equal xs x) with Not_found -> None
+
   let rec rev_init n ~f =
     if n = 0 then []
     else

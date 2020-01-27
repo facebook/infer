@@ -177,6 +177,7 @@ module List : sig
       argument, or raise [Not_found] if no such element exists. [equal]
       defaults to physical equality. *)
 
+  val remove : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list option
   val rev_init : int -> f:(int -> 'a) -> 'a list
 
   val symmetric_diff :

@@ -62,3 +62,14 @@ val difference : t -> Term.t -> Term.t -> Z.t option
     offset. *)
 
 val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
+
+(** Solution Substitutions *)
+module Subst : sig
+  type t [@@deriving compare, equal, sexp]
+end
+
+val solve_for_vars : Var.Set.t list -> t -> Subst.t
+(** [solve_for_vars \[v₁;…\] r] is a solution substitution that is
+    entailed by [r] and consists of oriented equalities [x ↦ u] such that
+    [fv x ⊈ vᵢ ⊇ fv u] where [i] is minimal such that [vᵢ]
+    distinguishes [fv x] and [fv u], if one exists. *)
