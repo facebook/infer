@@ -142,6 +142,14 @@ let rec is_constant e =
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Label _ | Float _ | Integer _ -> true
 
+let orient e f =
+  match (is_constant e, is_constant f) with
+  (* orient equation to discretionarily prefer term that is constant or
+     compares smaller as class representative *)
+  | true, false -> (f, e)
+  | false, true -> (e, f)
+  | _ -> if Term.compare e f > 0 then (e, f) else (f, e)
+
 let rec solve_ e f s =
   let extend ~trm ~rep (us, xs, s) =
     Some (us, xs, Subst.compose1 ~key:trm ~data:rep s)
@@ -151,18 +159,12 @@ let rec solve_ e f s =
     let xs = Set.add xs x in
     (Term.var x, (us, xs, s))
   in
-  let solve_uninterp e f =
+  let solve_uninterp e f s =
     match ((e : Term.t), (f : Term.t)) with
     | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
-    | _ -> (
-      match (is_constant e, is_constant f) with
-      (* orient equation to discretionarily prefer term that is constant or
-         compares smaller as class representative *)
-      | true, false -> extend ~trm:f ~rep:e s
-      | false, true -> extend ~trm:e ~rep:f s
-      | _ ->
-          let trm, rep = if Term.compare e f > 0 then (e, f) else (f, e) in
-          extend ~trm ~rep s )
+    | _ ->
+        let trm, rep = orient e f in
+        extend ~trm ~rep s
   in
   let concat_size args =
     Vector.fold_until args ~init:Term.zero
@@ -177,17 +179,17 @@ let rec solve_ e f s =
       let e_f = Term.sub e f in
       match Term.solve_zero_eq e_f with
       | Some (trm, rep) -> extend ~trm ~rep s
-      | None -> solve_uninterp e_f Term.zero )
+      | None -> s |> solve_uninterp e_f Term.zero )
   | ApN (Concat, ms), ApN (Concat, ns) -> (
     match (concat_size ms, concat_size ns) with
-    | Some p, Some q -> solve_uninterp e f >>= solve_ p q
-    | _ -> solve_uninterp e f )
+    | Some p, Some q -> s |> solve_uninterp e f >>= solve_ p q
+    | _ -> s |> solve_uninterp e f )
   | Ap2 (Memory, m, _), ApN (Concat, ns)
    |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
     match concat_size ns with
-    | Some p -> solve_uninterp e f >>= solve_ p m
-    | _ -> solve_uninterp e f )
-  | _ -> solve_uninterp e f
+    | Some p -> s |> solve_uninterp e f >>= solve_ p m
+    | _ -> s |> solve_uninterp e f )
+  | _ -> s |> solve_uninterp e f
 
 let solve ~us ~xs e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
