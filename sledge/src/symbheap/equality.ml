@@ -142,10 +142,18 @@ let rec is_constant e =
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Label _ | Float _ | Integer _ -> true
 
-let solve _ e f =
+let solve ~us ~xs e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
   ;
   let rec solve_ e f s =
+    let extend ~trm ~rep (us, xs, s) =
+      Some (us, xs, Subst.compose1 ~key:trm ~data:rep s)
+    in
+    let fresh name (us, xs, s) =
+      let x, us = Var.fresh name ~wrt:us in
+      let xs = Set.add xs x in
+      (Term.var x, (us, xs, s))
+    in
     let solve_uninterp e f =
       match ((e : Term.t), (f : Term.t)) with
       | Integer {data= m}, Integer {data= n} when not (Z.equal m n) -> None
@@ -153,13 +161,13 @@ let solve _ e f =
         match (is_constant e, is_constant f) with
         (* orient equation to discretionarily prefer term that is constant
            or compares smaller as class representative *)
-        | true, false -> Some (Subst.compose1 ~key:f ~data:e s)
-        | false, true -> Some (Subst.compose1 ~key:e ~data:f s)
+        | true, false -> extend ~trm:f ~rep:e s
+        | false, true -> extend ~trm:e ~rep:f s
         | _ ->
-            let key, data =
+            let trm, rep =
               if Term.compare e f > 0 then (e, f) else (f, e)
             in
-            Some (Subst.compose1 ~key ~data s) )
+            extend ~trm ~rep s )
     in
     let concat_size args =
       Vector.fold_until args ~init:Term.zero
@@ -173,7 +181,7 @@ let solve _ e f =
     | (Add _ | Mul _ | Integer _), _ | _, (Add _ | Mul _ | Integer _) -> (
         let e_f = Term.sub e f in
         match Term.solve_zero_eq e_f with
-        | Some (key, data) -> Some (Subst.compose1 ~key ~data s)
+        | Some (trm, rep) -> extend ~trm ~rep s
         | None -> solve_uninterp e_f Term.zero )
     | ApN (Concat, ms), ApN (Concat, ns) -> (
       match (concat_size ms, concat_size ns) with
@@ -186,16 +194,20 @@ let solve _ e f =
       | _ -> solve_uninterp e f )
     | _ -> solve_uninterp e f
   in
-  solve_ e f Subst.empty
+  (solve_ e f (us, xs, Subst.empty) >>| fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
-    function Some s -> pf "%a" Subst.pp s | None -> pf "false"]
+    function
+    | Some (xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
+    | None -> pf "false"]
 
 (** Equality Relations *)
 
 (** see also [invariant] *)
 type t =
-  { sat: bool  (** [false] only if constraints are inconsistent *)
+  { xs: Var.Set.t
+        (** existential variables that did not appear in input equations *)
+  ; sat: bool  (** [false] only if constraints are inconsistent *)
   ; rep: Subst.t
         (** functional set of oriented equations: map [a] to [a'],
             indicating that [a = a'] holds, and that [a'] is the
@@ -274,7 +286,8 @@ let invariant r =
 
 (** Core operations *)
 
-let true_ = {sat= true; rep= Subst.empty} |> check invariant
+let true_ =
+  {xs= Var.Set.empty; sat= true; rep= Subst.empty} |> check invariant
 
 (** terms are congruent if equal after normalizing subterms *)
 let congruent r a b =
@@ -317,8 +330,9 @@ let extend a r = extend a r |> check invariant
 let merge us a b r =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
   ;
-  ( match solve us a b with
-  | Some s -> {r with rep= Subst.compose r.rep s}
+  ( match solve ~us ~xs:r.xs a b with
+  | Some (xs, s) ->
+      {r with xs= Set.union r.xs xs; rep= Subst.compose r.rep s}
   | None -> {r with sat= false} )
   |>
   [%Trace.retn fun {pf} r' ->
@@ -354,22 +368,18 @@ let close us r =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-(** Exposed interface *)
-
 let and_eq us a b r =
-  [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp a Term.pp b pp r]
-  ;
-  ( if not r.sat then r
+  if not r.sat then r
   else
     let a' = canon r a in
     let b' = canon r b in
     let r = extend a' r in
     let r = extend b' r in
-    if Term.equal a' b' then r else close us (merge us a' b' r) )
-  |>
-  [%Trace.retn fun {pf} r' ->
-    pf "%a" pp_diff (r, r') ;
-    invariant r']
+    if Term.equal a' b' then r else close us (merge us a' b' r)
+
+let extract_xs r = (r.xs, {r with xs= Var.Set.empty})
+
+(** Exposed interface *)
 
 let is_true {sat; rep} =
   sat && Subst.for_alli rep ~f:(fun ~key:a ~data:a' -> Term.equal a a')
@@ -401,13 +411,15 @@ let difference r a b =
     function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
 
 let and_ us r s =
-  if not r.sat then r
+  ( if not r.sat then r
   else if not s.sat then s
   else
     let s, r =
       if Subst.length s.rep <= Subst.length r.rep then (s, r) else (r, s)
     in
     Subst.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> and_eq us e e' r)
+  )
+  |> extract_xs
 
 let or_ us r s =
   [%Trace.call fun {pf} -> pf "@[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
@@ -429,8 +441,18 @@ let or_ us r s =
     let rs = merge_mems rs r s in
     let rs = merge_mems rs s r in
     rs )
+  |> extract_xs
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Trace.retn fun {pf} (_, r) -> pf "%a" pp r]
+
+let and_eq us a b r =
+  [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp a Term.pp b pp r]
+  ;
+  and_eq us a b r |> extract_xs
+  |>
+  [%Trace.retn fun {pf} (_, r') ->
+    pf "%a" pp_diff (r, r') ;
+    invariant r']
 
 let rename r sub =
   [%Trace.call fun {pf} -> pf "%a" pp r]

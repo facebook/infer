@@ -36,10 +36,16 @@ let%test_module _ =
     let x = Term.var x_
     let y = Term.var y_
     let z = Term.var z_
-    let and_eq = and_eq wrt
-    let and_ = and_ wrt
-    let or_ = or_ wrt
-    let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
+
+    let of_eqs l =
+      List.fold ~init:(wrt, true_)
+        ~f:(fun (us, r) (a, b) -> and_eq us a b r)
+        l
+      |> snd
+
+    let and_eq a b r = and_eq wrt a b r |> snd
+    let and_ r s = and_ wrt r s |> snd
+    let or_ r s = or_ wrt r s |> snd
     let f1 = of_eqs [(!0, !1)]
 
     let%test _ = is_false f1
