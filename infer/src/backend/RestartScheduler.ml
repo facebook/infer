@@ -6,6 +6,36 @@
  *)
 open! IStd
 
+[@@@warning "-60"]
+
+module ProcLocker : sig
+  val setup : unit -> unit
+    [@@warning "-32"]
+  (** This should be called once before trying to lock Anything. *)
+
+  val try_lock : Procname.t -> bool
+    [@@warning "-32"]
+  (** true = the lock belongs to the calling process false = the lock belongs to a different worker *)
+
+  val unlock : Procname.t -> unit
+    [@@warning "-32"]
+  (** This will work as a cleanup function because after calling unlock all the workers that need an
+      unlocked Proc should find it's summary already Cached. Throws if the lock had not been taken. *)
+
+  val clean : unit -> unit
+    [@@warning "-32"]
+  (** This should be called when locks will no longer be used to remove any files or state that's
+      not necessary. *)
+end = struct
+  let setup () = ()
+
+  let try_lock _pname = true
+
+  let unlock _pname = ()
+
+  let clean () = ()
+end
+
 let of_list (lst : 'a list) : 'a ProcessPool.TaskGenerator.t =
   let content = Queue.of_list lst in
   let remaining = ref (Queue.length content) in
