@@ -20,13 +20,13 @@ include Invariant.S with type t := t
 val true_ : t
 (** The diagonal relation, which only equates each term with itself. *)
 
-val and_eq : Term.t -> Term.t -> t -> t
+val and_eq : Var.Set.t -> Term.t -> Term.t -> t -> t
 (** Conjoin an equation to a relation. *)
 
-val and_ : t -> t -> t
+val and_ : Var.Set.t -> t -> t -> t
 (** Conjunction. *)
 
-val or_ : t -> t -> t
+val or_ : Var.Set.t -> t -> t -> t
 (** Disjunction. *)
 
 val rename : t -> Var.Subst.t -> t

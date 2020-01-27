@@ -142,7 +142,7 @@ let rec is_constant e =
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Label _ | Float _ | Integer _ -> true
 
-let solve e f =
+let solve _ e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
   ;
   let rec solve_ e f s =
@@ -314,10 +314,10 @@ let rec extend a r =
 
 let extend a r = extend a r |> check invariant
 
-let merge a b r =
+let merge us a b r =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
   ;
-  ( match solve a b with
+  ( match solve us a b with
   | Some s -> {r with rep= Subst.compose r.rep s}
   | None -> {r with sat= false} )
   |>
@@ -338,17 +338,17 @@ let find_missing r =
           then return (Some (a', b')) ) ) ;
   None
 
-let rec close r =
+let rec close us r =
   if not r.sat then r
   else
     match find_missing r with
-    | Some (a', b') -> close (merge a' b' r)
+    | Some (a', b') -> close us (merge us a' b' r)
     | None -> r
 
-let close r =
+let close us r =
   [%Trace.call fun {pf} -> pf "%a" pp r]
   ;
-  close r
+  close us r
   |>
   [%Trace.retn fun {pf} r' ->
     pf "%a" pp_diff (r, r') ;
@@ -356,7 +356,7 @@ let close r =
 
 (** Exposed interface *)
 
-let and_eq a b r =
+let and_eq us a b r =
   [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp a Term.pp b pp r]
   ;
   ( if not r.sat then r
@@ -365,7 +365,7 @@ let and_eq a b r =
     let b' = canon r b in
     let r = extend a' r in
     let r = extend b' r in
-    if Term.equal a' b' then r else close (merge a' b' r) )
+    if Term.equal a' b' then r else close us (merge us a' b' r) )
   |>
   [%Trace.retn fun {pf} r' ->
     pf "%a" pp_diff (r, r') ;
@@ -400,16 +400,16 @@ let difference r a b =
   [%Trace.retn fun {pf} ->
     function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
 
-let and_ r s =
+let and_ us r s =
   if not r.sat then r
   else if not s.sat then s
   else
     let s, r =
       if Subst.length s.rep <= Subst.length r.rep then (s, r) else (r, s)
     in
-    Subst.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> and_eq e e' r)
+    Subst.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> and_eq us e e' r)
 
-let or_ r s =
+let or_ us r s =
   [%Trace.call fun {pf} -> pf "@[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
   ;
   ( if not s.sat then r
@@ -421,7 +421,7 @@ let or_ r s =
             ~init:([rep], rs)
             ~f:(fun (reps, rs) exp ->
               match List.find ~f:(entails_eq r exp) reps with
-              | Some rep -> (reps, and_eq exp rep rs)
+              | Some rep -> (reps, and_eq us exp rep rs)
               | None -> (exp :: reps, rs) )
           |> snd )
     in

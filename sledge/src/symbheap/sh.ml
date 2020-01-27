@@ -380,7 +380,7 @@ let and_cong cong q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Equality.pp cong pp q]
   ;
   let q = extend_us (Equality.fv cong) q in
-  let cong = Equality.and_ q.cong cong in
+  let cong = Equality.and_ q.us q.cong cong in
   (if Equality.is_false cong then false_ q.us else {q with cong})
   |>
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
@@ -406,7 +406,7 @@ let star q1 q2 =
       let {us= us1; xs= xs1; cong= c1; pure= p1; heap= h1; djns= d1} = q1 in
       let {us= us2; xs= xs2; cong= c2; pure= p2; heap= h2; djns= d2} = q2 in
       assert (Set.equal us (Set.union us1 us2)) ;
-      let cong = Equality.and_ c1 c2 in
+      let cong = Equality.and_ us c1 c2 in
       if Equality.is_false cong then false_ us
       else
         { us
@@ -462,7 +462,7 @@ let rec pure (e : Term.t) =
   ;
   let us = Term.fv e in
   let eq_false b =
-    let cong = Equality.and_eq b Term.false_ Equality.true_ in
+    let cong = Equality.and_eq us b Term.false_ Equality.true_ in
     {emp with us; cong; pure= [e]}
   in
   ( match e with
@@ -477,7 +477,7 @@ let rec pure (e : Term.t) =
         (star (pure cnd) (pure thn))
         (star (pure (Term.not_ cnd)) (pure els))
   | Ap2 (Eq, e1, e2) ->
-      let cong = Equality.(and_eq e1 e2 true_) in
+      let cong = Equality.(and_eq us e1 e2 true_) in
       if Equality.is_false cong then false_ us
       else {emp with us; cong; pure= [e]}
   | _ -> {emp with us; pure= [e]} )
