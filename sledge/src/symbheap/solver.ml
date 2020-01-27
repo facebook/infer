@@ -74,14 +74,25 @@ let excise_exists goal =
           in
           {goal with us; min; xs; sub; pgs= true} )
 
-let special_cases xs = function
-  | Term.Ap2 (Eq, Var _, Var _) as e ->
-      if Set.is_subset (Term.fv e) ~of_:xs then Term.true_ else e
-  | e -> e
+(* ad hoc treatment to drop tautologous constraints such as ∃x,y. x = y
+   where x and y do not appear elsewhere *)
+let drop_tautology xs sub e =
+  match (e : Term.t) with
+  | Ap2 (Eq, Var _, Var _) ->
+      let vs = Term.fv e in
+      if not (Set.is_subset vs ~of_:xs) then e
+      else
+        let var_strength = Sh.var_strength (Sh.exists xs sub) in
+        if
+          Set.for_all vs ~f:(fun v ->
+              Poly.equal (Map.find var_strength v) (Some `Anonymous) )
+        then Term.true_
+        else e
+  | _ -> e
 
-let excise_term ({min; xs} as goal) pure term =
+let excise_term ({min; xs; sub} as goal) pure term =
   let term' = Equality.normalize min.cong term in
-  let term' = special_cases xs term' in
+  let term' = drop_tautology xs sub term' in
   if Term.is_true term' then (
     excise (fun {pf} -> pf "excise_pure %a" Term.pp term) ;
     Some ({goal with pgs= true}, pure) )
