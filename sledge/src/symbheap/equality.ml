@@ -304,6 +304,10 @@ let classes r =
       | Simplified | Uninterpreted ->
           add (Term.map ~f:(Subst.apply r.rep) key) data cls )
 
+let cls_of r e =
+  let e' = Subst.apply r.rep e in
+  Map.find (classes r) e' |> Option.value ~default:[e']
+
 (** Pretty-printing *)
 
 let pp fs {sat; rep} =
@@ -474,6 +478,20 @@ let normalize = canon
 let class_of r e =
   let e' = normalize r e in
   e' :: Map.find_multi (classes r) e'
+
+let fold_uses_of r t ~init ~f =
+  let rec fold_ e ~init:s ~f =
+    let s =
+      Term.fold e ~init:s ~f:(fun sub s ->
+          if Term.equal t sub then f s e else s )
+    in
+    match classify e with
+    | Interpreted -> Term.fold e ~init:s ~f:(fun d s -> fold_ ~f d ~init:s)
+    | _ -> s
+  in
+  Subst.fold r.rep ~init ~f:(fun ~key:trm ~data:rep s ->
+      let f trm s = fold_ trm ~init:s ~f in
+      f trm (f rep s) )
 
 let difference r a b =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
@@ -720,9 +738,69 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
     pf "subst: @[%a@]@ classes: @[%a@]" Subst.pp_diff (subst, subst')
       pp_diff_clss (classes0, classes')]
 
+let solve_concat_extracts_eq r x =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp x pp r]
+  ;
+  let uses =
+    fold_uses_of r x ~init:[] ~f:(fun uses -> function
+      | Ap2 (Memory, _, _) as m ->
+          fold_uses_of r m ~init:uses ~f:(fun uses -> function
+            | Ap3 (Extract, _, _, _) as e -> e :: uses | _ -> uses )
+      | _ -> uses )
+  in
+  let find_extracts_at_off off =
+    List.filter uses ~f:(fun use ->
+        match (use : Term.t) with
+        | Ap3 (Extract, _, o, _) -> entails_eq r o off
+        | _ -> false )
+  in
+  let rec find_extracts full_rev_extracts rev_prefix off =
+    List.fold (find_extracts_at_off off) ~init:full_rev_extracts
+      ~f:(fun full_rev_extracts e ->
+        match e with
+        | Ap3 (Extract, Ap2 (Memory, n, _), o, l) ->
+            let o_l = Term.add o l in
+            if entails_eq r n o_l then
+              (e :: rev_prefix) :: full_rev_extracts
+            else find_extracts full_rev_extracts (e :: rev_prefix) o_l
+        | _ -> full_rev_extracts )
+  in
+  find_extracts [] [] Term.zero
+  |>
+  [%Trace.retn fun {pf} ->
+    pf "@[[%a]@]" (List.pp ";@ " (List.pp ",@ " Term.pp))]
+
+let solve_concat_extracts r us x (classes, subst, us_xs) =
+  match
+    List.filter_map (solve_concat_extracts_eq r x) ~f:(fun rev_extracts ->
+        List.fold_option rev_extracts ~init:[] ~f:(fun suffix e ->
+            let+ rep_ito_us =
+              List.fold (cls_of r e) ~init:None ~f:(fun rep_ito_us trm ->
+                  match rep_ito_us with
+                  | Some rep when Term.compare rep trm <= 0 -> rep_ito_us
+                  | _ when Set.is_subset (Term.fv trm) ~of_:us -> Some trm
+                  | _ -> rep_ito_us )
+            in
+            Term.memory ~siz:(Term.agg_size_exn e) ~arr:rep_ito_us :: suffix
+        ) )
+    |> List.min_elt ~compare:[%compare: Term.t list]
+  with
+  | Some extracts ->
+      let concat = Term.concat (Array.of_list extracts) in
+      let subst = Subst.compose1 ~key:x ~data:concat subst in
+      (classes, subst, us_xs)
+  | None -> (classes, subst, us_xs)
+
+let solve_for_xs r us xs (classes, subst, us_xs) =
+  Set.fold xs ~init:(classes, subst, us_xs)
+    ~f:(fun (classes, subst, us_xs) x ->
+      let x = Term.var x in
+      if Subst.mem subst x then (classes, subst, us_xs)
+      else solve_concat_extracts r us x (classes, subst, us_xs) )
+
 (* move equations from [classes] to [subst] which can be expressed, after
    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
-let solve_classes (classes, subst, us) xs =
+let solve_classes r (classes, subst, us) xs =
   [%Trace.call fun {pf} -> pf "xs: {@[%a@]}" Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
@@ -732,7 +810,8 @@ let solve_classes (classes, subst, us) xs =
     if subst != subst0 then solve_classes_ (classes, subst, us_xs)
     else (classes, subst, us_xs)
   in
-  solve_classes_ (classes, subst, Set.union us xs)
+  (classes, subst, Set.union us xs)
+  |> solve_classes_ |> solve_for_xs r us xs
   |>
   [%Trace.retn fun {pf} (classes', subst', _) ->
     pf "subst: @[%a@]@ classes: @[%a@]" Subst.pp_diff (subst, subst')
@@ -749,7 +828,7 @@ let pp_vss fs vss =
 let solve_for_vars vss r =
   [%Trace.call fun {pf} -> pf "%a@ @[%a@]" pp_vss vss pp_classes r]
   ;
-  List.fold ~f:solve_classes
+  List.fold ~f:(solve_classes r)
     ~init:(classes r, Subst.empty, Var.Set.empty)
     vss
   |> snd3
