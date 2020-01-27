@@ -49,7 +49,9 @@ type op2 =
   | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
-type op3 = Conditional  (** If-then-else *)
+type op3 =
+  | Conditional  (** If-then-else *)
+  | Extract  (** Extract a slice of an aggregate value *)
 [@@deriving compare, equal, hash, sexp]
 
 type opN =
@@ -214,6 +216,7 @@ val conditional : cnd:t -> thn:t -> els:t -> t
 
 (* memory contents *)
 val splat : t -> t
+val extract : agg:t -> off:t -> len:t -> t
 val eq_concat : t * t -> (t * t) array -> t
 
 (* records (struct / array values) *)

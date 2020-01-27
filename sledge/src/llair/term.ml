@@ -36,7 +36,7 @@ type op2 =
   | Update of int
 [@@deriving compare, equal, hash, sexp]
 
-type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+type op3 = Conditional | Extract [@@deriving compare, equal, hash, sexp]
 type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
 type recN = Record [@@deriving compare, equal, hash, sexp]
 
@@ -196,9 +196,11 @@ let rec ppx strength fs term =
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
+    | Ap3 (Extract, agg, off, len) -> pf "%a[%a,%a)" pp agg pp off pp len
     | Ap1 (Splat, byt) -> pf "%a^" pp byt
     | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
+    | ApN (Concat, args) when Vector.is_empty args -> pf "@<2>⟨⟩"
+    | ApN (Concat, args) -> pf "(%a)" (Vector.pp "@,^" pp) args
     | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
     | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
@@ -789,6 +791,7 @@ let simp_concat xs =
 
 let simp_splat byt = Ap1 (Splat, byt)
 let simp_memory siz arr = Ap2 (Memory, siz, arr)
+let simp_extract agg off len = Ap3 (Extract, agg, off, len)
 
 (* records *)
 
@@ -850,7 +853,10 @@ let norm2 op x y =
   |> check invariant
 
 let norm3 op x y z =
-  (match op with Conditional -> simp_cond x y z) |> check invariant
+  ( match op with
+  | Conditional -> simp_cond x y z
+  | Extract -> simp_extract x y z )
+  |> check invariant
 
 let normN op xs =
   (match op with Concat -> simp_concat xs | Record -> simp_record xs)
@@ -885,6 +891,7 @@ let ashr = norm2 Ashr
 let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let splat byt = norm1 Splat byt
 let memory ~siz ~arr = norm2 Memory siz arr
+let extract ~agg ~off ~len = norm3 Extract agg off len
 let concat xs = normN Concat (Vector.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
