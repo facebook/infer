@@ -7,6 +7,7 @@ permalink: /docs/checkers-bug-types.html
 
 Here is an overview of the types of bugs currently reported by Infer checkers.
 
+  - [Captured Strong Self](/docs/checkers-bug-types.html#CAPTURED_STRONG_SELF)
   - [Checkers Immutable Cast](/docs/checkers-bug-types.html#CHECKERS_IMMUTABLE_CAST)
   - [Deadlock](/docs/checkers-bug-types.html#DEADLOCK)
   - [Dead store](/docs/checkers-bug-types.html#DEAD_STORE)
