@@ -172,6 +172,10 @@ module List : sig
   (** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
       every element. *)
 
+  val filter_map_preserving_phys_equal : 'a t -> f:('a -> 'a option) -> 'a t
+  (** Like filter_map, but preserves [phys_equal] if [f] preserves
+      [phys_equal] of every element. *)
+
   val remove_exn : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list
   (** Returns the input list without the first element [equal] to the
       argument, or raise [Not_found] if no such element exists. [equal]

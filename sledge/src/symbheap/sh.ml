@@ -42,7 +42,11 @@ let map_seg ~f h =
 let map ~f_sjn ~f_cong ~f_trm ({us= _; xs= _; cong; pure; heap; djns} as q)
     =
   let cong = f_cong cong in
-  let pure = List.map_preserving_phys_equal pure ~f:f_trm in
+  let pure =
+    List.filter_map_preserving_phys_equal pure ~f:(fun e ->
+        let e' = f_trm e in
+        if Term.is_true e' then None else Some e' )
+  in
   let heap = List.map_preserving_phys_equal heap ~f:(map_seg ~f:f_trm) in
   let djns =
     List.map_preserving_phys_equal djns

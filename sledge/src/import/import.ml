@@ -137,6 +137,18 @@ let map_preserving_phys_equal map t ~f =
   in
   if !change then t' else t
 
+let filter_map_preserving_phys_equal filter_map t ~f =
+  let change = ref false in
+  let t' =
+    filter_map t ~f:(fun x ->
+        let x'_opt = f x in
+        ( match x'_opt with
+        | Some x' when x' == x -> ()
+        | _ -> change := true ) ;
+        x'_opt )
+  in
+  if !change then t' else t
+
 module type Applicative_syntax = sig
   type 'a t
 
@@ -204,6 +216,9 @@ module List = struct
     Some
       (fold xs ~init ~f:(fun acc elt ->
            match f acc elt with Some res -> res | None -> return None ))
+
+  let filter_map_preserving_phys_equal t ~f =
+    filter_map_preserving_phys_equal filter_map t ~f
 
   let map_preserving_phys_equal t ~f = map_preserving_phys_equal map t ~f
 
