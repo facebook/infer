@@ -869,7 +869,7 @@ let should_report_on_proc tenv procdesc =
       false
 
 
-let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} : reported_access) =
+let should_report_guardedby_violation classname ({snapshot; tenv; procname} : reported_access) =
   let is_uitthread param =
     match String.lowercase param with
     | "ui thread" | "ui-thread" | "ui_thread" | "uithread" ->
@@ -898,7 +898,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} 
     match base_type.desc with
     | Tstruct base_name | Tptr ({desc= Tstruct base_name}, _) ->
         (* is the base class a subclass of the one containing the GuardedBy annotation? *)
-        PatternMatch.is_subtype tenv base_name (Typ.Name.Java.from_string classname_str)
+        PatternMatch.is_subtype tenv base_name classname
         && Tenv.lookup tenv base_name
            |> Option.exists ~f:(fun ({fields; statics} : Struct.t) ->
                   let f fld = field_is_annotated_guardedby field_name fld in
@@ -1100,34 +1100,38 @@ let make_results_table exe_env summaries =
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
       accesses acc
   in
-  List.fold summaries ~init:ReportMap.empty ~f:(fun acc summary ->
+  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (summary : Summary.t) ->
       let procname = Summary.get_proc_name summary in
       let tenv = Exe_env.get_tenv exe_env procname in
-      Payload.read_toplevel_procedure procname
-      |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
+      Payloads.racerd summary.payloads |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
-let aggregate_by_class exe_env file_env =
-  List.fold file_env ~init:String.Map.empty ~f:(fun acc procname ->
-      Ondemand.analyze_proc_name_no_caller procname
-      |> Option.value_map ~default:acc ~f:(fun summary ->
-             let pdesc = Summary.get_proc_desc summary in
-             let tenv = Exe_env.get_tenv exe_env procname in
-             if should_report_on_proc tenv pdesc then
-               Procdesc.get_proc_name pdesc |> Procname.get_class_name
-               |> Option.fold ~init:acc ~f:(fun acc classname ->
-                      String.Map.add_multi acc ~key:classname ~data:summary )
-             else acc ) )
+let aggregate_by_class exe_env procedures =
+  List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
+      Procname.get_class_type_name procname
+      |> Option.bind ~f:(fun classname ->
+             Ondemand.analyze_proc_name_no_caller procname
+             |> Option.filter ~f:(fun summary ->
+                    let pdesc = Summary.get_proc_desc summary in
+                    let tenv = Exe_env.get_tenv exe_env procname in
+                    should_report_on_proc tenv pdesc )
+             |> Option.map ~f:(fun summary ->
+                    Typ.Name.Map.update classname
+                      (function
+                        | None -> Some [summary] | Some summaries -> Some (summary :: summaries) )
+                      acc ) )
+      |> Option.value ~default:acc )
 
 
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
 let file_analysis ({procedures; source_file; exe_env} : Callbacks.cluster_callback_args) =
-  let init = IssueLog.empty in
-  aggregate_by_class exe_env procedures
-  |> String.Map.fold ~init ~f:(fun ~key:classname ~data:summaries issue_log ->
-         make_results_table exe_env summaries |> report_unsafe_accesses ~issue_log classname )
+  let class_map = aggregate_by_class exe_env procedures in
+  Typ.Name.Map.fold
+    (fun classname methods issue_log ->
+      make_results_table exe_env methods |> report_unsafe_accesses ~issue_log classname )
+    class_map IssueLog.empty
   |> IssueLog.store ~dir:Config.racerd_issues_dir_name ~file:source_file

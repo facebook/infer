@@ -286,6 +286,8 @@ module Name : sig
   end
 
   module Set : Caml.Set.S with type elt = t
+
+  module Map : Caml.Map.S with type key = t
 end
 
 val equal : t -> t -> bool

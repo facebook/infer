@@ -552,6 +552,12 @@ module Name = struct
 
     let compare = compare
   end)
+
+  module Map = Caml.Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
 end
 
 (** dump a type with all the details. *)
