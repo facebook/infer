@@ -52,7 +52,6 @@ let add_invalid_and_modified ~check_empty attrs acc =
 let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
   let pre_heap = (AbductiveDomain.extract_pre pre_post).BaseDomain.heap in
   let post = AbductiveDomain.extract_post pre_post in
-  let post_heap = post.BaseDomain.heap in
   let post_stack = post.BaseDomain.stack in
   let add_to_modified var addr acc =
     let rec aux acc ~addr_to_explore ~visited : ImpurityDomain.trace list =
@@ -62,20 +61,20 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
       | addr :: addr_to_explore -> (
           if AbstractValue.Set.mem addr visited then aux acc ~addr_to_explore ~visited
           else
-            let cell_pre_opt = BaseMemory.find_opt addr pre_heap in
-            let cell_post_opt = BaseMemory.find_opt addr post_heap in
+            let edges_pre_opt = BaseMemory.find_opt addr pre_heap in
+            let cell_post_opt = BaseDomain.find_cell_opt addr post in
             let visited = AbstractValue.Set.add addr visited in
-            match (cell_pre_opt, cell_post_opt) with
+            match (edges_pre_opt, cell_post_opt) with
             | None, None ->
                 aux acc ~addr_to_explore ~visited
-            | Some (_, _pre_attrs), None ->
+            | Some _, None ->
                 L.(die InternalError)
                   "It is unexpected to have an address which has a binding in pre but not in post!"
-            | None, Some (_edges_post, attrs_post) ->
+            | None, Some (_, attrs_post) ->
                 aux
                   (add_invalid_and_modified ~check_empty:false attrs_post acc)
                   ~addr_to_explore ~visited
-            | Some (edges_pre, _), Some (edges_post, attrs_post) -> (
+            | Some edges_pre, Some (edges_post, attrs_post) -> (
               match get_matching_dest_addr_opt ~edges_pre ~edges_post with
               | Some addr_list ->
                   aux
@@ -100,7 +99,7 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
            match BaseStack.find_opt var post_stack with
            | Some (addr, _) when Typ.is_pointer typ -> (
              match BaseMemory.find_opt addr pre_heap with
-             | Some (edges_pre, _) ->
+             | Some edges_pre ->
                  BaseMemory.Edges.fold
                    (fun _ (addr, _) acc -> add_to_modified var addr acc)
                    edges_pre acc

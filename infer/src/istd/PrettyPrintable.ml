@@ -114,6 +114,10 @@ module type MonoMap = sig
   val mapi : (key -> value -> value) -> t -> t
 
   val is_singleton_or_more : t -> (key * value) IContainer.singleton_or_more
+
+  val fold_map : t -> init:'a -> f:('a -> value -> 'a * value) -> 'a * t
+
+  val of_seq : (key * value) Seq.t -> t
 end
 
 module type PPMap = sig

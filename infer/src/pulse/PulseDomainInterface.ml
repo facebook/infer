@@ -11,6 +11,7 @@ module AbductiveDomain = PulseAbductiveDomain
 
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
+module AddressAttributes = AbductiveDomain.AddressAttributes
 
 module BaseDomain = PulseBaseDomain
 (** use only if you know what you are doing or you risk break bi-abduction *)

@@ -10,6 +10,7 @@ module L = Logging
 open PulseBasicInterface
 module Memory = PulseBaseMemory
 module Stack = PulseBaseStack
+module AddressAttributes = PulseBaseAddressAttributes
 
 module SkippedTrace = struct
   type t = PulseTrace.t [@@deriving compare]
@@ -23,7 +24,8 @@ module SkippedCallsMap = PrettyPrintable.MakePPMonoMap (Procname) (SkippedTrace)
 
 (* {2 Abstract domain description } *)
 
-type t = {heap: Memory.t; stack: Stack.t; skipped_calls_map: SkippedCallsMap.t}
+type t =
+  {heap: Memory.t; stack: Stack.t; skipped_calls_map: SkippedCallsMap.t; attrs: AddressAttributes.t}
 
 let empty =
   { heap=
@@ -31,7 +33,20 @@ let empty =
       (* TODO: we could record that 0 is an invalid address at this point but this makes the
          analysis go a bit overboard with the Nullptr reports. *)
   ; stack= Stack.empty
-  ; skipped_calls_map= SkippedCallsMap.empty }
+  ; skipped_calls_map= SkippedCallsMap.empty
+  ; attrs= AddressAttributes.empty }
+
+
+type cell = Memory.Edges.t * Attributes.t
+
+let find_cell_opt addr {heap; attrs} =
+  match (Memory.find_opt addr heap, AddressAttributes.find_opt addr attrs) with
+  | None, None ->
+      None
+  | edges_opt, attrs_opt ->
+      let edges = Option.value edges_opt ~default:Memory.Edges.empty in
+      let attrs = Option.value attrs_opt ~default:Attributes.empty in
+      Some (edges, attrs)
 
 
 (** comparison between two elements of the domain to determine the [<=] relation
@@ -107,18 +122,15 @@ module GraphComparison = struct
     | `AliasingRHS | `AliasingLHS ->
         NotIsomorphic
     | `NotAlreadyVisited mapping -> (
-        let get_non_empty_cell = function
-          | None ->
-              None
-          | Some (edges, attrs) when Memory.Edges.is_empty edges && Attributes.is_empty attrs ->
-              (* this can happen because of [register_address] or because we don't care to delete empty
-                 edges when removing edges *)
-              None
-          | Some _ as some_cell ->
-              some_cell
+        let get_non_empty_cell addr astate =
+          find_cell_opt addr astate
+          |> Option.filter ~f:(fun (edges, attrs) ->
+                 not (Memory.Edges.is_empty edges && Attributes.is_empty attrs)
+                 (* this can happen because of [register_address] or because we don't care to delete empty
+                    edges when removing edges *) )
         in
-        let lhs_cell_opt = Memory.find_opt addr_lhs lhs.heap |> get_non_empty_cell in
-        let rhs_cell_opt = Memory.find_opt addr_rhs rhs.heap |> get_non_empty_cell in
+        let lhs_cell_opt = get_non_empty_cell addr_lhs lhs in
+        let rhs_cell_opt = get_non_empty_cell addr_rhs rhs in
         match (lhs_cell_opt, rhs_cell_opt) with
         | None, None ->
             IsomorphicUpTo mapping
@@ -183,11 +195,10 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
 
 
-let pp fmt {heap; stack; skipped_calls_map} =
+let pp fmt {heap; stack; skipped_calls_map; attrs} =
   F.fprintf fmt
     "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@;skipped_calls=@[<hv>%a@];@]}"
-    Stack.pp stack Memory.pp_heap heap Memory.pp_attributes heap SkippedCallsMap.pp
-    skipped_calls_map
+    Stack.pp stack Memory.pp heap AddressAttributes.pp attrs SkippedCallsMap.pp skipped_calls_map
 
 
 module GraphVisit : sig
@@ -229,7 +240,7 @@ end = struct
         match Memory.find_opt address astate.heap with
         | None ->
             Continue (visited, accum)
-        | Some (edges, _) ->
+        | Some edges ->
             visit_edges orig_var ~f rev_accesses astate ~edges (visited, accum) )
       | Stop fin ->
           Stop (visited, fin) )

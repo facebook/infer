@@ -41,8 +41,8 @@ module Misc = struct
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
       let i = IntLit.of_int64 i64 in
-      Memory.add_attribute ret_addr (BoItv (Itv.ItvPure.of_int_lit i)) astate
-      |> Memory.add_attribute ret_addr
+      AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit i)) astate
+      |> AddressAttributes.add_one ret_addr
            (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
     in
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
@@ -52,8 +52,8 @@ module Misc = struct
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
-      Memory.add_attribute ret_addr (BoItv Itv.ItvPure.nat) astate
-      |> Memory.add_attribute ret_addr
+      AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.nat) astate
+      |> AddressAttributes.add_one ret_addr
            (Arithmetic (Arithmetic.zero_inf, Immediate {location; history= []}))
     in
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
@@ -78,9 +78,9 @@ module C = struct
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     let is_known_zero =
-      ( Memory.get_arithmetic (fst deleted_access) astate
+      ( AddressAttributes.get_arithmetic (fst deleted_access) astate
       |> function Some (arith, _) -> Arithmetic.is_equal_to_zero arith | None -> false )
-      || Itv.ItvPure.is_zero (Memory.get_bo_itv (fst deleted_access) astate)
+      || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv (fst deleted_access) astate)
     in
     if is_known_zero then (* freeing 0 is a no-op *)
       Ok [astate]
@@ -274,7 +274,7 @@ module StdFunction = struct
     >>= fun (astate, (lambda, _)) ->
     PulseOperations.Closures.check_captured_addresses location lambda astate
     >>= fun astate ->
-    match PulseAbductiveDomain.Memory.get_closure_proc_name lambda astate with
+    match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
     | Some callee_proc_name ->
@@ -338,14 +338,14 @@ module StdVector = struct
    fun ~caller_summary:_ location ~ret:_ astate ->
     let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
     reallocate_internal_array [crumb] vector Reserve location astate
-    >>| PulseAbductiveDomain.Memory.std_vector_reserve (fst vector)
+    >>| AddressAttributes.std_vector_reserve (fst vector)
     >>| List.return
 
 
   let push_back vector : model =
    fun ~caller_summary:_ location ~ret:_ astate ->
     let crumb = ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []} in
-    if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
+    if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
       Ok [astate]

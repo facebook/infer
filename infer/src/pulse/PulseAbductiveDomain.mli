@@ -45,12 +45,6 @@ module Memory : sig
   module Access = BaseMemory.Access
   module Edges = BaseMemory.Edges
 
-  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
-  (** add the attribute to the pre, if meaningful (does not modify the post) *)
-
-  val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
-  (** add the attribute only to the post *)
-
   val add_edge :
        AbstractValue.t * ValueHistory.t
     -> Access.t
@@ -59,13 +53,26 @@ module Memory : sig
     -> t
     -> t
 
-  val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
+  val eval_edge :
+    AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
+      returns what it points to or creates a fresh value if that edge didn't exist. *)
 
-  val find_opt : AbstractValue.t -> t -> BaseMemory.cell option
+  val find_opt : AbstractValue.t -> t -> BaseMemory.Edges.t option
 
   val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+end
 
-  val set_cell : AbstractValue.t * ValueHistory.t -> BaseMemory.cell -> Location.t -> t -> t
+(** attribute operations like {!BaseAddressAttributes} but that also take care of propagating facts
+    to the precondition *)
+module AddressAttributes : sig
+  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
+  (** add the attribute to the pre, if meaningful (does not modify the post) *)
+
+  val add_one : AbstractValue.t -> Attribute.t -> t -> t
+  (** add the attribute only to the post *)
+
+  val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
@@ -75,17 +82,18 @@ module Memory : sig
 
   val std_vector_reserve : AbstractValue.t -> t -> t
 
-  val eval_edge :
-    AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
-  (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
-      returns what it points to or creates a fresh value if that edge didn't exist. *)
-
   val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
 
   val get_bo_itv : AbstractValue.t -> t -> Itv.ItvPure.t
+
+  val find_opt : AbstractValue.t -> t -> Attributes.t option
 end
 
 val is_local : Var.t -> t -> bool
+
+val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
+
+val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 
 module PrePost : sig
   type domain_t = t

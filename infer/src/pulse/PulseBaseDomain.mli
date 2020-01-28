@@ -15,7 +15,13 @@ end
 module SkippedCallsMap :
   PrettyPrintable.PPMonoMap with type key = Procname.t and type value = SkippedTrace.t
 
-type t = {heap: PulseBaseMemory.t; stack: PulseBaseStack.t; skipped_calls_map: SkippedCallsMap.t}
+type t =
+  { heap: PulseBaseMemory.t
+  ; stack: PulseBaseStack.t
+  ; skipped_calls_map: SkippedCallsMap.t
+  ; attrs: PulseBaseAddressAttributes.t }
+
+type cell = PulseBaseMemory.Edges.t * Attributes.t
 
 val empty : t
 
@@ -36,3 +42,5 @@ type isograph_relation =
 val isograph_map : lhs:t -> rhs:t -> mapping -> isograph_relation
 
 val is_isograph : lhs:t -> rhs:t -> mapping -> bool
+
+val find_cell_opt : AbstractValue.t -> t -> cell option

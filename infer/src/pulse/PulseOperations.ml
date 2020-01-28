@@ -17,7 +17,7 @@ type 'a access_result = ('a, Diagnostic.t) result
 (** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
-  Memory.check_valid access_trace address astate
+  AddressAttributes.check_valid access_trace address astate
   |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
          Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} )
 
@@ -50,8 +50,8 @@ module Closures = struct
     Memory.Edges.of_seq (Caml.List.to_seq fake_fields)
 
 
-  let check_captured_addresses action lambda_addr astate =
-    match Memory.find_opt lambda_addr astate with
+  let check_captured_addresses action lambda_addr (astate : t) =
+    match AbductiveDomain.find_post_cell_opt lambda_addr astate with
     | None ->
         Ok astate
     | Some (edges, attributes) ->
@@ -82,7 +82,7 @@ module Closures = struct
     let closure_addr_hist = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
     let astate =
-      Memory.set_cell closure_addr_hist
+      AbductiveDomain.set_post_cell closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
         location astate
     in
@@ -104,7 +104,7 @@ let eval_arith_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
     | LiteralOperand i ->
         Some (Arithmetic.equal_to i)
     | AbstractValueOperand v ->
-        Memory.get_arithmetic v astate |> Option.map ~f:fst
+        AddressAttributes.get_arithmetic v astate |> Option.map ~f:fst
   in
   match
     Option.both (arith_of_op op_lhs astate) (arith_of_op op_rhs astate)
@@ -114,7 +114,9 @@ let eval_arith_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
       astate
   | Some binop_a ->
       let binop_trace = Trace.Immediate {location; history= binop_hist} in
-      let astate = Memory.add_attribute binop_addr (Arithmetic (binop_a, binop_trace)) astate in
+      let astate =
+        AddressAttributes.add_one binop_addr (Arithmetic (binop_a, binop_trace)) astate
+      in
       astate
 
 
@@ -124,12 +126,12 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs astate =
     | LiteralOperand i ->
         Itv.ItvPure.of_int_lit i
     | AbstractValueOperand v ->
-        Memory.get_bo_itv v astate
+        AddressAttributes.get_bo_itv v astate
   in
   let bo_itv =
     Itv.ItvPure.arith_binop bop (bo_itv_of_op op_lhs astate) (bo_itv_of_op op_rhs astate)
   in
-  Memory.add_attribute binop_addr (BoItv bo_itv) astate
+  AddressAttributes.add_one binop_addr (BoItv bo_itv) astate
 
 
 let eval_binop location binop op_lhs op_rhs binop_hist astate =
@@ -143,22 +145,22 @@ let eval_binop location binop op_lhs op_rhs binop_hist astate =
 
 let eval_unop_arith location unop_addr unop operand_addr unop_hist astate =
   match
-    Memory.get_arithmetic operand_addr astate
+    AddressAttributes.get_arithmetic operand_addr astate
     |> Option.bind ~f:(function a, _ -> Arithmetic.unop unop a)
   with
   | None ->
       astate
   | Some unop_a ->
       let unop_trace = Trace.Immediate {location; history= unop_hist} in
-      Memory.add_attribute unop_addr (Arithmetic (unop_a, unop_trace)) astate
+      AddressAttributes.add_one unop_addr (Arithmetic (unop_a, unop_trace)) astate
 
 
 let eval_unop_bo_itv unop_addr unop operand_addr astate =
-  match Itv.ItvPure.arith_unop unop (Memory.get_bo_itv operand_addr astate) with
+  match Itv.ItvPure.arith_unop unop (AddressAttributes.get_bo_itv operand_addr astate) with
   | None ->
       astate
   | Some itv ->
-      Memory.add_attribute unop_addr (BoItv itv) astate
+      AddressAttributes.add_one unop_addr (BoItv itv) astate
 
 
 let eval_unop location unop addr unop_hist astate =
@@ -208,11 +210,11 @@ let eval location exp0 astate =
         (* TODO: make identical const the same address *)
         let addr = AbstractValue.mk_fresh () in
         let astate =
-          Memory.add_attribute addr
+          AddressAttributes.add_one addr
             (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
             astate
-          |> Memory.add_attribute addr (BoItv (Itv.ItvPure.of_int_lit i))
-          |> Memory.invalidate
+          |> AddressAttributes.add_one addr (BoItv (Itv.ItvPure.of_int_lit i))
+          |> AddressAttributes.invalidate
                (addr, [ValueHistory.Assignment location])
                (ConstantDereference i) location
         in
@@ -248,7 +250,10 @@ let eval_arith location exp astate =
   | exp ->
       eval location exp astate
       >>| fun (astate, (value, _)) ->
-      (astate, Some value, Memory.get_arithmetic value astate, Memory.get_bo_itv value astate)
+      ( astate
+      , Some value
+      , AddressAttributes.get_arithmetic value astate
+      , AddressAttributes.get_bo_itv value astate )
 
 
 let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate =
@@ -264,7 +269,8 @@ let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate 
             Trace.add_event event trace
       in
       let attribute = Attribute.Arithmetic (arith, trace) in
-      Memory.abduce_attribute addr attribute astate |> Memory.add_attribute addr attribute
+      AddressAttributes.abduce_attribute addr attribute astate
+      |> AddressAttributes.add_one addr attribute
 
 
 let prune ~is_then_branch if_kind location ~condition astate =
@@ -281,7 +287,8 @@ let prune ~is_then_branch if_kind location ~condition astate =
     | Some (v, NonBottom arith_pruned) ->
         let attr_arith = Attribute.BoItv arith_pruned in
         let astate =
-          Memory.abduce_attribute v attr_arith astate |> Memory.add_attribute v attr_arith
+          AddressAttributes.abduce_attribute v attr_arith astate
+          |> AddressAttributes.add_one v attr_arith
         in
         (astate, true)
   in
@@ -370,7 +377,8 @@ let havoc_field location addr_trace field trace_obj astate =
 
 
 let invalidate location cause addr_trace astate =
-  check_addr_access location addr_trace astate >>| Memory.invalidate addr_trace cause location
+  check_addr_access location addr_trace astate
+  >>| AddressAttributes.invalidate addr_trace cause location
 
 
 let invalidate_deref location cause ref_addr_hist astate =
@@ -384,12 +392,12 @@ let invalidate_array_elements location cause addr_trace astate =
   match Memory.find_opt (fst addr_trace) astate with
   | None ->
       astate
-  | Some (edges, _) ->
+  | Some edges ->
       Memory.Edges.fold
         (fun access dest_addr_trace astate ->
           match (access : Memory.Access.t) with
           | ArrayAccess _ ->
-              Memory.invalidate dest_addr_trace cause location astate
+              AddressAttributes.invalidate dest_addr_trace cause location astate
           | _ ->
               astate )
         edges astate
@@ -399,14 +407,14 @@ let shallow_copy location addr_hist astate =
   check_addr_access location addr_hist astate
   >>| fun astate ->
   let cell =
-    match Memory.find_opt (fst addr_hist) astate with
+    match AbductiveDomain.find_post_cell_opt (fst addr_hist) astate with
     | None ->
         (Memory.Edges.empty, Attributes.empty)
     | Some cell ->
         cell
   in
   let copy = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
-  (Memory.set_cell copy cell location astate, copy)
+  (AbductiveDomain.set_post_cell copy cell location astate, copy)
 
 
 let check_address_escape escape_location proc_desc address history astate =
@@ -420,8 +428,8 @@ let check_address_escape escape_location proc_desc address history astate =
       astate
   in
   let check_address_of_cpp_temporary () =
-    Memory.find_opt address astate
-    |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
+    AddressAttributes.find_opt address astate
+    |> Option.fold_result ~init:() ~f:(fun () attrs ->
            IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
                match attr with
                | Attribute.AddressOfCppTemporary (variable, _)
@@ -454,11 +462,11 @@ let check_address_escape escape_location proc_desc address history astate =
 
 
 let mark_address_of_cpp_temporary history variable address astate =
-  Memory.add_attribute address (AddressOfCppTemporary (variable, history)) astate
+  AddressAttributes.add_one address (AddressOfCppTemporary (variable, history)) astate
 
 
 let mark_address_of_stack_variable history variable location address astate =
-  Memory.add_attribute address (AddressOfStackVariable (variable, location, history)) astate
+  AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
 
 
 let remove_vars vars location astate =
