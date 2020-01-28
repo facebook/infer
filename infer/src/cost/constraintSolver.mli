@@ -12,7 +12,16 @@ module Node = ProcCfg.DefaultNode
 
 type debug = {f: 'a. ('a, F.formatter, unit, unit) IStd.format4 -> 'a} [@@unboxed]
 
-val get_node_nb_exec :
-  debug:debug -> Procdesc.t -> BasicCost.t Node.IdMap.t -> Node.id -> BasicCost.t
+module Equalities : sig
+  type t
+end
+
+val compute_costs : debug:debug -> BasicCost.t Node.IdMap.t -> Equalities.t -> unit
+(** repeatedly improve the costs given the constraints *)
+
+val get_node_nb_exec : Equalities.t -> Node.id -> BasicCost.t
 (** compute the number of times a node is executed by taking into account the program structural
     (e.g. control-flow) constraints *)
+
+val collect_constraints : debug:debug -> Procdesc.t -> Equalities.t
+(** collect initial constraints for a CFG *)

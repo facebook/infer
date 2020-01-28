@@ -181,9 +181,7 @@ let compute_costs ~debug bound_map equalities =
   debug.f "[ConstraintSolver][CImpr] %a@\n" Equalities.pp_costs equalities
 
 
-let get_node_nb_exec ~debug node_cfg bound_map node_id =
-  let equalities = collect_constraints ~debug node_cfg in
-  let () = compute_costs ~debug bound_map equalities in
+let get_node_nb_exec equalities node_id =
   let set =
     node_id |> ControlFlowCost.make_node |> Equalities.find equalities
     |> Equalities.find_set equalities

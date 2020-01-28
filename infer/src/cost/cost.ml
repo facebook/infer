@@ -303,7 +303,10 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
   let start_node = NodeCFG.start_node node_cfg in
   NodePrinter.with_session start_node
     ~pp_name:(fun fmt -> F.pp_print_string fmt "cost(constraints)")
-    ~f:(fun () -> ConstraintSolver.get_node_nb_exec ~debug node_cfg bound_map)
+    ~f:(fun () ->
+      let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
+      let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
+      ConstraintSolver.get_node_nb_exec equalities )
 
 
 let compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
