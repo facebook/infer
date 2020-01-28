@@ -7,8 +7,6 @@
 
 open! IStd
 
-(* FB-ONLY *)
-
 (** Low-level Scuba logging functionality. Provides functionality to log anything to any scuba
     table. (Note that Scuba is a schema-free storage, so it won't require any changes). Don't use
     this module directly for logging to tables with known structure. Use high-level functions that

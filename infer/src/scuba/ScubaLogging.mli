@@ -9,8 +9,6 @@
 
 open! IStd
 
-(* FB-ONLY *)
-
 (**
    Functionality for logging into "infer_events" Scuba table.
    The table is organized in form of key-value pairs.

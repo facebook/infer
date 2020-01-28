@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* FB-ONLY *)
-
 open! IStd
 module SMap = Map.Make (String)
 
