@@ -20,12 +20,11 @@ module SkippedTrace = struct
         F.pp_print_string fmt "call to skipped function occurs here" )
 end
 
-module SkippedCallsMap = PrettyPrintable.MakePPMonoMap (Procname) (SkippedTrace)
+module SkippedCalls = PrettyPrintable.MakePPMonoMap (Procname) (SkippedTrace)
 
 (* {2 Abstract domain description } *)
 
-type t =
-  {heap: Memory.t; stack: Stack.t; skipped_calls_map: SkippedCallsMap.t; attrs: AddressAttributes.t}
+type t = {heap: Memory.t; stack: Stack.t; skipped_calls: SkippedCalls.t; attrs: AddressAttributes.t}
 
 let empty =
   { heap=
@@ -33,7 +32,7 @@ let empty =
       (* TODO: we could record that 0 is an invalid address at this point but this makes the
          analysis go a bit overboard with the Nullptr reports. *)
   ; stack= Stack.empty
-  ; skipped_calls_map= SkippedCallsMap.empty
+  ; skipped_calls= SkippedCalls.empty
   ; attrs= AddressAttributes.empty }
 
 
@@ -195,10 +194,10 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
 
 
-let pp fmt {heap; stack; skipped_calls_map; attrs} =
+let pp fmt {heap; stack; skipped_calls; attrs} =
   F.fprintf fmt
     "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@;skipped_calls=@[<hv>%a@];@]}"
-    Stack.pp stack Memory.pp heap AddressAttributes.pp attrs SkippedCallsMap.pp skipped_calls_map
+    Stack.pp stack Memory.pp heap AddressAttributes.pp attrs SkippedCalls.pp skipped_calls
 
 
 module GraphVisit : sig

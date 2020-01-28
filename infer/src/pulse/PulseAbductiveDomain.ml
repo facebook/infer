@@ -11,7 +11,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
-module BaseSkippedCallsMap = BaseDomain.SkippedCallsMap
+module BaseSkippedCalls = BaseDomain.SkippedCalls
 module BaseAddressAttributes = PulseBaseAddressAttributes
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
@@ -26,7 +26,7 @@ module type BaseDomain = sig
   val update :
        ?stack:BaseStack.t
     -> ?heap:BaseMemory.t
-    -> ?skipped_calls_map:BaseSkippedCallsMap.t
+    -> ?skipped_calls:BaseSkippedCalls.t
     -> ?attrs:BaseAddressAttributes.t
     -> t
     -> t
@@ -42,25 +42,24 @@ end
 type base_domain = BaseDomain.t =
   { heap: BaseMemory.t
   ; stack: BaseStack.t
-  ; skipped_calls_map: BaseSkippedCallsMap.t
+  ; skipped_calls: BaseSkippedCalls.t
   ; attrs: BaseAddressAttributes.t }
 
 (** operations common to [Domain] and [InvertedDomain], see also the [BaseDomain] signature *)
 module BaseDomainCommon = struct
-  let update ?stack ?heap ?skipped_calls_map ?attrs foot =
-    let new_stack, new_heap, new_skipped_calls_map, new_attrs =
+  let update ?stack ?heap ?skipped_calls ?attrs foot =
+    let new_stack, new_heap, new_skipped_calls, new_attrs =
       ( Option.value ~default:foot.stack stack
       , Option.value ~default:foot.heap heap
-      , Option.value ~default:foot.skipped_calls_map skipped_calls_map
+      , Option.value ~default:foot.skipped_calls skipped_calls
       , Option.value ~default:foot.attrs attrs )
     in
     if
       phys_equal new_stack foot.stack && phys_equal new_heap foot.heap
-      && phys_equal new_skipped_calls_map foot.skipped_calls_map
+      && phys_equal new_skipped_calls foot.skipped_calls
       && phys_equal new_attrs foot.attrs
     then foot
-    else
-      {stack= new_stack; heap= new_heap; skipped_calls_map= new_skipped_calls_map; attrs= new_attrs}
+    else {stack= new_stack; heap= new_heap; skipped_calls= new_skipped_calls; attrs= new_attrs}
 
 
   let filter_addr ~f foot =
@@ -305,17 +304,17 @@ let mk_initial proc_desc =
   {pre; post}
 
 
-(** [astate] with [astate.post.skipped_calls_map = f astate.post.skipped_calls_map] *)
-let map_post_skipped_calls_map ~f astate =
+(** [astate] with [astate.post.skipped_calls = f astate.post.skipped_calls] *)
+let map_post_skipped_calls ~f astate =
   let new_post =
-    Domain.update astate.post ~skipped_calls_map:(f (astate.post :> base_domain).skipped_calls_map)
+    Domain.update astate.post ~skipped_calls:(f (astate.post :> base_domain).skipped_calls)
   in
   if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-let add_skipped_calls_map pname trace astate =
-  map_post_skipped_calls_map astate ~f:(fun skipped_call_map ->
-      BaseSkippedCallsMap.add pname trace skipped_call_map )
+let add_skipped_calls pname trace astate =
+  map_post_skipped_calls astate ~f:(fun skipped_call_map ->
+      BaseSkippedCalls.add pname trace skipped_call_map )
 
 
 let discard_unreachable ({pre; post} as astate) =
@@ -968,18 +967,18 @@ module PrePost = struct
 
 
   let record_skipped_calls callee_proc_name call_loc pre_post call_state =
-    let callee_skipped_map = (pre_post.post :> BaseDomain.t).skipped_calls_map in
+    let callee_skipped_map = (pre_post.post :> BaseDomain.t).skipped_calls in
     let caller_skipped_map =
-      BaseSkippedCallsMap.map
+      BaseSkippedCalls.map
         (fun trace -> add_call_to_trace callee_proc_name call_loc [] trace)
         callee_skipped_map
       |> (* favor calls we already knew about somewhat arbitrarily *)
-      BaseSkippedCallsMap.union
+      BaseSkippedCalls.union
         (fun _ orig_call _callee_call -> Some orig_call)
-        (call_state.astate.post :> BaseDomain.t).skipped_calls_map
+        (call_state.astate.post :> BaseDomain.t).skipped_calls
     in
     { call_state with
-      astate= map_post_skipped_calls_map ~f:(fun _ -> caller_skipped_map) call_state.astate }
+      astate= map_post_skipped_calls ~f:(fun _ -> caller_skipped_map) call_state.astate }
 
 
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =

@@ -120,7 +120,7 @@ val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
     keep its size down *)
 
-val add_skipped_calls_map : Procname.t -> PulseTrace.t -> t -> t
+val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
 
 val extract_pre : PrePost.t -> BaseDomain.t
 

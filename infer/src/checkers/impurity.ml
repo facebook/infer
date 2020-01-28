@@ -121,12 +121,12 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
     | None ->
         false
   in
-  let skipped_calls_map =
-    post.BaseDomain.skipped_calls_map
-    |> BaseDomain.SkippedCallsMap.filter (fun proc_name _ ->
+  let skipped_calls =
+    post.BaseDomain.skipped_calls
+    |> BaseDomain.SkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure proc_name) )
   in
-  {modified_globals; modified_params; skipped_calls_map}
+  {modified_globals; modified_params; skipped_calls}
 
 
 let report_errors summary proc_name pname_loc modified_opt =
@@ -136,7 +136,7 @@ let report_errors summary proc_name pname_loc modified_opt =
   | None ->
       Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
         impure_fun_desc
-  | Some (ImpurityDomain.{modified_globals; modified_params; skipped_calls_map} as astate) ->
+  | Some (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as astate) ->
       if Purity.should_report proc_name && not (ImpurityDomain.is_pure astate) then
         let modified_ltr param_source set acc =
           ImpurityDomain.ModifiedVarSet.fold
@@ -144,13 +144,13 @@ let report_errors summary proc_name pname_loc modified_opt =
             set acc
         in
         let skipped_functions =
-          PulseBaseDomain.SkippedCallsMap.fold
+          PulseBaseDomain.SkippedCalls.fold
             (fun proc_name trace acc ->
               PulseTrace.add_to_errlog ~nesting:1
                 ~pp_immediate:(fun fmt ->
                   F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
                 trace acc )
-            skipped_calls_map []
+            skipped_calls []
         in
         let ltr =
           impure_fun_ltr

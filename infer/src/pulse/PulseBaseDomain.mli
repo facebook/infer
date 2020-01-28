@@ -12,13 +12,13 @@ module SkippedTrace : sig
   type t = PulseTrace.t
 end
 
-module SkippedCallsMap :
+module SkippedCalls :
   PrettyPrintable.PPMonoMap with type key = Procname.t and type value = SkippedTrace.t
 
 type t =
   { heap: PulseBaseMemory.t
   ; stack: PulseBaseStack.t
-  ; skipped_calls_map: SkippedCallsMap.t
+  ; skipped_calls: SkippedCalls.t
   ; attrs: PulseBaseAddressAttributes.t }
 
 type cell = PulseBaseMemory.Edges.t * Attributes.t

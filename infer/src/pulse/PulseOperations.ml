@@ -510,7 +510,7 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   let add_skipped_proc astate =
     match reason with
     | PulseCallEvent.SkippedKnownCall proc_name ->
-        AbductiveDomain.add_skipped_calls_map proc_name
+        AbductiveDomain.add_skipped_calls proc_name
           (Trace.Immediate {location= call_loc; history= []})
           astate
     | _ ->
