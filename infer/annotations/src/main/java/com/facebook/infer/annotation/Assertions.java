@@ -54,6 +54,15 @@ public class Assertions {
     return object;
   }
 
+  /**
+   * Makes Nullsafe stop complaining when {@code object} is dereferenced or converted to a
+   * non-nullable. In contrast with {@link #assumeNotNull()}, indicates cases when the proper fix
+   * needs to be committed, but for some reason it is hard or impossible to do it staight away.
+   */
+  public static <T> T nullsafeFIXME(@Nullable T object, String explanationOrTask) {
+    return object;
+  }
+
   public static <T> T assertGet(int index, List<T> list) {
     assertCondition(0 <= index && index < list.size(), "Index not in bound");
     return assertNotNull(list.get(index), "Null value");

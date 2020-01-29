@@ -141,6 +141,10 @@ let check_not_null_parameter_list, check_not_null_list =
       , "com.facebook.infer.annotation.Assertions.assumeNotNull(java.lang.Object,java.lang.String):java.lang.Object"
       )
     ; ( 1
+      , (o, [n; o])
+      , "com.facebook.infer.annotation.Assertions.nullsafeFIXME(java.lang.Object,java.lang.String):java.lang.Object"
+      )
+    ; ( 1
       , (o, [n])
       , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object):java.lang.Object" )
     ; ( 1
