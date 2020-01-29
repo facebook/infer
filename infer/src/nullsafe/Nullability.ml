@@ -10,14 +10,21 @@ open! IStd
 type t =
   | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
-  | DeclaredNonnull
+  | UncheckedNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
-          conventions) as non-nullable. Hovewer, it might still contain null since the truthfullness
+          conventions) as non-nullable. However, it might still contain null since the truthfulness
           of the declaration was not checked. *)
-  | Nonnull
-      (** We believe that this value can not be null. If it is not the case, this is an unsoundness
-          issue for Nullsafe, and we aim to minimize number of such issues occuring in real-world
-          programs. *)
+  | StrictNonnull
+      (** Non-nullable value with the highest degree of certainty, because it is either:
+
+          - a non-null literal,
+          - an expression that semantically cannot be null,
+          - comes from internal code checked under strict mode,
+          - comes from a third-party method with an appropriate built-in model or user-defined
+            nullability signature.
+
+          The latter two are potential sources of unsoundness issues for nullsafe, but we need to
+          strike the balance between the strictness of analysis, convenience, and real-world risk. *)
 [@@deriving compare, equal]
 
 let top = Nullable
@@ -30,10 +37,10 @@ let join x y =
       Nullable
   | Nullable, _ | _, Nullable ->
       Nullable
-  | DeclaredNonnull, _ | _, DeclaredNonnull ->
-      DeclaredNonnull
-  | Nonnull, Nonnull ->
-      Nonnull
+  | UncheckedNonnull, _ | _, UncheckedNonnull ->
+      UncheckedNonnull
+  | StrictNonnull, StrictNonnull ->
+      StrictNonnull
 
 
 let is_subtype ~subtype ~supertype = equal (join subtype supertype) supertype
@@ -43,7 +50,7 @@ let to_string = function
       "Null"
   | Nullable ->
       "Nullable"
-  | DeclaredNonnull ->
-      "DeclaredNonnull"
-  | Nonnull ->
-      "Nonnull"
+  | UncheckedNonnull ->
+      "UncheckedNonnull"
+  | StrictNonnull ->
+      "StrictNonnull"

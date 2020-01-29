@@ -13,7 +13,7 @@ type type_role = Param | Ret
 
 let is_whitelisted_violation ~subtype ~supertype =
   match (subtype, supertype) with
-  | Nullability.DeclaredNonnull, Nullability.Nonnull ->
+  | Nullability.UncheckedNonnull, Nullability.StrictNonnull ->
       (* It is a violation that we are currently willing to ignore because
          it is hard to obey in practice.
          It might lead to unsoundness issues, so this might be reconsidered.

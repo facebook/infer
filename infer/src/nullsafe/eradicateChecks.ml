@@ -183,9 +183,9 @@ let is_declared_nonnull AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       false
-  | AnnotatedNullability.DeclaredNonnull _ ->
+  | AnnotatedNullability.UncheckedNonnull _ ->
       true
-  | AnnotatedNullability.Nonnull _ ->
+  | AnnotatedNullability.StrictNonnull _ ->
       true
 
 
@@ -234,7 +234,7 @@ let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
  *)
 let get_nullability_upper_bound field_name typestate_list =
   (* Join upper bounds for all typestates in the list *)
-  List.fold typestate_list ~init:Nullability.Nonnull ~f:(fun acc (proc_name, typestate) ->
+  List.fold typestate_list ~init:Nullability.StrictNonnull ~f:(fun acc (proc_name, typestate) ->
       Nullability.join acc
         (get_nullability_upper_bound_for_typestate proc_name field_name typestate) )
 

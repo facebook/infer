@@ -11,9 +11,10 @@ type violation = {declared_nullability: Nullability.t; can_be_narrowed_to: Nulla
 
 let check ~what ~by_rhs_upper_bound =
   match (what, by_rhs_upper_bound) with
-  | Nullability.Nullable, Nullability.Nonnull | Nullability.Nullable, Nullability.DeclaredNonnull ->
+  | Nullability.Nullable, Nullability.StrictNonnull
+  | Nullability.Nullable, Nullability.UncheckedNonnull ->
       Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
-  | Nullability.Null, Nullability.Nonnull | Nullability.Null, Nullability.DeclaredNonnull ->
+  | Nullability.Null, Nullability.StrictNonnull | Nullability.Null, Nullability.UncheckedNonnull ->
       (* Null, Nonnull pais is an edge case that we don't expect to arise in practice for two reasons:
          1. The only way to declare something as Null is to declare it is java.lang.Void, but nullsafe
          does not know about it just yet.

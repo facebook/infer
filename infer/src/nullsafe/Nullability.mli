@@ -18,13 +18,15 @@ open! IStd
 type t =
   | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
-  | DeclaredNonnull
+  | UncheckedNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
           conventions) as non-nullable. Hovewer, it might still contain null since the truthfullness
           of the declaration was not checked. *)
-  | Nonnull
-      (** We believe that this value can not be null. If it is not the case, this is an unsoundness
-          issue for Nullsafe, and we aim to minimize number of such issues occuring in real-world
+  | StrictNonnull
+      (** We believe that this value can not be null because it is either a non-null literal, an
+          expression that semantically cannot be null, or a non-null value that should not be null
+          according to typechecking rules. If the latter is not the case, this is an unsoundness
+          issue for nullsafe, and we aim to minimize number of such issues occuring in real-world
           programs. *)
 [@@deriving compare, equal]
 

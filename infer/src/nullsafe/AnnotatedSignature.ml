@@ -151,7 +151,7 @@ let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia
 let set_modelled_nullability_for_annotated_type annotated_type should_set_nullable =
   let nullability =
     if should_set_nullable then AnnotatedNullability.Nullable ModelledNullable
-    else AnnotatedNullability.Nonnull ModelledNonnull
+    else AnnotatedNullability.StrictNonnull ModelledNonnull
   in
   AnnotatedType.{annotated_type with nullability}
 

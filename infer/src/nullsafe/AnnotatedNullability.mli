@@ -18,8 +18,8 @@ open! IStd
 
 type t =
   | Nullable of nullable_origin
-  | DeclaredNonnull of declared_nonnull_origin  (** See {!Nullability.t} for explanation *)
-  | Nonnull of nonnull_origin
+  | UncheckedNonnull of unchecked_nonnull_origin  (** See {!Nullability.t} for explanation *)
+  | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
 
 and nullable_origin =
@@ -33,7 +33,7 @@ and nullable_origin =
   | ModelledNullable  (** nullsafe knows it is nullable via its internal models *)
 [@@deriving compare]
 
-and declared_nonnull_origin =
+and unchecked_nonnull_origin =
   | AnnotatedNonnull
       (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe
           recognizes *)
@@ -41,7 +41,7 @@ and declared_nonnull_origin =
       (** Infer was run in mode where all not annotated (non local) types are treated as non
           nullable *)
 
-and nonnull_origin =
+and strict_nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
   | PrimitiveType  (** Primitive types are non-nullable by language design *)

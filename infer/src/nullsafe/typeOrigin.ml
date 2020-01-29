@@ -63,7 +63,7 @@ let get_nullability = function
   | ArrayAccess
   | OptimisticFallback (* non-null is the most optimistic type *)
   | Undef (* This is a very special case, assigning non-null is a technical trick *) ->
-      Nullability.Nonnull
+      Nullability.StrictNonnull
   | Field {field_type= {nullability}} ->
       AnnotatedNullability.get_nullability nullability
   | MethodParameter {param_annotated_type= {nullability}} ->
@@ -116,7 +116,7 @@ let get_method_ret_description pname call_loc
     match nullability with
     | AnnotatedNullability.Nullable _ ->
         "nullable"
-    | AnnotatedNullability.DeclaredNonnull _ | AnnotatedNullability.Nonnull _ ->
+    | AnnotatedNullability.UncheckedNonnull _ | AnnotatedNullability.StrictNonnull _ ->
         "non-nullable"
   in
   let model_info =

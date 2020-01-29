@@ -19,9 +19,9 @@ let check ~is_strict_mode nullability =
   match nullability with
   | Nullability.Nullable | Nullability.Null ->
       Error {is_strict_mode; nullability}
-  | Nullability.DeclaredNonnull ->
+  | Nullability.UncheckedNonnull ->
       if is_strict_mode then Error {is_strict_mode; nullability} else Ok ()
-  | Nullability.Nonnull ->
+  | Nullability.StrictNonnull ->
       Ok ()
 
 
@@ -40,7 +40,7 @@ let violation_description {nullability} ~dereference_location dereference_type
     ~nullable_object_descr ~nullable_object_origin =
   let module MF = MarkupFormatter in
   match nullability with
-  | Nullability.DeclaredNonnull ->
+  | Nullability.UncheckedNonnull ->
       (* This can happen only in strict mode.
          This type of violation is more subtle than the normal case because, so it should be rendered in a special way *)
       ErrorRenderingUtils.get_strict_mode_violation_issue ~bad_usage_location:dereference_location
@@ -91,7 +91,7 @@ let violation_description {nullability} ~dereference_location dereference_type
         | Nullability.Nullable ->
             Format.sprintf "%s is nullable and is not locally checked for null when %s%s"
               what_is_dereferred_str action_descr suffix
-        | Nullability.DeclaredNonnull | Nullability.Nonnull ->
+        | Nullability.UncheckedNonnull | Nullability.StrictNonnull ->
             Logging.die InternalError "Invariant violation: unexpected nullability"
       in
       (description, IssueType.eradicate_nullable_dereference, dereference_location)

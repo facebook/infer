@@ -23,8 +23,8 @@ and function_info =
 
 let is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs =
   match (is_strict_mode, lhs, rhs) with
-  | false, Nullability.Nonnull, Nullability.DeclaredNonnull ->
-      (* We allow DeclaredNonnull -> Nonnull conversion outside of strict mode for better adoption.
+  | false, Nullability.StrictNonnull, Nullability.UncheckedNonnull ->
+      (* We allow UncheckedNonnull -> StrictNonnull conversion outside of strict mode for better adoption.
          Otherwise using strictified classes in non-strict context becomes a pain because
          of extra warnings.
       *)
@@ -78,7 +78,7 @@ let bad_param_description
             "`null`"
         | Nullability.Nullable ->
             "nullable"
-        | Nullability.Nonnull | Nullability.DeclaredNonnull ->
+        | Nullability.StrictNonnull | Nullability.UncheckedNonnull ->
             Logging.die InternalError "Invariant violation: unexpected nullability"
       in
       Format.asprintf "%a is %s" MF.pp_monospaced actual_param_expression nullability_descr
@@ -131,7 +131,11 @@ let bad_param_description
 
 
 let is_declared_nonnull_to_nonnull ~lhs ~rhs =
-  match (lhs, rhs) with Nullability.Nonnull, Nullability.DeclaredNonnull -> true | _ -> false
+  match (lhs, rhs) with
+  | Nullability.StrictNonnull, Nullability.UncheckedNonnull ->
+      true
+  | _ ->
+      false
 
 
 let get_issue_type = function
@@ -171,7 +175,7 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
                 "`null`"
             | Nullable ->
                 "a nullable"
-            | Nonnull | DeclaredNonnull ->
+            | StrictNonnull | UncheckedNonnull ->
                 Logging.die InternalError "Invariant violation: unexpected nullability"
           in
           Format.asprintf "%a is declared non-nullable but is assigned %s%s." MF.pp_monospaced
@@ -185,7 +189,7 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
                 "`null`"
             | Nullable ->
                 "a nullable value"
-            | Nonnull | DeclaredNonnull ->
+            | StrictNonnull | UncheckedNonnull ->
                 Logging.die InternalError "Invariant violation: unexpected nullability"
           in
           Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s."

@@ -14,7 +14,7 @@ let create origin = {nullability= TypeOrigin.get_nullability origin; origin}
 let get_nullability {nullability} = nullability
 
 let is_nonnull_or_declared_nonnull {nullability} =
-  match nullability with Nonnull | DeclaredNonnull -> true | _ -> false
+  match nullability with StrictNonnull | UncheckedNonnull -> true | _ -> false
 
 
 let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)

@@ -56,12 +56,12 @@ let get tenv field_name class_typ =
          in
          let corrected_nullability =
            match nullability with
-           | AnnotatedNullability.DeclaredNonnull _ when is_enum_value ->
+           | AnnotatedNullability.UncheckedNonnull _ when is_enum_value ->
                (* Enum values are the special case - they can not be null. So we can strengten nullability.
                   Note that if it is nullable, we do NOT change nullability: in this case this is probably
                   not an enum value, but just a static field annotated as nullable.
                *)
-               AnnotatedNullability.Nonnull EnumValue
+               AnnotatedNullability.StrictNonnull EnumValue
            | _ ->
                nullability
          in
