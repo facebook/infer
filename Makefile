@@ -250,6 +250,11 @@ byte: src_build_common
 	$(QUIET)$(call silent_on_success,Building byte Infer,\
 	$(MAKE_SOURCE) byte)
 
+.PHONY: check
+check: src_build_common
+	$(QUIET)$(call silent_on_success,Building artifacts for tooling support,\
+	$(MAKE_SOURCE) check)
+
 .PHONY: test_build
 test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
