@@ -13,14 +13,19 @@ import javax.annotation.Nullable;
 
 public class Assertions {
 
-  public static <T> T assumeNotNull(@Nullable T object) {
+  /** Assertion with a runtime check. */
+  public static <T> T assertNotNull(@Nullable T object, String explanation) {
+    if (object == null) {
+      throw new AssertionError(explanation);
+    }
     return object;
   }
 
-  public static <T> T assumeNotNull(@Nullable T object, String explanation) {
-    return object;
-  }
-
+  /**
+   * See {@link #assertNotNull(T object, String explanation)}.
+   *
+   * <p>NOTE: prefer always providing an explanation.
+   */
   public static <T> T assertNotNull(@Nullable T object) {
     if (object == null) {
       throw new AssertionError();
@@ -28,10 +33,24 @@ public class Assertions {
     return object;
   }
 
-  public static <T> T assertNotNull(@Nullable T object, String explanation) {
-    if (object == null) {
-      throw new AssertionError(explanation);
-    }
+  /**
+   * Same as {@link #assertNotNull()}, but does not do a runtime check. Useful in
+   * performance-critical places when a runtime check is costly.
+   *
+   * <p>NOTE: Whenever possible, prefer using {@link #assertNotNull()}. Java runtime is doing a good
+   * job with optimizing nullability checks, so most likely this won't improve performance, but will
+   * make unexpected null propagate and hide the real cause of an error.
+   */
+  public static <T> T assumeNotNull(@Nullable T object, String explanation) {
+    return object;
+  }
+
+  /**
+   * See {@link #assumeNotNull(T object, String explanation)}.
+   *
+   * <p>NOTE: prefer always providing an explanation.
+   */
+  public static <T> T assumeNotNull(@Nullable T object) {
     return object;
   }
 
