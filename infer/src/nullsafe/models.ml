@@ -100,12 +100,14 @@ let get_modelled_annotated_signature tenv proc_attributes =
   annotated_signature |> correct_by_internal_models |> correct_by_external_models
 
 
-(** Check if the procedure is one of the known Preconditions.checkNotNull. *)
+(** Check if the procedure is one of the known methods asserting nullability of the object. Nullsafe
+    should understand that both the argument and return value are non-nullable after the call. *)
 let is_check_not_null proc_name =
   table_has_procedure check_not_null_table proc_name || match_method_name proc_name "checkNotNull"
 
 
-(** Parameter number for a procedure known to be a checkNotNull *)
+(** Parameter number (starting from 1) for a procedure known to produce a non-nullable assertion.
+    [None] if the function is not known to be an aseertion OR the parameter number is not known *)
 let get_check_not_null_parameter proc_name =
   let proc_id = Procname.to_unique_id proc_name in
   Hashtbl.find_opt check_not_null_parameter_table proc_id

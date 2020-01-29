@@ -13,9 +13,6 @@ module Hashtbl = Caml.Hashtbl
  * @nolint
  *)
 
-(* in strict mode, give an error if a nullable is passed to checkNotNull *)
-let check_not_null_strict = false
-
 (* the type should be treated as Nonnull *)
 let o = false
 
@@ -78,50 +75,55 @@ let cr = if Config.nullsafe_strict_containers then (n, [o]) else (n, [n])
 let ng = (n, [])
 
 let check_not_null_parameter_list, check_not_null_list =
-  let x = if check_not_null_strict then o else n in
+  (* The first integer in the tuple is the index (counting from 1) of the argument to be asserted.
+     Commonly it is 1.
+  *)
   let list =
     [ ( 1
-      , (o, [x; n])
+      , (o, [n; n])
       , "com.facebook.common.internal.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
       )
     ; ( 1
-      , (o, [x; n; n])
+      , (o, [n; n; n])
       , "com.facebook.common.internal.Preconditions.checkNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
       )
     ; ( 1
-      , (o, [x])
+      , (o, [n])
       , "com.facebook.common.internal.Preconditions.checkNotNull(java.lang.Object):java.lang.Object"
       )
     ; ( 1
-      , (o, [x; n])
+      , (o, [n; n])
       , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.String):java.lang.Object"
       )
     ; ( 1
-      , (o, [x; n; n])
+      , (o, [n; n; n])
       , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
       )
     ; ( 1
-      , (o, [x])
+      , (o, [n])
       , "com.facebook.common.preconditions.Preconditions.checkNotNull(java.lang.Object):java.lang.Object"
       )
     ; ( 1
-      , (o, [x; n])
+      , (o, [n; n])
       , "com.google.common.base.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
       )
     ; ( 1
-      , (o, [x; n; n])
+      , (o, [n; n; n])
       , "com.google.common.base.Preconditions.checkNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
       )
     ; ( 1
-      , (o, [x])
+      , (o, [n])
       , "com.google.common.base.Preconditions.checkNotNull(java.lang.Object):java.lang.Object" )
-    ; (1, (o, [x]), "com.google.common.base.Verify.verifyNotNull(java.lang.Object):java.lang.Object")
+    ; (1, (o, [n]), "com.google.common.base.Verify.verifyNotNull(java.lang.Object):java.lang.Object")
     ; ( 1
-      , (o, [x; n; n])
+      , (o, [n; n; n])
       , "com.google.common.base.Verify.verifyNotNull(java.lang.Object,java.lang.String,java.lang.Object[]):java.lang.Object"
       )
-    ; (1, (o, [x]), "org.junit.Assert.assertNotNull(java.lang.Object):void")
-    ; (2, (o, [n; x]), "org.junit.Assert.assertNotNull(java.lang.String,java.lang.Object):void")
+    ; (1, (o, [n]), "org.junit.Assert.assertNotNull(java.lang.Object):void")
+    ; ( 2
+      , (* a non-traditional method - the second parameter is the object to be asserted, the first is the description *)
+        (o, [n; n])
+      , "org.junit.Assert.assertNotNull(java.lang.String,java.lang.Object):void" )
     ; ( 1
       , (o, [n])
       , "com.facebook.infer.annotation.Assertions.assertNotNull(java.lang.Object):java.lang.Object"
@@ -139,10 +141,10 @@ let check_not_null_parameter_list, check_not_null_list =
       , "com.facebook.infer.annotation.Assertions.assumeNotNull(java.lang.Object,java.lang.String):java.lang.Object"
       )
     ; ( 1
-      , (o, [x])
+      , (o, [n])
       , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object):java.lang.Object" )
     ; ( 1
-      , (o, [x; n])
+      , (o, [n; n])
       , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
       ) ]
   in
