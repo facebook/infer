@@ -8,9 +8,9 @@
 #include "crossfile-2.h"
 
 // a deadlock should be reported here
-void CrossFileTwo::lock_my_mutex_first_then_the_other() {
+void CrossFileTwo::lock_my_mutex_first_then_the_other(CrossFileOne* other) {
   _mutex.lock();
-  _other->just_lock_my_mutex();
+  other->just_lock_my_mutex();
   _mutex.unlock();
 }
 

@@ -117,7 +117,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            {astate with attributes} )
 
 
-  let do_call ProcData.{tenv; summary} lhs callee actuals loc (astate : Domain.t) =
+  let do_call ProcData.{tenv; summary; extras} lhs callee actuals loc (astate : Domain.t) =
     let open Domain in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
@@ -198,14 +198,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     (* constructor calls are special-cased because they side-effect the receiver and do not
        return anything *)
     let treat_modeled_summaries () =
-      let callsite = CallSite.make callee loc in
       IList.eval_until_first_some
         [ get_returned_executor_summary
         ; get_thread_assert_summary
         ; get_future_is_done_summary
         ; get_mainLooper_summary
         ; get_callee_summary ]
-      |> Option.map ~f:(Domain.integrate_summary ~tenv ~lhs callsite astate)
+      |> Option.map ~f:(fun summary ->
+             let subst = Lock.make_subst extras actuals in
+             let callsite = CallSite.make callee loc in
+             Domain.integrate_summary ~tenv ~lhs ~subst callsite astate summary )
     in
     IList.eval_until_first_some
       [treat_handler_constructor; treat_thread_constructor; treat_assume; treat_modeled_summaries]

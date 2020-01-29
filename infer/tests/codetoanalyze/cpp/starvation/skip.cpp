@@ -47,11 +47,12 @@ class SkipTemplate {
 class UseTemplate {
  public:
   void foo() {
-    SkipTemplate<void> x;
-
     x.skipped_ok();
     x.not_skipped_bad();
   }
+
+ private:
+  SkipTemplate<void> x;
 };
 
 } // namespace skipped

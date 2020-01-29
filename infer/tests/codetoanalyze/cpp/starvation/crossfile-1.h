@@ -22,12 +22,11 @@ class CrossFileOne;
 class CrossFileOne {
  public:
   CrossFileOne() {}
-  void lock_my_mutex_first_then_the_other();
+  void lock_my_mutex_first_then_the_other(CrossFileTwo* other);
   void just_lock_my_mutex();
 
  private:
   std::mutex _mutex;
-  CrossFileTwo* _other;
 };
 
 #endif

@@ -31,11 +31,11 @@ class Parameters {
   Parameters someObject;
 
   // Next two methods will deadlock
-  public synchronized void FN_oneWayEmulateSyncBad() {
+  public synchronized void oneWayEmulateSyncBad() {
     emulateSynchronized(someObject);
   }
 
-  public void FN_anotherWayEmulateSyncBad() {
+  public void anotherWayEmulateSyncBad() {
     synchronized (someObject) {
       synchronized (this) {
       }

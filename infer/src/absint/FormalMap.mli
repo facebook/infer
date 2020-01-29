@@ -31,3 +31,7 @@ val get_formals_indexes : t -> (AccessPath.base * int) list
 (** Get a list of (base * index) pairs. Note: these are sorted by base, not index *)
 
 val pp : F.formatter -> t -> unit [@@warning "-32"]
+
+val cardinal : t -> int
+
+val iter : (AccessPath.base -> int -> unit) -> t -> unit

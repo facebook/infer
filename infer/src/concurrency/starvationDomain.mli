@@ -58,6 +58,11 @@ module Lock : sig
 
   val compare_wrt_reporting : t -> t -> int
   (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
+
+  (** substitution type : a map from (0-based) positional index to lock options *)
+  type subst
+
+  val make_subst : FormalMap.t -> HilExp.t list -> subst
 end
 
 module Event : sig
@@ -228,7 +233,13 @@ val empty_summary : summary
 val pp_summary : F.formatter -> summary -> unit
 
 val integrate_summary :
-  ?tenv:Tenv.t -> ?lhs:HilExp.AccessExpression.t -> CallSite.t -> t -> summary -> t
+     ?tenv:Tenv.t
+  -> ?lhs:HilExp.AccessExpression.t
+  -> ?subst:Lock.subst
+  -> CallSite.t
+  -> t
+  -> summary
+  -> t
 (** apply a callee summary to the current abstract state; [lhs] is the expression assigned the
     returned value, if any *)
 
