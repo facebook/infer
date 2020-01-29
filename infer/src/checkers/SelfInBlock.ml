@@ -246,6 +246,26 @@ module TransferFunctions = struct
     List.iter ~f:report_unchecked_strongself_issues_on_exp exps
 
 
+  (* The translation of closures includes a load instruction for the captured variable,
+     then we add that corresponding id to the closure. This doesn't correspond to an
+     actual "use" of the captured variable in the source program though, and causes false
+     positives. Here we remove the ids from the domain when that id is being added to a closure. *)
+  let remove_ids_in_closures_from_domain (domain : Domain.t) (instr : Sil.instr) =
+    let remove_id_in_closures_from_domain vars ((exp : Exp.t), _, _) =
+      match exp with Var id -> Vars.remove id vars | _ -> vars
+    in
+    let do_exp vars (exp : Exp.t) =
+      match exp with
+      | Closure {captured_vars} ->
+          List.fold ~init:vars ~f:remove_id_in_closures_from_domain captured_vars
+      | _ ->
+          vars
+    in
+    let exps = Sil.exps_of_instr instr in
+    let vars = List.fold ~init:domain.vars ~f:do_exp exps in
+    {domain with vars}
+
+
   let is_objc_instance proc_desc_opt =
     match proc_desc_opt with
     | Some proc_desc -> (
@@ -299,6 +319,7 @@ module TransferFunctions = struct
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
     let attributes = Summary.get_attributes summary in
     report_unchecked_strongself_issues_on_exps astate summary instr ;
+    let astate = remove_ids_in_closures_from_domain astate instr in
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
         let vars =

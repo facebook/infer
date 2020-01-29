@@ -170,7 +170,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)wekSelfMultiple_bad {
+- (void)weakSelfMultiple_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     [weakSelf foo];
@@ -194,4 +194,15 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+- (void)mixSelfWeakSelf_good:(NSArray*)resources {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    [self foo]; // no bug here
+    int (^my_block)() = ^() {
+      [weakSelf foo];
+      return 0;
+    };
+    return 0;
+  };
+}
 @end
