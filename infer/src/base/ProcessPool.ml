@@ -9,6 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
+exception ProcnameAlreadyLocked
+
 module TaskGenerator = struct
   type 'a t =
     { remaining_tasks: unit -> int
@@ -349,20 +351,24 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
               send_final (FinalCrash slot) ;
               true ) ) )
   | Do stuff ->
-      ( try f stuff
-        with e ->
-          IExn.reraise_if e ~f:(fun () ->
-              if Config.keep_going then (
-                L.internal_error "Error in subprocess %d: %a@." slot Exn.pp e ;
-                (* do not raise and continue accepting jobs *)
-                false )
-              else (
-                (* crash hard, but first let the master know that we have crashed *)
-                send_to_parent (Crash slot) ;
-                true ) ) ) ;
-      (* This is temporary. prev_completed should contain the return value of f stuff *)
+      let result =
+        try f stuff ; true with
+        | ProcnameAlreadyLocked ->
+            false
+        | e ->
+            IExn.reraise_if e ~f:(fun () ->
+                if Config.keep_going then (
+                  L.internal_error "Error in subprocess %d: %a@." slot Exn.pp e ;
+                  (* do not raise and continue accepting jobs *)
+                  false )
+                else (
+                  (* crash hard, but first let the master know that we have crashed *)
+                  send_to_parent (Crash slot) ;
+                  true ) ) ;
+            true
+      in
       child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue
-        ~prev_completed:true
+        ~prev_completed:result
 
 
 (** Fork a new child and start it so that it is ready for work.

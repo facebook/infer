@@ -34,7 +34,9 @@ module Runner = struct
     Stdlib.flush_all () ;
     (* Compact heap before forking *)
     Gc.compact () ;
-    ProcessPool.run runner
+    RestartScheduler.setup () ;
+    let results = ProcessPool.run runner in
+    RestartScheduler.clean () ; results
 end
 
 let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =

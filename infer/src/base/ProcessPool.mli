@@ -7,6 +7,8 @@
 
 open! IStd
 
+exception ProcnameAlreadyLocked
+
 module TaskGenerator : sig
   (** abstraction for generating jobs *)
   type 'a t =

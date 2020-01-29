@@ -337,10 +337,14 @@ let analyze_callee ?caller_summary callee =
           if callee_should_be_analyzed callee then
             match get_callee_proc_desc callee with
             | Some callee_pdesc ->
-                Some
-                  (run_proc_analysis
-                     ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                     callee_pdesc)
+                RestartScheduler.lock_exn callee_pname ;
+                let callee_summary =
+                  run_proc_analysis
+                    ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                    callee_pdesc
+                in
+                RestartScheduler.unlock callee_pname ;
+                Some callee_summary
             | None ->
                 Summary.OnDisk.get callee_pname
           else (

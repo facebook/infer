@@ -6,4 +6,12 @@
  *)
 open! IStd
 
+val setup : unit -> unit
+
+val clean : unit -> unit
+
+val lock_exn : Procname.t -> unit
+
+val unlock : Procname.t -> unit
+
 val make : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t
