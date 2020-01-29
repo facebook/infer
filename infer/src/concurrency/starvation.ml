@@ -622,8 +622,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
     let acquisitions = other_pair.CriticalPair.elem.acquisitions in
     match other_pair.CriticalPair.elem.event with
     | MayBlock (_, sev) as event
-      when should_report_starvation && Acquisitions.lock_is_held_in_other_thread lock acquisitions
-      ->
+      when should_report_starvation
+           && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread and%a, which may be held by another thread which %a."
@@ -633,7 +633,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
         ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
     | MonitorWait monitor_lock
       when should_report_starvation
-           && Acquisitions.lock_is_held_in_other_thread lock acquisitions
+           && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
            && not (Lock.equal lock monitor_lock) ->
         let error_message =
           Format.asprintf
@@ -643,7 +643,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
         let ltr, loc = make_trace_and_loc () in
         ReportMap.add_starvation High tenv pdesc loc ltr error_message report_map
     | LockAcquire other_lock
-      when CriticalPair.may_deadlock pair other_pair
+      when CriticalPair.may_deadlock tenv pair other_pair
            && should_report_deadlock_on_current_proc pair other_pair ->
         let error_message =
           Format.asprintf

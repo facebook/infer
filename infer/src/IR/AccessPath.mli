@@ -24,6 +24,9 @@ val truncate : t -> t * access option
 (** remove and return the last access of the access path if the access list is non-empty. returns
     the original access path * None if the access list is empty *)
 
+val get_access_type : Tenv.t -> Typ.t -> access -> Typ.t option
+(** Get the type of an access, or None if the type cannot be determined *)
+
 val get_last_access : t -> access option
 (** get the last access in the list. returns None if the list is empty *)
 
@@ -66,6 +69,7 @@ val is_prefix : t -> t -> bool
 val replace_prefix : prefix:t -> t -> t -> t option [@@warning "-32"]
 
 val inner_class_normalize : t -> t
+  [@@warning "-32"]
 (** transform an access path that starts on "this" of an inner class but which breaks out to access
     outer class fields to the outermost one. Cases handled (recursively):
 

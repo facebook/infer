@@ -104,14 +104,28 @@ module Lock = struct
 
   type t = {root: root; path: path} [@@deriving compare, equal]
 
-  let equal_across_threads t1 t2 =
+  let rec norm_path tenv ((typ, (accesses : AccessPath.access list)) as path) =
+    match accesses with
+    | (FieldAccess fieldname as access) :: rest when Fieldname.is_java_outer_instance fieldname -> (
+      match AccessPath.get_access_type tenv typ access with
+      | Some typ' ->
+          norm_path tenv (typ', rest)
+      | None ->
+          path )
+    | _ ->
+        path
+
+
+  let equal_across_threads tenv t1 t2 =
     match (t1.root, t2.root) with
     | Global _, Global _ | Class _, Class _ ->
         (* globals and class objects must be identical across threads *)
         equal t1 t2
     | Parameter _, Parameter _ ->
+        let ((_, typ1), accesses1), ((_, typ2), accesses2) = (t1.path, t2.path) in
         (* parameter position/names can be ignored across threads, if types and accesses are equal *)
-        equal_path t1.path t2.path
+        let path1, path2 = (norm_path tenv (typ1, accesses1), norm_path tenv (typ2, accesses2)) in
+        [%equal: Typ.t * AccessPath.access list] path1 path2
     | _, _ ->
         false
 
@@ -146,10 +160,9 @@ module Lock = struct
         | Var.ProgramVar pvar when Pvar.is_global pvar ->
             Some (make_global path (Pvar.get_name pvar))
         | Var.ProgramVar _ ->
-            let norm_path = AccessPath.inner_class_normalize path in
-            FormalMap.get_formal_index (fst norm_path) formal_map
+            FormalMap.get_formal_index (fst path) formal_map
             (* ignores non-formals *)
-            |> Option.map ~f:(make_parameter norm_path) )
+            |> Option.map ~f:(make_parameter path) )
     | Constant (Cclass class_id) ->
         (* this is a synchronized/lock(CLASSNAME.class) construct *)
         let path = path_of_java_class class_id in
@@ -276,12 +289,12 @@ module Acquisitions = struct
   (* use the fact that location/procname are ignored in comparisons *)
   let lock_is_held lock acquisitions = mem (Acquisition.make_dummy lock) acquisitions
 
-  let lock_is_held_in_other_thread lock acquisitions =
-    exists (fun acq -> Lock.equal_across_threads lock acq.lock) acquisitions
+  let lock_is_held_in_other_thread tenv lock acquisitions =
+    exists (fun acq -> Lock.equal_across_threads tenv lock acq.lock) acquisitions
 
 
-  let no_locks_common_across_threads acqs1 acqs2 =
-    for_all (fun acq1 -> not (lock_is_held_in_other_thread acq1.lock acqs2)) acqs1
+  let no_locks_common_across_threads tenv acqs1 acqs2 =
+    for_all (fun acq1 -> not (lock_is_held_in_other_thread tenv acq1.lock acqs2)) acqs1
 end
 
 module LockState : sig
@@ -409,15 +422,15 @@ module CriticalPair = struct
     match event with LockAcquire lock -> Some lock | _ -> None
 
 
-  let may_deadlock ({elem= pair1} as t1 : t) ({elem= pair2} as t2 : t) =
+  let may_deadlock tenv ({elem= pair1} as t1 : t) ({elem= pair2} as t2 : t) =
     ThreadDomain.can_run_in_parallel pair1.thread pair2.thread
     && Option.both (get_final_acquire t1) (get_final_acquire t2)
        |> Option.exists ~f:(fun (lock1, lock2) ->
-              (not (Lock.equal_across_threads lock1 lock2))
-              && Acquisitions.lock_is_held_in_other_thread lock2 pair1.acquisitions
-              && Acquisitions.lock_is_held_in_other_thread lock1 pair2.acquisitions
-              && Acquisitions.no_locks_common_across_threads pair1.acquisitions pair2.acquisitions
-          )
+              (not (Lock.equal_across_threads tenv lock1 lock2))
+              && Acquisitions.lock_is_held_in_other_thread tenv lock2 pair1.acquisitions
+              && Acquisitions.lock_is_held_in_other_thread tenv lock1 pair2.acquisitions
+              && Acquisitions.no_locks_common_across_threads tenv pair1.acquisitions
+                   pair2.acquisitions )
 
 
   let integrate_summary_opt existing_acquisitions call_site (caller_thread : ThreadDomain.t)
