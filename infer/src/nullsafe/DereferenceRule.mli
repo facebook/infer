@@ -11,7 +11,7 @@ open! IStd
 
 type violation [@@deriving compare]
 
-val check : is_strict_mode:bool -> Nullability.t -> (unit, violation) result
+val check : nullsafe_mode:NullsafeMode.t -> Nullability.t -> (unit, violation) result
 
 type dereference_type =
   | MethodCall of Procname.t

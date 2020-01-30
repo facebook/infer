@@ -16,7 +16,7 @@ module L = Logging
 *)
 
 type t =
-  { is_strict_mode: bool
+  { nullsafe_mode: NullsafeMode.t
   ; model_source: model_source option
   ; ret: ret_signature
   ; params: param_signature list }
@@ -35,10 +35,10 @@ and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_num
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
-let nullability_for_return ret_type ret_annotations ~is_strict_mode
-    ~has_propagates_nullable_in_param =
+let nullability_for_return ret_type ret_annotations ~nullsafe_mode ~has_propagates_nullable_in_param
+    =
   let nullability =
-    AnnotatedNullability.of_type_and_annotation ~is_strict_mode ret_type ret_annotations
+    AnnotatedNullability.of_type_and_annotation ~nullsafe_mode ret_type ret_annotations
   in
   (* if any param is annotated with propagates nullable, then the result is nullable *)
   match nullability with
@@ -53,10 +53,10 @@ let nullability_for_return ret_type ret_annotations ~is_strict_mode
 
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
-let extract_nullability ~is_strict_mode ret_type ret_annotations param_annotated_types =
+let extract_nullability ~nullsafe_mode ret_type ret_annotations param_annotated_types =
   let params_nullability =
     List.map param_annotated_types ~f:(fun (typ, annotations) ->
-        AnnotatedNullability.of_type_and_annotation typ annotations ~is_strict_mode )
+        AnnotatedNullability.of_type_and_annotation typ annotations ~nullsafe_mode )
   in
   let has_propagates_nullable_in_param =
     List.exists params_nullability ~f:(function
@@ -66,13 +66,12 @@ let extract_nullability ~is_strict_mode ret_type ret_annotations param_annotated
           false )
   in
   let return_nullability =
-    nullability_for_return ret_type ret_annotations ~is_strict_mode
-      ~has_propagates_nullable_in_param
+    nullability_for_return ret_type ret_annotations ~nullsafe_mode ~has_propagates_nullable_in_param
   in
   (return_nullability, params_nullability)
 
 
-let get ~is_strict_mode proc_attributes : t =
+let get ~nullsafe_mode proc_attributes : t =
   let Annot.Method.{return= ret_annotation; params= original_params_annotation} =
     proc_attributes.ProcAttributes.method_annotation
   in
@@ -101,7 +100,7 @@ let get ~is_strict_mode proc_attributes : t =
     List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
   in
   let return_nullability, params_nullability =
-    extract_nullability ~is_strict_mode ret_type ret_annotation param_annotated_types
+    extract_nullability ~nullsafe_mode ret_type ret_annotation param_annotated_types
   in
   let ret =
     { ret_annotation_deprecated= ret_annotation
@@ -114,7 +113,7 @@ let get ~is_strict_mode proc_attributes : t =
         ; mangled
         ; param_annotated_type= AnnotatedType.{nullability; typ} } )
   in
-  {is_strict_mode; model_source= None; ret; params}
+  {nullsafe_mode; model_source= None; ret; params}
 
 
 let param_has_annot predicate pvar ann_sig =
@@ -131,9 +130,8 @@ let pp proc_name fmt annotated_signature =
       Mangled.pp mangled
   in
   let {ret_annotation_deprecated; ret_annotated_type} = annotated_signature.ret in
-  let mode_as_string = if annotated_signature.is_strict_mode then "Strict" else "Def" in
-  F.fprintf fmt "[%s] %a%a %a (%a )" mode_as_string pp_ia ret_annotation_deprecated AnnotatedType.pp
-    ret_annotated_type
+  F.fprintf fmt "[%a] %a%a %a (%a )" NullsafeMode.pp annotated_signature.nullsafe_mode pp_ia
+    ret_annotation_deprecated AnnotatedType.pp ret_annotated_type
     (Procname.pp_simplified_string ~withclass:false)
     proc_name (Pp.comma_seq pp_annotated_param) annotated_signature.params
 

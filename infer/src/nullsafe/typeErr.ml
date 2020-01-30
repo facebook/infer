@@ -65,7 +65,7 @@ type err_instance =
       ; violation_type: InheritanceRule.violation_type
       ; base_proc_name: Procname.t
       ; overridden_proc_name: Procname.t }
-  | Field_not_initialized of {is_strict_mode: bool; field_name: Fieldname.t}
+  | Field_not_initialized of {nullsafe_mode: NullsafeMode.t; field_name: Fieldname.t}
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }
@@ -194,9 +194,8 @@ module Severity = struct
         Some Exceptions.Advice
     | Over_annotation _ ->
         None
-    | Field_not_initialized {is_strict_mode} ->
-        (* TODO: show strict mode violations as errors *)
-        Some (if is_strict_mode then Exceptions.Error else Exceptions.Warning)
+    | Field_not_initialized {nullsafe_mode} ->
+        Some (NullsafeMode.severity nullsafe_mode)
     | Bad_assignment {assignment_violation} ->
         Some (AssignmentRule.violation_severity assignment_violation)
     | Inconsistent_subclass {inheritance_violation} ->

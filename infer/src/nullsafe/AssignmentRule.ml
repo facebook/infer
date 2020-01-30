@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
+type violation = {nullsafe_mode: NullsafeMode.t; lhs: Nullability.t; rhs: Nullability.t}
+[@@deriving compare]
 
 type assignment_type =
   | PassingParamToFunction of function_info
@@ -21,24 +22,28 @@ and function_info =
   ; param_position: int
   ; function_procname: Procname.t }
 
-let is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs =
-  match (is_strict_mode, lhs, rhs) with
-  | false, Nullability.StrictNonnull, Nullability.UncheckedNonnull ->
-      (* We allow UncheckedNonnull -> StrictNonnull conversion outside of strict mode for better adoption.
-         Otherwise using strictified classes in non-strict context becomes a pain because
-         of extra warnings.
-      *)
-      true
-  | _ ->
+let is_whitelisted_assignment ~nullsafe_mode ~lhs ~rhs =
+  match nullsafe_mode with
+  | NullsafeMode.Default -> (
+    match (lhs, rhs) with
+    | Nullability.StrictNonnull, Nullability.UncheckedNonnull ->
+        (* We allow UncheckedNonnull -> StrictNonnull conversion outside of strict mode for better adoption.
+           Otherwise using strictified classes in non-strict context becomes a pain because
+           of extra warnings.
+        *)
+        true
+    | _ ->
+        false )
+  | NullsafeMode.Strict ->
       false
 
 
-let check ~is_strict_mode ~lhs ~rhs =
+let check ~(nullsafe_mode : NullsafeMode.t) ~lhs ~rhs =
   let is_allowed_assignment =
     Nullability.is_subtype ~subtype:rhs ~supertype:lhs
-    || is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs
+    || is_whitelisted_assignment ~nullsafe_mode ~lhs ~rhs
   in
-  Result.ok_if_true is_allowed_assignment ~error:{is_strict_mode; lhs; rhs}
+  Result.ok_if_true is_allowed_assignment ~error:{nullsafe_mode; lhs; rhs}
 
 
 let get_origin_opt assignment_type origin =
@@ -130,11 +135,15 @@ let bad_param_description
         nullability_evidence_as_suffix
 
 
-let is_declared_nonnull_to_nonnull ~lhs ~rhs =
+let is_unchecked_nonnull_to_strict_nonnull ~lhs ~rhs =
   match (lhs, rhs) with
   | Nullability.StrictNonnull, Nullability.UncheckedNonnull ->
       true
-  | _ ->
+  (* Don't fold those cases into catch-all *)
+  | Nullability.StrictNonnull, _
+  | Nullability.UncheckedNonnull, _
+  | Nullability.Nullable, _
+  | Nullability.Null, _ ->
       false
 
 
@@ -147,10 +156,10 @@ let get_issue_type = function
       IssueType.eradicate_return_not_nullable
 
 
-let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assignment_type
-    ~rhs_origin =
-  if is_declared_nonnull_to_nonnull ~lhs ~rhs then (
-    if not is_strict_mode then
+let violation_description {nullsafe_mode; lhs; rhs} ~assignment_location assignment_type ~rhs_origin
+    =
+  if is_unchecked_nonnull_to_strict_nonnull ~lhs ~rhs then (
+    if not (NullsafeMode.equal nullsafe_mode NullsafeMode.Strict) then
       Logging.die InternalError "Unexpected situation: should not be a violation not in strict mode" ;
     (* This type of violation is more subtle than the normal case because, so it should be rendered in a special way *)
     ErrorRenderingUtils.get_strict_mode_violation_issue ~bad_usage_location:assignment_location
@@ -201,5 +210,4 @@ let violation_description {is_strict_mode; lhs; rhs} ~assignment_location assign
     (error_message, issue_type, assignment_location)
 
 
-let violation_severity {is_strict_mode} =
-  if is_strict_mode then Exceptions.Error else Exceptions.Warning
+let violation_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode

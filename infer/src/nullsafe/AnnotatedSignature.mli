@@ -10,7 +10,7 @@
 open! IStd
 
 type t =
-  { is_strict_mode: bool
+  { nullsafe_mode: NullsafeMode.t
   ; model_source: model_source option  (** None, if signature is not modelled *)
   ; ret: ret_signature
   ; params: param_signature list }
@@ -35,7 +35,7 @@ val set_modelled_nullability : Procname.t -> t -> model_source -> bool * bool li
 (** Override nullability for a function signature given its modelled nullability (for ret value and
     params) *)
 
-val get : is_strict_mode:bool -> ProcAttributes.t -> t
+val get : nullsafe_mode:NullsafeMode.t -> ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
 
 val pp : Procname.t -> Format.formatter -> t -> unit

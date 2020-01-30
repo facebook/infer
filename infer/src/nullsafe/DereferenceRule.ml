@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {is_strict_mode: bool; nullability: Nullability.t} [@@deriving compare]
+type violation = {nullsafe_mode: NullsafeMode.t; nullability: Nullability.t} [@@deriving compare]
 
 type dereference_type =
   | MethodCall of Procname.t
@@ -15,12 +15,16 @@ type dereference_type =
   | ArrayLengthAccess
 [@@deriving compare]
 
-let check ~is_strict_mode nullability =
+let check ~nullsafe_mode nullability =
   match nullability with
   | Nullability.Nullable | Nullability.Null ->
-      Error {is_strict_mode; nullability}
-  | Nullability.UncheckedNonnull ->
-      if is_strict_mode then Error {is_strict_mode; nullability} else Ok ()
+      Error {nullsafe_mode; nullability}
+  | Nullability.UncheckedNonnull -> (
+    match nullsafe_mode with
+    | NullsafeMode.Strict ->
+        Error {nullsafe_mode; nullability}
+    | NullsafeMode.Default ->
+        Ok () )
   | Nullability.StrictNonnull ->
       Ok ()
 
@@ -97,5 +101,4 @@ let violation_description {nullability} ~dereference_location dereference_type
       (description, IssueType.eradicate_nullable_dereference, dereference_location)
 
 
-let violation_severity {is_strict_mode} =
-  if is_strict_mode then Exceptions.Error else Exceptions.Warning
+let violation_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode

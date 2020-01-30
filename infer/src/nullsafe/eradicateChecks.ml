@@ -26,10 +26,10 @@ let is_virtual = function
       false
 
 
-let check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_pname node instr_ref
+let check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate curr_pname node instr_ref
     object_exp dereference_type inferred_nullability loc =
   Result.iter_error
-    (DereferenceRule.check ~is_strict_mode
+    (DereferenceRule.check ~nullsafe_mode
        (InferredNullability.get_nullability inferred_nullability))
     ~f:(fun dereference_violation ->
       let nullable_object_origin = InferredNullability.get_origin inferred_nullability in
@@ -126,7 +126,7 @@ let check_nonzero tenv find_canonical_duplicate =
 
 
 (** Check an assignment to a field. *)
-let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node instr_ref
+let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node instr_ref
     typestate exp_lhs exp_rhs typ loc fname annotated_field_opt typecheck_expr : unit =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
@@ -156,7 +156,7 @@ let check_field_assignment ~is_strict_mode tenv find_canonical_duplicate curr_pd
     Annotations.ia_is_cleanup ret_annotation_deprecated
   in
   let assignment_check_result =
-    AssignmentRule.check ~is_strict_mode
+    AssignmentRule.check ~nullsafe_mode
       ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
       ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
   in
@@ -241,7 +241,7 @@ let get_nullability_upper_bound field_name typestate_list =
 
 (** Check field initialization for a given constructor *)
 let check_constructor_initialization tenv find_canonical_duplicate curr_constructor_pname
-    curr_constructor_pdesc start_node ~is_strict_mode
+    curr_constructor_pdesc start_node ~nullsafe_mode
     ~typestates_for_curr_constructor_and_all_initializer_methods
     ~typestates_for_all_constructors_incl_current loc : unit =
   State.set_node start_node ;
@@ -305,7 +305,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
               then
                 if
                   Config.nullsafe_disable_field_not_initialized_in_nonstrict_classes
-                  && not is_strict_mode
+                  && NullsafeMode.equal nullsafe_mode NullsafeMode.Default
                 then
                   (* Behavior needed for backward compatibility, where we are not ready to surface this type of errors by default.
                      Hovewer, this error should be always turned on for @NullsafeStrict classes.
@@ -313,7 +313,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                   ()
                 else
                   report_error tenv find_canonical_duplicate
-                    (TypeErr.Field_not_initialized {is_strict_mode; field_name})
+                    (TypeErr.Field_not_initialized {nullsafe_mode; field_name})
                     None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               match annotated_field with
@@ -341,12 +341,12 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
         ()
 
 
-let check_return_not_nullable ~is_strict_mode tenv find_canonical_duplicate loc curr_pname
-    curr_pdesc (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
+let check_return_not_nullable ~nullsafe_mode tenv find_canonical_duplicate loc curr_pname curr_pdesc
+    (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
   let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   let rhs = InferredNullability.get_nullability ret_inferred_nullability in
-  Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:(fun assignment_violation ->
+  Result.iter_error (AssignmentRule.check ~nullsafe_mode ~lhs ~rhs) ~f:(fun assignment_violation ->
       let rhs_origin = InferredNullability.get_origin ret_inferred_nullability in
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
@@ -391,7 +391,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
   | Some (_, ret_inferred_nullability) ->
       (* TODO(T54308240) Model ret_implicitly_nullable in AnnotatedNullability *)
       if not ret_implicitly_nullable then
-        check_return_not_nullable ~is_strict_mode:annotated_signature.is_strict_mode tenv
+        check_return_not_nullable ~nullsafe_mode:annotated_signature.nullsafe_mode tenv
           find_canonical_duplicate loc curr_pname curr_pdesc annotated_signature.ret
           ret_inferred_nullability ;
       if Config.eradicate_return_over_annotated then
@@ -402,7 +402,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
 
 
 (** Check the receiver of a virtual call. *)
-let check_call_receiver ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node typestate
+let check_call_receiver ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node typestate
     call_params callee_pname (instr_ref : TypeErr.InstrRef.t) loc typecheck_expr : unit =
   match call_params with
   | ((original_this_e, this_e), typ) :: _ ->
@@ -412,7 +412,7 @@ let check_call_receiver ~is_strict_mode tenv find_canonical_duplicate curr_pdesc
           (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
-      check_object_dereference ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node
+      check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node
         instr_ref original_this_e (DereferenceRule.MethodCall callee_pname)
         this_inferred_nullability loc
   | [] ->
@@ -452,7 +452,7 @@ let is_third_party_without_model proc_name model_source =
 
 
 (** Check the parameters of a call. *)
-let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_canonical_duplicate
+let check_call_parameters ~nullsafe_mode ~callee_annotated_signature tenv find_canonical_duplicate
     curr_pdesc node callee_attributes resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
@@ -484,12 +484,13 @@ let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_
          to the formal param *)
       let lhs = AnnotatedNullability.get_nullability formal.param_annotated_type.nullability in
       let rhs = InferredNullability.get_nullability nullability_actual in
-      Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:report
+      Result.iter_error (AssignmentRule.check ~nullsafe_mode ~lhs ~rhs) ~f:report
   in
   let should_ignore_parameters_check =
     (* TODO(T52947663) model params in third-party non modelled method as a dedicated nullability type,
        so this logic can be moved to [AssignmentRule.check] *)
-    (not is_strict_mode) && Config.nullsafe_optimistic_third_party_params_in_non_strict
+    NullsafeMode.equal nullsafe_mode NullsafeMode.Default
+    && Config.nullsafe_optimistic_third_party_params_in_non_strict
     && is_third_party_without_model callee_pname
          callee_annotated_signature.AnnotatedSignature.model_source
   in
@@ -498,11 +499,11 @@ let check_call_parameters ~is_strict_mode ~callee_annotated_signature tenv find_
     List.iter ~f:check resolved_params
 
 
-let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~is_strict_mode
+let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~nullsafe_mode
     ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_nullability
     ~overridden_nullability =
   Result.iter_error
-    (InheritanceRule.check ~is_strict_mode InheritanceRule.Ret ~base:base_nullability
+    (InheritanceRule.check ~nullsafe_mode InheritanceRule.Ret ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
       report_error tenv find_canonical_duplicate
         (TypeErr.Inconsistent_subclass
@@ -513,11 +514,11 @@ let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~is_stri
         None loc overridden_proc_desc )
 
 
-let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~is_strict_mode
+let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~nullsafe_mode
     ~overridden_param_name ~base_proc_name ~overridden_proc_name ~overridden_proc_desc
     ~param_position ~base_nullability ~overridden_nullability =
   Result.iter_error
-    (InheritanceRule.check ~is_strict_mode InheritanceRule.Param ~base:base_nullability
+    (InheritanceRule.check ~nullsafe_mode InheritanceRule.Param ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
       report_error tenv find_canonical_duplicate
         (TypeErr.Inconsistent_subclass
@@ -530,7 +531,7 @@ let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~is_stric
         None loc overridden_proc_desc )
 
 
-let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~is_strict_mode
+let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~nullsafe_mode
     ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_signature
     ~overridden_signature =
   let base_params = base_signature.AnnotatedSignature.params in
@@ -547,7 +548,7 @@ let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~is_stri
                { mangled= overridden_param_name
                ; param_annotated_type= {nullability= annotated_nullability_overridden} } )
            ->
-          check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~is_strict_mode
+          check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~nullsafe_mode
             ~overridden_param_name ~base_proc_name ~overridden_proc_name ~overridden_proc_desc
             ~param_position:(if should_index_from_zero then index else index + 1)
             ~base_nullability:(AnnotatedNullability.get_nullability annotated_nullability_base)
@@ -560,13 +561,12 @@ let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~is_stri
 
 
 (* Check both params and return values for complying for co- and contravariance *)
-let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~is_strict_mode
+let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~nullsafe_mode
     ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_signature
     ~overridden_signature =
   (* Check params *)
-  check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~is_strict_mode
-    ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_signature
-    ~overridden_signature ;
+  check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~nullsafe_mode ~base_proc_name
+    ~overridden_proc_name ~overridden_proc_desc ~base_signature ~overridden_signature ;
   (* Check return value *)
   match base_proc_name with
   (* TODO model this as unknown nullability and get rid of that check *)
@@ -580,7 +580,7 @@ let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~is_s
         AnnotatedNullability.get_nullability
           overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
       in
-      check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~is_strict_mode
+      check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~nullsafe_mode
         ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_nullability
         ~overridden_nullability
   | _ ->
@@ -599,7 +599,7 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
     | Some base_attributes ->
         let base_signature = Models.get_modelled_annotated_signature tenv base_attributes in
         check_inheritance_rule_for_signature
-          ~is_strict_mode:annotated_signature.AnnotatedSignature.is_strict_mode
+          ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
           find_canonical_duplicate tenv loc ~base_proc_name ~overridden_proc_name:proc_name
           ~overridden_proc_desc:proc_desc ~base_signature ~overridden_signature:annotated_signature
     | None ->

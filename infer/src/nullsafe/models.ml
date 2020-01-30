@@ -33,7 +33,9 @@ let table_has_procedure table proc_name =
  *)
 let get_modelled_annotated_signature_for_biabduction proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let annotated_signature = AnnotatedSignature.get ~is_strict_mode:false proc_attributes in
+  let annotated_signature =
+    AnnotatedSignature.get ~nullsafe_mode:NullsafeMode.Default proc_attributes
+  in
   let proc_id = Procname.to_unique_id proc_name in
   let lookup_models_nullable ann_sig =
     try
@@ -66,10 +68,11 @@ let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability
     take precedence over internal ones. *)
 let get_modelled_annotated_signature tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let is_strict_mode =
-    PatternMatch.check_current_class_attributes Annotations.ia_is_nullsafe_strict tenv proc_name
+  let nullsafe_mode =
+    Procname.get_class_type_name proc_name
+    |> Option.value_map ~default:NullsafeMode.Default ~f:(NullsafeMode.of_class tenv)
   in
-  let annotated_signature = AnnotatedSignature.get ~is_strict_mode proc_attributes in
+  let annotated_signature = AnnotatedSignature.get ~nullsafe_mode proc_attributes in
   let proc_id = Procname.to_unique_id proc_name in
   (* Look in the infer internal models *)
   let correct_by_internal_models ann_sig =

@@ -12,14 +12,6 @@ open! IStd
   *)
 type t = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
 
-let is_class_in_strict_mode tenv typ =
-  match PatternMatch.type_get_annotation tenv typ with
-  | Some ia ->
-      Annotations.ia_is_nullsafe_strict ia
-  | None ->
-      false
-
-
 let rec get_type_name {Typ.desc} =
   match desc with Typ.Tstruct name -> Some name | Typ.Tptr (t, _) -> get_type_name t | _ -> None
 
@@ -47,12 +39,15 @@ let is_enum_value tenv ~class_typ (field_info : Struct.field_info) =
 let get tenv field_name class_typ =
   let lookup = Tenv.lookup tenv in
   (* We currently don't support field-level strict mode annotation, so fetch it from class *)
-  let is_strict_mode = is_class_in_strict_mode tenv class_typ in
+  let nullsafe_mode =
+    Typ.name class_typ
+    |> Option.value_map ~f:(NullsafeMode.of_class tenv) ~default:NullsafeMode.Default
+  in
   Struct.get_field_info ~lookup field_name class_typ
   |> Option.map ~f:(fun (Struct.{typ= field_typ; annotations} as field_info) ->
          let is_enum_value = is_enum_value tenv ~class_typ field_info in
          let nullability =
-           AnnotatedNullability.of_type_and_annotation field_typ annotations ~is_strict_mode
+           AnnotatedNullability.of_type_and_annotation field_typ annotations ~nullsafe_mode
          in
          let corrected_nullability =
            match nullability with

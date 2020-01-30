@@ -27,7 +27,7 @@ type violation_type =
 type type_role = Param | Ret
 
 val check :
-     is_strict_mode:bool
+     nullsafe_mode:NullsafeMode.t
   -> type_role
   -> base:Nullability.t
   -> overridden:Nullability.t

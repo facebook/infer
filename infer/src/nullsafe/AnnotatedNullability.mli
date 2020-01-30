@@ -51,7 +51,7 @@ and strict_nonnull_origin =
 
 val get_nullability : t -> Nullability.t
 
-val of_type_and_annotation : is_strict_mode:bool -> Typ.t -> Annot.Item.t -> t
+val of_type_and_annotation : nullsafe_mode:NullsafeMode.t -> Typ.t -> Annot.Item.t -> t
 (** Given the type and its annotations, returns its nullability. NOTE: it does not take into account
     models etc., so this is intended to be used as a helper function for more high-level annotation
     processing. *)

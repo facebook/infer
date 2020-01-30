@@ -13,7 +13,7 @@ open! IStd
 type violation [@@deriving compare]
 
 val check :
-  is_strict_mode:bool -> lhs:Nullability.t -> rhs:Nullability.t -> (unit, violation) result
+  nullsafe_mode:NullsafeMode.t -> lhs:Nullability.t -> rhs:Nullability.t -> (unit, violation) result
 
 type assignment_type =
   | PassingParamToFunction of function_info

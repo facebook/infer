@@ -91,7 +91,7 @@ let pp fmt t =
       F.fprintf fmt "StrictNonnull[%s]" (string_of_nonnull_origin origin)
 
 
-let of_type_and_annotation ~is_strict_mode typ annotations =
+let of_type_and_annotation ~(nullsafe_mode : NullsafeMode.t) typ annotations =
   if not (PatternMatch.type_is_class typ) then StrictNonnull PrimitiveType
   else if Annotations.ia_is_nullable annotations then
     let nullable_origin =
@@ -99,7 +99,11 @@ let of_type_and_annotation ~is_strict_mode typ annotations =
       else AnnotatedNullable
     in
     Nullable nullable_origin
-  else if is_strict_mode then StrictNonnull StrictMode
-  else if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
-    (* Currently, we treat not annotated types as nonnull *)
-  else UncheckedNonnull ImplicitlyNonnull
+  else
+    match nullsafe_mode with
+    | NullsafeMode.Strict ->
+        StrictNonnull StrictMode
+    | NullsafeMode.Default ->
+        if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
+          (* Currently, we treat not annotated types as nonnull *)
+        else UncheckedNonnull ImplicitlyNonnull

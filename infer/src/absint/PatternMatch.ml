@@ -120,10 +120,14 @@ let type_get_direct_supertypes tenv (typ : Typ.t) =
 
 let type_get_class_name {Typ.desc} = match desc with Typ.Tptr (typ, _) -> Typ.name typ | _ -> None
 
+let type_name_get_annotation tenv (name : Typ.name) : Annot.Item.t option =
+  match Tenv.lookup tenv name with Some {annots} -> Some annots | None -> None
+
+
 let type_get_annotation tenv (typ : Typ.t) : Annot.Item.t option =
   match typ.desc with
-  | Tptr ({desc= Tstruct name}, _) | Tstruct name -> (
-    match Tenv.lookup tenv name with Some {annots} -> Some annots | None -> None )
+  | Tptr ({desc= Tstruct name}, _) | Tstruct name ->
+      type_name_get_annotation tenv name
   | _ ->
       None
 
