@@ -18,7 +18,7 @@ let tests =
   let xFG = make_access_path "x" ["f"; "g"] in
   let yF = make_access_path "y" ["f"] in
   let xArr =
-    let dummy_typ = Typ.mk Tvoid in
+    let dummy_typ = Typ.void in
     let dummy_arr_typ = Typ.mk_array dummy_typ in
     let base = make_base "x" ~typ:dummy_arr_typ in
     (base, [make_array_access dummy_typ])
@@ -67,7 +67,7 @@ let tests =
   in
   let of_exp_test =
     let f_resolve_id _ = None in
-    let dummy_typ = Typ.mk Tvoid in
+    let dummy_typ = Typ.void in
     let check_make_ap exp expected_ap ~f_resolve_id =
       let make_ap exp =
         match AccessPath.of_lhs_exp ~include_array_indexes:true exp dummy_typ ~f_resolve_id with

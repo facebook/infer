@@ -1540,7 +1540,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' -> (
     match Fieldname.compare f1 f2 with
     | 0 ->
-        let typ' = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f2 typ2 in
+        let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
         let subs', se_frame, se_missing =
           sexp_imply tenv (Exp.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ'
         in
@@ -1560,7 +1560,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
         in
         (subs', (f1, se1) :: fld_frame, fld_missing)
     | _ ->
-        let typ' = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f2 typ2 in
+        let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
         let subs' =
           sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
         in
@@ -1570,7 +1570,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
         let fld_missing' = (f2, se2) :: fld_missing in
         (subs', fld_frame, fld_missing') )
   | [], (f2, se2) :: fsel2' ->
-      let typ' = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f2 typ2 in
+      let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
       let subs' =
         sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
       in
@@ -1582,7 +1582,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
 
 and array_imply tenv source calc_index_frame calc_missing subs esel1 esel2 typ2 :
     subst2 * (Exp.t * Predicates.strexp) list * (Exp.t * Predicates.strexp) list =
-  let typ_elem = Typ.array_elem (Some (Typ.mk Tvoid)) typ2 in
+  let typ_elem = Typ.array_elem (Some Typ.void) typ2 in
   match (esel1, esel2) with
   | _, [] ->
       (subs, esel1, [])
@@ -2048,7 +2048,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
           match Prop.prop_iter_current tenv iter1' with
           | Predicates.Hpointsto (e1, se1, texp1), _ -> (
             try
-              let typ2 = Exp.texp_to_typ (Some (Typ.mk Tvoid)) texp2 in
+              let typ2 = Exp.texp_to_typ (Some Typ.void) texp2 in
               let typing_frame, typing_missing = texp_imply tenv subs texp1 texp2 e1 calc_missing in
               let se1' = sexp_imply_preprocess se1 texp1 se2 in
               let subs', fld_frame, fld_missing =
@@ -2371,7 +2371,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
                   let subs' =
                     match hpred2' with
                     | Predicates.Hpointsto (e2, se2, te2) ->
-                        let typ2 = Exp.texp_to_typ (Some (Typ.mk Tvoid)) te2 in
+                        let typ2 = Exp.texp_to_typ (Some Typ.void) te2 in
                         sexp_imply_nolhs tenv e2 calc_missing subs se2 typ2
                     | _ ->
                         subs

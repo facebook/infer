@@ -89,7 +89,7 @@ let default translation_unit proc_name =
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
   ; proc_name
-  ; ret_type= Typ.mk Typ.Tvoid }
+  ; ret_type= Typ.void }
 
 
 let pp_parameters =

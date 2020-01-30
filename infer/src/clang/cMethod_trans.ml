@@ -278,7 +278,7 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
       | Some (ret_type, arg_types) ->
           (ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types)
       | None ->
-          (Typ.mk Typ.Tvoid, [])
+          (Typ.void, [])
     in
     let proc_attributes =
       { (ProcAttributes.default trans_unit_ctx.CFrontend_config.source_file proc_name) with

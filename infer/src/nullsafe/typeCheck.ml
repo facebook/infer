@@ -434,7 +434,7 @@ let typecheck_expr_for_errors ~is_strict_mode find_canonical_duplicate curr_pdes
     tenv node instr_ref typestate1 exp1 loc1 : unit =
   ignore
     (typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-       tenv node instr_ref typestate1 exp1 (Typ.mk Tvoid) TypeOrigin.Undef loc1)
+       tenv node instr_ref typestate1 exp1 Typ.void TypeOrigin.Undef loc1)
 
 
 (* Handle Preconditions.checkNotNull. *)
@@ -701,8 +701,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         let e1 = Exp.Lvar pvar in
         let typ, ta =
           typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this
-            checks tenv original_node instr_ref typestate e1 (Typ.mk Tvoid)
-            TypeOrigin.OptimisticFallback loc
+            checks tenv original_node instr_ref typestate e1 Typ.void TypeOrigin.OptimisticFallback
+            loc
         in
         let range = (typ, ta) in
         let typestate1 = TypeState.add pvar range typestate in
@@ -749,8 +749,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       in
       let typ, inferred_nullability =
         typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.OptimisticFallback
-          loc
+          tenv original_node instr_ref typestate2 e' Typ.void TypeOrigin.OptimisticFallback loc
       in
       if checks.eradicate then
         EradicateChecks.check_zero tenv find_canonical_duplicate curr_pdesc node e' typ
@@ -786,8 +785,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       in
       let typ, inferred_nullability =
         typecheck_expr_simple ~is_strict_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' (Typ.mk Tvoid) TypeOrigin.OptimisticFallback
-          loc
+          tenv original_node instr_ref typestate2 e' Typ.void TypeOrigin.OptimisticFallback loc
       in
       if checks.eradicate then
         EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc original_node e' typ

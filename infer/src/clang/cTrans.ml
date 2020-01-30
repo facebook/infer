@@ -1189,7 +1189,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
     let res_trans =
-      cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si (Typ.mk Tvoid)
+      cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si Typ.void
         ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
         ~is_inherited_ctor
     in
@@ -1212,7 +1212,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some res_trans_callee when Option.is_some res_trans_callee.method_name ->
         let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
         Some
-          (cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' (Typ.mk Tvoid)
+          (cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' Typ.void
              ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false)
     | _ ->
         None
@@ -3054,7 +3054,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
     let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = res_trans_stmt.return in
-    let args = [exp; (sizeof_expr, Typ.mk Tvoid)] in
+    let args = [exp; (sizeof_expr, Typ.void)] in
     let ret_id = Ident.create_fresh Ident.knormal in
     let call = Sil.Call ((ret_id, cast_type), builtin, args, sil_loc, CallFlags.default) in
     let res_ex = Exp.Var ret_id in
@@ -3097,22 +3097,22 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and gccAsmStmt_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.GCCAsmStmt BuiltinDecl.__infer_skip_gcc_asm_stmt
-      trans_state stmt_info (Typ.mk Tvoid) stmts
+      trans_state stmt_info Typ.void stmts
 
 
   and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.GenericSelectionExpr
-      BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info (Typ.mk Tvoid) stmts
+      BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info Typ.void stmts
 
 
   and objc_cxx_throw_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.ObjCCPPThrow BuiltinDecl.objc_cpp_throw trans_state
-      stmt_info (Typ.mk Tvoid) stmts
+      stmt_info Typ.void stmts
 
 
   and cxxPseudoDestructorExpr_trans () =
     mk_trans_result
-      (Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function), Typ.mk Tvoid)
+      (Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function), Typ.void)
       empty_control
 
 
@@ -3135,7 +3135,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let fun_name = BuiltinDecl.__cxx_typeid in
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let void_typ = Typ.mk Tvoid in
+    let void_typ = Typ.void in
     let type_info_objc =
       (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, void_typ)
     in
@@ -3582,7 +3582,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           genericSelectionExprUnknown_trans trans_state stmt_info stmts )
     | SizeOfPackExpr _ ->
-        mk_trans_result (Exp.get_undefined false, Typ.mk Tvoid) empty_control
+        mk_trans_result (Exp.get_undefined false, Typ.void) empty_control
     | GCCAsmStmt (stmt_info, stmts) ->
         gccAsmStmt_trans trans_state stmt_info stmts
     | CXXPseudoDestructorExpr _ ->
@@ -3727,7 +3727,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               ((stmt_info, stmts), ret_typ)
           | None ->
               let stmt_tuple = Clang_ast_proj.get_stmt_tuple instr in
-              (stmt_tuple, Typ.mk Tvoid)
+              (stmt_tuple, Typ.void)
         in
         skip_unimplemented
           ~reason:

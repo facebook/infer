@@ -602,7 +602,7 @@ let check_after_array_abstraction tenv prop =
         ()
     | Predicates.Earray (_, esel, _) ->
         (* check that no more than 2 elements are in the array *)
-        let typ_elem = Typ.array_elem (Some (Typ.mk Tvoid)) typ in
+        let typ_elem = Typ.array_elem (Some Typ.void) typ in
         if List.length esel > 2 && array_typ_can_abstract typ then
           if List.for_all ~f:(check_index root offs) esel then () else report_error prop
         else
@@ -612,13 +612,13 @@ let check_after_array_abstraction tenv prop =
     | Predicates.Estruct (fsel, _) ->
         List.iter
           ~f:(fun (f, se) ->
-            let typ_f = Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f typ in
+            let typ_f = Struct.fld_typ ~lookup ~default:Typ.void f typ in
             check_se root (offs @ [Predicates.Off_fld (f, typ)]) typ_f se )
           fsel
   in
   let check_hpred = function
     | Predicates.Hpointsto (root, se, texp) ->
-        let typ = Exp.texp_to_typ (Some (Typ.mk Tvoid)) texp in
+        let typ = Exp.texp_to_typ (Some Typ.void) texp in
         check_se root [] typ se
     | Predicates.Hlseg _ | Predicates.Hdllseg _ ->
         ()

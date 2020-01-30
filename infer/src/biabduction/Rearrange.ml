@@ -422,7 +422,7 @@ let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se t
     | Exp.Sizeof sizeof_data ->
         sizeof_data
     | _ ->
-        {Exp.typ= Typ.mk Typ.Tvoid; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        {Exp.typ= Typ.void; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
   in
   List.map
     ~f:(fun (atoms', se', typ') ->

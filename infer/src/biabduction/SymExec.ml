@@ -1831,7 +1831,7 @@ and sym_exec_objc_accessor callee_pname property_accesor ret_typ tenv ret_id pde
 
 and sym_exec_alloc_model exe_env pname ret_typ tenv ret_id_typ summary loc prop path :
     Builtin.ret_typ =
-  let alloc_source_function_arg = (Exp.Const (Const.Cfun pname), Typ.mk Tvoid) in
+  let alloc_source_function_arg = (Exp.Const (Const.Cfun pname), Typ.void) in
   let args =
     let sizeof_exp =
       Exp.Sizeof {typ= ret_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}

@@ -471,4 +471,4 @@ let rec expr_type (context : JContext.t) expr =
 
 (** Returns the return type of the method based on the return type specified in ms. *)
 let return_type program tenv ms =
-  match JBasics.ms_rtype ms with None -> Typ.mk Tvoid | Some vt -> value_type program tenv vt
+  match JBasics.ms_rtype ms with None -> Typ.void | Some vt -> value_type program tenv vt
