@@ -34,35 +34,9 @@ end
       only have equal access lists (ie [x.f.g == y.f.g]). This allows demonically aliasing
       parameters in *distinct* threads. This relation is used in [may_deadlock]. *)
 module Lock : sig
-  include PrettyPrintable.PrintableOrderedType
-
-  val equal : t -> t -> bool
-
-  val owner_class : t -> Typ.name option
-  (** Class of the root variable of the path representing the lock *)
+  include module type of AbstractAddress
 
   val pp_locks : F.formatter -> t -> unit
-
-  val describe : F.formatter -> t -> unit
-
-  val make : FormalMap.t -> HilExp.t -> t option
-  (** make a lock if the expression is rooted at a global or a formal parameter, or represents a
-      class object *)
-
-  val make_java_synchronized : FormalMap.t -> Procname.t -> t option
-  (** create the monitor locked when entering a synchronized java method *)
-
-  val is_class_object : t -> bool
-  (** is the lock a class object such as in [synchronized(MyClass.class){}] or
-      [static synchronized void foo()] *)
-
-  val compare_wrt_reporting : t -> t -> int
-  (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
-
-  (** substitution type : a map from (0-based) positional index to lock options *)
-  type subst
-
-  val make_subst : FormalMap.t -> HilExp.t list -> subst
 end
 
 module Event : sig

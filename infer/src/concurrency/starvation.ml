@@ -712,7 +712,7 @@ let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
       let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
       ReportMap.add_deadlock tenv pdesc loc ltr error_message report_map
   | LockAcquire lock when not Config.starvation_whole_program ->
-      Lock.owner_class lock
+      Lock.root_class lock
       |> Option.value_map ~default:report_map ~f:(fun other_class ->
              (* get the class of the root variable of the lock in the lock acquisition
                 and retrieve all the summaries of the methods of that class;
