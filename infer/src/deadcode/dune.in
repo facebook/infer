@@ -12,6 +12,7 @@ Format.sprintf
   {|
 (executable
  (name all_infer_in_one_file)
+ (modes byte)
  (flags (%s -w +60))
  (ocamlopt_flags (%s))
  (libraries %s)

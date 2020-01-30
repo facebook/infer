@@ -12,7 +12,7 @@ Format.sprintf
 (library
  (name InferCStubs)
  (public_name InferCStubs)
- (c_names fnv64_hash)
+ (foreign_stubs (language c) (names fnv64_hash))
 )
 |}
 |> Jbuild_plugin.V1.send

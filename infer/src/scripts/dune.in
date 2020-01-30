@@ -11,6 +11,7 @@ Format.sprintf
   {|
 (executable
  (name checkCopyright)
+ (modes byte exe)
  (flags (%s))
  (libraries core str)
  (preprocess (pps ppx_compare))

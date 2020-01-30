@@ -84,6 +84,7 @@ let stanzas =
         {|
 (executables
  (names %s)
+ (modes byte exe)
  (flags (%s -open InferModules))
  (ocamlopt_flags (%s))
  (libraries InferModules)
@@ -99,6 +100,7 @@ let stanzas =
         {|
 (executable
  (name infertop)
+ (modes byte)
  (flags (%s))
  (libraries utop InferModules)
  (modules Infertop)
