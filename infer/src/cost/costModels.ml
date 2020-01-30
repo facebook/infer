@@ -52,20 +52,28 @@ module JavaString = struct
     let begin_itv = BufferOverrunDomain.Val.get_itv begin_v in
     let end_itv = BufferOverrunDomain.Val.get_itv end_v in
     let itv =
-      if Boolean.is_true (Itv.le_sem begin_itv end_itv) then Itv.minus end_itv begin_itv
-      else end_itv
+      if
+        Boolean.is_true (Itv.le_sem Itv.zero begin_itv)
+        && Boolean.is_true (Itv.le_sem begin_itv end_itv)
+      then Itv.minus end_itv begin_itv
+      else
+        (* in practice, either we have two symbolic bounds that are semantically
+           incomparable at this point or there is an out of bounds exception. In
+           both cases, we don't want to give negative cost so we
+           behave as if there is no model and give unit cost. *)
+        Itv.of_int 1
     in
     CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.substring"
       location
 
 
-  let substring exp begin_idx model_env ~ret:_ inferbo_mem =
+  let substring_no_end exp begin_idx model_env ~ret:_ inferbo_mem =
     substring_aux ~begin_idx
       ~end_v:(BufferOverrunModels.JavaString.get_length model_env exp inferbo_mem)
       model_env inferbo_mem
 
 
-  let substring_no_end begin_idx end_idx ({integer_type_widths} as model_env) ~ret:_ inferbo_mem =
+  let substring begin_idx end_idx ({integer_type_widths} as model_env) ~ret:_ inferbo_mem =
     substring_aux ~begin_idx
       ~end_v:(BufferOverrunSemantics.eval integer_type_widths end_idx inferbo_mem)
       model_env inferbo_mem
@@ -163,7 +171,7 @@ module Call = struct
           &:: "shuffle" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.shuffle"
         ; +PatternMatch.implements_lang "String"
-          &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring
+          &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring_no_end
         ; +PatternMatch.implements_lang "String"
           &:: "indexOf" <>$ capt_exp
           $+ capt_exp_of_typ (+PatternMatch.implements_lang "String")
@@ -176,7 +184,7 @@ module Call = struct
         ; +PatternMatch.implements_lang "String"
           &:: "substring"
           $ any_arg_of_typ (+PatternMatch.implements_lang "String")
-          $+ capt_exp $+ capt_exp $--> JavaString.substring_no_end
+          $+ capt_exp $+ capt_exp $--> JavaString.substring
         ; +PatternMatch.implements_inject "Provider"
           &:: "get"
           <>--> modeled ~of_function:"Provider.get"
