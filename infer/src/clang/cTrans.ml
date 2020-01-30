@@ -2776,16 +2776,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
-        let block_return_type = expr_info.Clang_ast_t.ei_qual_type in
-        let block_pname =
-          CType_decl.CProcname.from_decl decl ~tenv:context.tenv ~block_return_type ~outer_proc
+        let return_type = expr_info.Clang_ast_t.ei_qual_type in
+        let procname =
+          CType_decl.CProcname.from_decl decl ~tenv:context.tenv ~block_return_type:return_type
+            ~outer_proc
         in
-        let captured_pvars =
+        let captured_vars =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables
         in
-        let res = closure_trans block_pname captured_pvars context stmt_info expr_info in
-        let block_data = Some (context, block_return_type, block_pname, captured_pvars) in
+        let res = closure_trans procname captured_vars context stmt_info expr_info in
+        let block_data = Some {CModule_type.captured_vars; context; procname; return_type} in
         F.function_decl context.translation_unit_context context.tenv context.cfg decl block_data ;
         res
     | _ ->

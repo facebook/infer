@@ -70,15 +70,15 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     try
       let captured_vars, outer_context_opt =
         match block_data_opt with
-        | Some (outer_context, _, _, captured_vars) ->
+        | Some {CModule_type.captured_vars; context= outer_context} ->
             (captured_vars, Some outer_context)
         | None ->
             ([], None)
       in
       let procname, block_return_type =
         match block_data_opt with
-        | Some (_, block_return_type, procname, _) ->
-            (procname, Some block_return_type)
+        | Some {CModule_type.procname; return_type} ->
+            (procname, Some return_type)
         | _ ->
             (CType_decl.CProcname.from_decl ~tenv func_decl, None)
       in

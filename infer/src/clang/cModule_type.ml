@@ -7,7 +7,11 @@
 
 open! IStd
 
-type block_data = CContext.t * Clang_ast_t.qual_type * Procname.t * (Pvar.t * Typ.t) list
+type block_data =
+  { captured_vars: (Pvar.t * Typ.t) list
+  ; context: CContext.t
+  ; procname: Procname.t
+  ; return_type: Clang_ast_t.qual_type }
 
 type instr_type =
   [`ClangStmt of Clang_ast_t.stmt | `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer]
