@@ -50,7 +50,9 @@ let infer_cflags =
     ; "-open"
     ; "InferBase"
     ; "-open"
-    ; "InferCStubs" ]
+    ; "InferCStubs"
+    ; "-w"
+    ; "+A-4@8-9-40-41-42-44-45-48-60-66" ]
 
 
 (** The build stanzas to be passed to dune *)
