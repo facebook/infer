@@ -112,14 +112,13 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
 
 let get_objc_method_data obj_c_message_expr_info =
   let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
-  let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
   | `Instance ->
-      (selector, pointer, MCVirtual)
+      (selector, MCVirtual)
   | `SuperInstance ->
-      (selector, pointer, MCNoVirtual)
+      (selector, MCNoVirtual)
   | `Class _ | `SuperClass ->
-      (selector, pointer, MCStatic)
+      (selector, MCStatic)
 
 
 let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
@@ -248,6 +247,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
         ; is_defined= defined
         ; is_cpp_noexcept_method= is_cpp_nothrow
         ; is_biabduction_model= Config.biabduction_models_mode
+        ; is_no_escape_block= ms.CMethodSignature.is_no_escape_block
         ; is_no_return= ms.CMethodSignature.is_no_return
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes

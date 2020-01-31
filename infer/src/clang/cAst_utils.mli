@@ -138,6 +138,8 @@ val get_cxx_virtual_base_classes : Clang_ast_t.decl -> Clang_ast_t.type_ptr list
 
 val is_std_vector : Clang_ast_t.qual_type -> bool
 
+val is_no_escape_block_arg : Clang_ast_t.decl -> bool
+
 val has_block_attribute : Clang_ast_t.decl -> bool
 
 val is_implicit_decl : Clang_ast_t.decl -> bool

@@ -26,7 +26,8 @@ type trans_state =
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option
-  ; is_fst_arg_objc_instance_method_call: bool }
+  ; is_fst_arg_objc_instance_method_call: bool
+  ; is_no_escape_block_arg: bool }
 
 val default_trans_state : CContext.t -> trans_state
 

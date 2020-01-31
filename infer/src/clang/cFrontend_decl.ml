@@ -75,15 +75,16 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | None ->
             ([], None)
       in
-      let procname, block_return_type =
+      let is_no_escape_block, procname, block_return_type =
         match block_data_opt with
-        | Some {CModule_type.procname; return_type} ->
-            (procname, Some return_type)
+        | Some {CModule_type.is_no_escape_block_arg; procname; return_type} ->
+            (is_no_escape_block_arg, procname, Some return_type)
         | _ ->
-            (CType_decl.CProcname.from_decl ~tenv func_decl, None)
+            (false, CType_decl.CProcname.from_decl ~tenv func_decl, None)
       in
       let ms, body_opt, extra_instrs =
-        CType_decl.method_signature_body_of_decl tenv func_decl ?block_return_type procname
+        CType_decl.method_signature_body_of_decl tenv func_decl ?block_return_type
+          ~is_no_escape_block procname
       in
       match body_opt with
       | Some body ->

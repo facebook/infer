@@ -10,6 +10,7 @@ open! IStd
 type block_data =
   { captured_vars: (Pvar.t * Typ.t) list
   ; context: CContext.t
+  ; is_no_escape_block_arg: bool
   ; procname: Procname.t
   ; return_type: Clang_ast_t.qual_type }
 

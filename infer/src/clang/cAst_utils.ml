@@ -555,6 +555,13 @@ let has_block_attribute decl =
       false
 
 
+(* true if a decl has a NS_NOESCAPE attribute *)
+let is_no_escape_block_arg decl =
+  let has_noescape_attr attr = match attr with `NoEscapeAttr _ -> true | _ -> false in
+  let attrs = (Clang_ast_proj.get_decl_tuple decl).di_attributes in
+  List.exists attrs ~f:has_noescape_attr
+
+
 let is_implicit_decl decl =
   let decl_info = Clang_ast_proj.get_decl_tuple decl in
   decl_info.Clang_ast_t.di_is_implicit

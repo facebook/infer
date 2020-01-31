@@ -42,8 +42,7 @@ val create_external_procdesc :
   -> (Typ.t * Typ.t list) option
   -> unit
 
-val get_objc_method_data :
-  Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.pointer option * method_call_type
+val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info -> string * method_call_type
 
 val get_class_name_method_call_from_receiver_kind :
   CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Exp.t * Typ.t) list -> Typ.Name.t

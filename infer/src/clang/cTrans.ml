@@ -22,25 +22,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      1. method is a predefined model
      2. method is found by clang's resolution
      3. Method is found by our resolution *)
-  let get_callee_objc_method context obj_c_message_expr_info act_params =
+  let get_callee_objc_method context obj_c_message_expr_info callee_ms_opt act_params =
     let open CContext in
-    let selector, method_pointer_opt, mc_type =
-      CMethod_trans.get_objc_method_data obj_c_message_expr_info
-    in
+    let selector, mc_type = CMethod_trans.get_objc_method_data obj_c_message_expr_info in
     let is_instance = mc_type <> CMethod_trans.MCStatic in
     let objc_method_kind = Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
     let method_kind =
       if is_instance then ClangMethodKind.OBJC_INSTANCE else ClangMethodKind.OBJC_CLASS
     in
-    let ms_opt =
-      match method_pointer_opt with
-      | Some pointer ->
-          CMethod_trans.method_signature_of_pointer context.tenv pointer
-      | None ->
-          None
-    in
     let proc_name =
-      match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
+      match CMethod_trans.get_method_name_from_clang context.tenv callee_ms_opt with
       | Some name ->
           name
       | None ->
@@ -61,7 +52,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | _ ->
           None
     in
-    match (predefined_ms_opt, ms_opt) with
+    match (predefined_ms_opt, callee_ms_opt) with
     | Some ms, _ ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
@@ -1254,13 +1245,35 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     else None
 
 
+  and exec_instruction_with_trans_state trans_state_param callee_ms_opt i stmt =
+    let trans_state_param' =
+      match callee_ms_opt with
+      | Some callee_ms when not trans_state_param.is_fst_arg_objc_instance_method_call ->
+          let ms_param_type_i =
+            let find_arg j _ = Int.equal i j in
+            List.findi ~f:find_arg callee_ms.CMethodSignature.params
+          in
+          let is_no_escape_block_arg =
+            match ms_param_type_i with
+            | Some (_, {CMethodSignature.is_no_escape_block_arg}) ->
+                is_no_escape_block_arg
+            | None ->
+                false
+          in
+          {trans_state_param with is_no_escape_block_arg}
+      | _ ->
+          trans_state_param
+    in
+    exec_with_glvalue_as_reference instruction trans_state_param' stmt
+
+
   (** If the first argument of the call is self in a static context, remove it as an argument and
      change the call from instance to static *)
-  and objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info =
-    match stmt_list with
+  and objCMessageExpr_translate_args trans_state_param args obj_c_message_expr_info callee_ms_opt =
+    match args with
     | stmt :: rest -> (
         let param_trans_results =
-          List.map ~f:(exec_with_glvalue_as_reference instruction trans_state_param) rest
+          List.mapi ~f:(exec_instruction_with_trans_state trans_state_param callee_ms_opt) rest
         in
         try
           let trans_state_param' =
@@ -1268,7 +1281,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               {trans_state_param with is_fst_arg_objc_instance_method_call= true}
             else {trans_state_param with is_fst_arg_objc_instance_method_call= false}
           in
-          let fst_res_trans = instruction trans_state_param' stmt in
+          let fst_res_trans =
+            exec_instruction_with_trans_state trans_state_param' callee_ms_opt 0 stmt
+          in
           (obj_c_message_expr_info, fst_res_trans :: param_trans_results)
         with Self.SelfClassException e ->
           let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
@@ -1290,9 +1305,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let method_type = add_reference_if_glvalue method_type_no_ref expr_info in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    let callee_ms_opt =
+      match obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
+      | Some pointer ->
+          CMethod_trans.method_signature_of_pointer context.tenv pointer
+      | None ->
+          None
+    in
     let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let obj_c_message_expr_info, res_trans_subexpr_list =
-      objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info
+      objCMessageExpr_translate_args trans_state_param stmt_list obj_c_message_expr_info
+        callee_ms_opt
     in
     let subexpr_exprs = collect_returns res_trans_subexpr_list in
     match
@@ -1304,7 +1327,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | None ->
         let procname = Procdesc.get_proc_name context.CContext.procdesc in
         let callee_name, method_call_type =
-          get_callee_objc_method context obj_c_message_expr_info subexpr_exprs
+          get_callee_objc_method context obj_c_message_expr_info callee_ms_opt subexpr_exprs
         in
         let res_trans_add_self =
           Self.add_self_parameter_for_super_instance si context procname sil_loc
@@ -2785,8 +2808,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables
         in
+        let is_no_escape_block_arg = trans_state.is_no_escape_block_arg in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
-        let block_data = Some {CModule_type.captured_vars; context; procname; return_type} in
+        let block_data =
+          Some {CModule_type.captured_vars; context; is_no_escape_block_arg; procname; return_type}
+        in
         F.function_decl context.translation_unit_context context.tenv context.cfg decl block_data ;
         res
     | _ ->
