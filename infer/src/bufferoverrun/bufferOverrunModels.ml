@@ -1300,12 +1300,12 @@ module Call = struct
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.implements_lang "CharSequence"
         &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp_of_prim_typ char_array
         $--> JavaString.constructor_from_array
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
       ; +PatternMatch.implements_lang "String"
         &:: "<init>" <>$ capt_exp $--> JavaString.empty_constructor
@@ -1321,6 +1321,9 @@ module Call = struct
         &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring_no_end
       ; +PatternMatch.implements_lang "CharSequence"
         &:: "substring" <>$ any_arg $+ capt_exp $+ capt_exp $--> JavaString.substring
+      ; +PatternMatch.implements_lang "StringBuilder"
+        &:: "append" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
+      ; +PatternMatch.implements_lang "StringBuilder" &:: "toString" <>$ capt_exp $+...$--> id
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
@@ -1355,10 +1358,10 @@ module Call = struct
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "length" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "size" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "compare" &--> by_value Dom.Val.Itv.top
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.implements_lang "CharSequence"
         &:: "equals"
-        $ any_arg_of_typ (+PatternMatch.implements_lang "String")
-        $+ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $ any_arg_of_typ (+PatternMatch.implements_lang "CharSequence")
+        $+ any_arg_of_typ (+PatternMatch.implements_lang "CharSequence")
         $--> by_value Dom.Val.Itv.unknown_bool
       ; +PatternMatch.implements_lang "String"
         &:: "startsWith"
