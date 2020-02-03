@@ -371,6 +371,14 @@ module C = struct
   let get_parameters c = c.parameters
 
   let replace_parameters new_parameters c = {c with parameters= new_parameters}
+
+  (** NOTE: [std::make_shared] is parsed as [C] proc name in Sil, rather than [ObjC_Cpp]. *)
+  let is_make_shared {name} =
+    match QualifiedCppName.to_rev_list name with
+    | [make_shared; "std"] when String.is_prefix make_shared ~prefix:"make_shared" ->
+        true
+    | _ ->
+        false
 end
 
 module Block = struct

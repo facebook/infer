@@ -453,10 +453,23 @@ let eval_sympath ~mode params sympath mem =
       (ArrayBlk.get_size ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
 
 
-let mk_eval_sym_trace integer_type_widths (callee_formals : (Pvar.t * Typ.t) list)
-    (actual_exps : (Exp.t * Typ.t) list) caller_mem =
+let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
+    (callee_formals : (Pvar.t * Typ.t) list) (actual_exps : (Exp.t * Typ.t) list) caller_mem =
   let params =
-    let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
+    let actuals =
+      if is_params_ref then
+        match actual_exps with
+        | [] ->
+            []
+        | (this, _) :: actual_exps ->
+            let this_actual = eval integer_type_widths this caller_mem in
+            let actuals =
+              List.map actual_exps ~f:(fun (a, _) ->
+                  Mem.find_set (eval_locs a caller_mem) caller_mem )
+            in
+            this_actual :: actuals
+      else List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps
+    in
     ParamBindings.make callee_formals actuals
   in
   let eval_sym ~mode s bound_end =

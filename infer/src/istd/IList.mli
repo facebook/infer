@@ -67,3 +67,5 @@ val fold2_result :
   -> 'a list
   -> 'b list
   -> ('acc, 'err) result Base.List.Or_unequal_lengths.t
+
+val move_last_to_first : 'a list -> 'a list

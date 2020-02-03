@@ -330,3 +330,66 @@ module Check = struct
 end
 
 type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
+
+module ReplaceCallee = struct
+  type replaced = {pname: Procname.t; params: (Exp.t * Typ.t) list; is_params_ref: bool}
+
+  let is_cpp_constructor_with_types get_formals class_typ param_ref_typs pname =
+    let num_params = List.length param_ref_typs in
+    match pname with
+    | Procname.ObjC_Cpp {kind= CPPConstructor _; parameters}
+      when Int.equal (List.length parameters) num_params -> (
+      match get_formals pname |> Option.map ~f:(List.map ~f:snd) with
+      | Some (this_typ :: formal_typs) -> (
+          Typ.is_ptr_to class_typ ~ptr:this_typ
+          &&
+          match
+            List.for_all2 param_ref_typs formal_typs ~f:(fun param_ref_typ formal_typ ->
+                Typ.is_ptr_to formal_typ ~ptr:param_ref_typ )
+          with
+          | List.Or_unequal_lengths.Ok b ->
+              b
+          | List.Or_unequal_lengths.Unequal_lengths ->
+              false )
+      | _ ->
+          false )
+    | _ ->
+        false
+
+
+  let get_cpp_constructor_of_make_shared tenv get_formals =
+    let rec strip_ttype = function
+      | [] ->
+          Some []
+      | Typ.TType x :: tl ->
+          Option.map (strip_ttype tl) ~f:(fun tl -> x :: tl)
+      | _ ->
+          None
+    in
+    function
+    | Procname.C ({template_args= Typ.Template {args}} as name) when Procname.C.is_make_shared name
+      -> (
+      match strip_ttype args with
+      | Some (class_typ_templ :: param_typs_templ) ->
+          let open Option.Let_syntax in
+          let%bind class_name = Typ.name class_typ_templ in
+          let%bind {Struct.methods} = Tenv.lookup tenv class_name in
+          List.find methods
+            ~f:(is_cpp_constructor_with_types get_formals class_typ_templ param_typs_templ)
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
+  let replace_make_shared tenv get_formals pname params =
+    match get_cpp_constructor_of_make_shared tenv get_formals pname with
+    | Some constr ->
+        (* NOTE: This replaces the pointer to the target object.  In the parameters of
+           [std::make_shared], the pointer is on the last place.  On the other hand, it is on the
+           first place in the constructor's parameters. *)
+        let params = IList.move_last_to_first params in
+        {pname= constr; params; is_params_ref= true}
+    | None ->
+        {pname; params; is_params_ref= false}
+end

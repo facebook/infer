@@ -234,7 +234,8 @@ let rec check_expr_for_integer_overflow integer_type_widths exp location mem con
 
 
 let instantiate_cond :
-       Typ.IntegerWidths.t
+       is_params_ref:bool
+    -> Typ.IntegerWidths.t
     -> Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
@@ -242,8 +243,11 @@ let instantiate_cond :
     -> BufferOverrunCheckerSummary.t
     -> Location.t
     -> PO.ConditionSet.checked_t =
- fun integer_type_widths callee_pname callee_formals params caller_mem callee_cond location ->
-  let eval_sym_trace = Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem in
+ fun ~is_params_ref integer_type_widths callee_pname callee_formals params caller_mem callee_cond
+     location ->
+  let eval_sym_trace =
+    Sem.mk_eval_sym_trace ~is_params_ref integer_type_widths callee_formals params caller_mem
+  in
   let latest_prune = Dom.Mem.get_latest_prune caller_mem in
   PO.ConditionSet.subst callee_cond eval_sym_trace callee_pname location latest_prune
 
@@ -292,13 +296,16 @@ let check_instr :
           in
           check model_env mem cond_set
       | None -> (
-        match (get_checks_summary callee_pname, get_formals callee_pname) with
-        | Some callee_condset, Some callee_formals ->
-            instantiate_cond integer_type_widths callee_pname callee_formals params mem
-              callee_condset location
-            |> PO.ConditionSet.join cond_set
-        | _, _ ->
-            (* unknown call / no inferbo payload *) cond_set ) )
+          let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
+            BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
+          in
+          match (get_checks_summary callee_pname, get_formals callee_pname) with
+          | Some callee_condset, Some callee_formals ->
+              instantiate_cond ~is_params_ref integer_type_widths callee_pname callee_formals params
+                mem callee_condset location
+              |> PO.ConditionSet.join cond_set
+          | _, _ ->
+              (* unknown call / no inferbo payload *) cond_set ) )
   | Sil.Prune (exp, location, _, _) ->
       check_expr_for_integer_overflow integer_type_widths exp location mem cond_set
   | _ ->

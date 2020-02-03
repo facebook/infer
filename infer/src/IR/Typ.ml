@@ -582,6 +582,8 @@ let unsome s = function
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let strip_ptr typ = match typ.desc with Tptr (t, _) -> t | _ -> assert false
 
+let is_ptr_to t ~ptr = match ptr.desc with Tptr (t', _) -> equal t t' | _ -> false
+
 (** If an array type, return the type of the element.
     If not, return the default type if given, otherwise raise an exception *)
 let array_elem default_opt typ =

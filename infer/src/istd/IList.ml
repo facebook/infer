@@ -204,3 +204,15 @@ let fold2_result ~init ~f l1 l2 =
 
 
 let eval_until_first_some thunks = List.find_map thunks ~f:(fun f -> f ())
+
+let move_last_to_first =
+  let rec move_last_to_first_helper l rev_acc =
+    match l with
+    | [] ->
+        []
+    | [a] ->
+        a :: List.rev rev_acc
+    | hd :: tl ->
+        move_last_to_first_helper tl (hd :: rev_acc)
+  in
+  fun l -> move_last_to_first_helper l []

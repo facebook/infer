@@ -158,7 +158,8 @@ module TransferFunctions = struct
 
 
   let instantiate_mem :
-         Typ.IntegerWidths.t
+         is_params_ref:bool
+      -> Typ.IntegerWidths.t
       -> Ident.t * Typ.t
       -> (Pvar.t * Typ.t) list
       -> Procname.t
@@ -167,10 +168,10 @@ module TransferFunctions = struct
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun integer_type_widths ret callee_formals callee_pname params caller_mem callee_exit_mem
-       location ->
+   fun ~is_params_ref integer_type_widths ret callee_formals callee_pname params caller_mem
+       callee_exit_mem location ->
     let eval_sym_trace =
-      Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
+      Sem.mk_eval_sym_trace ~is_params_ref integer_type_widths callee_formals params caller_mem
         ~mode:Sem.EvalNormal
     in
     let mem =
@@ -393,22 +394,25 @@ module TransferFunctions = struct
               in
               exec model_env ~ret mem
           | None -> (
-            match (get_summary callee_pname, get_formals callee_pname) with
-            | Some callee_exit_mem, Some callee_formals ->
-                instantiate_mem integer_type_widths ret callee_formals callee_pname params mem
-                  callee_exit_mem location
-            | _, _ ->
-                (* This may happen for procedures with a biabduction model too. *)
-                L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
-                if is_external callee_pname then (
-                  L.(debug BufferOverrun Verbose)
-                    "/!\\ External call to unknown %a \n\n" Procname.pp callee_pname ;
-                  assign_symbolic_pname_value callee_pname params ret location mem )
-                else if is_non_static callee_pname then (
-                  L.(debug BufferOverrun Verbose)
-                    "/!\\ Non-static call to unknown %a \n\n" Procname.pp callee_pname ;
-                  assign_symbolic_pname_value callee_pname params ret location mem )
-                else Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
+              let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
+                BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
+              in
+              match (get_summary callee_pname, get_formals callee_pname) with
+              | Some callee_exit_mem, Some callee_formals ->
+                  instantiate_mem ~is_params_ref integer_type_widths ret callee_formals callee_pname
+                    params mem callee_exit_mem location
+              | _, _ ->
+                  (* This may happen for procedures with a biabduction model too. *)
+                  L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
+                  if is_external callee_pname then (
+                    L.(debug BufferOverrun Verbose)
+                      "/!\\ External call to unknown %a \n\n" Procname.pp callee_pname ;
+                    assign_symbolic_pname_value callee_pname params ret location mem )
+                  else if is_non_static callee_pname then (
+                    L.(debug BufferOverrun Verbose)
+                      "/!\\ Non-static call to unknown %a \n\n" Procname.pp callee_pname ;
+                    assign_symbolic_pname_value callee_pname params ret location mem )
+                  else Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
     | Call (((id, _) as ret), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;

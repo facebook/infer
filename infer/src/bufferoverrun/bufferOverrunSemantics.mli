@@ -62,7 +62,8 @@ type eval_mode =
           the cost values only care about the upperbounds. *)
 
 val mk_eval_sym_trace :
-     Typ.IntegerWidths.t
+     ?is_params_ref:bool
+  -> Typ.IntegerWidths.t
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
   -> BufferOverrunDomain.Mem.t
