@@ -49,4 +49,30 @@ class StringTest {
     String s = new String("hello");
     split_linear(s);
   }
+
+  void byte_array_constructor_linear(byte[] data) {
+    String s = new String(data);
+    for (int i = 0; i < s.length(); i++) {}
+  }
+
+  void call_string_constant() {
+    byte[] data = new byte[10];
+    byte_array_constructor_linear(data);
+  }
+
+  void string_constructor_constant() {
+    String s = "abcd";
+    String str = new String(s);
+    for (int i = 0; i < str.length(); i++) {}
+  }
+
+  void string_constructor_linear(String s) {
+    String str = new String(s);
+    for (int i = 0; i < str.length(); i++) {}
+  }
+
+  void call_string_constructor_constant() {
+    String s = new String();
+    string_constructor_linear(s);
+  }
 }

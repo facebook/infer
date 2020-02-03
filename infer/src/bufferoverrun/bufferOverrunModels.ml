@@ -1089,10 +1089,14 @@ module JavaString = struct
     ArrObjCommon.constructor_from_char_ptr model_env tgt_deref ~fn src mem
 
 
-  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(byte[]) *)
-  let constructor tgt_exp src =
-    let exec model_env ~ret:_ mem =
-      constructor_from_char_ptr model_env (Sem.eval_locs tgt_exp mem) src mem
+  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(char[]) *)
+  (* same for byte[]*)
+  let constructor_from_array tgt_exp arr_exp =
+    let exec {integer_type_widths} ~ret:_ mem =
+      let tgt_locs = Sem.eval_locs tgt_exp mem in
+      let deref_of_tgt = PowLoc.append_field tgt_locs ~fn in
+      let src_arr_locs = Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths arr_exp mem) in
+      Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set src_arr_locs mem) mem
     in
     {exec; check= no_check}
 
@@ -1128,13 +1132,20 @@ module JavaString = struct
 
 
   (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(java.lang.String) *)
-  let copy_constructor vec_exp src_exp =
+  let copy_constructor tgt_exp src_exp =
     let exec ({integer_type_widths} as model_env) ~ret:_ mem =
-      let vec_locs = Sem.eval integer_type_widths vec_exp mem |> Dom.Val.get_all_locs in
-      let deref_of_vec = PowLoc.append_field vec_locs ~fn in
-      ArrObjCommon.copy_constructor model_env deref_of_vec ~fn src_exp mem
+      let tgt_deref = Sem.eval integer_type_widths tgt_exp mem |> Dom.Val.get_all_locs in
+      let elem_locs = PowLoc.append_field tgt_deref ~fn in
+      match src_exp with
+      | Exp.Const (Const.Cstr s) ->
+          BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
+      | _ ->
+          ArrObjCommon.copy_constructor model_env elem_locs ~fn src_exp mem
     in
     {exec; check= no_check}
+
+
+  let empty_constructor tgt_exp = copy_constructor tgt_exp (Exp.Const (Const.Cstr ""))
 end
 
 module Preconditions = struct
@@ -1206,7 +1217,9 @@ module Call = struct
     let std_array0 = mk_std_array () in
     let std_array1 = mk_std_array () in
     let std_array2 = mk_std_array () in
-    let char_ptr = Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)) in
+    let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
+    let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
+    let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
     make_dispatcher
       [ -"__exit" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
@@ -1255,11 +1268,12 @@ module Call = struct
       ; +PatternMatch.implements_lang "String"
         &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
       ; +PatternMatch.implements_lang "String"
-        &:: "<init>" <>$ capt_exp
-        $+ capt_exp_of_typ (+PatternMatch.implements_lang "String")
-        $--> JavaString.copy_constructor
+        &:: "<init>" <>$ capt_exp $+ capt_exp_of_prim_typ char_array
+        $--> JavaString.constructor_from_array
       ; +PatternMatch.implements_lang "String"
-        &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.constructor
+        &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
+      ; +PatternMatch.implements_lang "String"
+        &:: "<init>" <>$ capt_exp $--> JavaString.empty_constructor
       ; +PatternMatch.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
       ; +PatternMatch.implements_lang "String"
