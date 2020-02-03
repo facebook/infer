@@ -9,13 +9,13 @@ open! IStd
 module F = Format
 module L = Logging
 
-type call = Direct of Procname.t | Indirect of HilExp.AccessExpression.t [@@deriving compare]
+type call = Direct of Procname.t | Indirect of HilExp.t [@@deriving compare]
 
 let pp_call fmt = function
   | Direct pname ->
       Procname.pp fmt pname
-  | Indirect access_expr ->
-      F.fprintf fmt "*%a" HilExp.AccessExpression.pp access_expr
+  | Indirect expr ->
+      F.fprintf fmt "*%a" HilExp.pp expr
 
 
 type t =
@@ -88,10 +88,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
         match exp_of_sil call_exp Typ.void with
         | Constant (Cfun procname) | Closure (procname, _) ->
             Direct procname
-        | HilExp.AccessExpression access_expr ->
-            Indirect access_expr
         | call_exp ->
-            L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
+            Indirect call_exp
       in
       let formals = List.map ~f:(fun (exp, typ) -> exp_of_sil exp typ) formals in
       Instr (Call (hil_ret, hil_call, formals, call_flags, loc))
