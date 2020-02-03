@@ -14,6 +14,6 @@ void access_constant_global_Bad() {
 static int StaticGlobal[][3] = {
     {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-void access_static_global1_Bad_FN() { int* p = StaticGlobal[10]; }
+void access_static_global1_Bad() { int* p = StaticGlobal[10]; }
 
 void access_static_global2_Bad() { int a = StaticGlobal[0][10]; }

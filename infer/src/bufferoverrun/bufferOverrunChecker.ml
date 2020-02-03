@@ -156,13 +156,14 @@ let check_binop :
 
 
 let check_expr_for_array_access :
-       Typ.IntegerWidths.t
+       ?sub_expr_only:bool
+    -> Typ.IntegerWidths.t
     -> Exp.t
     -> Location.t
     -> Dom.Mem.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t =
- fun integer_type_widths exp location mem cond_set ->
+ fun ?(sub_expr_only = false) integer_type_widths exp location mem cond_set ->
   let rec check_sub_expr exp cond_set =
     match exp with
     | Exp.Lindex (array_exp, index_exp) ->
@@ -182,17 +183,19 @@ let check_expr_for_array_access :
         cond_set
   in
   let cond_set = check_sub_expr exp cond_set in
-  match exp with
-  | Exp.Var _ ->
-      let arr = Sem.eval integer_type_widths exp mem in
-      let idx = Dom.Val.Itv.zero in
-      let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune location
+  if sub_expr_only then cond_set
+  else
+    match exp with
+    | Exp.Var _ ->
+        let arr = Sem.eval integer_type_widths exp mem in
+        let idx = Dom.Val.Itv.zero in
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune
+          location cond_set
+    | Exp.BinOp (bop, e1, e2) ->
+        check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
+    | _ ->
         cond_set
-  | Exp.BinOp (bop, e1, e2) ->
-      check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
-  | _ ->
-      cond_set
 
 
 let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
@@ -276,6 +279,7 @@ let check_instr :
   | Sil.Store {e1= lexp; e2= rexp; loc= location} ->
       cond_set
       |> check_expr_for_array_access integer_type_widths lexp location mem
+      |> check_expr_for_array_access ~sub_expr_only:true integer_type_widths rexp location mem
       |> check_expr_for_integer_overflow integer_type_widths lexp location mem
       |> check_expr_for_integer_overflow integer_type_widths rexp location mem
   | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (

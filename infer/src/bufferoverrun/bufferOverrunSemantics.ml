@@ -318,7 +318,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
       let locs = eval_locs e mem |> PowLoc.append_field ~fn in
       Mem.find_set locs mem
   | Exp.Lindex (e, _) ->
-      let locs = eval_locs e mem in
+      let locs = eval_arr integer_type_widths e mem |> Val.get_all_locs in
       Mem.find_set locs mem
   | Exp.Const _ | Exp.UnOp _ | Exp.Sizeof _ | Exp.Exn _ | Exp.Closure _ ->
       Val.bot
