@@ -498,6 +498,8 @@ let untrusted_variable_length_array = register_from_string "UNTRUSTED_VARIABLE_L
 
 let vector_invalidation = register_from_string "VECTOR_INVALIDATION"
 
+let weak_self_in_noescape_block = register_from_string "WEAK_SELF_IN_NO_ESCAPE_BLOCK"
+
 let wrong_argument_number =
   register_from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
 

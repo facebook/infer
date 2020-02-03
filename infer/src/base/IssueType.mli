@@ -347,6 +347,8 @@ val user_controlled_sql_risk : t
 
 val vector_invalidation : t
 
+val weak_self_in_noescape_block : t
+
 val wrong_argument_number : t
 
 val zero_cost_call : kind:CostKind.t -> t

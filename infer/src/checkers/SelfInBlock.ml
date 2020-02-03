@@ -398,6 +398,25 @@ let report_mix_self_weakself_issues summary domain =
       ()
 
 
+let report_weakself_in_no_escape_block_issues summary domain attributes =
+  if attributes.ProcAttributes.is_no_escape_block then
+    let weakSelf_opt =
+      Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain |> Vars.choose_opt
+    in
+    match weakSelf_opt with
+    | Some (_, {pvar= weakSelf; loc= weakLoc}) ->
+        let message =
+          F.asprintf
+            "This block uses `%a` at %a. This is probably not needed since the block is passed to \
+             a method in a position annotated with NS_NOESCAPE. Use `self` instead."
+            (Pvar.pp Pp.text) weakSelf Location.pp weakLoc
+        in
+        let ltr = make_trace_use_self_weakself domain in
+        Reporting.log_error summary ~ltr ~loc:weakLoc IssueType.weak_self_in_noescape_block message
+    | _ ->
+        ()
+
+
 let report_weakself_multiple_issues summary domain =
   let weakSelfs =
     Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain
@@ -467,12 +486,14 @@ let checker {Callbacks.exe_env; summary} =
   let procname = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env procname in
   let proc_data = ProcData.make summary tenv () in
+  let attributes = Summary.get_attributes summary in
   ( if Procname.is_objc_block procname then
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
         report_mix_self_weakself_issues summary domain.vars ;
         report_weakself_multiple_issues summary domain.vars ;
-        report_captured_strongself_issues summary domain.vars
+        report_captured_strongself_issues summary domain.vars ;
+        report_weakself_in_no_escape_block_issues summary domain.vars attributes
     | None ->
         () ) ;
   summary

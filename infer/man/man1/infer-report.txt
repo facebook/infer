@@ -249,6 +249,7 @@ OPTIONS
              USE_AFTER_LIFETIME (enabled by default),
              Unknown_proc (enabled by default),
              VECTOR_INVALIDATION (enabled by default),
+             WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default),
              Wrong_argument_number (enabled by default),
              ZERO_ALLOCATION (disabled by default),
              ZERO_EXECUTION_TIME (disabled by default).
