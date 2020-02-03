@@ -361,7 +361,7 @@ QED
 Theorem l2n_padding:
   ∀ws n. l2n 256 (ws ++ map w2n (replicate n 0w)) = l2n 256 ws
 Proof
-  Induct >> rw [l2n_def] >>
+  Induct >> rw [l2n_def] >> fs [map_replicate] >>
   Induct_on `n` >> rw [l2n_def]
 QED
 

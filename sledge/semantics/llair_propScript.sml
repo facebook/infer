@@ -124,7 +124,7 @@ Proof
 QED
 
 Theorem eval_exp_ignores_lem:
-  ∀s1 e v. eval_exp s1 e v ⇒ ∀s2. s1.locals = s2.locals ⇒ eval_exp s2 e v
+  ∀s1 e v. eval_exp s1 e v ⇒ ∀s2. s1.locals = s2.locals ∧ s1.glob_addrs = s2.glob_addrs ⇒ eval_exp s2 e v
 Proof
   ho_match_mp_tac eval_exp_ind >>
   rw [] >> simp [Once eval_exp_cases] >>
@@ -134,13 +134,14 @@ Proof
 QED
 
 Theorem eval_exp_ignores:
-  ∀s1 e v s2. s1.locals = s2.locals ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
+  ∀s1 e v s2. s1.locals = s2.locals ∧ s1.glob_addrs = s2.glob_addrs ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
 Proof
   metis_tac [eval_exp_ignores_lem]
 QED
 
 Definition exp_uses_def:
-  (exp_uses (Var x) = {x}) ∧
+  (exp_uses (Var x T) = {}) ∧
+  (exp_uses (Var x F) = {x}) ∧
   (exp_uses Nondet = {}) ∧
   (exp_uses (Label _) = {}) ∧
   (exp_uses (Splat e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
@@ -164,7 +165,8 @@ End
 Theorem eval_exp_ignores_unused_lem:
   ∀s1 e v.
     eval_exp s1 e v ⇒
-    ∀s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ⇒
+    ∀s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ∧
+         s1.glob_addrs = s2.glob_addrs ⇒
     eval_exp s2 e v
 Proof
   ho_match_mp_tac eval_exp_ind >>
@@ -199,7 +201,11 @@ Proof
 QED
 
 Theorem eval_exp_ignores_unused:
-  ∀s1 e v s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
+  ∀s1 e v s2.
+    DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ∧
+    s1.glob_addrs = s2.glob_addrs
+    ⇒
+    (eval_exp s1 e v ⇔ eval_exp s2 e v)
 Proof
   metis_tac [eval_exp_ignores_unused_lem]
 QED

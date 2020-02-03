@@ -95,7 +95,7 @@ Definition translate_const_def:
     Record (map (λ(ty, c). translate_const gmap c) tcs)) ∧
   (translate_const gmap (ArrC tcs) =
     Record (map (λ(ty, c). translate_const gmap c) tcs)) ∧
-  (translate_const gmap (GlobalC g) = Var (translate_glob_var gmap g)) ∧
+  (translate_const gmap (GlobalC g) = Var (translate_glob_var gmap g) T) ∧
   (* TODO *)
   (translate_const gmap (GepC _ _ _ _) = ARB) ∧
   (translate_const gmap UndefC = Nondet)
@@ -112,7 +112,7 @@ Definition translate_arg_def:
     (* With the current strategy of threading the emap through the whole
      * function, we should never get a None here.
      *)
-    | None => Var (translate_reg r (IntT W64))
+    | None => Var (translate_reg r (IntT W64)) F
     | Some e => e)
 End
 
@@ -271,8 +271,8 @@ Definition classify_instr_def:
 End
 
 Definition extend_emap_non_exp_def:
-  (extend_emap_non_exp emap (Load r t _) = emap |+ (r, Var (translate_reg r t))) ∧
-  (extend_emap_non_exp emap (Call r t _ _) = emap |+ (r, Var (translate_reg r t))) ∧
+  (extend_emap_non_exp emap (Load r t _) = emap |+ (r, Var (translate_reg r t) F)) ∧
+  (extend_emap_non_exp emap (Call r t _ _) = emap |+ (r, Var (translate_reg r t) F)) ∧
   (extend_emap_non_exp emap _ = emap)
 End
 
@@ -317,7 +317,7 @@ Definition translate_instrs_def:
       let x = translate_reg r t in
       let e = translate_instr_to_exp gmap emap i in
         if r ∈ reg_to_keep then
-          let (bs, emap') = translate_instrs l gmap (emap |+ (r, Var x)) reg_to_keep is in
+          let (bs, emap') = translate_instrs l gmap (emap |+ (r, Var x F)) reg_to_keep is in
             (add_to_first_block (Move [(x, e)]) bs, emap')
         else
           translate_instrs l gmap (emap |+ (r, e)) reg_to_keep is
@@ -367,7 +367,7 @@ End
 Definition header_to_emap_upd_def:
   (header_to_emap_upd Entry = []) ∧
   (header_to_emap_upd (Head phis _) =
-    map (λx. case x of Phi r t largs => (r, Var (translate_reg r t))) phis)
+    map (λx. case x of Phi r t largs => (r, Var (translate_reg r t) F)) phis)
 End
 
 Definition translate_block_def:

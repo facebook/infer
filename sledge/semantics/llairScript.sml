@@ -54,7 +54,8 @@ End
 (* Based on the constructor functions in exp.mli rather than the type definition *)
 Datatype:
   exp =
-  | Var var
+  (* Args: variable name, true for globals *)
+  | Var var bool
   | Nondet
   (* Args: function name, block name *)
   | Label label
@@ -262,7 +263,12 @@ Inductive eval_exp:
   (∀s v r.
    flookup s.locals v = Some r
    ⇒
-   eval_exp s (Var v) r) ∧
+   eval_exp s (Var v F) r) ∧
+
+  (∀s v r.
+   flookup s.glob_addrs v = Some r
+   ⇒
+   eval_exp s (Var v T) (FlatV (n2i r pointer_size))) ∧
 
   (* TODO: Nondet I guess we need to know the type here *)
   (* TODO: Label *)

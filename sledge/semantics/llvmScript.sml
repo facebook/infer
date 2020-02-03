@@ -341,39 +341,43 @@ Definition unsigned_v_to_num_def:
   (unsigned_v_to_num _ = None)
 End
 
-Definition eval_const_def:
-  (eval_const g (IntC W1 i) = FlatV (W1V (i2w i))) ∧
-  (eval_const g (IntC W8 i) = FlatV (W8V (i2w i))) ∧
-  (eval_const g (IntC W32 i) = FlatV (W32V (i2w i))) ∧
-  (eval_const g (IntC W64 i) = FlatV (W64V (i2w i))) ∧
-  (eval_const g (StrC tconsts) = AggV (map (eval_const g) (map snd tconsts))) ∧
-  (eval_const g (ArrC tconsts) = AggV (map (eval_const g) (map snd tconsts))) ∧
-  (eval_const g (GepC ty ptr (t, idx) indices) =
-    case (eval_const g ptr, signed_v_to_num (eval_const g idx)) of
-    | (FlatV (PtrV ptr), Some n) =>
-      let ns = map (λ(t,ci). case signed_v_to_num (eval_const g ci) of None => 0 | Some n => n) indices in
-        (case get_offset ty ns of
-         | None => FlatV UndefV
-         | Some off => FlatV (PtrV (n2w ((w2n ptr) + (sizeof ty) * n + off))))
-    | _ => FlatV UndefV) ∧
-  (eval_const g (GlobalC var) =
-    case flookup g var of
-    | None => FlatV (PtrV 0w)
-    | Some (s,w) => FlatV (PtrV w)) ∧
-  (eval_const g UndefC = FlatV UndefV)
-Termination
-  WF_REL_TAC `measure (const_size o snd)` >> rw [listTheory.MEM_MAP] >>
-  TRY
-    (TRY (PairCases_on `y`) >> simp [] >>
-    Induct_on `tconsts` >> rw [] >> rw [definition "const_size_def"] >>
-    res_tac >> fs [] >> NO_TAC) >>
-  Induct_on `indices` >> rw [] >> rw [definition "const_size_def"] >>
-  fs []
+Inductive eval_const:
+  (∀g i. eval_const g (IntC W1 i) (FlatV (W1V (i2w i)))) ∧
+  (∀g i. eval_const g (IntC W8 i) (FlatV (W8V (i2w i)))) ∧
+  (∀g i. eval_const g (IntC W32 i) (FlatV (W32V (i2w i)))) ∧
+  (∀g i. eval_const g (IntC W64 i) (FlatV (W64V (i2w i)))) ∧
+  (∀g tconsts rs.
+    list_rel (eval_const g) (map snd tconsts) rs
+    ⇒
+    eval_const g (StrC tconsts) (AggV rs)) ∧
+  (∀g tconsts rs.
+    list_rel (eval_const g) (map snd tconsts) rs
+    ⇒
+    eval_const g (ArrC tconsts) (AggV rs)) ∧
+  (∀g ty ptr t idx indices ptr' n ns off vs v.
+    eval_const g ptr (FlatV (PtrV ptr')) ∧
+    eval_const g idx v ∧
+    signed_v_to_num v = Some n ∧
+    list_rel (λ(t, ci) v. eval_const g ci v) indices vs ∧
+    map signed_v_to_num vs = map Some ns ∧
+    get_offset ty ns = Some off
+    ⇒
+    eval_const g (GepC ty ptr (t, idx) indices) (FlatV (PtrV (n2w ((w2n ptr') + (sizeof ty) * n + off))))) ∧
+  (∀g var s w.
+    flookup g var = Some (s, w)
+    ⇒
+    eval_const g (GlobalC var) (FlatV (PtrV w)))
 End
 
-Definition eval_def:
-  (eval s (Variable v) = flookup s.locals v) ∧
-  (eval s (Constant c) = Some <| poison := F; value := eval_const s.globals c |>)
+Inductive eval:
+  (∀s x v.
+    flookup s.locals x = Some v
+    ⇒
+    eval s (Variable x) v) ∧
+  (∀s c v.
+    eval_const s.globals c v
+    ⇒
+    eval s (Constant c) <| poison := F; value := v |>)
 End
 
 (* BEGIN Functions to interface to the generic memory model *)
@@ -483,9 +487,12 @@ Definition do_icmp_def:
        | _ => None)
 End
 
-Definition do_phi_def:
-  do_phi from_l s (Phi id _ entries) =
-    option_join (option_map (λarg. option_map (\v. (id, v)) (eval s arg)) (alookup entries from_l))
+Inductive do_phi:
+  (∀from_l s id lands entries e v.
+    alookup entries from_l = Some e ∧
+    eval s e v
+    ⇒
+    do_phi from_l s (Phi id lands entries) (id, v))
 End
 
 Definition extract_value_def:
@@ -536,7 +543,7 @@ Inductive step_instr:
   (∀prog s t a fr v st new_h.
    s.stack = fr::st ∧
    deallocate fr.stack_allocs s.heap = new_h ∧
-   eval s a = Some v
+   eval s a v
    ⇒
    step_instr prog s
      (Ret (t, a)) Tau
@@ -549,7 +556,7 @@ Inductive step_instr:
           status := s.status |>)) ∧
 
   (∀prog s a l1 l2 tf l p.
-   eval s a = Some <| poison := p; value := FlatV (W1V tf) |> ∧
+   eval s a <| poison := p; value := FlatV (W1V tf) |> ∧
    l = Some (if tf = 0w then l2 else l1)
    ⇒
    step_instr prog s
@@ -560,7 +567,7 @@ Inductive step_instr:
   (∀prog s r t a args l1 l2. step_instr prog s (Invoke r t a args l1 l2) Tau s) ∧
 
   (∀prog s a exit_code v1.
-   eval s a = Some v1 ∧
+   eval s a v1 ∧
    signed_v_to_int v1.value = Some exit_code
    ⇒
    step_instr prog s
@@ -568,31 +575,33 @@ Inductive step_instr:
      (s with status := Complete exit_code)) ∧
 
   (∀prog s r nuw nsw t a1 a2 v3 v1 v2.
-   eval s a1 = Some v1 ∧
-   eval s a2 = Some v2 ∧
+   eval s a1 v1 ∧
+   eval s a2 v2 ∧
    do_sub nuw nsw v1 v2 t = Some v3
    ⇒
    step_instr prog s
      (Sub r nuw nsw t a1 a2) Tau
      (inc_pc (update_result r v3 s))) ∧
 
-  (∀prog s r t a const_indices v ns result.
-   eval s a = Some v ∧
+  (∀prog s r t a const_indices v vs ns result.
+   eval s a v ∧
+   list_rel (eval_const s.globals) const_indices vs ∧
    (* The manual implies (but does not explicitly state) that the indices are
     * interpreted as signed numbers *)
-   map (λci. signed_v_to_num (eval_const s.globals ci)) const_indices = map Some ns ∧
+   map signed_v_to_num vs = map Some ns ∧
    extract_value v.value ns = Some result
    ⇒
    step_instr prog s
      (Extractvalue r (t, a) const_indices) Tau
      (inc_pc (update_result r <| poison := v.poison; value := result |> s))) ∧
 
-  (∀prog s r t1 a1 t2 a2 const_indices result v1 v2 ns.
-   eval s a1 = Some v1 ∧
-   eval s a2 = Some v2 ∧
+  (∀prog s r t1 a1 t2 a2 const_indices result v1 v2 ns vs.
+   eval s a1 v1 ∧
+   eval s a2 v2 ∧
+   list_rel (eval_const s.globals) const_indices vs ∧
    (* The manual implies (but does not explicitly state) that the indices are
     * interpreted as signed numbers *)
-   map (λci. signed_v_to_num (eval_const s.globals ci)) const_indices = map Some ns ∧
+   map signed_v_to_num vs = map Some ns ∧
    insert_value v1.value v2.value ns = Some result
    ⇒
    step_instr prog s
@@ -601,7 +610,7 @@ Inductive step_instr:
                 <| poison := (v1.poison ∨ v2.poison); value := result |> s))) ∧
 
   (∀prog s r t t1 a1 ptr new_h v n n2.
-   eval s a1 = Some v ∧
+   eval s a1 v ∧
    (* TODO Question is the number to allocate interpreted as a signed or
     * unsigned quantity. E.g., if we allocate i8 0xFF does that do 255 or -1? *)
    signed_v_to_num v.value = Some n ∧
@@ -614,7 +623,7 @@ Inductive step_instr:
                 (s with heap := new_h)))) ∧
 
   (∀prog s r t t1 a1 pbytes w interval freeable p1.
-   eval s a1 = Some <| poison := p1; value := FlatV (PtrV w) |> ∧
+   eval s a1 <| poison := p1; value := FlatV (PtrV w) |> ∧
    interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧
    is_allocated interval s.heap ∧
    pbytes = get_bytes s.heap interval ∧
@@ -627,8 +636,8 @@ Inductive step_instr:
                             s))) ∧
 
   (∀prog s t1 a1 t2 a2 obs p2 bytes w v1 freeable interval.
-   eval s a2 = Some <| poison := p2; value := FlatV (PtrV w) |> ∧
-   eval s a1 = Some v1 ∧
+   eval s a2 <| poison := p2; value := FlatV (PtrV w) |> ∧
+   eval s a1 v1 ∧
    interval = Interval freeable (w2n w) (w2n w + sizeof t1) ∧
    is_allocated interval s.heap ∧
    bytes = llvm_value_to_bytes v1.value ∧
@@ -640,8 +649,8 @@ Inductive step_instr:
      (inc_pc (s with heap := set_bytes p2 bytes (w2n w) s.heap))) ∧
 
   (∀prog s r t t1 a1 tindices v1 i1 indices v w1 i is off ptr.
-   map (eval s o snd) tindices = map Some (i1::indices) ∧
-   eval s a1 = Some v ∧
+   list_rel (eval s o snd) tindices (i1::indices) ∧
+   eval s a1 v ∧
    v.value = FlatV (PtrV w1) ∧
    (* The manual states that the indices are interpreted as signed numbers *)
    signed_v_to_num i1.value = Some i ∧
@@ -657,7 +666,7 @@ Inductive step_instr:
                s))) ∧
 
   (∀prog s cop r t1 a1 t v1 v2.
-   eval s a1 = Some v1 ∧
+   eval s a1 v1 ∧
    do_cast cop v1.value t = Some v2
    ⇒
    step_instr prog s
@@ -665,8 +674,8 @@ Inductive step_instr:
     (inc_pc (update_result r <| poison := v1.poison; value := v2 |> s))) ∧
 
   (∀prog s r c t a1 a2 v3 v1 v2.
-   eval s a1 = Some v1 ∧
-   eval s a2 = Some v2 ∧
+   eval s a1 v1 ∧
+   eval s a2 v2 ∧
    do_icmp c v1 v2 = Some v3
    ⇒
    step_instr prog s
@@ -675,7 +684,7 @@ Inductive step_instr:
 
   (∀prog s r t fname targs d vs.
    alookup prog fname = Some d ∧
-   map (eval s o snd) targs = map Some vs
+   list_rel (eval s o snd) targs vs
    ⇒
    step_instr prog s
      (Call r t fname targs) Tau
@@ -741,7 +750,7 @@ Inductive step:
  *)
  (∀p s updates from_l phis.
   get_instr p s.ip (Inr (from_l, phis)) ∧
-  map (do_phi from_l s) phis = map Some updates
+  list_rel (do_phi from_l s) phis updates
   ⇒
   step p s Tau (inc_pc (s with locals := s.locals |++ updates)))
 End

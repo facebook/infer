@@ -361,7 +361,7 @@ Proof
     `take size (le_write_num size n ⧺ bs) = le_write_num size n`
     by metis_tac [le_write_num_length, TAKE_LENGTH_APPEND] >>
     simp [le_write_num_def, w2l_def, l2w_def] >>
-    fs [l2n_padding, TAKE_APPEND, take_replicate] >>
+    fs [SIMP_RULE (srw_ss()) [map_replicate] l2n_padding, TAKE_APPEND, take_replicate] >>
     simp [MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF, mod_n2l] >>
     rename1 `n2l 256 m` >>
     Cases_on `size = 0` >> fs [] >>
@@ -383,7 +383,8 @@ Proof
       fs [EXP_EXP_MULT] >>
       `2 ** log 2 m ≤ m` by rw [exp_log_bound] >>
       decide_tac) >>
-    simp [mod_n2l, l2n_n2l, TAKE_LENGTH_TOO_LONG])
+    simp [mod_n2l, l2n_n2l, TAKE_LENGTH_TOO_LONG]
+    )
   >- metis_tac [le_write_num_length, DROP_LENGTH_APPEND]
 QED
 
