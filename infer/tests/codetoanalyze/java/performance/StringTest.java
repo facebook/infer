@@ -75,4 +75,14 @@ class StringTest {
     String s = new String();
     string_constructor_linear(s);
   }
+
+  public void substring_no_end_linear(String s, int x) {
+    String sub = s.substring(x);
+    for (int i = 0; i < sub.length(); i++) {}
+  }
+
+  public void substring_linear(String s, int x, int y) {
+    String sub = s.substring(x, y);
+    for (int i = 0; i < sub.length(); i++) {}
+  }
 }

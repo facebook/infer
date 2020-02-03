@@ -1146,6 +1146,41 @@ module JavaString = struct
 
 
   let empty_constructor tgt_exp = copy_constructor tgt_exp (Exp.Const (Const.Cstr ""))
+
+  let create_with_length {pname; node_hash; location; integer_type_widths} ~ret:(id, _) ~begin_idx
+      ~end_v mem =
+    let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
+    let end_itv = Dom.Val.get_itv end_v in
+    let length_itv = Itv.minus end_itv begin_itv in
+    let arr_loc =
+      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+        ~represents_multiple_values:false
+      |> Loc.of_allocsite
+    in
+    let elem_alloc =
+      Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+        ~represents_multiple_values:true
+    in
+    let traces = Trace.(Set.singleton location ArrayDeclaration) in
+    Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem
+    |> Dom.Mem.add_heap (Loc.append_field arr_loc ~fn)
+         (Dom.Val.of_java_array_alloc elem_alloc ~length:length_itv ~traces)
+
+
+  let substring_no_end exp begin_idx =
+    let exec model_env ~ret mem =
+      create_with_length model_env ~ret ~begin_idx ~end_v:(get_length model_env exp mem) mem
+    in
+    {exec; check= no_check}
+
+
+  let substring begin_idx end_idx =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      create_with_length model_env ~ret ~begin_idx
+        ~end_v:(Sem.eval integer_type_widths end_idx mem)
+        mem
+    in
+    {exec; check= no_check}
 end
 
 module Preconditions = struct
@@ -1282,6 +1317,10 @@ module Call = struct
         &:: "split" <>$ any_arg $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
       ; +PatternMatch.implements_lang "String"
         &:: "split" <>$ capt_exp $+ any_arg $--> JavaString.split
+      ; +PatternMatch.implements_lang "String"
+        &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring_no_end
+      ; +PatternMatch.implements_lang "CharSequence"
+        &:: "substring" <>$ any_arg $+ capt_exp $+ capt_exp $--> JavaString.substring
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
