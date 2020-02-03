@@ -357,7 +357,17 @@ module ReplaceCallee = struct
         false
 
 
-  let get_cpp_constructor_of_make_shared tenv get_formals =
+  module CacheForMakeShared = struct
+    let results : Procname.t option Procname.Hash.t lazy_t = lazy (Procname.Hash.create 128)
+
+    let add pname value = Procname.Hash.replace (Lazy.force results) pname value
+
+    let find_opt pname = Procname.Hash.find_opt (Lazy.force results) pname
+
+    let clear () = if Lazy.is_val results then Procname.Hash.clear (Lazy.force results)
+  end
+
+  let get_cpp_constructor_of_make_shared =
     let rec strip_ttype = function
       | [] ->
           Some []
@@ -366,20 +376,26 @@ module ReplaceCallee = struct
       | _ ->
           None
     in
-    function
-    | Procname.C ({template_args= Typ.Template {args}} as name) when Procname.C.is_make_shared name
-      -> (
-      match strip_ttype args with
-      | Some (class_typ_templ :: param_typs_templ) ->
-          let open Option.Let_syntax in
-          let%bind class_name = Typ.name class_typ_templ in
-          let%bind {Struct.methods} = Tenv.lookup tenv class_name in
-          List.find methods
-            ~f:(is_cpp_constructor_with_types get_formals class_typ_templ param_typs_templ)
-      | _ ->
-          None )
-    | _ ->
-        None
+    fun tenv get_formals pname ->
+      IOption.value_default_f (CacheForMakeShared.find_opt pname) ~f:(fun () ->
+          let result =
+            match pname with
+            | Procname.C ({template_args= Typ.Template {args}} as name)
+              when Procname.C.is_make_shared name -> (
+              match strip_ttype args with
+              | Some (class_typ_templ :: param_typs_templ) ->
+                  let open Option.Let_syntax in
+                  let%bind class_name = Typ.name class_typ_templ in
+                  let%bind {Struct.methods} = Tenv.lookup tenv class_name in
+                  List.find methods
+                    ~f:(is_cpp_constructor_with_types get_formals class_typ_templ param_typs_templ)
+              | _ ->
+                  None )
+            | _ ->
+                None
+          in
+          CacheForMakeShared.add pname result ;
+          result )
 
 
   let replace_make_shared tenv get_formals pname params =
@@ -393,3 +409,5 @@ module ReplaceCallee = struct
     | None ->
         {pname; params; is_params_ref= false}
 end
+
+let clear_cache () = ReplaceCallee.CacheForMakeShared.clear ()

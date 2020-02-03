@@ -111,3 +111,5 @@ module ReplaceCallee : sig
 
   val replace_make_shared : Tenv.t -> get_formals -> Procname.t -> (Exp.t * Typ.t) list -> replaced
 end
+
+val clear_cache : unit -> unit

@@ -14,7 +14,10 @@ module L = Logging
 module CLOpt = CommandLineOption
 
 let clear_caches () =
-  Ondemand.LocalCache.clear () ; Summary.OnDisk.clear_cache () ; Procname.SQLite.clear_cache ()
+  Ondemand.LocalCache.clear () ;
+  Summary.OnDisk.clear_cache () ;
+  Procname.SQLite.clear_cache () ;
+  BufferOverrunUtils.clear_cache ()
 
 
 let analyze_target : SchedulerTypes.target Tasks.doer =
