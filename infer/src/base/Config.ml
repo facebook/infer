@@ -252,6 +252,8 @@ let perf_stats_prefix = "perf_stats"
 
 let proc_stats_filename = "proc_stats.json"
 
+let procnames_locks_dir_name = "procnames_locks"
+
 let property_attributes = "property_attributes"
 
 let racerd_issues_dir_name = "racerd"
@@ -3309,6 +3311,8 @@ let clang_frontend_action_string =
   in
   String.concat ~sep:", " text
 
+
+let procnames_locks_dir = results_dir ^/ procnames_locks_dir_name
 
 (* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as
    a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the

@@ -139,11 +139,13 @@ let analyze source_files_to_analyze =
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let tasks = schedule source_files_to_analyze in
     (* Prepare tasks one cluster at a time while executing in parallel *)
+    RestartScheduler.setup () ;
     let runner =
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
         ~tasks
     in
     let workers_stats = Tasks.Runner.run runner in
+    RestartScheduler.clean () ;
     let collected_stats =
       Array.fold workers_stats ~init:BackendStats.initial ~f:(fun collated_stats stats_opt ->
           match stats_opt with

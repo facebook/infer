@@ -44,14 +44,14 @@ let max_nesting_to_print = 8
    and exiting nested ondemand analyses. In particular we need to remember the original time.*)
 let current_taskbar_status : (Mtime.t * string) option ref = ref None
 
-let is_active, add_active, remove_active =
+let is_active, add_active, remove_active, clear_actives =
   let currently_analyzed = ref Procname.Set.empty in
   let is_active proc_name = Procname.Set.mem proc_name !currently_analyzed
   and add_active proc_name = currently_analyzed := Procname.Set.add proc_name !currently_analyzed
   and remove_active proc_name =
     currently_analyzed := Procname.Set.remove proc_name !currently_analyzed
-  in
-  (is_active, add_active, remove_active)
+  and clear_actives () = currently_analyzed := Procname.Set.empty in
+  (is_active, add_active, remove_active, clear_actives)
 
 
 let already_analyzed proc_name =
@@ -218,14 +218,18 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
   with exn -> (
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
-        if not !logged_error then (
-          let source_file = attributes.ProcAttributes.translation_unit in
-          let location = attributes.ProcAttributes.loc in
-          L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
-            Procname.pp callee_pname Location.pp_file_pos location ;
-          logged_error := true ) ;
-        restore_global_state old_state ;
-        not Config.keep_going ) ;
+        match exn with
+        | ProcessPool.ProcnameAlreadyLocked ->
+            clear_actives () ; true
+        | _ ->
+            if not !logged_error then (
+              let source_file = attributes.ProcAttributes.translation_unit in
+              let location = attributes.ProcAttributes.loc in
+              L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
+                Procname.pp callee_pname Location.pp_file_pos location ;
+              logged_error := true ) ;
+            restore_global_state old_state ;
+            not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Procname.pp
       callee_pname (Exn.to_string exn) backtrace ;
     match exn with

@@ -162,6 +162,8 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
             logged_error := false ;
             Ok post
           with exn ->
+            IExn.reraise_if exn ~f:(fun () ->
+                match exn with ProcessPool.ProcnameAlreadyLocked -> true | _ -> false ) ;
             (* delay reraising to get a chance to write the debug HTML *)
             let backtrace = Caml.Printexc.get_raw_backtrace () in
             Error (exn, backtrace, instr)

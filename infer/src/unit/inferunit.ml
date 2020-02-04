@@ -46,6 +46,7 @@ let () =
         ; TraceTests.tests
         ; WeakTopologicalOrderTests.tests ]
       @ ClangTests.tests @ AllNullsafeTests.tests )
+    @ [RestartSchedulerTests.tests]
   in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite
