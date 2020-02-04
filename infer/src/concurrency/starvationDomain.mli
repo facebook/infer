@@ -37,6 +37,12 @@ module Lock : sig
   include module type of AbstractAddress
 
   val pp_locks : F.formatter -> t -> unit
+
+  val make_java_synchronized : FormalMap.t -> Procname.t -> t option
+  (** create the monitor locked when entering a synchronized java method *)
+
+  val compare_wrt_reporting : t -> t -> int
+  (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
 end
 
 module Event : sig

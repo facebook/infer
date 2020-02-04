@@ -25,9 +25,8 @@ module F = Format
       identical globals and identical class objects compare equal. Parameter-rooted paths compare
       equal if their parameter indices, types and lists of accesses are equal.
     - Equality for comparing two addresses in two distinct threads/traces. Globals and class objects
-      are compared in the same way, but parameter-rooted paths need only only have equal access
-      lists (ie [x.f.g == y.f.g]). This allows demonically aliasing parameters in *distinct*
-      threads. *)
+      are compared in the same way, but parameter-rooted paths need only have equal access lists (ie
+      [x.f.g == y.f.g]). This allows demonically aliasing parameters in *distinct* threads. *)
 
 include PrettyPrintable.PrintableOrderedType
 
@@ -38,24 +37,20 @@ val equal : t -> t -> bool
 
 val equal_across_threads : Tenv.t -> t -> t -> bool
 
-val compare_wrt_reporting : t -> t -> int
-(** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
-
 val root_class : t -> Typ.name option
-(** Class of the root variable of the path representing the lock *)
+(** Class of the root variable of the expression representing the address *)
 
 val get_typ : Tenv.t -> t -> Typ.t option
 
 val make : FormalMap.t -> HilExp.t -> t option
-
-val make_java_synchronized : FormalMap.t -> Procname.t -> t option
-(** create the monitor locked when entering a synchronized java method *)
+(** convert an expression to a canonical form for an address *)
 
 val is_class_object : t -> bool
-(** is the lock a class object such as in [synchronized(MyClass.class){}] or
+(** is the address a Java class object such as in [synchronized(MyClass.class){}] or
     [static synchronized void foo()] *)
 
-(** substitution type : a map from (0-based) positional index to lock options *)
+(** A substitution from formal position indices to address options. [None] is used to for actuals
+    that cannot be resolved to an address (eg local-rooted paths or arithmetic expressions). *)
 type subst
 
 val pp_subst : F.formatter -> subst -> unit [@@warning "-32"]

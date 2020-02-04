@@ -86,6 +86,27 @@ module Lock = struct
   include AbstractAddress
 
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
+
+  let make_java_synchronized formals procname =
+    match procname with
+    | Procname.Java java_pname when Procname.Java.is_static java_pname ->
+        (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
+        let typename_str = Procname.Java.get_class_type_name java_pname |> Typ.Name.name in
+        let hilexp = HilExp.(Constant (Cclass (Ident.string_to_name typename_str))) in
+        make formals hilexp
+    | Procname.Java _ ->
+        FormalMap.get_formal_base 0 formals
+        |> Option.bind ~f:(fun base ->
+               let hilexp = HilExp.(AccessExpression (AccessExpression.base base)) in
+               make formals hilexp )
+    | _ ->
+        L.die InternalError "Non-Java methods cannot be synchronized.@\n"
+
+
+  let compare_wrt_reporting t1 t2 =
+    let mk_str t = root_class t |> Option.value_map ~default:"" ~f:Typ.Name.to_string in
+    (* use string comparison on types as a stable order to decide whether to report a deadlock *)
+    String.compare (mk_str t1) (mk_str t2)
 end
 
 module Event = struct
