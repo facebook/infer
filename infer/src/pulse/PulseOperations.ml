@@ -500,8 +500,12 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a
        pointer to const *)
-    if Typ.is_pointer actual_typ && not (is_ptr_to_const formal_typ_opt) then
-      (* HACK: write through the pointer even if it is invalid. This is to avoid raising issues when
+    if
+      (not (Language.curr_language_is Java))
+      && Typ.is_pointer actual_typ
+      && not (is_ptr_to_const formal_typ_opt)
+    then
+      (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
          havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
       let fresh_value = AbstractValue.mk_fresh () in
       Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate

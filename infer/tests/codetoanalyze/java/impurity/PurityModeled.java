@@ -4,6 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import java.util.ArrayList;
+
 class PurityModeled {
 
   double math_random_impure() {
@@ -44,5 +46,9 @@ class PurityModeled {
     }
 
     return p;
+  }
+
+  void list_size_pure(ArrayList<String> list) {
+    for (int i = 0; i < list.size(); i++) {}
   }
 }
