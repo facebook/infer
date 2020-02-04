@@ -36,8 +36,6 @@ val get_thread_assert_effect : Procname.t -> thread
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> (Typ.name * Typ.name list) option
 
-val cpp_lock_types_matcher : QualifiedCppName.Match.quals_matcher
-
 val is_recursive_lock_type : Typ.name -> bool
 
 (** Type documenting why a method is considered as annotated with a certain annotation *)

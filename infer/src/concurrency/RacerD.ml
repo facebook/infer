@@ -850,21 +850,12 @@ let should_report_on_proc tenv procdesc =
       || Procdesc.get_access procdesc <> PredSymb.Private
          && (not (Procname.Java.is_autogen_method java_pname))
          && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
-  | ObjC_Cpp {kind; class_name} ->
-      ( match kind with
-      | CPPMethod _ | CPPConstructor _ | CPPDestructor _ ->
-          Procdesc.get_access procdesc <> PredSymb.Private
-      | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
-          Tenv.lookup tenv class_name
-          |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
-                 List.mem ~equal:Procname.equal exported_objc_methods proc_name ) )
-      &&
-      let matcher = ConcurrencyModels.cpp_lock_types_matcher in
-      Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
-          (* check if the class contains a lock member *)
-          List.exists class_str.Struct.fields ~f:(fun (_, ft, _) ->
-              Option.exists (Typ.name ft) ~f:(fun name ->
-                  QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
+  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+      Procdesc.get_access procdesc <> PredSymb.Private
+  | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
+      Tenv.lookup tenv class_name
+      |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
+             List.mem ~equal:Procname.equal exported_objc_methods proc_name )
   | _ ->
       false
 
@@ -1106,6 +1097,28 @@ let make_results_table exe_env summaries =
       Payloads.racerd summary.payloads |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
 
 
+let class_has_concurrent_method class_summaries =
+  let open RacerDDomain in
+  let method_has_concurrent_context (summary : Summary.t) =
+    Payloads.racerd summary.payloads
+    |> Option.exists ~f:(fun (payload : summary) ->
+           match (payload.threads : ThreadsDomain.t) with NoThread -> false | _ -> true )
+  in
+  List.exists class_summaries ~f:method_has_concurrent_context
+
+
+let should_report_on_class (classname : Typ.Name.t) class_summaries =
+  match classname with
+  | JavaClass _ ->
+      true
+  | CppClass _ | ObjcClass _ | ObjcProtocol _ | CStruct _ ->
+      class_has_concurrent_method class_summaries
+  | CUnion _ ->
+      false
+
+
+let filter_reportable_classes class_map = Typ.Name.Map.filter should_report_on_class class_map
+
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
 let aggregate_by_class exe_env procedures =
@@ -1123,6 +1136,7 @@ let aggregate_by_class exe_env procedures =
                         | None -> Some [summary] | Some summaries -> Some (summary :: summaries) )
                       acc ) )
       |> Option.value ~default:acc )
+  |> filter_reportable_classes
 
 
 (* Gathers results by analyzing all the methods in a file, then

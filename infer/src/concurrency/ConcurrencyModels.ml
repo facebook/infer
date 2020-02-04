@@ -55,8 +55,6 @@ let get_thread_assert_effect = function
 module Clang : sig
   val get_lock_effect : Procname.t -> HilExp.t list -> lock_effect
 
-  val lock_types_matcher : QualifiedCppName.Match.quals_matcher
-
   val is_recursive_lock_type : QualifiedCppName.t -> bool
 end = struct
   type lock_model =
@@ -131,11 +129,6 @@ end = struct
     , mk_model_matcher ~f:(fun mdl -> mdl.unlock)
     , mk_model_matcher ~f:(fun mdl -> mdl.trylock)
     , mk_matcher ["std::lock"] )
-
-
-  let lock_types_matcher =
-    let class_names = List.map lock_models ~f:(fun mdl -> mdl.classname) in
-    QualifiedCppName.Match.of_fuzzy_qual_names class_names
 
 
   (** C++ guard classes used for scope-based lock management. NB we pretend all classes below
@@ -398,8 +391,6 @@ let annotated_as_uithread_equivalent ~attrs_of_pname tenv pname =
 let runs_on_ui_thread ~attrs_of_pname tenv pname =
   is_modeled_ui_method tenv pname || annotated_as_uithread_equivalent ~attrs_of_pname tenv pname
 
-
-let cpp_lock_types_matcher = Clang.lock_types_matcher
 
 let is_recursive_lock_type = function
   | Typ.CppClass (qname, _) ->
