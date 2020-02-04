@@ -28,7 +28,6 @@ type t =
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
-  ; is_cpp_nothrow: bool
   ; is_no_escape_block: bool
   ; is_no_return: bool
   ; is_variadic: bool
@@ -51,7 +50,6 @@ val mk :
   -> Clang_ast_t.source_range
   -> ClangMethodKind.t
   -> ?is_cpp_virtual:bool
-  -> ?is_cpp_nothrow:bool
   -> ?is_no_escape_block:bool
   -> ?is_no_return:bool
   -> ?is_variadic:bool

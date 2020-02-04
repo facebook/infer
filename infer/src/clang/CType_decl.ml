@@ -168,7 +168,6 @@ module BuildMethodSignature = struct
     let params = get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl in
     let attributes = decl_info.Clang_ast_t.di_attributes in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
-    let is_cpp_nothrow = CMethodProperties.is_cpp_nothrow method_decl in
     let is_no_return = CMethodProperties.is_no_return method_decl in
     let is_variadic = CMethodProperties.is_variadic method_decl in
     let access = decl_info.Clang_ast_t.di_access in
@@ -183,7 +182,6 @@ module BuildMethodSignature = struct
     ; loc
     ; method_kind
     ; is_cpp_virtual
-    ; is_cpp_nothrow
     ; is_no_escape_block
     ; is_no_return
     ; is_variadic

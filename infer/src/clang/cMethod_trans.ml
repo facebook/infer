@@ -193,7 +193,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
-  let is_cpp_nothrow = ms.CMethodSignature.is_cpp_nothrow in
   let access =
     match ms.CMethodSignature.access with
     | `None ->
@@ -245,7 +244,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
         ; has_added_return_param
         ; access
         ; is_defined= defined
-        ; is_cpp_noexcept_method= is_cpp_nothrow
         ; is_biabduction_model= Config.biabduction_models_mode
         ; is_no_escape_block= ms.CMethodSignature.is_no_escape_block
         ; is_no_return= ms.CMethodSignature.is_no_return

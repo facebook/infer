@@ -21,8 +21,6 @@ val get_method_body : Clang_ast_t.decl -> Clang_ast_t.stmt option
 
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
-val is_cpp_nothrow : Clang_ast_t.decl -> bool
-
 val get_init_list_instrs :
   Clang_ast_t.decl -> [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list
 

@@ -31,7 +31,6 @@ type t =
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
-  ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_no_escape_block: bool
         (** The procedure is an Objective-C block that is passed to a method in a position annotated

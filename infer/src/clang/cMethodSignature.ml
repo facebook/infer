@@ -35,7 +35,6 @@ type t =
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
-  ; is_cpp_nothrow: bool
   ; is_no_escape_block: bool
   ; is_no_return: bool
   ; is_variadic: bool
@@ -57,9 +56,8 @@ let is_setter {pointer_to_property_opt; params} =
 
 
 let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc method_kind
-    ?(is_cpp_virtual = false) ?(is_cpp_nothrow = false) ?(is_no_escape_block = false)
-    ?(is_no_return = false) ?(is_variadic = false) pointer_to_parent pointer_to_property_opt
-    return_param_typ access =
+    ?(is_cpp_virtual = false) ?(is_no_escape_block = false) ?(is_no_return = false)
+    ?(is_variadic = false) pointer_to_parent pointer_to_property_opt return_param_typ access =
   { name
   ; access
   ; class_param
@@ -70,7 +68,6 @@ let mk name class_param params ret_type ?(has_added_return_param = false) attrib
   ; loc
   ; method_kind
   ; is_cpp_virtual
-  ; is_cpp_nothrow
   ; is_no_escape_block
   ; is_no_return
   ; is_variadic

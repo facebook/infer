@@ -47,7 +47,6 @@ type t =
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
-  ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_no_escape_block: bool
         (** The procedure is an Objective-C block that has the NS_NOESCAPE attribute *)
@@ -75,7 +74,6 @@ let default translation_unit proc_name =
   ; is_abstract= false
   ; is_biabduction_model= false
   ; is_bridge_method= false
-  ; is_cpp_noexcept_method= false
   ; is_defined= false
   ; is_java_synchronized_method= false
   ; is_no_escape_block= false
@@ -109,7 +107,6 @@ let pp f
      ; is_biabduction_model
      ; is_bridge_method
      ; is_defined
-     ; is_cpp_noexcept_method
      ; is_java_synchronized_method
      ; is_no_escape_block
      ; is_no_return
@@ -149,8 +146,6 @@ let pp f
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
   pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
-  pp_bool_default ~default:default.is_cpp_noexcept_method "is_cpp_noexcept_method"
-    is_cpp_noexcept_method f () ;
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;

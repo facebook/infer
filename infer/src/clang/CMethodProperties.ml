@@ -104,19 +104,6 @@ let is_cpp_virtual method_decl =
       false
 
 
-let is_cpp_nothrow method_decl =
-  let open Clang_ast_t in
-  match method_decl with
-  | FunctionDecl (_, _, _, fdi)
-  | CXXMethodDecl (_, _, _, fdi, _)
-  | CXXConstructorDecl (_, _, _, fdi, _)
-  | CXXConversionDecl (_, _, _, fdi, _)
-  | CXXDestructorDecl (_, _, _, fdi, _) ->
-      fdi.fdi_is_no_throw
-  | _ ->
-      false
-
-
 let get_init_list_instrs method_decl =
   let open Clang_ast_t in
   match method_decl with
