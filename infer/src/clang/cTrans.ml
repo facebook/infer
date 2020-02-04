@@ -2770,25 +2770,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state message_stmt
 
 
-  (* @synchronized(anObj) {body} is translated as
-
-     __set_locked_attribue(anObj);
-     body;
-     __delete_locked_attribute(anObj);
-  *)
-  and objCAtSynchronizedStmt_trans trans_state stmt_list stmt_info =
+  (* Assumption: stmt_list contains 2 items, the first can be ObjCMessageExpr or ParenExpr *)
+  (* We ignore this item since we don't deal with the concurrency problem yet *)
+  (* For the same reason we also ignore the stmt_info that
+     is related with the ObjCAtSynchronizedStmt construct *)
+  (* Finally we recursively work on the CompoundStmt, the second item of stmt_list *)
+  and objCAtSynchronizedStmt_trans trans_state stmt_list =
     match stmt_list with
-    | [lockExpr; compound_stmt] ->
-        let set_lock_stmt =
-          Ast_expressions.make_function_call stmt_info "__set_locked_attribute" [lockExpr]
-        in
-        let set_delete_stmt =
-          Ast_expressions.make_function_call stmt_info "__delete_locked_attribute" [lockExpr]
-        in
-        let sync_compound_stmt =
-          Clang_ast_t.CompoundStmt (stmt_info, [set_lock_stmt; compound_stmt; set_delete_stmt])
-        in
-        instruction trans_state sync_compound_stmt
+    | [_; compound_stmt] ->
+        instruction trans_state compound_stmt
     | _ ->
         assert false
 
@@ -3556,8 +3546,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         breakStmt_trans trans_state stmt_info
     | ContinueStmt (stmt_info, _) ->
         continueStmt_trans trans_state stmt_info
-    | ObjCAtSynchronizedStmt (stmt_info, stmt_list) ->
-        objCAtSynchronizedStmt_trans trans_state stmt_list stmt_info
+    | ObjCAtSynchronizedStmt (_, stmt_list) ->
+        objCAtSynchronizedStmt_trans trans_state stmt_list
     | ObjCIndirectCopyRestoreExpr (_, stmt_list, _) ->
         let control, returns = instructions trans_state stmt_list in
         mk_trans_result (last_or_mk_fresh_void_exp_typ returns) control

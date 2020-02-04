@@ -53,7 +53,6 @@ SOURCES = \
   ../subclass/MyClass.m \
   ../subclass/MySubClass.m \
   ../subclass/main.c \
-  ../synchronizedStmt/sync.m \
   ../types/testloop.m \
   ../vardecl/aclass.m \
   ../vardecl/aclass_2.m \
