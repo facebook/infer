@@ -89,11 +89,6 @@ module TransferFunctions = struct
     Dom.Mem.find (Loc.of_allocsite (Allocsite.make_symbol path)) mem
 
 
-  let assign_symbolic_pname_value pname params (id, typ) location mem =
-    let v = symbolic_pname_value pname params typ location mem in
-    Dom.Mem.add_stack (Loc.of_id id) v mem
-
-
   let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname params
       ~callee_exit_mem ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
@@ -143,18 +138,6 @@ module TransferFunctions = struct
     |> instantiate_ret_alias
     |> copy_reachable_locs_from (PowLoc.join formal_locs (Dom.Val.get_all_locs ret_val))
     |> instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location
-
-
-  let is_external pname =
-    match pname with Procname.Java java_pname -> Procname.Java.is_external java_pname | _ -> false
-
-
-  let is_non_static pname =
-    match pname with
-    | Procname.Java java_pname ->
-        not (Procname.Java.is_static java_pname)
-    | _ ->
-        false
 
 
   let instantiate_mem :
@@ -404,15 +387,7 @@ module TransferFunctions = struct
               | _, _ ->
                   (* This may happen for procedures with a biabduction model too. *)
                   L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
-                  if is_external callee_pname then (
-                    L.(debug BufferOverrun Verbose)
-                      "/!\\ External call to unknown %a \n\n" Procname.pp callee_pname ;
-                    assign_symbolic_pname_value callee_pname params ret location mem )
-                  else if is_non_static callee_pname then (
-                    L.(debug BufferOverrun Verbose)
-                      "/!\\ Non-static call to unknown %a \n\n" Procname.pp callee_pname ;
-                    assign_symbolic_pname_value callee_pname params ret location mem )
-                  else Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
+                  Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
     | Call (((id, _) as ret), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
