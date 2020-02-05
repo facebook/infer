@@ -337,17 +337,17 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
   List.iter ~f:do_node nodes ; List.rev !res
 
 
-let is_override_of proc_name =
-  let sub_method_name = Procname.get_method proc_name in
-  let sub_params = Procname.get_parameters proc_name in
-  Staged.stage (fun super_pname ->
-      let super_method_name = Procname.get_method super_pname in
-      let super_params = Procname.get_parameters super_pname in
-      (not (Procname.is_constructor super_pname))
-      && String.equal super_method_name sub_method_name
+let has_same_signature proc_name =
+  let method_name = Procname.get_method proc_name in
+  let params = Procname.get_parameters proc_name in
+  Staged.stage (fun other_pname ->
+      let other_method_name = Procname.get_method other_pname in
+      let other_params = Procname.get_parameters other_pname in
+      (not (Procname.is_constructor other_pname))
+      && String.equal other_method_name method_name
       (* Check that parameter types match exactly (no subtyping or what not). *)
       &&
-      match List.for_all2 sub_params super_params ~f:Procname.Parameter.equal with
+      match List.for_all2 params other_params ~f:Procname.Parameter.equal with
       | List.Or_unequal_lengths.Ok res ->
           res
       | List.Or_unequal_lengths.Unequal_lengths ->
@@ -355,7 +355,7 @@ let is_override_of proc_name =
 
 
 let override_find ?(check_current_type = true) f tenv proc_name =
-  let is_override = Staged.unstage (is_override_of proc_name) in
+  let is_override = Staged.unstage (has_same_signature proc_name) in
   let rec find_super_type super_class_name =
     Tenv.lookup tenv super_class_name
     |> Option.bind ~f:(fun {Struct.methods; supers} ->

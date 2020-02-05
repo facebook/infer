@@ -355,7 +355,7 @@ type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass 
 
 let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_name =
   let is_annotated pn = Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot in
-  let is_override = Staged.unstage (PatternMatch.is_override_of proc_name) in
+  let is_override = Staged.unstage (PatternMatch.has_same_signature proc_name) in
   let rec find_override_or_superclass_aux class_name =
     match Tenv.lookup tenv class_name with
     | None ->
