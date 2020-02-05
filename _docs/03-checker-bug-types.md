@@ -31,6 +31,8 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Thread-safety violation](/docs/checkers-bug-types.html#THREAD_SAFETY_VIOLATION)
   - [UI Thread Starvation](/docs/checkers-bug-types.html#STARVATION)
   - [Unsafe_GuardedBy_Access](/docs/checkers-bug-types.html#UNSAFE_GUARDEDBY_ACCESS)
+  - [weakSelf In NOESCAPE Block](/docs/checkers-bug-types.html#WEAK_SELF_IN_NO_ESCAPE_BLOCK)
+  
 
 <a name="CAPTURED_STRONG_SELF"></a>
 
@@ -917,3 +919,12 @@ Outer.java:13: error: UNSAFE_GUARDED_BY_ACCESS
   14.       }
 
 ```
+
+<a name="WEAK_SELF_IN_NO_ESCAPE_BLOCK"></a>
+
+## weakSelf In NOESCAPE Block
+
+In many methods that take a block as an argument, the block position is annotated with NS_NOESCAPE to mark that the block 
+passed to this method won't be leaving the current scope. In those cases, there is no need to use `weakSelf` to avoid the block to capture `self`. This issue type flags this case.  
+
+
