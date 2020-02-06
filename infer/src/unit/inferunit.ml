@@ -40,13 +40,13 @@ let () =
         ; MaximumSharingTests.tests
         ; PerfProfilerATDParserTest.tests
         ; ProcCfgTests.tests
+        ; RestartSchedulerTests.tests
         ; SchedulerTests.tests
         ; SeverityTests.tests
         ; TaintTests.tests
         ; TraceTests.tests
         ; WeakTopologicalOrderTests.tests ]
       @ ClangTests.tests @ AllNullsafeTests.tests )
-    @ [RestartSchedulerTests.tests]
   in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite

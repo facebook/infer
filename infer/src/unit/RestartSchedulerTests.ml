@@ -10,33 +10,23 @@ open OUnit2
 
 let a_pname = Procname.from_string_c_fun "a_c_fun_name"
 
-let test_try_lock_already_locked _test_ctxt =
+let tests_wrapper _test_ctxt =
   ProcLocker.(
     setup () ;
+    (* When tries to lock a Procname that was already locked it fails *)
     try_lock a_pname |> ignore ;
     assert_bool "Should not be able to lock a Procname that's already locked."
-      (not (try_lock a_pname)))
-
-
-let test_lock_after_unlock _test_ctxt =
-  ProcLocker.(
-    setup () ;
+      (not (try_lock a_pname)) ;
+    unlock a_pname ;
+    (* When successives locks/unlocks are performed in the right order they succeed *)
     try_lock a_pname |> ignore ;
     unlock a_pname ;
     try_lock a_pname |> ignore ;
-    unlock a_pname)
-
-
-let test_unlocking_unlocked_fails _text_ctxt =
-  ProcLocker.(
-    setup () ;
+    unlock a_pname ;
+    (* When an unlock is performed over a non-locked Procname it fails *)
     try_lock a_pname |> ignore ;
     unlock a_pname ;
     assert_raises (UnlockNotLocked a_pname) (fun () -> unlock a_pname))
 
 
-let tests =
-  "restart_scheduler_suite"
-  >::: [ "test_try_lock_already_locked" >:: test_try_lock_already_locked
-       ; "test_lock_after_unlock" >:: test_lock_after_unlock
-       ; "test_unlocking_unlocked_fails" >:: test_unlocking_unlocked_fails ]
+let tests = "restart_scheduler_suite" >:: tests_wrapper
