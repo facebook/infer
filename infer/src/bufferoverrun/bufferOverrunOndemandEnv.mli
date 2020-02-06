@@ -14,6 +14,7 @@ type t =
   ; may_last_field: Symb.SymbolPath.partial -> bool
         (** if the path is a last field of a class in C++ *)
   ; entry_location: Location.t  (** location of entry node *)
-  ; integer_type_widths: Typ.IntegerWidths.t  (** bit sizes of integer types *) }
+  ; integer_type_widths: Typ.IntegerWidths.t  (** bit sizes of integer types *)
+  ; class_name: Typ.name option  (** class name of the procedure being analyzed *) }
 
 val mk : Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> t

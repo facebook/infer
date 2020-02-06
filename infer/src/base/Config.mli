@@ -229,6 +229,8 @@ val biabduction_models_mode : bool
 
 val bo_debug : int
 
+val bo_service_handler_request : bool
+
 val bootclasspath : string option
 
 val buck : bool

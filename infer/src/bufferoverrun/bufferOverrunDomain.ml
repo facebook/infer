@@ -86,12 +86,46 @@ module ModeledRange = struct
   let of_big_int ~trace z = NonBottom (Bounds.NonNegativeBound.of_big_int ~trace z)
 end
 
+module type TaintS = sig
+  include AbstractDomain.WithBottom
+
+  val pp : F.formatter -> t -> unit
+
+  val of_bool : bool -> t
+end
+
+module Taint = struct
+  module Unit = struct
+    include AbstractDomain.Empty
+
+    let bottom = ()
+
+    let is_bottom _ = true
+
+    let pp _ _ = ()
+
+    let of_bool _ = ()
+  end
+
+  module ServiceHandlerRequest = struct
+    include AbstractDomain.BooleanOr
+
+    let pp fmt taint = if taint then F.fprintf fmt "(tainted)"
+
+    let of_bool x = x
+  end
+
+  include ( val if Config.bo_service_handler_request then (module ServiceHandlerRequest)
+                else (module Unit) : TaintS )
+end
+
 module Val = struct
   type t =
     { itv: Itv.t
     ; itv_thresholds: ItvThresholds.t
     ; itv_updated_by: ItvUpdatedBy.t
     ; modeled_range: ModeledRange.t
+    ; taint: Taint.t
     ; powloc: PowLoc.t
     ; arrayblk: ArrayBlk.t
     ; traces: TraceSet.t }
@@ -101,6 +135,7 @@ module Val = struct
     ; itv_thresholds= ItvThresholds.empty
     ; itv_updated_by= ItvUpdatedBy.bottom
     ; modeled_range= ModeledRange.bottom
+    ; taint= Taint.bottom
     ; powloc= PowLoc.bot
     ; arrayblk= ArrayBlk.bot
     ; traces= TraceSet.bottom }
@@ -121,9 +156,9 @@ module Val = struct
     let trace_pp fmt traces =
       if Config.bo_debug >= 3 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    F.fprintf fmt "(%a%a%a%a, %a, %a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
-      itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range PowLoc.pp x.powloc
-      ArrayBlk.pp x.arrayblk trace_pp x.traces
+    F.fprintf fmt "(%a%a%a%a%a, %a, %a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
+      itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range Taint.pp x.taint PowLoc.pp
+      x.powloc ArrayBlk.pp x.arrayblk trace_pp x.traces
 
 
   let unknown_from : Typ.t -> callee_pname:_ -> location:_ -> t =
@@ -134,6 +169,7 @@ module Val = struct
     ; itv_thresholds= ItvThresholds.empty
     ; itv_updated_by= ItvUpdatedBy.Top
     ; modeled_range= ModeledRange.bottom
+    ; taint= Taint.bottom
     ; powloc= (if is_int then PowLoc.bottom else PowLoc.unknown)
     ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
     ; traces }
@@ -146,6 +182,7 @@ module Val = struct
       && ItvThresholds.leq ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
       && ItvUpdatedBy.leq ~lhs:lhs.itv_updated_by ~rhs:rhs.itv_updated_by
       && ModeledRange.leq ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
+      && Taint.leq ~lhs:lhs.taint ~rhs:rhs.taint
       && PowLoc.leq ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.leq ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
 
@@ -163,6 +200,7 @@ module Val = struct
           ItvUpdatedBy.widen ~prev:prev.itv_updated_by ~next:next.itv_updated_by ~num_iters
       ; modeled_range=
           ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
+      ; taint= Taint.widen ~prev:prev.taint ~next:next.taint ~num_iters
       ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
       ; traces= TraceSet.join prev.traces next.traces }
@@ -176,6 +214,7 @@ module Val = struct
       ; itv_thresholds= ItvThresholds.join x.itv_thresholds y.itv_thresholds
       ; itv_updated_by= ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by
       ; modeled_range= ModeledRange.join x.modeled_range y.modeled_range
+      ; taint= Taint.join x.taint y.taint
       ; powloc= PowLoc.join x.powloc y.powloc
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
       ; traces= TraceSet.join x.traces y.traces }
@@ -197,7 +236,7 @@ module Val = struct
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
-  let of_itv ?(traces = TraceSet.bottom) itv = {bot with itv; traces}
+  let of_itv ?(traces = TraceSet.bottom) ?(taint = Taint.bottom) itv = {bot with itv; taint; traces}
 
   let of_int n = of_itv (Itv.of_int n)
 
@@ -259,6 +298,7 @@ module Val = struct
       let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
       let itv_updated_by = ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by in
       let modeled_range = ModeledRange.join x.modeled_range y.modeled_range in
+      let taint = Taint.join x.taint y.taint in
       let traces =
         match f_trace with
         | Some f_trace ->
@@ -272,7 +312,7 @@ module Val = struct
           | true, true | false, false ->
               TraceSet.join x.traces y.traces )
       in
-      {bot with itv; itv_thresholds; itv_updated_by; modeled_range; traces}
+      {bot with itv; itv_thresholds; itv_updated_by; modeled_range; taint; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
@@ -510,16 +550,16 @@ module Val = struct
 
   let cast typ v = {v with powloc= PowLoc.cast typ v.powloc}
 
-  let of_path tenv ~may_last_field integer_type_widths location typ path =
+  let of_path tenv ~may_last_field ~is_service_handler integer_type_widths location typ path =
     let traces_of_loc l =
       let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
       TraceSet.singleton location trace
     in
-    let itv_val ~non_int =
+    let itv_val ~non_int ~taint =
       let l = Loc.of_path path in
       let traces = traces_of_loc l in
       let unsigned = Typ.is_unsigned_int typ in
-      of_itv ~traces (Itv.of_normal_path ~unsigned ~non_int path)
+      of_itv ~traces ~taint (Itv.of_normal_path ~unsigned ~non_int path)
     in
     let ptr_to_c_array_alloc deref_path size =
       let allocsite = Allocsite.make_symbol deref_path in
@@ -531,15 +571,20 @@ module Val = struct
     L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
+    let taint =
+      Taint.of_bool
+        ( Config.bo_service_handler_request && (not is_java) && Lazy.force_val is_service_handler
+        && SPath.is_request path )
+    in
     match typ.Typ.desc with
     | Tint (IBool | IChar | ISChar | IUChar) ->
-        let v = itv_val ~non_int:(Language.curr_language_is Java) in
+        let v = itv_val ~non_int:is_java ~taint in
         if Language.curr_language_is Java then set_itv_updated_by_unknown v
         else set_itv_updated_by_addition v
     | Tfloat _ | Tfun | TVar _ ->
-        itv_val ~non_int:true |> set_itv_updated_by_unknown
+        itv_val ~non_int:true ~taint |> set_itv_updated_by_unknown
     | Tint _ | Tvoid ->
-        itv_val ~non_int:false |> set_itv_updated_by_addition
+        itv_val ~non_int:false ~taint |> set_itv_updated_by_addition
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -589,7 +634,7 @@ module Val = struct
           let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
       | Some JavaInteger ->
-          itv_val ~non_int:false
+          itv_val ~non_int:false ~taint:(Taint.of_bool false)
       | None ->
           let l = Loc.of_path path in
           let traces = traces_of_loc l in
@@ -618,11 +663,14 @@ module Val = struct
 
 
   let on_demand : default:t -> ?typ:Typ.t -> OndemandEnv.t -> Loc.t -> t =
-   fun ~default ?typ {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths}
-       l ->
+   fun ~default ?typ
+       {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths; class_name} l ->
     let do_on_demand path typ =
       let may_last_field = may_last_field path in
-      of_path tenv ~may_last_field integer_type_widths entry_location typ path
+      let is_service_handler =
+        lazy (Option.exists class_name ~f:(FbPatternMatch.is_subtype_of_fb_service_handler tenv))
+      in
+      of_path tenv ~may_last_field ~is_service_handler integer_type_widths entry_location typ path
     in
     match Loc.get_literal_string l with
     | Some s ->

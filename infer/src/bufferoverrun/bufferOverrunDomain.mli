@@ -39,12 +39,23 @@ module ModeledRange : sig
   val of_modeled_function : Procname.t -> Location.t -> Bounds.Bound.t -> t
 end
 
+module type TaintS = sig
+  include AbstractDomain.WithBottom
+
+  val pp : Format.formatter -> t -> unit
+
+  val of_bool : bool -> t
+end
+
+module Taint : TaintS
+
 module Val : sig
   type t =
     { itv: Itv.t  (** Interval *)
     ; itv_thresholds: ItvThresholds.t
     ; itv_updated_by: ItvUpdatedBy.t
     ; modeled_range: ModeledRange.t
+    ; taint: Taint.t
     ; powloc: AbsLoc.PowLoc.t  (** Simple pointers *)
     ; arrayblk: ArrayBlk.t  (** Array blocks *)
     ; traces: BufferOverrunTrace.Set.t }
@@ -73,7 +84,7 @@ module Val : sig
 
   val of_int_lit : IntLit.t -> t
 
-  val of_itv : ?traces:BufferOverrunTrace.Set.t -> Itv.t -> t
+  val of_itv : ?traces:BufferOverrunTrace.Set.t -> ?taint:Taint.t -> Itv.t -> t
 
   val of_literal_string : Typ.IntegerWidths.t -> string -> t
 

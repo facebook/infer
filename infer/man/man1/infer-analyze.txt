@@ -356,6 +356,11 @@ BUCK OPTIONS
 BUFFER OVERRUN OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)
+
+       --bo-service-handler-request
+           Activates: [EXPERIMENTAL] Use taint flow of service handler
+           requests in buffer overflow checking. (Conversely:
+           --no-bo-service-handler-request)
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on

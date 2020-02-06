@@ -129,6 +129,11 @@ OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
+       --bo-service-handler-request
+           Activates: [EXPERIMENTAL] Use taint flow of service handler
+           requests in buffer overflow checking. (Conversely:
+           --no-bo-service-handler-request)           See also infer-analyze(1).
+
        --bootclasspath string
            Specify the Java bootclasspath           See also infer-capture(1).
 

@@ -1133,6 +1133,7 @@ and custom_symbols =
 
 and ( biabduction_models_mode
     , bo_debug
+    , bo_service_handler_request
     , deduplicate
     , developer_mode
     , debug
@@ -1166,6 +1167,10 @@ and ( biabduction_models_mode
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
+  and bo_service_handler_request =
+    CLOpt.mk_bool ~long:"bo-service-handler-request"
+      ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+      "[EXPERIMENTAL] Use taint flow of service handler requests in buffer overflow checking."
   and deduplicate =
     CLOpt.mk_bool ~long:"deduplicate" ~default:true
       ~in_help:
@@ -1288,6 +1293,7 @@ and ( biabduction_models_mode
   in
   ( biabduction_models_mode
   , bo_debug
+  , bo_service_handler_request
   , deduplicate
   , developer_mode
   , debug
@@ -2736,6 +2742,8 @@ and biabduction_models_mode = !biabduction_models_mode
 and bootclasspath = !bootclasspath
 
 and bo_debug = !bo_debug
+
+and bo_service_handler_request = !bo_service_handler_request
 
 and buck = !buck
 

@@ -69,6 +69,8 @@ module SymbolPath : sig
 
   val is_this : partial -> bool
 
+  val is_request : partial -> bool
+
   val get_pvar : partial -> Pvar.t option
 
   val represents_multiple_values : partial -> bool

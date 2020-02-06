@@ -122,6 +122,11 @@ module SymbolPath = struct
         None
 
 
+  let is_request x =
+    Option.exists (get_pvar x) ~f:(fun pvar ->
+        String.equal (Pvar.get_simplified_name pvar) "request" )
+
+
   let rec pp_partial_paren ~paren fmt = function
     | Pvar pvar ->
         if Config.bo_debug >= 3 then Pvar.pp_value fmt pvar else Pvar.pp_value_non_verbose fmt pvar
