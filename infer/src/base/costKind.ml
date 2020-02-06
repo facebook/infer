@@ -44,7 +44,7 @@ let to_json_cost_info c = function
   | OperationCost ->
       c.Jsonbug_t.exec_cost
   | AllocationCost ->
-      c.Jsonbug_t.alloc_cost
+      assert false
   | IOCost ->
       assert false
 
@@ -55,5 +55,4 @@ let to_threshold = function OperationCost -> Some 200 | AllocationCost -> Some 3
 
 type kind_spec = {kind: t; (* for non-diff analysis *) top_and_bottom: bool}
 
-let enabled_cost_kinds =
-  [{kind= OperationCost; top_and_bottom= true}; {kind= AllocationCost; top_and_bottom= false}]
+let enabled_cost_kinds = [{kind= OperationCost; top_and_bottom= true}]

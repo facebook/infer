@@ -77,10 +77,7 @@ OPTIONS
            disabling issue types does not make the corresponding checker not
            run.           Available issue types are as follows:
              
-           ALLOCATION_COMPLEXITY_INCREASE (enabled by default),
-             ALLOCATION_COMPLEXITY_INCREASE_COLD_START (enabled by default),
-             ALLOCATION_COMPLEXITY_INCREASE_UI_THREAD (enabled by default),
-             ANALYSIS_STOPS (disabled by default),
+           ANALYSIS_STOPS (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
@@ -151,9 +148,6 @@ OPTIONS
            default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
-             EXPENSIVE_ALLOCATION (disabled by default),
-             EXPENSIVE_ALLOCATION_COLD_START (disabled by default),
-             EXPENSIVE_ALLOCATION_UI_THREAD (disabled by default),
              EXPENSIVE_EXECUTION_TIME (disabled by default),
              EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
              EXPENSIVE_EXECUTION_TIME_UI_THREAD (disabled by default),
@@ -171,7 +165,6 @@ OPTIONS
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
              INFERBO_ALLOC_MAY_BE_TAINTED (enabled by default),
-             INFINITE_ALLOCATION (disabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INSECURE_INTENT_HANDLING (enabled by default),
@@ -253,7 +246,6 @@ OPTIONS
              VECTOR_INVALIDATION (enabled by default),
              WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default),
              Wrong_argument_number (enabled by default),
-             ZERO_ALLOCATION (disabled by default),
              ZERO_EXECUTION_TIME (disabled by default).
            
 
