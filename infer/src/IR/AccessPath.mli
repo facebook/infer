@@ -16,16 +16,13 @@ type access =
   | FieldAccess of Fieldname.t  (** field name *)
 [@@deriving compare, equal]
 
-(** root var, and a list of accesses. closest to the root var is first that is, x.f.g is
-    representedas (x, [f; g]) *)
+(** root var, and a list of accesses. closest to the root var is first that is, x.f.g is represented
+    as (x, [f; g]) *)
 and t = base * access list [@@deriving compare]
 
 val truncate : t -> t * access option
 (** remove and return the last access of the access path if the access list is non-empty. returns
     the original access path * None if the access list is empty *)
-
-val get_access_type : Tenv.t -> Typ.t -> access -> Typ.t option
-(** Get the type of an access, or None if the type cannot be determined *)
 
 val get_last_access : t -> access option
 (** get the last access in the list. returns None if the list is empty *)
@@ -66,18 +63,6 @@ val append : t -> access list -> t
 val is_prefix : t -> t -> bool
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 
-val replace_prefix : prefix:t -> t -> t -> t option [@@warning "-32"]
-
-val inner_class_normalize : t -> t
-  [@@warning "-32"]
-(** transform an access path that starts on "this" of an inner class but which breaks out to access
-    outer class fields to the outermost one. Cases handled (recursively):
-
-    - (this:InnerClass* ).(this$n:OuterClassAccessor).f. ... -> (this:OuterClass* ).f . ...
-    - this$n.(this$m:OuterClassAccessor).f ... -> (this$m:OuterClass* ).f . ... (happens in ctrs
-      only)
-    - this$n.f ... -> this.f . ... (happens in ctrs only) *)
-
 val equal : t -> t -> bool
 
 val equal_base : base -> base -> bool
@@ -87,8 +72,6 @@ val pp : Format.formatter -> t -> unit
 val pp_base : Format.formatter -> base -> unit
 
 val pp_access : Format.formatter -> access -> unit
-
-val pp_access_list : Format.formatter -> access list -> unit [@@warning "-32"]
 
 module Abs : sig
   type raw = t

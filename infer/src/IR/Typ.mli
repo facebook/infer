@@ -249,10 +249,6 @@ module Name : sig
     val is_external : t -> bool
     (** return true if the typename is in the .inferconfig list of external classes *)
 
-    val get_outer_class : t -> t option
-    (** Given an inner classname like C$Inner1$Inner2, return Some C$Inner1. If the class is not an
-        inner class, return None *)
-
     val is_anonymous_inner_class_name : t -> bool
 
     val split_typename : t -> Split.t

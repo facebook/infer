@@ -499,15 +499,6 @@ module Name = struct
 
     let split_typename typename = Split.of_string (name typename)
 
-    let get_outer_class class_name =
-      let {Split.package; type_name} = split_typename class_name in
-      match String.rsplit2 ~on:'$' type_name with
-      | Some (parent_class, _) ->
-          Some (from_package_class (Option.value ~default:"" package) parent_class)
-      | None ->
-          None
-
-
     let is_anonymous_inner_class_name class_name =
       let class_name_no_package = Split.type_name (split_typename class_name) in
       match String.rsplit2 class_name_no_package ~on:'$' with
