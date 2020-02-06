@@ -89,14 +89,20 @@ end
 module type TaintS = sig
   include AbstractDomain.WithBottom
 
+  val compare : t -> t -> int
+
   val pp : F.formatter -> t -> unit
 
   val of_bool : bool -> t
+
+  val is_tainted : t -> bool
 end
 
 module Taint = struct
   module Unit = struct
     include AbstractDomain.Empty
+
+    let compare _ _ = 0
 
     let bottom = ()
 
@@ -105,14 +111,20 @@ module Taint = struct
     let pp _ _ = ()
 
     let of_bool _ = ()
+
+    let is_tainted _ = false
   end
 
   module ServiceHandlerRequest = struct
     include AbstractDomain.BooleanOr
 
+    let compare = Bool.compare
+
     let pp fmt taint = if taint then F.fprintf fmt "(tainted)"
 
     let of_bool x = x
+
+    let is_tainted x = x
   end
 
   include ( val if Config.bo_service_handler_request then (module ServiceHandlerRequest)
@@ -233,6 +245,8 @@ module Val = struct
   let get_array_locs : t -> PowLoc.t = fun x -> ArrayBlk.get_pow_loc x.arrayblk
 
   let get_all_locs : t -> PowLoc.t = fun x -> PowLoc.join x.powloc (get_array_locs x)
+
+  let get_taint : t -> Taint.t = fun x -> x.taint
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 

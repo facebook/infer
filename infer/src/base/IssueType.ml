@@ -137,6 +137,8 @@ let buffer_overrun_r2 = register_from_string "BUFFER_OVERRUN_R2"
 
 let buffer_overrun_s2 = register_from_string "BUFFER_OVERRUN_S2"
 
+let buffer_overrun_t1 = register_from_string "BUFFER_OVERRUN_T1"
+
 let buffer_overrun_u5 = register_from_string ~enabled:false "BUFFER_OVERRUN_U5"
 
 let cannot_star = register_from_string "Cannot_star"
@@ -317,6 +319,8 @@ let inferbo_alloc_is_zero = register_from_string "INFERBO_ALLOC_IS_ZERO"
 let inferbo_alloc_may_be_big = register_from_string "INFERBO_ALLOC_MAY_BE_BIG"
 
 let inferbo_alloc_may_be_negative = register_from_string "INFERBO_ALLOC_MAY_BE_NEGATIVE"
+
+let inferbo_alloc_may_be_tainted = register_from_string "INFERBO_ALLOC_MAY_BE_TAINTED"
 
 let infinite_cost_call ~kind = register_from_cost_string ~enabled:false "INFINITE_%s" ~kind
 

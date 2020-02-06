@@ -82,9 +82,11 @@ let check_alloc_size ~can_be_zero size_exp {location; integer_type_widths} mem c
   | Bottom ->
       cond_set
   | NonBottom length ->
+      let taint = Dom.Val.get_taint v_length in
       let traces = Dom.Val.get_traces v_length in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      PO.ConditionSet.add_alloc_size location ~can_be_zero ~length traces latest_prune cond_set
+      PO.ConditionSet.add_alloc_size location ~can_be_zero ~length ~taint traces latest_prune
+        cond_set
 
 
 let fgets str_exp num_exp =

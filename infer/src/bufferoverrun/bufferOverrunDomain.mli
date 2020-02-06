@@ -42,9 +42,13 @@ end
 module type TaintS = sig
   include AbstractDomain.WithBottom
 
+  val compare : t -> t -> int
+
   val pp : Format.formatter -> t -> unit
 
   val of_bool : bool -> t
+
+  val is_tainted : t -> bool
 end
 
 module Taint : TaintS
@@ -120,6 +124,8 @@ module Val : sig
   val get_modeled_range : t -> ModeledRange.t
 
   val get_pow_loc : t -> AbsLoc.PowLoc.t
+
+  val get_taint : t -> Taint.t
 
   val get_traces : t -> BufferOverrunTrace.Set.t
 
