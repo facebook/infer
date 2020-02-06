@@ -294,26 +294,33 @@ module TransferFunctions = struct
         (F.sprintf "passed to %s" (Procname.to_simplified_string pname))
         var
     in
-    let rec report_on_non_nullable_arg ?(annots = []) args =
-      match (annots, args) with
-      | annot :: annot_rest, (Exp.Var var, _) :: rest when not (Annotations.ia_is_nullable annot) ->
-          report_issue var ;
-          report_on_non_nullable_arg ~annots:annot_rest rest
-      | [], (Exp.Var var, _) :: rest ->
-          report_issue var ; report_on_non_nullable_arg rest
+    let rec report_on_non_nullable_arg ?annotations args =
+      match (annotations, args) with
+      | Some (annot :: annot_rest), (arg, _) :: rest ->
+          ( match arg with
+          | Exp.Var var when not (Annotations.ia_is_nullable annot) ->
+              report_issue var
+          | _ ->
+              () ) ;
+          report_on_non_nullable_arg ~annotations:annot_rest rest
+      | None, (arg, _) :: rest ->
+          (match arg with Exp.Var var -> report_issue var | _ -> ()) ;
+          report_on_non_nullable_arg rest
       | _ ->
           ()
     in
     let proc_desc_opt = Ondemand.get_proc_desc pname in
+    let annotations = get_annotations proc_desc_opt in
     let args =
       if is_objc_instance proc_desc_opt then match args with _ :: rest -> rest | [] -> []
       else args
     in
-    match get_annotations proc_desc_opt with
-    | Some annotations ->
-        report_on_non_nullable_arg ~annots:annotations args
-    | None ->
-        report_on_non_nullable_arg args
+    let annotations =
+      if is_objc_instance proc_desc_opt then
+        match annotations with Some (_ :: rest) -> Some rest | _ -> annotations
+      else annotations
+    in
+    report_on_non_nullable_arg ?annotations args
 
 
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
