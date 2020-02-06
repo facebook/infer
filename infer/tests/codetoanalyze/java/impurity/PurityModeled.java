@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
 
 class PurityModeled {
 
@@ -50,5 +52,33 @@ class PurityModeled {
 
   void list_size_pure(ArrayList<String> list) {
     for (int i = 0; i < list.size(); i++) {}
+  }
+
+  void list_add_impure(ArrayList<String> list) {
+    list.add("a");
+  }
+
+  void list_addall_impure(ArrayList<String> list1, ArrayList<String> list2) {
+    list1.addAll(list2);
+  }
+
+  void enum_loop_pure(Enumeration<String> e) {
+
+    for (; e.hasMoreElements(); ) {
+      Object o = e.nextElement();
+    }
+  }
+
+  void remove_impure(Iterator<String> i) {
+    while (i.hasNext()) {
+      if (i.next().equals("Orange")) {
+        i.remove();
+        break;
+      }
+    }
+  }
+
+  void list_set_impure(ArrayList<String> list) {
+    list.set(0, "e");
   }
 }

@@ -354,10 +354,26 @@ module StdVector = struct
       reallocate_internal_array [crumb] vector PushBack location astate >>| List.return
 end
 
+module JavaCollection = struct
+  let set coll index new_elem : model =
+   fun ~caller_summary:_ location ~ret astate ->
+    let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
+    StdVector.element_of_internal_array location coll (fst index) astate
+    >>= fun (astate, ((old_addr, old_hist) as old_elem)) ->
+    PulseOperations.write_deref location ~ref:new_elem
+      ~obj:(old_addr, ValueHistory.Assignment location :: old_hist)
+      astate
+    >>= PulseOperations.invalidate_deref location (StdVector Assign) old_elem
+    >>| fun astate -> [PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate]
+end
+
+module StringSet = Caml.Set.Make (String)
+
 module ProcNameDispatcher = struct
   let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
+    let pushback_modeled = StringSet.of_list ["add"; "put"; "addAll"; "putAll"; "remove"] in
     make_dispatcher
       [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
       ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
@@ -422,19 +438,35 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
         $--> StdVector.invalidate_references ShrinkToFit
       ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_collection
+        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+        <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
+        $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdVector.at ~desc:"Collection.get()"
+      ; +PatternMatch.implements_list &:: "set" <>$ capt_arg_payload $+ capt_arg_payload
+        $+ capt_arg_payload $--> JavaCollection.set
       ; +PatternMatch.implements_iterator &:: "hasNext"
         &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
+      ; +PatternMatch.implements_enumeration
+        &:: "hasMoreElements"
+        &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
       ; +PatternMatch.implements_lang "Object"
         &:: "equals"
         &--> Misc.nondet ~fn_name:"Object.equals"
       ; +PatternMatch.implements_lang "Iterable"
         &:: "iterator" <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; ( +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
-        $!--> fun x -> StdVector.at ~desc:"Iterator.next" x (AbstractValue.mk_fresh (), []) ) ]
+        $!--> fun x -> StdVector.at ~desc:"Iterator.next" x (AbstractValue.mk_fresh (), []) )
+      ; ( +PatternMatch.implements_enumeration
+        &:: "nextElement" <>$ capt_arg_payload
+        $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])
+        ) ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
