@@ -16,13 +16,7 @@ module DomainData = struct
     | WEAK_SELF
   [@@deriving compare]
 
-  let is_self kind = match kind with SELF -> true | _ -> false
-
-  let is_weak_self kind = match kind with WEAK_SELF -> true | _ -> false
-
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
-
-  let is_captured_strong_self kind = match kind with CAPTURED_STRONG_SELF -> true | _ -> false
 
   let pp_self_pointer_kind fmt kind =
     let s =
@@ -386,70 +380,6 @@ let make_trace_use_self_weakself domain =
       Location.compare loc1 loc2 )
 
 
-let report_mix_self_weakself_issues summary domain =
-  let weakSelf_opt =
-    Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain |> Vars.choose_opt
-  in
-  let self_opt = Vars.filter (fun _ {kind} -> DomainData.is_self kind) domain |> Vars.choose_opt in
-  match (weakSelf_opt, self_opt) with
-  | Some (_, {pvar= weakSelf; loc= weakLoc}), Some (_, {pvar= self; loc= selfLoc}) ->
-      let message =
-        F.asprintf
-          "This block uses both `%a` (%a) and `%a` (%a). This could lead to retain cycles or \
-           unexpected behavior."
-          (Pvar.pp Pp.text) weakSelf Location.pp weakLoc (Pvar.pp Pp.text) self Location.pp selfLoc
-      in
-      let ltr = make_trace_use_self_weakself domain in
-      Reporting.log_error summary ~ltr ~loc:selfLoc IssueType.mixed_self_weakself message
-  | _ ->
-      ()
-
-
-let report_weakself_in_no_escape_block_issues summary domain attributes =
-  if attributes.ProcAttributes.is_no_escape_block then
-    let weakSelf_opt =
-      Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain |> Vars.choose_opt
-    in
-    match weakSelf_opt with
-    | Some (_, {pvar= weakSelf; loc= weakLoc}) ->
-        let message =
-          F.asprintf
-            "This block uses `%a` at %a. This is probably not needed since the block is passed to \
-             a method in a position annotated with NS_NOESCAPE. Use `self` instead."
-            (Pvar.pp Pp.text) weakSelf Location.pp weakLoc
-        in
-        let ltr = make_trace_use_self_weakself domain in
-        Reporting.log_error summary ~ltr ~loc:weakLoc IssueType.weak_self_in_noescape_block message
-    | _ ->
-        ()
-
-
-let report_weakself_multiple_issues summary domain =
-  let weakSelfs =
-    Vars.filter (fun _ {kind} -> DomainData.is_weak_self kind) domain
-    |> Vars.bindings |> List.map ~f:snd
-  in
-  let sorted_WeakSelfs =
-    List.sort weakSelfs ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
-        Location.compare loc1 loc2 )
-  in
-  match sorted_WeakSelfs with
-  | {pvar= weakSelf; loc= weakLoc1} :: {loc= weakLoc2} :: _ ->
-      let message =
-        F.asprintf
-          "This block uses the weak pointer `%a` more than once (%a) and (%a). This could lead to \
-           unexpected behavior. Even if `%a` is not nil in the first use, it could be nil in the \
-           following uses since the object that `%a` points to could be freed anytime; assign it \
-           to a strong variable first."
-          (Pvar.pp Pp.text) weakSelf Location.pp weakLoc1 Location.pp weakLoc2 (Pvar.pp Pp.text)
-          weakSelf (Pvar.pp Pp.text) weakSelf
-      in
-      let ltr = make_trace_use_self_weakself domain in
-      Reporting.log_error summary ~ltr ~loc:weakLoc1 IssueType.multiple_weakself message
-  | _ ->
-      ()
-
-
 let make_trace_captured_strong_self domain =
   let trace_elems =
     Vars.fold
@@ -467,21 +397,89 @@ let make_trace_captured_strong_self domain =
       Location.compare loc1 loc2 )
 
 
-let report_captured_strongself_issues summary domain =
-  let capturedStrongSelf_opt =
-    Vars.filter (fun _ {kind} -> DomainData.is_captured_strong_self kind) domain |> Vars.choose_opt
+let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (self : DomainData.t) =
+  let message =
+    F.asprintf
+      "This block uses both `%a` (%a) and `%a` (%a). This could lead to retain cycles or \
+       unexpected behavior."
+      (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc (Pvar.pp Pp.text) self.pvar
+      Location.pp self.loc
   in
-  match capturedStrongSelf_opt with
-  | Some (_, {pvar; loc}) ->
-      let message =
-        F.asprintf
-          "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \
-           This could lead to retain cycles or unexpected behavior since to avoid retain cycles \
-           one usually uses a local strong pointer or a captured weak pointer instead."
-          (Pvar.pp Pp.text) pvar Location.pp loc
-      in
-      let ltr = make_trace_captured_strong_self domain in
-      Reporting.log_error summary ~ltr ~loc IssueType.captured_strong_self message
+  let ltr = make_trace_use_self_weakself domain in
+  Reporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
+
+
+let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) =
+  let message =
+    F.asprintf
+      "This block uses `%a` at %a. This is probably not needed since the block is passed to a \
+       method in a position annotated with NS_NOESCAPE. Use `self` instead."
+      (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
+  in
+  let ltr = make_trace_use_self_weakself domain in
+  Reporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block message
+
+
+let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
+    (weakSelf2 : DomainData.t) =
+  let message =
+    F.asprintf
+      "This block uses the weak pointer `%a` more than once (%a) and (%a). This could lead to \
+       unexpected behavior. Even if `%a` is not nil in the first use, it could be nil in the \
+       following uses since the object that `%a` points to could be freed anytime; assign it to a \
+       strong variable first."
+      (Pvar.pp Pp.text) weakSelf1.pvar Location.pp weakSelf1.loc Location.pp weakSelf2.loc
+      (Pvar.pp Pp.text) weakSelf1.pvar (Pvar.pp Pp.text) weakSelf1.pvar
+  in
+  let ltr = make_trace_use_self_weakself domain in
+  Reporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
+
+
+let report_captured_strongself_issue domain summary (capturedStrongSelf : DomainData.t) =
+  let message =
+    F.asprintf
+      "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. This \
+       could lead to retain cycles or unexpected behavior since to avoid retain cycles one usually \
+       uses a local strong pointer or a captured weak pointer instead."
+      (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
+  in
+  let ltr = make_trace_captured_strong_self domain in
+  Reporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc IssueType.captured_strong_self
+    message
+
+
+let report_issues summary domain attributes =
+  let process_domain_item _ (domain_data : DomainData.t) (weakSelfList, selfList) =
+    match domain_data.kind with
+    | DomainData.CAPTURED_STRONG_SELF ->
+        report_captured_strongself_issue domain summary domain_data ;
+        (weakSelfList, selfList)
+    | DomainData.WEAK_SELF ->
+        if attributes.ProcAttributes.is_no_escape_block then
+          report_weakself_in_no_escape_block_issues summary domain domain_data ;
+        (domain_data :: weakSelfList, selfList)
+    | DomainData.SELF ->
+        (weakSelfList, domain_data :: selfList)
+    | _ ->
+        (weakSelfList, selfList)
+  in
+  let weakSelfList, selfList = Vars.fold process_domain_item domain ([], []) in
+  let sorted_WeakSelfList =
+    List.sort weakSelfList ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
+        Location.compare loc1 loc2 )
+  in
+  let sorted_selfList =
+    List.sort selfList ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
+        Location.compare loc1 loc2 )
+  in
+  ( match (sorted_WeakSelfList, sorted_selfList) with
+  | weakSelf :: _, self :: _ ->
+      report_mix_self_weakself_issues summary domain weakSelf self
+  | _ ->
+      () ) ;
+  match sorted_WeakSelfList with
+  | weakSelf1 :: weakSelf2 :: _ ->
+      report_weakself_multiple_issue summary domain weakSelf1 weakSelf2
   | _ ->
       ()
 
@@ -497,10 +495,7 @@ let checker {Callbacks.exe_env; summary} =
   ( if Procname.is_objc_block procname then
     match Analyzer.compute_post proc_data ~initial with
     | Some domain ->
-        report_mix_self_weakself_issues summary domain.vars ;
-        report_weakself_multiple_issues summary domain.vars ;
-        report_captured_strongself_issues summary domain.vars ;
-        report_weakself_in_no_escape_block_issues summary domain.vars attributes
+        report_issues summary domain.vars attributes
     | None ->
         () ) ;
   summary
