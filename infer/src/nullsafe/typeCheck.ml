@@ -213,14 +213,15 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
       exp
 
 
-(* Convert a function call to a pvar. *)
-let handle_function_call tenv curr_pname typestate exp default ~is_assignment ~call_node ~node id =
+(* Try to convert a function call to a pvar that originated it; fallback to an original expression in case of failure *)
+let funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment ~call_node ~node
+    id =
   match Errdesc.find_normal_variable_funcall call_node id with
   | Some (Exp.Const (Const.Cfun pn), _, _, _)
     when not (ComplexExpressions.procname_used_in_condition pn) -> (
     match ComplexExpressions.exp_to_string tenv node exp with
     | None ->
-        default
+        exp
     | Some exp_str ->
         let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
         let already_defined_in_typestate =
@@ -232,11 +233,11 @@ let handle_function_call tenv curr_pname typestate exp default ~is_assignment ~c
           | None ->
               false
         in
-        if is_assignment && already_defined_in_typestate then default
+        if is_assignment && already_defined_in_typestate then exp
           (* Don't overwrite pvar representing result of function call. *)
-        else (Exp.Lvar pvar, typestate) )
+        else Exp.Lvar pvar )
   | _ ->
-      default
+      exp
 
 
 (* If this is an assignment, update the typestate for a field access pvar. *)
@@ -270,16 +271,18 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
   let default = (exp, typestate) in
   match exp with
   | Exp.Var id when Errdesc.find_normal_variable_funcall node id <> None ->
-      handle_function_call tenv curr_pname typestate exp default ~is_assignment ~call_node:node
-        ~node id
+      ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
+          ~call_node:node ~node id
+      , typestate )
   | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
       let frontend_variable_assignment =
         Errdesc.find_program_variable_assignment original_node pvar
       in
       match frontend_variable_assignment with
       | Some (call_node, id) ->
-          handle_function_call tenv curr_pname typestate exp default ~is_assignment ~call_node ~node
-            id
+          ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment ~call_node
+              ~node id
+          , typestate )
       | _ ->
           default )
   | Exp.Lvar _ ->
