@@ -10,6 +10,10 @@ open OUnit2
 
 let a_pname = Procname.from_string_c_fun "a_c_fun_name"
 
+(* Tests are organized like this instead of using one function per test because
+   OUnit run tests in parallel and since all tests use the same output directory
+   (inter-out-unit) the file locks would collide because they all live in a
+   directory called procnames_locks inside the output dir. *)
 let tests_wrapper _test_ctxt =
   ProcLocker.(
     setup () ;

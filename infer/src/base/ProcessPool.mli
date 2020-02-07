@@ -58,7 +58,7 @@ val create :
   -> child_prelude:(unit -> unit)
   -> f:('work -> unit)
   -> child_epilogue:(unit -> 'final)
-  -> tasks:'work TaskGenerator.t
+  -> tasks:(unit -> 'work TaskGenerator.t)
   -> ('work, 'final) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 

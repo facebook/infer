@@ -430,7 +430,7 @@ let create :
     -> child_prelude:(unit -> unit)
     -> f:('work -> unit)
     -> child_epilogue:(unit -> 'final)
-    -> tasks:'work TaskGenerator.t
+    -> tasks:(unit -> 'work TaskGenerator.t)
     -> ('work, 'final) t =
  fun ~jobs ~child_prelude ~f ~child_epilogue ~tasks ->
   let file_lock = Utils.create_file_lock () in
@@ -447,7 +447,7 @@ let create :
   let[@warning "-26"] pipe_child_w = Unix.close pipe_child_w in
   let children_updates = pipe_child_r in
   let children_states = Array.create ~len:jobs Initializing in
-  {slots; children_updates; jobs; task_bar; tasks; children_states; file_lock}
+  {slots; children_updates; jobs; task_bar; tasks= tasks (); children_states; file_lock}
 
 
 let run pool =

@@ -11,6 +11,11 @@ type 'a doer = 'a -> unit
 
 let fork_protect ~f x = BackendStats.reset () ; ForkUtils.protect ~f x
 
+let with_new_db_connection ~f () =
+  ResultsDatabase.new_database_connection () ;
+  f ()
+
+
 module Runner = struct
   type ('work, 'final) t = ('work, 'final) ProcessPool.t
 
@@ -19,12 +24,11 @@ module Runner = struct
       log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
     ResultsDatabase.db_close () ;
     let pool =
-      ProcessPool.create ~jobs ~f ~child_epilogue ~tasks
+      ProcessPool.create ~jobs ~f ~child_epilogue ~tasks:(with_new_db_connection ~f:tasks)
         ~child_prelude:
           ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
            fork_protect ~f:(fun () -> ()))
     in
-    ResultsDatabase.new_database_connection () ;
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     pool
 

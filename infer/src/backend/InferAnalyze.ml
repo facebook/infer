@@ -116,7 +116,7 @@ let get_source_files_to_analyze ~changed_files =
   source_files_to_analyze
 
 
-let schedule sources =
+let tasks_generator_builder_for sources =
   if Config.call_graph_schedule then (
     CLOpt.warnf "WARNING: '--call-graph-schedule' is deprecated. Use '--scheduler' instead.@." ;
     SyntacticCallGraph.make sources )
@@ -137,12 +137,12 @@ let analyze source_files_to_analyze =
     BackendStats.get () )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
-    let tasks = schedule source_files_to_analyze in
+    let build_tasks_generator () = tasks_generator_builder_for source_files_to_analyze in
     (* Prepare tasks one cluster at a time while executing in parallel *)
     RestartScheduler.setup () ;
     let runner =
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
-        ~tasks
+        ~tasks:build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
     RestartScheduler.clean () ;
