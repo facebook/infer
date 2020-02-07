@@ -205,7 +205,7 @@ let check_argument_list =
 
 
 (** Models for boolean functions that return true on null. *)
-let true_on_null_list : ((_ * bool list) * _) list =
+let true_on_null_list =
   [ (n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")
   ; (n1, "com.google.common.base.Strings.isNullOrEmpty(java.lang.String):boolean") ]
 
@@ -226,7 +226,7 @@ let mapPut_list =
 
 (** Models for nullability *)
 let annotated_list_nullability =
-  check_not_null_list @ check_state_list @ check_argument_list
+  check_not_null_list @ check_state_list @ check_argument_list @ true_on_null_list
   @ [ ( o1
       , "android.text.SpannableString.valueOf(java.lang.CharSequence):android.text.SpannableString"
       )
