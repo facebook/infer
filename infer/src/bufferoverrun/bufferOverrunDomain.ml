@@ -14,14 +14,10 @@ module F = Format
 module L = Logging
 module OndemandEnv = BufferOverrunOndemandEnv
 module SPath = Symb.SymbolPath
+module SPathSet = Symb.SymbolPathSet
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 module LoopHeadLoc = Location
-
-type eval_sym_trace =
-  { eval_sym: Bounds.Bound.eval_sym
-  ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
-  ; eval_locpath: PowLoc.eval_locpath }
 
 module ItvThresholds = AbstractDomain.FiniteSet (struct
   include Z
@@ -93,9 +89,15 @@ module type TaintS = sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_bool : bool -> t
-
   val is_tainted : t -> bool
+
+  val param_of_path : SPath.partial -> t
+
+  val tainted_of_path : SPath.partial -> t
+
+  type eval_taint = SPath.partial -> t
+
+  val subst : t -> eval_taint -> t
 end
 
 module Taint = struct
@@ -110,26 +112,98 @@ module Taint = struct
 
     let pp _ _ = ()
 
-    let of_bool _ = ()
-
     let is_tainted _ = false
+
+    let param_of_path _ = ()
+
+    let tainted_of_path _ = ()
+
+    type eval_taint = SPath.partial -> t
+
+    let subst _ _ = ()
   end
 
   module ServiceHandlerRequest = struct
-    include AbstractDomain.BooleanOr
+    type t =
+      | Param of SPathSet.t
+      | Tainted of SPathSet.t (* The path set of [Tainted] should be non-empty. *)
+    [@@deriving compare]
 
-    let compare = Bool.compare
+    let pp f = function
+      | Param params ->
+          if SPathSet.is_empty params then F.pp_print_string f "not tainted"
+          else F.fprintf f "unknown taint from %a" SPathSet.pp params
+      | Tainted params ->
+          assert (not (SPathSet.is_empty params)) ;
+          F.fprintf f "tainted by %a" SPathSet.pp params
 
-    let pp fmt taint = if taint then F.fprintf fmt "(tainted)"
 
-    let of_bool x = x
+    let leq ~lhs ~rhs =
+      match (lhs, rhs) with
+      | Param _, Tainted _ ->
+          true
+      | Tainted _, Param _ ->
+          false
+      | Param params1, Param params2 | Tainted params1, Tainted params2 ->
+          SPathSet.subset params1 params2
 
-    let is_tainted x = x
+
+    let join x y =
+      match (x, y) with
+      | Param _, Tainted _ ->
+          y
+      | Tainted _, Param _ ->
+          x
+      | Param params1, Param params2 ->
+          Param (SPathSet.union params1 params2)
+      | Tainted params1, Tainted params2 ->
+          Tainted (SPathSet.union params1 params2)
+
+
+    let widen ~prev ~next ~num_iters:_ = join prev next
+
+    let bottom = Param SPathSet.empty
+
+    let is_bottom = function
+      | Param paths ->
+          SPathSet.is_empty paths
+      | Tainted paths ->
+          assert (not (SPathSet.is_empty paths)) ;
+          false
+
+
+    let is_tainted = function
+      | Tainted paths ->
+          assert (not (SPathSet.is_empty paths)) ;
+          true
+      | _ ->
+          false
+
+
+    let param_of_path path = Param (SPathSet.singleton path)
+
+    let tainted_of_path path = Tainted (SPathSet.singleton path)
+
+    type eval_taint = SPath.partial -> t
+
+    let subst x eval_taint =
+      match x with
+      | Tainted _ ->
+          x
+      | Param params ->
+          let accum_subst path acc = join acc (eval_taint path) in
+          SPathSet.fold accum_subst params bottom
   end
 
   include ( val if Config.bo_service_handler_request then (module ServiceHandlerRequest)
                 else (module Unit) : TaintS )
 end
+
+type eval_sym_trace =
+  { eval_sym: Bounds.Bound.eval_sym
+  ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
+  ; eval_locpath: PowLoc.eval_locpath
+  ; eval_taint: Taint.eval_taint }
 
 module Val = struct
   type t =
@@ -165,11 +239,15 @@ module Val = struct
       if not (ModeledRange.is_bottom range) then
         F.fprintf fmt " (modeled_range:%a)" ModeledRange.pp range
     in
+    let taint_pp fmt taint =
+      if Config.bo_service_handler_request && Config.bo_debug >= 3 then
+        F.fprintf fmt "(%a)" Taint.pp taint
+    in
     let trace_pp fmt traces =
       if Config.bo_debug >= 3 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
     F.fprintf fmt "(%a%a%a%a%a, %a, %a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
-      itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range Taint.pp x.taint PowLoc.pp
+      itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range taint_pp x.taint PowLoc.pp
       x.powloc ArrayBlk.pp x.arrayblk trace_pp x.traces
 
 
@@ -500,7 +578,7 @@ module Val = struct
 
 
   let subst : t -> eval_sym_trace -> Location.t -> t =
-   fun x {eval_sym; trace_of_sym; eval_locpath} location ->
+   fun x {eval_sym; trace_of_sym; eval_locpath; eval_taint} location ->
     let symbols = get_symbols x in
     let traces_caller =
       Itv.SymbolSet.fold
@@ -512,6 +590,7 @@ module Val = struct
     let powloc_from_arrayblk, arrayblk = ArrayBlk.subst x.arrayblk eval_sym eval_locpath in
     { x with
       itv= Itv.subst x.itv eval_sym
+    ; taint= Taint.subst x.taint eval_taint
     ; powloc= PowLoc.join powloc powloc_from_arrayblk
     ; arrayblk
     ; traces }
@@ -586,9 +665,10 @@ module Val = struct
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
     let taint =
-      Taint.of_bool
-        ( Config.bo_service_handler_request && (not is_java) && Lazy.force_val is_service_handler
-        && SPath.is_request path )
+      if (not Config.bo_service_handler_request) || is_java then Taint.bottom
+      else if Lazy.force_val is_service_handler && SPath.is_request path then
+        Taint.tainted_of_path path
+      else Taint.param_of_path path
     in
     match typ.Typ.desc with
     | Tint (IBool | IChar | ISChar | IUChar) ->
@@ -648,7 +728,7 @@ module Val = struct
           let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
       | Some JavaInteger ->
-          itv_val ~non_int:false ~taint:(Taint.of_bool false)
+          itv_val ~non_int:false ~taint:Taint.bottom
       | None ->
           let l = Loc.of_path path in
           let traces = traces_of_loc l in

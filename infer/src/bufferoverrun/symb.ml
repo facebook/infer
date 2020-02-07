@@ -414,3 +414,9 @@ module SymbolMap = struct
     | exception Exit ->
         false
 end
+
+module SymbolPathSet = PrettyPrintable.MakePPSet (struct
+  type t = SymbolPath.partial [@@deriving compare]
+
+  let pp = SymbolPath.pp_partial
+end)

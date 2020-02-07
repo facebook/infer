@@ -484,7 +484,12 @@ let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
     if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
   let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
-  fun ~mode -> {eval_sym= eval_sym ~mode; trace_of_sym; eval_locpath= eval_locpath ~mode}
+  let eval_taint ~mode path = eval_sympath_partial ~mode params path caller_mem |> Val.get_taint in
+  fun ~mode ->
+    { eval_sym= eval_sym ~mode
+    ; trace_of_sym
+    ; eval_locpath= eval_locpath ~mode
+    ; eval_taint= eval_taint ~mode }
 
 
 let mk_eval_sym_mode ~mode integer_type_widths callee_formals actual_exps caller_mem =

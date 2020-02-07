@@ -137,3 +137,5 @@ module SymbolMap : sig
 
   val for_all2 : f:(key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool
 end
+
+module SymbolPathSet : PrettyPrintable.PPSet with type elt = SymbolPath.partial

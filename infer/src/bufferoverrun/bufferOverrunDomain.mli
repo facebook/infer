@@ -8,12 +8,6 @@
 open! IStd
 open AbstractDomain.Types
 
-(** type for on-demand symbol evaluation in Inferbo *)
-type eval_sym_trace =
-  { eval_sym: Bounds.Bound.eval_sym  (** evaluating symbol *)
-  ; trace_of_sym: Symb.Symbol.t -> BufferOverrunTrace.Set.t  (** getting traces of symbol *)
-  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *) }
-
 module ItvThresholds : AbstractDomain.FiniteSetS with type elt = Z.t
 (** Set of integers for threshold widening *)
 
@@ -46,12 +40,25 @@ module type TaintS = sig
 
   val pp : Format.formatter -> t -> unit
 
-  val of_bool : bool -> t
-
   val is_tainted : t -> bool
+
+  val param_of_path : Symb.SymbolPath.partial -> t
+
+  val tainted_of_path : Symb.SymbolPath.partial -> t
+
+  type eval_taint = Symb.SymbolPath.partial -> t
+
+  val subst : t -> eval_taint -> t
 end
 
 module Taint : TaintS
+
+(** type for on-demand symbol evaluation in Inferbo *)
+type eval_sym_trace =
+  { eval_sym: Bounds.Bound.eval_sym  (** evaluating symbol *)
+  ; trace_of_sym: Symb.Symbol.t -> BufferOverrunTrace.Set.t  (** getting traces of symbol *)
+  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *)
+  ; eval_taint: Taint.eval_taint  (** evaluating taint of path *) }
 
 module Val : sig
   type t =

@@ -108,7 +108,10 @@ module AllocSizeCondition = struct
 
   let get_symbols {length} = ItvPure.get_symbols length
 
-  let pp fmt {length} = F.fprintf fmt "alloc(%a)" ItvPure.pp length
+  let pp fmt {length; taint} =
+    F.fprintf fmt "alloc(%a)" ItvPure.pp length ;
+    if Config.bo_debug >= 3 then F.fprintf fmt "(%a)" Dom.Taint.pp taint
+
 
   let pp_description ~markup fmt {length} =
     F.fprintf fmt "Length: %a" (ItvPure.pp_mark ~markup) length
@@ -192,9 +195,10 @@ module AllocSizeCondition = struct
                 else {report_issue_type= NotIssue; propagate} ) )
 
 
-  let subst eval_sym {length; can_be_zero; taint} =
+  let subst eval_sym eval_taint {length; can_be_zero; taint} =
     match ItvPure.subst length eval_sym with
     | NonBottom length ->
+        let taint = Dom.Taint.subst taint eval_taint in
         Some {length; can_be_zero; taint}
     | Bottom ->
         None
@@ -222,7 +226,8 @@ module ArrayAccessCondition = struct
     in
     let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
-      (ItvPure.make_positive c.size)
+      (ItvPure.make_positive c.size) ;
+    if Config.bo_debug >= 3 then F.fprintf fmt "(%a)" Dom.Taint.pp c.taint
 
 
   let pp_description : markup:bool -> F.formatter -> t -> unit =
@@ -396,8 +401,8 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst : Bound.eval_sym -> t -> t option =
-   fun eval_sym c ->
+  let subst : Bound.eval_sym -> Dom.Taint.eval_taint -> t -> t option =
+   fun eval_sym eval_taint c ->
     match
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
     with
@@ -406,7 +411,8 @@ module ArrayAccessCondition = struct
           c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
           || ItvPure.has_void_ptr_symb size
         in
-        Some {c with offset; idx; size; void_ptr}
+        let taint = Dom.Taint.subst c.taint eval_taint in
+        Some {c with offset; idx; size; void_ptr; taint}
     | _ ->
         None
 end
@@ -616,11 +622,11 @@ module Condition = struct
         BinaryOperationCondition.get_symbols c
 
 
-  let subst eval_sym = function
+  let subst eval_sym eval_taint = function
     | AllocSize c ->
-        AllocSizeCondition.subst eval_sym c |> make_alloc_size
+        AllocSizeCondition.subst eval_sym eval_taint c |> make_alloc_size
     | ArrayAccess c ->
-        ArrayAccessCondition.subst eval_sym c |> make_array_access
+        ArrayAccessCondition.subst eval_sym eval_taint c |> make_array_access
     | BinaryOperation c ->
         BinaryOperationCondition.subst eval_sym c |> make_binary_operation
 
@@ -746,8 +752,8 @@ module ConditionWithTrace = struct
         call_site
     with
     | `Reachable reachability -> (
-        let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
-        match Condition.subst eval_sym cwt.cond with
+        let {Dom.eval_sym; eval_taint; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
+        match Condition.subst eval_sym eval_taint cwt.cond with
         | None ->
             None
         | Some cond ->
