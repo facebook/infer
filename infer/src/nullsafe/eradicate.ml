@@ -41,7 +41,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
              has very special meaning and nullability limitations (it can never be null).
           *)
           TypeOrigin.This
-        else TypeOrigin.MethodParameter param_signature
+        else if PatternMatch.is_override_of_java_lang_object_equals curr_pname then
+          TypeOrigin.MethodParameter ObjectEqualsOverride
+        else TypeOrigin.MethodParameter (Normal param_signature)
       in
       let inferred_nullability = InferredNullability.create origin in
       TypeState.add pvar (param_signature.param_annotated_type.typ, inferred_nullability) typestate

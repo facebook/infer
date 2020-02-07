@@ -11,7 +11,7 @@ type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
   | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
-  | MethodParameter of AnnotatedSignature.param_signature  (** A method's parameter *)
+  | MethodParameter of method_parameter_origin  (** A method's parameter *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
   | CallToGetKnownToContainsKey
@@ -31,6 +31,8 @@ type t =
           should be added), or fixed. T54687014 tracks unsoundness issues caused by this type. *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
+
+and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
 
 and field_origin =
   { object_origin: t  (** field's object origin (object is before field access operator `.`) *)

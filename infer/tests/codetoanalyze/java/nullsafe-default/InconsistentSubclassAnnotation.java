@@ -172,11 +172,15 @@ class ExtendsExternalLibrary extends SomeExternalClass {
   }
 }
 
-// Check that we have a special error message for this method
+// Check that 1) we have a special error message for lack of annotation in this method and 2) treat
+// `x` as implicitly nullable
 class JavaLangEquals {
   @Override
   public boolean equals(Object x) {
-    return false;
+    // BAD: x can not be directly dereferenced without null comparison:
+    // it is implicitly nullable because Java requires `x.equals(null)` to work correctly.
+    // It is a common enough case to make the nullsafe support this specifically.
+    return x.toString() == "JavaLangEquals";
   }
 }
 

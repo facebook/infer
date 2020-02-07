@@ -13,7 +13,7 @@ type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
   | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
-  | MethodParameter of AnnotatedSignature.param_signature  (** A method's parameter *)
+  | MethodParameter of method_parameter_origin  (** A method's parameter *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
   | CallToGetKnownToContainsKey
@@ -33,6 +33,8 @@ type t =
           should be added), or fixed. T54687014 tracks unsoundness issues caused by this type. *)
   | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
+
+and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
 
 and field_origin =
   { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
@@ -70,8 +72,11 @@ let get_nullability = function
       Nullability.StrictNonnull
   | Field {field_type= {nullability}} ->
       AnnotatedNullability.get_nullability nullability
-  | MethodParameter {param_annotated_type= {nullability}} ->
+  | MethodParameter (Normal {param_annotated_type= {nullability}}) ->
       AnnotatedNullability.get_nullability nullability
+  | MethodParameter ObjectEqualsOverride ->
+      (* `Object.equals(obj)` should expect to be called with null `obj` *)
+      Nullability.Nullable
   | MethodCall {annotated_signature= {ret= {ret_annotated_type= {nullability}}}} ->
       AnnotatedNullability.get_nullability nullability
 
@@ -83,9 +88,11 @@ let rec to_string = function
       "Const (nonnull)"
   | Field {object_origin; field_name} ->
       "Field " ^ Fieldname.to_string field_name ^ " (object: " ^ to_string object_origin ^ ")"
-  | MethodParameter {mangled; param_annotated_type= {nullability}} ->
+  | MethodParameter (Normal {mangled; param_annotated_type= {nullability}}) ->
       Format.asprintf "Param %s <%a>" (Mangled.to_string mangled) AnnotatedNullability.pp
         nullability
+  | MethodParameter ObjectEqualsOverride ->
+      "Param(ObjectEqualsOverride)"
   | This ->
       "this"
   | MethodCall {pname} ->
@@ -149,8 +156,10 @@ let get_description origin =
       Some ("null constant" ^ atline loc)
   | Field {field_name; access_loc} ->
       Some ("field " ^ Fieldname.get_field_name field_name ^ atline access_loc)
-  | MethodParameter {mangled} ->
+  | MethodParameter (Normal {mangled}) ->
       Some ("method parameter " ^ Mangled.to_string mangled)
+  | MethodParameter ObjectEqualsOverride ->
+      Some "Object.equals() should be able to accept `null`, according to the Java specification"
   | MethodCall {pname; call_loc; annotated_signature} ->
       Some (get_method_ret_description pname call_loc annotated_signature)
   (* These are origins of non-nullable expressions that are result of evaluating of some rvalue.

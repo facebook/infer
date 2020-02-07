@@ -22,12 +22,14 @@ let is_object_nullability_self_explanatory ~object_expression (object_origin : T
   | NullConst _ ->
       (* Expect either a local variable or null literal (latter case is trivial) *)
       String.equal object_expression "null"
-  | MethodParameter {mangled} ->
+  | MethodParameter (Normal {mangled}) ->
       (* Either local variable or literally parameter. In latter case, its nullability is
          self-explanatory because the user can quickly see the current method signature.
       *)
       let param_name = Mangled.to_string mangled in
       String.equal object_expression param_name
+  | MethodParameter ObjectEqualsOverride ->
+      false
   | Field {field_name} ->
       (* Either local variable or expression like `<smth>.field_name`. Latter case is trivial:
          the user can quickly go to field_name definition and see if its annotation. *)
