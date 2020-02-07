@@ -738,8 +738,6 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
   | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
     when IntLit.iszero i -> (
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv original_node instr_ref typestate e loc ;
       let typestate1, e1, from_call =
         match from_is_true_on_null e with
         | Some e1 ->
@@ -768,8 +766,6 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
   | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
     when IntLit.iszero i -> (
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv original_node instr_ref typestate e loc ;
       let typestate1, e1, from_call =
         match from_instanceof e with
         | Some e1 ->
