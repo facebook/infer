@@ -274,8 +274,8 @@ module AccessSnapshot = struct
     else None
 
 
-  let make access lock thread ownership_precondition pdesc =
-    let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
+  let make access lock thread ownership_precondition =
+    let lock = LocksDomain.is_locked lock in
     make_if_not_owned access lock thread ownership_precondition
 
 
@@ -579,7 +579,7 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
     ownership AttributeMapDomain.pp attribute_map
 
 
-let add_unannotated_call_access pname loc pdesc (astate : t) =
+let add_unannotated_call_access pname loc (astate : t) =
   let access = TraceElem.make_unannotated_call_access pname loc in
-  let snapshot = AccessSnapshot.make access astate.locks astate.threads False pdesc in
+  let snapshot = AccessSnapshot.make access astate.locks astate.threads False in
   {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}

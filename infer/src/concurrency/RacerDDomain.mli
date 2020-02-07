@@ -47,6 +47,8 @@ end
 module LocksDomain : sig
   type t
 
+  val bottom : t
+
   val acquire_lock : t -> t
   (** record acquisition of a lock *)
 
@@ -105,13 +107,7 @@ module AccessSnapshot : sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val make :
-       TraceElem.t
-    -> LocksDomain.t
-    -> ThreadsDomain.t
-    -> OwnershipPrecondition.t
-    -> Procdesc.t
-    -> t option
+  val make : TraceElem.t -> LocksDomain.t -> ThreadsDomain.t -> OwnershipPrecondition.t -> t option
 
   val make_from_snapshot : TraceElem.t -> t -> t option
 
@@ -222,4 +218,4 @@ include AbstractDomain.WithBottom with type t := t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val add_unannotated_call_access : Procname.t -> Location.t -> Procdesc.t -> t -> t
+val add_unannotated_call_access : Procname.t -> Location.t -> t -> t
