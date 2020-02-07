@@ -50,7 +50,6 @@ type from_call =
   | From_condition  (** Direct condition *)
   | From_instanceof  (** x instanceof C *)
   | From_is_false_on_null  (** returns false on null *)
-  | From_is_true_on_null  (** returns true on null *)
   | From_containsKey  (** x.containsKey *)
 [@@deriving compare]
 

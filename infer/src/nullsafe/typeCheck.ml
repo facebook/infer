@@ -735,29 +735,30 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         typestate2
   in
   match[@warning "-57"] c with
-  | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
-  | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
+  | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), expr)
+  | Exp.BinOp (Binop.Eq, expr, Exp.Const (Const.Cint i))
     when IntLit.iszero i -> (
-      let typestate1, e1, from_call =
-        match from_is_true_on_null e with
-        | Some e1 ->
-            (typestate, e1, EradicateChecks.From_is_true_on_null)
-        | None ->
-            (typestate, e, EradicateChecks.From_condition)
-      in
-      let e', typestate2 =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node ~is_assignment:false e1 typestate1 loc
-      in
-      match from_call with
-      | EradicateChecks.From_is_true_on_null ->
-          (* if f returns true on null, then false branch implies != null *)
-          set_nonnull e' typestate2
-      | _ ->
-          typestate2 )
+    (* Zero literal has two different meanings important for Nullsafe:
+       `null` and `false`.
+       We don't currently have a logic for `a == null` case, but `a == false` is important.
+    *)
+    match from_is_true_on_null expr with
+    | Some argument ->
+        (* [expr] is a call to function known to return true on `null`.
+           According to PRUNE semantics, we just ensured that the result is `false`.
+           It means that [argument] can not be `null`, hence we can infer its nullability as a non-null.
+        *)
+        (* Trace the origin of [argument] back to pvar that originated it, so its nullability can be updated in typestate. *)
+        let pvar_expr, updated_typestate =
+          convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
+            ~original_node ~is_assignment:false argument typestate loc
+        in
+        set_nonnull pvar_expr updated_typestate
+    | None ->
+        typestate )
   | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
   | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
-    when IntLit.iszero i -> (
+    when IntLit.iszero i ->
       let typestate1, e1, from_call =
         match from_instanceof e with
         | Some e1 ->
@@ -785,14 +786,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
           find_canonical_duplicate curr_pdesc original_node e' typ inferred_nullability idenv
           linereader loc instr_ref ;
-      match from_call with
-      | EradicateChecks.From_is_true_on_null ->
-          typestate2
-      | EradicateChecks.From_condition
-      | EradicateChecks.From_containsKey
-      | EradicateChecks.From_instanceof
-      | EradicateChecks.From_is_false_on_null ->
-          set_nonnull e' typestate2 )
+      set_nonnull e' typestate2
   | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
       check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
         curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
