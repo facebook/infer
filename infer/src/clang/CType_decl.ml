@@ -156,7 +156,7 @@ module BuildMethodSignature = struct
 
 
   let method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
-      ?(is_no_escape_block = false) procname =
+      ?(passed_as_noescape_block_to = None) procname =
     let decl_info = Clang_ast_proj.get_decl_tuple method_decl in
     let loc = decl_info.Clang_ast_t.di_source_range in
     let ret_type, return_param_typ, ret_typ_annot, has_added_return_param =
@@ -182,7 +182,7 @@ module BuildMethodSignature = struct
     ; loc
     ; method_kind
     ; is_cpp_virtual
-    ; is_no_escape_block
+    ; passed_as_noescape_block_to
     ; is_no_return
     ; is_variadic
     ; pointer_to_parent
@@ -191,12 +191,12 @@ module BuildMethodSignature = struct
 
 
   let method_signature_body_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
-      ?is_no_escape_block procname =
+      ?passed_as_noescape_block_to procname =
     let body = CMethodProperties.get_method_body method_decl in
     let init_list_instrs = CMethodProperties.get_init_list_instrs method_decl in
     let ms =
       method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
-        ?is_no_escape_block procname
+        ?passed_as_noescape_block_to procname
     in
     (ms, body, init_list_instrs)
 end

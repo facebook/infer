@@ -127,9 +127,9 @@ type trans_state =
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option
   ; is_fst_arg_objc_instance_method_call: bool
-  ; is_no_escape_block_arg: bool
-        (** Current to-be-translated instruction is being passed as argument in a position annotated
-            with NS_NOESCAPE *) }
+  ; passed_as_noescape_block_to: Procname.t option
+        (** Current to-be-translated instruction is being passed as argument to the given method in
+            a position annotated with NS_NOESCAPE *) }
 
 let default_trans_state context =
   { context
@@ -139,7 +139,7 @@ let default_trans_state context =
   ; var_exp_typ= None
   ; opaque_exp= None
   ; is_fst_arg_objc_instance_method_call= false
-  ; is_no_escape_block_arg= false }
+  ; passed_as_noescape_block_to= None }
 
 
 type control =

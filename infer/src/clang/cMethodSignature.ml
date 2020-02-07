@@ -35,7 +35,7 @@ type t =
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
-  ; is_no_escape_block: bool
+  ; passed_as_noescape_block_to: Procname.t option
   ; is_no_return: bool
   ; is_variadic: bool
   ; pointer_to_parent: Clang_ast_t.pointer option
@@ -56,7 +56,7 @@ let is_setter {pointer_to_property_opt; params} =
 
 
 let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc method_kind
-    ?(is_cpp_virtual = false) ?(is_no_escape_block = false) ?(is_no_return = false)
+    ?(is_cpp_virtual = false) ?(passed_as_noescape_block_to = None) ?(is_no_return = false)
     ?(is_variadic = false) pointer_to_parent pointer_to_property_opt return_param_typ access =
   { name
   ; access
@@ -68,7 +68,7 @@ let mk name class_param params ret_type ?(has_added_return_param = false) attrib
   ; loc
   ; method_kind
   ; is_cpp_virtual
-  ; is_no_escape_block
+  ; passed_as_noescape_block_to
   ; is_no_return
   ; is_variadic
   ; pointer_to_parent
@@ -81,8 +81,8 @@ let pp fmt ms =
     F.fprintf fmt "%a, %a (is_no_escape_block=%b)" Mangled.pp name (Typ.pp Pp.text) typ
       is_no_escape_block_arg
   in
-  Format.fprintf fmt "Method %a [%a]->%a %a(is_no_escape_block=%b)"
+  Format.fprintf fmt "Method %a [%a]->%a %a(passed_as_noescape_block_to=%a)"
     (Pp.of_string ~f:Procname.to_string)
     ms.name (Pp.comma_seq pp_param) ms.params (Typ.pp Pp.text) (fst ms.ret_type)
     (Pp.of_string ~f:Clang_ast_j.string_of_source_range)
-    ms.loc ms.is_no_escape_block
+    ms.loc (Pp.option Procname.pp) ms.passed_as_noescape_block_to

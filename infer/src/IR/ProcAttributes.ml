@@ -48,8 +48,9 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
-  ; is_no_escape_block: bool
-        (** The procedure is an Objective-C block that has the NS_NOESCAPE attribute *)
+  ; passed_as_noescape_block_to: Procname.t option
+        (** Present if the procedure is an Objective-C block that has been passed to the given
+            method in a position annotated with the NS_NOESCAPE attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
@@ -76,7 +77,7 @@ let default translation_unit proc_name =
   ; is_bridge_method= false
   ; is_defined= false
   ; is_java_synchronized_method= false
-  ; is_no_escape_block= false
+  ; passed_as_noescape_block_to= None
   ; is_no_return= false
   ; is_specialized= false
   ; is_synthetic_method= false
@@ -108,7 +109,7 @@ let pp f
      ; is_bridge_method
      ; is_defined
      ; is_java_synchronized_method
-     ; is_no_escape_block
+     ; passed_as_noescape_block_to
      ; is_no_return
      ; is_specialized
      ; is_synthetic_method
@@ -149,7 +150,7 @@ let pp f
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
-  pp_bool_default ~default:default.is_no_escape_block "is_no_escape_block" is_no_escape_block f () ;
+  F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp) passed_as_noescape_block_to ;
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f

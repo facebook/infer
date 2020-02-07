@@ -409,12 +409,13 @@ let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (se
   Reporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
 
 
-let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) =
+let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) procname =
   let message =
     F.asprintf
-      "This block uses `%a` at %a. This is probably not needed since the block is passed to a \
-       method in a position annotated with NS_NOESCAPE. Use `self` instead."
+      "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
+       method `%s` in a position annotated with NS_NOESCAPE. Use `self` instead."
       (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
+      (Procname.to_simplified_string procname)
   in
   let ltr = make_trace_use_self_weakself domain in
   Reporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block message
@@ -455,8 +456,11 @@ let report_issues summary domain attributes =
         report_captured_strongself_issue domain summary domain_data ;
         (weakSelfList, selfList)
     | DomainData.WEAK_SELF ->
-        if attributes.ProcAttributes.is_no_escape_block then
-          report_weakself_in_no_escape_block_issues summary domain domain_data ;
+        ( match attributes.ProcAttributes.passed_as_noescape_block_to with
+        | Some procname ->
+            report_weakself_in_no_escape_block_issues summary domain domain_data procname
+        | None ->
+            () ) ;
         (domain_data :: weakSelfList, selfList)
     | DomainData.SELF ->
         (weakSelfList, domain_data :: selfList)

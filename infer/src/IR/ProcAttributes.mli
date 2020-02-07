@@ -32,9 +32,9 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
-  ; is_no_escape_block: bool
-        (** The procedure is an Objective-C block that is passed to a method in a position annotated
-            with NS_NOESCAPE *)
+  ; passed_as_noescape_block_to: Procname.t option
+        (** Present if the procedure is an Objective-C block that has been passed to the given
+            method in a position annotated with the NS_NOESCAPE attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)

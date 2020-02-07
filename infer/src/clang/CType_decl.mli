@@ -53,7 +53,7 @@ val method_signature_of_decl :
      Tenv.t
   -> Clang_ast_t.decl
   -> ?block_return_type:Clang_ast_t.qual_type
-  -> ?is_no_escape_block:bool
+  -> ?passed_as_noescape_block_to:Procname.t option
   -> Procname.t
   -> CMethodSignature.t
 
@@ -61,7 +61,7 @@ val method_signature_body_of_decl :
      Tenv.t
   -> Clang_ast_t.decl
   -> ?block_return_type:Clang_ast_t.qual_type
-  -> ?is_no_escape_block:bool
+  -> ?passed_as_noescape_block_to:Procname.t option
   -> Procname.t
   -> CMethodSignature.t
      * Clang_ast_t.stmt option
