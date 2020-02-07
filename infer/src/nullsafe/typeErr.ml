@@ -250,6 +250,7 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
   (* TODO: this could be specified more precisely *)
   | NonnullConst _
   | Field _
+  | CallToGetKnownToContainsKey
   | MethodParameter _
   | This
   | New

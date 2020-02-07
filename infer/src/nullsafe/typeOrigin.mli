@@ -14,6 +14,9 @@ type t =
   | MethodParameter of AnnotatedSignature.param_signature  (** A method's parameter *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
+  | CallToGetKnownToContainsKey
+      (** This is a result of accessing a map element that is known to contains this particular key,
+          normally because it was explicitly checked for presense before *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ArrayAccess  (** Result of accessing an array by index *)

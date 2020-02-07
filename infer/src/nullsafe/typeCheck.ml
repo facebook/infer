@@ -677,10 +677,14 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   in
   (* check if the expression is coming from Map.containsKey *)
   let from_containsKey e : Exp.t option = from_call ComplexExpressions.procname_containsKey e in
-  (* Turn x.containsKey(e) into the pvar for x.get(e) *)
-  (* which is then treated as a normal condition != null. *)
-  let handle_containsKey e =
-    let map_dexp = function
+  (* Call to x.containsKey(e) returned `true`.
+     It means that subsequent calls to `x.get(e)` should be inferred as non-nullables.
+     We achieve this behavior by adding the result of a call to `x.get(e)` (in form of corresponding pvar)
+     to a typestate, with correspnding (non-null) type origin.
+  *)
+  let handle_containsKey_returned_true call_to_containsKey_exr =
+    let replace_contains_key_with_get_in_a_function_call_expression = function
+      (* This will replace x.containsKey(e) to x.get(e) *)
       | Some
           (DExp.Dretcall
             (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
@@ -695,19 +699,20 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       | _ ->
           None
     in
-    match ComplexExpressions.exp_to_string_map_dexp tenv map_dexp node e with
-    | Some e_str ->
-        let pvar = Pvar.mk (Mangled.from_string e_str) curr_pname in
-        let e1 = Exp.Lvar pvar in
-        let typ, ta =
-          typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-            tenv original_node instr_ref typestate e1 Typ.void TypeOrigin.OptimisticFallback loc
-        in
-        let range = (typ, ta) in
-        let typestate1 = TypeState.add pvar range typestate in
-        (typestate1, e1, EradicateChecks.From_containsKey)
+    let string_representing_call_to_get =
+      ComplexExpressions.exp_to_string_map_dexp tenv
+        replace_contains_key_with_get_in_a_function_call_expression node call_to_containsKey_exr
+    in
+    match string_representing_call_to_get with
+    | Some expr_str ->
+        (* Add pvar representing call to `get` to a typestate, indicating that it is a non-nullable *)
+        let pvar = Pvar.mk (Mangled.from_string expr_str) curr_pname in
+        let pvar_expr = Exp.Lvar pvar in
+        let range = (Typ.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey) in
+        let typestate_with_new_pvar = TypeState.add pvar range typestate in
+        (typestate_with_new_pvar, pvar_expr, EradicateChecks.From_containsKey)
     | None ->
-        (typestate, e, EradicateChecks.From_condition)
+        (typestate, call_to_containsKey_exr, EradicateChecks.From_condition)
   in
   let set_nonnull e' typestate2 =
     let handle_pvar typestate' pvar =
@@ -775,7 +780,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
           | Some e1 ->
               (typestate, e1, EradicateChecks.From_is_false_on_null)
           | None ->
-              if Option.is_some (from_containsKey e) then handle_containsKey e
+              if Option.is_some (from_containsKey e) then handle_containsKey_returned_true e
               else (typestate, e, EradicateChecks.From_condition) )
       in
       let e', typestate2 =

@@ -16,6 +16,9 @@ type t =
   | MethodParameter of AnnotatedSignature.param_signature  (** A method's parameter *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
+  | CallToGetKnownToContainsKey
+      (** This is a result of accessing a map element that is known to contains this particular key,
+          normally because it was explicitly checked for presense before *)
   | New  (** A new object creation *)
   | ArrayLengthResult  (** integer value - result of accessing array.length *)
   | ArrayAccess  (** Result of accessing an array by index *)
@@ -52,6 +55,7 @@ let get_nullability = function
   | This (* `this` can not be null according to Java rules *)
   | New (* In Java `new` always create a non-null object  *)
   | ArrayLengthResult (* integer hence non-nullable *)
+  | CallToGetKnownToContainsKey (* non-nullable by definition *)
   | InferredNonnull _
   (* WARNING: we trade soundness for usability.
      In Java, arrays are initialized with null, so accessing array is nullable until it was initialized.
@@ -86,14 +90,16 @@ let rec to_string = function
       "this"
   | MethodCall {pname} ->
       Printf.sprintf "Fun %s" (Procname.to_simplified_string pname)
+  | CallToGetKnownToContainsKey ->
+      "CallToGetKnownToContainsKey"
   | New ->
       "New"
   | ArrayLengthResult ->
       "ArrayLength"
   | ArrayAccess ->
       "ArrayAccess"
-  | InferredNonnull _ ->
-      "InferredNonnull"
+  | InferredNonnull {previous_origin} ->
+      Format.sprintf "InferredNonnull(prev:%s)" (to_string previous_origin)
   | OptimisticFallback ->
       "OptimisticFallback"
   | Undef ->
@@ -153,7 +159,13 @@ let get_description origin =
      But for these issues we currently don't print origins in the error string.
      It is a good idea to change this and start printing origins for these origins as well.
   *)
-  | This | New | NonnullConst _ | ArrayLengthResult | ArrayAccess | InferredNonnull _ ->
+  | This
+  | New
+  | NonnullConst _
+  | ArrayLengthResult
+  | ArrayAccess
+  | InferredNonnull _
+  | CallToGetKnownToContainsKey ->
       None
   (* Two special cases - should not really occur in normal code *)
   | OptimisticFallback | Undef ->

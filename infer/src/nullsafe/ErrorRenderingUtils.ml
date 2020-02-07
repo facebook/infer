@@ -7,7 +7,7 @@
 
 open! IStd
 
-let is_object_nullability_self_explanatory ~object_expression object_origin =
+let is_object_nullability_self_explanatory ~object_expression (object_origin : TypeOrigin.t) =
   (* Fundamentally, object can be of two kinds:
      1. Indirect: local variable that was instantiated before.
      In this case, normally origin is NOT trivial
@@ -19,21 +19,21 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
      to be 100% precise.
   *)
   match object_origin with
-  | TypeOrigin.NullConst _ ->
+  | NullConst _ ->
       (* Expect either a local variable or null literal (latter case is trivial) *)
       String.equal object_expression "null"
-  | TypeOrigin.MethodParameter {mangled} ->
+  | MethodParameter {mangled} ->
       (* Either local variable or literally parameter. In latter case, its nullability is
          self-explanatory because the user can quickly see the current method signature.
       *)
       let param_name = Mangled.to_string mangled in
       String.equal object_expression param_name
-  | TypeOrigin.Field {field_name} ->
+  | Field {field_name} ->
       (* Either local variable or expression like `<smth>.field_name`. Latter case is trivial:
          the user can quickly go to field_name definition and see if its annotation. *)
       let field_name_str = Fieldname.get_field_name field_name in
       String.is_suffix object_expression ~suffix:field_name_str
-  | TypeOrigin.MethodCall {pname; annotated_signature= {model_source}} ->
+  | MethodCall {pname; annotated_signature= {model_source}} ->
       let is_modelled = Option.is_some model_source in
       if is_modelled then (* This is non-trivial and should always be explained to the user *)
         false
@@ -47,14 +47,15 @@ let is_object_nullability_self_explanatory ~object_expression object_origin =
   (* These cases are not yet supported because they normally mean non-nullable case, for which
      we don't render important messages yet.
   *)
-  | TypeOrigin.NonnullConst _
-  | TypeOrigin.This
-  | TypeOrigin.New
-  | TypeOrigin.ArrayLengthResult
-  | TypeOrigin.ArrayAccess
-  | TypeOrigin.InferredNonnull _
-  | TypeOrigin.OptimisticFallback
-  | TypeOrigin.Undef ->
+  | NonnullConst _
+  | This
+  | New
+  | CallToGetKnownToContainsKey
+  | ArrayLengthResult
+  | ArrayAccess
+  | InferredNonnull _
+  | OptimisticFallback
+  | Undef ->
       false
 
 
