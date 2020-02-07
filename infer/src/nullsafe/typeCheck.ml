@@ -749,14 +749,6 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
           ~original_node ~is_assignment:false e1 typestate1 loc
       in
-      let typ, inferred_nullability =
-        typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' Typ.void TypeOrigin.OptimisticFallback loc
-      in
-      if checks.eradicate then
-        EradicateChecks.check_zero tenv find_canonical_duplicate curr_pdesc node e' typ
-          inferred_nullability true_branch EradicateChecks.From_condition idenv linereader loc
-          instr_ref ;
       match from_call with
       | EradicateChecks.From_is_true_on_null ->
           (* if f returns true on null, then false branch implies != null *)
@@ -787,9 +779,12 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
           tenv original_node instr_ref typestate2 e' Typ.void TypeOrigin.OptimisticFallback loc
       in
-      if checks.eradicate then
-        EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc original_node e' typ
-          inferred_nullability true_branch from_call idenv linereader loc instr_ref ;
+      if checks.eradicate && EradicateChecks.equal_from_call from_call From_condition then
+        (* We are about to set inferred nullability. But what if it was not needed?
+           This indicates that the condition was redundant. *)
+        EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
+          find_canonical_duplicate curr_pdesc original_node e' typ inferred_nullability idenv
+          linereader loc instr_ref ;
       match from_call with
       | EradicateChecks.From_is_true_on_null ->
           typestate2
