@@ -126,8 +126,9 @@ let exps_of_instr = function
       [e1; e2]
   | Prune (cond, _, _, _) ->
       [cond]
-  | Call ((id, _), e, _, _, _) ->
-      [e; Exp.Var id]
+  | Call ((id, _), e, exps, _, _) ->
+      let exps = List.map ~f:fst exps in
+      e :: Exp.Var id :: exps
   | Metadata metadata ->
       exps_of_instr_metadata metadata
 
