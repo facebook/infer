@@ -156,3 +156,7 @@ val find_superclasses_with_attributes :
 val has_same_signature : Procname.t -> (Procname.t -> bool) Staged.t
 (** For a given [procname] checks if the method has the same method name, number, order and types of
     parameters.) *)
+
+val is_override_of_java_lang_object_equals : Procname.t -> bool
+(** Whether the method is an override of `java.lang.Object.equals(Object)` or
+    `java.lang.Object.equals(Object)` itself *)

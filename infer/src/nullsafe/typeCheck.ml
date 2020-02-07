@@ -15,27 +15,24 @@ module DExp = DecompiledExp
 module ComplexExpressions = struct
   let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
 
-  let procname_is_false_on_null tenv pn =
-    match PatternMatch.lookup_attributes tenv pn with
+  let is_annotated_with predicate tenv procname =
+    match PatternMatch.lookup_attributes tenv procname with
     | Some proc_attributes ->
         let annotated_signature = Models.get_modelled_annotated_signature tenv proc_attributes in
         let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
-        Annotations.ia_is_false_on_null ret_annotation_deprecated
+        predicate ret_annotation_deprecated
     | None ->
         false
 
 
-  let procname_is_true_on_null tenv pn =
-    let annotated_true_on_null () =
-      match PatternMatch.lookup_attributes tenv pn with
-      | Some proc_attributes ->
-          let annotated_signature = Models.get_modelled_annotated_signature tenv proc_attributes in
-          let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
-          Annotations.ia_is_true_on_null ret_annotation_deprecated
-      | None ->
-          false
-    in
-    Models.is_true_on_null pn || annotated_true_on_null ()
+  let procname_is_false_on_null tenv procname =
+    is_annotated_with Annotations.ia_is_false_on_null tenv procname
+    || Models.is_false_on_null procname
+
+
+  let procname_is_true_on_null tenv procname =
+    is_annotated_with Annotations.ia_is_true_on_null tenv procname
+    || Models.is_true_on_null procname
 
 
   let procname_containsKey = Models.is_containsKey

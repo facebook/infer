@@ -132,6 +132,13 @@ let is_noreturn proc_name = table_has_procedure noreturn_table proc_name
 (** Check if the procedure returns true on null. *)
 let is_true_on_null proc_name = table_has_procedure true_on_null_table proc_name
 
+(** Check if the procedure returns false on null. *)
+let is_false_on_null proc_name =
+  (* The only usecase for now - consider all overrides of `Object.equals()` correctly
+     implementing the Java specification contract (returning false on null). *)
+  PatternMatch.is_override_of_java_lang_object_equals proc_name
+
+
 (** Check if the procedure is Map.containsKey(). *)
 let is_containsKey proc_name = table_has_procedure containsKey_table proc_name
 

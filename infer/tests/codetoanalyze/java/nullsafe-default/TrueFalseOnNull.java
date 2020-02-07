@@ -224,6 +224,51 @@ public class TrueFalseOnNull {
     }
   }
 
+  // nullsafe should assume Object.equals() and all overrides return false on `null` argument.
+  static class TestEqualsIsFalseOnNull {
+    // An example of class that overrides equals().
+    static class SomeObject {
+      private int mContent;
+
+      SomeObject(int content) {
+        mContent = content;
+      }
+
+      @Override
+      // No nullsafe warnings are expected
+      public boolean equals(@Nullable Object src) {
+        if (!super.equals(src)) {
+          return false;
+        }
+        // at this point src should be a non-nullable: super.equals() would return false otherwise.
+        src.toString(); // should be OK to dereference now
+        if (!(src instanceof SomeObject)) {
+          return false;
+        }
+        SomeObject asSomeObject = (SomeObject) src;
+        return mContent == asSomeObject.mContent;
+      }
+    }
+
+    private void testObjectEqualsIsFalseOnNull(Object x, @Nullable Object y) {
+      if (!x.equals(y)) {
+        return;
+      }
+
+      // OK to dereference
+      y.toString();
+    }
+
+    private void testOverrideEqualsIsFalseOnNull(SomeObject x, @Nullable Object y) {
+      if (!x.equals(y)) {
+        return;
+      }
+
+      // OK to dereference even that SomeObject.equals() is not annotated as @FalseOnNull
+      y.toString();
+    }
+  }
+
   // this is a common enough pattern to be tested separately
   class EarlyReturn {
 

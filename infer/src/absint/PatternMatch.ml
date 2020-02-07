@@ -460,3 +460,15 @@ let rec find_superclasses_with_attributes check tenv tname =
       if check struct_typ.annots then tname :: result_from_supers else result_from_supers
   | _ ->
       []
+
+
+let is_override_of_java_lang_object_equals curr_pname =
+  let is_only_param_of_object_type = function
+    | [Procname.Parameter.JavaParameter param_type]
+      when Typ.Name.Java.Split.equal param_type Typ.Name.Java.Split.java_lang_object ->
+        true
+    | _ ->
+        false
+  in
+  String.equal (Procname.get_method curr_pname) "equals"
+  && is_only_param_of_object_type (Procname.get_parameters curr_pname)
