@@ -684,8 +684,9 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
      It means that subsequent calls to `x.get(e)` should be inferred as non-nullables.
      We achieve this behavior by adding the result of a call to `x.get(e)` (in form of corresponding pvar)
      to a typestate, with correspnding (non-null) type origin.
+     Returns the updated typestate.
   *)
-  let handle_containsKey_returned_true call_to_containsKey_exr =
+  let handle_containsKey_returned_true call_to_containsKey_exr typestate =
     let replace_contains_key_with_get_in_a_function_call_expression = function
       (* This will replace x.containsKey(e) to x.get(e) *)
       | Some
@@ -710,12 +711,11 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
     | Some expr_str ->
         (* Add pvar representing call to `get` to a typestate, indicating that it is a non-nullable *)
         let pvar = Pvar.mk (Mangled.from_string expr_str) curr_pname in
-        let pvar_expr = Exp.Lvar pvar in
         let range = (Typ.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey) in
         let typestate_with_new_pvar = TypeState.add pvar range typestate in
-        (typestate_with_new_pvar, pvar_expr, EradicateChecks.From_containsKey)
+        typestate_with_new_pvar
     | None ->
-        (typestate, call_to_containsKey_exr, EradicateChecks.From_condition)
+        typestate
   in
   let set_nonnull e' typestate2 =
     let handle_pvar typestate' pvar =
@@ -737,59 +737,93 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
     | _ ->
         typestate2
   in
+  (* Trace [expr] back to the pvar that originated it, and set its nullability as inferred non-null.
+     Optionally, if this was already non-nullable, emit a corresponding condition redudant issue.
+     Returns the updated typestate.
+  *)
+  let set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check expr typestate =
+    (* Trace back to original to pvar *)
+    let pvar_expr, modified_typestate =
+      convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
+        ~original_node ~is_assignment:false expr typestate loc
+    in
+    ( if with_cond_redundant_check then
+      (* We are about to set [pvar_expr] to nonnull. But what if it already is non-null?
+         This means the corresponding condition (initiated this PRUNE branch) was redudant.
+      *)
+      let typ, inferred_nullability =
+        typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
+          tenv original_node instr_ref typestate pvar_expr Typ.void TypeOrigin.OptimisticFallback
+          loc
+      in
+      if checks.eradicate then
+        EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
+          find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability idenv
+          linereader loc instr_ref ) ;
+    set_nonnull pvar_expr modified_typestate
+  in
+  (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
+     We've just ensured that [expr] == false.
+     Update the typestate accordingly.
+  *)
+  let handle_boolean_equal_false expr =
+    match from_is_true_on_null expr with
+    | Some argument ->
+        (* [expr] is false hence, according to true-on-null contract, [argument] can not not be null.
+           Hence we can infer its nullability as a non-null.
+        *)
+        set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
+          typestate
+    | None ->
+        typestate
+  in
+  (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
+     We've just ensured that [expr] == true.
+     Update the typestate accordingly.
+  *)
+  let handle_boolean_equal_true expr typestate =
+    match from_is_false_on_null expr with
+    | Some argument ->
+        (* [expr] is true hence, according to false-on-null contract, [argument] can not not be null.
+           Hence we can infer its nullability as a non-null.
+        *)
+        set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
+          typestate
+    | None -> (
+      match from_instanceof expr with
+      | Some argument ->
+          (* ([argument] instanceof [expr] == true) implies (expr != null) *)
+          set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
+            typestate
+      | None ->
+          if Option.is_some (from_containsKey expr) then
+            handle_containsKey_returned_true expr typestate
+          else typestate )
+  in
+  (* Assuming [expr] is a non-primitive, this is the branch where, according to PRUNE semantics,
+     We've just ensured that [expr] != null.
+     Update the typestate accordingly.
+  *)
+  let handle_object_not_equal_null expr typestate =
+    set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:true expr typestate
+  in
   match[@warning "-57"] c with
   | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), expr)
   | Exp.BinOp (Binop.Eq, expr, Exp.Const (Const.Cint i))
-    when IntLit.iszero i -> (
-    (* Zero literal has two different meanings important for Nullsafe:
-       `null` and `false`.
-       We don't currently have a logic for `a == null` case, but `a == false` is important.
-    *)
-    match from_is_true_on_null expr with
-    | Some argument ->
-        (* [expr] is a call to function known to return true on `null`.
-           According to PRUNE semantics, we just ensured that the result is `false`.
-           It means that [argument] can not be `null`, hence we can infer its nullability as a non-null.
-        *)
-        (* Trace the origin of [argument] back to pvar that originated it, so its nullability can be updated in typestate. *)
-        let pvar_expr, updated_typestate =
-          convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-            ~original_node ~is_assignment:false argument typestate loc
-        in
-        set_nonnull pvar_expr updated_typestate
-    | None ->
-        typestate )
-  | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
-  | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
     when IntLit.iszero i ->
-      let typestate1, e1, from_call =
-        match from_instanceof e with
-        | Some e1 ->
-            (* (e1 instanceof C) implies (e1 != null) *)
-            (typestate, e1, EradicateChecks.From_instanceof)
-        | None -> (
-          match from_is_false_on_null e with
-          | Some e1 ->
-              (typestate, e1, EradicateChecks.From_is_false_on_null)
-          | None ->
-              if Option.is_some (from_containsKey e) then handle_containsKey_returned_true e
-              else (typestate, e, EradicateChecks.From_condition) )
-      in
-      let e', typestate2 =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node ~is_assignment:false e1 typestate1 loc
-      in
-      let typ, inferred_nullability =
-        typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate2 e' Typ.void TypeOrigin.OptimisticFallback loc
-      in
-      if checks.eradicate && EradicateChecks.equal_from_call from_call From_condition then
-        (* We are about to set inferred nullability. But what if it was not needed?
-           This indicates that the condition was redundant. *)
-        EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
-          find_canonical_duplicate curr_pdesc original_node e' typ inferred_nullability idenv
-          linereader loc instr_ref ;
-      set_nonnull e' typestate2
+      (* Zero literal has two different meanings important for Nullsafe:
+         `null` and `false`, hence the expression means either "some_bool == false" or "some_object == null"
+         We don't currently have a logic for the latter case, but we do support the former
+      *)
+      handle_boolean_equal_false expr
+  | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), expr)
+  | Exp.BinOp (Binop.Ne, expr, Exp.Const (Const.Cint i))
+    when IntLit.iszero i ->
+      (* Zero literal has two different meanings important for Nullsafe:
+         `null` and `false`, hence the expression means either "some_bool == true" or "some_object != null"
+         Handle both cases sequentially
+      *)
+      typestate |> handle_boolean_equal_true expr |> handle_object_not_equal_null expr
   | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
       check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
         curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref

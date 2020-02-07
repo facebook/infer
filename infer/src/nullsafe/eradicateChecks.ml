@@ -45,16 +45,6 @@ let check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate curr_p
       report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname )
 
 
-(** Where the condition is coming from *)
-type from_call =
-  | From_condition  (** Direct condition *)
-  | From_instanceof  (** x instanceof C *)
-  | From_is_false_on_null  (** returns false on null *)
-  | From_containsKey  (** x.containsKey *)
-[@@deriving compare]
-
-let equal_from_call = [%compare.equal: from_call]
-
 (** [expr] is an expression that was explicitly compared with `null`. At the same time, [expr] had
     [inferred_nullability] before the comparision. Check if the comparision is redundant and emit an
     issue, if this is the case. *)
