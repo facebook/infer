@@ -16,65 +16,202 @@ import javax.annotation.Nullable;
 /** Testing functionality related to @TrueOnNull and @FalseOnNull methods */
 public class TrueFalseOnNull {
 
-  // Example of API that benefits from annotating with @TrueOnNull and @FalseOnNull
-  static class AnnotatedTextUtils {
-
+  static class StaticOneParam {
     @TrueOnNull
-    static boolean isEmpty(@Nullable CharSequence s) {
-      return s == null || s.equals("");
+    static boolean trueOnNull(@Nullable Object o) {
+      return o == null ? true : o.toString() == "something";
     }
 
     @FalseOnNull
-    static boolean isNotEmpty(@Nullable CharSequence s) {
-      return s != null && s.length() > 0;
+    static boolean falseOnNull(@Nullable Object o) {
+      return o == null ? false : o.toString() == "something";
+    }
+
+    static boolean notAnnotated(@Nullable Object o) {
+      return o == null ? false : o.toString() == "something";
     }
   }
 
-  // The same API, but not annotated
-  static class NotAnnotatedTextUtils {
-    static boolean isEmpty(@Nullable CharSequence s) {
-      return s == null || s.equals("");
+  static class NonStaticOneParam {
+    private String compareTo = "something";
+
+    @TrueOnNull
+    boolean trueOnNull(@Nullable Object o) {
+      return o == null ? true : o.toString() == compareTo;
     }
 
-    static boolean isNotEmpty(@Nullable CharSequence s) {
-      return s != null && s.length() > 0;
+    @FalseOnNull
+    boolean falseOnNull(@Nullable Object o) {
+      return o == null ? false : o.toString() == compareTo;
+    }
+
+    boolean notAnnotated(@Nullable Object o) {
+      return o == null ? false : o.toString() == compareTo;
     }
   }
 
-  class Test {
-    void testTrueOnNull(@Nullable CharSequence s) {
-      // Explicitly annotated
-      if (!AnnotatedTextUtils.isEmpty(s)) {
-        s.toString(); // OK: if we are here, we know that s is not null
-      }
+  // @TrueOnNull and @FalseOnNull should expect true/false will be returned if ANY of input objects
+  // is null.
+  // In other words, they should infer that all input nullable objects are non-null in the
+  // corresponding branch.
+  static class NonStaticSeveralParams {
+    private String compareTo = "something";
 
-      // Not annotated
-      if (!NotAnnotatedTextUtils.isEmpty(s)) {
-        s.toString(); // BAD: the typecker does not know s can not be null
+    @TrueOnNull
+    boolean trueOnNull(
+        @Nullable Object nullable1, int primitive, Object nonnull, @Nullable Object nullable2) {
+      if (nullable1 == null || nullable2 == null) {
+        return true;
       }
+      return nonnull == compareTo;
+    }
 
-      if (AnnotatedTextUtils.isEmpty(s)) {
-        s.toString(); // BAD: s can be null or an empty string
+    @FalseOnNull
+    boolean falseOnNull(
+        @Nullable Object nullable1, int primitive, Object nonnull, @Nullable Object nullable2) {
+      if (nullable1 == null || nullable2 == null) {
+        return false;
+      }
+      return nonnull == compareTo;
+    }
+
+    boolean notAnnotated(
+        @Nullable Object nullable1, int primitive, Object nonnull, @Nullable Object nullable2) {
+      if (nullable1 == null || nullable2 == null) {
+        return false;
+      }
+      return nonnull == compareTo;
+    }
+  }
+
+  class TestStaticOneParam {
+
+    void trueOnNullPositiveBranchIsBAD(@Nullable String s) {
+      if (StaticOneParam.trueOnNull(s)) {
+        s.toString();
       }
     }
 
-    void testFalseOnNull(@Nullable CharSequence s) {
-      // Explicitly annotated
-      if (AnnotatedTextUtils.isNotEmpty(s)) {
-        s.toString(); // OK: if we are here, we know that `s` is not null
-      }
-
-      // Not annotated
-      if (NotAnnotatedTextUtils.isNotEmpty(s)) {
-        s.toString(); // BAD: the typecker does not know `s` can not be null
-      }
-
-      if (!AnnotatedTextUtils.isNotEmpty(s)) {
-        s.toString(); // BAD: `s` can be null or an empty string
+    void trueOnNullNegativeBranchIsOK(@Nullable String s) {
+      if (!StaticOneParam.trueOnNull(s)) {
+        s.toString();
       }
     }
 
-    void testModelledTrueOnNull(String s) {
+    void falseOnNullPositiveBranchIsOK(@Nullable String s) {
+      if (StaticOneParam.falseOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void falseOnNullNegativeBranchIsBAD(@Nullable String s) {
+      if (!StaticOneParam.falseOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void notAnnotatedPositiveBranchIsBAD(@Nullable String s) {
+      if (StaticOneParam.notAnnotated(s)) {
+        s.toString();
+      }
+    }
+
+    void notAnnotatedNegativeBranchIsBAD(@Nullable String s) {
+      if (!StaticOneParam.notAnnotated(s)) {
+        s.toString();
+      }
+    }
+  }
+
+  class TestNonStaticOneParam {
+    private NonStaticOneParam object = new NonStaticOneParam();
+
+    void trueOnNullPositiveBranchIsBAD(@Nullable String s) {
+      if (object.trueOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void trueOnNullNegativeBranchIsOK(@Nullable String s) {
+      if (!object.trueOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void falseOnNullPositiveBranchIsOK(@Nullable String s) {
+      if (object.falseOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void falseOnNullNegativeBranchIsBAD(@Nullable String s) {
+      if (!object.falseOnNull(s)) {
+        s.toString();
+      }
+    }
+
+    void notAnnotatedPositiveBranchIsBAD(@Nullable String s) {
+      if (object.notAnnotated(s)) {
+        s.toString();
+      }
+    }
+
+    void notAnnotatedNegativeBranchIsBAD(@Nullable String s) {
+      if (!object.notAnnotated(s)) {
+        s.toString();
+      }
+    }
+  }
+
+  class TestNonStaticSeveralParams {
+    private NonStaticSeveralParams object = new NonStaticSeveralParams();
+
+    void trueOnNullPositiveBranchIsBAD(@Nullable String s1, @Nullable String s2) {
+      if (object.trueOnNull(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+
+    void trueOnNullNegativeBranchIsOK(@Nullable String s1, @Nullable String s2) {
+      if (!object.trueOnNull(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+
+    void falseOnNullPositiveBranchIsOK(@Nullable String s1, @Nullable String s2) {
+      if (object.falseOnNull(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+
+    void falseOnNullNegativeBranchIsBAD(@Nullable String s1, @Nullable String s2) {
+      if (!object.falseOnNull(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+
+    void notAnnotatedPositiveBranchIsBAD(@Nullable String s1, @Nullable String s2) {
+      if (object.notAnnotated(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+
+    void notAnnotatedNegativeBranchIsBAD(@Nullable String s1, @Nullable String s2) {
+      if (!object.notAnnotated(s1, 1, "123", s2)) {
+        s1.toString();
+        s2.toString();
+      }
+    }
+  }
+
+  class TestModels {
+
+    void testModelledTrueOnNull(@Nullable String s) {
       // TextUtils.isEmpty is modelled as TrueOnNull
       if (!TextUtils.isEmpty(s)) {
         s.toString(); // OK: if we are here, we know that `s` is not null
@@ -84,19 +221,19 @@ public class TrueFalseOnNull {
       if (!Strings.isNullOrEmpty(s)) {
         s.toString(); // OK: if we are here, we know that `s` is not null
       }
-
-      if (!NotAnnotatedTextUtils.isEmpty(s)) {
-        s.toString(); // BAD: the typechecker can not figure this out for not modelled class
-      }
     }
+  }
+
+  // this is a common enough pattern to be tested separately
+  class EarlyReturn {
 
     void testEarlyReturn(@Nullable CharSequence s1, @Nullable CharSequence s2) {
-      if (AnnotatedTextUtils.isEmpty(s1) || NotAnnotatedTextUtils.isEmpty(s2)) {
+      if (StaticOneParam.trueOnNull(s1) || StaticOneParam.notAnnotated(s2)) {
         return;
       }
 
       s1.toString(); // OK: if `s1` was null, we would no rech this point
-      s2.toString(); // BAD: typechecker can not figure this for not annotated class
+      s2.toString(); // BAD: no reason for `s2` to become non-nullable
     }
   }
 }

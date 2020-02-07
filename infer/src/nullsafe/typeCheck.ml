@@ -656,30 +656,40 @@ let normalize_cond_for_sil_prune idenv ~node cond =
 let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
     curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
     ~nullsafe_mode ~original_node ~node c : TypeState.t =
-  (* check if the expression is coming from a call, and return the argument *)
-  let from_call filter_callee e : Exp.t option =
-    match e with
+  (* check if the expression is coming from a call, and return the arguments *)
+  let extract_arguments_from_call filter_callee expr =
+    match expr with
     | Exp.Var id -> (
       match Errdesc.find_normal_variable_funcall node id with
-      | Some (Exp.Const (Const.Cfun pn), e1 :: _, _, _) when filter_callee pn ->
-          Some e1
+      | Some (Exp.Const (Const.Cfun pn), arguments, _, _) when filter_callee pn ->
+          Some arguments
       | _ ->
           None )
     | _ ->
         None
   in
-  (* check if the expression is coming from instanceof *)
-  let from_instanceof e : Exp.t option = from_call ComplexExpressions.procname_instanceof e in
+  (* check if the expression is coming from (`a` instanceof `b`), and returns `b`, if it is the case *)
+  let extract_argument_from_instanceof expr =
+    match extract_arguments_from_call ComplexExpressions.procname_instanceof expr with
+    | Some [argument; _] ->
+        Some argument
+    | Some _ ->
+        Logging.die Logging.InternalError "expected exactly two arguments in instanceOf expression"
+    | None ->
+        None
+  in
   (* check if the expression is coming from a procedure returning false on null *)
-  let from_is_false_on_null e : Exp.t option =
-    from_call (ComplexExpressions.procname_is_false_on_null tenv) e
+  let extract_arguments_from_call_to_false_on_null_func e =
+    extract_arguments_from_call (ComplexExpressions.procname_is_false_on_null tenv) e
   in
   (* check if the expression is coming from a procedure returning true on null *)
-  let from_is_true_on_null e : Exp.t option =
-    from_call (ComplexExpressions.procname_is_true_on_null tenv) e
+  let extract_arguments_from_call_to_true_on_null_func e =
+    extract_arguments_from_call (ComplexExpressions.procname_is_true_on_null tenv) e
   in
   (* check if the expression is coming from Map.containsKey *)
-  let from_containsKey e : Exp.t option = from_call ComplexExpressions.procname_containsKey e in
+  let is_from_containsKey expr =
+    extract_arguments_from_call ComplexExpressions.procname_containsKey expr |> Option.is_some
+  in
   (* Call to x.containsKey(e) returned `true`.
      It means that subsequent calls to `x.get(e)` should be inferred as non-nullables.
      We achieve this behavior by adding the result of a call to `x.get(e)` (in form of corresponding pvar)
@@ -766,14 +776,18 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
      We've just ensured that [expr] == false.
      Update the typestate accordingly.
   *)
-  let handle_boolean_equal_false expr =
-    match from_is_true_on_null expr with
-    | Some argument ->
-        (* [expr] is false hence, according to true-on-null contract, [argument] can not not be null.
-           Hence we can infer its nullability as a non-null.
+  let handle_boolean_equal_false expr typestate =
+    match extract_arguments_from_call_to_true_on_null_func expr with
+    | Some arguments ->
+        (* [expr] is false hence, according to true-on-null contract, neither of [arguments] can be null.
+           (otherwise the result would have been true)
+           Hence we can infer their nullability as non-null.
         *)
-        set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
-          typestate
+        List.fold ~init:typestate
+          ~f:(fun accumulated_typestate argument ->
+            set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
+              accumulated_typestate )
+          arguments
     | None ->
         typestate
   in
@@ -782,22 +796,25 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
      Update the typestate accordingly.
   *)
   let handle_boolean_equal_true expr typestate =
-    match from_is_false_on_null expr with
-    | Some argument ->
-        (* [expr] is true hence, according to false-on-null contract, [argument] can not not be null.
-           Hence we can infer its nullability as a non-null.
+    match extract_arguments_from_call_to_false_on_null_func expr with
+    | Some arguments ->
+        (* [expr] is true hence, according to false-on-null contract, neither of [arguments] can be null.
+           (otherwise the result would have been false).
+           Hence we can infer their nullability as non-null.
         *)
-        set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
-          typestate
+        List.fold ~init:typestate
+          ~f:(fun accumulated_typestate argument ->
+            set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
+              accumulated_typestate )
+          arguments
     | None -> (
-      match from_instanceof expr with
+      match extract_argument_from_instanceof expr with
       | Some argument ->
           (* ([argument] instanceof [expr] == true) implies (expr != null) *)
           set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
             typestate
       | None ->
-          if Option.is_some (from_containsKey expr) then
-            handle_containsKey_returned_true expr typestate
+          if is_from_containsKey expr then handle_containsKey_returned_true expr typestate
           else typestate )
   in
   (* Assuming [expr] is a non-primitive, this is the branch where, according to PRUNE semantics,
@@ -815,7 +832,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
          `null` and `false`, hence the expression means either "some_bool == false" or "some_object == null"
          We don't currently have a logic for the latter case, but we do support the former
       *)
-      handle_boolean_equal_false expr
+      handle_boolean_equal_false expr typestate
   | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), expr)
   | Exp.BinOp (Binop.Ne, expr, Exp.Const (Const.Cint i))
     when IntLit.iszero i ->
