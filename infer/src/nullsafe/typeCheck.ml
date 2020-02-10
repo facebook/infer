@@ -665,8 +665,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
     | _ ->
         None
   in
-  (* check if the expression is coming from (`a` instanceof `b`), and returns `b`, if it is the case *)
-  let extract_argument_from_instanceof expr =
+  (* check if the expression is coming from (`a` instanceof `b`), and returns `a`, if it is the case *)
+  let extract_first_argument_from_instanceof expr =
     match extract_arguments_from_call ComplexExpressions.procname_instanceof expr with
     | Some [argument; _] ->
         Some argument
@@ -805,9 +805,9 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
               accumulated_typestate )
           arguments
     | None -> (
-      match extract_argument_from_instanceof expr with
+      match extract_first_argument_from_instanceof expr with
       | Some argument ->
-          (* ([argument] instanceof [expr] == true) implies (expr != null) *)
+          (* ([argument] instanceof <anything> == true) implies (argument != null) *)
           set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
             typestate
       | None ->
