@@ -1955,6 +1955,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* just return the [root_nodes] to be linked to the previous case's fallthrough *)
           root_nodes
     in
+    let switch_cases =
+      (* move the default case to the last in the list of cases, which is the first in
+         [switch_cases] since the list is reversed by default *)
+      let default, cases =
+        List.partition_tf switch_cases ~f:(function
+          | {SwitchCase.condition= Default} ->
+              true
+          | {SwitchCase.condition= Case _} ->
+              false )
+      in
+      default @ cases
+    in
     let cases_root_nodes =
       List.fold switch_cases ~init:trans_state.succ_nodes ~f:link_up_switch_cases
     in

@@ -262,7 +262,7 @@ digraph cfg {
 "test_switch2.0717c55583f10f472ddb2d73d867e556_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 53, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch2.0717c55583f10f472ddb2d73d867e556_11" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_11" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
 "test_switch2.0717c55583f10f472ddb2d73d867e556_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 52, column 5]\n " shape="invhouse"]
 	
 
@@ -288,7 +288,8 @@ digraph cfg {
 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 40, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_14" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_15" ;
 "test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(value:int); [line 37, column 3]\n  *&value:int=0 [line 37, column 3]\n " shape="box"]
 	
 
@@ -407,7 +408,7 @@ digraph cfg {
 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 94, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 93, column 5]\n " shape="invhouse"]
 	
 
@@ -433,7 +434,8 @@ digraph cfg {
 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 81, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" ;
 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(value:int); [line 78, column 3]\n  *&value:int=0 [line 78, column 3]\n " shape="box"]
 	
 
