@@ -31,6 +31,10 @@ val incr_ondemand_local_cache_hits : unit -> unit
 
 val incr_ondemand_local_cache_misses : unit -> unit
 
+val add_to_proc_locker_lock_sys_time : float -> unit
+
+val add_to_proc_locker_unlock_sys_time : float -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

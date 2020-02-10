@@ -20,7 +20,9 @@ include struct
     ; mutable summary_has_model_queries: int
     ; mutable ondemand_procs_analyzed: int
     ; mutable ondemand_local_cache_hits: int
-    ; mutable ondemand_local_cache_misses: int }
+    ; mutable ondemand_local_cache_misses: int
+    ; mutable proc_locker_lock_sys_time: float
+    ; mutable proc_locker_unlock_sys_time: float }
   [@@deriving fields]
 end
 
@@ -32,7 +34,9 @@ let global_stats =
   ; summary_has_model_queries= 0
   ; ondemand_procs_analyzed= 0
   ; ondemand_local_cache_hits= 0
-  ; ondemand_local_cache_misses= 0 }
+  ; ondemand_local_cache_misses= 0
+  ; proc_locker_lock_sys_time= 0.
+  ; proc_locker_unlock_sys_time= 0. }
 
 
 let get () = global_stats
@@ -43,6 +47,14 @@ let incr field =
       L.die InternalError "incr on non-mutable field %s" (Field.name field)
   | Some set ->
       set global_stats (Field.get field global_stats + 1)
+
+
+let add field seconds_count =
+  match Field.setter field with
+  | None ->
+      L.die InternalError "add on non-mutable field %s" (Field.name field)
+  | Some set ->
+      set global_stats (Field.get field global_stats +. seconds_count)
 
 
 let incr_summary_file_try_load () = incr Fields.summary_file_try_load
@@ -61,6 +73,14 @@ let incr_ondemand_local_cache_hits () = incr Fields.ondemand_local_cache_hits
 
 let incr_ondemand_local_cache_misses () = incr Fields.ondemand_local_cache_misses
 
+let add_to_proc_locker_lock_sys_time seconds_count =
+  add Fields.proc_locker_lock_sys_time seconds_count
+
+
+let add_to_proc_locker_unlock_sys_time seconds_count =
+  add Fields.proc_locker_unlock_sys_time seconds_count
+
+
 let copy from ~into : unit =
   let { summary_file_try_load
       ; summary_read_from_disk
@@ -69,12 +89,15 @@ let copy from ~into : unit =
       ; summary_has_model_queries
       ; ondemand_procs_analyzed
       ; ondemand_local_cache_hits
-      ; ondemand_local_cache_misses } =
+      ; ondemand_local_cache_misses
+      ; proc_locker_lock_sys_time
+      ; proc_locker_unlock_sys_time } =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
     ~summary_cache_hits ~summary_cache_misses ~summary_has_model_queries ~ondemand_procs_analyzed
-    ~ondemand_local_cache_hits ~ondemand_local_cache_misses
+    ~ondemand_local_cache_hits ~ondemand_local_cache_misses ~proc_locker_lock_sys_time
+    ~proc_locker_unlock_sys_time
 
 
 let merge stats1 stats2 =
@@ -86,7 +109,10 @@ let merge stats1 stats2 =
   ; ondemand_procs_analyzed= stats1.ondemand_procs_analyzed + stats2.ondemand_procs_analyzed
   ; ondemand_local_cache_hits= stats1.ondemand_local_cache_hits + stats2.ondemand_local_cache_hits
   ; ondemand_local_cache_misses=
-      stats1.ondemand_local_cache_misses + stats2.ondemand_local_cache_misses }
+      stats1.ondemand_local_cache_misses + stats2.ondemand_local_cache_misses
+  ; proc_locker_lock_sys_time= stats1.proc_locker_lock_sys_time +. stats2.proc_locker_lock_sys_time
+  ; proc_locker_unlock_sys_time=
+      stats1.proc_locker_unlock_sys_time +. stats2.proc_locker_unlock_sys_time }
 
 
 let initial =
@@ -97,7 +123,9 @@ let initial =
   ; summary_has_model_queries= 0
   ; ondemand_procs_analyzed= 0
   ; ondemand_local_cache_hits= 0
-  ; ondemand_local_cache_misses= 0 }
+  ; ondemand_local_cache_misses= 0
+  ; proc_locker_lock_sys_time= 0.
+  ; proc_locker_unlock_sys_time= 0. }
 
 
 let reset () = copy initial ~into:global_stats
@@ -109,6 +137,9 @@ let pp f stats =
   in
   let pp_int_field stats f field =
     F.fprintf f "%s= %d@;" (Field.name field) (Field.get field stats)
+  in
+  let pp_float_field stats f field =
+    F.fprintf f "%s= %.8f@;" (Field.name field) (Field.get field stats)
   in
   let pp_cache_hits stats cache_misses f cache_hits_field =
     let cache_hits = Field.get cache_hits_field stats in
@@ -123,6 +154,8 @@ let pp f stats =
       ~ondemand_procs_analyzed:(pp_int_field stats f)
       ~ondemand_local_cache_hits:(pp_cache_hits stats stats.ondemand_local_cache_misses f)
       ~ondemand_local_cache_misses:(pp_int_field stats f)
+      ~proc_locker_lock_sys_time:(pp_float_field stats f)
+      ~proc_locker_unlock_sys_time:(pp_float_field stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
@@ -131,10 +164,17 @@ let log_to_scuba stats =
   let create_counter field =
     LogEntry.mk_count ~label:("backend_stats." ^ Field.name field) ~value:(Field.get field stats)
   in
+  let create_float_counter field =
+    LogEntry.mk_count
+      ~label:("backend_stats." ^ Field.name field)
+      ~value:(Field.get field stats |> Int.of_float)
+  in
   let entries =
     Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
       ~summary_has_model_queries:create_counter ~ondemand_procs_analyzed:create_counter
       ~ondemand_local_cache_hits:create_counter ~ondemand_local_cache_misses:create_counter
+      ~proc_locker_lock_sys_time:create_float_counter
+      ~proc_locker_unlock_sys_time:create_float_counter
   in
   ScubaLogging.log_many entries
