@@ -345,11 +345,12 @@ module ReplaceCallee = struct
       when Int.equal (List.length parameters) num_params -> (
       match get_formals pname |> Option.map ~f:(List.map ~f:snd) with
       | Some (this_typ :: formal_typs) -> (
-          Typ.is_ptr_to class_typ ~ptr:this_typ
+          Typ.is_ptr_to_ignore_quals class_typ ~ptr:this_typ
           &&
           match
             List.for_all2 param_ref_typs formal_typs ~f:(fun param_ref_typ formal_typ ->
-                Typ.is_ptr_to formal_typ ~ptr:param_ref_typ )
+                Typ.equal_ignore_quals formal_typ param_ref_typ
+                || Typ.is_ptr_to_ignore_quals formal_typ ~ptr:param_ref_typ )
           with
           | List.Or_unequal_lengths.Ok b ->
               b

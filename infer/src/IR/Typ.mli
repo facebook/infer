@@ -318,8 +318,8 @@ val name : t -> Name.t option
 val strip_ptr : t -> t
 (** turn a *T into a T. fails if [t] is not a pointer type *)
 
-val is_ptr_to : t -> ptr:t -> bool
-(** check if [ptr] is a pointer type to [t] *)
+val is_ptr_to_ignore_quals : t -> ptr:t -> bool
+(** check if [ptr] is a pointer type to [t], ignoring quals *)
 
 val array_elem : t option -> t -> t
 (** If an array type, return the type of the element.

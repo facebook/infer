@@ -6,6 +6,7 @@
  */
 
 #include <memory>
+#include <string>
 
 class smart_ptr {
  public:
@@ -19,6 +20,11 @@ class smart_ptr {
     my_class(int i, int j) {
       int a[10];
       a[i + j] = 0;
+    }
+
+    my_class(const std::string& str, int i) {
+      int a[5];
+      a[i] = 0;
     }
   };
 
@@ -42,5 +48,27 @@ class smart_ptr {
     int i = 8;
     int j = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i, j);
+  }
+
+  void shared_ptr_with_std_string_Good() {
+    std::string str = "abc";
+    int i = 3;
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(str, i);
+  }
+
+  void shared_ptr_with_std_string_Bad() {
+    std::string str = "abc";
+    int i = 8;
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(str, i);
+  }
+
+  void shared_ptr_with_const_int_Good() {
+    const int i = 3;
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
+  }
+
+  void shared_ptr_with_const_int_Bad() {
+    const int i = 8;
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
   }
 };

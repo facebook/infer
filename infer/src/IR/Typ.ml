@@ -220,10 +220,14 @@ module T = struct
         equal_ikind ikind1 ikind2
     | Tfloat fkind1, Tfloat fkind2 ->
         equal_fkind fkind1 fkind2
-    | Tvoid, Tvoid ->
+    | Tvoid, Tvoid | Tfun, Tfun ->
         true
     | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
         equal_ptr_kind ptr_kind1 ptr_kind2 && equal_ignore_quals t1 t2
+    | Tstruct name1, Tstruct name2 ->
+        equal_name name1 name2
+    | TVar s1, TVar s2 ->
+        String.equal s1 s2
     | Tarray {elt= t1}, Tarray {elt= t2} ->
         equal_ignore_quals t1 t2
     | _, _ ->
@@ -573,7 +577,9 @@ let unsome s = function
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let strip_ptr typ = match typ.desc with Tptr (t, _) -> t | _ -> assert false
 
-let is_ptr_to t ~ptr = match ptr.desc with Tptr (t', _) -> equal t t' | _ -> false
+let is_ptr_to_ignore_quals t ~ptr =
+  match ptr.desc with Tptr (t', _) -> equal_ignore_quals t t' | _ -> false
+
 
 (** If an array type, return the type of the element.
     If not, return the default type if given, otherwise raise an exception *)
