@@ -256,8 +256,16 @@ let get_classpath_channel program = program.classpath.channel
 let get_models program = program.models
 
 let add_class cn jclass program =
-  program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
-
+  (* [prefix] must be a fresh class name *)
+  let prefix = JBasics.cn_name cn ^ "$Lambda$" in
+  (* we rewrite each class to replace invokedynamic (closure construction)
+     with equivalent old-style Java code that implements a suitable Java interface *)
+  let rewritten_jclass, new_classes = Javalib.remove_invokedynamics jclass ~prefix in
+  program.classmap <- JBasics.ClassMap.add cn rewritten_jclass program.classmap ;
+  (* the rewrite will generate new classes and we add them to the program *)
+  JBasics.ClassMap.iter
+    (fun cn jcl -> program.classmap <- JBasics.ClassMap.add cn jcl program.classmap)
+    new_classes
 
 let set_callee_translated program pname = Procname.Hash.replace program.callees pname Translated
 
