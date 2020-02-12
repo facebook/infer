@@ -8,9 +8,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 class BaosTest {
-  void aBad() throws IOException {
+  static void aBad() throws IOException {
     ByteArrayOutputStream x = new ByteArrayOutputStream();
     ObjectOutputStream y = new ObjectOutputStream(x);
     y.writeObject(1337);
@@ -18,7 +19,7 @@ class BaosTest {
   }
 
   /** Bugfix for aBad. */
-  void a1Ok() throws IOException {
+  static void a1Ok() throws IOException {
     ByteArrayOutputStream x = new ByteArrayOutputStream();
     ObjectOutputStream y = new ObjectOutputStream(x);
     y.writeObject(1337);
@@ -27,7 +28,7 @@ class BaosTest {
   }
 
   /** Another bugfix for aBad. */
-  void a2Ok() throws IOException {
+  static void a2Ok() throws IOException {
     ByteArrayOutputStream x = new ByteArrayOutputStream();
     ObjectOutputStream y = new ObjectOutputStream(x);
     y.writeObject(1337);
@@ -35,7 +36,7 @@ class BaosTest {
     byte[] bytes = x.toByteArray();
   }
 
-  void bBad() throws IOException {
+  static void bBad() throws IOException {
     ByteArrayOutputStream x = new ByteArrayOutputStream();
     ObjectOutputStream y = new ObjectOutputStream(x);
     y.writeObject(1337);
@@ -43,10 +44,23 @@ class BaosTest {
     y.close();
   }
 
-  void cBad() throws IOException {
+  static void cBad() throws IOException {
     ByteArrayOutputStream x = new ByteArrayOutputStream();
     DataOutputStream y = new DataOutputStream(x);
     y.writeLong(1337);
     byte[] bytes = x.toByteArray();
+  }
+
+  /**
+   * This false positive is caused by the property being imprecise. However, it is also an example
+   * where, arguably, GZIPOutputStream breaks the behavioral contract on OutputStream: it may be
+   * surprising that finish() sends data to the underlying stream but flush() may not.
+   */
+  static byte[] FP_dOk(final byte[] src) throws IOException {
+    ByteArrayOutputStream x = new ByteArrayOutputStream(src.length);
+    GZIPOutputStream y = new GZIPOutputStream(x);
+    y.write(src);
+    y.finish();
+    return x.toByteArray();
   }
 }
