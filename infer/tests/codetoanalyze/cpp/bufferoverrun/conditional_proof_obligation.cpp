@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #include <stddef.h>
+#include <stdexcept>
 
 void conditional_buffer_access(int* ptr, unsigned int size) {
   int i;
@@ -226,3 +227,15 @@ void call_set_fourth_idx_safe_Good() {
   MyString* s = new MyString();
   set_fourth_idx_safe(s);
 }
+
+void throw_exception(int i) {
+  int a[10];
+  if (i >= 10) {
+    throw std::runtime_error("throw exception");
+  }
+  a[i] = 0;
+}
+
+void call_throw_exception_Good() { throw_exception(15); }
+
+void call_throw_exception_Bad() { throw_exception(-5); }

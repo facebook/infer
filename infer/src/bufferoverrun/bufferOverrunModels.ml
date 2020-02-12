@@ -1259,6 +1259,7 @@ module Call = struct
     let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
     make_dispatcher
       [ -"__exit" <>--> bottom
+      ; -"__infer_objc_cpp_throw" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> CFArray.length
