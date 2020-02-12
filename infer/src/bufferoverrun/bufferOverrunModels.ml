@@ -1411,6 +1411,8 @@ module Call = struct
         $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
+      ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
+      ; -"std" &:: "__shared_ptr_access" &:: "operator->" $ capt_exp $--> id
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn
         $+ capt_exp_of_typ (+PatternMatch.implements_collection)

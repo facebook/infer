@@ -26,6 +26,15 @@ class smart_ptr {
       int a[5];
       a[i] = 0;
     }
+
+    int i;
+
+    void set_i(int n) { i = n; }
+
+    void array_access() {
+      int a[5];
+      a[i] = 0;
+    }
   };
 
   void use_shared_ptr1_Good() {
@@ -70,5 +79,17 @@ class smart_ptr {
   void shared_ptr_with_const_int_Bad() {
     const int i = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
+  }
+
+  void call_method_Good() {
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(0);
+    p->set_i(3);
+    p->array_access();
+  }
+
+  void call_method_Bad() {
+    std::shared_ptr<my_class> p = std::make_shared<my_class>(0);
+    p->set_i(8);
+    p->array_access();
   }
 };
