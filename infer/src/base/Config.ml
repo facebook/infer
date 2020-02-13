@@ -402,7 +402,7 @@ let clang_exe_aliases =
 
 let exe_basename =
   (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
-  Filename.basename Sys.argv.(0)
+  Filename.basename (Sys.get_argv ()).(0)
 
 
 let infer_is_clang = List.mem ~equal:String.equal clang_exe_aliases exe_basename

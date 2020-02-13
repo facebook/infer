@@ -557,12 +557,18 @@ let mode_from_command_line =
     ( match Config.generated_classes with
     | _ when Config.infer_is_clang ->
         let prog, args =
-          match Array.to_list Sys.argv with prog :: args -> (prog, args) | [] -> assert false
+          match Array.to_list (Sys.get_argv ()) with
+          | prog :: args ->
+              (prog, args)
+          | [] ->
+              assert false
           (* Sys.argv is never empty *)
         in
         Clang (Clang.Clang, prog, args)
     | _ when Config.infer_is_javac ->
-        let build_args = match Array.to_list Sys.argv with _ :: args -> args | [] -> [] in
+        let build_args =
+          match Array.to_list (Sys.get_argv ()) with _ :: args -> args | [] -> []
+        in
         Javac (Javac.Javac, "javac", build_args)
     | Some path ->
         assert_supported_mode `Java "Buck genrule" ;

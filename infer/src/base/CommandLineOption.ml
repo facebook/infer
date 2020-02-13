@@ -1004,7 +1004,7 @@ let parse ?config_file ~usage action initial_command =
   parse_args ~usage InferCommand env_args |> ignore ;
   add_parsed_args_to_args_to_export () ;
   let curr_usage =
-    let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
+    let cl_args = match Array.to_list (Sys.get_argv ()) with _ :: tl -> tl | [] -> [] in
     let curr_usage = parse_args ~usage action ?initial_command cl_args in
     add_parsed_args_to_args_to_export () ;
     curr_usage

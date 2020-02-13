@@ -92,7 +92,7 @@ let log_environment_info () =
     infer_args ;
   L.environment_info "command line arguments: %a@\n"
     (Pp.cli_args_with_verbosity ~verbose:Config.debug_mode)
-    (Array.to_list Sys.argv) ;
+    (Array.to_list Sys.(get_argv ())) ;
   ( match Utils.get_available_memory_MB () with
   | None ->
       L.environment_info "Could not retrieve available memory (possibly not on Linux)@\n"

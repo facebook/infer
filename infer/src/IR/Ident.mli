@@ -37,7 +37,7 @@ module Hash : Caml.Hashtbl.S with type key = t
 module Map : Caml.Map.S with type key = t
 (** Map with ident as key. *)
 
-module HashQueue : Hash_queue.S with type Key.t = t
+module HashQueue : Hash_queue.S with type key = t
 
 module NameGenerator : sig
   type t
