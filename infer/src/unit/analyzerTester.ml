@@ -262,7 +262,7 @@ struct
           F.asprintf "%a" pp_state post
         with Caml.Not_found -> "_|_"
       in
-      if inv_str <> post_str then
+      if not (String.equal inv_str post_str) then
         let error_msg =
           F.fprintf F.str_formatter "> Expected state %s at invariant %d, but found state %s"
             inv_str inv_label post_str

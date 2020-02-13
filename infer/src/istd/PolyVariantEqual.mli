@@ -11,3 +11,6 @@ open! Core
 
 val ( = ) : ([> ] as 'a) -> 'a -> bool
 (** Equality for polymorphic variants *)
+
+val ( <> ) : ([> ] as 'a) -> 'a -> bool
+(** Disequality for polymorphic variants *)

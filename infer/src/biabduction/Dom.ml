@@ -1487,7 +1487,7 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
      'todo' describes the start point. *)
   let cut_sigma side todo (target : Prop.sigma) (other : Prop.sigma) =
     let list_is_empty l =
-      if l <> [] then (L.d_strln "failure reason 61" ; raise Predicates.JoinFail)
+      if not (List.is_empty l) then (L.d_strln "failure reason 61" ; raise Predicates.JoinFail)
     in
     let x = Todo.take () in
     Todo.push todo ;

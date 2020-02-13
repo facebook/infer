@@ -232,7 +232,7 @@ let inline_argument_files buck_args =
   let expand_buck_arg buck_arg =
     if String.is_prefix ~prefix:"@" buck_arg then
       let file_name = String.chop_prefix_exn ~prefix:"@" buck_arg in
-      if Sys.file_exists file_name <> `Yes then [buck_arg]
+      if PolyVariantEqual.(Sys.file_exists file_name <> `Yes) then [buck_arg]
         (* Arguments that start with @ could mean something different than an arguments file in buck. *)
       else
         let expanded_args =

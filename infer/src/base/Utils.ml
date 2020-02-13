@@ -265,10 +265,12 @@ let with_process_lines ~(debug : ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp
         shell_cmd output
 
 
+let is_dir_kind (kind : Unix.file_kind) = match kind with S_DIR -> true | _ -> false
+
 (** Recursively create a directory if it does not exist already. *)
 let create_dir dir =
   try
-    if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
+    if not (is_dir_kind (Unix.stat dir).Unix.st_kind) then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
   with Unix.Unix_error _ -> (
     try Unix.mkdir_p dir ~perm:0o700

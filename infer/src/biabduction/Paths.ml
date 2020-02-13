@@ -281,7 +281,7 @@ end = struct
           f level path session prev_exn_opt
       | Pnode (_, exn_opt, session', p, _, _) ->
           (* no two consecutive exceptions *)
-          let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in
+          let next_exn_opt = if Option.is_some prev_exn_opt then None else exn_opt in
           doit level (session' :> int) p next_exn_opt ;
           f level path session prev_exn_opt
       | Pjoin (p1, p2, _) ->
@@ -316,7 +316,8 @@ end = struct
           PredSymb.equal_path_pos (get_path_pos node) pos
     in
     let path_pos_at_path p =
-      try match curr_node p with Some node -> pos_opt <> None && filter node | None -> false
+      try
+        match curr_node p with Some node -> Option.is_some pos_opt && filter node | None -> false
       with exn when SymOp.exn_not_failure exn -> false
     in
     let position_seen = ref false in
@@ -527,7 +528,7 @@ end = struct
         (lt1.Errlog.lt_level, lt1.Errlog.lt_loc)
         (lt2.Errlog.lt_level, lt2.Errlog.lt_loc)
     in
-    let relevant lt = lt.Errlog.lt_node_tags <> [] in
+    let relevant lt = not (List.is_empty lt.Errlog.lt_node_tags) in
     IList.remove_irrelevant_duplicates ~equal ~f:relevant (List.rev !trace)
 end
 

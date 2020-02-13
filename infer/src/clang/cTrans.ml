@@ -25,7 +25,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let get_callee_objc_method context obj_c_message_expr_info callee_ms_opt act_params =
     let open CContext in
     let selector, mc_type = CMethod_trans.get_objc_method_data obj_c_message_expr_info in
-    let is_instance = mc_type <> CMethod_trans.MCStatic in
+    let is_instance = not (CMethod_trans.equal_method_call_type mc_type MCStatic) in
     let objc_method_kind = Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
     let method_kind =
       if is_instance then ClangMethodKind.OBJC_INSTANCE else ClangMethodKind.OBJC_CLASS
@@ -106,7 +106,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let exec_with_node_creation ~f trans_state stmt =
     let res_trans = f trans_state stmt in
-    if res_trans.control.instrs <> [] then
+    if not (List.is_empty res_trans.control.instrs) then
       let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
       let stmt_info' = {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
@@ -903,14 +903,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let i_exp, _ = res_trans_idx.return in
     let array_exp = Exp.Lindex (a_exp, i_exp) in
     let root_nodes =
-      if res_trans_a.control.root_nodes <> [] then res_trans_a.control.root_nodes
+      if not (List.is_empty res_trans_a.control.root_nodes) then res_trans_a.control.root_nodes
       else res_trans_idx.control.root_nodes
     in
     let leaf_nodes =
-      if res_trans_idx.control.leaf_nodes <> [] then res_trans_idx.control.leaf_nodes
+      if not (List.is_empty res_trans_idx.control.leaf_nodes) then res_trans_idx.control.leaf_nodes
       else res_trans_a.control.leaf_nodes
     in
-    if res_trans_idx.control.root_nodes <> [] then
+    if not (List.is_empty res_trans_idx.control.root_nodes) then
       List.iter
         ~f:(fun n ->
           Procdesc.node_set_succs context.procdesc n ~normal:res_trans_idx.control.root_nodes
@@ -1366,7 +1366,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and add_this_instrs_if_result_non_empty res_trans this_res_trans =
-    if res_trans <> [] then
+    if not (List.is_empty res_trans) then
       mk_trans_result this_res_trans.return
         {empty_control with instrs= this_res_trans.control.instrs}
       :: res_trans
@@ -1637,7 +1637,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ~node_name:BinaryConditionalStmtInit stmt_info init_res_trans
         in
         let root_nodes = init_res_trans'.control.root_nodes in
-        if root_nodes <> [] then {op_res_trans with control= {op_res_trans.control with root_nodes}}
+        if not (List.is_empty root_nodes) then
+          {op_res_trans with control= {op_res_trans.control with root_nodes}}
         else op_res_trans
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -1896,7 +1897,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ~f:(fun n' -> Procdesc.node_set_succs context.procdesc n' ~normal:[switch_node] ~exn:[])
       res_trans_cond_tmp.control.leaf_nodes ;
     let root_nodes =
-      if res_trans_cond_tmp.control.root_nodes <> [] then res_trans_cond_tmp.control.root_nodes
+      if not (List.is_empty res_trans_cond_tmp.control.root_nodes) then
+        res_trans_cond_tmp.control.root_nodes
       else [switch_node]
     in
     let condition_exp, _ = res_trans_cond_tmp.return in
@@ -3812,7 +3814,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | trans_stmt_fun :: trans_stmt_fun_list' ->
           let res_trans_s = trans_stmt_fun trans_state in
           let trans_state' =
-            if res_trans_s.control.root_nodes <> [] then
+            if not (List.is_empty res_trans_s.control.root_nodes) then
               {trans_state with succ_nodes= res_trans_s.control.root_nodes}
             else trans_state
           in

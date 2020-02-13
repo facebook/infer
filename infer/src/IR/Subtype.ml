@@ -17,7 +17,7 @@ let list_to_string list =
 
 
 type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t list
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal: t'] st1 st2
 
@@ -26,7 +26,7 @@ type kind = CAST | INSTOF | NORMAL [@@deriving compare]
 
 let equal_kind = [%compare.equal: kind]
 
-type t = t' * kind [@@deriving compare]
+type t = t' * kind [@@deriving compare, equal]
 
 type result = No | Unknown | Yes [@@deriving compare]
 

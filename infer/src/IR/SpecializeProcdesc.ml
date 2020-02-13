@@ -101,7 +101,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         , (Exp.Var id, _) :: origin_args
         , loc
         , call_flags )
-      when call_flags.CallFlags.cf_virtual && redirect_typename id <> None ->
+      when call_flags.CallFlags.cf_virtual && Option.is_some (redirect_typename id) ->
         let redirected_typename = Option.value_exn (redirect_typename id) in
         let redirected_typ = mk_ptr_typ redirected_typename in
         let redirected_pname = Procname.replace_class callee_pname redirected_typename in

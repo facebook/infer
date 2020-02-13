@@ -68,7 +68,7 @@ let rec pp fmt = function
       F.fprintf fmt "*%a" pp de
   | Dfcall (fun_dexp, args, _, {cf_virtual= isvirtual}) ->
       let pp_args fmt des =
-        if eradicate_java () then (if des <> [] then F.pp_print_string fmt "...")
+        if eradicate_java () then (if not (List.is_empty des) then F.pp_print_string fmt "...")
         else Pp.comma_seq pp fmt des
       in
       let pp_fun fmt = function

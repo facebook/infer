@@ -722,7 +722,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
               new_sigma_todo )
       | ( Some (Predicates.Hlseg (k1, para1, root1, next1, shared1) as hpred1)
         , Some (Predicates.Hlseg (k2, para2, root2, next2, shared2) as hpred2) ) -> (
-          if k1 <> k2 || not (hpara_iso tenv para1 para2) then None
+          if (not (Predicates.equal_lseg_kind k1 k2)) || not (hpara_iso tenv para1 para2) then None
           else
             try
               let new_corres =
@@ -747,7 +747,8 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
             with Invalid_argument _ -> None )
       | ( Some (Predicates.Hdllseg (k1, para1, iF1, oB1, oF1, iB1, shared1) as hpred1)
         , Some (Predicates.Hdllseg (k2, para2, iF2, oB2, oF2, iB2, shared2) as hpred2) ) -> (
-          if k1 <> k2 || not (hpara_dll_iso tenv para1 para2) then None
+          if (not (Predicates.equal_lseg_kind k1 k2)) || not (hpara_dll_iso tenv para1 para2) then
+            None
           else
             try
               let new_corres =

@@ -113,7 +113,7 @@ let unset_wallclock_alarm () = !gs.last_wallclock <- None
 (** if the wallclock alarm has expired, raise a timeout exception *)
 let check_wallclock_alarm () =
   match (!gs.last_wallclock, !wallclock_timeout_handler) with
-  | Some alarm_time, Some handler when Unix.gettimeofday () >= alarm_time ->
+  | Some alarm_time, Some handler when Float.(Unix.gettimeofday () >= alarm_time) ->
       unset_wallclock_alarm () ; handler ()
   | _ ->
       ()
@@ -123,7 +123,7 @@ let check_wallclock_alarm () =
 let get_remaining_wallclock_time () =
   match !gs.last_wallclock with
   | Some alarm_time ->
-      max 0.0 (alarm_time -. Unix.gettimeofday ())
+      Float.(max 0.0 (alarm_time -. Unix.gettimeofday ()))
   | None ->
       0.0
 

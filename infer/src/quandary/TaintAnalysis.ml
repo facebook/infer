@@ -868,7 +868,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | Some access_tree ->
         Payload.update_summary (make_summary proc_data access_tree) summary
     | None ->
-        if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
+        if not (List.is_empty (Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc))) then (
           L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Procname.pp pname ;
           summary )
         else summary

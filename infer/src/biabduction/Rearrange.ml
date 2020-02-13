@@ -951,7 +951,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                 false )
           prop.Prop.sigma
       in
-      Procdesc.get_access pdesc <> PredSymb.Private
+      (not (PredSymb.equal_access (Procdesc.get_access pdesc) Private))
       && (not (Annotations.pdesc_return_annot_ends_with pdesc Annotations.visibleForTesting))
       && (not
             ( match Procdesc.get_proc_name pdesc with
@@ -1513,9 +1513,7 @@ let is_only_pt_by_fld_or_param_with_annot pdesc tenv prop deref_exp is_annotatio
     | _ ->
         true
   in
-  if List.for_all ~f:is_pt_by_fld_or_param_with_annot prop.Prop.sigma && !obj_str <> None then
-    !obj_str
-  else None
+  if List.for_all ~f:is_pt_by_fld_or_param_with_annot prop.Prop.sigma then !obj_str else None
 
 
 let is_only_pt_by_fld_or_param_nullable pdesc tenv prop deref_exp =

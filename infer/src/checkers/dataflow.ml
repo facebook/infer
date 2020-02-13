@@ -117,10 +117,16 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
     in
     let succ_nodes = Procdesc.Node.get_succs node in
     let exn_nodes = Procdesc.Node.get_exn node in
-    if throws <> Throws then
-      List.iter ~f:(fun s -> List.iter ~f:(propagate_to_dest s) succ_nodes) states_succ ;
-    if throws <> DoesNotThrow then
-      List.iter ~f:(fun s -> List.iter ~f:(propagate_to_dest s) exn_nodes) states_exn ;
+    ( match throws with
+    | DoesNotThrow | DontKnow ->
+        List.iter ~f:(fun s -> List.iter ~f:(propagate_to_dest s) succ_nodes) states_succ
+    | Throws ->
+        () ) ;
+    ( match throws with
+    | Throws | DontKnow ->
+        List.iter ~f:(fun s -> List.iter ~f:(propagate_to_dest s) exn_nodes) states_exn
+    | DoesNotThrow ->
+        () ) ;
     H.replace t.post_states node states_succ ;
     H.replace t.exn_states node states_exn
 

@@ -28,9 +28,9 @@ module NonZeroInt = struct
 
   let is_multiple m d = Z.(equal (m mod d) zero)
 
-  let is_negative x = Z.(x < zero)
+  let is_negative x = Z.(lt x zero)
 
-  let is_positive x = Z.(x > zero)
+  let is_positive x = Z.(gt x zero)
 
   let ( ~- ) = Z.( ~- )
 
@@ -59,7 +59,7 @@ module NonNegativeInt = struct
 
   let is_one = Z.equal one
 
-  let of_big_int i = if Z.(i < zero) then None else Some i
+  let of_big_int i = if Z.(lt i zero) then None else Some i
 
   let of_int_exn i =
     assert (i >= 0) ;
@@ -67,13 +67,13 @@ module NonNegativeInt = struct
 
 
   let of_big_int_exn i =
-    assert (Z.(i >= zero)) ;
+    assert (Z.(geq i zero)) ;
     i
 
 
   let to_int_exn = Z.to_int
 
-  let leq ~lhs ~rhs = lhs <= rhs
+  let leq ~lhs ~rhs = Z.leq lhs rhs
 
   let succ = Z.succ
 
@@ -91,7 +91,7 @@ module PositiveInt = struct
 
   let one = Z.one
 
-  let of_big_int i = if Z.(i <= zero) then None else Some i
+  let of_big_int i = if Z.(leq i zero) then None else Some i
 
   let succ = Z.succ
 
@@ -101,7 +101,7 @@ module PositiveInt = struct
 
   let pp_exponent f i =
     let rec aux f i =
-      if not Z.(i <= zero) then (
+      if not Z.(leq i zero) then (
         let d, r = Z.ediv_rem i ten in
         aux f d ;
         F.pp_print_string f exponent_chars.(Z.to_int r) )

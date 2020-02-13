@@ -124,7 +124,7 @@ let param_has_annot predicate pvar ann_sig =
 
 
 let pp proc_name fmt annotated_signature =
-  let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
+  let pp_ia fmt ia = if not (List.is_empty ia) then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
     F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp param_annotated_type
       Mangled.pp mangled

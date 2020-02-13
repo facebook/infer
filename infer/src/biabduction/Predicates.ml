@@ -308,7 +308,7 @@ end = struct
       already. This can in turn extend the todo list for the nested predicates, which are then
       visited as well. Can be applied only once, as it destroys the todo list *)
   let iter (env : t) f f_dll =
-    while env.todo <> [] || env.todo_dll <> [] do
+    while (not (List.is_empty env.todo)) || not (List.is_empty env.todo_dll) do
       match env.todo with
       | hpara :: todo' ->
           env.todo <- todo' ;

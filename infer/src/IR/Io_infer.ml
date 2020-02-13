@@ -85,7 +85,7 @@ h1 { font-size:14pt }
   (** Return true if the html file was modified since the beginning of the analysis *)
   let modified_during_analysis source path =
     let fname = get_full_fname source path in
-    if DB.file_exists fname then DB.file_modified_time fname >= Config.initial_analysis_time
+    if DB.file_exists fname then Float.(DB.file_modified_time fname >= Config.initial_analysis_time)
     else false
 
 

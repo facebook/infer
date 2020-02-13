@@ -54,6 +54,7 @@ let sort_versions versions =
 let version_of number_s : human_readable_version option =
   let epsilon = 0.001 in
   let rec version_of_aux version_numbers number =
+    let open Float in
     match version_numbers with
     | (version_n, version_s) :: (next_version_n, next_version_s) :: rest ->
         if number -. version_n < epsilon && number -. version_n > ~-.epsilon then Some version_s

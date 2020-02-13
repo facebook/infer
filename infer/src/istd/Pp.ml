@@ -106,7 +106,7 @@ let html_with_color color pp f x =
 
 let color_wrapper pe ppf x ~f =
   match pe.kind with
-  | HTML when pe.cmap_norm (Obj.repr x) <> pe.color ->
+  | HTML when not (equal_color (pe.cmap_norm (Obj.repr x)) pe.color) ->
       let color = pe.cmap_norm (Obj.repr x) in
       let pe' =
         if equal_color color Red then

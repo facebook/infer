@@ -165,12 +165,14 @@ let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_controls pdesc l =
   let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps} =
-    if root_nodes <> [] then
+    if not (List.is_empty root_nodes) then
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs pdesc n ~normal:root_nodes ~exn:[])
         result_rev.leaf_nodes ;
-    let root_nodes = if result_rev.root_nodes <> [] then result_rev.root_nodes else root_nodes in
-    let leaf_nodes = if leaf_nodes <> [] then leaf_nodes else result_rev.leaf_nodes in
+    let root_nodes =
+      if List.is_empty result_rev.root_nodes then root_nodes else result_rev.root_nodes
+    in
+    let leaf_nodes = if List.is_empty leaf_nodes then result_rev.leaf_nodes else leaf_nodes in
     { root_nodes
     ; leaf_nodes
     ; instrs= List.rev_append instrs result_rev.instrs
@@ -216,7 +218,9 @@ module PriorityNode = struct
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
   let compute_controls_to_parent trans_state loc ~node_name stmt_info res_states_children =
     let res_state = collect_controls trans_state.context.procdesc res_states_children in
-    let create_node = own_priority_node trans_state.priority stmt_info && res_state.instrs <> [] in
+    let create_node =
+      own_priority_node trans_state.priority stmt_info && not (List.is_empty res_state.instrs)
+    in
     if create_node then (
       (* We need to create a node *)
       let node_kind = Procdesc.Node.Stmt_node node_name in
@@ -230,7 +234,9 @@ module PriorityNode = struct
           Procdesc.node_set_succs trans_state.context.procdesc leaf ~normal:[node] ~exn:[] )
         res_state.leaf_nodes ;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
-      let root_nodes = if res_state.root_nodes <> [] then res_state.root_nodes else [node] in
+      let root_nodes =
+        if List.is_empty res_state.root_nodes then [node] else res_state.root_nodes
+      in
       {res_state with root_nodes; leaf_nodes= [node]; instrs= []} )
     else (* The node is created by the parent. We just pass back nodes/leafs params *)
       res_state

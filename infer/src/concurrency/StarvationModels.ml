@@ -62,7 +62,7 @@ let float_of_const_int = function
       None
 
 
-let is_excessive_secs duration = duration >. android_anr_time_limit
+let is_excessive_secs duration = Float.(duration > android_anr_time_limit)
 
 type severity = Low | Medium | High [@@deriving compare]
 

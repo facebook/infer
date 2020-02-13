@@ -11,12 +11,13 @@ open! IStd
 module F = Format
 module YBU = Yojson.Basic.Util
 module L = Die
+open PolyVariantEqual
 
 let ( = ) = String.equal
 
 let manpage_s_notes = "NOTES"
 
-let is_env_var_set v = Option.value (Option.map (Sys.getenv v) ~f:(( = ) "1")) ~default:false
+let is_env_var_set v = Option.value (Option.map (Sys.getenv v) ~f:(String.equal "1")) ~default:false
 
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
@@ -147,7 +148,7 @@ let check_no_duplicates desc_list =
   let rec check_for_duplicates_ = function
     | [] | [_] ->
         true
-    | (x, _, _) :: (y, _, _) :: _ when x <> "" && x = y ->
+    | (x, _, _) :: (y, _, _) :: _ when (not (String.is_empty x)) && x = y ->
         L.(die InternalError) "Multiple definitions of command line option: %s" x
     | _ :: tl ->
         check_for_duplicates_ tl
@@ -243,7 +244,7 @@ let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
     match parse_mode with
     | Javac | NoParse ->
         ()
-    | InferCommand when long <> "" ->
+    | InferCommand when not (String.is_empty long) ->
         warnf "WARNING:%s '-%s' is deprecated. Use '--%s'%s instead.@." source_s deprecated long
           (if short = "" then "" else Printf.sprintf " or '-%s'" short)
     | InferCommand ->
@@ -290,9 +291,9 @@ let mk ?(deprecated = []) ?(parse_mode = InferCommand) ?(in_help = []) ~long ?sh
   let short = match short0 with Some c -> String.of_char c | None -> "" in
   let desc = {long; short; meta; doc; default_string; spec; decode_json} in
   (* add desc for long option, with documentation (which includes any short option) for exes *)
-  if long <> "" then add parse_mode in_help desc ;
+  if not (String.is_empty long) then add parse_mode in_help desc ;
   (* add desc for short option only for parsing, without documentation *)
-  if short <> "" then add parse_mode [] {desc with long= ""; meta= ""; doc= ""} ;
+  if not (String.is_empty short) then add parse_mode [] {desc with long= ""; meta= ""; doc= ""} ;
   (* add desc for deprecated options only for parsing, without documentation *)
   List.iter deprecated ~f:(fun deprecated ->
       deprecate_desc parse_mode ~long ~short ~deprecated doc desc |> add parse_mode [] ) ;
@@ -1010,7 +1011,7 @@ let parse ?config_file ~usage action initial_command =
   in
   let to_export =
     let argv_to_export = decode_env_to_argv !args_to_export in
-    if argv_to_export <> [] then (
+    if not (List.is_empty argv_to_export) then (
       (* We have to be careful not to add too much data to the environment because the size of the
          environment contributes to the length of the command to be run. If the environment + CLI is
          too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
@@ -1040,7 +1041,7 @@ let wrap_line indent_string wrap_length line0 =
       else len
     in
     let new_length = line_length + String.length word_sep_str + word_length in
-    let new_non_empty = non_empty || word <> "" in
+    let new_non_empty = non_empty || not (String.is_empty word) in
     if new_length > wrap_length && non_empty then
       (line :: rev_lines, true, indent_string ^ word, indent_length + word_length)
     else

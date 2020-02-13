@@ -267,7 +267,7 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
   in
   let default = (exp, typestate) in
   match exp with
-  | Exp.Var id when Errdesc.find_normal_variable_funcall node id <> None ->
+  | Exp.Var id when Option.is_some (Errdesc.find_normal_variable_funcall node id) ->
       ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
           ~call_node:node ~node id
       , typestate )
@@ -1180,7 +1180,7 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
         let has_exceptions =
           match callee_attributes_opt with
           | Some callee_attributes ->
-              callee_attributes.ProcAttributes.exceptions <> []
+              not (List.is_empty callee_attributes.ProcAttributes.exceptions)
           | None ->
               false
         in

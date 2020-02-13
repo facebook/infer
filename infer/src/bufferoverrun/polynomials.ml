@@ -397,11 +397,11 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       else ((s, PositiveInt.one), last :: others)
     in
     let pp_coeff fmt (c : NonNegativeInt.t) =
-      if Z.((c :> Z.t) > one) then
+      if Z.(gt (c :> Z.t) one) then
         F.fprintf fmt "%a %s " NonNegativeInt.pp c SpecialChars.dot_operator
     in
     let pp_exp fmt (e : PositiveInt.t) =
-      if Z.((e :> Z.t) > one) then PositiveInt.pp_exponent fmt e
+      if Z.(gt (e :> Z.t) one) then PositiveInt.pp_exponent fmt e
     in
     let pp_magic_parentheses pp fmt x =
       let s = F.asprintf "%a" pp x in

@@ -71,7 +71,7 @@ let iterate_procedure_callbacks exe_env summary =
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks procedures exe_env source_file =
-  if !cluster_callbacks <> [] then
+  if not (List.is_empty !cluster_callbacks) then
     let environment = {procedures; source_file; exe_env} in
     let language_matches language =
       match procedures with

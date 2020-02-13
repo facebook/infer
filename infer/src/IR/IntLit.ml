@@ -29,7 +29,7 @@ type t = {signedness: signedness; i: Z.t; pointerness: pointerness} [@@deriving 
 exception OversizedShift
 
 let area {signedness; i} =
-  match (Z.(i < zero), signedness) with
+  match (Z.(lt i zero), signedness) with
   | true, Signed ->
       (* negative signed *) 1
   | false, _ ->
@@ -43,7 +43,7 @@ let to_signed intlit =
   | {signedness= Signed} ->
       Some intlit
   | {signedness= Unsigned; i} ->
-      if Z.(i < zero) then None else Some {intlit with signedness= Signed}
+      if Z.(lt i zero) then None else Some {intlit with signedness= Signed}
 
 
 let compare_value intlit1 intlit2 =

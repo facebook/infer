@@ -361,7 +361,7 @@ let pp_custom_of_report fmt report fields =
     let pp_trace fmt trace comma =
       let pp_trace_elem fmt {description} = F.pp_print_string fmt description in
       let trace_without_empty_descs =
-        List.filter ~f:(fun {description} -> description <> "") trace
+        List.filter ~f:(fun {description} -> not (String.is_empty description)) trace
       in
       F.fprintf fmt "%s[%a]" comma (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
     in
@@ -504,7 +504,7 @@ module Stats = struct
       let code = match Printer.LineReader.from_loc linereader loc with Some s -> s | None -> "" in
       let line =
         let pp fmt =
-          if description <> "" then
+          if not (String.is_empty description) then
             F.fprintf fmt "%s%4s  // %s@\n" (indent_string (level + indent_num)) " " description ;
           F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code
         in
@@ -553,7 +553,7 @@ module Stats = struct
       process_err_log error_filter linereader (Summary.get_err_log summary) stats
     in
     let is_defective = found_errors in
-    let is_verified = specs <> [] && not is_defective in
+    let is_verified = (not (List.is_empty specs)) && not is_defective in
     let is_checked = not (is_defective || is_verified) in
     let is_timeout =
       match Summary.(Stats.failure_kind summary.stats) with

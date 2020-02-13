@@ -243,7 +243,7 @@ module Node = struct
 
   (** Append the instructions to the list of instructions to execute *)
   let append_instrs node instrs =
-    if instrs <> [] then node.instrs <- Instrs.append_list node.instrs instrs
+    if not (List.is_empty instrs) then node.instrs <- Instrs.append_list node.instrs instrs
 
 
   (** Map and replace the instructions to be executed *)
@@ -466,7 +466,7 @@ let compute_distance_to_exit_node pdesc =
           next_nodes := node.preds @ !next_nodes
     in
     List.iter ~f:do_node nodes ;
-    if !next_nodes <> [] then mark_distance (dist + 1) !next_nodes
+    if not (List.is_empty !next_nodes) then mark_distance (dist + 1) !next_nodes
   in
   mark_distance 0 [exit_node]
 

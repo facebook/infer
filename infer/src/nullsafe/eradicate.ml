@@ -66,7 +66,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         String.equal (PatternMatch.get_type_name ret_annotated_type.typ) "java.lang.Void"
       in
       State.set_node exit_node ;
-      if checks.TypeCheck.check_ret_type <> [] then
+      if not (List.is_empty checks.TypeCheck.check_ret_type) then
         List.iter
           ~f:(fun f -> f curr_pname curr_pdesc ret_annotated_type.typ typ_found_opt loc)
           checks.TypeCheck.check_ret_type ;

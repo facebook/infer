@@ -2585,7 +2585,7 @@ let post_parsing_initialization command_opt =
         CommandDoc.infer command_opt
   | `None ->
       () ) ;
-  if !version <> `None || !help <> `None then Stdlib.exit 0 ;
+  if PolyVariantEqual.(!version <> `None || !help <> `None) then Stdlib.exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
     let is_infer_exit_zero = match exn with L.InferExit 0 -> true | _ -> false in
     let should_print_backtrace_default =

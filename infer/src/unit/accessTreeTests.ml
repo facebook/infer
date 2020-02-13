@@ -17,7 +17,7 @@ module MockTraceDomain = struct
   let top = singleton top_str
 
   let singleton e =
-    assert (e <> top_str) ;
+    assert (String.(e <> top_str)) ;
     singleton e
 
 

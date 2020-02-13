@@ -60,5 +60,5 @@ let is_java_outer_instance ({field_name} as field) =
   &&
   let this = "this$" in
   let last_char = field_name.[String.length field_name - 1] in
-  (last_char >= '0' && last_char <= '9')
+  Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)

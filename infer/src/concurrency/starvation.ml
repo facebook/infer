@@ -570,7 +570,7 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
 
 
 let should_report pdesc =
-  Procdesc.get_access pdesc <> PredSymb.Private
+  (not (PredSymb.equal_access (Procdesc.get_access pdesc) Private))
   &&
   match Procdesc.get_proc_name pdesc with
   | Procname.Java java_pname ->

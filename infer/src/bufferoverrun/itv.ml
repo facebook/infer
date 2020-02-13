@@ -330,7 +330,7 @@ module ItvPure = struct
       match get_const y with
       | Some n when Z.(leq n zero) ->
           x
-      | Some n when Z.(n >= of_int 64) ->
+      | Some n when Z.(geq n (of_int 64)) ->
           zero
       | Some n -> (
         match Z.to_int n with n -> div_const x Z.(one lsl n) | exception Z.Overflow -> top )

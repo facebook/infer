@@ -26,17 +26,18 @@ let compute_statistics values =
   | [] ->
       None
   | _ :: _ as values ->
+      let open Float in
       let num_elements = List.length values in
       let sum = List.fold ~f:(fun acc v -> acc +. v) ~init:0.0 values in
       let average = sum /. float_of_int num_elements in
       let values_arr = Array.of_list values in
       Array.sort
-        ~compare:(fun a b -> if Float.equal a b then 0 else if a -. b < 0.0 then -1 else 1)
+        ~compare:(fun a b -> if equal a b then 0 else if a -. b < 0.0 then -1 else 1)
         values_arr ;
       let percentile pct =
         assert (pct >= 0.0 && pct <= 1.0) ;
-        assert (num_elements > 0) ;
-        let max_index = num_elements - 1 in
+        assert (Int.(num_elements > 0)) ;
+        let max_index = Int.(num_elements - 1) in
         let pct_index = float_of_int max_index *. pct in
         let low_index = int_of_float (Stdlib.floor pct_index) in
         let high_index = int_of_float (Stdlib.ceil pct_index) in

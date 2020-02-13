@@ -182,7 +182,7 @@ let should_report proc_desc tenv =
   let pname = Procdesc.get_proc_name proc_desc in
   (not (is_litho_function pname))
   && (not (is_component_build_method pname tenv))
-  && Procdesc.get_access proc_desc <> PredSymb.Private
+  && not (PredSymb.equal_access (Procdesc.get_access proc_desc) Private)
 
 
 let report astate tenv summary =

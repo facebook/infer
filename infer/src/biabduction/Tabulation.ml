@@ -385,7 +385,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
             None
       else None
     in
-    if deref_no_null_check_pos <> None then
+    if Option.is_some deref_no_null_check_pos then
       (* only report a dereference null error if we know
          there was a dereference without null check *)
       match deref_no_null_check_pos with
@@ -871,12 +871,12 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
   L.d_strln "Frame fld:" ;
   Prop.d_sigma split.frame_fld ;
   L.d_ln () ;
-  if split.frame_typ <> [] then (
+  if not (List.is_empty split.frame_typ) then (
     L.d_strln "Frame typ:" ; Prover.d_typings split.frame_typ ; L.d_ln () ) ;
   L.d_strln "Missing fld:" ;
   Prop.d_sigma split.missing_fld ;
   L.d_ln () ;
-  if split.missing_typ <> [] then (
+  if not (List.is_empty split.missing_typ) then (
     L.d_strln "Missing typ:" ;
     Prover.d_typings split.missing_typ ;
     L.d_ln () ) ;
@@ -984,7 +984,7 @@ let mk_actual_precondition tenv prop actual_params formal_params =
       | f :: fpars', a :: apars' ->
           (f, a) :: comb fpars' apars'
       | [], _ ->
-          if apars <> [] then (
+          if not (List.is_empty apars) then (
             let str =
               "more actual pars than formal pars in fun call ("
               ^ string_of_int (List.length actual_params)
@@ -1186,11 +1186,11 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
       let missing_sigma_objc_class =
         List.filter ~f:(fun hp -> hpred_missing_objc_class hp) missing_sigma
       in
-      if missing_fld_objc_class <> [] then (
+      if not (List.is_empty missing_fld_objc_class) then (
         L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
         add_missing_field_to_tenv ~missing_sigma:false exe_env tenv callee_pname
           missing_fld_objc_class callee_summary ) ;
-      if missing_sigma_objc_class <> [] then (
+      if not (List.is_empty missing_sigma_objc_class) then (
         L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
         add_missing_field_to_tenv ~missing_sigma:true exe_env tenv callee_pname
           missing_sigma_objc_class callee_summary ) ;
@@ -1242,10 +1242,12 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
           Invalid_res (Dereference_error (deref_error, desc, pjoin))
       | None ->
           let split = do_split () in
-          if (not !BiabductionConfig.footprint) && split.missing_sigma <> [] then (
+          if (not !BiabductionConfig.footprint) && not (List.is_empty split.missing_sigma) then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )
-          else if (not !BiabductionConfig.footprint) && missing_fld_not_objc_class <> [] then (
+          else if
+            (not !BiabductionConfig.footprint) && not (List.is_empty missing_fld_not_objc_class)
+          then (
             L.d_strln "Implication error: missing_fld not empty in re-execution" ;
             Invalid_res Missing_fld_not_empty )
           else report_valid_res split )
@@ -1305,7 +1307,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
     List.map ~f:(function Valid_res _ -> assert false | Invalid_res ir -> ir) invalid_res0
   in
   let valid_res_miss_pi, valid_res_no_miss_pi =
-    List.partition_tf ~f:(fun vr -> vr.vr_pi <> []) valid_res
+    List.partition_tf ~f:(fun vr -> not (List.is_empty vr.vr_pi)) valid_res
   in
   let _, valid_res_cons_pre_missing =
     List.partition_tf ~f:(fun vr -> vr.incons_pre_missing) valid_res
@@ -1402,7 +1404,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
         List.map
           ~f:(fun (p, path) -> (prop_pure_to_footprint tenv p, path))
           (List.concat_map ~f:process_valid_res valid_res)
-    else if valid_res_no_miss_pi <> [] then
+    else if not (List.is_empty valid_res_no_miss_pi) then
       List.concat_map ~f:(fun vr -> vr.vr_cons_res) valid_res_no_miss_pi
     else if List.is_empty valid_res_miss_pi then
       raise (Exceptions.Precondition_not_met (call_desc None, __POS__))

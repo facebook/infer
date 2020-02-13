@@ -140,7 +140,7 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
   let find_instr n =
     let filter = function
       | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Const (Const.Cint i)} when Pvar.equal pvar pvar_ ->
-          IntLit.iszero i <> true_branch
+          Bool.(IntLit.iszero i <> true_branch)
       | _ ->
           false
     in
@@ -462,7 +462,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let node_instrs = Procdesc.Node.get_instrs node in
   let hpred_typ_opt = find_hpred_typ hpred in
   let value_str_from_pvars_vpath pvars vpath =
-    if pvars <> [] then
+    if not (List.is_empty pvars) then
       let pp = Pp.seq Pvar.pp_value in
       let desc_string = F.asprintf "%a" pp pvars in
       Some desc_string
@@ -554,7 +554,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         (* we know it has been allocated *)
         (Exceptions.Exn_user, bucket)
     | None ->
-        if leak_from_list_abstraction hpred prop && value_str <> None then
+        if leak_from_list_abstraction hpred prop && Option.is_some value_str then
           (* we don't know it's been allocated,
              but it's coming from list abstraction and we have a name *)
           (Exceptions.Exn_user, bucket)

@@ -50,7 +50,7 @@ let load_and_validate () =
               Was it created using an older version of infer?" Config.results_dir err_msg) )
       msg
   in
-  if Sys.file_exists state_file_path <> `Yes then
+  if PolyVariantEqual.(Sys.file_exists state_file_path <> `Yes) then
     error "save state not found: '%s' does not exist" state_file_path
   else
     match Atdgen_runtime.Util.Json.from_file Runstate_j.read_t state_file_path with

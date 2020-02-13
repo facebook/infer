@@ -737,7 +737,7 @@ let check_disequal tenv prop e1 e2 =
               let sigma_rest' = List.rev_append sigma_irrelevant sigma_rest in
               f [] e2 sigma_rest' )
       | Predicates.Hdllseg (Lseg_NE, _, iF, _, _, iB, _) :: sigma_rest ->
-          if is_root tenv prop iF e <> None || is_root tenv prop iB e <> None then
+          if Option.is_some (is_root tenv prop iF e) || Option.is_some (is_root tenv prop iB e) then
             let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest in
             Some (true, sigma_irrelevant')
           else
@@ -870,16 +870,16 @@ let check_allocatedness tenv prop e =
   let spatial_part = prop.Prop.sigma in
   let f = function
     | Predicates.Hpointsto (base, _, _) ->
-        is_root tenv prop base n_e <> None
+        Option.is_some (is_root tenv prop base n_e)
     | Predicates.Hlseg (k, _, e1, e2, _) ->
         if Predicates.equal_lseg_kind k Lseg_NE || check_disequal tenv prop e1 e2 then
-          is_root tenv prop e1 n_e <> None
+          Option.is_some (is_root tenv prop e1 n_e)
         else false
     | Predicates.Hdllseg (k, _, iF, oB, oF, iB, _) ->
         if
           Predicates.equal_lseg_kind k Lseg_NE
           || check_disequal tenv prop iF oF || check_disequal tenv prop iB oB
-        then is_root tenv prop iF n_e <> None || is_root tenv prop iB n_e <> None
+        then Option.is_some (is_root tenv prop iF n_e) || Option.is_some (is_root tenv prop iB n_e)
         else false
   in
   List.exists ~f spatial_part
@@ -1186,17 +1186,17 @@ end = struct
     L.d_increase_indent () ;
     Prop.d_sub sub ;
     L.d_decrease_indent () ;
-    if !missing_pi <> [] && !missing_sigma <> [] then (
+    if (not (List.is_empty !missing_pi)) && not (List.is_empty !missing_sigma) then (
       L.d_ln () ; Prop.d_pi !missing_pi ; L.d_strln "*" ; Prop.d_sigma !missing_sigma )
-    else if !missing_pi <> [] then (L.d_ln () ; Prop.d_pi !missing_pi)
-    else if !missing_sigma <> [] then (L.d_ln () ; Prop.d_sigma !missing_sigma) ;
-    if !missing_fld <> [] then (
+    else if not (List.is_empty !missing_pi) then (L.d_ln () ; Prop.d_pi !missing_pi)
+    else if not (List.is_empty !missing_sigma) then (L.d_ln () ; Prop.d_sigma !missing_sigma) ;
+    if not (List.is_empty !missing_fld) then (
       L.d_ln () ;
       L.d_strln "MISSING FLD:" ;
       L.d_increase_indent () ;
       Prop.d_sigma !missing_fld ;
       L.d_decrease_indent () ) ;
-    if !missing_typ <> [] then (
+    if not (List.is_empty !missing_typ) then (
       L.d_ln () ;
       L.d_strln "MISSING TYPING:" ;
       L.d_increase_indent () ;
@@ -1207,14 +1207,17 @@ end = struct
   let d_missing sub =
     (* optional print of missing: if print something, prepend with newline *)
     if
-      !missing_pi <> [] || !missing_sigma <> [] || !missing_fld <> [] || !missing_typ <> []
+      (not (List.is_empty !missing_pi))
+      || (not (List.is_empty !missing_sigma))
+      || (not (List.is_empty !missing_fld))
+      || (not (List.is_empty !missing_typ))
       || not (Predicates.is_sub_empty sub)
     then ( L.d_ln () ; L.d_str "[" ; d_missing_ sub ; L.d_str "]" )
 
 
   let d_frame_fld () =
     (* optional print of frame fld: if print something, prepend with newline *)
-    if !frame_fld <> [] then (
+    if not (List.is_empty !frame_fld) then (
       L.d_ln () ;
       L.d_strln "[FRAME FLD:" ;
       L.d_increase_indent () ;
@@ -1225,7 +1228,7 @@ end = struct
 
   let d_frame_typ () =
     (* optional print of frame typ: if print something, prepend with newline *)
-    if !frame_typ <> [] then (
+    if not (List.is_empty !frame_typ) then (
       L.d_ln () ;
       L.d_strln "[FRAME TYPING:" ;
       L.d_increase_indent () ;
@@ -1469,10 +1472,11 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
         struct_imply tenv source calc_missing subs fsel1 fsel2 typ2
       in
       let fld_frame_opt =
-        if fld_frame <> [] then Some (Predicates.Estruct (fld_frame, inst1)) else None
+        if not (List.is_empty fld_frame) then Some (Predicates.Estruct (fld_frame, inst1)) else None
       in
       let fld_missing_opt =
-        if fld_missing <> [] then Some (Predicates.Estruct (fld_missing, inst1)) else None
+        if not (List.is_empty fld_missing) then Some (Predicates.Estruct (fld_missing, inst1))
+        else None
       in
       (subs', fld_frame_opt, fld_missing_opt)
   | Predicates.Estruct _, Predicates.Eexp (e2, _) -> (
@@ -1492,10 +1496,11 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
         array_imply tenv source calc_index_frame calc_missing subs' esel1 esel2 typ2
       in
       let index_frame_opt =
-        if index_frame <> [] then Some (Predicates.Earray (len1, index_frame, inst1)) else None
+        if not (List.is_empty index_frame) then Some (Predicates.Earray (len1, index_frame, inst1))
+        else None
       in
       let index_missing_opt =
-        if index_missing <> [] && !BiabductionConfig.footprint then
+        if (not (List.is_empty index_missing)) && !BiabductionConfig.footprint then
           Some (Predicates.Earray (len1, index_missing, inst1))
         else None
       in
@@ -1839,7 +1844,7 @@ module Subtyping_check = struct
       when ( Typ.Name.equal cn1 Typ.Name.Java.java_io_serializable
            || Typ.Name.equal cn1 Typ.Name.Java.java_lang_cloneable
            || Typ.Name.equal cn1 Typ.Name.Java.java_lang_object )
-           && st1 <> Subtype.exact ->
+           && not (Subtype.equal st1 Subtype.exact) ->
         (Some st1, None)
     | Tstruct cn1, Tstruct cn2
     (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
@@ -2528,7 +2533,8 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     Prop.d_pi pi2 ;
     L.d_decrease_indent () ;
     L.d_ln () ;
-    if pi2_bcheck <> [] then (L.d_str "pi2 bounds checks: " ; Prop.d_pi pi2_bcheck ; L.d_ln ()) ;
+    if not (List.is_empty pi2_bcheck) then (
+      L.d_str "pi2 bounds checks: " ; Prop.d_pi pi2_bcheck ; L.d_ln () ) ;
     L.d_strln "returns" ;
     L.d_strln "sub1:" ;
     L.d_increase_indent () ;
@@ -2556,7 +2562,8 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     L.d_ln () ;
     L.d_strln "returning TRUE" ;
     let frame = frame_prop.Prop.sigma in
-    if check_frame_empty && frame <> [] then raise (IMPL_EXC ("frame not empty", subs, EXC_FALSE)) ;
+    if check_frame_empty && not (List.is_empty frame) then
+      raise (IMPL_EXC ("frame not empty", subs, EXC_FALSE)) ;
     Some ((sub1, sub2), frame)
   with
   | IMPL_EXC (s, subs, body) ->

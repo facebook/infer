@@ -594,7 +594,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
       (* if this is not a virtual or interface call, there's no need for resolution *)
       [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _ ->
-      if !Language.curr_language <> Language.Java then
+      if not (Language.curr_language_is Java) then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else
@@ -1264,7 +1264,7 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
-        if !Language.curr_language <> Language.Clang || Config.report_condition_always_true_in_clang
+        if (not (Language.curr_language_is Clang)) || Config.report_condition_always_true_in_clang
         then
           let report_condition_always_true_false i =
             let skip_loop =
@@ -2010,9 +2010,12 @@ let node handle_exn exe_env tenv summary proc_cfg (node : ProcCfg.Exceptional.No
       if
         Tabulation.prop_is_exn pname p
         && (not (Sil.instr_is_auxiliary instr))
-        && ProcCfg.Exceptional.Node.kind node <> Procdesc.Node.exn_handler_kind
-        (* skip normal instructions if an exception was thrown,
-           unless this is an exception handler node *)
+        && not
+             (Procdesc.Node.equal_nodekind
+                (ProcCfg.Exceptional.Node.kind node)
+                Procdesc.Node.exn_handler_kind)
+        (* skip normal instructions if an exception was thrown, unless this is an exception
+           handler node *)
       then (
         L.d_str "Skipping instr " ;
         Sil.d_instr instr ;

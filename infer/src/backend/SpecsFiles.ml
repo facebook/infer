@@ -13,7 +13,8 @@ module CLOpt = CommandLineOption
 let load_specfiles () =
   let specs_files_in_dir dir =
     let is_specs_file fname =
-      Sys.is_directory fname <> `Yes && Filename.check_suffix fname Config.specs_files_suffix
+      PolyVariantEqual.(Sys.is_directory fname <> `Yes)
+      && Filename.check_suffix fname Config.specs_files_suffix
     in
     match Sys.readdir dir with
     | exception Sys_error _ ->
@@ -38,8 +39,8 @@ let spec_files_from_cmdline () =
        files may be generated between init and report time. *)
     List.iter
       ~f:(fun arg ->
-        if (not (Filename.check_suffix arg Config.specs_files_suffix)) && arg <> "." then
-          print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
+        if (not (Filename.check_suffix arg Config.specs_files_suffix)) && not (String.equal arg ".")
+        then print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
       Config.anon_args ;
     if Config.test_filtering then (Inferconfig.test () ; L.exit 0) ;
     if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )

@@ -62,7 +62,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
         List.filter ~f:(fun (pn, _) -> not (Procname.Set.mem pn !seen)) initializers_new
       in
       mark_seen initializers_new' ;
-      if initializers_new' <> [] then fixpoint initializers_new'
+      if not (List.is_empty initializers_new') then fixpoint initializers_new'
     in
     mark_seen initializers_base_case ; fixpoint initializers_base_case ; !res
   in

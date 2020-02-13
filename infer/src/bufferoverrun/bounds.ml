@@ -67,7 +67,7 @@ module SymLinear = struct
     let le_one_pair s v1_opt v2_opt =
       let v1 = NonZeroInt.opt_to_big_int v1_opt in
       let v2 = NonZeroInt.opt_to_big_int v2_opt in
-      Z.(equal v1 v2) || (Symb.Symbol.is_unsigned s && v1 <= v2)
+      Z.(equal v1 v2) || (Symb.Symbol.is_unsigned s && Z.leq v1 v2)
     in
     M.for_all2 ~f:le_one_pair x y
 
@@ -186,7 +186,7 @@ module SymLinear = struct
       match prev_opt with
       | Some (prev_coeff, prev_symb)
         when Symb.Symbol.paths_equal prev_symb symb
-             && NonZeroInt.is_positive coeff <> NonZeroInt.is_positive prev_coeff ->
+             && Bool.(NonZeroInt.is_positive coeff <> NonZeroInt.is_positive prev_coeff) ->
           let add_coeff =
             (if NonZeroInt.is_positive coeff then NonZeroInt.max else NonZeroInt.min)
               prev_coeff (NonZeroInt.( ~- ) coeff)
@@ -384,7 +384,7 @@ module Bound = struct
 
 
   let mk_MinMax (c, sign, m, d, s) =
-    if Symb.Symbol.is_unsigned s && Z.(d <= zero) then
+    if Symb.Symbol.is_unsigned s && Z.(leq d zero) then
       match m with
       | Min ->
           of_big_int (Sign.eval_big_int sign c d)
@@ -486,7 +486,7 @@ module Bound = struct
   let le_minmax_by_int x y =
     match (big_int_ub_of_minmax x, big_int_lb_of_minmax y) with
     | Some n, Some m ->
-        n <= m
+        Z.leq n m
     | _, _ ->
         false
 
@@ -508,7 +508,7 @@ module Bound = struct
     | MultB _, _ | _, MultB _ ->
         false
     | Linear (c0, x0), Linear (c1, x1) ->
-        c0 <= c1 && SymLinear.le x0 x1
+        Z.leq c0 c1 && SymLinear.le x0 x1
     | MinMax _, MinMax _ when le_minmax_by_int x y ->
         true
     | MinMax (c1, (Plus as sign), Min, d1, s1), MinMax (c2, Plus, Min, d2, s2)

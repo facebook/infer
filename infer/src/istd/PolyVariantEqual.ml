@@ -8,3 +8,5 @@
 open! Core
 
 let ( = ) (v1 : [> ]) (v2 : [> ]) = Poly.equal v1 v2
+
+let ( <> ) (v1 : [> ]) (v2 : [> ]) = not (v1 = v2)

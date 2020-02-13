@@ -1124,7 +1124,7 @@ let check_junk pname tenv prop =
                 | Some _, None | None, Some _ ->
                     false
               in
-              (is_none alloc_attribute && !leaks_reported <> [])
+              (is_none alloc_attribute && not (List.is_empty !leaks_reported))
               || (* None attribute only reported if it's the first one *)
               List.mem ~equal:attr_opt_equal !leaks_reported alloc_attribute
             in
