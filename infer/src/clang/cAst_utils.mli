@@ -33,11 +33,11 @@ val get_property_of_ivar : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
 val update_sil_types_map : Clang_ast_t.type_ptr -> Typ.desc -> unit
 
-val update_enum_map : Clang_ast_t.pointer -> Exp.t -> unit
+val update_enum_map_exn : Clang_ast_t.pointer -> Exp.t -> unit
 
 val add_enum_constant : Clang_ast_t.pointer -> Clang_ast_t.pointer option -> unit
 
-val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Exp.t option
+val get_enum_constant_exp_exn : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Exp.t option
 
 val get_qualified_name : ?linters_mode:bool -> Clang_ast_t.named_decl_info -> QualifiedCppName.t
 (** returns sanitized, fully qualified name given name info *)

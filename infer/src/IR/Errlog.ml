@@ -223,7 +223,7 @@ let add_issue tbl err_key (err_datas : ErrDataSet.t) : bool =
     else (
       ErrLogHash.replace tbl err_key (ErrDataSet.union err_datas current_eds) ;
       true )
-  with Caml.Not_found ->
+  with Caml.Not_found | Not_found_s _ ->
     ErrLogHash.add tbl err_key err_datas ;
     true
 

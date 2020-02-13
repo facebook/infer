@@ -115,7 +115,7 @@ module TransferFunctions = struct
                   Some loc
               | _ ->
                   None
-            with Caml.Not_found -> None )
+            with Not_found_s _ | Caml.Not_found -> None )
       in
       match Dom.Mem.find_ret_alias callee_exit_mem with
       | Bottom ->

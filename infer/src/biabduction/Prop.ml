@@ -2099,9 +2099,10 @@ let rec idlist_assoc id = function
       if Ident.equal i id then x else idlist_assoc id l
 
 
-let ident_captured_ren ren id = try idlist_assoc id ren with Caml.Not_found -> id
+let ident_captured_ren ren id =
+  (* If not defined in ren, id should be mapped to itself *)
+  try idlist_assoc id ren with Caml.Not_found -> id
 
-(* If not defined in ren, id should be mapped to itself *)
 
 let rec exp_captured_ren ren (e : Exp.t) : Exp.t =
   match e with

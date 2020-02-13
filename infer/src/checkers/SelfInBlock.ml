@@ -182,7 +182,7 @@ module TransferFunctions = struct
         in
         {Domain.vars; strongVars}
       else astate
-    with Not_found_s _ | Caml.Not_found -> astate
+    with Caml.Not_found -> astate
 
 
   let make_trace_unchecked_strongself (domain : Domain.t) =
@@ -225,7 +225,7 @@ module TransferFunctions = struct
         in
         let ltr = make_trace_unchecked_strongself domain in
         Reporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message
-    with Not_found_s _ | Caml.Not_found -> ()
+    with Caml.Not_found -> ()
 
 
   let report_unchecked_strongself_issues_on_exps (domain : Domain.t) summary (instr : Sil.instr) =
@@ -336,7 +336,7 @@ module TransferFunctions = struct
               if not isChecked.checked then
                 Vars.add id {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF} astate.vars
               else astate.vars
-            with Not_found_s _ | Caml.Not_found -> astate.vars
+            with Caml.Not_found -> astate.vars
         in
         {astate with vars}
     | Store {e1= Lvar pvar; e2= Var id; typ= pvar_typ; loc} ->
@@ -346,7 +346,7 @@ module TransferFunctions = struct
             if is_captured_weak_self attributes binding_for_id && Typ.is_strong_pointer pvar_typ
             then StrongEqualToWeakCapturedVars.add pvar {checked= false; loc} astate.strongVars
             else astate.strongVars
-          with Not_found_s _ | Caml.Not_found -> astate.strongVars
+          with Caml.Not_found -> astate.strongVars
         in
         {astate with strongVars}
     | Prune (Var id, _, _, _) ->

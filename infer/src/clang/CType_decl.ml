@@ -359,7 +359,7 @@ let get_translate_as_friend_decl decl_list =
       Some t_ptr
   | _ ->
       None
-  | exception Caml.Not_found ->
+  | exception (Not_found_s _ | Caml.Not_found) ->
       None
 
 

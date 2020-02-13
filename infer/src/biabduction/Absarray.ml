@@ -49,7 +49,7 @@ module StrexpMatch : sig
   type t
 
   val find_path : sigma -> path -> t
-  (** Find a strexp at the given path. Can raise [Not_found] *)
+  (** Find a strexp at the given path. Can raise [Not_found_s/Caml.Not_found] *)
 
   val find : Tenv.t -> sigma -> (strexp_data -> bool) -> t list
   (** Find a strexp with the given property. *)
@@ -165,14 +165,14 @@ end = struct
   (** Store hpred using physical equality, and offset list for an array *)
   type t = sigma * Predicates.hpred * syn_offset list
 
-  (** Find an array at the given path. Can raise [Not_found] *)
+  (** Find an array at the given path. Can raise [Not_found_s/Caml.Not_found] *)
   let find_path sigma (root, syn_offs) : t =
     let filter = function Predicates.Hpointsto (e, _, _) -> Exp.equal root e | _ -> false in
     let hpred = List.find_exn ~f:filter sigma in
     (sigma, hpred, syn_offs)
 
 
-  (** Find a sub strexp with the given property. Can raise [Not_found] *)
+  (** Find a sub strexp with the given property. Can raise [Not_found_s/Caml.Not_found] *)
   let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
     let rec find_offset_sexp sigma_other hpred root offs se (typ : Typ.t) =
@@ -431,7 +431,7 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
           let sigma_fp' = StrexpMatch.replace_index tenv true matched_fp index fresh_index in
           Prop.set p ~sigma_fp:sigma_fp'
         else Prop.expose p
-      with Caml.Not_found -> Prop.expose p
+      with Not_found_s _ | Caml.Not_found -> Prop.expose p
     in
     let p3 =
       let matched = StrexpMatch.find_path p.Prop.sigma path in
@@ -445,7 +445,7 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
       prop_replace_path_index tenv p3 path map
     in
     Prop.normalize tenv p4
-  with Caml.Not_found -> p
+  with Not_found_s _ | Caml.Not_found -> p
 
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
@@ -474,7 +474,7 @@ let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (i
             (sigma', true)
       | _ ->
           (sigma, false)
-    with Caml.Not_found -> (sigma, false)
+    with Not_found_s _ | Caml.Not_found -> (sigma, false)
   in
   prop_update_sigma_and_fp_sigma tenv p prune_sigma
 

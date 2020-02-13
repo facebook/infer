@@ -16,9 +16,9 @@ open! IStd
 (* to the map. *)
 let add_enum_constant_to_map_if_needed decl_pointer pred_decl_opt =
   try
-    ignore (CAst_utils.get_enum_constant_exp decl_pointer) ;
+    ignore (CAst_utils.get_enum_constant_exp_exn decl_pointer) ;
     true
-  with Caml.Not_found ->
+  with Not_found_s _ | Caml.Not_found ->
     CAst_utils.add_enum_constant decl_pointer pred_decl_opt ;
     false
 

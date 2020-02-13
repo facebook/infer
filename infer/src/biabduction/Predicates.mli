@@ -301,7 +301,7 @@ val sub_symmetric_difference : subst -> subst -> subst * subst * subst
 
 val sub_find : (Ident.t -> bool) -> subst -> Exp.t
 (** [sub_find filter sub] returns the expression associated to the first identifier that satisfies
-    [filter]. Raise [Not_found] if there isn't one. *)
+    [filter]. Raise [Not_found_s/Caml.Not_found] if there isn't one. *)
 
 val sub_filter : (Ident.t -> bool) -> subst -> subst
 (** [sub_filter filter sub] restricts the domain of [sub] to the identifiers satisfying [filter]. *)

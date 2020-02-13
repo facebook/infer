@@ -143,7 +143,7 @@ let update_sil_types_map type_ptr sil_type =
     Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
 
-let update_enum_map enum_constant_pointer sil_exp =
+let update_enum_map_exn enum_constant_pointer sil_exp =
   let predecessor_pointer_opt, _ =
     ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
   in
@@ -158,7 +158,7 @@ let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
     ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
 
 
-let get_enum_constant_exp enum_constant_pointer =
+let get_enum_constant_exp_exn enum_constant_pointer =
   ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
 
 

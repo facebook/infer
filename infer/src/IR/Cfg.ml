@@ -131,7 +131,7 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
           if is_access || is_bridge || is_synthetic then
             inline_synthetic_method ret_id_typ etl pd loc |> Option.value ~default:instr
           else instr
-      | exception Caml.Not_found ->
+      | exception (Caml.Not_found | Not_found_s _) ->
           instr )
     | _ ->
         instr

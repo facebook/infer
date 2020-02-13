@@ -866,7 +866,7 @@ let sub_symmetric_difference sub1_in sub2_in =
 
 
 (** [sub_find filter sub] returns the expression associated to the first identifier that satisfies
-    [filter]. Raise [Not_found] if there isn't one. *)
+    [filter]. Raise [Not_found_s/Caml.Not_found] if there isn't one. *)
 let sub_find filter (sub : subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the identifiers satisfying [filter]. *)

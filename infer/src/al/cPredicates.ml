@@ -703,7 +703,7 @@ let is_property_pointer_type an =
           CAst_utils.name_of_typedef_type_info tti |> QualifiedCppName.to_qual_string
         in
         String.equal typedef_str CFrontend_config.id_cl
-    | exception Caml.Not_found ->
+    | exception (Not_found_s _ | Caml.Not_found) ->
         false
     | _ ->
         false )

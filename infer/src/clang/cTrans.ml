@@ -865,16 +865,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
       let prev_enum_constant_opt, sil_exp_opt =
-        CAst_utils.get_enum_constant_exp enum_constant_pointer
+        CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
       in
       match sil_exp_opt with
       | Some exp ->
           exp
       | None ->
           let exp = enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero in
-          CAst_utils.update_enum_map enum_constant_pointer exp ;
+          CAst_utils.update_enum_map_exn enum_constant_pointer exp ;
           exp
-    with Caml.Not_found -> zero
+    with Not_found_s _ | Caml.Not_found -> zero
 
 
   and enum_constant_trans trans_state decl_ref =
