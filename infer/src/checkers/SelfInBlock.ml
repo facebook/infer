@@ -285,7 +285,7 @@ module TransferFunctions = struct
   let report_unchecked_strongself_issues_on_args (domain : Domain.t) summary pname args =
     let report_issue var =
       report_unchecked_strongself_issues summary domain
-        (F.sprintf "passed to %s" (Procname.to_simplified_string pname))
+        (F.sprintf "passed to `%s`" (Procname.to_simplified_string pname))
         var
     in
     let rec report_on_non_nullable_arg ?annotations args =
