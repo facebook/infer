@@ -26,12 +26,6 @@ let invalid_argf _ : [`use_Logging_die_instead] = assert false
 
 let exit = `In_general_prefer_using_Logging_exit_over_Pervasives_exit
 
-(* prevent merlin et al. from showing ['a sexp_list] everywhere a list type is used *)
-type 'a list = 'a sexp_list
-
-(* prevent merlin et al. from showing ['a sexp_option] everywhere an option type is used *)
-type 'a option = 'a sexp_option
-
 [@@@warning "+32"]
 
 module ANSITerminal : module type of ANSITerminal = struct
