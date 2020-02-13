@@ -208,7 +208,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       - contents of terms are not zero
       - symbols in terms are only symbolic values
   *)
-  type t = {const: NonNegativeInt.t; terms: t M.t}
+  type t = {const: NonNegativeInt.t; terms: t M.t} [@@deriving compare]
 
   let of_non_negative_int : NonNegativeInt.t -> t = fun const -> {const; terms= M.empty}
 
@@ -376,12 +376,14 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       match subst p eval_sym with p -> Below p | exception ReturnTop s_trace -> Above s_trace
 
 
-  (** Emit a pair (d,t) where d is the degree of the polynomial and t is the first term with such degree *)
+  (** Emit a pair (d,t) where d is the degree of the polynomial and t is the first term with such
+      degree *)
   let rec degree_with_term {terms} =
     M.fold
-      (fun t p acc ->
+      (fun t p cur_max ->
         let d, p' = degree_with_term p in
-        max acc (Degree.succ (S.degree_kind t) d, mult_symb p' t) )
+        let degree_term = (Degree.succ (S.degree_kind t) d, mult_symb p' t) in
+        if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
       terms (Degree.zero, one)
 
 
