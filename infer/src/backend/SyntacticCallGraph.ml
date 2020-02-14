@@ -57,9 +57,9 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
   in
   (* prime the pending queue so that [empty] doesn't immediately return true *)
   fill_queue () ;
-  let scheduled = ref Procname.Set.empty in
+  let scheduled = ref 0 in
   let is_empty () =
-    let empty = Queue.is_empty pending && Procname.Set.is_empty !scheduled in
+    let empty = Int.equal 0 !scheduled && Queue.is_empty pending in
     if empty then (
       remaining := 0 ;
       L.progress "Finished call graph scheduling, %d procs remaining (in, or reaching, cycles).@."
@@ -79,14 +79,14 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
     | Some n when n.flag || not (CallGraph.mem syntactic_call_graph n.id) ->
         next ()
     | Some n ->
-        scheduled := Procname.Set.add n.pname !scheduled ;
+        incr scheduled ;
         CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
   let finished ~completed:_ = function
     | Procname pname ->
         decr remaining ;
-        scheduled := Procname.Set.remove pname !scheduled ;
+        decr scheduled ;
         CallGraph.remove syntactic_call_graph pname
     | File _ ->
         L.die InternalError "Only Procnames are scheduled but File target was received"
