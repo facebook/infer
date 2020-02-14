@@ -72,7 +72,7 @@ module TransferFunctions = struct
         if Dom.LatestPrune.is_top latest_prune' then mem
         else Dom.Mem.set_latest_prune latest_prune' mem
     | Error `SubstBottom ->
-        Dom.Mem.bot
+        Dom.Mem.unreachable
     | Error `SubstFail ->
         mem
 
@@ -476,7 +476,7 @@ let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_
   | Some exit_mem ->
       exit_mem |> Dom.Mem.forget_unreachable_locs ~formals |> Dom.Mem.unset_oenv
   | None ->
-      Bottom
+      Unreachable
 
 
 let do_analysis : Callbacks.proc_callback_args -> Summary.t =

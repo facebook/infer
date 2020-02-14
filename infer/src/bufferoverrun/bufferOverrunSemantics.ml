@@ -748,17 +748,20 @@ module Prune = struct
         astate
 
 
-  let is_unreachable_constant : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> bool =
-   fun integer_type_widths e m ->
-    let v = eval integer_type_widths e m in
-    Itv.leq ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
-    && PowLoc.is_bot (Val.get_pow_loc v)
-    && ArrayBlk.is_bot (Val.get_array_blk v)
-
-
   let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
-    if is_unreachable_constant integer_type_widths e mem then {astate with mem= Mem.bot} else astate
+    match mem with
+    | Mem.(Unreachable | Error | ExcRaised) ->
+        astate
+    | Mem.Reachable _ ->
+        let v = eval integer_type_widths e mem in
+        let itv_v = Val.get_itv v in
+        if
+          Itv.leq ~lhs:itv_v ~rhs:(Itv.of_int 0)
+          && PowLoc.is_bot (Val.get_pow_loc v)
+          && ArrayBlk.is_bot (Val.get_array_blk v)
+        then {astate with mem= (if Itv.is_bottom itv_v then Mem.error else Mem.unreachable)}
+        else astate
 
 
   let rec prune_helper integer_type_widths e astate =
@@ -804,5 +807,6 @@ module Prune = struct
    fun integer_type_widths e mem ->
     let mem, prune_pairs = Mem.apply_latest_prune e mem in
     let {mem; prune_pairs} = prune_helper integer_type_widths e {mem; prune_pairs} in
-    if PrunePairs.is_reachable prune_pairs then Mem.set_prune_pairs prune_pairs mem else Mem.bot
+    if PrunePairs.is_reachable prune_pairs then Mem.set_prune_pairs prune_pairs mem
+    else Mem.unreachable
 end

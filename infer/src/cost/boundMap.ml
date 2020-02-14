@@ -55,15 +55,21 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
             (* bound = env(v1) *... * env(vn) *)
             let bound =
               match entry_mem with
-              | Bottom ->
+              | Unreachable ->
                   L.debug Analysis Medium
                     "@\n\
                      [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                      unreachable returning cost 0 \n" ;
                   BasicCost.zero
+              | Error ->
+                  L.debug Analysis Medium
+                    "@\n\
+                     [COST ANALYSIS INTERNAL WARNING:] No 'env' found. The Inferbo memory of this \
+                     location is erroneous \n" ;
+                  BasicCost.zero
               | ExcRaised ->
                   BasicCost.one
-              | NonBottom mem ->
+              | Reachable mem ->
                   let cost =
                     BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map) ~node_id
                       mem

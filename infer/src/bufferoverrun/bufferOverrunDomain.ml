@@ -2333,13 +2333,15 @@ module MemReach = struct
 end
 
 module Mem = struct
-  type 'has_oenv t0 = Bottom | ExcRaised | NonBottom of 'has_oenv MemReach.t0
+  type 'has_oenv t0 = Unreachable | Error | ExcRaised | Reachable of 'has_oenv MemReach.t0
 
   type no_oenv_t = GOption.none t0
 
   type t = GOption.some t0
 
-  let bot : t = Bottom
+  let unreachable : t = Unreachable
+
+  let error : t = Error
 
   let exc_raised : t = ExcRaised
 
@@ -2349,15 +2351,19 @@ module Mem = struct
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
-      | Bottom, _ ->
+      | Unreachable, _ ->
           true
-      | _, Bottom ->
+      | _, Unreachable ->
+          false
+      | Error, _ ->
+          true
+      | _, Error ->
           false
       | ExcRaised, _ ->
           true
       | _, ExcRaised ->
           false
-      | NonBottom lhs, NonBottom rhs ->
+      | Reachable lhs, Reachable rhs ->
           MemReach.leq ~lhs ~rhs
 
 
@@ -2365,33 +2371,37 @@ module Mem = struct
     if phys_equal x y then x
     else
       match (x, y) with
-      | Bottom, m | m, Bottom ->
+      | Unreachable, m | m, Unreachable ->
+          m
+      | Error, m | m, Error ->
           m
       | ExcRaised, m | m, ExcRaised ->
           m
-      | NonBottom m1, NonBottom m2 ->
-          PhysEqual.optim2 ~res:(NonBottom (MemReach.join m1 m2)) x y
+      | Reachable m1, Reachable m2 ->
+          PhysEqual.optim2 ~res:(Reachable (MemReach.join m1 m2)) x y
 
 
   let widen ~prev:prev0 ~next:next0 ~num_iters =
     if phys_equal prev0 next0 then prev0
     else
       match (prev0, next0) with
-      | Bottom, m | m, Bottom ->
+      | Unreachable, m | m, Unreachable ->
+          m
+      | Error, m | m, Error ->
           m
       | ExcRaised, m | m, ExcRaised ->
           m
-      | NonBottom prev, NonBottom next ->
-          PhysEqual.optim2 ~res:(NonBottom (MemReach.widen ~prev ~next ~num_iters)) prev0 next0
+      | Reachable prev, Reachable next ->
+          PhysEqual.optim2 ~res:(Reachable (MemReach.widen ~prev ~next ~num_iters)) prev0 next0
 
 
   let map ~f x =
     match x with
-    | Bottom | ExcRaised ->
+    | Unreachable | Error | ExcRaised ->
         x
-    | NonBottom m ->
+    | Reachable m ->
         let m' = f m in
-        if phys_equal m' m then x else NonBottom m'
+        if phys_equal m' m then x else Reachable m'
 
 
   type get_summary = Procname.t -> no_oenv_t option
@@ -2399,13 +2409,14 @@ module Mem = struct
   let init : get_summary -> OndemandEnv.t -> t =
    fun get_summary oenv ->
     let get_summary pname =
-      match get_summary pname with Some (NonBottom m) -> Some m | _ -> None
+      match get_summary pname with Some (Reachable m) -> Some m | _ -> None
     in
-    NonBottom (MemReach.init get_summary oenv)
+    Reachable (MemReach.init get_summary oenv)
 
 
   let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =
-   fun ~default f m -> match m with Bottom | ExcRaised -> default | NonBottom m' -> f m'
+   fun ~default f m ->
+    match m with Unreachable | Error | ExcRaised -> default | Reachable m' -> f m'
 
 
   let is_stack_loc : Loc.t -> _ t0 -> bool =
@@ -2450,9 +2461,9 @@ module Mem = struct
   let find_ret_alias : _ t0 -> AliasTargets.t bottom_lifted =
    fun m ->
     match m with
-    | Bottom | ExcRaised ->
+    | Unreachable | Error | ExcRaised ->
         Bottom
-    | NonBottom m' ->
+    | Reachable m' ->
         NonBottom (MemReach.find_ret_alias m')
 
 
@@ -2503,8 +2514,8 @@ module Mem = struct
 
   let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m =
     match (callee_exit_mem, m) with
-    | NonBottom callee_exit_mem, NonBottom m ->
-        NonBottom (MemReach.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m)
+    | Reachable callee_exit_mem, Reachable m ->
+        Reachable (MemReach.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m)
     | _, _ ->
         m
 
@@ -2556,11 +2567,11 @@ module Mem = struct
 
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
    fun e -> function
-    | (Bottom | ExcRaised) as x ->
+    | (Unreachable | Error | ExcRaised) as x ->
         (x, PrunePairs.empty)
-    | NonBottom m ->
+    | Reachable m ->
         let m, prune_pairs = MemReach.apply_latest_prune e m in
-        (NonBottom m, prune_pairs)
+        (Reachable m, prune_pairs)
 
 
   let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
@@ -2582,10 +2593,10 @@ module Mem = struct
   let forget_size_alias arr_locs = map ~f:(MemReach.forget_size_alias arr_locs)
 
   let unset_oenv = function
-    | (Bottom | ExcRaised) as x ->
+    | (Unreachable | Error | ExcRaised) as x ->
         x
-    | NonBottom m ->
-        NonBottom (MemReach.unset_oenv m)
+    | Reachable m ->
+        Reachable (MemReach.unset_oenv m)
 
 
   let set_first_idx_of_null loc idx = map ~f:(MemReach.set_first_idx_of_null loc idx)
@@ -2601,10 +2612,12 @@ module Mem = struct
 
   let pp f m =
     match m with
-    | Bottom ->
-        F.pp_print_string f SpecialChars.up_tack
+    | Unreachable ->
+        F.fprintf f "%s_unreachable" SpecialChars.up_tack
+    | Error ->
+        F.fprintf f "%s_our_fault" SpecialChars.up_tack
     | ExcRaised ->
         F.pp_print_string f (SpecialChars.up_tack ^ " by exception")
-    | NonBottom m ->
+    | Reachable m ->
         MemReach.pp f m
 end

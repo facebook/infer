@@ -342,16 +342,16 @@ let check_instrs :
   match state with
   | _ when Instrs.is_empty instrs ->
       checks
-  | {AbstractInterpreter.State.pre= Dom.Mem.(Bottom | ExcRaised)} ->
+  | {AbstractInterpreter.State.pre= Dom.Mem.(Unreachable | Error | ExcRaised)} ->
       checks
-  | {AbstractInterpreter.State.pre= Dom.Mem.NonBottom _ as pre; post} ->
+  | {AbstractInterpreter.State.pre= Reachable _ as pre; post} ->
       if Instrs.nth_exists instrs 1 then L.(die InternalError) "Did not expect several instructions" ;
       let instr = Instrs.nth_exn instrs 0 in
       let checks =
         match post with
-        | Dom.Mem.(Bottom | ExcRaised) ->
+        | Dom.Mem.(Unreachable | ExcRaised) ->
             add_unreachable_code cfg node instr Instrs.empty checks
-        | Dom.Mem.NonBottom _ ->
+        | Dom.Mem.(Error | Reachable _) ->
             checks
       in
       let cond_set =
