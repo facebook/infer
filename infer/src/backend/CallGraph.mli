@@ -42,8 +42,8 @@ val flag : t -> Procname.t -> unit
 val flag_reachable : t -> Procname.t -> unit
 (** flag all nodes reachable from the node of the given procname, if it exists *)
 
-val get_unflagged_leaves : t -> Node.t list
-(** get all leaves that have their flag set to false *)
+val iter_unflagged_leaves : f:(Node.t -> unit) -> t -> unit
+(** iterate over all leaves that have their flag set to false *)
 
 val remove : t -> Procname.t -> unit
 

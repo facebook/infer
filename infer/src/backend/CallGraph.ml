@@ -147,11 +147,10 @@ let remove_unflagged_and_unflag_all {id_map; node_map} =
     node_map
 
 
-let get_unflagged_leaves g =
-  NodeMap.fold
-    (fun _id (n : Node.t) acc ->
-      if n.flag || List.exists n.successors ~f:(mem g) then acc else n :: acc )
-    g.node_map []
+let iter_unflagged_leaves ~f g =
+  NodeMap.iter
+    (fun _id (n : Node.t) -> if not (n.flag || List.exists n.successors ~f:(mem g)) then f n)
+    g.node_map
 
 
 let fold_flagged graph ~f =

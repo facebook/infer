@@ -51,32 +51,34 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
   let syntactic_call_graph = build_from_sources sources in
   let remaining = ref (CallGraph.n_procs syntactic_call_graph) in
   let remaining_tasks () = !remaining in
-  let pending =
-    (* prime the pending queue so that [empty] doesn't immediately return true *)
-    ref (CallGraph.get_unflagged_leaves syntactic_call_graph)
+  let pending : CallGraph.Node.t Queue.t = Queue.create () in
+  let fill_queue () =
+    CallGraph.iter_unflagged_leaves ~f:(Queue.enqueue pending) syntactic_call_graph
   in
+  (* prime the pending queue so that [empty] doesn't immediately return true *)
+  fill_queue () ;
   let scheduled = ref Procname.Set.empty in
   let is_empty () =
-    let empty = List.is_empty !pending && Procname.Set.is_empty !scheduled in
+    let empty = Queue.is_empty pending && Procname.Set.is_empty !scheduled in
     if empty then (
       remaining := 0 ;
       L.progress "Finished call graph scheduling, %d procs remaining (in, or reaching, cycles).@."
         (CallGraph.n_procs syntactic_call_graph) ;
       if Config.debug_level_analysis > 0 then CallGraph.to_dotty syntactic_call_graph "cycles.dot" ;
       (* save some memory *)
-      CallGraph.reset syntactic_call_graph ) ;
+      CallGraph.reset syntactic_call_graph ;
+      (* there is no equivalent to [Hashtbl.reset] so set capacity to min, freeing the old array *)
+      Queue.set_capacity pending 1 ) ;
     empty
   in
   let rec next () =
-    match !pending with
-    | [] ->
-        pending := CallGraph.get_unflagged_leaves syntactic_call_graph ;
-        if List.is_empty !pending then None else next ()
-    | n :: ns when n.flag || not (CallGraph.mem syntactic_call_graph n.id) ->
-        pending := ns ;
+    match Queue.dequeue pending with
+    | None ->
+        fill_queue () ;
+        if Queue.is_empty pending then None else next ()
+    | Some n when n.flag || not (CallGraph.mem syntactic_call_graph n.id) ->
         next ()
-    | n :: ns ->
-        pending := ns ;
+    | Some n ->
         scheduled := Procname.Set.add n.pname !scheduled ;
         CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
