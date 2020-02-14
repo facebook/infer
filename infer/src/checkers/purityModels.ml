@@ -68,14 +68,12 @@ module ProcName = struct
       ; +PatternMatch.implements_iterator &:: "next" <>--> modifies_first
       ; +PatternMatch.implements_iterator &:: "remove" <>--> modifies_first
       ; +PatternMatch.implements_collection &:: "size" <>--> PurityDomain.pure
-      ; +PatternMatch.implements_map &:: "size" <>--> PurityDomain.pure
       ; +PatternMatch.implements_collection &:: "add" <>--> modifies_first
       ; +PatternMatch.implements_collection &:: "addAll" <>--> modifies_first
       ; +PatternMatch.implements_collection &:: "remove" <>--> modifies_first
       ; +PatternMatch.implements_collection &:: "isEmpty" <>--> PurityDomain.pure
       ; +PatternMatch.implements_collection &:: "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_collection &:: "set" <>--> modifies_first
-        (* Unlike Set.contains, List.contains is linear *)
       ; +PatternMatch.implements_list &:: "contains" <>--> PurityDomain.pure
       ; +PatternMatch.implements_collection &:: "contains" <>--> PurityDomain.pure
       ; +PatternMatch.implements_enumeration &:: "hasMoreElements" <>--> PurityDomain.pure
@@ -89,7 +87,6 @@ module ProcName = struct
       ; +PatternMatch.implements_io "PrintStream" &:: "println" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "Reader" &:: "read" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "BufferedReader" &:: "readLine" <>--> PurityDomain.impure_global
-        (* deserialization is often expensive *)
       ; +PatternMatch.implements_jackson "databind.JsonDeserializer"
         &:: "deserialize" <>--> PurityDomain.pure
       ; +PatternMatch.implements_jackson "core.JsonParser" &:: "nextToken" <>--> modifies_first
@@ -110,7 +107,6 @@ module ProcName = struct
       ; +PatternMatch.implements_lang "Number" &:: "valueOf" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "String" &:: "length" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "String" &:: "charAt" <>--> PurityDomain.pure
-        (* substring in Java >= 1.7  has linear complexity *)
       ; +PatternMatch.implements_lang "String" &:: "substring" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "CharSequence" &:: "charAt" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "String" &:: "equals" <>--> PurityDomain.pure
