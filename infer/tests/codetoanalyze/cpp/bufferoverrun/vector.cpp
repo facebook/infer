@@ -45,6 +45,18 @@ void push_back_Bad() {
   v[1] = 2;
 }
 
+void emplace_back_Good() {
+  std::vector<int> v;
+  v.emplace_back(1);
+  v[0] = 2;
+}
+
+void emplace_back_Bad() {
+  std::vector<int> v;
+  v.emplace_back(1);
+  v[1] = 2;
+}
+
 void reserve_Good() {
   std::vector<int> v;
   v.reserve(42);

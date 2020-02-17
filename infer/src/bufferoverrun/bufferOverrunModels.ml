@@ -1410,6 +1410,8 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "push_back" $ capt_arg $+ capt_exp
         $--> StdVector.push_back
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "emplace_back" $ capt_arg $+ capt_exp
+        $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
