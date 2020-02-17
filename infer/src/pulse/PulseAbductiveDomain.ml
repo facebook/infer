@@ -459,6 +459,8 @@ module PrePost = struct
         ; call_state: call_state }
         (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
             state *)
+    | FormalActualLength of
+        {formals: Var.t list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
 
   let pp_contradiction fmt = function
     | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
@@ -477,6 +479,9 @@ module PrePost = struct
           "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints@\n\
            note: current call state was %a" AbstractValue.pp addr_callee Itv.ItvPure.pp arith_callee
           AbstractValue.pp addr_caller pp_call_state call_state
+    | FormalActualLength {formals; actuals} ->
+        F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
+          (List.length actuals)
 
 
   exception Contradiction of contradiction
@@ -597,11 +602,9 @@ module PrePost = struct
             ~formal ~actual call_state )
     with
     | Unequal_lengths ->
-        L.d_printfln "ERROR: formals have length %d but actuals have length %d"
-          (List.length formals) (List.length actuals) ;
-        None
+        raise (Contradiction (FormalActualLength {formals; actuals}))
     | Ok result ->
-        Some result
+        result
 
 
   let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
@@ -719,10 +722,9 @@ module PrePost = struct
 
 
   let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
-    let ( >>= ) x f = Option.map x ~f:(Result.bind ~f) in
-    let ( >>| ) x f = Option.map x ~f:(Result.map ~f) in
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
     let r =
+      let open Result.Monad_infix in
       (* first make as large a mapping as we can between callee values and caller values... *)
       materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
         call_state
@@ -1052,14 +1054,10 @@ module PrePost = struct
            pre/post pair *)
         L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
         Ok None
-    | None ->
-        (* couldn't apply the pre for some technical reason (as in: not by the fault of the
-           programmer as far as we know) *)
-        Ok (Some (astate, None))
-    | Some (Error _ as error) ->
+    | Error _ as error ->
         (* error: the function call requires to read some state known to be invalid *)
         error
-    | Some (Ok call_state) -> (
+    | Ok call_state -> (
         L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
         match
           let open Result.Monad_infix in
