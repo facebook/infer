@@ -17,7 +17,7 @@ Format.sprintf
  (ocamlopt_flags (%s))
  (libraries %s)
  (modules All_infer_in_one_file)
- (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_let ppx_sexp_conv ppx_variants_conv -no-check))
+ (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )
 |}
   (String.concat " " common_cflags)

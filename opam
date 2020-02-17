@@ -42,7 +42,6 @@ depends: [
   "ppx_compare" {>= "v0.13.0" & < "v0.14"}
   "ppx_deriving" {>="4.1"}
   "ppx_fields_conv" {>="v0.13.0" & < "v0.14"}
-  "ppx_let" {>="v0.13.0" & < "v0.14"}
   "sawja" {>="1.5.8"}
   "sqlite3"
   "utop" {with-test}

@@ -389,9 +389,9 @@ module ReplaceCallee = struct
               when Procname.C.is_make_shared name -> (
               match strip_ttype args with
               | Some (class_typ_templ :: param_typs_templ) ->
-                  let open Option.Let_syntax in
-                  let%bind class_name = Typ.name class_typ_templ in
-                  let%bind {Struct.methods} = Tenv.lookup tenv class_name in
+                  let open IOption.Let_syntax in
+                  let* class_name = Typ.name class_typ_templ in
+                  let* {Struct.methods} = Tenv.lookup tenv class_name in
                   List.find methods
                     ~f:(is_cpp_constructor_with_types get_formals class_typ_templ param_typs_templ)
               | _ ->
