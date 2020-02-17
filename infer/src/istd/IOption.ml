@@ -14,3 +14,15 @@ let value_default_f ~f = function None -> f () | Some v -> v
 let if_none_evalopt ~f x = match x with None -> f () | Some _ -> x
 
 let if_none_eval = value_default_f
+
+module Let_syntax = struct
+  include Option.Let_syntax
+
+  let ( let+ ) x f = Option.map ~f x
+
+  let ( and+ ) x y = Option.both x y
+
+  let ( let* ) x f = Option.bind ~f x
+
+  let ( and* ) x y = Option.both x y
+end
