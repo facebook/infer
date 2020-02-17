@@ -34,6 +34,7 @@
   __weak __typeof(self) weakSelf = self;
   [allResults enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL* stop) {
     B* result = [weakSelf process:obj]; // bug
+    B* result1 = [weakSelf process:obj]; // no bug because of dedup
     if (result != nil) {
       [resultsList addObject:result];
     }

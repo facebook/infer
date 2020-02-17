@@ -134,9 +134,10 @@ module Domain = struct
 end
 
 type report_issues_result =
-  { weakSelfList: DomainData.t list
+  { reported_captured_strong_self: Pvar.Set.t
+  ; reported_weak_self_in_noescape_block: Pvar.Set.t
   ; selfList: DomainData.t list
-  ; reported_captured_strong_self: Pvar.Set.t }
+  ; weakSelfList: DomainData.t list }
 
 module TransferFunctions = struct
   module Domain = Domain
@@ -436,16 +437,23 @@ let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (se
   Reporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
 
 
-let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) procname =
-  let message =
-    F.asprintf
-      "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
-       method `%s` in a position annotated with NS_NOESCAPE. Use `self` instead."
-      (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
-      (Procname.to_simplified_string procname)
-  in
-  let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block message
+let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) procname
+    reported_weak_self_in_noescape_block =
+  if not (Pvar.Set.mem weakSelf.pvar reported_weak_self_in_noescape_block) then (
+    let reported_weak_self_in_noescape_block =
+      Pvar.Set.add weakSelf.pvar reported_weak_self_in_noescape_block
+    in
+    let message =
+      F.asprintf
+        "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
+         method `%s` in a position annotated with NS_NOESCAPE. Use `self` instead."
+        (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
+        (Procname.to_simplified_string procname)
+    in
+    let ltr = make_trace_use_self_weakself domain in
+    Reporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block message ;
+    reported_weak_self_in_noescape_block )
+  else reported_weak_self_in_noescape_block
 
 
 let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
@@ -493,19 +501,27 @@ let report_issues summary domain attributes =
         in
         {result with reported_captured_strong_self}
     | DomainData.WEAK_SELF ->
-        ( match attributes.ProcAttributes.passed_as_noescape_block_to with
-        | Some procname ->
-            report_weakself_in_no_escape_block_issues summary domain domain_data procname
-        | None ->
-            () ) ;
-        {result with weakSelfList= domain_data :: result.weakSelfList}
+        let reported_weak_self_in_noescape_block =
+          match attributes.ProcAttributes.passed_as_noescape_block_to with
+          | Some procname ->
+              report_weakself_in_no_escape_block_issues summary domain domain_data procname
+                result.reported_weak_self_in_noescape_block
+          | None ->
+              result.reported_weak_self_in_noescape_block
+        in
+        { result with
+          reported_weak_self_in_noescape_block
+        ; weakSelfList= domain_data :: result.weakSelfList }
     | DomainData.SELF ->
         {result with selfList= domain_data :: result.selfList}
     | _ ->
         result
   in
   let report_issues_result_empty =
-    {weakSelfList= []; selfList= []; reported_captured_strong_self= Pvar.Set.empty}
+    { reported_captured_strong_self= Pvar.Set.empty
+    ; reported_weak_self_in_noescape_block= Pvar.Set.empty
+    ; selfList= []
+    ; weakSelfList= [] }
   in
   let domain_bindings =
     Vars.bindings domain
