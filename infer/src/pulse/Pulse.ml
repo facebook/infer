@@ -4,10 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
 module L = Logging
-open Result.Monad_infix
+open IResult.Let_syntax
 open PulseBasicInterface
 
 let report summary diagnostic =
@@ -72,22 +73,21 @@ module PulseTransferFunctions = struct
   let exec_object_out_of_scope call_loc (pvar, typ) astate =
     let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
     (* invalidate [&x] *)
-    PulseOperations.eval call_loc (Exp.Lvar pvar) astate
-    >>= fun (astate, out_of_scope_base) ->
+    let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
     PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
 
 
   let dispatch_call tenv summary ret call_exp actuals call_loc flags get_formals astate =
     (* evaluate all actuals *)
-    List.fold_result actuals ~init:(astate, [])
-      ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
-        PulseOperations.eval call_loc actual_exp astate
-        >>| fun (astate, actual_evaled) ->
-        ( astate
-        , ProcnameDispatcher.Call.FuncArg.
-            {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
-          :: rev_func_args ) )
-    >>= fun (astate, rev_func_args) ->
+    let* astate, rev_func_args =
+      List.fold_result actuals ~init:(astate, [])
+        ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
+          let+ astate, actual_evaled = PulseOperations.eval call_loc actual_exp astate in
+          ( astate
+          , ProcnameDispatcher.Call.FuncArg.
+              {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
+            :: rev_func_args ) )
+    in
     let func_args = List.rev rev_func_args in
     let model =
       match proc_name_of_call call_exp with
@@ -120,8 +120,7 @@ module PulseTransferFunctions = struct
     match get_out_of_scope_object call_exp actuals flags with
     | Some pvar_typ ->
         L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
-        posts
-        >>= fun posts ->
+        let* posts = posts in
         List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc pvar_typ astate)
         |> Result.all
     | None ->
@@ -134,22 +133,21 @@ module PulseTransferFunctions = struct
     | Load {id= lhs_id; e= rhs_exp; loc} ->
         (* [lhs_id := *rhs_exp] *)
         let result =
-          PulseOperations.eval_deref loc rhs_exp astate
-          >>| fun (astate, rhs_addr_hist) -> PulseOperations.write_id lhs_id rhs_addr_hist astate
+          let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
+          PulseOperations.write_id lhs_id rhs_addr_hist astate
         in
         [check_error summary result]
     | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
         (* [*lhs_exp := rhs_exp] *)
         let event = ValueHistory.Assignment loc in
         let result =
-          PulseOperations.eval loc rhs_exp astate
-          >>= fun (astate, (rhs_addr, rhs_history)) ->
-          PulseOperations.eval loc lhs_exp astate
-          >>= fun (astate, lhs_addr_hist) ->
-          PulseOperations.write_deref loc ~ref:lhs_addr_hist
-            ~obj:(rhs_addr, event :: rhs_history)
-            astate
-          >>= fun astate ->
+          let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+          let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
+          let* astate =
+            PulseOperations.write_deref loc ~ref:lhs_addr_hist
+              ~obj:(rhs_addr, event :: rhs_history)
+              astate
+          in
           match lhs_exp with
           | Lvar pvar when Pvar.is_return pvar ->
               PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr

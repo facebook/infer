@@ -6,7 +6,7 @@
  *)
 open! IStd
 module L = Logging
-open Result.Monad_infix
+open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -55,17 +55,20 @@ module Closures = struct
     | None ->
         Ok astate
     | Some (edges, attributes) ->
-        IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
-          | Attribute.Closure _ ->
-              IContainer.iter_result
-                ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
-                ~f:(fun (access, addr_trace) ->
-                  if is_captured_fake_access access then
-                    check_addr_access action addr_trace astate >>| fun _ -> ()
-                  else Ok () )
-          | _ ->
-              Ok () )
-        >>| fun () -> astate
+        let+ () =
+          IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
+            | Attribute.Closure _ ->
+                IContainer.iter_result
+                  ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
+                  ~f:(fun (access, addr_trace) ->
+                    if is_captured_fake_access access then
+                      let+ _ = check_addr_access action addr_trace astate in
+                      ()
+                    else Ok () )
+            | _ ->
+                Ok () )
+        in
+        astate
 
 
   let record location pname captured astate =
@@ -92,8 +95,8 @@ end
 let eval_var var astate = Stack.eval var astate
 
 let eval_access location addr_hist access astate =
-  check_addr_access location addr_hist astate
-  >>| fun astate -> Memory.eval_edge addr_hist access astate
+  let+ astate = check_addr_access location addr_hist astate in
+  Memory.eval_edge addr_hist access astate
 
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
@@ -180,29 +183,25 @@ let eval location exp0 astate =
     | Lvar pvar ->
         Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
-        eval exp' astate
-        >>= fun (astate, addr_hist) ->
-        check_addr_access location addr_hist astate
-        >>| fun astate -> Memory.eval_edge addr_hist (FieldAccess field) astate
+        let* astate, addr_hist = eval exp' astate in
+        let+ astate = check_addr_access location addr_hist astate in
+        Memory.eval_edge addr_hist (FieldAccess field) astate
     | Lindex (exp', exp_index) ->
-        eval exp_index astate
-        >>= fun (astate, addr_hist_index) ->
-        eval exp' astate
-        >>= fun (astate, addr_hist) ->
-        check_addr_access location addr_hist astate
-        >>| fun astate ->
+        let* astate, addr_hist_index = eval exp_index astate in
+        let* astate, addr_hist = eval exp' astate in
+        let+ astate = check_addr_access location addr_hist astate in
         Memory.eval_edge addr_hist (ArrayAccess (Typ.void, fst addr_hist_index)) astate
     | Closure {name; captured_vars} ->
-        List.fold_result captured_vars ~init:(astate, [])
-          ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _) ->
-            eval capt_exp astate
-            >>| fun (astate, addr_trace) ->
-            let mode =
-              (* HACK: the frontend follows this discipline *)
-              match (capt_exp : Exp.t) with Lvar _ -> `ByReference | _ -> `ByValue
-            in
-            (astate, (captured_as, addr_trace, mode) :: rev_captured) )
-        >>| fun (astate, rev_captured) ->
+        let+ astate, rev_captured =
+          List.fold_result captured_vars ~init:(astate, [])
+            ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _) ->
+              let+ astate, addr_trace = eval capt_exp astate in
+              let mode =
+                (* HACK: the frontend follows this discipline *)
+                match (capt_exp : Exp.t) with Lvar _ -> `ByReference | _ -> `ByValue
+              in
+              (astate, (captured_as, addr_trace, mode) :: rev_captured) )
+        in
         Closures.record location name (List.rev rev_captured) astate
     | Cast (_, exp') ->
         eval exp' astate
@@ -220,15 +219,16 @@ let eval location exp0 astate =
         in
         Ok (astate, (addr, []))
     | UnOp (unop, exp, _typ) ->
-        eval exp astate >>| fun (astate, (addr, hist)) -> eval_unop location unop addr hist astate
+        let+ astate, (addr, hist) = eval exp astate in
+        eval_unop location unop addr hist astate
     | BinOp (bop, e_lhs, e_rhs) ->
-        eval e_lhs astate
-        >>= fun (astate, (addr_lhs, hist_lhs)) ->
-        eval e_rhs astate
-        >>| fun ( astate
-                , ( addr_rhs
-                  , (* NOTE: arbitrarily track only the history of the lhs, maybe not the brightest idea *)
-                  _ ) ) ->
+        let* astate, (addr_lhs, hist_lhs) = eval e_lhs astate in
+        let+ ( astate
+             , ( addr_rhs
+               , (* NOTE: arbitrarily track only the history of the lhs, maybe not the brightest idea *)
+               _ ) ) =
+          eval e_rhs astate
+        in
         eval_binop location bop (AbstractValueOperand addr_lhs) (AbstractValueOperand addr_rhs)
           hist_lhs astate
     | Const _ | Sizeof _ | Exn _ ->
@@ -248,8 +248,7 @@ let eval_arith location exp astate =
             , Trace.Immediate {location; history= [ValueHistory.Assignment location]} )
         , Itv.ItvPure.of_int_lit i )
   | exp ->
-      eval location exp astate
-      >>| fun (astate, (value, _)) ->
+      let+ astate, (value, _) = eval location exp astate in
       ( astate
       , Some value
       , AddressAttributes.get_arithmetic value astate
@@ -296,10 +295,12 @@ let prune ~is_then_branch if_kind location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) -> (
-        eval_arith location exp_lhs astate
-        >>= fun (astate, value_lhs_opt, arith_lhs_opt, bo_itv_lhs) ->
-        eval_arith location exp_rhs astate
-        >>| fun (astate, value_rhs_opt, arith_rhs_opt, bo_itv_rhs) ->
+        let* astate, value_lhs_opt, arith_lhs_opt, bo_itv_lhs =
+          eval_arith location exp_lhs astate
+        in
+        let+ astate, value_rhs_opt, arith_rhs_opt, bo_itv_rhs =
+          eval_arith location exp_rhs astate
+        in
         match
           Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
             (Option.map ~f:fst arith_rhs_opt)
@@ -340,10 +341,9 @@ let prune ~is_then_branch if_kind location ~condition astate =
 
 
 let eval_deref location exp astate =
-  eval location exp astate
-  >>= fun (astate, addr_hist) ->
-  check_addr_access location addr_hist astate
-  >>| fun astate -> Memory.eval_edge addr_hist Dereference astate
+  let* astate, addr_hist = eval location exp astate in
+  let+ astate = check_addr_access location addr_hist astate in
+  Memory.eval_edge addr_hist Dereference astate
 
 
 let realloc_pvar pvar location astate =
@@ -387,8 +387,7 @@ let invalidate_deref location cause ref_addr_hist astate =
 
 
 let invalidate_array_elements location cause addr_trace astate =
-  check_addr_access location addr_trace astate
-  >>| fun astate ->
+  let+ astate = check_addr_access location addr_trace astate in
   match Memory.find_opt (fst addr_trace) astate with
   | None ->
       astate
@@ -404,8 +403,7 @@ let invalidate_array_elements location cause addr_trace astate =
 
 
 let shallow_copy location addr_hist astate =
-  check_addr_access location addr_hist astate
-  >>| fun astate ->
+  let+ astate = check_addr_access location addr_hist astate in
   let cell =
     match AbductiveDomain.find_post_cell_opt (fst addr_hist) astate with
     | None ->
@@ -458,7 +456,8 @@ let check_address_escape escape_location proc_desc address history astate =
             (Diagnostic.StackVariableAddressEscape {variable; location= escape_location; history}) )
         else Ok () )
   in
-  check_address_of_cpp_temporary () >>= check_address_of_stack_variable >>| fun () -> astate
+  let+ () = check_address_of_cpp_temporary () >>= check_address_of_stack_variable in
+  astate
 
 
 let mark_address_of_cpp_temporary history variable address astate =

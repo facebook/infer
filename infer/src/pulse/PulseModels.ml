@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open Result.Monad_infix
+open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -24,14 +24,14 @@ module Misc = struct
   let shallow_copy model_desc dest_pointer_hist src_pointer_hist : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
-    PulseOperations.eval_access location src_pointer_hist Dereference astate
-    >>= fun (astate, obj) ->
-    PulseOperations.shallow_copy location obj astate
-    >>= fun (astate, obj_copy) ->
-    PulseOperations.write_deref location ~ref:dest_pointer_hist
-      ~obj:(fst obj_copy, event :: snd obj_copy)
-      astate
-    >>| fun astate -> [PulseOperations.havoc_id ret_id [event] astate]
+    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    let* astate, obj_copy = PulseOperations.shallow_copy location obj astate in
+    let+ astate =
+      PulseOperations.write_deref location ~ref:dest_pointer_hist
+        ~obj:(fst obj_copy, event :: snd obj_copy)
+        astate
+    in
+    [PulseOperations.havoc_id ret_id [event] astate]
 
 
   let early_exit : model = fun ~caller_summary:_ _ ~ret:_ _ -> Ok []
@@ -85,8 +85,8 @@ module C = struct
     if is_known_zero then (* freeing 0 is a no-op *)
       Ok [astate]
     else
-      PulseOperations.invalidate location Invalidation.CFree deleted_access astate
-      >>| fun astate -> [astate]
+      let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
+      [astate]
 end
 
 module Cplusplus = struct
@@ -113,35 +113,35 @@ module StdAtomicInteger = struct
 
 
   let load_backing_int location this astate =
-    PulseOperations.eval_access location this Dereference astate
-    >>= fun (astate, obj) ->
-    PulseOperations.eval_access location obj (FieldAccess internal_int) astate
-    >>= fun (astate, int_addr) ->
-    PulseOperations.eval_access location int_addr Dereference astate
-    >>| fun (astate, int_val) -> (astate, int_addr, int_val)
+    let* astate, obj = PulseOperations.eval_access location this Dereference astate in
+    let* astate, int_addr =
+      PulseOperations.eval_access location obj (FieldAccess internal_int) astate
+    in
+    let+ astate, int_val = PulseOperations.eval_access location int_addr Dereference astate in
+    (astate, int_addr, int_val)
 
 
   let constructor this_address init_value : model =
    fun ~caller_summary:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []} in
     let this = (AbstractValue.mk_fresh (), [event]) in
-    PulseOperations.eval_access location this (FieldAccess internal_int) astate
-    >>= fun (astate, int_field) ->
-    PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate
-    >>= fun astate ->
-    PulseOperations.write_deref location ~ref:this_address ~obj:this astate
-    >>| fun astate -> [astate]
+    let* astate, int_field =
+      PulseOperations.eval_access location this (FieldAccess internal_int) astate
+    in
+    let* astate = PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate in
+    let+ astate = PulseOperations.write_deref location ~ref:this_address ~obj:this astate in
+    [astate]
 
 
   let arith_bop prepost location event ret_id bop this operand astate =
-    load_backing_int location this astate
-    >>= fun (astate, int_addr, (old_int, old_int_hist)) ->
+    let* astate, int_addr, (old_int, old_int_hist) = load_backing_int location this astate in
     let astate, (new_int, hist) =
       PulseOperations.eval_binop location bop (AbstractValueOperand old_int) operand old_int_hist
         astate
     in
-    PulseOperations.write_deref location ~ref:int_addr ~obj:(new_int, event :: hist) astate
-    >>| fun astate ->
+    let+ astate =
+      PulseOperations.write_deref location ~ref:int_addr ~obj:(new_int, event :: hist) astate
+    in
     let ret_int = match prepost with `Pre -> new_int | `Post -> old_int in
     PulseOperations.write_id ret_id (ret_int, event :: hist) astate
 
@@ -149,22 +149,30 @@ module StdAtomicInteger = struct
   let fetch_add this (increment, _) _memory_ordering : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= []} in
-    arith_bop `Post location event ret_id (PlusA None) this (AbstractValueOperand increment) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
+        astate
+    in
+    [astate]
 
 
   let fetch_sub this (increment, _) _memory_ordering : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= []} in
-    arith_bop `Post location event ret_id (MinusA None) this (AbstractValueOperand increment) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
+        astate
+    in
+    [astate]
 
 
   let operator_plus_plus_pre this : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= []} in
-    arith_bop `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
+    in
+    [astate]
 
 
   let operator_plus_plus_post this _int : model =
@@ -172,15 +180,19 @@ module StdAtomicInteger = struct
     let event =
       ValueHistory.Call {f= Model "std::atomic<T>::operator++(T)"; location; in_call= []}
     in
-    arith_bop `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
+    in
+    [astate]
 
 
   let operator_minus_minus_pre this : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= []} in
-    arith_bop `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
+    in
+    [astate]
 
 
   let operator_minus_minus_post this _int : model =
@@ -188,15 +200,16 @@ module StdAtomicInteger = struct
     let event =
       ValueHistory.Call {f= Model "std::atomic<T>::operator--(T)"; location; in_call= []}
     in
-    arith_bop `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
-    >>| fun astate -> [astate]
+    let+ astate =
+      arith_bop `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
+    in
+    [astate]
 
 
   let load_instr model_desc this _memory_ordering_opt : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
-    load_backing_int location this astate
-    >>| fun (astate, _int_addr, (int, hist)) ->
+    let+ astate, _int_addr, (int, hist) = load_backing_int location this astate in
     [PulseOperations.write_id ret_id (int, event :: hist) astate]
 
 
@@ -205,27 +218,26 @@ module StdAtomicInteger = struct
   let operator_t = load_instr "std::atomic<T>::operator_T()"
 
   let store_backing_int location this_address new_value astate =
-    PulseOperations.eval_access location this_address Dereference astate
-    >>= fun (astate, this) ->
-    PulseOperations.eval_access location this (FieldAccess internal_int) astate
-    >>= fun (astate, int_field) ->
+    let* astate, this = PulseOperations.eval_access location this_address Dereference astate in
+    let* astate, int_field =
+      PulseOperations.eval_access location this (FieldAccess internal_int) astate
+    in
     PulseOperations.write_deref location ~ref:int_field ~obj:new_value astate
 
 
   let store this_address (new_value, new_hist) _memory_ordering : model =
    fun ~caller_summary:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []} in
-    store_backing_int location this_address (new_value, event :: new_hist) astate
-    >>| fun astate -> [astate]
+    let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
+    [astate]
 
 
   let exchange this_address (new_value, new_hist) _memory_ordering : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []} in
-    load_backing_int location this_address astate
-    >>= fun (astate, _int_addr, (old_int, old_hist)) ->
-    store_backing_int location this_address (new_value, event :: new_hist) astate
-    >>| fun astate -> [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
+    let* astate, _int_addr, (old_int, old_hist) = load_backing_int location this_address astate in
+    let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
+    [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
 end
 
 module StdBasicString = struct
@@ -244,10 +256,10 @@ module StdBasicString = struct
   let data this_hist : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
-    to_internal_string location this_hist astate
-    >>= fun (astate, string_addr_hist) ->
-    PulseOperations.eval_access location string_addr_hist Dereference astate
-    >>| fun (astate, (string, hist)) ->
+    let* astate, string_addr_hist = to_internal_string location this_hist astate in
+    let+ astate, (string, hist) =
+      PulseOperations.eval_access location string_addr_hist Dereference astate
+    in
     [PulseOperations.write_id ret_id (string, event :: hist) astate]
 
 
@@ -255,12 +267,11 @@ module StdBasicString = struct
    fun ~caller_summary:_ location ~ret:_ astate ->
     let model = CallEvent.Model "std::basic_string::~basic_string()" in
     let call_event = ValueHistory.Call {f= model; location; in_call= []} in
-    to_internal_string location this_hist astate
-    >>= fun (astate, (string_addr, string_hist)) ->
+    let* astate, (string_addr, string_hist) = to_internal_string location this_hist astate in
     let string_addr_hist = (string_addr, call_event :: string_hist) in
-    PulseOperations.invalidate_deref location CppDelete string_addr_hist astate
-    >>= fun astate ->
-    PulseOperations.invalidate location CppDelete string_addr_hist astate >>| fun astate -> [astate]
+    let* astate = PulseOperations.invalidate_deref location CppDelete string_addr_hist astate in
+    let+ astate = PulseOperations.invalidate location CppDelete string_addr_hist astate in
+    [astate]
 end
 
 module StdFunction = struct
@@ -270,10 +281,10 @@ module StdFunction = struct
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
-    PulseOperations.eval_access location lambda_ptr_hist Dereference astate
-    >>= fun (astate, (lambda, _)) ->
-    PulseOperations.Closures.check_captured_addresses location lambda astate
-    >>= fun astate ->
+    let* astate, (lambda, _) =
+      PulseOperations.eval_access location lambda_ptr_hist Dereference astate
+    in
+    let* astate = PulseOperations.Closures.check_captured_addresses location lambda astate in
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
@@ -300,16 +311,14 @@ module StdVector = struct
 
 
   let element_of_internal_array location vector index astate =
-    to_internal_array location vector astate
-    >>= fun (astate, vector_internal_array) ->
+    let* astate, vector_internal_array = to_internal_array location vector astate in
     PulseOperations.eval_access location vector_internal_array
       (ArrayAccess (Typ.void, index))
       astate
 
 
   let reallocate_internal_array trace vector vector_f location astate =
-    to_internal_array location vector astate
-    >>= fun (astate, array_address) ->
+    let* astate, array_address = to_internal_array location vector astate in
     PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
     >>= PulseOperations.invalidate_deref location (StdVector vector_f) array_address
     >>= PulseOperations.havoc_field location vector internal_array trace
@@ -329,8 +338,7 @@ module StdVector = struct
   let at ~desc vector index : model =
    fun ~caller_summary:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    element_of_internal_array location vector (fst index) astate
-    >>| fun (astate, (addr, hist)) ->
+    let+ astate, (addr, hist) = element_of_internal_array location vector (fst index) astate in
     [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
 
 
@@ -358,13 +366,16 @@ module JavaCollection = struct
   let set coll index new_elem : model =
    fun ~caller_summary:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
-    StdVector.element_of_internal_array location coll (fst index) astate
-    >>= fun (astate, ((old_addr, old_hist) as old_elem)) ->
-    PulseOperations.write_deref location ~ref:new_elem
-      ~obj:(old_addr, ValueHistory.Assignment location :: old_hist)
-      astate
-    >>= PulseOperations.invalidate_deref location (StdVector Assign) old_elem
-    >>| fun astate -> [PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate]
+    let* astate, ((old_addr, old_hist) as old_elem) =
+      StdVector.element_of_internal_array location coll (fst index) astate
+    in
+    let+ astate =
+      PulseOperations.write_deref location ~ref:new_elem
+        ~obj:(old_addr, ValueHistory.Assignment location :: old_hist)
+        astate
+      >>= PulseOperations.invalidate_deref location (StdVector Assign) old_elem
+    in
+    [PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate]
 end
 
 module StringSet = Caml.Set.Make (String)

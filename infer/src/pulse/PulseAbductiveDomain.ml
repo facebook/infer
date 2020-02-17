@@ -165,7 +165,7 @@ module Stack = struct
 end
 
 module AddressAttributes = struct
-  open Result.Monad_infix
+  open IResult.Let_syntax
 
   (** if [address] is in [pre] then add the attribute [attr] *)
   let abduce_attribute address attribute astate =
@@ -180,8 +180,7 @@ module AddressAttributes = struct
 
 
   let check_valid access_trace addr astate =
-    BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs
-    >>| fun () ->
+    let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
     abduce_attribute addr (MustBeValid access_trace) astate
 
@@ -559,11 +558,9 @@ module PrePost = struct
       [call_state.astate] *)
   let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
     L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
-    (let open Option.Monad_infix in
-    BaseStack.find_opt formal pre.BaseDomain.stack
-    >>= fun (addr_formal_pre, _) ->
-    BaseMemory.find_edge_opt addr_formal_pre Dereference pre.BaseDomain.heap
-    >>| fun (formal_pre, _) ->
+    (let open IOption.Let_syntax in
+    let* addr_formal_pre, _ = BaseStack.find_opt formal pre.BaseDomain.stack in
+    let+ formal_pre, _ = BaseMemory.find_edge_opt addr_formal_pre Dereference pre.BaseDomain.heap in
     materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
       ~addr_hist_caller:actual call_state)
     |> function Some result -> result | None -> Ok call_state
@@ -724,7 +721,7 @@ module PrePost = struct
   let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
     let r =
-      let open Result.Monad_infix in
+      let open IResult.Let_syntax in
       (* first make as large a mapping as we can between callee values and caller values... *)
       materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
         call_state
@@ -814,10 +811,11 @@ module PrePost = struct
     in
     let attrs =
       let written_to =
-        let open Option.Monad_infix in
-        BaseAddressAttributes.find_opt addr_caller attrs
-        >>= (fun attrs -> Attributes.get_written_to attrs)
-        |> fun written_to_callee_opt ->
+        let written_to_callee_opt =
+          let open IOption.Let_syntax in
+          let* attrs = BaseAddressAttributes.find_opt addr_caller attrs in
+          Attributes.get_written_to attrs
+        in
         let callee_trace =
           match written_to_callee_opt with
           | None ->
@@ -872,12 +870,14 @@ module PrePost = struct
     L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractValue.pp
       (fst actual) ;
     match
-      let open Option.Monad_infix in
-      BaseStack.find_opt formal (pre_post.pre :> BaseDomain.t).BaseDomain.stack
-      >>= fun (addr_formal_pre, _) ->
-      BaseMemory.find_edge_opt addr_formal_pre Dereference
-        (pre_post.pre :> BaseDomain.t).BaseDomain.heap
-      >>| fun (formal_pre, _) ->
+      let open IOption.Let_syntax in
+      let* addr_formal_pre, _ =
+        BaseStack.find_opt formal (pre_post.pre :> BaseDomain.t).BaseDomain.stack
+      in
+      let+ formal_pre, _ =
+        BaseMemory.find_edge_opt addr_formal_pre Dereference
+          (pre_post.pre :> BaseDomain.t).BaseDomain.heap
+      in
       record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:formal_pre
         ~addr_hist_caller:actual call_state
     with
@@ -1060,9 +1060,8 @@ module PrePost = struct
     | Ok call_state -> (
         L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
         match
-          let open Result.Monad_infix in
-          check_all_valid callee_proc_name call_location pre_post call_state
-          >>| fun astate ->
+          let open IResult.Let_syntax in
+          let+ astate = check_all_valid callee_proc_name call_location pre_post call_state in
           (* reset [visited] *)
           let call_state = {call_state with astate; visited= AddressSet.empty} in
           (* apply the postcondition *)
