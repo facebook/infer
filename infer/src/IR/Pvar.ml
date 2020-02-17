@@ -318,3 +318,11 @@ let is_objc_static_local_of_proc_name pname pvar =
 
 
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (get_name pvar))
+
+module Set = PrettyPrintable.MakePPSet (struct
+  type nonrec t = t
+
+  let compare = compare
+
+  let pp = pp Pp.text
+end)

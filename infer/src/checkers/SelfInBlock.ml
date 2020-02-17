@@ -133,6 +133,11 @@ module Domain = struct
     && StrongEqualToWeakCapturedVars.leq ~lhs:lhs.strongVars ~rhs:rhs.strongVars
 end
 
+type report_issues_result =
+  { weakSelfList: DomainData.t list
+  ; selfList: DomainData.t list
+  ; reported_captured_strong_self: Pvar.Set.t }
+
 module TransferFunctions = struct
   module Domain = Domain
   module CFG = ProcCfg.Normal
@@ -458,52 +463,66 @@ let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
   Reporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
 
 
-let report_captured_strongself_issue domain summary (capturedStrongSelf : DomainData.t) =
-  let message =
-    F.asprintf
-      "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. This \
-       could lead to retain cycles or unexpected behavior since to avoid retain cycles one usually \
-       uses a local strong pointer or a captured weak pointer instead."
-      (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
-  in
-  let ltr = make_trace_captured_strong_self domain in
-  Reporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc IssueType.captured_strong_self
-    message
+let report_captured_strongself_issue domain summary (capturedStrongSelf : DomainData.t)
+    report_captured_strongself =
+  if not (Pvar.Set.mem capturedStrongSelf.pvar report_captured_strongself) then (
+    let report_captured_strongself =
+      Pvar.Set.add capturedStrongSelf.pvar report_captured_strongself
+    in
+    let message =
+      F.asprintf
+        "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \
+         This could lead to retain cycles or unexpected behavior since to avoid retain cycles one \
+         usually uses a local strong pointer or a captured weak pointer instead."
+        (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
+    in
+    let ltr = make_trace_captured_strong_self domain in
+    Reporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc IssueType.captured_strong_self
+      message ;
+    report_captured_strongself )
+  else report_captured_strongself
 
 
 let report_issues summary domain attributes =
-  let process_domain_item _ (domain_data : DomainData.t) (weakSelfList, selfList) =
+  let process_domain_item (result : report_issues_result) (_, (domain_data : DomainData.t)) =
     match domain_data.kind with
     | DomainData.CAPTURED_STRONG_SELF ->
-        report_captured_strongself_issue domain summary domain_data ;
-        (weakSelfList, selfList)
+        let reported_captured_strong_self =
+          report_captured_strongself_issue domain summary domain_data
+            result.reported_captured_strong_self
+        in
+        {result with reported_captured_strong_self}
     | DomainData.WEAK_SELF ->
         ( match attributes.ProcAttributes.passed_as_noescape_block_to with
         | Some procname ->
             report_weakself_in_no_escape_block_issues summary domain domain_data procname
         | None ->
             () ) ;
-        (domain_data :: weakSelfList, selfList)
+        {result with weakSelfList= domain_data :: result.weakSelfList}
     | DomainData.SELF ->
-        (weakSelfList, domain_data :: selfList)
+        {result with selfList= domain_data :: result.selfList}
     | _ ->
-        (weakSelfList, selfList)
+        result
   in
-  let weakSelfList, selfList = Vars.fold process_domain_item domain ([], []) in
-  let sorted_WeakSelfList =
-    List.sort weakSelfList ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
-        Location.compare loc1 loc2 )
+  let report_issues_result_empty =
+    {weakSelfList= []; selfList= []; reported_captured_strong_self= Pvar.Set.empty}
   in
-  let sorted_selfList =
-    List.sort selfList ~compare:(fun {DomainData.loc= loc1} {DomainData.loc= loc2} ->
-        Location.compare loc1 loc2 )
+  let domain_bindings =
+    Vars.bindings domain
+    |> List.sort ~compare:(fun (_, {DomainData.loc= loc1}) (_, {DomainData.loc= loc2}) ->
+           Location.compare loc1 loc2 )
   in
-  ( match (sorted_WeakSelfList, sorted_selfList) with
+  let {weakSelfList; selfList} =
+    List.fold_left ~f:process_domain_item ~init:report_issues_result_empty domain_bindings
+  in
+  let weakSelfList = List.rev weakSelfList in
+  let selfList = List.rev selfList in
+  ( match (weakSelfList, selfList) with
   | weakSelf :: _, self :: _ ->
       report_mix_self_weakself_issues summary domain weakSelf self
   | _ ->
       () ) ;
-  match sorted_WeakSelfList with
+  match weakSelfList with
   | weakSelf1 :: weakSelf2 :: _ ->
       report_weakself_multiple_issue summary domain weakSelf1 weakSelf2
   | _ ->

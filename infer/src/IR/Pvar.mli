@@ -168,3 +168,6 @@ val get_name_of_local_with_procname : t -> Mangled.t
 val materialized_cpp_temporary : string
 
 val rename : f:(string -> string) -> t -> t
+
+module Set : PrettyPrintable.PPSet with type elt = t
+(** Sets of pvars. *)
