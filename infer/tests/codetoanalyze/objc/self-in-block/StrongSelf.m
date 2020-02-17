@@ -98,19 +98,32 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     } else {
       strongSelf->x; // bug here
       [strongSelf foo]; // no bug here
-      m(strongSelf); // bug here
-      m2(strongSelf); // no bug here because of _Nullable annotation
-      [strongSelf.user use_self_in_block_test:strongSelf]; // bug here
-      [strongSelf.user
-          use_self_in_block_test_nullable:1
-                                      and:strongSelf]; // no bug here because of
-                                                       // _Nullable annotation
+      m(strongSelf); // no bug here because of dedup
     }
-    [strongSelf foo];
-    if (strongSelf != nil) {
+    return 0;
+  };
+}
+
+- (void)strongSelfCheck2_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
       [strongSelf foo];
       int x = strongSelf->x;
+    } else {
+      m(strongSelf); // bug here
+      int x = strongSelf->x; // no bug here because of dedup
     }
+    return 0;
+  };
+}
+
+- (void)strongSelfCheck6_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    m2(strongSelf); // no bug here because of _Nullable annotation
     return 0;
   };
 }
@@ -140,13 +153,23 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck4_good {
+- (void)strongSelfCheck4_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
-    if (!strongSelf) {
-    } else {
-    }
+    [strongSelf.user use_self_in_block_test:strongSelf]; // bug here
+    return 0;
+  };
+}
+
+- (void)strongSelfCheck5_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    [strongSelf.user
+        use_self_in_block_test_nullable:1
+                                    and:strongSelf]; // no bug here because of
+                                                     // _Nullable annotation
     return 0;
   };
 }
@@ -162,7 +185,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck6_good {
+- (void)strongSelfCheck7_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
