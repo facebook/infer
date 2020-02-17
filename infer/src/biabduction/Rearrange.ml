@@ -758,7 +758,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let annot_extract_guarded_by_str ((annot : Annot.t), _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by then
         match annot.parameters with
-        | [Annot.{value= guarded_by_str}] when not (excluded_guardedby_string guarded_by_str) ->
+        | [Annot.{value= Str guarded_by_str}] when not (excluded_guardedby_string guarded_by_str) ->
             Some guarded_by_str
         | _ ->
             None
@@ -769,7 +769,13 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let extract_suppress_warnings_str item_annot =
     let annot_suppress_warnings_str ((annot : Annot.t), _) =
       if Annotations.annot_ends_with annot Annotations.suppress_lint then
-        match annot.parameters with [Annot.{value= suppr_str}] -> Some suppr_str | _ -> None
+        (* TODO: @SuppressLint's param is an array of strings, thus we need to match on
+           array. But generally logic here is still broken since it only expects 1 value. *)
+        match annot.parameters with
+        | [Annot.{value= Array [Str suppr_str; _]}] ->
+            Some suppr_str
+        | _ ->
+            None
       else None
     in
     List.find_map ~f:annot_suppress_warnings_str item_annot

@@ -9,21 +9,75 @@
 open! IStd
 open Javalib_pack
 
+let translate_basic_type = function
+  | `Bool ->
+      Typ.boolean
+  | `Byte ->
+      Typ.java_byte
+  | `Char ->
+      Typ.char
+  | `Double ->
+      Typ.double
+  | `Float ->
+      Typ.float
+  | `Int ->
+      Typ.int
+  | `Long ->
+      Typ.long
+  | `Short ->
+      Typ.java_short
+
+
+let rec translate_value_type = function
+  | JBasics.TBasic basic ->
+      translate_basic_type basic
+  | JBasics.TObject obj ->
+      translate_object_type obj
+
+
+and translate_object_type = function
+  | JBasics.TClass cn ->
+      Typ.mk_struct (Typ.Name.Java.from_string (JBasics.cn_name cn))
+  | JBasics.TArray vt ->
+      Typ.mk_array (translate_value_type vt)
+
+
+let rec translate_value_exn = function
+  | JBasics.EVCstString s ->
+      Annot.Str s
+  | JBasics.EVCstBoolean 0 ->
+      Annot.Bool false
+  | JBasics.EVCstBoolean 1 ->
+      Annot.Bool true
+  | JBasics.EVEnum (cn, value) ->
+      Annot.Enum {class_typ= Typ.mk_struct (Typ.Name.Java.from_string (JBasics.cn_name cn)); value}
+  | JBasics.EVArray values ->
+      Annot.Array (List.map values ~f:translate_value |> List.filter_opt)
+  | JBasics.EVClass (Some typ) ->
+      Annot.Class (translate_value_type typ)
+  | JBasics.EVClass _ ->
+      Annot.Class Typ.void
+  | JBasics.EVAnnotation ann ->
+      Annot.Annot (translate ann)
+  | _ ->
+      raise (Invalid_argument "Annotation value not supported")
+
+
+and translate_value element_value =
+  match translate_value_exn element_value with
+  | value ->
+      Some value
+  | exception Invalid_argument _ ->
+      None
+
+
 (** Translate an annotation. *)
-let translate a : Annot.t =
+and translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
-  let rec translate_value_pair acc (x, value) =
-    match value with
-    | JBasics.EVArray (JBasics.EVCstString s :: l) ->
-        translate_value_pair (Annot.{name= Some x; value= s} :: acc) (x, JBasics.EVArray l)
-    | JBasics.EVCstString s ->
-        Annot.{name= Some x; value= s} :: acc
-    | JBasics.EVCstBoolean 0 ->
-        (* just translate bools as strings. means we can't distinguish between a boolean false
-           literal parameter and string literal "false" parameter, but that's ok. *)
-        Annot.{name= Some x; value= "false"} :: acc
-    | JBasics.EVCstBoolean 1 ->
-        Annot.{name= Some x; value= "true"} :: acc
+  let translate_value_pair acc (x, value) =
+    match translate_value value with
+    | Some translated ->
+        Annot.{name= Some x; value= translated} :: acc
     | _ ->
         acc
   in

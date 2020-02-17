@@ -277,7 +277,7 @@ let is_thread_safe item_annot =
     List.exists ~f:(Annotations.annot_ends_with annot) threadsafe_annotations
     &&
     match annot.Annot.parameters with
-    | [Annot.{name= Some "enableChecks"; value= "false"}] ->
+    | [Annot.{name= Some "enableChecks"; value= Bool false}] ->
         false
     | _ ->
         true
@@ -291,7 +291,7 @@ let is_assumed_thread_safe item_annot =
     Annotations.annot_ends_with annot Annotations.thread_safe
     &&
     match annot.Annot.parameters with
-    | [Annot.{name= Some "enableChecks"; value= "false"}] ->
+    | [Annot.{name= Some "enableChecks"; value= Bool false}] ->
         true
     | _ ->
         false

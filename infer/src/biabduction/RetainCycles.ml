@@ -66,9 +66,10 @@ let edge_is_strong tenv obj_edge =
   in
   let has_weak_or_unretained_or_assign params =
     List.exists
-      ~f:(fun Annot.{value= att} ->
-        String.equal Config.unsafe_unret att
-        || String.equal Config.weak att || String.equal Config.assign att )
+      ~f:(fun Annot.{value} ->
+        Annot.has_matching_str_value value ~pred:(fun att ->
+            String.equal Config.unsafe_unret att
+            || String.equal Config.weak att || String.equal Config.assign att ) )
       params
   in
   let rc_field =

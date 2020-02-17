@@ -134,6 +134,8 @@ val mk : ?default:t -> ?quals:type_quals -> desc -> t
 val mk_array : ?default:t -> ?quals:type_quals -> ?length:IntLit.t -> ?stride:IntLit.t -> t -> t
 (** Create an array type from a given element type. If [length] or [stride] value is given, use them as static length and size. *)
 
+val mk_struct : name -> t
+
 val void : t
 (** void type *)
 

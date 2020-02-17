@@ -11,21 +11,32 @@
 open! IStd
 module F = Format
 
-type parameter = {name: string option; value: string}
-
-type parameters = parameter list
-
-(** Type to represent one [@Annotation]. *)
-type t =
-  { class_name: string  (** name of the annotation *)
-  ; parameters: parameters  (** currently only one string parameter *) }
+(** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
+    other annotations. *)
+type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
 [@@deriving compare]
+
+and parameter = {name: string option; value: value} [@@deriving compare]
+
+(** Type to represent possible annotation parameter values. Note that support for numeric parameters
+    is missing for now due to an issue with [MaximumSharing] and [int64]. *)
+and value =
+  | Str of string
+  | Bool of bool
+  | Enum of {class_typ: Typ.t; value: string}
+  | Array of value list
+  | Class of Typ.t
+  | Annot of t
 
 val volatile : t
 (** annotation for fields marked with the "volatile" keyword *)
 
 val final : t
 (** annotation for fields marked with the "final" keyword *)
+
+val has_matching_str_value : pred:(string -> bool) -> value -> bool
+(** Check if annotation parameter value contains a string satisfying a predicate. For convenience it
+    works both with raw [Vstr] and [Vstr] inside [Varray]. *)
 
 val pp : F.formatter -> t -> unit
 (** Pretty print an annotation. *)

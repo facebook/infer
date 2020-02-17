@@ -11,15 +11,22 @@
 open! IStd
 module F = Format
 
-type parameter = {name: string option; value: string} [@@deriving compare]
-
-type parameters = parameter list [@@deriving compare]
-
-(** Type to represent one [@Annotation]. *)
-type t =
-  { class_name: string  (** name of the annotation *)
-  ; parameters: parameters  (** currently only one string parameter *) }
+(** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
+    other annotations. *)
+type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
 [@@deriving compare]
+
+and parameter = {name: string option; value: value} [@@deriving compare]
+
+(** Type to represent possible annotation parameter values. Note that support for numeric parameters
+    is missing for now due to an issue with [MaximumSharing] and [int64]. *)
+and value =
+  | Str of string
+  | Bool of bool
+  | Enum of {class_typ: Typ.t; value: string}
+  | Array of value list
+  | Class of Typ.t
+  | Annot of t
 
 let equal = [%compare.equal: t]
 
@@ -29,22 +36,47 @@ let final = {class_name= "final"; parameters= []}
 
 let is_final x = equal final x
 
+let rec has_matching_str_value ~pred = function
+  | Str s ->
+      pred s
+  | Array els ->
+      List.exists els ~f:(has_matching_str_value ~pred)
+  | _ ->
+      false
+
+
 (** Pretty print an annotation. *)
 let prefix = match Language.curr_language_is Java with true -> "@" | false -> "_"
 
-let pp_parameter fmt {name; value} =
+let comma_sep fmt _ = F.pp_print_string fmt ", "
+
+let rec pp_value fmt = function
+  | Str s ->
+      F.pp_print_string fmt s
+  | Bool b ->
+      F.pp_print_bool fmt b
+  | Enum {class_typ; value} ->
+      F.fprintf fmt "%a.%s" (Typ.pp Pp.text) class_typ value
+  | Array values ->
+      F.pp_print_list ~pp_sep:comma_sep pp_value fmt values
+  | Class name ->
+      F.fprintf fmt "%a" (Typ.pp Pp.text) name
+  | Annot a ->
+      F.fprintf fmt "%a" pp a
+
+
+and pp_parameter fmt {name; value} =
   match name with
   | None ->
-      F.fprintf fmt "\"%s\"" value
+      F.fprintf fmt "\"%a\"" pp_value value
   | Some name ->
-      F.fprintf fmt "%s=\"%s\"" name value
+      F.fprintf fmt "%s=\"%a\"" name pp_value value
 
 
-let pp fmt annotation =
-  let pp_sep fmt _ = F.pp_print_string fmt ", " in
-  F.fprintf fmt "%s%s%a" prefix annotation.class_name
-    (F.pp_print_list ~pp_sep pp_parameter)
-    annotation.parameters
+and pp fmt annotation =
+  F.fprintf fmt "%s%s" prefix annotation.class_name ;
+  if not (List.is_empty annotation.parameters) then
+    F.fprintf fmt "(%a)" (F.pp_print_list ~pp_sep:comma_sep pp_parameter) annotation.parameters
 
 
 module Item = struct

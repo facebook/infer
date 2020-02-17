@@ -28,8 +28,7 @@ let get_required_props typename tenv =
         not
           (List.exists
              ~f:(fun Annot.{name; value} ->
-               Option.value_map name ~default:false ~f:(fun name -> String.equal "optional" name)
-               && String.equal value "true" )
+               match (name, value) with Some "optional", Annot.Bool true -> true | _ -> false )
              parameters) )
       annot_list
   in
@@ -41,9 +40,11 @@ let get_required_props typename tenv =
              @Prop(varArg = myProp). *)
           List.fold ~init:acc
             ~f:(fun acc Annot.{name; value} ->
-              if Option.value_map name ~default:false ~f:(fun name -> String.equal "varArg" name)
-              then Some value
-              else acc )
+              match (name, value) with
+              | Some "varArg", Annot.Str str_value ->
+                  Some str_value
+              | _ ->
+                  acc )
             parameters
         else acc )
       annot_list

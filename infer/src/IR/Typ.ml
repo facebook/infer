@@ -265,6 +265,8 @@ let mk_array ?default ?quals ?length ?stride elt : t =
   mk ?default ?quals (Tarray {elt; length; stride})
 
 
+let mk_struct name = mk (Tstruct name)
+
 let void = mk Tvoid
 
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
