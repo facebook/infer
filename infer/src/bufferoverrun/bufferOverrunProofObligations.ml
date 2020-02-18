@@ -436,7 +436,8 @@ module BinaryOperationCondition = struct
     ; typ: Typ.ikind
     ; integer_widths: Typ.IntegerWidths.t
     ; lhs: ItvPure.t
-    ; rhs: ItvPure.t }
+    ; rhs: ItvPure.t
+    ; pname: Procname.t }
   [@@deriving compare]
 
   let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
@@ -529,13 +530,15 @@ module BinaryOperationCondition = struct
 
 
   let is_deliberate_integer_overflow =
-    let whitelist = ["lfsr"; "prng"; "rand"; "seed"] in
+    let whitelist = ["hash"; "lfsr"; "prng"; "rand"; "seed"] in
     let f x =
+      let x = String.lowercase x in
       List.exists whitelist ~f:(fun whitelist -> String.is_substring x ~substring:whitelist)
     in
-    fun {typ; lhs; rhs} ct ->
+    fun {typ; lhs; rhs; pname} ct ->
       Typ.ikind_is_unsigned typ
-      && (ConditionTrace.exists_str ~f ct || ItvPure.exists_str ~f lhs || ItvPure.exists_str ~f rhs)
+      && ( ConditionTrace.exists_str ~f ct || ItvPure.exists_str ~f lhs || ItvPure.exists_str ~f rhs
+         || f (Procname.to_simplified_string pname) )
 
 
   let check ({binop; typ; integer_widths; lhs; rhs} as c) (trace : ConditionTrace.t) =
@@ -580,7 +583,7 @@ module BinaryOperationCondition = struct
         {report_issue_type; propagate= is_symbolic}
 
 
-  let make integer_widths bop ~lhs ~rhs =
+  let make integer_widths pname bop ~lhs ~rhs =
     if ItvPure.is_invalid lhs || ItvPure.is_invalid rhs then None
     else
       let binop, typ =
@@ -595,7 +598,7 @@ module BinaryOperationCondition = struct
             L.(die InternalError)
               "Unexpected type %s is given to BinaryOperationCondition." (Binop.str Pp.text bop)
       in
-      Some {binop; typ; integer_widths; lhs; rhs}
+      Some {binop; typ; integer_widths; lhs; rhs; pname}
 end
 
 module Condition = struct
@@ -923,9 +926,9 @@ module ConditionSet = struct
     |> add_opt location (ValTrace.Issue.alloc location val_traces) latest_prune condset
 
 
-  let add_binary_operation integer_type_widths location bop ~lhs ~rhs ~lhs_traces ~rhs_traces
+  let add_binary_operation integer_type_widths location pname bop ~lhs ~rhs ~lhs_traces ~rhs_traces
       ~latest_prune condset =
-    BinaryOperationCondition.make integer_type_widths bop ~lhs ~rhs
+    BinaryOperationCondition.make integer_type_widths pname bop ~lhs ~rhs
     |> Condition.make_binary_operation
     |> add_opt location
          (ValTrace.Issue.(binary location Binop) lhs_traces rhs_traces)

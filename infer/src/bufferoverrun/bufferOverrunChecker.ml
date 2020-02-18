@@ -198,7 +198,7 @@ let check_expr_for_array_access :
         cond_set
 
 
-let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
+let check_binop_for_integer_overflow integer_type_widths pname bop ~lhs ~rhs location mem cond_set =
   match bop with
   | Binop.MinusA (Some typ) when Typ.ikind_is_unsigned typ && Exp.is_zero lhs && Exp.is_const rhs ->
       cond_set
@@ -206,32 +206,32 @@ let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location 
       let lhs_v = Sem.eval integer_type_widths lhs mem in
       let rhs_v = Sem.eval integer_type_widths rhs mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.binary_operation integer_type_widths bop ~lhs:lhs_v ~rhs:rhs_v ~latest_prune
-        location cond_set
+      BoUtils.Check.binary_operation integer_type_widths pname bop ~lhs:lhs_v ~rhs:rhs_v
+        ~latest_prune location cond_set
   | _ ->
       cond_set
 
 
-let rec check_expr_for_integer_overflow integer_type_widths exp location mem cond_set =
+let rec check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set =
   match exp with
   | Exp.UnOp (_, e, _)
   | Exp.Exn e
   | Exp.Lfield (e, _, _)
   | Exp.Cast (_, e)
   | Exp.Sizeof {dynamic_length= Some e} ->
-      check_expr_for_integer_overflow integer_type_widths e location mem cond_set
+      check_expr_for_integer_overflow integer_type_widths pname e location mem cond_set
   | Exp.BinOp (bop, lhs, rhs) ->
       cond_set
-      |> check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem
-      |> check_expr_for_integer_overflow integer_type_widths lhs location mem
-      |> check_expr_for_integer_overflow integer_type_widths rhs location mem
+      |> check_binop_for_integer_overflow integer_type_widths pname bop ~lhs ~rhs location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname lhs location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname rhs location mem
   | Exp.Lindex (e1, e2) ->
       cond_set
-      |> check_expr_for_integer_overflow integer_type_widths e1 location mem
-      |> check_expr_for_integer_overflow integer_type_widths e2 location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname e1 location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname e2 location mem
   | Exp.Closure {captured_vars} ->
       List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
-          check_expr_for_integer_overflow integer_type_widths e location mem cond_set )
+          check_expr_for_integer_overflow integer_type_widths pname e location mem cond_set )
   | Exp.Var _ | Exp.Const _ | Exp.Lvar _ | Exp.Sizeof {dynamic_length= None} ->
       cond_set
 
@@ -275,17 +275,17 @@ let check_instr :
   | Sil.Load {e= exp; loc= location} ->
       cond_set
       |> check_expr_for_array_access integer_type_widths exp location mem
-      |> check_expr_for_integer_overflow integer_type_widths exp location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname exp location mem
   | Sil.Store {e1= lexp; e2= rexp; loc= location} ->
       cond_set
       |> check_expr_for_array_access integer_type_widths lexp location mem
       |> check_expr_for_array_access ~sub_expr_only:true integer_type_widths rexp location mem
-      |> check_expr_for_integer_overflow integer_type_widths lexp location mem
-      |> check_expr_for_integer_overflow integer_type_widths rexp location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname lexp location mem
+      |> check_expr_for_integer_overflow integer_type_widths pname rexp location mem
   | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
       let cond_set =
         List.fold params ~init:cond_set ~f:(fun cond_set (exp, _) ->
-            check_expr_for_integer_overflow integer_type_widths exp location mem cond_set )
+            check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set )
       in
       let fun_arg_list =
         List.map params ~f:(fun (exp, typ) ->
@@ -310,7 +310,7 @@ let check_instr :
           | _, _ ->
               (* unknown call / no inferbo payload *) cond_set ) )
   | Sil.Prune (exp, location, _, _) ->
-      check_expr_for_integer_overflow integer_type_widths exp location mem cond_set
+      check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set
   | _ ->
       cond_set
 

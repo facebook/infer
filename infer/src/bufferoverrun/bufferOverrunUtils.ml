@@ -318,7 +318,7 @@ module Check = struct
     array_access_byte ~arr ~idx ~is_plus:true ~last_included ~latest_prune location cond_set
 
 
-  let binary_operation integer_type_widths bop ~lhs ~rhs ~latest_prune location cond_set =
+  let binary_operation integer_type_widths pname bop ~lhs ~rhs ~latest_prune location cond_set =
     let lhs_itv = Dom.Val.get_itv lhs in
     let rhs_itv = Dom.Val.get_itv rhs in
     match (lhs_itv, rhs_itv) with
@@ -326,7 +326,7 @@ module Check = struct
         L.(debug BufferOverrun Verbose)
           "@[<v 2>Add condition :@,bop:%s@,  lhs: %a@,  rhs: %a@,@]@." (Binop.str Pp.text bop)
           Itv.ItvPure.pp lhs_itv Itv.ItvPure.pp rhs_itv ;
-        PO.ConditionSet.add_binary_operation integer_type_widths location bop ~lhs:lhs_itv
+        PO.ConditionSet.add_binary_operation integer_type_widths location pname bop ~lhs:lhs_itv
           ~rhs:rhs_itv ~lhs_traces:(Dom.Val.get_traces lhs) ~rhs_traces:(Dom.Val.get_traces rhs)
           ~latest_prune cond_set
     | _, _ ->

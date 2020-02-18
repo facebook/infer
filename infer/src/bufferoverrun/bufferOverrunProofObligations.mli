@@ -58,6 +58,7 @@ module ConditionSet : sig
   val add_binary_operation :
        Typ.IntegerWidths.t
     -> Location.t
+    -> Procname.t
     -> Binop.t
     -> lhs:ItvPure.t
     -> rhs:ItvPure.t

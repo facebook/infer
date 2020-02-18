@@ -84,6 +84,7 @@ module Check : sig
 
   val binary_operation :
        Typ.IntegerWidths.t
+    -> Procname.t
     -> Binop.t
     -> lhs:Dom.Val.t
     -> rhs:Dom.Val.t
