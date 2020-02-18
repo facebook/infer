@@ -14,6 +14,7 @@ include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing make clang and javac integration,\
-	  $(TESTLOCK) $(INFER_BIN) --dump-duplicate-symbols --project-root $(TESTS_DIR) -- \
-	    make -C ../codetoanalyze/make clean all)
+	  $(TESTLOCK) sh -c "$(MAKE) -C ../codetoanalyze/make clean && \
+	  $(INFER_BIN) --dump-duplicate-symbols --project-root $(TESTS_DIR) -- \
+	  	$(MAKE) -C ../codetoanalyze/make all")
 	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)

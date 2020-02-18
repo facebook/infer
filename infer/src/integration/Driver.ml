@@ -584,11 +584,6 @@ let run_prologue mode =
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
   if CLOpt.is_originator then (
     if Config.dump_duplicate_symbols then reset_duplicates_file () ;
-    (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
-       but cannot communicate with the parent make command. Since infer won't interfere with them
-       anyway, pretend that we are not called from another make to prevent make falling back to a
-       mono-threaded execution. *)
-    Unix.unsetenv "MAKEFLAGS" ;
     (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
     Unix.putenv ~key:"NO_BUCKD" ~data:"1" ) ;
   ()

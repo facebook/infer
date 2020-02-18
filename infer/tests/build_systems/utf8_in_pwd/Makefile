@@ -92,8 +92,7 @@ infer-out-javac/report.json: $(JAVA_DEPS) $(JAVAC_DIR)
 infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	$(QUIET)cd $(MAKE_DIR) && \
 	$(call silent_on_success,Testing Infer/make is immune to UTF-8 in PWD,\
-	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- \
-	    make clean all)
+	  $(TESTLOCK) sh -c "$(MAKE) clean && $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- $(MAKE) all")
 
 issues-%.exp.test: infer-out-%/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@ \
