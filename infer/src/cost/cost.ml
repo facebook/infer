@@ -217,14 +217,11 @@ module WorstCaseCost = struct
 end
 
 module Check = struct
-  let report_threshold proc_desc summary ~name ~location ~cost CostIssues.{expensive_issue}
-      ~threshold ~is_on_ui_thread =
-    let pname = Procdesc.get_proc_name proc_desc in
+  let report_threshold pname summary ~name ~location ~cost CostIssues.{expensive_issue} ~threshold
+      ~is_on_ui_thread =
     let report_issue_type =
       L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
-      let is_on_cold_start =
-        ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc)
-      in
+      let is_on_cold_start = ExternalPerfData.in_profiler_data_map pname in
       expensive_issue ~is_on_cold_start ~is_on_ui_thread
     in
     let bigO_str =
@@ -250,14 +247,9 @@ module Check = struct
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_bottom proc_desc summary ~name ~cost CostIssues.{zero_issue; infinite_issue} =
+  let report_top_and_bottom pname loc summary ~name ~cost CostIssues.{zero_issue; infinite_issue} =
     let report issue suffix =
-      let message =
-        F.asprintf "%s of the function %a %s" name Procname.pp
-          (Procdesc.get_proc_name proc_desc)
-          suffix
-      in
-      let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+      let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
       Reporting.log_error ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) summary issue message
@@ -268,17 +260,19 @@ module Check = struct
 
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
+    let proc_loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
     if not (Procname.is_java_access_method pname) then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
         ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
         | ThresholdReports.Threshold _ ->
             ()
         | ThresholdReports.ReportOn {location; cost} ->
-            report_threshold proc_desc summary ~name ~location ~cost kind_spec
+            report_threshold pname summary ~name ~location ~cost kind_spec
               ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
         ~f:(fun _kind (CostIssues.{name; top_and_bottom} as issue_spec) cost ->
-          if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost issue_spec ) )
+          if top_and_bottom then report_top_and_bottom pname proc_loc summary ~name ~cost issue_spec
+      ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
