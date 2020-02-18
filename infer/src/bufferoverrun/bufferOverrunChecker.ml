@@ -262,7 +262,7 @@ type get_checks_summary = Procname.t -> checks_summary option
 let check_instr :
        get_checks_summary
     -> BoUtils.get_formals
-    -> Procdesc.t
+    -> Procname.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> CFG.Node.t
@@ -270,7 +270,7 @@ let check_instr :
     -> Dom.Mem.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t =
- fun get_checks_summary get_formals pdesc tenv integer_type_widths node instr mem cond_set ->
+ fun get_checks_summary get_formals pname tenv integer_type_widths node instr mem cond_set ->
   match instr with
   | Sil.Load {e= exp; loc= location} ->
       cond_set
@@ -295,7 +295,6 @@ let check_instr :
       | Some {Models.check} ->
           let model_env =
             let node_hash = CFG.Node.hash node in
-            let pname = Procdesc.get_proc_name pdesc in
             BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
           in
           check model_env mem cond_set
@@ -329,7 +328,7 @@ let print_debug_info : Sil.instr -> Dom.Mem.t -> PO.ConditionSet.checked_t -> un
 let check_instrs :
        get_checks_summary
     -> BoUtils.get_formals
-    -> Procdesc.t
+    -> Procname.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> CFG.t
@@ -338,7 +337,7 @@ let check_instrs :
     -> Dom.Mem.t AbstractInterpreter.State.t
     -> Checks.t
     -> Checks.t =
- fun get_checks_summary get_formals pdesc tenv integer_type_widths cfg node instrs state checks ->
+ fun get_checks_summary get_formals pname tenv integer_type_widths cfg node instrs state checks ->
   match state with
   | _ when Instrs.is_empty instrs ->
       checks
@@ -355,7 +354,7 @@ let check_instrs :
             checks
       in
       let cond_set =
-        check_instr get_checks_summary get_formals pdesc tenv integer_type_widths node instr pre
+        check_instr get_checks_summary get_formals pname tenv integer_type_widths node instr pre
           checks.cond_set
       in
       print_debug_info instr pre cond_set ;
@@ -365,7 +364,7 @@ let check_instrs :
 let check_node :
        get_checks_summary
     -> BoUtils.get_formals
-    -> Procdesc.t
+    -> Procname.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> CFG.t
@@ -373,11 +372,11 @@ let check_node :
     -> Checks.t
     -> CFG.Node.t
     -> Checks.t =
- fun get_checks_summary get_formals pdesc tenv integer_type_widths cfg inv_map checks node ->
+ fun get_checks_summary get_formals pname tenv integer_type_widths cfg inv_map checks node ->
   match BufferOverrunAnalysis.extract_state (CFG.Node.id node) inv_map with
   | Some state ->
       let instrs = CFG.instrs node in
-      check_instrs get_checks_summary get_formals pdesc tenv integer_type_widths cfg node instrs
+      check_instrs get_checks_summary get_formals pname tenv integer_type_widths cfg node instrs
         state checks
   | _ ->
       checks
@@ -388,15 +387,15 @@ type checks = Checks.t
 let compute_checks :
        get_checks_summary
     -> BoUtils.get_formals
-    -> Procdesc.t
+    -> Procname.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> CFG.t
     -> BufferOverrunAnalysis.invariant_map
     -> checks =
- fun get_checks_summary get_formals pdesc tenv integer_type_widths cfg inv_map ->
+ fun get_checks_summary get_formals pname tenv integer_type_widths cfg inv_map ->
   CFG.fold_nodes cfg
-    ~f:(check_node get_checks_summary get_formals pdesc tenv integer_type_widths cfg inv_map)
+    ~f:(check_node get_checks_summary get_formals pname tenv integer_type_widths cfg inv_map)
     ~init:Checks.empty
 
 
@@ -443,7 +442,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
         let get_formals callee_pname =
           Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
         in
-        compute_checks get_checks_summary get_formals proc_desc tenv integer_type_widths cfg inv_map
+        compute_checks get_checks_summary get_formals proc_name tenv integer_type_widths cfg inv_map
       in
       report_errors tenv checks summary ;
       let cond_set = get_checks_summary checks in
