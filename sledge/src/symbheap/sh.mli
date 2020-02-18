@@ -116,7 +116,7 @@ val is_false : t -> bool
 (** Holds only of inconsistent formulas, does not hold of all inconsistent
     formulas. *)
 
-val fv : t -> Var.Set.t
+val fv : ?ignore_cong:unit -> t -> Var.Set.t
 (** Free variables, a subset of vocabulary. *)
 
 val var_strength : t -> [> `Anonymous | `Existential | `Universal] Var.Map.t

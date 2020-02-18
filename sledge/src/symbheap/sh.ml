@@ -63,19 +63,24 @@ let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fold_vars fold_vars {us= _; xs= _; cong= _; pure; heap; djns} ~init ~f =
+let fold_vars ?ignore_cong fold_vars {us= _; xs= _; cong; pure; heap; djns}
+    ~init ~f =
   List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
   |> fun init ->
   List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
   |> fun init ->
   List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
+  |> fun init ->
+  if Option.is_some ignore_cong then init
+  else
+    Equality.fold_terms ~init cong ~f:(fun init -> Term.fold_vars ~f ~init)
 
 (** Pretty-printing *)
 
 let var_strength q =
   let rec var_strength_ xs m q =
     let xs = Set.union xs q.xs in
-    fold_vars (var_strength_ xs) q ~init:m ~f:(fun m var ->
+    fold_vars ~ignore_cong:() (var_strength_ xs) q ~init:m ~f:(fun m var ->
         if not (Set.mem xs var) then Map.set m ~key:var ~data:`Universal
         else
           match Map.find m var with
@@ -225,10 +230,11 @@ let pp fs q = pp_diff_eq Equality.true_ fs q
 let pp_djn fs d = pp_djn Var.Set.empty Equality.true_ fs d
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
-let rec fv_union init q =
-  Set.diff (fold_vars fv_union q ~init ~f:Set.add) q.xs
-
-let fv q = fv_union Var.Set.empty q
+let fv ?ignore_cong q =
+  let rec fv_union init q =
+    Set.diff (fold_vars ?ignore_cong fv_union q ~init ~f:Set.add) q.xs
+  in
+  fv_union Var.Set.empty q
 
 let invariant_pure = function
   | Term.Integer {data} -> assert (not (Z.is_false data))
@@ -248,11 +254,6 @@ let rec invariant q =
     assert (
       Set.is_subset (fv q) ~of_:us
       || fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us) () ) ;
-    assert (
-      Set.is_subset
-        (Equality.fold_terms ~init:Var.Set.empty cong ~f:(fun init ->
-             Term.fold_vars ~f:Set.add ~init ))
-        ~of_:(Set.union us xs) ) ;
     Equality.invariant cong ;
     ( match djns with
     | [[]] ->

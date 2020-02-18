@@ -54,7 +54,9 @@ let excise_exists goal =
     if Equality.Subst.is_empty solutions_for_xs then goal
     else
       let sub = Sh.norm solutions_for_xs goal.sub in
-      let removed, survived = Set.diff_inter goal.xs (Sh.fv sub) in
+      let removed, survived =
+        Set.diff_inter goal.xs (Sh.fv ~ignore_cong:() sub)
+      in
       if Set.is_empty removed then goal
       else
         let witnesses =
