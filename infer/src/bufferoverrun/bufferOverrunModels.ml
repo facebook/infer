@@ -473,44 +473,6 @@ module CFArray = struct
     {exec; check= no_check}
 end
 
-module Split = struct
-  let std_vector ~adds_at_least_one {exp= vector_exp; typ= vector_typ} location mem =
-    let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
-    let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
-    let size_field = Fieldname.make vector_type_name "infer_size" in
-    let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
-    let f_trace _ traces = Trace.(Set.add_elem location (through ~risky_fun:None)) traces in
-    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
-end
-
-module Boost = struct
-  module Split = struct
-    let std_vector vector_arg =
-      let exec {location} ~ret:_ mem =
-        Split.std_vector ~adds_at_least_one:true vector_arg location mem
-      in
-      {exec; check= no_check}
-  end
-end
-
-module Folly = struct
-  module Split = struct
-    let std_vector vector_arg ignore_empty_opt =
-      let exec {location; integer_type_widths} ~ret:_ mem =
-        let adds_at_least_one =
-          match ignore_empty_opt with
-          | Some ignore_empty_exp ->
-              Sem.eval integer_type_widths ignore_empty_exp mem |> Dom.Val.get_itv |> Itv.is_false
-          | None ->
-              (* default: ignore_empty is false *)
-              true
-        in
-        Split.std_vector ~adds_at_least_one vector_arg location mem
-      in
-      {exec; check= no_check}
-  end
-end
-
 module StdArray = struct
   let constructor _size =
     let exec _model_env ~ret:_ mem = mem (* initialize? *) in
@@ -709,6 +671,44 @@ module StdVector = struct
       ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
     in
     {exec; check= no_check}
+end
+
+module Split = struct
+  let std_vector ~adds_at_least_one {exp= vector_exp; typ= vector_typ} location mem =
+    let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
+    let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
+    let size_field = Fieldname.make vector_type_name "infer_size" in
+    let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
+    let f_trace _ traces = Trace.(Set.add_elem location (through ~risky_fun:None)) traces in
+    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
+end
+
+module Boost = struct
+  module Split = struct
+    let std_vector vector_arg =
+      let exec {location} ~ret:_ mem =
+        Split.std_vector ~adds_at_least_one:true vector_arg location mem
+      in
+      {exec; check= no_check}
+  end
+end
+
+module Folly = struct
+  module Split = struct
+    let std_vector vector_arg ignore_empty_opt =
+      let exec {location; integer_type_widths} ~ret:_ mem =
+        let adds_at_least_one =
+          match ignore_empty_opt with
+          | Some ignore_empty_exp ->
+              Sem.eval integer_type_widths ignore_empty_exp mem |> Dom.Val.get_itv |> Itv.is_false
+          | None ->
+              (* default: ignore_empty is false *)
+              true
+        in
+        Split.std_vector ~adds_at_least_one vector_arg location mem
+      in
+      {exec; check= no_check}
+  end
 end
 
 module StdBasicString = struct
