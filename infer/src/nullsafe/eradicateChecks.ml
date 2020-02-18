@@ -228,6 +228,13 @@ let get_nullability_upper_bound field_name typestate_list =
         (get_nullability_upper_bound_for_typestate proc_name field_name typestate) )
 
 
+let is_generated_field field_name =
+  (* Annotation transformers might generate hidden fields in the class.
+     We distinguish such fields by their prefix.
+  *)
+  String.is_prefix ~prefix:"$" (Fieldname.get_field_name field_name)
+
+
 (** Check field initialization for a given constructor *)
 let check_constructor_initialization tenv find_canonical_duplicate curr_constructor_pname
     curr_constructor_pdesc start_node ~nullsafe_mode
@@ -284,7 +291,9 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
               (* primitive types can not be null so initialization check is not needed *)
               && PatternMatch.type_is_class field_type
               && in_current_class
-              && not (Fieldname.is_java_outer_instance field_name)
+              && (not (Fieldname.is_java_outer_instance field_name))
+              (* not user code, unactionable errors *)
+              && not (is_generated_field field_name)
             in
             if should_check_field_initialization then (
               (* Check if non-null field is not initialized. *)
