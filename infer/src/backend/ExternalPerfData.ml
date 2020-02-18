@@ -45,17 +45,9 @@ let pp_perf_profiler_item itm =
     \               sum inclusive cpu time = %f@\n\
     \               avg inclusive time = %f @\n\
     \               sum exclusive cpu time = %f @\n\
-    \               avg exclusive_time = %f  @\n\
-    \               inclusive p90 = %f  @\n\
-    \               exclusive p90 = %f @\n\
-    \               inclusive p50 = %f  @\n\
-    \               exclusive p50 = %f @\n\
-    \               inclusive p25 = %f  @\n\
-    \               exclusive p25 = %f @\n"
-    itm.function_name itm.count_trace_id itm.sum_inclusive_cpu_time itm.avg_inclusive_cpu_time_ms
-    itm.sum_exclusive_cpu_time itm.avg_exclusive_cpu_time_ms itm.p90_inclusive_cpu_time_ms
-    itm.p90_exclusive_cpu_time_ms itm.p50_inclusive_cpu_time_ms itm.p50_exclusive_cpu_time_ms
-    itm.p25_inclusive_cpu_time_ms itm.p25_exclusive_cpu_time_ms
+    \               avg exclusive_time = %f  @\n"
+    itm.function_name itm.approx_count_trace_id itm.sum_inclusive_cpu_time
+    itm.avg_inclusive_cpu_time_ms itm.sum_exclusive_cpu_time itm.avg_exclusive_cpu_time_ms
 
 
 let _read_file_perf_data fname =
