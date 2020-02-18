@@ -403,4 +403,13 @@ let%test_module _ =
           (((u8) %y_6) + 1) = %y_6
         ∧ %x_5 = ((u8) %x_5)
         ∧ ((u8) %y_6) = ((u8) (((u8) %y_6) + 1)) |}]
+
+    let r19 = of_eqs [(x, y + z); (x, !0); (y, !0)]
+
+    let%expect_test _ =
+      pp r19 ;
+      [%expect
+        {| {sat= true; rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]]} |}]
+
+    let%test _ = entails_eq r19 z !0
   end )

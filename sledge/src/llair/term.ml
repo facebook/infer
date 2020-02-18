@@ -572,6 +572,8 @@ and simp_div x y =
       integer (Z.div i j)
   (* e / 1 ==> e *)
   | e, Integer {data} when Z.equal Z.one data -> e
+  (* e / -1 ==> -1×e *)
+  | e, (Integer {data} as c) when Z.equal Z.minus_one data -> simp_mul2 e c
   (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
   | Add args, Integer {data} ->
       sum_to_term (Sum.mul_const Q.(inv (of_z data)) args)
