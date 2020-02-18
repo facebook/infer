@@ -42,13 +42,13 @@ void splitTo(const Delim& delimiter,
 } // namespace folly
 
 namespace folly_split {
-std::string FP_do_not_ignore_empty_Good(const std::string& s) {
+std::string do_not_ignore_empty_Good(const std::string& s) {
   std::vector<std::string> v;
   folly::split("delimiter", s, v);
   return v[0];
 }
 
-std::string FP_do_not_ignore_empty2_Good(const std::string& s) {
+std::string do_not_ignore_empty2_Good(const std::string& s) {
   std::vector<std::string> v;
   folly::split("delimiter", s, v, false);
   return v[0];

@@ -674,20 +674,22 @@ module StdVector = struct
 end
 
 module Split = struct
-  let std_vector ~adds_at_least_one {exp= vector_exp; typ= vector_typ} location mem =
-    let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
-    let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
-    let size_field = Fieldname.make vector_type_name "infer_size" in
-    let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
-    let f_trace _ traces = Trace.(Set.add_elem location (through ~risky_fun:None)) traces in
-    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
+  let std_vector model_env ~adds_at_least_one ({typ= vector_typ} as vec_arg) mem =
+    match vector_typ with
+    | Typ.{desc= Tptr ({desc= Tstruct (CppClass (_, Template {args= TType elt_typ :: _}))}, _)} ->
+        let arr_locs = StdVector.deref_of model_env elt_typ vec_arg mem in
+        let size = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
+        StdVector.set_size model_env arr_locs size mem
+    | _ ->
+        Logging.d_printfln_escaped "Could not find element type of vector" ;
+        mem
 end
 
 module Boost = struct
   module Split = struct
     let std_vector vector_arg =
-      let exec {location} ~ret:_ mem =
-        Split.std_vector ~adds_at_least_one:true vector_arg location mem
+      let exec model_env ~ret:_ mem =
+        Split.std_vector model_env ~adds_at_least_one:true vector_arg mem
       in
       {exec; check= no_check}
   end
@@ -696,7 +698,7 @@ end
 module Folly = struct
   module Split = struct
     let std_vector vector_arg ignore_empty_opt =
-      let exec {location; integer_type_widths} ~ret:_ mem =
+      let exec ({integer_type_widths} as model_env) ~ret:_ mem =
         let adds_at_least_one =
           match ignore_empty_opt with
           | Some ignore_empty_exp ->
@@ -705,7 +707,7 @@ module Folly = struct
               (* default: ignore_empty is false *)
               true
         in
-        Split.std_vector ~adds_at_least_one vector_arg location mem
+        Split.std_vector model_env ~adds_at_least_one vector_arg mem
       in
       {exec; check= no_check}
   end
