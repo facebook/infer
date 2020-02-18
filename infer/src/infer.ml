@@ -74,6 +74,19 @@ let print_active_checkers () =
     (RegisterCheckers.get_active_checkers ())
 
 
+let print_scheduler () =
+  L.environment_info "Scheduler: %s@\n"
+    ( match Config.scheduler with
+    | File ->
+        "file"
+    | Restart ->
+        "restart"
+    | SyntacticCallGraph ->
+        "callgraph" )
+
+
+let print_cores_used () = L.environment_info "Cores used: %d@\n" Config.jobs
+
 let log_environment_info () =
   L.environment_info "CWD = %s@\n" (Sys.getcwd ()) ;
   ( match Config.inferconfig_file with
@@ -99,7 +112,7 @@ let log_environment_info () =
   | Some available_memory ->
       L.environment_info "Available memory at startup: %d MB@\n" available_memory ;
       ScubaLogging.log_count ~label:"startup_mem_avail_MB" ~value:available_memory ) ;
-  print_active_checkers ()
+  print_active_checkers () ; print_scheduler () ; print_cores_used ()
 
 
 let prepare_events_logging () =
