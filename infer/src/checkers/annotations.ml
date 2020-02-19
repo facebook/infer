@@ -51,6 +51,8 @@ let inject_prop = "InjectProp"
 
 let inject_view = "InjectView"
 
+let json_field = "JsonField"
+
 let lockless = "Lockless"
 
 let nonnull = "Nonnull"
@@ -240,6 +242,8 @@ let ia_is_functional ia = ia_ends_with ia functional
 let ia_is_ignore_allocations ia = ia_ends_with ia ignore_allocations
 
 let ia_is_inject ia = ia_ends_with ia inject
+
+let ia_is_json_field ia = ia_ends_with ia json_field
 
 let ia_is_suppress_lint ia = ia_ends_with ia suppress_lint
 

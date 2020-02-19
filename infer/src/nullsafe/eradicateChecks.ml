@@ -251,12 +251,15 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
       | Some {fields} ->
           let do_field (field_name, field_type, _) =
             let annotated_field = AnnotatedField.get tenv field_name ts in
-            let is_injector_readonly_annotated =
+            let is_initialized_by_framework =
               match annotated_field with
               | None ->
                   false
               | Some {annotation_deprecated} ->
+                  (* Initialized by Dependency Injection framework *)
                   Annotations.ia_is_field_injector_readonly annotation_deprecated
+                  (* Initialized by Json framework *)
+                  || Annotations.ia_is_json_field annotation_deprecated
             in
             let is_initialized_in_either_constructor_or_initializer =
               let is_initialized = function
@@ -287,7 +290,10 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                 let fld_cname = Fieldname.get_class_name field_name in
                 Typ.Name.equal name fld_cname
               in
-              (not is_injector_readonly_annotated)
+              (* various frameworks initialize spefic fields behind the scenes,
+                 we assume they are doing it well
+              *)
+              (not is_initialized_by_framework)
               (* primitive types can not be null so initialization check is not needed *)
               && PatternMatch.type_is_class field_type
               && in_current_class

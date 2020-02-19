@@ -90,6 +90,8 @@ val ia_is_ignore_allocations : Annot.Item.t -> bool
 
 val ia_is_inject : Annot.Item.t -> bool
 
+val ia_is_json_field : Annot.Item.t -> bool
+
 val ia_is_suppress_lint : Annot.Item.t -> bool
 
 val ia_is_not_thread_safe : Annot.Item.t -> bool
