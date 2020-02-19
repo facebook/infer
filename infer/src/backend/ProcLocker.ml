@@ -23,7 +23,11 @@ let record_sys_time_of ~f ~log_f =
 
 let locks_dir = Config.procnames_locks_dir
 
-let setup () = Utils.rmtree locks_dir ; Utils.create_dir locks_dir
+let locks_target = locks_dir ^/ "locks_target"
+
+let create_file filename = Unix.openfile ~mode:[O_CREAT; O_RDONLY] filename |> Unix.close
+
+let setup () = Utils.rmtree locks_dir ; Utils.create_dir locks_dir ; create_file locks_target
 
 let clean () = ()
 
@@ -38,6 +42,6 @@ let unlock pname =
 let try_lock pname =
   record_sys_time_of ~log_f:log_lock_systime ~f:(fun () ->
       try
-        Unix.openfile ~mode:[O_CREAT; O_EXCL; O_RDONLY] (filename_from pname) |> Unix.close ;
+        Unix.symlink ~target:locks_target ~link_name:(filename_from pname) ;
         true
       with Unix.Unix_error (Unix.EEXIST, _, _) -> false )
