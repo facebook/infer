@@ -13,11 +13,39 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A method annotated with @Initializer should always be be called before the object is used. Users
- * of the class and static checkers must enforce, and can rely on, this invariant. Examples include
- * methods called indirectly by the constructor, protocols of init-then-use where some values are
- * initialized after construction but before the first use, and builder classes where an object
- * initialization must complete before build() is called.
+ * A method annotated with @Initializer is expected to always be invoked before the object is used.
+ * Nullsafe typechecker respects this annotation when checking field initialization: if a field is
+ * assigned a (non-nullable) value in @Initializer-annotated method, it is considered initialized,
+ * and hence does not require @Nullable annotation.
+ *
+ * <p>Methods annotated as @Initializer should not be private. If the actual initialization is
+ * happening in a private helper method, then the public method that calls this helper method should
+ * be annotated.
+ *
+ * <p>In this example, only field2 will be reported as not initialized:
+ *
+ * <p><code>
+ * class Example {
+ *   private String field1;
+ *   private String field2;
+ *   // Will be initialized in finishCreation().
+ *   // (It is a good idea to specify that in comments in your real code!)
+ *   private String field3;
+ *
+ *   public Example() {
+ *     field1 = "OK: initialized in the constructor";
+ *     // BAD: did not initialize field2!
+ *     // (But OK not to initialize field3).
+ *   }
+ *
+ *   // This should be called before the object can be used.
+ *   // It is a good idea to always document @Initializer methods for your client).
+ *   @Initializer
+ *   public void finishCreation() {
+ *     field3 = "OK: Nullsafe assumes this will be called after creation";
+ *   }
+ * }
+ * </code>
  */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
