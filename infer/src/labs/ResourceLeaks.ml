@@ -36,8 +36,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_closeable_procname tenv procname =
     match procname with
     | Procname.Java java_procname ->
-        is_closeable_typename tenv
-          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_procname))
+        is_closeable_typename tenv (Procname.Java.get_class_type_name java_procname)
     | _ ->
         false
 

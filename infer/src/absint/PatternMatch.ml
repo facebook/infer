@@ -372,7 +372,7 @@ let override_find ?(check_current_type = true) f tenv proc_name =
   else
     match proc_name with
     | Procname.Java proc_name_java ->
-        find_super_type (Typ.Name.Java.from_string (Procname.Java.get_class_name proc_name_java))
+        find_super_type (Procname.Java.get_class_type_name proc_name_java)
     | Procname.ObjC_Cpp proc_name_cpp ->
         find_super_type (Procname.ObjC_Cpp.get_class_type_name proc_name_cpp)
     | _ ->

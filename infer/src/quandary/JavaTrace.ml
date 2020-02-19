@@ -136,7 +136,7 @@ module SourceKind = struct
               get_external_source class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-          (Typ.Name.Java.from_string (Procname.Java.get_class_name pname))
+          (Procname.Java.get_class_type_name pname)
         |> Option.value ~default:[]
     | Procname.C _ when Procname.equal pname BuiltinDecl.__global_access -> (
       (* accessed global will be passed to us as the only parameter *)
@@ -249,7 +249,7 @@ module SourceKind = struct
         in
         match
           PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-            (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
+            (Procname.Java.get_class_type_name java_pname)
         with
         | Some tainted_formals ->
             tainted_formals
@@ -480,7 +480,7 @@ module SinkKind = struct
               get_external_sink class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
+          (Procname.Java.get_class_type_name java_pname)
         |> Option.value ~default:[]
     | pname when BuiltinDecl.is_declared pname ->
         []
@@ -557,7 +557,7 @@ module JavaSanitizer = struct
               get_external_sanitizer class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv sanitizer_matching_supertype
-          (Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname))
+          (Procname.Java.get_class_type_name java_pname)
     | _ ->
         None
 

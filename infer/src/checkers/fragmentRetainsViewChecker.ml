@@ -64,7 +64,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
   if is_on_destroy_view then
-    let class_name = Typ.Name.Java.from_string (Procname.Java.get_class_name java_pname) in
+    let class_name = Procname.Java.get_class_type_name java_pname in
     match Tenv.lookup tenv class_name with
     | Some {fields} when AndroidFramework.is_fragment tenv class_name ->
         let declared_view_fields = List.filter ~f:(is_declared_view_typ class_name) fields in
