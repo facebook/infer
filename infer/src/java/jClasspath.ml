@@ -255,9 +255,12 @@ let get_classpath_channel program = program.classpath.channel
 
 let get_models program = program.models
 
+(* this string should characterize the methods we generate for lambda rewriting *)
+let lambda_str = "$Lambda$"
+
 let add_class cn jclass program =
   (* [prefix] must be a fresh class name *)
-  let prefix = JBasics.cn_name cn ^ "$Lambda$" in
+  let prefix = JBasics.cn_name cn ^ lambda_str in
   (* we rewrite each class to replace invokedynamic (closure construction)
      with equivalent old-style Java code that implements a suitable Java interface *)
   let rewritten_jclass, new_classes = Javalib.remove_invokedynamics jclass ~prefix in
@@ -265,7 +268,9 @@ let add_class cn jclass program =
   (* the rewrite will generate new classes and we add them to the program *)
   JBasics.ClassMap.iter
     (fun cn jcl -> program.classmap <- JBasics.ClassMap.add cn jcl program.classmap)
-    new_classes
+    new_classes ;
+  rewritten_jclass
+
 
 let set_callee_translated program pname = Procname.Hash.replace program.callees pname Translated
 
@@ -286,7 +291,7 @@ let lookup_node cn program =
   with Caml.Not_found -> (
     try
       let jclass = javalib_get_class (get_classpath_channel program) cn in
-      add_class cn jclass program ; Some jclass
+      Some (add_class cn jclass program)
     with
     | JBasics.No_class_found _ ->
         (* TODO T28155039 Figure out when and what to log *)

@@ -128,7 +128,13 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
           let attributes = Procdesc.get_attributes pd in
           let is_synthetic = attributes.is_synthetic_method in
           let is_bridge = attributes.is_bridge_method in
-          if is_access || is_bridge || is_synthetic then
+          let is_generated_for_lambda =
+            String.is_substring ~substring:"$Lambda$" (Procname.get_method pn)
+          in
+          (* this is a temporary hack in order to stop synthetic inlining on
+             methods that are generated for lambda rewritting *)
+          if is_generated_for_lambda then instr
+          else if is_access || is_bridge || is_synthetic then
             inline_synthetic_method ret_id_typ etl pd loc |> Option.value ~default:instr
           else instr
       | exception (Caml.Not_found | Not_found_s _) ->

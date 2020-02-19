@@ -217,10 +217,12 @@ let get_bytecode cm =
       L.(die InternalError)
         "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn)
   | Javalib.Java t ->
-      (* Sawja doesn't handle invokedynamic, and it will crash with a Match_failure if we give it
-         bytecode with this instruction. hack around this problem by converting all invokedynamic's
-         to invokestatic's that call a method with the same signature as the lambda on
-         java.lang.Object. this isn't great, but it's a lot better than crashing *)
+      (* Java frontend doesn't know how to translate Sawja invokedynamics, but most
+         of them will be rewritten by Javalib before arriving to Sawja. For the
+         remainings we (still) use this hack that convert an invokedynamic
+         into an invokestatic that calls a method with the same signature as the lambda.
+         But the objective is to never have to do that and hope Javalib rewriting
+         is complete enough *)
       let bytecode = Lazy.force t in
       let c_code =
         Array.map
