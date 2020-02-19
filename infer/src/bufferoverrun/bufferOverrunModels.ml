@@ -671,6 +671,15 @@ module StdVector = struct
       ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
     in
     {exec; check= no_check}
+
+
+  let resize elt_typ vec_arg size_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
+      let arr_locs = deref_of model_env elt_typ vec_arg mem in
+      let new_size = Sem.eval integer_type_widths size_exp mem in
+      set_size model_env arr_locs new_size mem
+    in
+    {exec; check= no_check}
 end
 
 module Split = struct
@@ -1416,6 +1425,8 @@ module Call = struct
         $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "resize" $ capt_arg $+ capt_exp
+        $--> StdVector.resize
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
       ; -"std" &:: "__shared_ptr_access" &:: "operator->" $ capt_exp $--> id
       ; +PatternMatch.implements_collection

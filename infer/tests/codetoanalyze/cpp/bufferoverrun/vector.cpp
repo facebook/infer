@@ -215,3 +215,15 @@ void precise_subst_Bad() {
   CharVector v(a);
   access_minus_one(0, v);
 }
+
+void resize_Good() {
+  std::vector<int> v;
+  v.resize(1);
+  v[0] = 0;
+}
+
+void resize_Bad() {
+  std::vector<int> v;
+  v.resize(1);
+  v[1] = 0;
+}

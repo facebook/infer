@@ -124,6 +124,7 @@ codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Bad, 3, BUFFER_OVERRUN
 codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Good_FP, 3, BUFFER_OVERRUN_L3, no_bucket, ERROR, [Array declaration,Call,Parameter `*init`,Assignment,Call,Parameter `*__param_0->a`,Assignment,Call,<Length trace>,Parameter `count`,Call,Parameter `idx`,Assignment,Array access: Offset: [-1, 0] Size: 10 by call to `access_minus_one` ]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, push_back_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, reserve_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset: 0 Size: 0]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, resize_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, safe_access3_Good, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, simple_size_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Array declaration,Assignment,<Length trace>,Array declaration,Assignment,Array access: Offset: 3 Size: 3]
 codetoanalyze/cpp/bufferoverrun/void_ptr.cpp, FP_call_casting_void_ptr_Ok, 2, BUFFER_OVERRUN_L5, no_bucket, ERROR, [Array declaration,Call,<Length trace>,Parameter `*p`,Assignment,Array access: Offset: 14 Size: 2 by call to `casting_void_ptr` ]
