@@ -25,15 +25,14 @@ let is_destroy_method pname =
       false
 
 
-let is_subtype_package_class tenv tname package classname =
-  PatternMatch.is_subtype tenv tname (Typ.Name.Java.from_package_class package classname)
+let is_autocloseable tenv tname =
+  PatternMatch.is_subtype_of_str tenv tname "java.lang.AutoCloseable"
 
 
-let is_autocloseable tenv tname = is_subtype_package_class tenv tname "java.lang" "AutoCloseable"
+let is_view tenv tname = PatternMatch.is_subtype_of_str tenv tname "android.view.View"
 
-let is_view tenv tname = is_subtype_package_class tenv tname "android.view" "View"
-
-let is_fragment tenv tname =
-  is_subtype_package_class tenv tname "androidx.fragment.app" "Fragment"
-  || is_subtype_package_class tenv tname "android.app" "Fragment"
-  || is_subtype_package_class tenv tname "android.support.v4.app" "Fragment"
+let is_fragment =
+  let fragments =
+    ["androidx.fragment.app.Fragment"; "android.app.Fragment"; "android.support.v4.app.Fragment"]
+  in
+  fun tenv tname -> List.exists fragments ~f:(PatternMatch.is_subtype_of_str tenv tname)

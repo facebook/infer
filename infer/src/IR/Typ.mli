@@ -239,9 +239,6 @@ module Name : sig
     val from_string : string -> t
     (** Create a typename from a Java classname in the form "package.class" *)
 
-    val from_package_class : string -> string -> t
-    (** Create a typename from a package name and a class name *)
-
     val is_class : t -> bool
     (** [is_class name] holds if [name] names a Java class *)
 

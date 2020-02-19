@@ -6,4 +6,11 @@
  *)
 
 open! IStd
-include Mangled
+
+type t = string [@@deriving compare]
+
+let from_string str = str
+
+let to_string str = str
+
+let pp = String.pp

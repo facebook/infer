@@ -486,11 +486,6 @@ module Name = struct
 
     let from_string name_str = JavaClass (JavaClassName.from_string name_str)
 
-    let from_package_class package_name class_name =
-      if String.equal package_name "" then from_string class_name
-      else from_string (package_name ^ "." ^ class_name)
-
-
     let is_class = function JavaClass _ -> true | _ -> false
 
     let java_io_serializable = from_string "java.io.Serializable"
