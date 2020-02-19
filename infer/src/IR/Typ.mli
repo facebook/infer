@@ -242,9 +242,6 @@ module Name : sig
     val is_class : t -> bool
     (** [is_class name] holds if [name] names a Java class *)
 
-    val is_external_classname : string -> bool
-    (** return true if the string is in the .inferconfig list of external classes *)
-
     val is_external : t -> bool
     (** return true if the typename is in the .inferconfig list of external classes *)
 

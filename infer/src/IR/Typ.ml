@@ -467,6 +467,12 @@ module Name = struct
             {type_name= package_classname; package= None}
 
 
+      let of_java_class_name java_class_name =
+        let package = JavaClassName.package java_class_name in
+        let type_name = JavaClassName.classname java_class_name in
+        make ?package type_name
+
+
       let package {package} = package
 
       let type_name {type_name} = type_name
@@ -498,10 +504,19 @@ module Name = struct
 
     let java_lang_string = from_string "java.lang.String"
 
-    let split_typename typename = Split.of_string (name typename)
+    let get_java_class_name_exn typename =
+      match typename with
+      | JavaClass java_class_name ->
+          java_class_name
+      | _ ->
+          L.die InternalError "Tried to split a non-java class name into a java split type@."
+
+
+    let split_typename typename = Split.of_java_class_name (get_java_class_name_exn typename)
 
     let is_anonymous_inner_class_name class_name =
-      let class_name_no_package = Split.type_name (split_typename class_name) in
+      let java_class_name = get_java_class_name_exn class_name in
+      let class_name_no_package = JavaClassName.classname java_class_name in
       match String.rsplit2 class_name_no_package ~on:'$' with
       | Some (_, s) ->
           let is_int =
@@ -515,12 +530,9 @@ module Name = struct
           false
 
 
-    let is_external_classname name_string =
-      let {Split.package} = Split.of_string name_string in
-      Option.exists ~f:Config.java_package_is_external package
-
-
-    let is_external t = is_external_classname (name t)
+    let is_external t =
+      get_java_class_name_exn t |> JavaClassName.package
+      |> Option.exists ~f:Config.java_package_is_external
   end
 
   module Cpp = struct

@@ -174,7 +174,7 @@ let pretty_field_name proc_data field_name =
 let is_outside_codebase proc_name field_name =
   match proc_name with
   | Procname.Java _ ->
-      Typ.Name.Java.is_external_classname (Typ.Name.name (Fieldname.get_class_name field_name))
+      Typ.Name.Java.is_external (Fieldname.get_class_name field_name)
   | _ ->
       false
 

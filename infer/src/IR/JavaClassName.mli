@@ -14,3 +14,7 @@ val from_string : string -> t
 val to_string : t -> string
 
 val pp : Format.formatter -> t -> unit
+
+val package : t -> string option
+
+val classname : t -> string
