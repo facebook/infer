@@ -24,9 +24,7 @@ module Node : sig
   type t [@@deriving compare]
 
   (** node id *)
-  type id = private int [@@deriving compare]
-
-  val equal_id : id -> id -> bool
+  type id = private int [@@deriving compare, equal]
 
   type destruction_kind =
     | DestrBreakStmt

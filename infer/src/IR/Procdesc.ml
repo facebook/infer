@@ -26,9 +26,7 @@ end
 
 (* =============== START of module Node =============== *)
 module Node = struct
-  type id = int [@@deriving compare]
-
-  let equal_id = [%compare.equal: id]
+  type id = int [@@deriving compare, equal]
 
   type destruction_kind =
     | DestrBreakStmt
