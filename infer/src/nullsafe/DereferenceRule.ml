@@ -83,17 +83,17 @@ let violation_description {nullability} ~dereference_location dereference_type
       let suffix =
         get_origin_opt ~nullable_object_descr nullable_object_origin
         |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-        |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:"."
+        |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:""
       in
       let description =
         match nullability with
         | Nullability.Null ->
             Format.sprintf
               "NullPointerException will be thrown at this line! %s is `null` and is dereferenced \
-               via %s%s"
+               via %s%s."
               what_is_dereferred_str action_descr suffix
         | Nullability.Nullable ->
-            Format.sprintf "%s is nullable and is not locally checked for null when %s%s"
+            Format.sprintf "%s is nullable and is not locally checked for null when %s%s."
               what_is_dereferred_str action_descr suffix
         | Nullability.UncheckedNonnull | Nullability.StrictNonnull ->
             Logging.die InternalError "Invariant violation: unexpected nullability"
