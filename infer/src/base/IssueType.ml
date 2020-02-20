@@ -468,8 +468,6 @@ let unknown_proc = register_from_string "Unknown_proc" ~hum:"Unknown Procedure"
 
 let unreachable_code_after = register_from_string "UNREACHABLE_CODE"
 
-let unsafe_guarded_by_access = register_from_string "UNSAFE_GUARDED_BY_ACCESS"
-
 let use_after_delete = register_from_string "USE_AFTER_DELETE"
 
 let use_after_free = register_from_string "USE_AFTER_FREE"

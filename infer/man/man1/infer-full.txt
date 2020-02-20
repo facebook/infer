@@ -498,7 +498,6 @@ OPTIONS
            default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
-             UNSAFE_GUARDED_BY_ACCESS (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
              UNTRUSTED_DESERIALIZATION (enabled by default),
              UNTRUSTED_DESERIALIZATION_RISK (enabled by default),

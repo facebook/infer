@@ -309,25 +309,6 @@ let deref_str_array_bound size_opt index_opt =
   ; problem_str= "could be accessed with " ^ index_str ^ " out of bounds" }
 
 
-let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
-  let line_info = at_line (Tags.create ()) loc in
-  let accessed_fld_str = Fieldname.to_string accessed_fld in
-  let annot_str = Printf.sprintf "@GuardedBy(\"%s\")" guarded_by_str in
-  let syncronized_str =
-    MF.monospaced_to_string (Printf.sprintf "synchronized(%s)" guarded_by_str)
-  in
-  let msg =
-    Format.asprintf
-      "The field %a is annotated with %a, but the lock %a is not held during the access to the \
-       field %s. Since the current method is non-private, it can be called from outside the \
-       current class without synchronization. Consider wrapping the access in a %s block or making \
-       the method private."
-      MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str MF.pp_monospaced guarded_by_str
-      line_info syncronized_str
-  in
-  {no_desc with descriptions= [msg]}
-
-
 let desc_custom_error loc : error_desc =
   {no_desc with descriptions= ["detected"; at_line (Tags.create ()) loc]}
 

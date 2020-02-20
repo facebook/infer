@@ -71,8 +71,6 @@ val classpath : string option
 
 val costs_report_json : string
 
-val csl_analysis : bool
-
 val default_failure_name : string
 
 val default_in_zip_results_dir : string

@@ -168,9 +168,6 @@ let classnames_dir_name = "classnames"
 
 let costs_report_json = "costs-report.json"
 
-(** Experimental: if true do some specialized analysis of concurrent constructs. *)
-let csl_analysis = true
-
 let default_failure_name = "ASSERTION_FAILURE"
 
 let default_in_zip_results_dir = "infer"

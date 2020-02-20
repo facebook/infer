@@ -114,9 +114,6 @@ val ia_is_worker_thread : Annot.Item.t -> bool
 
 val ia_is_uithread_equivalent : Annot.Item.t -> bool
 
-val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
-(** get the list of annotations on the return value of [pdesc] *)
-
 val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
 (** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return value *)
 

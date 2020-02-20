@@ -126,8 +126,6 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.
 
 exception Unknown_proc
 
-exception Unsafe_guarded_by_access of Localise.error_desc * L.ocaml_pos
-
 exception Wrong_argument_number of L.ocaml_pos
 
 type t =
@@ -525,13 +523,6 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= None
       ; category= Nocat }
-  | Unsafe_guarded_by_access (desc, ocaml_pos) ->
-      { name= IssueType.unsafe_guarded_by_access
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
   | Wrong_argument_number ocaml_pos ->
       { name= IssueType.wrong_argument_number
       ; description= Localise.no_desc
