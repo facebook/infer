@@ -9,11 +9,12 @@ package codetoanalyze.java.nullsafe_default;
 
 import com.facebook.infer.annotation.Nullsafe;
 import com.facebook.infer.annotation.NullsafeStrict;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import some.test.pckg.ThirdPartyTestClass;
 
 public class NullsafeMode {
-  abstract class VariousMethods {
+  abstract static class VariousMethods {
     public String returnVal() {
       return "OK";
     }
@@ -24,7 +25,7 @@ public class NullsafeMode {
     }
   }
 
-  class NonNullsafe extends VariousMethods {
+  static class NonNullsafe extends VariousMethods {
     String OK_passUncheckedToLocal(String arg) {
       return new TrustAllNullsafe().acceptVal(arg);
     }
@@ -43,10 +44,10 @@ public class NullsafeMode {
     }
   }
 
-  class AnotherNonNullsafe extends VariousMethods {}
+  static class AnotherNonNullsafe extends VariousMethods {}
 
   @Nullsafe(Nullsafe.Mode.LOCAL)
-  class TrustAllNullsafe extends VariousMethods {
+  static class TrustAllNullsafe extends VariousMethods {
     public String acceptVal(String arg) {
       return arg;
     }
@@ -83,7 +84,7 @@ public class NullsafeMode {
   }
 
   @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({NonNullsafe.class}))
-  class TrustSomeNullsafe extends VariousMethods {
+  static class TrustSomeNullsafe extends VariousMethods {
     @Override
     public String returnVal() {
       return "OK";
@@ -108,7 +109,7 @@ public class NullsafeMode {
   }
 
   @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))
-  class TrustNoneNullsafe extends VariousMethods {
+  static class TrustNoneNullsafe extends VariousMethods {
     String BAD_returnFromNonNullsafe() {
       return new NonNullsafe().returnVal();
     }
@@ -119,7 +120,7 @@ public class NullsafeMode {
   }
 
   @Nullsafe(Nullsafe.Mode.STRICT)
-  class NullsafeWithStrictMode extends VariousMethods {
+  static class NullsafeWithStrictMode extends VariousMethods {
     @Override
     public String returnVal() {
       return "OK";
@@ -138,8 +139,19 @@ public class NullsafeMode {
     }
   }
 
+  static class UncheckedParams {
+    public long mDelay;
+
+    public UncheckedParams(long delay) {
+      mDelay = delay;
+    }
+  }
+
   @NullsafeStrict
-  class StrictNullsafe extends VariousMethods {
+  static class StrictNullsafe extends VariousMethods {
+    private static final UncheckedParams PARAMS =
+        new UncheckedParams(TimeUnit.MINUTES.toMillis(42));
+
     @Override
     public String returnVal() {
       return "OK";
@@ -155,6 +167,14 @@ public class NullsafeMode {
 
     String OK_returnFromNullsafeWithStrictMode() {
       return new NullsafeWithStrictMode().returnVal();
+    }
+
+    long OK_callMethodsOnThirdPartyEnumValues() {
+      return TimeUnit.MINUTES.toMillis(42);
+    }
+
+    long OK_passResultOfCallingThirdPartyToStrict() {
+      return PARAMS.mDelay;
     }
   }
 }
