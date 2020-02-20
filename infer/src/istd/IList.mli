@@ -69,3 +69,7 @@ val fold2_result :
   -> ('acc, 'err) result Base.List.Or_unequal_lengths.t
 
 val move_last_to_first : 'a list -> 'a list
+
+val traverse_opt : 'a list -> f:('a -> 'b option) -> 'b list option
+(** Applies [f] to the elements of the list and returns [None] if any application results in [None]
+    otherwise returns [Some list']. *)

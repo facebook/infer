@@ -129,7 +129,9 @@ let get_method_ret_description pname call_loc
     match nullability with
     | AnnotatedNullability.Nullable _ ->
         "nullable"
-    | AnnotatedNullability.UncheckedNonnull _ | AnnotatedNullability.StrictNonnull _ ->
+    | AnnotatedNullability.UncheckedNonnull _
+    | AnnotatedNullability.LocallyCheckedNonnull
+    | AnnotatedNullability.StrictNonnull _ ->
         "non-nullable"
   in
   let model_info =

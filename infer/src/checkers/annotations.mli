@@ -78,6 +78,8 @@ val ia_is_nullable : Annot.Item.t -> bool
 
 val ia_is_nullsafe_strict : Annot.Item.t -> bool
 
+val ia_find_nullsafe : Annot.Item.t -> Annot.t option
+
 val ia_is_true_on_null : Annot.Item.t -> bool
 
 val ia_is_expensive : Annot.Item.t -> bool

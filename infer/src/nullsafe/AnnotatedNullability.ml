@@ -17,6 +17,7 @@ module F = Format
 type t =
   | Nullable of nullable_origin
   | UncheckedNonnull of unchecked_nonnull_origin  (** See {!Nullability.t} for explanation *)
+  | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
 
@@ -52,6 +53,8 @@ let get_nullability = function
       Nullability.Nullable
   | UncheckedNonnull _ ->
       Nullability.UncheckedNonnull
+  | LocallyCheckedNonnull ->
+      Nullability.LocallyCheckedNonnull
   | StrictNonnull _ ->
       Nullability.StrictNonnull
 
@@ -87,6 +90,8 @@ let pp fmt t =
       F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin origin)
   | UncheckedNonnull origin ->
       F.fprintf fmt "UncheckedNonnull[%s]" (string_of_declared_nonnull_origin origin)
+  | LocallyCheckedNonnull ->
+      F.fprintf fmt "LocallyCheckedNonnull"
   | StrictNonnull origin ->
       F.fprintf fmt "StrictNonnull[%s]" (string_of_nonnull_origin origin)
 
@@ -103,6 +108,8 @@ let of_type_and_annotation ~(nullsafe_mode : NullsafeMode.t) typ annotations =
     match nullsafe_mode with
     | NullsafeMode.Strict ->
         StrictNonnull StrictMode
+    | NullsafeMode.Local _ ->
+        LocallyCheckedNonnull
     | NullsafeMode.Default ->
         if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
           (* Currently, we treat not annotated types as nonnull *)

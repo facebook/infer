@@ -277,14 +277,14 @@ let eradicate_return_over_annotated =
   register_from_string "ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated"
 
 
-let eradicate_forbidden_non_strict_in_strict =
-  register_from_string "ERADICATE_UNCHECKED_NONSTRICT_FROM_STRICT"
-    ~hum:"Strict mode: unchecked usage of a value from non-strict code"
+let eradicate_unchecked_usage_in_nullsafe =
+  register_from_string "ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE"
+    ~hum:"Nullsafe mode: unchecked usage of a value"
 
 
-let eradicate_unvetted_third_party_in_strict =
-  register_from_string "ERADICATE_UNVETTED_THIRD_PARTY_IN_STRICT"
-    ~hum:"Strict mode: unchecked usage of unvetted third-party"
+let eradicate_unvetted_third_party_in_nullsafe =
+  register_from_string "ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE"
+    ~hum:"Nullsafe mode: unchecked usage of unvetted third-party"
 
 
 let expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread =

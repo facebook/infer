@@ -9,7 +9,25 @@ open! IStd
 
 (** Represents a type-checking mode of nullsafe. *)
 
-type t = Default | Strict [@@deriving compare, equal]
+module Trust : sig
+  [@@@warning "-32"]
+
+  type t = All | Only of Typ.name list [@@deriving compare, equal]
+
+  val none : t
+
+  val of_annot : Annot.t -> t option
+  (** Returns [Trust.t] when provided annotation matches the format of [@TrustList], otherwise
+      [None]. *)
+
+  val pp : Format.formatter -> t -> unit
+end
+
+type t = Default | Local of Trust.t | Strict [@@deriving compare, equal]
+
+val of_annot : Annot.t -> t option
+  [@@warning "-32"]
+(** Returns [t] when provided annotation matches the format of [@Nullsafe], otherwise [None]. *)
 
 val of_class : Tenv.t -> Typ.name -> t
 (** Extracts mode information from class annotations *)

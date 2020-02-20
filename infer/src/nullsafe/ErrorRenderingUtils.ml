@@ -83,7 +83,34 @@ let get_field_class_name field_name =
   |> Option.value_map ~f:(fun (classname, _) -> classname) ~default:"the field class"
 
 
-let get_info object_origin =
+let mk_coming_from nullsafe_mode nullability =
+  match (nullsafe_mode, nullability) with
+  | NullsafeMode.Strict, Nullability.UncheckedNonnull ->
+      "non-strict classes"
+  | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
+      "nullsafe-local classes"
+  | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
+      "non-nullsafe classes"
+  | (_ as mode), nullability ->
+      Logging.die InternalError "Unexpected: using %s in %a should not be a violation"
+        (Nullability.to_string nullability)
+        NullsafeMode.pp mode
+
+
+let mk_recommendation nullsafe_mode nullability what =
+  match (nullsafe_mode, nullability) with
+  | NullsafeMode.Strict, Nullability.UncheckedNonnull
+  | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
+      Format.sprintf "make %s nullsafe strict" what
+  | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
+      Format.sprintf "make %s nullsafe" what
+  | (_ as mode), nullability ->
+      Logging.die InternalError "Unexpected: using %s in %a should not be a violation"
+        (Nullability.to_string nullability)
+        NullsafeMode.pp mode
+
+
+let get_info object_origin nullsafe_mode bad_nullability =
   match object_origin with
   | TypeOrigin.MethodCall {pname; call_loc} ->
       let offending_object =
@@ -106,15 +133,15 @@ let get_info object_origin =
         in
         match suggested_third_party_sig_file with
         | None ->
-            ( "non-strict classes"
-            , Format.sprintf "strictify %s" what_to_strictify
-            , IssueType.eradicate_forbidden_non_strict_in_strict )
+            ( mk_coming_from nullsafe_mode bad_nullability
+            , mk_recommendation nullsafe_mode bad_nullability what_to_strictify
+            , IssueType.eradicate_unchecked_usage_in_nullsafe )
         | Some sig_file_name ->
             ( "not vetted third party methods"
             , Format.sprintf "add the correct signature to %s"
                 (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
                    ~filename:sig_file_name)
-            , IssueType.eradicate_unvetted_third_party_in_strict )
+            , IssueType.eradicate_unvetted_third_party_in_nullsafe )
       in
       { offending_object
       ; object_loc
@@ -131,9 +158,11 @@ let get_info object_origin =
       (* TODO: currently we do not support third-party annotations for fields. Because of this,
          render error like it is a non-stict class. *)
       let what_is_used = "This field" in
-      let coming_from_explanation = "non-strict classes" in
-      let recommendation = Format.sprintf "strictify %s" (get_field_class_name field_name) in
-      let issue_type = IssueType.eradicate_forbidden_non_strict_in_strict in
+      let coming_from_explanation = mk_coming_from nullsafe_mode bad_nullability in
+      let recommendation =
+        mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name)
+      in
+      let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
       { offending_object
       ; object_loc
       ; coming_from_explanation
@@ -145,20 +174,20 @@ let get_info object_origin =
         "Invariant violation: unexpected origin of declared non-nullable value"
 
 
-let get_strict_mode_violation_issue ~bad_usage_location object_origin =
+let mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability ~bad_usage_location object_origin =
   let { offending_object
       ; object_loc
       ; coming_from_explanation
       ; what_is_used
       ; recommendation
       ; issue_type } =
-    get_info object_origin
+    get_info object_origin nullsafe_mode bad_nullability
   in
   let description =
-    Format.sprintf
-      "%s: `@NullsafeStrict` mode prohibits using values coming from %s without a check. %s is \
-       used at line %d. Either add a local check for null or assertion, or %s."
-      offending_object coming_from_explanation what_is_used bad_usage_location.Location.line
-      recommendation
+    Format.asprintf
+      "%s: `@Nullsafe%a` mode prohibits using values coming from %s without a check. %s is used at \
+       line %d. Either add a local check for null or assertion, or %s."
+      offending_object NullsafeMode.pp nullsafe_mode coming_from_explanation what_is_used
+      bad_usage_location.Location.line recommendation
   in
   (description, issue_type, object_loc)

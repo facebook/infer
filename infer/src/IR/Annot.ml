@@ -45,6 +45,11 @@ let rec has_matching_str_value ~pred = function
       false
 
 
+let find_parameter t ~name =
+  let match_name param = Option.exists param.name ~f:(String.equal name) in
+  List.find t.parameters ~f:match_name |> Option.map ~f:(fun x -> x.value)
+
+
 (** Pretty print an annotation. *)
 let prefix = match Language.curr_language_is Java with true -> "@" | false -> "_"
 

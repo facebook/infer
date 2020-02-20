@@ -63,6 +63,8 @@ let nullable = "Nullable"
 
 let nullsafe_strict = "NullsafeStrict"
 
+let nullsafe = "Nullsafe"
+
 let mainthread = "MainThread"
 
 let nonblocking = "NonBlocking"
@@ -142,6 +144,8 @@ let class_name_matches s ((annot : Annot.t), _) = String.equal s annot.class_nam
 
 let ia_ends_with ia ann_name = List.exists ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
 
+let find_ia_ends_with ia ann_name = List.find ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
+
 let ia_contains ia ann_name = List.exists ~f:(class_name_matches ann_name) ia
 
 let pdesc_get_return_annot pdesc =
@@ -191,6 +195,8 @@ let ia_is_nullable ia =
 let ia_is_nonnull ia = List.exists ~f:(ia_ends_with ia) [nonnull; notnull; camel_nonnull]
 
 let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict
+
+let ia_find_nullsafe ia = Option.map (find_ia_ends_with ia nullsafe) ~f:fst
 
 let ia_is_false_on_null ia = ia_ends_with ia false_on_null
 

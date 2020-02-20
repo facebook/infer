@@ -22,6 +22,11 @@ type t =
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
           conventions) as non-nullable. Hovewer, it might still contain null since the truthfullness
           of the declaration was not checked. *)
+  | LocallyCheckedNonnull
+      (** Non-nullable value that comes from a class checked under local mode. Local mode
+          type-checks files against its dependencies but does not require the dependencies to be
+          transitively checked. Therefore this type of non-nullable value is differentiated from
+          StrictNonnull. *)
   | StrictNonnull
       (** We believe that this value can not be null because it is either a non-null literal, an
           expression that semantically cannot be null, or a non-null value that should not be null
@@ -29,6 +34,8 @@ type t =
           issue for nullsafe, and we aim to minimize number of such issues occuring in real-world
           programs. *)
 [@@deriving compare, equal]
+
+type pair = t * t [@@deriving compare, equal]
 
 val top : t
 (** The most generic type. *)

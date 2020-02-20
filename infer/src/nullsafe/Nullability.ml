@@ -14,6 +14,10 @@ type t =
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
           conventions) as non-nullable. However, it might still contain null since the truthfulness
           of the declaration was not checked. *)
+  | LocallyCheckedNonnull
+      (** Non-nullable value the comes from a class checked under local mode. Local mode type-checks
+          files against its dependencies but does not require the dependencies to be transitively
+          checked. Therefore this type of non-nullable value is differentiated from StrictNonnull. *)
   | StrictNonnull
       (** Non-nullable value with the highest degree of certainty, because it is either:
 
@@ -27,6 +31,8 @@ type t =
           strike the balance between the strictness of analysis, convenience, and real-world risk. *)
 [@@deriving compare, equal]
 
+type pair = t * t [@@deriving compare, equal]
+
 let top = Nullable
 
 let join x y =
@@ -39,6 +45,8 @@ let join x y =
       Nullable
   | UncheckedNonnull, _ | _, UncheckedNonnull ->
       UncheckedNonnull
+  | LocallyCheckedNonnull, _ | _, LocallyCheckedNonnull ->
+      LocallyCheckedNonnull
   | StrictNonnull, StrictNonnull ->
       StrictNonnull
 
@@ -52,5 +60,7 @@ let to_string = function
       "Nullable"
   | UncheckedNonnull ->
       "UncheckedNonnull"
+  | LocallyCheckedNonnull ->
+      "LocallyCheckedNonnull"
   | StrictNonnull ->
       "StrictNonnull"

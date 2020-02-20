@@ -19,6 +19,7 @@ open! IStd
 type t =
   | Nullable of nullable_origin
   | UncheckedNonnull of unchecked_nonnull_origin  (** See {!Nullability.t} for explanation *)
+  | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
 

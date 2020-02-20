@@ -216,3 +216,14 @@ let move_last_to_first =
         move_last_to_first_helper tl (hd :: rev_acc)
   in
   fun l -> move_last_to_first_helper l []
+
+
+let traverse_opt xs ~f =
+  List.fold_until xs ~init:[]
+    ~f:(fun acc x ->
+      match f x with
+      | Some r ->
+          Continue_or_stop.Continue (r :: acc)
+      | _ ->
+          Continue_or_stop.Stop None )
+    ~finish:(fun acc -> Some (List.rev acc))

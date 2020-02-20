@@ -172,8 +172,8 @@ let is_declared_nonnull AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       false
-  | AnnotatedNullability.UncheckedNonnull _ ->
-      true
+  | AnnotatedNullability.UncheckedNonnull _
+  | AnnotatedNullability.LocallyCheckedNonnull
   | AnnotatedNullability.StrictNonnull _ ->
       true
 

@@ -23,12 +23,28 @@ public class NullsafeMode {
     }
   }
 
-  class NonNullsafe extends VariousMethods {}
+  class NonNullsafe extends VariousMethods {
+    String OK_passUncheckedToLocal(String arg) {
+      return new TrustAllNullsafe().acceptVal(arg);
+    }
+
+    String OK_passUncheckedToStrictMode(String arg) {
+      return new NullsafeWithStrictMode().acceptVal(arg);
+    }
+
+    String OK_passUncheckedToStrict(String arg) {
+      return new StrictNullsafe().acceptVal(arg);
+    }
+  }
 
   class AnotherNonNullsafe extends VariousMethods {}
 
   @Nullsafe(Nullsafe.Mode.LOCAL)
   class TrustAllNullsafe extends VariousMethods {
+    public String acceptVal(String arg) {
+      return arg;
+    }
+
     String OK_returnFromAnyNonNullsafe() {
       String a = new NonNullsafe().returnVal();
       String b = new AnotherNonNullsafe().returnVal();
@@ -38,11 +54,24 @@ public class NullsafeMode {
     String BAD_returnNullFromNonNulsafe() {
       return (new NonNullsafe()).returnNull();
     }
+
+    String OK_passLocalToStrictMode(String arg) {
+      return new NullsafeWithStrictMode().acceptVal(arg);
+    }
+
+    String OK_passLocalToStrict(String arg) {
+      return new StrictNullsafe().acceptVal(arg);
+    }
   }
 
   @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({NonNullsafe.class}))
   class TrustSomeNullsafe extends VariousMethods {
-    String OK_returnFromNonNullsafe() {
+    @Override
+    public String returnVal() {
+      return "OK";
+    }
+
+    String FP_OK_returnFromNonNullsafe() {
       return new NonNullsafe().returnVal();
     }
 
@@ -73,6 +102,15 @@ public class NullsafeMode {
 
   @Nullsafe(Nullsafe.Mode.STRICT)
   class NullsafeWithStrictMode extends VariousMethods {
+    @Override
+    public String returnVal() {
+      return "OK";
+    }
+
+    public String acceptVal(String arg) {
+      return arg;
+    }
+
     String BAD_returnFromNonStrict() {
       return new TrustNoneNullsafe().returnVal();
     }
@@ -84,6 +122,15 @@ public class NullsafeMode {
 
   @NullsafeStrict
   class StrictNullsafe extends VariousMethods {
+    @Override
+    public String returnVal() {
+      return "OK";
+    }
+
+    public String acceptVal(String arg) {
+      return arg;
+    }
+
     String BAD_returnFromNonNullsafe() {
       return new NonNullsafe().returnVal();
     }
