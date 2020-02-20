@@ -14,6 +14,14 @@ import javax.annotation.Nullable;
  */
 public class ThirdPartyTestClass {
 
+  public static class UncheckedLong {
+    public long mInner;
+
+    public UncheckedLong(long inner) {
+      mInner = inner;
+    }
+  }
+
   // Fields.
 
   public String nonNullableField;
@@ -22,6 +30,12 @@ public class ThirdPartyTestClass {
 
   public ThirdPartyTestClass() {
     nonNullableField = "OK";
+  }
+
+  // Static methods
+
+  public static UncheckedLong getUncheckedLong(long l) {
+    return new UncheckedLong(l);
   }
 
   // Return values.

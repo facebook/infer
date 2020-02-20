@@ -46,6 +46,26 @@ public class NullsafeMode {
 
   static class AnotherNonNullsafe extends VariousMethods {}
 
+  static class UncheckedParams {
+    public long mDelay;
+
+    public UncheckedParams(long delay) {
+      mDelay = delay;
+    }
+
+    public UncheckedParams(UncheckedParams other) {
+      mDelay = other.mDelay;
+    }
+
+    public UncheckedParams copy() {
+      return new UncheckedParams(this);
+    }
+
+    public UncheckedParams(ThirdPartyTestClass.UncheckedLong delay) {
+      mDelay = delay.mInner;
+    }
+  }
+
   @Nullsafe(Nullsafe.Mode.LOCAL)
   static class TrustAllNullsafe extends VariousMethods {
     public String acceptVal(String arg) {
@@ -80,6 +100,16 @@ public class NullsafeMode {
 
     String OK_passLocalToStrict(String arg) {
       return new StrictNullsafe().acceptVal(arg);
+    }
+
+    UncheckedParams BAD_passThirdPartyToUnchecked() {
+      return new UncheckedParams(ThirdPartyTestClass.getUncheckedLong(42));
+    }
+
+    UncheckedParams OK_passUncheckedToUnchecked() {
+      UncheckedParams first = new UncheckedParams(42);
+      UncheckedParams second = new UncheckedParams(first.copy());
+      return second;
     }
   }
 
@@ -139,14 +169,6 @@ public class NullsafeMode {
     }
   }
 
-  static class UncheckedParams {
-    public long mDelay;
-
-    public UncheckedParams(long delay) {
-      mDelay = delay;
-    }
-  }
-
   @NullsafeStrict
   static class StrictNullsafe extends VariousMethods {
     private static final UncheckedParams PARAMS =
@@ -175,6 +197,10 @@ public class NullsafeMode {
 
     long OK_passResultOfCallingThirdPartyToStrict() {
       return PARAMS.mDelay;
+    }
+
+    UncheckedParams BAD_passThirdPartyToUnchecked() {
+      return new UncheckedParams(ThirdPartyTestClass.getUncheckedLong(42));
     }
   }
 }
