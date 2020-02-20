@@ -17,7 +17,7 @@ let cutoff_length = 100
 
 let crc_token = '.'
 
-let append_crc_cutoff ?(key = "") ?(crc_only = false) name =
+let append_crc_cutoff ?(key = "") name =
   let name_up_to_cutoff =
     if String.length name <= cutoff_length then name else String.sub name ~pos:0 ~len:cutoff_length
   in
@@ -25,7 +25,7 @@ let append_crc_cutoff ?(key = "") ?(crc_only = false) name =
     let name_for_crc = name ^ key in
     Utils.string_crc_hex32 name_for_crc
   in
-  if crc_only then crc_str else Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str
+  Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str
 
 
 let curr_source_file_encoding = `Enc_crc

@@ -309,8 +309,8 @@ val pp_unique_id : F.formatter -> t -> unit
 val to_unique_id : t -> string
 (** Convert a proc name into a unique identifier. *)
 
-val to_filename : ?crc_only:bool -> t -> string
-(** Convert a proc name to a filename or only to its crc. *)
+val to_filename : t -> string
+(** Convert a proc name to a filename. *)
 
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
