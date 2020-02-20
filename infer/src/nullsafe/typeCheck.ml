@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module DExp = DecompiledExp
 
 (** Module for type checking. *)
@@ -1199,11 +1200,15 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
       (* keep unique instruction reference per-node *)
       TypeErr.InstrRef.gen instr_ref_gen
     in
-    let instr' =
+    let post =
       typecheck_instr tenv calls_this checks node idenv curr_pname curr_pdesc
         find_canonical_duplicate annotated_signature instr_ref linereader typestate instr
     in
-    handle_exceptions typestate instr ; instr'
+    if Config.write_html then (
+      L.d_printfln "instr: %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
+      L.d_printfln "new state:@\n%a@\n" TypeState.pp post ) ;
+    handle_exceptions typestate instr ;
+    post
   in
   (* Reset 'always' field for forall errors to false. *)
   (* This is used to track if it is set to true for all visit to the node. *)
