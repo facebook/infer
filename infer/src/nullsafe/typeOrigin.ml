@@ -129,6 +129,7 @@ let get_method_ret_description pname call_loc
     match nullability with
     | AnnotatedNullability.Nullable _ ->
         "nullable"
+    | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.LocallyCheckedNonnull
     | AnnotatedNullability.StrictNonnull _ ->

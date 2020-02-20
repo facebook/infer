@@ -12,15 +12,13 @@ type violation = {nullsafe_mode: NullsafeMode.t; base: Nullability.t; overridden
 type type_role = Param | Ret
 
 let is_whitelisted_violation ~subtype ~supertype =
-  match (subtype, supertype) with
-  | Nullability.UncheckedNonnull, Nullability.StrictNonnull ->
-      (* It is a violation that we are currently willing to ignore because
-         it is hard to obey in practice.
-         It might lead to unsoundness issues, so this might be reconsidered.
-      *)
-      true
-  | _ ->
-      false
+  (* When both nullabilities are kind-of non-nullable we don't want to raise the
+     issue. Without this suppression there will be a lot of non-actionable issues
+     raised for classes in one [NullsafeMode] inheriting from classes in the other
+     [NullsafeMode]. *)
+  (* TODO(T62521386): consider using caller context when determining nullability to get
+     rid of white-lists. *)
+  Nullability.is_nonnullish subtype && Nullability.is_nonnullish supertype
 
 
 let check ~nullsafe_mode type_role ~base ~overridden =

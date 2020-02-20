@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 let is_object_nullability_self_explanatory ~object_expression (object_origin : TypeOrigin.t) =
   (* Fundamentally, object can be of two kinds:
@@ -85,41 +86,52 @@ let get_field_class_name field_name =
 
 let mk_coming_from nullsafe_mode nullability =
   match (nullsafe_mode, nullability) with
+  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull
   | NullsafeMode.Strict, Nullability.UncheckedNonnull ->
-      "non-strict classes"
+      Some "non-strict classes"
   | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
-      "nullsafe-local classes"
+      Some "nullsafe-local classes"
+  | NullsafeMode.Local _, Nullability.ThirdPartyNonnull ->
+      Some "third-party classes"
   | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
-      "non-nullsafe classes"
-  | (_ as mode), nullability ->
-      Logging.die InternalError "Unexpected: using %s in %a should not be a violation"
-        (Nullability.to_string nullability)
-        NullsafeMode.pp mode
+      Some "non-nullsafe classes"
+  | _ ->
+      None
 
 
 let mk_recommendation nullsafe_mode nullability what =
   match (nullsafe_mode, nullability) with
+  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull
   | NullsafeMode.Strict, Nullability.UncheckedNonnull
   | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
-      Format.sprintf "make %s nullsafe strict" what
+      Some (F.sprintf "make %s nullsafe strict" what)
   | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
-      Format.sprintf "make %s nullsafe" what
-  | (_ as mode), nullability ->
-      Logging.die InternalError "Unexpected: using %s in %a should not be a violation"
-        (Nullability.to_string nullability)
-        NullsafeMode.pp mode
+      Some (F.sprintf "make %s nullsafe" what)
+  | _ ->
+      None
+
+
+let mk_recommendation_for_third_party_field nullsafe_mode nullability field =
+  match (nullsafe_mode, nullability) with
+  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull ->
+      Some (F.sprintf "access %s via a nullsafe strict getter" field)
+  | NullsafeMode.Local _, Nullability.ThirdPartyNonnull ->
+      Some (F.sprintf "access %s via a nullsafe getter" field)
+  | _ ->
+      None
 
 
 let get_info object_origin nullsafe_mode bad_nullability =
+  let open IOption.Let_syntax in
   match object_origin with
   | TypeOrigin.MethodCall {pname; call_loc} ->
       let offending_object =
-        Format.asprintf "%a" MarkupFormatter.pp_monospaced
+        F.asprintf "%a" MarkupFormatter.pp_monospaced
           (Procname.to_simplified_string ~withclass:true pname)
       in
       let object_loc = call_loc in
       let suggested_third_party_sig_file =
-        ThirdPartyAnnotationInfo.lookup_related_sig_file_by_package
+        ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
           (ThirdPartyAnnotationGlobalRepo.get_repo ())
           pname
       in
@@ -127,21 +139,29 @@ let get_info object_origin nullsafe_mode bad_nullability =
       (* Two main cases: it is either FB owned code or third party.
          We determine the difference based on presense of suggested_third_party_sig_file.
       *)
-      let coming_from_explanation, recommendation, issue_type =
-        let what_to_strictify =
-          Option.value (get_method_class_name pname) ~default:offending_object
-        in
+      let+ coming_from_explanation, recommendation, issue_type =
         match suggested_third_party_sig_file with
-        | None ->
-            ( mk_coming_from nullsafe_mode bad_nullability
-            , mk_recommendation nullsafe_mode bad_nullability what_to_strictify
-            , IssueType.eradicate_unchecked_usage_in_nullsafe )
         | Some sig_file_name ->
-            ( "not vetted third party methods"
-            , Format.sprintf "add the correct signature to %s"
-                (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
-                   ~filename:sig_file_name)
-            , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+            (* Dereferences or assignment violations with regular Nullables
+               should not be special cased *)
+            if Nullability.equal Nullable bad_nullability then None
+            else
+              return
+                ( "not vetted third party methods"
+                , F.sprintf "add the correct signature to %s"
+                    (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
+                       ~filename:sig_file_name)
+                , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+        | None ->
+            let* from = mk_coming_from nullsafe_mode bad_nullability in
+            let+ recommendation =
+              let what_to_strictify =
+                Option.value (get_method_class_name pname) ~default:offending_object
+              in
+              mk_recommendation nullsafe_mode bad_nullability what_to_strictify
+            in
+            let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
+            (from, recommendation, issue_type)
       in
       { offending_object
       ; object_loc
@@ -150,41 +170,45 @@ let get_info object_origin nullsafe_mode bad_nullability =
       ; recommendation
       ; issue_type }
   | TypeOrigin.Field {field_name; access_loc} ->
-      let offending_object =
-        Format.asprintf "%a" MarkupFormatter.pp_monospaced
-          (Fieldname.to_simplified_string field_name)
+      let qualified_name =
+        F.asprintf "%a" MarkupFormatter.pp_monospaced (Fieldname.to_simplified_string field_name)
+      in
+      let unqualified_name =
+        F.asprintf "%a" MarkupFormatter.pp_monospaced (Fieldname.get_field_name field_name)
       in
       let object_loc = access_loc in
       (* TODO: currently we do not support third-party annotations for fields. Because of this,
          render error like it is a non-stict class. *)
       let what_is_used = "This field" in
-      let coming_from_explanation = mk_coming_from nullsafe_mode bad_nullability in
-      let recommendation =
-        mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name)
+      let* coming_from_explanation = mk_coming_from nullsafe_mode bad_nullability in
+      let+ recommendation =
+        Option.first_some
+          (mk_recommendation_for_third_party_field nullsafe_mode bad_nullability unqualified_name)
+          (mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name))
       in
       let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
-      { offending_object
+      { offending_object= qualified_name
       ; object_loc
       ; coming_from_explanation
       ; what_is_used
       ; recommendation
       ; issue_type }
   | _ ->
-      Logging.die Logging.InternalError
-        "Invariant violation: unexpected origin of declared non-nullable value"
+      None
 
 
 let mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability ~bad_usage_location object_origin =
-  let { offending_object
-      ; object_loc
-      ; coming_from_explanation
-      ; what_is_used
-      ; recommendation
-      ; issue_type } =
+  let open IOption.Let_syntax in
+  let+ { offending_object
+       ; object_loc
+       ; coming_from_explanation
+       ; what_is_used
+       ; recommendation
+       ; issue_type } =
     get_info object_origin nullsafe_mode bad_nullability
   in
   let description =
-    Format.asprintf
+    F.asprintf
       "%s: `@Nullsafe%a` mode prohibits using values coming from %s without a check. %s is used at \
        line %d. Either add a local check for null or assertion, or %s."
       offending_object NullsafeMode.pp nullsafe_mode coming_from_explanation what_is_used

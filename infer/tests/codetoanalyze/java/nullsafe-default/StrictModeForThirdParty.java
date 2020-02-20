@@ -45,6 +45,10 @@ public class StrictModeForThirdParty {
     obj.returnSpecifiedAsNullable().toString();
   }
 
+  public void dereferenceFieldIsBAD() {
+    obj.nonNullableField.toString();
+  }
+
   public void dereferenceSpecifiedAsNonnullIsOK() {
     obj.returnSpecifiedAsNonnull().toString();
   }

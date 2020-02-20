@@ -450,7 +450,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
         let should_report =
           Config.eradicate_condition_redundant
           (* TODO: This condition should be extracted into a dedicated rule *)
-          && InferredNullability.is_nonnull_or_declared_nonnull nullability
+          && InferredNullability.is_nonnullish nullability
           && not (InferredNullability.origin_is_fun_library nullability)
         in
         ( if checks.eradicate && should_report then

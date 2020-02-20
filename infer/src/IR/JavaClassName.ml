@@ -39,3 +39,7 @@ let pp fmt = function
 let package {package} = package
 
 let classname {classname} = classname
+
+let is_external_via_config t =
+  let package = package t in
+  Option.exists ~f:Config.java_package_is_external package

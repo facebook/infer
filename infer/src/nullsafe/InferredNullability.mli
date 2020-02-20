@@ -20,7 +20,8 @@ val get_nullability : t -> Nullability.t
 
 val create : TypeOrigin.t -> t
 
-val is_nonnull_or_declared_nonnull : t -> bool
+val is_nonnullish : t -> bool
+(** Check whether corresponding [Nullability] is [Nullability.is_nonnullish] *)
 
 val get_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred. *)
@@ -39,4 +40,4 @@ val join : t -> t -> t
 
 val origin_is_fun_library : t -> bool
 
-val to_string : t -> string
+val pp : Format.formatter -> t -> unit

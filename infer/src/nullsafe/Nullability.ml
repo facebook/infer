@@ -6,10 +6,14 @@
  *)
 
 open! IStd
+module F = Format
 
 type t =
   | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
+  | ThirdPartyNonnull
+      (** Values coming from third-party methods and fields not explictly annotated as [@Nullable].
+          We still consider those as non-nullable but with the least level of confidence. *)
   | UncheckedNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
           conventions) as non-nullable. However, it might still contain null since the truthfulness
@@ -43,6 +47,8 @@ let join x y =
       Nullable
   | Nullable, _ | _, Nullable ->
       Nullable
+  | ThirdPartyNonnull, _ | _, ThirdPartyNonnull ->
+      ThirdPartyNonnull
   | UncheckedNonnull, _ | _, UncheckedNonnull ->
       UncheckedNonnull
   | LocallyCheckedNonnull, _ | _, LocallyCheckedNonnull ->
@@ -53,14 +59,37 @@ let join x y =
 
 let is_subtype ~subtype ~supertype = equal (join subtype supertype) supertype
 
+let is_considered_nonnull ~nullsafe_mode nullability =
+  let least_required =
+    match nullsafe_mode with
+    | NullsafeMode.Strict ->
+        StrictNonnull
+    | NullsafeMode.Local (NullsafeMode.Trust.Only _classes) ->
+        (* TODO(T61473665). For now treat trust with specified classes as trust=none.  *)
+        LocallyCheckedNonnull
+    | NullsafeMode.Local NullsafeMode.Trust.All ->
+        UncheckedNonnull
+    | NullsafeMode.Default ->
+        ThirdPartyNonnull
+  in
+  is_subtype ~subtype:nullability ~supertype:least_required
+
+
+let is_nonnullish t = is_considered_nonnull ~nullsafe_mode:NullsafeMode.Default t
+
 let to_string = function
   | Null ->
       "Null"
   | Nullable ->
       "Nullable"
+  | ThirdPartyNonnull ->
+      "ThirdPartyNonnull"
   | UncheckedNonnull ->
       "UncheckedNonnull"
   | LocallyCheckedNonnull ->
       "LocallyCheckedNonnull"
   | StrictNonnull ->
       "StrictNonnull"
+
+
+let pp fmt t = F.fprintf fmt "%s" (to_string t)

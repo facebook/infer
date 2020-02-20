@@ -19,22 +19,9 @@ let check ~nullsafe_mode nullability =
   match nullability with
   | Nullability.Nullable | Nullability.Null ->
       Error {nullsafe_mode; nullability}
-  | Nullability.UncheckedNonnull -> (
-    match nullsafe_mode with
-    | NullsafeMode.Strict | NullsafeMode.Local (NullsafeMode.Trust.Only []) ->
-        Error {nullsafe_mode; nullability}
-    | NullsafeMode.Local (NullsafeMode.Trust.Only _typ_names) ->
-        (* TODO(T61473665). For now treat as trust=none.  *)
-        Error {nullsafe_mode; nullability}
-    | NullsafeMode.Local NullsafeMode.Trust.All | NullsafeMode.Default ->
-        Ok () )
-  | Nullability.LocallyCheckedNonnull -> (
-    match nullsafe_mode with
-    | NullsafeMode.Default | NullsafeMode.Local _ ->
-        Ok ()
-    | NullsafeMode.Strict ->
-        Error {nullsafe_mode; nullability} )
-  | Nullability.StrictNonnull ->
+  | other when not (Nullability.is_considered_nonnull ~nullsafe_mode other) ->
+      Error {nullsafe_mode; nullability}
+  | _ ->
       Ok ()
 
 
@@ -52,12 +39,15 @@ let get_origin_opt ~nullable_object_descr origin =
 let violation_description {nullsafe_mode; nullability} ~dereference_location dereference_type
     ~nullable_object_descr ~nullable_object_origin =
   let module MF = MarkupFormatter in
-  match nullability with
-  | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
-      (* These types of violations are possible in non-default nullsafe mode. For them we
-         provide tailored error messages. *)
+  let special_message =
+    if not (NullsafeMode.equal NullsafeMode.Default nullsafe_mode) then
       ErrorRenderingUtils.mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability:nullability
         ~bad_usage_location:dereference_location nullable_object_origin
+    else None
+  in
+  match special_message with
+  | Some desc ->
+      desc
   | _ ->
       let what_is_dereferred_str =
         match dereference_type with
@@ -104,10 +94,10 @@ let violation_description {nullsafe_mode; nullability} ~dereference_location der
         | Nullability.Nullable ->
             Format.sprintf "%s is nullable and is not locally checked for null when %s%s."
               what_is_dereferred_str action_descr suffix
-        | Nullability.UncheckedNonnull
-        | Nullability.LocallyCheckedNonnull
-        | Nullability.StrictNonnull ->
-            Logging.die InternalError "Invariant violation: unexpected nullability"
+        | other ->
+            Logging.die InternalError
+              "violation_description:: invariant violation: unexpected nullability %a"
+              Nullability.pp other
       in
       (description, IssueType.eradicate_nullable_dereference, dereference_location)
 

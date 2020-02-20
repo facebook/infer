@@ -16,9 +16,11 @@ open! IStd
     user-provided annotations for local types, so annotated nullability applies only for types
     declared at methods and field level. *)
 
+(** See {!Nullability.t} for explanation *)
 type t =
   | Nullable of nullable_origin
-  | UncheckedNonnull of unchecked_nonnull_origin  (** See {!Nullability.t} for explanation *)
+  | ThirdPartyNonnull
+  | UncheckedNonnull of unchecked_nonnull_origin
   | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
@@ -52,7 +54,8 @@ and strict_nonnull_origin =
 
 val get_nullability : t -> Nullability.t
 
-val of_type_and_annotation : nullsafe_mode:NullsafeMode.t -> Typ.t -> Annot.Item.t -> t
+val of_type_and_annotation :
+  nullsafe_mode:NullsafeMode.t -> is_third_party:bool -> Typ.t -> Annot.Item.t -> t
 (** Given the type and its annotations, returns its nullability. NOTE: it does not take into account
     models etc., so this is intended to be used as a helper function for more high-level annotation
     processing. *)

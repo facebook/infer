@@ -33,6 +33,13 @@ val find_nullability_info : storage -> ThirdPartyMethod.unique_repr -> signature
 val lookup_related_sig_file : storage -> package:string -> string option
 (** If the package is third-party, return the relevant .sig file to add signatures for this package. *)
 
-val lookup_related_sig_file_by_package : storage -> Procname.t -> string option
-(** If the function is third-party (based on its package), return relevant .sig file to add the
-    signature NOTE: this DOES NOT look if the function is is already *)
+val lookup_related_sig_file_for_proc : storage -> Procname.t -> string option
+(** If the function is third-party (based on its package), return relevant .sig file *)
+
+val is_third_party_proc : storage -> Procname.t -> bool
+(** Checks whether a required procname comes from third-party code based on available .sig files and
+    config flags. NOTE: considering config flags is done for compatibility with the legacy behaviour
+    and will be removed in the future *)
+
+val is_third_party_typ : storage -> Typ.t -> bool
+(** See [is_third_party_proc]. *)

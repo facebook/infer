@@ -6,11 +6,23 @@
  */
 package some.test.pckg;
 
+import javax.annotation.Nullable;
+
 /**
  * A test third party class. We specify its annotations outside of this class, in a third-party
  * repository.
  */
 public class ThirdPartyTestClass {
+
+  // Fields.
+
+  public String nonNullableField;
+
+  @Nullable public String nullableField;
+
+  public ThirdPartyTestClass() {
+    nonNullableField = "OK";
+  }
 
   // Return values.
 

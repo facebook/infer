@@ -18,3 +18,6 @@ val pp : Format.formatter -> t -> unit
 val package : t -> string option
 
 val classname : t -> string
+
+val is_external_via_config : t -> bool
+(** Considered external based on config flags. *)

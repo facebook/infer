@@ -97,7 +97,7 @@ let check_condition_for_redundancy tenv ~is_always_true find_canonical_duplicate
     *)
     (* NOTE: We don't report the opposite case, namely when the expression is known to be always `null`. Consider changing this.
     *)
-    InferredNullability.is_nonnull_or_declared_nonnull inferred_nullability
+    InferredNullability.is_nonnullish inferred_nullability
     && Config.eradicate_condition_redundant && (not is_temp) && PatternMatch.type_is_class typ
     && (not (from_try_with_resources ()))
     && not (InferredNullability.origin_is_fun_library inferred_nullability)
@@ -168,22 +168,15 @@ let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pde
           (Some instr_ref) loc curr_pdesc )
 
 
-let is_declared_nonnull AnnotatedField.{annotated_type} =
-  match annotated_type.nullability with
-  | AnnotatedNullability.Nullable _ ->
-      false
-  | AnnotatedNullability.UncheckedNonnull _
-  | AnnotatedNullability.LocallyCheckedNonnull
-  | AnnotatedNullability.StrictNonnull _ ->
-      true
+(* Check if the field declared as not nullable (implicitly or explicitly). If the field is
+   absent, we optimistically assume it is not nullable.
 
-
-(* Is field declared as non-nullable (implicitly or explicitly)? *)
+   TODO(T54687014) investigate if this leads to unsoundness issues in practice *)
 let is_field_declared_as_nonnull annotated_field_opt =
-  (* If the field is not present, we optimistically assume it is not nullable.
-     TODO(T54687014) investigate if this leads to unsoundness issues in practice
-  *)
-  Option.exists annotated_field_opt ~f:is_declared_nonnull
+  let is_nonnullish AnnotatedField.{annotated_type= {nullability}} =
+    Nullability.is_nonnullish (AnnotatedNullability.get_nullability nullability)
+  in
+  Option.exists annotated_field_opt ~f:is_nonnullish
 
 
 let lookup_field_in_typestate pname field_name typestate =
@@ -429,32 +422,6 @@ type resolved_param =
   ; actual: Exp.t * InferredNullability.t
   ; is_formal_propagates_nullable: bool }
 
-let is_third_party_via_sig_files proc_name =
-  Option.is_some
-    (ThirdPartyAnnotationInfo.lookup_related_sig_file_by_package
-       (ThirdPartyAnnotationGlobalRepo.get_repo ())
-       proc_name)
-
-
-let is_marked_third_party_in_config proc_name =
-  match proc_name with
-  | Procname.Java java_pname ->
-      (* TODO: migrate to the new way of checking for third party: use
-         signatures repository instead of looking it up in config params.
-      *)
-      Procname.Java.is_external java_pname
-  | _ ->
-      false
-
-
-(* if this method belongs to a third party code, but is not modelled neigher internally nor externally *)
-let is_third_party_without_model proc_name model_source =
-  let is_third_party =
-    is_third_party_via_sig_files proc_name || is_marked_third_party_in_config proc_name
-  in
-  is_third_party && Option.is_none model_source
-
-
 (** Check the parameters of a call. *)
 let check_call_parameters ~nullsafe_mode ~callee_annotated_signature tenv find_canonical_duplicate
     curr_pdesc node callee_attributes resolved_params loc instr_ref : unit =
@@ -490,17 +457,7 @@ let check_call_parameters ~nullsafe_mode ~callee_annotated_signature tenv find_c
       let rhs = InferredNullability.get_nullability nullability_actual in
       Result.iter_error (AssignmentRule.check ~nullsafe_mode ~lhs ~rhs) ~f:report
   in
-  let should_ignore_parameters_check =
-    (* TODO(T52947663) model params in third-party non modelled method as a dedicated nullability type,
-       so this logic can be moved to [AssignmentRule.check] *)
-    NullsafeMode.equal nullsafe_mode NullsafeMode.Default
-    && Config.nullsafe_optimistic_third_party_params_in_non_strict
-    && is_third_party_without_model callee_pname
-         callee_annotated_signature.AnnotatedSignature.model_source
-  in
-  if not should_ignore_parameters_check then
-    (* left to right to avoid guessing the different lengths *)
-    List.iter ~f:check resolved_params
+  List.iter ~f:check resolved_params
 
 
 let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~nullsafe_mode

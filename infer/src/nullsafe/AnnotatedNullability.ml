@@ -14,9 +14,11 @@ module F = Format
     nullsafe omits Nullability information in types used for local variable declarations: this
     information is inferred according to flow-sensitive inferrence rule. *)
 
+(** See {!Nullability.t} for explanation *)
 type t =
   | Nullable of nullable_origin
-  | UncheckedNonnull of unchecked_nonnull_origin  (** See {!Nullability.t} for explanation *)
+  | ThirdPartyNonnull
+  | UncheckedNonnull of unchecked_nonnull_origin
   | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
@@ -51,6 +53,8 @@ and strict_nonnull_origin =
 let get_nullability = function
   | Nullable _ ->
       Nullability.Nullable
+  | ThirdPartyNonnull ->
+      Nullability.ThirdPartyNonnull
   | UncheckedNonnull _ ->
       Nullability.UncheckedNonnull
   | LocallyCheckedNonnull ->
@@ -88,6 +92,8 @@ let pp fmt t =
   match t with
   | Nullable origin ->
       F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin origin)
+  | ThirdPartyNonnull ->
+      F.fprintf fmt "ThirdPartyNonnull"
   | UncheckedNonnull origin ->
       F.fprintf fmt "UncheckedNonnull[%s]" (string_of_declared_nonnull_origin origin)
   | LocallyCheckedNonnull ->
@@ -96,7 +102,7 @@ let pp fmt t =
       F.fprintf fmt "StrictNonnull[%s]" (string_of_nonnull_origin origin)
 
 
-let of_type_and_annotation ~(nullsafe_mode : NullsafeMode.t) typ annotations =
+let of_type_and_annotation ~nullsafe_mode ~is_third_party typ annotations =
   if not (PatternMatch.type_is_class typ) then StrictNonnull PrimitiveType
   else if Annotations.ia_is_nullable annotations then
     let nullable_origin =
@@ -111,6 +117,7 @@ let of_type_and_annotation ~(nullsafe_mode : NullsafeMode.t) typ annotations =
     | NullsafeMode.Local _ ->
         LocallyCheckedNonnull
     | NullsafeMode.Default ->
-        if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
+        if is_third_party then ThirdPartyNonnull
+        else if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
           (* Currently, we treat not annotated types as nonnull *)
         else UncheckedNonnull ImplicitlyNonnull

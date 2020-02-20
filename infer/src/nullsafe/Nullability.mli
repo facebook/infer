@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Nullability is a central concept for Nullsafe type-checker. Informally, nullability is a "type"
     \- set of values together with some additional context. All nullsafe is interested about if
@@ -18,6 +19,9 @@ open! IStd
 type t =
   | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
+  | ThirdPartyNonnull
+      (** Values coming from third-party methods and fields not explictly annotated as [@Nullable].
+          We still consider those as non-nullable but with the least level of confidence. *)
   | UncheckedNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
           conventions) as non-nullable. Hovewer, it might still contain null since the truthfullness
@@ -48,4 +52,10 @@ val join : t -> t -> t
 (** Unique upper bound over two types: the most precise type that is a supertype of both.
     Practically, joins occur e.g. when two branches of execution flow are getting merged. *)
 
-val to_string : t -> string
+val is_considered_nonnull : nullsafe_mode:NullsafeMode.t -> t -> bool
+(** Check whether a given nullability is considered non-nullable within a given [nullsafe_mode]. *)
+
+val is_nonnullish : t -> bool
+(** Check whether a given nullability is one of the non-nullable types with no regards to the mode. *)
+
+val pp : F.formatter -> t -> unit

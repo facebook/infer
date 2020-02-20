@@ -10,6 +10,7 @@ package codetoanalyze.java.nullsafe_default;
 import com.facebook.infer.annotation.Nullsafe;
 import com.facebook.infer.annotation.NullsafeStrict;
 import javax.annotation.Nullable;
+import some.test.pckg.ThirdPartyTestClass;
 
 public class NullsafeMode {
   abstract class VariousMethods {
@@ -35,6 +36,11 @@ public class NullsafeMode {
     String OK_passUncheckedToStrict(String arg) {
       return new StrictNullsafe().acceptVal(arg);
     }
+
+    void OK_passNullableToThirdPartyParam() {
+      new ThirdPartyTestClass().paramUnspecified(returnNull());
+      return;
+    }
   }
 
   class AnotherNonNullsafe extends VariousMethods {}
@@ -53,6 +59,18 @@ public class NullsafeMode {
 
     String BAD_returnNullFromNonNulsafe() {
       return (new NonNullsafe()).returnNull();
+    }
+
+    String BAD_returnFromUnvettedThirdParty() {
+      return new ThirdPartyTestClass().returnUnspecified();
+    }
+
+    String BAD_returnNullableFieldFromThirdParty() {
+      return new ThirdPartyTestClass().nullableField;
+    }
+
+    String BAD_returnNonNullableFieldFromThirdParty() {
+      return new ThirdPartyTestClass().nonNullableField;
     }
 
     String OK_passLocalToStrictMode(String arg) {

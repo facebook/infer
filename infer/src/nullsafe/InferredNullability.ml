@@ -13,11 +13,9 @@ let create origin = {nullability= TypeOrigin.get_nullability origin; origin}
 
 let get_nullability {nullability} = nullability
 
-let is_nonnull_or_declared_nonnull {nullability} =
-  match nullability with StrictNonnull | UncheckedNonnull -> true | _ -> false
+let is_nonnullish {nullability} = Nullability.is_nonnullish nullability
 
-
-let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)
+let pp fmt {nullability} = Nullability.pp fmt nullability
 
 let join t1 t2 =
   let joined_nullability = Nullability.join t1.nullability t2.nullability in

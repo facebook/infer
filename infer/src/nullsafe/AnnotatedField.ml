@@ -43,11 +43,17 @@ let get tenv field_name class_typ =
     Typ.name class_typ
     |> Option.value_map ~f:(NullsafeMode.of_class tenv) ~default:NullsafeMode.Default
   in
+  let is_third_party =
+    ThirdPartyAnnotationInfo.is_third_party_typ
+      (ThirdPartyAnnotationGlobalRepo.get_repo ())
+      class_typ
+  in
   Struct.get_field_info ~lookup field_name class_typ
   |> Option.map ~f:(fun (Struct.{typ= field_typ; annotations} as field_info) ->
          let is_enum_value = is_enum_value tenv ~class_typ field_info in
          let nullability =
-           AnnotatedNullability.of_type_and_annotation field_typ annotations ~nullsafe_mode
+           AnnotatedNullability.of_type_and_annotation ~nullsafe_mode ~is_third_party field_typ
+             annotations
          in
          let corrected_nullability =
            match nullability with

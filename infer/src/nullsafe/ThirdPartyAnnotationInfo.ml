@@ -71,14 +71,12 @@ let does_package_match_file ~package sig_filename =
 
 let lookup_related_sig_file {filenames} ~package =
   List.filter filenames ~f:(does_package_match_file ~package)
-  |> List.max_elt
-       ~compare:(fun (* If two different files match the package, we choose the most specific; it will have the biggest length *)
-                       filename1
-                filename2
-                -> String.length filename1 - String.length filename2 )
+  (* In case two different files match the package, we choose the most specific;
+     it will have the longest length *)
+  |> List.max_elt ~compare:(fun name1 name2 -> String.length name1 - String.length name2)
 
 
-let lookup_related_sig_file_by_package storage procname =
+let lookup_related_sig_file_for_proc storage procname =
   let package =
     match procname with
     | Procname.Java java_pname ->
@@ -87,3 +85,33 @@ let lookup_related_sig_file_by_package storage procname =
         None
   in
   Option.bind package ~f:(fun package -> lookup_related_sig_file storage ~package)
+
+
+let is_third_party_proc storage procname =
+  let is_from_config =
+    match procname with
+    | Procname.Java java_pname ->
+        Procname.Java.is_external java_pname
+    | _ ->
+        false
+  in
+  let lookup_sig_file _ = lookup_related_sig_file_for_proc storage procname in
+  is_from_config || Option.is_some (lookup_sig_file ())
+
+
+(* There is a bit of duplication relative to [is_third_party_proc] due to mismatch between
+   [Typ.Name.Java] and [JavaClassName]. When those types are consolidated would be a good
+   idea to refactor this function. *)
+let is_third_party_typ storage typ =
+  IOption.Let_syntax.(
+    let* typ_name = Typ.name typ in
+    let+ class_name =
+      match typ_name with Typ.JavaClass class_name -> return class_name | _ -> None
+    in
+    let is_from_config = JavaClassName.is_external_via_config class_name in
+    let lookup_sig_file _ =
+      let* package = JavaClassName.package class_name in
+      lookup_related_sig_file storage ~package
+    in
+    is_from_config || Option.is_some (lookup_sig_file ()))
+  |> Option.value ~default:false
