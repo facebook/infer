@@ -178,6 +178,7 @@ detect_dead_ml_file:
 	  if [ "$$1" = "infertop.ml" ] \
 	  || [ "$$1" = "deadcode/all_infer_in_one_file.ml" ] \
 	  || [[ "$$1" =~ ^"labs/" ]] \
+	  || [[ "$$1" =~ ^"llvm/" ]] \
 	  || [[ "$$1" =~ ^"opensource/" ]]; then \
 	    exit 0; \
           else \
