@@ -46,6 +46,8 @@ import java.lang.annotation.Target;
  *   }
  * }
  * </code>
+ *
+ * <p>See also: @Cleanup annotation.
  */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})

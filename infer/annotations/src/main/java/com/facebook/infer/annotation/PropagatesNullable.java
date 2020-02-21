@@ -12,7 +12,39 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation to indicate that when the parameter is null, the result is also null. */
+/**
+ * Annotation specifying method's contract. If a method's param is annotated
+ * with @PropagaresNullable, it declares that the method will return {@code null} if and only if
+ * this param is {@code null}.
+ *
+ * <p>Calls to @PropagatesNullable-annotated methods are treated by Nullsafe typechecker
+ * accordingly. If param is non-nullable in the callsite, Nullsafe will assume the method result is
+ * not null either, and hence no assertion or check will be needed.
+ *
+ * <p>In the following example, annotating the param with @PropagatesNullable allows to simplify
+ * usage of the method.
+ *
+ * <p><code>
+ * public static String capitalize(@PropagatesNullable String input) {
+ *   if (input == null) {
+ *     return null;
+ *   }
+ *   return input.toUpperCase();
+ * }
+ *
+ * void exampleOfUsage(@Nullable String nullable, String nonnull) {
+ *   capitalize(nullable).contains("A"); // <-- BAD: need a check
+ *   // if capitalize() was not annotated as @PropagatesNullable,
+ *   // assertNotNull(capitalize(nonnull)) would be required.
+ *   capitalize(nonnull).contains("A");  // <-- OK: safe to dereference
+ * }
+ * </code>
+ *
+ * <p>If several params are annotated as @PropagatesNullable, the method should return {@code null}
+ * if and only if any of those params is {@code null}.
+ *
+ * <p>See also @TrueOnNull and @FalseOnNull annotations.
+ */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.PARAMETER})
 public @interface PropagatesNullable {}

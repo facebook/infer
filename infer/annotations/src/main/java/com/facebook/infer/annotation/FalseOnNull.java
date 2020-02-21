@@ -12,7 +12,36 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation for a boolean function returning false when the argument is null. */
+/**
+ * Annotation specifying method's contract. @FalseOnNull declares that a boolean method will always
+ * return {@code false} when any of its arguments is {@code null}.
+ *
+ * <p>Calls to @FalseOnNull-annotated methods are treated by Nullsafe typechecker accordingly. This
+ * allows the caller's code become more elegant without need of extra assertions.
+ *
+ * <p>In the following example, annotating a method with @FalseOnNull simplifies its usage.
+ *
+ * <p><code>
+ * @FalseOnNull
+ * public static hasNotification(@Nullable MyObject object) {
+ *  if (object == null) {
+ *    return false;
+ *  }
+ *  // ... actual logic
+ * }
+ *
+ * void exampleOfUsage(@Nullable MyObject obj) {
+ *   if (hasNotification(obj)) {
+ *     // Nullsafe knows obj can not be null at this point, so it can be safely dereferenced.
+ *     // If hasNotification() was not annotated as @FalseOnNull, assertNotNull(obj)
+ *     // would be required.
+ *     obj.doSomething();
+ *   }
+ * }
+ * </code>
+ *
+ * <p>See also @TrueOnNull and @PropagatesNullable annotations.
+ */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.METHOD})
 public @interface FalseOnNull {}
