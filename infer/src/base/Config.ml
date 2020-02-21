@@ -1084,9 +1084,17 @@ and compute_analytics =
     marking. *)
 and continue =
   CLOpt.mk_bool ~deprecated:["continue"] ~long:"continue"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Capture, manual_generic)]
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If \
      a procedure was changed beforehand, keep the changed marking.)"
+
+
+and continue_analysis =
+  CLOpt.mk_bool ~long:"continue-analysis"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Continue the analysis after more targets are captured by $(b,--continue). The other analysis \
+     options should be given the same before. Not compatible with $(b,--reanalyze) and \
+     $(b,--incremental-analysis)."
 
 
 and costs_current =
@@ -2036,7 +2044,8 @@ and reactive_capture =
 
 and reanalyze =
   CLOpt.mk_bool ~long:"reanalyze"
-    "Rerun the analysis. Not compatible with $(b,--incremental-analysis)."
+    "Rerun the analysis. Not compatible with $(b,--incremental-analysis) and \
+     $(b,--continue-analysis)."
 
 
 and relative_path_backtrack =
@@ -2439,7 +2448,7 @@ and use_cost_threshold =
 and incremental_analysis =
   CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
     "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
-     $(b,--reanalyze)."
+     $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
 and version =
@@ -2826,6 +2835,8 @@ and class_loads = !class_loads
 and class_loads_roots = String.Set.of_list !class_loads_roots
 
 and compute_analytics = !compute_analytics
+
+and continue_analysis = !continue_analysis
 
 and continue_capture = !continue
 

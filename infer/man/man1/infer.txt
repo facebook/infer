@@ -250,7 +250,14 @@ OPTIONS
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was
            changed beforehand, keep the changed marking.) (Conversely:
-           --no-continue)           See also infer-analyze(1).
+           --no-continue)           See also infer-capture(1).
+
+       --continue-analysis
+           Activates: Continue the analysis after more targets are captured
+           by --continue. The other analysis options should be given the same
+           before. Not compatible with --reanalyze and
+           --incremental-analysis. (Conversely: --no-continue-analysis)       
+    See also infer-analyze(1).
 
        --cost
            Activates: checker for performance cost analysis (Conversely:

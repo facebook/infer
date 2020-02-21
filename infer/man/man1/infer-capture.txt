@@ -24,6 +24,12 @@ DESCRIPTION
 
 
 OPTIONS
+       --continue
+           Activates: Continue the capture for the reactive analysis,
+           increasing the changed files/procedures. (If a procedure was
+           changed beforehand, keep the changed marking.) (Conversely:
+           --no-continue)
+
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,

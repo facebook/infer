@@ -290,6 +290,8 @@ val command : InferCommand.t
 
 val compute_analytics : bool
 
+val continue_analysis : bool
+
 val continue_capture : bool
 
 val cost : bool
