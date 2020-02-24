@@ -15,7 +15,7 @@ enum {
 };
 
 // expected linear
-bool wrong_cvar_FN(int x) {
+bool wrong_cvar_FP(int x) {
 
   while (true) {
     switch (x) {

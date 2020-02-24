@@ -655,9 +655,11 @@ module Prune = struct
             let v' = eval integer_type_widths e mem in
             if IntLit.iszero i then v' else Val.minus_a v' (Val.of_int_lit i)
           in
-          let v = val_prune_eq lhs rhs in
-          let pruning_exp = make_pruning_exp ~lhs ~rhs in
-          update_mem_in_prune lv v ~pruning_exp acc )
+          if Val.is_bot rhs then acc
+          else
+            let v = val_prune_eq lhs rhs in
+            let pruning_exp = make_pruning_exp ~lhs ~rhs in
+            update_mem_in_prune lv v ~pruning_exp acc )
     in
     gen_prune_alias_functions ~prune_alias_core
 

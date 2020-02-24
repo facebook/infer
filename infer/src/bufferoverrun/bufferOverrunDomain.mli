@@ -108,6 +108,9 @@ module Val : sig
   val unknown_from : Typ.t -> callee_pname:Procname.t option -> location:Location.t -> t
   (** Unknown return value of [callee_pname] *)
 
+  val is_bot : t -> bool
+  (** Check if the value is bottom *)
+
   val is_mone : t -> bool
   (** Check if the value is [\[-1,-1\]] *)
 

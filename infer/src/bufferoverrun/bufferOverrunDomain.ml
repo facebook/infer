@@ -635,6 +635,8 @@ module Val = struct
 
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.bottom
 
+  let is_bot x = Itv.is_bottom x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
+
   let is_mone x = Itv.is_mone (get_itv x)
 
   let is_incr_of l {itv} =
@@ -1564,10 +1566,7 @@ module CoreVal = struct
     if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
 
 
-  let is_empty v =
-    Itv.is_bottom (Val.get_itv v)
-    && PowLoc.is_empty (Val.get_pow_loc v)
-    && ArrayBlk.is_empty (Val.get_array_blk v)
+  let is_bot = Val.is_bot
 end
 
 module PruningExp = struct
@@ -1686,7 +1685,7 @@ module PrunedVal = struct
 
   let is_symbolic {v; pruning_exp} = CoreVal.is_symbolic v || PruningExp.is_symbolic pruning_exp
 
-  let is_empty {v; pruning_exp} = CoreVal.is_empty v || PruningExp.is_empty pruning_exp
+  let is_bot {v; pruning_exp} = CoreVal.is_bot v || PruningExp.is_empty pruning_exp
 end
 
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
@@ -1713,7 +1712,7 @@ module PrunePairs = struct
     fold subst1 x (Ok empty)
 
 
-  let is_reachable x = not (exists (fun _ v -> PrunedVal.is_empty v) x)
+  let is_reachable x = not (exists (fun _ v -> PrunedVal.is_bot v) x)
 end
 
 module LatestPrune = struct
@@ -1923,7 +1922,7 @@ module Reachability = struct
     let exception Unreachable in
     let subst1 x acc =
       let v = PrunedVal.subst x eval_sym_trace location in
-      if PrunedVal.is_empty v then raise Unreachable else add v acc
+      if PrunedVal.is_bot v then raise Unreachable else add v acc
     in
     match M.fold subst1 x M.empty with x -> `Reachable x | exception Unreachable -> `Unreachable
 end
