@@ -32,7 +32,9 @@ INFER_BUILD_DIR = ../_build/test
 
 ALL_INFER_IN_ONE_FILE_ML = all_infer_in_one_file.ml
 ALL_ML_FILES = all_ml_files
+ALL_MLI_FILES = all_mli_files
 ALL_ML_FILES_COPIED = all_ml_files_copied
+ALL_MLI_FILES_COPIED = all_mli_files_copied
 
 default: detect_dead_code
 
@@ -103,6 +105,7 @@ depend:
 	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
 	fi
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "$*.mli" >> $(ALL_MLI_FILES_COPIED)
 	$(QUIET)echo "$*.ml" >> $(ALL_ML_FILES_COPIED)
 
 $(ml_src_files_without_mli:.ml=.cmx):
@@ -158,11 +161,12 @@ detect_dead_code:
 #	have changed. For both of these reasons, run another `make`.
 #	Create a temp file so that the build doesn't break if this step gets interrupted.
 	tmp_file=$$(mktemp -t all_infer_in_one_file_XXXXX.ml); \
-	tmp_file_copied=$$(mktemp -t all_ml_files_copied); \
+	tmp_file_copied=$$(mktemp -t all_ml_files_copied_XXXXX); \
 	$(MAKE) -j 1 ALL_INFER_IN_ONE_FILE_ML="$$tmp_file" ALL_ML_FILES_COPIED="$$tmp_file_copied" flatten_infer; \
 	mv "$$tmp_file" $(ALL_INFER_IN_ONE_FILE_ML); \
-	sort -u "$$tmp_file_copied" > $(ALL_ML_FILES_COPIED)
-	$(MAKE) -j 1 detect_dead_ml_file
+	sort -u "$$tmp_file_copied" > $(ALL_ML_FILES_COPIED); \
+	rm "$$tmp_file_copied"
+	$(MAKE) -j 1 detect_dead_src_file
 #	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
 	if ! dune build $(INFER_BUILD_DIR)/deadcode/all_infer_in_one_file.bc; then \
 	  $(MAKE) clean; \
@@ -172,11 +176,12 @@ detect_dead_code:
 #	accident and I don't know enough dune to be positive that it won't happen
 	$(MAKE) clean
 
-.PHONY: detect_dead_ml_file
-detect_dead_ml_file:
+.PHONY: detect_dead_src_file
+detect_dead_src_file:
 	function is_in_blacklist { \
 	  if [ "$$1" = "infertop.ml" ] \
 	  || [ "$$1" = "deadcode/all_infer_in_one_file.ml" ] \
+	  || [ "$$1" = "deadcode/all_infer_in_one_file.mli" ] \
 	  || [[ "$$1" =~ ^"labs/" ]] \
 	  || [[ "$$1" =~ ^"llvm/" ]] \
 	  || [[ "$$1" =~ ^"opensource/" ]]; then \
@@ -185,23 +190,47 @@ detect_dead_ml_file:
 	    exit 1; \
 	  fi; \
 	}; \
-	tmp_file=$$(mktemp -t all_ml_files); \
+	\
+	tmp_file=$$(mktemp -t all_ml_files_XXXXX); \
 	for i in $(ml_src_files) $(ml_src_files_without_mli); do \
 	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_ML_FILES); \
-	tmp_file=$$(mktemp -t all_ml_files_copied); \
+	rm "$$tmp_file"; \
+	\
+	tmp_file=$$(mktemp -t all_mli_files_XXXXX); \
+	for i in $(mli_src_files); do \
+	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	done; \
+	sort -u "$$tmp_file" > $(ALL_MLI_FILES); \
+	rm "$$tmp_file"; \
+	\
+	tmp_file=$$(mktemp -t all_ml_files_copied_XXXXX); \
 	for i in $$(cat $(ALL_ML_FILES_COPIED)); do \
 	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
-	sort -u "$$tmp_file" > $(ALL_ML_FILES_COPIED)
+	sort -u "$$tmp_file" > $(ALL_ML_FILES_COPIED); \
+	rm "$$tmp_file"; \
+	\
+	tmp_file=$$(mktemp -t all_mli_files_copied_XXXXX); \
+	for i in $$(cat $(ALL_MLI_FILES_COPIED)); do \
+	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	done; \
+	sort -u "$$tmp_file" > $(ALL_MLI_FILES_COPIED); \
+	rm "$$tmp_file"; \
 
 	if ! diff $(ALL_ML_FILES) $(ALL_ML_FILES_COPIED) 1>&2; then \
 	  $(MAKE) clean; \
 	  exit 1; \
 	fi
 
+	if ! diff $(ALL_MLI_FILES) $(ALL_MLI_FILES_COPIED) 1>&2; then \
+	  $(MAKE) clean; \
+	  exit 1; \
+	fi
+
 .PHONY: clean
 clean:
-	$(REMOVE) .depend *.ml *.mli dune $(ALL_ML_FILES) $(ALL_ML_FILES_COPIED)
+	$(REMOVE) .depend *.ml *.mli dune $(ALL_ML_FILES) $(ALL_MLI_FILES) $(ALL_ML_FILES_COPIED) \
+	  $(ALL_MLI_FILES_COPIED)
 

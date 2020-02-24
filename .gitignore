@@ -185,6 +185,8 @@ infer/src/.project
 /infer/src/deadcode/.depend
 /infer/src/deadcode/all_ml_files
 /infer/src/deadcode/all_ml_files_copied
+/infer/src/deadcode/all_mli_files
+/infer/src/deadcode/all_mli_files_copied
 /infer/src/deadcode/dune
 /infer/src/deadcode/*.ml
 /infer/src/deadcode/*.mli
