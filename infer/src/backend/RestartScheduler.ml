@@ -7,13 +7,30 @@
 open! IStd
 module L = Logging
 
-let of_list (lst : 'a list) : 'a ProcessPool.TaskGenerator.t =
+exception ProcnameAlreadyLocked of Procname.t
+
+type work_with_dependency = {work: SchedulerTypes.target; need_to_finish: Procname.t option}
+
+let of_list (lst : work_with_dependency list) : ('a, Procname.t) ProcessPool.TaskGenerator.t =
   let content = Queue.of_list lst in
   let remaining = ref (Queue.length content) in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
-  let finished ~completed work = if completed then decr remaining else Queue.enqueue content work in
-  let next () = Queue.dequeue content in
+  let finished ~result work =
+    match result with
+    | None ->
+        decr remaining
+    | Some _ as need_to_finish ->
+        Queue.enqueue content {work; need_to_finish}
+  in
+  let work_if_dependency_allows w =
+    match w.need_to_finish with
+    | Some pname when ProcLocker.is_locked pname ->
+        Queue.enqueue content w ; None
+    | None | Some _ ->
+        Some w.work
+  in
+  let next () = Option.bind (Queue.dequeue content) ~f:(fun w -> work_if_dependency_allows w) in
   {remaining_tasks; is_empty; finished; next}
 
 
@@ -21,9 +38,12 @@ let make sources =
   let pnames =
     List.map sources ~f:SourceFiles.proc_names_of_source
     |> List.concat
-    |> List.rev_map ~f:(fun procname -> SchedulerTypes.Procname procname)
+    |> List.rev_map ~f:(fun procname ->
+           {work= SchedulerTypes.Procname procname; need_to_finish= None} )
   in
-  let files = List.map sources ~f:(fun file -> SchedulerTypes.File file) in
+  let files =
+    List.map sources ~f:(fun file -> {work= SchedulerTypes.File file; need_to_finish= None})
+  in
   let permute = List.permute ~random_state:(Random.State.make (Array.create ~len:1 0)) in
   permute pnames @ permute files |> of_list
 
@@ -44,7 +64,7 @@ let lock_exn pname =
       if ProcLocker.try_lock pname then record_locked_proc pname
       else (
         unlock_all () ;
-        raise ProcessPool.ProcnameAlreadyLocked ) )
+        raise (ProcnameAlreadyLocked pname) ) )
 
 
 let unlock pname =

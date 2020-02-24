@@ -7,29 +7,29 @@
 
 open! IStd
 
-exception ProcnameAlreadyLocked
-
 module TaskGenerator : sig
   (** abstraction for generating jobs *)
-  type 'a t =
+  type ('a, 'b) t =
     { remaining_tasks: unit -> int
           (** number of tasks remaining to complete -- only used for reporting, so imprecision is
               not a bug *)
     ; is_empty: unit -> bool
           (** when should the main loop of the task manager stop expecting new tasks *)
-    ; finished: completed:bool -> 'a -> unit
-          (** Process pool calls [finished x] when a worker finishes item [x]. This is only called
-              if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
+    ; finished: result:'b option -> 'a -> unit
+          (** Process pool calls [finished result:r x] when a worker finishes item [x]. result is
+              None when the item was completed successfully and Some pname when it failed because it
+              could not lock pname. This is only called if [next ()] has previously returned
+              [Some x] and [x] was sent to a worker. *)
     ; next: unit -> 'a option
           (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] must
               return [None]. However, it is OK to for [next ()] to return [None] when [is_empty] is
               false. This corresponds to the case where there is more work to be done, but it is not
               schedulable until some already scheduled work is finished. *) }
 
-  val chain : 'a t -> 'a t -> 'a t
+  val chain : ('a, 'b) t -> ('a, 'b) t -> ('a, 'b) t
   (** chain two generators in order *)
 
-  val of_list : 'a list -> 'a t
+  val of_list : 'a list -> ('a, 'b) t
   (** schedule tasks out of a concrete list *)
 end
 
@@ -51,17 +51,17 @@ end
 
 (** A [('work, 'final) t] process pool accepts tasks of type ['work] and produces an array of
     results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)
-type (_, _) t
+type (_, _, _) t
 
 val create :
      jobs:int
   -> child_prelude:(unit -> unit)
-  -> f:('work -> unit)
+  -> f:('work -> 'result option)
   -> child_epilogue:(unit -> 'final)
-  -> tasks:(unit -> 'work TaskGenerator.t)
-  -> ('work, 'final) t
+  -> tasks:(unit -> ('work, 'result) TaskGenerator.t)
+  -> ('work, 'final, 'result) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
-val run : (_, 'final) t -> 'final option Array.t
+val run : (_, 'final, 'result) t -> 'final option Array.t
 (** use the processes in the given process pool to run all the given tasks in parallel and return
     the results of the epilogues *)

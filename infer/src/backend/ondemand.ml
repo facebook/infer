@@ -219,7 +219,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
-        | ProcessPool.ProcnameAlreadyLocked ->
+        | RestartScheduler.ProcnameAlreadyLocked _ ->
             clear_actives () ; true
         | _ ->
             if not !logged_error then (

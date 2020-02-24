@@ -20,15 +20,18 @@ let clear_caches () =
   BufferOverrunUtils.clear_cache ()
 
 
-let analyze_target : SchedulerTypes.target Tasks.doer =
+let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
   let analyze_source_file exe_env source_file =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
-        Ondemand.analyze_file exe_env source_file ;
-        if Topl.is_active () && Config.debug_mode then
-          DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
-        if Config.write_html then Printer.write_all_html_files source_file )
+        try
+          Ondemand.analyze_file exe_env source_file ;
+          if Topl.is_active () && Config.debug_mode then
+            DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
+          if Config.write_html then Printer.write_all_html_files source_file ;
+          None
+        with RestartScheduler.ProcnameAlreadyLocked pname -> Some pname )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
@@ -41,7 +44,10 @@ let analyze_target : SchedulerTypes.target Tasks.doer =
       L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
         Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
-    Ondemand.analyze_proc_name_toplevel exe_env proc_name
+    try
+      Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
+      None
+    with RestartScheduler.ProcnameAlreadyLocked pname -> Some pname
   in
   fun target ->
     let exe_env = Exe_env.mk () in

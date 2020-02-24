@@ -213,7 +213,11 @@ let log_task fmt =
   log ~to_console progress_file_fmts fmt
 
 
-let task_progress ~f pp x = log_task "%a starting@." pp x ; f () ; log_task "%a DONE@." pp x
+let task_progress ~f pp x =
+  log_task "%a starting@." pp x ;
+  let result = f () in
+  log_task "%a DONE@." pp x ; result
+
 
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 

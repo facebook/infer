@@ -26,13 +26,14 @@ let create_cmd (source_file, (compilation_data : CompilationDatabase.compilation
 
 let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
   let argv = cmd.executable :: cmd.escaped_arguments in
-  ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
-  | pid ->
-      !ProcessPoolState.update_status (Mtime_clock.now ()) (SourceFile.to_string source_file) ;
-      Unix.waitpid (Pid.of_int pid)
-      |> Result.map_error ~f:(fun unix_error -> Unix.Exit_or_signal.to_string_hum (Error unix_error))
-  | exception Unix.Unix_error (err, f, arg) ->
-      Error (F.asprintf "%s(%s): %s@." f arg (Unix.Error.message err)) )
+  ( ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
+    | pid ->
+        !ProcessPoolState.update_status (Mtime_clock.now ()) (SourceFile.to_string source_file) ;
+        Unix.waitpid (Pid.of_int pid)
+        |> Result.map_error ~f:(fun unix_error ->
+               Unix.Exit_or_signal.to_string_hum (Error unix_error) )
+    | exception Unix.Unix_error (err, f, arg) ->
+        Error (F.asprintf "%s(%s): %s@." f arg (Unix.Error.message err)) )
   |> function
   | Ok () ->
       ()
@@ -42,7 +43,8 @@ let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
         else L.die ExternalError fmt
       in
       log_or_die "Error running compilation for '%a': %a:@\n%s@." SourceFile.pp source_file
-        Pp.cli_args argv error
+        Pp.cli_args argv error ) ;
+  None
 
 
 let run_compilation_database compilation_database should_capture_file =

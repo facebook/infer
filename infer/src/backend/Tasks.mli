@@ -7,9 +7,9 @@
 
 open! IStd
 
-type 'a doer = 'a -> unit
+type ('a, 'b) doer = 'a -> 'b option
 
-val run_sequentially : f:'a doer -> 'a list -> unit
+val run_sequentially : f:('a, 'b) doer -> 'a list -> unit
 (** Run the tasks sequentially *)
 
 val fork_protect : f:('a -> 'b) -> 'a -> 'b
@@ -17,16 +17,16 @@ val fork_protect : f:('a -> 'b) -> 'a -> 'b
 
 (** A runner accepts new tasks repeatedly for parallel execution *)
 module Runner : sig
-  type ('work, 'final) t
+  type ('work, 'final, 'result) t
 
   val create :
        jobs:int
-    -> f:'work doer
+    -> f:('work, 'result) doer
     -> child_epilogue:(unit -> 'final)
-    -> tasks:(unit -> 'work ProcessPool.TaskGenerator.t)
-    -> ('work, 'final) t
+    -> tasks:(unit -> ('work, 'result) ProcessPool.TaskGenerator.t)
+    -> ('work, 'final, 'result) t
   (** Create a runner running [jobs] jobs in parallel *)
 
-  val run : (_, 'final) t -> 'final option Array.t
+  val run : (_, 'final, _) t -> 'final option Array.t
   (** Start the given tasks with the runner and wait until completion *)
 end

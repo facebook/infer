@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 exception UnlockNotLocked of Procname.t
 
@@ -45,3 +46,10 @@ let try_lock pname =
         Unix.symlink ~target:locks_target ~link_name:(filename_from pname) ;
         true
       with Unix.Unix_error (Unix.EEXIST, _, _) -> false )
+
+
+let is_locked pname =
+  try
+    ignore (Unix.lstat (filename_from pname)) ;
+    true
+  with Unix.Unix_error (Unix.ENOENT, _, _) -> false

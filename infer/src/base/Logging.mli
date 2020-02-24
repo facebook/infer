@@ -26,7 +26,7 @@ val progress : ('a, F.formatter, unit) format -> 'a
 val log_task : ('a, F.formatter, unit) format -> 'a
 (** log progress in the log file and on the console unless there is an active task bar *)
 
-val task_progress : f:(unit -> unit) -> (F.formatter -> 'a -> unit) -> 'a -> unit
+val task_progress : f:(unit -> 'a) -> (F.formatter -> 'b -> unit) -> 'b -> 'a
 (** [task_progress ~f pp x] executes [f] and log progress [pp x] in the log file and also on the
     console unless there is an active task bar *)
 

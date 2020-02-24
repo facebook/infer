@@ -46,7 +46,7 @@ let build_from_sources sources =
   g
 
 
-let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
+let bottom_up sources : (SchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t =
   let open SchedulerTypes in
   let syntactic_call_graph = build_from_sources sources in
   let remaining = ref (CallGraph.n_procs syntactic_call_graph) in
@@ -83,7 +83,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
         CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
-  let finished ~completed:_ = function
+  let finished ~result:_ = function
     | Procname pname ->
         decr remaining ;
         decr scheduled ;

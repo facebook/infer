@@ -22,3 +22,5 @@ val unlock : Procname.t -> unit
 val clean : unit -> unit
 (** This should be called when locks will no longer be used to remove any files or state that's not
     necessary. *)
+
+val is_locked : Procname.t -> bool
