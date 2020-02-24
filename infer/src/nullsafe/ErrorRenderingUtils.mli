@@ -23,3 +23,8 @@ val mk_special_nullsafe_issue :
     strict and local mode. Returns a tuple (error message, issue type, error location). NOTE:
     Location of the error will be NOT in the place when the value is used (that is
     [bad_usage_location]), but where the value is first obtained from. *)
+
+val find_alternative_nonnull_method_description : TypeOrigin.t -> string option
+(** If type origin is the result of a nullable method call that have a known nonnullable alternative
+    (the one that does the check inside), return the string representation of that alternative
+    suitable for error messaging. *)

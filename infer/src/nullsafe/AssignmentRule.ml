@@ -65,7 +65,7 @@ let pp_param_name fmt mangled =
 
 let mk_description_for_bad_param_passed
     {model_source; param_signature; actual_param_expression; param_position; function_procname}
-    ~param_nullability nullability_evidence =
+    ~param_nullability ~nullability_evidence =
   let nullability_evidence_as_suffix =
     Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
   in
@@ -161,11 +161,22 @@ let violation_description {nullsafe_mode; rhs} ~assignment_location assignment_t
         Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
       in
       let module MF = MarkupFormatter in
+      let alternative_method_description =
+        ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin
+      in
+      let alternative_recommendation =
+        Option.value_map alternative_method_description
+          ~f:(fun descr ->
+            Format.asprintf " If you don't expect null, use %a instead." MF.pp_monospaced descr )
+          ~default:""
+      in
       let error_message =
         match assignment_type with
         | PassingParamToFunction function_info ->
-            mk_description_for_bad_param_passed function_info nullability_evidence
-              ~param_nullability:rhs
+            Format.sprintf "%s%s"
+              (mk_description_for_bad_param_passed function_info ~nullability_evidence
+                 ~param_nullability:rhs)
+              alternative_recommendation
         | AssigningToField field_name ->
             let rhs_description =
               Nullability.(
@@ -180,9 +191,9 @@ let violation_description {nullsafe_mode; rhs} ~assignment_location assignment_t
                        nullability %a"
                       Nullability.pp other)
             in
-            Format.asprintf "%a is declared non-nullable but is assigned %s%s." MF.pp_monospaced
+            Format.asprintf "%a is declared non-nullable but is assigned %s%s.%s" MF.pp_monospaced
               (Fieldname.get_field_name field_name)
-              rhs_description nullability_evidence_as_suffix
+              rhs_description nullability_evidence_as_suffix alternative_recommendation
         | ReturningFromFunction function_proc_name ->
             let return_description =
               Nullability.(
@@ -198,10 +209,11 @@ let violation_description {nullsafe_mode; rhs} ~assignment_location assignment_t
                        nullability %a"
                       Nullability.pp other)
             in
-            Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s."
+            Format.asprintf
+              "%a: return type is declared non-nullable but the method returns %s%s.%s"
               MF.pp_monospaced
               (Procname.to_simplified_string ~withclass:false function_proc_name)
-              return_description nullability_evidence_as_suffix
+              return_description nullability_evidence_as_suffix alternative_recommendation
       in
       let issue_type = get_issue_type assignment_type in
       (error_message, issue_type, assignment_location)

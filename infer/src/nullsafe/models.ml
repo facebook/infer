@@ -144,3 +144,11 @@ let is_containsKey proc_name = table_has_procedure containsKey_table proc_name
 
 (** Check if the procedure is Map.put(). *)
 let is_mapPut proc_name = table_has_procedure mapPut_table proc_name
+
+(** Check if a (nullable) method has a non-nullable alternative: A method that does the same as
+    [proc_name] but asserts the result is not null before returning to the caller. *)
+let find_nonnullable_alternative proc_name =
+  (* NOTE: For now we fetch this info from internal models.
+     It is a good idea to support this feature in a user-facing third party repository. *)
+  let proc_id = Procname.to_unique_id proc_name in
+  Hashtbl.find_opt nonnull_alternatives_table proc_id

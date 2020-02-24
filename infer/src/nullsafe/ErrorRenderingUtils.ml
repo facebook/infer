@@ -215,3 +215,20 @@ let mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability ~bad_usage_locatio
       bad_usage_location.Location.line recommendation
   in
   (description, issue_type, object_loc)
+
+
+let find_alternative_nonnull_method_description nullable_origin =
+  let open IOption.Let_syntax in
+  match nullable_origin with
+  | TypeOrigin.MethodCall {pname= Procname.Java java_pname as pname} ->
+      let* ModelTables.{package_name; class_name; method_name} =
+        Models.find_nonnullable_alternative pname
+      in
+      let+ original_package_name = Procname.Java.get_package java_pname in
+      if String.equal original_package_name package_name then
+        (* The same package that is from origin - omit name for simplicity *)
+        class_name ^ "." ^ method_name ^ "()"
+      else (* Fully qualified name *)
+        package_name ^ "." ^ class_name ^ "." ^ method_name ^ "()"
+  | _ ->
+      None

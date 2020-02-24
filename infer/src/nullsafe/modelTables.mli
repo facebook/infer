@@ -34,3 +34,12 @@ val mapPut_table : model_table_t
 val noreturn_table : model_table_t
 
 val true_on_null_table : model_table_t
+
+(** Used to describe a method complementary to a given one. Contains information needed for
+    reporting (hence does not describe the whole signature). *)
+type nonnull_alternative_method = {package_name: string; class_name: string; method_name: string}
+
+val nonnull_alternatives_table : (string, nonnull_alternative_method) Caml.Hashtbl.t
+(** The key is a string representation of a [@Nullable] method. The value is the description of
+    non-nullable alternative: a method does the same, but never returns null (does a null check
+    inside). *)

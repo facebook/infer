@@ -79,10 +79,19 @@ let violation_description {nullsafe_mode; nullability} ~dereference_location der
         | ArrayLengthAccess ->
             "accessing its length"
       in
-      let suffix =
+      let origin_descr =
         get_origin_opt ~nullable_object_descr nullable_object_origin
         |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
         |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:""
+      in
+      let alternative_method_description =
+        ErrorRenderingUtils.find_alternative_nonnull_method_description nullable_object_origin
+      in
+      let alternative_recommendation =
+        Option.value_map alternative_method_description
+          ~f:(fun descr ->
+            Format.asprintf " If this is intentional, use %a instead." MF.pp_monospaced descr )
+          ~default:""
       in
       let description =
         match nullability with
@@ -90,10 +99,10 @@ let violation_description {nullsafe_mode; nullability} ~dereference_location der
             Format.sprintf
               "NullPointerException will be thrown at this line! %s is `null` and is dereferenced \
                via %s%s."
-              what_is_dereferred_str action_descr suffix
+              what_is_dereferred_str action_descr origin_descr
         | Nullability.Nullable ->
-            Format.sprintf "%s is nullable and is not locally checked for null when %s%s."
-              what_is_dereferred_str action_descr suffix
+            Format.sprintf "%s is nullable and is not locally checked for null when %s%s.%s"
+              what_is_dereferred_str action_descr origin_descr alternative_recommendation
         | other ->
             Logging.die InternalError
               "violation_description:: invariant violation: unexpected nullability %a"
