@@ -464,9 +464,6 @@ end
 module Mem : sig
   type 'has_oenv t0 =
     | Unreachable  (** Memory of unreachable node *)
-    | Error
-        (** Error status due to Inferbo's incorrect semantics/models, e.g., when a value of an
-            abstract location is not found from the abstract memory inadvertently *)
     | ExcRaised
         (** Memory of node that can be reachable only with exception raises that we want to ignore *)
     | Reachable of 'has_oenv MemReach.t0
@@ -484,8 +481,6 @@ module Mem : sig
   val pp : Format.formatter -> _ t0 -> unit
 
   val unreachable : t
-
-  val error : t
 
   type get_summary = Procname.t -> no_oenv_t option
 

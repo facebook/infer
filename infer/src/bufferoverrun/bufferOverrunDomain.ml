@@ -2332,15 +2332,13 @@ module MemReach = struct
 end
 
 module Mem = struct
-  type 'has_oenv t0 = Unreachable | Error | ExcRaised | Reachable of 'has_oenv MemReach.t0
+  type 'has_oenv t0 = Unreachable | ExcRaised | Reachable of 'has_oenv MemReach.t0
 
   type no_oenv_t = GOption.none t0
 
   type t = GOption.some t0
 
   let unreachable : t = Unreachable
-
-  let error : t = Error
 
   let exc_raised : t = ExcRaised
 
@@ -2353,10 +2351,6 @@ module Mem = struct
       | Unreachable, _ ->
           true
       | _, Unreachable ->
-          false
-      | Error, _ ->
-          true
-      | _, Error ->
           false
       | ExcRaised, _ ->
           true
@@ -2372,8 +2366,6 @@ module Mem = struct
       match (x, y) with
       | Unreachable, m | m, Unreachable ->
           m
-      | Error, m | m, Error ->
-          m
       | ExcRaised, m | m, ExcRaised ->
           m
       | Reachable m1, Reachable m2 ->
@@ -2386,8 +2378,6 @@ module Mem = struct
       match (prev0, next0) with
       | Unreachable, m | m, Unreachable ->
           m
-      | Error, m | m, Error ->
-          m
       | ExcRaised, m | m, ExcRaised ->
           m
       | Reachable prev, Reachable next ->
@@ -2396,7 +2386,7 @@ module Mem = struct
 
   let map ~f x =
     match x with
-    | Unreachable | Error | ExcRaised ->
+    | Unreachable | ExcRaised ->
         x
     | Reachable m ->
         let m' = f m in
@@ -2414,8 +2404,7 @@ module Mem = struct
 
 
   let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =
-   fun ~default f m ->
-    match m with Unreachable | Error | ExcRaised -> default | Reachable m' -> f m'
+   fun ~default f m -> match m with Unreachable | ExcRaised -> default | Reachable m' -> f m'
 
 
   let is_stack_loc : Loc.t -> _ t0 -> bool =
@@ -2460,7 +2449,7 @@ module Mem = struct
   let find_ret_alias : _ t0 -> AliasTargets.t bottom_lifted =
    fun m ->
     match m with
-    | Unreachable | Error | ExcRaised ->
+    | Unreachable | ExcRaised ->
         Bottom
     | Reachable m' ->
         NonBottom (MemReach.find_ret_alias m')
@@ -2566,7 +2555,7 @@ module Mem = struct
 
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
    fun e -> function
-    | (Unreachable | Error | ExcRaised) as x ->
+    | (Unreachable | ExcRaised) as x ->
         (x, PrunePairs.empty)
     | Reachable m ->
         let m, prune_pairs = MemReach.apply_latest_prune e m in
@@ -2592,7 +2581,7 @@ module Mem = struct
   let forget_size_alias arr_locs = map ~f:(MemReach.forget_size_alias arr_locs)
 
   let unset_oenv = function
-    | (Unreachable | Error | ExcRaised) as x ->
+    | (Unreachable | ExcRaised) as x ->
         x
     | Reachable m ->
         Reachable (MemReach.unset_oenv m)
@@ -2613,8 +2602,6 @@ module Mem = struct
     match m with
     | Unreachable ->
         F.fprintf f "%s_unreachable" SpecialChars.up_tack
-    | Error ->
-        F.fprintf f "%s_our_fault" SpecialChars.up_tack
     | ExcRaised ->
         F.pp_print_string f (SpecialChars.up_tack ^ " by exception")
     | Reachable m ->

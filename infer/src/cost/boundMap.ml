@@ -61,12 +61,6 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
                      [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                      unreachable returning cost 0 \n" ;
                   BasicCost.zero
-              | Error ->
-                  L.debug Analysis Medium
-                    "@\n\
-                     [COST ANALYSIS INTERNAL WARNING:] No 'env' found. The Inferbo memory of this \
-                     location is erroneous \n" ;
-                  BasicCost.zero
               | ExcRaised ->
                   BasicCost.one
               | Reachable mem ->

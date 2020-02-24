@@ -753,7 +753,7 @@ module Prune = struct
   let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
     match mem with
-    | Mem.(Unreachable | Error | ExcRaised) ->
+    | Mem.(Unreachable | ExcRaised) ->
         astate
     | Mem.Reachable _ ->
         let v = eval integer_type_widths e mem in
@@ -762,7 +762,13 @@ module Prune = struct
           Itv.leq ~lhs:itv_v ~rhs:(Itv.of_int 0)
           && PowLoc.is_bot (Val.get_pow_loc v)
           && ArrayBlk.is_bot (Val.get_array_blk v)
-        then {astate with mem= (if Itv.is_bottom itv_v then Mem.error else Mem.unreachable)}
+        then
+          if Itv.is_bottom itv_v then
+            let () =
+              Logging.d_printfln_escaped "Warning: the condition expression is evaluated to bottom"
+            in
+            astate
+          else {astate with mem= Mem.unreachable}
         else astate
 
 
