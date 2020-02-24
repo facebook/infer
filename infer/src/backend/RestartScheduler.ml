@@ -53,11 +53,37 @@ let if_restart_scheduler f =
   else match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
 
 
+type locked_proc =
+  {pname: Procname.t; start: Unix.process_times; mutable callees_useful: ExecutionDuration.t}
+
 let locked_procs = Stack.create ()
 
-let record_locked_proc (pname : Procname.t) = Stack.push locked_procs pname
+let record_locked_proc (pname : Procname.t) =
+  Stack.push locked_procs {pname; start= Unix.times (); callees_useful= ExecutionDuration.zero}
 
-let unlock_all () = Stack.until_empty locked_procs ProcLocker.unlock
+
+let add_to_useful_time (from : Unix.process_times) =
+  BackendStats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
+
+
+let add_to_useful_exe_duration exe_duration =
+  BackendStats.add_to_restart_scheduler_useful_time exe_duration
+
+
+let add_to_total_time (from : Unix.process_times) =
+  BackendStats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
+
+
+let unlock_all () =
+  Stack.until_empty locked_procs (fun {pname; start; callees_useful} ->
+      ( match Stack.top locked_procs with
+      | Some caller ->
+          caller.callees_useful <- ExecutionDuration.add caller.callees_useful callees_useful
+      | None ->
+          add_to_useful_exe_duration callees_useful ;
+          add_to_total_time start ) ;
+      ProcLocker.unlock pname )
+
 
 let lock_exn pname =
   if_restart_scheduler (fun () ->
@@ -73,10 +99,16 @@ let unlock pname =
       | None ->
           L.die InternalError "Trying to unlock %s but it does not appear to be locked.@."
             (Procname.to_string pname)
-      | Some stack_pname when not (Procname.equal pname stack_pname) ->
+      | Some {pname= stack_pname} when not (Procname.equal pname stack_pname) ->
           L.die InternalError "Trying to unlock %s but top of stack is %s.@."
             (Procname.to_string pname) (Procname.to_string stack_pname)
-      | Some _ ->
+      | Some {start} ->
+          ( match Stack.top locked_procs with
+          | Some caller ->
+              caller.callees_useful <-
+                ExecutionDuration.add_duration_since caller.callees_useful start
+          | None ->
+              add_to_useful_time start ; add_to_total_time start ) ;
           ProcLocker.unlock pname )
 
 
