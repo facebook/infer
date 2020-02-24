@@ -17,24 +17,15 @@ let of_list (lst : 'a list) : 'a ProcessPool.TaskGenerator.t =
   {remaining_tasks; is_empty; finished; next}
 
 
-let make_with_procs_from sources =
-  let gen =
+let make sources =
+  let pnames =
     List.map sources ~f:SourceFiles.proc_names_of_source
     |> List.concat
     |> List.rev_map ~f:(fun procname -> SchedulerTypes.Procname procname)
-    |> List.permute ~random_state:(Random.State.make (Array.create ~len:1 0))
-    |> of_list
   in
-  let next x =
-    let res = gen.next x in
-    (* see defn of gen above to see why res should never match Some (File _) *)
-    match res with None -> None | Some (File _) -> assert false | Some (Procname _) as v -> v
-  in
-  {gen with next}
-
-
-let make sources =
-  ProcessPool.TaskGenerator.chain (make_with_procs_from sources) (FileScheduler.make sources)
+  let files = List.map sources ~f:(fun file -> SchedulerTypes.File file) in
+  let permute = List.permute ~random_state:(Random.State.make (Array.create ~len:1 0)) in
+  permute pnames @ permute files |> of_list
 
 
 let if_restart_scheduler f =

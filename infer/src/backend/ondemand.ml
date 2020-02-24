@@ -373,13 +373,13 @@ let analyze_proc_name_no_caller callee_pname =
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
-  Option.iter source_file_opt ~f:(fun source_file ->
-      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   set_exe_env exe_env ;
   let analyze_proc_name_call pname =
     ignore (analyze_proc_name_no_caller pname : Summary.t option)
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
+  Option.iter source_file_opt ~f:(fun source_file ->
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   Option.iter source_file_opt ~f:(fun source_file ->
       Callbacks.iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
       create_perf_stats_report source_file ) ;
