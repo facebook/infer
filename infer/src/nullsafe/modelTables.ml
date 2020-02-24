@@ -226,7 +226,7 @@ let mapPut_list =
 
 type nonnull_alternative_method = {package_name: string; class_name: string; method_name: string}
 
-(* Nullable methods that have non-nullable signatures. 
+(* Nullable methods that have non-nullable signatures.
    Format is a triple: (<nullability>, <method>, <alternative>), *)
 let nullable_methods_with_nonnull_alternatives_list =
   [ ( (n, [o])
@@ -243,7 +243,7 @@ let nullable_method_with_nonnull_alternatives_nullability_list =
       ~f:(fun (nullability, method_descr, _) -> (nullability, method_descr))
   in
   List.iter result ~f:(fun ((ret_nullability, _param_nullability), _) ->
-      if not (ret_nullability == n) then
+      if not (Bool.equal ret_nullability n) then
         Logging.die Logging.InternalError "Function is expected to be nullable" ) ;
   result
 
