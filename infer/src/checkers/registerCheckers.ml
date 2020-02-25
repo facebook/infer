@@ -21,7 +21,7 @@ let () =
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
-  | Cluster of Callbacks.cluster_callback_t
+  | File of Callbacks.file_callback_t
 
 type callback = callback_fun * Language.t
 
@@ -101,8 +101,8 @@ let all_checkers =
     ; callbacks=
         [ (Procedure RacerD.analyze_procedure, Language.Clang)
         ; (Procedure RacerD.analyze_procedure, Language.Java)
-        ; (Cluster RacerD.file_analysis, Language.Clang)
-        ; (Cluster RacerD.file_analysis, Language.Java) ] }
+        ; (File RacerD.file_analysis, Language.Clang)
+        ; (File RacerD.file_analysis, Language.Java) ] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
     ; active= Config.resource_leak
@@ -131,9 +131,9 @@ let all_checkers =
     ; active= Config.starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; (Cluster Starvation.reporting, Language.Java)
+        ; (File Starvation.reporting, Language.Java)
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
-        ; (Cluster Starvation.reporting, Language.Clang) ] }
+        ; (File Starvation.reporting, Language.Clang) ] }
   ; { name= "purity"
     ; active= Config.purity || Config.loop_hoisting
     ; callbacks=
@@ -156,11 +156,12 @@ let register checkers =
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb ->
-          Callbacks.register_procedure_callback ~name language procedure_cb
+          Callbacks.register_procedure_callback ~checker_name:name language procedure_cb
       | DynamicDispatch procedure_cb ->
-          Callbacks.register_procedure_callback ~name ~dynamic_dispatch:true language procedure_cb
-      | Cluster cluster_cb ->
-          Callbacks.register_cluster_callback ~name language cluster_cb
+          Callbacks.register_procedure_callback ~checker_name:name ~dynamic_dispatch:true language
+            procedure_cb
+      | File file_cb ->
+          Callbacks.register_file_callback ~checker_name:name language file_cb
     in
     List.iter ~f:register_callback callbacks
   in

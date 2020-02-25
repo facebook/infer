@@ -60,8 +60,8 @@ let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
         analyze_source_file exe_env source_file
 
 
-let output_json_makefile_stats clusters =
-  let num_files = List.length clusters in
+let output_json_makefile_stats files =
+  let num_files = List.length files in
   let num_procs = 0 in
   (* can't compute it at this stage *)
   let num_lines = 0 in
@@ -144,7 +144,7 @@ let analyze source_files_to_analyze =
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () = tasks_generator_builder_for source_files_to_analyze in
-    (* Prepare tasks one cluster at a time while executing in parallel *)
+    (* Prepare tasks one file at a time while executing in parallel *)
     RestartScheduler.setup () ;
     let runner =
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get

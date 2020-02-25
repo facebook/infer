@@ -47,6 +47,10 @@ type t =
   ; status: Status.t
   ; proc_desc: Procdesc.t
   ; err_log: Errlog.t
+        (** Those are issues that are detected for this procedure after per-procedure analysis. In
+            addition to that there can be errors detected after file-level analysis (next stage
+            after per-procedure analysis). This latter category of errors should NOT be written
+            here, use [IssueLog] and its serialization capabilities instead. *)
   ; mutable callee_pnames: Procname.Set.t }
 
 val poly_fields : t PolyFields.t

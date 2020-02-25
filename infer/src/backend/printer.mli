@@ -38,4 +38,5 @@ val write_proc_html : Procdesc.t -> unit
 (** Write html file for the procedure. *)
 
 val write_all_html_files : SourceFile.t -> unit
-(** Create filename.ext.html for each file in the cluster. *)
+(** Group procedures used in the file by their corresponding source files, and create
+    filename.ext.html for each such a file. *)

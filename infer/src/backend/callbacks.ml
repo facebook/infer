@@ -7,37 +7,35 @@
 
 open! IStd
 
-(** Module to register and invoke callbacks *)
-
 type proc_callback_args =
   {get_procs_in_file: Procname.t -> Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
-type cluster_callback_args =
+type file_callback_args =
   {procedures: Procname.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
-type cluster_callback_t = cluster_callback_args -> unit
+type file_callback_t = file_callback_args -> unit
 
 type procedure_callback =
-  {name: string; dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
+  {checker_name: string; dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
 
-type cluster_callback = {name: string; language: Language.t; callback: cluster_callback_t}
+type file_callback = {checker_name: string; language: Language.t; callback: file_callback_t}
 
 let procedure_callbacks = ref []
 
-let cluster_callbacks = ref []
+let file_callbacks = ref []
 
-let register_procedure_callback ~name ?(dynamic_dispatch = false) language
+let register_procedure_callback ~checker_name ?(dynamic_dispatch = false) language
     (callback : proc_callback_t) =
-  procedure_callbacks := {name; dynamic_dispatch; language; callback} :: !procedure_callbacks
+  procedure_callbacks :=
+    {checker_name; dynamic_dispatch; language; callback} :: !procedure_callbacks
 
 
-let register_cluster_callback ~name language (callback : cluster_callback_t) =
-  cluster_callbacks := {name; language; callback} :: !cluster_callbacks
+let register_file_callback ~checker_name language (callback : file_callback_t) =
+  file_callbacks := {checker_name; language; callback} :: !file_callbacks
 
 
-(** Invoke all registered procedure callbacks on the given procedure. *)
 let iterate_procedure_callbacks exe_env summary =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -55,11 +53,11 @@ let iterate_procedure_callbacks exe_env summary =
   in
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
-    ~f:(fun summary {name; dynamic_dispatch; language; callback} ->
+    ~f:(fun summary {checker_name; dynamic_dispatch; language; callback} ->
       if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized) then (
         PerfEvent.(
           log (fun logger ->
-              log_begin_event logger ~name ~categories:["backend"]
+              log_begin_event logger ~name:checker_name ~categories:["backend"]
                 ~arguments:[("proc", `String (Procname.to_string proc_name))]
                 () )) ;
         let summary = callback {get_procs_in_file; summary; exe_env} in
@@ -69,9 +67,8 @@ let iterate_procedure_callbacks exe_env summary =
     !procedure_callbacks
 
 
-(** Invoke all registered cluster callbacks on a cluster of procedures. *)
-let iterate_cluster_callbacks procedures exe_env source_file =
-  if not (List.is_empty !cluster_callbacks) then
+let iterate_file_callbacks procedures exe_env source_file =
+  if not (List.is_empty !file_callbacks) then
     let environment = {procedures; source_file; exe_env} in
     let language_matches language =
       match procedures with
@@ -85,4 +82,4 @@ let iterate_cluster_callbacks procedures exe_env source_file =
         if language_matches language then (
           Language.curr_language := language ;
           callback environment ) )
-      !cluster_callbacks
+      !file_callbacks

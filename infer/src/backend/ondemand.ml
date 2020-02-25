@@ -381,13 +381,13 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   Option.iter source_file_opt ~f:(fun source_file ->
       if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      Callbacks.iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
+      Callbacks.iterate_file_callbacks procs_to_analyze exe_env source_file ;
       create_perf_stats_report source_file ) ;
   unset_exe_env () ;
   Language.curr_language := saved_language
 
 
-(** Invoke all procedure and cluster callbacks on a given environment. *)
+(** Invoke all procedure-level and file-level callbacks on a given environment. *)
 let analyze_file (exe_env : Exe_env.t) source_file =
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)

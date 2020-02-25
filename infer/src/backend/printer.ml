@@ -236,7 +236,6 @@ end = struct
         Errlog.update global_err_log (Summary.get_err_log summary)
 
 
-  (** Create filename.ext.html. *)
   let write_html_file filename procs =
     let fname_encoding = DB.source_file_encoding filename in
     let fd, fmt = Io_infer.Html.create filename [".."; fname_encoding] in

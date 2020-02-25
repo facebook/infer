@@ -7,7 +7,9 @@
 
 open! IStd
 
-(** Module for maps from procnames to error logs. *)
+(** Module for storing issues detected outside of per-procedure analysis (and hence not serialized
+    as a part of procedure summary). Normally those are issues detected at the file-level analysis
+    step. Individual checkers are responsible for storing their own list of such issues. *)
 type t
 
 val empty : t

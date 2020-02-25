@@ -9,6 +9,6 @@ open! IStd
 
 val analyze_procedure : Callbacks.proc_callback_t
 
-val reporting : Callbacks.cluster_callback_t
+val reporting : Callbacks.file_callback_t
 
 val whole_program_analysis : unit -> unit

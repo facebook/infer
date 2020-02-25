@@ -7,6 +7,6 @@
 
 open! IStd
 
-val file_analysis : Callbacks.cluster_callback_t
+val file_analysis : Callbacks.file_callback_t
 
 val analyze_procedure : Callbacks.proc_callback_t
