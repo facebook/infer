@@ -337,7 +337,9 @@ module Bound = struct
     of_path (Symb.SymbolPath.length ~is_void) ~unsigned:true ~non_int:false
 
 
-  let of_modeled_path = of_path Symb.SymbolPath.modeled ~unsigned:true ~non_int:false
+  let of_modeled_path ~is_expensive =
+    of_path (Symb.SymbolPath.modeled ~is_expensive) ~unsigned:true ~non_int:false
+
 
   let is_path_of ~f = function
     | Linear (n, se) when Z.(equal n zero) ->

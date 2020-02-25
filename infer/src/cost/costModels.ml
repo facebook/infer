@@ -23,10 +23,10 @@ let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
 
 let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
-let modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
+let expensive_modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
   let callsite = CallSite.make pname location in
   let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
-  let itv = Itv.of_modeled_path path in
+  let itv = Itv.of_modeled_path ~is_expensive:true path in
   CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
@@ -187,7 +187,7 @@ module Call = struct
           $+ capt_exp $+ capt_exp $--> JavaString.substring
         ; +PatternMatch.implements_inject "Provider"
           &:: "get"
-          <>--> modeled ~of_function:"Provider.get"
+          <>--> expensive_modeled ~of_function:"Provider.get"
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model

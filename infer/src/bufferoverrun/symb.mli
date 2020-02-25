@@ -38,7 +38,7 @@ module SymbolPath : sig
     | Normal of partial
     | Offset of {p: partial; is_void: bool}
     | Length of {p: partial; is_void: bool}
-    | Modeled of partial
+    | Modeled of {p: partial; is_expensive: bool}
   [@@deriving equal]
 
   val equal_partial : partial -> partial -> bool
@@ -65,7 +65,7 @@ module SymbolPath : sig
 
   val length : partial -> is_void:bool -> t
 
-  val modeled : partial -> t
+  val modeled : partial -> is_expensive:bool -> t
 
   val is_this : partial -> bool
 

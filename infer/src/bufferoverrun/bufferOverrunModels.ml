@@ -1227,7 +1227,7 @@ module FileChannel = struct
       let buf_v = Dom.Mem.find_set buf_locs mem in
       let range =
         Symb.SymbolPath.of_callsite ~ret_typ (CallSite.make pname location)
-        |> Bounds.Bound.of_modeled_path Symb.Symbol.make_onevalue
+        |> Bounds.Bound.of_modeled_path ~is_expensive:false Symb.Symbol.make_onevalue
         |> Dom.ModeledRange.of_modeled_function pname location
       in
       let mem = Dom.Mem.add_heap_set buf_locs (Dom.Val.set_modeled_range range buf_v) mem in
