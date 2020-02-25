@@ -12,6 +12,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD})
 /**
  * Annotation specifying method's contract. @FalseOnNull declares that a boolean method will always
  * return {@code false} when any of its arguments is {@code null}.
@@ -21,7 +23,7 @@ import java.lang.annotation.Target;
  *
  * <p>In the following example, annotating a method with @FalseOnNull simplifies its usage.
  *
- * <p><code>
+ * <pre>
  * @FalseOnNull
  * public static hasNotification(@Nullable MyObject object) {
  *  if (object == null) {
@@ -38,10 +40,8 @@ import java.lang.annotation.Target;
  *     obj.doSomething();
  *   }
  * }
- * </code>
+ * </pre>
  *
- * <p>See also @TrueOnNull and @PropagatesNullable annotations.
+ * <p>See also {@code @TrueOnNull} and {@code @PropagatesNullable} annotations.
  */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.METHOD})
 public @interface FalseOnNull {}

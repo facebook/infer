@@ -12,6 +12,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.PARAMETER})
 /**
  * Annotation specifying method's contract. If a method's param is annotated
  * with @PropagaresNullable, it declares that the method will return {@code null} if and only if
@@ -24,7 +26,7 @@ import java.lang.annotation.Target;
  * <p>In the following example, annotating the param with @PropagatesNullable allows to simplify
  * usage of the method.
  *
- * <p><code>
+ * <pre>
  * public static String capitalize(@PropagatesNullable String input) {
  *   if (input == null) {
  *     return null;
@@ -38,13 +40,11 @@ import java.lang.annotation.Target;
  *   // assertNotNull(capitalize(nonnull)) would be required.
  *   capitalize(nonnull).contains("A");  // <-- OK: safe to dereference
  * }
- * </code>
+ * </pre>
  *
- * <p>If several params are annotated as @PropagatesNullable, the method should return {@code null}
- * if and only if any of those params is {@code null}.
+ * <p>If several params are annotated as {@code @PropagatesNullable}, the method should return
+ * {@code null} if and only if any of those params is {@code null}.
  *
- * <p>See also @TrueOnNull and @FalseOnNull annotations.
+ * <p>See also {@code @TrueOnNull} and {@code @FalseOnNull} annotations.
  */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.PARAMETER})
 public @interface PropagatesNullable {}

@@ -12,6 +12,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD})
 /**
  * Annotation specifying method's contract. @TrueOnNull declares that a boolean method will always
  * return {@code true} when any of its arguments is {@code null}.
@@ -21,7 +23,7 @@ import java.lang.annotation.Target;
  *
  * <p>In the following example, annotating a method with @TrueOnNull simplifies its usage.
  *
- * <p><code>
+ * <pre>
  * @TrueOnNull
  * public static boolean isStringEmpty(@Nullable String str) {
  *   return str == null || str.length() == 0;
@@ -35,10 +37,8 @@ import java.lang.annotation.Target;
  *     myString.toUpperCase();
  *   }
  * }
- * </code>
+ * </pre>
  *
- * <p>See also @FalseOnNull and @PropagatesNullable annotations.
+ * <p>See also {@code @FalseOnNull} and {@code @PropagatesNullable} annotations.
  */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.METHOD})
 public @interface TrueOnNull {}

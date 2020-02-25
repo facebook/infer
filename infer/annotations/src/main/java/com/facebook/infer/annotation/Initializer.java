@@ -12,6 +12,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
 /**
  * A method annotated with @Initializer is expected to always be invoked before the object is used.
  * Nullsafe typechecker respects this annotation when checking field initialization: if a field is
@@ -24,7 +26,7 @@ import java.lang.annotation.Target;
  *
  * <p>In this example, only field2 will be reported as not initialized:
  *
- * <p><code>
+ * <pre>
  * class Example {
  *   private String field1;
  *   private String field2;
@@ -45,10 +47,8 @@ import java.lang.annotation.Target;
  *     field3 = "OK: Nullsafe assumes this will be called after creation";
  *   }
  * }
- * </code>
+ * </pre>
  *
- * <p>See also: @Cleanup annotation.
+ * <p>See also: {@code @Cleanup} annotation.
  */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
 public @interface Initializer {}

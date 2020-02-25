@@ -22,7 +22,7 @@ public class Assertions {
   }
 
   /**
-   * See {@link #assertNotNull(T object, String explanation)}.
+   * See {@code #assertNotNull(T object, String explanation)}.
    *
    * <p>NOTE: prefer always providing an explanation.
    */
@@ -34,10 +34,10 @@ public class Assertions {
   }
 
   /**
-   * Same as {@link #assertNotNull()}, but does not do a runtime check. Useful in
+   * Same as {@code #assertNotNull()}, but does not do a runtime check. Useful in
    * performance-critical places when a runtime check is costly.
    *
-   * <p>NOTE: Whenever possible, prefer using {@link #assertNotNull()}. Java runtime is doing a good
+   * <p>NOTE: Whenever possible, prefer using {@code #assertNotNull()}. Java runtime is doing a good
    * job with optimizing nullability checks, so most likely this won't improve performance, but will
    * make unexpected null propagate and hide the real cause of an error.
    */
@@ -46,7 +46,7 @@ public class Assertions {
   }
 
   /**
-   * See {@link #assumeNotNull(T object, String explanation)}.
+   * See {@code #assumeNotNull(T object, String explanation)}.
    *
    * <p>NOTE: prefer always providing an explanation.
    */
@@ -56,7 +56,7 @@ public class Assertions {
 
   /**
    * Makes Nullsafe stop complaining when {@code object} is dereferenced or converted to a
-   * non-nullable. In contrast with {@link #assumeNotNull()}, indicates cases when the proper fix
+   * non-nullable. In contrast with {@code #assumeNotNull()}, indicates cases when the proper fix
    * needs to be committed, but for some reason it is hard or impossible to do it staight away.
    */
   public static <T> T nullsafeFIXME(@Nullable T object, String explanationOrTask) {
