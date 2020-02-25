@@ -544,8 +544,11 @@ module Prune = struct
   let prune_has_next ~true_branch iterator ({mem} as astate) =
     let accum_prune_common ~prune_f loc acc =
       let length = collection_length_of_iterator iterator mem in
-      let v = prune_f (Mem.find loc mem) length in
-      update_mem_in_prune loc v acc
+      let v = Mem.find loc mem in
+      if Val.is_bot length || Val.is_bot v then acc
+      else
+        let v' = prune_f v length in
+        update_mem_in_prune loc v' acc
     in
     let accum_pruned loc tgt acc =
       match tgt with
@@ -575,16 +578,23 @@ module Prune = struct
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
               let v = Mem.find rhs mem in
-              let v' = Val.prune_ne_zero v in
-              update_mem_in_prune rhs v' acc
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_ne_zero v in
+                update_mem_in_prune rhs v' acc
           | AliasTarget.Empty ->
               let v = Mem.find rhs mem in
-              let v' = Val.prune_length_eq_zero v in
-              update_mem_in_prune rhs v' acc
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_length_eq_zero v in
+                update_mem_in_prune rhs v' acc
           | AliasTarget.Fgets ->
               let strlen_loc = Loc.of_c_strlen rhs in
-              let v' = Val.prune_ge_one (Mem.find strlen_loc mem) in
-              update_mem_in_prune strlen_loc v' acc
+              let v = Mem.find strlen_loc mem in
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_ge_one v in
+                update_mem_in_prune strlen_loc v' acc
           | AliasTarget.IteratorHasNext _ ->
               prune_has_next ~true_branch:true rhs acc
           | _ ->
@@ -596,12 +606,16 @@ module Prune = struct
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
               let v = Mem.find rhs mem in
-              let v' = Val.prune_eq_zero v in
-              update_mem_in_prune rhs v' acc
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_eq_zero v in
+                update_mem_in_prune rhs v' acc
           | AliasTarget.Empty ->
               let v = Mem.find rhs mem in
-              let v' = Val.prune_length_ge_one v in
-              update_mem_in_prune rhs v' acc
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_length_ge_one v in
+                update_mem_in_prune rhs v' acc
           | AliasTarget.IteratorHasNext _ ->
               prune_has_next ~true_branch:false rhs acc
           | _ ->
@@ -655,7 +669,7 @@ module Prune = struct
             let v' = eval integer_type_widths e mem in
             if IntLit.iszero i then v' else Val.minus_a v' (Val.of_int_lit i)
           in
-          if Val.is_bot rhs then acc
+          if Val.is_bot lhs || Val.is_bot rhs then acc
           else
             let v = val_prune_eq lhs rhs in
             let pruning_exp = make_pruning_exp ~lhs ~rhs in
@@ -676,30 +690,32 @@ module Prune = struct
             |> Val.of_itv |> Val.set_itv_updated_by_addition
           in
           let rhs = eval integer_type_widths e mem in
-          let prune_target val_prune astate =
-            let lhs' = val_prune lhs rhs in
-            let array_v' =
-              Val.set_array_length Location.dummy
-                ~length:(Val.minus_a lhs' (Val.of_int_lit i))
-                array_v
-            in
-            let pruning_exp = make_pruning_exp ~lhs:lhs' ~rhs in
-            (update_mem_in_prune lv array_v' ~pruning_exp astate, lhs', pruning_exp)
-          in
-          match alias_typ with
-          | AliasTarget.Eq ->
-              let astate, size', pruning_exp = prune_target val_prune_eq astate in
-              Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
-                  update_mem_in_prune java_tmp size' ~pruning_exp astate )
-          | AliasTarget.Le ->
-              let astate =
-                Option.value_map val_prune_le ~default:astate ~f:(fun val_prune_le ->
-                    prune_target val_prune_le astate |> fun (astate, _, _) -> astate )
+          if Val.is_bot lhs || Val.is_bot rhs then astate
+          else
+            let prune_target val_prune astate =
+              let lhs' = val_prune lhs rhs in
+              let array_v' =
+                Val.set_array_length Location.dummy
+                  ~length:(Val.minus_a lhs' (Val.of_int_lit i))
+                  array_v
               in
-              Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
-                  let v = val_prune_eq (Mem.find java_tmp mem) rhs in
-                  let pruning_exp = make_pruning_exp ~lhs:v ~rhs in
-                  update_mem_in_prune java_tmp v ~pruning_exp astate ) )
+              let pruning_exp = make_pruning_exp ~lhs:lhs' ~rhs in
+              (update_mem_in_prune lv array_v' ~pruning_exp astate, lhs', pruning_exp)
+            in
+            match alias_typ with
+            | AliasTarget.Eq ->
+                let astate, size', pruning_exp = prune_target val_prune_eq astate in
+                Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
+                    update_mem_in_prune java_tmp size' ~pruning_exp astate )
+            | AliasTarget.Le ->
+                let astate =
+                  Option.value_map val_prune_le ~default:astate ~f:(fun val_prune_le ->
+                      prune_target val_prune_le astate |> fun (astate, _, _) -> astate )
+                in
+                Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
+                    let v = val_prune_eq (Mem.find java_tmp mem) rhs in
+                    let pruning_exp = make_pruning_exp ~lhs:v ~rhs in
+                    update_mem_in_prune java_tmp v ~pruning_exp astate ) )
     in
     gen_prune_alias_functions ~prune_alias_core
 
