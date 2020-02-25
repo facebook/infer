@@ -29,11 +29,15 @@ module Trust = struct
     let* trust_classes = extract_trust_list trust_list in
     match trust_all with
     | None ->
-        return none
+        return (Only trust_classes)
     | Some (Annot.Bool trust_all') ->
         if trust_all' then return All else return (Only trust_classes)
     | _ ->
         None
+
+
+  let is_trusted_name t name =
+    match t with All -> true | Only classes -> List.exists classes ~f:(Typ.Name.equal name)
 
 
   let pp fmt t =
@@ -42,8 +46,8 @@ module Trust = struct
         F.fprintf fmt "all"
     | Only [] ->
         F.fprintf fmt "none"
-    | Only names ->
-        F.fprintf fmt "[%a]" (F.pp_print_list ~pp_sep:F.pp_print_space Typ.Name.pp) names
+    | Only _names ->
+        F.fprintf fmt "selected"
 end
 
 type t = Default | Local of Trust.t | Strict [@@deriving compare, equal]
@@ -91,6 +95,21 @@ let of_class tenv typ_name =
             Default )
   | None ->
       Default
+
+
+let of_procname tenv pname =
+  let class_name =
+    match pname with
+    | Procname.Java jn ->
+        Procname.Java.get_class_type_name jn
+    | _ ->
+        Logging.die InternalError "Unexpected non-Java procname %a" Procname.pp pname
+  in
+  of_class tenv class_name
+
+
+let is_trusted_name t name =
+  match t with Strict -> false | Default -> true | Local trust -> Trust.is_trusted_name trust name
 
 
 let severity = function Strict | Local _ -> Exceptions.Error | Default -> Exceptions.Warning

@@ -26,6 +26,8 @@ public class NullsafeMode {
   }
 
   static class NonNullsafe extends VariousMethods {
+    public String valField = "OK";
+
     String OK_passUncheckedToLocal(String arg) {
       return new TrustAllNullsafe().acceptVal(arg);
     }
@@ -41,6 +43,11 @@ public class NullsafeMode {
     void OK_passNullableToThirdPartyParam() {
       new ThirdPartyTestClass().paramUnspecified(returnNull());
       return;
+    }
+
+    @Override
+    public String returnVal() {
+      return super.returnVal();
     }
   }
 
@@ -120,21 +127,25 @@ public class NullsafeMode {
       return "OK";
     }
 
-    String FP_OK_returnFromNonNullsafe() {
+    String OK_returnFromTrustedNonNullsafe() {
       return new NonNullsafe().returnVal();
     }
 
-    String BAD_returnFromAnotherNonNullsafe() {
+    String BAD_returnFromUntrustedNonNullsafe() {
       return new AnotherNonNullsafe().returnVal();
     }
 
     @Nullable
-    String OK_returnFromAnotherNonNullsafeAsNullable() {
+    String OK_returnFromUntrustedNonNullsafeAsNullable() {
       return new AnotherNonNullsafe().returnVal();
     }
 
     String BAD_returnNullFromNonNulsafe() {
       return new NonNullsafe().returnNull();
+    }
+
+    String FP_OK_accessFieldFromNonNullsafe() {
+      return new NonNullsafe().valField;
     }
   }
 

@@ -124,14 +124,22 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let duplicate_nodes = find_duplicate_nodes node in
       try Procdesc.NodeSet.min_elt duplicate_nodes with Caml.Not_found -> node
     in
+    let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
     let typecheck_proc do_checks pname pdesc proc_details_opt =
       let ann_sig, loc, idenv_pn =
         match proc_details_opt with
         | Some (ann_sig, loc, idenv_pn) ->
             (ann_sig, loc, idenv_pn)
         | None ->
+            let is_trusted_callee =
+              let callee_class = Procname.get_class_type_name pname in
+              Option.value_map callee_class
+                ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
+                ~default:false
+            in
             let ann_sig =
-              Models.get_modelled_annotated_signature tenv (Procdesc.get_attributes pdesc)
+              Models.get_modelled_annotated_signature ~is_trusted_callee tenv
+                (Procdesc.get_attributes pdesc)
             in
             let loc = Procdesc.get_loc pdesc in
             (ann_sig, loc, Idenv.create pdesc)
@@ -199,7 +207,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       then None
       else
         let annotated_signature =
-          Models.get_modelled_annotated_signature tenv (Procdesc.get_attributes proc_desc)
+          (* TODO(T62825735): fully support trusted callees; this could benefit from refactoring *)
+          Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv
+            (Procdesc.get_attributes proc_desc)
         in
         Some annotated_signature
     in

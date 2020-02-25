@@ -19,7 +19,10 @@ module ComplexExpressions = struct
   let is_annotated_with predicate tenv procname =
     match PatternMatch.lookup_attributes tenv procname with
     | Some proc_attributes ->
-        let annotated_signature = Models.get_modelled_annotated_signature tenv proc_attributes in
+        let annotated_signature =
+          (* TODO(T62825735): fully support trusted callees *)
+          Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv proc_attributes
+        in
         let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
         predicate ret_annotation_deprecated
     | None ->
@@ -1016,7 +1019,17 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
     in
     List.fold_right ~f:handle_et etl ~init:([], typestate)
   in
-  let callee_annotated_signature = Models.get_modelled_annotated_signature tenv callee_attributes in
+  let pname = callee_attributes.ProcAttributes.proc_name in
+  let is_trusted_callee =
+    let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
+    let callee_class = Procname.get_class_type_name pname in
+    Option.value_map callee_class
+      ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
+      ~default:false
+  in
+  let callee_annotated_signature =
+    Models.get_modelled_annotated_signature ~is_trusted_callee tenv callee_attributes
+  in
   let signature_params =
     drop_unchecked_signature_params callee_attributes callee_annotated_signature
   in

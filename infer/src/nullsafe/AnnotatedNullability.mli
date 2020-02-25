@@ -55,9 +55,15 @@ and strict_nonnull_origin =
 val get_nullability : t -> Nullability.t
 
 val of_type_and_annotation :
-  nullsafe_mode:NullsafeMode.t -> is_third_party:bool -> Typ.t -> Annot.Item.t -> t
+     is_trusted_callee:bool
+  -> nullsafe_mode:NullsafeMode.t
+  -> is_third_party:bool
+  -> Typ.t
+  -> Annot.Item.t
+  -> t
 (** Given the type and its annotations, returns its nullability. NOTE: it does not take into account
     models etc., so this is intended to be used as a helper function for more high-level annotation
-    processing. *)
+    processing. [is_trusted_callee] defines whether the callee class is in the caller's trust list
+    and therefore whether its nullability should be refined. *)
 
 val pp : Format.formatter -> t -> unit

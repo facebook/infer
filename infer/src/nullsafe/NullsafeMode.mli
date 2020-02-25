@@ -32,6 +32,12 @@ val of_annot : Annot.t -> t option
 val of_class : Tenv.t -> Typ.name -> t
 (** Extracts mode information from class annotations *)
 
+val of_procname : Tenv.t -> Procname.t -> t
+(** Extracts mode information from a class where procname is defined *)
+
+val is_trusted_name : t -> Typ.name -> bool
+(** Check whether [Typ.name] can be trusted under a given mode *)
+
 val severity : t -> Exceptions.severity
 (** Provides a default choice of issue severity for a particular mode *)
 
