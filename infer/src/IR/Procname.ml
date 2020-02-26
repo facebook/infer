@@ -734,10 +734,15 @@ module Hashable = struct
 
   let equal = equal
 
+  let compare = compare
+
   let hash = hash
+
+  let sexp_of_t t = Sexp.of_string (to_string t)
 end
 
 module Hash = Hashtbl.Make (Hashable)
+module HashQueue = Hash_queue.Make (Hashable)
 
 module Map = PrettyPrintable.MakePPMap (struct
   type nonrec t = t

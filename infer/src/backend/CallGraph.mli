@@ -37,6 +37,9 @@ val n_procs : t -> int
 val mem : t -> int -> bool
 (** is an int [id] the index of a node in the graph? *)
 
+val mem_procname : t -> Procname.t -> bool
+(** is there a node for [procname] in the graph? *)
+
 val flag : t -> Procname.t -> unit
 
 val flag_reachable : t -> Procname.t -> unit
@@ -49,12 +52,6 @@ val remove : t -> Procname.t -> unit
 
 val to_dotty : t -> string -> unit
 (** output call graph in dotty format with the given filename in results dir *)
-
-val trim_id_map : t -> unit
-(** remove all pnames that do not correspond to a defined procedure from id_map *)
-
-val remove_unflagged_and_unflag_all : t -> unit
-(** remove all nodes with flag set to false, and set flag to false on all remaining nodes *)
 
 val add_edge : t -> pname:Procname.t -> successor_pname:Procname.t -> unit
 (** add an edge from [pname] to [successor_pname] in the graph, creating a node for [pname] if there
