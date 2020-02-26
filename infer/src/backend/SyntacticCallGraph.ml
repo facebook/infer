@@ -19,7 +19,11 @@ let build_from_captured_procs g =
           IdMap.add pname_tbl pname pname ; pname
   in
   let db = ResultsDatabase.get_database () in
-  let stmt = Sqlite3.prepare db "SELECT proc_name, callees FROM procedures" in
+  (* only load procedure info for those we have a CFG *)
+  let stmt =
+    Sqlite3.prepare db
+      "SELECT proc_name, callees FROM procedures WHERE cfg IS NOT NULL and attr_kind != 0"
+  in
   SqliteUtils.result_fold_rows db ~log:"creating call graph" stmt ~init:() ~f:(fun () stmt ->
       let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize |> hashcons_pname in
       let callees =
