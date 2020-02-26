@@ -195,7 +195,10 @@ let log_to_scuba stats =
         ~duration_ms:(ExecutionDuration.sys_time field_value |> secs_to_ms)
     ; LogEntry.mk_time
         ~label:("backend_stats." ^ Field.name field ^ "_user")
-        ~duration_ms:(ExecutionDuration.user_time field_value |> secs_to_ms) ]
+        ~duration_ms:(ExecutionDuration.user_time field_value |> secs_to_ms)
+    ; LogEntry.mk_time
+        ~label:("backend_stats." ^ Field.name field ^ "_wall")
+        ~duration_ms:(ExecutionDuration.wall_time field_value |> secs_to_ms) ]
   in
   let entries =
     Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter

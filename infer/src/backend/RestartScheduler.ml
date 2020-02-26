@@ -54,15 +54,16 @@ let if_restart_scheduler f =
 
 
 type locked_proc =
-  {pname: Procname.t; start: Unix.process_times; mutable callees_useful: ExecutionDuration.t}
+  {pname: Procname.t; start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
 
 let locked_procs = Stack.create ()
 
 let record_locked_proc (pname : Procname.t) =
-  Stack.push locked_procs {pname; start= Unix.times (); callees_useful= ExecutionDuration.zero}
+  Stack.push locked_procs
+    {pname; start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero}
 
 
-let add_to_useful_time (from : Unix.process_times) =
+let add_to_useful_time from =
   BackendStats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
 
 
@@ -70,7 +71,7 @@ let add_to_useful_exe_duration exe_duration =
   BackendStats.add_to_restart_scheduler_useful_time exe_duration
 
 
-let add_to_total_time (from : Unix.process_times) =
+let add_to_total_time from =
   BackendStats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
 
 

@@ -30,34 +30,43 @@ module Duration = struct
   let secs d = d.time +. d.comp
 end
 
-type t = {utime: Duration.t; stime: Duration.t}
+type t = {user: Duration.t; sys: Duration.t; wall: Mtime.Span.t}
+
+type counter = {process_times: Unix.process_times; wall_time: Mtime_clock.counter}
 
 type 'a evaluation_result = {result: 'a; execution_duration: t}
 
-let zero = {utime= Duration.zero; stime= Duration.zero}
+let zero = {user= Duration.zero; sys= Duration.zero; wall= Mtime.Span.zero}
 
-let since (from : Unix.process_times) =
+let since {process_times; wall_time} =
   let now = Unix.times () in
-  { utime= Duration.since from.tms_utime ~now:now.tms_utime
-  ; stime= Duration.since from.tms_stime ~now:now.tms_stime }
+  { user= Duration.since process_times.tms_utime ~now:now.tms_utime
+  ; sys= Duration.since process_times.tms_stime ~now:now.tms_stime
+  ; wall= Mtime_clock.count wall_time }
 
 
 let add exe_d1 exe_d2 =
-  {utime= Duration.add exe_d1.utime exe_d2.utime; stime= Duration.add exe_d1.stime exe_d2.stime}
+  { user= Duration.add exe_d1.user exe_d2.user
+  ; sys= Duration.add exe_d1.sys exe_d2.sys
+  ; wall= Mtime.Span.add exe_d1.wall exe_d2.wall }
 
 
-let add_duration_since exe_duration (from : Unix.process_times) = add exe_duration (since from)
+let add_duration_since exe_duration from = add exe_duration (since from)
 
-let user_time exe_duration = Duration.secs exe_duration.utime
+let user_time exe_duration = Duration.secs exe_duration.user
 
-let sys_time exe_duration = Duration.secs exe_duration.stime
+let sys_time exe_duration = Duration.secs exe_duration.sys
+
+let wall_time exe_duration = Mtime.Span.to_s exe_duration.wall
 
 let pp ~field fmt exe_duration =
-  F.fprintf fmt "%s_utime= %.8f@;%s_stime= %.8f" field (user_time exe_duration) field
-    (sys_time exe_duration)
+  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f" field (user_time exe_duration) field
+    (sys_time exe_duration) field (wall_time exe_duration)
 
+
+let counter () = {process_times= Unix.times (); wall_time= Mtime_clock.counter ()}
 
 let timed_evaluate ~f =
-  let start_time = Unix.times () in
+  let start = counter () in
   let result = f () in
-  {result; execution_duration= since start_time}
+  {result; execution_duration= since start}

@@ -9,19 +9,25 @@ open! IStd
 
 type t
 
+type counter
+
 type 'a evaluation_result = {result: 'a; execution_duration: t}
 
 val zero : t
 
-val since : Unix.process_times -> t
+val counter : unit -> counter
 
-val add_duration_since : t -> Unix.process_times -> t
+val since : counter -> t
+
+val add_duration_since : t -> counter -> t
 
 val add : t -> t -> t
 
 val user_time : t -> float
 
 val sys_time : t -> float
+
+val wall_time : t -> float
 
 val pp : field:string -> Format.formatter -> t -> unit
 
