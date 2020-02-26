@@ -175,29 +175,43 @@ module TransferFunctions = struct
         false
 
 
-  let is_java_enum_values ~caller_pname ~callee_pname =
-    match
-      (Procname.get_class_type_name caller_pname, Procname.get_class_type_name callee_pname)
-    with
-    | Some caller_class_name, Some callee_class_name
-      when Typ.equal_name caller_class_name callee_class_name ->
-        Procname.is_java_class_initializer caller_pname
-        && String.equal (Procname.get_method callee_pname) "values"
-    | _, _ ->
-        false
+  let is_java_enum_values tenv callee_pname =
+    Option.exists (Procname.get_class_type_name callee_pname) ~f:(fun callee_class_name ->
+        PatternMatch.is_java_enum tenv callee_class_name
+        && String.equal (Procname.get_method callee_pname) "values" )
 
 
-  let assign_java_enum_values id callee_pname mem =
-    match Procname.get_class_type_name callee_pname with
+  let assign_java_enum_values get_summary id ~caller_pname ~callee_pname mem =
+    let caller_class_name = Procname.get_class_type_name caller_pname in
+    let callee_class_name = Procname.get_class_type_name callee_pname in
+    let is_caller_class_initializer =
+      IOption.exists2 caller_class_name callee_class_name
+        ~f:(fun caller_class_name callee_class_name ->
+          Procname.is_java_class_initializer caller_pname
+          && Typ.equal_name caller_class_name callee_class_name )
+    in
+    match callee_class_name with
     | Some (JavaClass class_name as typename) ->
-        let class_var =
-          Loc.of_var
-            (Var.of_pvar
-               (Pvar.mk_global (Mangled.from_string (JavaClassName.to_string class_name))))
+        let clinit_mem =
+          if is_caller_class_initializer then Some (Dom.Mem.unset_oenv mem)
+          else get_summary (Procname.Java (Procname.Java.get_class_initializer typename))
         in
-        let fn = Fieldname.make typename "$VALUES" in
-        let v = Dom.Mem.find (Loc.append_field class_var ~fn) mem in
-        Dom.Mem.add_stack (Loc.of_id id) v mem
+        Option.value_map clinit_mem ~default:mem ~f:(fun clinit_mem ->
+            let loc =
+              let class_var =
+                let class_mangled = Mangled.from_string (JavaClassName.to_string class_name) in
+                Loc.of_var (Var.of_pvar (Pvar.mk_global class_mangled))
+              in
+              let fn = Fieldname.make typename "$VALUES" in
+              Loc.append_field class_var ~fn
+            in
+            let v = Dom.Mem.find loc clinit_mem in
+            let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
+            if is_caller_class_initializer then mem
+            else
+              let arr_locs = Dom.Val.get_all_locs v in
+              let arr_v = Dom.Mem.find_set arr_locs clinit_mem in
+              Dom.Mem.add_heap_set arr_locs arr_v mem )
     | _ ->
         assert false
 
@@ -359,35 +373,37 @@ module TransferFunctions = struct
         mem
     | Prune (exp, _, _, _) ->
         Sem.Prune.prune integer_type_widths exp mem
+    | Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_java_enum_values tenv callee_pname
+      ->
+        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+        assign_java_enum_values get_summary id ~caller_pname:(Summary.get_proc_name summary)
+          ~callee_pname mem
     | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        if is_java_enum_values ~caller_pname:(Summary.get_proc_name summary) ~callee_pname then
-          assign_java_enum_values id callee_pname mem
-        else
-          let fun_arg_list =
-            List.map params ~f:(fun (exp, typ) ->
-                ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-          in
-          match Models.Call.dispatch tenv callee_pname fun_arg_list with
-          | Some {Models.exec} ->
-              let model_env =
-                let node_hash = CFG.Node.hash node in
-                BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
-                  integer_type_widths
-              in
-              exec model_env ~ret mem
-          | None -> (
-              let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
-                BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
-              in
-              match (get_summary callee_pname, get_formals callee_pname) with
-              | Some callee_exit_mem, Some callee_formals ->
-                  instantiate_mem ~is_params_ref integer_type_widths ret callee_formals callee_pname
-                    params mem callee_exit_mem location
-              | _, _ ->
-                  (* This may happen for procedures with a biabduction model too. *)
-                  L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
-                  Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
+        let fun_arg_list =
+          List.map params ~f:(fun (exp, typ) ->
+              ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+        in
+        match Models.Call.dispatch tenv callee_pname fun_arg_list with
+        | Some {Models.exec} ->
+            let model_env =
+              let node_hash = CFG.Node.hash node in
+              BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
+                integer_type_widths
+            in
+            exec model_env ~ret mem
+        | None -> (
+            let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
+              BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
+            in
+            match (get_summary callee_pname, get_formals callee_pname) with
+            | Some callee_exit_mem, Some callee_formals ->
+                instantiate_mem ~is_params_ref integer_type_widths ret callee_formals callee_pname
+                  params mem callee_exit_mem location
+            | _, _ ->
+                (* This may happen for procedures with a biabduction model too. *)
+                L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
+                Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
     | Call (((id, _) as ret), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;

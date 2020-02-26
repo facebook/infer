@@ -22,6 +22,9 @@ val if_none_eval : f:(unit -> 'a) -> 'a option -> 'a
     built with [if_none_evalopt]. This is exactly the same as [value_default_f] but with a better
     name. *)
 
+val exists2 : 'a option -> 'b option -> f:('a -> 'b -> bool) -> bool
+(** Like [Option.exists] but gets two parameters. *)
+
 include sig
   [@@@warning "-32-60"]
 

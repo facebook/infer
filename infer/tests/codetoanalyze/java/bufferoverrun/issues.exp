@@ -1,4 +1,5 @@
-codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.array_length_Bad():void, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
+codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.array_length_Bad():void, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.array_length_Bad():void, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.call_iterate_collection_Bad():void, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Array declaration,Through,Through,Through,Through,Through,Call,<Length trace>,Array declaration,Array access: Offset: 5 Size: 5 by call to `void Array.iterate_collection_Bad(ArrayList)` ]
 codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.collection_remove_from_empty_Bad():java.util.ArrayList, 1, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 0 Size: 0]
 codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.negative_alloc_Bad():void, 0, INFERBO_ALLOC_IS_NEGATIVE, no_bucket, ERROR, [Allocation: Length: -1]

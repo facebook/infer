@@ -28,4 +28,8 @@ public class IteratorTest {
       for (Color c : Color.values()) {}
     }
   }
+
+  public void enum_iter() {
+    for (Color c : Color.values()) {}
+  }
 }
