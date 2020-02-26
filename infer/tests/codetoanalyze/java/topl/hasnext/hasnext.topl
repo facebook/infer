@@ -4,9 +4,9 @@ property HasNext
   prefix "Scanner"
   nondet (start)
   start -> start: *
-  start -> invalid: I = iterator(*)
-  start -> invalid: Scanner(I, *)  // For constructors, biabduction has "this" as first argument
-  invalid -> valid: B = hasNext(i) if B != 0 // in SIL, "true" is encoded as "not 0"
-  valid -> invalid: next(i)
-  invalid -> error: next(i)
+  start -> invalid: iterator(Ignore, RetIter) => i := RetIter
+  start -> invalid: Scanner(Iter, IgnoreA, IgnoreB) => i := Iter // For constructors, "this" is first argument, and there's a dummy return
+  invalid -> valid: hasNext(Iter, Ret) when Ret != 0 && Iter == i // in SIL, "true" is encoded as "not 0"
+  valid -> invalid: next(Iter, IgnoreRet) when Iter == i
+  invalid -> error: next(Iter, IgnoreRet) when Iter == i
 

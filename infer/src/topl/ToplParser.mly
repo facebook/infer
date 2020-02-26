@@ -15,14 +15,14 @@
 %token <string> UID
 %token AND
 %token ARROW
-%token ASGN
+%token ARROWARROW
 %token COLON
+%token COLONEQ
 %token COMMA
 %token EOF
 %token EQ
 %token GE
 %token GT
-%token IF
 %token LC
 %token LE
 %token LP
@@ -34,7 +34,9 @@
 %token PROPERTY
 %token RC
 %token RP
+%token SEMI
 %token STAR
+%token WHEN
 
 %start <ToplAst.t list> properties
 
@@ -60,16 +62,14 @@ transition:
 state: i=identifier { i }
 
 label:
-    return=value_pattern ASGN cp=call_pattern condition=condition?
-    { let procedure_name, arguments = cp in
-      let condition = Option.value condition ~default:[] in
-      ToplAst.{return; procedure_name; arguments; condition} }
-  | cp=call_pattern condition=condition?
-    { let procedure_name, arguments = cp in
-      let condition = Option.value condition ~default:[] in
-      ToplAst.{return=Ignore; procedure_name; arguments; condition} }
+    STAR { None }
+  | procedure_name=procedure_pattern arguments=arguments_pattern?
+    condition=condition? action=action?
+    { let condition = Option.value ~default:[] condition in
+      let action = Option.value ~default:[] action in
+      Some ToplAst.{ arguments; condition; action; procedure_name } }
 
-condition: IF ps=condition_expression { ps }
+condition: WHEN ps=condition_expression { ps }
 
 condition_expression: p=predicate ps=and_predicate* { p :: ps }
 
@@ -80,7 +80,7 @@ predicate:
 
 value:
     id=LID { ToplAst.Register id }
-  | id=UID { ToplAst.Binding (String.uncapitalize id) }
+  | id=UID { ToplAst.Binding id }
   | x=INTEGER { ToplAst.Constant (Exp.Const (Const.Cint (IntLit.of_int x))) }
   | x=STRING  { ToplAst.Constant (Exp.Const (Const.Cstr x)) }
 
@@ -96,19 +96,17 @@ predop:
 
 and_predicate: AND p=predicate { p }
 
-call_pattern: p=procedure_pattern a=arguments_pattern? { (p, a) }
-
 procedure_pattern:
     i=identifier { i }
   | s=STRING { s }
-  | STAR { ".*" }
 
-arguments_pattern: LP a=separated_list(COMMA, value_pattern) RP { a }
+arguments_pattern: LP a=separated_list(COMMA, UID) RP { a }
 
-value_pattern:
-    i=LID { ToplAst.EqualToRegister i }
-  | i=UID { ToplAst.SaveInRegister (String.uncapitalize i) }
-  | STAR { ToplAst.Ignore }
+action:
+    ARROWARROW a=separated_nonempty_list(SEMI, assignment) { a }
+
+assignment:
+    r=LID COLONEQ v=UID { (r, v) }
 
 identifier: i=LID { i } | i=UID { i }
 

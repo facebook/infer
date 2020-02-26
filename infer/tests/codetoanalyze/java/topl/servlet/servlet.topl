@@ -10,16 +10,16 @@ property InterleavedResponse
   prefix "ServletResponse"
   nondet (start)
   start -> start: *
-  start -> gotWriter: getWriter(R)
-  start -> gotStream: getOutputStream(R)
-  gotWriter -> error: getOutputStream(r)
-  gotStream -> error: getWriter(r)
+  start -> gotWriter: getWriter(R, IgnoreRet) => r := R
+  start -> gotStream: getOutputStream(R, IgnoreRet) => r := R
+  gotWriter -> error: getOutputStream(R, IgnoreRet) when R == r
+  gotStream -> error: getWriter(R, IgnoreRet) when R == r
 
 property ForwardUncommitted
   message "A ServletResponse was forwarded before being committed."
   nondet (start)
   start -> start: *
-  start -> gotChannel: C = "ServletResponse.\\(getWriter\\|getOutputStream\\)"(R)
-  gotChannel -> ok: "\\(PrintWriter\\|ServletOutputStream\\).flush.*"(c)
-  gotChannel -> error: "RequestDispatcher.forward"(*, *, r)
+  start -> gotChannel: "ServletResponse.\\(getWriter\\|getOutputStream\\)"(R, C) => r := R; c := C
+  gotChannel -> ok: "\\(PrintWriter\\|ServletOutputStream\\).flush.*"(C, IgnoreRet) when C == c
+  gotChannel -> error: "RequestDispatcher.forward"(IgnoreDispatcher, IgnoreRequest, Response, IgnoreRet) when Response == r
 

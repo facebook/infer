@@ -20,8 +20,8 @@ class ServletTests {
   }
 
   void bBad(ServletResponse response) throws IOException {
-    PrintWriter w = response.getWriter();
     ServletOutputStream s = response.getOutputStream();
+    PrintWriter w = response.getWriter();
   }
 
   void cBad(ServletRequest request, ServletResponse response, RequestDispatcher dispatcher)

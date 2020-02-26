@@ -2,6 +2,8 @@ property SkipAfterRemove
   prefix "ArrayList"
   nondet (start)
   start -> start: *
-  start -> removed: remove(Collection, Index)
-  removed -> ok:    get(collection, index)
-  removed -> error: get(collection, J) if J != index
+  start -> removed: remove(Collection, Index, IgnoreRet) => c := Collection; i := Index
+  removed -> ok:    get(Collection, Index, IgnoreRet) when i == Index && c == Collection
+  removed -> error: get(Collection, Index, IgnoreRet) when i != Index && c == Collection => j := Index
+  // TODO(rgrigore): Dropping the assignment above makes it slow. Also, swapping the conjuncts!
+  // This is weird prover-stuff to be investigated.

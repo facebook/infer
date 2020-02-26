@@ -17,8 +17,6 @@ let transition = p "transition%d"
 
 let arg = p "arg%d"
 
-let retval = "retval"
-
 let saved_arg = p "savedArg%d"
 
 let reg = p "reg_%s"

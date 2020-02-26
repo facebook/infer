@@ -1,8 +1,8 @@
 property ShouldUseEntries
   nondet (start iteratingKeys)
   start -> start: *
-  start -> gotKeys: S = "Map.keySet"(M)
-  gotKeys -> iteratingKeys: I = "Set.iterator"(s)
+  start -> gotKeys: "Map.keySet"(M, S) => m := M; s := S
+  gotKeys -> iteratingKeys: "Set.iterator"(S, I) when S == s => i := I
   iteratingKeys -> iteratingKeys: *
-  iteratingKeys -> gotOneKey: K = "Iterator.next"(i)
-  gotOneKey -> error: ".*Map.get"(m, k)
+  iteratingKeys -> gotOneKey: "Iterator.next"(I, K) when I == i => k := K
+  gotOneKey -> error: ".*Map.get"(M, K, IgnoreRet) when M == m && K == k

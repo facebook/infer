@@ -29,7 +29,7 @@ type vindex = int (* from 0 to vcount()-1, inclusive *)
 
 type tindex = int (* from 0 to tcount()-1, inclusive *)
 
-type transition = {source: vindex; target: vindex; label: ToplAst.label}
+type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
 val make : ToplAst.t list -> t
 

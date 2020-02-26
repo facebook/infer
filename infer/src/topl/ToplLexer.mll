@@ -35,8 +35,10 @@ rule raw_token = parse
   | ((' '* ("//" [^ '\n']*)? '\n')+ as x) (' '* as y) { new_line x y lexbuf }
   | ' '+ { raw_token lexbuf }
   | "->" { ARROW }
-  | '='  { ASGN }
+  | "=>" { ARROWARROW }
   | ':'  { COLON }
+  | ":=" { COLONEQ }
+  | ';'  { SEMI }
   | ','  { COMMA }
   | '('  { LP }
   | ')'  { RP }
@@ -49,12 +51,12 @@ rule raw_token = parse
   | ">=" { GE }
   | "==" { EQ }
   | "!=" { NE }
-  | "if" { IF }
   | "&&" { AND }
   | "prefix" { PREFIX }
   | "property" { PROPERTY }
   | "message" { MESSAGE }
   | "nondet" { NONDET }
+  | "when" { WHEN }
   | ['a'-'z'] id_tail as id { LID id }
   | ['A'-'Z'] id_tail as id { UID id }
   | eof { EOF }

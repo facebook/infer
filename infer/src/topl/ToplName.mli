@@ -15,8 +15,6 @@ val transition : int -> t
 
 val arg : int -> t
 
-val retval : t
-
 val saved_arg : int -> t
 
 val reg : string -> t

@@ -63,4 +63,15 @@ class BaosTest {
     y.finish();
     return x.toByteArray();
   }
+
+  static byte[] FP_eOk(final byte[] src) throws IOException {
+    ByteArrayOutputStream x = new ByteArrayOutputStream(src.length);
+    GZIPOutputStream y = new GZIPOutputStream(x);
+    try {
+      y.write(src);
+      y.finish();
+    } catch (Exception e) {
+    }
+    return x.toByteArray();
+  }
 }

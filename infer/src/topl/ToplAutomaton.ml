@@ -25,7 +25,7 @@ type vindex = int
 
 type tindex = int
 
-type transition = {source: vindex; target: vindex; label: ToplAst.label}
+type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
 (** - INV1: Array.length states = Array.length outgoing = Array.length nondets
     - INV2: Array.length transitions = Array.length skips
@@ -82,11 +82,13 @@ let make properties =
           let ps = List.map ~f:(fun p -> "\\|" ^ p ^ "\\.") p.ToplAst.prefixes in
           "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "("
       in
+      let prefix_label label =
+        ToplAst.{label with procedure_name= prefix_pname label.procedure_name}
+      in
       let f t =
         let source = vindex ToplAst.(p.name, t.source) in
         let target = vindex ToplAst.(p.name, t.target) in
-        let procedure_name = prefix_pname ToplAst.(t.label.procedure_name) in
-        let label = {t.ToplAst.label with procedure_name} in
+        let label = Option.map ~f:prefix_label t.ToplAst.label in
         {source; target; label}
       in
       List.map ~f p.ToplAst.transitions
@@ -94,7 +96,7 @@ let make properties =
     Array.of_list (List.concat_map ~f properties)
   in
   Array.iteri transitions ~f:(fun i {source; target; label} ->
-      tt "transition%d %d -> %d on %s@\n" i source target label.ToplAst.procedure_name ) ;
+      tt "transition%d %d -> %d on %a@\n" i source target ToplAstOps.pp_label label ) ;
   let outgoing : tindex list array =
     let vcount = Array.length states in
     let a = Array.create ~len:vcount [] in
@@ -102,11 +104,11 @@ let make properties =
     Array.iteri ~f transitions ; a
   in
   let max_args =
-    let f x t =
-      let y = Option.value_map ~default:0 ~f:List.length t.label.ToplAst.arguments in
-      Int.max x y
-    in
-    Array.fold ~init:0 ~f transitions
+    let llen l = Option.value_map ~default:0 ~f:List.length l.ToplAst.arguments in
+    let tlen t = Option.value_map ~default:0 ~f:llen t.label in
+    transitions |> Array.map ~f:tlen
+    |> Array.max_elt ~compare:Int.compare
+    |> Option.value ~default:0 |> succ
   in
   let nondets : bool array =
     let vcount = Array.length states in
@@ -126,15 +128,8 @@ let make properties =
     List.iter ~f properties ; a
   in
   let skips : bool array =
-    let is_skip {source; target; label} =
-      let r = Int.equal source target in
-      let r = r && match label.return with Ignore -> true | _ -> false in
-      let r = r && Option.is_none label.arguments in
-      (* The next line conservatively evaluates if the regex on the label includes
-       * all other regexes. *)
-      let r = r && String.equal ".*" label.procedure_name in
-      r
-    in
+    (* TODO(rgrigore): Rename "anys"? *)
+    let is_skip {label} = Option.is_none label in
     Array.map ~f:is_skip transitions
   in
   {states; nondets; transitions; skips; outgoing; vindex; max_args}

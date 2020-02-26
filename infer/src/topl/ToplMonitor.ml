@@ -202,15 +202,12 @@ let arguments_count proc_name = List.length (Procname.get_parameters proc_name)
 let generate_save_args automaton proc_name =
   if arguments_count proc_name < 1 then
     L.die InternalError "ToplMonitor: saveArgs() needs at least one argument" ;
-  let n = Int.min (arguments_count proc_name - 1) (ToplAutomaton.max_args automaton) in
+  let n = Int.min (arguments_count proc_name) (ToplAutomaton.max_args automaton) in
   let local_var = ToplUtils.local_var proc_name in
   procedure proc_name
     (sequence
-       ( assign (ToplUtils.static_var ToplName.retval) (local_var (ToplName.arg 0))
-       :: List.init n ~f:(fun i ->
-              assign
-                (ToplUtils.static_var (ToplName.saved_arg i))
-                (local_var (ToplName.arg (i + 1))) ) ))
+       (List.init n ~f:(fun i ->
+            assign (ToplUtils.static_var (ToplName.saved_arg i)) (local_var (ToplName.arg i)) )))
 
 
 let generate_execute automaton proc_name =
@@ -218,9 +215,8 @@ let generate_execute automaton proc_name =
   let fresh_var () = Exp.Var (Ident.create_fresh Ident.knormal) in
   let calls = List.init (ToplAutomaton.vcount automaton) ~f:call_execute_state in
   let havoc_event_data =
-    assign (ToplUtils.static_var ToplName.retval) (fresh_var ())
-    :: List.init (ToplAutomaton.max_args automaton) ~f:(fun i ->
-           assign (ToplUtils.static_var (ToplName.saved_arg i)) (fresh_var ()) )
+    List.init (ToplAutomaton.max_args automaton) ~f:(fun i ->
+        assign (ToplUtils.static_var (ToplName.saved_arg i)) (fresh_var ()) )
   in
   let havoc_transitions =
     List.init (ToplAutomaton.tcount automaton) ~f:(fun i ->
@@ -235,33 +231,34 @@ let generate_execute_state automaton proc_name =
     let re = Str.regexp "execute_state_\\([0-9]*\\)$" in
     let mname = Procname.get_method proc_name in
     if Str.string_match re mname 0 then int_of_string (Str.matched_group 1 mname)
-    else L.die InternalError "Topl.Monitor.generate_execute_state called for %s" mname
+    else L.die InternalError "ToplMonitor.generate_execute_state called for %s" mname
   in
-  let condition maybe t : Exp.t =
-    let conjunct variable pattern =
-      let open ToplAst in
-      match pattern with
-      | Ignore | SaveInRegister _ ->
-          [] (* true *)
-      | EqualToRegister i ->
-          [Exp.eq variable (ToplUtils.static_var (ToplName.reg i))]
-    in
-    let label = (ToplAutomaton.transition automaton t).label in
-    let explicit_condition =
-      (* computed from label.ToplAst.condition *)
-      let binding_of : ToplAst.register_name -> ToplName.t =
-        (* The _exn functions here should fail only if [label] is ill-formed. *)
+  let binding_of t : ToplAst.variable_name -> ToplName.t =
+    match (ToplAutomaton.transition automaton t).label with
+    | None ->
+        fun _ -> L.die InternalError "ToplMonitor: There are no bindings for any-labels."
+    | Some label ->
         let table = String.Table.create () in
-        let add n = function
-          | ToplAst.SaveInRegister i ->
-              Hashtbl.add_exn ~key:i ~data:n table
-          | _ ->
+        let add n v =
+          match Hashtbl.add ~key:v ~data:n table with
+          | `Duplicate ->
+              L.die UserError "ToplMonitor: ill-formed label (%s bound multiple times)" v
+          | `Ok ->
               ()
         in
-        add ToplName.retval label.ToplAst.return ;
         Option.iter ~f:(List.iteri ~f:(fun i -> add (ToplName.saved_arg i))) label.ToplAst.arguments ;
-        Hashtbl.find_exn table
-      in
+        let find v =
+          match Hashtbl.find table v with
+          | Some arg ->
+              arg
+          | None ->
+              L.die UserError "ToplMonitor: ill-formed label (%s not bound)" v
+        in
+        find
+  in
+  let condition maybe t : Exp.t =
+    let binding_of = binding_of t in
+    let make_condition label =
       let exp_of_value =
         let open ToplAst in
         function
@@ -294,29 +291,24 @@ let generate_execute_state automaton proc_name =
       in
       List.map ~f:predicate label.ToplAst.condition
     in
+    let condition =
+      Option.value_map ~default:[] ~f:make_condition (ToplAutomaton.transition automaton t).label
+    in
     let all_conjuncts =
-      let arg_conjunct i pattern = conjunct (ToplUtils.static_var (ToplName.saved_arg i)) pattern in
-      List.concat
-        ( Option.value_map ~default:[] ~f:(fun x -> [x]) maybe
-        :: [ToplUtils.static_var (ToplName.transition t)]
-        :: explicit_condition
-        :: conjunct (ToplUtils.static_var ToplName.retval) label.ToplAst.return
-        :: Option.value_map ~default:[] ~f:(List.mapi ~f:arg_conjunct) label.ToplAst.arguments )
+      Option.to_list maybe @ (ToplUtils.static_var (ToplName.transition t) :: condition)
     in
     Exp.and_nary all_conjuncts
   in
   let skip : node_generator = sequence [] in
   let action t : node_generator =
-    let step variable pattern =
-      match pattern with
-      | ToplAst.SaveInRegister i ->
-          assign (ToplUtils.static_var (ToplName.reg i)) variable
-      | _ ->
-          skip
-    in
+    let binding_of = binding_of t in
     let transition = ToplAutomaton.transition automaton t in
     let all_actions =
-      let arg_action i pattern = step (ToplUtils.static_var (ToplName.saved_arg i)) pattern in
+      let reg_var_assign (reg, var) =
+        assign (ToplUtils.static_var (ToplName.reg reg)) (ToplUtils.static_var (binding_of var))
+      in
+      let l_assign l = List.map ~f:reg_var_assign l.ToplAst.action in
+      let lo_assign = Option.value_map ~default:[] ~f:l_assign in
       stmt_node
         [ Sil.Store
             { e1= ToplUtils.static_var ToplName.state
@@ -324,9 +316,7 @@ let generate_execute_state automaton proc_name =
             ; typ= Typ.mk (Tint IInt)
             ; e2= Exp.int (IntLit.of_int transition.target)
             ; loc= sourcefile_location () } ]
-      :: step (ToplUtils.static_var ToplName.retval) transition.label.ToplAst.return
-      :: Option.value_map ~default:[] ~f:(List.mapi ~f:arg_action)
-           transition.label.ToplAst.arguments
+      :: lo_assign transition.label
     in
     sequence all_actions
   in

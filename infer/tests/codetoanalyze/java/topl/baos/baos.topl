@@ -1,11 +1,11 @@
 property BaosRetrieveWithoutFlush
   nondet (start)
   start -> start: *
-  start -> valid: ".*OutputStream"(X, Y)
-  valid -> invalid: ".*OutputStream.write.*"(x, *)
-  valid -> invalid: ".*OutputStream.write.*"(x, *, *)
-  valid -> invalid: ".*OutputStream.write.*"(x, *, *, *)
-  invalid -> valid: ".*OutputStream.flush"(x)
-  invalid -> valid: ".*OutputStream.close"(x)
-  invalid -> error: "ByteArrayOutputStream.toByteArray"(y)
-  invalid -> error: "ByteArrayOutputStream.toString"(y)
+  start -> valid: ".*OutputStream"(X, Y, Ret) => x := X; y := Y
+  valid -> invalid: ".*OutputStream.write.*"(X, Ia, Ret) when X == x
+  valid -> invalid: ".*OutputStream.write.*"(X, Ia, Ib, Ret) when X == x
+  valid -> invalid: ".*OutputStream.write.*"(X, Ia, Ib, Ic, Ret) when X == x
+  invalid -> valid: ".*OutputStream.flush"(X, Ret) when X == x
+  invalid -> valid: ".*OutputStream.close"(X, Ret) when X == x
+  invalid -> error: "ByteArrayOutputStream.toByteArray"(Y, Ret) when Y == y
+  invalid -> error: "ByteArrayOutputStream.toString"(Y, Ret) when Y == y
