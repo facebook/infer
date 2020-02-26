@@ -1151,10 +1151,9 @@ let aggregate_by_class exe_env procedures =
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
-let file_analysis ({procedures; source_file; exe_env} : Callbacks.file_callback_args) =
+let file_analysis ({procedures; exe_env} : Callbacks.file_callback_args) =
   let class_map = aggregate_by_class exe_env procedures in
   Typ.Name.Map.fold
     (fun classname methods issue_log ->
       make_results_table exe_env methods |> report_unsafe_accesses ~issue_log classname )
     class_map IssueLog.empty
-  |> IssueLog.store ~dir:Config.racerd_issues_dir_name ~file:source_file

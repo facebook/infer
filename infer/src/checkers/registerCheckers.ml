@@ -21,7 +21,7 @@ let () =
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
-  | File of Callbacks.file_callback_t
+  | File of {callback: Callbacks.file_callback_t; issue_dir: string}
 
 type callback = callback_fun * Language.t
 
@@ -101,8 +101,10 @@ let all_checkers =
     ; callbacks=
         [ (Procedure RacerD.analyze_procedure, Language.Clang)
         ; (Procedure RacerD.analyze_procedure, Language.Java)
-        ; (File RacerD.file_analysis, Language.Clang)
-        ; (File RacerD.file_analysis, Language.Java) ] }
+        ; ( File {callback= RacerD.file_analysis; issue_dir= Config.racerd_issues_dir_name}
+          , Language.Clang )
+        ; ( File {callback= RacerD.file_analysis; issue_dir= Config.racerd_issues_dir_name}
+          , Language.Java ) ] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
     ; active= Config.resource_leak
@@ -131,9 +133,11 @@ let all_checkers =
     ; active= Config.starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; (File Starvation.reporting, Language.Java)
+        ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
+          , Language.Java )
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
-        ; (File Starvation.reporting, Language.Clang) ] }
+        ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
+          , Language.Clang ) ] }
   ; { name= "purity"
     ; active= Config.purity || Config.loop_hoisting
     ; callbacks=
@@ -160,8 +164,8 @@ let register checkers =
       | DynamicDispatch procedure_cb ->
           Callbacks.register_procedure_callback ~checker_name:name ~dynamic_dispatch:true language
             procedure_cb
-      | File file_cb ->
-          Callbacks.register_file_callback ~checker_name:name language file_cb
+      | File {callback; issue_dir} ->
+          Callbacks.register_file_callback ~checker_name:name language callback ~issue_dir
     in
     List.iter ~f:register_callback callbacks
   in

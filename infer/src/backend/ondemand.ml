@@ -381,7 +381,7 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   Option.iter source_file_opt ~f:(fun source_file ->
       if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      Callbacks.iterate_file_callbacks procs_to_analyze exe_env source_file ;
+      Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ;
       create_perf_stats_report source_file ) ;
   unset_exe_env () ;
   Language.curr_language := saved_language

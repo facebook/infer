@@ -729,7 +729,7 @@ let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
 
 
 let reporting {Callbacks.procedures; exe_env} =
-  if Config.starvation_whole_program then ()
+  if Config.starvation_whole_program then IssueLog.empty
   else
     let report_on_summary tenv summary report_map (payload : Domain.summary) =
       Domain.CriticalPairs.fold (report_on_pair tenv summary) payload.critical_pairs report_map
@@ -744,7 +744,25 @@ let reporting {Callbacks.procedures; exe_env} =
                |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
              else report_map )
     in
-    List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store
+    List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store ;
+    (* TODO FIXME stop serializing issues inside the checker and respect callback's contract.
+       Contract of a file-level callback is that it needs to return list of issues for that file.
+       Those will be stored in corresponding directory later on.
+       Instead, starvation checker returns an empty log, but takes care of logging by itself.
+       This is for historical reasons.
+       In case the issue corresponds to two files A and B, the analysis will be ran twice on A and B.
+       Which of it should report, and where?
+
+       Desired behavior:
+       - if duplication is allowed, checker for A reports on A and checker for B reports on B.
+       - if duplication is disallowed, checker for A reports on A, checker B reports nothing, and
+       which one should report and one should not is decided based on some symmetry-breaking condition.
+
+       In both cases, desired behavior allows to preserve contract of the callback.
+       Current behavior is not like that: each of analyzers for A and B can report to both A and B,
+       which is not optimal and is (such an irony!) prone to a race condition.
+    *)
+    IssueLog.empty
 
 
 (* given a scheduled-work item, read the summary of the scheduled method from the disk

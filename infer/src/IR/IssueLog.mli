@@ -8,8 +8,7 @@
 open! IStd
 
 (** Module for storing issues detected outside of per-procedure analysis (and hence not serialized
-    as a part of procedure summary). Normally those are issues detected at the file-level analysis
-    step. Individual checkers are responsible for storing their own list of such issues. *)
+    as a part of procedure summary). *)
 type t
 
 val empty : t

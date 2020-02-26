@@ -1166,8 +1166,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
     !all_issues ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
   if Config.summary_stats then SummaryStats.pp_stats () ;
-  List.iter
-    [Config.lint_issues_dir_name; Config.starvation_issues_dir_name; Config.racerd_issues_dir_name]
+  (* Issues that are generated and stored outside of summaries by linter and checkers *)
+  List.iter (Config.lint_issues_dir_name :: FileLevelAnalysisIssueDirs.get_registered_dir_names ())
     ~f:(fun dir_name ->
       IssueLog.load dir_name
       |> IssueLog.iter ~f:(pp_lint_issues filters formats_by_report_kind linereader) ) ;
