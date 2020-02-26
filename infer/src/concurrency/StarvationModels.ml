@@ -21,7 +21,17 @@ let is_synchronized_library_call =
         false
 
 
-let should_skip_analysis = MethodMatcher.of_json Config.starvation_skip_analysis
+let should_skip_analysis =
+  let matcher = MethodMatcher.of_json Config.starvation_skip_analysis in
+  fun tenv pname actuals ->
+    match pname with
+    | Procname.Java java_pname
+      when Procname.Java.is_static java_pname
+           && String.equal "getInstance" (Procname.get_method pname) ->
+        true
+    | _ ->
+        matcher tenv pname actuals
+
 
 (** magical value from https://developer.android.com/topic/performance/vitals/anr *)
 let android_anr_time_limit = 5.0
