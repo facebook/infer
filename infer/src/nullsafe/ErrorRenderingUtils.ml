@@ -84,19 +84,17 @@ let get_field_class_name field_name =
   |> Option.value_map ~f:(fun (classname, _) -> classname) ~default:"the field class"
 
 
-let mk_coming_from nullsafe_mode nullability =
+let mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode nullability =
   match (nullsafe_mode, nullability) with
-  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull
   | NullsafeMode.Strict, Nullability.UncheckedNonnull ->
-      Some "non-strict classes"
+      "non-strict classes"
   | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
-      Some "nullsafe-local classes"
-  | NullsafeMode.Local _, Nullability.ThirdPartyNonnull ->
-      Some "third-party classes"
+      "nullsafe-local classes"
   | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
-      Some "non-nullsafe classes"
+      "non-nullsafe classes"
   | _ ->
-      None
+      Logging.die Logging.InternalError
+        "Should be called only for locally checked or unchecked nonnull cases"
 
 
 let mk_recommendation nullsafe_mode nullability what =
@@ -110,14 +108,15 @@ let mk_recommendation nullsafe_mode nullability what =
       None
 
 
-let mk_recommendation_for_third_party_field nullsafe_mode nullability field =
-  match (nullsafe_mode, nullability) with
-  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull ->
-      Some (F.sprintf "access %s via a nullsafe strict getter" field)
-  | NullsafeMode.Local _, Nullability.ThirdPartyNonnull ->
-      Some (F.sprintf "access %s via a nullsafe getter" field)
-  | _ ->
-      None
+let mk_recommendation_for_third_party_field nullsafe_mode field =
+  match nullsafe_mode with
+  | NullsafeMode.Strict ->
+      F.sprintf "access %s via a nullsafe strict getter" field
+  | NullsafeMode.Local _ ->
+      F.sprintf "access %s via a nullsafe getter" field
+  | NullsafeMode.Default ->
+      Logging.die Logging.InternalError
+        "Should not happen: we should tolerate third party in default mode"
 
 
 let get_info object_origin nullsafe_mode bad_nullability =
@@ -136,7 +135,6 @@ let get_info object_origin nullsafe_mode bad_nullability =
             (* This method makes sense only for non-nullable violations *)
             None
         | Nullability.StrictNonnull ->
-            (* This method makes sense only for non-nullable violations *)
             Logging.die InternalError "There should not be type violations involving StrictNonnull"
         | Nullability.ThirdPartyNonnull ->
             let suggested_third_party_sig_file =
@@ -157,7 +155,9 @@ let get_info object_origin nullsafe_mode bad_nullability =
               , F.sprintf "add the correct signature to %s" where_to_add_signature
               , IssueType.eradicate_unvetted_third_party_in_nullsafe )
         | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
-            let* from = mk_coming_from nullsafe_mode bad_nullability in
+            let from =
+              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode bad_nullability
+            in
             let+ recommendation =
               let what_to_strictify =
                 Option.value (get_method_class_name pname) ~default:offending_object
@@ -184,13 +184,27 @@ let get_info object_origin nullsafe_mode bad_nullability =
       (* TODO: currently we do not support third-party annotations for fields. Because of this,
          render error like it is a non-stict class. *)
       let what_is_used = "This field" in
-      let* coming_from_explanation = mk_coming_from nullsafe_mode bad_nullability in
-      let+ recommendation =
-        Option.first_some
-          (mk_recommendation_for_third_party_field nullsafe_mode bad_nullability unqualified_name)
-          (mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name))
+      let+ coming_from_explanation, recommendation, issue_type =
+        match bad_nullability with
+        | Nullability.Null | Nullability.Nullable ->
+            (* This method makes sense only for non-nullable violations *)
+            None
+        | Nullability.StrictNonnull ->
+            Logging.die InternalError "There should not be type violations involving StrictNonnull"
+        | Nullability.ThirdPartyNonnull ->
+            return
+              ( "third-party classes"
+              , mk_recommendation_for_third_party_field nullsafe_mode unqualified_name
+              , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+        | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
+            let from =
+              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode bad_nullability
+            in
+            let+ recommendation =
+              mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name)
+            in
+            (from, recommendation, IssueType.eradicate_unchecked_usage_in_nullsafe)
       in
-      let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
       { offending_object= qualified_name
       ; object_loc
       ; coming_from_explanation
