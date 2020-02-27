@@ -219,3 +219,5 @@ codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_max_
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_sum_cost(java.io.InputStream,byte[],int,int,java.util.ArrayList):int, 3, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 15 + 6 ⋅ 2⋅byteCount, O(2⋅byteCount), degree = 1,{2⋅byteCount},Loop at line 33]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.throw_exception():int, 0, UNREACHABLE_CODE, no_bucket, ERROR, [Here]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.unmodeled_impure_linear(java.util.ArrayList):void, 0, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 2 + 13 ⋅ list.length + 3 ⋅ (list.length + 1), O(list.length), degree = 1,{list.length + 1},Loop at line 61,{list.length},Loop at line 61]
+codetoanalyze/java/performance/Zero.java, Zero.infeasible_path_zero():void, 0, UNREACHABLE_CODE, no_bucket, ERROR, [Here]
+codetoanalyze/java/performance/Zero.java, Zero.infeasible_path_zero():void, 0, ZERO_EXECUTION_TIME, no_bucket, ERROR, []
