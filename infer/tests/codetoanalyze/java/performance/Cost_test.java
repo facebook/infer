@@ -210,6 +210,11 @@ public class Cost_test {
   void mult_symbols_quadratic(int x, int y) {
     for (int i = 0; i < x * y; i++) {}
   }
+
+  void call_mult_symbold_quadratic(int n) {
+    for (int i = 0; i < n; i++) {}
+    mult_symbols_quadratic(n, n);
+  }
 }
 
 class CloneTest {

@@ -188,6 +188,9 @@ module WorstCaseCost = struct
           | Some (ThresholdReports.Threshold threshold), Some cost
             when should_report_cost cost ~threshold ->
               Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
+          | Some (ThresholdReports.ReportOn {cost= prev}), Some cost
+            when (not (BasicCost.is_top cost)) && BasicCost.compare_by_degree prev cost < 0 ->
+              Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
           | _ ->
               threshold_or_report_opt )
         reports costs
