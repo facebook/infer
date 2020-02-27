@@ -140,6 +140,7 @@ module ThresholdReports = struct
   type threshold_or_report =
     | Threshold of BasicCost.t
     | ReportOn of {location: Location.t; cost: BasicCost.t}
+    | NoReport
 
   type t = threshold_or_report CostIssues.CostKindMap.t
 
@@ -163,10 +164,6 @@ module WorstCaseCost = struct
 
   (** We don't report when the cost is Top as it corresponds to subsequent 'don't know's. Instead,
       we report Top cost only at the top level per function. *)
-  let should_report_cost cost ~threshold =
-    (not (BasicCost.is_top cost)) && not (BasicCost.leq ~lhs:cost ~rhs:threshold)
-
-
   let exec_node tenv {costs; reports} extras instr_node =
     let {get_node_nb_exec} = extras in
     let node_cost =
@@ -183,13 +180,16 @@ module WorstCaseCost = struct
       CostIssues.CostKindMap.merge
         (fun _kind threshold_or_report_opt cost_opt ->
           match (threshold_or_report_opt, cost_opt) with
-          | None, _ ->
-              None
+          | Some ThresholdReports.NoReport, _ ->
+              threshold_or_report_opt
+          | Some ThresholdReports.(Threshold _ | ReportOn _), Some cost when BasicCost.is_top cost
+            ->
+              Some ThresholdReports.NoReport
           | Some (ThresholdReports.Threshold threshold), Some cost
-            when should_report_cost cost ~threshold ->
+            when not (BasicCost.leq ~lhs:cost ~rhs:threshold) ->
               Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
           | Some (ThresholdReports.ReportOn {cost= prev}), Some cost
-            when (not (BasicCost.is_top cost)) && BasicCost.compare_by_degree prev cost < 0 ->
+            when BasicCost.compare_by_degree prev cost < 0 ->
               Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
           | _ ->
               threshold_or_report_opt )
@@ -267,7 +267,7 @@ module Check = struct
     if not (Procname.is_java_access_method pname) then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
         ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
-        | ThresholdReports.Threshold _ ->
+        | ThresholdReports.Threshold _ | ThresholdReports.NoReport ->
             ()
         | ThresholdReports.ReportOn {location; cost} ->
             report_threshold pname summary ~name ~location ~cost kind_spec
