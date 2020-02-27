@@ -213,5 +213,13 @@ public class NullsafeMode {
     UncheckedParams BAD_passThirdPartyToUnchecked() {
       return new UncheckedParams(ThirdPartyTestClass.getUncheckedLong(42));
     }
+
+    void BAD_dereferenceNotAnnotatedThirdParty() {
+      (new ThirdPartyTestClass()).returnUnspecified().toString();
+    }
+
+    void OK_dereferenceExplicitlyAnnotatedThirdParty() {
+      (new ThirdPartyTestClass()).returnExplicitlyAnnotated().toString();
+    }
   }
 }

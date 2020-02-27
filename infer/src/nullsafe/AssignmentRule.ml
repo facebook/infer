@@ -69,6 +69,7 @@ let mk_description_for_bad_param_passed
   let nullability_evidence_as_suffix =
     Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
   in
+  let annotated_param_nullability = param_signature.param_annotated_type.nullability in
   let module MF = MarkupFormatter in
   let argument_description =
     if String.equal actual_param_expression "null" then "is `null`"
@@ -86,35 +87,39 @@ let mk_description_for_bad_param_passed
       in
       Format.asprintf "%a is %s" MF.pp_monospaced actual_param_expression nullability_descr
   in
-  let suggested_file_to_add_third_party =
-    match model_source with
-    | None ->
-        ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
-          (ThirdPartyAnnotationGlobalRepo.get_repo ())
-          function_procname
-    | Some _ ->
-        (* This is a different case:
-           suggestion to add third party is irrelevant (it is already added or modelled internally).
-        *)
-        None
-  in
-  match suggested_file_to_add_third_party with
-  | Some sig_file_name ->
+  match AnnotatedNullability.get_nullability annotated_param_nullability with
+  | Nullability.Null ->
+      Logging.die Logging.InternalError "Unexpected param nullability: Null"
+  | Nullability.Nullable ->
+      Logging.die Logging.InternalError "Passing anything to a nullable param should be allowed"
+  | Nullability.ThirdPartyNonnull ->
       (* This is a special case. While for FB codebase we can assume "not annotated hence not nullable" rule for all_whitelisted signatures,
          This is not the case for third party functions, which can have different conventions,
          So we can not just say "param is declared as non-nullable" like we say for FB-internal or modelled case:
          param can be nullable according to API but it was just not annotated.
          So we phrase it differently to remain truthful, but as specific as possible.
       *)
+      let suggested_third_party_sig_file =
+        ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
+          (ThirdPartyAnnotationGlobalRepo.get_repo ())
+          function_procname
+      in
+      let where_to_add_signature =
+        Option.value_map suggested_third_party_sig_file
+          ~f:(fun sig_file_name ->
+            ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
+              ~filename:sig_file_name )
+            (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
+          ~default:"the third party signature storage"
+      in
       let procname_str = Procname.to_simplified_string ~withclass:true function_procname in
       Format.asprintf
         "Third-party %a is missing a signature that would allow passing a nullable to param #%d%a. \
          Actual argument %s%s. Consider adding the correct signature of %a to %s."
         MF.pp_monospaced procname_str param_position pp_param_name param_signature.mangled
         argument_description nullability_evidence_as_suffix MF.pp_monospaced procname_str
-        (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
-           ~filename:sig_file_name)
-  | None ->
+        where_to_add_signature
+  | Nullability.LocallyCheckedNonnull | Nullability.UncheckedNonnull | Nullability.StrictNonnull ->
       let nonnull_evidence =
         match model_source with
         | None ->

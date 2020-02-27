@@ -6,6 +6,7 @@
  */
 package some.test.pckg;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -39,6 +40,10 @@ public class ThirdPartyTestClass {
   }
 
   // Return values.
+
+  public @Nonnull String returnExplicitlyAnnotated() {
+    return "";
+  }
 
   // No information in 3rd party repo
   public String returnUnspecified() {

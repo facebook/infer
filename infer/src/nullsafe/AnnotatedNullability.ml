@@ -24,30 +24,20 @@ type t =
 [@@deriving compare]
 
 and nullable_origin =
-  | AnnotatedNullable  (** The type is expicitly annotated with [@Nullable] in the code *)
+  | AnnotatedNullable
   | AnnotatedPropagatesNullable
-      (** If a function param is annotated as [@PropagatesNullable], this param is automatically
-          nullable *)
   | HasPropagatesNullableInParam
-      (** If a method has at least one param marked as [@PropagatesNullable], return value is
-          automatically nullable *)
-  | ModelledNullable  (** nullsafe knows it is nullable via its internal models *)
+  | ModelledNullable
 [@@deriving compare]
 
-and unchecked_nonnull_origin =
-  | AnnotatedNonnull
-      (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe
-          recognizes *)
-  | ImplicitlyNonnull
-      (** Infer was run in mode where all not annotated (non local) types are treated as non
-          nullable *)
+and unchecked_nonnull_origin = AnnotatedNonnull | ImplicitlyNonnull
 
 and strict_nonnull_origin =
-  | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
-  | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
-  | PrimitiveType  (** Primitive types are non-nullable by language design *)
+  | ExplicitNonnullThirdParty
+  | ModelledNonnull
+  | StrictMode
+  | PrimitiveType
   | EnumValue
-      (** Java enum value are statically initialized with non-nulls according to language semantics *)
 [@@deriving compare]
 
 let get_nullability = function
@@ -80,6 +70,8 @@ let pp fmt t =
   in
   let string_of_nonnull_origin nonnull_origin =
     match nonnull_origin with
+    | ExplicitNonnullThirdParty ->
+        "explicit3p"
     | ModelledNonnull ->
         "model"
     | StrictMode ->
@@ -105,20 +97,36 @@ let pp fmt t =
 let of_type_and_annotation ~is_trusted_callee ~nullsafe_mode ~is_third_party typ annotations =
   if not (PatternMatch.type_is_class typ) then StrictNonnull PrimitiveType
   else if Annotations.ia_is_nullable annotations then
+    (* Explicitly nullable always means Nullable *)
     let nullable_origin =
       if Annotations.ia_is_propagates_nullable annotations then AnnotatedPropagatesNullable
       else AnnotatedNullable
     in
     Nullable nullable_origin
   else
+    (* Lack of nullable annotation means non-nullish case, lets specify which exactly. *)
     match nullsafe_mode with
     | NullsafeMode.Strict ->
+        (* In strict mode, not annotated with nullable means non-nullable *)
         StrictNonnull StrictMode
     | NullsafeMode.Local _ ->
+        (* In local mode, not annotated with nullable means non-nullable *)
         LocallyCheckedNonnull
     | NullsafeMode.Default ->
-        if is_third_party then ThirdPartyNonnull
+        (* In default mode, agreements for "not [@Nullable]" depend on where code comes from *)
+        if is_third_party then
+          if Annotations.ia_is_nonnull annotations then
+            (* Third party method explicitly marked as [@Nonnull].
+               This is considered strict - see documentation to [ExplicitNonnullThirdParty]
+               **)
+            StrictNonnull ExplicitNonnullThirdParty
+          else
+            (* Third party might not obey "not annotated hence not nullable" convention.
+               Hence by default we treat is with low level of trust.
+            *)
+            ThirdPartyNonnull
         else
+          (* For non third party code, the agreement is "not annotated with [@Nullable] hence not null" *)
           let preliminary_nullability =
             if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
             else UncheckedNonnull ImplicitlyNonnull

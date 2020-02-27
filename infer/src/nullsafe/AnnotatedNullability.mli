@@ -45,6 +45,16 @@ and unchecked_nonnull_origin =
           nullable *)
 
 and strict_nonnull_origin =
+  | ExplicitNonnullThirdParty
+      (** Third party annotated as [@Nonnull] is considered strict. This is a controversial choice
+          and might be an unsoundness issue. The reason is practical. The best we can do for third
+          party is to register it in third party signature repository. Though this typically
+          requires human review, in practice errors are inevitable. On the other hand, if the
+          library owner explicitly annotated a function as nonnull, we assume this was made for
+          reason. In practice, requiring such methods to be registered in third party folder, will
+          introduce user friction but will not significantly increase safety. So our approach here
+          is optimistic. If some particular method or library is known to contain wrong [@Nonnull]
+          annotations, third party repository is a way to override this. *)
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
   | PrimitiveType  (** Primitive types are non-nullable by language design *)
