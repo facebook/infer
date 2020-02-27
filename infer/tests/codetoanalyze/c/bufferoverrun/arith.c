@@ -572,3 +572,19 @@ void ptr_band2_Bad(int x, int* q) {
   }
   a[10] = 0;
 }
+
+void do_not_prune_float_Good_FP() {
+  int a[5];
+  float f = 0.5;
+  if (f > 1.0 && f < 1.0) {
+    a[10] = 0;
+  }
+}
+
+void do_not_prune_float_Bad() {
+  int a[5];
+  float f = 0.5;
+  if (f > 0.0 && f < 1.0) {
+    a[10] = 0;
+  }
+}

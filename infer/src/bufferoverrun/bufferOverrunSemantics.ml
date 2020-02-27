@@ -18,8 +18,6 @@ let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
  fun integer_type_widths -> function
   | Const.Cint intlit ->
       Val.of_big_int (IntLit.to_big_int intlit)
-  | Const.Cfloat f ->
-      f |> int_of_float |> Val.of_int
   | Const.Cstr s ->
       Val.of_literal_string integer_type_widths s
   | _ ->

@@ -72,7 +72,7 @@ void cast_signed_to_unsigned2_Bad_FN() {
   }
 }
 
-void cast_float_to_int_Good() {
+void cast_float_to_int_Good_FP() {
   char arr[10];
   float x = 15.0;
   int32_t y = (int32_t)x;
@@ -81,7 +81,7 @@ void cast_float_to_int_Good() {
   }
 }
 
-void cast_float_to_int_Bad_FN() {
+void cast_float_to_int_Bad() {
   char arr[10];
   float x = 15000000000.0;
   int32_t y = (int32_t)x; // y is -2147483648.
