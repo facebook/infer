@@ -19,9 +19,11 @@ val mk_special_nullsafe_issue :
   -> bad_usage_location:Location.t
   -> TypeOrigin.t
   -> (string * IssueType.t * Location.t) option
-(** Situation when we tried to use nonnull values of incompatible modes. This is disallowed in
-    strict and local mode. Returns a tuple (error message, issue type, error location). NOTE:
-    Location of the error will be NOT in the place when the value is used (that is
+(** Situation when we tried to use nonnull values in a nullsafe mode that does not trust them to be
+    non-nullable. From the user perspective, this case is different from normal nullable assignment
+    or dereference violation: what needs to be described is why does not this mode trust this value
+    (and what are possible actions). Returns a tuple (error message, issue type, error location).
+    NOTE: Location of the error will be NOT in the place when the value is used (that is
     [bad_usage_location]), but where the value is first obtained from. *)
 
 val find_alternative_nonnull_method_description : TypeOrigin.t -> string option

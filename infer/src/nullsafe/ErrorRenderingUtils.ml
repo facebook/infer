@@ -101,7 +101,6 @@ let mk_coming_from nullsafe_mode nullability =
 
 let mk_recommendation nullsafe_mode nullability what =
   match (nullsafe_mode, nullability) with
-  | NullsafeMode.Strict, Nullability.ThirdPartyNonnull
   | NullsafeMode.Strict, Nullability.UncheckedNonnull
   | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
       Some (F.sprintf "make %s nullsafe strict" what)
@@ -130,29 +129,34 @@ let get_info object_origin nullsafe_mode bad_nullability =
           (Procname.to_simplified_string ~withclass:true pname)
       in
       let object_loc = call_loc in
-      let suggested_third_party_sig_file =
-        ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
-          (ThirdPartyAnnotationGlobalRepo.get_repo ())
-          pname
-      in
       let what_is_used = "Result of this call" in
-      (* Two main cases: it is either FB owned code or third party.
-         We determine the difference based on presense of suggested_third_party_sig_file.
-      *)
       let+ coming_from_explanation, recommendation, issue_type =
-        match suggested_third_party_sig_file with
-        | Some sig_file_name ->
-            (* Dereferences or assignment violations with regular Nullables
-               should not be special cased *)
-            if Nullability.equal Nullable bad_nullability then None
-            else
-              return
-                ( "not vetted third party methods"
-                , F.sprintf "add the correct signature to %s"
-                    (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
-                       ~filename:sig_file_name)
-                , IssueType.eradicate_unvetted_third_party_in_nullsafe )
-        | None ->
+        match bad_nullability with
+        | Nullability.Null | Nullability.Nullable ->
+            (* This method makes sense only for non-nullable violations *)
+            None
+        | Nullability.StrictNonnull ->
+            (* This method makes sense only for non-nullable violations *)
+            Logging.die InternalError "There should not be type violations involving StrictNonnull"
+        | Nullability.ThirdPartyNonnull ->
+            let suggested_third_party_sig_file =
+              ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
+                (ThirdPartyAnnotationGlobalRepo.get_repo ())
+                pname
+            in
+            let where_to_add_signature =
+              Option.value_map suggested_third_party_sig_file
+                ~f:(fun sig_file_name ->
+                  ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
+                    ~filename:sig_file_name )
+                  (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
+                ~default:"the third party signature storage"
+            in
+            return
+              ( "not vetted third party methods"
+              , F.sprintf "add the correct signature to %s" where_to_add_signature
+              , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+        | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
             let* from = mk_coming_from nullsafe_mode bad_nullability in
             let+ recommendation =
               let what_to_strictify =
