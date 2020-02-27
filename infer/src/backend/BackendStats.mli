@@ -39,6 +39,8 @@ val add_to_restart_scheduler_total_time : ExecutionDuration.t -> unit
 
 val add_to_restart_scheduler_useful_time : ExecutionDuration.t -> unit
 
+val set_analysis_time : t -> ExecutionDuration.t -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

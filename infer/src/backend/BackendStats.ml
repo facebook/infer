@@ -24,7 +24,13 @@ include struct
     ; mutable proc_locker_lock_time: ExecutionDuration.t
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
-    ; mutable restart_scheduler_total_time: ExecutionDuration.t }
+    ; mutable restart_scheduler_total_time: ExecutionDuration.t
+    ; mutable scheduler_process_analysis_time: ExecutionDuration.t }
+  (* - scheduler_process_analysis_time.wall counts the wall time of the analysis
+     phase
+     - scheduler_process_analysis_time.(user|sys) counts the (user|sys) time
+     only of the scheduler_process
+  *)
   [@@deriving fields]
 end
 
@@ -40,7 +46,8 @@ let global_stats =
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero }
+  ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; scheduler_process_analysis_time= ExecutionDuration.zero }
 
 
 let get () = global_stats
@@ -89,6 +96,11 @@ let add_to_restart_scheduler_total_time execution_duration =
   add Fields.restart_scheduler_total_time execution_duration
 
 
+let set_analysis_time stats execution_duration =
+  let set_opt = Field.setter Fields.scheduler_process_analysis_time in
+  Option.iter set_opt ~f:(fun set -> set stats execution_duration)
+
+
 let copy from ~into : unit =
   let { summary_file_try_load
       ; summary_read_from_disk
@@ -101,13 +113,15 @@ let copy from ~into : unit =
       ; proc_locker_lock_time
       ; proc_locker_unlock_time
       ; restart_scheduler_useful_time
-      ; restart_scheduler_total_time } =
+      ; restart_scheduler_total_time
+      ; scheduler_process_analysis_time } =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
     ~summary_cache_hits ~summary_cache_misses ~summary_has_model_queries ~ondemand_procs_analyzed
     ~ondemand_local_cache_hits ~ondemand_local_cache_misses ~proc_locker_lock_time
     ~proc_locker_unlock_time ~restart_scheduler_useful_time ~restart_scheduler_total_time
+    ~scheduler_process_analysis_time
 
 
 let merge stats1 stats2 =
@@ -129,7 +143,7 @@ let merge stats1 stats2 =
         stats2.restart_scheduler_useful_time
   ; restart_scheduler_total_time=
       ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
-  }
+  ; scheduler_process_analysis_time= ExecutionDuration.zero }
 
 
 let initial =
@@ -144,7 +158,8 @@ let initial =
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero }
+  ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; scheduler_process_analysis_time= ExecutionDuration.zero }
 
 
 let reset () = copy initial ~into:global_stats
@@ -179,6 +194,7 @@ let pp f stats =
       ~proc_locker_unlock_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_total_time:(pp_execution_duration_field stats f)
+      ~scheduler_process_analysis_time:(pp_execution_duration_field stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
@@ -208,6 +224,7 @@ let log_to_scuba stats =
       ~proc_locker_lock_time:create_time_entry ~proc_locker_unlock_time:create_time_entry
       ~restart_scheduler_useful_time:create_time_entry
       ~restart_scheduler_total_time:create_time_entry
+      ~scheduler_process_analysis_time:create_time_entry
     |> List.concat
   in
   ScubaLogging.log_many entries

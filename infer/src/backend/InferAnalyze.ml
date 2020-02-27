@@ -200,7 +200,7 @@ let invalidate_changed_procedures changed_files =
 
 
 let main ~changed_files =
-  let time0 = Mtime_clock.counter () in
+  let start = ExecutionDuration.counter () in
   register_active_checkers () ;
   if not Config.continue_analysis then
     if Config.reanalyze then (
@@ -212,7 +212,10 @@ let main ~changed_files =
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let stats = analyze source_files in
-  L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp (Mtime_clock.count time0) ;
+  let analysis_duration = ExecutionDuration.since start in
+  BackendStats.set_analysis_time stats analysis_duration ;
+  L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp_float_s
+    (ExecutionDuration.wall_time analysis_duration) ;
   L.debug Analysis Quiet "Collected stats:@\n%a@." BackendStats.pp stats ;
   BackendStats.log_to_scuba stats ;
   output_json_makefile_stats source_files
