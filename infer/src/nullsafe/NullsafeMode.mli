@@ -39,6 +39,7 @@ val is_trusted_name : t -> Typ.name -> bool
 (** Check whether [Typ.name] can be trusted under a given mode *)
 
 val severity : t -> Exceptions.severity
-(** Provides a default choice of issue severity for a particular mode *)
+(** Provides a default choice of issue severity for a particular mode. Rule is: severity should be
+    ERROR if and only if it is enforced. *)
 
 val pp : Format.formatter -> t -> unit

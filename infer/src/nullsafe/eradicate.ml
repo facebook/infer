@@ -185,7 +185,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     if checks.TypeCheck.eradicate then
       EradicateChecks.check_overridden_annotations find_canonical_duplicate tenv curr_pname
         curr_pdesc annotated_signature ;
-    TypeErr.report_forall_checks_and_reset tenv (EradicateCheckers.report_error tenv) curr_pdesc ;
+    TypeErr.report_forall_checks_and_reset (EradicateCheckers.report_error tenv) curr_pdesc ;
     ()
 
 

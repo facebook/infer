@@ -151,58 +151,27 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
     not is_forall
 
 
-(* print now if it's not a forall check *)
+let err_instance_get_severity err_instance =
+  match err_instance with
+  | Condition_redundant _ ->
+      (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with null,
+         this can have a lot of reasons to be actually nullable.
+         Until it is made non-precise, it is recommended to not turn this warning on.
+         But even when it is on, this should not be more than advice.
+      *)
+      Exceptions.Advice
+  | Over_annotation _ ->
+      (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
+      Exceptions.Advice
+  | Nullable_dereference {dereference_violation} ->
+      DereferenceRule.violation_severity dereference_violation
+  | Field_not_initialized {nullsafe_mode} ->
+      NullsafeMode.severity nullsafe_mode
+  | Bad_assignment {assignment_violation} ->
+      AssignmentRule.violation_severity assignment_violation
+  | Inconsistent_subclass {inheritance_violation} ->
+      InheritanceRule.violation_severity inheritance_violation
 
-module Severity = struct
-  let get_severity ia =
-    if Annotations.ia_ends_with ia Annotations.generated_graphql then Some Exceptions.Error
-    else None
-
-
-  let this_type_get_severity tenv (signature : AnnotatedSignature.t) =
-    match signature.params with
-    | AnnotatedSignature.{mangled; param_annotated_type} :: _ when Mangled.is_this mangled ->
-        (* TODO(T54088319) get rid of direct access to annotation *)
-        Option.bind ~f:get_severity (PatternMatch.type_get_annotation tenv param_annotated_type.typ)
-    | _ ->
-        None
-
-
-  let origin_get_severity tenv origin =
-    match origin with
-    | TypeOrigin.MethodCall {annotated_signature} ->
-        this_type_get_severity tenv annotated_signature
-    | _ ->
-        None
-
-
-  let err_instance_get_severity tenv err_instance : Exceptions.severity option =
-    match err_instance with
-    | Nullable_dereference {dereference_violation; nullable_object_origin} ->
-        (* A special hacky case: raise severity for violations of @GeneratedGraphQL method.
-           We might want to reevaluate if we still need this / make this behavior dependent on config.
-        *)
-        origin_get_severity tenv nullable_object_origin
-        |> IOption.if_none_evalopt ~f:(fun _ ->
-               Some (DereferenceRule.violation_severity dereference_violation) )
-    | Condition_redundant _ ->
-        (* Condition redundant is a very non-precise warning. Depending on the origin of what is compared with null,
-           this can have a lot of reasons to be actually nullable.
-           Until it is made non-precise, it is recommended to not turn this warning on.
-           But even when it is on, this should not be more than advice.
-        *)
-        Some Exceptions.Advice
-    | Over_annotation _ ->
-        None
-    | Field_not_initialized {nullsafe_mode} ->
-        Some (NullsafeMode.severity nullsafe_mode)
-    | Bad_assignment {assignment_violation} ->
-        Some (AssignmentRule.violation_severity assignment_violation)
-    | Inconsistent_subclass {inheritance_violation} ->
-        Some (InheritanceRule.violation_severity inheritance_violation)
-end
-
-(* Severity *)
 
 type st_report_error =
      Procname.t
@@ -211,7 +180,7 @@ type st_report_error =
   -> Location.t
   -> ?field_name:Fieldname.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.severity
+  -> severity:Exceptions.severity
   -> string
   -> unit
 
@@ -316,34 +285,34 @@ let get_error_info err_instance =
 
 
 (** Report an error right now. *)
-let report_error_now tenv (st_report_error : st_report_error) err_instance loc pdesc : unit =
+let report_error_now (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
   let err_description, infer_issue_type, updated_location = get_error_info err_instance in
   let field_name = get_field_name_for_error_suppressing err_instance in
-  let severity = Severity.err_instance_get_severity tenv err_instance in
+  let severity = err_instance_get_severity err_instance in
   let error_location = Option.value updated_location ~default:loc in
   st_report_error pname pdesc infer_issue_type error_location ~field_name
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
-    ?severity err_description
+    ~severity err_description
 
 
 (** Report an error unless is has been reported already, or unless it's a forall error since it
     requires waiting until the end of the analysis and be printed by flush. *)
-let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate err_instance
+let report_error (st_report_error : st_report_error) find_canonical_duplicate err_instance
     instr_ref_opt loc pdesc =
   let should_report_now = add_err find_canonical_duplicate err_instance instr_ref_opt loc in
-  if should_report_now then report_error_now tenv st_report_error err_instance loc pdesc
+  if should_report_now then report_error_now st_report_error err_instance loc pdesc
 
 
 (** Report the forall checks at the end of the analysis and reset the error table *)
-let report_forall_checks_and_reset tenv st_report_error proc_desc =
+let report_forall_checks_and_reset st_report_error proc_desc =
   let iter (err_instance, instr_ref_opt) err_state =
     match (instr_ref_opt, get_forall err_instance) with
     | Some instr_ref, is_forall ->
         let node = InstrRef.get_node instr_ref in
         State.set_node node ;
         if is_forall && err_state.always then
-          report_error_now tenv st_report_error err_instance err_state.loc proc_desc
+          report_error_now st_report_error err_instance err_state.loc proc_desc
     | None, _ ->
         ()
   in

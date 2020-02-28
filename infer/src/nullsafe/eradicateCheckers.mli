@@ -17,7 +17,7 @@ val report_error :
   -> Location.t
   -> ?field_name:Fieldname.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.severity
+  -> severity:Exceptions.severity
   -> string
   -> unit
 (** Report an error. *)

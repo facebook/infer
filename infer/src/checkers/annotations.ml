@@ -93,8 +93,6 @@ let returns_ownership = "ReturnsOwnership"
 
 let synchronized_collection = "SynchronizedCollection"
 
-let generated_graphql = "GeneratedGraphQL"
-
 let suppress_lint = "SuppressLint"
 
 let suppress_view_nullability = "SuppressViewNullability"

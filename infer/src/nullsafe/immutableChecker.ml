@@ -36,7 +36,7 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
                 Typ.Name.pp name_given Typ.Name.pp name_expected
             in
             EradicateCheckers.report_error tenv curr_pname curr_pdesc
-              IssueType.checkers_immutable_cast loc description
+              IssueType.checkers_immutable_cast loc description ~severity:Exceptions.Warning
       | _ ->
           () )
   | None ->

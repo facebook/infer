@@ -47,8 +47,6 @@ val worker_thread : string
 
 val visibleForTesting : string
 
-val generated_graphql : string
-
 val annot_ends_with : Annot.t -> string -> bool
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)

@@ -112,4 +112,12 @@ let is_trusted_name t name =
   match t with Strict -> false | Default -> true | Local trust -> Trust.is_trusted_name trust name
 
 
-let severity = function Strict | Local _ -> Exceptions.Error | Default -> Exceptions.Warning
+let severity = function
+  | Strict | Local _ ->
+      (* Explicit @Nullsafe modes suppose that enforcement is made on CI side to not allow violations in the codebase.
+         Hence it should be an error.
+      *)
+      Exceptions.Error
+  | Default ->
+      (* Enforcement is not supposed to be setup in default modes. *)
+      Exceptions.Warning

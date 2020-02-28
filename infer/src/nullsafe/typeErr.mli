@@ -67,13 +67,12 @@ type st_report_error =
   -> Location.t
   -> ?field_name:Fieldname.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.severity
+  -> severity:Exceptions.severity
   -> string
   -> unit
 
 val report_error :
-     Tenv.t
-  -> st_report_error
+     st_report_error
   -> (Procdesc.Node.t -> Procdesc.Node.t)
   -> err_instance
   -> InstrRef.t option
@@ -81,6 +80,6 @@ val report_error :
   -> Procdesc.t
   -> unit
 
-val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Procdesc.t -> unit
+val report_forall_checks_and_reset : st_report_error -> Procdesc.t -> unit
 
 val reset : unit -> unit
