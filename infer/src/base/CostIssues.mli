@@ -13,9 +13,9 @@ type issue_spec =
   ; threshold: int option
   ; complexity_increase_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
   ; expensive_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
-  ; zero_issue: IssueType.t
+  ; unreachable_issue: IssueType.t
   ; infinite_issue: IssueType.t
-  ; top_and_bottom: bool }
+  ; top_and_unreachable: bool }
 
 module CostKindMap : sig
   include PrettyPrintable.PPMap with type key = CostKind.t

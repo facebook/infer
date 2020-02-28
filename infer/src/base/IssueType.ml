@@ -506,14 +506,16 @@ let wrong_argument_number =
   register_from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
 
 
-let zero_cost_call ~kind = register_from_cost_string ~enabled:false ~kind "ZERO_%s"
+let unreachable_cost_call ~kind =
+  register_from_cost_string ~enabled:false ~kind "%s_UNREACHABLE_AT_EXIT"
+
 
 (* register enabled cost issues *)
 let () =
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_cold_start ->
           List.iter [true; false] ~f:(fun is_on_ui_thread ->
-              let _ = zero_cost_call ~kind in
+              let _ = unreachable_cost_call ~kind in
               let _ = expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread in
               let _ = infinite_cost_call ~kind in
               let _ = complexity_increase ~kind ~is_on_cold_start ~is_on_ui_thread in

@@ -204,8 +204,8 @@ module CostItem = struct
     Format.fprintf fmt "Cost is %t (degree is %a)" pp_cost (pp_degree ~only_bigO:false) curr_item
 end
 
-let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} ~delta
-    ~prev_item
+let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue; infinite_issue}
+    ~delta ~prev_item
     ~curr_item:
       ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
   let file = cost_info.Jsonbug_t.loc.file in
@@ -224,7 +224,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostItem.is_top curr_item then infinite_issue
-    else if CostItem.is_unreachable curr_item then zero_issue
+    else if CostItem.is_unreachable curr_item then unreachable_issue
     else
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
       complexity_increase_issue ~is_on_cold_start ~is_on_ui_thread

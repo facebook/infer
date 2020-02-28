@@ -9,7 +9,7 @@ open! IStd
 
 type t = OperationCost | AllocationCost | IOCost [@@deriving compare]
 
-type kind_spec = {kind: t; (* for non-diff analysis *) top_and_bottom: bool}
+type kind_spec = {kind: t; (* for non-diff analysis *) top_and_unreachable: bool}
 
 val compare : t -> t -> int
 

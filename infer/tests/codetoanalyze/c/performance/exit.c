@@ -4,12 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-void exit_unreachable_zero() {
+void exit_unreachable_unreachable() {
   exit(0); // modeled as unreachable
 }
 
-// constraint solver resolves all nodes to 0 cost
-void compute_exit_unreachable_zero() {
+// constraint solver resolves all nodes to unreachable cost
+void compute_exit_unreachable_unreachable() {
   int k = 0;
   exit(0);
 }
@@ -19,7 +19,7 @@ void linear(int p) {
   }
 }
 
-void call_exit_unreachable_zero(int p) {
+void call_exit_unreachable_unreachable(int p) {
   linear(p);
   exit(0);
 }
@@ -32,4 +32,4 @@ void inline_exit_unreachable_FP(int p) {
   exit(0);
 }
 
-void call_unreachable_constant() { exit_unreachable_zero(); }
+void call_unreachable_constant() { exit_unreachable_unreachable(); }

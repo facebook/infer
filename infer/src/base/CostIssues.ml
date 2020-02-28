@@ -12,9 +12,9 @@ type issue_spec =
   ; threshold: int option
   ; complexity_increase_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
   ; expensive_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
-  ; zero_issue: IssueType.t
+  ; unreachable_issue: IssueType.t
   ; infinite_issue: IssueType.t
-  ; top_and_bottom: bool }
+  ; top_and_unreachable: bool }
 
 module CostKindMap = struct
   include PrettyPrintable.MakePPMap (CostKind)
@@ -34,7 +34,7 @@ end
 
 let enabled_cost_map =
   List.fold CostKind.enabled_cost_kinds ~init:CostKindMap.empty
-    ~f:(fun acc CostKind.{kind; top_and_bottom} ->
+    ~f:(fun acc CostKind.{kind; top_and_unreachable} ->
       let kind_spec =
         { name= Format.asprintf "The %a" CostKind.pp kind
         ; threshold= (if Config.use_cost_threshold then CostKind.to_threshold kind else None)
@@ -45,8 +45,8 @@ let enabled_cost_map =
         ; expensive_issue=
             (fun ~is_on_cold_start ~is_on_ui_thread ->
               IssueType.expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread )
-        ; zero_issue= IssueType.zero_cost_call ~kind
+        ; unreachable_issue= IssueType.unreachable_cost_call ~kind
         ; infinite_issue= IssueType.infinite_cost_call ~kind
-        ; top_and_bottom }
+        ; top_and_unreachable }
       in
       CostKindMap.add kind kind_spec acc )

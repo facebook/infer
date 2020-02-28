@@ -254,7 +254,8 @@ module Check = struct
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_bottom pname loc summary ~name ~cost CostIssues.{zero_issue; infinite_issue} =
+  let report_top_and_unreachable pname loc summary ~name ~cost
+      CostIssues.{unreachable_issue; infinite_issue} =
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
       Reporting.log_error ~loc
@@ -262,7 +263,9 @@ module Check = struct
         ~extras:(compute_errlog_extras cost) summary issue message
     in
     if BasicCost.is_top cost then report infinite_issue "cannot be computed"
-    else if BasicCost.is_unreachable cost then report zero_issue "is zero(unreachable)"
+    else if BasicCost.is_unreachable cost then
+      report unreachable_issue
+        "cannot be computed since the program's exit state is never reachable"
 
 
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
@@ -277,9 +280,9 @@ module Check = struct
             report_threshold pname summary ~name ~location ~cost kind_spec
               ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
-        ~f:(fun _kind (CostIssues.{name; top_and_bottom} as issue_spec) cost ->
-          if top_and_bottom then report_top_and_bottom pname proc_loc summary ~name ~cost issue_spec
-      ) )
+        ~f:(fun _kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
+          if top_and_unreachable then
+            report_top_and_unreachable pname proc_loc summary ~name ~cost issue_spec ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
