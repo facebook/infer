@@ -77,7 +77,7 @@ module Query = struct
   exception NotATarget
 
   let quote_if_needed =
-    let no_quote_needed_regexp = Str.regexp "^[a-zA-Z0-9/:_*][a-zA-Z0-9/:.-_*]*$" in
+    let no_quote_needed_regexp = Str.regexp "^[a-zA-Z0-9/:_*][-a-zA-Z0-9/:._*]*$" in
     fun s ->
       if Str.string_match no_quote_needed_regexp s 0 then s
       else s |> Escape.escape_double_quotes |> F.sprintf "\"%s\""
