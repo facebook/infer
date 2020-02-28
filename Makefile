@@ -486,6 +486,24 @@ $(DIRECT_TESTS:%=direct_%_replace): infer
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
+COST_TESTS += \
+  c_performance \
+  java_hoistingExpensive \
+  java_performance \
+  objc_performance \
+
+.PHONY: cost_tests
+cost_tests: $(COST_TESTS:%=direct_%_test)
+
+.PHONY: cost_tests_clean
+cost_tests_clean: $(COST_TESTS:%=direct_%_clean)
+
+.PHONY: cost_tests_replace
+cost_tests_replace: $(COST_TESTS:%=direct_%_replace)
+
+.PHONY: cost_tests_print
+cost_tests_print: $(COST_TESTS:%=direct_%_print)
+
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
 	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
