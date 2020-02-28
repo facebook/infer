@@ -391,13 +391,17 @@ let fork_child ~file_lock ~child_prelude ~slot (updates_r, updates_w) ~f ~epilog
          bar. This is because only the parent knows about all the children, hence it's in charge of
          actually updating the task bar. *)
       let update_status t status =
-        let status =
-          (* Truncate status if too big: it's pointless to spam the status bar with long status, and
-             also difficult to achieve technically over pipes (it's easier if all the messages fit
-             into a buffer of reasonable size). *)
-          if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
-        in
-        send_to_parent (UpdateStatus (slot, t, status))
+        match Config.progress_bar with
+        | `Quiet | `Plain ->
+            ()
+        | `MultiLine ->
+            let status =
+              (* Truncate status if too big: it's pointless to spam the status bar with long status, and
+                 also difficult to achieve technically over pipes (it's easier if all the messages fit
+                 into a buffer of reasonable size). *)
+              if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
+            in
+            send_to_parent (UpdateStatus (slot, t, status))
       in
       ProcessPoolState.update_status := update_status ;
       let orders_ic = Unix.in_channel_of_descr to_child_r in
