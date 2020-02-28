@@ -38,8 +38,8 @@ val map : f:(BasicCost.t -> BasicCost.t) -> t -> t
 val zero_record : t
 (** Map representing cost record {OperationCost:0; AllocationCost:0; IOCost:0} *)
 
-val mult_by_scalar : t -> BasicCost.t -> t
-(** Map where each element is multiplied by a cost *)
+val mult_by : t -> nb_exec:BasicCost.t -> t
+(** Special map where each element is multiplied by the number of executions *)
 
 val plus : t -> t -> t
 (** Union of two maps where common costs are added together *)

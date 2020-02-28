@@ -13,7 +13,7 @@ module Types = struct
 
   type 'astate top_lifted = Top | NonTop of 'astate
 
-  type ('below, 'above) below_above = Below of 'below | Above of 'above
+  type ('below, 'astate, 'above) below_above = Below of 'below | Above of 'above | Val of 'astate
 end
 
 open! Types
@@ -256,65 +256,90 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
 end
 
 module StackedUtils = struct
-  let compare x1 x2 ~cmp_below ~cmp_above =
+  let compare x1 x2 ~cmp_below ~cmp ~cmp_above =
     if phys_equal x1 x2 then 0
     else
       match (x1, x2) with
       | Below b1, Below b2 ->
           cmp_below b1 b2
-      | Below _, Above _ ->
+      | Below _, _ ->
           -1
-      | Above _, Below _ ->
+      | _, Below _ ->
           1
       | Above a1, Above a2 ->
           cmp_above a1 a2
+      | Above _, _ ->
+          1
+      | _, Above _ ->
+          -1
+      | Val v1, Val v2 ->
+          cmp v1 v2
 
 
-  let leq ~leq_below ~leq_above ~lhs ~rhs =
+  let leq ~leq_below ~leq ~leq_above ~lhs ~rhs =
     phys_equal lhs rhs
     ||
     match (lhs, rhs) with
     | Below lhs, Below rhs ->
         leq_below ~lhs ~rhs
-    | Below _, Above _ ->
+    | Below _, _ ->
         true
-    | Above _, Below _ ->
+    | _, Below _ ->
         false
     | Above lhs, Above rhs ->
         leq_above ~lhs ~rhs
+    | Above _, _ ->
+        false
+    | _, Above _ ->
+        true
+    | Val lhs, Val rhs ->
+        leq ~lhs ~rhs
 
 
-  let combine ~dir x1 x2 ~f_below ~f_above =
+  let combine ~dir x1 x2 ~f_below ~f ~f_above =
     match (x1, x2) with
     | Below b1, Below b2 ->
         Below (f_below b1 b2)
-    | (Below _ as below), (Above _ as above) | (Above _ as above), (Below _ as below) -> (
-      match dir with `Increasing -> above | `Decreasing -> below )
+    | Val v1, Val v2 ->
+        Val (f v1 v2)
     | Above a1, Above a2 ->
         Above (f_above a1 a2)
+    | (Below _ as below), x | x, (Below _ as below) -> (
+      match dir with `Increasing -> x | `Decreasing -> below )
+    | x, (Above _ as above) | (Above _ as above), x -> (
+      match dir with `Increasing -> above | `Decreasing -> x )
 
 
-  let map x ~f_below ~f_above =
-    match x with Below b -> Below (f_below b) | Above a -> Above (f_above a)
+  let map x ~f_below ~f ~f_above =
+    match x with Below b -> Below (f_below b) | Above a -> Above (f_above a) | Val v -> Val (f v)
 
 
-  let pp ~pp_below ~pp_above f = function Below b -> pp_below f b | Above a -> pp_above f a
+  let pp ~pp_below ~pp ~pp_above f = function
+    | Below b ->
+        pp_below f b
+    | Above a ->
+        pp_above f a
+    | Val v ->
+        pp f v
 end
 
-module Stacked (Below : S) (Above : S) = struct
-  type t = (Below.t, Above.t) below_above
+module Stacked (Below : S) (Val : S) (Above : S) = struct
+  type t = (Below.t, Val.t, Above.t) below_above
 
-  let leq = StackedUtils.leq ~leq_below:Below.leq ~leq_above:Above.leq
+  let leq = StackedUtils.leq ~leq_below:Below.leq ~leq:Val.leq ~leq_above:Above.leq
 
-  let join = StackedUtils.combine ~dir:`Increasing ~f_below:Below.join ~f_above:Above.join
+  let join =
+    StackedUtils.combine ~dir:`Increasing ~f_below:Below.join ~f:Val.join ~f_above:Above.join
+
 
   let widen ~prev ~next ~num_iters =
     StackedUtils.combine ~dir:`Increasing prev next
       ~f_below:(fun prev next -> Below.widen ~prev ~next ~num_iters)
+      ~f:(fun prev next -> Val.widen ~prev ~next ~num_iters)
       ~f_above:(fun prev next -> Above.widen ~prev ~next ~num_iters)
 
 
-  let pp = StackedUtils.pp ~pp_below:Below.pp ~pp_above:Above.pp
+  let pp = StackedUtils.pp ~pp_below:Below.pp ~pp:Val.pp ~pp_above:Above.pp
 end
 
 module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) = struct

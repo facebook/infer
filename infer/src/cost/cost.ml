@@ -123,11 +123,15 @@ module InstrBasicCost = struct
           assert false
     in
     let cost = get_instr_cost_record tenv extras instr_node instr in
-    if BasicCost.is_top (CostDomain.get_operation_cost cost) then
-      Logging.d_printfln_escaped "Statement cost became top at %a (%a)." InstrCFG.Node.pp_id
-        (InstrCFG.Node.id instr_node)
+    let operation_cost = CostDomain.get_operation_cost cost in
+    let log_msg top_or_bottom =
+      Logging.d_printfln_escaped "Statement cost became %s at %a (%a)." top_or_bottom
+        InstrCFG.Node.pp_id (InstrCFG.Node.id instr_node)
         (Sil.pp_instr ~print_types:false Pp.text)
-        instr ;
+        instr
+    in
+    if BasicCost.is_top operation_cost then log_msg "top"
+    else if BasicCost.is_unreachable operation_cost then log_msg "unreachable" ;
     cost
 end
 
@@ -173,7 +177,7 @@ module WorstCaseCost = struct
       if BasicCost.is_top nb_exec then
         Logging.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
           node_id ;
-      CostDomain.mult_by_scalar instr_cost_record nb_exec
+      CostDomain.mult_by instr_cost_record ~nb_exec
     in
     let costs = CostDomain.plus costs node_cost in
     let reports =
@@ -258,7 +262,7 @@ module Check = struct
         ~extras:(compute_errlog_extras cost) summary issue message
     in
     if BasicCost.is_top cost then report infinite_issue "cannot be computed"
-    else if BasicCost.is_zero cost then report zero_issue "is zero"
+    else if BasicCost.is_unreachable cost then report zero_issue "is zero(unreachable)"
 
 
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =

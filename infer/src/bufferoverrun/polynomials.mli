@@ -17,8 +17,6 @@ module Degree : sig
 
   val encode_to_int : t -> int
   (** Encodes the complex type [t] to an integer that can be used for comparison. *)
-
-  val is_zero : t -> bool
 end
 
 module NonNegativeNonTopPolynomial : sig
@@ -33,17 +31,28 @@ module TopTraces : sig
   val make_err_trace : t -> Errlog.loc_trace
 end
 
+module UnreachableTraces : sig
+  type t
+
+  val make_err_trace : t -> Errlog.loc_trace
+end
+
 module NonNegativePolynomial : sig
   include PrettyPrintable.PrintableType
 
   type degree_with_term =
-    (Degree.t * NonNegativeNonTopPolynomial.t, TopTraces.t) AbstractDomain.Types.below_above
+    ( UnreachableTraces.t
+    , Degree.t * NonNegativeNonTopPolynomial.t
+    , TopTraces.t )
+    AbstractDomain.Types.below_above
 
   val pp_hum : Format.formatter -> t -> unit
 
   val leq : lhs:t -> rhs:t -> bool
 
   val top : t
+
+  val of_unreachable : Location.t -> t
 
   val zero : t
 
@@ -55,6 +64,8 @@ module NonNegativePolynomial : sig
 
   val is_top : t -> bool
 
+  val is_unreachable : t -> bool
+
   val is_zero : t -> bool
 
   val is_one : t -> bool
@@ -62,6 +73,9 @@ module NonNegativePolynomial : sig
   val of_non_negative_bound : ?degree_kind:DegreeKind.t -> Bounds.NonNegativeBound.t -> t
 
   val plus : t -> t -> t
+
+  val mult_unreachable : t -> t -> t
+  (** if one of the operands is unreachable, the result is unreachable *)
 
   val mult : t -> t -> t
 

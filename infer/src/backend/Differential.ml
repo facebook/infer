@@ -68,11 +68,9 @@ module CostsSummary = struct
     let count_aux t (e : CostDomain.BasicCost.t) =
       match CostDomain.BasicCost.degree e with
       | None ->
-          assert (CostDomain.BasicCost.is_top e) ;
-          {t with top= t.top + 1}
-      | Some d when CostDomain.BasicCost.is_zero e ->
-          assert (Polynomials.Degree.is_zero d) ;
-          {t with zero= t.zero + 1}
+          if CostDomain.BasicCost.is_top e then {t with top= t.top + 1}
+          else if CostDomain.BasicCost.is_unreachable e then {t with zero= t.zero + 1}
+          else (* a cost with no degree must be either T/bottom*) assert false
       | Some d ->
           let degrees = DegreeMap.update (Polynomials.Degree.encode_to_int d) incr t.degrees in
           {t with degrees}
@@ -164,7 +162,7 @@ module CostItem = struct
   let is_top = lift ~f_poly:CostDomain.BasicCost.is_top ~f_deg:Option.is_none
 
   (* NOTE: incorrect when using [f_deg] *)
-  let is_zero = lift ~f_poly:CostDomain.BasicCost.is_zero ~f_deg:(fun _ -> false)
+  let is_unreachable = lift ~f_poly:CostDomain.BasicCost.is_unreachable ~f_deg:(fun _ -> false)
 
   (* NOTE: incorrect when using [f_deg] *)
   let is_one = lift ~f_poly:CostDomain.BasicCost.is_one ~f_deg:(fun _ -> false)
@@ -226,7 +224,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostItem.is_top curr_item then infinite_issue
-    else if CostItem.is_zero curr_item then zero_issue
+    else if CostItem.is_unreachable curr_item then zero_issue
     else
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
       complexity_increase_issue ~is_on_cold_start ~is_on_ui_thread
@@ -281,9 +279,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
         match curr_degree_with_term with
         | None ->
             []
-        | Some (Below (_, degree_term)) ->
+        | Some (Val (_, degree_term)) ->
             Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
             |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+        | Some (Below traces) ->
+            [("", Polynomials.UnreachableTraces.make_err_trace traces)]
         | Some (Above traces) ->
             [("", Polynomials.TopTraces.make_err_trace traces)]
       in

@@ -12,7 +12,7 @@ module Types : sig
 
   type 'astate top_lifted = Top | NonTop of 'astate
 
-  type ('below, 'above) below_above = Below of 'below | Above of 'above
+  type ('below, 'astate, 'above) below_above = Below of 'below | Above of 'above | Val of 'astate
 end
 
 open! Types
@@ -73,6 +73,10 @@ module BottomLifted (Domain : S) : sig
   val map : f:(Domain.t -> Domain.t) -> t -> t
 end
 
+module BottomLiftedUtils : sig
+  val pp_bottom : Format.formatter -> unit
+end
+
 (** Create a domain with Top element from a pre-domain *)
 module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 
@@ -97,43 +101,53 @@ end
 include sig
   [@@@warning "-60"]
 
-  (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of
-      [Below] are strictly smaller than elements of [Above] *)
-  module Stacked (Below : S) (Above : S) : S with type t = (Below.t, Above.t) below_above
+  (** Stacked abstract domain: tagged union of [Below], [Val], and [Above] domains where all
+      elements of [Below] are strictly smaller than all elements of [Val] which are strictly smaller
+      than all elements of [Above] *)
+  module Stacked (Below : S) (Val : S) (Above : S) :
+    S with type t = (Below.t, Val.t, Above.t) below_above
 end
 
 module StackedUtils : sig
   val leq :
        leq_below:(lhs:'b -> rhs:'b -> bool)
+    -> leq:(lhs:'v -> rhs:'v -> bool)
     -> leq_above:(lhs:'a -> rhs:'a -> bool)
-    -> lhs:('b, 'a) below_above
-    -> rhs:('b, 'a) below_above
+    -> lhs:('b, 'v, 'a) below_above
+    -> rhs:('b, 'v, 'a) below_above
     -> bool
 
   val compare :
-       ('b, 'a) below_above
-    -> ('b, 'a) below_above
+       ('b, 'v, 'a) below_above
+    -> ('b, 'v, 'a) below_above
     -> cmp_below:('b -> 'b -> int)
+    -> cmp:('v -> 'v -> int)
     -> cmp_above:('a -> 'a -> int)
     -> int
 
   val pp :
        pp_below:(Format.formatter -> 'b -> unit)
+    -> pp:(Format.formatter -> 'v -> unit)
     -> pp_above:(Format.formatter -> 'a -> unit)
     -> Format.formatter
-    -> ('b, 'a) below_above
+    -> ('b, 'v, 'a) below_above
     -> unit
 
   val combine :
        dir:[`Increasing | `Decreasing]
-    -> ('b, 'a) below_above
-    -> ('b, 'a) below_above
+    -> ('b, 'v, 'a) below_above
+    -> ('b, 'v, 'a) below_above
     -> f_below:('b -> 'b -> 'b)
+    -> f:('v -> 'v -> 'v)
     -> f_above:('a -> 'a -> 'a)
-    -> ('b, 'a) below_above
+    -> ('b, 'v, 'a) below_above
 
   val map :
-    ('b, 'a) below_above -> f_below:('b -> 'b2) -> f_above:('a -> 'a2) -> ('b2, 'a2) below_above
+       ('b, 'v, 'a) below_above
+    -> f_below:('b -> 'b2)
+    -> f:('v -> 'v2)
+    -> f_above:('a -> 'a2)
+    -> ('b2, 'v2, 'a2) below_above
 end
 
 (** Abstracts a set of [Element]s by keeping its smallest representative only. The widening is

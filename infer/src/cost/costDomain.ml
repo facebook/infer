@@ -15,7 +15,7 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 4
+  let version = 5
 end
 
 (**
@@ -54,7 +54,8 @@ let map ~f cost_record = VariantCostMap.map f cost_record
 
 let zero_record = VariantCostMap.empty
 
-let mult_by_scalar cost_record scalar = map cost_record ~f:(BasicCost.mult scalar)
+(** If nb_exec is unreachable, we map to unreachable, not 0 *)
+let mult_by cost_record ~nb_exec = map cost_record ~f:(BasicCost.mult_unreachable nb_exec)
 
 let plus cost_record1 cost_record2 =
   VariantCostMap.union

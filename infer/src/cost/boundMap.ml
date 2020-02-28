@@ -56,11 +56,12 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
             let bound =
               match entry_mem with
               | Unreachable ->
+                  let node_loc = NodeCFG.Node.loc node in
                   L.debug Analysis Medium
                     "@\n\
                      [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                      unreachable returning cost 0 \n" ;
-                  BasicCost.zero
+                  BasicCost.of_unreachable node_loc
               | ExcRaised ->
                   BasicCost.one
               | Reachable mem ->
@@ -68,8 +69,11 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
                     BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map) ~node_id
                       mem
                   in
-                  (* The zero cost of node does not make sense especially when the abstract memory
-                     is non-bottom. *)
+                  (* The zero number of executions for a node
+                     (corresponding to getting the range of bottom
+                     values) does not make sense especially when the
+                     abstract memory is non-bottom. This is a source
+                     of unsoundness in the analysis. *)
                   if BasicCost.is_zero cost then BasicCost.one else cost
             in
             L.(debug Analysis Medium)
