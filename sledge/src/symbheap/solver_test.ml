@@ -194,8 +194,6 @@ let%test_module _ =
           ∧ 16 = %m_8 = %n_9
           ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
-    (* Incompleteness: changing the order of the subtrahend leads to
-       different existential instantiation, which fails *)
     let%expect_test _ =
       infer_frame
         (Sh.star
@@ -211,7 +209,12 @@ let%test_module _ =
             %k_5 -[ %k_5, 16 )-> ⟨32,%a_1⟩ * %l_6 -[)-> ⟨8,16⟩
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
-        ) infer_frame: |}]
+        ) infer_frame:
+          ∃ %a0_10, %a1_11 .
+            %a_2 = %a0_10
+          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
+          ∧ 16 = %m_8 = %n_9
+          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
     let seg_split_symbolically =
       Sh.star

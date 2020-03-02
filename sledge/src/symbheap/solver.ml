@@ -498,9 +498,7 @@ let excise_seg ({sub} as goal) msg ssg =
         )
     (* k-l = 0 so k = l *)
     | Zero -> (
-      match Equality.difference sub.cong o n with
-      | None -> Some {goal with sub= Sh.and_ (Term.eq o n) goal.sub}
-      | Some o_n -> (
+        let* o_n = Equality.difference sub.cong o n in
         match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
@@ -510,7 +508,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | Zero -> Some (excise_seg_same goal msg ssg)
         (* o-n > 0      [k;   o)
          * so o > n   ⊢ [l; n) *)
-        | Pos -> Some (excise_seg_sub_prefix goal msg ssg o_n) ) )
+        | Pos -> Some (excise_seg_sub_prefix goal msg ssg o_n) )
     (* k-l > 0 so k > l *)
     | Pos -> (
         let ko = Term.add k o in
