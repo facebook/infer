@@ -25,6 +25,18 @@ and disjunction = starjunction list
 
 type t = starjunction [@@deriving compare, equal, sexp]
 
+(** Basic values *)
+
+let emp =
+  { us= Var.Set.empty
+  ; xs= Var.Set.empty
+  ; cong= Equality.true_
+  ; pure= []
+  ; heap= []
+  ; djns= [] }
+
+let false_ us = {emp with us; djns= [[]]}
+
 (** Traversals *)
 
 let map_seg ~f h =
@@ -39,22 +51,26 @@ let map_seg ~f h =
   then h
   else {loc; bas; len; siz; arr}
 
-let map ~f_sjn ~f_cong ~f_trm ({us= _; xs= _; cong; pure; heap; djns} as q)
-    =
-  let cong = f_cong cong in
-  let pure =
-    List.filter_map_preserving_phys_equal pure ~f:(fun e ->
-        let e' = f_trm e in
-        if Term.is_true e' then None else Some e' )
-  in
-  let heap = List.map_preserving_phys_equal heap ~f:(map_seg ~f:f_trm) in
-  let djns =
-    List.map_preserving_phys_equal djns
-      ~f:(List.map_preserving_phys_equal ~f:f_sjn)
-  in
-  if cong == q.cong && pure == q.pure && heap == q.heap && djns == q.djns
-  then q
-  else {q with cong; pure; heap; djns}
+let map ~f_sjn ~f_cong ~f_trm ({us; xs= _; cong; pure; heap; djns} as q) =
+  let exception Unsat in
+  try
+    let cong = f_cong cong in
+    let pure =
+      List.filter_map_preserving_phys_equal pure ~f:(fun e ->
+          let e' = f_trm e in
+          if Term.is_false e' then raise Unsat
+          else if Term.is_true e' then None
+          else Some e' )
+    in
+    let heap = List.map_preserving_phys_equal heap ~f:(map_seg ~f:f_trm) in
+    let djns =
+      List.map_preserving_phys_equal djns
+        ~f:(List.map_preserving_phys_equal ~f:f_sjn)
+    in
+    if cong == q.cong && pure == q.pure && heap == q.heap && djns == q.djns
+    then q
+    else {q with cong; pure; heap; djns}
+  with Unsat -> false_ us
 
 let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
   let f b s = f s b in
@@ -395,17 +411,6 @@ let elim_exists xs q =
   {q with us= Set.union q.us xs; xs= Set.diff q.xs xs}
 
 (** Construct *)
-
-let emp =
-  { us= Var.Set.empty
-  ; xs= Var.Set.empty
-  ; cong= Equality.true_
-  ; pure= []
-  ; heap= []
-  ; djns= [] }
-  |> check invariant
-
-let false_ us = {emp with us; djns= [[]]} |> check invariant
 
 (** conjoin an equality relation assuming vocabulary is compatible *)
 let and_cong_ cong q =
