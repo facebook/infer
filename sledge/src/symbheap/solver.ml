@@ -49,7 +49,10 @@ let excise_exists goal =
   if Set.is_empty goal.xs then goal
   else
     let solutions_for_xs =
-      Equality.solve_for_vars [goal.us; goal.xs] goal.sub.cong
+      let xs =
+        Set.diff goal.xs (Sh.fv ~ignore_cong:() (Sh.with_pure [] goal.sub))
+      in
+      Equality.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
     in
     if Equality.Subst.is_empty solutions_for_xs then goal
     else

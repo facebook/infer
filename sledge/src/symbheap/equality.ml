@@ -42,6 +42,7 @@ module Subst : sig
   val is_empty : t -> bool
   val length : t -> int
   val mem : t -> Term.t -> bool
+  val find : t -> Term.t -> Term.t option
   val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
   val iteri : t -> f:(key:Term.t -> data:Term.t -> unit) -> unit
   val for_alli : t -> f:(key:Term.t -> data:Term.t -> bool) -> bool
@@ -65,6 +66,7 @@ end = struct
   let is_empty = Map.is_empty
   let length = Map.length
   let mem = Map.mem
+  let find = Map.find
   let fold = Map.fold
   let iteri = Map.iteri
   let for_alli = Map.for_alli
@@ -636,6 +638,20 @@ let ppx_classes_diff x fs (r, s) =
 
 (** Existential Witnessing and Elimination *)
 
+let subst_invariant us s0 s =
+  assert (s0 == s || not (Subst.equal s0 s)) ;
+  assert (
+    Subst.iteri s ~f:(fun ~key ~data ->
+        (* dom of new entries not ito us *)
+        assert (
+          Option.for_all ~f:(Term.equal data) (Subst.find s0 key)
+          || not (Set.is_subset (Term.fv key) ~of_:us) ) ;
+        (* rep not ito us implies trm not ito us *)
+        assert (
+          Set.is_subset (Term.fv data) ~of_:us
+          || not (Set.is_subset (Term.fv key) ~of_:us) ) ) ;
+    true )
+
 type 'a zom = Zero | One of 'a | Many
 
 (* try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q] has at
@@ -680,12 +696,7 @@ let solve_interp_eq us e' (cls, subst) =
   |>
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
-    Option.iter subst' ~f:(fun subst' ->
-        Subst.iteri subst' ~f:(fun ~key ~data ->
-            assert (
-              Subst.mem subst key
-              || not (Set.is_subset (Term.fv key) ~of_:us) ) ;
-            assert (Set.is_subset (Term.fv data) ~of_:us) ) )]
+    Option.iter ~f:(subst_invariant us subst) subst']
 
 (* move equations from [cls] to [subst] which are between [Interpreted]
    terms and can be expressed, after normalizing with [subst], as [x ↦ u]
@@ -713,50 +724,88 @@ let rec solve_interp_eqs us (cls, subst) =
     pf "cls: @[%a@]@ subst: @[%a@]" pp_diff_cls (cls, cls') Subst.pp_diff
       (subst, subst')]
 
-(* move equations from [cls] (which is assumed to be normalized by [subst])
-   to [subst] which are between non-[Interpreted] terms and can be expressed
-   as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
+type cls_solve_state =
+  { rep_us: Term.t option  (** rep, that is ito us, for class *)
+  ; cls_us: Term.t list  (** cls that is ito us, or interpreted *)
+  ; rep_xs: Term.t option  (** rep, that is *not* ito us, for class *)
+  ; cls_xs: Term.t list  (** cls that is *not* ito us *) }
+
+let dom_trm e =
+  match (e : Term.t) with
+  | Ap2 (Memory, _, (Var _ as v)) -> Some v
+  | _ when non_interpreted e -> Some e
+  | _ -> None
+
+(** move equations from [cls] (which is assumed to be normalized by [subst])
+    to [subst] which can be expressed as [x ↦ u] where [x] is
+    non-interpreted [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
+    [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
   ;
-  let rep_ito_us, cls_not_ito_us, cls_delay =
-    List.fold cls ~init:(None, [], [])
-      ~f:(fun (rep_ito_us, cls_not_ito_us, cls_delay) trm ->
-        if non_interpreted trm then
-          if Set.is_subset (Term.fv trm) ~of_:us then
-            match rep_ito_us with
-            | Some rep when Term.compare rep trm <= 0 ->
-                (rep_ito_us, cls_not_ito_us, trm :: cls_delay)
-            | Some rep -> (Some trm, cls_not_ito_us, rep :: cls_delay)
-            | None -> (Some trm, cls_not_ito_us, cls_delay)
-          else (rep_ito_us, trm :: cls_not_ito_us, cls_delay)
-        else (rep_ito_us, cls_not_ito_us, trm :: cls_delay) )
+  let compare e f =
+    [%compare: kind * Term.t] (classify e, e) (classify f, f)
   in
-  ( match rep_ito_us with
-  | None -> (cls, subst)
-  | Some rep_ito_us ->
-      let cls =
-        if List.is_empty cls_delay then [] else rep_ito_us :: cls_delay
+  let {rep_us; cls_us; rep_xs; cls_xs} =
+    List.fold cls ~init:{rep_us= None; cls_us= []; rep_xs= None; cls_xs= []}
+      ~f:(fun ({rep_us; cls_us; rep_xs; cls_xs} as s) trm ->
+        if Set.is_subset (Term.fv trm) ~of_:us then
+          match rep_us with
+          | Some rep when compare rep trm <= 0 ->
+              {s with cls_us= trm :: cls_us}
+          | Some rep -> {s with rep_us= Some trm; cls_us= rep :: cls_us}
+          | None -> {s with rep_us= Some trm}
+        else
+          match rep_xs with
+          | Some rep -> (
+              if compare rep trm <= 0 then
+                match dom_trm trm with
+                | Some trm -> {s with cls_xs= trm :: cls_xs}
+                | None -> {s with cls_us= trm :: cls_us}
+              else
+                match dom_trm rep with
+                | Some rep ->
+                    {s with rep_xs= Some trm; cls_xs= rep :: cls_xs}
+                | None -> {s with rep_xs= Some trm; cls_us= rep :: cls_us} )
+          | None -> {s with rep_xs= Some trm} )
+  in
+  ( match rep_us with
+  | Some rep_us ->
+      let cls = rep_us :: cls_us in
+      let cls, cls_xs =
+        match rep_xs with
+        | Some rep -> (
+          match dom_trm rep with
+          | Some rep -> (cls, rep :: cls_xs)
+          | None -> (rep :: cls, cls_xs) )
+        | None -> (cls, cls_xs)
       in
       let subst =
-        List.fold cls_not_ito_us ~init:subst ~f:(fun subst trm_not_ito_us ->
-            Subst.compose1 ~key:trm_not_ito_us ~data:rep_ito_us subst )
+        List.fold cls_xs ~init:subst ~f:(fun subst trm_xs ->
+            Subst.compose1 ~key:trm_xs ~data:rep_us subst )
       in
-      (cls, subst) )
+      (cls, subst)
+  | None -> (
+    match rep_xs with
+    | Some rep_xs ->
+        let cls = rep_xs :: cls_us in
+        let subst =
+          List.fold cls_xs ~init:subst ~f:(fun subst trm_xs ->
+              Subst.compose1 ~key:trm_xs ~data:rep_xs subst )
+        in
+        (cls, subst)
+    | None -> (cls, subst) ) )
   |>
   [%Trace.retn fun {pf} (cls', subst') ->
     pf "cls: @[%a@]@ subst: @[%a@]" pp_diff_cls (cls, cls') Subst.pp_diff
       (subst, subst') ;
-    Subst.iteri subst' ~f:(fun ~key ~data ->
-        assert (
-          Subst.mem subst key || not (Set.is_subset (Term.fv key) ~of_:us)
-        ) ;
-        assert (Set.is_subset (Term.fv data) ~of_:us) )]
+    subst_invariant us subst subst']
 
-(* move equations between terms in [rep]'s class [cls] from [classes] to
-   [subst] which can be expressed, after normalizing with [subst], as [x ↦
-   u] where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
+(** move equations between terms in [rep]'s class [cls] from [classes] to
+    [subst] which can be expressed, after normalizing with [subst], as
+    [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
+    [fv u ⊆ us ∪ xs] *)
 let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   let classes0 = classes in
   [%Trace.call fun {pf} ->
@@ -764,9 +813,11 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
       Subst.pp subst]
   ;
   let cls, cls_not_ito_us_xs =
-    List.partition_tf ~f:(fun e -> Set.is_subset (Term.fv e) ~of_:us_xs) cls
+    List.partition_tf
+      ~f:(fun e -> Set.is_subset (Term.fv e) ~of_:us_xs)
+      (rep :: cls)
   in
-  let cls, subst = solve_interp_eqs us (rep :: cls, subst) in
+  let cls, subst = solve_interp_eqs us (cls, subst) in
   let cls, subst = solve_uninterp_eqs us (cls, subst) in
   let cls = List.rev_append cls_not_ito_us_xs cls in
   let cls =
@@ -843,10 +894,12 @@ let solve_for_xs r us xs (classes, subst, us_xs) =
       if Subst.mem subst x then (classes, subst, us_xs)
       else solve_concat_extracts r us x (classes, subst, us_xs) )
 
-(* move equations from [classes] to [subst] which can be expressed, after
-   normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
+(** move equations from [classes] to [subst] which can be expressed, after
+    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us]
+    and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
 let solve_classes r (classes, subst, us) xs =
-  [%Trace.call fun {pf} -> pf "xs: {@[%a@]}" Var.Set.pp xs]
+  [%Trace.call fun {pf} ->
+    pf "us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
     let classes, subst =
@@ -867,15 +920,18 @@ let pp_vss fs vss =
     (List.pp ";@ " (fun fs vs -> Format.fprintf fs "{@[%a@]}" Var.Set.pp vs))
     vss
 
-(* enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution subst
-   with entries [x ↦ u] where [r] entails [x = u] and [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈
-   ⋃ⱼ₌₁ⁱ⁻¹ vⱼ ⊇ fv u] *)
+(** enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution
+    subst with entries [x ↦ u] where [r] entails [x = u] and
+    [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and
+    [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and otherwise
+    [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
   [%Trace.call fun {pf} -> pf "%a@ @[%a@]" pp_vss vss pp_classes r]
   ;
-  List.fold ~f:(solve_classes r)
-    ~init:(classes r, Subst.empty, Var.Set.empty)
-    vss
+  let us, vss =
+    match vss with us :: vss -> (us, vss) | [] -> (Var.Set.empty, vss)
+  in
+  List.fold ~f:(solve_classes r) ~init:(classes r, Subst.empty, us) vss
   |> snd3
   |>
   [%Trace.retn fun {pf} subst ->
@@ -886,11 +942,16 @@ let solve_for_vars vss r =
           || fail "@[%a = %a not entailed by@ %a@]" Term.pp key Term.pp data
                pp_classes r () ) ;
         assert (
-          List.exists vss ~f:(fun vs ->
-              match
-                ( Set.is_subset (Term.fv key) ~of_:vs
-                , Set.is_subset (Term.fv data) ~of_:vs )
-              with
-              | false, true -> true
-              | true, false -> assert false
-              | _ -> false ) ) )]
+          List.fold_until vss ~init:us
+            ~f:(fun us xs ->
+              let us_xs = Set.union us xs in
+              let ks = Term.fv key in
+              let ds = Term.fv data in
+              if
+                Set.is_subset ks ~of_:us_xs
+                && Set.is_subset ds ~of_:us_xs
+                && ( Set.is_subset ds ~of_:us
+                   || not (Set.is_subset ks ~of_:us) )
+              then Stop true
+              else Continue us_xs )
+            ~finish:(fun _ -> false) ) )]

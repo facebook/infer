@@ -82,7 +82,8 @@ module Subst : sig
 end
 
 val solve_for_vars : Var.Set.t list -> t -> Subst.t
-(** [solve_for_vars \[v₁;…\] r] is a solution substitution that is
-    entailed by [r] and consists of oriented equalities [x ↦ u] such that
-    [fv x ⊈ vᵢ ⊇ fv u] where [i] is minimal such that [vᵢ]
-    distinguishes [fv x] and [fv u], if one exists. *)
+(** [solve_for_vars vss r] is a solution substitution that is entailed by
+    [r] and consists of oriented equalities [x ↦ e] that map terms [x]
+    with free variables contained in (the union of) a prefix [uss] of [vss]
+    to terms [e] with free variables contained in as short a prefix of [uss]
+    as possible. *)

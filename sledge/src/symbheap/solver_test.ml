@@ -69,7 +69,7 @@ let%test_module _ =
       [%expect
         {|
         ( infer_frame:   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
-        ) infer_frame:   emp |}]
+        ) infer_frame:   %m_8 = %n_9 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -109,7 +109,8 @@ let%test_module _ =
             %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ * %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
           \- ∃ %m_8, %n_9 .
             ∃ %m_10 .   %m_8 = %n_9 ∧ %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
-        ) infer_frame: ∃ %m_10 .   %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
+        ) infer_frame:
+          ∃ %m_10 .   %m_8 = %n_9 ∧ %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
 
     let%expect_test _ =
       check_frame
@@ -271,5 +272,16 @@ let%test_module _ =
           * %l_6 -[ %l_6, 16 )-> ⟨(8 × %n_9),%a_2⟩
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
+        ) infer_frame: |}]
+
+    (* Incompleteness: cannot witness existentials to satisfy non-equality
+       pure constraints *)
+    let%expect_test _ =
+      let subtrahend = Sh.and_ (Term.eq m a) (Sh.pure (Term.dq m !0)) in
+      let minuend = Sh.extend_us (Var.Set.of_ a_) Sh.emp in
+      infer_frame minuend [m_] subtrahend ;
+      [%expect
+        {|
+        ( infer_frame:   emp \- ∃ %m_8 .   %a_1 = %m_8 ∧ (%a_1 ≠ 0) ∧ emp
         ) infer_frame: |}]
   end )
