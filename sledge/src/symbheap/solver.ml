@@ -578,14 +578,14 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   List.fold_option dnf_minuend
     ~init:(Sh.false_ (Set.union minuend.us xs))
     ~f:(fun remainders minuend ->
-      [%Trace.call fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend]
+      ([%Trace.call fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend]
       ;
       let ys, min = Sh.bind_exists minuend ~wrt:xs in
       let us = min.us in
       let com = Sh.emp in
       let+ remainder =
         List.find_map dnf_subtrahend ~f:(fun sub ->
-            [%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
+            ([%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
             ;
             let sub = Sh.extend_us us sub in
             let ws, sub = Sh.bind_exists sub ~wrt:xs in
@@ -595,13 +595,13 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
             let+ remainder =
               excise {us; com; min; xs; sub; zs; pgs= true}
             in
-            Sh.exists (Set.union ys ws) remainder
+            Sh.exists (Set.union ys ws) remainder)
             |>
-            [%Trace.retn fun {pf} -> pf "%a" Sh.pp] )
+            [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )
       in
-      Sh.or_ remainders remainder
+      Sh.or_ remainders remainder)
       |>
-      [%Trace.retn fun {pf} -> pf "%a" Sh.pp] )
+      [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )
 
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
