@@ -1125,6 +1125,15 @@ let iter e ~f =
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> ()
 
+let exists e ~f =
+  match e with
+  | Ap1 (_, x) -> f x
+  | Ap2 (_, x, y) -> f x || f y
+  | Ap3 (_, x, y, z) -> f x || f y || f z
+  | ApN (_, xs) | RecN (_, xs) -> Vector.exists ~f xs
+  | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> false
+
 let fold e ~init:s ~f =
   match e with
   | Ap1 (_, x) -> f x s

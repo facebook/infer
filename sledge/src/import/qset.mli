@@ -103,6 +103,9 @@ val for_all : ('a, _) t -> f:('a -> Q.t -> bool) -> bool
 val iter : ('a, _) t -> f:('a -> Q.t -> unit) -> unit
 (** Iterate over the elements in ascending order. *)
 
+val exists : ('a, _) t -> f:('a -> Q.t -> bool) -> bool
+(** Search for an element satisfying a predicate. *)
+
 val min_elt : ('a, _) t -> ('a * Q.t) option
 (** Minimum element. *)
 

@@ -23,14 +23,14 @@ let classify e =
 
 let interpreted e = equal_kind (classify e) Interpreted
 let non_interpreted e = not (interpreted e)
+let uninterpreted e = equal_kind (classify e) Uninterpreted
 
 let rec fold_max_solvables e ~init ~f =
-  if interpreted e then
-    Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
-  else f e init
+  if non_interpreted e then f e init
+  else Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
 
 let rec iter_max_solvables e ~f =
-  if interpreted e then Term.iter ~f:(iter_max_solvables ~f) e else f e
+  if non_interpreted e then f e else Term.iter ~f:(iter_max_solvables ~f) e
 
 (** Solution Substitutions *)
 module Subst : sig
@@ -52,7 +52,7 @@ module Subst : sig
   val extend : Term.t -> t -> t option
   val map_entries : f:(Term.t -> Term.t) -> t -> t
   val to_alist : t -> (Term.t * Term.t) list
-  val trim : bound:Var.Set.t -> Var.Set.t -> t -> t
+  val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
 end = struct
   type t = Term.t Term.Map.t [@@deriving compare, equal, sexp]
 
@@ -114,20 +114,39 @@ end = struct
           if Term.equal data' data then s else Map.set s ~key ~data:data'
         else Map.remove s key |> Map.add_exn ~key:key' ~data:data' )
 
-  (** [trim bound kills subst] is [subst] without mappings that mention
-      [kills] or [bound ∩ fv x] for removed entries [x ↦ u] *)
-  let rec trim ~bound ks s =
-    let ks', s' =
-      Map.fold s ~init:(ks, s) ~f:(fun ~key ~data (ks, s) ->
-          let fv_key = Term.fv key in
-          let fv_data = Term.fv data in
-          if Set.disjoint ks (Set.union fv_key fv_data) then (ks, s)
-          else
-            let ks = Set.union ks (Set.inter bound fv_key) in
-            let s = Map.remove s key in
-            (ks, s) )
+  (** Holds only if [true ⊢ ∃xs. e=f]. Clients assume
+      [not (is_valid_eq xs e f)] implies [not (is_valid_eq ys e f)] for
+      [ys ⊆ xs]. *)
+  let is_valid_eq xs e f =
+    let is_var_in xs e = Option.exists ~f:(Set.mem xs) (Var.of_term e) in
+    ( is_var_in xs e || is_var_in xs f
+    || (uninterpreted e && Term.exists ~f:(is_var_in xs) e)
+    || (uninterpreted f && Term.exists ~f:(is_var_in xs) f) )
+    $> fun b ->
+    [%Trace.info
+      "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Term.pp e Term.pp f b]
+
+  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
+      and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
+      ks ∩ fv(τ) = ∅. *)
+  let partition_valid xs s =
+    (* Move equations e=f from s to t when ∃ks.e=f fails to be provably
+       valid. When moving an equation, reduce ks by fv(e=f) to maintain ks ∩
+       fv(t) = ∅. This reduction may cause equations in s to no longer be
+       valid, so loop until no change. *)
+    let rec partition_valid_ t ks s =
+      let t', ks', s' =
+        Map.fold s ~init:(t, ks, s) ~f:(fun ~key ~data (t, ks, s) ->
+            if is_valid_eq ks key data then (t, ks, s)
+            else
+              let t = Map.set ~key ~data t
+              and ks = Set.diff ks (Set.union (Term.fv key) (Term.fv data))
+              and s = Map.remove s key in
+              (t, ks, s) )
+      in
+      if s' != s then partition_valid_ t' ks' s' else (t', ks', s')
     in
-    if s' != s then trim ~bound ks' s' else s'
+    partition_valid_ empty xs s
 end
 
 (** Theory Solver *)

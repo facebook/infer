@@ -53,14 +53,14 @@ let excise_exists goal =
     in
     if Equality.Subst.is_empty solutions_for_xs then goal
     else
-      let sub = Sh.norm solutions_for_xs goal.sub in
-      let removed, survived =
-        Set.diff_inter goal.xs (Sh.fv ~ignore_cong:() sub)
+      let removed =
+        Set.diff goal.xs
+          (Sh.fv ~ignore_cong:() (Sh.norm solutions_for_xs goal.sub))
       in
       if Set.is_empty removed then goal
       else
-        let witnesses =
-          Equality.Subst.trim ~bound:goal.xs survived solutions_for_xs
+        let _, removed, witnesses =
+          Equality.Subst.partition_valid removed solutions_for_xs
         in
         if Equality.Subst.is_empty witnesses then goal
         else (
@@ -68,13 +68,13 @@ let excise_exists goal =
               pf "@[<2>excise_exists @[%a%a@]@]" Var.Set.pp_xs removed
                 Equality.Subst.pp witnesses ) ;
           let us = Set.union goal.us removed in
-          let xs = survived in
+          let xs = Set.diff goal.xs removed in
           let min =
             Equality.Subst.fold
               ~f:(fun ~key ~data -> Sh.and_ (Term.eq key data))
               witnesses ~init:goal.min
           in
-          {goal with us; min; xs; sub; pgs= true} )
+          {goal with us; min; xs; pgs= true} )
 
 (* ad hoc treatment to drop tautologous constraints such as ∃x,y. x = y
    where x and y do not appear elsewhere *)

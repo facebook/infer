@@ -246,6 +246,7 @@ val rename : Var.Subst.t -> t -> t
 (** Traverse *)
 
 val iter : t -> f:(t -> unit) -> unit
+val exists : t -> f:(t -> bool) -> bool
 val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
 val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a

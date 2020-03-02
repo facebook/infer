@@ -7,12 +7,16 @@
 
 let%test_module _ =
   ( module struct
-    (* let () = Trace.init ~margin:160 ~config:all () *)
-
     let () =
       Trace.init ~margin:68
         ~config:(Result.ok_exn (Trace.parse "+Solver.infer_frame"))
         ()
+
+    (* let () =
+     *   Trace.init ~margin:160
+     *     ~config:
+     *       (Result.ok_exn (Trace.parse "+Solver.infer_frame+Solver.excise"))
+     *     () *)
 
     let infer_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q
@@ -267,9 +271,5 @@ let%test_module _ =
           * %l_6 -[ %l_6, 16 )-> ⟨(8 × %n_9),%a_2⟩
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
-        ) infer_frame:
-            %a_1 = %a_2
-          ∧ 2 = %n_9
-          ∧ 16 = %m_8
-          ∧ (%l_6 + 16) -[ %l_6, 16 )-> ⟨0,%a_3⟩ |}]
+        ) infer_frame: |}]
   end )

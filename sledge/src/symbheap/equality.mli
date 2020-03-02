@@ -71,7 +71,11 @@ module Subst : sig
   val is_empty : t -> bool
   val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
   val norm : t -> Term.t -> Term.t
-  val trim : bound:Var.Set.t -> Var.Set.t -> t -> t
+
+  val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
+  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
+      and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
+      ks ∩ fv(τ) = ∅. *)
 end
 
 val solve_for_vars : Var.Set.t list -> t -> Subst.t

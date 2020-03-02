@@ -114,4 +114,5 @@ let fold_map m ~f ~init:s =
 let for_all m ~f = Map.for_alli m ~f:(fun ~key ~data -> f key data)
 let map_counts m ~f = Map.mapi m ~f:(fun ~key ~data -> f key data)
 let iter m ~f = Map.iteri m ~f:(fun ~key ~data -> f key data)
+let exists m ~f = Map.existsi m ~f:(fun ~key ~data -> f key data)
 let to_list m = Map.to_alist m
