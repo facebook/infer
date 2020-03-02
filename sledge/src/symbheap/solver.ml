@@ -560,11 +560,12 @@ let excise_heap ({min; sub} as goal) =
   | Some goal -> Some {goal with pgs= true}
   | None -> Some goal
 
-let rec excise ({min; xs; sub; zs; pgs} as goal) =
+let rec excise ({us; min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
   if Sh.is_false min then
     Some (Sh.false_ (Set.diff (Set.union min.us xs) zs))
-  else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
+  else if Sh.is_emp sub then
+    Some (Sh.exists zs (Sh.extend_us (Set.union us xs) min))
   else if Sh.is_false sub then None
   else if pgs then
     {goal with pgs= false} |> excise_exists |> excise_pure >>= excise_heap
