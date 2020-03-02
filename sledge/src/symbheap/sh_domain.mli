@@ -17,3 +17,5 @@ val create_summary :
   -> entry:t
   -> current:t
   -> summary * t
+
+val simplify_states : bool ref

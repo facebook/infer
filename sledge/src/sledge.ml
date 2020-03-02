@@ -112,11 +112,15 @@ let analyze =
         "<string> select abstract domain; must be one of \"sh\" (default, \
          symbolic heap domain), \"globals\" (used-globals domain), or \
          \"unit\" (unit domain)"
+  and no_simplify_states =
+    flag "no-simplify-states" no_arg
+      ~doc:"do not simplify states during symbolic execution"
   in
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
     let skip_throw = not exceptions in
+    Sh_domain.simplify_states := not no_simplify_states ;
     exec {bound; skip_throw; function_summaries; globals} pgm
 
 let analyze_cmd =

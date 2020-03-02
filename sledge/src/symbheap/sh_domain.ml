@@ -9,13 +9,12 @@
 
 type t = Sh.t [@@deriving equal, sexp_of]
 
-let pp_simp fs q =
-  let q' = ref q in
-  [%Trace.printf "%a" (fun _ q -> q' := Sh.simplify q) q] ;
-  Sh.pp fs !q'
-
-let pp = pp_simp
+let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
 let report_fmt_thunk = Fn.flip pp
+
+(* set by cli *)
+let simplify_states = ref true
+let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
@@ -27,22 +26,23 @@ let init globals =
     | _ -> q )
 
 let join p q =
-  [%Trace.call fun {pf} -> pf "{ %a@ }@ { %a@ }" Sh.pp p Sh.pp q]
+  [%Trace.call fun {pf} -> pf "%a@ %a" pp p pp q]
   ;
-  Some (Sh.or_ p q)
+  Some (Sh.or_ p q) |> Option.map ~f:simplify
   |>
-  [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)]
+  [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" pp)]
 
 let is_false = Sh.is_false
 let dnf = Sh.dnf
-let exec_assume q b = Exec.assume q (Exp.term b)
-let exec_kill q r = Exec.kill q (Reg.var r)
+let exec_assume q b = Exec.assume q (Exp.term b) |> Option.map ~f:simplify
+let exec_kill q r = Exec.kill q (Reg.var r) |> simplify
 
 let exec_move q res =
   Exec.move q (Vector.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
+  |> simplify
 
 let exec_inst pre inst =
-  match (inst : Llair.inst) with
+  ( match (inst : Llair.inst) with
   | Move {reg_exps; _} ->
       Some
         (Exec.move pre
@@ -67,11 +67,13 @@ let exec_inst pre inst =
         ~len:(Exp.term len)
   | Free {ptr; _} -> Exec.free pre ~ptr:(Exp.term ptr)
   | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:Reg.var reg))
-  | Abort _ -> Exec.abort pre
+  | Abort _ -> Exec.abort pre )
+  |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw q r i es =
   Exec.intrinsic ~skip_throw q (Option.map ~f:Reg.var r) (Reg.var i)
     (List.map ~f:Exp.term es)
+  |> Option.map ~f:(Option.map ~f:simplify)
 
 let term_eq_class_has_only_vars_in fvs cong term =
   [%Trace.call fun {pf} ->
@@ -166,6 +168,8 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   let entry = and_eqs subst formals actuals q' in
   (* note: locals and formals are in scope *)
   assert (Set.is_subset (Set.add_list formals freturn_locals) ~of_:entry.us) ;
+  (* simplify *)
+  let entry = simplify entry in
   ( if not summaries then (entry, {areturn; subst; frame= Sh.emp})
   else
     let q'', frame =
@@ -182,7 +186,7 @@ let post locals _ q =
   [%Trace.call fun {pf} ->
     pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Reg.Set.pp locals Sh.pp q]
   ;
-  Sh.exists (Reg.Set.vars locals) q
+  Sh.exists (Reg.Set.vars locals) q |> simplify
   |>
   [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
 
@@ -219,6 +223,8 @@ let retn formals freturn {areturn; subst; frame} q =
   let q = Sh.rename inv_subst q in
   (* reconjoin frame *)
   Sh.star frame q
+  (* simplify *)
+  |> simplify
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
