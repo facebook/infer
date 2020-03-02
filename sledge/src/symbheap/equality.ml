@@ -21,16 +21,16 @@ let classify e =
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
 
+let interpreted e = equal_kind (classify e) Interpreted
+let non_interpreted e = not (interpreted e)
+
 let rec fold_max_solvables e ~init ~f =
-  match classify e with
-  | Interpreted ->
-      Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
-  | _ -> f e init
+  if interpreted e then
+    Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
+  else f e init
 
 let rec iter_max_solvables e ~f =
-  match classify e with
-  | Interpreted -> Term.iter ~f:(iter_max_solvables ~f) e
-  | _ -> f e
+  if interpreted e then Term.iter ~f:(iter_max_solvables ~f) e else f e
 
 (** Solution Substitutions *)
 module Subst : sig
@@ -261,8 +261,8 @@ and solve_ e f s =
       | q, ((Add _ | Mul _ | Integer _) as p) ) ->
       solve_poly p q s
   | Some (rep, var) ->
-      assert (Poly.(classify var <> Interpreted)) ;
-      assert (Poly.(classify rep <> Interpreted)) ;
+      assert (non_interpreted var) ;
+      assert (non_interpreted rep) ;
       extend ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
@@ -359,7 +359,7 @@ let invariant r =
   @@ fun () ->
   Subst.iteri r.rep ~f:(fun ~key:a ~data:_ ->
       (* no interpreted terms in carrier *)
-      assert (Poly.(classify a <> Interpreted)) ;
+      assert (non_interpreted a) ;
       (* carrier is closed under subterms *)
       iter_max_solvables a ~f:(fun b ->
           assert (
@@ -485,9 +485,9 @@ let fold_uses_of r t ~init ~f =
       Term.fold e ~init:s ~f:(fun sub s ->
           if Term.equal t sub then f s e else s )
     in
-    match classify e with
-    | Interpreted -> Term.fold e ~init:s ~f:(fun d s -> fold_ ~f d ~init:s)
-    | _ -> s
+    if interpreted e then
+      Term.fold e ~init:s ~f:(fun d s -> fold_ ~f d ~init:s)
+    else s
   in
   Subst.fold r.rep ~init ~f:(fun ~key:trm ~data:rep s ->
       let f trm s = fold_ trm ~init:s ~f in
@@ -651,14 +651,13 @@ let rec solve_interp_eqs us (cls, subst) =
   let rec solve_interp_eqs_ cls' (cls, subst) =
     match cls with
     | [] -> (cls', subst)
-    | trm :: cls -> (
+    | trm :: cls ->
         let trm' = Subst.norm subst trm in
-        match classify trm' with
-        | Interpreted -> (
+        if interpreted trm' then
           match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
-          | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
-        | _ -> solve_interp_eqs_ (trm' :: cls') (cls, subst) )
+          | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst)
+        else solve_interp_eqs_ (trm' :: cls') (cls, subst)
   in
   let cls', subst' = solve_interp_eqs_ [] (cls, subst) in
   ( if subst' != subst then solve_interp_eqs us (cls', subst')
@@ -678,7 +677,7 @@ let solve_uninterp_eqs us (cls, subst) =
   let rep_ito_us, cls_not_ito_us, cls_delay =
     List.fold cls ~init:(None, [], [])
       ~f:(fun (rep_ito_us, cls_not_ito_us, cls_delay) trm ->
-        if not (equal_kind (classify trm) Interpreted) then
+        if non_interpreted trm then
           if Set.is_subset (Term.fv trm) ~of_:us then
             match rep_ito_us with
             | Some rep when Term.compare rep trm <= 0 ->
