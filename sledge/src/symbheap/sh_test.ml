@@ -7,105 +7,172 @@
 
 let%test_module _ =
   ( module struct
+    open Sh
+
     (* let () =
      *   Trace.init ~margin:160 ~config:(Result.ok_exn (Trace.parse "+Sh")) () *)
 
     let () = Trace.init ~margin:68 ~config:Trace.none ()
-    let pp = Format.printf "@\n%a@." Sh.pp
-    let pp_djn = Format.printf "@\n%a@." Sh.pp_djn
+    let pp = Format.printf "@\n%a@." pp
+    let pp_raw = Format.printf "@\n%a@." pp_raw
+    let pp_djn = Format.printf "@\n%a@." pp_djn
     let ( ~$ ) = Var.Set.of_list
     let ( ! ) i = Term.integer (Z.of_int i)
+    let ( - ) = Term.sub
     let ( = ) = Term.eq
+    let f = Term.unsigned 8
     let wrt = Var.Set.empty
+    let a_, wrt = Var.fresh "a" ~wrt
+    let b_, wrt = Var.fresh "b" ~wrt
+    let c_, wrt = Var.fresh "c" ~wrt
+    let d_, wrt = Var.fresh "d" ~wrt
+    let e_, wrt = Var.fresh "e" ~wrt
     let x_, wrt = Var.fresh "x" ~wrt
-    let y_, _ = Var.fresh "y" ~wrt
+    let y_, wrt = Var.fresh "y" ~wrt
+    let _ = wrt
+    let a = Term.var a_
+    let b = Term.var b_
+    let c = Term.var c_
+    let d = Term.var d_
+    let e = Term.var e_
     let x = Term.var x_
     let y = Term.var y_
 
     let%expect_test _ =
-      let p = Sh.(exists ~$[x_] (extend_us ~$[x_] emp)) in
-      let q = Sh.(pure (x = !0)) in
+      let p = exists ~$[x_] (extend_us ~$[x_] emp) in
+      let q = pure (x = !0) in
       pp p ;
       pp q ;
-      pp (Sh.star p q) ;
+      pp (star p q) ;
       [%expect
         {|
-        ∃ %x_1 .   emp
+        ∃ %x_6 .   emp
 
-          0 = %x_1 ∧ emp
+          0 = %x_6 ∧ emp
 
-          0 = %x_1 ∧ emp |}]
+          0 = %x_6 ∧ emp |}]
 
     let%expect_test _ =
       let q =
-        Sh.(
-          or_
-            (pure (x = !0))
-            (exists
-               ~$[x_]
-               (or_
-                  (and_ (x = !1) (pure (y = !1)))
-                  (exists ~$[x_] (pure (x = !2))))))
+        or_
+          (pure (x = !0))
+          (exists
+             ~$[x_]
+             (or_
+                (and_ (x = !1) (pure (y = !1)))
+                (exists ~$[x_] (pure (x = !2)))))
       in
       pp q ;
-      pp_djn (Sh.dnf q) ;
+      pp_djn (dnf q) ;
       [%expect
         {|
-          ( (  0 = %x_1 ∧ emp)
-          ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+          ( (  0 = %x_6 ∧ emp)
+          ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
 
-        ( (∃ %x_1, %x_2 .   2 = %x_2 ∧ (%x_2 = 2) ∧ emp)
-        ∨ (∃ %x_1 .   1 = %x_1 = %y_2 ∧ (%x_1 = 1) ∧ (%y_2 = 1) ∧ emp)
-        ∨ (  0 = %x_1 ∧ (%x_1 = 0) ∧ emp)
+        ( (∃ %x_6, %x_7 .   2 = %x_7 ∧ (%x_7 = 2) ∧ emp)
+        ∨ (∃ %x_6 .   1 = %x_6 = %y_7 ∧ (%x_6 = 1) ∧ (%y_7 = 1) ∧ emp)
+        ∨ (  0 = %x_6 ∧ (%x_6 = 0) ∧ emp)
         ) |}]
 
     let%expect_test _ =
       let q =
-        Sh.(
-          exists
-            ~$[x_]
-            (or_
-               (pure (x = !0))
-               (exists
-                  ~$[x_]
-                  (or_
-                     (and_ (x = !1) (pure (y = !1)))
-                     (exists ~$[x_] (pure (x = !2)))))))
+        exists
+          ~$[x_]
+          (or_
+             (pure (x = !0))
+             (exists
+                ~$[x_]
+                (or_
+                   (and_ (x = !1) (pure (y = !1)))
+                   (exists ~$[x_] (pure (x = !2))))))
       in
       pp q ;
-      pp_djn (Sh.dnf q) ;
+      pp_djn (dnf q) ;
       [%expect
         {|
           ( (  0 = _ ∧ emp)
-          ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+          ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
 
-        ( (∃ %x_1, %x_3, %x_4 .   2 = %x_4 ∧ (%x_4 = 2) ∧ emp)
-        ∨ (∃ %x_1, %x_3 .   1 = %y_2 = %x_3 ∧ (%y_2 = 1) ∧ (%x_3 = 1) ∧ emp)
-        ∨ (∃ %x_1 .   0 = %x_1 ∧ (%x_1 = 0) ∧ emp)
+        ( (∃ %x_6, %x_8, %x_9 .   2 = %x_9 ∧ (%x_9 = 2) ∧ emp)
+        ∨ (∃ %x_6, %x_8 .   1 = %y_7 = %x_8 ∧ (%y_7 = 1) ∧ (%x_8 = 1) ∧ emp)
+        ∨ (∃ %x_6 .   0 = %x_6 ∧ (%x_6 = 0) ∧ emp)
         ) |}]
 
     let%expect_test _ =
       let q =
-        Sh.(
-          exists
-            ~$[x_]
-            (or_
-               (pure (x = !0))
-               (exists
-                  ~$[x_]
-                  (or_
-                     (and_ (x = !1) (pure (y = !1)))
-                     (exists ~$[x_] (pure (x = !2)))))))
+        exists
+          ~$[x_]
+          (or_
+             (pure (x = !0))
+             (exists
+                ~$[x_]
+                (or_
+                   (and_ (x = !1) (pure (y = !1)))
+                   (exists ~$[x_] (pure (x = !2))))))
       in
       pp q ;
-      pp (Sh.simplify q) ;
+      pp (simplify q) ;
       [%expect
         {|
         ( (  0 = _ ∧ emp)
-        ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+        ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
         )
 
         ( (  emp) ∨ (  ( (  emp) ∨ (  emp) )) ) |}]
+
+    let of_eqs l =
+      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
+
+    let%expect_test _ =
+      let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in
+      pp q ;
+      let q' = simplify q in
+      pp_raw q' ;
+      pp q' ;
+      [%expect
+        {|
+        ∃ %x_6 .
+          (((u8) %y_7) + 1) = %y_7
+        ∧ %x_6 = ((u8) %x_6)
+        ∧ ((u8) %y_7) = ((u8) (((u8) %y_7) + 1))
+        ∧ emp
+
+          -1 ∧ emp
+
+          emp |}]
+
+    let%expect_test _ =
+      let q =
+        exists
+          ~$[a_; c_; d_; e_]
+          (star
+             (pure (Term.eq_concat (!16, e) [|(!8, a); (!8, d)|]))
+             (or_
+                (pure (Term.dq x !0))
+                (exists
+                   (Var.Set.of_list [b_])
+                   (pure (Term.eq_concat (!8, a) [|(!4, c); (!4, b)|])))))
+      in
+      pp_raw q ;
+      let q' = simplify q in
+      pp_raw q' ;
+      pp q' ;
+      [%expect
+        {|
+        ∃ %a_1, %c_3, %d_4, %e_5 .
+          (⟨8,%a_1⟩^⟨8,%d_4⟩) = %e_5
+        ∧ (⟨16,%e_5⟩ = (⟨8,%a_1⟩^⟨8,%d_4⟩))
+        ∧ emp
+        * ( (  (%x_6 ≠ 0) ∧ emp)
+          ∨ (∃ %b_2 .
+               (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1
+             ∧ (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩))
+             ∧ emp)
+          )
+
+          -1 ∧ emp * ( (  (%x_6 ≠ 0) ∧ emp) ∨ (  -1 ∧ emp) )
+
+          ( (  (%x_6 ≠ 0) ∧ emp) ∨ (  emp) ) |}]
   end )
