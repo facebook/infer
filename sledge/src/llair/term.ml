@@ -675,134 +675,6 @@ let rec simp_or x y =
   | _ when equal x y -> x
   | _ -> Ap2 (Or, x, y)
 
-(* comparison *)
-
-let simp_lt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
-  | _ -> Ap2 (Lt, x, y)
-
-let simp_le x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
-  | _ -> Ap2 (Le, x, y)
-
-let simp_ord x y = Ap2 (Ord, x, y)
-let simp_uno x y = Ap2 (Uno, x, y)
-
-let rec simp_eq x y =
-  match
-    match Ordering.of_int (compare x y) with
-    | Equal -> None
-    | Less -> Some (x, y)
-    | Greater -> Some (y, x)
-  with
-  (* e = e ==> true *)
-  | None -> bool true
-  | Some (x, y) -> (
-    match (x, y) with
-    (* i = j ==> false when i ≠ j *)
-    | Integer _, Integer _ -> bool false
-    (* b = false ==> ¬b *)
-    | b, Integer {data} when Z.is_false data && is_boolean b -> simp_not b
-    (* b = true ==> b *)
-    | b, Integer {data} when Z.is_true data && is_boolean b -> b
-    (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
-    | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
-        simp_cond c (simp_eq e t) (simp_eq e f)
-    | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
-      , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
-        Ap2 (Eq, x, y)
-    (* x = α ==> ⟨x,|α|⟩ = α *)
-    | ( x
-      , ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
-        a ) )
-     |( ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
-        a )
-      , x ) ->
-        simp_eq (Ap2 (Memory, agg_size_exn a, x)) a
-    | x, y -> Ap2 (Eq, x, y) )
-
-and simp_dq x y =
-  match (x, y) with
-  (* e ≠ (c ? t : f) ==> (c ? e ≠ t : e ≠ f) *)
-  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
-      simp_cond c (simp_dq e t) (simp_dq e f)
-  | _ -> (
-    match simp_eq x y with
-    | Ap2 (Eq, x, y) -> Ap2 (Dq, x, y)
-    | b -> simp_not b )
-
-(* negation-normal form *)
-and simp_not term =
-  match term with
-  (* ¬(x = y) ==> x ≠ y *)
-  | Ap2 (Eq, x, y) -> simp_dq x y
-  (* ¬(x ≠ y) ==> x = y *)
-  | Ap2 (Dq, x, y) -> simp_eq x y
-  (* ¬(x < y) ==> y <= x *)
-  | Ap2 (Lt, x, y) -> simp_le y x
-  (* ¬(x <= y) ==> y < x *)
-  | Ap2 (Le, x, y) -> simp_lt y x
-  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | Ap2 (Ord, x, y) -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | Ap2 (Uno, x, y) -> simp_ord x y
-  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
-  | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
-  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
-  | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
-  (* ¬¬e ==> e *)
-  | Ap2 (Xor, Integer {data}, e) when Z.is_true data -> e
-  | Ap2 (Xor, e, Integer {data}) when Z.is_true data -> e
-  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
-  | Ap3 (Conditional, cnd, thn, els) ->
-      simp_cond cnd (simp_not thn) (simp_not els)
-  (* ¬i ==> -i-1 *)
-  | Integer {data} -> integer (Z.lognot data)
-  (* ¬e ==> true xor e *)
-  | e -> Ap2 (Xor, true_, e)
-
-(* bitwise *)
-
-let simp_xor x y =
-  match (x, y) with
-  (* i xor j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.logxor i j)
-  (* true xor b ==> ¬b *)
-  | Integer {data}, b when Z.is_true data && is_boolean b -> simp_not b
-  | b, Integer {data} when Z.is_true data && is_boolean b -> simp_not b
-  (* e xor e ==> 0 *)
-  | _ when equal x y -> zero
-  | _ -> Ap2 (Xor, x, y)
-
-let simp_shl x y =
-  match (x, y) with
-  (* i shl j *)
-  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
-      integer (Z.shift_left i (Z.to_int j))
-  (* e shl 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> Ap2 (Shl, x, y)
-
-let simp_lshr x y =
-  match (x, y) with
-  (* i lshr j *)
-  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
-      integer (Z.shift_right_trunc i (Z.to_int j))
-  (* e lshr 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> Ap2 (Lshr, x, y)
-
-let simp_ashr x y =
-  match (x, y) with
-  (* i ashr j *)
-  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
-      integer (Z.shift_right i (Z.to_int j))
-  (* e ashr 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> Ap2 (Ashr, x, y)
-
 (* memory *)
 
 let empty_agg = ApN (Concat, Vector.of_array [||])
@@ -930,6 +802,134 @@ and simp_concat xs =
   (if Vector.length xs = 1 then Vector.get xs 0 else ApN (Concat, xs))
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
+
+(* comparison *)
+
+let simp_lt x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
+  | _ -> Ap2 (Lt, x, y)
+
+let simp_le x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
+  | _ -> Ap2 (Le, x, y)
+
+let simp_ord x y = Ap2 (Ord, x, y)
+let simp_uno x y = Ap2 (Uno, x, y)
+
+let rec simp_eq x y =
+  match
+    match Ordering.of_int (compare x y) with
+    | Equal -> None
+    | Less -> Some (x, y)
+    | Greater -> Some (y, x)
+  with
+  (* e = e ==> true *)
+  | None -> bool true
+  | Some (x, y) -> (
+    match (x, y) with
+    (* i = j ==> false when i ≠ j *)
+    | Integer _, Integer _ -> bool false
+    (* b = false ==> ¬b *)
+    | b, Integer {data} when Z.is_false data && is_boolean b -> simp_not b
+    (* b = true ==> b *)
+    | b, Integer {data} when Z.is_true data && is_boolean b -> b
+    (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
+    | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
+        simp_cond c (simp_eq e t) (simp_eq e f)
+    | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
+      , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
+        Ap2 (Eq, x, y)
+    (* x = α ==> ⟨x,|α|⟩ = α *)
+    | ( x
+      , ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
+        a ) )
+     |( ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
+        a )
+      , x ) ->
+        simp_eq (Ap2 (Memory, agg_size_exn a, x)) a
+    | x, y -> Ap2 (Eq, x, y) )
+
+and simp_dq x y =
+  match (x, y) with
+  (* e ≠ (c ? t : f) ==> (c ? e ≠ t : e ≠ f) *)
+  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
+      simp_cond c (simp_dq e t) (simp_dq e f)
+  | _ -> (
+    match simp_eq x y with
+    | Ap2 (Eq, x, y) -> Ap2 (Dq, x, y)
+    | b -> simp_not b )
+
+(* negation-normal form *)
+and simp_not term =
+  match term with
+  (* ¬(x = y) ==> x ≠ y *)
+  | Ap2 (Eq, x, y) -> simp_dq x y
+  (* ¬(x ≠ y) ==> x = y *)
+  | Ap2 (Dq, x, y) -> simp_eq x y
+  (* ¬(x < y) ==> y <= x *)
+  | Ap2 (Lt, x, y) -> simp_le y x
+  (* ¬(x <= y) ==> y < x *)
+  | Ap2 (Le, x, y) -> simp_lt y x
+  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
+  | Ap2 (Ord, x, y) -> simp_uno x y
+  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
+  | Ap2 (Uno, x, y) -> simp_ord x y
+  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
+  | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
+  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
+  | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
+  (* ¬¬e ==> e *)
+  | Ap2 (Xor, Integer {data}, e) when Z.is_true data -> e
+  | Ap2 (Xor, e, Integer {data}) when Z.is_true data -> e
+  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
+  | Ap3 (Conditional, cnd, thn, els) ->
+      simp_cond cnd (simp_not thn) (simp_not els)
+  (* ¬i ==> -i-1 *)
+  | Integer {data} -> integer (Z.lognot data)
+  (* ¬e ==> true xor e *)
+  | e -> Ap2 (Xor, true_, e)
+
+(* bitwise *)
+
+let simp_xor x y =
+  match (x, y) with
+  (* i xor j *)
+  | Integer {data= i}, Integer {data= j} -> integer (Z.logxor i j)
+  (* true xor b ==> ¬b *)
+  | Integer {data}, b when Z.is_true data && is_boolean b -> simp_not b
+  | b, Integer {data} when Z.is_true data && is_boolean b -> simp_not b
+  (* e xor e ==> 0 *)
+  | _ when equal x y -> zero
+  | _ -> Ap2 (Xor, x, y)
+
+let simp_shl x y =
+  match (x, y) with
+  (* i shl j *)
+  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
+      integer (Z.shift_left i (Z.to_int j))
+  (* e shl 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> Ap2 (Shl, x, y)
+
+let simp_lshr x y =
+  match (x, y) with
+  (* i lshr j *)
+  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
+      integer (Z.shift_right_trunc i (Z.to_int j))
+  (* e lshr 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> Ap2 (Lshr, x, y)
+
+let simp_ashr x y =
+  match (x, y) with
+  (* i ashr j *)
+  | Integer {data= i}, Integer {data= j} when Z.sign j >= 0 ->
+      integer (Z.shift_right i (Z.to_int j))
+  (* e ashr 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> Ap2 (Ashr, x, y)
 
 (* records *)
 
