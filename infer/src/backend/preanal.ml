@@ -104,7 +104,7 @@ module InlineJavaSyntheticMethods = struct
 
   let process pdesc =
     let is_generated_for_lambda proc_name =
-      String.is_substring ~substring:"$Lambda$" (Procname.get_method proc_name)
+      String.is_substring ~substring:Config.java_lambda_marker_infix (Procname.get_method proc_name)
     in
     let should_inline proc_name =
       (not (is_generated_for_lambda proc_name))

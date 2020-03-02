@@ -255,12 +255,9 @@ let get_classpath_channel program = program.classpath.channel
 
 let get_models program = program.models
 
-(* this string should characterize the methods we generate for lambda rewriting *)
-let lambda_str = "$Lambda$"
-
 let add_class cn jclass program =
   (* [prefix] must be a fresh class name *)
-  let prefix = JBasics.cn_name cn ^ lambda_str in
+  let prefix = JBasics.cn_name cn ^ Config.java_lambda_marker_infix in
   (* we rewrite each class to replace invokedynamic (closure construction)
      with equivalent old-style Java code that implements a suitable Java interface *)
   let rewritten_jclass, new_classes = Javalib.remove_invokedynamics jclass ~prefix in

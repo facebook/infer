@@ -198,6 +198,8 @@ let infer_py_argparse_error_exit_code = 22
 
 let ivar_attributes = "ivar_attributes"
 
+let java_lambda_marker_infix = "$Lambda$"
+
 let lint_dotty_dir_name = "lint_dotty"
 
 let lint_issues_dir_name = "lint_issues"
