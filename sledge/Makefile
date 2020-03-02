@@ -67,7 +67,8 @@ watch: setup
 
 .PHONY: test
 test: setup
-	dune build @_build/dbg/runtest --auto-promote
+	-dune build @_build/dbg/runtest --auto-promote
+	dune build $(FMTS) --auto-promote
 
 .PHONY: ci-test
 ci-test: setup
