@@ -220,7 +220,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
         | RestartScheduler.ProcnameAlreadyLocked _ ->
-            clear_actives () ; true
+            clear_actives () ; restore_global_state old_state ; true
         | _ ->
             if not !logged_error then (
               let source_file = attributes.ProcAttributes.translation_unit in
