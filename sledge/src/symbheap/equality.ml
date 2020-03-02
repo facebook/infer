@@ -401,7 +401,9 @@ let congruent r a b =
 
 (** [lookup r a] is [b'] if [a ~ b = b'] for some equation [b = b'] in rep *)
 let lookup r a =
-  With_return.with_return
+  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp a pp r]
+  ;
+  ( With_return.with_return
   @@ fun {return} ->
   (* congruent specialized to assume [a] canonized and [b] non-interpreted *)
   let semi_congruent r a b =
@@ -409,15 +411,26 @@ let lookup r a =
   in
   Subst.iteri r.rep ~f:(fun ~key ~data ->
       if semi_congruent r a key then return data ) ;
-  a
+  a )
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
-(** rewrite a term into canonical form using rep and, for uninterpreted
+(** rewrite a term into canonical form using rep and, for non-interpreted
     terms, congruence composed with rep *)
 let rec canon r a =
-  match classify a with
-  | Interpreted -> Term.map ~f:(canon r) a
-  | Simplified | Uninterpreted -> lookup r (Term.map ~f:(canon r) a)
+  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp a pp r]
+  ;
+  ( match classify a with
   | Atomic -> Subst.apply r.rep a
+  | Interpreted -> Term.map ~f:(canon r) a
+  | Simplified | Uninterpreted -> (
+      let a' = Term.map ~f:(canon r) a in
+      match classify a' with
+      | Atomic -> Subst.apply r.rep a'
+      | Interpreted -> Term.map ~f:(canon r) a'
+      | Simplified | Uninterpreted -> lookup r a' ) )
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
 (** add a term to the carrier *)
 let rec extend a r =
