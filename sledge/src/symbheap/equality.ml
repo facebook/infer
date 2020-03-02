@@ -391,6 +391,8 @@ let invariant r =
 let true_ =
   {xs= Var.Set.empty; sat= true; rep= Subst.empty} |> check invariant
 
+let false_ = {true_ with sat= false}
+
 (** terms are congruent if equal after normalizing subterms *)
 let congruent r a b =
   Term.equal
@@ -560,6 +562,18 @@ let or_ us r s =
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (_, r) -> pf "%a" pp r]
+
+let rec and_term_ us e r =
+  let eq_false b r = and_eq us b Term.false_ r in
+  match (e : Term.t) with
+  | Integer {data} -> if Z.is_false data then false_ else true_
+  | Ap2 (And, a, b) -> and_term_ us a (and_term_ us b r)
+  | Ap2 (Eq, a, b) -> and_eq us a b r
+  | Ap2 (Xor, Integer {data}, a) when Z.is_true data -> eq_false a r
+  | Ap2 (Xor, a, Integer {data}) when Z.is_true data -> eq_false a r
+  | _ -> r
+
+let and_term us e r = and_term_ us e r |> extract_xs
 
 let and_eq us a b r =
   [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp a Term.pp b pp r]

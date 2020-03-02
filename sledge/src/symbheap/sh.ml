@@ -497,27 +497,17 @@ let or_ q1 q2 =
 let rec pure (e : Term.t) =
   [%Trace.call fun {pf} -> pf "%a" Term.pp e]
   ;
-  let us = Term.fv e in
-  let eq_false b =
-    let xs, cong = Equality.and_eq us b Term.false_ Equality.true_ in
-    exists_fresh xs {emp with us; cong; pure= [e]}
-  in
   ( match e with
-  | Integer {data} -> if Z.is_false data then false_ us else emp
-  (* ¬b ==> false = b *)
-  | Ap2 (Xor, Integer {data}, arg) when Z.is_true data -> eq_false arg
-  | Ap2 (Xor, arg, Integer {data}) when Z.is_true data -> eq_false arg
-  | Ap2 (And, e1, e2) -> star (pure e1) (pure e2)
   | Ap2 (Or, e1, e2) -> or_ (pure e1) (pure e2)
   | Ap3 (Conditional, cnd, thn, els) ->
       or_
         (star (pure cnd) (pure thn))
         (star (pure (Term.not_ cnd)) (pure els))
-  | Ap2 (Eq, e1, e2) ->
-      let xs, cong = Equality.(and_eq us e1 e2 true_) in
+  | _ ->
+      let us = Term.fv e in
+      let xs, cong = Equality.(and_term us e true_) in
       if Equality.is_false cong then false_ us
-      else exists_fresh xs {emp with us; cong; pure= [e]}
-  | _ -> {emp with us; pure= [e]} )
+      else exists_fresh xs {emp with us; cong; pure= [e]} )
   |>
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 

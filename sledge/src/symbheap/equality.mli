@@ -23,6 +23,9 @@ val true_ : t
 val and_eq : Var.Set.t -> Term.t -> Term.t -> t -> Var.Set.t * t
 (** Conjoin an equation to a relation. *)
 
+val and_term : Var.Set.t -> Term.t -> t -> Var.Set.t * t
+(** Conjoin a (Boolean) term to a relation. *)
+
 val and_ : Var.Set.t -> t -> t -> Var.Set.t * t
 (** Conjunction. *)
 
