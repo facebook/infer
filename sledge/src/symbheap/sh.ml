@@ -63,33 +63,51 @@ let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fold_vars ?ignore_cong fold_vars {us= _; xs= _; cong; pure; heap; djns}
+let fold_vars_stem ?ignore_cong {us= _; xs= _; cong; pure; heap; djns= _}
     ~init ~f =
-  List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
-  |> fun init ->
   List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
   |> fun init ->
-  List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
+  List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
   |> fun init ->
   if Option.is_some ignore_cong then init
   else
     Equality.fold_terms ~init cong ~f:(fun init -> Term.fold_vars ~f ~init)
 
+let fold_vars ?ignore_cong fold_vars q ~init ~f =
+  fold_vars_stem ?ignore_cong ~init ~f q
+  |> fun init ->
+  List.fold ~init q.djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
+
 (** Pretty-printing *)
 
-let var_strength q =
-  let rec var_strength_ xs m q =
-    let xs = Set.union xs q.xs in
-    fold_vars ~ignore_cong:() (var_strength_ xs) q ~init:m ~f:(fun m var ->
-        if not (Set.mem xs var) then Map.set m ~key:var ~data:`Universal
-        else
-          match Map.find m var with
-          | None -> Map.set m ~key:var ~data:`Anonymous
-          | Some `Anonymous -> Map.set m ~key:var ~data:`Existential
-          | Some _ -> m )
+let rec var_strength_ xs m q =
+  let add m v =
+    match Map.find m v with
+    | None -> Map.set m ~key:v ~data:`Anonymous
+    | Some `Anonymous -> Map.set m ~key:v ~data:`Existential
+    | Some _ -> m
   in
-  var_strength_ Var.Set.empty Var.Map.empty q
+  let xs = Set.union xs q.xs in
+  let m_stem =
+    fold_vars_stem ~ignore_cong:() q ~init:m ~f:(fun m var ->
+        if not (Set.mem xs var) then Map.set m ~key:var ~data:`Universal
+        else add m var )
+  in
+  let m =
+    List.fold ~init:m_stem q.djns ~f:(fun m djn ->
+        let ms = List.map ~f:(fun dj -> snd (var_strength_ xs m dj)) djn in
+        List.reduce_balanced ms ~f:(fun m1 m2 ->
+            Map.merge_skewed m1 m2 ~combine:(fun ~key:_ s1 s2 ->
+                match (s1, s2) with
+                | `Anonymous, `Anonymous -> `Anonymous
+                | `Universal, _ | _, `Universal -> `Universal
+                | `Existential, _ | _, `Existential -> `Existential ) )
+        |> Option.value ~default:m )
+  in
+  (m_stem, m)
 
+let var_strength_full q = var_strength_ Var.Set.empty Var.Map.empty q
+let var_strength q = snd (var_strength_full q)
 let pp_memory x fs (siz, arr) = Term.ppx x fs (Term.memory ~siz ~arr)
 
 let pp_seg x fs {loc; bas; len; siz; arr} =
@@ -163,10 +181,10 @@ let pp_us ?(pre = ("" : _ fmt)) fs us =
   if not (Set.is_empty us) then
     [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
 
-let rec pp_ ?var_strength vs parent_cong fs {us; xs; cong; pure; heap; djns}
-    =
+let rec pp_ ?var_strength vs parent_xs parent_cong fs
+    {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
-  let x v = Option.bind ~f:(fun m -> Map.find m v) var_strength in
+  let x v = Option.bind ~f:(fun (_, m) -> Map.find m v) var_strength in
   pp_us fs us ;
   let xs_d_vs, xs_i_vs =
     Set.diff_inter
@@ -201,33 +219,32 @@ let rec pp_ ?var_strength vs parent_cong fs {us; xs; cong; pure; heap; djns}
   List.pp
     ~pre:(if first then "  " else "@ * ")
     "@ * "
-    (pp_djn ?var_strength (Set.union vs (Set.union us xs)) cong)
+    (pp_djn ?var_strength
+       (Set.union vs (Set.union us xs))
+       (Set.union parent_xs xs) cong)
     fs djns ;
   Format.pp_close_box fs ()
 
-and pp_djn ?var_strength:parent_var_strength vs cong fs = function
+and pp_djn ?var_strength vs xs cong fs = function
   | [] -> Format.fprintf fs "false"
   | djn ->
       Format.fprintf fs "@[<hv>( %a@ )@]"
         (List.pp "@ @<2>∨ " (fun fs sjn ->
              let var_strength =
-               let combine ~key sjn_v m_v =
-                 if Set.mem sjn.xs key then sjn_v else m_v
-               in
-               Option.map
-                 ~f:(Map.merge_skewed ~combine (var_strength sjn))
-                 parent_var_strength
+               let+ var_strength_stem, _ = var_strength in
+               var_strength_ xs var_strength_stem sjn
              in
              Format.fprintf fs "@[<hv 1>(%a)@]"
-               (pp_ ?var_strength vs cong)
+               (pp_ ?var_strength vs (Set.union xs sjn.xs) cong)
                {sjn with us= Set.diff sjn.us vs} ))
         djn
 
 let pp_diff_eq cong fs q =
-  pp_ ~var_strength:(var_strength q) Var.Set.empty cong fs q
+  pp_ ~var_strength:(var_strength_full q) Var.Set.empty Var.Set.empty cong
+    fs q
 
 let pp fs q = pp_diff_eq Equality.true_ fs q
-let pp_djn fs d = pp_djn Var.Set.empty Equality.true_ fs d
+let pp_djn fs d = pp_djn Var.Set.empty Var.Set.empty Equality.true_ fs d
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
 let fv ?ignore_cong q =

@@ -119,7 +119,7 @@ val is_false : t -> bool
 val fv : ?ignore_cong:unit -> t -> Var.Set.t
 (** Free variables, a subset of vocabulary. *)
 
-val var_strength : t -> [> `Anonymous | `Existential | `Universal] Var.Map.t
+val var_strength : t -> [`Anonymous | `Existential | `Universal] Var.Map.t
 (** Classify each variable in a formula as either [Universal],
     [Existential], or [Anonymous], meaning existential but with only one
     occurrence. *)

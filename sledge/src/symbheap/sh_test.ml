@@ -52,7 +52,7 @@ let%test_module _ =
       [%expect
         {|
           ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+          ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
 
         ( (∃ %x_1, %x_2 .   2 = %x_2 ∧ emp)
@@ -77,9 +77,8 @@ let%test_module _ =
       pp_djn (Sh.dnf q) ;
       [%expect
         {|
-        ∃ %x_1 .
-          ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+          ( (  0 = _ ∧ emp)
+          ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
 
         ( (∃ %x_1, %x_3, %x_4 .   2 = %x_4 ∧ emp)
@@ -104,10 +103,9 @@ let%test_module _ =
       pp (Sh.simplify q) ;
       [%expect
         {|
-        ∃ %x_1 .
-          ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
-          )
+        ( (  0 = _ ∧ emp)
+        ∨ (  ( (  1 = _ = %y_2 ∧ emp) ∨ (  2 = _ ∧ emp) ))
+        )
 
-          ( (  emp) ∨ (  ( (  emp) ∨ (  emp) )) ) |}]
+        ( (  emp) ∨ (  ( (  emp) ∨ (  emp) )) ) |}]
   end )
