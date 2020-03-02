@@ -177,15 +177,21 @@ let pp_heap x ?pre cong fs heap =
   let blocks = List.group ~break (List.sort ~compare heap) in
   List.pp ?pre "@ * " (pp_block x) fs blocks
 
-let pp_us ?(pre = ("" : _ fmt)) fs us =
-  if not (Set.is_empty us) then
-    [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
+let pp_us ?(pre = ("" : _ fmt)) ?vs () fs us =
+  match vs with
+  | None ->
+      if not (Set.is_empty us) then
+        [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
+  | Some vs ->
+      if not (Set.equal vs us) then
+        [%Trace.fprintf
+          fs "%( %)@[%a@] .@ " pre (Set.pp_diff Var.pp) (vs, us)]
 
 let rec pp_ ?var_strength vs parent_xs parent_cong fs
     {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
   let x v = Option.bind ~f:(fun (_, m) -> Map.find m v) var_strength in
-  pp_us fs us ;
+  pp_us ~vs () fs us ;
   let xs_d_vs, xs_i_vs =
     Set.diff_inter
       (Set.filter xs ~f:(fun v -> Poly.(x v <> Some `Anonymous)))
@@ -200,9 +206,11 @@ let rec pp_ ?var_strength vs parent_xs parent_cong fs
   if not first then Format.fprintf fs "  " ;
   Equality.ppx_classes_diff x fs (parent_cong, cong) ;
   let pure =
-    List.filter_map pure ~f:(fun e ->
-        let e' = Equality.normalize cong e in
-        if Term.is_true e' then None else Some e' )
+    if Option.is_none var_strength then pure
+    else
+      List.filter_map pure ~f:(fun e ->
+          let e' = Equality.normalize cong e in
+          if Term.is_true e' then None else Some e' )
   in
   List.pp
     ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
@@ -236,7 +244,7 @@ and pp_djn ?var_strength vs xs cong fs = function
              in
              Format.fprintf fs "@[<hv 1>(%a)@]"
                (pp_ ?var_strength vs (Set.union xs sjn.xs) cong)
-               {sjn with us= Set.diff sjn.us vs} ))
+               sjn ))
         djn
 
 let pp_diff_eq cong fs q =
@@ -245,6 +253,7 @@ let pp_diff_eq cong fs q =
 
 let pp fs q = pp_diff_eq Equality.true_ fs q
 let pp_djn fs d = pp_djn Var.Set.empty Var.Set.empty Equality.true_ fs d
+let pp_raw fs q = pp_ Var.Set.empty Var.Set.empty Equality.true_ fs q
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
 let fv ?ignore_cong q =

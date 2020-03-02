@@ -610,7 +610,7 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
 let exec_spec pre0 {xs; foot; sub; ms; post} =
   ([%Trace.call fun {pf} ->
      pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
-       (Sh.pp_us ~pre:"@<2>∀ ")
+       (Sh.pp_us ~pre:"@<2>∀ " ())
        xs Sh.pp foot
        (fun fs sub ->
          if not (Var.Subst.is_empty sub) then

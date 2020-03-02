@@ -248,6 +248,7 @@ module Set : sig
     (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
 
   val pp : 'e pp -> ('e, 'c) t pp
+  val pp_diff : 'e pp -> (('e, 'c) t * ('e, 'c) t) pp
   val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool
   val add_option : 'e option -> ('e, 'c) t -> ('e, 'c) t
   val add_list : 'e list -> ('e, 'c) t -> ('e, 'c) t

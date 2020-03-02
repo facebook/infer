@@ -333,6 +333,12 @@ module Set = struct
 
   let equal_m__t (module Elt : Compare_m) = equal
   let pp pp_elt fs x = List.pp ",@ " pp_elt fs (to_list x)
+
+  let pp_diff pp_elt fs (xs, ys) =
+    let lose = diff xs ys and gain = diff ys xs in
+    if not (is_empty lose) then Format.fprintf fs "-- %a" (pp pp_elt) lose ;
+    if not (is_empty gain) then Format.fprintf fs "++ %a" (pp pp_elt) gain
+
   let disjoint x y = is_empty (inter x y)
   let add_option yo x = Option.fold ~f:add ~init:x yo
   let add_list ys x = List.fold ~f:add ~init:x ys
