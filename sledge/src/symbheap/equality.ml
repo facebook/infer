@@ -660,7 +660,7 @@ let ppx_classes_diff x fs (r, s) =
     (fun fs (rep, cls) ->
       Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep
         (List.pp "@ = " (Term.ppx x))
-        (List.sort ~compare:Term.compare cls) )
+        (List.dedup_and_sort ~compare:Term.compare cls) )
     fs (Map.to_alist clss)
 
 (** Existential Witnessing and Elimination *)
