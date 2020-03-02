@@ -63,6 +63,10 @@ val and_cong : Equality.t -> t -> t
 (** Conjoin constraints of a congruence to a formula, extending to a common
     vocabulary, and avoiding capturing existentials. *)
 
+val and_subst : Equality.Subst.t -> t -> t
+(** Conjoin constraints of a solution substitution to a formula, extending
+    to a common vocabulary, and avoiding capturing existentials. *)
+
 (** Update *)
 
 val with_pure : Term.t list -> t -> t

@@ -72,11 +72,7 @@ let excise_exists goal =
                 Equality.Subst.pp witnesses ) ;
           let us = Set.union goal.us removed in
           let xs = Set.diff goal.xs removed in
-          let min =
-            Equality.Subst.fold
-              ~f:(fun ~key ~data -> Sh.and_ (Term.eq key data))
-              witnesses ~init:goal.min
-          in
+          let min = Sh.and_subst witnesses goal.min in
           {goal with us; min; xs; pgs= true} )
 
 (* ad hoc treatment to drop tautologous constraints such as ∃x,y. x = y

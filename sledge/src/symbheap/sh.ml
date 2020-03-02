@@ -513,6 +513,15 @@ let rec pure (e : Term.t) =
 
 let and_ e q = star (pure e) q
 
+let and_subst subst q =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Equality.Subst.pp subst pp q]
+  ;
+  Equality.Subst.fold
+    ~f:(fun ~key ~data -> and_ (Term.eq key data))
+    subst ~init:q
+  |>
+  [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
+
 let subst sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
