@@ -838,6 +838,32 @@ let rec simp_eq x y =
     (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
     | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
         simp_cond c (simp_eq e t) (simp_eq e f)
+    (* α^β^δ = α^γ^δ ==> β = γ *)
+    | ApN (Concat, a), ApN (Concat, b) ->
+        let m = Vector.length a in
+        let n = Vector.length b in
+        let length_common_prefix =
+          let rec find_lcp i =
+            if equal (Vector.get a i) (Vector.get b i) then find_lcp (i + 1)
+            else i
+          in
+          find_lcp 0
+        in
+        let length_common_suffix =
+          let rec find_lcs i =
+            if equal (Vector.get a (m - 1 - i)) (Vector.get b (n - 1 - i))
+            then find_lcs (i + 1)
+            else i
+          in
+          find_lcs 0
+        in
+        let length_common = length_common_prefix + length_common_suffix in
+        if length_common = 0 then Ap2 (Eq, x, y)
+        else
+          let pos = length_common_prefix in
+          let a = Vector.sub ~pos ~len:(m - length_common) a in
+          let b = Vector.sub ~pos ~len:(n - length_common) b in
+          simp_eq (simp_concat a) (simp_concat b)
     | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
       , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
         Ap2 (Eq, x, y)
