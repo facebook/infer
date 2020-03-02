@@ -176,6 +176,9 @@ module List : sig
   (** Like filter_map, but preserves [phys_equal] if [f] preserves
       [phys_equal] of every element. *)
 
+  val rev_map_unzip : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
+  (** [rev_map_unzip ~f xs] is [unzip (rev_map ~f xs)] but more efficient. *)
+
   val remove_exn : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list
   (** Returns the input list without the first element [equal] to the
       argument, or raise [Not_found] if no such element exists. [equal]

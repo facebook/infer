@@ -295,22 +295,6 @@ let rec invariant q =
             invariant sjn ) )
   with exc -> [%Trace.info "%a" pp q] ; raise exc
 
-let rec simplify {us; xs; cong; pure; heap; djns} =
-  [%Trace.call fun {pf} -> pf "%a" pp {us; xs; cong; pure; heap; djns}]
-  ;
-  let heap = List.map heap ~f:(map_seg ~f:(Equality.normalize cong)) in
-  let pure = List.map pure ~f:(Equality.normalize cong) in
-  let cong = Equality.true_ in
-  let djns = List.map djns ~f:(List.map ~f:simplify) in
-  let all_vars =
-    fv {us= Set.union us xs; xs= Var.Set.empty; cong; pure; heap; djns}
-  in
-  let xs = Set.inter all_vars xs in
-  let us = Set.inter all_vars us in
-  {us; xs; cong; pure; heap; djns} |> check invariant
-  |>
-  [%Trace.retn fun {pf} s -> pf "%a" pp s]
-
 (** Quantification and Vocabulary *)
 
 (** primitive application of a substitution, ignores us and xs, may violate
@@ -405,6 +389,11 @@ let exists xs q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
+(** remove quantification on variables disjoint from vocabulary *)
+let elim_exists xs q =
+  assert (Set.disjoint xs q.us) ;
+  {q with us= Set.union q.us xs; xs= Set.diff q.xs xs}
+
 (** Construct *)
 
 let emp =
@@ -418,13 +407,17 @@ let emp =
 
 let false_ us = {emp with us; djns= [[]]} |> check invariant
 
+(** conjoin an equality relation assuming vocabulary is compatible *)
+let and_cong_ cong q =
+  assert (Set.is_subset (Equality.fv cong) ~of_:q.us) ;
+  let xs, cong = Equality.and_ (Set.union q.us q.xs) q.cong cong in
+  if Equality.is_false cong then false_ q.us
+  else exists_fresh xs {q with cong}
+
 let and_cong cong q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Equality.pp cong pp q]
   ;
-  let q = extend_us (Equality.fv cong) q in
-  let xs, cong = Equality.and_ (Set.union q.us q.xs) q.cong cong in
-  ( if Equality.is_false cong then false_ q.us
-  else exists_fresh xs {q with cong} )
+  and_cong_ cong (extend_us (Equality.fv cong) q)
   |>
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 
@@ -467,7 +460,7 @@ let star q1 q2 =
     invariant q ;
     assert (Set.equal q.us (Set.union q1.us q2.us))]
 
-let stars = function
+let starN = function
   | [] -> emp
   | [q] -> q
   | q :: qs -> List.fold ~f:star ~init:q qs
@@ -502,6 +495,11 @@ let or_ q1 q2 =
     pf "%a" pp q ;
     invariant q ;
     assert (Set.equal q.us (Set.union q1.us q2.us))]
+
+let orN = function
+  | [] -> false_ Var.Set.empty
+  | [q] -> q
+  | q :: qs -> List.fold ~f:or_ ~init:q qs
 
 let rec pure (e : Term.t) =
   [%Trace.call fun {pf} -> pf "%a" Term.pp e]
@@ -616,7 +614,7 @@ let dnf q =
   ;
   let conj sjn conjuncts = sjn :: conjuncts in
   let disj (xs, conjuncts) disjuncts =
-    exists xs (stars conjuncts) :: disjuncts
+    exists xs (starN conjuncts) :: disjuncts
   in
   fold_dnf ~conj ~disj q (Var.Set.empty, []) []
   |>
@@ -624,9 +622,148 @@ let dnf q =
 
 (** Simplify *)
 
-let rec norm s q =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp q]
+let rec norm_ s q =
+  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp_raw q]
   ;
-  map q ~f_sjn:(norm s) ~f_cong:Fn.id ~f_trm:(Equality.Subst.norm s)
+  let q =
+    map q ~f_sjn:(norm_ s) ~f_cong:Fn.id ~f_trm:(Equality.Subst.subst s)
+  in
+  let xs, cong = Equality.apply_subst (Set.union q.us q.xs) s q.cong in
+  exists_fresh xs {q with cong}
+  |>
+  [%Trace.retn fun {pf} q' -> pf "%a" pp_raw q' ; invariant q']
+
+let norm s q =
+  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp_raw q]
+  ;
+  (if Equality.Subst.is_empty s then q else norm_ s q)
+  |>
+  [%Trace.retn fun {pf} q' -> pf "%a" pp_raw q' ; invariant q']
+
+(** rename existentially quantified variables to avoid shadowing, and reduce
+    quantifier scopes by sinking them as low as possible into disjunctions *)
+let rec freshen_nested_xs q =
+  [%Trace.call fun {pf} -> pf "%a" pp q]
+  ;
+  (* trim xs to those that appear in the stem and sink the rest *)
+  let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
+  let xs_sink, xs = Set.diff_inter q.xs fv_stem in
+  let xs_below, djns =
+    List.fold_map ~init:Var.Set.empty q.djns ~f:(fun xs_below djn ->
+        List.fold_map ~init:xs_below djn ~f:(fun xs_below dj ->
+            (* quantify xs not in stem and freshen disjunct *)
+            let dj' =
+              freshen_nested_xs (exists (Set.inter xs_sink dj.us) dj)
+            in
+            let xs_below' = Set.union xs_below dj'.xs in
+            (xs_below', dj') ) )
+  in
+  (* rename xs to miss all xs in subformulas *)
+  freshen_xs {q with xs; djns} ~wrt:(Set.union q.us xs_below)
   |>
   [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+
+let rec propagate_equality_ ancestor_vs ancestor_cong q =
+  [%Trace.call fun {pf} ->
+    pf "(%a)@ %a" Equality.pp_classes ancestor_cong pp q]
+  ;
+  (* extend vocabulary with variables in scope above *)
+  let ancestor_vs = Set.union ancestor_vs (Set.union q.us q.xs) in
+  (* decompose formula *)
+  let xs, stem, djns =
+    (q.xs, {q with us= ancestor_vs; xs= emp.xs; djns= emp.djns}, q.djns)
+  in
+  (* strengthen equality relation with that from above *)
+  let ancestor_stem = and_cong_ ancestor_cong stem in
+  let ancestor_cong = ancestor_stem.cong in
+  exists xs
+    (List.fold djns ~init:ancestor_stem ~f:(fun q' djn ->
+         let dj_congs, djn =
+           List.rev_map_unzip djn ~f:(fun dj ->
+               let dj = propagate_equality_ ancestor_vs ancestor_cong dj in
+               (dj.cong, dj) )
+         in
+         let new_xs, djn_cong = Equality.orN ancestor_vs dj_congs in
+         (* hoist xs appearing in disjunction's equality relation *)
+         let djn_xs = Set.diff (Equality.fv djn_cong) q'.us in
+         let djn = List.map ~f:(elim_exists djn_xs) djn in
+         let cong_djn = and_cong_ djn_cong (orN djn) in
+         assert (is_false cong_djn || Set.is_subset new_xs ~of_:djn_xs) ;
+         star (exists djn_xs cong_djn) q' ))
+  |>
+  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+
+let propagate_equality ancestor_vs ancestor_cong q =
+  [%Trace.call fun {pf} ->
+    pf "(%a)@ %a" Equality.pp_classes ancestor_cong pp q]
+  ;
+  propagate_equality_ ancestor_vs ancestor_cong q
+  |>
+  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+
+let pp_vss fs vss =
+  Format.fprintf fs "[@[%a@]]"
+    (List.pp ";@ " (fun fs vs -> Format.fprintf fs "{@[%a@]}" Var.Set.pp vs))
+    vss
+
+let remove_absent_xs ks q =
+  let ks = Set.inter ks q.xs in
+  if Set.is_empty ks then q
+  else
+    let xs = Set.diff q.xs ks in
+    let djns =
+      let rec trim_ks ks djns =
+        List.map djns ~f:(fun djn ->
+            List.map djn ~f:(fun sjn ->
+                {sjn with us= Set.diff sjn.us ks; djns= trim_ks ks sjn.djns}
+            ) )
+      in
+      trim_ks ks q.djns
+    in
+    {q with xs; djns}
+
+let rec simplify_ us rev_xss q =
+  [%Trace.call fun {pf} -> pf "%a@ %a" pp_vss (List.rev rev_xss) pp_raw q]
+  ;
+  let rev_xss = q.xs :: rev_xss in
+  (* recursively simplify subformulas *)
+  let q =
+    exists q.xs
+      (starN
+         ( {q with us= Set.union q.us q.xs; xs= emp.xs; djns= []}
+         :: List.map q.djns ~f:(fun djn ->
+                orN (List.map djn ~f:(fun sjn -> simplify_ us rev_xss sjn))
+            ) ))
+  in
+  (* try to solve equations in cong for variables in xss *)
+  let subst = Equality.solve_for_vars (us :: List.rev rev_xss) q.cong in
+  (* simplification can reveal inconsistency *)
+  ( if is_false q then false_ q.us
+  else if Equality.Subst.is_empty subst then q
+  else
+    (* normalize wrt solutions *)
+    let q = norm subst q in
+    (* reconjoin only non-redundant equations *)
+    let removed =
+      Set.diff
+        (Var.Set.union_list rev_xss)
+        (fv ~ignore_cong:() (elim_exists q.xs q))
+    in
+    let keep, removed, _ = Equality.Subst.partition_valid removed subst in
+    let q = and_subst keep q in
+    (* remove the eliminated variables from xs and subformulas' us *)
+    remove_absent_xs removed q )
+  |>
+  [%Trace.retn fun {pf} q' ->
+    pf "%a@ %a" Equality.Subst.pp subst pp_raw q' ;
+    invariant q']
+
+let simplify q =
+  [%Trace.call fun {pf} -> pf "%a" pp_raw q]
+  ;
+  let q = freshen_nested_xs q in
+  let q = propagate_equality Var.Set.empty Equality.true_ q in
+  let q = simplify_ q.us [] q in
+  q
+  |>
+  [%Trace.retn fun {pf} q' -> pf "@\n" ; invariant q']

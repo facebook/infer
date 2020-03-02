@@ -32,6 +32,9 @@ val and_ : Var.Set.t -> t -> t -> Var.Set.t * t
 val or_ : Var.Set.t -> t -> t -> Var.Set.t * t
 (** Disjunction. *)
 
+val orN : Var.Set.t -> t list -> Var.Set.t * t
+(** Nary disjunction. *)
+
 val rename : t -> Var.Subst.t -> t
 (** Apply a renaming substitution to the relation. *)
 
@@ -73,13 +76,19 @@ module Subst : sig
   val pp : t pp
   val is_empty : t -> bool
   val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
-  val norm : t -> Term.t -> Term.t
+
+  val subst : t -> Term.t -> Term.t
+  (** Apply a substitution recursively to subterms. *)
 
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
   (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
       and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
       ks ∩ fv(τ) = ∅. *)
 end
+
+val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
+(** Relation induced by applying a substitution to a set of equations
+    generating the argument relation. *)
 
 val solve_for_vars : Var.Set.t list -> t -> Subst.t
 (** [solve_for_vars vss r] is a solution substitution that is entailed by

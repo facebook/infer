@@ -120,7 +120,7 @@ let%test_module _ =
         ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
         )
 
-        ( (  emp) ∨ (  ( (  emp) ∨ (  emp) )) ) |}]
+        ( (  1 = %y_7 ∧ emp) ∨ (  emp) ∨ (  emp) ) |}]
 
     let of_eqs l =
       List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
@@ -139,9 +139,14 @@ let%test_module _ =
         ∧ ((u8) %y_7) = ((u8) (((u8) %y_7) + 1))
         ∧ emp
 
-          -1 ∧ emp
+          (((u8) %y_7) + 1) = %y_7
+        ∧ ((u8) %y_7) = ((u8) (((u8) %y_7) + 1))
+        ∧ ((%y_7 + -1) = ((u8) %y_7))
+        ∧ emp
 
-          emp |}]
+          (((u8) %y_7) + 1) = %y_7
+        ∧ ((u8) %y_7) = ((u8) (((u8) %y_7) + 1))
+        ∧ emp |}]
 
     let%expect_test _ =
       let q =
@@ -172,7 +177,7 @@ let%test_module _ =
              ∧ emp)
           )
 
-          -1 ∧ emp * ( (  (%x_6 ≠ 0) ∧ emp) ∨ (  -1 ∧ emp) )
+          ( (  emp) ∨ (  (%x_6 ≠ 0) ∧ emp) )
 
-          ( (  (%x_6 ≠ 0) ∧ emp) ∨ (  emp) ) |}]
+          ( (  emp) ∨ (  (%x_6 ≠ 0) ∧ emp) ) |}]
   end )

@@ -222,6 +222,11 @@ module List = struct
 
   let map_preserving_phys_equal t ~f = map_preserving_phys_equal map t ~f
 
+  let rev_map_unzip xs ~f =
+    fold xs ~init:([], []) ~f:(fun (ys, zs) x ->
+        let y, z = f x in
+        (y :: ys, z :: zs) )
+
   let remove_exn ?(equal = phys_equal) xs x =
     let rec remove_ ys = function
       | [] -> raise Not_found

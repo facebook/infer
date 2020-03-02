@@ -47,6 +47,7 @@ module Subst : sig
   val iteri : t -> f:(key:Term.t -> data:Term.t -> unit) -> unit
   val for_alli : t -> f:(key:Term.t -> data:Term.t -> bool) -> bool
   val apply : t -> Term.t -> Term.t
+  val subst : t -> Term.t -> Term.t
   val norm : t -> Term.t -> Term.t
   val compose : t -> t -> t
   val compose1 : key:Term.t -> data:Term.t -> t -> t
@@ -74,6 +75,8 @@ end = struct
 
   (** look up a term in a substitution *)
   let apply s a = Map.find s a |> Option.value ~default:a
+
+  let rec subst s a = apply s (Term.map ~f:(subst s) a)
 
   (** apply a substitution to maximal non-interpreted subterms *)
   let rec norm s a =
@@ -550,6 +553,18 @@ let difference r a b =
   [%Trace.retn fun {pf} ->
     function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
 
+let apply_subst us s r =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
+  ;
+  Map.fold (classes r) ~init:true_ ~f:(fun ~key:rep ~data:cls r ->
+      let rep' = Subst.subst s rep in
+      List.fold cls ~init:r ~f:(fun r trm ->
+          let trm' = Subst.subst s trm in
+          and_eq us trm' rep' r ) )
+  |> extract_xs
+  |>
+  [%Trace.retn fun {pf} (xs, r') -> pf "%a%a" Var.Set.pp_xs xs pp r']
+
 let and_ us r s =
   ( if not r.sat then r
   else if not s.sat then s
@@ -584,6 +599,11 @@ let or_ us r s =
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (_, r) -> pf "%a" pp r]
+
+let orN us rs =
+  match rs with
+  | [] -> (us, false_)
+  | r :: rs -> List.fold ~f:(fun (us, s) r -> or_ us s r) ~init:(us, r) rs
 
 let rec and_term_ us e r =
   let eq_false b r = and_eq us b Term.false_ r in
