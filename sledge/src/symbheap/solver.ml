@@ -94,7 +94,8 @@ let drop_tautology xs sub e =
 let excise_term ({min; xs; sub} as goal) pure term =
   let term' = Equality.normalize min.cong term in
   let term' = drop_tautology xs sub term' in
-  if Term.is_true term' then (
+  if Term.is_false term' then None
+  else if Term.is_true term' then (
     excise (fun {pf} -> pf "excise_pure %a" Term.pp term) ;
     Some ({goal with pgs= true}, pure) )
   else Some (goal, term' :: pure)
