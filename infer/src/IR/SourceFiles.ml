@@ -28,7 +28,6 @@ let get_existing_data source_file =
 
 
 let add source_file cfg tenv integer_type_widths =
-  Cfg.inline_java_synthetic_methods cfg ;
   let tenv, proc_names =
     (* The same source file may get captured several times in a single capture event, for instance
        because it is compiled with different options, or from different symbolic links. This may

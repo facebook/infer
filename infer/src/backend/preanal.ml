@@ -35,6 +35,107 @@ module AddAbstractionInstructions = struct
     Procdesc.iter_nodes do_node pdesc
 end
 
+(** Find synthetic (including access and bridge) Java methods in the procedure and inline them in
+    the cfg.
+
+    This is a horrible hack that inlines only *one* instruction ouf of the callee. This works only
+    on some synthetic methods that have a particular shape. *)
+module InlineJavaSyntheticMethods = struct
+  (** Inline a synthetic (access or bridge) method. *)
+  let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr option =
+    let found instr instr' =
+      L.debug Analysis Verbose
+        "inline_synthetic_method translated the call %a as %a (original instr %a)@\n" Procname.pp
+        (Procdesc.get_proc_name pdesc)
+        (Sil.pp_instr ~print_types:true Pp.text)
+        instr'
+        (Sil.pp_instr ~print_types:true Pp.text)
+        instr ;
+      Some instr'
+    in
+    let do_instr instr =
+      match (instr, etl) with
+      | ( Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); root_typ; typ}
+        , [(* getter for fields *) (e1, _)] ) ->
+          let instr' =
+            Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); root_typ; typ; loc= loc_call}
+          in
+          found instr instr'
+      | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ}, [] when Pvar.is_global pvar
+        ->
+          (* getter for static fields *)
+          let instr' =
+            Sil.Load
+              {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ; loc= loc_call}
+          in
+          found instr instr'
+      | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ; typ}
+        , [(* setter for fields *) (e1, _); (e2, _)] ) ->
+          let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); root_typ; typ; e2; loc= loc_call} in
+          found instr instr'
+      | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ}, [(e1, _)]
+        when Pvar.is_global pvar ->
+          (* setter for static fields *)
+          let instr' =
+            Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ; e2= e1; loc= loc_call}
+          in
+          found instr instr'
+      | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _
+        when Int.equal (List.length etl') (List.length etl) ->
+          let instr' = Sil.Call (ret, Exp.Const (Const.Cfun pn), etl, loc_call, cf) in
+          found instr instr'
+      | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _
+        when Int.equal (List.length etl' + 1) (List.length etl) ->
+          let etl1 =
+            match List.rev etl with
+            (* remove last element *)
+            | _ :: l ->
+                List.rev l
+            | [] ->
+                assert false
+          in
+          let instr' = Sil.Call (ret, Exp.Const (Const.Cfun pn), etl1, loc_call, cf) in
+          found instr instr'
+      | _ ->
+          None
+    in
+    Procdesc.find_map_instrs ~f:do_instr pdesc
+
+
+  let process pdesc =
+    let is_generated_for_lambda proc_name =
+      String.is_substring ~substring:"$Lambda$" (Procname.get_method proc_name)
+    in
+    let should_inline proc_name =
+      (not (is_generated_for_lambda proc_name))
+      &&
+      match Attributes.load proc_name with
+      | None ->
+          false
+      | Some attributes ->
+          let is_access =
+            match proc_name with
+            | Procname.Java java_proc_name ->
+                Procname.Java.is_access_method java_proc_name
+            | _ ->
+                false
+          in
+          let is_synthetic = attributes.is_synthetic_method in
+          let is_bridge = attributes.is_bridge_method in
+          is_access || is_bridge || is_synthetic
+    in
+    let instr_inline_synthetic_method _node (instr : Sil.instr) =
+      match instr with
+      | Call (ret_id_typ, Const (Cfun pn), etl, loc, _) when should_inline pn ->
+          Option.bind (Procdesc.load pn) ~f:(fun proc_desc_callee ->
+              inline_synthetic_method ret_id_typ etl proc_desc_callee loc )
+          |> Option.value ~default:instr
+      | _ ->
+          instr
+    in
+    Procdesc.replace_instrs pdesc ~f:instr_inline_synthetic_method |> ignore
+end
+
 (** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it
     easy for analyses to do abstract garbage collection *)
 module Liveness = struct
@@ -236,8 +337,10 @@ end
 let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
   let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
-  if Config.function_pointer_specialization && not (Procname.is_java (Procdesc.get_proc_name pdesc))
-  then FunctionPointerSubstitution.process summary tenv ;
+  let proc_name = Procdesc.get_proc_name pdesc in
+  if Procname.is_java proc_name then InlineJavaSyntheticMethods.process pdesc ;
+  if Config.function_pointer_specialization && not (Procname.is_java proc_name) then
+    FunctionPointerSubstitution.process summary tenv ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
   NoReturn.process pdesc ;
