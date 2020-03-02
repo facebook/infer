@@ -186,26 +186,31 @@ let orient e f =
 
 let norm (_, _, s) e = Subst.norm s e
 
-let extend ~var ~rep (us, xs, s) =
-  Some (us, xs, Subst.compose1 ~key:var ~data:rep s)
+let extend ?f ~var ~rep (us, xs, s) =
+  let s =
+    match f with
+    | Some f when not (f var rep) -> s
+    | _ -> Subst.compose1 ~key:var ~data:rep s
+  in
+  Some (us, xs, s)
 
 let fresh name (us, xs, s) =
   let x, us = Var.fresh name ~wrt:us in
   let xs = Set.add xs x in
   (Term.var x, (us, xs, s))
 
-let solve_poly p q s =
+let solve_poly ?f p q s =
   match Term.sub p q with
   | Integer {data} -> if Z.equal Z.zero data then Some s else None
-  | Var _ as var -> extend ~var ~rep:Term.zero s
+  | Var _ as var -> extend ?f ~var ~rep:Term.zero s
   | p_q -> (
     match Term.solve_zero_eq p_q with
-    | Some (var, rep) -> extend ~var ~rep s
-    | None -> extend ~var:p_q ~rep:Term.zero s )
+    | Some (var, rep) -> extend ?f ~var ~rep s
+    | None -> extend ?f ~var:p_q ~rep:Term.zero s )
 
 (* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
    = |α| and c fresh *)
-let rec solve_extract a o l b s =
+let rec solve_extract ?f a o l b s =
   let n = Term.agg_size_exn a in
   let c, s = fresh "c" s in
   let n_c = Term.memory ~siz:n ~arr:c in
@@ -216,85 +221,87 @@ let rec solve_extract a o l b s =
   let b, s =
     match Term.agg_size b with
     | None -> (Term.memory ~siz:l ~arr:b, Some s)
-    | Some m -> (b, solve_ l m s)
+    | Some m -> (b, solve_ ?f l m s)
   in
-  s >>= solve_ a (Term.concat [|c0; b; c1|])
+  s >>= solve_ ?f a (Term.concat [|c0; b; c1|])
 
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
-and solve_concat a0V b m s =
+and solve_concat ?f a0V b m s =
   Vector.fold_until a0V ~init:(s, Term.zero)
     ~f:(fun (s, oI) aJ ->
       let nJ = Term.agg_size_exn aJ in
       let oJ = Term.add oI nJ in
-      match solve_ aJ (Term.extract ~agg:b ~off:oI ~len:nJ) s with
+      match solve_ ?f aJ (Term.extract ~agg:b ~off:oI ~len:nJ) s with
       | Some s -> Continue (s, oJ)
       | None -> Stop None )
-    ~finish:(fun (s, n0V) -> solve_ n0V m s)
+    ~finish:(fun (s, n0V) -> solve_ ?f n0V m s)
 
-and solve_ e f s =
+and solve_ ?f d e s =
   [%Trace.call fun {pf} ->
-    pf "%a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Term.pp e Term.pp f
+    pf "%a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Term.pp d Term.pp e
       Subst.pp (trd3 s)]
   ;
-  ( match orient (norm s e) (norm s f) with
+  ( match orient (norm s d) (norm s e) with
   (* e' = f' ==> true when e' ≡ f' *)
   | None -> Some s
   (* i = j ==> false when i ≠ j *)
   | Some (Integer _, Integer _) -> None
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
   | Some (Ap2 (Memory, n, a), b) when Term.equal n Term.zero ->
-      s |> solve_ a (Term.concat [||]) >>= solve_ b (Term.concat [||])
+      s |> solve_ ?f a (Term.concat [||]) >>= solve_ ?f b (Term.concat [||])
   | Some (b, Ap2 (Memory, n, a)) when Term.equal n Term.zero ->
-      s |> solve_ a (Term.concat [||]) >>= solve_ b (Term.concat [||])
+      s |> solve_ ?f a (Term.concat [||]) >>= solve_ ?f b (Term.concat [||])
   (* v = ⟨n,a⟩ ==> v = a *)
-  | Some ((Var _ as v), Ap2 (Memory, _, a)) -> s |> solve_ v a
+  | Some ((Var _ as v), Ap2 (Memory, _, a)) -> s |> solve_ ?f v a
   (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
   | Some (Ap2 (Memory, n, a), Ap2 (Memory, m, b)) ->
-      s |> solve_ n m >>= solve_ a b
+      s |> solve_ ?f n m >>= solve_ ?f a b
   (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
   | Some (Ap2 (Memory, n, a), b) ->
-      (match Term.agg_size b with None -> Some s | Some m -> solve_ n m s)
-      >>= solve_ a b
+      ( match Term.agg_size b with
+      | None -> Some s
+      | Some m -> solve_ ?f n m s )
+      >>= solve_ ?f a b
   | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
       if not (Set.mem (Term.fv e) (Var.of_ v)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
-        extend ~var:v ~rep:e s
+        extend ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        extend ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
+        extend ?f ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
       if not (Set.mem (Term.fv c) (Var.of_ v)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
-        extend ~var:v ~rep:c s
+        extend ?f ~var:v ~rep:c s
       else
         (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
         let m = Term.agg_size_exn c in
-        solve_concat a0V (Term.memory ~siz:m ~arr:v) m s
+        solve_concat ?f a0V (Term.memory ~siz:m ~arr:v) m s
   | Some ((Ap3 (Extract, _, _, l) as e), ApN (Concat, a0V)) ->
-      solve_concat a0V e l s
+      solve_concat ?f a0V e l s
   | Some (ApN (Concat, a0V), (ApN (Concat, _) as c)) ->
-      solve_concat a0V c (Term.agg_size_exn c) s
-  | Some (Ap3 (Extract, a, o, l), e) -> solve_extract a o l e s
+      solve_concat ?f a0V c (Term.agg_size_exn c) s
+  | Some (Ap3 (Extract, a, o, l), e) -> solve_extract ?f a o l e s
   (* p = q ==> p-q = 0 *)
   | Some
       ( ((Add _ | Mul _ | Integer _) as p), q
       | q, ((Add _ | Mul _ | Integer _) as p) ) ->
-      solve_poly p q s
+      solve_poly ?f p q s
   | Some (rep, var) ->
       assert (non_interpreted var) ;
       assert (non_interpreted rep) ;
-      extend ~var ~rep s )
+      extend ?f ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
     function
     | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
     | None -> pf "false"]
 
-let solve ~us ~xs e f =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp e Term.pp f]
+let solve ?f ~us ~xs d e =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp d Term.pp e]
   ;
-  (solve_ e f (us, xs, Subst.empty) >>| fun (_, xs, s) -> (xs, s))
+  (solve_ ?f d e (us, xs, Subst.empty) >>| fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
     function
@@ -673,15 +680,35 @@ let solve_poly_eq us p' q' subst =
   | Many | Zero -> None
 
 let solve_memory_eq us e' f' subst =
-  match ((e' : Term.t), (f' : Term.t)) with
-  | (Ap2 (Memory, _, (Var _ as v)) as m), u
-   |u, (Ap2 (Memory, _, (Var _ as v)) as m) ->
-      if
-        (not (Set.is_subset (Term.fv m) ~of_:us))
-        && Set.is_subset (Term.fv u) ~of_:us
-      then Some (Subst.compose1 ~key:v ~data:u subst)
-      else None
-  | _ -> None
+  [%Trace.call fun {pf} -> pf "%a = %a" Term.pp e' Term.pp f']
+  ;
+  let f x u =
+    (not (Set.is_subset (Term.fv x) ~of_:us))
+    && Set.is_subset (Term.fv u) ~of_:us
+  in
+  let solve_concat ms n a =
+    let a, n =
+      match Term.agg_size a with
+      | Some n -> (a, n)
+      | None -> (Term.memory ~siz:n ~arr:a, n)
+    in
+    let+ _, xs, s = solve_concat ~f ms a n (us, Var.Set.empty, subst) in
+    assert (Set.is_empty xs) ;
+    s
+  in
+  ( match ((e' : Term.t), (f' : Term.t)) with
+  | (ApN (Concat, ms) as c), a when f c a ->
+      solve_concat ms (Term.agg_size_exn c) a
+  | a, (ApN (Concat, ms) as c) when f c a ->
+      solve_concat ms (Term.agg_size_exn c) a
+  | (Ap2 (Memory, _, (Var _ as v)) as m), u when f m u ->
+      Some (Subst.compose1 ~key:v ~data:u subst)
+  | u, (Ap2 (Memory, _, (Var _ as v)) as m) when f m u ->
+      Some (Subst.compose1 ~key:v ~data:u subst)
+  | _ -> None )
+  |>
+  [%Trace.retn fun {pf} subst' ->
+    pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
 let solve_interp_eq us e' (cls, subst) =
   [%Trace.call fun {pf} ->
@@ -698,9 +725,10 @@ let solve_interp_eq us e' (cls, subst) =
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
     Option.iter ~f:(subst_invariant us subst) subst']
 
-(* move equations from [cls] to [subst] which are between [Interpreted]
-   terms and can be expressed, after normalizing with [subst], as [x ↦ u]
-   where [us ∪ xs ⊇ fv x ⊈ us ⊇ fv u] *)
+(** move equations from [cls] to [subst] which are between interpreted terms
+    and can be expressed, after normalizing with [subst], as [x ↦ u] where
+    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
+    [fv u ⊆ us ∪ xs] *)
 let rec solve_interp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
