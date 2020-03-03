@@ -471,9 +471,12 @@ let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
   Reporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
 
 
-let report_captured_strongself_issue domain summary (capturedStrongSelf : DomainData.t)
+let report_captured_strongself_issue domain summary attributes (capturedStrongSelf : DomainData.t)
     report_captured_strongself =
-  if not (Pvar.Set.mem capturedStrongSelf.pvar report_captured_strongself) then (
+  if
+    Option.is_none attributes.ProcAttributes.passed_as_noescape_block_to
+    && not (Pvar.Set.mem capturedStrongSelf.pvar report_captured_strongself)
+  then (
     let report_captured_strongself =
       Pvar.Set.add capturedStrongSelf.pvar report_captured_strongself
     in
@@ -496,7 +499,7 @@ let report_issues summary domain attributes =
     match domain_data.kind with
     | DomainData.CAPTURED_STRONG_SELF ->
         let reported_captured_strong_self =
-          report_captured_strongself_issue domain summary domain_data
+          report_captured_strongself_issue domain summary attributes domain_data
             result.reported_captured_strong_self
         in
         {result with reported_captured_strong_self}

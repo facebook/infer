@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <Foundation/NSObject.h>
+#include <Foundation/Foundation.h>
 
 @class SelfInBlockTest;
 
@@ -31,6 +31,8 @@
 
 - (void)bar;
 
+- (A*)process:(A*)obj;
+
 @end
 
 void m(SelfInBlockTest* obj) {}
@@ -45,6 +47,10 @@ void m2(_Nullable SelfInBlockTest* obj) {}
 }
 
 - (void)bar {
+}
+
+- (A*)process:(A*)obj {
+  return obj;
 }
 
 - (void)mixSelfWeakSelf_bad {
@@ -213,6 +219,21 @@ void m2(_Nullable SelfInBlockTest* obj) {}
         return 0;
       };
       int x = strongSelf->x;
+    }
+    return 0;
+  };
+}
+
+- (void)capturedStrongSelf_good:(NSArray<A*>*)allResults {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      [allResults
+          enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL* stop) {
+            A* result =
+                [strongSelf process:obj]; // no bug because of NS_NOESCAPE flag
+          }];
     }
     return 0;
   };
