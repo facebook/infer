@@ -64,23 +64,19 @@ type t = string * file_entry String.Map.t * JBasics.ClassSet.t
    Only the case where the package is declared in a single line is supported *)
 let read_package_declaration source_file =
   let path = SourceFile.to_abs_path source_file in
-  let file_in = In_channel.create path in
-  let remove_trailing_semicolon = Str.replace_first (Str.regexp ";") "" in
-  let empty_package = "" in
-  let rec loop () =
-    match remove_trailing_semicolon (In_channel.input_line_exn file_in) with
-    | exception End_of_file ->
-        In_channel.close file_in ; empty_package
-    | line -> (
-      match Str.split (Str.regexp "[ \t]+") line with
-      | [] ->
-          (loop [@tailcall]) ()
-      | [hd; package] when String.equal hd "package" ->
-          package
-      | _ ->
-          (loop [@tailcall]) () )
+  let process_line line =
+    String.strip line |> String.lsplit2 ~on:';' |> Option.map ~f:fst
+    |> Option.bind ~f:(String.chop_prefix ~prefix:"package")
+    |> Option.map ~f:String.strip
   in
-  loop ()
+  let rec loop file_in =
+    match In_channel.input_line file_in with
+    | None ->
+        None
+    | Some line -> (
+      match process_line line with Some package -> Some package | None -> loop file_in )
+  in
+  Utils.with_file_in path ~f:loop |> Option.value ~default:""
 
 
 let add_source_file path map =
