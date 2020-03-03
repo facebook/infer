@@ -20,3 +20,14 @@ int test_offsetof_expr() {
   }
   return 42;
 }
+
+int test_offsetof_expr_nonlit() {
+  size_t sum = 0;
+  for (int i = 0; i < 2; i++) {
+    sum += offsetof(struct address, v1[i]);
+  }
+  if (sum == 1) {
+    return 1 / 0;
+  }
+  return 42;
+}

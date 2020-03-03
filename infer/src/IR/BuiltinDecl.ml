@@ -42,6 +42,8 @@ let __builtin_va_end = create_procname "__builtin_va_end"
 
 let __builtin_va_start = create_procname "__builtin_va_start"
 
+let __builtin_offsetof = create_procname "__builtin_offsetof"
+
 let __cast = create_procname "__cast"
 
 let __cxx_typeid = create_procname "__cxx_typeid"

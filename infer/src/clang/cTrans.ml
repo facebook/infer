@@ -3132,6 +3132,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       trans_state stmt_info Typ.void stmts
 
 
+  and offsetOf_trans trans_state expr_info offset_of_expr_info stmt_info =
+    match offset_of_expr_info.Clang_ast_t.ooe_literal with
+    | Some integer_literal_info ->
+        integerLiteral_trans trans_state expr_info integer_literal_info
+    | None ->
+        (* [offsetof] couldn't be evaluated as integer, return as a call to a builtin *)
+        let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+        (* We don't provide arguments to the builtin because due to translation we get gibberish.
+           Ex: offsetof(struct foo, bar[i]) gets only [i] as stmt_list and no mentions of foo or bar. *)
+        call_function_with_args (Procdesc.Node.Call "offsetof") BuiltinDecl.__builtin_offsetof
+          trans_state stmt_info typ []
+
+
   and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.GenericSelectionExpr
       BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info Typ.void stmts
@@ -3500,9 +3513,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXStaticCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXFunctionalCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _) ->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind
-    | IntegerLiteral (_, _, expr_info, integer_literal_info)
-    | OffsetOfExpr (_, _, expr_info, integer_literal_info) ->
+    | IntegerLiteral (_, _, expr_info, integer_literal_info) ->
         integerLiteral_trans trans_state expr_info integer_literal_info
+    | OffsetOfExpr (stmt_info, _, expr_info, offset_of_expr_info) ->
+        offsetOf_trans trans_state expr_info offset_of_expr_info stmt_info
     | StringLiteral (_, _, expr_info, str_list) ->
         stringLiteral_trans trans_state expr_info (String.concat ~sep:"" str_list)
     | GNUNullExpr (_, _, expr_info) ->

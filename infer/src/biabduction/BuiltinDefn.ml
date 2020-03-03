@@ -853,6 +853,9 @@ let __builtin_va_end = Builtin.register BuiltinDecl.__builtin_va_end execute_ski
 
 let __builtin_va_start = Builtin.register BuiltinDecl.__builtin_va_start execute_skip
 
+(* Ideally, offsetof needs to be properly handled here, instead of just skipped. *)
+let __builtin_offsetof = Builtin.register BuiltinDecl.__builtin_offsetof execute_skip
+
 (* [__cast(val,typ)] implements java's [typ(val)] *)
 let __cast = Builtin.register BuiltinDecl.__cast execute___cast
 

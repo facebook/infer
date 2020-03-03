@@ -23,6 +23,8 @@ module type S = sig
 
   val __builtin_va_start : t
 
+  val __builtin_offsetof : t
+
   val __cast : t
   (** [__cast(val,typ)] implements java's [typ(val)] *)
 

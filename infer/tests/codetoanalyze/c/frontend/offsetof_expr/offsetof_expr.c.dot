@@ -36,4 +36,69 @@ digraph cfg {
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_1" [label="1: Start test_offsetof_expr_nonlit\nFormals: \nLocals:  i:int sum:unsigned long \n  " color=yellow style=filled]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_1" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_16" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_2" [label="2: Exit test_offsetof_expr_nonlit \n  " color=yellow style=filled]
+	
+
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_3" [label="3:  Return Stmt \n   *&return:int=42 [line 32, column 3]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_3" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_2" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_4" [label="4: + \n  " ]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_4" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_3" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&sum:unsigned long [line 29, column 7]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_5" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_6" ;
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_5" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_7" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == (unsigned long)1), true); [line 29, column 7]\n " shape="invhouse"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_6" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_8" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == (unsigned long)1), false); [line 29, column 7]\n " shape="invhouse"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_7" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_4" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_8" [label="8:  Return Stmt \n   *&return:int=(1 / 0) [line 30, column 5]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_8" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_2" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_9" [label="9: + \n  " ]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_9" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_12" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 26, column 8]\n  *&i:int=0 [line 26, column 8]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_10" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_9" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_11" [label="11:  UnaryOperator \n   n$3=*&i:int [line 26, column 26]\n  *&i:int=(n$3 + 1) [line 26, column 26]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_11" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_9" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_12" [label="12:  BinaryOperatorStmt: LT \n   n$4=*&i:int [line 26, column 19]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_12" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_13" ;
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_12" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_14" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_13" [label="13: Prune (true branch, for loop) \n   PRUNE((n$4 < 2), true); [line 26, column 19]\n " shape="invhouse"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_13" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_15" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_14" [label="14: Prune (false branch, for loop) \n   PRUNE(!(n$4 < 2), false); [line 26, column 19]\n " shape="invhouse"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_14" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_5" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$5=_fun___builtin_offsetof() [line 27, column 12]\n  n$6=*&sum:unsigned long [line 27, column 5]\n  *&sum:unsigned long=(n$6 + n$5) [line 27, column 5]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_15" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_11" ;
+"test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_16" [label="16:  DeclStmt \n   VARIABLE_DECLARED(sum:unsigned long); [line 25, column 3]\n  *&sum:unsigned long=(unsigned long)0 [line 25, column 3]\n " shape="box"]
+	
+
+	 "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_16" -> "test_offsetof_expr_nonlit.84cbb7cce74551fd659dd824f9839319_10" ;
 }
