@@ -37,6 +37,7 @@ let () =
         ; IListTests.tests
         ; JavaProfilerSamplesTest.tests
         ; LivenessTests.tests
+        ; LRUHashtblTests.tests
         ; MaximumSharingTests.tests
         ; PerfProfilerATDParserTest.tests
         ; ProcCfgTests.tests

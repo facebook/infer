@@ -742,6 +742,7 @@ module Hashable = struct
 end
 
 module Hash = Hashtbl.Make (Hashable)
+module LRUHash = LRUHashtbl.Make (Hashable)
 module HashQueue = Hash_queue.Make (Hashable)
 
 module Map = PrettyPrintable.MakePPMap (struct

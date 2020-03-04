@@ -223,6 +223,8 @@ val is_objc_method : t -> bool
 module Hash : Caml.Hashtbl.S with type key = t
 (** Hash tables with proc names as keys. *)
 
+module LRUHash : LRUHashtbl.S with type key = t
+
 module HashQueue : Hash_queue.S with type key = t
 
 module Map : PrettyPrintable.PPMap with type key = t

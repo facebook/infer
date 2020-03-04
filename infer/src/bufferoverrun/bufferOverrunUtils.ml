@@ -363,13 +363,15 @@ module ReplaceCallee = struct
 
 
   module CacheForMakeShared = struct
-    let results : Procname.t option Procname.Hash.t lazy_t = lazy (Procname.Hash.create 128)
+    let results : Procname.t option Procname.LRUHash.t lazy_t =
+      lazy (Procname.LRUHash.create ~initial_size:128 ~max_size:200)
 
-    let add pname value = Procname.Hash.replace (Lazy.force results) pname value
 
-    let find_opt pname = Procname.Hash.find_opt (Lazy.force results) pname
+    let add pname value = Procname.LRUHash.replace (Lazy.force results) pname value
 
-    let clear () = if Lazy.is_val results then Procname.Hash.clear (Lazy.force results)
+    let find_opt pname = Procname.LRUHash.find_opt (Lazy.force results) pname
+
+    let clear () = if Lazy.is_val results then Procname.LRUHash.clear (Lazy.force results)
   end
 
   let get_cpp_constructor_of_make_shared =
