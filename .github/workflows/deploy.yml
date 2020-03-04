@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "website/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    if: github.repository == 'facebook/infer'
+
+    env:
+      working-directory: website
+      node-version: 12.x
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2.0.0
+
+      - name: Use Node.js ${{ env.node-version }}
+        uses: actions/setup-node@v1.3.0
+        with:
+          node-version: ${{ env.node-version }}
+
+      - name: Get yarn cache directory
+        id: yarn
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Restore yarn cache
+        uses: actions/cache@v1.1.0
+        with:
+          path: ${{ steps.yarn.outputs.dir }}
+          # prettier-ignore
+          key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/website/yarn.lock')) }}
+
+      - name: Install packages
+        working-directory: ${{ env.working-directory }}
+        run: yarn --frozen-lockfile
+
+      - name: Deploy to GitHub Pages
+        working-directory: ${{ env.working-directory }}
+        run: |
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "${GITHUB_ACTOR}"
+          echo "machine github.com login ${GITHUB_ACTOR} password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+          GIT_USER=${GITHUB_ACTOR} yarn deploy
