@@ -471,15 +471,11 @@ let starN = function
   | q :: qs -> List.fold ~f:star ~init:q qs
 
 let or_ q1 q2 =
-  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
+  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp_raw q1 pp_raw q2]
   ;
   ( match (q1, q2) with
-  | {djns= [[]]; _}, _ ->
-      let us = Set.union q1.us q2.us in
-      if us == q2.us then q2 else {q2 with us}
-  | _, {djns= [[]]; _} ->
-      let us = Set.union q1.us q2.us in
-      if us == q1.us then q1 else {q1 with us}
+  | {djns= [[]]; _}, _ -> extend_us q1.us q2
+  | _, {djns= [[]]; _} -> extend_us q2.us q1
   | ( ({djns= []; _} as q)
     , ({us= _; xs; cong= _; pure= []; heap= []; djns= [djn]} as d) )
     when Set.is_empty xs ->
@@ -497,7 +493,7 @@ let or_ q1 q2 =
       ; djns= [[q1; q2]] } )
   |>
   [%Trace.retn fun {pf} q ->
-    pf "%a" pp q ;
+    pf "%a" pp_raw q ;
     invariant q ;
     assert (Set.equal q.us (Set.union q1.us q2.us))]
 
