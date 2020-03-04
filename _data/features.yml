@@ -1,0 +1,8 @@
+- title: Android and Java
+  text: |
+        Infer checks for null pointer exceptions, resource leaks, annotation reachability, missing lock guards, and concurrency race conditions 
+        in Android and Java code.
+
+- title: C, C++, and iOS/Objective-C
+  text: |
+        Infer checks for null pointer dereferences, memory leaks, coding conventions and unavailable API's.

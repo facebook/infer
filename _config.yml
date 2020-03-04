@@ -1,0 +1,47 @@
+# Site settings
+permalink: /blog/:year/:month/:day/:title.html
+title: Infer
+tagline: A tool to detect bugs in Java and C/C++/Objective-C code before it ships
+description: >
+  Infer is a static analysis tool – if you give Infer some Java, or Objective-C/C++/C code, it produces a list of potential bugs.
+fbappid: "1615782811974223"
+gacode: "UA-44373548-7"
+description:
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "https://fbinfer.com" # the base hostname & protocol for your site
+ghrepo: "facebook/infer"
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+  syntax_highlighter_opts:
+    css_class: 'rougeHighlight'
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true
+      start_line: 1
+
+collections:
+  docs:
+    output: true
+    permalink: /docs/:name/
+  support:
+    output: true
+    permalink: /support.html
+
+sass:
+  style: :compressed
+
+redcarpet:
+  extensions: [with_toc_data]
+
+color:
+  primary: "#6223b0"
+  secondary: "#f9f9f9"
+  # Use the following to specify whether the previous two colours are 'light'
+  # or 'dark'
+  primary-overlay: "dark"
+  secondary-overlay: "light"
