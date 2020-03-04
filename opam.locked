@@ -54,9 +54,9 @@ depends: [
   "core_kernel" {= "v0.13.0"}
   "cppo" {= "1.6.6"}
   "ctypes" {= "0.16.0"}
-  "dune" {= "2.2.0"}
-  "dune-configurator" {= "2.2.0"}
-  "dune-private-libs" {= "2.2.0"}
+  "dune" {= "2.3.1"}
+  "dune-configurator" {= "2.3.1"}
+  "dune-private-libs" {= "2.3.1"}
   "easy-format" {= "1.3.2"}
   "extlib" {= "1.7.6"}
   "fieldslib" {= "v0.13.0"}
