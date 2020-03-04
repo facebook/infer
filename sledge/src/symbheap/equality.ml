@@ -444,17 +444,19 @@ let rec canon r a =
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
-(** add a term to the carrier *)
-let rec extend a r =
+let rec extend_ a r =
   match classify a with
-  | Interpreted | Simplified -> Term.fold ~f:extend a ~init:r
+  | Interpreted | Simplified -> Term.fold ~f:extend_ a ~init:r
   | Uninterpreted -> (
-    match Subst.extend a r.rep with
-    | Some rep -> Term.fold ~f:extend a ~init:{r with rep}
+    match Subst.extend a r with
+    | Some r -> Term.fold ~f:extend_ a ~init:r
     | None -> r )
   | Atomic -> r
 
-let extend a r = extend a r |> check invariant
+(** add a term to the carrier *)
+let extend a r =
+  let rep = extend_ a r.rep in
+  if rep == r.rep then r else {r with rep} |> check invariant
 
 let merge us a b r =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
