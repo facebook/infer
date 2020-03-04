@@ -10,7 +10,8 @@ module F = Format
 module L = Logging
 module DExp = DecompiledExp
 
-(** Module for type checking. *)
+type typecheck_result =
+  {normal_flow_typestate: TypeState.t option; exception_flow_typestates: TypeState.t list}
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
@@ -1176,61 +1177,79 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         ~nullsafe_mode ~node:node' ~original_node:node normalized_cond
 
 
+let can_instrunction_throw tenv node instr =
+  match instr with
+  | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) -> (
+      let callee_attributes_opt = PatternMatch.lookup_attributes tenv callee_pname in
+      (* We assume if the function is not annotated with throws(), it can not throw an exception.
+         This is unsound.
+         TODO(T63305137) nullsafe should assume all methods can throw.
+      *)
+      match callee_attributes_opt with
+      | Some callee_attributes ->
+          not (List.is_empty callee_attributes.ProcAttributes.exceptions)
+      | None ->
+          false )
+  | Sil.Store {e1= Exp.Lvar pv}
+    when Pvar.is_return pv
+         && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind ->
+      (* Explicit throw instruction *)
+      true
+  | _ ->
+      false
+
+
+(* true if after this instruction the program interrupts *)
+let is_noreturn_instruction = function
+  | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) when Models.is_noreturn callee_pname
+    ->
+      true
+  | _ ->
+      false
+
+
 (** Typecheck the instructions in a cfg node. *)
 let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canonical_duplicate
     annotated_signature typestate node linereader =
-  let instrs = Procdesc.Node.get_instrs node in
-  let instr_ref_gen = TypeErr.InstrRef.create_generator node in
-  let typestates_exn = ref [] in
-  let noreturn = ref false in
-  let handle_exceptions typestate instr =
-    match instr with
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _)
-      when Models.is_noreturn callee_pname ->
-        noreturn := true
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
-        let callee_attributes_opt = PatternMatch.lookup_attributes tenv callee_pname in
-        (* check if the call might throw an exception *)
-        let has_exceptions =
-          match callee_attributes_opt with
-          | Some callee_attributes ->
-              not (List.is_empty callee_attributes.ProcAttributes.exceptions)
-          | None ->
-              false
-        in
-        if has_exceptions then typestates_exn := typestate :: !typestates_exn
-    | Sil.Store {e1= Exp.Lvar pv}
-      when Pvar.is_return pv
-           && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind ->
-        (* throw instruction *)
-        typestates_exn := typestate :: !typestates_exn
-    | _ ->
-        ()
-  in
-  let canonical_node = find_canonical_duplicate node in
-  let do_instruction typestate instr =
-    let instr_ref =
-      (* keep unique instruction reference per-node *)
-      TypeErr.InstrRef.gen instr_ref_gen
+  if Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind then
+    {normal_flow_typestate= None; exception_flow_typestates= []}
+  else
+    let instrs = Procdesc.Node.get_instrs node in
+    let instr_ref_gen = TypeErr.InstrRef.create_generator node in
+    let canonical_node = find_canonical_duplicate node in
+    (* typecheck the instruction and accumulate result *)
+    let fold_instruction
+        ( { normal_flow_typestate= normal_typestate_prev_opt
+          ; exception_flow_typestates= exception_flow_typestates_prev } as prev_result ) instr =
+      match normal_typestate_prev_opt with
+      | None ->
+          (* no input typestate - abort typechecking and propagate the current result *)
+          prev_result
+      | Some normal_flow_typestate_prev ->
+          let instr_ref =
+            (* keep unique instruction reference per-node *)
+            TypeErr.InstrRef.gen instr_ref_gen
+          in
+          let normal_flow_typestate =
+            typecheck_instr tenv calls_this checks node idenv curr_pname curr_pdesc
+              find_canonical_duplicate annotated_signature instr_ref linereader
+              normal_flow_typestate_prev instr
+          in
+          if is_noreturn_instruction instr then {prev_result with normal_flow_typestate= None}
+          else
+            let exception_flow_typestates =
+              if can_instrunction_throw tenv node instr then
+                (* add the typestate after this instruction to the list of exception typestates *)
+                normal_flow_typestate :: exception_flow_typestates_prev
+              else exception_flow_typestates_prev
+            in
+            if Config.write_html then (
+              L.d_printfln "instr: %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
+              L.d_printfln "new state:@\n%a@\n" TypeState.pp normal_flow_typestate ) ;
+            {normal_flow_typestate= Some normal_flow_typestate; exception_flow_typestates}
     in
-    let post =
-      typecheck_instr tenv calls_this checks node idenv curr_pname curr_pdesc
-        find_canonical_duplicate annotated_signature instr_ref linereader typestate instr
-    in
-    if Config.write_html then (
-      L.d_printfln "instr: %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-      L.d_printfln "new state:@\n%a@\n" TypeState.pp post ) ;
-    handle_exceptions typestate instr ;
-    post
-  in
-  (* Reset 'always' field for forall errors to false. *)
-  (* This is used to track if it is set to true for all visit to the node. *)
-  TypeErr.node_reset_forall canonical_node ;
-  let typestate_succ = Instrs.fold ~f:do_instruction ~init:typestate instrs in
-  let dont_propagate =
-    Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind
-    (* don't propagate exceptions *)
-    || !noreturn
-  in
-  if dont_propagate then ([], []) (* don't propagate to exit node *)
-  else ([typestate_succ], !typestates_exn)
+    (* Reset 'always' field for forall errors to false. *)
+    (* This is used to track if it is set to true for all visit to the node. *)
+    TypeErr.node_reset_forall canonical_node ;
+    Instrs.fold instrs ~f:fold_instruction
+      ~init:{normal_flow_typestate= Some typestate; exception_flow_typestates= []}

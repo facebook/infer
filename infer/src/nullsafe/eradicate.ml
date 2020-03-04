@@ -95,11 +95,14 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         NodePrinter.with_session ~pp_name node ~f:(fun () ->
             State.set_node node ;
             if Config.write_html then L.d_printfln "before:@\n%a@\n" TypeState.pp typestate ;
-            let typestates_succ, typestates_exn =
+            let TypeCheck.{normal_flow_typestate; exception_flow_typestates} =
               TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc
                 find_canonical_duplicate annotated_signature typestate node linereader
             in
-            (typestates_succ, typestates_exn) )
+            let normal_flow_typestates =
+              Option.value_map normal_flow_typestate ~f:(fun a -> [a]) ~default:[]
+            in
+            (normal_flow_typestates, exception_flow_typestates) )
 
 
       let proc_throws _ = DontKnow
