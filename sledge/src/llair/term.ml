@@ -104,6 +104,12 @@ end = struct
     | Float of {data: string}
     | Integer of {data: Z.t}
   [@@deriving compare, equal, hash, sexp]
+
+  let compare x y =
+    match (x, y) with
+    | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
+        Int.compare i j
+    | _ -> compare x y
 end
 
 (* suppress spurious "Warning 60: unused module T0." *)
