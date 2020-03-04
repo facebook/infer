@@ -225,8 +225,7 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
   | New
   | ArrayAccess
   | InferredNonnull _
-  | OptimisticFallback
-  | Undef ->
+  | OptimisticFallback ->
       " according to the existing annotations"
 
 

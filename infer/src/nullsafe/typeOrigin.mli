@@ -23,13 +23,13 @@ type t =
   | InferredNonnull of {previous_origin: t}
       (** The value is inferred as non-null during flow-sensitive type inference (most commonly from
           relevant condition branch or assertion explicitly comparing the value with `null`) *)
-  (* Below are two special values. *)
   | OptimisticFallback
-      (** Something went wrong during typechecking. We fall back to optimistic (not-nullable) type
-          to reduce potential non-actionable false positives. Ideally we should not see these
-          instances. They should be either processed gracefully (and a dedicated type constructor
-          should be added), or fixed. T54687014 tracks unsoundness issues caused by this type. *)
-  | Undef  (** Undefined value before initialization *)
+      (** A special case: technical type variant. Indicates either cases when something went wrong
+          during typechecking, and some cases that should be expressed in a better way than using
+          this type. We fall back to optimistic (not-nullable) type to reduce potential
+          non-actionable false positives. Ideally we should not see these instances. They should be
+          either processed gracefully (and a dedicated type constructor should be added), or fixed.
+          T54687014 tracks unsoundness issues caused by this type. *)
 [@@deriving compare]
 
 and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride

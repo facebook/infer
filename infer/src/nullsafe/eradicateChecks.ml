@@ -257,9 +257,6 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
             in
             let is_initialized_in_either_constructor_or_initializer =
               let is_initialized = function
-                | TypeOrigin.Undef ->
-                    (* Special case: not really an initialization *)
-                    false
                 | TypeOrigin.Field {object_origin= TypeOrigin.This} ->
                     (* Circular initialization - does not count *)
                     false

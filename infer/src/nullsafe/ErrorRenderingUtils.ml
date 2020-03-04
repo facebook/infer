@@ -57,8 +57,7 @@ let is_object_nullability_self_explanatory ~object_expression (object_origin : T
   | ArrayLengthResult
   | ArrayAccess
   | InferredNonnull _
-  | OptimisticFallback
-  | Undef ->
+  | OptimisticFallback ->
       false
 
 

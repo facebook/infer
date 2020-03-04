@@ -226,15 +226,7 @@ let funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignmen
         exp
     | Some exp_str ->
         let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
-        let already_defined_in_typestate =
-          match TypeState.lookup_pvar pvar typestate with
-          | Some (_, inferred_nullability) ->
-              not
-                (TypeOrigin.equal TypeOrigin.Undef
-                   (InferredNullability.get_origin inferred_nullability))
-          | None ->
-              false
-        in
+        let already_defined_in_typestate = Option.is_some (TypeState.lookup_pvar pvar typestate) in
         if is_assignment && already_defined_in_typestate then exp
           (* Don't overwrite pvar representing result of function call. *)
         else Exp.Lvar pvar )
@@ -439,7 +431,7 @@ let typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc
     tenv node instr_ref typestate1 exp1 loc1 : unit =
   ignore
     (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks tenv
-       node instr_ref typestate1 exp1 Typ.void TypeOrigin.Undef loc1)
+       node instr_ref typestate1 exp1 Typ.void TypeOrigin.OptimisticFallback loc1)
 
 
 (* Handle Preconditions.checkNotNull. *)
@@ -596,7 +588,8 @@ let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc call
           let pvar_map_get = Pvar.mk (Mangled.from_string map_get_str) curr_pname in
           TypeState.add pvar_map_get
             (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
-               checks tenv node instr_ref typestate' exp_value typ_value TypeOrigin.Undef loc)
+               checks tenv node instr_ref typestate' exp_value typ_value
+               TypeOrigin.OptimisticFallback loc)
             typestate'
       | None ->
           typestate' )
@@ -1079,7 +1072,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       TypeState.add_id id
         (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-           tenv node instr_ref typestate' e' typ TypeOrigin.Undef loc)
+           tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
         typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
@@ -1107,7 +1100,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         | Exp.Lvar pvar ->
             TypeState.add pvar
               (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
-                 checks tenv node instr_ref typestate1 e2 typ TypeOrigin.Undef loc)
+                 checks tenv node instr_ref typestate1 e2 typ TypeOrigin.OptimisticFallback loc)
               typestate1
         | Exp.Lfield _ ->
             typestate1

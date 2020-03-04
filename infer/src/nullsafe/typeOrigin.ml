@@ -10,28 +10,18 @@ open! IStd
 (** Describe the origin of values propagated by the checker. *)
 
 type t =
-  | NullConst of Location.t  (** A null literal in the source *)
-  | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
-  | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
-  | MethodParameter of method_parameter_origin  (** A method's parameter *)
-  | This (* `this` object. Can not be null, according to Java rules. *)
-  | MethodCall of method_call_origin  (** A result of a method call *)
+  | NullConst of Location.t
+  | NonnullConst of Location.t
+  | Field of field_origin
+  | MethodParameter of method_parameter_origin
+  | This
+  | MethodCall of method_call_origin
   | CallToGetKnownToContainsKey
-      (** This is a result of accessing a map element that is known to contains this particular key,
-          normally because it was explicitly checked for presense before *)
-  | New  (** A new object creation *)
-  | ArrayLengthResult  (** integer value - result of accessing array.length *)
-  | ArrayAccess  (** Result of accessing an array by index *)
+  | New
+  | ArrayLengthResult
+  | ArrayAccess
   | InferredNonnull of {previous_origin: t}
-      (** The value is inferred as non-null during flow-sensitive type inference (most commonly from
-          relevant condition branch or assertion explicitly comparing the value with `null`) *)
-  (* Below are two special values. *)
   | OptimisticFallback
-      (** Something went wrong during typechecking. We fall back to optimistic (not-nullable) type
-          to reduce potential non-actionable false positives. Ideally we should not see these
-          instances. They should be either processed gracefully (and a dedicated type constructor
-          should be added), or fixed. T54687014 tracks unsoundness issues caused by this type. *)
-  | Undef  (** Undefined value before initialization *)
 [@@deriving compare]
 
 and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
@@ -67,8 +57,7 @@ let get_nullability = function
      Hence we make potentially dangerous choice in favor of pragmatism.
   *)
   | ArrayAccess
-  | OptimisticFallback (* non-null is the most optimistic type *)
-  | Undef (* This is a very special case, assigning non-null is a technical trick *) ->
+  | OptimisticFallback (* non-null is the most optimistic type *) ->
       Nullability.StrictNonnull
   | Field {field_type= {nullability}} ->
       AnnotatedNullability.get_nullability nullability
@@ -109,8 +98,6 @@ let rec to_string = function
       Format.sprintf "InferredNonnull(prev:%s)" (to_string previous_origin)
   | OptimisticFallback ->
       "OptimisticFallback"
-  | Undef ->
-      "Undef"
 
 
 let atline loc = " at line " ^ string_of_int loc.Location.line
@@ -179,18 +166,16 @@ let get_description origin =
   | InferredNonnull _
   | CallToGetKnownToContainsKey ->
       None
-  (* Two special cases - should not really occur in normal code *)
-  | OptimisticFallback | Undef ->
+  (* A technical origin *)
+  | OptimisticFallback ->
       None
 
 
 let join o1 o2 =
   match (o1, o2) with
-  (* left priority *)
-  | Undef, _ | _, Undef ->
-      Undef
   | Field _, (NullConst _ | NonnullConst _ | MethodParameter _ | This | MethodCall _ | New) ->
       (* low priority to Field, to support field initialization patterns *)
       o2
   | _ ->
+      (* left priority *)
       o1
