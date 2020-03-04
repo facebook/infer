@@ -46,8 +46,6 @@ and method_call_origin =
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }
 
-val equal : t -> t -> bool
-
 val get_nullability : t -> Nullability.t
 
 val get_description : t -> string option

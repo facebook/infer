@@ -38,8 +38,6 @@ and method_call_origin =
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }
 
-let equal = [%compare.equal: t]
-
 let get_nullability = function
   | NullConst _ ->
       Nullability.Null
