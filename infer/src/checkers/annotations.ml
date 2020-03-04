@@ -97,6 +97,8 @@ let suppress_lint = "SuppressLint"
 
 let suppress_view_nullability = "SuppressViewNullability"
 
+let recently_nonnull = "RecentlyNonNull"
+
 let recently_nullable = "RecentlyNullable"
 
 let thread_confined = "ThreadConfined"
@@ -179,18 +181,31 @@ let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
 let ia_is_propagates_nullable ia = ia_ends_with ia propagates_nullable
 
 let ia_is_nullable ia =
-  ia_ends_with ia nullable
-  (* @RecentlyNullable is a special annotation that was added to solve backward compatibility issues
-     for Android SDK migration.
-     See https://android-developers.googleblog.com/2018/08/android-pie-sdk-is-now-more-kotlin.html for details.
-     From nullsafe point of view, such annotations should be treated exactly as normal @Nullable annotation is treated.
-     (Actually, IDEs might even show it as @Nullable)
-  *)
-  || ia_ends_with ia recently_nullable
-  || ia_is_propagates_nullable ia
+  List.exists ~f:(ia_ends_with ia)
+    [ nullable
+    ; propagates_nullable (* @PropagatesNullable is implicitly nullable *)
+    ; recently_nullable
+      (* @RecentlyNullable is a special annotation that was added to solve backward compatibility issues
+         for Android SDK migration.
+         See https://android-developers.googleblog.com/2018/08/android-pie-sdk-is-now-more-kotlin.html for details.
+         From nullsafe point of view, such annotations should be treated exactly as normal @Nullable annotation.
+         (Actually, it might even be shown as @Nullable in IDE/source code)
+      *) ]
 
 
-let ia_is_nonnull ia = List.exists ~f:(ia_ends_with ia) [nonnull; notnull; camel_nonnull]
+let ia_is_nonnull ia =
+  List.exists ~f:(ia_ends_with ia)
+    [ nonnull
+    ; notnull
+    ; camel_nonnull
+    ; recently_nonnull
+      (* @RecentlyNonNull is a special annotation that was added to solve backward compatibility issues
+         for Android SDK migration.
+         See https://android-developers.googleblog.com/2018/08/android-pie-sdk-is-now-more-kotlin.html for details.
+         From nullsafe point of view, such annotations should be treated exactly as normal @NonNull annotation.
+         (Actually, it might even be shown as @NonNull in IDE/source code)
+      *) ]
+
 
 let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict
 
