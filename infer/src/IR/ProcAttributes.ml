@@ -150,7 +150,9 @@ let pp f
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
-  F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp) passed_as_noescape_block_to ;
+  if not ([%compare.equal : Procname.t option] default.passed_as_noescape_block_to passed_as_noescape_block_to) then
+    F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
+      passed_as_noescape_block_to ;
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
