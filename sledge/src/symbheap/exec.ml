@@ -165,7 +165,7 @@ let memmov_foot us dst src len =
   let mem_src = (src_dst, arr_src) in
   let mem_dst_mid_src = [|mem_dst; mem_mid; mem_src|] in
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
-  let arr_dst_mid_src, _, xs = fresh_var "a" us xs in
+  let arr_dst_mid_src, us, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
     Term.eq_concat (siz_dst_mid_src, arr_dst_mid_src) mem_dst_mid_src
   in
@@ -178,14 +178,14 @@ let memmov_foot us dst src len =
       (Sh.and_ (Term.lt dst src)
          (Sh.and_ (Term.lt src (Term.add dst len)) seg))
   in
-  (xs, bas, siz, mem_dst, mem_mid, mem_src, foot)
+  (us, xs, bas, siz, mem_dst, mem_mid, mem_src, foot)
 
 (* { d<s * s<d+l * d-[b;m)->⟨s-d,α⟩^⟨l-(s-d),β⟩^⟨s-d,γ⟩ }
  *   memmov l d s
  * { d-[b;m)->⟨l-(s-d),β⟩^⟨s-d,γ⟩^⟨s-d,γ⟩ }
  *)
 let memmov_dn_spec us dst src len =
-  let xs, bas, siz, _, mem_mid, mem_src, foot =
+  let us, xs, bas, siz, _, mem_mid, mem_src, foot =
     memmov_foot us dst src len
   in
   let mem_mid_src_src = [|mem_mid; mem_src; mem_src|] in
@@ -210,7 +210,7 @@ let memmov_dn_spec us dst src len =
  * { s-[b;m)->⟨d-s,α⟩^⟨d-s,α⟩^⟨l-(d-s),β⟩ }
  *)
 let memmov_up_spec us dst src len =
-  let xs, bas, siz, mem_src, mem_mid, _, foot =
+  let us, xs, bas, siz, mem_src, mem_mid, _, foot =
     memmov_foot us src dst len
   in
   let mem_src_src_mid = [|mem_src; mem_src; mem_mid|] in
