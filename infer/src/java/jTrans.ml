@@ -678,7 +678,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
   let instrs =
     match call_args with
     (* modeling a class bypasses the treatment of Closeable *)
-    | _ when Config.biabduction_models_mode || JClasspath.is_model callee_procname ->
+    | _ when Config.biabduction_models_mode || JModels.is_model callee_procname ->
         call_instrs
     | ((_, {Typ.desc= Typ.Tptr ({desc= Tstruct typename}, _)}) as exp) :: _
     (* add a file attribute when calling the constructor of a subtype of Closeable *)

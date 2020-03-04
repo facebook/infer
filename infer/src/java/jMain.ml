@@ -120,7 +120,7 @@ let main load_sources_and_classes =
   | true, true ->
       L.(die UserError) "Not expecting model file when analyzing the models"
   | false, true ->
-      JClasspath.add_models Config.biabduction_models_jar ) ;
+      JModels.set_models ~jar_filename:Config.biabduction_models_jar ) ;
   JBasics.set_permissive true ;
   let classpath, sources, classes =
     match load_sources_and_classes with

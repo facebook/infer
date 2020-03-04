@@ -9,13 +9,6 @@
 open! IStd
 open Javalib_pack
 
-val add_models : string -> unit
-(** Adds the set of procnames for the models of Java libraries so that methods with similar names
-    are skipped during the capture *)
-
-val is_model : Procname.t -> bool
-(** Check if there is a model for the given procname *)
-
 (** map entry for source files with potential basename collision within the same compiler call *)
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 

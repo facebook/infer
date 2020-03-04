@@ -141,7 +141,7 @@ let create_icfg source_file program tenv icfg cn node =
   let translate m =
     let proc_name = JTransType.translate_method_name program tenv m in
     JClasspath.set_callee_translated program proc_name ;
-    if JClasspath.is_model proc_name then
+    if JModels.is_model proc_name then
       (* do not translate the method if there is a model for it *)
       L.debug Capture Verbose "Skipping method with a model: %a@." Procname.pp proc_name
     else

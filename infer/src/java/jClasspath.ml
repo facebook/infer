@@ -7,38 +7,11 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 open Javalib_pack
 module L = Logging
 
 (** version of Javalib.get_class that does not spam stderr *)
 let javalib_get_class = Utils.suppress_stderr2 Javalib.get_class
-
-let models_specs_filenames = ref String.Set.empty
-
-let models_jar = ref ""
-
-let collect_specs_filenames jar_filename =
-  let zip_channel = Zip.open_in jar_filename in
-  let collect set e =
-    let filename = e.Zip.filename in
-    if not (Filename.check_suffix filename Config.specs_files_suffix) then set
-    else
-      let proc_filename = Filename.chop_extension (Filename.basename filename) in
-      String.Set.add set proc_filename
-  in
-  models_specs_filenames :=
-    List.fold ~f:collect ~init:!models_specs_filenames (Zip.entries zip_channel) ;
-  Zip.close_in zip_channel
-
-
-let add_models jar_filename =
-  models_jar := jar_filename ;
-  if Sys.file_exists !models_jar = `Yes then collect_specs_filenames jar_filename
-  else L.(die InternalError) "Java model file not found"
-
-
-let is_model procname = String.Set.mem !models_specs_filenames (Procname.to_filename procname)
 
 let split_classpath = String.split ~on:JFile.sep
 
@@ -308,8 +281,8 @@ let collect_classes start_classmap jar_filename =
 let load_program classpath classes =
   L.(debug Capture Medium) "loading program ... %!" ;
   let models =
-    if String.equal !models_jar "" then JBasics.ClassMap.empty
-    else collect_classes JBasics.ClassMap.empty !models_jar
+    JModels.get_models_jar_filename ()
+    |> Option.fold ~init:JBasics.ClassMap.empty ~f:collect_classes
   in
   let program =
     { classpath= {path= classpath; channel= Javalib.class_path classpath}
