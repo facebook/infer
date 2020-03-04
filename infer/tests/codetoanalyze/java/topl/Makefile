@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-SUBDIRS = baos hasnext skip servlet
+SUBDIRS = baos compareArgs hasnext skip servlet
 
 test-%:
 	$(MAKE) -C $* test

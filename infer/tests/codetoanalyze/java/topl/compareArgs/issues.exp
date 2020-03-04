@@ -1,0 +1,2 @@
+codetoanalyze/java/topl/compareArgs/CompareArgs.java, CompareArgs.aBad():void, 0, TOPL_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/compareArgs/CompareArgs.java, CompareArgs.cBad():void, 0, TOPL_ERROR, no_bucket, ERROR, []

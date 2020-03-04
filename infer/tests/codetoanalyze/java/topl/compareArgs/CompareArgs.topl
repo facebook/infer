@@ -1,0 +1,4 @@
+property MaxArgs
+  nondet (start)
+  start -> start: *
+  start -> error: "CompareArgs.max"(Ignore, I, J, IgnoreRet) when I >= J
