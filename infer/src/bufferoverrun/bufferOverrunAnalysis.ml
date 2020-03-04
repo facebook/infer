@@ -456,23 +456,17 @@ let compute_invariant_map :
 
 
 let cached_compute_invariant_map =
-  (* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily keeps invariant maps around) *)
-  let module WeakInvMapHashTbl = Caml.Weak.Make (struct
-    type t = Procname.t * invariant_map option
-
-    let equal (pname1, _) (pname2, _) = Procname.equal pname1 pname2
-
-    let hash (pname, _) = Hashtbl.hash pname
-  end) in
-  let inv_map_cache = WeakInvMapHashTbl.create 100 in
+  let cache = ref None in
+  let cache_get pname =
+    Option.bind !cache ~f:(fun (pname', inv_map) ->
+        Option.some_if (Procname.equal pname pname') inv_map )
+  in
+  let cache_set pname inv_map = cache := Some (pname, inv_map) in
   fun summary tenv integer_type_widths ->
     let pname = Summary.get_proc_name summary in
-    match WeakInvMapHashTbl.find_opt inv_map_cache (pname, None) with
-    | Some (_, Some inv_map) ->
+    match cache_get pname with
+    | Some inv_map ->
         inv_map
-    | Some (_, None) ->
-        (* this should never happen *)
-        assert false
     | None ->
         let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
         let get_formals callee_pname =
@@ -481,8 +475,7 @@ let cached_compute_invariant_map =
         let inv_map =
           compute_invariant_map summary tenv integer_type_widths get_summary get_formals
         in
-        WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map) ;
-        inv_map
+        cache_set pname inv_map ; inv_map
 
 
 let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
