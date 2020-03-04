@@ -741,6 +741,14 @@ let rec simp_extract agg off len =
                       | Ap2 (Memory, nJ, _) | Ap3 (Extract, _, _, nJ) -> (
                           let lIJ = simp_add2 lIJ nJ in
                           match (lIJ, len) with
+                          (* (α₀^…^αᵢ^…) [0+n₀+…+nᵢ₋₁, l) ==> (αᵢ^…)[0,l)
+                             where nₓ ≡ |αₓ| *)
+                          | Integer {data= y}, Integer {data= z}
+                            when Z.gt y z ->
+                              let naIN =
+                                Vector.sub ~pos:i ~len:(n - i) na1N
+                              in
+                              simp_extract (simp_concat naIN) zero len
                           | Integer {data= y}, Integer {data= z}
                             when Z.gt y z ->
                               Ap3 (Extract, agg, off, len)
