@@ -60,8 +60,8 @@ module.exports = {
           title: "Social",
           items: [
             { label: "Blog", to: "blog" },
-            { label: "GitHub", href: "https://github.com/facebook" },
-            { label: "Twitter", href: "https://twitter.com/fbOpenSource" }
+            { label: "GitHub", href: "https://github.com/facebook/infer" },
+            { label: "Twitter", href: "https://twitter.com/fbinfer" }
           ]
         }
       ],
