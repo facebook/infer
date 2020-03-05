@@ -189,7 +189,7 @@ endif
 
 
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += genrule genrulecapture
+BUILD_SYSTEMS_TESTS += genrulecapture
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
