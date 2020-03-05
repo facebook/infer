@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v2.0.0
 
       - name: Use Node.js ${{ env.node-version }}
-        uses: actions/setup-node@v1.3.0
+        uses: actions/setup-node@v1.4.0
         with:
           node-version: ${{ env.node-version }}
 
@@ -31,7 +31,7 @@ jobs:
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - name: Restore yarn cache
-        uses: actions/cache@v1.1.0
+        uses: actions/cache@v1.1.2
         with:
           path: ${{ steps.yarn.outputs.dir }}
           # prettier-ignore
