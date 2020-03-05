@@ -81,4 +81,10 @@ class PurityModeled {
   void list_set_impure(ArrayList<String> list) {
     list.set(0, "e");
   }
+
+  void timing_call_in_loop_impure_FN() {
+    for (int i = 0; i < 10; i++) {
+      System.nanoTime();
+    }
+  }
 }
