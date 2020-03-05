@@ -250,10 +250,14 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         if is_on_ui_thread then
           Format.asprintf "%a %s" MarkupFormatter.pp_bold
             "This function is called on the UI Thread!" common_msg
-        else if ExternalPerfData.in_profiler_data_map procname then
-          Format.asprintf "%a %s" MarkupFormatter.pp_bold
-            "This function is called during cold start!" common_msg
-        else ""
+        else
+          Option.value_map (ExternalPerfData.get_avg_inclusive_time_opt procname) ~default:""
+            ~f:(fun avg_inclusive_time ->
+              let pp_avg_inclusive_time f =
+                Format.fprintf f "(avg inclusive CPU time was %.1f ms)" avg_inclusive_time
+              in
+              Format.asprintf "%a %t %s" MarkupFormatter.pp_bold
+                "This function is called during cold start!" pp_avg_inclusive_time common_msg )
       in
       let msg =
         (* Java Only *)

@@ -73,14 +73,28 @@ let _read_file_perf_data fname =
 
 let read_file_flag = ref false
 
+let prepare_perf_data fname =
+  if not !read_file_flag then (
+    _read_file_perf_data fname ;
+    read_file_flag := true ) ;
+  if PerfProfilerDataMap.is_empty !global_perf_profiler_data then
+    L.(debug Analysis Medium) "@\n\n[Perf Profiler Log] WARNING: EMPTY PERF PROFILER DATA@\n"
+
+
 let in_profiler_data_map key =
   match Config.perf_profiler_data_file with
   | Some fname ->
-      if not !read_file_flag then (
-        _read_file_perf_data fname ;
-        read_file_flag := true ) ;
-      if PerfProfilerDataMap.is_empty !global_perf_profiler_data then
-        L.(debug Analysis Medium) "@\n\n[Perf Profiler Log] WARNING: EMPTY PERF PROFILER DATA@\n" ;
+      prepare_perf_data fname ;
       PerfProfilerDataMap.mem key !global_perf_profiler_data
   | _ ->
       false
+
+
+let get_avg_inclusive_time_opt key =
+  let open IOption.Let_syntax in
+  let* fname = Config.perf_profiler_data_file in
+  prepare_perf_data fname ;
+  let+ {Perf_profiler_t.avg_inclusive_cpu_time_ms} =
+    PerfProfilerDataMap.find_opt key !global_perf_profiler_data
+  in
+  avg_inclusive_cpu_time_ms

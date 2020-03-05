@@ -8,3 +8,5 @@
 open! IStd
 
 val in_profiler_data_map : Procname.t -> bool
+
+val get_avg_inclusive_time_opt : Procname.t -> float option
