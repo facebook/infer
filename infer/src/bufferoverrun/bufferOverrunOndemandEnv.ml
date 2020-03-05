@@ -45,7 +45,10 @@ let mk pdesc =
                 Some element_typ
             | Some CppStdVector ->
                 Some (Typ.mk (Typ.Tptr (Typ.void, Typ.Pk_pointer)))
-            | Some _ ->
+            | Some JavaCollection ->
+                (* Current Java frontend does give element types of Java collection. *)
+                None
+            | Some JavaInteger ->
                 L.internal_error "Deref of non-array modeled type `%a`" Typ.Name.pp typename ;
                 None
             | None ->
