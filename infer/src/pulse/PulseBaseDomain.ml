@@ -190,10 +190,6 @@ module GraphComparison = struct
     match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
 end
 
-let leq ~lhs ~rhs =
-  phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
-
-
 let pp fmt {heap; stack; skipped_calls; attrs} =
   F.fprintf fmt
     "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@;skipped_calls=@[<hv>%a@];@]}"

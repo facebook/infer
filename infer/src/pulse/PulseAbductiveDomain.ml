@@ -34,7 +34,7 @@ module type BaseDomain = sig
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
   (**filter both heap and attrs *)
 
-  include AbstractDomain.NoJoin with type t := t
+  val pp : F.formatter -> t -> unit
 end
 
 (* just to expose record field names without having to type
@@ -83,9 +83,6 @@ module InvertedDomain : BaseDomain = struct
   let empty = BaseDomain.empty
 
   let pp = BaseDomain.pp
-
-  (** inverted lattice *)
-  let leq ~lhs ~rhs = BaseDomain.leq ~rhs:lhs ~lhs:rhs
 end
 
 (** biabduction-style pre/post state *)
