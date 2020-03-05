@@ -1635,12 +1635,6 @@ INTERNAL OPTIONS
            Activates: process the ast to emit some info about the file (Not
            available for Java) (Conversely: --no-process-clang-ast)
 
-       --procs-csv file
-           Write statistics for each procedure in CSV format to a file
-
-       --procs-csv-reset
-           Cancel the effect of --procs-csv.
-
        --profiler-samples path
            File containing the profiler samples when Infer is run Test
            Determinator mode with --test-determinator.
@@ -1776,12 +1770,6 @@ INTERNAL OPTIONS
        --starvation-whole-program
            Activates: Run whole-program starvation analysis (Conversely:
            --no-starvation-whole-program)
-
-       --stats-report file
-           Write a report of the analysis results to a file
-
-       --stats-report-reset
-           Cancel the effect of --stats-report.
 
        --no-subtype-multirange
            Deactivates: Use the multirange subtyping domain (Conversely:

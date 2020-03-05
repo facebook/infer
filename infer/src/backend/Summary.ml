@@ -42,8 +42,6 @@ module Stats = struct
         F.pp_print_string fmt "NONE"
 
 
-  let failure_kind_to_string {failure_kind} = F.asprintf "%a" pp_failure_kind_opt failure_kind
-
   let pp fmt {failure_kind; symops} =
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
@@ -105,8 +103,6 @@ let pp_signature fmt summary =
   F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Procname.pp
     (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
 
-
-let get_signature summary = F.asprintf "%a" pp_signature summary
 
 let pp_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_signature summary ;

@@ -60,82 +60,6 @@ let loc_trace_to_jsonbug_record trace_list ekind =
       record_list
 
 
-type summary_val =
-  { vname: string
-  ; vname_id: string
-  ; vspecs: int
-  ; vto: string
-  ; vsymop: int
-  ; verr: int
-  ; vfile: string
-  ; vline: int
-  ; vsignature: string
-  ; vproof_trace: string }
-
-(** compute values from summary data to export to csv format *)
-let summary_values summary =
-  let stats = summary.Summary.stats in
-  let attributes = Summary.get_attributes summary in
-  let err_log = Summary.get_err_log summary in
-  let proc_name = Summary.get_proc_name summary in
-  let vsignature = Summary.get_signature summary in
-  let specs = Tabulation.get_specs_from_payload summary in
-  let lines_visited =
-    let visited = ref BiabductionSummary.Visitedset.empty in
-    let do_spec spec =
-      visited := BiabductionSummary.Visitedset.union spec.BiabductionSummary.visited !visited
-    in
-    List.iter ~f:do_spec specs ;
-    let visited_lines = ref Int.Set.empty in
-    BiabductionSummary.Visitedset.iter
-      (fun (_, ls) -> List.iter ~f:(fun l -> visited_lines := Int.Set.add !visited_lines l) ls)
-      !visited ;
-    Int.Set.elements !visited_lines
-  in
-  let vproof_trace =
-    let pp_line fmt l = F.pp_print_int fmt l in
-    let pp fmt = Pp.seq pp_line fmt lines_visited in
-    F.asprintf "%t" pp
-  in
-  { vname= Procname.to_string proc_name
-  ; vname_id= Procname.to_filename proc_name
-  ; vspecs= List.length specs
-  ; vto= Summary.Stats.failure_kind_to_string stats
-  ; vsymop= Summary.Stats.symops stats
-  ; verr= Errlog.size (Exceptions.equal_severity Exceptions.Error) err_log
-  ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
-  ; vline= attributes.ProcAttributes.loc.Location.line
-  ; vsignature
-  ; vproof_trace }
-
-
-module ProcsCsv = struct
-  (** Print the header of the procedures csv file, with column names *)
-  let pp_header fmt () =
-    Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s@\n"
-      Io_infer.Xml.tag_name Io_infer.Xml.tag_name_id Io_infer.Xml.tag_specs Io_infer.Xml.tag_time
-      Io_infer.Xml.tag_to Io_infer.Xml.tag_symop Io_infer.Xml.tag_err Io_infer.Xml.tag_file
-      Io_infer.Xml.tag_line Io_infer.Xml.tag_loc Io_infer.Xml.tag_top Io_infer.Xml.tag_signature
-      Io_infer.Xml.tag_weight Io_infer.Xml.tag_proof_coverage Io_infer.Xml.tag_rank
-      Io_infer.Xml.tag_in_calls Io_infer.Xml.tag_out_calls Io_infer.Xml.tag_proof_trace
-
-
-  (** Write proc summary stats in csv format *)
-  let pp_summary fmt summary =
-    let pp x = F.fprintf fmt x in
-    let sv = summary_values summary in
-    pp "\"%s\"," (Escape.escape_csv sv.vname) ;
-    pp "\"%s\"," (Escape.escape_csv sv.vname_id) ;
-    pp "%d," sv.vspecs ;
-    pp "%s," sv.vto ;
-    pp "%d," sv.vsymop ;
-    pp "%d," sv.verr ;
-    pp "%s," sv.vfile ;
-    pp "%d," sv.vline ;
-    pp "\"%s\"," (Escape.escape_csv sv.vsignature) ;
-    pp "%s@\n" sv.vproof_trace
-end
-
 let should_report (issue_kind : Exceptions.severity) issue_type error_desc eclass =
   if (not Config.filtering) || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
@@ -479,114 +403,6 @@ module Stats = struct
     ; nverified= 0
     ; nwarnings= 0
     ; saved_errors= [] }
-
-
-  let process_loc loc stats =
-    try Hashtbl.find stats.files loc.Location.file
-    with Caml.Not_found -> Hashtbl.add stats.files loc.Location.file ()
-
-
-  let loc_trace_to_string_list linereader indent_num ltr =
-    let res = ref [] in
-    let indent_string n =
-      let s = ref "" in
-      for _ = 1 to n do
-        s := "  " ^ !s
-      done ;
-      !s
-    in
-    let num = ref 0 in
-    let loc_to_string lt =
-      incr num ;
-      let loc = lt.Errlog.lt_loc in
-      let level = lt.Errlog.lt_level in
-      let description = lt.Errlog.lt_description in
-      let code = match Printer.LineReader.from_loc linereader loc with Some s -> s | None -> "" in
-      let line =
-        let pp fmt =
-          if not (String.is_empty description) then
-            F.fprintf fmt "%s%4s  // %s@\n" (indent_string (level + indent_num)) " " description ;
-          F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code
-        in
-        F.asprintf "%t" pp
-      in
-      res := line :: "" :: !res
-    in
-    List.iter ~f:loc_to_string ltr ; List.rev !res
-
-
-  let process_err_log error_filter linereader err_log stats =
-    let found_errors = ref false in
-    let process_row (key : Errlog.err_key) (err_data : Errlog.err_data) =
-      let type_str = key.err_name.IssueType.unique_id in
-      if error_filter key.err_name then
-        match key.severity with
-        | Exceptions.Error ->
-            found_errors := true ;
-            stats.nerrors <- stats.nerrors + 1 ;
-            let error_strs =
-              let pp1 fmt = F.fprintf fmt "%d: %s" stats.nerrors type_str in
-              let pp2 fmt =
-                F.fprintf fmt "  %a:%d" SourceFile.pp err_data.loc.Location.file
-                  err_data.loc.Location.line
-              in
-              let pp3 fmt = F.fprintf fmt "  (%a)" Localise.pp_error_desc key.err_desc in
-              [F.asprintf "%t" pp1; F.asprintf "%t" pp2; F.asprintf "%t" pp3]
-            in
-            let trace = loc_trace_to_string_list linereader 1 err_data.loc_trace in
-            stats.saved_errors <- List.rev_append (error_strs @ trace @ [""]) stats.saved_errors
-        | Exceptions.Warning ->
-            stats.nwarnings <- stats.nwarnings + 1
-        | Exceptions.Info ->
-            stats.ninfos <- stats.ninfos + 1
-        | Exceptions.Advice ->
-            stats.nadvice <- stats.nadvice + 1
-        | Exceptions.Like ->
-            stats.nlikes <- stats.nlikes + 1
-    in
-    Errlog.iter process_row err_log ; !found_errors
-
-
-  let process_summary error_filter summary linereader stats =
-    let specs = Tabulation.get_specs_from_payload summary in
-    let found_errors =
-      process_err_log error_filter linereader (Summary.get_err_log summary) stats
-    in
-    let is_defective = found_errors in
-    let is_verified = (not (List.is_empty specs)) && not is_defective in
-    let is_checked = not (is_defective || is_verified) in
-    let is_timeout =
-      match Summary.(Stats.failure_kind summary.stats) with
-      | None | Some (FKcrash _) ->
-          false
-      | _ ->
-          true
-    in
-    stats.nprocs <- stats.nprocs + 1 ;
-    stats.nspecs <- stats.nspecs + List.length specs ;
-    if is_verified then stats.nverified <- stats.nverified + 1 ;
-    if is_checked then stats.nchecked <- stats.nchecked + 1 ;
-    if is_timeout then stats.ntimeouts <- stats.ntimeouts + 1 ;
-    if is_defective then stats.ndefective <- stats.ndefective + 1 ;
-    process_loc (Summary.get_loc summary) stats
-
-
-  let num_files stats = Hashtbl.length stats.files
-
-  let pp fmt stats =
-    F.fprintf fmt "Files: %d@\n" (num_files stats) ;
-    F.fprintf fmt "Specs: %d@\n" stats.nspecs ;
-    F.fprintf fmt "Timeouts: %d@\n" stats.ntimeouts ;
-    F.fprintf fmt "Procedures: %d@\n" stats.nprocs ;
-    F.fprintf fmt "  Verified: %d@\n" stats.nverified ;
-    F.fprintf fmt "  Checked: %d@\n" stats.nchecked ;
-    F.fprintf fmt "  Defective: %d@\n" stats.ndefective ;
-    F.fprintf fmt "Errors: %d@\n" stats.nerrors ;
-    F.fprintf fmt "Warnings: %d@\n" stats.nwarnings ;
-    F.fprintf fmt "Infos: %d@\n" stats.ninfos ;
-    F.fprintf fmt "@\n -------------------@\n" ;
-    F.fprintf fmt "@\nDetailed Errors@\n@\n" ;
-    List.iter ~f:(fun s -> F.fprintf fmt "%s@\n" s) (List.rev stats.saved_errors)
 end
 
 module StatsLogs = struct
@@ -612,15 +428,6 @@ module StatsLogs = struct
         ; symops= Summary.Stats.symops summary.stats }
     in
     EventLogger.log stats
-end
-
-module Report = struct
-  let pp_header fmt () =
-    F.fprintf fmt "Infer Analysis Results -- generated %a@\n@\n" Pp.current_time () ;
-    F.fprintf fmt "Summary Report@\n@\n"
-
-
-  let pp_stats fmt stats = Stats.pp fmt stats
 end
 
 (** Categorize the preconditions of specs and print stats *)
@@ -828,28 +635,24 @@ let error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Costs | Issues | Procs | Stats | Summary [@@deriving compare]
+type report_kind = Costs | Issues | Stats | Summary [@@deriving compare]
 
 let _string_of_report_kind = function
   | Costs ->
       "Costs"
   | Issues ->
       "Issues"
-  | Procs ->
-      "Procs"
   | Stats ->
       "Stats"
   | Summary ->
       "Summary"
 
 
-type bug_format_kind = Json | Csv | Logs | Tests | Text [@@deriving compare]
+type bug_format_kind = Json | Logs | Tests | Text [@@deriving compare]
 
 let _string_of_bug_format_kind = function
   | Json ->
       "Json"
-  | Csv ->
-      "Csv"
   | Logs ->
       "Logs"
   | Tests ->
@@ -873,8 +676,6 @@ let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error
       let outf = get_outfile outfile_opt in
       IssuesJson.pp outf.fmt
         {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
-  | Csv ->
-      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
       L.(die InternalError) "Printing issues as tests is not implemented"
   | Logs ->
@@ -889,8 +690,6 @@ let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   | Json ->
       let outf = get_outfile outfile_opt in
       IssuesJson.pp_issues_of_error_log outf.fmt
-  | Csv ->
-      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
       L.(die InternalError) "Printing issues as tests is not implemented"
   | Logs ->
@@ -900,19 +699,8 @@ let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
       IssuesTxt.pp_issues_of_error_log outf.fmt
 
 
-let pp_procs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
-  match format_kind with
-  | Csv ->
-      let outf = get_outfile outfile_opt in
-      ProcsCsv.pp_summary outf.fmt
-  | Json | Tests | Text | Logs ->
-      L.(die InternalError) "Printing procs in json/tests/text/logs is not implemented"
-
-
 let pp_stats_in_format (format_kind, _) =
   match format_kind with
-  | Csv ->
-      Stats.process_summary
   | Logs ->
       StatsLogs.process
   | Json | Tests | Text ->
@@ -935,14 +723,6 @@ let collect_issues summary issues_acc =
     err_log issues_acc
 
 
-let pp_procs summary procs_format_list =
-  let pp_procs_in_format format =
-    let pp_procs = pp_procs_in_format format in
-    pp_procs summary
-  in
-  List.iter ~f:pp_procs_in_format procs_format_list
-
-
 let pp_stats error_filter linereader summary stats stats_format_list =
   let pp_stats_in_format format =
     let pp_stats = pp_stats_in_format format in
@@ -961,8 +741,8 @@ let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   | Json ->
       let outf = get_outfile outfile_opt in
       JsonCostsPrinter.pp outf.fmt
-  | Csv | Tests | Text | Logs ->
-      L.(die InternalError) "Printing costs in csv/tests/text/logs is not implemented"
+  | Tests | Text | Logs ->
+      L.(die InternalError) "Printing costs in tests/text/logs is not implemented"
 
 
 let pp_costs summary costs_format_list =
@@ -981,8 +761,6 @@ let pp_summary_by_report_kind formats_by_report_kind summary error_filter linere
     match (report_kind, format_list) with
     | Costs, _ ->
         pp_costs summary format_list
-    | Procs, _ :: _ ->
-        pp_procs summary format_list
     | Stats, _ :: _ ->
         pp_stats (error_filter file) linereader summary stats format_list
     | Summary, _ when InferCommand.equal Config.command Report && not Config.quiet ->
@@ -1008,8 +786,6 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
               pp_text_of_report outf.fmt report
           | Json ->
               L.(die InternalError) "Printing issues from json does not support json output"
-          | Csv ->
-              L.(die InternalError) "Printing issues from json does not support csv output"
           | Logs ->
               L.(die InternalError) "Printing issues from json does not support logs output"
         in
@@ -1078,39 +854,24 @@ let init_issues_format_list report_json =
   json_format @ tests_format @ txt_format
 
 
-let init_procs_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.procs_csv
-
 let init_stats_format_list () =
-  let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] Config.stats_report in
   let logs_format = if Config.log_events then [(Logs, None)] else [] in
-  csv_format @ logs_format
+  logs_format
 
 
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
     let init_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       match (format_kind, report_kind) with
-      | Csv, Issues ->
-          L.(die InternalError) "Printing issues in a CSV format is not implemented"
-      | Logs, (Issues | Procs | Summary) ->
+      | Logs, (Issues | Summary) ->
           L.(die InternalError) "Logging these reports is not implemented"
-      | Csv, Procs ->
-          let outfile = get_outfile outfile_opt in
-          ProcsCsv.pp_header outfile.fmt ()
-      | Csv, Stats ->
-          let outfile = get_outfile outfile_opt in
-          Report.pp_header outfile.fmt ()
       | Json, Costs ->
           let outfile = get_outfile outfile_opt in
           JsonCostsPrinter.pp_open outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_open outfile.fmt ()
-      | Csv, (Costs | Summary)
-      | Logs, (Costs | Stats)
-      | Json, (Procs | Stats | Summary)
-      | Tests, _
-      | Text, _ ->
+      | Logs, (Costs | Stats) | Json, (Stats | Summary) | Tests, _ | Text, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -1118,26 +879,19 @@ let init_files format_list_by_kind =
   List.iter ~f:init_files_of_report_kind format_list_by_kind
 
 
-let finalize_and_close_files format_list_by_kind (stats : Stats.t) =
+let finalize_and_close_files format_list_by_kind =
   let close_files_of_report_kind (report_kind, format_list) =
     let close_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       ( match (format_kind, report_kind) with
-      | Logs, (Issues | Procs | Summary) ->
+      | Logs, (Issues | Summary) ->
           L.(die InternalError) "Logging these reports is not implemented"
-      | Csv, Stats ->
-          let outfile = get_outfile outfile_opt in
-          F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | Json, Costs ->
           let outfile = get_outfile outfile_opt in
           JsonCostsPrinter.pp_close outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_close outfile.fmt ()
-      | Csv, (Costs | Issues | Procs | Summary)
-      | Logs, (Costs | Stats)
-      | Json, (Procs | Stats | Summary)
-      | Tests, _
-      | Text, _ ->
+      | Logs, (Costs | Stats) | Json, (Stats | Summary) | Tests, _ | Text, _ ->
           () ) ;
       match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
     in
@@ -1171,7 +925,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
     ~f:(fun dir_name ->
       IssueLog.load dir_name
       |> IssueLog.iter ~f:(pp_lint_issues filters formats_by_report_kind linereader) ) ;
-  finalize_and_close_files formats_by_report_kind stats
+  finalize_and_close_files formats_by_report_kind
 
 
 let register_perf_stats_report () =
@@ -1191,10 +945,7 @@ let main ~report_json =
           []
     in
     costs_report_format_kind
-    @ [ (Issues, issue_formats)
-      ; (Procs, init_procs_format_list ())
-      ; (Stats, init_stats_format_list ())
-      ; (Summary, []) ]
+    @ [(Issues, issue_formats); (Stats, init_stats_format_list ()); (Summary, [])]
   in
   register_perf_stats_report () ;
   init_files formats_by_report_kind ;

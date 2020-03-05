@@ -6,9 +6,6 @@
  *)
 
 open! IStd
-
-(** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
-
 module F = Format
 
 (** apply a map function for escape sequences *)
@@ -24,18 +21,6 @@ let escape_map map_fun s =
     Buffer.contents buf )
   else (* not escaping anything, so don't waste memory on a copy of the string *)
     s
-
-
-let escape_csv s =
-  let map = function
-    | '"' ->
-        Some "\"\""
-    | c when Char.to_int c > 127 ->
-        Some "?" (* non-ascii character: escape *)
-    | _ ->
-        None
-  in
-  escape_map map s
 
 
 let escape_xml s =

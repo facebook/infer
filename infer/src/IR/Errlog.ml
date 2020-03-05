@@ -164,16 +164,6 @@ let fold (f : err_key -> err_data -> 'a -> 'a) t acc =
     t acc
 
 
-(** Return the number of elements in the error log which satisfy [filter] *)
-let size filter (err_log : t) =
-  let count = ref 0 in
-  ErrLogHash.iter
-    (fun key err_datas ->
-      if filter key.severity then count := !count + ErrDataSet.cardinal err_datas )
-    err_log ;
-  !count
-
-
 (** Print errors from error log *)
 let pp_errors fmt (errlog : t) =
   let f key _ =

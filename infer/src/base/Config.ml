@@ -1938,11 +1938,6 @@ and process_clang_ast =
     "process the ast to emit some info about the file (Not available for Java)"
 
 
-and procs_csv =
-  CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv" ~meta:"file"
-    "Write statistics for each procedure in CSV format to a file"
-
-
 and progress_bar =
   CLOpt.mk_bool ~deprecated:["pb"] ~deprecated_no:["no_progress_bar"; "npb"] ~short:'p'
     ~long:"progress-bar" ~default:true
@@ -2311,11 +2306,6 @@ and sqlite_vfs =
 and sqlite_write_daemon =
   CLOpt.mk_bool ~default:false "Route all DB writes through a daemon process"
     ~long:"sqlite-write-daemon"
-
-
-and stats_report =
-  CLOpt.mk_path_opt ~long:"stats-report" ~meta:"file"
-    "Write a report of the analysis results to a file"
 
 
 and subtype_multirange =
@@ -3097,8 +3087,6 @@ and progress_bar =
   else `Quiet
 
 
-and procs_csv = !procs_csv
-
 and project_root = !project_root
 
 and pulse = !pulse
@@ -3230,8 +3218,6 @@ and starvation_skip_analysis = !starvation_skip_analysis
 and starvation_strict_mode = !starvation_strict_mode
 
 and starvation_whole_program = !starvation_whole_program
-
-and stats_report = !stats_report
 
 and subtype_multirange = !subtype_multirange
 

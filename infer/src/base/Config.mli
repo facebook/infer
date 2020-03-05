@@ -545,8 +545,6 @@ val process_clang_ast : bool
 
 val clang_frontend_action_string : string
 
-val procs_csv : string option
-
 val profiler_samples : string option
 
 val progress_bar : [`MultiLine | `Plain | `Quiet]
@@ -672,8 +670,6 @@ val starvation_skip_analysis : Yojson.Basic.t
 val starvation_strict_mode : bool
 
 val starvation_whole_program : bool
-
-val stats_report : string option
 
 val subtype_multirange : bool
 

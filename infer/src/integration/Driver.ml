@@ -94,7 +94,7 @@ let clean_results_dir () =
           ResultsDatabase.database_filename ^ "-shm"
         ; ResultsDatabase.database_filename ^ "-wal" ]
     in
-    let suffixes_to_delete = [".txt"; ".csv"; ".json"] in
+    let suffixes_to_delete = [".txt"; ".json"] in
     fun name ->
       (* Keep the JSON report and the JSON costs report *)
       (not

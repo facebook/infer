@@ -102,9 +102,6 @@ val pp_warnings : Format.formatter -> t -> unit
 val pp_html : SourceFile.t -> DB.Results_dir.path -> Format.formatter -> t -> unit
 (** Print an error log in html format *)
 
-val size : (Exceptions.severity -> bool) -> t -> int
-(** Return the number of elements in the error log which satisfy the filter. *)
-
 val update : t -> t -> unit
 (** Update an old error log with a new one *)
 

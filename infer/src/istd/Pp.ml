@@ -151,13 +151,6 @@ let comma_seq_diff pp pe0 f =
   doit
 
 
-(** Print the current time and date in a format similar to the "date" command *)
-let current_time f () =
-  let tm = Unix.localtime (Unix.time ()) in
-  F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900)
-    tm.Unix.tm_hour tm.Unix.tm_min
-
-
 let option pp fmt = function
   | None ->
       F.pp_print_string fmt "[None]"

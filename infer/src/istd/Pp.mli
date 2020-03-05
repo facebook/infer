@@ -97,9 +97,6 @@ val of_string : f:('a -> string) -> F.formatter -> 'a -> unit
 val string_of_pp : (F.formatter -> 'a -> unit) -> 'a -> string
 (** If all you have is pp_foo, but you need to_string. *)
 
-val current_time : F.formatter -> unit -> unit
-(** Print the current time and date in a format similar to the "date" command *)
-
 val pair :
      fst:(F.formatter -> 'a -> unit)
   -> snd:(F.formatter -> 'b -> unit)

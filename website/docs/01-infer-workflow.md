@@ -62,9 +62,7 @@ to find possibly more errors or to check that all the errors have been fixed.
 
 The errors will be displayed in the standard output and also in a file
 `infer-out/bugs.txt`. We filter the bugs and show the ones that are most likely
-to be real. In the results directory (`infer-out/`), however, we also save a
-file `report.csv` that contains all the errors, warnings and infos reported by
-Infer in csv format.
+to be real.
 
 ## Global (default) and differential workflows
 

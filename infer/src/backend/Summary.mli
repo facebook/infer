@@ -25,8 +25,6 @@ module Stats : sig
 
   val failure_kind : t -> SymOp.failure_kind option
 
-  val failure_kind_to_string : t -> string
-
   val symops : t -> int
 end
 
@@ -69,9 +67,6 @@ val get_formals : t -> (Mangled.t * Typ.t) list
 val get_err_log : t -> Errlog.t
 
 val get_loc : t -> Location.t
-
-val get_signature : t -> string
-(** Return the signature of a procedure declaration as a string *)
 
 val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
