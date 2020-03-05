@@ -7,7 +7,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c -x c++ -std=c++14
-INFER_OPTIONS = --no-default-checkers --biabduction --nullsafe --project-root $(TESTS_DIR)
+INFER_OPTIONS = --no-default-checkers --biabduction --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.cpp)

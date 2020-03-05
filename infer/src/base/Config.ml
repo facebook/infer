@@ -32,7 +32,6 @@ type checkers =
   ; litho_required_props: bool ref
   ; liveness: bool ref
   ; loop_hoisting: bool ref
-  ; nullsafe: bool ref
   ; self_in_block: bool ref
   ; printf_args: bool ref
   ; pulse: bool ref
@@ -631,7 +630,6 @@ and { annotation_reachability
     ; litho_required_props
     ; liveness
     ; loop_hoisting
-    ; nullsafe
     ; self_in_block
     ; printf_args
     ; pulse
@@ -643,9 +641,11 @@ and { annotation_reachability
     ; siof
     ; starvation
     ; uninit } =
-  let mk_checker ?(default = false) ?(deprecated = []) ~long doc =
+  let mk_checker ?(default = false) ?(deprecated = []) ~long ?f doc =
     let var =
-      CLOpt.mk_bool ~long ~in_help:InferCommand.[(Analyze, manual_generic)] ~default ~deprecated doc
+      CLOpt.mk_bool ?f ~long
+        ~in_help:InferCommand.[(Analyze, manual_generic)]
+        ~default ~deprecated doc
     in
     all_checkers := (var, long, doc, default) :: !all_checkers ;
     var
@@ -681,10 +681,14 @@ and { annotation_reachability
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and loop_hoisting = mk_checker ~long:"loop-hoisting" ~default:false "checker for loop-hoisting"
-  and nullsafe =
+  and _nullsafe =
+    (* TODO make this to be activate nullsafe typechecker when old usages are gone *)
     mk_checker ~long:"nullsafe"
+      ~f:(fun b ->
+        CLOpt.warnf "nullsafe is is a reserved (no-op) checker; use --eradicate\n" ;
+        b )
       ~deprecated:["-check-nullable"; "-suggest-nullable"]
-      "[EXPERIMENTAL] Nullable type checker (incomplete: use --eradicate for now)"
+      "[RESERVED] Reserved for nullsafe typechecker, use --eradicate for now"
   and printf_args =
     mk_checker ~long:"printf-args" ~default:false
       "the detection of mismatch between the Java printf format strings and the argument types \
@@ -758,7 +762,6 @@ and { annotation_reachability
   ; litho_required_props
   ; liveness
   ; loop_hoisting
-  ; nullsafe
   ; printf_args
   ; pulse
   ; purity
@@ -2809,8 +2812,6 @@ and censor_report =
 
 
 and changed_files_index = !changed_files_index
-
-and nullsafe = !nullsafe
 
 and check_version = !check_version
 

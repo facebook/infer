@@ -94,9 +94,6 @@ type access =
   | Initialized_automatically
   | Returned_from_call of int
 
-val nullable_annotation_name : Procname.t -> string
-(** Name of the nullable annotation *)
-
 val dereference_string :
   Procname.t -> deref_str -> string -> access option -> Location.t -> error_desc
 

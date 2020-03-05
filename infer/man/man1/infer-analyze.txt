@@ -201,8 +201,8 @@ OPTIONS
            (Conversely: --no-loop-hoisting-only)
 
        --nullsafe
-           Activates: [EXPERIMENTAL] Nullable type checker (incomplete: use
-           --eradicate for now) (Conversely: --no-nullsafe)
+           Activates: [RESERVED] Reserved for nullsafe typechecker, use
+           --eradicate for now (Conversely: --no-nullsafe)
 
        --nullsafe-only
            Activates: Enable --nullsafe and disable all other checkers

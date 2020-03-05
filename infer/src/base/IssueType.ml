@@ -378,14 +378,6 @@ let null_test_after_dereference = register_from_string ~enabled:false "NULL_TEST
 
 let nullptr_dereference = register_from_string ~enabled:false "NULLPTR_DEREFERENCE"
 
-let nullsafe_field_not_nullable =
-  register_from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
-
-
-let nullsafe_nullable_dereference =
-  register_from_string "NULLSAFE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
-
-
 let parameter_not_null_checked = register_from_string "PARAMETER_NOT_NULL_CHECKED"
 
 let pointer_size_mismatch = register_from_string "POINTER_SIZE_MISMATCH"

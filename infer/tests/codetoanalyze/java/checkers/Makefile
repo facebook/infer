@@ -8,7 +8,7 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = \
   --debug-exceptions --no-default-checkers \
   --fragment-retains-view --immutable-cast --printf-args --quandary \
-  --nullsafe --racerd \
+  --racerd \
 
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java) $(wildcard $(TESTS_DIR)/external/library/*.java)

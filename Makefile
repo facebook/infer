@@ -66,7 +66,6 @@ DIRECT_TESTS += \
   cpp_linters \
   cpp_linters-for-test-only \
   cpp_liveness \
-  cpp_nullable \
   cpp_pulse \
   cpp_quandary cpp_quandaryBO \
   cpp_racerd \
@@ -115,7 +114,6 @@ DIRECT_TESTS += \
   objc_linters-def-folder \
   objc_linters-for-test-only \
   objc_liveness \
-  objc_nullable \
   objc_performance \
   objc_pulse \
   objc_quandary \
@@ -126,7 +124,6 @@ DIRECT_TESTS += \
   objcpp_linters \
   objcpp_linters-for-test-only \
   objcpp_liveness \
-  objcpp_nullable \
   objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \

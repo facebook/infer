@@ -35,11 +35,6 @@ let all_checkers =
     ; callbacks=
         [ (Procedure AnnotationReachability.checker, Language.Java)
         ; (Procedure AnnotationReachability.checker, Language.Clang) ] }
-  ; { name= "nullable checks"
-    ; active= Config.nullsafe
-    ; callbacks=
-        [ (Procedure NullabilityCheck.checker, Language.Clang)
-        ; (Procedure NullabilityCheck.checker, Language.Java) ] }
   ; { name= "biabduction"
     ; active= Config.biabduction
     ; callbacks=
@@ -76,11 +71,6 @@ let all_checkers =
   ; { name= "printf args"
     ; active= Config.printf_args
     ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }
-  ; { name= "nullable suggestion"
-    ; active= Config.nullsafe
-    ; callbacks=
-        [ (Procedure NullabilitySuggest.checker, Language.Java)
-        ; (Procedure NullabilitySuggest.checker, Language.Clang) ] }
   ; { name= "impurity"
     ; active= Config.impurity
     ; callbacks=

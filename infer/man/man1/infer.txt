@@ -470,8 +470,6 @@ OPTIONS
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
              NULLPTR_DEREFERENCE (disabled by default),
-             NULLSAFE_FIELD_NOT_NULLABLE (enabled by default),
-             NULLSAFE_NULLABLE_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),
              NULL_TEST_AFTER_DEREFERENCE (disabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
@@ -801,8 +799,8 @@ OPTIONS
            See also infer-analyze(1).
 
        --nullsafe
-           Activates: [EXPERIMENTAL] Nullable type checker (incomplete: use
-           --eradicate for now) (Conversely: --no-nullsafe)           See also infer-analyze(1).
+           Activates: [RESERVED] Reserved for nullsafe typechecker, use
+           --eradicate for now (Conversely: --no-nullsafe)           See also infer-analyze(1).
 
        --nullsafe-only
            Activates: Enable --nullsafe and disable all other checkers

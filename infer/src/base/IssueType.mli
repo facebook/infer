@@ -250,10 +250,6 @@ val null_test_after_dereference : t
 
 val nullptr_dereference : t
 
-val nullsafe_field_not_nullable : t
-
-val nullsafe_nullable_dereference : t
-
 val parameter_not_null_checked : t
 
 val pointer_size_mismatch : t

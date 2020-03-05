@@ -26,9 +26,6 @@ module Set : Caml.Set.S with type elt = t
 module Map : Caml.Map.S with type key = t
 (** Map for fieldnames *)
 
-val is_java_captured_parameter : t -> bool
-(** Check if field is a captured parameter *)
-
 val is_java_outer_instance : t -> bool
 (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
     instance. *)

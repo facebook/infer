@@ -20,17 +20,6 @@ type access =
     as (x, [f; g]) *)
 and t = base * access list [@@deriving compare]
 
-val truncate : t -> t * access option
-(** remove and return the last access of the access path if the access list is non-empty. returns
-    the original access path * None if the access list is empty *)
-
-val get_last_access : t -> access option
-(** get the last access in the list. returns None if the list is empty *)
-
-val get_field_and_annotation : t -> Tenv.t -> (Fieldname.t * Annot.Item.t) option
-(** get the field name and the annotation of the last access in the list of accesses if the list is
-    non-empty and the last access is a field access *)
-
 val get_typ : t -> Tenv.t -> Typ.t option
 (** get the typ of the last access in the list of accesses if the list is non-empty, or the base if
     the list is empty. that is, for x.f.g, return typ(g), and for x, return typ(x) *)

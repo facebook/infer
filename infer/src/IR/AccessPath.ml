@@ -55,14 +55,6 @@ module Raw = struct
 
   let equal = [%compare.equal: t]
 
-  let truncate ((base, accesses) as t) =
-    match List.rev accesses with
-    | [] ->
-        (t, None)
-    | last_access :: accesses ->
-        ((base, List.rev accesses), Some last_access)
-
-
   let lookup_field_type_annot tenv base_typ field_name =
     let lookup = Tenv.lookup tenv in
     Struct.get_field_type_and_annotation ~lookup field_name base_typ
@@ -74,16 +66,6 @@ module Raw = struct
         Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:fst
     | ArrayAccess (array_typ, _) ->
         Some array_typ
-
-
-  (* For field access, get the field name and the annotation associated with it
-   * Return None if given an array access, or if the info cannot be obtained *)
-  let get_access_field_annot tenv base_typ = function
-    | FieldAccess field_name ->
-        Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:(fun (_, annot) ->
-            (field_name, annot) )
-    | ArrayAccess _ ->
-        None
 
 
   (* Extract the last access of the given access path together with its base type.
@@ -107,16 +89,6 @@ module Raw = struct
             (None, None) )
     in
     last_access_info_impl tenv base_typ accesses
-
-
-  let get_last_access (_, accesses) = List.last accesses
-
-  let get_field_and_annotation ap tenv =
-    match last_access_info ap tenv with
-    | Some base_typ, Some access ->
-        get_access_field_annot tenv base_typ access
-    | _ ->
-        None
 
 
   let get_typ ap tenv =
