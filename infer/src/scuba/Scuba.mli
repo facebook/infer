@@ -30,5 +30,9 @@ val add_normal : name:string -> value:string -> sample -> sample
 (** Set a new string (normal in Scuba terminology) field and its value to the sample. Overwrites if
     a field with this name was already set. *)
 
+val add_tagset : name:string -> value:string list -> sample -> sample
+(** Set a new set of strings (tagset in Scuba terminology) field and its value to the sample.
+    Overwrites if a field with this name was already set. *)
+
 val log : table -> sample list -> unit
 (** The main function. Log a collection of samples to the given table. *)

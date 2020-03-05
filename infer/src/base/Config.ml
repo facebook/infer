@@ -2169,6 +2169,12 @@ and scuba_normals =
     "add an extra string (normal) field to be set for each sample of scuba, format <name>=<value>"
 
 
+and scuba_tags =
+  CLOpt.mk_string_map ~long:"scuba-tags"
+    "add an extra set of strings (tagset) field to be set for each sample of scuba, format \
+     <name>=(<value>,<value>,<value>|NONE)"
+
+
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -3162,6 +3168,8 @@ and scheduler = !scheduler
 and scuba_logging = !scuba_logging
 
 and scuba_normals = !scuba_normals
+
+and scuba_tags = String.Map.map !scuba_tags ~f:(fun v -> String.split v ~on:',')
 
 and seconds_per_iteration = !seconds_per_iteration
 

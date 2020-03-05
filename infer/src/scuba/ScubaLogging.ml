@@ -21,6 +21,11 @@ let set_command_line_normales sample =
   Map.fold Config.scuba_normals ~init:sample ~f:add_normal
 
 
+let set_command_line_tagsets sample =
+  let add_tagset ~key ~data = Scuba.add_tagset ~name:key ~value:data in
+  Map.fold Config.scuba_tags ~init:sample ~f:add_tagset
+
+
 let set_common_fields sample =
   let open Scuba in
   sample
@@ -42,7 +47,7 @@ let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =
         (Printf.sprintf "time.%s" label, duration_ms)
   in
   Scuba.new_sample ~time:(Some created_at_ts)
-  |> set_common_fields |> set_command_line_normales
+  |> set_common_fields |> set_command_line_normales |> set_command_line_tagsets
   |> Scuba.add_normal ~name:"event" ~value:event_name
   |> Scuba.add_int ~name:"value" ~value
 

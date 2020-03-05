@@ -619,6 +619,8 @@ val scuba_logging : bool
 
 val scuba_normals : string String.Map.t
 
+val scuba_tags : string list String.Map.t
+
 val seconds_per_iteration : float option
 
 val select : int option
