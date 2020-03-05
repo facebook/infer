@@ -11,8 +11,8 @@
     "@docusaurus/core": "2.0.0-alpha.43",
     "@docusaurus/preset-classic": "2.0.0-alpha.43",
     "classnames": "2.2.6",
-    "react": "16.12.0",
-    "react-dom": "16.12.0",
+    "react": "16.13.0",
+    "react-dom": "16.13.0",
     "react-github-btn": "1.1.1"
   },
   "devDependencies": {
