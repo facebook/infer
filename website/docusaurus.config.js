@@ -17,7 +17,7 @@ module.exports = {
   themeConfig: {
     algolia: {
       apiKey: 'aac9e661e851db0d4b6e74802c3df9de',
-      indexName: 'infer',
+      indexName: 'fbinfer',
     },
     navbar: {
       title: 'Infer',
