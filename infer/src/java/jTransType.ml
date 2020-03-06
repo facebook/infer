@@ -260,7 +260,7 @@ let collect_models_class_fields classpath_field_map cn cf fields =
     else (static, (field_name, field_type, annotation) :: nonstatic)
 
 
-let add_model_fields program classpath_fields cn =
+let add_model_fields classpath_fields cn =
   let statics, nonstatics = classpath_fields in
   let classpath_field_map =
     let collect_fields map =
@@ -269,7 +269,7 @@ let add_model_fields program classpath_fields cn =
     collect_fields (collect_fields Fieldname.Map.empty statics) nonstatics
   in
   try
-    match JBasics.ClassMap.find cn (JClasspath.get_models program) with
+    match JBasics.ClassMap.find cn (JModels.get_classmap ()) with
     | Javalib.JClass _ as jclass ->
         Javalib.cf_fold (collect_models_class_fields classpath_field_map cn) jclass classpath_fields
     | _ ->
@@ -362,7 +362,7 @@ and get_class_struct_typ =
               | Javalib.JClass jclass ->
                   let statics, nonstatics =
                     let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
-                    add_model_fields program (classpath_static, classpath_nonstatic) cn
+                    add_model_fields (classpath_static, classpath_nonstatic) cn
                   in
                   let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
                   let interface_list = create_super_list jclass.Javalib.c_interfaces in

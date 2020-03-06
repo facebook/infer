@@ -525,14 +525,8 @@ let set_best_cpu_for worker_id =
   Setcore.setcore ((chosen_core * threads_per_core) + chosen_thread_in_core)
 
 
-let zip_fold_filenames ~init ~f ~chop_extension ~zip_filename =
+let zip_fold_filenames ~init ~f ~zip_filename =
   let file_in = Zip.open_in zip_filename in
-  let collect acc (entry : Zip.entry) =
-    match Filename.split_extension entry.filename with
-    | basename, Some extension when String.equal extension chop_extension ->
-        f acc basename
-    | _ ->
-        acc
-  in
+  let collect acc (entry : Zip.entry) = f acc entry.filename in
   let result = List.fold ~f:collect ~init (Zip.entries file_in) in
   Zip.close_in file_in ; result

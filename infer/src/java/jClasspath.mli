@@ -28,8 +28,6 @@ val get_classmap : program -> classmap
 
 val mem_classmap : JBasics.class_name -> program -> bool
 
-val get_models : program -> classmap
-
 val cleanup : program -> unit
 
 val load_program : classpath:string -> JBasics.ClassSet.t -> program
