@@ -129,7 +129,19 @@ val d_indent : int -> unit
 (** dump an indentation *)
 
 val d_increase_indent : unit -> unit
-(** dump command to increase the indentation level *)
+(** dump command to increase the indentation level. NOTE: most likely, you need [d_with_indent]
+    instead *)
 
 val d_decrease_indent : unit -> unit
-(** dump command to decrease the indentation level *)
+(** dump command to decrease the indentation level NOTE: most likely, you need [d_with_indent]
+    instead. *)
+
+val d_with_indent : ?pp_result:(F.formatter -> 'a -> unit) -> name:string -> (unit -> 'a) -> 'a
+(** Execute arbitrary function (the last argument) with a given [name] so that all logs written
+    inside (if any) are written with indentation.
+
+    [pp_result], if provided, will make the result of a call to be printed as well (useful for cases
+    when there are several places when the function returns).
+
+    NOTE: If you want to use it NOT at the very top level of a function, it is a code smell, and you
+    probably want to split your function into smaller ones. *)

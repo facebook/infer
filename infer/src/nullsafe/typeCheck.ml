@@ -112,70 +112,72 @@ type checks = {eradicate: bool; check_ret_type: check_return_type list}
 (** Typecheck an expression. *)
 let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
     (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
-  match e with
-  (* null literal or 0 *)
-  | _ when Exp.is_null_literal e ->
-      let typ, _ = tr_default in
-      (* 0 is not the same thing as null. They are encoded as the same thing in SIL.
-         We distinct them by type.
-      *)
-      if PatternMatch.type_is_class typ then
-        (typ, InferredNullability.create (TypeOrigin.NullConst loc))
-      else
-        (* 0 const (this is not the same as null) *)
-        (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
-  | Exp.Const _ ->
-      let typ, _ = tr_default in
-      (* We already considered case of null literal above, so this is a non-null const. *)
-      (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
-  | Exp.Lvar pvar ->
-      Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
-  | Exp.Var id ->
-      Option.value (TypeState.lookup_id id typestate) ~default:tr_default
-  | Exp.Exn e1 ->
-      typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
-        curr_pdesc typestate e1 tr_default loc
-  | Exp.Lfield (exp, field_name, typ) ->
-      let _, _ = tr_default in
-      let _, inferred_nullability =
-        typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
-          curr_pdesc typestate exp
-          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
-          loc
-      in
-      let object_origin = InferredNullability.get_origin inferred_nullability in
-      let tr_new =
-        match AnnotatedField.get tenv field_name typ with
-        | Some AnnotatedField.{annotated_type= field_type} ->
-            ( field_type.typ
-            , InferredNullability.create
-                (TypeOrigin.Field {object_origin; field_name; field_type; access_loc= loc}) )
-        | None ->
-            tr_default
-      in
-      if checks.eradicate then
-        EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-          curr_pdesc node instr_ref exp (DereferenceRule.AccessToField field_name)
-          inferred_nullability loc ;
-      tr_new
-  | Exp.Lindex (array_exp, index_exp) ->
-      let _, inferred_nullability =
-        typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
-          curr_pdesc typestate array_exp tr_default loc
-      in
-      let index_desc =
-        match EradicateChecks.explain_expr tenv node index_exp with Some s -> s | None -> "?"
-      in
-      if checks.eradicate then
-        EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-          curr_pdesc node instr_ref array_exp
-          (DereferenceRule.AccessByIndex {index_desc})
-          inferred_nullability loc ;
-      let typ, _ = tr_default in
-      (typ, InferredNullability.create TypeOrigin.ArrayAccess)
-  | _ ->
-      tr_default
+  L.d_with_indent ~name:"typecheck_expr" ~pp_result:TypeState.pp_range (fun () ->
+      L.d_printfln "Expr: %a" Exp.pp e ;
+      match e with
+      (* null literal or 0 *)
+      | _ when Exp.is_null_literal e ->
+          let typ, _ = tr_default in
+          (* 0 is not the same thing as null. They are encoded as the same thing in SIL.
+             We distinct them by type.
+          *)
+          if PatternMatch.type_is_class typ then
+            (typ, InferredNullability.create (TypeOrigin.NullConst loc))
+          else
+            (* 0 const (this is not the same as null) *)
+            (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
+      | Exp.Const _ ->
+          let typ, _ = tr_default in
+          (* We already considered case of null literal above, so this is a non-null const. *)
+          (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
+      | Exp.Lvar pvar ->
+          Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
+      | Exp.Var id ->
+          Option.value (TypeState.lookup_id id typestate) ~default:tr_default
+      | Exp.Exn e1 ->
+          typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
+            curr_pdesc typestate e1 tr_default loc
+      | Exp.Lfield (exp, field_name, typ) ->
+          let _, _ = tr_default in
+          let _, inferred_nullability =
+            typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node
+              instr_ref curr_pdesc typestate exp
+              (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+              (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
+              loc
+          in
+          let object_origin = InferredNullability.get_origin inferred_nullability in
+          let tr_new =
+            match AnnotatedField.get tenv field_name typ with
+            | Some AnnotatedField.{annotated_type= field_type} ->
+                ( field_type.typ
+                , InferredNullability.create
+                    (TypeOrigin.Field {object_origin; field_name; field_type; access_loc= loc}) )
+            | None ->
+                tr_default
+          in
+          if checks.eradicate then
+            EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
+              curr_pdesc node instr_ref exp (DereferenceRule.AccessToField field_name)
+              inferred_nullability loc ;
+          tr_new
+      | Exp.Lindex (array_exp, index_exp) ->
+          let _, inferred_nullability =
+            typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node
+              instr_ref curr_pdesc typestate array_exp tr_default loc
+          in
+          let index_desc =
+            match EradicateChecks.explain_expr tenv node index_exp with Some s -> s | None -> "?"
+          in
+          if checks.eradicate then
+            EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
+              curr_pdesc node instr_ref array_exp
+              (DereferenceRule.AccessByIndex {index_desc})
+              inferred_nullability loc ;
+          let typ, _ = tr_default in
+          (typ, InferredNullability.create TypeOrigin.ArrayAccess)
+      | _ ->
+          tr_default )
 
 
 (* Handle the case where a field access X.f happens via a temporary variable $Txxx.
@@ -259,89 +261,93 @@ let update_typestate_fld ~is_assignment tenv access_loc typestate pvar object_or
 let convert_complex_exp_to_pvar tenv idenv curr_pname
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t)
     ~is_assignment exp_ typestate loc =
-  let exp =
-    handle_field_access_via_temporary idenv curr_pname typestate (Idenv.expand_expr idenv exp_)
-  in
-  let default = (exp, typestate) in
-  match exp with
-  | Exp.Var id when Option.is_some (Errdesc.find_normal_variable_funcall node id) ->
-      ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
-          ~call_node:node ~node id
-      , typestate )
-  | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
-      let frontend_variable_assignment =
-        Errdesc.find_program_variable_assignment original_node pvar
+  L.d_with_indent ~name:"convert_complex_exp_to_pvar"
+    ~pp_result:(fun f (exp, typestate) ->
+      F.fprintf f "Exp: %a;@\nTypestate: @\n%a" Exp.pp exp TypeState.pp typestate )
+    (fun () ->
+      let exp =
+        handle_field_access_via_temporary idenv curr_pname typestate (Idenv.expand_expr idenv exp_)
       in
-      match frontend_variable_assignment with
-      | Some (call_node, id) ->
-          ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment ~call_node
-              ~node id
+      let default = (exp, typestate) in
+      match exp with
+      | Exp.Var id when Option.is_some (Errdesc.find_normal_variable_funcall node id) ->
+          ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
+              ~call_node:node ~node id
           , typestate )
+      | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
+          let frontend_variable_assignment =
+            Errdesc.find_program_variable_assignment original_node pvar
+          in
+          match frontend_variable_assignment with
+          | Some (call_node, id) ->
+              ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
+                  ~call_node ~node id
+              , typestate )
+          | _ ->
+              default )
+      | Exp.Lvar _ ->
+          default
+      | Exp.Lfield (exp_, fn, typ) ->
+          let inner_origin =
+            ( match exp_ with
+            | Exp.Lvar pvar ->
+                TypeState.lookup_pvar pvar typestate
+            | Exp.Var id ->
+                TypeState.lookup_id id typestate
+            | _ ->
+                None )
+            |> Option.value_map
+                 ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
+                 ~default:TypeOrigin.OptimisticFallback
+          in
+          let exp' = Idenv.expand_expr_temps idenv original_node exp_ in
+          let is_parameter_field pvar =
+            (* parameter.field *)
+            let name = Pvar.get_name pvar in
+            let filter AnnotatedSignature.{mangled} = Mangled.equal mangled name in
+            List.exists ~f:filter curr_annotated_signature.params
+          in
+          let is_static_field pvar =
+            (* static field *)
+            Pvar.is_global pvar
+          in
+          let pvar_to_str pvar =
+            if Exp.is_this (Exp.Lvar pvar) then "" else Pvar.to_string pvar ^ "_"
+          in
+          let res =
+            match exp' with
+            | Exp.Lvar pv when is_parameter_field pv || is_static_field pv ->
+                let fld_name = pvar_to_str pv ^ Fieldname.to_string fn in
+                let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
+                let typestate' =
+                  update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
+                in
+                (Exp.Lvar pvar, typestate')
+            | Exp.Lfield (_exp', fn', _) when Fieldname.is_java_outer_instance fn' ->
+                (* handle double dereference when accessing a field from an outer class *)
+                let fld_name = Fieldname.to_string fn' ^ "_" ^ Fieldname.to_string fn in
+                let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
+                let typestate' =
+                  update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
+                in
+                (Exp.Lvar pvar, typestate')
+            | Exp.Lvar _ | Exp.Lfield _ -> (
+              (* treat var.field1. ... .fieldn as a constant *)
+              match ComplexExpressions.exp_to_string tenv node exp with
+              | Some exp_str ->
+                  let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
+                  let typestate' =
+                    update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
+                  in
+                  (Exp.Lvar pvar, typestate')
+              | None ->
+                  default )
+            | _ ->
+                default
+          in
+          res
       | _ ->
           default )
-  | Exp.Lvar _ ->
-      default
-  | Exp.Lfield (exp_, fn, typ) ->
-      let inner_origin =
-        ( match exp_ with
-        | Exp.Lvar pvar ->
-            TypeState.lookup_pvar pvar typestate
-        | Exp.Var id ->
-            TypeState.lookup_id id typestate
-        | _ ->
-            None )
-        |> Option.value_map
-             ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
-             ~default:TypeOrigin.OptimisticFallback
-      in
-      let exp' = Idenv.expand_expr_temps idenv original_node exp_ in
-      let is_parameter_field pvar =
-        (* parameter.field *)
-        let name = Pvar.get_name pvar in
-        let filter AnnotatedSignature.{mangled} = Mangled.equal mangled name in
-        List.exists ~f:filter curr_annotated_signature.params
-      in
-      let is_static_field pvar =
-        (* static field *)
-        Pvar.is_global pvar
-      in
-      let pvar_to_str pvar =
-        if Exp.is_this (Exp.Lvar pvar) then "" else Pvar.to_string pvar ^ "_"
-      in
-      let res =
-        match exp' with
-        | Exp.Lvar pv when is_parameter_field pv || is_static_field pv ->
-            let fld_name = pvar_to_str pv ^ Fieldname.to_string fn in
-            let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
-            let typestate' =
-              update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
-            in
-            (Exp.Lvar pvar, typestate')
-        | Exp.Lfield (_exp', fn', _) when Fieldname.is_java_outer_instance fn' ->
-            (* handle double dereference when accessing a field from an outer class *)
-            let fld_name = Fieldname.to_string fn' ^ "_" ^ Fieldname.to_string fn in
-            let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
-            let typestate' =
-              update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
-            in
-            (Exp.Lvar pvar, typestate')
-        | Exp.Lvar _ | Exp.Lfield _ -> (
-          (* treat var.field1. ... .fieldn as a constant *)
-          match ComplexExpressions.exp_to_string tenv node exp with
-          | Some exp_str ->
-              let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
-              let typestate' =
-                update_typestate_fld ~is_assignment tenv loc typestate pvar inner_origin fn typ
-              in
-              (Exp.Lvar pvar, typestate')
-          | None ->
-              default )
-        | _ ->
-            default
-      in
-      res
-  | _ ->
-      default
 
 
 let constructor_check_calls_this curr_pname calls_this pn =
@@ -395,26 +401,27 @@ let drop_unchecked_signature_params proc_attributes annotated_signature =
 (* Apply a function to a pvar and its associated content if front-end generated. *)
 let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc handle_pvar typestate
     pvar node =
-  let typestate' = handle_pvar typestate pvar in
-  let curr_node = TypeErr.InstrRef.get_node instr_ref in
-  let frontent_variable_assignment =
-    if Pvar.is_frontend_tmp pvar then Errdesc.find_program_variable_assignment curr_node pvar
-    else None
-  in
-  match frontent_variable_assignment with
-  | None ->
-      typestate'
-  | Some (node', id) -> (
-      (* handle the case where pvar is a frontend-generated program variable *)
-      let exp = Idenv.expand_expr idenv (Exp.Var id) in
-      match
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node:node'
-          ~original_node:node ~is_assignment:false exp typestate' loc
-      with
-      | Exp.Lvar pvar', _ ->
-          handle_pvar typestate' pvar'
-      | _ ->
-          typestate' )
+  L.d_with_indent ~name:"pvar_apply" ~pp_result:TypeState.pp (fun () ->
+      let typestate' = handle_pvar typestate pvar in
+      let curr_node = TypeErr.InstrRef.get_node instr_ref in
+      let frontent_variable_assignment =
+        if Pvar.is_frontend_tmp pvar then Errdesc.find_program_variable_assignment curr_node pvar
+        else None
+      in
+      match frontent_variable_assignment with
+      | None ->
+          typestate'
+      | Some (node', id) -> (
+          (* handle the case where pvar is a frontend-generated program variable *)
+          let exp = Idenv.expand_expr idenv (Exp.Var id) in
+          match
+            convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node:node'
+              ~original_node:node ~is_assignment:false exp typestate' loc
+          with
+          | Exp.Lvar pvar', _ ->
+              handle_pvar typestate' pvar'
+          | _ ->
+              typestate' ) )
 
 
 (* typecheck_expr with fewer parameters, using a common template for typestate range  *)

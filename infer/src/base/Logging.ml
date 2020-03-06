@@ -436,8 +436,26 @@ let d_indent indent =
     d_str s
 
 
-(** dump command to increase the indentation level *)
 let d_increase_indent () = d_printf "  @["
 
-(** dump command to decrease the indentation level *)
 let d_decrease_indent () = d_printf "@]"
+
+let d_call_with_indent_impl ~f =
+  d_increase_indent () ;
+  let result = f () in
+  d_decrease_indent () ;
+  d_ln () ;
+  (* Without a new line decreasing identation does not fully work *)
+  result
+
+
+let d_with_indent ?pp_result ~name f =
+  if not Config.write_html then f ()
+  else (
+    d_printf "Executing %s:@\n" name ;
+    let result = d_call_with_indent_impl ~f in
+    (* Print result if needed *)
+    Option.iter pp_result ~f:(fun pp_result ->
+        d_printf "Result of %s:@\n" name ;
+        d_call_with_indent_impl ~f:(fun () -> d_printf "%a" pp_result result) ) ;
+    result )

@@ -14,6 +14,8 @@ type t
 
 type range = Typ.t * InferredNullability.t
 
+val pp_range : Format.formatter -> Typ.t * InferredNullability.t -> unit
+
 val add_id : Ident.t -> range -> t -> descr:string -> t
 (** [descr] is for debug logs only *)
 
