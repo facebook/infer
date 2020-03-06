@@ -59,6 +59,8 @@ val buck_infer_deps_file_name : string
 
 val captured_dir_name : string
 
+val clang_exe_aliases : string list
+
 val clang_initializer_prefix : string
 
 val clang_inner_destructor_prefix : string

@@ -14,13 +14,14 @@ open! IStd
 type mode =
   | Analyze
   | BuckClangFlavor of string list
+  | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
   | BuckGenrule of string
   | BuckGenruleMaster of string list
-  | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
   | Clang of Clang.compiler * string * string list
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
+  | NdkBuild of string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
 
