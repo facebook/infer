@@ -7,32 +7,90 @@
 
 (** Frame Inference Solver over Symbolic Heaps *)
 
-(** Excision judgment
+module Goal : sig
+  (** Excision judgment
 
-    ∀us. Common ❮ Minuend ⊢ ∃xs. Subtrahend ❯ ∃zs. Remainder
+      ∀us. Common ❮ Minuend ⊢ ∃xs. Subtrahend ❯ ∃zs. Remainder
 
-    is valid iff
+      is valid iff
 
-    Common * Minuend ⊧ ∃xs. Common * Subtrahend * ∃zs. Remainder
+      Common * Minuend ⊧ ∃xs. Common * Subtrahend * ∃zs. Remainder
 
-    is universally valid semantically.
+      is universally valid semantically.
 
-    Terminology analogous to arithmetic subtraction is used: "minuend" is a
-    formula from which another, the subtrahend, is to be subtracted; and
-    "subtrahend" is a formula to be subtracted from another, the minuend. *)
-type judgment =
-  { us: Var.Set.t  (** (universal) vocabulary of entire judgment *)
-  ; com: Sh.t  (** common star-conjunct of minuend and subtrahend *)
-  ; min: Sh.t  (** minuend, cong strengthened by pure_approx (com * min) *)
-  ; xs: Var.Set.t  (** existentials over subtrahend and remainder *)
-  ; sub: Sh.t  (** subtrahend, cong strengthened by min.cong *)
-  ; zs: Var.Set.t  (** existentials over remainder *)
-  ; pgs: bool  (** indicates whether a deduction rule has been applied *) }
+      Terminology analogous to arithmetic subtraction is used: "minuend" is
+      a formula from which another, the subtrahend, is to be subtracted; and
+      "subtrahend" is a formula to be subtracted from another, the minuend. *)
+  type t = private
+    { us: Var.Set.t  (** (universal) vocabulary of entire judgment *)
+    ; com: Sh.t  (** common star-conjunct of minuend and subtrahend *)
+    ; min: Sh.t
+          (** minuend, cong strengthened by pure_approx (com * min) *)
+    ; xs: Var.Set.t  (** existentials over subtrahend and remainder *)
+    ; sub: Sh.t  (** subtrahend, cong strengthened by min.cong *)
+    ; zs: Var.Set.t  (** existentials over remainder *)
+    ; pgs: bool  (** indicates whether a deduction rule has been applied *)
+    }
 
-let pp fs {com; min; xs; sub; pgs} =
-  Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
-    (if pgs then "t" else "f")
-    Sh.pp com Sh.pp min Var.Set.pp_xs xs (Sh.pp_diff_eq min.cong) sub
+  val pp : t pp
+
+  val goal :
+       us:Var.Set.t
+    -> com:Sh.t
+    -> min:Sh.t
+    -> xs:Var.Set.t
+    -> sub:Sh.t
+    -> zs:Var.Set.t
+    -> pgs:bool
+    -> t
+
+  val with_ :
+       ?us:Var.Set.t
+    -> ?com:Sh.t
+    -> ?min:Sh.t
+    -> ?xs:Var.Set.t
+    -> ?sub:Sh.t
+    -> ?zs:Var.Set.t
+    -> ?pgs:bool
+    -> t
+    -> t
+end = struct
+  type t =
+    { us: Var.Set.t
+    ; com: Sh.t
+    ; min: Sh.t
+    ; xs: Var.Set.t
+    ; sub: Sh.t
+    ; zs: Var.Set.t
+    ; pgs: bool }
+
+  let pp fs {com; min; xs; sub; pgs} =
+    Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
+      (if pgs then "t" else "f")
+      Sh.pp com Sh.pp min Var.Set.pp_xs xs (Sh.pp_diff_eq min.cong) sub
+
+  let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
+    let us = Option.value us ~default:g.us in
+    let xs = Option.value xs ~default:g.xs in
+    let zs = Option.value zs ~default:g.zs in
+    let com = Option.value com ~default:g.com in
+    let min = Option.value min ~default:g.min in
+    let sub = Option.value sub ~default:g.sub in
+    let pgs = Option.value pgs ~default:g.pgs in
+    {us; com; min; xs; sub; zs; pgs}
+
+  let goal ~us ~com ~min ~xs ~sub ~zs ~pgs =
+    with_ ~us ~com ~min ~xs ~sub ~zs ~pgs
+      { us= Var.Set.empty
+      ; com= Sh.emp
+      ; min= Sh.emp
+      ; xs= Var.Set.empty
+      ; sub= Sh.emp
+      ; zs= Var.Set.empty
+      ; pgs= false }
+end
+
+open Goal
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
@@ -73,14 +131,14 @@ let excise_exists goal =
           let us = Set.union goal.us removed in
           let xs = Set.diff goal.xs removed in
           let min = Sh.and_subst witnesses goal.min in
-          {goal with us; min; xs; pgs= true} )
+          goal |> with_ ~us ~min ~xs ~pgs:true )
 
 let excise_term ({min} as goal) pure term =
   let term' = Equality.normalize min.cong term in
   if Term.is_false term' then None
   else if Term.is_true term' then (
     excise (fun {pf} -> pf "excise_pure %a" Term.pp term) ;
-    Some ({goal with pgs= true}, pure) )
+    Some (goal |> with_ ~pgs:true, pure) )
   else Some (goal, term' :: pure)
 
 let excise_pure ({sub} as goal) =
@@ -89,7 +147,7 @@ let excise_pure ({sub} as goal) =
     List.fold_option sub.pure ~init:(goal, []) ~f:(fun (goal, pure) term ->
         excise_term goal pure term )
   in
-  {goal with sub= Sh.with_pure pure sub}
+  goal |> with_ ~sub:(Sh.with_pure pure sub)
 
 (*   [k; o)
  * ⊢ [l; n)
@@ -116,7 +174,7 @@ let excise_seg_same ({com; min; sub} as goal) msg ssg =
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m') (Sh.and_ (Term.eq a a') (Sh.rem_seg ssg sub)))
   in
-  {goal with com; min; sub}
+  goal |> with_ ~com ~min ~sub
 
 (*   [k;   o)
  * ⊢ [l; n)
@@ -154,7 +212,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a0 a') (Sh.rem_seg ssg sub)))
   in
-  {goal with us; com; min; sub; zs}
+  goal |> with_ ~us ~com ~min ~sub ~zs
 
 (*   [k; o)
  * ⊢ [l;   n)
@@ -191,7 +249,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
                   {loc= Term.add l o; bas= b'; len= m'; siz= n_o; arr= a1'})
                (Sh.rem_seg ssg sub))))
   in
-  {goal with us; com; min; xs; sub; zs}
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*   [k;    o)
  * ⊢    [l; n)
@@ -231,7 +289,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
-  {goal with us; com; min; sub; zs}
+  goal |> with_ ~us ~com ~min ~sub ~zs
 
 (*   [k;      o)
  * ⊢    [l; n)
@@ -277,7 +335,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
-  {goal with us; com; min; sub; zs}
+  goal |> with_ ~us ~com ~min ~sub ~zs
 
 (*   [k;   o)
  * ⊢    [l;  n)
@@ -326,7 +384,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
                (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; arr= a2'})
                (Sh.rem_seg ssg sub))))
   in
-  {goal with us; com; min; xs; sub; zs}
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*      [k; o)
  * ⊢ [l;    n)
@@ -362,7 +420,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.rem_seg ssg sub))))
   in
-  {goal with us; com; min; xs; sub; zs}
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*      [k; o)
  * ⊢ [l;      n)
@@ -404,7 +462,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                   (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; arr= a2'})
                   (Sh.rem_seg ssg sub)))))
   in
-  {goal with us; com; min; xs; sub; zs}
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*      [k;  o)
  * ⊢ [l;   n)
@@ -453,7 +511,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.rem_seg ssg sub))))
   in
-  {goal with us; com; min; xs; sub; zs}
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (* C ❮ k-[b;m)->⟨o,α⟩ * M ⊢ ∃xs. l-[b';m')->⟨n,α'⟩ * S ❯ R *)
 let excise_seg ({sub} as goal) msg ssg =
@@ -468,8 +526,10 @@ let excise_seg ({sub} as goal) msg ssg =
     || not (Equality.entails_eq sub.cong m m')
   then
     Some
-      { goal with
-        sub= Sh.and_ (Term.eq b b') (Sh.and_ (Term.eq m m') goal.sub) }
+      ( goal
+      |> with_
+           ~sub:(Sh.and_ (Term.eq b b') (Sh.and_ (Term.eq m m') goal.sub))
+      )
   else
     match Int.sign (Z.sign k_l) with
     (* k-l < 0 so k < l *)
@@ -538,7 +598,7 @@ let excise_heap ({min; sub} as goal) =
     List.find_map sub.heap ~f:(fun ssg ->
         List.find_map min.heap ~f:(fun msg -> excise_seg goal msg ssg) )
   with
-  | Some goal -> Some {goal with pgs= true}
+  | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal
 
 let rec excise ({us; min; xs; sub; zs; pgs} as goal) =
@@ -549,7 +609,7 @@ let rec excise ({us; min; xs; sub; zs; pgs} as goal) =
     Some (Sh.exists zs (Sh.extend_us (Set.union us xs) min))
   else if Sh.is_false sub then None
   else if pgs then
-    {goal with pgs= false} |> excise_exists |> excise_pure >>= excise_heap
+    goal |> with_ ~pgs:false |> excise_exists |> excise_pure >>= excise_heap
     >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
 
@@ -575,7 +635,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
             let sub = Sh.and_cong min.cong sub in
             let zs = Var.Set.empty in
             let+ remainder =
-              excise {us; com; min; xs; sub; zs; pgs= true}
+              excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
             in
             Sh.exists (Set.union ys ws) remainder)
             |>
