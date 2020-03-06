@@ -21,7 +21,7 @@ end
 type t =
   { modified_params: ModifiedVarSet.t
   ; modified_globals: ModifiedVarSet.t
-  ; skipped_calls: PulseBaseDomain.SkippedCalls.t }
+  ; skipped_calls: PulseAbductiveDomain.SkippedCalls.t }
 
 val pure : t
 

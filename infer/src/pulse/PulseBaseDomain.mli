@@ -9,17 +9,7 @@ open! IStd
 open PulseBasicInterface
 module F = Format
 
-module SkippedTrace : sig
-  type t = PulseTrace.t
-end
-
-module SkippedCalls : AbstractDomain.MapS with type key = Procname.t and type value = SkippedTrace.t
-
-type t =
-  { heap: PulseBaseMemory.t
-  ; stack: PulseBaseStack.t
-  ; skipped_calls: SkippedCalls.t
-  ; attrs: PulseBaseAddressAttributes.t }
+type t = {heap: PulseBaseMemory.t; stack: PulseBaseStack.t; attrs: PulseBaseAddressAttributes.t}
 
 type cell = PulseBaseMemory.Edges.t * Attributes.t
 

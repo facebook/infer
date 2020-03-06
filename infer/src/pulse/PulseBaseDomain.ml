@@ -12,26 +12,9 @@ module Memory = PulseBaseMemory
 module Stack = PulseBaseStack
 module AddressAttributes = PulseBaseAddressAttributes
 
-module SkippedTrace = struct
-  type t = PulseTrace.t [@@deriving compare]
-
-  let pp fmt =
-    PulseTrace.pp fmt ~pp_immediate:(fun fmt ->
-        F.pp_print_string fmt "call to skipped function occurs here" )
-
-
-  let leq ~lhs ~rhs = phys_equal lhs rhs
-
-  let join _ _ = assert false
-
-  let widen ~prev:_ ~next:_ ~num_iters:_ = assert false
-end
-
-module SkippedCalls = AbstractDomain.Map (Procname) (SkippedTrace)
-
 (* {2 Abstract domain description } *)
 
-type t = {heap: Memory.t; stack: Stack.t; skipped_calls: SkippedCalls.t; attrs: AddressAttributes.t}
+type t = {heap: Memory.t; stack: Stack.t; attrs: AddressAttributes.t}
 
 let empty =
   { heap=
@@ -39,7 +22,6 @@ let empty =
       (* TODO: we could record that 0 is an invalid address at this point but this makes the
          analysis go a bit overboard with the Nullptr reports. *)
   ; stack= Stack.empty
-  ; skipped_calls= SkippedCalls.empty
   ; attrs= AddressAttributes.empty }
 
 
@@ -197,10 +179,9 @@ module GraphComparison = struct
     match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
 end
 
-let pp fmt {heap; stack; skipped_calls; attrs} =
-  F.fprintf fmt
-    "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@;skipped_calls=@[<hv>%a@];@]}"
-    Stack.pp stack Memory.pp heap AddressAttributes.pp attrs SkippedCalls.pp skipped_calls
+let pp fmt {heap; stack; attrs} =
+  F.fprintf fmt "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@]}" Stack.pp stack
+    Memory.pp heap AddressAttributes.pp attrs
 
 
 module GraphVisit : sig

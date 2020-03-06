@@ -95,6 +95,12 @@ val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
 val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 
+module SkippedTrace : sig
+  type t = PulseTrace.t
+end
+
+module SkippedCalls : AbstractDomain.MapS with type key = Procname.t and type value = SkippedTrace.t
+
 module PrePost : sig
   type domain_t = t
 
@@ -125,3 +131,5 @@ val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
 val extract_pre : PrePost.t -> BaseDomain.t
 
 val extract_post : PrePost.t -> BaseDomain.t
+
+val extract_skipped_calls : PrePost.t -> SkippedCalls.t

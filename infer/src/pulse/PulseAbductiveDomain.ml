@@ -11,7 +11,6 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
-module BaseSkippedCalls = BaseDomain.SkippedCalls
 module BaseAddressAttributes = PulseBaseAddressAttributes
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
@@ -23,13 +22,7 @@ module type BaseDomain = sig
 
   val empty : t
 
-  val update :
-       ?stack:BaseStack.t
-    -> ?heap:BaseMemory.t
-    -> ?skipped_calls:BaseSkippedCalls.t
-    -> ?attrs:BaseAddressAttributes.t
-    -> t
-    -> t
+  val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
 
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
   (**filter both heap and attrs *)
@@ -40,26 +33,21 @@ end
 (* just to expose record field names without having to type
    [BaseDomain.heap] *)
 type base_domain = BaseDomain.t =
-  { heap: BaseMemory.t
-  ; stack: BaseStack.t
-  ; skipped_calls: BaseSkippedCalls.t
-  ; attrs: BaseAddressAttributes.t }
+  {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
 (** operations common to [Domain] and [InvertedDomain], see also the [BaseDomain] signature *)
 module BaseDomainCommon = struct
-  let update ?stack ?heap ?skipped_calls ?attrs foot =
-    let new_stack, new_heap, new_skipped_calls, new_attrs =
+  let update ?stack ?heap ?attrs foot =
+    let new_stack, new_heap, new_attrs =
       ( Option.value ~default:foot.stack stack
       , Option.value ~default:foot.heap heap
-      , Option.value ~default:foot.skipped_calls skipped_calls
       , Option.value ~default:foot.attrs attrs )
     in
     if
       phys_equal new_stack foot.stack && phys_equal new_heap foot.heap
-      && phys_equal new_skipped_calls foot.skipped_calls
       && phys_equal new_attrs foot.attrs
     then foot
-    else {stack= new_stack; heap= new_heap; skipped_calls= new_skipped_calls; attrs= new_attrs}
+    else {stack= new_stack; heap= new_heap; attrs= new_attrs}
 
 
   let filter_addr ~f foot =
@@ -85,18 +73,33 @@ module InvertedDomain : BaseDomain = struct
   let pp = BaseDomain.pp
 end
 
-(** biabduction-style pre/post state *)
+module SkippedTrace = struct
+  type t = PulseTrace.t [@@deriving compare]
+
+  let pp fmt =
+    PulseTrace.pp fmt ~pp_immediate:(fun fmt ->
+        F.pp_print_string fmt "call to skipped function occurs here" )
+
+
+  let leq ~lhs ~rhs = phys_equal lhs rhs
+
+  let join s1 _ = s1
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+end
+
+module SkippedCalls = AbstractDomain.Map (Procname) (SkippedTrace)
+
+(** biabduction-style pre/post state + skipped calls *)
 type t =
   { post: Domain.t  (** state at the current program point*)
-  ; pre: InvertedDomain.t  (** inferred pre at the current program point *) }
+  ; pre: InvertedDomain.t  (** inferred pre at the current program point *)
+  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 
 let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
 
 let leq ~lhs ~rhs =
-  (* We only care about post state for skipped calls. TODO: Pull
-     skipped calls out of BaseDomain to here. *)
-  BaseDomain.SkippedCalls.leq ~lhs:(lhs.post :> BaseDomain.t).skipped_calls
-    ~rhs:(rhs.post :> BaseDomain.t).skipped_calls
+  SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
   &&
   match
     BaseDomain.isograph_map BaseDomain.empty_mapping
@@ -141,7 +144,10 @@ module Stack = struct
             InvertedDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
         in
-        ({post= Domain.update astate.post ~stack:post_stack; pre}, addr_hist)
+        ( { post= Domain.update astate.post ~stack:post_stack
+          ; pre
+          ; skipped_calls= astate.skipped_calls }
+        , addr_hist )
 
 
   let add var addr_loc_opt astate =
@@ -271,7 +277,8 @@ module Memory = struct
           else (astate.pre :> base_domain).heap
         in
         ( { post= Domain.update astate.post ~heap:post_heap
-          ; pre= InvertedDomain.update astate.pre ~heap:foot_heap }
+          ; pre= InvertedDomain.update astate.pre ~heap:foot_heap
+          ; skipped_calls= astate.skipped_calls }
         , addr_hist_dst )
 
 
@@ -302,20 +309,14 @@ let mk_initial proc_desc =
     InvertedDomain.update ~stack:initial_stack ~heap:initial_heap InvertedDomain.empty
   in
   let post = Domain.update ~stack:initial_stack Domain.empty in
-  {pre; post}
-
-
-(** [astate] with [astate.post.skipped_calls = f astate.post.skipped_calls] *)
-let map_post_skipped_calls ~f astate =
-  let new_post =
-    Domain.update astate.post ~skipped_calls:(f (astate.post :> base_domain).skipped_calls)
-  in
-  if phys_equal new_post astate.post then astate else {astate with post= new_post}
+  let skipped_calls = SkippedCalls.empty in
+  {pre; post; skipped_calls}
 
 
 let add_skipped_calls pname trace astate =
-  map_post_skipped_calls astate ~f:(fun skipped_call_map ->
-      BaseSkippedCalls.add pname trace skipped_call_map )
+  let new_skipped_calls = SkippedCalls.add pname trace astate.skipped_calls in
+  if phys_equal new_skipped_calls astate.skipped_calls then astate
+  else {astate with skipped_calls= new_skipped_calls}
 
 
 let discard_unreachable ({pre; post} as astate) =
@@ -329,7 +330,7 @@ let discard_unreachable ({pre; post} as astate) =
     Domain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
   in
   if phys_equal pre_new pre && phys_equal post_new post then astate
-  else {pre= pre_new; post= post_new}
+  else {astate with pre= pre_new; post= post_new}
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -362,7 +363,8 @@ module PrePost = struct
     in
     let pre_heap = deregister_empty (astate.pre :> base_domain).heap in
     let post_heap = deregister_empty (astate.post :> base_domain).heap in
-    { pre= InvertedDomain.update astate.pre ~heap:pre_heap
+    { astate with
+      pre= InvertedDomain.update astate.pre ~heap:pre_heap
     ; post= Domain.update ~stack:post_stack ~heap:post_heap astate.post }
 
 
@@ -395,7 +397,7 @@ module PrePost = struct
         attrs attrs
     in
     if phys_equal attrs attrs' then astate
-    else {pre= astate.pre; post= Domain.update astate.post ~attrs:attrs'}
+    else {astate with pre= astate.pre; post= Domain.update astate.post ~attrs:attrs'}
 
 
   let of_post pdesc astate =
@@ -971,18 +973,17 @@ module PrePost = struct
 
 
   let record_skipped_calls callee_proc_name call_loc pre_post call_state =
-    let callee_skipped_map = (pre_post.post :> BaseDomain.t).skipped_calls in
+    let callee_skipped_map = pre_post.skipped_calls in
     let caller_skipped_map =
-      BaseSkippedCalls.map
+      SkippedCalls.map
         (fun trace -> add_call_to_trace callee_proc_name call_loc [] trace)
         callee_skipped_map
       |> (* favor calls we already knew about somewhat arbitrarily *)
-      BaseSkippedCalls.union
+      SkippedCalls.union
         (fun _ orig_call _callee_call -> Some orig_call)
-        (call_state.astate.post :> BaseDomain.t).skipped_calls
+        call_state.astate.skipped_calls
     in
-    { call_state with
-      astate= map_post_skipped_calls ~f:(fun _ -> caller_skipped_map) call_state.astate }
+    {call_state with astate= {call_state.astate with skipped_calls= caller_skipped_map}}
 
 
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
@@ -1081,3 +1082,5 @@ end
 let extract_pre {pre} = (pre :> BaseDomain.t)
 
 let extract_post {post} = (post :> BaseDomain.t)
+
+let extract_skipped_calls {skipped_calls} = skipped_calls

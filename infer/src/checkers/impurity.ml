@@ -122,8 +122,8 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
         false
   in
   let skipped_calls =
-    post.BaseDomain.skipped_calls
-    |> BaseDomain.SkippedCalls.filter (fun proc_name _ ->
+    AbductiveDomain.extract_skipped_calls pre_post
+    |> PulseAbductiveDomain.SkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure proc_name) )
   in
   {modified_globals; modified_params; skipped_calls}
@@ -144,7 +144,7 @@ let report_errors summary proc_name pname_loc modified_opt =
             set acc
         in
         let skipped_functions =
-          PulseBaseDomain.SkippedCalls.fold
+          PulseAbductiveDomain.SkippedCalls.fold
             (fun proc_name trace acc ->
               PulseTrace.add_to_errlog ~nesting:1
                 ~pp_immediate:(fun fmt ->

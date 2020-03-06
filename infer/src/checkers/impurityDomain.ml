@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module SkippedCalls = PulseAbductiveDomain.SkippedCalls
 
 type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 [@@deriving compare]
@@ -24,18 +25,18 @@ module ModifiedVarSet = AbstractDomain.FiniteSet (ModifiedVar)
 type t =
   { modified_params: ModifiedVarSet.t
   ; modified_globals: ModifiedVarSet.t
-  ; skipped_calls: PulseBaseDomain.SkippedCalls.t }
+  ; skipped_calls: SkippedCalls.t }
 
 let is_pure {modified_globals; modified_params; skipped_calls} =
   ModifiedVarSet.is_empty modified_globals
   && ModifiedVarSet.is_empty modified_params
-  && PulseBaseDomain.SkippedCalls.is_empty skipped_calls
+  && SkippedCalls.is_empty skipped_calls
 
 
 let pure =
   { modified_params= ModifiedVarSet.empty
   ; modified_globals= ModifiedVarSet.empty
-  ; skipped_calls= PulseBaseDomain.SkippedCalls.empty }
+  ; skipped_calls= SkippedCalls.empty }
 
 
 let join astate1 astate2 =
@@ -47,7 +48,7 @@ let join astate1 astate2 =
       ~res:
         { modified_globals= ModifiedVarSet.join mg1 mg2
         ; modified_params= ModifiedVarSet.join mp1 mp2
-        ; skipped_calls= PulseBaseDomain.SkippedCalls.union (fun _pname t1 _ -> Some t1) uk1 uk2 }
+        ; skipped_calls= SkippedCalls.union (fun _pname t1 _ -> Some t1) uk1 uk2 }
       astate1 astate2
 
 
