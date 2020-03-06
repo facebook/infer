@@ -249,7 +249,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
                   {loc= Term.add l o; bas= b'; len= m'; siz= n_o; arr= a1'})
                (Sh.rem_seg ssg sub))))
   in
-  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
+  goal |> with_ ~com ~min ~xs ~sub ~zs
 
 (*   [k;    o)
  * ⊢    [l; n)
@@ -420,7 +420,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.rem_seg ssg sub))))
   in
-  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
+  goal |> with_ ~com ~min ~xs ~sub ~zs
 
 (*      [k; o)
  * ⊢ [l;      n)
@@ -462,7 +462,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                   (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; arr= a2'})
                   (Sh.rem_seg ssg sub)))))
   in
-  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
+  goal |> with_ ~com ~min ~xs ~sub ~zs
 
 (*      [k;  o)
  * ⊢ [l;   n)
