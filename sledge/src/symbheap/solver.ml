@@ -63,21 +63,56 @@ end = struct
     ; sub: Sh.t
     ; zs: Var.Set.t
     ; pgs: bool }
+  [@@deriving sexp]
 
   let pp fs {com; min; xs; sub; pgs} =
     Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
       (if pgs then "t" else "f")
       Sh.pp com Sh.pp min Var.Set.pp_xs xs (Sh.pp_diff_eq min.cong) sub
 
+  let invariant g =
+    Invariant.invariant [%here] g [%sexp_of: t]
+    @@ fun () ->
+    try
+      let {us; com; min; xs; sub; zs; pgs= _} = g in
+      assert (Set.equal us com.us) ;
+      assert (Set.equal us min.us) ;
+      assert (Set.equal (Set.union us xs) sub.us) ;
+      assert (Set.disjoint us xs) ;
+      assert (Set.is_subset zs ~of_:(Set.union us xs))
+    with exc -> [%Trace.info "%a" pp g] ; raise exc
+
   let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
-    let us = Option.value us ~default:g.us in
     let xs = Option.value xs ~default:g.xs in
     let zs = Option.value zs ~default:g.zs in
-    let com = Option.value com ~default:g.com in
-    let min = Option.value min ~default:g.min in
-    let sub = Option.value sub ~default:g.sub in
+    let new_us =
+      let us = Option.value us ~default:Var.Set.empty in
+      let us =
+        Option.fold
+          ~f:(fun us sub -> Set.union (Set.diff sub.Sh.us xs) us)
+          sub ~init:us
+      in
+      let union_us q_opt us' =
+        Option.fold ~f:(fun us' q -> Set.union q.Sh.us us') q_opt ~init:us'
+      in
+      union_us com (union_us min us)
+    in
+    let com = Sh.extend_us new_us (Option.value com ~default:g.com) in
+    let min = Sh.extend_us new_us (Option.value min ~default:g.min) in
+    let xs, sub, zs =
+      match sub with
+      | Some sub ->
+          let sub = Sh.extend_us (Set.union new_us xs) sub in
+          let ys, sub = Sh.bind_exists sub ~wrt:xs in
+          let xs = Set.union xs ys in
+          let zs = Set.union zs ys in
+          (xs, sub, zs)
+      | None ->
+          let sub = Sh.extend_us new_us (Option.value sub ~default:g.sub) in
+          (xs, sub, zs)
+    in
     let pgs = Option.value pgs ~default:g.pgs in
-    {us; com; min; xs; sub; zs; pgs}
+    {us= min.us; com; min; xs; sub; zs; pgs} |> check invariant
 
   let goal ~us ~com ~min ~xs ~sub ~zs ~pgs =
     with_ ~us ~com ~min ~xs ~sub ~zs ~pgs
@@ -605,12 +640,10 @@ let excise_heap ({min; sub} as goal) =
   | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal
 
-let rec excise ({us; min; xs; sub; zs; pgs} as goal) =
+let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
-  if Sh.is_false min then
-    Some (Sh.false_ (Set.diff (Set.union min.us xs) zs))
-  else if Sh.is_emp sub then
-    Some (Sh.exists zs (Sh.extend_us (Set.union us xs) min))
+  if Sh.is_false min then Some (Sh.false_ (Set.diff sub.us zs))
+  else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
     goal |> with_ ~pgs:false |> excise_exists |> excise_pure >>= excise_heap
@@ -626,22 +659,15 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     ~f:(fun remainders minuend ->
       ([%Trace.call fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend]
       ;
-      let ys, min = Sh.bind_exists minuend ~wrt:xs in
+      let zs, min = Sh.bind_exists minuend ~wrt:xs in
       let us = min.us in
       let com = Sh.emp in
       let+ remainder =
         List.find_map dnf_subtrahend ~f:(fun sub ->
-            ([%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
+            [%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
             ;
-            let sub = Sh.extend_us us sub in
-            let ws, sub = Sh.bind_exists sub ~wrt:xs in
-            let xs = Set.union xs ws in
-            let sub = Sh.and_cong min.cong sub in
-            let zs = Var.Set.empty in
-            let+ remainder =
-              excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
-            in
-            Sh.exists (Set.union ys ws) remainder)
+            let sub = Sh.and_cong min.cong (Sh.extend_us us sub) in
+            excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
             |>
             [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )
       in
