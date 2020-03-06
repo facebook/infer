@@ -122,7 +122,7 @@ let main load_sources_and_classes =
   | false, true ->
       JModels.set_models ~jar_filename:Config.biabduction_models_jar ) ;
   JBasics.set_permissive true ;
-  let classpath, sources, classes =
+  let JClasspath.{classpath; sources; classes} =
     match load_sources_and_classes with
     | `FromVerboseOut verbose_out_file ->
         JClasspath.load_from_verbose_output verbose_out_file
@@ -133,7 +133,7 @@ let main load_sources_and_classes =
   L.(debug Capture Quiet)
     "Translating %d source files (%d classes)@." (String.Map.length sources)
     (JBasics.ClassSet.cardinal classes) ;
-  let program = JClasspath.load_program classpath classes in
+  let program = JClasspath.load_program ~classpath classes in
   do_all_files sources program
 
 

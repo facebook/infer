@@ -17,16 +17,15 @@ module StringHash = Caml.Hashtbl.Make (String)
 
 let models_specs_filenames = StringHash.create 1
 
+let specs_file_extension = String.chop_prefix_exn ~prefix:"." Config.specs_files_suffix
+
 let collect_specs_filenames jar_filename =
-  let zip_channel = Zip.open_in jar_filename in
-  let collect entry =
-    let filename = entry.Zip.filename in
-    if Filename.check_suffix filename Config.specs_files_suffix then
-      let proc_filename = Filename.chop_extension (Filename.basename filename) in
-      StringHash.replace models_specs_filenames proc_filename ()
+  let f () filename =
+    let proc_filename = Filename.basename filename in
+    StringHash.replace models_specs_filenames proc_filename ()
   in
-  List.iter ~f:collect (Zip.entries zip_channel) ;
-  Zip.close_in zip_channel
+  Utils.zip_fold_filenames ~init:() ~f ~chop_extension:specs_file_extension
+    ~zip_filename:jar_filename
 
 
 let set_models ~jar_filename =

@@ -31,7 +31,7 @@ let classpath_of_paths paths =
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
-type t = string * file_entry String.Map.t * JBasics.ClassSet.t
+type t = {classpath: string; sources: file_entry String.Map.t; classes: JBasics.ClassSet.t}
 
 (* Open the source file and search for the package declaration.
    Only the case where the package is declared in a single line is supported *)
@@ -107,7 +107,7 @@ let load_from_verbose_output javac_verbose_out =
     | exception End_of_file ->
         In_channel.close file_in ;
         let classpath = classpath_of_paths (String.Set.elements roots @ paths) in
-        (classpath, sources, classes)
+        {classpath; sources; classes}
     | line ->
         if Str.string_match class_filename_re line 0 then
           let path =
@@ -140,32 +140,20 @@ let load_from_verbose_output javac_verbose_out =
   loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty
 
 
-let classname_of_class_filename class_filename =
-  JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
-
-
-let extract_classnames classnames jar_filename =
-  let file_in = Zip.open_in jar_filename in
-  let collect classes entry =
-    let class_filename = entry.Zip.filename in
-    match Filename.split_extension class_filename with
-    | basename, Some "class" ->
-        classname_of_class_filename basename :: classes
-    | _ ->
-        classes
+let fold_classnames ~init ~f jar_filename =
+  let f acc class_filename =
+    let classname =
+      JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
+    in
+    f acc classname
   in
-  let classnames_after = List.fold ~f:collect ~init:classnames (Zip.entries file_in) in
-  Zip.close_in file_in ; classnames_after
-
-
-let collect_classnames start_classmap jar_filename =
-  List.fold
-    ~f:(fun map cn -> JBasics.ClassSet.add cn map)
-    ~init:start_classmap
-    (extract_classnames [] jar_filename)
+  Utils.zip_fold_filenames ~init ~f ~chop_extension:"class" ~zip_filename:jar_filename
 
 
 let search_classes path =
+  let collect_classnames start_classmap jar_filename =
+    fold_classnames ~f:(fun map cn -> JBasics.ClassSet.add cn map) ~init:start_classmap jar_filename
+  in
   let add_class roots classes class_filename =
     let cn, root_dir = Javalib.extract_class_name_from_file class_filename in
     (add_root_path root_dir roots, JBasics.ClassSet.add cn classes)
@@ -201,17 +189,15 @@ let load_from_arguments classes_out_path =
     split Config.bootclasspath @ split Config.classpath @ String.Set.elements roots
     |> classpath_of_paths
   in
-  (classpath, search_sources (), classes)
+  {classpath; sources= search_sources (); classes}
 
 
 type callee_status = Translated | Missing of JBasics.class_name * JBasics.method_signature
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
-type classpath = {path: string; channel: Javalib.class_path}
-
 type program =
-  { classpath: classpath
+  { classpath_channel: Javalib.class_path
   ; models: classmap
   ; mutable classmap: classmap
   ; callees: callee_status Procname.Hash.t }
@@ -220,7 +206,7 @@ let get_classmap program = program.classmap
 
 let mem_classmap cn program = JBasics.ClassMap.mem cn program.classmap
 
-let get_classpath_channel program = program.classpath.channel
+let get_classpath_channel program = program.classpath_channel
 
 let get_models program = program.models
 
@@ -250,7 +236,7 @@ let iter_missing_callees program ~f =
   Procname.Hash.iter select program.callees
 
 
-let cleanup program = Javalib.close_class_path program.classpath.channel
+let cleanup program = Javalib.close_class_path program.classpath_channel
 
 let lookup_node cn program =
   try Some (JBasics.ClassMap.find cn (get_classmap program))
@@ -273,19 +259,19 @@ let collect_classes start_classmap jar_filename =
     try JBasics.ClassMap.add cn (javalib_get_class classpath cn) classmap
     with JBasics.Class_structure_error _ -> classmap
   in
-  let classmap = List.fold ~f:collect ~init:start_classmap (extract_classnames [] jar_filename) in
+  let classmap = fold_classnames ~f:collect ~init:start_classmap jar_filename in
   Javalib.close_class_path classpath ;
   classmap
 
 
-let load_program classpath classes =
+let load_program ~classpath classes =
   L.(debug Capture Medium) "loading program ... %!" ;
   let models =
     JModels.get_models_jar_filename ()
     |> Option.fold ~init:JBasics.ClassMap.empty ~f:collect_classes
   in
   let program =
-    { classpath= {path= classpath; channel= Javalib.class_path classpath}
+    { classpath_channel= Javalib.class_path classpath
     ; models
     ; classmap= JBasics.ClassMap.empty
     ; callees= Procname.Hash.create 128 }

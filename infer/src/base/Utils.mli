@@ -178,3 +178,8 @@ val numcores : int
 
 val set_best_cpu_for : int -> unit
 (** Pins processes to CPUs aiming to saturate physical cores evenly *)
+
+val zip_fold_filenames :
+  init:'a -> f:('a -> string -> 'a) -> chop_extension:string -> zip_filename:string -> 'a
+(** fold over each filename in the given [zip_filename] which has as extension [chop_extension]. [f]
+    receives the filename with the extension removed. *)

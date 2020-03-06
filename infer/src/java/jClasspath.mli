@@ -12,7 +12,7 @@ open Javalib_pack
 (** map entry for source files with potential basename collision within the same compiler call *)
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
-type t = string * file_entry String.Map.t * JBasics.ClassSet.t
+type t = {classpath: string; sources: file_entry String.Map.t; classes: JBasics.ClassSet.t}
 
 val load_from_verbose_output : string -> t
 (** load the list of source files and the list of classes from the javac verbose file *)
@@ -32,7 +32,7 @@ val get_models : program -> classmap
 
 val cleanup : program -> unit
 
-val load_program : string -> JBasics.ClassSet.t -> program
+val load_program : classpath:string -> JBasics.ClassSet.t -> program
 (** load a java program *)
 
 val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface_or_class option
