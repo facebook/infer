@@ -15,13 +15,6 @@ type t =
   ; quoting_style: ClangQuotes.style
   ; is_driver: bool }
 
-let fcp_dir =
-  Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
-
-
-(** path of the plugin to load in clang *)
-let plugin_path = fcp_dir ^/ "libtooling" ^/ "build" ^/ "FacebookClangPlugin.dylib"
-
 (** name of the plugin to use *)
 let plugin_name = "BiniouASTExporter"
 
@@ -148,7 +141,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
 let clang_cc1_cmd_sanitizer cmd =
   let replace_args arg = function
     | Some override_regex when Str.string_match override_regex arg 0 ->
-        fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "9.0.0" ^/ "include"
+        Config.fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "9.0.0" ^/ "include"
     | _ ->
         arg
   in
@@ -175,7 +168,7 @@ let clang_cc1_cmd_sanitizer cmd =
       match libcxx_include_to_override_regex with
       | Some libcxx_include_to_override_regex
         when Str.string_match libcxx_include_to_override_regex arg 0 ->
-          fcp_dir ^/ "clang" ^/ "install" ^/ "include" ^/ "c++" ^/ "v1"
+          Config.fcp_dir ^/ "clang" ^/ "install" ^/ "include" ^/ "c++" ^/ "v1"
       | _ ->
           arg )
     | _ ->
@@ -250,7 +243,7 @@ let with_plugin_args args =
     argv_cons "-cc1"
     |> List.rev_append
          [ "-load"
-         ; plugin_path
+         ; Config.clang_plugin_path
          ; (* (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag and the
               YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
               files, we invoke apple clang again to generate the expected artifacts. This will keep

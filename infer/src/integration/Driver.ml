@@ -16,6 +16,7 @@ module F = Format
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
+  | BuckClangFlavor of string list
   | BuckGenrule of string
   | BuckGenruleMaster of string list
   | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
@@ -31,6 +32,8 @@ let is_analyze_mode = function Analyze -> true | _ -> false
 let pp_mode fmt = function
   | Analyze ->
       F.fprintf fmt "Analyze driver mode"
+  | BuckClangFlavor args ->
+      F.fprintf fmt "BuckClangFlavor driver mode: args = %a" Pp.cli_args args
   | BuckGenrule prog ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckGenruleMaster build_cmd ->
@@ -187,12 +190,12 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 
-let python_capture build_system build_cmd =
+let buck_capture build_cmd =
   register_perf_stats_report PerfStats.TotalFrontend ;
-  let in_buck_mode = Config.equal_build_system build_system BBuck in
-  let build_cmd_opt =
+  let prog_build_cmd_opt =
+    let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
     match Config.buck_mode with
-    | Some ClangFlavors when in_buck_mode ->
+    | Some ClangFlavors ->
         (* let children infer processes know that they are inside Buck *)
         let infer_args_with_buck =
           String.concat
@@ -200,7 +203,6 @@ let python_capture build_system build_cmd =
             (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
         in
         Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-        let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
         let {Buck.command; rev_not_targets; targets} =
           Buck.add_flavors_to_buck_arguments ClangFlavors ~filter_kind:`Auto ~extra_flavors:[]
             buck_args
@@ -209,71 +211,66 @@ let python_capture build_system build_cmd =
         else
           let all_args = List.rev_append rev_not_targets targets in
           let updated_buck_cmd =
-            [prog; command]
-            @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
+            command
+            :: List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
           in
           Logging.(debug Capture Quiet)
             "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
-          Some updated_buck_cmd
+          Some (prog, updated_buck_cmd)
     | _ ->
-        Some build_cmd
+        Some (prog, build_cmd)
   in
-  Option.iter build_cmd_opt ~f:(fun updated_build_cmd ->
-      L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
-      let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
-      let args =
-        List.rev_append Config.anon_args
-          ( ( match (build_system, Config.buck_blacklist) with
-            | Config.BBuck, _ :: _ ->
-                ["--blacklist-regex"; "(" ^ String.concat ~sep:")|(" Config.buck_blacklist ^ ")"]
-            | _ ->
-                [] )
-          @ (if not Config.continue_capture then [] else ["--continue"])
-          @ ( match Config.force_integration with
-            | None ->
-                []
-            | Some tool ->
-                ["--force-integration"; Config.string_of_build_system tool] )
-          @ (match Config.java_jar_compiler with None -> [] | Some p -> ["--java-jar-compiler"; p])
-          @ ( match List.rev Config.buck_build_args with
-            | args when in_buck_mode ->
-                List.map ~f:(fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
-            | _ ->
-                [] )
-          @ (if not Config.debug_mode then [] else ["--debug"])
-          @ (if Config.filtering then [] else ["--no-filtering"])
-          @ "-j" :: string_of_int Config.jobs
-            :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
-          @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
-          @ ["--project-root"; Config.project_root]
-          @ (if not Config.quiet then [] else ["--quiet"])
-          @ "--out" :: Config.results_dir
-            ::
-            ( match Config.xcode_developer_dir with
-            | None ->
-                []
-            | Some d ->
-                ["--xcode-developer-dir"; d] )
-          @ (if not Config.buck_merge_all_deps then [] else ["--buck-merge-all-deps"])
-          @ ("--" :: updated_build_cmd) )
-      in
-      if in_buck_mode && Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then (
+  Option.iter prog_build_cmd_opt ~f:(fun (prog, buck_build_cmd) ->
+      L.progress "Capturing in buck mode...@." ;
+      if Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then (
         RunState.set_merge_capture true ; RunState.store () ) ;
-      run_command ~prog:infer_py ~args
-        ~cleanup:(function
-          | Error (`Exit_non_zero exit_code)
-            when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
-              (* swallow infer.py argument parsing error *)
-              Config.print_usage_exit ()
-          | status ->
-              command_error_handling ~always_die:true ~prog:infer_py ~args status )
-        () ;
-      PerfStats.get_reporter PerfStats.TotalFrontend () )
+      Buck.clang_flavor_capture ~prog ~buck_build_cmd ) ;
+  PerfStats.get_reporter PerfStats.TotalFrontend ()
+
+
+let python_capture build_system build_cmd =
+  register_perf_stats_report PerfStats.TotalFrontend ;
+  L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
+  let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
+  let args =
+    List.rev_append Config.anon_args
+      ( (if not Config.continue_capture then [] else ["--continue"])
+      @ ( match Config.force_integration with
+        | None ->
+            []
+        | Some tool ->
+            ["--force-integration"; Config.string_of_build_system tool] )
+      @ (match Config.java_jar_compiler with None -> [] | Some p -> ["--java-jar-compiler"; p])
+      @ (if not Config.debug_mode then [] else ["--debug"])
+      @ (if Config.filtering then [] else ["--no-filtering"])
+      @ "-j" :: string_of_int Config.jobs
+        :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
+      @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
+      @ ["--project-root"; Config.project_root]
+      @ (if not Config.quiet then [] else ["--quiet"])
+      @ "--out" :: Config.results_dir
+        ::
+        (match Config.xcode_developer_dir with None -> [] | Some d -> ["--xcode-developer-dir"; d])
+      @ (if not Config.buck_merge_all_deps then [] else ["--buck-merge-all-deps"])
+      @ ("--" :: build_cmd) )
+  in
+  run_command ~prog:infer_py ~args
+    ~cleanup:(function
+      | Error (`Exit_non_zero exit_code)
+        when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
+          (* swallow infer.py argument parsing error *)
+          Config.print_usage_exit ()
+      | status ->
+          command_error_handling ~always_die:true ~prog:infer_py ~args status )
+    () ;
+  PerfStats.get_reporter PerfStats.TotalFrontend ()
 
 
 let capture ~changed_files = function
   | Analyze ->
       ()
+  | BuckClangFlavor build_cmd ->
+      buck_capture build_cmd
   | BuckCompilationDB (deps, prog, args) ->
       L.progress "Capturing using Buck's compilation database...@." ;
       let json_cdb =
@@ -391,8 +388,7 @@ let error_nothing_to_analyze mode =
 let analyze_and_report ?suppress_console_report ~changed_files mode =
   let should_analyze, should_report =
     match (Config.command, mode) with
-    | _, PythonCapture (BBuck, _)
-      when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
+    | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
@@ -409,7 +405,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ when Config.merge ->
         (* [--merge] overrides other behaviors *)
         true
-    | PythonCapture (BBuck, _)
+    | BuckClangFlavor _
       when Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode
            && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
@@ -532,7 +528,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           L.user_warning
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
-          PythonCapture (BBuck, build_cmd)
+          BuckClangFlavor build_cmd
       | BBuck, Some JavaGenruleMaster ->
           BuckGenruleMaster build_cmd
       | BClang, _ ->
@@ -547,7 +543,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Maven (prog, args)
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty (prog, args)
-      | (BBuck as build_system), Some ClangFlavors
+      | BBuck, Some ClangFlavors ->
+          BuckClangFlavor build_cmd
       | ((BAnt | BGradle | BNdk | BXcode) as build_system), _ ->
           PythonCapture (build_system, build_cmd) )
 

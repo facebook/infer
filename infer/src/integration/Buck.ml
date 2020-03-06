@@ -339,3 +339,109 @@ let filter_compatible subcommand args =
       List.filter args ~f:(fun arg -> not (String.equal blacklist arg))
   | _ ->
       args
+
+
+let capture_buck_args =
+  let clang_path =
+    List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
+  in
+  List.append
+    [ "--show-output"
+    ; "--config"
+    ; "client.id=infer.clang"
+    ; "--config"
+    ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
+    ; "--config"
+    ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
+    ; "--config"
+    ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
+    ; "--config"
+    ; "*//cxx.pch_enabled=false"
+    ; "--config"
+    ; (* Infer doesn't support C++ modules yet (T35656509) *)
+      "*//cxx.modules_default=false"
+    ; "--config"
+    ; "*//cxx.modules=false" ]
+    ( List.rev_append Config.buck_build_args
+        ( if not (List.is_empty Config.buck_blacklist) then
+          [ "--config"
+          ; Printf.sprintf "*//infer.blacklist_regex=(%s)"
+              (String.concat ~sep:")|(" Config.buck_blacklist) ]
+        else [] )
+    @ ( match Config.xcode_developer_dir with
+      | Some d ->
+          ["--config"; Printf.sprintf "apple.xcode_developer_dir=%s" d]
+      | None ->
+          [] )
+    @ (if Config.keep_going then ["--keep-going"] else [])
+    @ ["-j"; Int.to_string Config.jobs]
+    @ match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [] )
+
+
+let run_buck_build prog buck_build_args =
+  L.debug Capture Verbose "%s %s@." prog (List.to_string ~f:Fn.id buck_build_args) ;
+  let {Unix.Process_info.stdin; stdout; stderr; pid} =
+    Unix.create_process ~prog ~args:buck_build_args
+  in
+  let buck_stderr = Unix.in_channel_of_descr stderr in
+  let buck_stdout = Unix.in_channel_of_descr stdout in
+  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
+  Unix.close stdin ;
+  In_channel.close buck_stderr ;
+  (* Process a line of buck stdout output, in this case the result of '--show-output'
+     These paths (may) contain a 'infer-deps.txt' file, which we will later merge
+  *)
+  let process_buck_line acc line =
+    L.debug Capture Verbose "BUCK OUT: %s@." line ;
+    match String.split ~on:' ' line with
+    | [_; target_path] ->
+        let filename = Config.project_root ^/ target_path ^/ Config.buck_infer_deps_file_name in
+        if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
+    | _ ->
+        L.die ExternalError "Couldn't parse buck target output: %s" line
+  in
+  match Unix.waitpid pid with
+  | Ok () ->
+      let res = In_channel.fold_lines buck_stdout ~init:[] ~f:process_buck_line in
+      In_channel.close buck_stdout ; res
+  | Error _ as err ->
+      L.die ExternalError "*** capture failed to execute: %s"
+        (Unix.Exit_or_signal.to_string_hum err)
+
+
+let merge_deps_files depsfiles =
+  let buck_out = Config.project_root ^/ Config.buck_out_gen in
+  let depslines, depsfiles =
+    match (depsfiles, Config.keep_going, Config.buck_merge_all_deps) with
+    | [], true, _ ->
+        let infouts =
+          Utils.fold_folders ~init:[] ~path:buck_out ~f:(fun acc dir ->
+              if
+                String.is_substring dir ~substring:"infer-out"
+                && PolyVariantEqual.(
+                     Sys.file_exists @@ dir ^/ ResultsDatabase.database_filename = `Yes)
+              then Printf.sprintf "\t\t%s" dir :: acc
+              else acc )
+        in
+        (infouts, depsfiles)
+    | [], _, true ->
+        let files = Utils.find_files ~path:buck_out ~extension:Config.buck_infer_deps_file_name in
+        ([], files)
+    | _ ->
+        ([], depsfiles)
+  in
+  depslines
+  @ List.fold depsfiles ~init:[] ~f:(fun acc file ->
+        List.rev_append acc (Utils.with_file_in file ~f:In_channel.input_lines) )
+  |> List.dedup_and_sort ~compare:String.compare
+
+
+let clang_flavor_capture ~prog ~buck_build_cmd =
+  if Config.keep_going && not Config.continue_capture then
+    Process.create_process_and_wait ~prog ~args:["clean"] ;
+  let depsfiles = run_buck_build prog (buck_build_cmd @ capture_buck_args) in
+  let deplines = merge_deps_files depsfiles in
+  let infer_out_depsfile = Config.(results_dir ^/ buck_infer_deps_file_name) in
+  Utils.with_file_out infer_out_depsfile ~f:(fun out_chan ->
+      Out_channel.output_lines out_chan deplines ) ;
+  ()

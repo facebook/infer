@@ -13,6 +13,7 @@ open! IStd
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
+  | BuckClangFlavor of string list
   | BuckGenrule of string
   | BuckGenruleMaster of string list
   | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list

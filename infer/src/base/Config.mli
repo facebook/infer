@@ -27,8 +27,6 @@ type build_system =
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
-val equal_build_system : build_system -> build_system -> bool
-
 val build_system_of_exe_name : string -> build_system
 
 val string_of_build_system : build_system -> string
@@ -65,6 +63,8 @@ val clang_initializer_prefix : string
 
 val clang_inner_destructor_prefix : string
 
+val clang_plugin_path : string
+
 val classnames_dir_name : string
 
 val classpath : string option
@@ -86,6 +86,8 @@ val etc_dir : string
 val events_dir_name : string
 
 val fail_on_issue_exit_code : int
+
+val fcp_dir : string
 
 val frontend_stats_dir_name : string
 
@@ -249,6 +251,8 @@ val buck_merge_all_deps : bool
 val buck_mode : BuckMode.t option
 
 val buck_out : string option
+
+val buck_out_gen : string
 
 val buck_targets_blacklist : string list
 

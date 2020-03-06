@@ -155,6 +155,8 @@ let bound_error_allowed_in_procedure_call = true
 
 let buck_infer_deps_file_name = "infer-deps.txt"
 
+let buck_out_gen = "buck-out" ^/ "gen"
+
 let buck_results_dir_name = "infer"
 
 let captured_dir_name = "captured"
@@ -413,6 +415,12 @@ let bin_dir =
   (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
   Filename.dirname (Utils.realpath Sys.executable_name)
 
+
+let fcp_dir =
+  bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
+
+
+let clang_plugin_path = fcp_dir ^/ "libtooling" ^/ "build" ^/ "FacebookClangPlugin.dylib"
 
 let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 

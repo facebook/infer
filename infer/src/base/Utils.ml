@@ -26,10 +26,29 @@ let find_files ~path ~extension =
           traverse_dir_aux files full_path
       | _ ->
           files
+      | exception Unix.Unix_error (ENOENT, _, _) ->
+          files
     in
     Sys.fold_dir ~init ~f:(aux dir_path) dir_path
   in
   traverse_dir_aux [] path
+
+
+let fold_folders ~init ~f ~path =
+  let rec traverse_dir_aux acc dir_path =
+    let aux base_path acc' rel_path =
+      let full_path = base_path ^/ rel_path in
+      match (Unix.stat full_path).Unix.st_kind with
+      | Unix.S_DIR ->
+          traverse_dir_aux (f acc' full_path) full_path
+      | _ ->
+          acc'
+      | exception Unix.Unix_error (ENOENT, _, _) ->
+          acc'
+    in
+    Sys.fold_dir ~init:acc ~f:(aux dir_path) dir_path
+  in
+  traverse_dir_aux init path
 
 
 (** read a source file and return a list of lines, or None in case of error *)

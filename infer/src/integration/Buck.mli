@@ -32,3 +32,6 @@ val store_args_in_file : string list -> string list
 
 val filter_compatible : [> `Targets] -> string list -> string list
 (** keep only the options compatible with the given Buck subcommand *)
+
+val clang_flavor_capture : prog:string -> buck_build_cmd:string list -> unit
+(** do a buck/clang flavor capture given the prog and build command (buck args) *)
