@@ -378,7 +378,7 @@ let fork_child ~file_lock ~child_prelude ~slot (updates_r, updates_w) ~f ~epilog
       Unix.close updates_r ;
       Unix.close to_child_w ;
       (* Pin to a core. [setcore] does the modulo <number of cores> for us. *)
-      Setcore.setcore slot ;
+      Utils.set_best_cpu_for slot ;
       ProcessPoolState.in_child := true ;
       ProcessPoolState.reset_pid () ;
       child_prelude () ;

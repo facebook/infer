@@ -466,3 +466,41 @@ let iter_infer_deps ~project_root ~f infer_deps_file =
       List.iter ~f:one_line lines
   | Error error ->
       Die.die InternalError "Couldn't read deps file '%s': %s" infer_deps_file error
+
+
+let physical_cores () =
+  with_file_in "/proc/cpuinfo" ~f:(fun ic ->
+      let physical_or_core_regxp =
+        Re.Str.regexp "\\(physical id\\|core id\\)[^0-9]+\\([0-9]+\\).*"
+      in
+      let rec loop max_socket_id max_core_id =
+        match In_channel.input_line ~fix_win_eol:true ic with
+        | None ->
+            (max_socket_id + 1, max_core_id + 1)
+        | Some line when Re.Str.string_match physical_or_core_regxp line 0 -> (
+            let value = Re.Str.matched_group 2 line |> int_of_string in
+            match Re.Str.matched_group 1 line with
+            | "physical id" ->
+                loop (max value max_socket_id) max_core_id
+            | "core id" ->
+                loop max_socket_id (max value max_core_id)
+            | _ ->
+                L.die InternalError "Couldn't parse line '%s' from /proc/cpuinfo." line )
+        | Some _ ->
+            loop max_socket_id max_core_id
+      in
+      let sockets, cores_per_socket = loop 0 0 in
+      sockets * cores_per_socket )
+
+
+let cpus = Setcore.numcores ()
+
+let numcores =
+  match Version.build_platform with Darwin | Windows -> cpus / 2 | Linux -> physical_cores ()
+
+
+let set_best_cpu_for worker_id =
+  let threads_per_core = cpus / numcores in
+  let chosen_core = worker_id * threads_per_core % numcores in
+  let chosen_thread_in_core = worker_id * threads_per_core / numcores in
+  Setcore.setcore ((chosen_core * threads_per_core) + chosen_thread_in_core)

@@ -76,6 +76,7 @@ let common_libraries =
     ; "ocamlgraph"
     ; "oUnit"
     ; "parmap"
+    ; "re"
     ; "sqlite3"
     ; "str"
     ; "unix"

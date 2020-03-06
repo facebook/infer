@@ -437,7 +437,7 @@ let linters_def_default_file = linters_def_dir ^/ "linters.al"
 
 let wrappers_dir = lib_dir ^/ "wrappers"
 
-let ncpu = Setcore.numcores ()
+let ncpu = Utils.numcores
 
 let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -> Unix
 

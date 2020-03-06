@@ -167,3 +167,11 @@ val get_available_memory_MB : unit -> int option
 val iter_infer_deps : project_root:string -> f:(string -> unit) -> string -> unit
 (** Parse each line of the given infer_deps.txt file (split on tabs, assume 3 elements per line) and
     run [f] on the third element. [project_root] is an argument to avoid dependency cycles. *)
+
+val numcores : int
+(** - On Linux return the number of physical cores (sockets * cores per socket).
+    - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware
+      threads per core. *)
+
+val set_best_cpu_for : int -> unit
+(** Pins processes to CPUs aiming to saturate physical cores evenly *)
