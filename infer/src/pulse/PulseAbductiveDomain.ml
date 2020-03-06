@@ -93,6 +93,11 @@ type t =
 let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
 
 let leq ~lhs ~rhs =
+  (* We only care about post state for skipped calls. TODO: Pull
+     skipped calls out of BaseDomain to here. *)
+  BaseDomain.SkippedCalls.leq ~lhs:(lhs.post :> BaseDomain.t).skipped_calls
+    ~rhs:(rhs.post :> BaseDomain.t).skipped_calls
+  &&
   match
     BaseDomain.isograph_map BaseDomain.empty_mapping
       ~lhs:(rhs.pre :> BaseDomain.t)

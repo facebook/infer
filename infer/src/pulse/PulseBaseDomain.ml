@@ -18,9 +18,16 @@ module SkippedTrace = struct
   let pp fmt =
     PulseTrace.pp fmt ~pp_immediate:(fun fmt ->
         F.pp_print_string fmt "call to skipped function occurs here" )
+
+
+  let leq ~lhs ~rhs = phys_equal lhs rhs
+
+  let join _ _ = assert false
+
+  let widen ~prev:_ ~next:_ ~num_iters:_ = assert false
 end
 
-module SkippedCalls = PrettyPrintable.MakePPMonoMap (Procname) (SkippedTrace)
+module SkippedCalls = AbstractDomain.Map (Procname) (SkippedTrace)
 
 (* {2 Abstract domain description } *)
 

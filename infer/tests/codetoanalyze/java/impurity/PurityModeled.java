@@ -82,8 +82,17 @@ class PurityModeled {
     list.set(0, "e");
   }
 
+  // Pulse can only widen a fixed number of times, hence it thinks
+  // that the exit of the loop never reaches and results in empty
+  // post.
   void timing_call_in_loop_impure_FN() {
     for (int i = 0; i < 10; i++) {
+      System.nanoTime();
+    }
+  }
+
+  void timing_call_in_loop_symb_impure(int n) {
+    for (int i = 0; i < n; i++) {
       System.nanoTime();
     }
   }
