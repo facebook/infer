@@ -199,6 +199,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
   let o_n = Term.integer o_n in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
+  let xs = Set.diff xs (Term.fv n) in
   let com = Sh.star (Sh.seg {msg with siz= n; arr= a0}) com in
   let min =
     Sh.and_
@@ -212,7 +213,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a0 a') (Sh.rem_seg ssg sub)))
   in
-  goal |> with_ ~us ~com ~min ~sub ~zs
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*   [k; o)
  * ⊢ [l;   n)
@@ -274,6 +275,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let l_k = Term.integer l_k in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
+  let xs = Set.diff xs (Term.fv n) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a1}) com
   in
@@ -289,7 +291,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
-  goal |> with_ ~us ~com ~min ~sub ~zs
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*   [k;      o)
  * ⊢    [l; n)
@@ -318,6 +320,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
+  let xs = Set.diff xs (Set.union (Term.fv l) (Term.fv n)) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a1}) com
   in
@@ -335,7 +338,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Sh.and_ (Term.eq m m')
          (Sh.and_ (Term.eq a1 a') (Sh.rem_seg ssg sub)))
   in
-  goal |> with_ ~us ~com ~min ~sub ~zs
+  goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
 (*   [k;   o)
  * ⊢    [l;  n)
@@ -365,6 +368,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
+  let xs = Set.diff xs (Term.fv l) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= ko_l; arr= a1}) com
   in
