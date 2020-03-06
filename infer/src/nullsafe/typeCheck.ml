@@ -248,7 +248,7 @@ let update_typestate_fld ~is_assignment tenv access_loc typestate pvar object_or
           , InferredNullability.create
               (TypeOrigin.Field {object_origin; field_name; field_type; access_loc}) )
         in
-        TypeState.add pvar range typestate
+        TypeState.add ~descr:"update_typestate_fld" pvar range typestate
     | None ->
         typestate )
 
@@ -459,7 +459,9 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
             (Some instr_ref) loc curr_pdesc ) ;
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
-        TypeState.add pvar (t, InferredNullability.create new_origin) typestate''
+        TypeState.add pvar
+          (t, InferredNullability.create new_origin)
+          typestate'' ~descr:"check_not_null function argument"
     | None ->
         typestate'
   in
@@ -501,7 +503,9 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
     | Some (t, nullability) ->
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
-        TypeState.add pvar (t, InferredNullability.create new_origin) typestate1
+        TypeState.add pvar
+          (t, InferredNullability.create new_origin)
+          typestate1 ~descr:"check_state argument"
     | None ->
         typestate1
   in
@@ -590,7 +594,7 @@ let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc call
             (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
                checks tenv node instr_ref typestate' exp_value typ_value
                TypeOrigin.OptimisticFallback loc)
-            typestate'
+            typestate' ~descr:"do_map_put"
       | None ->
           typestate' )
   | _ ->
@@ -719,10 +723,11 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         let range = (Typ.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey) in
         let typestate_with_new_pvar = TypeState.add pvar range typestate in
         typestate_with_new_pvar
+          ~descr:"modelling result of Map.get() since containsKey() returned true"
     | None ->
         typestate
   in
-  let set_nonnull e' typestate2 =
+  let set_nonnull e' typestate2 ~descr =
     let handle_pvar typestate' pvar =
       match TypeState.lookup_pvar pvar typestate' with
       | Some (t, current_nullability) ->
@@ -731,7 +736,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
               {previous_origin= InferredNullability.get_origin current_nullability}
           in
           let new_nullability = InferredNullability.create new_origin in
-          TypeState.add pvar (t, new_nullability) typestate'
+          TypeState.add pvar (t, new_nullability) typestate' ~descr
       | None ->
           typestate'
     in
@@ -746,7 +751,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
      Optionally, if this was already non-nullable, emit a corresponding condition redudant issue.
      Returns the updated typestate.
   *)
-  let set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check expr typestate =
+  let set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check expr typestate ~descr =
     (* Trace back to original to pvar *)
     let pvar_expr, modified_typestate =
       convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
@@ -765,7 +770,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
           find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability idenv
           linereader loc instr_ref ) ;
-    set_nonnull pvar_expr modified_typestate
+    set_nonnull pvar_expr modified_typestate ~descr
   in
   (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
      We've just ensured that [expr] == false.
@@ -781,7 +786,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         List.fold ~init:typestate
           ~f:(fun accumulated_typestate argument ->
             set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
-              accumulated_typestate )
+              accumulated_typestate ~descr:"@TrueOnNull-proc argument in false branch" )
           arguments
     | None ->
         typestate
@@ -800,14 +805,14 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         List.fold ~init:typestate
           ~f:(fun accumulated_typestate argument ->
             set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
-              accumulated_typestate )
+              accumulated_typestate ~descr:"@FalseOnNull-proc argument in false branch" )
           arguments
     | None -> (
       match extract_first_argument_from_instanceof expr with
       | Some argument ->
           (* ([argument] instanceof <anything> == true) implies (argument != null) *)
           set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:false argument
-            typestate
+            typestate ~descr:"instanceof argument in true branch"
       | None ->
           if is_from_containsKey expr then handle_containsKey_returned_true expr typestate
           else typestate )
@@ -818,6 +823,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   *)
   let handle_object_not_equal_null expr typestate =
     set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:true expr typestate
+      ~descr:"`!= null` branch"
   in
   match[@warning "-57"] c with
   | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), expr)
@@ -1033,7 +1039,7 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
   let do_return (ret_ta, ret_typ) typestate' =
     let mk_return_range () = (ret_typ, ret_ta) in
     let id = fst ret_id_typ in
-    TypeState.add_id id (mk_return_range ()) typestate'
+    TypeState.add_id id (mk_return_range ()) typestate' ~descr:"typecheck_sil_call_function"
   in
   let typestate_after_call, finally_resolved_ret =
     calc_typestate_after_call find_canonical_duplicate calls_this checks tenv idenv instr_ref
@@ -1058,7 +1064,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       List.fold_right vars ~init:typestate ~f:(fun var astate ->
           match var with
           | Var.LogicalVar id ->
-              TypeState.remove_id id astate
+              TypeState.remove_id id astate ~descr:"ExitScope"
           | Var.ProgramVar _ ->
               astate )
   | Sil.Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
@@ -1073,7 +1079,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       TypeState.add_id id
         (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
            tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
-        typestate'
+        ~descr:"Sil.Load" typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
@@ -1101,7 +1107,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             TypeState.add pvar
               (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
                  checks tenv node instr_ref typestate1 e2 typ TypeOrigin.OptimisticFallback loc)
-              typestate1
+              typestate1 ~descr:"Sil.Store: Exp.Lvar case"
         | Exp.Lfield _ ->
             typestate1
         | _ ->
@@ -1112,7 +1118,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
     when Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array ->
       (* new never returns null *)
-      TypeState.add_id id (typ, InferredNullability.create TypeOrigin.New) typestate
+      TypeState.add_id id
+        (typ, InferredNullability.create TypeOrigin.New)
+        typestate ~descr:"new() operator"
   (* Type cast *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Procname.equal pn BuiltinDecl.__cast ->
@@ -1126,7 +1134,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       TypeState.add_id id
         (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
            tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
-        typestate'
+        typestate' ~descr:"type cast"
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn BuiltinDecl.__get_array_length ->
@@ -1142,7 +1150,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           curr_pdesc node instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create TypeOrigin.ArrayLengthResult)
-        typestate
+        typestate ~descr:"array.length"
   (* All other builtins that are not considered above *)
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip other builtins *)
@@ -1214,6 +1222,10 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
     let fold_instruction
         ( { normal_flow_typestate= normal_typestate_prev_opt
           ; exception_flow_typestates= exception_flow_typestates_prev } as prev_result ) instr =
+      if Config.write_html then
+        L.d_printfln "-----------------------------\nTypecking instr: %a@\n"
+          (Sil.pp_instr ~print_types:true Pp.text)
+          instr ;
       match normal_typestate_prev_opt with
       | None ->
           (* no input typestate - abort typechecking and propagate the current result *)
@@ -1228,17 +1240,19 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
               find_canonical_duplicate annotated_signature instr_ref linereader
               normal_flow_typestate_prev instr
           in
-          if is_noreturn_instruction instr then {prev_result with normal_flow_typestate= None}
+          if Config.write_html then
+            L.d_printfln "New state: @\n%a@\n" TypeState.pp normal_flow_typestate ;
+          if is_noreturn_instruction instr then (
+            L.d_strln "Found no return; aborting flow" ;
+            {prev_result with normal_flow_typestate= None} )
           else
             let exception_flow_typestates =
-              if can_instrunction_throw tenv node instr then
+              if can_instrunction_throw tenv node instr then (
                 (* add the typestate after this instruction to the list of exception typestates *)
-                normal_flow_typestate :: exception_flow_typestates_prev
+                L.d_strln "Throwable instruction: adding the typestate to exception list" ;
+                normal_flow_typestate :: exception_flow_typestates_prev )
               else exception_flow_typestates_prev
             in
-            if Config.write_html then (
-              L.d_printfln "instr: %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-              L.d_printfln "new state:@\n%a@\n" TypeState.pp normal_flow_typestate ) ;
             {normal_flow_typestate= Some normal_flow_typestate; exception_flow_typestates}
     in
     (* Reset 'always' field for forall errors to false. *)

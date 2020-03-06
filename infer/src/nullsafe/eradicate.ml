@@ -46,7 +46,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         else TypeOrigin.MethodParameter (Normal param_signature)
       in
       let inferred_nullability = InferredNullability.create origin in
-      TypeState.add pvar (param_signature.param_annotated_type.typ, inferred_nullability) typestate
+      TypeState.add pvar
+        (param_signature.param_annotated_type.typ, inferred_nullability)
+        typestate ~descr:"registering formal param"
     in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty in
