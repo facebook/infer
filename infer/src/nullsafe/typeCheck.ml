@@ -1032,11 +1032,11 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
     let handle_et (e1, t1) (etl1, typestate1) =
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e1 loc ;
-      let e2, typestate2 =
-        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
-          curr_annotated_signature ~node ~original_node:node ~is_assignment:false e1 typestate1 loc
+      let e2 =
+        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
+          ~original_node:node e1 typestate1 loc
       in
-      (((e1, e2), t1) :: etl1, typestate2)
+      (((e1, e2), t1) :: etl1, typestate1)
     in
     List.fold_right ~f:handle_et etl ~init:([], typestate)
   in
