@@ -258,10 +258,10 @@ let update_typestate_fld ~is_assignment tenv access_loc typestate pvar object_or
 (* When [is_assignment] is true, update the relevant annotations for the pvar. *)
 (* So what is the difference between ~node and ~original_node? I don't know. This is an artifact of refactoring of
    very old code. Sorry, dear future supporter, if names don't make sense. *)
-let convert_complex_exp_to_pvar tenv idenv curr_pname
+let convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t)
     ~is_assignment exp_ typestate loc =
-  L.d_with_indent ~name:"convert_complex_exp_to_pvar"
+  L.d_with_indent ~name:"convert_complex_exp_to_pvar_and_update_typestate"
     ~pp_result:(fun f (exp, typestate) ->
       F.fprintf f "Exp: %a;@\nTypestate: @\n%a" Exp.pp exp TypeState.pp typestate )
     (fun () ->
@@ -350,6 +350,20 @@ let convert_complex_exp_to_pvar tenv idenv curr_pname
           default )
 
 
+let convert_complex_exp_to_pvar tenv idenv curr_pname
+    (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t) exp
+    typestate loc =
+  L.d_with_indent ~name:"convert_complex_exp_to_pvar" ~pp_result:Exp.pp (fun () ->
+      (* For now, we implement the function via the generic version that modifies the typestate.
+      *)
+      let exp, _ =
+        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+          curr_annotated_signature ~node ~original_node ~is_assignment:false exp typestate loc
+      in
+      L.d_printfln "Disregarding updated typestate" ;
+      exp )
+
+
 let constructor_check_calls_this curr_pname calls_this pn =
   match (curr_pname, pn) with
   | Procname.Java curr_pname_java, Procname.Java pn_java ->
@@ -416,9 +430,9 @@ let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc hand
           let exp = Idenv.expand_expr idenv (Exp.Var id) in
           match
             convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node:node'
-              ~original_node:node ~is_assignment:false exp typestate' loc
+              ~original_node:node exp typestate' loc
           with
-          | Exp.Lvar pvar', _ ->
+          | Exp.Lvar pvar' ->
               handle_pvar typestate' pvar'
           | _ ->
               typestate' ) )
@@ -529,9 +543,9 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
         let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
         match
           convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node:cond_node
-            ~original_node:node ~is_assignment:false cond_e typestate' loc
+            ~original_node:node cond_e typestate' loc
         with
-        | Exp.Lvar pvar', _ ->
+        | Exp.Lvar pvar' ->
             set_nonnull pvar'
         | _ ->
             ()
@@ -761,8 +775,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   let set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check expr typestate ~descr =
     (* Trace back to original to pvar *)
     let pvar_expr, modified_typestate =
-      convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-        ~original_node ~is_assignment:false expr typestate loc
+      convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+        curr_annotated_signature ~node ~original_node ~is_assignment:false expr typestate loc
     in
     ( if with_cond_redundant_check then
       (* We are about to set [pvar_expr] to nonnull. But what if it already is non-null?
@@ -1019,8 +1033,8 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e1 loc ;
       let e2, typestate2 =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node:node ~is_assignment:false e1 typestate1 loc
+        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+          curr_annotated_signature ~node ~original_node:node ~is_assignment:false e1 typestate1 loc
       in
       (((e1, e2), t1) :: etl1, typestate2)
     in
@@ -1080,8 +1094,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e loc ;
       let e', typestate' =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node:node ~is_assignment:false e typestate loc
+        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+          curr_annotated_signature ~node ~original_node:node ~is_assignment:false e typestate loc
       in
       TypeState.add_id id
         (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
@@ -1094,8 +1108,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e1 loc ;
       let e1', typestate1 =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node:node ~is_assignment:true e1 typestate loc
+        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+          curr_annotated_signature ~node ~original_node:node ~is_assignment:true e1 typestate loc
       in
       let check_field_assign () =
         match e1 with
@@ -1134,8 +1148,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e loc ;
       let e', typestate' =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
-          ~original_node:node ~is_assignment:false e typestate loc
+        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
+          curr_annotated_signature ~node ~original_node:node ~is_assignment:false e typestate loc
       in
       (* cast copies the type of the first argument *)
       TypeState.add_id id
