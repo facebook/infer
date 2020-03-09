@@ -89,18 +89,18 @@ let do_all_files sources program =
     is_path_matching (SourceFile.to_rel_path source_file)
     || Inferconfig.skip_translation_matcher source_file Procname.empty_block
   in
-  let translate_source_file basename (package_opt, _) source_file =
+  let translate_source_file basename package_opt source_file =
     if not (skip source_file) then do_source_file program tenv basename package_opt source_file
   in
   String.Map.iteri
     ~f:(fun ~key:basename ~data:file_entry ->
       match file_entry with
       | JClasspath.Singleton source_file ->
-          translate_source_file basename (None, source_file) source_file
+          translate_source_file basename None source_file
       | JClasspath.Duplicate source_files ->
           List.iter
             ~f:(fun (package, source_file) ->
-              translate_source_file basename (Some package, source_file) source_file )
+              translate_source_file basename (Some package) source_file )
             source_files )
     sources ;
   if Config.dependency_mode then capture_libs program tenv ;
