@@ -1147,15 +1147,15 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
     when Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
         tenv node instr_ref typestate e loc ;
-      let e', typestate' =
-        convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
-          curr_annotated_signature ~node ~original_node:node ~is_assignment:false e typestate loc
+      let e' =
+        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
+          ~original_node:node e typestate loc
       in
       (* cast copies the type of the first argument *)
       TypeState.add_id id
         (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-           tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
-        typestate' ~descr:"type cast"
+           tenv node instr_ref typestate e' typ TypeOrigin.OptimisticFallback loc)
+        typestate ~descr:"type cast"
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn BuiltinDecl.__get_array_length ->
