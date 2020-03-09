@@ -273,9 +273,11 @@ let void = mk Tvoid
 
 let void_star = mk (Tptr (void, Pk_pointer))
 
-let java_byte = mk (Tint IShort)
+let java_char = mk (Tint IUShort)
 
-let java_short = java_byte
+let java_byte = mk (Tint ISChar)
+
+let java_short = mk (Tint IShort)
 
 let boolean = mk (Tint IBool)
 

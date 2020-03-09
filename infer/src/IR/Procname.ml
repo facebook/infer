@@ -136,7 +136,7 @@ module Java = struct
       | "boolean" ->
           Typ.boolean
       | "char" ->
-          Typ.char
+          Typ.java_char
       | "long" ->
           Typ.long
       | "float" ->

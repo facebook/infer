@@ -15,15 +15,16 @@ module L = Logging
 
 exception Type_tranlsation_error of string
 
+(** https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html *)
 let translate_basic_type = function
   | `Int ->
       Typ.int
   | `Bool ->
       Typ.boolean
   | `Byte ->
-      Typ.char
+      Typ.java_byte
   | `Char ->
-      Typ.char
+      Typ.java_char
   | `Double ->
       Typ.double
   | `Float ->

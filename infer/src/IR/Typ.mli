@@ -142,6 +142,8 @@ val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
 val void : t
 (** void type *)
 
+val java_char : t
+
 val java_byte : t
 
 val java_short : t

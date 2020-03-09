@@ -15,7 +15,7 @@ let translate_basic_type = function
   | `Byte ->
       Typ.java_byte
   | `Char ->
-      Typ.char
+      Typ.java_char
   | `Double ->
       Typ.double
   | `Float ->
