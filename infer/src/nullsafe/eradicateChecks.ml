@@ -9,6 +9,8 @@ open! IStd
 
 (** Module for the checks called by Eradicate. *)
 
+module L = Logging
+
 let report_error tenv = TypeErr.report_error (EradicateCheckers.report_error tenv)
 
 let explain_expr tenv node e =
@@ -117,56 +119,59 @@ let check_condition_for_redundancy tenv ~is_always_true find_canonical_duplicate
 (** Check an assignment to a field. *)
 let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node instr_ref
     typestate exp_lhs exp_rhs typ loc fname annotated_field_opt typecheck_expr : unit =
-  let curr_pname = Procdesc.get_proc_name curr_pdesc in
-  let curr_pattrs = Procdesc.get_attributes curr_pdesc in
-  let t_lhs, inferred_nullability_lhs =
-    typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
-      (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
-      loc
-  in
-  let _, inferred_nullability_rhs =
-    typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
-      (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
-      loc
-  in
-  let field_is_injector_readwrite () =
-    match annotated_field_opt with
-    | Some AnnotatedField.{annotation_deprecated} ->
-        Annotations.ia_is_field_injector_readwrite annotation_deprecated
-    | _ ->
-        false
-  in
-  let field_is_in_cleanup_context () =
-    let AnnotatedSignature.{ret_annotation_deprecated} =
-      (* TODO(T62825735): support trusted callees for fields *)
-      (Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv curr_pattrs).ret
-    in
-    Annotations.ia_is_cleanup ret_annotation_deprecated
-  in
-  let assignment_check_result =
-    AssignmentRule.check ~nullsafe_mode
-      ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
-      ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
-  in
-  Result.iter_error assignment_check_result ~f:(fun assignment_violation ->
-      let should_report =
-        (not (AndroidFramework.is_destroy_method curr_pname))
-        && PatternMatch.type_is_class t_lhs
-        && (not (Fieldname.is_java_outer_instance fname))
-        && (not (field_is_injector_readwrite ()))
-        && not (field_is_in_cleanup_context ())
+  L.d_with_indent ~name:"check_field_assignment" (fun () ->
+      let curr_pname = Procdesc.get_proc_name curr_pdesc in
+      let curr_pattrs = Procdesc.get_attributes curr_pdesc in
+      let t_lhs, inferred_nullability_lhs =
+        L.d_strln "Typechecking lhs" ;
+        typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
+          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
+          loc
       in
-      if should_report then
-        let rhs_origin = InferredNullability.get_origin inferred_nullability_rhs in
-        report_error tenv find_canonical_duplicate
-          (TypeErr.Bad_assignment
-             { assignment_violation
-             ; assignment_location= loc
-             ; rhs_origin
-             ; assignment_type= AssignmentRule.AssigningToField fname })
-          (Some instr_ref) loc curr_pdesc )
+      let _, inferred_nullability_rhs =
+        L.d_strln "Typechecking rhs" ;
+        typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
+          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
+          loc
+      in
+      let field_is_injector_readwrite () =
+        match annotated_field_opt with
+        | Some AnnotatedField.{annotation_deprecated} ->
+            Annotations.ia_is_field_injector_readwrite annotation_deprecated
+        | _ ->
+            false
+      in
+      let field_is_in_cleanup_context () =
+        let AnnotatedSignature.{ret_annotation_deprecated} =
+          (* TODO(T62825735): support trusted callees for fields *)
+          (Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv curr_pattrs).ret
+        in
+        Annotations.ia_is_cleanup ret_annotation_deprecated
+      in
+      let assignment_check_result =
+        AssignmentRule.check ~nullsafe_mode
+          ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
+          ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
+      in
+      Result.iter_error assignment_check_result ~f:(fun assignment_violation ->
+          let should_report =
+            (not (AndroidFramework.is_destroy_method curr_pname))
+            && PatternMatch.type_is_class t_lhs
+            && (not (Fieldname.is_java_outer_instance fname))
+            && (not (field_is_injector_readwrite ()))
+            && not (field_is_in_cleanup_context ())
+          in
+          if should_report then
+            let rhs_origin = InferredNullability.get_origin inferred_nullability_rhs in
+            report_error tenv find_canonical_duplicate
+              (TypeErr.Bad_assignment
+                 { assignment_violation
+                 ; assignment_location= loc
+                 ; rhs_origin
+                 ; assignment_type= AssignmentRule.AssigningToField fname })
+              (Some instr_ref) loc curr_pdesc ) )
 
 
 (* Check if the field declared as not nullable (implicitly or explicitly). If the field is

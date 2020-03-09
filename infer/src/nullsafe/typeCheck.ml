@@ -131,9 +131,15 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
           (* We already considered case of null literal above, so this is a non-null const. *)
           (typ, InferredNullability.create (TypeOrigin.NonnullConst loc))
       | Exp.Lvar pvar ->
-          Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
+          TypeState.lookup_pvar pvar typestate
+          |> IOption.if_none_eval ~f:(fun () ->
+                 L.d_strln "WARNING: could not lookup Pvar in typestate: fallback to default" ;
+                 tr_default )
       | Exp.Var id ->
-          Option.value (TypeState.lookup_id id typestate) ~default:tr_default
+          TypeState.lookup_id id typestate
+          |> IOption.if_none_eval ~f:(fun () ->
+                 L.d_strln "WARNING: could not lookup Id in typestate: fallback to default" ;
+                 tr_default )
       | Exp.Exn e1 ->
           typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
             curr_pdesc typestate e1 tr_default loc
@@ -154,6 +160,7 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
                 , InferredNullability.create
                     (TypeOrigin.Field {object_origin; field_name; field_type; access_loc= loc}) )
             | None ->
+                L.d_strln "WARNING: could not lookup field annotation: fallback to default" ;
                 tr_default
           in
           if checks.eradicate then
@@ -177,6 +184,7 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
           let typ, _ = tr_default in
           (typ, InferredNullability.create TypeOrigin.ArrayAccess)
       | _ ->
+          L.d_strln "WARNING: unknown expression: fallback to default" ;
           tr_default )
 
 
