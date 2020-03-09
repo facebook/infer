@@ -18,8 +18,8 @@ let topl_class_typ = Typ.mk (Tstruct topl_class_name)
 
 let topl_call ret_id (ret_typ : Typ.desc) loc name arg_ts : Sil.instr =
   let e_fun =
-    let ret_typ = Some Typ.Name.Java.Split.void in
-    let args_typ = List.map arg_ts ~f:(fun _ -> Typ.Name.Java.Split.java_lang_object) in
+    let ret_typ = Some JavaSplitName.void in
+    let args_typ = List.map arg_ts ~f:(fun _ -> JavaSplitName.java_lang_object) in
     Exp.Const
       (Const.Cfun
          (Procname.Java

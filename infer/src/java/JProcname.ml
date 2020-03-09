@@ -68,7 +68,7 @@ module JNI = struct
 
 
   let rec to_java_type jni =
-    let make = Typ.Name.Java.Split.make in
+    let make = JavaSplitName.make in
     match jni with
     | Boolean ->
         make "bool"
@@ -92,8 +92,8 @@ module JNI = struct
         make ~package:pkg cl
     | Array typ ->
         let java_type = to_java_type typ in
-        let typ_str = Typ.Name.Java.Split.type_name java_type in
-        make ?package:(Typ.Name.Java.Split.package java_type) (Printf.sprintf "%s[]" typ_str)
+        let typ_str = JavaSplitName.type_name java_type in
+        make ?package:(JavaSplitName.package java_type) (Printf.sprintf "%s[]" typ_str)
     | Method _ ->
         L.(die UserError "Cannot express a method as a Procname.Java.java_type")
 

@@ -15,6 +15,9 @@ val to_string : t -> string
 
 val pp : Format.formatter -> t -> unit
 
+val pp_with_verbosity : verbose:bool -> Format.formatter -> t -> unit
+(** if [verbose] then print package if present, otherwise only print class *)
+
 val package : t -> string option
 
 val classname : t -> string

@@ -19,7 +19,7 @@ module Java : sig
 
   type t [@@deriving compare]
 
-  type java_type = Typ.Name.Java.Split.t [@@deriving compare, equal]
+  type java_type = JavaSplitName.t [@@deriving compare, equal]
 
   val constructor_method_name : string
 

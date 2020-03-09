@@ -9,7 +9,7 @@ open! IStd
 open OUnit2
 module T = JProcname.JNI.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY
 
-let mk_split (pkg, typ) = Typ.Name.Java.Split.make ?package:pkg typ
+let mk_split (pkg, typ) = JavaSplitName.make ?package:pkg typ
 
 let test_jni_pp =
   let create_test input expected _ =
@@ -130,10 +130,10 @@ let test_jni_to_java_type_with_valid_input =
   let create_test input expected _ =
     let found = T.to_java_type input in
     let pp_diff fmt (expected, actual) =
-      let exp_pkg = Option.value ~default:"<None>" (Typ.Name.Java.Split.package expected) in
-      let exp_cl = Typ.Name.Java.Split.type_name expected in
-      let actual_pkg = Option.value ~default:"<None>" (Typ.Name.Java.Split.package actual) in
-      let actual_cl = Typ.Name.Java.Split.type_name actual in
+      let exp_pkg = Option.value ~default:"<None>" (JavaSplitName.package expected) in
+      let exp_cl = JavaSplitName.type_name expected in
+      let actual_pkg = Option.value ~default:"<None>" (JavaSplitName.package actual) in
+      let actual_cl = JavaSplitName.type_name actual in
       Format.fprintf fmt "Expected: '(%s, %s)', found: '(%s, %s)'" exp_pkg exp_cl actual_pkg
         actual_cl
     in

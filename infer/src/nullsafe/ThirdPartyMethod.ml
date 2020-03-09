@@ -49,8 +49,8 @@ let string_of_parsing_error = function
 let pp_unique_repr fmt signature = Sexp.pp fmt (sexp_of_unique_repr signature)
 
 let java_type_to_string java_type =
-  let package = Typ.Name.Java.Split.package java_type in
-  let type_name = Typ.Name.Java.Split.type_name java_type in
+  let package = JavaSplitName.package java_type in
+  let type_name = JavaSplitName.type_name java_type in
   match package with
   | None ->
       (* Primitive type *)

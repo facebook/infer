@@ -451,47 +451,6 @@ module Name = struct
   end
 
   module Java = struct
-    module Split = struct
-      (** e.g. {type_name="int"; package=None} for primitive types
-      * or {type_name="PrintWriter"; package=Some "java.io"} for objects.
-      *)
-      type t = {package: string option; type_name: string} [@@deriving compare, equal]
-
-      let make ?package type_name = {type_name; package}
-
-      (** Given a package.class_name string, it looks for the latest dot and split the string
-                in two (package, class_name) *)
-      let of_string package_classname =
-        match String.rsplit2 package_classname ~on:'.' with
-        | Some (package, type_name) ->
-            {type_name; package= Some package}
-        | None ->
-            {type_name= package_classname; package= None}
-
-
-      let of_java_class_name java_class_name =
-        let package = JavaClassName.package java_class_name in
-        let type_name = JavaClassName.classname java_class_name in
-        make ?package type_name
-
-
-      let package {package} = package
-
-      let type_name {type_name} = type_name
-
-      let java_lang_object = make ~package:"java.lang" "Object"
-
-      let java_lang_string = make ~package:"java.lang" "String"
-
-      let void = make "void"
-
-      let pp_type_verbosity ~verbose fmt = function
-        | {package= Some package; type_name} when verbose ->
-            F.fprintf fmt "%s.%s" package type_name
-        | {type_name} ->
-            F.pp_print_string fmt type_name
-    end
-
     let from_string name_str = JavaClass (JavaClassName.from_string name_str)
 
     let is_class = function JavaClass _ -> true | _ -> false
@@ -513,8 +472,6 @@ module Name = struct
       | _ ->
           L.die InternalError "Tried to split a non-java class name into a java split type@."
 
-
-    let split_typename typename = Split.of_java_class_name (get_java_class_name_exn typename)
 
     let is_anonymous_inner_class_name class_name =
       let java_class_name = get_java_class_name_exn class_name in

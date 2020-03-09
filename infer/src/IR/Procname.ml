@@ -8,6 +8,7 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module F = Format
+module L = Logging
 
 (** Level of verbosity of some to_string functions. *)
 type detail_level = Verbose | Non_verbose | Simple [@@deriving compare, equal]
@@ -22,9 +23,9 @@ module Java = struct
   [@@deriving compare]
 
   (* TODO: use Mangled.t here *)
-  type java_type = Typ.Name.Java.Split.t [@@deriving compare, equal]
+  type java_type = JavaSplitName.t [@@deriving compare, equal]
 
-  let java_void = Typ.Name.Java.Split.make "void"
+  let java_void = JavaSplitName.void
 
   (** Type of java procedure names. *)
   type t =
@@ -40,7 +41,7 @@ module Java = struct
 
 
   let pp_type_verbosity verbosity fmt java_type =
-    Typ.Name.Java.Split.pp_type_verbosity ~verbose:(is_verbose verbosity) fmt java_type
+    JavaSplitName.pp_type_verbosity ~verbose:(is_verbose verbosity) fmt java_type
 
 
   (** Given a list of types, it creates a unique string of types separated by commas *)
@@ -56,8 +57,6 @@ module Java = struct
         pp_param_list verbosity fmt rest
 
 
-  let java_type_of_name class_name = Typ.Name.Java.Split.of_string (Typ.Name.name class_name)
-
   (** It is the same as java_type_to_string_verbosity, but Java return types are optional because of
       constructors without type *)
   let pp_return_type verbosity fmt j =
@@ -68,9 +67,17 @@ module Java = struct
 
   let get_class_type_name j = j.class_name
 
-  let get_simple_class_name j = Typ.Name.Java.Split.(j |> get_class_name |> of_string |> type_name)
+  let get_java_class_name_exn j =
+    match j.class_name with
+    | Typ.JavaClass java_class_name ->
+        java_class_name
+    | _ ->
+        L.die InternalError "Asked for java class name but got something else"
 
-  let get_package j = Typ.Name.Java.Split.(j |> get_class_name |> of_string |> package)
+
+  let get_simple_class_name j = JavaClassName.classname (get_java_class_name_exn j)
+
+  let get_package j = JavaClassName.package (get_java_class_name_exn j)
 
   let get_method j = j.method_name
 
@@ -84,14 +91,15 @@ module Java = struct
 
   (** Prints a string of a java procname with the given level of verbosity *)
   let pp ?(withclass = false) verbosity fmt j =
+    let pp_class_name verbosity fmt j =
+      JavaClassName.pp_with_verbosity ~verbose:(is_verbose verbosity) fmt
+        (get_java_class_name_exn j)
+    in
     match verbosity with
     | Verbose | Non_verbose ->
         (* if verbose, then package.class.method(params): rtype,
            else rtype package.class.method(params)
            verbose is used for example to create unique filenames, non_verbose to create reports *)
-        let pp_class_name verbosity fmt j =
-          pp_type_verbosity verbosity fmt (Typ.Name.Java.split_typename j.class_name)
-        in
         let separator =
           match (j.return_type, verbosity) with None, _ -> "" | Some _, Verbose -> ":" | _ -> " "
         in
@@ -104,9 +112,7 @@ module Java = struct
     | Simple ->
         (* methodname(...) or without ... if there are no parameters *)
         let pp_class_prefix ~withclass verbosity fmt j =
-          if withclass then
-            F.fprintf fmt "%a." (pp_type_verbosity verbosity)
-              (Typ.Name.Java.split_typename j.class_name)
+          if withclass then F.fprintf fmt "%a." (pp_class_name verbosity) j
         in
         let params = match j.parameters with [] -> "" | _ -> "..." in
         let pp_method_name ~withclass verbosity fmt j =
@@ -197,7 +203,7 @@ module Java = struct
     (* FIXME this looks wrong due to the dot in the type name *)
     List.last parameters
     |> Option.exists ~f:(fun java_type ->
-           String.equal "java.lang.Object[]" (Typ.Name.Java.Split.type_name java_type) )
+           String.equal "java.lang.Object[]" (JavaSplitName.type_name java_type) )
 
 
   let is_external java_pname =
@@ -715,7 +721,7 @@ let rec replace_parameters new_parameters procname =
 let parameter_of_name procname class_name =
   match procname with
   | Java _ ->
-      Parameter.JavaParameter (Java.java_type_of_name class_name)
+      Parameter.JavaParameter (JavaSplitName.of_string (Typ.Name.name class_name))
   | _ ->
       Parameter.ClangParameter (Parameter.clang_param_of_name class_name)
 

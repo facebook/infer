@@ -570,7 +570,7 @@ let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc call
     instr_ref ~nullsafe_mode find_canonical_duplicate typestate' =
   (* Get the proc name for map.get() from map.put() *)
   let pname_get_from_pname_put pname_put =
-    let object_t = Typ.Name.Java.Split.java_lang_object in
+    let object_t = JavaSplitName.java_lang_object in
     let parameters = [object_t] in
     pname_put
     |> Procname.Java.replace_method_name "get"
@@ -709,7 +709,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
           (DExp.Dretcall
             (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
           let pname_java' =
-            let object_t = Typ.Name.Java.Split.java_lang_object in
+            let object_t = JavaSplitName.java_lang_object in
             pname_java
             |> Procname.Java.replace_method_name "get"
             |> Procname.Java.replace_return_type object_t

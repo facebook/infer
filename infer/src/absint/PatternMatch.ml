@@ -465,7 +465,7 @@ let rec find_superclasses_with_attributes check tenv tname =
 let is_override_of_java_lang_object_equals curr_pname =
   let is_only_param_of_object_type = function
     | [Procname.Parameter.JavaParameter param_type]
-      when Typ.Name.Java.Split.equal param_type Typ.Name.Java.Split.java_lang_object ->
+      when JavaSplitName.equal param_type JavaSplitName.java_lang_object ->
         true
     | _ ->
         false

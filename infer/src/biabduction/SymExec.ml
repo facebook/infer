@@ -736,9 +736,7 @@ let call_constructor_url_update_args pname actual_params =
     Procname.Java
       (Procname.Java.make
          (Typ.Name.Java.from_string "java.net.URL")
-         None "<init>"
-         [Typ.Name.Java.Split.java_lang_string]
-         Procname.Java.Non_Static)
+         None "<init>" [JavaSplitName.java_lang_string] Procname.Java.Non_Static)
   in
   if Procname.equal url_pname pname then
     match actual_params with

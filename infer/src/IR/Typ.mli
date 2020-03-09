@@ -219,26 +219,6 @@ module Name : sig
   end
 
   module Java : sig
-    module Split : sig
-      type t [@@deriving compare, equal]
-
-      val make : ?package:string -> string -> t
-
-      val of_string : string -> t
-
-      val java_lang_object : t
-
-      val java_lang_string : t
-
-      val void : t
-
-      val package : t -> string option
-
-      val type_name : t -> string
-
-      val pp_type_verbosity : verbose:bool -> F.formatter -> t -> unit
-    end
-
     val from_string : string -> t
     (** Create a typename from a Java classname in the form "package.class" *)
 
@@ -249,8 +229,6 @@ module Name : sig
     (** return true if the typename is in the .inferconfig list of external classes *)
 
     val is_anonymous_inner_class_name : t -> bool
-
-    val split_typename : t -> Split.t
 
     val java_lang_object : t
 
