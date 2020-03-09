@@ -85,6 +85,10 @@ EXPLORE PROCEDURES
            Deactivates: Include the source file in which the procedure
            definition or declaration was found in the output of --procedures
            (Conversely: --procedures-source-file)
+
+       --procedures-summary
+           Activates: Print the summaries of each procedure in the output of
+           --procedures (Conversely: --no-procedures-summary)
 EXPLORE SOURCE FILES
        --source-files
            Activates: Print source files discovered by infer (Conversely:

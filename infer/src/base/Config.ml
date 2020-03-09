@@ -1941,6 +1941,12 @@ and procedures_source_file =
      output of $(b,--procedures)"
 
 
+and procedures_summary =
+  CLOpt.mk_bool ~long:"procedures-summary" ~default:false
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    "Print the summaries of each procedure in the output of $(b,--procedures)"
+
+
 and process_clang_ast =
   CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
     "process the ast to emit some info about the file (Not available for Java)"
@@ -3086,6 +3092,8 @@ and procedures_name = !procedures_name
 and[@warning "-32"] procedures_per_process = !procedures_per_process
 
 and procedures_source_file = !procedures_source_file
+
+and procedures_summary = !procedures_summary
 
 and process_clang_ast = !process_clang_ast
 

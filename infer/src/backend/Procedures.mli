@@ -18,3 +18,5 @@ val pp_all :
   -> Format.formatter
   -> unit
   -> unit
+
+val select_proc_names_interactive : filter:Filtering.procedures_filter -> Procname.t list option

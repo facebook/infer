@@ -180,13 +180,24 @@ let () =
     | Explore -> (
       match (Config.procedures, Config.source_files) with
       | true, false ->
-          L.result "%a"
-            Config.(
-              Procedures.pp_all
-                ~filter:(Lazy.force Filtering.procedures_filter)
-                ~proc_name:procedures_name ~attr_kind:procedures_definedness
-                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
-            ()
+          let filter = Lazy.force Filtering.procedures_filter in
+          if Config.procedures_summary then
+            let pp_summary fmt proc_name =
+              match Summary.OnDisk.get proc_name with
+              | None ->
+                  Format.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
+              | Some summary ->
+                  Summary.pp_text fmt summary
+            in
+            Option.iter (Procedures.select_proc_names_interactive ~filter) ~f:(fun proc_names ->
+                L.result "%a" (fun fmt () -> List.iter proc_names ~f:(pp_summary fmt)) () )
+          else
+            L.result "%a"
+              Config.(
+                Procedures.pp_all ~filter ~proc_name:procedures_name
+                  ~attr_kind:procedures_definedness ~source_file:procedures_source_file
+                  ~proc_attributes:procedures_attributes)
+              ()
       | false, true ->
           let filter = Lazy.force Filtering.source_files_filter in
           L.result "%a"

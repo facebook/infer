@@ -875,6 +875,10 @@ OPTIONS
            definition or declaration was found in the output of --procedures
            (Conversely: --procedures-source-file)           See also infer-explore(1).
 
+       --procedures-summary
+           Activates: Print the summaries of each procedure in the output of
+           --procedures (Conversely: --no-procedures-summary)           See also infer-explore(1).
+
        --no-progress-bar,-P
            Deactivates: Show a progress bar (Conversely: --progress-bar | -p)       
     See also infer-run(1).

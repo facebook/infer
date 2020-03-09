@@ -547,6 +547,8 @@ val procedures_name : bool
 
 val procedures_source_file : bool
 
+val procedures_summary : bool
+
 val process_clang_ast : bool
 
 val clang_frontend_action_string : string

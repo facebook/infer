@@ -17,6 +17,39 @@ let get_all ~filter () =
       if filter source_file proc_name then proc_name :: rev_results else rev_results )
 
 
+let select_proc_names_interactive ~filter =
+  let proc_names = get_all ~filter () |> List.rev in
+  match proc_names with
+  | [] ->
+      print_endline "No procedures found" ;
+      None
+  | [proc_name] ->
+      Format.printf "Selected proc name: %a@\n" Procname.pp proc_name ;
+      Format.print_flush () ;
+      Some proc_names
+  | _ ->
+      let proc_names_array = List.to_array proc_names in
+      Array.iteri proc_names_array ~f:(fun i proc_name ->
+          Format.printf "%d: %a@\n" i Procname.pp proc_name ) ;
+      Format.print_flush () ;
+      let rec ask_user_input () =
+        print_string "Select one number (type 'a' for selecting all, 'q' for quit): " ;
+        Out_channel.(flush stdout) ;
+        let input = String.strip In_channel.(input_line_exn stdin) in
+        if String.equal (String.lowercase input) "a" then Some proc_names
+        else if String.equal (String.lowercase input) "q" then (
+          print_endline "Quit interactive mode" ;
+          None )
+        else
+          match int_of_string_opt input with
+          | Some n when 0 <= n && n < Array.length proc_names_array ->
+              Some [proc_names_array.(n)]
+          | _ ->
+              print_endline "Invalid input" ; ask_user_input ()
+      in
+      ask_user_input ()
+
+
 let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
     ~proc_attributes fmt () =
   let db = ResultsDatabase.get_database () in
