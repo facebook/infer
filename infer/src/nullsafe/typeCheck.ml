@@ -774,9 +774,9 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
   *)
   let set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check expr typestate ~descr =
     (* Trace back to original to pvar *)
-    let pvar_expr, modified_typestate =
-      convert_complex_exp_to_pvar_and_update_typestate tenv idenv curr_pname
-        curr_annotated_signature ~node ~original_node ~is_assignment:false expr typestate loc
+    let pvar_expr =
+      convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
+        ~original_node expr typestate loc
     in
     ( if with_cond_redundant_check then
       (* We are about to set [pvar_expr] to nonnull. But what if it already is non-null?
@@ -791,7 +791,7 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
         EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
           find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability idenv
           linereader loc instr_ref ) ;
-    set_nonnull pvar_expr modified_typestate ~descr
+    set_nonnull pvar_expr typestate ~descr
   in
   (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
      We've just ensured that [expr] == false.
