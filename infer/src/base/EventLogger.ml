@@ -8,6 +8,8 @@
 open! IStd
 module CLOpt = CommandLineOption
 
+let hostname = Unix.gethostname ()
+
 module IO = struct
   let log_file_extension = ".log"
 
@@ -353,7 +355,7 @@ module LoggerImpl : S = struct
       empty
       |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
       |> add_string ~key:"event_tag" ~data:(string_of_event event)
-      |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
+      |> add_string ~key:"hostname" ~data:hostname
       |> add_string ~key:"infer_commit" ~data:Version.commit
       |> add_int ~key:"is_originator" ~data:(if CLOpt.is_originator then 1 else 0)
       |> add_string_opt ~key:"job_id" ~data:Config.job_id
