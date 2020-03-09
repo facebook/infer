@@ -12,9 +12,6 @@ open PulseDomainInterface
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
-(* An impurity analysis that relies on pulse to determine how the state
-   changes *)
-
 let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractValue.t list option =
   match
     List.fold2 ~init:(Some [])
@@ -37,14 +34,72 @@ let add_invalid_and_modified ~check_empty attrs acc =
     Attributes.get_written_to attrs
     |> Option.value_map ~default:[] ~f:(fun modified -> [ImpurityDomain.WrittenTo modified])
   in
-  let res =
-    Attributes.get_invalid attrs
-    |> Option.value_map ~default:modified ~f:(fun invalid ->
-           ImpurityDomain.Invalid invalid :: modified )
+  let invalid_and_modified =
+    match Attributes.get_invalid attrs with
+    | None | Some (PulseInvalidation.ConstantDereference _, _) ->
+        modified
+    | Some invalid ->
+        ImpurityDomain.Invalid invalid :: modified
   in
-  if check_empty && List.is_empty res then
+  if check_empty && List.is_empty invalid_and_modified then
     L.(die InternalError) "Address is modified without being written to or invalidated."
-  else res @ acc
+  else invalid_and_modified @ acc
+
+
+let add_to_modified var addr pre_heap post acc =
+  let rec aux acc ~addr_to_explore ~visited : ImpurityDomain.trace list =
+    match addr_to_explore with
+    | [] ->
+        acc
+    | addr :: addr_to_explore -> (
+        if AbstractValue.Set.mem addr visited then aux acc ~addr_to_explore ~visited
+        else
+          let edges_pre_opt = BaseMemory.find_opt addr pre_heap in
+          let cell_post_opt = BaseDomain.find_cell_opt addr post in
+          let visited = AbstractValue.Set.add addr visited in
+          match (edges_pre_opt, cell_post_opt) with
+          | None, None ->
+              aux acc ~addr_to_explore ~visited
+          | Some _, None ->
+              L.(die InternalError)
+                "It is unexpected to have an address which has a binding in pre but not in post!"
+          | None, Some (_, attrs_post) ->
+              aux
+                (add_invalid_and_modified ~check_empty:false attrs_post acc)
+                ~addr_to_explore ~visited
+          | Some edges_pre, Some (edges_post, attrs_post) -> (
+            match get_matching_dest_addr_opt ~edges_pre ~edges_post with
+            | Some addr_list ->
+                aux
+                  (add_invalid_and_modified attrs_post ~check_empty:false acc)
+                  ~addr_to_explore:(addr_list @ addr_to_explore) ~visited
+            | None ->
+                aux
+                  (add_invalid_and_modified ~check_empty:true attrs_post acc)
+                  ~addr_to_explore ~visited ) )
+  in
+  match aux [] ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty with
+  | [] ->
+      acc
+  | hd :: tl ->
+      ImpurityDomain.ModifiedVarSet.add {var; trace_list= (hd, tl)} acc
+
+
+let get_modified_params pname post_stack pre_heap post formals =
+  List.fold_left formals ~init:ImpurityDomain.ModifiedVarSet.empty ~f:(fun acc (name, typ) ->
+      let var = Var.of_pvar (Pvar.mk name pname) in
+      match BaseStack.find_opt var post_stack with
+      | Some (addr, _) when Typ.is_pointer typ -> (
+        match BaseMemory.find_opt addr pre_heap with
+        | Some edges_pre ->
+            BaseMemory.Edges.fold
+              (fun _ (addr, _) acc -> add_to_modified var addr pre_heap post acc)
+              edges_pre acc
+        | None ->
+            debug "The address is not materialized in pre-heap." ;
+            acc )
+      | _ ->
+          acc )
 
 
 (** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
@@ -53,65 +108,14 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
   let pre_heap = (AbductiveDomain.extract_pre pre_post).BaseDomain.heap in
   let post = AbductiveDomain.extract_post pre_post in
   let post_stack = post.BaseDomain.stack in
-  let add_to_modified var addr acc =
-    let rec aux acc ~addr_to_explore ~visited : ImpurityDomain.trace list =
-      match addr_to_explore with
-      | [] ->
-          acc
-      | addr :: addr_to_explore -> (
-          if AbstractValue.Set.mem addr visited then aux acc ~addr_to_explore ~visited
-          else
-            let edges_pre_opt = BaseMemory.find_opt addr pre_heap in
-            let cell_post_opt = BaseDomain.find_cell_opt addr post in
-            let visited = AbstractValue.Set.add addr visited in
-            match (edges_pre_opt, cell_post_opt) with
-            | None, None ->
-                aux acc ~addr_to_explore ~visited
-            | Some _, None ->
-                L.(die InternalError)
-                  "It is unexpected to have an address which has a binding in pre but not in post!"
-            | None, Some (_, attrs_post) ->
-                aux
-                  (add_invalid_and_modified ~check_empty:false attrs_post acc)
-                  ~addr_to_explore ~visited
-            | Some edges_pre, Some (edges_post, attrs_post) -> (
-              match get_matching_dest_addr_opt ~edges_pre ~edges_post with
-              | Some addr_list ->
-                  aux
-                    (add_invalid_and_modified attrs_post ~check_empty:false acc)
-                    ~addr_to_explore:(addr_list @ addr_to_explore) ~visited
-              | None ->
-                  aux
-                    (add_invalid_and_modified ~check_empty:true attrs_post acc)
-                    ~addr_to_explore ~visited ) )
-    in
-    match aux [] ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty with
-    | [] ->
-        acc
-    | hd :: tl ->
-        ImpurityDomain.ModifiedVarSet.add {var; trace_list= (hd, tl)} acc
-  in
   let pname = Procdesc.get_proc_name pdesc in
   let modified_params =
-    Procdesc.get_formals pdesc
-    |> List.fold_left ~init:ImpurityDomain.ModifiedVarSet.empty ~f:(fun acc (name, typ) ->
-           let var = Var.of_pvar (Pvar.mk name pname) in
-           match BaseStack.find_opt var post_stack with
-           | Some (addr, _) when Typ.is_pointer typ -> (
-             match BaseMemory.find_opt addr pre_heap with
-             | Some edges_pre ->
-                 BaseMemory.Edges.fold
-                   (fun _ (addr, _) acc -> add_to_modified var addr acc)
-                   edges_pre acc
-             | None ->
-                 debug "The address is not materialized in pre-heap." ;
-                 acc )
-           | _ ->
-               acc )
+    Procdesc.get_formals pdesc |> get_modified_params pname post_stack pre_heap post
   in
   let modified_globals =
     BaseStack.fold
-      (fun var (addr, _) acc -> if Var.is_global var then add_to_modified var addr acc else acc)
+      (fun var (addr, _) acc ->
+        if Var.is_global var then add_to_modified var addr pre_heap post acc else acc )
       post_stack ImpurityDomain.ModifiedVarSet.empty
   in
   let is_modeled_pure pname =
