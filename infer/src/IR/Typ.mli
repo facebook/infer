@@ -136,6 +136,9 @@ val mk_array : ?default:t -> ?quals:type_quals -> ?length:IntLit.t -> ?stride:In
 
 val mk_struct : name -> t
 
+val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
+(** make a pointer to [t], default kind is [Pk_pointer] *)
+
 val void : t
 (** void type *)
 

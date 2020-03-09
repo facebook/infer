@@ -15,115 +15,102 @@ module L = Logging
 
 exception Type_tranlsation_error of string
 
-let basic_type = function
+let translate_basic_type = function
   | `Int ->
-      Typ.mk (Tint Typ.IInt)
+      Typ.int
   | `Bool ->
-      Typ.mk (Tint Typ.IBool)
+      Typ.boolean
   | `Byte ->
-      Typ.mk (Tint Typ.IChar)
+      Typ.char
   | `Char ->
-      Typ.mk (Tint Typ.IChar)
+      Typ.char
   | `Double ->
-      Typ.mk (Tfloat Typ.FDouble)
+      Typ.double
   | `Float ->
-      Typ.mk (Tfloat Typ.FFloat)
+      Typ.float
   | `Long ->
-      Typ.mk (Tint Typ.ILong)
+      Typ.long
   | `Short ->
-      Typ.mk (Tint Typ.IShort)
+      Typ.java_short
 
 
 let cast_type = function
   | JBir.F2I | JBir.L2I | JBir.D2I ->
-      Typ.mk (Typ.Tint Typ.IInt)
+      Typ.int
   | JBir.D2L | JBir.F2L | JBir.I2L ->
-      Typ.mk (Typ.Tint Typ.ILong)
+      Typ.long
   | JBir.I2F | JBir.L2F | JBir.D2F ->
-      Typ.mk (Typ.Tfloat Typ.FFloat)
+      Typ.float
   | JBir.L2D | JBir.F2D | JBir.I2D ->
-      Typ.mk (Typ.Tfloat Typ.FDouble)
+      Typ.double
   | JBir.I2B ->
-      Typ.mk (Typ.Tint Typ.IBool)
+      Typ.boolean
   | JBir.I2C ->
-      Typ.mk (Typ.Tint Typ.IChar)
+      Typ.char
   | JBir.I2S ->
-      Typ.mk (Typ.Tint Typ.IShort)
+      Typ.java_short
 
-
-let const_type const = JBir.type_of_expr (JBir.Const const)
 
 let typename_of_classname cn = Typ.Name.Java.from_string (JBasics.cn_name cn)
 
-let rec get_named_type vt : Typ.t =
+let rec get_named_type (vt : JBasics.value_type) =
   match vt with
-  | JBasics.TBasic bt ->
-      basic_type bt
-  | JBasics.TObject ot -> (
-    match ot with
-    | JBasics.TArray vt ->
-        let content_type = get_named_type vt in
-        Typ.mk (Tptr (Typ.mk_array content_type, Typ.Pk_pointer))
-    | JBasics.TClass cn ->
-        Typ.mk (Tptr (Typ.mk (Tstruct (typename_of_classname cn)), Typ.Pk_pointer)) )
+  | TBasic bt ->
+      translate_basic_type bt
+  | TObject (TArray at) ->
+      Typ.(mk_ptr (mk_array (get_named_type at)))
+  | TObject (TClass cn) ->
+      Typ.(mk_ptr (mk_struct (typename_of_classname cn)))
 
 
 let rec create_array_type typ dim =
   if dim > 0 then
     let content_typ = create_array_type typ (dim - 1) in
-    Typ.mk (Tptr (Typ.mk_array content_typ, Typ.Pk_pointer))
+    Typ.(mk_ptr (mk_array content_typ))
   else typ
 
 
-let extract_cn_no_obj typ =
-  match typ.Typ.desc with
-  | Typ.Tptr ({desc= Tstruct (JavaClass _ as name)}, Pk_pointer) ->
+let extract_cn_no_obj (typ : Typ.t) =
+  match typ.desc with
+  | Tptr ({desc= Tstruct (JavaClass _ as name)}, Pk_pointer) ->
       let class_name = JBasics.make_cn (Typ.Name.name name) in
-      if JBasics.cn_equal class_name JBasics.java_lang_object then None
-      else
-        let jbir_class_name = class_name in
-        Some jbir_class_name
+      if JBasics.cn_equal class_name JBasics.java_lang_object then None else Some class_name
   | _ ->
       None
 
 
 (** Printing types *)
-let rec array_type_to_string vt =
-  let s =
-    match vt with
-    | JBasics.TBasic bt -> (
-      match bt with
-      | `Bool ->
-          JConfig.boolean_code
-      | `Byte ->
-          JConfig.byte_code
-      | `Char ->
-          JConfig.char_code
-      | `Double ->
-          JConfig.double_code
-      | `Float ->
-          JConfig.float_code
-      | `Int ->
-          JConfig.int_code
-      | `Long ->
-          JConfig.long_code
-      | `Short ->
-          JConfig.short_code )
-    | JBasics.TObject ot ->
-        object_type_to_string' ot
-  in
-  "[" ^ s
-
-
-and object_type_to_string' ot =
-  match ot with
-  | JBasics.TClass class_name ->
-      JConfig.class_code (JBasics.cn_name class_name)
-  | JBasics.TArray vt ->
-      array_type_to_string vt
-
-
 let object_type_to_string ot =
+  let rec array_type_to_string (vt : JBasics.value_type) =
+    let s =
+      match vt with
+      | TObject ot ->
+          object_type_to_string' ot
+      | TBasic `Bool ->
+          JConfig.boolean_code
+      | TBasic `Byte ->
+          JConfig.byte_code
+      | TBasic `Char ->
+          JConfig.char_code
+      | TBasic `Double ->
+          JConfig.double_code
+      | TBasic `Float ->
+          JConfig.float_code
+      | TBasic `Int ->
+          JConfig.int_code
+      | TBasic `Long ->
+          JConfig.long_code
+      | TBasic `Short ->
+          JConfig.short_code
+    in
+    "[" ^ s
+  and object_type_to_string' ot =
+    match ot with
+    | JBasics.TClass class_name ->
+        JConfig.class_code (JBasics.cn_name class_name)
+    | JBasics.TArray vt ->
+        array_type_to_string vt
+  in
   match ot with
   | JBasics.TClass class_name ->
       JBasics.cn_name class_name
@@ -183,21 +170,18 @@ let vt_to_java_type vt =
 
 
 let method_signature_names ms =
+  let method_name = JBasics.ms_name ms in
   let return_type_name =
     match JBasics.ms_rtype ms with
+    | None when String.equal method_name JConfig.constructor_name ->
+        None
     | None ->
-        if String.equal (JBasics.ms_name ms) JConfig.constructor_name then None
-        else Some (Typ.Name.Java.Split.make JConfig.void)
+        Some (Typ.Name.Java.Split.make JConfig.void)
     | Some vt ->
         Some (vt_to_java_type vt)
   in
-  let method_name = JBasics.ms_name ms in
   let args_types = List.map ~f:vt_to_java_type (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)
-
-
-let get_method_kind m =
-  if Javalib.is_static_method m then Procname.Java.Static else Procname.Java.Non_Static
 
 
 let create_fieldname cn fs =
@@ -207,9 +191,9 @@ let create_fieldname cn fs =
 
 
 let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
-  let field_name = create_fieldname cn cf_signature
-  and field_type = get_named_type (JBasics.fs_type cf_signature)
-  and annotation =
+  let field_name = create_fieldname cn cf_signature in
+  let field_type = get_named_type (JBasics.fs_type cf_signature) in
+  let annotation =
     let real_annotations = JAnnotation.translate_item cf_annotations in
     (* translate modifiers like "volatile" as annotations *)
     match cf_kind with
@@ -242,22 +226,19 @@ let collect_interface_field cn inf l =
 let collect_models_class_fields classpath_field_map cn cf fields =
   let static, nonstatic = fields in
   let field_name, field_type, annotation = create_sil_class_field cn cf in
-  try
-    let classpath_ft = Fieldname.Map.find field_name classpath_field_map in
-    if Typ.equal classpath_ft field_type then fields
-    else
-      (* TODO (#6711750): fix type equality for arrays before failing here *)
-      let () =
-        L.(debug Capture Quiet)
-          "Found inconsistent types for %s@\n\tclasspath: %a@\n\tmodels: %a@\n@."
-          (Fieldname.to_string field_name) (Typ.pp_full Pp.text) classpath_ft (Typ.pp_full Pp.text)
-          field_type
-      in
+  match Fieldname.Map.find_opt field_name classpath_field_map with
+  | Some classpath_ft when Typ.equal classpath_ft field_type ->
       fields
-  with Caml.Not_found ->
-    if Javalib.is_static_field (Javalib.ClassField cf) then
+  | Some classpath_ft ->
+      (* TODO (#6711750): fix type equality for arrays before failing here *)
+      L.internal_error "Found inconsistent types for %s@\n\tclasspath: %a@\n\tmodels: %a@\n@."
+        (Fieldname.to_string field_name) (Typ.pp_full Pp.text) classpath_ft (Typ.pp_full Pp.text)
+        field_type ;
+      fields
+  | None when Javalib.is_static_field (Javalib.ClassField cf) ->
       ((field_name, field_type, annotation) :: static, nonstatic)
-    else (static, (field_name, field_type, annotation) :: nonstatic)
+  | None ->
+      (static, (field_name, field_type, annotation) :: nonstatic)
 
 
 let add_model_fields classpath_fields cn =
@@ -275,6 +256,10 @@ let add_model_fields classpath_fields cn =
     | _ ->
         classpath_fields
   with Caml.Not_found -> classpath_fields
+
+
+let get_method_kind m =
+  if Javalib.is_static_method m then Procname.Java.Static else Procname.Java.Non_Static
 
 
 let rec get_method_procname program tenv cn ms method_kind =
@@ -333,6 +318,16 @@ and get_all_fields program tenv cn =
 
 and get_class_struct_typ =
   let seen = ref JBasics.ClassSet.empty in
+  let create_super_list program tenv interface_names =
+    List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;
+    List.map ~f:typename_of_classname interface_names
+  in
+  let make_struct program tenv node supers ~fields ~statics annots name =
+    let methods =
+      Javalib.m_fold (fun m procnames -> translate_method_name program tenv m :: procnames) node []
+    in
+    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
+  in
   fun program tenv cn ->
     let name = typename_of_classname cn in
     match Tenv.lookup tenv name with
@@ -345,54 +340,36 @@ and get_class_struct_typ =
         match JClasspath.lookup_node cn program with
         | None ->
             Tenv.mk_struct ~dummy:true tenv name
-        | Some node ->
-            let create_super_list interface_names =
-              List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;
-              List.map ~f:typename_of_classname interface_names
+        | Some (Javalib.JInterface jinterface as node) ->
+            let statics, _ = get_all_fields program tenv cn in
+            let supers = create_super_list program tenv jinterface.Javalib.i_interfaces in
+            let annots = JAnnotation.translate_item jinterface.Javalib.i_annotations in
+            make_struct program tenv node supers ~fields:[] ~statics annots name
+        | Some (Javalib.JClass jclass as node) ->
+            let statics, fields =
+              let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
+              add_model_fields (classpath_static, classpath_nonstatic) cn
             in
-            let supers, fields, statics, annots =
-              match node with
-              | Javalib.JInterface jinterface ->
-                  let statics, _ = get_all_fields program tenv cn in
-                  let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
-                  let item_annotation =
-                    JAnnotation.translate_item jinterface.Javalib.i_annotations
-                  in
-                  (sil_interface_list, [], statics, item_annotation)
-              | Javalib.JClass jclass ->
-                  let statics, nonstatics =
-                    let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
-                    add_model_fields (classpath_static, classpath_nonstatic) cn
-                  in
-                  let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
-                  let interface_list = create_super_list jclass.Javalib.c_interfaces in
-                  let super_classname_list =
-                    match jclass.Javalib.c_super_class with
-                    | None ->
-                        interface_list (* base case of the recursion *)
-                    | Some super_cn ->
-                        ignore (get_class_struct_typ program tenv super_cn) ;
-                        let super_classname = typename_of_classname super_cn in
-                        super_classname :: interface_list
-                  in
-                  (super_classname_list, nonstatics, statics, item_annotation)
+            let annots = JAnnotation.translate_item jclass.Javalib.c_annotations in
+            let interface_list = create_super_list program tenv jclass.Javalib.c_interfaces in
+            let supers =
+              match jclass.Javalib.c_super_class with
+              | None ->
+                  interface_list (* base case of the recursion *)
+              | Some super_cn ->
+                  ignore (get_class_struct_typ program tenv super_cn) ;
+                  let super_classname = typename_of_classname super_cn in
+                  super_classname :: interface_list
             in
-            let methods =
-              Javalib.m_fold
-                (fun m procnames -> translate_method_name program tenv m :: procnames)
-                node []
-            in
-            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name )
+            make_struct program tenv node supers ~fields ~statics annots name )
 
 
 let get_class_type_no_pointer program tenv cn =
   ignore (get_class_struct_typ program tenv cn) ;
-  Typ.mk (Tstruct (typename_of_classname cn))
+  Typ.mk_struct (typename_of_classname cn)
 
 
-let get_class_type program tenv cn =
-  Typ.mk (Tptr (get_class_type_no_pointer program tenv cn, Pk_pointer))
-
+let get_class_type program tenv cn = Typ.mk_ptr (get_class_type_no_pointer program tenv cn)
 
 (** return true if [field_name] is the autogenerated C.$assertionsDisabled field for class C *)
 let is_autogenerated_assert_field field_name =
@@ -405,14 +382,14 @@ let rec object_type program tenv ot =
   | JBasics.TClass cn ->
       get_class_type program tenv cn
   | JBasics.TArray at ->
-      Typ.mk (Tptr (Typ.mk_array (value_type program tenv at), Typ.Pk_pointer))
+      Typ.mk_ptr (Typ.mk_array (value_type program tenv at))
 
 
 (** translate a value type *)
 and value_type program tenv vt =
   match vt with
   | JBasics.TBasic bt ->
-      basic_type bt
+      translate_basic_type bt
   | JBasics.TObject ot ->
       object_type program tenv ot
 
@@ -458,8 +435,6 @@ let rec expr_type (context : JContext.t) expr =
   let program = context.program in
   let tenv = JContext.get_tenv context in
   match expr with
-  | JBir.Const const ->
-      value_type program tenv (const_type const)
   | JBir.Var (vt, var) -> (
     match get_var_type context var with Some typ -> typ | None -> value_type program tenv vt )
   | JBir.Binop (JBir.ArrayLoad _, e1, _) ->

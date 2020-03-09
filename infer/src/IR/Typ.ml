@@ -267,9 +267,11 @@ let mk_array ?default ?quals ?length ?stride elt : t =
 
 let mk_struct name = mk (Tstruct name)
 
+let mk_ptr ?(ptr_kind = Pk_pointer) t = mk (Tptr (t, ptr_kind))
+
 let void = mk Tvoid
 
-let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
+let void_star = mk (Tptr (void, Pk_pointer))
 
 let java_byte = mk (Tint IShort)
 
