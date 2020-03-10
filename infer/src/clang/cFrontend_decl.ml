@@ -34,8 +34,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     in
     let f () =
-      match Procname.Hash.find cfg procname with
-      | procdesc when Procdesc.is_defined procdesc && not (model_exists procname) -> (
+      match Procname.Hash.find_opt cfg procname with
+      | Some procdesc when Procdesc.is_defined procdesc && not (model_exists procname) ->
           L.(debug Capture Verbose)
             "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
             (Procname.to_string procname) ;
@@ -49,18 +49,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           let meth_body_nodes =
             T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
           in
-          Procdesc.node_set_succs procdesc start_node ~normal:meth_body_nodes ~exn:[] ;
-          match Procdesc.is_connected procdesc with
-          | Ok () ->
-              ()
-          | Error broken_node ->
-              let lang =
-                CFrontend_config.string_of_clang_lang trans_unit_ctx.CFrontend_config.lang
-              in
-              ClangLogging.log_broken_cfg ~broken_node procdesc __POS__ ~lang )
+          Procdesc.node_set_succs procdesc start_node ~normal:meth_body_nodes ~exn:[]
       | _ ->
-          ()
-      | exception Caml.Not_found ->
           ()
     in
     CFrontend_errors.protect ~f ~recover ~pp_context trans_unit_ctx

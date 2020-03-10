@@ -312,9 +312,6 @@ val is_captured_var : t -> Var.t -> bool
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 
-val is_connected : t -> (unit, [`Join | `Other]) Result.t
-(** checks whether a cfg for the given procdesc is connected or not *)
-
 module SQLite : SqliteUtils.Data with type t = t option
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)
