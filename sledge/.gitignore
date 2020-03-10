@@ -5,7 +5,6 @@
 /lib/dune
 /lib/import/dune
 /llvm/
-/model/dune
 /test/*/*.bc
 /test/*/*.bc.err
 /test/*/*.bc.out

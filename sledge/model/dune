@@ -1,17 +1,8 @@
-(* -*- tuareg -*- *)
-(*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *)
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
 
-let deps = []
-
-;;
-Jbuild_plugin.V1.send
-@@ Format.sprintf
-     {|
 (rule
  (targets cxxabi.bc)
  (deps cxxabi.cpp Makefile llair_intrinsics.h)
@@ -29,9 +20,4 @@ Jbuild_plugin.V1.send
 
 (library
  (name model)
- (public_name sledge.model)
- (libraries %s)
- %s)
-|}
-     (libraries deps)
-     (flags `lib deps)
+ (public_name sledge.model))
