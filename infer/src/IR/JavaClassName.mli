@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, equal]
+type t [@@deriving compare]
 
 val from_string : string -> t
 
@@ -24,5 +24,3 @@ val classname : t -> string
 
 val is_external_via_config : t -> bool
 (** Considered external based on config flags. *)
-
-val java_lang_integer : t
