@@ -9,6 +9,5 @@
  (libraries core core_kernel.fheap zarith trace)
  (flags (:standard))
  (preprocess
-  (pps ppx_compare ppx_custom_printf ppx_expect ppx_hash ppx_here
-    ppx_inline_test ppx_let ppx_sexp_conv ppx_sexp_value ppx_trace))
+  (pps ppx_sledge))
  (inline_tests))
