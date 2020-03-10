@@ -91,7 +91,7 @@ clean:
 
 .PHONY: fmt
 fmt:
-	dune build $(FMTS) --auto-promote
+	dune build @fmt --auto-promote
 	ocamlformat -i $(DUNEINS)
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt

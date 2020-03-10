@@ -10,7 +10,7 @@ build: [
 ]
 depends: [
   "ocaml"
-  "dune" {>= "1.11.3" build}
+  "dune" {>= "2.0.0"}
   "ppxlib"
 ]
 synopsis: "Conditionally compiled debug tracing"

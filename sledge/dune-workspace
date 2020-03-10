@@ -1,4 +1,9 @@
-(lang dune 1.0)
+(lang dune 2.0)
+
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
 
 (context (opam (switch sledge) (name dbg) (merlin)))
 (context (opam (switch sledge) (name dbg-opt)))
