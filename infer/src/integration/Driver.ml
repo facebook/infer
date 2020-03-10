@@ -529,7 +529,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           error_no_buck_mode_specified ()
       | BBuck, Some (ClangCompilationDB deps) ->
           BuckCompilationDB (deps, prog, List.append args (List.rev Config.buck_build_args))
-      | BBuck, Some ClangFlavors when Config.linters ->
+      | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->
           L.user_warning
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;

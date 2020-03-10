@@ -212,8 +212,6 @@ val allow_leak : bool
 
 val analysis_stops : bool
 
-val annotation_reachability : bool
-
 val annotation_reachability_cxx : Yojson.Basic.t
 
 val annotation_reachability_cxx_sources : Yojson.Basic.t
@@ -223,8 +221,6 @@ val annotation_reachability_custom_pairs : Yojson.Basic.t
 val anon_args : string list
 
 val array_level : int
-
-val biabduction : bool
 
 val biabduction_model_alloc_pattern : Str.regexp option
 
@@ -258,8 +254,6 @@ val buck_out_gen : string
 
 val buck_targets_blacklist : string list
 
-val bufferoverrun : bool
-
 val call_graph_schedule : bool
 
 val capture : bool
@@ -291,8 +285,6 @@ val clang_idirafter_to_override_regex : Str.regexp option
 
 val clang_libcxx_include_to_override_regex : string option
 
-val class_loads : bool
-
 val class_loads_roots : String.Set.t
 
 val command : InferCommand.t
@@ -302,8 +294,6 @@ val compute_analytics : bool
 val continue_analysis : bool
 
 val continue_capture : bool
-
-val cost : bool
 
 val costs_current : string option
 
@@ -343,8 +333,6 @@ val dump_duplicate_symbols : bool
 
 val dynamic_dispatch : bool
 
-val eradicate : bool
-
 val eradicate_condition_redundant : bool
 
 val eradicate_field_over_annotated : bool
@@ -369,8 +357,6 @@ val force_delete_results_dir : bool
 
 val force_integration : build_system option
 
-val fragment_retains_view : bool
-
 val from_json_report : string option
 
 val frontend_stats : bool
@@ -391,12 +377,6 @@ val html : bool
 
 val icfg_dotty_outfile : string option
 
-val immutable_cast : bool
-
-val impurity : bool
-
-val inefficient_keyset_iterator : bool
-
 val infer_is_clang : bool
 
 val infer_is_javac : bool
@@ -410,6 +390,8 @@ val inferconfig_dir : string option
 val iphoneos_target_sdk_version : string option
 
 val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
+
+val is_checker_enabled : Checker.t -> bool
 
 val issues_fields :
   [ `Issue_field_bug_type
@@ -450,8 +432,6 @@ val keep_going : bool
 
 val linter : string option
 
-val linters : bool
-
 val linters_def_file : string list
 
 val linters_def_folder : string list
@@ -462,10 +442,6 @@ val linters_ignore_clang_failures : bool
 
 val linters_validate_syntax_only : bool
 
-val litho_required_props : bool
-
-val liveness : bool
-
 val liveness_dangerous_classes : Yojson.Basic.t
 
 val log_events : bool
@@ -473,8 +449,6 @@ val log_events : bool
 val log_file : string
 
 val log_skipped : bool
-
-val loop_hoisting : bool
 
 val max_nesting : int option
 
@@ -513,8 +487,6 @@ val only_footprint : bool
 
 val only_show : bool
 
-val self_in_block : bool
-
 val perf_profiler_data_file : string option
 
 val pmd_xml : bool
@@ -532,8 +504,6 @@ val print_logs : bool
 val print_types : bool
 
 val print_using_diff : bool
-
-val printf_args : bool
 
 val procedures : bool
 
@@ -559,19 +529,13 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
 
-val pulse : bool
-
 val pulse_intraprocedural_only : bool
 
 val pulse_max_disjuncts : int
 
 val pulse_widen_threshold : int
 
-val purity : bool
-
 val pure_by_default : bool
-
-val quandary : bool
 
 val quandary_endpoints : Yojson.Basic.t
 
@@ -581,11 +545,7 @@ val quandary_sinks : Yojson.Basic.t
 
 val quandary_sources : Yojson.Basic.t
 
-val quandaryBO : bool
-
 val quiet : bool
-
-val racerd : bool
 
 val racerd_guardedby : bool
 
@@ -615,8 +575,6 @@ val report_suppress_errors : string list
 
 val reports_include_ml_loc : bool
 
-val resource_leak : bool
-
 val rest : string list
 
 val results_dir : string
@@ -634,8 +592,6 @@ val seconds_per_iteration : float option
 val select : int option
 
 val show_buckets : bool
-
-val siof : bool
 
 val siof_check_iostreams : bool
 
@@ -672,8 +628,6 @@ val sqlite_lock_timeout : int
 val sqlite_vfs : string option
 
 val sqlite_write_daemon : bool
-
-val starvation : bool
 
 val starvation_skip_analysis : Yojson.Basic.t
 
@@ -728,8 +682,6 @@ val tv_limit : int
 val tv_limit_filtered : int
 
 val type_size : bool
-
-val uninit : bool
 
 val uninit_interproc : bool
 

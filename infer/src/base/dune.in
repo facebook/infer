@@ -16,7 +16,7 @@ Format.sprintf
  (flags (%s -open Core -open InferStdlib -open IStd -open InferGenerated))
  (ocamlopt_flags (%s))
  (libraries %s)
- (preprocess (pps ppx_compare))
+ (preprocess (pps ppx_compare ppx_enumerate))
 )
 
 (documentation

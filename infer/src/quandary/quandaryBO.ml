@@ -119,8 +119,8 @@ let update_issues all_issues =
     List.filter
       ~f:(fun issue ->
         let issue_in ls = List.mem ls issue.Issue.err_key.err_name ~equal:IssueType.equal in
-        (Config.quandary || not (issue_in quandary_issues))
-        && (Config.bufferoverrun || not (issue_in inferbo_issues))
+        (Config.is_checker_enabled Quandary || not (issue_in quandary_issues))
+        && (Config.is_checker_enabled BufferOverrun || not (issue_in inferbo_issues))
         && not (issue_in filtered_issues) )
       all_issues
   in

@@ -103,7 +103,7 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --siof, --starvation, --self_in_block,
+           --liveness, --racerd, --siof, --self_in_block, --starvation,
            --uninit (Conversely: --default-checkers)
 
        --eradicate
@@ -199,14 +199,6 @@ OPTIONS
        --loop-hoisting-only
            Activates: Enable --loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)
-
-       --nullsafe
-           Activates: [RESERVED] Reserved for nullsafe typechecker, use
-           --eradicate for now (Conversely: --no-nullsafe)
-
-       --nullsafe-only
-           Activates: Enable --nullsafe and disable all other checkers
-           (Conversely: --no-nullsafe-only)
 
        --perf-profiler-data-file file
            Specify the file containing perf profiler data to read

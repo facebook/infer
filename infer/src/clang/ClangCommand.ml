@@ -175,7 +175,9 @@ let clang_cc1_cmd_sanitizer cmd =
         arg
   in
   let args_defines =
-    if Config.bufferoverrun && not Config.biabduction then ["-D__INFER_BUFFEROVERRUN"] else []
+    if Config.is_checker_enabled BufferOverrun && not (Config.is_checker_enabled Biabduction) then
+      ["-D__INFER_BUFFEROVERRUN"]
+    else []
   in
   let explicit_sysroot_passed = has_flag cmd "-isysroot" in
   (* supply isysroot only when SDKROOT is not set up and explicit isysroot is not provided,

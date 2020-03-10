@@ -27,7 +27,7 @@ let validate_decl_from_channel chan =
 let register_perf_stats_report source_file =
   let stats_type =
     if Config.capture then PerfStats.ClangFrontend source_file
-    else if Config.linters then PerfStats.ClangLinters source_file
+    else if Config.is_checker_enabled Linters then PerfStats.ClangLinters source_file
     else if Config.process_clang_ast then PerfStats.ClangProcessAST source_file
     else
       Logging.(die UserError)
@@ -96,7 +96,7 @@ let run_clang_frontend ast_source =
   ClangPointers.populate_all_tables ast_decl ;
   L.(debug Capture Medium)
     "Start %s the AST of %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
-  if Config.linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
+  if Config.is_checker_enabled Linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
   if Config.process_clang_ast then ProcessAST.process_ast trans_unit_ctx ast_decl ;
   if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
   L.(debug Capture Medium)

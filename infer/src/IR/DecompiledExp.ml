@@ -31,7 +31,7 @@ type t =
     path, with Dpvar being the simplest one *)
 type vpath = t option
 
-let eradicate_java () = Config.eradicate && Language.curr_language_is Java
+let eradicate_java () = Config.is_checker_enabled Eradicate && Language.curr_language_is Java
 
 let split_var_clang var_name =
   match String.rsplit2 ~on:'.' var_name with Some (_, name) -> name | _ -> var_name

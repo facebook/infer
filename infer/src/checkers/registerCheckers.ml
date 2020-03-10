@@ -31,63 +31,67 @@ let all_checkers =
   (* TODO (T24393492): the checkers should run in the order from this list.
      Currently, the checkers are run in the reverse order *)
   [ { name= "annotation reachability"
-    ; active= Config.annotation_reachability
+    ; active= Config.is_checker_enabled AnnotationReachability
     ; callbacks=
         [ (Procedure AnnotationReachability.checker, Language.Java)
         ; (Procedure AnnotationReachability.checker, Language.Clang) ] }
   ; { name= "biabduction"
-    ; active= Config.biabduction
+    ; active= Config.is_checker_enabled Biabduction
     ; callbacks=
         [ (DynamicDispatch Interproc.analyze_procedure, Language.Clang)
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun analysis"
     ; active=
-        Config.bufferoverrun || Config.cost || Config.loop_hoisting || Config.purity
-        || Config.quandaryBO
+        Config.(
+          is_checker_enabled BufferOverrun || is_checker_enabled Cost
+          || is_checker_enabled LoopHoisting || is_checker_enabled Purity
+          || is_checker_enabled QuandaryBO)
     ; callbacks=
         [ (Procedure BufferOverrunAnalysis.do_analysis, Language.Clang)
         ; (Procedure BufferOverrunAnalysis.do_analysis, Language.Java) ] }
   ; { name= "buffer overrun checker"
-    ; active= Config.bufferoverrun || Config.quandaryBO
+    ; active= Config.(is_checker_enabled BufferOverrun || is_checker_enabled QuandaryBO)
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
   ; { name= "eradicate"
-    ; active= Config.eradicate
+    ; active= Config.is_checker_enabled Eradicate
     ; callbacks= [(Procedure Eradicate.callback_eradicate, Language.Java)] }
   ; { name= "fragment retains view"
-    ; active= Config.fragment_retains_view
+    ; active= Config.is_checker_enabled FragmentRetainsView
     ; callbacks=
         [(Procedure FragmentRetainsViewChecker.callback_fragment_retains_view, Language.Java)] }
   ; { name= "immutable cast"
-    ; active= Config.immutable_cast
+    ; active= Config.is_checker_enabled ImmutableCast
     ; callbacks= [(Procedure ImmutableChecker.callback_check_immutable_cast, Language.Java)] }
   ; { name= "inefficient keyset iterator"
-    ; active= Config.inefficient_keyset_iterator
+    ; active= Config.is_checker_enabled InefficientKeysetIterator
     ; callbacks= [(Procedure InefficientKeysetIterator.checker, Language.Java)] }
   ; { name= "liveness"
-    ; active= Config.liveness
+    ; active= Config.is_checker_enabled Liveness
     ; callbacks= [(Procedure Liveness.checker, Language.Clang)] }
   ; { name= "printf args"
-    ; active= Config.printf_args
+    ; active= Config.is_checker_enabled PrintfArgs
     ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }
   ; { name= "impurity"
-    ; active= Config.impurity
+    ; active= Config.is_checker_enabled Impurity
     ; callbacks=
         [(Procedure Impurity.checker, Language.Java); (Procedure Impurity.checker, Language.Clang)]
     }
   ; { name= "pulse"
-    ; active= Config.pulse || Config.impurity
+    ; active= Config.(is_checker_enabled Pulse || is_checker_enabled Impurity)
     ; callbacks=
         (Procedure Pulse.checker, Language.Clang)
-        :: (if Config.impurity then [(Procedure Pulse.checker, Language.Java)] else []) }
+        ::
+        ( if Config.is_checker_enabled Impurity then [(Procedure Pulse.checker, Language.Java)]
+        else [] ) }
   ; { name= "quandary"
-    ; active= Config.quandary || Config.quandaryBO
+    ; active= Config.(is_checker_enabled Quandary || is_checker_enabled QuandaryBO)
     ; callbacks=
         [ (Procedure JavaTaintAnalysis.checker, Language.Java)
         ; (Procedure ClangTaintAnalysis.checker, Language.Clang) ] }
   ; { name= "RacerD"
-    ; active= Config.racerd
+    ; active= Config.is_checker_enabled RacerD
     ; callbacks=
         [ (Procedure RacerD.analyze_procedure, Language.Clang)
         ; (Procedure RacerD.analyze_procedure, Language.Java)
@@ -97,30 +101,35 @@ let all_checkers =
           , Language.Java ) ] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
-    ; active= Config.resource_leak
+    ; active= Config.is_checker_enabled ResourceLeak
     ; callbacks=
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
             Procedure ResourceLeaks.checker
           , Language.Java ) ] }
   ; { name= "litho-required-props"
-    ; active= Config.litho_required_props
+    ; active= Config.is_checker_enabled LithoRequiredProps
     ; callbacks= [(Procedure RequiredProps.checker, Language.Java)] }
-  ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Language.Clang)]}
+  ; { name= "SIOF"
+    ; active= Config.is_checker_enabled SIOF
+    ; callbacks= [(Procedure Siof.checker, Language.Clang)] }
   ; { name= "uninitialized variables"
-    ; active= Config.uninit
+    ; active= Config.is_checker_enabled Uninit
     ; callbacks= [(Procedure Uninit.checker, Language.Clang)] }
   ; { name= "cost analysis"
-    ; active= Config.cost || (Config.loop_hoisting && Config.hoisting_report_only_expensive)
+    ; active=
+        Config.(
+          is_checker_enabled Cost
+          || (is_checker_enabled LoopHoisting && hoisting_report_only_expensive))
     ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
     }
   ; { name= "loop hoisting"
-    ; active= Config.loop_hoisting
+    ; active= Config.is_checker_enabled LoopHoisting
     ; callbacks=
         [(Procedure Hoisting.checker, Language.Clang); (Procedure Hoisting.checker, Language.Java)]
     }
   ; { name= "Starvation analysis"
-    ; active= Config.starvation
+    ; active= Config.is_checker_enabled Starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
         ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
@@ -129,14 +138,14 @@ let all_checkers =
         ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
           , Language.Clang ) ] }
   ; { name= "purity"
-    ; active= Config.purity || Config.loop_hoisting
+    ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
     ; callbacks=
         [(Procedure Purity.checker, Language.Java); (Procedure Purity.checker, Language.Clang)] }
   ; { name= "Class loading analysis"
-    ; active= Config.class_loads
+    ; active= Config.is_checker_enabled ClassLoads
     ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] }
   ; { name= "Self captured in block checker"
-    ; active= Config.self_in_block
+    ; active= Config.is_checker_enabled SelfInBlock
     ; callbacks= [(Procedure SelfInBlock.checker, Language.Clang)] } ]
 
 

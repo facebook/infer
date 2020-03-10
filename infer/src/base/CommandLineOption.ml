@@ -62,12 +62,9 @@ let to_arg_spec_triple (x, spec, y) = (x, to_arg_spec spec, y)
 
 let to_arg_speclist = List.map ~f:to_arg_spec_triple
 
-(* NOTE: All variants must be also added to `all_parse_modes` below *)
-type parse_mode = InferCommand | Javac | NoParse [@@deriving compare]
+type parse_mode = InferCommand | Javac | NoParse [@@deriving compare, enumerate]
 
 let equal_parse_mode = [%compare.equal: parse_mode]
-
-let all_parse_modes = [InferCommand; Javac; NoParse]
 
 type anon_arg_action =
   {parse_subcommands: bool; parse_argfiles: bool; on_unknown: [`Add | `Reject | `Skip]}
@@ -157,7 +154,7 @@ let check_no_duplicates desc_list =
     (List.sort ~compare:(fun (x, _, _) (y, _, _) -> String.compare x y) desc_list)
 
 
-let parse_mode_desc_lists = List.map ~f:(fun parse_mode -> (parse_mode, ref [])) all_parse_modes
+let parse_mode_desc_lists = List.map ~f:(fun parse_mode -> (parse_mode, ref [])) all_of_parse_mode
 
 module SectionMap = Caml.Map.Make (struct
   type t = String.t

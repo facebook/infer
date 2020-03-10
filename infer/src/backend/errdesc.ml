@@ -188,7 +188,9 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
         in
         Some (DExp.Dretcall (fun_dexp, args_dexp, loc, call_flags))
     | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Var id0}
-      when Config.biabduction && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
+      when Config.is_checker_enabled Biabduction
+           && Ident.equal id id0
+           && not (Pvar.is_frontend_tmp pvar) ->
         (* this case is a hack to make bucketing continue to work in the presence of copy
            propagation. previously, we would have code like:
            n1 = foo(); x = n1; n2 = x; n2.toString(), but copy-propagation will optimize this to:

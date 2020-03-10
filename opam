@@ -41,6 +41,7 @@ depends: [
   "parmap" {>="1.0-rc8"}
   "ppx_compare" {>= "v0.13.0" & < "v0.14"}
   "ppx_deriving" {>="4.1"}
+  "ppx_enumerate" {>="v0.13.0" & < "v0.14"}
   "ppx_fields_conv" {>="v0.13.0" & < "v0.14"}
   "sawja" {>="1.5.8"}
   "sqlite3"

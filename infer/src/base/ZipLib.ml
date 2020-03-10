@@ -33,7 +33,7 @@ let zip_libraries =
   lazy
     (let mk_zip_lib zip_filename = {zip_filename; zip_channel= lazy (Zip.open_in zip_filename)} in
      if
-       Config.biabduction
+       Config.is_checker_enabled Biabduction
        && (not Config.biabduction_models_mode)
        && Sys.file_exists Config.biabduction_models_jar = `Yes
      then Some (mk_zip_lib Config.biabduction_models_jar)
