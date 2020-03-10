@@ -380,8 +380,14 @@ let capture_buck_args =
 
 let run_buck_build prog buck_build_args =
   L.debug Capture Verbose "%s %s@." prog (List.to_string ~f:Fn.id buck_build_args) ;
+  let infer_args =
+    Option.fold (Sys.getenv CommandLineOption.args_env_var) ~init:"--fcp-syntax-only"
+      ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
+  in
   let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process ~prog ~args:buck_build_args
+    Unix.create_process_env ~prog ~args:buck_build_args
+      ~env:(`Extend [(CommandLineOption.args_env_var, infer_args)])
+      ()
   in
   let buck_stderr = Unix.in_channel_of_descr stderr in
   let buck_stdout = Unix.in_channel_of_descr stdout in
