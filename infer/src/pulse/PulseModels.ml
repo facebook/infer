@@ -240,6 +240,16 @@ module StdAtomicInteger = struct
     [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
 end
 
+module JavaObject = struct
+  (* naively modeled as shallow copy. *)
+  let clone src_pointer_hist : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []} in
+    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    let+ astate, obj_copy = PulseOperations.shallow_copy location obj astate in
+    [PulseOperations.write_id ret_id (fst obj_copy, event :: snd obj_copy) astate]
+end
+
 module StdBasicString = struct
   let internal_string =
     Fieldname.make
@@ -406,6 +416,7 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload $++$--> StdFunction.operator_call
       ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
         $--> Misc.shallow_copy "std::function::operator="
+      ; +PatternMatch.implements_lang "Object" &:: "clone" $ capt_arg_payload $--> JavaObject.clone
       ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdAtomicInteger.constructor
       ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload

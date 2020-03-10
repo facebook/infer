@@ -96,4 +96,19 @@ class PurityModeled {
       System.nanoTime();
     }
   }
+
+  enum Color {
+    RED,
+    GREEN,
+    BLUE; // values() calls clone
+  }
+
+  public void enum_iter_pure() {
+    for (Color c : Color.values()) {}
+  }
+
+  void clone_pure(ArrayList<String> list) {
+    ArrayList<String> cloned = (ArrayList<String>) list.clone();
+    cloned.add(""); // no change the list
+  }
 }
