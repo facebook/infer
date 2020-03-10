@@ -1,9 +1,5 @@
 .llvm_build
 .llvm_install
-.merlin
-/bin/dune
-/lib/dune
-/lib/import/dune
 /llvm/
 /test/*/*.bc
 /test/*/*.bc.err

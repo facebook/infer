@@ -6,8 +6,8 @@ bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue
 dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 build: [
-  [make "setup"]
-  ["dune" "build" "-p" name "--profile" "opt" "-j" jobs]
+  ["dune" "build" "_build/opt/bin/sledge.exe" "-j" jobs]
+  ["dune" "install" "--context=opt" "sledge"]
 ]
 depends: [
   "ocaml"

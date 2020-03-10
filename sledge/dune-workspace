@@ -5,7 +5,29 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
-(context (opam (switch sledge) (name dbg) (merlin)))
-(context (opam (switch sledge) (name dbg-opt)))
-(context (opam (switch sledge) (name opt)))
-(context (opam (switch sledge) (name coverage)))
+(env
+ (dbg
+  (flags
+   (-w +a-4-9-18-40-42-44-48@50-66 -strict-formats -strict-sequence
+     -short-paths -bin-annot -keep-locs -keep-docs -opaque))
+  (env-vars
+   (PPX_TRACE_ENABLED 1))
+  (inline_tests enabled))
+ (opt
+  (flags
+   (-w -a -noassert -unboxed-types))
+  (ocamlopt_flags (-O3))
+  (env-vars
+   (PPX_TRACE_ENABLED 0))
+  (inline_tests disabled))
+ (dbg-opt
+  (flags
+   (-w -a -noassert -unboxed-types))
+  (ocamlopt_flags (-O3))
+  (env-vars
+   (PPX_TRACE_ENABLED 1))
+  (inline_tests disabled)))
+
+(context (opam (switch sledge) (name dbg) (profile dbg) (merlin)))
+(context (opam (switch sledge) (name opt) (profile opt)))
+(context (opam (switch sledge) (name dbg-opt) (profile dbg-opt)))

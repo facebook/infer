@@ -8,11 +8,10 @@ default: exes
 
 EXES = bin/sledge
 INSTALLS = sledge
-FMTS = @_build/dbg/lib/fmt @_build/dbg/bin/fmt
 
-DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS)) _build/dbg/sledge-help.txt
+DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS))
 
-TARGETS = $(DBG_TARGETS) $(subst dbg,dbg-opt,$(DBG_TARGETS)) $(subst dbg,opt,$(DBG_TARGETS))
+TARGETS = $(DBG_TARGETS) $(subst dbg,dbg-opt,$(DBG_TARGETS)) $(subst dbg,opt,$(DBG_TARGETS)) _build/opt/sledge-help.txt
 
 dune_build_dbg = dune build $(DBG_TARGETS)
 dune_install_dbg = dune install --context=dbg --prefix=_build/_install/dbg sledge 2>/dev/null
@@ -23,76 +22,52 @@ dune_install_dbg_opt = $(subst dbg,dbg-opt,$(dune_install_dbg))
 dune_build_opt = $(subst dbg,opt,$(dune_build_dbg))
 dune_install_opt = $(subst dbg,opt,$(dune_install_dbg))
 
-DUNEINS = $(shell find lib bin model -name dune.in)
-DUNES = $(patsubst %.in,%,$(DUNEINS))
-
-.PHONY: dunes
-dunes: $(DUNES)
-
-%/dune: dune-common.in %/dune.in
-	cat $+ > $@
-
-.PHONY: setup
-setup: dunes
-
 .PHONY: check
-check: setup
+check:
 	dune build @check
 
 .PHONY: exes
-exes: setup
+exes:
 	dune build $(TARGETS)
 	$(dune_install_dbg)
 	$(dune_install_dbg_opt)
 	$(dune_install_opt)
 
 .PHONY: dbg
-dbg: setup
+dbg:
 	$(dune_build_dbg)
 	$(dune_install_dbg)
 
 .PHONY: do
-do: setup
+do:
 	$(dune_build_dbg_opt)
 	$(dune_install_dbg_opt)
 
 .PHONY: opt
-opt: setup
+opt:
 	$(dune_build_opt)
 	$(dune_install_opt)
 
 .PHONY: watch
-watch: setup
+watch:
 	dune build --watch --terminal-persistence=clear-on-rebuild $(TARGETS)
 
 .PHONY: test
-test: setup
+test:
 	-dune build @_build/dbg/runtest --auto-promote
-	dune build $(FMTS) --auto-promote
+	dune build @fmt --auto-promote
 
 .PHONY: ci-test
-ci-test: setup
+ci-test:
 	dune build @_build/dbg/runtest
-
-BISECT_DIR = $(CURDIR)/_coverage/out
-
-.PHONY: coverage
-coverage: setup
-	rm -rf _coverage
-	mkdir -p $(BISECT_DIR)
-	BISECT_FILE=$(BISECT_DIR)/bisect dune build --force @_build/coverage/runtest
-	find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I _build/coverage/ -text _coverage/summary.txt -html _coverage/
-	@echo "open _coverage/index.html"
 
 .PHONY: clean
 clean:
 	dune clean
-	rm -rf _coverage $(DUNES)
 
 .PHONY: fmt
 fmt:
 	dune build @fmt --auto-promote
-	ocamlformat -i $(DUNEINS)
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt
 

@@ -1,0 +1,14 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name sledgelib)
+ (libraries apron apron.boxMPQ ctypes ctypes.foreign trace import)
+ (flags
+  (:standard -open Import))
+ (preprocess
+  (pps ppx_compare ppx_custom_printf ppx_expect ppx_hash ppx_here
+    ppx_inline_test ppx_let ppx_sexp_conv ppx_sexp_value ppx_trace))
+ (inline_tests))
