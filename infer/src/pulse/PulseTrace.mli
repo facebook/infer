@@ -30,7 +30,8 @@ val get_start_location : t -> Location.t
 val add_event : ValueHistory.event -> t -> t
 
 val add_to_errlog :
-     nesting:int
+     ?include_value_history:bool
+  -> nesting:int
   -> pp_immediate:(F.formatter -> unit)
   -> t
   -> Errlog.loc_trace_elem list

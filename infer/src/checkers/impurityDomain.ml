@@ -65,12 +65,12 @@ let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
   let aux ~nesting errlog trace =
     match trace with
     | WrittenTo access_trace ->
-        PulseTrace.add_to_errlog ~nesting
+        PulseTrace.add_to_errlog ~include_value_history:false ~nesting
           ~pp_immediate:(fun fmt ->
             F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
           access_trace errlog
     | Invalid (invalidation, invalidation_trace) ->
-        PulseTrace.add_to_errlog ~nesting
+        PulseTrace.add_to_errlog ~include_value_history:false ~nesting
           ~pp_immediate:(fun fmt ->
             F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
               PulseInvalidation.describe invalidation )

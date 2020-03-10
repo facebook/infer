@@ -43,17 +43,21 @@ let add_event event = function
       ViaCall {f; in_call; location; history= event :: history}
 
 
-let rec add_to_errlog ~nesting ~pp_immediate trace errlog =
+let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate trace errlog =
   match trace with
   | Immediate {location; history} ->
-      ValueHistory.add_to_errlog ~nesting history
-      @@ (Errlog.make_trace_element nesting location (F.asprintf "%t" pp_immediate) [] :: errlog)
+      let acc =
+        Errlog.make_trace_element nesting location (F.asprintf "%t" pp_immediate) [] :: errlog
+      in
+      if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
   | ViaCall {f; location; in_call; history} ->
-      ValueHistory.add_to_errlog ~nesting history
-      @@ (fun errlog ->
-           Errlog.make_trace_element nesting location
-             (F.asprintf "when calling %a here" CallEvent.pp f)
-             []
-           :: errlog )
-      @@ add_to_errlog ~nesting:(nesting + 1) ~pp_immediate in_call
-      @@ errlog
+      let acc =
+        (fun errlog ->
+          Errlog.make_trace_element nesting location
+            (F.asprintf "when calling %a here" CallEvent.pp f)
+            []
+          :: errlog )
+        @@ add_to_errlog ~nesting:(nesting + 1) ~pp_immediate in_call
+        @@ errlog
+      in
+      if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
