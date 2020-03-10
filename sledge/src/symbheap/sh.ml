@@ -422,7 +422,9 @@ let and_cong_ cong q =
 let and_cong cong q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Equality.pp cong pp q]
   ;
-  and_cong_ cong (extend_us (Equality.fv cong) q)
+  ( match q.djns with
+  | [[]] -> q
+  | _ -> and_cong_ cong (extend_us (Equality.fv cong) q) )
   |>
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 
