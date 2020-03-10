@@ -174,11 +174,6 @@ let clang_cc1_cmd_sanitizer cmd =
     | _ ->
         arg
   in
-  let args_defines =
-    if Config.is_checker_enabled BufferOverrun && not (Config.is_checker_enabled Biabduction) then
-      ["-D__INFER_BUFFEROVERRUN"]
-    else []
-  in
   let explicit_sysroot_passed = has_flag cmd "-isysroot" in
   (* supply isysroot only when SDKROOT is not set up and explicit isysroot is not provided,
      cf. https://lists.apple.com/archives/xcode-users/2005/Dec/msg00524.html
@@ -192,7 +187,6 @@ let clang_cc1_cmd_sanitizer cmd =
   let post_args_rev =
     []
     |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
-    |> List.rev_append args_defines
     |> (* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
           are appended at the end to override previous opposite settings.  How it's done: suppress
           all the warnings, since there are no warnings, compiler can't elevate them to error
