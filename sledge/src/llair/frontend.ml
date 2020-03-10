@@ -15,6 +15,24 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
+;;
+Reg.demangle :=
+  let open Ctypes in
+  let cxa_demangle =
+    (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
+    Foreign.foreign "__cxa_demangle"
+      ( string @-> ptr char @-> ptr size_t @-> ptr int
+      @-> returning string_opt )
+  in
+  let null_ptr_char = from_voidp char null in
+  let null_ptr_size_t = from_voidp size_t null in
+  let status = allocate int 0 in
+  fun mangled ->
+    let demangled =
+      cxa_demangle mangled null_ptr_char null_ptr_size_t status
+    in
+    if !@status = 0 then demangled else None
+
 exception Invalid_llvm of string
 
 let invalid_llvm : string -> 'a =

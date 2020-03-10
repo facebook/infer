@@ -339,27 +339,12 @@ module Reg = struct
     let empty = Map.empty (module T)
   end
 
-  let demangle =
-    let open Ctypes in
-    let cxa_demangle =
-      (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
-      Foreign.foreign "__cxa_demangle"
-        ( string @-> ptr char @-> ptr size_t @-> ptr int
-        @-> returning string_opt )
-    in
-    let null_ptr_char = from_voidp char null in
-    let null_ptr_size_t = from_voidp size_t null in
-    let status = allocate int 0 in
-    fun mangled ->
-      let demangled =
-        cxa_demangle mangled null_ptr_char null_ptr_size_t status
-      in
-      if !@status = 0 then demangled else None
+  let demangle = ref (fun _ -> None)
 
   let pp_demangled fs e =
     match e.desc with
     | Reg {name} -> (
-      match demangle name with
+      match !demangle name with
       | Some demangled when not (String.equal name demangled) ->
           Format.fprintf fs "“%s”" demangled
       | _ -> () )

@@ -125,6 +125,7 @@ module Reg : sig
     val empty : 'a t
   end
 
+  val demangle : (string -> string option) ref
   val pp : t pp
   val pp_demangled : t pp
 
