@@ -8,7 +8,9 @@
 (** Extension point rewriter for debug trace logging
 
     This ppx rewriter declares a [--debug] command line option, to be passed
-    by the build system in debug but not optimized build modes.
+    by the build system in debug but not optimized build modes. Setting the
+    [PPX_TRACE_ENABLED] environment variable to [1] or [true] has the same
+    effect as passing [--debug].
 
     It rewrites [\[%Trace.info f\]] to a call
     [\[Trace.info mod_name fun_name f\]] where [mod_name] and [fun_name] are
@@ -42,7 +44,11 @@ open Ppxlib
 open Ast_builder.Default
 module Ast_mapper = Selected_ast.Ast.Ast_mapper
 
-let debug = ref false
+let debug =
+  ref
+    ( match Sys.getenv_opt "PPX_TRACE_ENABLED" with
+    | Some ("1" | "true") -> true
+    | _ -> false )
 
 ;;
 Driver.add_arg "--debug" (Arg.Set debug) ~doc:"Enable debug tracing output"
