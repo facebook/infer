@@ -456,12 +456,7 @@ let compute_invariant_map :
 
 
 let cached_compute_invariant_map =
-  let cache = ref None in
-  let cache_get pname =
-    Option.bind !cache ~f:(fun (pname', inv_map) ->
-        Option.some_if (Procname.equal pname pname') inv_map )
-  in
-  let cache_set pname inv_map = cache := Some (pname, inv_map) in
+  let cache_get, cache_set = Procname.UnitCache.create () in
   fun summary tenv integer_type_widths ->
     let pname = Summary.get_proc_name summary in
     match cache_get pname with

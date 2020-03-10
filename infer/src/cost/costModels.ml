@@ -23,11 +23,18 @@ let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
 
 let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
-let expensive_modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
-  let callsite = CallSite.make pname location in
-  let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
-  let itv = Itv.of_modeled_path ~is_expensive:true path in
-  CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+let provider_get {pname; location; get_cast_type} ~ret:(ret_id, ret_typ) _ : BasicCost.t =
+  let is_integer_type =
+    Option.exists get_cast_type ~f:(fun get_cast_type ->
+        CastType.Val.is_integer_type (get_cast_type ret_id) )
+  in
+  if is_integer_type then BasicCost.one
+  else
+    let callsite = CallSite.make pname location in
+    let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
+    let itv = Itv.of_modeled_path ~is_expensive:true path in
+    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"Provider.get"
+      location
 
 
 module BoundsOf (Container : CostUtils.S) = struct
@@ -185,9 +192,7 @@ module Call = struct
           &:: "substring"
           $ any_arg_of_typ (+PatternMatch.implements_lang "String")
           $+ capt_exp $+ capt_exp $--> JavaString.substring
-        ; +PatternMatch.implements_inject "Provider"
-          &:: "get"
-          <>--> expensive_modeled ~of_function:"Provider.get"
+        ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> provider_get
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model

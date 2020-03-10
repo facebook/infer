@@ -16,10 +16,17 @@ module ModelEnv : sig
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
-    ; integer_type_widths: Typ.IntegerWidths.t }
+    ; integer_type_widths: Typ.IntegerWidths.t
+    ; get_cast_type: CastType.get_cast_type option }
 
   val mk_model_env :
-    Procname.t -> node_hash:int -> Location.t -> Tenv.t -> Typ.IntegerWidths.t -> model_env
+       Procname.t
+    -> node_hash:int
+    -> ?get_cast_type:CastType.get_cast_type
+    -> Location.t
+    -> Tenv.t
+    -> Typ.IntegerWidths.t
+    -> model_env
 end
 
 module Exec : sig

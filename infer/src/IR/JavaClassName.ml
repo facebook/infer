@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 (** invariant: if [package = Some str] then [not (String.equal str "")] *)
-type t = {classname: string; package: string option} [@@deriving compare]
+type t = {classname: string; package: string option} [@@deriving compare, equal]
 
 let from_string str =
   match String.rsplit2 str ~on:'.' with
@@ -47,3 +47,6 @@ let is_external_via_config t =
 
 let pp_with_verbosity ~verbose fmt t =
   if verbose then pp fmt t else F.pp_print_string fmt (classname t)
+
+
+let java_lang_integer = {classname= "Integer"; package= Some "java.lang"}

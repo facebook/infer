@@ -22,10 +22,11 @@ module ModelEnv = struct
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
-    ; integer_type_widths: Typ.IntegerWidths.t }
+    ; integer_type_widths: Typ.IntegerWidths.t
+    ; get_cast_type: CastType.get_cast_type option }
 
-  let mk_model_env pname ~node_hash location tenv integer_type_widths =
-    {pname; node_hash; location; tenv; integer_type_widths}
+  let mk_model_env pname ~node_hash ?get_cast_type location tenv integer_type_widths =
+    {pname; node_hash; location; tenv; integer_type_widths; get_cast_type}
 end
 
 module Exec = struct

@@ -29,7 +29,8 @@ type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t
-  ; get_callee_summary_and_formals: Procname.t -> callee_summary_and_formals option }
+  ; get_callee_summary_and_formals: Procname.t -> callee_summary_and_formals option
+  ; get_cast_type: CastType.get_cast_type }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
@@ -58,7 +59,7 @@ module InstrBasicCost = struct
     List.exists allocation_functions ~f:(fun f -> Procname.equal callee_pname f)
 
 
-  let get_instr_cost_record tenv extras instr_node instr =
+  let get_instr_cost_record tenv ({get_cast_type} as extras) instr_node instr =
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
         let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} = extras in
@@ -78,8 +79,8 @@ module InstrBasicCost = struct
               | Some model ->
                   let node_hash = InstrCFG.Node.hash instr_node in
                   let model_env =
-                    BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash loc tenv
-                      integer_type_widths
+                    BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash ~get_cast_type
+                      loc tenv integer_type_widths
                   in
                   CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
@@ -314,9 +315,13 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
 
 
 let compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
-    inferbo_invariant_map get_node_nb_exec =
+    inferbo_invariant_map get_node_nb_exec get_cast_type =
   let extras =
-    {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_callee_summary_and_formals}
+    { inferbo_invariant_map
+    ; integer_type_widths
+    ; get_node_nb_exec
+    ; get_callee_summary_and_formals
+    ; get_cast_type }
   in
   WorstCaseCost.compute tenv extras instr_cfg_wto
 
@@ -329,7 +334,7 @@ let report_errors ~is_on_ui_thread proc_desc astate summary =
   Check.check_and_report ~is_on_ui_thread astate proc_desc summary
 
 
-let checker {Callbacks.exe_env; summary} : Summary.t =
+let checker ({Callbacks.exe_env; summary} as callback_args) : Summary.t =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
@@ -362,6 +367,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   in
   let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
+  let get_cast_type = CastType.compute_get_cast_type callback_args in
   let astate =
     let get_callee_summary_and_formals callee_pname =
       Payload.read_full ~caller_summary:summary ~callee_pname
@@ -371,7 +377,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
     compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
-      inferbo_invariant_map get_node_nb_exec
+      inferbo_invariant_map get_node_nb_exec get_cast_type
   in
   let () =
     let exit_cost_record = astate.WorstCaseCost.costs in

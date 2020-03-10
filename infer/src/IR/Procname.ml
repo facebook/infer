@@ -828,3 +828,13 @@ end
 module SQLiteList = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t list
 end)
+
+module UnitCache = struct
+  let create () =
+    let cache = ref None in
+    let cache_get pname =
+      Option.bind !cache ~f:(fun (pname', value) -> Option.some_if (equal pname pname') value)
+    in
+    let cache_set pname value = cache := Some (pname, value) in
+    (cache_get, cache_set)
+end

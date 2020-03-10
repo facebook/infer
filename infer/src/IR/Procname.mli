@@ -243,6 +243,11 @@ end
 
 module SQLiteList : SqliteUtils.Data with type t = t list
 
+(** One-sized cache for one procedure at a time. Returns getter and setter. *)
+module UnitCache : sig
+  val create : unit -> (t -> 'a option) * (t -> 'a -> unit)
+end
+
 val empty_block : t
 (** Empty block name. *)
 
