@@ -29,7 +29,7 @@ val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> ?vs:Var.Set.t -> unit -> Var.Set.t pp
 val pp : t pp
 val pp_raw : t pp
-val pp_diff_eq : Equality.t -> t pp
+val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Equality.t -> t pp
 val pp_djn : disjunction pp
 val simplify : t -> t
 

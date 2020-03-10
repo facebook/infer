@@ -122,7 +122,13 @@ let rec var_strength_ xs m q =
   in
   (m_stem, m)
 
-let var_strength_full q = var_strength_ Var.Set.empty Var.Map.empty q
+let var_strength_full ?(xs = Var.Set.empty) q =
+  let m =
+    Set.fold xs ~init:Var.Map.empty ~f:(fun m x ->
+        Map.set m ~key:x ~data:`Existential )
+  in
+  var_strength_ xs m q
+
 let var_strength q = snd (var_strength_full q)
 let pp_memory x fs (siz, arr) = Term.ppx x fs (Term.memory ~siz ~arr)
 
@@ -263,9 +269,8 @@ and pp_djn ?var_strength vs xs cong fs = function
                sjn ))
         djn
 
-let pp_diff_eq cong fs q =
-  pp_ ~var_strength:(var_strength_full q) Var.Set.empty Var.Set.empty cong
-    fs q
+let pp_diff_eq ?(us = Var.Set.empty) ?(xs = Var.Set.empty) cong fs q =
+  pp_ ~var_strength:(var_strength_full ~xs q) us xs cong fs q
 
 let pp fs q = pp_diff_eq Equality.true_ fs q
 let pp_djn fs d = pp_djn Var.Set.empty Var.Set.empty Equality.true_ fs d

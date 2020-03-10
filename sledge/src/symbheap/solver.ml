@@ -68,7 +68,9 @@ end = struct
   let pp fs {com; min; xs; sub; pgs} =
     Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
       (if pgs then "t" else "f")
-      Sh.pp com Sh.pp min Var.Set.pp_xs xs (Sh.pp_diff_eq min.cong) sub
+      Sh.pp com Sh.pp min Var.Set.pp_xs xs
+      (Sh.pp_diff_eq ~us:(Set.union min.us sub.us) ~xs min.cong)
+      sub
 
   let invariant g =
     Invariant.invariant [%here] g [%sexp_of: t]
