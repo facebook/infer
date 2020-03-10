@@ -7,20 +7,7 @@
 
 (** Debug trace logging *)
 
-(** Tracing configuration for a toplevel module. *)
-type trace_mod_funs =
-  { trace_mod: bool option
-        (** Enable/disable tracing of all functions in module *)
-  ; trace_funs: bool Base.Map.M(Base.String).t
-        (** Enable/disable tracing of individual functions *) }
-
-type trace_mods_funs = trace_mod_funs Base.Map.M(Base.String).t
-
-type config =
-  { trace_all: bool  (** Enable all tracing *)
-  ; trace_mods_funs: trace_mods_funs
-        (** Specify tracing of individual toplevel modules *)
-  ; colors: bool  (** Enable color output *) }
+type config
 
 val none : config
 val all : config
@@ -29,14 +16,12 @@ val parse : string -> (config, exn) result
 val init : ?colors:bool -> ?margin:int -> ?config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)
 
-type 'a printf = ('a, Format.formatter, unit) format -> 'a
+type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
+type 'a printf = ('a, unit) fmt -> 'a
 type pf = {pf: 'a. 'a printf}
 
 val pp_styled :
-     [`Bold | `Cyan | `Magenta]
-  -> ('a, Format.formatter, unit, unit) format4
-  -> Format.formatter
-  -> 'a
+  [`Bold | `Cyan | `Magenta] -> ('a, unit) fmt -> Format.formatter -> 'a
 (** If config.colors is set to true, print in the specificed color *)
 
 val printf : string -> string -> 'a printf
@@ -62,9 +47,6 @@ val retn : string -> string -> (pf -> 'a -> unit) -> 'a -> 'a
 
 val flush : unit -> unit
 (** Flush the internal buffers. *)
-
-(** Format strings. *)
-type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
 
 val raisef : ?margin:int -> (string -> exn) -> ('a, unit -> _) fmt -> 'a
 (** Take a function from a string message to an exception, and a format

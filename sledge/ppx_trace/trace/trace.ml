@@ -5,45 +5,63 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Char = Base.Char
-module List = Base.List
-module Map = Base.Map
-module Option = Base.Option
-module String = Base.String
+module Char = struct
+  include Char
+
+  let is_lowercase = function 'a' .. 'z' -> true | _ -> false
+  let is_uppercase = function 'A' .. 'Z' -> true | _ -> false
+end
+
+module String = struct
+  include StringLabels
+
+  let is_empty str = length str = 0
+
+  let lsplit2 str ~on =
+    match index_opt str on with
+    | Some pos ->
+        Some
+          ( sub str ~pos:0 ~len:pos
+          , sub str ~pos:(pos + 1) ~len:(length str - pos - 1) )
+    | None -> None
+
+  let subo ?(pos = 0) ?len str =
+    let len = match len with Some i -> i | None -> length str - pos in
+    sub str ~pos ~len
+end
+
+module Map = Map.Make (String)
 
 (** Debug trace logging *)
 
-type 'a printf = ('a, Format.formatter, unit) format -> 'a
+type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
+type 'a printf = ('a, unit) fmt -> 'a
 type pf = {pf: 'a. 'a printf}
 
 let fs = Format.err_formatter
 let flush = Format.pp_print_newline fs
 
-type trace_mod_funs =
-  {trace_mod: bool option; trace_funs: bool Map.M(String).t}
-
-type trace_mods_funs = trace_mod_funs Map.M(String).t
+type trace_mod_funs = {trace_mod: bool option; trace_funs: bool Map.t}
+type trace_mods_funs = trace_mod_funs Map.t
 
 type config =
   {trace_all: bool; trace_mods_funs: trace_mods_funs; colors: bool}
 
-let none =
-  { trace_all= false
-  ; trace_mods_funs= Map.empty (module String)
-  ; colors= false }
-
+let none = {trace_all= false; trace_mods_funs= Map.empty; colors= false}
 let all = {none with trace_all= true}
-let config : config ref = ref none
+let config = ref none
 
 let parse s =
   try
     if String.equal s "*" then Ok all
     else
-      let default = Map.empty (module String) in
+      let default = Map.empty in
       let index_from s i =
-        Option.merge ~f:min
-          (String.index_from s i '+')
-          (String.index_from s i '-')
+        match
+          (String.index_from_opt s i '+', String.index_from_opt s i '-')
+        with
+        | None, o | o, None -> o
+        | Some m, Some n -> Some (min m n)
       in
       let rec split s rev_parts i =
         match index_from s (i + 1) with
@@ -54,7 +72,8 @@ let parse s =
       in
       let parts = split s [] 0 in
       let trace_mods_funs =
-        List.fold parts ~init:default ~f:(fun m part ->
+        List.fold_left
+          (fun m part ->
             let parse_part part =
               let sign, rest =
                 match part.[0] with
@@ -73,18 +92,18 @@ let parse s =
             match parse_part part with
             | mod_name, Some fun_name, enabled ->
                 let {trace_mod; trace_funs} =
-                  match Map.find m mod_name with
-                  | Some c -> c
-                  | None -> {trace_mod= None; trace_funs= default}
+                  try Map.find mod_name m
+                  with Not_found -> {trace_mod= None; trace_funs= default}
                 in
-                Map.set m ~key:mod_name
-                  ~data:
-                    { trace_mod
-                    ; trace_funs=
-                        Map.set trace_funs ~key:fun_name ~data:enabled }
+                Map.add mod_name
+                  { trace_mod
+                  ; trace_funs= Map.add fun_name enabled trace_funs }
+                  m
             | mod_name, None, enabled ->
-                Map.set m ~key:mod_name
-                  ~data:{trace_mod= Some enabled; trace_funs= default} )
+                Map.add mod_name
+                  {trace_mod= Some enabled; trace_funs= default}
+                  m )
+          default parts
       in
       Ok {none with trace_mods_funs}
   with Assert_failure _ as exn -> Error exn
@@ -110,7 +129,7 @@ let init ?(colors = false) ?(margin = 240) ?config:(c = none) () =
   Format.pp_set_margin fs margin ;
   Format.pp_set_max_indent fs (margin - 1) ;
   Format.pp_open_vbox fs 0 ;
-  Caml.at_exit flush ;
+  at_exit flush ;
   config := {c with colors}
 
 let unwrap s =
@@ -126,15 +145,14 @@ let unwrap s =
 
 let enabled mod_name fun_name =
   let {trace_all; trace_mods_funs; _} = !config in
-  match Map.find trace_mods_funs (unwrap mod_name) with
-  | Some {trace_mod; trace_funs} -> (
-    match Map.find trace_funs fun_name with
-    | Some fun_enabled -> fun_enabled
-    | None -> (
+  match Map.find (unwrap mod_name) trace_mods_funs with
+  | {trace_mod; trace_funs} -> (
+    try Map.find fun_name trace_funs
+    with Not_found -> (
       match trace_mod with
       | Some mod_enabled -> mod_enabled
       | None -> trace_all ) )
-  | None -> trace_all
+  | exception Not_found -> trace_all
 
 let kprintf mod_name fun_name k fmt =
   if enabled mod_name fun_name then Format.kfprintf k fs fmt
@@ -174,10 +192,8 @@ let retn mod_name fun_name k result =
   k {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
   result
 
-type ('a, 'b) fmt = ('a, Base.Formatter.t, unit, 'b) format4
-
 let raisef ?margin exn fmt =
-  let bt = Caml.Printexc.get_raw_backtrace () in
+  let bt = Printexc.get_raw_backtrace () in
   let fs = Format.str_formatter in
   ( match margin with
   | Some m ->
@@ -190,7 +206,7 @@ let raisef ?margin exn fmt =
       Format.pp_close_box fs () ;
       let msg = Format.flush_str_formatter () in
       let exn = exn msg in
-      Caml.Printexc.raise_with_backtrace exn bt )
+      Printexc.raise_with_backtrace exn bt )
     fs fmt
 
 let fail fmt =

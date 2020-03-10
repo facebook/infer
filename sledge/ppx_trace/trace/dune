@@ -5,5 +5,4 @@
 
 (library
  (name trace)
- (public_name ppx_trace.trace)
- (libraries base))
+ (public_name ppx_trace.trace))
