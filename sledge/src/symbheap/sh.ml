@@ -374,7 +374,9 @@ let freshen ~wrt q =
 let bind_exists q ~wrt =
   [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
   ;
-  let q' = freshen_xs q ~wrt:(Set.union q.us wrt) in
+  let q' =
+    if Set.is_empty wrt then q else freshen_xs q ~wrt:(Set.union q.us wrt)
+  in
   (q'.xs, {q' with us= Set.union q'.us q'.xs; xs= Var.Set.empty})
   |>
   [%Trace.retn fun {pf} (_, q') -> pf "%a" pp q']
