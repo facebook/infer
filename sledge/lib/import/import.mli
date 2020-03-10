@@ -69,23 +69,24 @@ val ( <$ ) : ('a -> unit) -> 'a -> 'a
 type 'a pp = Formatter.t -> 'a -> unit
 
 (** Format strings. *)
-type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
+type ('a, 'b) fmt = ('a, 'b) Trace.fmt
 
 (** Failures *)
 
 exception Unimplemented of string
 
-val raisef : ?margin:int -> (string -> exn) -> ('a, unit -> _) fmt -> 'a
-(** Take a function from a string message to an exception, and a format
-    string with the additional arguments it specifies, and then call the
-    function on the formatted string and raise the returned exception. *)
-
-val warn : ('a, unit -> unit) fmt -> 'a
-(** Issue a warning for a survivable problem. *)
+val fail : ('a, unit -> _) fmt -> 'a
+(** Emit a message at the current indentation level, and raise a [Failure]
+    exception indicating a fatal error. *)
 
 val todo : ('a, unit -> _) fmt -> 'a
 (** Raise an [Unimplemented] exception indicating that an input is valid but
     not handled by the current implementation. *)
+
+val warn : ('a, unit -> unit) fmt -> 'a
+(** Issue a warning for a survivable problem. *)
+
+(** Assertions *)
 
 val assertf : bool -> ('a, unit -> unit) fmt -> 'a
 (** Raise an [Failure] exception if the bool argument is false, indicating

@@ -9,7 +9,7 @@
     triples over a base domain *)
 
 module type State_domain_sig = sig
-  include Domain_sig.Dom
+  include Domain_intf.Dom
 
   val create_summary :
        locals:Reg.Set.t
@@ -19,4 +19,4 @@ module type State_domain_sig = sig
     -> summary * t
 end
 
-module Make (State_domain : State_domain_sig) : Domain_sig.Dom
+module Make (State_domain : State_domain_sig) : Domain_intf.Dom

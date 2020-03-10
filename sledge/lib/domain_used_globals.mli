@@ -7,7 +7,7 @@
 
 (** Used-globals abstract domain *)
 
-include Domain_sig.Dom with type summary = Reg.Set.t
+include Domain_intf.Dom with type summary = Reg.Set.t
 
 type r =
   | Per_function of Reg.Set.t Reg.Map.t

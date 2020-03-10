@@ -22,7 +22,6 @@ Jbuild_plugin.V1.send
  (deps lib_fuzzer_main.c Makefile)
  (action (run make ROOT=../../.. lib_fuzzer_main.bc)))
 
-
 (rule
  (targets model.ml)
  (deps cxxabi.bc lib_fuzzer_main.bc)
@@ -30,9 +29,9 @@ Jbuild_plugin.V1.send
 
 (library
  (name model)
- (public_name llair.model)
- %s
- (libraries %s))
+ (public_name sledge.model)
+ (libraries %s)
+ %s)
 |}
-     (flags `lib deps)
      (libraries deps)
+     (flags `lib deps)

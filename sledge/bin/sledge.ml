@@ -13,10 +13,10 @@ open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
 
-module Sh_executor = Control.Make (Domain.Relation.Make (Sh_domain))
-module Unit_executor = Control.Make (Domain.Unit)
-module Used_globals_executor = Control.Make (Domain.Used_globals)
-module Itv_executor = Control.Make (Domain.Itv)
+module Sh_executor = Control.Make (Domain_relation.Make (Domain_sh))
+module Unit_executor = Control.Make (Domain_unit)
+module Used_globals_executor = Control.Make (Domain_used_globals)
+module Itv_executor = Control.Make (Domain_itv)
 
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
@@ -70,7 +70,7 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.t))
     file
 
-let used_globals pgm preanalyze : Used_globals.r =
+let used_globals pgm preanalyze : Domain_used_globals.r =
   if preanalyze then
     let summary_table =
       Used_globals_executor.compute_summaries
@@ -122,7 +122,7 @@ let analyze =
     let globals = used_globals pgm preanalyze_globals in
     let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
-    Sh_domain.simplify_states := not no_simplify_states ;
+    Domain_sh.simplify_states := not no_simplify_states ;
     exec {bound; skip_throw; function_summaries; entry_points; globals} pgm
 
 let analyze_cmd =

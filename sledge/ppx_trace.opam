@@ -1,0 +1,18 @@
+opam-version: "2.0"
+maintainer: "Josh Berdine <jjb@fb.com>"
+authors: "Josh Berdine <jjb@fb.com>"
+homepage: "https://github.com/facebook/infer/tree/master/sledge/ppx_trace"
+bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue_template.md"
+dev-repo: "git://github.com/facebook/infer.git"
+license: "MIT"
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "ocaml"
+  "base" {>= "v0.12.0"}
+  "dune" {>= "1.11.3" build}
+  "ppxlib"
+]
+synopsis: "Conditionally compiled debug tracing"
+description: "Conditionally compiled debug tracing"

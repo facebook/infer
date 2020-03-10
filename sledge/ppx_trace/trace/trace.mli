@@ -11,10 +11,10 @@
 type trace_mod_funs =
   { trace_mod: bool option
         (** Enable/disable tracing of all functions in module *)
-  ; trace_funs: bool Map.M(String).t
+  ; trace_funs: bool Base.Map.M(Base.String).t
         (** Enable/disable tracing of individual functions *) }
 
-type trace_mods_funs = trace_mod_funs Map.M(String).t
+type trace_mods_funs = trace_mod_funs Base.Map.M(Base.String).t
 
 type config =
   { trace_all: bool  (** Enable all tracing *)
@@ -26,10 +26,10 @@ val none : config
 val all : config
 val parse : string -> (config, exn) result
 
-val init : ?colors:bool -> ?margin:int -> config:config -> unit -> unit
+val init : ?colors:bool -> ?margin:int -> ?config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)
 
-type 'a printf = ('a, Formatter.t, unit) format -> 'a
+type 'a printf = ('a, Format.formatter, unit) format -> 'a
 type pf = {pf: 'a. 'a printf}
 
 val pp_styled :
@@ -42,10 +42,10 @@ val pp_styled :
 val printf : string -> string -> 'a printf
 (** Like [Format.printf], if enabled, otherwise like [Format.iprintf]. *)
 
-val fprintf : string -> string -> Formatter.t -> 'a printf
+val fprintf : string -> string -> Format.formatter -> 'a printf
 (** Like [Format.fprintf], if enabled, otherwise like [Format.ifprintf]. *)
 
-val kprintf : string -> string -> (Formatter.t -> unit) -> 'a printf
+val kprintf : string -> string -> (Format.formatter -> unit) -> 'a printf
 (** Like [Format.kprintf], if enabled, otherwise like [Format.ifprintf]. *)
 
 val info : string -> string -> 'a printf
@@ -62,6 +62,14 @@ val retn : string -> string -> (pf -> 'a -> unit) -> 'a -> 'a
 
 val flush : unit -> unit
 (** Flush the internal buffers. *)
+
+(** Format strings. *)
+type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
+
+val raisef : ?margin:int -> (string -> exn) -> ('a, unit -> _) fmt -> 'a
+(** Take a function from a string message to an exception, and a format
+    string with the additional arguments it specifies, and then call the
+    function on the formatted string and raise the returned exception. *)
 
 val fail : ('a, unit -> _) fmt -> 'a
 (** Emit a message at the current indentation level, and raise a [Failure]

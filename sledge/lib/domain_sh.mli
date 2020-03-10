@@ -7,7 +7,7 @@
 
 (** Abstract domain *)
 
-include Domain_sig.Dom
+include Domain_intf.Dom
 
 (* formals should include all the parameters of the summary. That is both
    formals and globals. *)

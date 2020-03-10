@@ -136,8 +136,8 @@ let fresh_var name vs zs ~wrt =
   let v = Term.var v in
   (v, vs, zs, wrt)
 
-let excise k = [%Trace.infok k]
-let trace k = [%Trace.infok k]
+let excise (k : Trace.pf -> _) = [%Trace.infok k]
+let trace (k : Trace.pf -> _) = [%Trace.infok k]
 
 let excise_exists goal =
   trace (fun {pf} -> pf "@[<2>excise_exists@ %a@]" pp goal) ;

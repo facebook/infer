@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-let deps = ["import"; "trace"; "llair_"; "symbheap"; "config"; "domain"]
+let deps = ["import"; "libsledge"; "model"]
 
 ;;
 Jbuild_plugin.V1.send
@@ -15,8 +15,8 @@ Jbuild_plugin.V1.send
 (executable
  (public_name sledge)
  (package sledge)
- %s
- (libraries dune-build-info shexp.process %s))
+ (libraries dune-build-info llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo llvm.linker shexp.process yojson %s)
+ %s)
 |}
+     (libraries ("trace" :: deps))
      (flags `exe deps)
-     (libraries deps)

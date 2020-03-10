@@ -1,8 +1,13 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
 (ignored_subdirs (llvm test))
 
 (rule
  (targets sledge-help.txt)
- (deps src/sledge.ml src/sledge_buck.ml tools/gen_help.sh src/sledge.exe)
+ (deps bin/sledge.ml bin/sledge_buck.ml tools/gen_help.sh bin/sledge.exe)
  (action
   (with-stdout-to sledge-help.txt
    (run tools/gen_help.sh)))

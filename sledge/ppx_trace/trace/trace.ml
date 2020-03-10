@@ -5,9 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Char = Base.Char
+module List = Base.List
+module Map = Base.Map
+module Option = Base.Option
+module String = Base.String
+
 (** Debug trace logging *)
 
-type 'a printf = ('a, Formatter.t, unit) format -> 'a
+type 'a printf = ('a, Format.formatter, unit) format -> 'a
 type pf = {pf: 'a. 'a printf}
 
 let fs = Format.err_formatter
@@ -98,7 +104,7 @@ let pp_styled style fmt fs =
         Format.pp_close_box fs () )
       fs fmt )
 
-let init ?(colors = false) ?(margin = 240) ~config:c () =
+let init ?(colors = false) ?(margin = 240) ?config:(c = none) () =
   Format.set_margin margin ;
   Format.set_max_indent (margin - 1) ;
   Format.pp_set_margin fs margin ;
@@ -119,7 +125,7 @@ let unwrap s =
   | None -> s
 
 let enabled mod_name fun_name =
-  let {trace_all; trace_mods_funs} = !config in
+  let {trace_all; trace_mods_funs; _} = !config in
   match Map.find trace_mods_funs (unwrap mod_name) with
   | Some {trace_mod; trace_funs} -> (
     match Map.find trace_funs fun_name with
@@ -168,6 +174,25 @@ let retn mod_name fun_name k result =
   k {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
   result
 
+type ('a, 'b) fmt = ('a, Base.Formatter.t, unit, 'b) format4
+
+let raisef ?margin exn fmt =
+  let bt = Caml.Printexc.get_raw_backtrace () in
+  let fs = Format.str_formatter in
+  ( match margin with
+  | Some m ->
+      Format.pp_set_margin fs m ;
+      Format.pp_set_max_indent fs (m - 1)
+  | None -> () ) ;
+  Format.pp_open_box fs 2 ;
+  Format.kfprintf
+    (fun fs () ->
+      Format.pp_close_box fs () ;
+      let msg = Format.flush_str_formatter () in
+      let exn = exn msg in
+      Caml.Printexc.raise_with_backtrace exn bt )
+    fs fmt
+
 let fail fmt =
   let margin = Format.pp_get_margin fs () in
   raisef ~margin
@@ -175,6 +200,3 @@ let fail fmt =
       Format.fprintf fs "@\n@[<2>| %s@]@." msg ;
       Failure msg )
     fmt
-
-let%test_module _ =
-  (module struct let () = init ~margin:70 ~config:!config () end)

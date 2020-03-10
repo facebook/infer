@@ -9,7 +9,7 @@
     triples over a base state domain *)
 
 module type State_domain_sig = sig
-  include Domain_sig.Dom
+  include Domain_intf.Dom
 
   val create_summary :
        locals:Reg.Set.t

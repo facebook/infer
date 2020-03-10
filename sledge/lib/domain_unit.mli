@@ -7,4 +7,4 @@
 
 (** "Unit" abstract domain *)
 
-include Domain_sig.Dom
+include Domain_intf.Dom

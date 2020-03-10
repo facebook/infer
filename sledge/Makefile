@@ -6,9 +6,9 @@
 .PHONY: default
 default: exes
 
-EXES = src/sledge
+EXES = bin/sledge
 INSTALLS = sledge
-FMTS = @_build/dbg/src/fmt
+FMTS = @_build/dbg/lib/fmt @_build/dbg/bin/fmt
 
 DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS)) _build/dbg/sledge-help.txt
 
@@ -23,7 +23,7 @@ dune_install_dbg_opt = $(subst dbg,dbg-opt,$(dune_install_dbg))
 dune_build_opt = $(subst dbg,opt,$(dune_build_dbg))
 dune_install_opt = $(subst dbg,opt,$(dune_install_dbg))
 
-DUNEINS = $(shell find src model -name dune.in)
+DUNEINS = $(shell find lib bin model -name dune.in)
 DUNES = $(patsubst %.in,%,$(DUNEINS))
 
 .PHONY: dunes

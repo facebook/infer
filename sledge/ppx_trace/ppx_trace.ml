@@ -45,8 +45,7 @@ module Ast_mapper = Selected_ast.Ast.Ast_mapper
 let debug = ref false
 
 ;;
-Driver.add_arg "--debug" (Caml.Arg.Set debug)
-  ~doc:"Enable debug tracing output"
+Driver.add_arg "--debug" (Arg.Set debug) ~doc:"Enable debug tracing output"
 
 let rec get_fun_name pat =
   match pat.ppat_desc with

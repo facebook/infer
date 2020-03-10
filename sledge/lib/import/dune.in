@@ -6,17 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-let deps = ["import"]
+let deps = []
 
 ;;
 Jbuild_plugin.V1.send
 @@ Format.sprintf
      {|
 (library
- (name trace)
- (public_name llair.trace)
- %s
- (libraries %s))
+ (name import)
+ (public_name sledge.import)
+ (libraries core core_kernel.fheap zarith %s)
+ %s)
 |}
+     (libraries ("trace" :: deps))
      (flags `lib deps)
-     (libraries deps)

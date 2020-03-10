@@ -14,9 +14,9 @@ type exec_opts =
   ; skip_throw: bool
   ; function_summaries: bool
   ; entry_points: string list
-  ; globals: Used_globals.r }
+  ; globals: Domain_used_globals.r }
 
-module Make (Dom : Domain_sig.Dom) = struct
+module Make (Dom : Domain_intf.Dom) = struct
   module Stack : sig
     type t
     type as_inlined_location = t [@@deriving compare, sexp_of]
@@ -313,7 +313,9 @@ module Make (Dom : Domain_sig.Dom) = struct
     let summarize post_state =
       if not opts.function_summaries then post_state
       else
-        let globals = Used_globals.by_function opts.globals name.reg in
+        let globals =
+          Domain_used_globals.by_function opts.globals name.reg
+        in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
             ~formals:(Set.union (Reg.Set.of_list formals) globals)
@@ -435,7 +437,7 @@ module Make (Dom : Domain_sig.Dom) = struct
                     exec_skip_func stk state block areturn return
                 | None ->
                     exec_call opts stk state block {call with callee}
-                      (Used_globals.by_function opts.globals
+                      (Domain_used_globals.by_function opts.globals
                          callee.name.reg) )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
@@ -470,7 +472,8 @@ module Make (Dom : Domain_sig.Dom) = struct
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
-                   ~globals:(Used_globals.by_function opts.globals reg)
+                   ~globals:
+                     (Domain_used_globals.by_function opts.globals reg)
                    ~actuals:[] ~areturn:None ~formals:[] ~freturn ~locals
                    (Dom.init pgm.globals)))
              entry)

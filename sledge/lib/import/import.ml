@@ -48,9 +48,15 @@ let ( <$ ) f x = f x ; x
 (** Pretty-printing *)
 
 type 'a pp = Formatter.t -> 'a -> unit
-type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
+type ('a, 'b) fmt = ('a, 'b) Trace.fmt
 
 (** Failures *)
+
+let fail = Trace.fail
+
+exception Unimplemented of string
+
+let todo fmt = Trace.raisef (fun msg -> Unimplemented msg) fmt
 
 let warn fmt =
   let fs = Format.std_formatter in
@@ -62,27 +68,7 @@ let warn fmt =
       Format.pp_force_newline fs () )
     fs fmt
 
-let raisef ?margin exn fmt =
-  let bt = Caml.Printexc.get_raw_backtrace () in
-  let fs = Format.str_formatter in
-  ( match margin with
-  | Some m ->
-      Format.pp_set_margin fs m ;
-      Format.pp_set_max_indent fs (m - 1)
-  | None -> () ) ;
-  Format.pp_open_box fs 2 ;
-  Format.kfprintf
-    (fun fs () ->
-      Format.pp_close_box fs () ;
-      let msg = Format.flush_str_formatter () in
-      let exn = exn msg in
-      Caml.Printexc.raise_with_backtrace exn bt )
-    fs fmt
-
-exception Unimplemented of string
-
-let todo fmt = raisef (fun msg -> Unimplemented msg) fmt
-let fail fmt = raisef (fun msg -> Failure msg) fmt
+(** Assertions *)
 
 let assertf cnd fmt =
   if not cnd then fail fmt

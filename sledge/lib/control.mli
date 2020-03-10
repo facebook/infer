@@ -12,9 +12,9 @@ type exec_opts =
   ; skip_throw: bool  (** Treat throw as unreachable *)
   ; function_summaries: bool  (** Use function summarisation *)
   ; entry_points: string list
-  ; globals: Used_globals.r }
+  ; globals: Domain_used_globals.r }
 
-module Make (Dom : Domain_sig.Dom) : sig
+module Make (Dom : Domain_intf.Dom) : sig
   val exec_pgm : exec_opts -> Llair.t -> unit
   val compute_summaries : exec_opts -> Llair.t -> Dom.summary list Reg.Map.t
 end
