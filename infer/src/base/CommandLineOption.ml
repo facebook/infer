@@ -447,13 +447,14 @@ let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(depreca
         [dashdash (if YBU.to_bool json then long else nolong)] )
       ~mk_spec
   in
-  ignore
-    (mk ~long:nolong ?short:noshort ~deprecated:deprecated_no ~default:(not default) ?parse_mode
-       ?in_help ~meta nodoc ~default_to_string
-       ~mk_setter:(fun _ _ -> var := f false)
-       ~decode_json:(fun ~inferconfig_dir:_ json ->
-         [dashdash (if YBU.to_bool json then nolong else long)] )
-       ~mk_spec) ;
+  if not (String.is_empty long) then
+    ignore
+      (mk ~long:nolong ?short:noshort ~deprecated:deprecated_no ~default:(not default) ?parse_mode
+         ?in_help ~meta nodoc ~default_to_string
+         ~mk_setter:(fun _ _ -> var := f false)
+         ~decode_json:(fun ~inferconfig_dir:_ json ->
+           [dashdash (if YBU.to_bool json then nolong else long)] )
+         ~mk_spec) ;
   var
 
 
