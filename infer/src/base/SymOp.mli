@@ -72,5 +72,3 @@ val try_finally : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
     so [finally ()] should return reasonably quickly. *)
 
 val pp_failure_kind : Format.formatter -> failure_kind -> unit
-
-val failure_kind_to_string : failure_kind -> string

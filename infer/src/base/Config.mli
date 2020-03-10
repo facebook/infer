@@ -79,13 +79,9 @@ val default_in_zip_results_dir : string
 
 val dotty_frontend_output : string
 
-val driver_stats_dir_name : string
-
 val duplicates_filename : string
 
 val etc_dir : string
-
-val events_dir_name : string
 
 val fail_on_issue_exit_code : int
 
@@ -133,8 +129,6 @@ val patterns_never_returning_null : string * Yojson.Basic.t
 val patterns_skip_implementation : string * Yojson.Basic.t
 
 val patterns_skip_translation : string * Yojson.Basic.t
-
-val perf_stats_prefix : string
 
 val pp_version : Format.formatter -> unit -> unit
 
@@ -247,8 +241,6 @@ val buck_cache_mode : bool
 val buck_merge_all_deps : bool
 
 val buck_mode : BuckMode.t option
-
-val buck_out : string option
 
 val buck_out_gen : string
 
@@ -444,11 +436,7 @@ val linters_validate_syntax_only : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
-val log_events : bool
-
 val log_file : string
-
-val log_skipped : bool
 
 val max_nesting : int option
 
@@ -496,8 +484,6 @@ val precondition_stats : bool
 val print_active_checkers : bool
 
 val print_builtins : bool
-
-val print_log_identifier : bool
 
 val print_logs : bool
 

@@ -241,8 +241,6 @@ val get_locals : t -> ProcAttributes.var_data list
 
 val get_nodes : t -> Node.t list
 
-val get_nodes_num : t -> int
-
 val get_proc_name : t -> Procname.t
 
 val get_ret_type : t -> Typ.t

@@ -22,17 +22,11 @@ module Stats = struct
 
   let add_visited stats node_id = stats.nodes_visited <- IntSet.add node_id stats.nodes_visited
 
-  let nb_visited {nodes_visited} = IntSet.cardinal nodes_visited
-
   let update ?(add_symops = 0) ?failure_kind stats =
     let symops = stats.symops + add_symops in
     let failure_kind = match failure_kind with None -> stats.failure_kind | some -> some in
     {stats with symops; failure_kind}
 
-
-  let failure_kind {failure_kind} = failure_kind
-
-  let symops {symops} = symops
 
   let pp_failure_kind_opt fmt failure_kind_opt =
     match failure_kind_opt with

@@ -286,11 +286,6 @@ let dump_duplicate_procs source_file procs =
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
 
-let create_perf_stats_report source_file =
-  PerfStats.register_report PerfStats.TimeAndMemory (PerfStats.Backend source_file) ;
-  PerfStats.get_reporter (PerfStats.Backend source_file) ()
-
-
 let register_callee ?caller_summary callee_pname =
   Option.iter
     ~f:(fun (summary : Summary.t) ->
@@ -351,9 +346,7 @@ let analyze_callee ?caller_summary callee =
                 Some callee_summary
             | None ->
                 Summary.OnDisk.get callee_pname
-          else (
-            EventLogger.log_skipped_pname (F.asprintf "%a" Procname.pp callee_pname) ;
-            Summary.OnDisk.get callee_pname )
+          else Summary.OnDisk.get callee_pname
         in
         LocalCache.add callee_pname summ_opt ;
         summ_opt
@@ -381,8 +374,7 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   Option.iter source_file_opt ~f:(fun source_file ->
       if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ;
-      create_perf_stats_report source_file ) ;
+      Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ) ;
   unset_exe_env () ;
   Language.curr_language := saved_language
 

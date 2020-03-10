@@ -785,11 +785,7 @@ and eval_AndWithWitnesses an lcxt f1 f2 pred_name_ args =
   match eval_AndWithW an lcxt f1 f2 with
   | Some (witness1, witness2) -> (
     try if eval_Atomic_with_witness pred_name_ args witness1 witness2 lcxt then Some an else None
-    with CFrontend_errors.IncorrectAssumption e ->
-      let trans_unit_ctx = lcxt.CLintersContext.translation_unit_context in
-      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-        e.source_range e.ast_node ;
-      None )
+    with CFrontend_errors.IncorrectAssumption _ -> None )
   | None ->
       None
 
@@ -966,11 +962,7 @@ and eval_formula ?keep_witness f an lcxt : Ctl_parser_types.ast_node option =
         None
     | Atomic (name, params) -> (
       try if eval_Atomic name params an lcxt then Some an else None
-      with CFrontend_errors.IncorrectAssumption e ->
-        let trans_unit_ctx = lcxt.CLintersContext.translation_unit_context in
-        ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-          e.source_range e.ast_node ;
-        None )
+      with CFrontend_errors.IncorrectAssumption _ -> None )
     | InNode (node_type_list, f1) ->
         in_node node_type_list f1 an lcxt
     | Not f1 -> (

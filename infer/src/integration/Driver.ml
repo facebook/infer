@@ -72,11 +72,6 @@ let clean_compilation_command mode =
       None
 
 
-let register_perf_stats_report stats_type =
-  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
-  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) stats_type
-
-
 (** Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
     get rid of non-deterministic outputs.*)
 let clean_results_dir () =
@@ -194,7 +189,6 @@ let capture_with_compilation_database db_files =
 
 
 let buck_capture build_cmd =
-  register_perf_stats_report PerfStats.TotalFrontend ;
   let prog_build_cmd_opt =
     let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
     match Config.buck_mode with
@@ -227,12 +221,10 @@ let buck_capture build_cmd =
       L.progress "Capturing in buck mode...@." ;
       if Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then (
         RunState.set_merge_capture true ; RunState.store () ) ;
-      Buck.clang_flavor_capture ~prog ~buck_build_cmd ) ;
-  PerfStats.get_reporter PerfStats.TotalFrontend ()
+      Buck.clang_flavor_capture ~prog ~buck_build_cmd )
 
 
 let python_capture build_system build_cmd =
-  register_perf_stats_report PerfStats.TotalFrontend ;
   L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
   let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
   let args =
@@ -265,8 +257,7 @@ let python_capture build_system build_cmd =
           Config.print_usage_exit ()
       | status ->
           command_error_handling ~always_die:true ~prog:infer_py ~args status )
-    () ;
-  PerfStats.get_reporter PerfStats.TotalFrontend ()
+    ()
 
 
 let capture ~changed_files = function
@@ -323,15 +314,8 @@ let capture ~changed_files mode =
 
 
 let execute_analyze ~changed_files =
-  register_perf_stats_report PerfStats.TotalBackend ;
-  InferAnalyze.main ~changed_files ;
-  PerfStats.get_reporter PerfStats.TotalBackend ()
-
-
-(* shadowed for tracing *)
-let execute_analyze ~changed_files =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
-  execute_analyze ~changed_files ;
+  InferAnalyze.main ~changed_files ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
@@ -399,7 +383,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
         (false, false)
-    | (Capture | Compile | Events | Explore | Report | ReportDiff), _ ->
+    | (Capture | Compile | Explore | Report | ReportDiff), _ ->
         (false, false)
     | (Analyze | Run), _ ->
         (true, true)
@@ -582,9 +566,7 @@ let mode_from_command_line =
 
 
 let run_prologue mode =
-  if CLOpt.is_originator then (
-    L.environment_info "%a@\n" Config.pp_version () ;
-    PerfStats.register_report_at_exit PerfStats.Driver ) ;
+  if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
   if CLOpt.is_originator then (
     if Config.dump_duplicate_symbols then reset_duplicates_file () ;
@@ -599,7 +581,6 @@ let run_prologue mode =
 
 let run_epilogue () =
   if CLOpt.is_originator then (
-    if Config.developer_mode then StatsAggregator.generate_files () ;
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;

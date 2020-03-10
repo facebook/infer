@@ -13,7 +13,6 @@ module L = Logging
 
 let init_global_state source_file =
   Language.curr_language := Language.Java ;
-  PerfStats.register_report_at_exit (PerfStats.JavaFrontend source_file) ;
   DB.Results_dir.init source_file ;
   Ident.NameGenerator.reset () ;
   JContext.reset_exn_node_table ()

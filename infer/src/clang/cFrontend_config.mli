@@ -11,8 +11,6 @@ open! IStd
 
 type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
 
-val string_of_clang_lang : clang_lang -> string
-
 val equal_clang_lang : clang_lang -> clang_lang -> bool
 
 type translation_unit_context =

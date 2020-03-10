@@ -167,10 +167,6 @@ OPTIONS
            successful capture. Only valid for --buck-clang. (Conversely:
            --no-buck-merge-all-deps)           See also infer-capture(1).
 
-       --buck-out dir
-           Specify the root directory of buck-out. Only valid for
-           --buck-java.           See also infer-capture(1).
-
        --buck-targets-blacklist +regex
            Skip capture of buck targets matched by the specified regular
            expression. Only valid for --buck-compilation-database.       
@@ -291,8 +287,7 @@ OPTIONS
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
            --write-dotty, --write-html) (Conversely: --no-debug | -G)       
     See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-report(1), infer-reportdiff(1), and
-           infer-run(1).
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -301,26 +296,22 @@ OPTIONS
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-report(1), infer-reportdiff(1), and
-           infer-run(1).
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-report(1), infer-reportdiff(1), and
-           infer-run(1).
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-report(1), infer-reportdiff(1), and
-           infer-run(1).
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-report(1), infer-reportdiff(1), and
-           infer-run(1).
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
@@ -603,21 +594,21 @@ OPTIONS
 
        --help
            Show this manual           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-explore(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-explore(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
            to pager otherwise.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-explore(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-explore(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-events(1), infer-explore(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-explore(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --no-hoisting-report-only-expensive
            Deactivates: [Hoisting] Report loop-invariant calls only when the
@@ -764,16 +755,6 @@ OPTIONS
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)           See also infer-capture(1).
 
-       --log-events
-           Activates: Turn on the feature that logs events in a
-           machine-readable format (Conversely: --no-log-events)       
-    See also infer-run(1).
-
-       --log-skipped
-           Activates: Turn on the feature that logs skipped functions (one
-           per file) in a machine-readable format (Conversely:
-           --no-log-skipped)           See also infer-run(1).
-
        --loop-hoisting
            Activates: checker for loop-hoisting (Conversely:
            --no-loop-hoisting)           See also infer-analyze(1).
@@ -813,11 +794,6 @@ OPTIONS
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis
            (Conversely: --no-print-active-checkers)           See also infer-analyze(1).
-
-       --print-log-identifier
-           Activates: Print the unique identifier that is common to all
-           logged events (Conversely: --no-print-log-identifier)       
-    See also infer-run(1).
 
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:
@@ -1194,7 +1170,7 @@ FILES
 
 
 SEE ALSO
-       infer-analyze(1), infer-capture(1), infer-compile(1), infer-events(1),
+       infer-analyze(1), infer-capture(1), infer-compile(1),
        infer-explore(1), infer-report(1), infer-reportdiff(1), infer-run(1)
 
 

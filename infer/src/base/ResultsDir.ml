@@ -66,7 +66,6 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  EventLogger.prepare () ;
   if Sys.is_file ResultsDatabase.database_fullpath <> `Yes then ResultsDatabase.create_db () ;
   ResultsDatabase.new_database_connection ()
 
@@ -83,7 +82,6 @@ let create_results_dir () =
              L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir
        ) ;
   Unix.mkdir_p Config.results_dir ;
-  Unix.mkdir_p (Config.results_dir ^/ Config.events_dir_name) ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
   prepare_logging_and_db () ;
   ()

@@ -8,23 +8,6 @@
 
 open! IStd
 
-(** kind of result of a procedure call *)
-type call_result =
-  | CR_success  (** successful call *)
-  | CR_not_met  (** precondition not met *)
-  | CR_not_found  (** the callee has no specs *)
-  | CR_skip  (** the callee was skipped *)
-
-val log_call_trace :
-     caller_name:Procname.t
-  -> callee_name:Procname.t
-  -> ?callee_attributes:ProcAttributes.t
-  -> ?reason:string
-  -> ?dynamic_dispatch:EventLogger.dynamic_dispatch
-  -> Location.t
-  -> call_result
-  -> unit
-
 (** Interprocedural footprint analysis *)
 
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
@@ -53,8 +36,7 @@ val lookup_custom_errors : 'a Prop.t -> string option
 (** search in prop contains an error state *)
 
 val exe_function_call :
-     ?dynamic_dispatch:EventLogger.dynamic_dispatch
-  -> Exe_env.t
+     Exe_env.t
   -> Summary.t
   -> Tenv.t
   -> Ident.t

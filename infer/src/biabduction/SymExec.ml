@@ -683,8 +683,7 @@ let resolve_args prop args =
 type resolve_and_analyze_result =
   { resolved_pname: Procname.t
   ; resolved_procdesc_opt: Procdesc.t option
-  ; resolved_summary_opt: Summary.t option
-  ; dynamic_dispatch_status: EventLogger.dynamic_dispatch option }
+  ; resolved_summary_opt: Summary.t option }
 
 (** Resolve the procedure name and run the analysis of the resolved procedure if not already
     analyzed *)
@@ -721,12 +720,8 @@ let resolve_and_analyze tenv ~caller_summary ?(has_clang_model = false) prop arg
       ~caller_pdesc:(Summary.get_proc_desc caller_summary)
       tenv prop args callee_proc_name call_flags
   in
-  let dynamic_dispatch_status =
-    if Procname.equal callee_proc_name resolved_pname then None
-    else Some EventLogger.Dynamic_dispatch_successful
-  in
   let resolved_procdesc_opt, resolved_summary_opt = analyze_ondemand resolved_pname in
-  {resolved_pname; resolved_procdesc_opt; resolved_summary_opt; dynamic_dispatch_status}
+  {resolved_pname; resolved_procdesc_opt; resolved_summary_opt}
 
 
 (** recognize calls to the constructor java.net.URL and splits the argument string to be only the
@@ -1101,8 +1096,7 @@ let resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual
   in
   { resolved_pname
   ; resolved_procdesc_opt= Ondemand.get_proc_desc resolved_pname
-  ; resolved_summary_opt
-  ; dynamic_dispatch_status= None }
+  ; resolved_summary_opt }
 
 
 let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee_pname call_flags =
@@ -1132,20 +1126,12 @@ let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee
             false
       in
       if clang_model_specialized_failure then
-        let result =
-          resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params
-            callee_pname call_flags
-        in
-        { result with
-          dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_model_specialization_failure }
-      else resolve_and_analyze_result
-    with SpecializeProcdesc.UnmatchedParameters ->
-      let result =
         resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params
           callee_pname call_flags
-      in
-      { result with
-        dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_parameters_arguments_mismatch }
+      else resolve_and_analyze_result
+    with SpecializeProcdesc.UnmatchedParameters ->
+      resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params
+        callee_pname call_flags
   else
     resolve_and_analyze_no_dynamic_dispatch current_summary tenv prop_r n_actual_params callee_pname
       call_flags
@@ -1216,14 +1202,12 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
     | _ ->
         instr_
   in
-  let skip_call ?(is_objc_instance_method = false) ?(callee_attributes = None) ~reason prop path
-      callee_pname ret_annots loc ret_id_typ ret_typ actual_args =
+  let skip_call ?(is_objc_instance_method = false) ~reason prop path callee_pname ret_annots loc
+      ret_id_typ ret_typ actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_issue_deprecated_using_state Exceptions.Info current_pname exn ;
       L.d_printfln "Skipping function '%a': %s" Procname.pp callee_pname reason ;
-      Tabulation.log_call_trace ~caller_name:current_pname ~callee_name:callee_pname
-        ?callee_attributes ~reason loc Tabulation.CR_skip ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
         Builtin.
           { summary= current_summary
@@ -1381,7 +1365,6 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
               let resolved_pname = resolve_and_analyze_result.resolved_pname in
               let resolved_pdesc_opt = resolve_and_analyze_result.resolved_procdesc_opt in
               let resolved_summary_opt = resolve_and_analyze_result.resolved_summary_opt in
-              let dynamic_dispatch_status = resolve_and_analyze_result.dynamic_dispatch_status in
               Logging.d_printfln "Original callee %s" (Procname.to_unique_id callee_pname) ;
               Logging.d_printfln "Resolved callee %s" (Procname.to_unique_id resolved_pname) ;
               let sentinel_result =
@@ -1448,14 +1431,13 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
                               ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
                                 ClangMethodKind.OBJC_INSTANCE
                             in
-                            skip_call ~is_objc_instance_method ~callee_attributes:(Some attrs)
-                              ~reason prop path resolved_pname ret_annots loc ret_id_typ ret_type
-                              n_actual_params )
+                            skip_call ~is_objc_instance_method ~reason prop path resolved_pname
+                              ret_annots loc ret_id_typ ret_type n_actual_params )
                     | None ->
                         skip_call ~reason prop path resolved_pname ret_annots loc ret_id_typ
                           (snd ret_id_typ) n_actual_params )
                 | None ->
-                    proc_call ?dynamic_dispatch:dynamic_dispatch_status exe_env
+                    proc_call exe_env
                       (Option.value_exn resolved_summary_opt)
                       (call_args prop resolved_pname n_actual_params ret_id_typ loc)
               in
@@ -1851,7 +1833,7 @@ and sym_exec_free_model exe_env ret_id_typ args tenv summary loc prop path : Bui
 
 
 (** Perform symbolic execution for a function call *)
-and proc_call ?dynamic_dispatch exe_env callee_summary
+and proc_call exe_env callee_summary
     {Builtin.summary; tenv; prop_= pre; path; ret_id_typ; args= actual_pars; loc} =
   let caller_pname = Summary.get_proc_name summary in
   let callee_attrs = Summary.get_attributes callee_summary in
@@ -1899,11 +1881,11 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
   | Language.Clang, ClangMethodKind.OBJC_INSTANCE ->
       handle_objc_instance_method_call actual_pars actual_params pre tenv (fst ret_id_typ) pdesc
         callee_pname loc path
-        (Tabulation.exe_function_call ?dynamic_dispatch exe_env callee_summary)
+        (Tabulation.exe_function_call exe_env callee_summary)
   | _ ->
       (* non-objective-c method call. Standard tabulation *)
-      Tabulation.exe_function_call ?dynamic_dispatch exe_env callee_summary tenv (fst ret_id_typ)
-        pdesc callee_pname loc actual_params pre path
+      Tabulation.exe_function_call exe_env callee_summary tenv (fst ret_id_typ) pdesc callee_pname
+        loc actual_params pre path
 
 
 (** perform symbolic execution for a single prop, and check for junk *)

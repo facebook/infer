@@ -160,11 +160,7 @@ let mutable_local_vars_advice context an =
       | _ ->
           None
     else None
-  with CFrontend_errors.IncorrectAssumption e ->
-    let trans_unit_ctx = context.CLintersContext.translation_unit_context in
-    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position e.source_range
-      e.ast_node ;
-    None
+  with CFrontend_errors.IncorrectAssumption _ -> None
 
 
 (* Should only be called with a VarDecl *)

@@ -29,7 +29,7 @@ let incorrect_assumption position source_range ?ast_node fmt =
   F.kasprintf (fun msg -> raise (IncorrectAssumption {msg; position; source_range; ast_node})) fmt
 
 
-let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translation_unit_context) =
+let protect ~f ~recover ~pp_context =
   let log_and_recover ~print fmt =
     recover () ;
     (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
@@ -39,13 +39,9 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translati
      catching the exception) unless `--keep-going` was passed. Print errors we should fix
      (t21762295) to the console. *)
   | Unimplemented e ->
-      ClangLogging.log_caught_exception trans_unit_ctx "Unimplemented" e.position e.source_range
-        e.ast_node ;
       log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" e.msg
   | IncorrectAssumption e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
-      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-        e.source_range e.ast_node ;
       log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
   | exn ->
       let trace = Backtrace.get () in

@@ -149,11 +149,7 @@ let default_in_zip_results_dir = "infer"
 (** Dotty output filename **)
 let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
-let driver_stats_dir_name = "driver_stats"
-
 let duplicates_filename = "duplicates.txt"
-
-let events_dir_name = "events"
 
 let trace_events_file = "perf_events.json"
 
@@ -220,8 +216,6 @@ let max_widens = 10000
 let meet_level = 1
 
 let nsnotification_center_checker_backend = false
-
-let perf_stats_prefix = "perf_stats"
 
 let proc_stats_filename = "proc_stats.json"
 
@@ -557,7 +551,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Events | Explore | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Explore | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -812,10 +806,9 @@ and buck_mode =
   buck_mode
 
 
-and buck_out =
-  CLOpt.mk_path_opt ~long:"buck-out"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~meta:"dir" "Specify the root directory of buck-out. Only valid for $(b,--buck-java)."
+and _buck_out =
+  CLOpt.mk_path_opt ~deprecated:["-buck-out"] ~long:"" ~meta:"dir"
+    "[DOES NOTHING] Specify the root directory of buck-out. Only valid for $(b,--buck-java)."
 
 
 and buck_targets_blacklist =
@@ -1512,10 +1505,9 @@ and liveness_dangerous_classes =
      by the program."
 
 
-and log_events =
-  CLOpt.mk_bool ~long:"log-events"
-    ~in_help:InferCommand.[(Run, manual_generic)]
-    "Turn on the feature that logs events in a machine-readable format"
+and _log_events =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-log-events"] ~deprecated_no:["-no-log-events"]
+    "[DOES NOTHING] Turn on the feature that logs events in a machine-readable format"
 
 
 and log_file =
@@ -1523,10 +1515,10 @@ and log_file =
     ~default:"logs" "Specify the file to use for logging"
 
 
-and log_skipped =
-  CLOpt.mk_bool ~long:"log-skipped"
-    ~in_help:InferCommand.[(Run, manual_generic)]
-    "Turn on the feature that logs skipped functions (one per file) in a machine-readable format"
+and _log_skipped =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-log-skipped"] ~deprecated_no:["-no-log-skipped"]
+    "[DOES NOTHING] Turn on the feature that logs skipped functions (one per file) in a \
+     machine-readable format"
 
 
 and perf_profiler_data_file =
@@ -1754,10 +1746,10 @@ and print_builtins =
     "Print the builtin functions and exit"
 
 
-and print_log_identifier =
-  CLOpt.mk_bool ~long:"print-log-identifier"
-    ~in_help:InferCommand.[(Run, manual_generic)]
-    "Print the unique identifier that is common to all logged events"
+and _print_log_identifier =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-print-log-identifier"]
+    ~deprecated_no:["-no-print-log-identifier"]
+    "[DOES NOTHING] Print the unique identifier that is common to all logged events"
 
 
 and print_using_diff =
@@ -2663,8 +2655,6 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB (DepsUpToDepth depth))
 
 
-and buck_out = !buck_out
-
 and buck_targets_blacklist = !buck_targets_blacklist
 
 and call_graph_schedule = !call_graph_schedule
@@ -2846,11 +2836,7 @@ and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
 
-and log_events = !log_events
-
 and log_file = !log_file
-
-and log_skipped = !log_skipped
 
 and perf_profiler_data_file = !perf_profiler_data_file
 
@@ -2913,8 +2899,6 @@ and precondition_stats = !precondition_stats
 and print_active_checkers = !print_active_checkers
 
 and print_builtins = !print_builtins
-
-and print_log_identifier = !print_log_identifier
 
 and print_logs = !print_logs
 

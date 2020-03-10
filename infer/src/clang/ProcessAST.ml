@@ -24,7 +24,7 @@ let process_ast trans_unit_ctx ast_decl =
     if Config.test_determinator then export_tests_to_run source_file ast_decl
   in
   let call_f () =
-    CFrontend_errors.protect trans_unit_ctx
+    CFrontend_errors.protect
       ~recover:(fun () -> ())
       ~pp_context:(fun f () -> F.fprintf f "Error when processing %a" SourceFile.pp source_file)
       ~f

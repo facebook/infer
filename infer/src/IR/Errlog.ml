@@ -223,8 +223,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-    ~linters_def_file ~doc_url ~access ~extras exn =
+let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access ~extras
+    exn =
   let error = Exceptions.recognize_exception exn in
   let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
@@ -249,26 +249,6 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
     || (Config.developer_mode && exn_developer)
   in
-  ( if exn_developer then
-    let issue =
-      let lang = Procname.get_language procname in
-      let clang_method_kind =
-        match lang with
-        | Language.Clang ->
-            Option.map ~f:ClangMethodKind.to_string clang_method_kind
-        | _ ->
-            None
-      in
-      EventLogger.AnalysisIssue
-        { bug_type= error.name.IssueType.unique_id
-        ; bug_kind= Exceptions.severity_string severity
-        ; clang_method_kind
-        ; exception_triggered_location= error.ocaml_pos
-        ; lang= Language.to_explicit_string lang
-        ; procedure_name= Procname.to_string procname
-        ; source_location= loc }
-    in
-    EventLogger.log issue ) ;
   if should_report && (not hide_java_loc_zero) && not hide_memory_error then
     let added =
       let node_id, node_key =

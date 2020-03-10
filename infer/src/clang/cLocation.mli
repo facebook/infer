@@ -9,8 +9,6 @@ open! IStd
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
-val clang_to_sil_location : SourceFile.t -> Clang_ast_t.source_location -> Location.t
-
 val should_translate_lib :
      SourceFile.t
   -> Clang_ast_t.source_range

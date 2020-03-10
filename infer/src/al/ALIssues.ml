@@ -497,8 +497,8 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
         CAst_utils.generate_key_stmt st
   in
   let node_key = Procdesc.NodeKey.of_frontend_node_key key_str in
-  Reporting.log_frontend_issue procname issue_desc.severity errlog exn ~loc:issue_desc.loc
-    ~ltr:trace ~node_key
+  Reporting.log_frontend_issue issue_desc.severity errlog exn ~loc:issue_desc.loc ~ltr:trace
+    ~node_key
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc) loc
@@ -510,10 +510,7 @@ let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CI
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
   try log_frontend_issue context.CLintersContext.current_method witness issue_desc'
-  with CFrontend_errors.IncorrectAssumption e ->
-    let trans_unit_ctx = context.CLintersContext.translation_unit_context in
-    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position e.source_range
-      e.ast_node
+  with CFrontend_errors.IncorrectAssumption _ -> ()
 
 
 (* Calls the set of hard coded checkers (if any) *)

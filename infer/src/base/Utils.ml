@@ -11,9 +11,6 @@ module F = Format
 module Hashtbl = Caml.Hashtbl
 module L = Die
 
-(** initial process times *)
-let initial_times = Unix.times ()
-
 (** recursively traverse a path for files ending with a given extension *)
 let find_files ~path ~extension =
   let rec traverse_dir_aux init dir_path =

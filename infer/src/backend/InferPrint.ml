@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
@@ -373,63 +372,6 @@ let pp_text_of_report fmt report =
   List.iter ~f:pp_row report ; F.fprintf fmt "@?"
 
 
-module Stats = struct
-  type t =
-    { files: (SourceFile.t, unit) Hashtbl.t
-    ; mutable nchecked: int
-    ; mutable ndefective: int
-    ; mutable nerrors: int
-    ; mutable ninfos: int
-    ; mutable nadvice: int
-    ; mutable nlikes: int
-    ; mutable nprocs: int
-    ; mutable nspecs: int
-    ; mutable ntimeouts: int
-    ; mutable nverified: int
-    ; mutable nwarnings: int
-    ; mutable saved_errors: string list }
-
-  let create () =
-    { files= Hashtbl.create 3
-    ; nchecked= 0
-    ; ndefective= 0
-    ; nerrors= 0
-    ; ninfos= 0
-    ; nadvice= 0
-    ; nlikes= 0
-    ; nprocs= 0
-    ; nspecs= 0
-    ; ntimeouts= 0
-    ; nverified= 0
-    ; nwarnings= 0
-    ; saved_errors= [] }
-end
-
-module StatsLogs = struct
-  let process _ (summary : Summary.t) _ _ =
-    let num_preposts =
-      match summary.payloads.biabduction with Some {preposts} -> List.length preposts | None -> 0
-    in
-    let clang_method_kind =
-      ClangMethodKind.to_string (Summary.get_attributes summary).clang_method_kind
-    in
-    let proc_name = Summary.get_proc_name summary in
-    let lang = Procname.get_language proc_name in
-    let stats =
-      EventLogger.AnalysisStats
-        { analysis_nodes_visited= Summary.Stats.nb_visited summary.stats
-        ; analysis_status= Summary.Stats.failure_kind summary.stats
-        ; analysis_total_nodes= Summary.get_proc_desc summary |> Procdesc.get_nodes_num
-        ; clang_method_kind= (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
-        ; lang= Language.to_explicit_string lang
-        ; method_location= Summary.get_loc summary
-        ; method_name= Procname.to_string proc_name
-        ; num_preposts
-        ; symops= Summary.Stats.symops summary.stats }
-    in
-    EventLogger.log stats
-end
-
 (** Categorize the preconditions of specs and print stats *)
 module PreconditionStats = struct
   let nr_nopres = ref 0
@@ -635,31 +577,9 @@ let error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Costs | Issues | Stats | Summary [@@deriving compare]
+type report_kind = Costs | Issues | Summary [@@deriving compare]
 
-let _string_of_report_kind = function
-  | Costs ->
-      "Costs"
-  | Issues ->
-      "Issues"
-  | Stats ->
-      "Stats"
-  | Summary ->
-      "Summary"
-
-
-type bug_format_kind = Json | Logs | Tests | Text [@@deriving compare]
-
-let _string_of_bug_format_kind = function
-  | Json ->
-      "Json"
-  | Logs ->
-      "Logs"
-  | Tests ->
-      "Tests"
-  | Text ->
-      "Text"
-
+type bug_format_kind = Json | Tests | Text [@@deriving compare]
 
 let get_outfile outfile =
   match outfile with
@@ -677,9 +597,7 @@ let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error
       IssuesJson.pp outf.fmt
         {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
   | Tests ->
-      L.(die InternalError) "Printing issues as tests is not implemented"
-  | Logs ->
-      L.(die InternalError) "Printing issues as logs is not implemented"
+      L.die InternalError "Printing issues as tests is not implemented"
   | Text ->
       let outf = get_outfile outfile_opt in
       IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
@@ -691,20 +609,10 @@ let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
       let outf = get_outfile outfile_opt in
       IssuesJson.pp_issues_of_error_log outf.fmt
   | Tests ->
-      L.(die InternalError) "Printing issues as tests is not implemented"
-  | Logs ->
-      L.(die InternalError) "Printing issues as logs is not implemented"
+      L.die InternalError "Printing issues as tests is not implemented"
   | Text ->
       let outf = get_outfile outfile_opt in
       IssuesTxt.pp_issues_of_error_log outf.fmt
-
-
-let pp_stats_in_format (format_kind, _) =
-  match format_kind with
-  | Logs ->
-      StatsLogs.process
-  | Json | Tests | Text ->
-      L.(die InternalError) "Printing stats in json/tests/text is not implemented"
 
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
@@ -723,14 +631,6 @@ let collect_issues summary issues_acc =
     err_log issues_acc
 
 
-let pp_stats error_filter linereader summary stats stats_format_list =
-  let pp_stats_in_format format =
-    let pp_stats = pp_stats_in_format format in
-    pp_stats error_filter summary linereader stats
-  in
-  List.iter ~f:pp_stats_in_format stats_format_list
-
-
 let pp_summary summary =
   L.result "Procedure: %a@\n%a@." Procname.pp (Summary.get_proc_name summary) Summary.pp_text
     summary
@@ -741,7 +641,7 @@ let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   | Json ->
       let outf = get_outfile outfile_opt in
       JsonCostsPrinter.pp outf.fmt
-  | Tests | Text | Logs ->
+  | Tests | Text ->
       L.(die InternalError) "Printing costs in tests/text/logs is not implemented"
 
 
@@ -755,14 +655,11 @@ let pp_costs summary costs_format_list =
   List.iter ~f:pp costs_format_list
 
 
-let pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
-    issues_acc =
+let pp_summary_by_report_kind formats_by_report_kind summary issues_acc =
   let pp_summary_by_report_kind (report_kind, format_list) =
     match (report_kind, format_list) with
     | Costs, _ ->
         pp_costs summary format_list
-    | Stats, _ :: _ ->
-        pp_stats (error_filter file) linereader summary stats format_list
     | Summary, _ when InferCommand.equal Config.command Report && not Config.quiet ->
         pp_summary summary
     | _ ->
@@ -785,9 +682,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
               let outf = get_outfile outfile_opt in
               pp_text_of_report outf.fmt report
           | Json ->
-              L.(die InternalError) "Printing issues from json does not support json output"
-          | Logs ->
-              L.(die InternalError) "Printing issues from json does not support logs output"
+              L.die InternalError "Printing issues from json does not support json output"
         in
         List.iter ~f:pp_json_issue format_list
       in
@@ -826,14 +721,9 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 
 
 (** Process a summary *)
-let process_summary filters formats_by_report_kind linereader stats summary issues_acc =
-  let file = (Summary.get_loc summary).Location.file in
+let process_summary formats_by_report_kind summary issues_acc =
   let proc_name = Summary.get_proc_name summary in
-  let error_filter = error_filter filters proc_name in
-  let issues_acc' =
-    pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
-      issues_acc
-  in
+  let issues_acc' = pp_summary_by_report_kind formats_by_report_kind summary issues_acc in
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary ;
   if Config.summary_stats then SummaryStats.do_summary proc_name summary ;
   issues_acc'
@@ -854,24 +744,17 @@ let init_issues_format_list report_json =
   json_format @ tests_format @ txt_format
 
 
-let init_stats_format_list () =
-  let logs_format = if Config.log_events then [(Logs, None)] else [] in
-  logs_format
-
-
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
     let init_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       match (format_kind, report_kind) with
-      | Logs, (Issues | Summary) ->
-          L.(die InternalError) "Logging these reports is not implemented"
       | Json, Costs ->
           let outfile = get_outfile outfile_opt in
           JsonCostsPrinter.pp_open outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_open outfile.fmt ()
-      | Logs, (Costs | Stats) | Json, (Stats | Summary) | Tests, _ | Text, _ ->
+      | Json, Summary | Tests, _ | Text, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -883,15 +766,13 @@ let finalize_and_close_files format_list_by_kind =
   let close_files_of_report_kind (report_kind, format_list) =
     let close_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       ( match (format_kind, report_kind) with
-      | Logs, (Issues | Summary) ->
-          L.(die InternalError) "Logging these reports is not implemented"
       | Json, Costs ->
           let outfile = get_outfile outfile_opt in
           JsonCostsPrinter.pp_close outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_close outfile.fmt ()
-      | Logs, (Costs | Stats) | Json, (Stats | Summary) | Tests, _ | Text, _ ->
+      | Json, Summary | Tests, _ | Text, _ ->
           () ) ;
       match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
     in
@@ -902,13 +783,11 @@ let finalize_and_close_files format_list_by_kind =
 
 
 let pp_summary_and_issues formats_by_report_kind issue_formats =
-  let stats = Stats.create () in
   let linereader = Printer.LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
   SpecsFiles.iter_from_config ~f:(fun summary ->
-      all_issues :=
-        process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
+      all_issues := process_summary formats_by_report_kind summary !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   if Config.is_checker_enabled QuandaryBO then all_issues := QuandaryBO.update_issues !all_issues ;
   List.iter
@@ -928,11 +807,6 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   finalize_and_close_files formats_by_report_kind
 
 
-let register_perf_stats_report () =
-  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
-  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) PerfStats.Reporting
-
-
 let main ~report_json =
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
@@ -944,10 +818,8 @@ let main ~report_json =
       | None ->
           []
     in
-    costs_report_format_kind
-    @ [(Issues, issue_formats); (Stats, init_stats_format_list ()); (Summary, [])]
+    costs_report_format_kind @ [(Issues, issue_formats); (Summary, [])]
   in
-  register_perf_stats_report () ;
   init_files formats_by_report_kind ;
   ( match Config.from_json_report with
   | Some fname ->
@@ -956,4 +828,4 @@ let main ~report_json =
       pp_summary_and_issues formats_by_report_kind issue_formats ) ;
   if Config.test_determinator && Config.process_clang_ast then
     TestDeterminator.merge_test_determinator_results () ;
-  PerfStats.get_reporter PerfStats.Reporting ()
+  ()

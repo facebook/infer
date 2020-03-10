@@ -24,24 +24,6 @@ type splitting =
   ; frame_typ: (Exp.t * Exp.t) list
   ; missing_typ: (Exp.t * Exp.t) list }
 
-(** kind of result of a procedure call *)
-type call_result =
-  | CR_success  (** successful call *)
-  | CR_not_met  (** precondition not met *)
-  | CR_not_found  (** the callee has no specs *)
-  | CR_skip  (** the callee was skipped *)
-
-let string_of_call_result = function
-  | CR_success ->
-      "OK"
-  | CR_not_met ->
-      "NotMet"
-  | CR_not_found ->
-      "NotFound"
-  | CR_skip ->
-      "Skip"
-
-
 type deref_error =
   | Deref_freed of PredSymb.res_action  (** dereference a freed pointer *)
   | Deref_minusone  (** dereference -1 *)
@@ -80,40 +62,6 @@ let print_results tenv actual_pre results =
   L.d_strln "***** RESULTS FUNCTION CALL *******" ;
   Propset.d actual_pre (Propset.from_proplist tenv results) ;
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
-
-
-let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic_dispatch loc res =
-  if !BiabductionConfig.footprint then
-    let get_valid_source_file loc =
-      let file = loc.Location.file in
-      if SourceFile.is_invalid file then None else Some file
-    in
-    let callee_clang_method_kind, callee_source_file =
-      match callee_attributes with
-      | Some attributes when Language.curr_language_is Language.Clang ->
-          let callee_clang_method_kind =
-            ClangMethodKind.to_string attributes.ProcAttributes.clang_method_kind
-          in
-          let callee_source_file = get_valid_source_file attributes.ProcAttributes.loc in
-          (Some callee_clang_method_kind, callee_source_file)
-      | Some attributes ->
-          (None, get_valid_source_file attributes.ProcAttributes.loc)
-      | None ->
-          (None, None)
-    in
-    let call_trace =
-      EventLogger.CallTrace
-        { call_location= loc
-        ; call_result= string_of_call_result res
-        ; callee_clang_method_kind
-        ; callee_source_file
-        ; callee_name= Procname.to_string callee_name
-        ; caller_name= Procname.to_string caller_name
-        ; lang= Procname.get_language caller_name |> Language.to_explicit_string
-        ; reason
-        ; dynamic_dispatch }
-    in
-    EventLogger.log call_trace
 
 
 (***************)
@@ -156,8 +104,7 @@ let spec_rename_vars pname spec =
 
 (** Find and number the specs for [proc_name],
     after renaming their vars, and also return the parameters *)
-let spec_find_rename trace_call summary :
-    (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
+let spec_find_rename summary : (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
   let proc_name = Summary.get_proc_name summary in
   try
     let count = ref 0 in
@@ -167,11 +114,10 @@ let spec_find_rename trace_call summary :
     in
     let specs = get_specs_from_payload summary in
     let formals = Summary.get_formals summary in
-    if List.is_empty specs then (
-      trace_call CR_not_found ;
+    if List.is_empty specs then
       raise
         (Exceptions.Precondition_not_found
-           (Localise.verbatim_desc (Procname.to_string proc_name), __POS__)) ) ;
+           (Localise.verbatim_desc (Procname.to_string proc_name), __POS__)) ;
     let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
     (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->
@@ -1297,7 +1243,7 @@ let prop_pure_to_footprint tenv (p : 'a Prop.t) : Prop.normal Prop.t =
 
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results =
+let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
   let filter_valid_res = function Invalid_res _ -> false | Valid_res _ -> true in
   let valid_res0, invalid_res0 = List.partition_tf ~f:filter_valid_res results in
   let valid_res =
@@ -1319,7 +1265,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let call_desc kind_opt = Localise.desc_precondition_not_met kind_opt callee_pname loc in
   let res_with_path_idents =
     if !BiabductionConfig.footprint then
-      if List.is_empty valid_res_cons_pre_missing then (
+      if List.is_empty valid_res_cons_pre_missing then
         (* no valid results where actual pre and missing are consistent *)
         match deref_errors with
         | error :: _ -> (
@@ -1338,15 +1284,12 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             in
             match error with
             | Dereference_error (Deref_minusone, desc, path_opt) ->
-                trace_call CR_not_met ;
                 extend_path path_opt None ;
                 raise (Exceptions.Dangling_pointer_dereference (true, desc, __POS__))
             | Dereference_error (Deref_undef_exp, desc, path_opt) ->
-                trace_call CR_not_met ;
                 extend_path path_opt None ;
                 raise (Exceptions.Dangling_pointer_dereference (true, desc, __POS__))
             | Dereference_error (Deref_null pos, desc, path_opt) ->
-                trace_call CR_not_met ;
                 extend_path path_opt (Some pos) ;
                 if Localise.is_parameter_not_null_checked_desc desc then
                   raise (Exceptions.Parameter_not_null_checked (desc, __POS__))
@@ -1356,15 +1299,12 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
                   raise (Exceptions.Empty_vector_access (desc, __POS__))
                 else raise (Exceptions.Null_dereference (desc, __POS__))
             | Dereference_error (Deref_freed _, desc, path_opt) ->
-                trace_call CR_not_met ;
                 extend_path path_opt None ;
                 raise (Exceptions.Biabd_use_after_free (desc, __POS__))
             | Dereference_error (Deref_undef (_, _, pos), desc, path_opt) ->
-                trace_call CR_not_met ;
                 extend_path path_opt (Some pos) ;
                 raise (Exceptions.Skip_pointer_dereference (desc, __POS__))
             | Prover_checks _ | Cannot_combine | Missing_sigma_not_empty | Missing_fld_not_empty ->
-                trace_call CR_not_met ;
                 assert false )
         | [] ->
             (* no dereference error detected *)
@@ -1375,7 +1315,6 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
                 List.exists
                   ~f:(function
                     | Prover_checks (check :: _) ->
-                        trace_call CR_not_met ;
                         let exn = get_check_exn tenv check callee_pname loc __POS__ in
                         raise exn
                     | _ ->
@@ -1384,8 +1323,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
               then call_desc (Some Localise.Pnm_bounds)
               else call_desc None
             in
-            trace_call CR_not_met ;
-            raise (Exceptions.Precondition_not_met (desc, __POS__)) )
+            raise (Exceptions.Precondition_not_met (desc, __POS__))
       else
         (* combine the valid results, and store diverging states *)
         let process_valid_res vr =
@@ -1416,14 +1354,12 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
           (List.map ~f:(fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi)
       with
       | None ->
-          trace_call CR_not_met ;
           raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
       | Some cover ->
           L.d_strln "Found minimum cover" ;
           List.iter ~f:print_pi (List.map ~f:fst cover) ;
           List.concat_map ~f:snd cover )
   in
-  trace_call CR_success ;
   let res =
     List.map
       ~f:(fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
@@ -1453,14 +1389,10 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id caller_pdesc callee_pname
-    loc actual_params prop path =
+let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pname loc actual_params
+    prop path =
   let callee_attributes = Summary.get_attributes callee_summary in
-  let caller_name = Procdesc.get_proc_name caller_pdesc in
-  let trace_call =
-    log_call_trace ~caller_name ~callee_name:callee_pname ~callee_attributes ?dynamic_dispatch loc
-  in
-  let spec_list, formal_params = spec_find_rename trace_call callee_summary in
+  let spec_list, formal_params = spec_find_rename callee_summary in
   let nspecs = List.length spec_list in
   L.d_printfln "Found %d specs for function %s" nspecs (Procname.to_unique_id callee_pname) ;
   L.d_printfln "START EXECUTING SPECS FOR %s from state" (Procname.to_unique_id callee_pname) ;
@@ -1471,4 +1403,4 @@ let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id calle
       actual_params formal_params callee_summary
   in
   let results = List.map ~f:exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_id trace_call callee_pname callee_attributes loc results
+  exe_call_postprocess tenv ret_id callee_pname callee_attributes loc results

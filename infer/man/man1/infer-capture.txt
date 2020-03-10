@@ -145,10 +145,6 @@ BUCK OPTIONS
            successful capture. Only valid for --buck-clang. (Conversely:
            --no-buck-merge-all-deps)
 
-       --buck-out dir
-           Specify the root directory of buck-out. Only valid for
-           --buck-java.
-
        --buck-targets-blacklist +regex
            Skip capture of buck targets matched by the specified regular
            expression. Only valid for --buck-compilation-database.

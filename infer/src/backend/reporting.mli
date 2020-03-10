@@ -23,8 +23,7 @@ val log_issue_deprecated_using_state :
     DEPRECATED as it can create race conditions between checkers. Use log_error/warning instead *)
 
 val log_frontend_issue :
-     Procname.t
-  -> Exceptions.severity
+     Exceptions.severity
   -> Errlog.t
   -> loc:Location.t
   -> node_key:Procdesc.NodeKey.t

@@ -41,7 +41,6 @@ val protect :
      f:(unit -> unit)
   -> recover:(unit -> unit)
   -> pp_context:(Format.formatter -> unit -> unit)
-  -> CFrontend_config.translation_unit_context
   -> unit
 (** Catch frontend errors in [f] to avoid crashing due to bugs in the frontend. Upon error [recover]
     is run and [pp_context] is used to provide more info to the user. *)

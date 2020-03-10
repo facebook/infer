@@ -106,9 +106,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-     Procname.t
-  -> clang_method_kind:ClangMethodKind.t option
-  -> Exceptions.severity
+     Exceptions.severity
   -> t
   -> loc:Location.t
   -> node:node

@@ -272,17 +272,6 @@ let reportdiff =
     ~see_also:InferCommand.[Report]
 
 
-let events =
-  mk_command_doc ~title:"Infer Events"
-    ~short_description:"dump all the logged events in machine readable format"
-    ~synopsis:{|$(b,infer) $(b,events)|}
-    ~description:
-      [ `P
-          "Emit to stdout one JSON object per line, each describing a logged event happened during \
-           the execution of Infer" ]
-    ~see_also:InferCommand.[Report; Run]
-
-
 let run =
   mk_command_doc ~title:"Infer Analysis of a Project"
     ~short_description:"capture source files, analyze, and report"
@@ -308,7 +297,6 @@ let command_to_data =
   [ mk Analyze analyze
   ; mk Capture capture
   ; mk Compile compile
-  ; mk Events events
   ; mk Explore explore
   ; mk Report report
   ; mk ReportDiff reportdiff

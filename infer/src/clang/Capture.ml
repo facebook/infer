@@ -22,24 +22,9 @@ let validate_decl_from_channel chan =
     Clang_ast_b.read_decl chan
 
 
-(**FIXME(T54413835): Make the perf stats in the frontend work when one runs more than one frontend
-   action *)
-let register_perf_stats_report source_file =
-  let stats_type =
-    if Config.capture then PerfStats.ClangFrontend source_file
-    else if Config.is_checker_enabled Linters then PerfStats.ClangLinters source_file
-    else if Config.process_clang_ast then PerfStats.ClangProcessAST source_file
-    else
-      Logging.(die UserError)
-        "Clang frontend should be run in capture, linters or process AST mode."
-  in
-  PerfStats.register_report_at_exit stats_type
-
-
 let init_global_state_for_capture_and_linters source_file =
   L.(debug Capture Medium) "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file)) ;
   Language.curr_language := Language.Clang ;
-  register_perf_stats_report source_file ;
   if Config.capture then DB.Results_dir.init source_file ;
   CFrontend_config.reset_global_state ()
 

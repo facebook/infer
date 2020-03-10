@@ -10,20 +10,18 @@ module L = Logging
 
 type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> string -> unit
 
-let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-    ~access ~extras exn =
+let log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access ~extras exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let doc_url = issue_type.doc_url in
     let linters_def_file = issue_type.linters_def_file in
-    Errlog.log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-      ~linters_def_file ~doc_url ~access ~extras exn
+    Errlog.log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access
+      ~extras exn
 
 
-let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr exn =
+let log_frontend_issue severity errlog ~loc ~node_key ~ltr exn =
   let node = Errlog.FrontendNode {node_key} in
-  log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~session:0 ~ltr
-    ~access:None ~extras:None exn
+  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None exn
 
 
 let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn =
@@ -52,9 +50,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
     (* Skip the reporting *)
   else
     let err_log = Summary.get_err_log summary in
-    let clang_method_kind = Some attrs.clang_method_kind in
-    log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-      ~access:None ~extras exn
+    log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access:None ~extras exn
 
 
 let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
@@ -94,8 +90,7 @@ let log_issue_external procname ~issue_log severity ~loc ~ltr ?access issue_type
   let exn = checker_exception issue_type error_message in
   let issue_log, errlog = IssueLog.get_or_add issue_log ~proc:procname in
   let node = Errlog.UnknownNode in
-  log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~session:0 ~ltr
-    ~access ~extras:None exn ;
+  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access ~extras:None exn ;
   issue_log
 
 

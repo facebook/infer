@@ -51,8 +51,6 @@ let pp_failure_kind fmt = function
       F.fprintf fmt "CRASH (%s)" msg
 
 
-let failure_kind_to_string failure_kind = Format.asprintf "%a" pp_failure_kind failure_kind
-
 (** Count the number of symbolic operations *)
 
 (** Timeout in seconds for each function *)

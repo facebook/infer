@@ -10,7 +10,6 @@ module L = Logging
 
 let protect ~f x =
   Epilogues.reset () ;
-  EventLogger.prepare () ;
   L.reset_formatters () ;
   ResultsDatabase.new_database_connection () ;
   (* get different streams of random numbers in each fork, in particular to lessen contention in

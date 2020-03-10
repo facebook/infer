@@ -58,9 +58,7 @@ let setup () =
         && not (Driver.is_analyze_mode driver_mode)
       then ( db_start () ; SourceFiles.mark_all_stale () )
   | Explore ->
-      ResultsDir.assert_results_dir "please run an infer analysis first"
-  | Events ->
-      ResultsDir.assert_results_dir "have you run infer before?" ) ;
+      ResultsDir.assert_results_dir "please run an infer analysis first" ) ;
   db_start () ;
   NullsafeInit.init () ;
   if CLOpt.is_originator then (RunState.add_run_to_sequence () ; RunState.store ()) ;
@@ -115,21 +113,6 @@ let log_environment_info () =
   print_active_checkers () ; print_scheduler () ; print_cores_used ()
 
 
-let prepare_events_logging () =
-  (* there's no point in logging data from the events command. To fetch them we'd need to run events again... *)
-  if InferCommand.equal Config.command Events then ()
-  else
-    let log_identifier_msg =
-      Printf.sprintf "Infer log identifier is %s\n" (EventLogger.get_log_identifier ())
-    in
-    L.environment_info "%s" log_identifier_msg ;
-    if CLOpt.is_originator && Config.print_log_identifier then L.progress "%s" log_identifier_msg ;
-    let log_uncaught_exn exn ~exitcode =
-      EventLogger.log (EventLogger.UncaughtException (exn, exitcode))
-    in
-    L.set_log_uncaught_exception_callback log_uncaught_exn
-
-
 let () =
   (* We specifically want to collect samples only from the main process until
      we figure out what other entries and how we want to collect *)
@@ -151,7 +134,6 @@ let () =
   if Config.print_builtins then Builtin.print_and_exit () ;
   setup () ;
   log_environment_info () ;
-  prepare_events_logging () ;
   if Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
@@ -238,8 +220,6 @@ let () =
               "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
               (String.concat ~sep:" " args)
       | true, true ->
-          L.user_error "Options --procedures and --source-files cannot be used together.@\n" )
-    | Events ->
-        EventLogger.dump () ) ;
+          L.user_error "Options --procedures and --source-files cannot be used together.@\n" ) ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0

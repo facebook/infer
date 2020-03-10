@@ -19,13 +19,7 @@ module Stats : sig
 
   val is_visited : t -> int -> bool
 
-  val nb_visited : t -> int
-
   val update : ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> t -> t
-
-  val failure_kind : t -> SymOp.failure_kind option
-
-  val symops : t -> int
 end
 
 module Status : sig

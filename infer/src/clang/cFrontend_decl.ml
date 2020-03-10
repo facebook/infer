@@ -53,7 +53,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | _ ->
           ()
     in
-    CFrontend_errors.protect ~f ~recover ~pp_context trans_unit_ctx
+    CFrontend_errors.protect ~f ~recover ~pp_context
 
 
   let function_decl trans_unit_ctx tenv cfg func_decl block_data_opt =
@@ -86,9 +86,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               return_param_typ_opt outer_context_opt extra_instrs
       | None ->
           ()
-    with CFrontend_errors.IncorrectAssumption e ->
-      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-        e.source_range e.ast_node
+    with CFrontend_errors.IncorrectAssumption _ -> ()
 
 
   let process_method_decl ?(set_objc_accessor_attr = false) ?(is_destructor = false) trans_unit_ctx
@@ -134,9 +132,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ignore
               (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
                  ms [] [])
-    with CFrontend_errors.IncorrectAssumption e ->
-      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-        e.source_range e.ast_node
+    with CFrontend_errors.IncorrectAssumption _ -> ()
 
 
   let process_property_implementation trans_unit_ctx tenv cfg curr_class
@@ -239,10 +235,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | PragmaDetectMismatchDecl _
     | StaticAssertDecl _
     | TranslationUnitDecl _ ->
-        let decl_info = Clang_ast_proj.get_decl_tuple dec in
-        ClangLogging.log_unexpected_decl trans_unit_ctx __POS__
-          decl_info.Clang_ast_t.di_source_range
-          (Some (Clang_ast_proj.get_decl_kind_string dec))
+        (* TODO: some form of logging *)
+        ()
 
 
   let process_methods trans_unit_ctx tenv cfg curr_class decl_list =
@@ -422,8 +416,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ~pp_context:(fun fmt () ->
               F.fprintf fmt "Error adding types from decl '%a'"
                 (Pp.of_string ~f:Clang_ast_j.string_of_decl)
-                dec )
-            trans_unit_ctx ;
+                dec ) ;
           List.iter ~f:translate method_decls
       | _ ->
           () ) ;

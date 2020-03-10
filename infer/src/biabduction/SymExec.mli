@@ -38,8 +38,7 @@ val instrs :
 val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of the divergent pure computation. *)
 
-val proc_call :
-  ?dynamic_dispatch:EventLogger.dynamic_dispatch -> Exe_env.t -> Summary.t -> Builtin.t
+val proc_call : Exe_env.t -> Summary.t -> Builtin.t
 
 val unknown_or_scan_call : is_scan:bool -> reason:string -> Typ.t -> Annot.Item.t -> Builtin.t
 

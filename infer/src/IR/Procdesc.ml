@@ -500,8 +500,6 @@ let get_access pdesc = pdesc.attributes.access
 
 let get_nodes pdesc = pdesc.nodes
 
-let get_nodes_num pdesc = pdesc.nodes_num
-
 (** Return the return type of the procedure *)
 let get_ret_type pdesc = pdesc.attributes.ret_type
 
