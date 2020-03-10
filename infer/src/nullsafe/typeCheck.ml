@@ -1121,12 +1121,16 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       let check_field_assign () =
         match e1 with
-        | Exp.Lfield (_, fn, f_typ) ->
-            let field_type_opt = AnnotatedField.get tenv fn f_typ in
-            if checks.eradicate then
-              EradicateChecks.check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate
-                curr_pdesc node instr_ref typestate1 e1' e2 typ loc fn field_type_opt
-                (typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv)
+        | Exp.Lfield (_, field_name, field_class_type) -> (
+          match AnnotatedField.get tenv field_name field_class_type with
+          | Some annotated_field ->
+              if checks.eradicate then
+                EradicateChecks.check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate
+                  curr_pdesc node instr_ref typestate1 ~expr_rhs:e2 ~field_type:typ loc field_name
+                  annotated_field
+                  (typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv)
+          | None ->
+              L.d_strln "WARNING: could not fetch field declaration; skipping assignment check" )
         | _ ->
             ()
       in

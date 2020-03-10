@@ -118,30 +118,20 @@ let check_condition_for_redundancy tenv ~is_always_true find_canonical_duplicate
 
 (** Check an assignment to a field. *)
 let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node instr_ref
-    typestate exp_lhs exp_rhs typ loc fname annotated_field_opt typecheck_expr : unit =
+    typestate ~expr_rhs ~field_type loc fname (annotated_field : AnnotatedField.t) typecheck_expr :
+    unit =
   L.d_with_indent ~name:"check_field_assignment" (fun () ->
       let curr_pname = Procdesc.get_proc_name curr_pdesc in
       let curr_pattrs = Procdesc.get_attributes curr_pdesc in
-      let t_lhs, inferred_nullability_lhs =
-        L.d_strln "Typechecking lhs" ;
-        typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
-          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
-          loc
-      in
       let _, inferred_nullability_rhs =
         L.d_strln "Typechecking rhs" ;
-        typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
+        typecheck_expr node instr_ref curr_pdesc typestate expr_rhs
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
+          (field_type, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
       let field_is_injector_readwrite () =
-        match annotated_field_opt with
-        | Some AnnotatedField.{annotation_deprecated} ->
-            Annotations.ia_is_field_injector_readwrite annotation_deprecated
-        | _ ->
-            false
+        Annotations.ia_is_field_injector_readwrite annotated_field.annotation_deprecated
       in
       let field_is_in_cleanup_context () =
         let AnnotatedSignature.{ret_annotation_deprecated} =
@@ -150,15 +140,17 @@ let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pde
         in
         Annotations.ia_is_cleanup ret_annotation_deprecated
       in
+      let declared_nullability =
+        AnnotatedNullability.get_nullability annotated_field.annotated_type.nullability
+      in
       let assignment_check_result =
-        AssignmentRule.check ~nullsafe_mode
-          ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
+        AssignmentRule.check ~nullsafe_mode ~lhs:declared_nullability
           ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
       in
       Result.iter_error assignment_check_result ~f:(fun assignment_violation ->
           let should_report =
             (not (AndroidFramework.is_destroy_method curr_pname))
-            && PatternMatch.type_is_class t_lhs
+            && PatternMatch.type_is_class field_type
             && (not (Fieldname.is_java_outer_instance fname))
             && (not (field_is_injector_readwrite ()))
             && not (field_is_in_cleanup_context ())
