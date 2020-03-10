@@ -1,0 +1,41 @@
+= Hacking on SLEdge
+
+== Development workflow
+
+== Compiling
+
+- `make check` while coding to run the type-checker and populate the data merlin needs as fast as possible
+
+- `make dbg` to build the _debug_ binary (`_build/_install/dbg/bin/sledge`), which enables debug tracing (calls to functions in the `Trace` module) and executes `assert`ions
+
+- `make dbg-opt` to build the _optimized debug_ binary (`_build/_install/dbg-opt/bin/sledge`), which enables debug tracing but does not execute `assert`ions
+
+- `make opt` to build the _optimized_ binary (`_build/_install/opt/bin/sledge`), which disables debug tracing and does not execute `assert`ions
+
+- `make exes`, the default target, to build all 3 binaries
+
+- `make watch` to continuously watch the file system for changes and rebuild all binaries automatically
+
+- `make clean` to remove build artifacts
+
+== Testing
+
+- `make test` to run the inline tests and promote the new results, for review by source control tools (e.g. `git diff`)
+
+- `make ci-test` to run the inline tests and fail if the results change
+
+- `cd ..; GIT_SEQUENCE_EDITOR=: git rebase -ix 'make OCAMLPARAM=_,warn-error=+a -C sledge fmt exes test' $(git merge-base origin/master HEAD)` to format, build, and test a stack of diffs
+
+== Formatting
+
+- `make fmt` to autoformat source code
+
+== Running
+
+- `sledge help` to see the cli's interactive help, or see `sledge-help.txt` for the complete interactive help
+
+== Debugging
+
+- An efficient way to debug individual functions is to write an inline expect test and observe its behavior. See the various `*_test.ml` files which contain tests.
+
+- For wider debugging, take particular note of the documentation for the `-trace` option at the top of `sledge help`. It can be used to selectively enable debug tracing output for calls to `Trace` from individual functions or modules.

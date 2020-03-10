@@ -38,8 +38,8 @@ dbg:
 	$(dune_build_dbg)
 	$(dune_install_dbg)
 
-.PHONY: do
-do:
+.PHONY: dbg-opt
+dbg-opt:
 	$(dune_build_dbg_opt)
 	$(dune_install_dbg_opt)
 
