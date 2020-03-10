@@ -11,6 +11,7 @@ type exec_opts =
   { bound: int  (** Loop/recursion unrolling bound *)
   ; skip_throw: bool  (** Treat throw as unreachable *)
   ; function_summaries: bool  (** Use function summarisation *)
+  ; entry_points: string list
   ; globals: Used_globals.r }
 
 module Make (Dom : Domain_sig.Dom) : sig

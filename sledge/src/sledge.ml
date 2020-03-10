@@ -77,6 +77,7 @@ let used_globals pgm preanalyze : Used_globals.r =
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
+        ; entry_points= Config.find_list "entry-points"
         ; globals= Declared Reg.Set.empty }
         pgm
     in
@@ -119,9 +120,10 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
+    let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
     Sh_domain.simplify_states := not no_simplify_states ;
-    exec {bound; skip_throw; function_summaries; globals} pgm
+    exec {bound; skip_throw; function_summaries; entry_points; globals} pgm
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in

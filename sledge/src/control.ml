@@ -13,6 +13,7 @@ type exec_opts =
   { bound: int
   ; skip_throw: bool
   ; function_summaries: bool
+  ; entry_points: string list
   ; globals: Used_globals.r }
 
 module Make (Dom : Domain_sig.Dom) = struct
@@ -337,8 +338,7 @@ module Make (Dom : Domain_sig.Dom) = struct
         (* Create and store a function summary for main *)
         if
           opts.function_summaries
-          && List.exists
-               (Config.find_list "entry-points")
+          && List.exists opts.entry_points
                ~f:(String.equal (Reg.name name.reg))
         then summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
@@ -463,8 +463,7 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let harness : exec_opts -> Llair.t -> (int -> Work.t) option =
    fun opts pgm ->
-    let entry_points = Config.find_list "entry-points" in
-    List.find_map ~f:(Llair.Func.find pgm.functions) entry_points
+    List.find_map ~f:(Llair.Func.find pgm.functions) opts.entry_points
     |> function
     | Some {name= {reg}; formals= []; freturn; locals; entry} ->
         Some
