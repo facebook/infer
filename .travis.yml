@@ -1,15 +1,17 @@
 language: c
-sudo: required
 env:
   - OCAML_VERSION=4.08.1
 cache:
   directories:
     - ${HOME}/.opam
     - facebook-clang-plugins
+addons:
+  apt:
+    packages:
+    - libmpfr-dev
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libmpfr-dev
-  - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-linux
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ARCH="darwin"; else ARCH="linux"; fi
+  - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-${ARCH}
   - chmod +x ${HOME}/opam
   - export PATH=${HOME}:${PATH}
   - export OPAMYES=1
