@@ -101,6 +101,14 @@ let fold_map x ~init ~f =
   let s, x = Array.fold_map (a x) ~init ~f in
   (s, v x)
 
+let fold_map_until xs ~init ~f ~finish =
+  With_return.with_return (fun {return} ->
+      finish
+        (fold_map xs ~init ~f:(fun s x ->
+             match (f s x : _ Continue_or_stop.t) with
+             | Continue x -> x
+             | Stop x -> return x )) )
+
 let concat xs = v (Array.concat (al xs))
 let copy x = v (Array.copy (a x))
 let sub ~pos ~len x = v (Array.sub ~pos ~len (a x))

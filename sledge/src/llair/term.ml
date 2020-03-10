@@ -720,61 +720,45 @@ let rec simp_extract agg off len =
         simp_memory len e
     (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
     | Ap2 (Memory, n, _) when equal off zero && equal n len -> agg
-    (* (α₀^…^αᵢ^…^αⱼ^…) [0+n₀+…+nᵢ₋₁, nᵢ+…+nⱼ) ==> αᵢ^…^αⱼ where nₓ ≡ |αₓ| *)
-    | ApN (Concat, na1N) ->
-        let n = Vector.length na1N in
-        (* invariant: oI = ∑ᵥ₌₀ⁱ⁻¹ nᵥ *)
-        let rec find_off oI i =
-          [%Trace.call fun {pf} -> pf "o_0^%i = %a" i pp oI]
-          ;
-          ( if i = n then Ap3 (Extract, agg, off, len)
-          else
-            match Vector.get na1N i with
-            | Ap2 (Memory, nI, _) | Ap3 (Extract, _, _, nI) -> (
-              match (oI, off) with
-              | Integer {data= y}, Integer {data= z} when Z.gt y z ->
-                  Ap3 (Extract, agg, off, len)
-              | _ when not (equal oI off) ->
-                  find_off (simp_add2 oI nI) (i + 1)
-              | _ ->
-                  (* invariant: lIJ = ∑ᵥ₌ᵢʲ⁻¹ nᵥ *)
-                  let rec find_len lIJ j =
-                    [%Trace.call fun {pf} -> pf "l_%i^%i = %a" i j pp lIJ]
-                    ;
-                    ( if j = n then find_off (simp_add2 oI nI) (i + 1)
-                    else
-                      match Vector.get na1N j with
-                      | Ap2 (Memory, nJ, _) | Ap3 (Extract, _, _, nJ) -> (
-                          let lIJ = simp_add2 lIJ nJ in
-                          match (lIJ, len) with
-                          (* (α₀^…^αᵢ^…) [0+n₀+…+nᵢ₋₁, l) ==> (αᵢ^…)[0,l)
-                             where nₓ ≡ |αₓ| *)
-                          | Integer {data= y}, Integer {data= z}
-                            when Z.gt y z ->
-                              let naIN =
-                                Vector.sub ~pos:i ~len:(n - i) na1N
-                              in
-                              simp_extract (simp_concat naIN) zero len
-                          | Integer {data= y}, Integer {data= z}
-                            when Z.gt y z ->
-                              Ap3 (Extract, agg, off, len)
-                          | _ when not (equal lIJ len) ->
-                              find_len lIJ (j + 1)
-                          | _ ->
-                              let naIJ =
-                                Vector.sub ~pos:i ~len:(j - i + 1) na1N
-                              in
-                              simp_concat naIJ )
-                      | _ -> violates invariant agg )
-                    |>
-                    [%Trace.retn fun {pf} -> pf "%a" pp]
-                  in
-                  find_len zero i )
-            | _ -> violates invariant agg )
-          |>
-          [%Trace.retn fun {pf} -> pf "%a" pp]
-        in
-        find_off zero 0
+    (* For (α₀^α₁)[o,l) there are 3 cases:
+     *
+     * ⟨...⟩^⟨...⟩
+     *  [,)
+     * o < o+l ≤ |α₀| : (α₀^α₁)[o,l) ==> α₀[o,l) ^ α₁[0,0)
+     *
+     * ⟨...⟩^⟨...⟩
+     *   [  ,  )
+     * o ≤ |α₀| < o+l : (α₀^α₁)[o,l) ==> α₀[o,|α₀|-o) ^ α₁[0,l-(|α₀|-o))
+     *
+     * ⟨...⟩^⟨...⟩
+     *        [,)
+     * |α₀| ≤ o : (α₀^α₁)[o,l) ==> α₀[o,0) ^ α₁[o-|α₀|,l)
+     *
+     * So in general:
+     *
+     * (α₀^α₁)[o,l) ==> α₀[o,l₀) ^ α₁[o₁,l-l₀)
+     * where l₀ = max 0 (min l |α₀|-o)
+     *       o₁ = max 0 o-|α₀|
+     *)
+    | ApN (Concat, na1N) -> (
+      match len with
+      | Integer {data= l} ->
+          Vector.fold_map_until na1N ~init:(l, off)
+            ~f:(fun (l, oI) naI ->
+              let nI = agg_size_exn naI in
+              if Z.equal Z.zero l then
+                Continue ((l, oI), simp_extract naI oI zero)
+              else
+                let oI_nI = simp_sub oI nI in
+                match oI_nI with
+                | Integer {data} ->
+                    let oJ = if Z.sign data <= 0 then zero else oI_nI in
+                    let lI = Z.(max zero (min l (neg data))) in
+                    let l = Z.(l - lI) in
+                    Continue ((l, oJ), simp_extract naI oI (integer lI))
+                | _ -> Stop (Ap3 (Extract, agg, off, len)) )
+            ~finish:(fun (_, e1N) -> simp_concat e1N)
+      | _ -> Ap3 (Extract, agg, off, len) )
     (* α[o,l) *)
     | _ -> Ap3 (Extract, agg, off, len) )
   |>

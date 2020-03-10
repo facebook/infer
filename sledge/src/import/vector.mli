@@ -108,6 +108,14 @@ val map_preserving_phys_equal : 'a t -> f:('a -> 'a) -> 'a t
 (* val folding_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'c t *)
 (* val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) ->
    'c t *)
+
+val fold_map_until :
+     'a t
+  -> init:'accum
+  -> f:('accum -> 'a -> ('accum * 'b, 'final) Continue_or_stop.t)
+  -> finish:('accum * 'b t -> 'final)
+  -> 'final
+
 val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
 
 (* val fold_mapi :
