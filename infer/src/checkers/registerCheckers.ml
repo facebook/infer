@@ -44,13 +44,12 @@ let all_checkers =
     ; active=
         Config.(
           is_checker_enabled BufferOverrun || is_checker_enabled Cost
-          || is_checker_enabled LoopHoisting || is_checker_enabled Purity
-          || is_checker_enabled QuandaryBO)
+          || is_checker_enabled LoopHoisting || is_checker_enabled Purity)
     ; callbacks=
         [ (Procedure BufferOverrunAnalysis.do_analysis, Language.Clang)
         ; (Procedure BufferOverrunAnalysis.do_analysis, Language.Java) ] }
   ; { name= "buffer overrun checker"
-    ; active= Config.(is_checker_enabled BufferOverrun || is_checker_enabled QuandaryBO)
+    ; active= Config.(is_checker_enabled BufferOverrun)
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
@@ -86,7 +85,7 @@ let all_checkers =
         ( if Config.is_checker_enabled Impurity then [(Procedure Pulse.checker, Language.Java)]
         else [] ) }
   ; { name= "quandary"
-    ; active= Config.(is_checker_enabled Quandary || is_checker_enabled QuandaryBO)
+    ; active= Config.(is_checker_enabled Quandary)
     ; callbacks=
         [ (Procedure JavaTaintAnalysis.checker, Language.Java)
         ; (Procedure ClangTaintAnalysis.checker, Language.Clang) ] }

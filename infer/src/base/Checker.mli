@@ -27,7 +27,6 @@ type t =
   | Pulse
   | Purity
   | Quandary
-  | QuandaryBO
   | RacerD
   | ResourceLeak
   | SIOF

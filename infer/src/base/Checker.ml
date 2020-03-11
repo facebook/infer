@@ -27,7 +27,6 @@ type t =
   | Pulse
   | Purity
   | Quandary
-  | QuandaryBO
   | RacerD
   | ResourceLeak
   | SIOF
@@ -205,13 +204,6 @@ let config checker =
       ; short_documentation= "the quandary taint analysis"
       ; show_in_help= true
       ; cli_flag= "quandary"
-      ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
-  | QuandaryBO ->
-      { support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] The quandaryBO tainted buffer access analysis"
-      ; show_in_help= true
-      ; cli_flag= "quandaryBO"
       ; enabled_by_default= false
       ; cli_deprecated_flags= [] }
   | RacerD ->

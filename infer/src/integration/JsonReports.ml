@@ -318,7 +318,6 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   SpecsFiles.iter_from_config ~f:(fun summary ->
       all_issues := process_summary ~costs_outf summary !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
-  if Config.is_checker_enabled QuandaryBO then all_issues := QuandaryBO.update_issues !all_issues ;
   List.iter
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
       let error_filter = mk_error_filter filters proc_name in

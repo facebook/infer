@@ -438,10 +438,6 @@ let symexec_memory_error =
   register_from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"
 
 
-let tainted_buffer_access = register_from_string "TAINTED_BUFFER_ACCESS"
-
-let tainted_memory_allocation = register_from_string "TAINTED_MEMORY_ALLOCATION"
-
 let thread_safety_violation = register_from_string "THREAD_SAFETY_VIOLATION"
 
 let complexity_increase ~kind ~is_on_cold_start ~is_on_ui_thread =

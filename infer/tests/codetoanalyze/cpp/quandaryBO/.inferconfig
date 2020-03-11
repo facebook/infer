@@ -1,8 +1,0 @@
-{
-  "quandary-sources": [
-    {
-      "procedure": "__infer_taint_source",
-      "kind": "Other"
-    }
-  ]
-}

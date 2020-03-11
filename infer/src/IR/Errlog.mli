@@ -44,16 +44,6 @@ type err_key = private
   {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
-val merge_err_key :
-     err_key
-  -> err_key
-  -> merge_issues:(IssueType.t -> IssueType.t -> IssueType.t)
-  -> merge_descriptions:(string list -> string list -> string)
-  -> err_key
-(** Merges two error keys, setting the result's severity to the maximum of that of the two arguments
-    and giving the user the opportunity to pass a function to merge the IssueTypes and descriptions
-    of the two. *)
-
 (** Data associated to a specific error *)
 type err_data = private
   { node_id: int
@@ -69,11 +59,6 @@ type err_data = private
   ; access: string option
   ; extras: Jsonbug_t.extra option }
 [@@deriving compare]
-
-val merge_err_data : err_data -> err_data -> err_data
-(** Merges two err_datas, throwing out most information and setting the trace of the result to the
-    concatenation of the traces of the two arguments with a separator in between. Used specifically
-    for QuandaryBO. *)
 
 (** Type of the error log *)
 type t

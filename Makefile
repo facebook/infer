@@ -68,7 +68,7 @@ DIRECT_TESTS += \
   cpp_linters-for-test-only \
   cpp_liveness \
   cpp_pulse \
-  cpp_quandary cpp_quandaryBO \
+  cpp_quandary \
   cpp_racerd \
   cpp_siof \
   cpp_starvation \

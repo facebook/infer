@@ -251,14 +251,6 @@ OPTIONS
            Activates: Enable --quandary and disable all other checkers
            (Conversely: --no-quandary-only)
 
-       --quandaryBO
-           Activates: [EXPERIMENTAL] The quandaryBO tainted buffer access
-           analysis (Conversely: --no-quandaryBO)
-
-       --quandaryBO-only
-           Activates: Enable --quandaryBO and disable all other checkers
-           (Conversely: --no-quandaryBO-only)
-
        --quiet,-q
            Activates: Do not print specs on standard output (default: only
            print for the report command) (Conversely: --no-quiet | -Q)

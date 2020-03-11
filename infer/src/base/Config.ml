@@ -3117,20 +3117,6 @@ let procnames_locks_dir = results_dir ^/ procnames_locks_dir_name
    information found in the abstract state *)
 let dynamic_dispatch = is_checker_enabled Biabduction
 
-let quandaryBO_filtered_issues =
-  if is_checker_enabled QuandaryBO then
-    IssueType.
-      [ buffer_overrun_u5
-      ; buffer_overrun_l5
-      ; buffer_overrun_l4
-      ; untrusted_buffer_access
-      ; untrusted_heap_allocation ]
-    |> List.filter ~f:(fun issue ->
-           let enabled = issue.IssueType.enabled || not filtering in
-           IssueType.set_enabled issue true ; not enabled )
-  else []
-
-
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
   match external_java_packages with

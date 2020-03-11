@@ -488,8 +488,6 @@ OPTIONS
              STRICT_MODE_VIOLATION (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
-             TAINTED_BUFFER_ACCESS (enabled by default),
-             TAINTED_MEMORY_ALLOCATION (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by
@@ -890,14 +888,6 @@ OPTIONS
 
        --quandary-sources json
            Specify custom sources for Quandary           See also infer-analyze(1).
-
-       --quandaryBO
-           Activates: [EXPERIMENTAL] The quandaryBO tainted buffer access
-           analysis (Conversely: --no-quandaryBO)           See also infer-analyze(1).
-
-       --quandaryBO-only
-           Activates: Enable --quandaryBO and disable all other checkers
-           (Conversely: --no-quandaryBO-only)           See also infer-analyze(1).
 
        --quiet,-q
            Activates: Do not print specs on standard output (default: only

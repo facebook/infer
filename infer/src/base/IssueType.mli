@@ -300,10 +300,6 @@ val strong_self_not_checked : t
 
 val symexec_memory_error : t
 
-val tainted_buffer_access : t
-
-val tainted_memory_allocation : t
-
 val thread_safety_violation : t
 
 val topl_error : t
