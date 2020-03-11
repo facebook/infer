@@ -320,8 +320,8 @@ let execute_analyze ~changed_files =
 
 
 let report ?(suppress_console = false) () =
-  let report_json = Config.(results_dir ^/ report_json) in
-  InferPrint.main ~report_json ;
+  let issues_json = Config.(results_dir ^/ report_json) in
+  InferPrint.main ~issues_json ~costs_json:Config.(results_dir ^/ costs_report_json) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
@@ -339,7 +339,7 @@ let report ?(suppress_console = false) () =
         @@ if_true "--quiet"
              (Config.quiet || suppress_console)
              [ "--issues-json"
-             ; report_json
+             ; issues_json
              ; "--issues-txt"
              ; bugs_txt
              ; "--project-root"

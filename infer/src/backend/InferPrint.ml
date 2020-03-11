@@ -277,46 +277,11 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         None
 end)
 
-let error_filter filters proc_name file error_name =
+let mk_error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
   && filters.Inferconfig.error_filter error_name
   && filters.Inferconfig.proc_filter proc_name
-
-
-type report_kind = Costs | Issues [@@deriving compare]
-
-type bug_format_kind = Json [@@deriving compare]
-
-let get_outfile outfile =
-  match outfile with
-  | Some outfile ->
-      outfile
-  | None ->
-      L.(die InternalError) "An outfile is require for this format."
-
-
-let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error_filter
-    {Issue.proc_name; proc_location; err_key; err_data} =
-  match format_kind with
-  | Json ->
-      let outf = get_outfile outfile_opt in
-      IssuesJson.pp outf.fmt
-        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
-
-
-let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
-  match format_kind with
-  | Json ->
-      let outf = get_outfile outfile_opt in
-      IssuesJson.pp_issues_of_error_log outf.fmt
-
-
-let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
-  let pp_issues_in_format format =
-    pp_issues_in_format format error_filter linereader proc_loc_opt procname err_log
-  in
-  List.iter ~f:pp_issues_in_format bug_format_list
 
 
 let collect_issues summary issues_acc =
@@ -328,130 +293,61 @@ let collect_issues summary issues_acc =
     err_log issues_acc
 
 
-let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
-  match format_kind with
-  | Json ->
-      let outf = get_outfile outfile_opt in
-      JsonCostsPrinter.pp outf.fmt
-
-
-let pp_costs summary costs_format_list =
-  let pp format =
-    pp_costs_in_format format
-      { loc= Summary.get_loc summary
-      ; proc_name= Summary.get_proc_name summary
-      ; cost_opt= summary.Summary.payloads.Payloads.cost }
-  in
-  List.iter ~f:pp costs_format_list
-
-
-let pp_summary_by_report_kind formats_by_report_kind summary issues_acc =
-  let pp_summary_by_report_kind (report_kind, format_list) =
-    match (report_kind, format_list) with Costs, _ -> pp_costs summary format_list | _ -> ()
-  in
-  List.iter ~f:pp_summary_by_report_kind formats_by_report_kind ;
-  collect_issues summary issues_acc
-
-
-let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
-    =
-  let pp_summary_by_report_kind (report_kind, format_list) =
-    match (report_kind, format_list) with
-    | Issues, _ :: _ ->
-        pp_issues_of_error_log error_filter linereader None procname error_log format_list
-    | _ ->
-        ()
-  in
-  List.iter ~f:pp_summary_by_report_kind formats_by_report_kind
+let write_costs summary (outfile : Utils.outfile) =
+  JsonCostsPrinter.pp outfile.fmt
+    { loc= Summary.get_loc summary
+    ; proc_name= Summary.get_proc_name summary
+    ; cost_opt= summary.Summary.payloads.Payloads.cost }
 
 
 (** Process lint issues of a procedure *)
-let pp_lint_issues filters formats_by_report_kind linereader procname error_log =
-  let error_filter = error_filter filters procname in
-  pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
+let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname error_log =
+  let error_filter = mk_error_filter filters procname in
+  IssuesJson.pp_issues_of_error_log issues_outf.fmt error_filter linereader None procname error_log
 
 
 (** Process a summary *)
-let process_summary formats_by_report_kind summary issues_acc =
-  pp_summary_by_report_kind formats_by_report_kind summary issues_acc
+let process_summary ~costs_outf summary issues_acc =
+  write_costs summary costs_outf ; collect_issues summary issues_acc
 
 
-(** Although the out_file is an Option type, the None option is strictly meant for the logs
-    format_kind, and all other formats should contain an outfile value. *)
-let mk_format format_kind fname =
-  Option.value_map
-    ~f:(fun out_file -> [(format_kind, Some out_file)])
-    ~default:[] (Utils.create_outfile fname)
-
-
-let init_issues_format_list report_json = mk_format Json report_json
-
-let init_files format_list_by_kind =
-  let init_files_of_report_kind (report_kind, format_list) =
-    let init_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
-      match (format_kind, report_kind) with
-      | Json, Costs ->
-          let outfile = get_outfile outfile_opt in
-          JsonCostsPrinter.pp_open outfile.fmt ()
-      | Json, Issues ->
-          let outfile = get_outfile outfile_opt in
-          IssuesJson.pp_open outfile.fmt ()
-    in
-    List.iter ~f:init_files_of_format format_list
-  in
-  List.iter ~f:init_files_of_report_kind format_list_by_kind
-
-
-let finalize_and_close_files format_list_by_kind =
-  let close_files_of_report_kind (report_kind, format_list) =
-    let close_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
-      ( match (format_kind, report_kind) with
-      | Json, Costs ->
-          let outfile = get_outfile outfile_opt in
-          JsonCostsPrinter.pp_close outfile.fmt ()
-      | Json, Issues ->
-          let outfile = get_outfile outfile_opt in
-          IssuesJson.pp_close outfile.fmt () ) ;
-      match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
-    in
-    List.iter ~f:close_files_of_format format_list ;
-    ()
-  in
-  List.iter ~f:close_files_of_report_kind format_list_by_kind
-
-
-let pp_summary_and_issues formats_by_report_kind issue_formats =
+let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   let linereader = Printer.LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
   SpecsFiles.iter_from_config ~f:(fun summary ->
-      all_issues := process_summary formats_by_report_kind summary !all_issues ) ;
+      all_issues := process_summary ~costs_outf summary !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   if Config.is_checker_enabled QuandaryBO then all_issues := QuandaryBO.update_issues !all_issues ;
   List.iter
-    ~f:(fun ({Issue.proc_name} as issue) ->
-      let error_filter = error_filter filters proc_name in
-      List.iter
-        ~f:(fun issue_format -> pp_issue_in_format issue_format error_filter issue)
-        issue_formats )
+    ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
+      let error_filter = mk_error_filter filters proc_name in
+      IssuesJson.pp issues_outf.Utils.fmt
+        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} )
     !all_issues ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
   List.iter (Config.lint_issues_dir_name :: FileLevelAnalysisIssueDirs.get_registered_dir_names ())
     ~f:(fun dir_name ->
-      IssueLog.load dir_name
-      |> IssueLog.iter ~f:(pp_lint_issues filters formats_by_report_kind linereader) ) ;
-  finalize_and_close_files formats_by_report_kind
+      IssueLog.load dir_name |> IssueLog.iter ~f:(write_lint_issues filters issues_outf linereader)
+  ) ;
+  ()
 
 
-let main ~report_json =
-  let issue_formats = init_issues_format_list report_json in
-  let formats_by_report_kind =
-    let costs_report_format_kind =
-      let file = Config.(results_dir ^/ costs_report_json) in
-      [(Costs, mk_format Json file)]
-    in
-    costs_report_format_kind @ [(Issues, issue_formats)]
+let main ~issues_json ~costs_json =
+  let mk_outfile fname =
+    match Utils.create_outfile fname with
+    | None ->
+        L.die InternalError "Could not create '%s'." fname
+    | Some outf ->
+        outf
   in
-  init_files formats_by_report_kind ;
-  pp_summary_and_issues formats_by_report_kind issue_formats ;
+  let issues_outf = mk_outfile issues_json in
+  IssuesJson.pp_open issues_outf.fmt () ;
+  let costs_outf = mk_outfile costs_json in
+  JsonCostsPrinter.pp_open costs_outf.fmt () ;
+  process_all_summaries_and_issues ~issues_outf ~costs_outf ;
+  JsonCostsPrinter.pp_close costs_outf.fmt () ;
+  Utils.close_outf costs_outf ;
+  IssuesJson.pp_close issues_outf.fmt () ;
+  Utils.close_outf issues_outf ;
   ()
