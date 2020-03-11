@@ -41,9 +41,12 @@ let comment_style_python = Line ("#", false)
 
 let comment_style_shell = Line ("#", true)
 
+let comment_style_lisp = Line (";", false)
+
 let comment_styles_lang =
   [ (comment_style_al, "AL")
   ; (comment_style_c, "C")
+  ; (comment_style_lisp, "Lisp")
   ; (comment_style_llvm, "LLVM")
   ; (comment_style_m4, "M4")
   ; (comment_style_make, "Makefile")
@@ -241,10 +244,15 @@ let com_style_of_lang =
   ; (".re", comment_style_c)
   ; (".rei", comment_style_c)
   ; (".sh", comment_style_shell)
+  ; ("dune", comment_style_lisp)
   ; ("dune.in", comment_style_ocaml)
+  ; ("dune.common", comment_style_lisp)
   ; ("dune.common.in", comment_style_ocaml)
+  ; ("dune-common", comment_style_lisp)
   ; ("dune-common.in", comment_style_ocaml)
-  ; ("dune-workspace.in", comment_style_llvm)
+  ; ("dune-project", comment_style_lisp)
+  ; ("dune-workspace", comment_style_lisp)
+  ; ("dune-workspace.in", comment_style_lisp)
   ; ("Makefile", comment_style_make) ]
 
 
