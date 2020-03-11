@@ -324,7 +324,7 @@ let rec exceed_length ~max = function
 
 let store_args_in_file args =
   if exceed_length ~max:max_command_line_length args then (
-    let file = Filename.temp_file "buck_targets" ".txt" in
+    let file = Filename.temp_file ~in_dir:Config.temp_file_dir "buck_targets" ".txt" in
     let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" args) in
     let () = Utils.with_file_out file ~f:write_args in
     L.(debug Capture Quiet) "Buck targets options stored in file '%s'@\n" file ;

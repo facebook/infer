@@ -215,7 +215,7 @@ type file_lock =
   ; unlock: unit -> unit }
 
 let create_file_lock () =
-  let file, oc = Core.Filename.open_temp_file "infer" "" in
+  let file, oc = Core.Filename.open_temp_file "infer_lock" "" in
   let fd = Core.Unix.openfile ~mode:[IStd.Unix.O_WRONLY] file in
   let lock () = Core.Unix.lockf fd ~mode:IStd.Unix.F_LOCK ~len:IStd.Int64.zero in
   let unlock () = Core.Unix.lockf fd ~mode:IStd.Unix.F_ULOCK ~len:IStd.Int64.zero in

@@ -665,6 +665,8 @@ val xcode_developer_dir : string option
 val xcpretty : bool
 (** {2 Global variables with initial values specified by command-line options} *)
 
+val temp_file_dir : string
+
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
 
 (** {2 Command Line Interface Documentation} *)

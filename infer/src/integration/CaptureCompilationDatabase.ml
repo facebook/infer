@@ -124,7 +124,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
 
 (** Compute the compilation database files. *)
 let get_compilation_database_files_xcodebuild ~prog ~args =
-  let tmp_file = Filename.temp_file "cdb" ".json" in
+  let tmp_file = Filename.temp_file ~in_dir:Config.temp_file_dir "cdb" ".json" in
   let xcodebuild_prog, xcodebuild_args = (prog, prog :: args) in
   let xcpretty_prog = "xcpretty" in
   let xcpretty_args =

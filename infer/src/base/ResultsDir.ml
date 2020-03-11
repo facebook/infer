@@ -82,6 +82,7 @@ let create_results_dir () =
              L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir
        ) ;
   Unix.mkdir_p Config.results_dir ;
+  Unix.mkdir_p Config.temp_file_dir ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
   prepare_logging_and_db () ;
   ()

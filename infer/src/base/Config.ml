@@ -3028,6 +3028,8 @@ and custom_symbols =
 
 and symops_per_iteration = !symops_per_iteration
 
+and temp_file_dir = !results_dir ^/ "tmp"
+
 and keep_going = !keep_going
 
 and test_determinator = !test_determinator

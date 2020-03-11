@@ -23,7 +23,7 @@ let write_infer_deps infile =
 
 
 let run_buck_capture cmd =
-  let buck_output_file = Filename.temp_file "buck_output" ".log" in
+  let buck_output_file = Filename.temp_file ~in_dir:Config.temp_file_dir "buck_output" ".log" in
   let shell_cmd =
     List.map ~f:Escape.escape_shell cmd
     |> String.concat ~sep:" "
@@ -45,7 +45,7 @@ let run_buck_capture cmd =
   In_channel.close buck_stderr ;
   match Unix.waitpid pid with
   | Ok () ->
-      write_infer_deps buck_output_file ; Unix.unlink buck_output_file
+      write_infer_deps buck_output_file
   | Error _ as err ->
       L.(die ExternalError)
         "*** Buck genrule capture failed to execute: %s@\n***@."
