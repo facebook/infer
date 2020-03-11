@@ -91,4 +91,10 @@ public class Array {
   void toArray_linear(java.util.ArrayList<String> list) {
     for (int i = 0; i < list.toArray().length; i++) {}
   }
+
+  private static final String[] static_final_field = new String[] {"", ""};
+
+  void use_static_final_array_field_constant() {
+    for (int i = 0; i < static_final_field.length; i++) {}
+  }
 }

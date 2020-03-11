@@ -234,16 +234,18 @@ module TransferFunctions = struct
     fun tenv get_summary exp mem ->
       Option.value_map (Exp.get_java_class_initializer tenv exp) ~default:mem
         ~f:(fun (clinit_pname, pvar, fn, field_typ) ->
+          let copy_from_class_init () =
+            Option.value_map (get_summary clinit_pname) ~default:mem ~f:(fun clinit_mem ->
+                let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) ~fn in
+                copy_reachable_locs_from field_loc ~from_mem:clinit_mem ~to_mem:mem )
+          in
           match field_typ.Typ.desc with
-          | Typ.Tptr ({desc= Tstruct _}, _) ->
+          | Typ.Tptr ({desc= Tstruct _}, _) when is_known_java_static_field fn ->
               (* It copies all of the reachable values when the contents of the field are commonly
-                 used as immutable, e.g., values of enum.  Otherwise, it copies only the size of
-                 static final array. *)
-              Option.value_map (get_summary clinit_pname) ~default:mem ~f:(fun clinit_mem ->
-                  let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) ~fn in
-                  if is_known_java_static_field fn then
-                    copy_reachable_locs_from field_loc ~from_mem:clinit_mem ~to_mem:mem
-                  else mem )
+                 used as immutable, e.g., values of enum. *)
+              copy_from_class_init ()
+          | Typ.Tptr ({desc= Tarray _}, _) ->
+              copy_from_class_init ()
           | _ ->
               mem )
 
