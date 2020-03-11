@@ -5,7 +5,7 @@
 
 (library
  (name sledgelib)
- (libraries apron apron.boxMPQ ctypes ctypes.foreign trace import)
+ (libraries apron apron.boxMPQ trace import)
  (flags
   (:standard -open Import))
  (preprocess
