@@ -309,7 +309,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
       ; procedure= cost_info.Jsonbug_t.procedure_id
       ; procedure_start_line= line
       ; file
-      ; bug_trace= InferPrint.loc_trace_to_jsonbug_record trace severity
+      ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace severity
       ; key= ""
       ; node_key= None
       ; hash= cost_info.Jsonbug_t.hash
@@ -319,7 +319,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
       ; linters_def_file= None
       ; doc_url= None
       ; traceview_id= None
-      ; censored_reason= InferPrint.censored_reason issue_type source_file
+      ; censored_reason= JsonReports.censored_reason issue_type source_file
       ; access= None
       ; extras= None }
   else None

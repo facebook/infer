@@ -333,7 +333,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   ()
 
 
-let main ~issues_json ~costs_json =
+let write_reports ~issues_json ~costs_json =
   let mk_outfile fname =
     match Utils.create_outfile fname with
     | None ->

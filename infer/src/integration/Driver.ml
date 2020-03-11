@@ -321,7 +321,7 @@ let execute_analyze ~changed_files =
 
 let report ?(suppress_console = false) () =
   let issues_json = Config.(results_dir ^/ report_json) in
-  InferPrint.main ~issues_json ~costs_json:Config.(results_dir ^/ costs_report_json) ;
+  JsonReports.write_reports ~issues_json ~costs_json:Config.(results_dir ^/ costs_report_json) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   (* Post-process the report according to the user config. By default, calls report.py to create a

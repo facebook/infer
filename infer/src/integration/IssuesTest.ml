@@ -60,7 +60,7 @@ let pp_custom_of_report fmt report fields =
           F.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
       | QualifierContainsPotentialExceptionNote ->
           F.pp_print_bool fmt
-            (String.is_substring issue.qualifier ~substring:InferPrint.potential_exception_message)
+            (String.is_substring issue.qualifier ~substring:JsonReports.potential_exception_message)
     in
     List.iteri ~f:pp_field fields ; F.fprintf fmt "@."
   in
