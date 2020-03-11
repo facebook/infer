@@ -575,6 +575,9 @@ mod_dep: src_build_common
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
 
+# `test_build` and `src_build` (which is a dependency of `endtoend_test`) should not be run in
+# parallel since they build infer with different profiles (and therefore conflict). Therefore,
+# `test_build` is in the dependency, and `endtoend_test` in the recipe.
 .PHONY: config_tests
 config_tests: test_build ocaml_unit_test validate-skel mod_dep
 	$(MAKE) endtoend_test checkCopyright

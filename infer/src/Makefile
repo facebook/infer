@@ -22,14 +22,6 @@ INFER_CREATE_TRACEVIEW_LINKS_MODULE = InferCreateTraceViewLinks
 INFER_CREATE_TRACEVIEW_LINKS_MAIN = $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 CHECKCOPYRIGHT_MAIN = checkCopyright
 
-INFER_ATDGEN_STUB_BASES = atd/jsonbug atd/runstate atd/java_method_decl atd/perf_profiler atd/java_profiler_samples atd/clang_profiler_samples
-INFER_ATDGEN_TYPES = j t
-INFER_ATDGEN_STUB_ATDS = $(INFER_ATDGEN_STUB_BASES:.atd)
-INFER_ATDGEN_SUFFIXES = $(foreach atd_t,$(INFER_ATDGEN_TYPES),_$(atd_t).ml _$(atd_t).mli)
-INFER_ATDGEN_STUBS = $(foreach base,$(INFER_ATDGEN_STUB_BASES),\
-	$(addprefix $(base),$(INFER_ATDGEN_SUFFIXES)))
-
-
 FACEBOOK_DIR = facebook
 
 #### Clang declarations ####
@@ -66,8 +58,7 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 INFER_CONFIG_TARGETS += $(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe
 endif
 
-OCAML_GENERATED_SOURCES = \
-  base/Version.ml $(INFER_ATDGEN_STUBS)
+OCAML_GENERATED_SOURCES = base/Version.ml
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
 OCAML_GENERATED_SOURCES += $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
@@ -197,11 +188,6 @@ $(2)_$(3).mli: $(1)
 # twice during parallel builds
 $(2)_$(3).ml: $(2)_$(3).mli
 endef
-
-$(foreach atd_type,$(INFER_ATDGEN_TYPES),\
-  $(foreach base,$(INFER_ATDGEN_STUB_BASES),\
-    $(eval \
-        $(call gen_atdgen_rules,$(base).atd,$(base),$(atd_type)))))
 
 # rebuild the artifacts of the AST files whenever they're upated in FCP
 $(foreach atd_type,$(CLANG_ATDGEN_TYPES),\

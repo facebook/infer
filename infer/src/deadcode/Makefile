@@ -29,6 +29,7 @@ ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
 INFER_BUILD_DIR = $(INFER_DIR)/_build/default/src
+DEADCODE_DIR = $(INFER_DIR)/src/deadcode
 
 ALL_INFER_IN_ONE_FILE_ML = all_infer_in_one_file.ml
 ALL_ML_FILES = all_ml_files
@@ -38,23 +39,43 @@ ALL_MLI_FILES_COPIED = all_mli_files_copied
 
 default: detect_dead_code
 
-ml_src_files_from_mlly:=$(shell find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml[ly]')
+# ./ is necessary for find to work correctly.
+# Note that we run find under _build directory. Since we copy some
+# sources from subfolders to src/ folder to avoid duplicates we use
+# -depth 1 and iteration over main and library folders.
+LIBRARY_FOLDERS = . ./IR ./atd ./base ./c_stubs ./istd ./scripts
+INCLUDE_FOLDERS = -I IR -I atd -I base -I c_stubs -I istd -I scripts
 
-ml_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do echo $${i\#"../"}; done)
+ml_src_files:=$(shell \
+	cd $(INFER_BUILD_DIR); \
+	for d in $(LIBRARY_FOLDERS); do \
+	[ -d $$d ] && echo $$(find $$d -depth 1 -regex '\./[a-zA-Z].*\.ml' \( -not -regex '.*\.pp\.ml' \) \
+				| sed 's/^\.\///'); \
+	done)
+mli_src_files:=$(shell \
+	cd $(INFER_BUILD_DIR); \
+	for d in $(LIBRARY_FOLDERS); do \
+	[ -d $$d ] && echo $$(find $$d -depth 1 -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
+				| sed 's/^\.\///'); \
+	done)
+ml_src_files_without_mli:=$(shell \
+	cd $(INFER_BUILD_DIR); \
+	for i in $(ml_src_files); do [ -f $${i}i ] || echo $$i; done)
 
-mli_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.mli'); do echo $${i\#"../"}; done)
-
-ml_src_files_without_mli:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $${i\#"../"}; done)
+.PHONY: dump_ml dump_mli dump_ml_only
+dump_ml:
+	@echo $(ml_src_files)
+dump_mli:
+	@echo $(mli_src_files)
+dump_ml_only:
+	@echo $(ml_src_files_without_mli)
 
 .PHONY: depend
 depend:
-	cd .. && \
+	cd $(INFER_BUILD_DIR) && \
 	ocamldep -native \
-	  -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun \
-	  -I c_stubs -I checkers -I cost -I clang -I concurrency -I facebook -I integration -I istd -I java \
-	  -I labs -I nullsafe -I pulse -I scuba -I quandary -I topl -I unit -I unit/clang -I unit/nullsafe -I deadcode \
-	  -I test_determinator \
-	  $(ml_src_files) $(mli_src_files) > deadcode/.depend
+	  $(INCLUDE_FOLDERS) \
+	  $(ml_src_files) $(mli_src_files) > $(DEADCODE_DIR)/.depend
 
 # circular dependency... not sure how to fix properly
 %.cmi: %.cmx
@@ -73,12 +94,12 @@ depend:
 	$(QUIET)echo "  = sig " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	pre-processor directive to get errors in the original files and not in all_infer_in_one_file.ml
 	$(QUIET)echo '# 1 "$*.mli"' >> $(ALL_INFER_IN_ONE_FILE_ML)
-	cat ../$*.mli >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat $(INFER_BUILD_DIR)/$*.mli >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  end end " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	silence "unused module" warnings for executables
 	$(QUIET)if [ $@ = "infer.cmi" ] \
-	        || [ $@ = "unit/inferunit.cmi" ] \
-	        || [ $@ = "facebook/InferCreateTraceViewLinks.cmi" ] \
+	        || [ $@ = "inferunit.cmi" ] \
+	        || [ $@ = "InferCreateTraceViewLinks.cmi" ] \
 	        ; then \
 	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
 	fi
@@ -93,13 +114,13 @@ depend:
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo '# 1 "$*.ml"' >> $(ALL_INFER_IN_ONE_FILE_ML)
-	cat ../$*.ml >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat $(INFER_BUILD_DIR)/$*.ml >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  end end" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "(* END OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	silence "unused module" warnings for executables
 	$(QUIET)if [ $@ = "infer.cmi" ] \
-	        || [ $@ = "unit/inferunit.cmi" ] \
-	        || [ $@ = "facebook/InferCreateTraceViewLinks.cmi" ] \
+	        || [ $@ = "inferunit.cmi" ] \
+	        || [ $@ = "InferCreateTraceViewLinks.cmi" ] \
 	        || [ $@ = "scripts/checkCopyright.cmi" ] \
 	        ; then \
 	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
@@ -116,7 +137,7 @@ $(ml_src_files_without_mli:.ml=.cmx):
 	$(QUIET)echo $(shell basename $@ .cmx) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "# 1 \"$$(echo $@ | $(GNU_SED) -e 's/\.cmx$$/.ml/')\"" >> $(ALL_INFER_IN_ONE_FILE_ML)
-	cat ../$$(echo $@ | $(GNU_SED) -e "s/\.cmx$$/.ml/") >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat $(INFER_BUILD_DIR)/$$(echo $@ | $(GNU_SED) -e "s/\.cmx$$/.ml/") >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "(* END OF MODULE $@ *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
@@ -132,7 +153,7 @@ $(ml_src_files_without_mli:.ml=.cmx):
 # root .cmx to include all the code. Any code not used in the construction of these "root .cmx" will
 # be considered dead.
 .PHONY: flatten_infer
-flatten_infer: infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.cmx scripts/checkCopyright.cmx
+flatten_infer: infer.cmx inferunit.cmx InferCreateTraceViewLinks.cmx scripts/checkCopyright.cmx
 	$(QUIET)echo "see results in $(ALL_INFER_IN_ONE_FILE_ML)"
 
 .PHONY: detect_dead_code
@@ -143,19 +164,6 @@ detect_dead_code:
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get dune generated, and the generated code for the lexers and parsers in ../_build
 	$(MAKE) GENERATED_DUNES=deadcode/dune -C .. test
-#	copy generated source files from ../_build
-	for file in $(ml_src_files_from_mlly); do \
-	  set +e; \
-	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mly).ml" ] && \
-	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mly).ml .; \
-	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mly).mli" ] && \
-	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mly).mli .; \
-	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mll).ml" ] && \
-	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mll).ml .; \
-	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mll).mli" ] && \
-	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mll).mli .; \
-	  set -e; \
-	done
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
 #	have changed. For both of these reasons, run another `make`.
