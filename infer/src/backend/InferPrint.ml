@@ -372,44 +372,6 @@ let pp_text_of_report fmt report =
   List.iter ~f:pp_row report ; F.fprintf fmt "@?"
 
 
-(** Categorize the preconditions of specs and print stats *)
-module PreconditionStats = struct
-  let nr_nopres = ref 0
-
-  let nr_empty = ref 0
-
-  let nr_onlyallocation = ref 0
-
-  let nr_dataconstraints = ref 0
-
-  let do_summary proc_name summary =
-    let specs = Tabulation.get_specs_from_payload summary in
-    let preconditions =
-      List.map ~f:(fun spec -> BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre) specs
-    in
-    match Prop.CategorizePreconditions.categorize preconditions with
-    | Prop.CategorizePreconditions.Empty ->
-        incr nr_empty ;
-        L.result "Procedure: %a footprint:Empty@." Procname.pp proc_name
-    | Prop.CategorizePreconditions.OnlyAllocation ->
-        incr nr_onlyallocation ;
-        L.result "Procedure: %a footprint:OnlyAllocation@." Procname.pp proc_name
-    | Prop.CategorizePreconditions.NoPres ->
-        incr nr_nopres ;
-        L.result "Procedure: %a footprint:NoPres@." Procname.pp proc_name
-    | Prop.CategorizePreconditions.DataConstraints ->
-        incr nr_dataconstraints ;
-        L.result "Procedure: %a footprint:DataConstraints@." Procname.pp proc_name
-
-
-  let pp_stats () =
-    L.result "@.Precondition stats@." ;
-    L.result "Procedures with no preconditions: %d@." !nr_nopres ;
-    L.result "Procedures with empty precondition: %d@." !nr_empty ;
-    L.result "Procedures with only allocation conditions: %d@." !nr_onlyallocation ;
-    L.result "Procedures with data constraints: %d@." !nr_dataconstraints
-end
-
 module SummaryStats = struct
   module MetricTypes = struct
     type 't typ = Bool : bool typ | Int : int typ
@@ -724,7 +686,6 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 let process_summary formats_by_report_kind summary issues_acc =
   let proc_name = Summary.get_proc_name summary in
   let issues_acc' = pp_summary_by_report_kind formats_by_report_kind summary issues_acc in
-  if Config.precondition_stats then PreconditionStats.do_summary proc_name summary ;
   if Config.summary_stats then SummaryStats.do_summary proc_name summary ;
   issues_acc'
 
@@ -797,7 +758,6 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
         ~f:(fun issue_format -> pp_issue_in_format issue_format error_filter issue)
         issue_formats )
     !all_issues ;
-  if Config.precondition_stats then PreconditionStats.pp_stats () ;
   if Config.summary_stats then SummaryStats.pp_stats () ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
   List.iter (Config.lint_issues_dir_name :: FileLevelAnalysisIssueDirs.get_registered_dir_names ())

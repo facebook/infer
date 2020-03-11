@@ -1575,10 +1575,6 @@ INTERNAL OPTIONS
        --perf-profiler-data-file-reset
            Cancel the effect of --perf-profiler-data-file.
 
-       --precondition-stats
-           Activates: Print stats about preconditions to standard output
-           (Conversely: --no-precondition-stats)
-
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
            textual description (Conversely: --no-print-buckets)

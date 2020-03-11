@@ -1730,11 +1730,6 @@ and pmd_xml =
     "Output issues in (PMD) XML format"
 
 
-and precondition_stats =
-  CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
-    "Print stats about preconditions to standard output"
-
-
 and print_active_checkers =
   CLOpt.mk_bool ~long:"print-active-checkers"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2893,8 +2888,6 @@ and patterns_skip_implementation = match patterns_skip_implementation with k, r 
 and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
 
 and pmd_xml = !pmd_xml
-
-and precondition_stats = !precondition_stats
 
 and print_active_checkers = !print_active_checkers
 

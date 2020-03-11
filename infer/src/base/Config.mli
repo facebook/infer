@@ -479,8 +479,6 @@ val perf_profiler_data_file : string option
 
 val pmd_xml : bool
 
-val precondition_stats : bool
-
 val print_active_checkers : bool
 
 val print_builtins : bool
