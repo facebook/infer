@@ -1,0 +1,18 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name InferIR)
+ (public_name InferIR)
+ (flags
+  (:standard -open Core -open InferStdlib -open IStd -open InferGenerated
+    -open InferBase))
+ (libraries core zarith InferStdlib InferGenerated InferBase)
+ (preprocess
+  (pps ppx_compare)))
+
+(documentation
+ (package InferIR)
+ (mld_files index))

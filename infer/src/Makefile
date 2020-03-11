@@ -98,7 +98,7 @@ all: infer
 
 GENERATED_FROM_AUTOCONF = dune.common dune-workspace base/Version.ml
 
-GENERATED_DUNES += dune atd/dune base/dune IR/dune istd/dune scripts/dune
+GENERATED_DUNES += dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -307,12 +307,7 @@ $(GENERATED_DUNES): dune.common
 	$(QUIET)cat $+ > $@
 
 dune: dune.in
-atd/dune: atd/dune.in
-base/dune: base/dune.in
 deadcode/dune: deadcode/dune.in
-IR/dune: IR/dune.in
-istd/dune: istd/dune.in
-scripts/dune: scripts/dune.in
 
 .PHONY: clean
 clean:

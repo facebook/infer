@@ -177,11 +177,6 @@ infer/src/.project
 /infer/src/_build
 /infer/src/dune.common
 /infer/src/dune
-/infer/src/atd/dune
-/infer/src/base/dune
-/infer/src/IR/dune
-/infer/src/istd/dune
-/infer/src/scripts/dune
 /infer/src/dune-workspace
 .merlin
 
