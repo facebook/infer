@@ -5,8 +5,16 @@
 
 (executable
  (name checkCopyright)
- (modes byte exe)
+ (modes byte_complete exe)
  (flags (:standard))
  (libraries core str)
  (preprocess
   (pps ppx_compare)))
+
+(rule
+ (action
+  (copy checkCopyright.exe checkCopyright))
+ (mode
+  (promote
+   (until-clean)
+   (into ../../bin))))

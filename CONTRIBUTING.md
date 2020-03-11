@@ -55,7 +55,7 @@ make devsetup
   if you're unsure of a module name.
 
 ```console
-$ ledit ocamldebug infer/bin/infer.bc
+$ ledit ocamldebug infer/bin/infer.bc.exe
 (ocd) break @ InferModules__InferAnalyze 100
 Breakpoint 1 at 9409684: file backend/InferAnalyze.ml, line 99, characters 18-78
 ```

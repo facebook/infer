@@ -1,0 +1,6 @@
+# .gitignore to keep the directory for dune to promote binaries into
+###################################
+
+# Filter everything except the .gitignore
+*
+!.gitignore

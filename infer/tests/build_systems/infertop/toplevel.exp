@@ -8,7 +8,7 @@ Findlib has been successfully loaded. Additional directives:
   #thread;;                 to enable threads
 
 The files [...]/extLib.cma
-and [...]/infertop.bc
+and [...]/infertop.bc.exe
 disagree over interface Base64
 n$5
 false

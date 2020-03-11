@@ -28,7 +28,7 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-INFER_BUILD_DIR = ../_build/default
+INFER_BUILD_DIR = $(INFER_DIR)/_build/default/src
 
 ALL_INFER_IN_ONE_FILE_ML = all_infer_in_one_file.ml
 ALL_ML_FILES = all_ml_files
@@ -38,13 +38,13 @@ ALL_MLI_FILES_COPIED = all_mli_files_copied
 
 default: detect_dead_code
 
-ml_src_files_from_mlly:=$(shell find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml[ly]')
+ml_src_files_from_mlly:=$(shell find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml[ly]')
 
-ml_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do echo $${i\#"../"}; done)
+ml_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do echo $${i\#"../"}; done)
 
-mli_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.mli'); do echo $${i\#"../"}; done)
+mli_src_files:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.mli'); do echo $${i\#"../"}; done)
 
-ml_src_files_without_mli:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $${i\#"../"}; done)
+ml_src_files_without_mli:=$(shell for i in $$(find .. -not -path "../*clang_stubs/*" -not -path "../*java_stubs/*" -not -path "../../_build/*" -regex '\.\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $${i\#"../"}; done)
 
 .PHONY: depend
 depend:
@@ -168,7 +168,7 @@ detect_dead_code:
 	rm "$$tmp_file_copied"
 	$(MAKE) -j 1 detect_dead_src_file
 #	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
-	if ! dune build --profile test $(INFER_BUILD_DIR)/deadcode/all_infer_in_one_file.bc; then \
+	if ! dune build --profile test all_infer_in_one_file.bc; then \
 	  $(MAKE) clean; \
 	  exit 1; \
 	fi

@@ -6,7 +6,7 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-INFER_BUILD_DIR = ../_build/default
+INFER_BUILD_DIR = ../../_build/default
 
 default: llvm_sil
 

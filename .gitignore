@@ -112,20 +112,6 @@ buck-out/
 .buckd/
 
 #other
-/infer/bin/infer
-/infer/bin/infer.bc
-/infer/bin/infer.exe
-/infer/bin/infer-analyze
-/infer/bin/infer-capture
-/infer/bin/infer-compile
-/infer/bin/infer-explore
-/infer/bin/infer-report
-/infer/bin/infer-reportdiff
-/infer/bin/infer-run
-/infer/bin/InferCreateTraceViewLinks
-/infer/bin/InferUnit
-/infer/bin/infertop.bc
-/infer/bin/llvm_sil
 /infer/man/man1/*.1
 /infer/man/man1/*.1.gz
 
@@ -142,7 +128,6 @@ buck-out/
 /infer/lib/specs/cpp_models
 /infer/lib/specs/objc_models
 /infer/lib/specs/clean_models
-/scripts/checkCopyright
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
 
@@ -174,10 +159,10 @@ infer/src/.project
 /infer/annotations/target
 
 # dune
-/infer/src/_build
+/infer/_build
+/infer/dune-workspace
 /infer/src/dune.common
 /infer/src/dune
-/infer/src/dune-workspace
 .merlin
 
 # generated when looking for dead code

@@ -439,8 +439,7 @@ clang_plugin_test_replace: clang_setup
 ocaml_unit_test: test_build
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
-	INFER_ARGS=--results-dir^infer-out-unit-tests \
-	$(SCRIPT_DIR)/dune_exec_shim.sh $(BUILD_DIR)/default/inferunit.bc)
+	INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN))
 
 define silence_make
   $(1) 2> >(grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target')
@@ -592,9 +591,6 @@ test: crash_if_not_all_analyzers_enabled config_tests
 ifeq (,$(findstring s,$(MAKEFLAGS)))
 	$(QUIET)echo "$(TERM_INFO)ALL TESTS PASSED$(TERM_RESET)"
 endif
-
-.PHONY: quick-test
-quick-test: test_build ocaml_unit_test
 
 .PHONY: test-replace
 test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace) \

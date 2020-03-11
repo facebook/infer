@@ -45,7 +45,8 @@ let env_stanza =
     (flags %s)
     (ocamlopt_flags (:standard -O3)))
   (test
-    (flags %s)))
+    (flags %s))
+  )
 |}
     lenient_flags lenient_flags strict_flags
 
@@ -102,11 +103,12 @@ let infer_exe_stanza =
     {|
 (executables
  (names %s)
- (modes byte exe)
+ (modes byte_complete exe)
  (flags (:standard %s -open InferModules))
  (libraries InferModules)
  (modules %s)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
+ (promote (until-clean) (into ../bin))
 )
 |}
     (String.concat " " infer_binaries)
@@ -119,12 +121,13 @@ let infertop_stanza =
     {|
 (executable
  (name infertop)
- (modes byte)
+ (modes byte_complete)
  (flags (:standard %s))
  (libraries utop InferModules)
+ (link_flags (-linkall -warn-error -31))
  (modules Infertop)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
- (link_flags (-linkall -warn-error -31))
+ (promote (until-clean) (into ../bin))
 )
 |}
     infer_cflags

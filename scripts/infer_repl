@@ -5,7 +5,8 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # where to find toplevel.bc, can be overridden
-BUILD_DIR=${BUILD_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
+BUILD_DIR=${BUILD_DIR:-"$SCRIPT_DIR"/../infer/_build/default/src}
+BIN_DIR="$SCRIPT_DIR/../infer/bin"
 INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}/byte\n' \;)
 
 # The -init option is effective only in interactive mode.
@@ -17,7 +18,7 @@ INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}/
 #       file. In interactive mode $SCRIPT_DIR isn't needed
 
 set -x
-"$SCRIPT_DIR"/dune_exec_shim.sh infertop.bc \
+$BIN_DIR/infertop.bc.exe \
   -init "$SCRIPT_DIR"/toplevel_init \
   $INCLUDE_FLAGS \
   -I "$SCRIPT_DIR" \
