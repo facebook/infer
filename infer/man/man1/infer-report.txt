@@ -283,10 +283,6 @@ OPTIONS
        --issues-tests file
            Write a list of issues in a format suitable for tests to file
 
-       --issues-txt file
-           Write a list of issues in text format to file (default:
-           infer-out/bugs.txt)
-
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:
            --no-print-logs)

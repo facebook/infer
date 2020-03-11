@@ -1455,12 +1455,6 @@ and issues_tests =
     ~meta:"file" "Write a list of issues in a format suitable for tests to $(i,file)"
 
 
-and issues_txt =
-  CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
-    ~in_help:InferCommand.[(Report, manual_generic)]
-    ~meta:"file" "Write a list of issues in text format to $(i,file) (default: infer-out/bugs.txt)"
-
-
 and iterations =
   CLOpt.mk_int ~deprecated:["iterations"] ~long:"iterations" ~default:1 ~meta:"int"
     "Specify the maximum number of operations for each function, expressed as a multiple of \
@@ -2792,8 +2786,6 @@ and iphoneos_target_sdk_version_path_regex =
 and issues_fields = !issues_fields
 
 and issues_tests = !issues_tests
-
-and issues_txt = !issues_txt
 
 and iterations = !iterations
 

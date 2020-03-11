@@ -665,10 +665,6 @@ OPTIONS
            Write a list of issues in a format suitable for tests to file       
     See also infer-report(1).
 
-       --issues-txt file
-           Write a list of issues in text format to file (default:
-           infer-out/bugs.txt)           See also infer-report(1).
-
        --java-jar-compiler path
            Specify the Java compiler jar used to generate the bytecode       
     See also infer-capture(1).
@@ -1426,9 +1422,6 @@ INTERNAL OPTIONS
 
        --issues-tests-reset
            Cancel the effect of --issues-tests.
-
-       --issues-txt-reset
-           Cancel the effect of --issues-txt.
 
        --iterations int
            Specify the maximum number of operations for each function,

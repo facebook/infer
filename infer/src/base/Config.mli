@@ -404,8 +404,6 @@ val issues_fields :
 
 val issues_tests : string option
 
-val issues_txt : string option
-
 val iterations : int
 
 val java_jar_compiler : string option

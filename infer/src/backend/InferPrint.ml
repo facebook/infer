@@ -343,35 +343,6 @@ let tests_jsonbug_compare (bug1 : Jsonbug_t.jsonbug) (bug2 : Jsonbug_t.jsonbug) 
     (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
 
 
-module IssuesTxt = struct
-  let pp_issue fmt error_filter proc_loc_opt (key : Errlog.err_key) (err_data : Errlog.err_data) =
-    let source_file =
-      match proc_loc_opt with
-      | Some proc_loc ->
-          proc_loc.Location.file
-      | None ->
-          err_data.loc.Location.file
-    in
-    if
-      error_filter source_file key.err_name
-      && ((not Config.filtering) || Option.is_none (censored_reason key.err_name source_file))
-    then Exceptions.pp_err err_data.loc key.severity key.err_name key.err_desc None fmt ()
-
-
-  (** Write bug report in text format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log =
-    Errlog.iter (pp_issue fmt error_filter proc_loc_opt) err_log
-end
-
-let pp_text_of_report fmt report =
-  let pp_row jsonbug =
-    let open Jsonbug_t in
-    F.fprintf fmt "%s:%d: %s: %s %s@\n" jsonbug.file jsonbug.line jsonbug.severity jsonbug.bug_type
-      jsonbug.qualifier
-  in
-  List.iter ~f:pp_row report ; F.fprintf fmt "@?"
-
-
 let error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
@@ -381,7 +352,7 @@ let error_filter filters proc_name file error_name =
 
 type report_kind = Costs | Issues | Summary [@@deriving compare]
 
-type bug_format_kind = Json | Tests | Text [@@deriving compare]
+type bug_format_kind = Json | Tests [@@deriving compare]
 
 let get_outfile outfile =
   match outfile with
@@ -400,9 +371,6 @@ let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error
         {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
   | Tests ->
       L.die InternalError "Printing issues as tests is not implemented"
-  | Text ->
-      let outf = get_outfile outfile_opt in
-      IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
 
 
 let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
@@ -412,9 +380,6 @@ let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
       IssuesJson.pp_issues_of_error_log outf.fmt
   | Tests ->
       L.die InternalError "Printing issues as tests is not implemented"
-  | Text ->
-      let outf = get_outfile outfile_opt in
-      IssuesTxt.pp_issues_of_error_log outf.fmt
 
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
@@ -443,8 +408,8 @@ let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   | Json ->
       let outf = get_outfile outfile_opt in
       JsonCostsPrinter.pp outf.fmt
-  | Tests | Text ->
-      L.(die InternalError) "Printing costs in tests/text/logs is not implemented"
+  | Tests ->
+      L.die InternalError "Printing costs in tests is not implemented"
 
 
 let pp_costs summary costs_format_list =
@@ -480,9 +445,6 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
           | Tests ->
               let outf = get_outfile outfile_opt in
               pp_custom_of_report outf.fmt report Config.issues_fields
-          | Text ->
-              let outf = get_outfile outfile_opt in
-              pp_text_of_report outf.fmt report
           | Json ->
               L.die InternalError "Printing issues from json does not support json output"
         in
@@ -538,8 +500,7 @@ let mk_format format_kind fname =
 let init_issues_format_list report_json =
   let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
   let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
-  let txt_format = Option.value_map ~f:(mk_format Text) ~default:[] Config.issues_txt in
-  json_format @ tests_format @ txt_format
+  json_format @ tests_format
 
 
 let init_files format_list_by_kind =
@@ -552,7 +513,7 @@ let init_files format_list_by_kind =
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_open outfile.fmt ()
-      | Json, Summary | Tests, _ | Text, _ ->
+      | Json, Summary | Tests, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -570,7 +531,7 @@ let finalize_and_close_files format_list_by_kind =
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_close outfile.fmt ()
-      | Json, Summary | Tests, _ | Text, _ ->
+      | Json, Summary | Tests, _ ->
           () ) ;
       match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
     in

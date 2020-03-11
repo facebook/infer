@@ -331,7 +331,7 @@ let report ?(suppress_console = false) () =
       ()
   | false, Some prog ->
       let if_true key opt args = if not opt then args else key :: args in
-      let bugs_txt = Option.value ~default:(Config.results_dir ^/ "bugs.txt") Config.issues_txt in
+      let bugs_txt = Config.results_dir ^/ "bugs.txt" in
       let args =
         if_true "--pmd-xml" Config.pmd_xml
         @@ if_true "--quiet"
