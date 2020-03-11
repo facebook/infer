@@ -150,7 +150,7 @@ let report_errors summary proc_name pname_loc modified_opt =
         let skipped_functions =
           PulseAbductiveDomain.SkippedCalls.fold
             (fun proc_name trace acc ->
-              PulseTrace.add_to_errlog ~nesting:1
+              PulseTrace.add_to_errlog ~nesting:1 ~include_value_history:false
                 ~pp_immediate:(fun fmt ->
                   F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
                 trace acc )

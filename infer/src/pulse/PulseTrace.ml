@@ -57,7 +57,7 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
             (F.asprintf "when calling %a here" CallEvent.pp f)
             []
           :: errlog )
-        @@ add_to_errlog ~nesting:(nesting + 1) ~pp_immediate in_call
+        @@ add_to_errlog ~include_value_history ~nesting:(nesting + 1) ~pp_immediate in_call
         @@ errlog
       in
       if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
