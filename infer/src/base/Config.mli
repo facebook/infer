@@ -387,22 +387,7 @@ val is_checker_enabled : Checker.t -> bool
 
 val issues_tests : string option
 
-val issues_tests_fields :
-  [ `Issue_field_bug_type
-  | `Issue_field_qualifier
-  | `Issue_field_severity
-  | `Issue_field_bucket
-  | `Issue_field_line
-  | `Issue_field_column
-  | `Issue_field_procedure
-  | `Issue_field_procedure_start_line
-  | `Issue_field_file
-  | `Issue_field_bug_trace
-  | `Issue_field_key
-  | `Issue_field_hash
-  | `Issue_field_line_offset
-  | `Issue_field_qualifier_contains_potential_exception_note ]
-  list
+val issues_tests_fields : IssuesTestField.t list
 
 val iterations : int
 

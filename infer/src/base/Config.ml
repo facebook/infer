@@ -30,24 +30,6 @@ let ml_bucket_symbols =
   ; ("unknown_origin", `MLeak_unknown) ]
 
 
-let issues_tests_fields_symbols =
-  [ ("bug_type", `Issue_field_bug_type)
-  ; ("bucket", `Issue_field_bucket)
-  ; ("qualifier", `Issue_field_qualifier)
-  ; ("severity", `Issue_field_severity)
-  ; ("line", `Issue_field_line)
-  ; ("column", `Issue_field_column)
-  ; ("procedure", `Issue_field_procedure)
-  ; ("procedure_start_line", `Issue_field_procedure_start_line)
-  ; ("file", `Issue_field_file)
-  ; ("bug_trace", `Issue_field_bug_trace)
-  ; ("key", `Issue_field_key)
-  ; ("hash", `Issue_field_hash)
-  ; ("line_offset", `Issue_field_line_offset)
-  ; ( "qualifier_contains_potential_exception_note"
-    , `Issue_field_qualifier_contains_potential_exception_note ) ]
-
-
 type os_type = Unix | Win32 | Cygwin
 
 type build_system =
@@ -1437,15 +1419,8 @@ and iphoneos_target_sdk_version_path_regex =
 and issues_tests_fields =
   CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
-    ~default:
-      [ `Issue_field_file
-      ; `Issue_field_procedure
-      ; `Issue_field_line_offset
-      ; `Issue_field_bug_type
-      ; `Issue_field_bucket
-      ; `Issue_field_severity
-      ; `Issue_field_bug_trace ]
-    ~symbols:issues_tests_fields_symbols ~eq:PolyVariantEqual.( = )
+    ~default:IssuesTestField.[File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace]
+    ~symbols:IssuesTestField.all_symbols ~eq:IssuesTestField.equal
     "Fields to emit with $(b,--issues-tests)"
 
 

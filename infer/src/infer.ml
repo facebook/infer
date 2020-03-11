@@ -145,8 +145,13 @@ let () =
         run Driver.Analyze
     | Capture | Compile | Run ->
         run (Lazy.force Driver.mode_from_command_line)
-    | Report ->
-        InferPrint.main ~report_json:None
+    | Report -> (
+      match Config.issues_tests with
+      | None ->
+          if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
+      | Some out_path ->
+          IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path
+            Config.issues_tests_fields )
     | ReportDiff ->
         (* at least one report must be passed in input to compute differential *)
         ( match Config.(report_current, report_previous, costs_current, costs_previous) with

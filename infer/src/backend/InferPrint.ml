@@ -277,72 +277,6 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         None
 end)
 
-let pp_custom_of_report fmt report fields =
-  let pp_custom_of_issue fmt (issue : Jsonbug_t.jsonbug) =
-    let open Jsonbug_t in
-    let comma_separator index = if index > 0 then ", " else "" in
-    let pp_trace fmt trace comma =
-      let pp_trace_elem fmt {description} = F.pp_print_string fmt description in
-      let trace_without_empty_descs =
-        List.filter ~f:(fun {description} -> not (String.is_empty description)) trace
-      in
-      F.fprintf fmt "%s[%a]" comma (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
-    in
-    let pp_field index field =
-      match field with
-      | `Issue_field_bug_type ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.bug_type
-      | `Issue_field_bucket ->
-          let bucket =
-            match
-              String.lsplit2 issue.qualifier ~on:']'
-              |> Option.map ~f:fst
-              |> Option.bind ~f:(String.chop_prefix ~prefix:"[")
-            with
-            | Some bucket ->
-                bucket
-            | None ->
-                "no_bucket"
-          in
-          Format.fprintf fmt "%s%s" (comma_separator index) bucket
-      | `Issue_field_qualifier ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
-      | `Issue_field_severity ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.severity
-      | `Issue_field_line ->
-          Format.fprintf fmt "%s%d" (comma_separator index) issue.line
-      | `Issue_field_column ->
-          Format.fprintf fmt "%s%d" (comma_separator index) issue.column
-      | `Issue_field_procedure ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.procedure
-      | `Issue_field_procedure_start_line ->
-          Format.fprintf fmt "%s%d" (comma_separator index) issue.procedure_start_line
-      | `Issue_field_file ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.file
-      | `Issue_field_bug_trace ->
-          pp_trace fmt issue.bug_trace (comma_separator index)
-      | `Issue_field_key ->
-          Format.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.key)
-      | `Issue_field_hash ->
-          Format.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.hash)
-      | `Issue_field_line_offset ->
-          Format.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
-      | `Issue_field_qualifier_contains_potential_exception_note ->
-          Format.pp_print_bool fmt
-            (String.is_substring issue.qualifier ~substring:potential_exception_message)
-    in
-    List.iteri ~f:pp_field fields ; Format.fprintf fmt "@."
-  in
-  List.iter ~f:(pp_custom_of_issue fmt) report
-
-
-let tests_jsonbug_compare (bug1 : Jsonbug_t.jsonbug) (bug2 : Jsonbug_t.jsonbug) =
-  let open Jsonbug_t in
-  [%compare: string * string * int * string * Caml.Digest.t]
-    (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
-    (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
-
-
 let error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
@@ -350,9 +284,9 @@ let error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Costs | Issues | Summary [@@deriving compare]
+type report_kind = Costs | Issues [@@deriving compare]
 
-type bug_format_kind = Json | Tests [@@deriving compare]
+type bug_format_kind = Json [@@deriving compare]
 
 let get_outfile outfile =
   match outfile with
@@ -369,8 +303,6 @@ let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error
       let outf = get_outfile outfile_opt in
       IssuesJson.pp outf.fmt
         {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
-  | Tests ->
-      L.die InternalError "Printing issues as tests is not implemented"
 
 
 let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
@@ -378,8 +310,6 @@ let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   | Json ->
       let outf = get_outfile outfile_opt in
       IssuesJson.pp_issues_of_error_log outf.fmt
-  | Tests ->
-      L.die InternalError "Printing issues as tests is not implemented"
 
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
@@ -398,18 +328,11 @@ let collect_issues summary issues_acc =
     err_log issues_acc
 
 
-let pp_summary summary =
-  L.result "Procedure: %a@\n%a@." Procname.pp (Summary.get_proc_name summary) Summary.pp_text
-    summary
-
-
 let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   match format_kind with
   | Json ->
       let outf = get_outfile outfile_opt in
       JsonCostsPrinter.pp outf.fmt
-  | Tests ->
-      L.die InternalError "Printing costs in tests is not implemented"
 
 
 let pp_costs summary costs_format_list =
@@ -424,46 +347,10 @@ let pp_costs summary costs_format_list =
 
 let pp_summary_by_report_kind formats_by_report_kind summary issues_acc =
   let pp_summary_by_report_kind (report_kind, format_list) =
-    match (report_kind, format_list) with
-    | Costs, _ ->
-        pp_costs summary format_list
-    | Summary, _ when InferCommand.equal Config.command Report && not Config.quiet ->
-        pp_summary summary
-    | _ ->
-        ()
+    match (report_kind, format_list) with Costs, _ -> pp_costs summary format_list | _ -> ()
   in
   List.iter ~f:pp_summary_by_report_kind formats_by_report_kind ;
   collect_issues summary issues_acc
-
-
-let pp_json_report_by_report_kind formats_by_report_kind fname =
-  match Utils.read_file fname with
-  | Ok report_lines ->
-      let pp_json_issues format_list report =
-        let pp_json_issue (format_kind, (outfile_opt : Utils.outfile option)) =
-          match format_kind with
-          | Tests ->
-              let outf = get_outfile outfile_opt in
-              pp_custom_of_report outf.fmt report Config.issues_tests_fields
-          | Json ->
-              L.die InternalError "Printing issues from json does not support json output"
-        in
-        List.iter ~f:pp_json_issue format_list
-      in
-      let sorted_report =
-        let report = Jsonbug_j.report_of_string (String.concat ~sep:"\n" report_lines) in
-        List.sort ~compare:tests_jsonbug_compare report
-      in
-      let pp_report_by_report_kind (report_kind, format_list) =
-        match (report_kind, format_list) with
-        | Issues, _ :: _ ->
-            pp_json_issues format_list sorted_report
-        | _ ->
-            ()
-      in
-      List.iter ~f:pp_report_by_report_kind formats_by_report_kind
-  | Error error ->
-      L.(die UserError) "Error reading '%s': %s" fname error
 
 
 let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
@@ -497,11 +384,7 @@ let mk_format format_kind fname =
     ~default:[] (Utils.create_outfile fname)
 
 
-let init_issues_format_list report_json =
-  let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
-  let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
-  json_format @ tests_format
-
+let init_issues_format_list report_json = mk_format Json report_json
 
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
@@ -513,8 +396,6 @@ let init_files format_list_by_kind =
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_open outfile.fmt ()
-      | Json, Summary | Tests, _ ->
-          ()
     in
     List.iter ~f:init_files_of_format format_list
   in
@@ -530,9 +411,7 @@ let finalize_and_close_files format_list_by_kind =
           JsonCostsPrinter.pp_close outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
-          IssuesJson.pp_close outfile.fmt ()
-      | Json, Summary | Tests, _ ->
-          () ) ;
+          IssuesJson.pp_close outfile.fmt () ) ;
       match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
     in
     List.iter ~f:close_files_of_format format_list ;
@@ -568,21 +447,11 @@ let main ~report_json =
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
     let costs_report_format_kind =
-      match report_json with
-      | Some _ ->
-          let file = Config.(results_dir ^/ Config.costs_report_json) in
-          [(Costs, mk_format Json file)]
-      | None ->
-          []
+      let file = Config.(results_dir ^/ costs_report_json) in
+      [(Costs, mk_format Json file)]
     in
-    costs_report_format_kind @ [(Issues, issue_formats); (Summary, [])]
+    costs_report_format_kind @ [(Issues, issue_formats)]
   in
   init_files formats_by_report_kind ;
-  ( match Config.issues_tests with
-  | Some _ ->
-      pp_json_report_by_report_kind formats_by_report_kind Config.from_json_report
-  | None ->
-      pp_summary_and_issues formats_by_report_kind issue_formats ) ;
-  if Config.test_determinator && Config.process_clang_ast then
-    TestDeterminator.merge_test_determinator_results () ;
+  pp_summary_and_issues formats_by_report_kind issue_formats ;
   ()

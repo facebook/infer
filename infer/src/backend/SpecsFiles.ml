@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module CLOpt = CommandLineOption
 
@@ -71,3 +72,9 @@ let delete pname =
   (try Unix.unlink filename with Unix.Unix_error _ -> ()) ;
   Ondemand.LocalCache.remove pname ;
   Summary.OnDisk.remove_from_cache pname
+
+
+let pp_from_config fmt =
+  iter_from_config ~f:(fun summary ->
+      F.fprintf fmt "Procedure: %a@\n%a@." Procname.pp (Summary.get_proc_name summary)
+        Summary.pp_text summary )

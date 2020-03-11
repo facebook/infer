@@ -17,3 +17,5 @@ val iter_from_config : f:(Summary.t -> unit) -> unit
 val delete : Procname.t -> unit
 (** Delete the .specs file associated with a summary and remove the summary from the caches in
     Summary.ml and ondemand.ml *)
+
+val pp_from_config : Format.formatter -> unit
