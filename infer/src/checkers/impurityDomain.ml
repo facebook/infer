@@ -13,9 +13,8 @@ type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * Pulse
 [@@deriving compare]
 
 module ModifiedVar = struct
-  type nonempty_action_type = trace * trace list [@@deriving compare]
-
-  type t = {var: Var.t; trace_list: nonempty_action_type} [@@deriving compare]
+  type t = {var: Var.t; access: unit HilExp.Access.t; trace: trace [@compare.ignore]}
+  [@@deriving compare]
 
   let pp fmt {var} = F.fprintf fmt "@\n %a @\n" Var.pp var
 end
@@ -61,20 +60,16 @@ let pp_param_source fmt = function
       F.pp_print_string fmt "global variable"
 
 
-let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
-  let aux ~nesting errlog trace =
-    match trace with
-    | WrittenTo access_trace ->
-        PulseTrace.add_to_errlog ~include_value_history:false ~nesting
-          ~pp_immediate:(fun fmt ->
-            F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
-          access_trace errlog
-    | Invalid (invalidation, invalidation_trace) ->
-        PulseTrace.add_to_errlog ~include_value_history:false ~nesting
-          ~pp_immediate:(fun fmt ->
-            F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
-              PulseInvalidation.describe invalidation )
-          invalidation_trace errlog
-  in
-  let first_trace, rest = trace_list in
-  List.fold_left rest ~init:(aux ~nesting errlog first_trace) ~f:(aux ~nesting)
+let add_to_errlog ~nesting param_source ModifiedVar.{var; trace} errlog =
+  match trace with
+  | WrittenTo access_trace ->
+      PulseTrace.add_to_errlog ~include_value_history:false ~nesting
+        ~pp_immediate:(fun fmt ->
+          F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
+        access_trace errlog
+  | Invalid (invalidation, invalidation_trace) ->
+      PulseTrace.add_to_errlog ~include_value_history:false ~nesting
+        ~pp_immediate:(fun fmt ->
+          F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
+            PulseInvalidation.describe invalidation )
+        invalidation_trace errlog
