@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Eradicate NPEs. *)
+(** The main entry point for Nullsafe typechecker. *)
 
 val callback_eradicate : Callbacks.proc_callback_t
 

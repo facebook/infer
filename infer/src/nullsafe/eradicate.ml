@@ -6,15 +6,9 @@
  *)
 
 open! IStd
-
-(** Eradicate NPEs. *)
-
 module L = Logging
 module F = Format
 open Dataflow
-
-(* ERADICATE CHECKER. TODOS:*)
-(* 1) add support for constructors for anonymous inner classes (currently not checked) *)
 
 (** Type for a module that provides a main callback function *)
 module type CallBackT = sig
@@ -120,16 +114,15 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         (!calls_this, None)
 
 
-  let callback2 tenv curr_pname calls_this checks {Callbacks.summary; get_procs_in_file}
+  let analyze_procedure tenv proc_name proc_desc calls_this checks Callbacks.{get_procs_in_file}
       annotated_signature linereader proc_loc : unit =
-    let curr_pdesc = Summary.get_proc_desc summary in
-    let idenv = Idenv.create curr_pdesc in
-    let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
+    let idenv = Idenv.create proc_desc in
+    let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
       try Procdesc.NodeSet.min_elt duplicate_nodes with Caml.Not_found -> node
     in
-    let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
+    let caller_nullsafe_mode = NullsafeMode.of_procname tenv proc_name in
     let typecheck_proc do_checks pname pdesc proc_details_opt =
       let ann_sig, loc, idenv_pn =
         match proc_details_opt with
@@ -158,23 +151,22 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     in
     let do_final_typestate typestate_opt calls_this =
       let do_typestate typestate =
-        let start_node = Procdesc.get_start_node curr_pdesc in
+        let start_node = Procdesc.get_start_node proc_desc in
         if
           (not calls_this)
           (* if 'this(...)' is called, no need to check initialization *)
           && checks.TypeCheck.eradicate
         then (
           let typestates_for_curr_constructor_and_all_initializer_methods =
-            Initializers.final_initializer_typestates_lazy tenv curr_pname curr_pdesc
+            Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc
               get_procs_in_file typecheck_proc
           in
           let typestates_for_all_constructors_incl_current =
-            Initializers.final_constructor_typestates_lazy tenv curr_pname get_procs_in_file
+            Initializers.final_constructor_typestates_lazy tenv proc_name get_procs_in_file
               typecheck_proc
           in
-          EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
-            curr_pdesc start_node
-            ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
+          EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate proc_name
+            proc_desc start_node ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
             ~typestates_for_curr_constructor_and_all_initializer_methods
             ~typestates_for_all_constructors_incl_current proc_loc ;
           if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate
@@ -182,53 +174,55 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       in
       match typestate_opt with None -> () | Some typestate -> do_typestate typestate
     in
-    TypeErr.reset () ;
     let calls_this, final_typestate_opt =
-      typecheck_proc true curr_pname curr_pdesc (Some (annotated_signature, proc_loc, idenv))
+      typecheck_proc true proc_name proc_desc (Some (annotated_signature, proc_loc, idenv))
     in
     do_final_typestate final_typestate_opt calls_this ;
     if checks.TypeCheck.eradicate then
-      EradicateChecks.check_overridden_annotations find_canonical_duplicate tenv curr_pname
-        curr_pdesc annotated_signature ;
-    TypeErr.report_forall_checks_and_reset (EradicateCheckers.report_error tenv) curr_pdesc ;
+      EradicateChecks.check_overridden_annotations find_canonical_duplicate tenv proc_name proc_desc
+        annotated_signature ;
     ()
 
 
-  (** Entry point for the eradicate-based checker infrastructure. *)
+  (* If we need to skip analysis, returns a string reason for debug, otherwise None *)
+  let find_reason_to_skip_analysis proc_name proc_desc =
+    match proc_name with
+    | Procname.Java java_pname ->
+        if Procname.Java.is_access_method java_pname then Some "access method"
+        else if Procname.Java.is_external java_pname then Some "third party method"
+        else if (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method then
+          Some "bridge method"
+        else None
+    | _ ->
+        Some "not a Java method"
+
+
+  (** Entry point for the nullsafe procedure-level analysis. *)
   let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
     let proc_desc = Summary.get_proc_desc summary in
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let calls_this = ref false in
-    let curr_pname = Summary.get_proc_name summary in
-    let tenv = Exe_env.get_tenv callback_args.exe_env curr_pname in
-    let filter_special_cases () =
-      if
-        ( match proc_name with
-        | Procname.Java java_pname ->
-            Procname.Java.is_access_method java_pname || Procname.Java.is_external java_pname
-        | _ ->
-            false )
-        || (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method
-      then None
-      else
+    L.debug Analysis Medium "Analysis of %a@\n" Procname.pp proc_name ;
+    match find_reason_to_skip_analysis proc_name proc_desc with
+    | Some reason ->
+        L.debug Analysis Medium "Skipping analysis: %s@\n" reason ;
+        summary
+    | None ->
+        (* start the analysis! *)
+        let calls_this = ref false in
+        let tenv = Exe_env.get_tenv callback_args.exe_env proc_name in
         let annotated_signature =
-          (* TODO(T62825735): fully support trusted callees; this could benefit from refactoring *)
           Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv
             (Procdesc.get_attributes proc_desc)
         in
-        Some annotated_signature
-    in
-    ( match filter_special_cases () with
-    | None ->
-        ()
-    | Some annotated_signature ->
+        L.debug Analysis Medium "Signature: %a@\n" (AnnotatedSignature.pp proc_name)
+          annotated_signature ;
         let loc = Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
-        if Config.eradicate_verbose then
-          L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature ;
-        callback2 tenv curr_pname calls_this checks callback_args annotated_signature linereader loc
-    ) ;
-    summary
+        TypeErr.reset () ;
+        analyze_procedure tenv proc_name proc_desc calls_this checks callback_args
+          annotated_signature linereader loc ;
+        TypeErr.report_forall_checks_and_reset (EradicateCheckers.report_error tenv) proc_desc ;
+        summary
 end
 
 (* MkCallback *)
