@@ -458,7 +458,8 @@ let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(depreca
         | None -> (
           match deprecated with
           | [] ->
-              (* [mk] will fail in this case but with a non-informative message if this is the auto-genarated negated form of the option *)
+              (* [mk] will fail in this case but with a non-informative message if this is the
+                 auto-generated negated form of the option *)
               L.die InternalError
                 "No command line flag can be given to enable this option or to disable it (did you \
                  forget to give it a `~deprecated_no` form?). The documentation for this option is \
