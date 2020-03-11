@@ -145,12 +145,11 @@ module Java = struct
           Typ.double
       | typ_str when String.contains typ_str '[' ->
           let stripped_typ = String.sub typ_str ~pos:0 ~len:(String.length typ_str - 2) in
-          Typ.mk (Tptr (Typ.mk_array (java_from_string stripped_typ), Pk_pointer))
+          Typ.(mk_ptr (mk_array (java_from_string stripped_typ)))
       | typ_str ->
-          Typ.mk (Tstruct (Typ.Name.Java.from_string typ_str))
+          Typ.(mk_ptr (mk_struct (Typ.Name.Java.from_string typ_str)))
     in
-    let typ = java_from_string (F.asprintf "%a" (pp_return_type Verbose) pname_java) in
-    match typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_pointer)) | _ -> typ
+    java_from_string (F.asprintf "%a" (pp_return_type Verbose) pname_java)
 
 
   let is_close {method_name} = String.equal method_name "close"
