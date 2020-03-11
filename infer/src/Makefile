@@ -8,10 +8,15 @@ include $(ROOT_DIR)/Makefile.config
 
 #### Global declarations ####
 
-ETC_DIR = $(INFER_DIR)/etc
+# override this for faster builds (but slower infer)
+BUILD_MODE ?= opt
+BUILD_ROOT = _build
 # paths to BUILD_DIR are relative because that's how dune likes it
-# can be overriden to specify another build mode (eg opt)
-INFER_BUILD_DIR = _build/default
+INFER_BUILD_DIR = $(BUILD_ROOT)/default
+
+DUNE_BUILD = dune build --profile=$(BUILD_MODE) --build-dir=$(BUILD_ROOT)
+
+ETC_DIR = $(INFER_DIR)/etc
 
 #### Backend declarations ####
 
@@ -103,28 +108,33 @@ endif
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
 
-# single out infer.exe as the source of truth for make, knowing that in fact several targets are
-# produced by the build
+# Single out infer.exe as the source of truth for make, knowing that in fact several
+# targets are produced by the build.
+# The target is marked as .PHONY because if you build with one profile `make
+# BUILD_MODE=dev` and then try with another profile `make BUILD_MODE=opt`, make won't
+# trigger a rebuild since it has only partial view on the dependencies.
+.PHONY: $(INFER_BUILD_DIR)/$(INFER_MAIN).exe
 $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)dune build $(INFER_CONFIG_TARGETS)
+	$(QUIET)$(DUNE_BUILD) $(INFER_CONFIG_TARGETS)
 #	let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
 
 .PHONY: test
+test: BUILD_MODE = test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 #	needed for dune to "install" the relevant dynamic libraries for the C stubs
-	$(QUIET)cd c_stubs; dune build InferCStubs.install
-	$(QUIET)dune build \
-	  $(patsubst $(INFER_BUILD_DIR)/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
-	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
+	$(QUIET)cd c_stubs; $(DUNE_BUILD) InferCStubs.install
+	$(QUIET)$(DUNE_BUILD) \
+	  $(patsubst $(INFER_BUILD_DIR)/%.exe,%.bc, $(INFER_CONFIG_TARGETS)) \
+	  scripts/checkCopyright.bc $(INFERUNIT_MAIN).bc infertop.bc
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)dune build @$(INFER_BUILD_DIR)/doc
+	$(QUIET)$(DUNE_BUILD) @doc
 
 .PHONY: check
 check: src_build_common
-	dune build @check
+	$(DUNE_BUILD) @check
 
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
@@ -152,10 +162,12 @@ infer: $(INFER_BIN).exe
 	$(INSTALL_PROGRAM) -C $(INFER_BIN).exe $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
+.PHONY: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc
 $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	dune build $(INFER_CONFIG_TARGETS:.exe=.bc)
+	$(DUNE_BUILD) $(INFER_CONFIG_TARGETS:.exe=.bc)
 	$(QUIET)touch $@
 
+.PHONY: $(INFER_BIN).bc
 $(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc
 	$(QUIET)$(MKDIR_P) $(BIN_DIR)
 ifeq ($(WINDOWS_BUILD),yes)
@@ -168,7 +180,7 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 endif
 #	needed for dune to "install" the relevant dynamic libraries for the C stubs
-	cd c_stubs; dune build InferCStubs.install
+	cd c_stubs; $(DUNE_BUILD) InferCStubs.install
 
 .PHONY: byte
 byte: $(INFER_BIN).bc
@@ -200,10 +212,11 @@ mod_dep.pdf: mod_dep.dot
 dsort:
 	$(QUIET)ocamldep.opt -sort $(inc_flags) $(ml_src_files)
 
+.PHONY: $(INFER_BUILD_DIR)/infertop.bc
 $(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	dune build $@
+	$(DUNE_BUILD) $@
 #	needed for dune to "install" the relevant dynamic libraries for the C stubs
-	cd c_stubs; dune build InferCStubs.install
+	cd c_stubs; $(DUNE_BUILD) InferCStubs.install
 	$(QUIET)touch $@
 
 $(INFERTOP_BIN): $(INFER_BUILD_DIR)/infertop.bc
@@ -216,8 +229,9 @@ toplevel: $(INFERTOP_BIN)
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
+.PHONY: $(CHECKCOPYRIGHT_BIN)
 $(CHECKCOPYRIGHT_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	dune build $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
+	$(DUNE_BUILD) $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
 	$(INSTALL_PROGRAM) -C $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules

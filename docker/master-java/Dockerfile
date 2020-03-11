@@ -58,7 +58,7 @@ RUN eval $(opam env) && \
 ENV PATH /infer-host/infer/bin:/infer/bin:$PATH
 
 # build in non-optimized mode by default to speed up build times
-ENV BUILD_MODE=default
+ENV BUILD_MODE=dev
 
 # prevent exiting by compulsively hitting Control-D
 ENV IGNOREEOF=9

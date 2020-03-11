@@ -20,12 +20,12 @@ make devsetup
 
 ### Building Infer for Development
 
-- Build the code faster: `make -j BUILD_MODE=default`. By default `make` builds infer with flambda
+- Build the code faster: `make -j BUILD_MODE=dev`. By default `make` builds infer with flambda
   enabled, which makes it very slow (but makes infer significantly faster).
 
 - Faster edit/build cycle when working on OCaml code inside infer/src/: build inside infer/src/
   (skips building the models after infer has been built), and build bytecode instead of native:
-  `make -j -C infer/src byte`. You need to have run `make -j` (with or without `BUILD_MODE=default`)
+  `make -j -C infer/src byte`. You need to have run `make -j` (with or without `BUILD_MODE=dev`)
   at some point before.
 
 - In general, `make` commands from the root of the repository make sure that dependencies are in a
@@ -37,7 +37,7 @@ make devsetup
   before running the test, but running `make -C infer/tests/codetoanalyze/java/infer test` will just
   execute the test.
 
-- To switch the default build mode to flambda disabled, you can `export BUILD_MODE=default` in your
+- To switch the default build mode to flambda disabled, you can `export BUILD_MODE=dev` in your
   shell.
 
 ### Debugging OCaml Code

@@ -7,16 +7,13 @@
  *)
 (* NOTE: prepend dune.common to this file! *)
 
-let cflags = common_cflags @ ["-w"; "-27-32-34-35-39"]
-
 ;;
 Format.sprintf
   {|
 (library
  (name InferGenerated)
  (public_name InferGenerated)
- (flags (%s))
- (ocamlopt_flags (%s))
+ (flags (:standard -w -27-32-34-35-39))
  (libraries atdgen core)
  (preprocess (pps ppx_compare))
 )
@@ -26,6 +23,4 @@ Format.sprintf
  (mld_files index)
 )
 |}
-  (String.concat " " cflags)
-  (String.concat " " common_optflags)
 |> Jbuild_plugin.V1.send

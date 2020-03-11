@@ -35,90 +35,121 @@ let source_dirs =
 
 let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
 
+let env_stanza =
+  Format.sprintf
+    {|
+(env
+  (dev
+    (flags %s))
+  (opt
+    (flags %s)
+    (ocamlopt_flags (:standard -O3)))
+  (test
+    (flags %s)))
+|}
+    lenient_flags lenient_flags strict_flags
+
+
+let clang_lexer_stanzas =
+  if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
+  else []
+
+
 let infer_cflags =
-  common_cflags
-  @ [ "-open"
-    ; "Core"
-    ; "-open"
-    ; "InferStdlib"
-    ; "-open"
-    ; "IStd"
-    ; "-open"
-    ; "InferGenerated"
-    ; "-open"
-    ; "InferIR"
-    ; "-open"
-    ; "InferBase"
-    ; "-open"
-    ; "InferCStubs"
-    ; "-w"
-    ; "+A-4@8-9-40-41-42-44-45-48-60-66" ]
+  [ "-open"
+  ; "Core"
+  ; "-open"
+  ; "InferStdlib"
+  ; "-open"
+  ; "IStd"
+  ; "-open"
+  ; "InferGenerated"
+  ; "-open"
+  ; "InferIR"
+  ; "-open"
+  ; "InferBase"
+  ; "-open"
+  ; "InferCStubs" ]
+  |> String.concat " "
 
 
-(** The build stanzas to be passed to dune *)
-let stanzas =
-  ( if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
-  else [] )
-  @ [ "(ocamllex ToplLexer)"
-    ; "(menhir (flags --unused-token INDENT --explain) (modules ToplParser))"
-    ; Format.sprintf
-        {|
+let main_lib_stanza =
+  Format.sprintf
+    {|
 (library
  (name InferModules)
  (public_name infer)
- (flags (%s))
- (ocamlopt_flags (%s))
+ (flags (:standard %s))
  (libraries %s)
  (modules :standard \ %s infertop)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )
+|}
+    infer_cflags
+    (String.concat " " ("InferCStubs" :: "InferIR" :: common_libraries))
+    (String.concat " " infer_binaries)
 
+
+let docs_stanza = {|
 (documentation
  (package infer)
  (mld_files index)
 )
 |}
-        (String.concat " " infer_cflags)
-        (String.concat " " common_optflags)
-        (String.concat " " ("InferCStubs" :: "InferIR" :: common_libraries))
-        (String.concat " " infer_binaries)
-    ; Format.sprintf
-        {|
+
+let infer_exe_stanza =
+  Format.sprintf
+    {|
 (executables
  (names %s)
  (modes byte exe)
- (flags (%s -open InferModules))
- (ocamlopt_flags (%s))
+ (flags (:standard %s -open InferModules))
  (libraries InferModules)
  (modules %s)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )
 |}
-        (String.concat " " infer_binaries)
-        (String.concat " " infer_cflags)
-        (String.concat " " common_optflags)
-        (String.concat " " infer_binaries)
-    ; Format.sprintf
-        {|
+    (String.concat " " infer_binaries)
+    infer_cflags
+    (String.concat " " infer_binaries)
+
+
+let infertop_stanza =
+  Format.sprintf
+    {|
 (executable
  (name infertop)
  (modes byte)
- (flags (%s))
+ (flags (:standard %s))
  (libraries utop InferModules)
  (modules Infertop)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
  (link_flags (-linkall -warn-error -31))
 )
 |}
-        (String.concat " " infer_cflags) ]
-  @ ( List.map
-        (fun source_dir ->
-          [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
-          ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
-               copy# actions *)
-            Printf.sprintf "(copy_files %s/*.mly)" source_dir ] )
-        source_dirs
-    |> List.concat )
+    infer_cflags
+
+
+let topl_stanzas =
+  ["(ocamllex ToplLexer)"; "(menhir (flags --unused-token INDENT --explain) (modules ToplParser))"]
+
+
+let flatten_sources_stanzas =
+  List.map
+    (fun source_dir ->
+      [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
+      ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
+           copy# actions *)
+        Printf.sprintf "(copy_files %s/*.mly)" source_dir ] )
+    source_dirs
+  |> List.concat
+
+
+(** The build stanzas to be passed to dune *)
+let stanzas =
+  env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: docs_stanza
+  :: clang_lexer_stanzas
+  @ topl_stanzas @ flatten_sources_stanzas
 
 
 ;;

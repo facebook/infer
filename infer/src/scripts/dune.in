@@ -12,10 +12,9 @@ Format.sprintf
 (executable
  (name checkCopyright)
  (modes byte exe)
- (flags (%s))
+ (flags (:standard))
  (libraries core str)
  (preprocess (pps ppx_compare))
 )
 |}
-  (String.concat " " common_cflags)
 |> Jbuild_plugin.V1.send

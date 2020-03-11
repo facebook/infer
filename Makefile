@@ -13,7 +13,7 @@ ORIG_SHELL_BUILD_MODE = $(BUILD_MODE)
 # override this for faster builds (but slower infer)
 BUILD_MODE ?= opt
 
-MAKE_SOURCE = $(MAKE) -C $(SRC_DIR) INFER_BUILD_DIR=_build/$(BUILD_MODE)
+MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 
 ifneq ($(UTOP),no)
 BUILD_SYSTEMS_TESTS += infertop
@@ -293,9 +293,9 @@ toplevel:
 	$(QUIET)echo "You can now use the infer REPL:"
 	$(QUIET)echo "  \"$(ABSOLUTE_ROOT_DIR)/scripts/infer_repl\""
 
-toplevel_test: test_build
-	$(QUIET)$(call silent_on_success,Building Infer REPL (test mode),\
-	$(MAKE_SOURCE) BUILD_MODE=test toplevel)
+toplevel_test:
+	$(QUIET)$(call silent_on_success,Building Infer REPL,\
+	$(MAKE_SOURCE) toplevel)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 byte src_build_common src_build test_build: fb-setup
@@ -331,16 +331,14 @@ $(INFER_GROFF_MANUALS_GZIPPED): %.gz: %
 
 infer_models: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(MAKE) -C $(ANNOTATIONS_DIR)
+	$(QUIET)$(call silent_on_success,Building infer annotations,\
+	$(MAKE) -C $(ANNOTATIONS_DIR))
 endif
-	$(MAKE) -C $(MODELS_DIR) all
+	$(QUIET)$(call silent_on_success,Building infer models,\
+	$(MAKE) -C $(MODELS_DIR) all)
 
 .PHONY: infer byte_infer
-infer byte_infer:
-	$(QUIET)$(call silent_on_success,Building Infer models,\
-	$(MAKE) infer_models)
-	$(QUIET)$(call silent_on_success,Building Infer manuals,\
-	$(MAKE) $(INFER_MANUALS))
+infer byte_infer: infer_models
 infer: src_build
 byte_infer: byte
 
@@ -442,8 +440,7 @@ ocaml_unit_test: test_build
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
 	INFER_ARGS=--results-dir^infer-out-unit-tests \
-	BUILD_DIR=$(BUILD_DIR)/test \
-	$(SCRIPT_DIR)/dune_exec_shim.sh $(BUILD_DIR)/test/inferunit.bc)
+	$(SCRIPT_DIR)/dune_exec_shim.sh $(BUILD_DIR)/default/inferunit.bc)
 
 define silence_make
   $(1) 2> >(grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target')
@@ -580,11 +577,14 @@ mod_dep: src_build_common
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
 
 .PHONY: config_tests
-config_tests: test_build ocaml_unit_test endtoend_test checkCopyright validate-skel mod_dep
+config_tests: test_build ocaml_unit_test validate-skel mod_dep
+	$(MAKE) endtoend_test checkCopyright
+	$(QUIET)$(call silent_on_success,Building Infer manuals,\
+	$(MAKE) $(INFER_MANUALS))
 
-ifneq ($(filter config_tests test,${MAKECMDGOALS}),)
-test_build: src_build
-checkCopyright: src_build test_build
+ifneq ($(filter endtoend_test,${MAKECMDGOALS}),)
+checkCopyright: src_build
+toplevel_test: checkCopyright
 endif
 
 .PHONY: test
@@ -841,14 +841,14 @@ devsetup: Makefile.autoconf
 	fi; \
 	if [ -z "$(ORIG_SHELL_BUILD_MODE)" ]; then \
 	  echo >&2; \
-	  echo '$(TERM_INFO)*** NOTE: Set `BUILD_MODE=default` in your shell to disable flambda by default.$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: Set `BUILD_MODE=dev` in your shell to disable flambda by default.$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Compiling with flambda is ~5 times slower than without, so unless you are$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: testing infer on a very large project it will not be worth it. Use the$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: commands below to set the default build mode. You can then use `make opt`$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: when you really do want to enable flambda.$(TERM_RESET)' >&2; \
 	  echo >&2; \
-	  printf "$(TERM_INFO)  export BUILD_MODE=default$(TERM_RESET)\n" >&2; \
-	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=default' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2; \
+	  printf "$(TERM_INFO)  export BUILD_MODE=dev$(TERM_RESET)\n" >&2; \
+	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=dev' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2; \
 	fi
 	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
 	  echo >&2; \
@@ -867,7 +867,7 @@ doc: src_build_common
 # do not call the browser if we are publishing the docs
 ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 	$(QUIET)$(call silent_on_success,Opening in browser,\
-	browse $(SRC_DIR)/_build/$(BUILD_MODE)/_doc/_html/index.html)
+	browse $(SRC_DIR)/_build/default/_doc/_html/index.html)
 	$(QUIET)echo "Tip: you can generate the doc for all the opam dependencies of infer like this:"
 	$(QUIET)echo
 	$(QUIET)echo "  odig odoc # takes a while, run it only when the dependencies change"
@@ -895,7 +895,7 @@ endif
 ifeq ($(IS_FACEBOOK_TREE),no)
 	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
 	version=$$($(INFER_BIN) --version | head -1 | cut -d ' ' -f 3 | cut -c 2-); \
-	rsync -a --delete $(SRC_DIR)/_build/$(BUILD_MODE)/_doc/_html/ "$(GHPAGES)"/static/odoc/"$$version"; \
+	rsync -a --delete $(SRC_DIR)/_build/default/_doc/_html/ "$(GHPAGES)"/static/odoc/"$$version"; \
 	$(REMOVE) "$(GHPAGES)"/static/odoc/latest; \
 	$(LN_S) "$$version" "$(GHPAGES)"/static/odoc/latest)
 else

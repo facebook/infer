@@ -17,8 +17,8 @@ shift
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SRC_DIR="$SCRIPT_DIR"/../infer/src
-BUILD_MODE=${BUILD_MODE:-default}
-DUNE_INSTALL_DIR=${INSTALL_DIR:-"$SRC_DIR/_build/install/$BUILD_MODE"}
+BUILD_MODE=${BUILD_MODE:-dev}
+DUNE_INSTALL_DIR=${INSTALL_DIR:-"$SRC_DIR/_build/install/default"}
 
 export CAML_LD_LIBRARY_PATH="$DUNE_INSTALL_DIR"/lib/stublibs:"$CAML_LD_LIBRARY_PATH"
 

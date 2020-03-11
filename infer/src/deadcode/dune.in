@@ -13,14 +13,11 @@ Format.sprintf
 (executable
  (name all_infer_in_one_file)
  (modes byte)
- (flags (%s -w +60))
- (ocamlopt_flags (%s))
+ (flags (:standard -w +60))
  (libraries %s)
  (modules All_infer_in_one_file)
  (preprocess (pps ppx_compare ppx_enumerate ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )
 |}
-  (String.concat " " common_cflags)
-  (String.concat " " common_optflags)
   (String.concat " " ("InferCStubs" :: common_libraries))
 |> Jbuild_plugin.V1.send
