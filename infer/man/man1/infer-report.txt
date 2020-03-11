@@ -274,14 +274,14 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-       --issues-fields ,-separated sequence of { bug_type | bucket |
+       --issues-tests file
+           Write a list of issues in a format suitable for tests to file
+
+       --issues-tests-fields ,-separated sequence of { bug_type | bucket |
        qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note }
            Fields to emit with --issues-tests
-
-       --issues-tests file
-           Write a list of issues in a format suitable for tests to file
 
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:

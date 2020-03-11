@@ -444,7 +444,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
           match format_kind with
           | Tests ->
               let outf = get_outfile outfile_opt in
-              pp_custom_of_report outf.fmt report Config.issues_fields
+              pp_custom_of_report outf.fmt report Config.issues_tests_fields
           | Json ->
               L.die InternalError "Printing issues from json does not support json output"
         in
@@ -578,9 +578,9 @@ let main ~report_json =
     costs_report_format_kind @ [(Issues, issue_formats); (Summary, [])]
   in
   init_files formats_by_report_kind ;
-  ( match Config.from_json_report with
-  | Some fname ->
-      pp_json_report_by_report_kind formats_by_report_kind fname
+  ( match Config.issues_tests with
+  | Some _ ->
+      pp_json_report_by_report_kind formats_by_report_kind Config.from_json_report
   | None ->
       pp_summary_and_issues formats_by_report_kind issue_formats ) ;
   if Config.test_determinator && Config.process_clang_ast then

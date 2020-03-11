@@ -28,12 +28,10 @@ replace_reports: current.exp.test previous.exp.test
 
 current.exp.test: $(CURRENT_REPORT)
 	$(QUIET)$(INFER_BIN) report -o $(<D) \
-		--from-json-report $(CURRENT_DIR)/report.json \
 		--issues-tests current.exp.test
 
 previous.exp.test: $(PREVIOUS_REPORT)
 	$(QUIET)$(INFER_BIN) report -o $(<D) \
-		--from-json-report $(PREVIOUS_DIR)/report.json \
 		--issues-tests previous.exp.test
 
 test: compare_reports

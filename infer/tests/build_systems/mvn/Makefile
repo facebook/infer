@@ -36,8 +36,7 @@ infer-out-simple_app/report.json: infer-out-app_with_infer_profile/report.json
 infer-out-app_with_infer_profile/report.json: infer-out-app_with_profiles/report.json
 
 issues-%.exp.test: infer-out-%/report.json
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@ \
-	  -o $(<D) --from-json-report $<
+	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@ -o $(<D)
 
 issues.exp.test: $(foreach mvndir,$(MVN_DIRS),issues-$(mvndir).exp.test)
 #	erase the contents of the file

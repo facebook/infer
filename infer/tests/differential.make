@@ -40,15 +40,15 @@ $(EXPECTED_TEST_OUTPUT): $(CURRENT_REPORT) $(PREVIOUS_REPORT) $(MODIFIED_FILES_F
 		--costs-current $(CURRENT_COSTS) --costs-previous $(PREVIOUS_COSTS) \
 		$(DIFFERENTIAL_ARGS))
 	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
-		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
+		--issues-tests-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/introduced.json \
 		--issues-tests introduced.exp.test
 	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
-		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
+		--issues-tests-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/fixed.json \
 		--issues-tests fixed.exp.test
 	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
-		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
+		--issues-tests-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/preexisting.json \
 		--issues-tests preexisting.exp.test
 	$(QUIET)$(COPY) $(INFER_OUT)/differential/costs_summary.json \

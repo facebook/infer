@@ -141,10 +141,10 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
 
 issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.all \
-	  -o infer-out-all --from-json-report infer-out-all/report.json
+	  -o infer-out-all
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.arc \
-	  -o infer-out-arc --from-json-report infer-out-arc/report.json
+	  -o infer-out-arc
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.default \
-	  -o infer-out --from-json-report infer-out/report.json
+	  -o infer-out
 	$(QUIET)cat $@.all $@.arc $@.default > $@
 	$(QUIET)cat infer-out-all/duplicates.txt infer-out-arc/duplicates.txt >> infer-out/duplicates.txt

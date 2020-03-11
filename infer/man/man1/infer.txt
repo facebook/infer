@@ -655,15 +655,15 @@ OPTIONS
            particular path, with the format path:version (can be specified
            multiple times)           See also infer-capture(1).
 
-       --issues-fields ,-separated sequence of { bug_type | bucket |
+       --issues-tests file
+           Write a list of issues in a format suitable for tests to file       
+    See also infer-report(1).
+
+       --issues-tests-fields ,-separated sequence of { bug_type | bucket |
        qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note }
            Fields to emit with --issues-tests           See also infer-report(1).
-
-       --issues-tests file
-           Write a list of issues in a format suitable for tests to file       
-    See also infer-report(1).
 
        --java-jar-compiler path
            Specify the Java compiler jar used to generate the bytecode       

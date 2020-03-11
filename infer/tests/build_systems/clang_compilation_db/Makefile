@@ -43,9 +43,9 @@ infer-out-reactive-capture/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json
 
 issues.exp.test: infer-out-with-index/report.json infer-out-no-index/report.json infer-out-reactive-capture/report.json
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.with-index \
-	  -o infer-out-with-index --from-json-report infer-out-with-index/report.json
+	  -o infer-out-with-index
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.no-index \
-	  -o infer-out-no-index --from-json-report infer-out-no-index/report.json
+	  -o infer-out-no-index
 	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.reactive-capture \
-	  -o infer-out-reactive-capture --from-json-report infer-out-reactive-capture/report.json
+	  -o infer-out-reactive-capture
 	$(QUIET)cat $@.with-index $@.no-index $@.reactive-capture > $@

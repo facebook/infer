@@ -11,7 +11,7 @@ default: compile
 
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
-	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	   $(INFERPRINT_OPTIONS) $@
 
 .PHONY: compile
 compile: $(OBJECTS)

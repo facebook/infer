@@ -349,7 +349,7 @@ val force_delete_results_dir : bool
 
 val force_integration : build_system option
 
-val from_json_report : string option
+val from_json_report : string
 
 val frontend_stats : bool
 
@@ -385,7 +385,9 @@ val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_re
 
 val is_checker_enabled : Checker.t -> bool
 
-val issues_fields :
+val issues_tests : string option
+
+val issues_tests_fields :
   [ `Issue_field_bug_type
   | `Issue_field_qualifier
   | `Issue_field_severity
@@ -401,8 +403,6 @@ val issues_fields :
   | `Issue_field_line_offset
   | `Issue_field_qualifier_contains_potential_exception_note ]
   list
-
-val issues_tests : string option
 
 val iterations : int
 

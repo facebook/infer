@@ -12,7 +12,7 @@ INFER_OPTIONS = \
 
 # we need to disable traces in C tests because assertions/assertion_failure.c has different traces
 # on Linux and OSX because of different implementations of assert() on each platform
-INFERPRINT_OPTIONS = --issues-fields "file,procedure,line_offset,bug_type,bucket" --issues-tests
+INFERPRINT_OPTIONS = --issues-tests-fields "file,procedure,line_offset,bug_type,bucket" --issues-tests
 
 SOURCES = \
   $(wildcard */*.c) \

@@ -36,7 +36,7 @@ PROJECT_ROOT ?= $(TESTS_DIR)
 
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
-	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	   $(INFERPRINT_OPTIONS) $@
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\

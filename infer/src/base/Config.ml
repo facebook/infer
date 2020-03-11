@@ -30,7 +30,7 @@ let ml_bucket_symbols =
   ; ("unknown_origin", `MLeak_unknown) ]
 
 
-let issues_fields_symbols =
+let issues_tests_fields_symbols =
   [ ("bug_type", `Issue_field_bug_type)
   ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)
@@ -1434,8 +1434,8 @@ and iphoneos_target_sdk_version_path_regex =
      format path:version (can be specified multiple times)"
 
 
-and issues_fields =
-  CLOpt.mk_symbol_seq ~long:"issues-fields"
+and issues_tests_fields =
+  CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
     ~default:
       [ `Issue_field_file
@@ -1445,7 +1445,7 @@ and issues_fields =
       ; `Issue_field_bucket
       ; `Issue_field_severity
       ; `Issue_field_bug_trace ]
-    ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
+    ~symbols:issues_tests_fields_symbols ~eq:PolyVariantEqual.( = )
     "Fields to emit with $(b,--issues-tests)"
 
 
@@ -2757,7 +2757,7 @@ and force_delete_results_dir = !force_delete_results_dir
 
 and force_integration = !force_integration
 
-and from_json_report = !from_json_report
+and from_json_report = Option.value !from_json_report ~default:(!results_dir ^/ report_json)
 
 and frontend_stats = !frontend_stats
 
@@ -2783,9 +2783,9 @@ and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
 
-and issues_fields = !issues_fields
-
 and issues_tests = !issues_tests
+
+and issues_tests_fields = !issues_tests_fields
 
 and iterations = !iterations
 
