@@ -276,6 +276,14 @@ let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
 
 let mk ?(deprecated = []) ?(parse_mode = InferCommand) ?(in_help = []) ~long ?short:short0 ~default
     ~meta doc ~default_to_string ~decode_json ~mk_setter ~mk_spec =
+  (* check that *some* flag exists for the option, otherwise report an error *)
+  if String.is_empty long && Option.is_none short0 && List.for_all ~f:String.is_empty deprecated
+  then
+    L.die InternalError
+      "No command line flag corresponds to this option, please give it at least one of 1) a long \
+       form, 2) a short form, or 3) a non-empty deprecated form. The documentation for this option \
+       is '%s'."
+      doc ;
   let variable = ref default in
   let closure = mk_setter variable in
   let setter str =
@@ -415,7 +423,9 @@ let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(depreca
     ?short ?parse_mode ?in_help ?(meta = "") doc0 =
   let nolong =
     let len = String.length long in
-    if len > 3 && String.sub long ~pos:0 ~len:3 = "no-" then String.sub long ~pos:3 ~len:(len - 3)
+    let is_already_no = len > 3 && String.sub long ~pos:0 ~len:3 = "no-" in
+    if is_already_no then String.sub long ~pos:3 ~len:(len - 3)
+    else if Int.equal len 0 then ""
     else "no-" ^ long
   and noshort =
     Option.map
@@ -424,11 +434,13 @@ let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(depreca
       short
   in
   let doc long short =
-    match short with
-    | Some short ->
-        doc0 ^ " (Conversely: $(b,--" ^ long ^ ") | $(b,-" ^ String.of_char short ^ "))"
-    | None ->
-        doc0 ^ " (Conversely: $(b,--" ^ long ^ "))"
+    if String.is_empty long then doc0
+    else
+      match short with
+      | Some short ->
+          doc0 ^ " (Conversely: $(b,--" ^ long ^ ") | $(b,-" ^ String.of_char short ^ "))"
+      | None ->
+          doc0 ^ " (Conversely: $(b,--" ^ long ^ "))"
   in
   let doc, nodoc =
     if String.equal doc0 "" then ("", "")
@@ -437,21 +449,41 @@ let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(depreca
   in
   let default_to_string _ = "" in
   let mk_spec set = Unit (fun () -> set "") in
+  let best_nonempty_enable, best_nonempty_disable =
+    let mk_best_non_empty long short_opt deprecated =
+      if String.is_empty long then
+        match short_opt with
+        | Some short ->
+            "-" ^ String.of_char short
+        | None -> (
+          match deprecated with
+          | [] ->
+              (* [mk] will fail in this case but with a non-informative message if this is the auto-genarated negated form of the option *)
+              L.die InternalError
+                "No command line flag can be given to enable this option or to disable it (did you \
+                 forget to give it a `~deprecated_no` form?). The documentation for this option is \
+                 '%s'."
+                doc0
+          | first_deprecated :: _ ->
+              "-" ^ first_deprecated )
+      else "--" ^ long
+    in
+    (mk_best_non_empty long short deprecated, mk_best_non_empty nolong noshort deprecated_no)
+  in
   let var =
     mk ~long ?short ~deprecated ~default ?parse_mode ?in_help ~meta doc ~default_to_string
       ~mk_setter:(fun var _ -> var := f true)
       ~decode_json:(fun ~inferconfig_dir:_ json ->
-        [dashdash (if YBU.to_bool json then long else nolong)] )
+        [(if YBU.to_bool json then best_nonempty_enable else best_nonempty_disable)] )
       ~mk_spec
   in
-  if not (String.is_empty long) then
-    ignore
-      (mk ~long:nolong ?short:noshort ~deprecated:deprecated_no ~default:(not default) ?parse_mode
-         ?in_help ~meta nodoc ~default_to_string
-         ~mk_setter:(fun _ _ -> var := f false)
-         ~decode_json:(fun ~inferconfig_dir:_ json ->
-           [dashdash (if YBU.to_bool json then nolong else long)] )
-         ~mk_spec) ;
+  ignore
+    (mk ~long:nolong ?short:noshort ~deprecated:deprecated_no ~default:(not default) ?parse_mode
+       ?in_help ~meta nodoc ~default_to_string
+       ~mk_setter:(fun _ _ -> var := f false)
+       ~decode_json:(fun ~inferconfig_dir:_ json ->
+         [(if YBU.to_bool json then best_nonempty_disable else best_nonempty_enable)] )
+       ~mk_spec) ;
   var
 
 

@@ -2356,7 +2356,8 @@ let javac_classes_out =
 and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~long:"" `Javac ""
 
 and (_ : bool ref) =
-  CLOpt.mk_bool ~long:"" ~deprecated:["-cxx-infer-headers"] "This option doesn't exist anymore."
+  CLOpt.mk_bool ~long:"" ~deprecated:["-cxx-infer-headers"] ~deprecated_no:["-no-cxx-infer-headers"]
+    "This option doesn't exist anymore."
 
 
 (** Parse Command Line Args *)
