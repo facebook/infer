@@ -9,10 +9,12 @@ open! IStd
 let reportdiff ~current_report:current_report_fname ~previous_report:previous_report_fname
     ~current_costs:current_costs_fname ~previous_costs:previous_costs_fname =
   let load_aux ~f filename_opt =
-    Option.value_map ~f:(fun filename -> f (In_channel.read_all filename)) ~default:[] filename_opt
+    Option.value_map
+      ~f:(fun filename -> Atdgen_runtime.Util.Json.from_file f filename)
+      ~default:[] filename_opt
   in
-  let load_report = load_aux ~f:Jsonbug_j.report_of_string in
-  let load_costs = load_aux ~f:Jsonbug_j.costs_report_of_string in
+  let load_report = load_aux ~f:Jsonbug_j.read_report in
+  let load_costs = load_aux ~f:Jsonbug_j.read_costs_report in
   let current_report = load_report current_report_fname in
   let previous_report = load_report previous_report_fname in
   let current_costs = load_costs current_costs_fname in
