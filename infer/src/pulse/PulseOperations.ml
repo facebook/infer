@@ -376,6 +376,8 @@ let havoc_field location addr_trace field trace_obj astate =
   write_field location addr_trace field (AbstractValue.mk_fresh (), trace_obj) astate
 
 
+let allocate location addr_trace astate = AddressAttributes.allocate addr_trace location astate
+
 let invalidate location cause addr_trace astate =
   check_addr_access location addr_trace astate
   >>| AddressAttributes.invalidate addr_trace cause location

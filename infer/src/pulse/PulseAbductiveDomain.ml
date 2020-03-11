@@ -203,6 +203,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.invalidate address invalidation location)
 
 
+  let allocate address location astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.allocate address location)
+
+
   let add_one address attributes astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
 
@@ -662,6 +666,7 @@ module PrePost = struct
       )
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
+    | Allocated _
     | Closure _
     | Invalid _
     | MustBeValid _
@@ -681,6 +686,8 @@ module PrePost = struct
       | Arithmetic (arith, trace) ->
           Attribute.Arithmetic
             (arith, add_call_to_trace proc_name call_location caller_history trace)
+      | Allocated trace ->
+          Attribute.Allocated (add_call_to_trace proc_name call_location caller_history trace)
       | AddressOfCppTemporary _
       | AddressOfStackVariable _
       | BoItv _

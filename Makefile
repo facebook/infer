@@ -55,6 +55,7 @@ DIRECT_TESTS += \
   c_errors \
   c_frontend \
   c_performance \
+  c_pulse \
   c_purity \
   c_uninit \
   cpp_annotation-reachability \

@@ -20,6 +20,8 @@ val add_one : AbstractValue.t -> Attribute.t -> t -> t
 
 val add : AbstractValue.t -> Attributes.t -> t -> t
 
+val allocate : AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
+
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result

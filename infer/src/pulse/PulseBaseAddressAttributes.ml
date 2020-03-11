@@ -51,6 +51,10 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
+let allocate (address, history) location memory =
+  add_one address (Attribute.Allocated (Immediate {location; history})) memory
+
+
 let check_valid address attrs =
   L.d_printfln "Checking validity of %a" AbstractValue.pp address ;
   match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_invalid with

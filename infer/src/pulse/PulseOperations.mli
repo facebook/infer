@@ -82,6 +82,8 @@ val invalidate :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that the address is invalid *)
 
+val allocate : Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
+
 val invalidate_deref :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that what the address points to is invalid *)

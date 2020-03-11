@@ -87,6 +87,12 @@ module C = struct
     else
       let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
       [astate]
+
+
+  let malloc access : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+    let astate = PulseOperations.allocate location access astate in
+    Ok [PulseOperations.write_id ret_id access astate]
 end
 
 module Cplusplus = struct
@@ -397,6 +403,7 @@ module ProcNameDispatcher = struct
     let pushback_modeled = StringSet.of_list ["add"; "put"; "addAll"; "putAll"; "remove"] in
     make_dispatcher
       [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
+      ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
       ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
       ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
       ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
