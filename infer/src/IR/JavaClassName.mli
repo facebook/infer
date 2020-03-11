@@ -24,3 +24,7 @@ val classname : t -> string
 
 val is_external_via_config : t -> bool
 (** Considered external based on config flags. *)
+
+val is_anonymous_inner_class_name : t -> bool
+(** True if it is anonymous Java class:
+    https://docs.oracle.com/javase/tutorial/java/javaOO/anonymousclasses.html *)

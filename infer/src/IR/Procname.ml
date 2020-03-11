@@ -171,8 +171,8 @@ module Java = struct
 
   let is_constructor {method_name} = String.equal method_name constructor_method_name
 
-  let is_anonymous_inner_class_constructor {class_name} =
-    Typ.Name.Java.is_anonymous_inner_class_name class_name
+  let is_anonymous_inner_class_constructor_exn {class_name} =
+    Typ.Name.Java.is_anonymous_inner_class_name_exn class_name
 
 
   let is_static {kind} = match kind with Static -> true | _ -> false

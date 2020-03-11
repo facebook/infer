@@ -69,8 +69,9 @@ module Java : sig
   val is_autogen_method : t -> bool
   (** Check if the procedure name is of an auto-generated method containing '$'. *)
 
-  val is_anonymous_inner_class_constructor : t -> bool
-  (** Check if the procedure name is an anonymous inner class constructor. *)
+  val is_anonymous_inner_class_constructor_exn : t -> bool
+  (** Check if the procedure name is an anonymous inner class constructor. Throws if it is not a
+      Java type *)
 
   val is_close : t -> bool
   (** Check if the method name is "close". *)

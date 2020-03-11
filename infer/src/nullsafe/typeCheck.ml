@@ -1074,7 +1074,7 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
     drop_unchecked_signature_params callee_attributes callee_annotated_signature
   in
   let is_anonymous_inner_class_constructor =
-    Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
+    Procname.Java.is_anonymous_inner_class_constructor_exn callee_pname_java
   in
   let do_return (ret_ta, ret_typ) typestate' =
     let mk_return_range () = (ret_typ, ret_ta) in

@@ -40,6 +40,20 @@ let package {package} = package
 
 let classname {classname} = classname
 
+let is_anonymous_inner_class_name {classname} =
+  match String.rsplit2 classname ~on:'$' with
+  | Some (_, s) ->
+      let is_int =
+        try
+          ignore (int_of_string (String.strip s)) ;
+          true
+        with Failure _ -> false
+      in
+      is_int
+  | None ->
+      false
+
+
 let is_external_via_config t =
   let package = package t in
   Option.exists ~f:Config.java_package_is_external package
