@@ -2193,10 +2193,6 @@ and subtype_multirange =
     "Use the multirange subtyping domain"
 
 
-and summary_stats =
-  CLOpt.mk_bool ~long:"summary-stats" "Print stats about summaries to standard output"
-
-
 and symops_per_iteration =
   CLOpt.mk_int_opt ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~meta:"int"
     "Set the number of symbolic operations per iteration (see $(b,--iterations))"
@@ -3048,8 +3044,6 @@ and starvation_strict_mode = !starvation_strict_mode
 and starvation_whole_program = !starvation_whole_program
 
 and subtype_multirange = !subtype_multirange
-
-and summary_stats = !summary_stats
 
 and custom_symbols =
   (* Convert symbol lists to regexps just once, here *)

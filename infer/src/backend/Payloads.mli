@@ -35,5 +35,3 @@ end
 val pp : Pp.env -> Format.formatter -> t -> unit
 
 val empty : t
-
-val poly_fields : t PolyFields.t

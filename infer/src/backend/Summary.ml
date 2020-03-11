@@ -67,10 +67,6 @@ include struct
   [@@deriving fields]
 end
 
-let poly_fields =
-  PolyFields.(make Fields.map_poly ~subfields:[S (Fields.payloads, Payloads.poly_fields)])
-
-
 let get_status summary = summary.status
 
 let get_proc_desc summary = summary.proc_desc

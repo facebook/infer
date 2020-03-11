@@ -45,8 +45,6 @@ type t =
             here, use [IssueLog] and its serialization capabilities instead. *)
   ; mutable callee_pnames: Procname.Set.t }
 
-val poly_fields : t PolyFields.t
-
 val get_proc_name : t -> Procname.t
 (** Get the procedure name *)
 
