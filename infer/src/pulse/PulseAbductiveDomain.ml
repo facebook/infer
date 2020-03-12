@@ -95,7 +95,10 @@ let get_post {post} = (post :> BaseDomain.t)
 
 let get_skipped_calls {skipped_calls} = skipped_calls
 
-let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post PreDomain.pp pre
+let pp f {post; pre; skipped_calls} =
+  F.fprintf f "@[<v>%a@;PRE=[%a]@;skipped_calls=%a@]" Domain.pp post PreDomain.pp pre
+    SkippedCalls.pp skipped_calls
+
 
 let leq ~lhs ~rhs =
   SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
@@ -523,9 +526,10 @@ module PrePost = struct
         ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
-  let pp f {pre; post} =
+  let pp f {pre; post; skipped_calls} =
     F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
-    F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t)
+    F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
+    F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls
 
 
   (* {3 reading the pre from the current state} *)
