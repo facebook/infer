@@ -103,6 +103,18 @@ end
 
 module SkippedCalls : AbstractDomain.MapS with type key = Procname.t and type value = SkippedTrace.t
 
+val discard_unreachable : t -> t
+(** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
+    keep its size down *)
+
+val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
+
+val get_pre : t -> BaseDomain.t
+
+val get_post : t -> BaseDomain.t
+
+val get_skipped_calls : t -> SkippedCalls.t
+
 module PrePost : sig
   type domain_t = t
 
@@ -122,16 +134,10 @@ module PrePost : sig
     -> ((domain_t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
   (** return the abstract state after the call along with an optional return value, or [None] if the
       precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
+
+  val get_pre : t -> BaseDomain.t
+
+  val get_post : t -> BaseDomain.t
+
+  val get_skipped_calls : t -> SkippedCalls.t
 end
-
-val discard_unreachable : t -> t
-(** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
-    keep its size down *)
-
-val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
-
-val extract_pre : PrePost.t -> BaseDomain.t
-
-val extract_post : PrePost.t -> BaseDomain.t
-
-val extract_skipped_calls : PrePost.t -> SkippedCalls.t

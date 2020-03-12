@@ -96,6 +96,12 @@ type t =
   ; pre: InvertedDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 
+let get_pre {pre} = (pre :> BaseDomain.t)
+
+let get_post {post} = (post :> BaseDomain.t)
+
+let get_skipped_calls {skipped_calls} = skipped_calls
+
 let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
 
 let leq ~lhs ~rhs =
@@ -414,7 +420,7 @@ module PrePost = struct
 
   (** stuff we carry around when computing the result of applying one pre/post pair *)
   type call_state =
-    { astate: t  (** caller's abstract state computed so far *)
+    { astate: domain_t  (** caller's abstract state computed so far *)
     ; subst: (AbstractValue.t * ValueHistory.t) AddressMap.t
           (** translation from callee addresses to caller addresses and their caller histories *)
     ; rev_subst: AbstractValue.t AddressMap.t
@@ -1077,10 +1083,11 @@ module PrePost = struct
             Ok None
         | Error _ as error ->
             error )
+
+
+  let get_pre {pre} = (pre :> BaseDomain.t)
+
+  let get_post {post} = (post :> BaseDomain.t)
+
+  let get_skipped_calls {skipped_calls} = skipped_calls
 end
-
-let extract_pre {pre} = (pre :> BaseDomain.t)
-
-let extract_post {post} = (post :> BaseDomain.t)
-
-let extract_skipped_calls {skipped_calls} = skipped_calls

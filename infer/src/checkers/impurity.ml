@@ -139,8 +139,8 @@ let is_modeled_pure tenv pname =
 (** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
     modified by the function and skipped functions. *)
 let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
-  let pre_heap = (AbductiveDomain.extract_pre pre_post).BaseDomain.heap in
-  let post = AbductiveDomain.extract_post pre_post in
+  let pre_heap = (AbductiveDomain.PrePost.get_pre pre_post).BaseDomain.heap in
+  let post = AbductiveDomain.PrePost.get_post pre_post in
   let post_stack = post.BaseDomain.stack in
   let pname = Procdesc.get_proc_name pdesc in
   let modified_params =
@@ -148,7 +148,7 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
   in
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
-    AbductiveDomain.extract_skipped_calls pre_post
+    AbductiveDomain.PrePost.get_skipped_calls pre_post
     |> PulseAbductiveDomain.SkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
   in

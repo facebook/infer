@@ -6,8 +6,9 @@
  *)
 open! IStd
 module F = Format
+open PulseDomainInterface
 
-type t = PulseAbductiveDomain.PrePost.t list
+type t = AbductiveDomain.PrePost.t list
 
 let of_posts pdesc posts = List.map posts ~f:(PulseAbductiveDomain.PrePost.of_post pdesc)
 
