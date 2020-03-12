@@ -18,8 +18,6 @@ module F = Format
     variables (C) or default values (Java). *)
 type struct_init_mode = No_init | Fld_init
 
-let unSome = function Some x -> x | _ -> assert false
-
 (** kind for normal props, i.e. normalized *)
 type normal
 
@@ -2547,7 +2545,7 @@ let rec strexp_gc_fields (se : Predicates.strexp) =
       let fselo = List.map ~f:(fun (f, se) -> (f, strexp_gc_fields se)) fsel in
       let fsel' =
         let fselo' = List.filter ~f:(function _, Some _ -> true | _ -> false) fselo in
-        List.map ~f:(function f, seo -> (f, unSome seo)) fselo'
+        List.map ~f:(function f, seo -> (f, Option.value_exn seo)) fselo'
       in
       if [%compare.equal: (Fieldname.t * Predicates.strexp) list] fsel fsel' then Some se
       else Some (Predicates.Estruct (fsel', inst))
