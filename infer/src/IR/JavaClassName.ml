@@ -55,7 +55,7 @@ let is_int s =
 let strip_anonymous_suffixes_if_present classname =
   let rec strip_recursively classname nesting_level =
     match String.rsplit2 classname ~on:'$' with
-    | Some (outer, suffix) when is_int (String.strip suffix) ->
+    | Some (outer, suffix) when is_int suffix ->
         (* Suffix is an integer - that was an anonymous class.
            But it could be nested inside another anonymous class as well *)
         strip_recursively outer (nesting_level + 1)
