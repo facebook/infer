@@ -35,6 +35,7 @@ let () =
         ; DifferentialTests.tests
         ; FileDiffTests.tests
         ; IListTests.tests
+        ; JavaClassNameTests.tests
         ; JavaProfilerSamplesTest.tests
         ; LivenessTests.tests
         ; LRUHashtblTests.tests

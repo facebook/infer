@@ -7,7 +7,9 @@
 
 open! IStd
 
-type t [@@deriving compare]
+type t [@@deriving compare, equal]
+
+val make : package:string option -> classname:string -> t
 
 val from_string : string -> t
 
@@ -28,3 +30,13 @@ val is_external_via_config : t -> bool
 val is_anonymous_inner_class_name : t -> bool
 (** True if it is anonymous Java class:
     https://docs.oracle.com/javase/tutorial/java/javaOO/anonymousclasses.html *)
+
+val get_user_defined_class_if_anonymous_inner : t -> t option
+(** If the current class is anonymous ([is_anonymous_inner_class_name] is true), Return the
+    corresponding user defined (not anonymous) class this anonymous class belongs to.
+
+    In general case, BOTH anonymous classes and user-defined classes can be nested, so the most
+    general example looks like So in general case anonymous class name looks something like
+    Class$NestedClass$1$17$5. This function should return Class$NestedClass for this case.
+
+    If this is not an anonymous class, returns [None]. *)
