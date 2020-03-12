@@ -2,7 +2,7 @@
 digraph callgraph {
   N1 [ label = "Test.<init>()", flag = true ];
 
-  N5 [ label = "void Test.main(java.lang.String[])", flag = true ];
+  N5 [ label = "void Test.main(String[])", flag = true ];
 
   N0 [ label = "Object.<init>()", flag = false ];
   N0 -> N7 ;

@@ -161,11 +161,11 @@ let cn_to_java_type cn =
 let vt_to_java_type vt =
   match vt with
   | JBasics.TBasic bt ->
-      JavaSplitName.make (string_of_basic_type bt)
+      JavaSplitName.of_string (string_of_basic_type bt)
   | JBasics.TObject ot -> (
     match ot with
     | JBasics.TArray vt ->
-        JavaSplitName.make (string_of_type vt ^ "[]")
+        JavaSplitName.of_string (string_of_type vt ^ "[]")
     | JBasics.TClass cn ->
         cn_to_java_type cn )
 

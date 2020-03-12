@@ -199,10 +199,7 @@ module Java = struct
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)
   let is_vararg {parameters} =
-    (* FIXME this looks wrong due to the dot in the type name *)
-    List.last parameters
-    |> Option.exists ~f:(fun java_type ->
-           String.equal "java.lang.Object[]" (JavaSplitName.type_name java_type) )
+    List.last parameters |> Option.exists ~f:JavaSplitName.(equal java_lang_object_array)
 
 
   let is_external java_pname =

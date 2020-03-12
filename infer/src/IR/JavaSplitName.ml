@@ -28,6 +28,8 @@ let type_name {type_name} = type_name
 
 let java_lang_object = make ~package:"java.lang" "Object"
 
+let java_lang_object_array = make ~package:"java.lang" "Object[]"
+
 let java_lang_string = make ~package:"java.lang" "String"
 
 let void = make "void"

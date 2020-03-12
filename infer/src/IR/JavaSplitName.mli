@@ -22,6 +22,9 @@ val of_string : string -> t
 val java_lang_object : t
 (** [java.lang.Object] type *)
 
+val java_lang_object_array : t
+(** [java.lang.Object\[\]] type *)
+
 val java_lang_string : t
 (** [java.lang.String] type *)
 
