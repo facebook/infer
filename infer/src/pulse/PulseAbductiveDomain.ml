@@ -14,8 +14,8 @@ module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
-    and the inverted [InvertedDomain], representing the inferred pre-condition*)
-module type BaseDomain = sig
+    and the inverted [PreDomain], representing the inferred pre-condition*)
+module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
   type t = private BaseDomain.t
@@ -35,7 +35,7 @@ end
 type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
-(** operations common to [Domain] and [InvertedDomain], see also the [BaseDomain] signature *)
+(** operations common to [Domain] and [PreDomain], see also the [BaseDomain] signature *)
 module BaseDomainCommon = struct
   let update ?stack ?heap ?attrs foot =
     let new_stack, new_heap, new_attrs =
@@ -57,21 +57,14 @@ module BaseDomainCommon = struct
 end
 
 (** represents the post abstract state at each program point *)
-module Domain : BaseDomain = struct
+module Domain : BaseDomainSig = struct
   include BaseDomainCommon
   include BaseDomain
 end
 
+(* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
+module PreDomain : BaseDomainSig = Domain
 (** represents the inferred pre-condition at each program point, biabduction style *)
-module InvertedDomain : BaseDomain = struct
-  include BaseDomainCommon
-
-  type t = BaseDomain.t
-
-  let empty = BaseDomain.empty
-
-  let pp = BaseDomain.pp
-end
 
 module SkippedTrace = struct
   type t = PulseTrace.t [@@deriving compare]
@@ -93,7 +86,7 @@ module SkippedCalls = AbstractDomain.Map (Procname) (SkippedTrace)
 (** biabduction-style pre/post state + skipped calls *)
 type t =
   { post: Domain.t  (** state at the current program point*)
-  ; pre: InvertedDomain.t  (** inferred pre at the current program point *)
+  ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 
 let get_pre {pre} = (pre :> BaseDomain.t)
@@ -102,7 +95,7 @@ let get_post {post} = (post :> BaseDomain.t)
 
 let get_skipped_calls {skipped_calls} = skipped_calls
 
-let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
+let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post PreDomain.pp pre
 
 let leq ~lhs ~rhs =
   SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
@@ -147,7 +140,7 @@ module Stack = struct
             (* HACK: do not record the history of values in the pre as they are unused *)
             let foot_stack = BaseStack.add var (addr, []) (astate.pre :> base_domain).stack in
             let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
-            InvertedDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
+            PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
         in
         ( { post= Domain.update astate.post ~stack:post_stack
@@ -186,7 +179,7 @@ module AddressAttributes = struct
     L.d_printfln "Abducing %a:%a" AbstractValue.pp address Attribute.pp attribute ;
     let new_pre =
       if BaseMemory.mem address (astate.pre :> base_domain).heap then
-        InvertedDomain.update astate.pre
+        PreDomain.update astate.pre
           ~attrs:(BaseAddressAttributes.add_one address attribute (astate.pre :> base_domain).attrs)
       else astate.pre
     in
@@ -285,7 +278,7 @@ module Memory = struct
           else (astate.pre :> base_domain).heap
         in
         ( { post= Domain.update astate.post ~heap:post_heap
-          ; pre= InvertedDomain.update astate.pre ~heap:foot_heap
+          ; pre= PreDomain.update astate.pre ~heap:foot_heap
           ; skipped_calls= astate.skipped_calls }
         , addr_hist_dst )
 
@@ -306,15 +299,15 @@ let mk_initial proc_desc =
            , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
   in
   let initial_stack =
-    List.fold formals ~init:(InvertedDomain.empty :> BaseDomain.t).stack
+    List.fold formals ~init:(PreDomain.empty :> BaseDomain.t).stack
       ~f:(fun stack (formal, addr_loc) -> BaseStack.add formal addr_loc stack)
   in
   let pre =
     let initial_heap =
-      List.fold formals ~init:(InvertedDomain.empty :> base_domain).heap
-        ~f:(fun heap (_, (addr, _)) -> BaseMemory.register_address addr heap)
+      List.fold formals ~init:(PreDomain.empty :> base_domain).heap ~f:(fun heap (_, (addr, _)) ->
+          BaseMemory.register_address addr heap )
     in
-    InvertedDomain.update ~stack:initial_stack ~heap:initial_heap InvertedDomain.empty
+    PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
   let post = Domain.update ~stack:initial_stack Domain.empty in
   let skipped_calls = SkippedCalls.empty in
@@ -330,7 +323,7 @@ let add_skipped_calls pname trace astate =
 let discard_unreachable ({pre; post} as astate) =
   let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
   let pre_new =
-    InvertedDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
+    PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
@@ -372,7 +365,7 @@ module PrePost = struct
     let pre_heap = deregister_empty (astate.pre :> base_domain).heap in
     let post_heap = deregister_empty (astate.post :> base_domain).heap in
     { astate with
-      pre= InvertedDomain.update astate.pre ~heap:pre_heap
+      pre= PreDomain.update astate.pre ~heap:pre_heap
     ; post= Domain.update ~stack:post_stack ~heap:post_heap astate.post }
 
 
