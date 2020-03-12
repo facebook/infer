@@ -105,21 +105,19 @@ let eval_arith_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
   let arith_of_op op astate =
     match op with
     | LiteralOperand i ->
-        Some (Arithmetic.equal_to i)
+        Some (CItv.equal_to i)
     | AbstractValueOperand v ->
-        AddressAttributes.get_arithmetic v astate |> Option.map ~f:fst
+        AddressAttributes.get_citv v astate |> Option.map ~f:fst
   in
   match
     Option.both (arith_of_op op_lhs astate) (arith_of_op op_rhs astate)
-    |> Option.bind ~f:(fun (addr_lhs, addr_rhs) -> Arithmetic.binop bop addr_lhs addr_rhs)
+    |> Option.bind ~f:(fun (addr_lhs, addr_rhs) -> CItv.binop bop addr_lhs addr_rhs)
   with
   | None ->
       astate
   | Some binop_a ->
       let binop_trace = Trace.Immediate {location; history= binop_hist} in
-      let astate =
-        AddressAttributes.add_one binop_addr (Arithmetic (binop_a, binop_trace)) astate
-      in
+      let astate = AddressAttributes.add_one binop_addr (CItv (binop_a, binop_trace)) astate in
       astate
 
 
@@ -148,14 +146,14 @@ let eval_binop location binop op_lhs op_rhs binop_hist astate =
 
 let eval_unop_arith location unop_addr unop operand_addr unop_hist astate =
   match
-    AddressAttributes.get_arithmetic operand_addr astate
-    |> Option.bind ~f:(function a, _ -> Arithmetic.unop unop a)
+    AddressAttributes.get_citv operand_addr astate
+    |> Option.bind ~f:(function a, _ -> CItv.unop unop a)
   with
   | None ->
       astate
   | Some unop_a ->
       let unop_trace = Trace.Immediate {location; history= unop_hist} in
-      AddressAttributes.add_one unop_addr (Arithmetic (unop_a, unop_trace)) astate
+      AddressAttributes.add_one unop_addr (CItv (unop_a, unop_trace)) astate
 
 
 let eval_unop_bo_itv unop_addr unop operand_addr astate =
@@ -210,7 +208,7 @@ let eval location exp0 astate =
         let addr = AbstractValue.mk_fresh () in
         let astate =
           AddressAttributes.add_one addr
-            (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
+            (CItv (CItv.equal_to i, Immediate {location; history= []}))
             astate
           |> AddressAttributes.add_one addr (BoItv (Itv.ItvPure.of_int_lit i))
           |> AddressAttributes.invalidate
@@ -244,14 +242,14 @@ let eval_arith location exp astate =
         ( astate
         , None
         , Some
-            ( Arithmetic.equal_to i
+            ( CItv.equal_to i
             , Trace.Immediate {location; history= [ValueHistory.Assignment location]} )
         , Itv.ItvPure.of_int_lit i )
   | exp ->
       let+ astate, (value, _) = eval location exp astate in
       ( astate
       , Some value
-      , AddressAttributes.get_arithmetic value astate
+      , AddressAttributes.get_citv value astate
       , AddressAttributes.get_bo_itv value astate )
 
 
@@ -267,7 +265,7 @@ let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate 
         | Some (_, trace) ->
             Trace.add_event event trace
       in
-      let attribute = Attribute.Arithmetic (arith, trace) in
+      let attribute = Attribute.CItv (arith, trace) in
       AddressAttributes.abduce_attribute addr attribute astate
       |> AddressAttributes.add_one addr attribute
 
@@ -302,7 +300,7 @@ let prune ~is_then_branch if_kind location ~condition astate =
           eval_arith location exp_rhs astate
         in
         match
-          Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
+          CItv.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
             (Option.map ~f:fst arith_rhs_opt)
         with
         | Unsatisfiable ->

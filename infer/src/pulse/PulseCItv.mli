@@ -7,6 +7,8 @@
 open! IStd
 module F = Format
 
+(** Concrete interval domain (CItv) *)
+
 type t [@@deriving compare]
 
 val equal_to : IntLit.t -> t

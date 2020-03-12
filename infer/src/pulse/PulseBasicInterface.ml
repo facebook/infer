@@ -9,10 +9,10 @@ open! IStd
 (** Basic Pulse modules that are safe to use in any module *)
 
 module AbstractValue = PulseAbstractValue
-module Arithmetic = PulseArithmetic
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent
+module CItv = PulseCItv
 module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace

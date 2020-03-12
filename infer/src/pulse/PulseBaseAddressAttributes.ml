@@ -71,7 +71,7 @@ let get_attribute getter address attrs =
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_arithmetic = get_attribute Attributes.get_arithmetic
+let get_citv = get_attribute Attributes.get_citv
 
 let get_bo_itv v memory =
   match get_attribute Attributes.get_bo_itv v memory with

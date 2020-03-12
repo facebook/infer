@@ -6,7 +6,7 @@
  *)
 open! IStd
 module F = Format
-module Arithmetic = PulseArithmetic
+module CItv = PulseCItv
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -29,7 +29,7 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Trace.t
-    | Arithmetic of Arithmetic.t * Trace.t
+    | CItv of CItv.t * Trace.t
     | BoItv of Itv.ItvPure.t
     | Closure of Procname.t
     | Invalid of Invalidation.t * Trace.t
@@ -63,7 +63,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero, dummy_trace))
+  let const_rank = Variants.to_rank (CItv (CItv.equal_to IntLit.zero, dummy_trace))
 
   let bo_itv_rank = Variants.to_rank (BoItv Itv.ItvPure.zero)
 
@@ -82,8 +82,8 @@ module Attribute = struct
         F.fprintf f "BoItv (%a)" Itv.ItvPure.pp bo_itv
     | Closure pname ->
         Procname.pp f pname
-    | Arithmetic (phi, trace) ->
-        F.fprintf f "Arith %a" (Trace.pp ~pp_immediate:(fun fmt -> Arithmetic.pp fmt phi)) trace
+    | CItv (phi, trace) ->
+        F.fprintf f "Arith %a" (Trace.pp ~pp_immediate:(fun fmt -> CItv.pp fmt phi)) trace
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -143,10 +143,10 @@ module Attributes = struct
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 
-  let get_arithmetic attrs =
+  let get_citv attrs =
     Set.find_rank attrs Attribute.const_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Arithmetic (a, trace)) = attr in
+           let[@warning "-8"] (Attribute.CItv (a, trace)) = attr in
            (a, trace) )
 
 
@@ -163,7 +163,7 @@ end
 include Attribute
 
 let is_suitable_for_pre = function
-  | Arithmetic _ | BoItv _ | MustBeValid _ ->
+  | CItv _ | BoItv _ | MustBeValid _ ->
       true
   | AddressOfCppTemporary _
   | AddressOfStackVariable _

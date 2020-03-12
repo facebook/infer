@@ -215,9 +215,7 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_closure_proc_name addr (astate.post :> base_domain).attrs
 
 
-  let get_arithmetic addr astate =
-    BaseAddressAttributes.get_arithmetic addr (astate.post :> base_domain).attrs
-
+  let get_citv addr astate = BaseAddressAttributes.get_citv addr (astate.post :> base_domain).attrs
 
   let get_bo_itv addr astate =
     BaseAddressAttributes.get_bo_itv addr (astate.post :> base_domain).attrs
@@ -451,11 +449,11 @@ module PrePost = struct
             addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
             single address [caller_addr] in the caller's current state. Typically raised when
             calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
-    | Arithmetic of
+    | CItv of
         { addr_caller: AbstractValue.t
         ; addr_callee: AbstractValue.t
-        ; arith_caller: Arithmetic.t option
-        ; arith_callee: Arithmetic.t option
+        ; arith_caller: CItv.t option
+        ; arith_callee: CItv.t option
         ; call_state: call_state }
         (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
             state *)
@@ -475,11 +473,11 @@ module PrePost = struct
           "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
           AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
           pp_call_state call_state
-    | Arithmetic {addr_caller; addr_callee; arith_caller; arith_callee; call_state} ->
+    | CItv {addr_caller; addr_callee; arith_caller; arith_callee; call_state} ->
         F.fprintf fmt
           "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable@\n\
-           note: current call state was %a" AbstractValue.pp addr_caller (Pp.option Arithmetic.pp)
-          arith_caller AbstractValue.pp addr_callee (Pp.option Arithmetic.pp) arith_callee
+           note: current call state was %a" AbstractValue.pp addr_caller (Pp.option CItv.pp)
+          arith_caller AbstractValue.pp addr_callee (Pp.option CItv.pp) arith_callee
           AbstractValue.pp addr_caller pp_call_state call_state AbstractValue.pp addr_callee
     | ArithmeticBo {addr_caller; addr_callee; arith_callee; call_state} ->
         F.fprintf fmt
@@ -633,24 +631,20 @@ module PrePost = struct
 
   let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
     match (attr : Attribute.t) with
-    | Arithmetic (arith_callee, hist) -> (
-        let arith_caller_opt =
-          AddressAttributes.get_arithmetic addr_caller astate |> Option.map ~f:fst
-        in
-        match
-          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee)
-        with
+    | CItv (arith_callee, hist) -> (
+        let arith_caller_opt = AddressAttributes.get_citv addr_caller astate |> Option.map ~f:fst in
+        match CItv.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee) with
         | Unsatisfiable ->
             raise
               (Contradiction
-                 (Arithmetic
+                 (CItv
                     { addr_caller
                     ; addr_callee
                     ; arith_caller= arith_caller_opt
                     ; arith_callee= Some arith_callee
                     ; call_state }))
         | Satisfiable (Some abduce_caller, _abduce_callee) ->
-            Attribute.Arithmetic (abduce_caller, hist)
+            Attribute.CItv (abduce_caller, hist)
         | Satisfiable (None, _) ->
             attr )
     | BoItv itv -> (
@@ -683,9 +677,8 @@ module PrePost = struct
       | Invalid (invalidation, trace) ->
           Attribute.Invalid
             (invalidation, add_call_to_trace proc_name call_location caller_history trace)
-      | Arithmetic (arith, trace) ->
-          Attribute.Arithmetic
-            (arith, add_call_to_trace proc_name call_location caller_history trace)
+      | CItv (arith, trace) ->
+          Attribute.CItv (arith, add_call_to_trace proc_name call_location caller_history trace)
       | Allocated trace ->
           Attribute.Allocated (add_call_to_trace proc_name call_location caller_history trace)
       | AddressOfCppTemporary _

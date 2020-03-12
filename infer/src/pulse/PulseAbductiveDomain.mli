@@ -84,7 +84,7 @@ module AddressAttributes : sig
 
   val std_vector_reserve : AbstractValue.t -> t -> t
 
-  val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
+  val get_citv : AbstractValue.t -> t -> (CItv.t * Trace.t) option
 
   val get_bo_itv : AbstractValue.t -> t -> Itv.ItvPure.t
 

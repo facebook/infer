@@ -43,7 +43,7 @@ module Misc = struct
       let i = IntLit.of_int64 i64 in
       AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit i)) astate
       |> AddressAttributes.add_one ret_addr
-           (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
+           (CItv (CItv.equal_to i, Immediate {location; history= []}))
     in
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
@@ -54,7 +54,7 @@ module Misc = struct
     let astate =
       AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.nat) astate
       |> AddressAttributes.add_one ret_addr
-           (Arithmetic (Arithmetic.zero_inf, Immediate {location; history= []}))
+           (CItv (CItv.zero_inf, Immediate {location; history= []}))
     in
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
@@ -78,8 +78,8 @@ module C = struct
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     let is_known_zero =
-      ( AddressAttributes.get_arithmetic (fst deleted_access) astate
-      |> function Some (arith, _) -> Arithmetic.is_equal_to_zero arith | None -> false )
+      ( AddressAttributes.get_citv (fst deleted_access) astate
+      |> function Some (arith, _) -> CItv.is_equal_to_zero arith | None -> false )
       || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv (fst deleted_access) astate)
     in
     if is_known_zero then (* freeing 0 is a no-op *)

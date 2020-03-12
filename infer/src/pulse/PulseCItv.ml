@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 module F = Format
 module L = Logging
@@ -112,8 +110,8 @@ end
 
 module Unsafe : sig
   type t = private
-    | Between of Bound.t * Bound.t  (** we write [b1,b2] for these *)
-    | Outside of IntLit.t * IntLit.t  (** we write i1][i2 for these *)
+    | Between of Bound.t * Bound.t  (** we write \[b1,b2\] for these *)
+    | Outside of IntLit.t * IntLit.t  (** we write i1\]\[i2 for these *)
   [@@deriving compare]
 
   val between : Bound.t -> Bound.t -> t
@@ -177,7 +175,7 @@ let has_empty_intersection a1 a2 =
   | Between (lower1, upper1), Between (lower2, upper2) ->
       Bound.lt upper1 lower2 || Bound.lt upper2 lower1
   | Between (lower1, upper1), Outside (l2, u2) | Outside (l2, u2), Between (lower1, upper1) ->
-      (* is [l1, u1] inside [l2, u2]? *)
+      (* is \[l1, u1\] inside \[l2, u2\]? *)
       Bound.le (Int l2) lower1 && Bound.ge (Int u2) upper1
 
 
@@ -235,22 +233,22 @@ let rec abduce_eq (a1 : t) (a2 : t) =
   | Outside (l1, u1), Outside (l2, u2) ->
       (* ∃x. (x<l1 ∨ x>u1) ∧ (x<l2 ∨ x>u2) ∧ li<=ui*)
       (* all the possible cases:
-         x: --------[   ]---------
-         y: -----[       ]--------
+         x: --------\[   \]---------
+         y: -----\[       \]--------
 
-         x: ---[           ]------
-         y: -----[       ]--------
+         x: ---\[           \]------
+         y: -----\[       \]--------
 
-         x: ---[       ]----------
-         y: -----[       ]--------
+         x: ---\[       \]----------
+         y: -----\[       \]--------
 
-         x: ---------[       ]----
-         y: -----[       ]--------
+         x: ---------\[       \]----
+         y: -----\[       \]--------
 
-         -> SAT, can tighten both to min(l1,l2)][max(u1,u2)
+         -> SAT, can tighten both to min(l1,l2)\]\[max(u1,u2)
 
-         x: ---------------[   ]--
-         y: -----[       ]--------
+         x: ---------------\[   \]--
+         y: -----\[       \]--------
          or symmetrically x<->y => cannot express the 3 intervals that would be needed so return SAT
          (TODO: we might want to keep only one of these, which would be a kind of recency model of
          disequalities: remember the last known disequality)
@@ -267,24 +265,24 @@ let rec abduce_eq (a1 : t) (a2 : t) =
       (* ∃x. l1≤x≤u1 ∧ (x<l2 ∨ x>u2) *)
       (* all the possible cases:
 
-         x:  [-------]
-         y: --[   ]---
+         x:  \[-------\]
+         y: --\[   \]---
 
-         case 1 above: SAT, cannot say more unless a1 is [-∞,+∞] (then we can abduce that a1 is
+         case 1 above: SAT, cannot say more unless a1 is \[-∞,+∞\] (then we can abduce that a1 is
          the same as a2)
 
-         x:        [--]
-         y: ------[   ]--
+         x:        \[--\]
+         y: ------\[   \]--
 
          case 2 above: UNSAT
 
-         x:   [---]
-         y: ------[   ]--
+         x:   \[---\]
+         y: ------\[   \]--
 
          case 3 above: SAT: x = x\cap y for both
 
-         x:      [----]
-         y: ------[   ]--
+         x:      \[----\]
+         y: ------\[   \]--
 
          case 4 above: SAT: x\cap y for both
       *)
@@ -360,11 +358,11 @@ let abduce_le (a1 : t) (a2 : t) =
       (* two cases:
          1. l1<l2: we don't know if x≤y for sure and cannot express a good fact to abduce to make
          it true
-         x:   [----doesn't matter where u1 is
-         y: -----[       ]---------------------
+         x:   \[----doesn't matter where u1 is
+         y: -----\[       \]---------------------
          2. l1≥l2: we can abduce that y≥max(u2+1, l1) and that makes it SAT
-         x:      [----doesn't matter either
-         y: -----[       ]---------------------
+         x:      \[----doesn't matter either
+         y: -----\[       \]---------------------
       *)
       if Bound.lt lower1 (Int l2) then (* case 1: l1<l2 *) Satisfiable (None, None)
       else
@@ -374,12 +372,12 @@ let abduce_le (a1 : t) (a2 : t) =
   | Outside (l1, u1), Between (_lower2, upper2) ->
       (* similarly, two cases:
          1. u1≥u2: can refine to x≤min(l1+1, u2)
-         x: -----[       ]---------------------
-         y: ..-]
-         or y:      ...-----]
+         x: -----\[       \]---------------------
+         y: ..-\]
+         or y:      ...-----\]
          2. u1<u2: cannot deduce anything
-         x: -----[       ]---------------------
-         y:          ...---]
+         x: -----\[       \]---------------------
+         y:          ...---\]
       *)
       if Bound.ge (Int u1) upper2 then
         (* case 1: l1>l2 *)
