@@ -1194,6 +1194,9 @@ module JavaString = struct
         mem
     in
     {exec; check= no_check}
+
+
+  let replace = id
 end
 
 module Preconditions = struct
@@ -1265,6 +1268,7 @@ module Call = struct
     let std_array0 = mk_std_array () in
     let std_array1 = mk_std_array () in
     let std_array2 = mk_std_array () in
+    let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
     let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
@@ -1326,7 +1330,12 @@ module Call = struct
       ; +PatternMatch.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
       ; +PatternMatch.implements_lang "String"
-        &:: "indexOf" <>$ capt_exp $+ any_arg $--> JavaString.indexOf
+        &:: "indexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
+      ; +PatternMatch.implements_lang "String"
+        &:: "lastIndexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
+      ; +PatternMatch.implements_lang "String"
+        &:: "replace" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $+ any_arg_of_prim_typ int_typ
+        $--> JavaString.replace
       ; +PatternMatch.implements_lang "String"
         &:: "split" <>$ any_arg $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
       ; +PatternMatch.implements_lang "String"

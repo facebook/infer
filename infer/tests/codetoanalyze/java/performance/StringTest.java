@@ -85,4 +85,27 @@ class StringTest {
     String sub = s.substring(x, y);
     for (int i = 0; i < sub.length(); i++) {}
   }
+
+  public void replace_linear(String s) {
+    String r = s.replace('.', '/');
+    for (int i = 0; i < r.length(); i++) {}
+  }
+
+  public void last_index_of_linear(String s) {
+    int j = s.lastIndexOf('/');
+    for (int i = 0; i < j; i++) {}
+  }
+
+  boolean unknown_bool;
+
+  public void last_index_of_linear_FP(String s) {
+    int i = s.lastIndexOf('/');
+    while (i > 0) {
+      int j = s.lastIndexOf('/', i - 1);
+      if (j > 0) {
+        break;
+      }
+      i = j;
+    }
+  }
 }
