@@ -35,6 +35,23 @@ let create_process_and_wait ~prog ~args =
         (Unix.Exit_or_signal.to_string_hum status)
 
 
+let create_process_and_wait_with_output ~prog ~args =
+  let {Unix.Process_info.stdin; stdout; stderr; pid} = Unix.create_process ~prog ~args in
+  let stderr_chan = Unix.in_channel_of_descr stderr in
+  let stdout_chan = Unix.in_channel_of_descr stdout in
+  Unix.close stdin ;
+  match Unix.waitpid pid with
+  | Ok () ->
+      let out = In_channel.input_all stdout_chan in
+      let err = In_channel.input_all stderr_chan in
+      In_channel.close stdout_chan ; In_channel.close stderr_chan ; (out, err)
+  | Error _ as status ->
+      L.(die ExternalError)
+        "Error executing: %s@\n%s@\n"
+        (String.concat ~sep:" " (prog :: args))
+        (Unix.Exit_or_signal.to_string_hum status)
+
+
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
   let pipe_in, pipe_out = Unix.pipe () in
   match Unix.fork () with

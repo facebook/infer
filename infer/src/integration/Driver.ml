@@ -26,6 +26,7 @@ type mode =
   | Maven of string * string list
   | NdkBuild of string list
   | PythonCapture of Config.build_system * string list
+  | XcodeBuild of string * string list
   | XcodeXcpretty of string * string list
 
 let is_analyze_mode = function Analyze -> true | _ -> false
@@ -48,6 +49,8 @@ let pp_mode fmt = function
       F.fprintf fmt "PythonCapture driver mode:@\nbuild system = '%s'@\nargs = %a"
         (Config.string_of_build_system bs)
         Pp.cli_args args
+  | XcodeBuild (prog, args) ->
+      F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty (prog, args) ->
       F.fprintf fmt "XcodeXcpretty driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Javac (_, prog, args) ->
@@ -290,9 +293,13 @@ let capture ~changed_files = function
       L.progress "Capturing in maven mode...@." ;
       Maven.capture ~prog ~args
   | NdkBuild build_cmd ->
+      L.progress "Capturing in ndk-build mode...@." ;
       NdkBuild.capture ~build_cmd
   | PythonCapture (build_system, build_cmd) ->
       python_capture build_system build_cmd
+  | XcodeBuild (prog, args) ->
+      L.progress "Capturing in xcodebuild mode...@." ;
+      XcodeBuild.capture ~prog ~args
   | XcodeXcpretty (prog, args) ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
@@ -534,11 +541,13 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Maven (prog, args)
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty (prog, args)
+      | BXcode, _ ->
+          XcodeBuild (prog, args)
       | BBuck, Some ClangFlavors ->
           BuckClangFlavor build_cmd
       | BNdk, _ ->
           NdkBuild build_cmd
-      | ((BAnt | BGradle | BXcode) as build_system), _ ->
+      | ((BAnt | BGradle) as build_system), _ ->
           PythonCapture (build_system, build_cmd) )
 
 

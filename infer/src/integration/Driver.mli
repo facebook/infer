@@ -23,6 +23,7 @@ type mode =
   | Maven of string * string list
   | NdkBuild of string list
   | PythonCapture of Config.build_system * string list
+  | XcodeBuild of string * string list
   | XcodeXcpretty of string * string list
 
 val is_analyze_mode : mode -> bool
