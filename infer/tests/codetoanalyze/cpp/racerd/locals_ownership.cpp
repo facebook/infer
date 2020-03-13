@@ -41,7 +41,7 @@ class Ownership {
     return x.f;
   }
 
-  int test2_bad() {
+  int FN_test2_bad() {
     X* x = &current;
     mutex_.lock();
     x->f = 7;
@@ -57,7 +57,7 @@ class Ownership {
     return x.f;
   }
 
-  int test3_bad(X* xformal) {
+  int FN_test3_bad(X* xformal) {
     X* x = xformal;
     mutex_.lock();
     x->f = 7;

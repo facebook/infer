@@ -65,6 +65,19 @@ module Access = struct
         None
 
 
+  let should_keep formals access =
+    match get_access_exp access with
+    | None ->
+        true
+    | Some acc_exp -> (
+        let ((root, _) as base) = AccessExpression.get_base acc_exp in
+        match root with
+        | Var.LogicalVar _ ->
+            false
+        | Var.ProgramVar pvar ->
+            Pvar.is_global pvar || FormalMap.is_formal base formals )
+
+
   let map ~f access =
     match access with
     | Read {exp} ->
@@ -126,6 +139,8 @@ module TraceElem = struct
   let is_write {elem} = Access.is_write elem
 
   let is_container_write {elem} = Access.is_container_write elem
+
+  let should_keep formals {elem} = Access.should_keep formals elem
 
   let map ~f trace_elem = map ~f:(Access.map ~f) trace_elem
 
@@ -268,19 +283,21 @@ module AccessSnapshot = struct
     ; ownership_precondition: OwnershipPrecondition.t }
   [@@deriving compare]
 
-  let make_if_not_owned access lock thread ownership_precondition =
-    if not (OwnershipPrecondition.is_true ownership_precondition) then
-      Some {access; lock; thread; ownership_precondition}
+  let make_if_not_owned formals access lock thread ownership_precondition =
+    if
+      (not (OwnershipPrecondition.is_true ownership_precondition))
+      && TraceElem.should_keep formals access
+    then Some {access; lock; thread; ownership_precondition}
     else None
 
 
-  let make access lock thread ownership_precondition =
+  let make formals access lock thread ownership_precondition =
     let lock = LocksDomain.is_locked lock in
-    make_if_not_owned access lock thread ownership_precondition
+    make_if_not_owned formals access lock thread ownership_precondition
 
 
-  let make_from_snapshot access {lock; thread; ownership_precondition} =
-    make_if_not_owned access lock thread ownership_precondition
+  let make_from_snapshot formals access {lock; thread; ownership_precondition} =
+    make_if_not_owned formals access lock thread ownership_precondition
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
@@ -579,7 +596,7 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
     ownership AttributeMapDomain.pp attribute_map
 
 
-let add_unannotated_call_access pname loc (astate : t) =
+let add_unannotated_call_access formals pname loc (astate : t) =
   let access = TraceElem.make_unannotated_call_access pname loc in
-  let snapshot = AccessSnapshot.make access astate.locks astate.threads False in
+  let snapshot = AccessSnapshot.make formals access astate.locks astate.threads False in
   {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}

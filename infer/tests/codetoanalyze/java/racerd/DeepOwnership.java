@@ -16,7 +16,7 @@ class DeepOwnership {
     global.next = null;
   }
 
-  void reassignBaseToGlobalBad() {
+  void FN_reassignBaseToGlobalBad() {
     DeepOwnership x = new DeepOwnership();
     x = global;
     x.next = null;

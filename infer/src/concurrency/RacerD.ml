@@ -23,10 +23,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RacerDDomain
 
-  type extras = ProcData.no_extras
+  type extras = FormalMap.t
 
-  let add_access loc ~is_write_access locks threads ownership (proc_data : extras ProcData.t)
-      access_domain exp =
+  let add_access formals loc ~is_write_access locks threads ownership
+      (proc_data : extras ProcData.t) access_domain exp =
     let open Domain in
     let rec add_field_accesses prefix_path acc = function
       | [] ->
@@ -41,7 +41,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let is_write = List.is_empty access_list && is_write_access in
             let access = TraceElem.make_field_access prefix_path' ~is_write loc in
             let pre = OwnershipDomain.get_precondition prefix_path ownership in
-            let snapshot_opt = AccessSnapshot.make access locks threads pre in
+            let snapshot_opt = AccessSnapshot.make formals access locks threads pre in
             let access_acc' = AccessDomain.add_opt snapshot_opt acc in
             add_field_accesses prefix_path' access_acc' access_list
     in
@@ -50,7 +50,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses base acc accesses )
 
 
-  let make_container_access ret_base callee_pname ~is_write receiver_ap callee_loc tenv
+  let make_container_access formals ret_base callee_pname ~is_write receiver_ap callee_loc tenv
       (astate : Domain.t) =
     let open Domain in
     if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
@@ -60,7 +60,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
         let ownership_pre = OwnershipDomain.get_precondition receiver_ap astate.ownership in
-        AccessSnapshot.make container_access astate.locks astate.threads ownership_pre
+        AccessSnapshot.make formals container_access astate.locks astate.threads ownership_pre
       in
       let ownership_value = OwnershipDomain.get_owned receiver_ap astate.ownership in
       let ownership =
@@ -70,15 +70,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Some {astate with accesses; ownership}
 
 
-  let add_reads exps loc ({accesses; locks; threads; ownership} as astate : Domain.t) proc_data =
+  let add_reads formals exps loc ({accesses; locks; threads; ownership} as astate : Domain.t)
+      proc_data =
     let accesses' =
       List.fold exps ~init:accesses
-        ~f:(add_access loc ~is_write_access:false locks threads ownership proc_data)
+        ~f:(add_access formals loc ~is_write_access:false locks threads ownership proc_data)
     in
     {astate with accesses= accesses'}
 
 
-  let expand_actuals actuals accesses pdesc =
+  let expand_actuals formals actuals accesses pdesc =
     let open Domain in
     if AccessDomain.is_empty accesses then accesses
     else
@@ -108,13 +109,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       let add snapshot acc =
         let access' = TraceElem.map ~f:expand_exp snapshot.AccessSnapshot.access in
-        let snapshot_opt' = AccessSnapshot.make_from_snapshot access' snapshot in
+        let snapshot_opt' = AccessSnapshot.make_from_snapshot formals access' snapshot in
         AccessDomain.add_opt snapshot_opt' acc
       in
       AccessDomain.fold add accesses AccessDomain.empty
 
 
-  let add_callee_accesses (caller_astate : Domain.t) callee_accesses locks threads actuals
+  let add_callee_accesses formals (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname loc =
     let open Domain in
     let conjoin_ownership_precondition actual_indexes actual_exp :
@@ -166,7 +167,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* discard accesses to owned memory *)
         acc
       else
-        let snapshot_opt = AccessSnapshot.make access locks thread ownership_precondition in
+        let snapshot_opt = AccessSnapshot.make formals access locks thread ownership_precondition in
         AccessDomain.add_opt snapshot_opt acc
     in
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
@@ -220,11 +221,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let treat_call_acquiring_ownership ret_base procname actuals loc ({ProcData.tenv} as proc_data)
-      astate () =
+  let treat_call_acquiring_ownership ret_base procname actuals loc
+      ({ProcData.tenv; extras} as proc_data) astate () =
     let open Domain in
     if RacerDModels.acquires_ownership procname tenv then
-      let astate = add_reads actuals loc astate proc_data in
+      let astate = add_reads extras actuals loc astate proc_data in
       let ownership =
         OwnershipDomain.add (AccessExpression.base ret_base) OwnershipAbstractValue.owned
           astate.ownership
@@ -233,7 +234,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else None
 
 
-  let treat_container_accesses ret_base callee_pname actuals loc {ProcData.tenv} astate () =
+  let treat_container_accesses ret_base callee_pname actuals loc {ProcData.tenv; extras} astate () =
     let open RacerDModels in
     Option.bind (get_container_access callee_pname tenv) ~f:(fun container_access ->
         match List.hd actuals with
@@ -241,14 +242,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let is_write =
               match container_access with ContainerWrite -> true | ContainerRead -> false
             in
-            make_container_access ret_base callee_pname ~is_write receiver_expr loc tenv astate
+            make_container_access extras ret_base callee_pname ~is_write receiver_expr loc tenv
+              astate
         | _ ->
             L.internal_error "Call to %a is marked as a container write, but has no receiver"
               Procname.pp callee_pname ;
             None )
 
 
-  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; summary}
+  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; summary; extras}
       (astate : Domain.t) () =
     let open Domain in
     let open RacerDModels in
@@ -256,7 +258,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ret_access_exp = AccessExpression.base ret_base in
     let astate =
       if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
-        Domain.add_unannotated_call_access callee_pname loc astate
+        Domain.add_unannotated_call_access extras callee_pname loc astate
       else astate
     in
     let astate =
@@ -311,7 +313,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               |> Option.map ~f:(fun summary ->
                      let rebased_accesses =
                        Ondemand.get_proc_desc callee_pname
-                       |> Option.fold ~init:summary.accesses ~f:(expand_actuals actuals)
+                       |> Option.fold ~init:summary.accesses ~f:(expand_actuals extras actuals)
                      in
                      {summary with accesses= rebased_accesses} )
             in
@@ -321,7 +323,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   LocksDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
                 in
                 let accesses =
-                  add_callee_accesses astate accesses locks threads actuals callee_pname loc
+                  add_callee_accesses extras astate accesses locks threads actuals callee_pname loc
                 in
                 let ownership =
                   OwnershipDomain.propagate_return ret_access_exp return_ownership actuals
@@ -355,11 +357,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate_callee with ownership; attribute_map}
 
 
-  let do_assignment lhs_access_exp rhs_exp loc ({ProcData.tenv} as proc_data) (astate : Domain.t) =
+  let do_assignment lhs_access_exp rhs_exp loc ({ProcData.tenv; extras} as proc_data)
+      (astate : Domain.t) =
     let open Domain in
     let rhs_accesses =
-      add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership proc_data
-        astate.accesses rhs_exp
+      add_access extras loc ~is_write_access:false astate.locks astate.threads astate.ownership
+        proc_data astate.accesses rhs_exp
     in
     let rhs_access_exprs = HilExp.get_access_exprs rhs_exp in
     let is_functional =
@@ -382,8 +385,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            report spurious read/write races *)
         rhs_accesses
       else
-        add_access loc ~is_write_access:true astate.locks astate.threads astate.ownership proc_data
-          rhs_accesses (HilExp.AccessExpression lhs_access_exp)
+        add_access extras loc ~is_write_access:true astate.locks astate.threads astate.ownership
+          proc_data rhs_accesses (HilExp.AccessExpression lhs_access_exp)
     in
     let ownership = OwnershipDomain.propagate_assignment lhs_access_exp rhs_exp astate.ownership in
     let attribute_map =
@@ -392,7 +395,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate with accesses; ownership; attribute_map}
 
 
-  let do_assume assume_exp loc proc_data (astate : Domain.t) =
+  let do_assume formals assume_exp loc proc_data (astate : Domain.t) =
     let open Domain in
     let add_choice bool_value (acc : Domain.t) = function
       | Choice.LockHeld ->
@@ -408,8 +411,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           {acc with threads}
     in
     let accesses =
-      add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership proc_data
-        astate.accesses assume_exp
+      add_access formals loc ~is_write_access:false astate.locks astate.threads astate.ownership
+        proc_data astate.accesses assume_exp
     in
     let astate' =
       match HilExp.get_access_exprs assume_exp with
@@ -426,10 +429,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate' with accesses}
 
 
-  let exec_instr (astate : Domain.t) ({ProcData.summary} as proc_data) _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) ({ProcData.summary; extras} as proc_data) _
+      (instr : HilInstr.t) =
     match instr with
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
-        let astate = add_reads actuals loc astate proc_data in
+        let astate = add_reads extras actuals loc astate proc_data in
         treat_call_acquiring_ownership ret_base callee_pname actuals loc proc_data astate ()
         |> IOption.if_none_evalopt
              ~f:(treat_container_accesses ret_base callee_pname actuals loc proc_data astate)
@@ -442,7 +446,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (lhs_access_expr, rhs_exp, loc) ->
         do_assignment lhs_access_expr rhs_exp loc proc_data astate
     | Assume (assume_exp, _, _, loc) ->
-        do_assume assume_exp loc proc_data astate
+        do_assume extras assume_exp loc proc_data astate
     | Metadata _ ->
         astate
 
@@ -465,7 +469,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   let open RacerDDomain in
   if should_analyze_proc tenv proc_name then
     let formal_map = FormalMap.make proc_desc in
-    let proc_data = ProcData.make summary tenv ProcData.empty_extras in
+    let proc_data = ProcData.make summary tenv (FormalMap.make proc_desc) in
     let initial =
       let locks =
         if Procdesc.is_java_synchronized proc_desc then LocksDomain.(acquire_lock bottom)

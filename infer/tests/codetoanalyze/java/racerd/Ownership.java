@@ -157,7 +157,7 @@ public class Ownership {
     writeToFormal(o);
   }
 
-  public void writeToNotOwnedInCalleeBad2() {
+  public void FN_writeToNotOwnedInCalleeBad2() {
     Obj o = getMaybeUnownedObj();
     writeToFormal(o);
   }
@@ -339,7 +339,7 @@ public class Ownership {
     castThenCall(o);
   }
 
-  void castThenCallBad() {
+  void FN_castThenCallBad() {
     Obj o = getMaybeUnownedObj();
     castThenCall(o);
   }
@@ -507,7 +507,7 @@ public class Ownership {
     conditionalAlias(new Obj(), new Obj());
   }
 
-  void conditionalAliasBad(Obj unowned) {
+  void FN_conditionalAliasBad(Obj unowned) {
     conditionalAlias(new Obj(), unowned);
   }
 }

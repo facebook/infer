@@ -107,9 +107,15 @@ module AccessSnapshot : sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val make : TraceElem.t -> LocksDomain.t -> ThreadsDomain.t -> OwnershipPrecondition.t -> t option
+  val make :
+       FormalMap.t
+    -> TraceElem.t
+    -> LocksDomain.t
+    -> ThreadsDomain.t
+    -> OwnershipPrecondition.t
+    -> t option
 
-  val make_from_snapshot : TraceElem.t -> t -> t option
+  val make_from_snapshot : FormalMap.t -> TraceElem.t -> t -> t option
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
@@ -218,4 +224,4 @@ include AbstractDomain.WithBottom with type t := t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val add_unannotated_call_access : Procname.t -> Location.t -> t -> t
+val add_unannotated_call_access : FormalMap.t -> Procname.t -> Location.t -> t -> t
