@@ -119,6 +119,7 @@ module ProcName = struct
       ; +PatternMatch.implements_lang "StringBuilder" &:: "<init>" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "StringBuilder" &:: "append" <>--> modifies_first
       ; +PatternMatch.implements_lang "StringBuilder" &:: "length" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_lang "Object" &:: "clone" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "Object" &:: "equals" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "Object" &:: "toString" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "Object" &:: "getClass" <>--> PurityDomain.pure
