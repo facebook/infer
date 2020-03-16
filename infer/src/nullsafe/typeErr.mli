@@ -83,3 +83,5 @@ val report_error :
 val report_forall_checks_and_reset : st_report_error -> Procdesc.t -> unit
 
 val reset : unit -> unit
+
+val get_errors : unit -> (err_instance * InstrRef.t option) list

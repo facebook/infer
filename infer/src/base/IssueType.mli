@@ -170,6 +170,10 @@ val eradicate_unvetted_third_party_in_nullsafe : t
 
 val eradicate_unchecked_usage_in_nullsafe : t
 
+val eradicate_meta_class_is_clean : t
+
+val eradicate_meta_class_needs_fixing : t
+
 val expensive_cost_call : kind:CostKind.t -> is_on_cold_start:bool -> is_on_ui_thread:bool -> t
 
 val exposed_insecure_intent_handling : t

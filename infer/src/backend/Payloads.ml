@@ -23,7 +23,7 @@ type t =
   ; racerd: RacerDDomain.summary option
   ; siof: SiofDomain.Summary.t option
   ; starvation: StarvationDomain.summary option
-  ; typestate: TypeState.t option
+  ; nullsafe: NullsafeSummary.t option
   ; uninit: UninitDomain.Summary.t option }
 [@@deriving fields]
 
@@ -49,7 +49,7 @@ let fields =
     ~lab_resource_leaks:(fun f -> mk f "Resource Leaks Lab" ResourceLeakDomain.pp)
     ~siof:(fun f -> mk f "Siof" SiofDomain.Summary.pp)
     ~starvation:(fun f -> mk f "Starvation" StarvationDomain.pp_summary)
-    ~typestate:(fun f -> mk f "TypeState" TypeState.pp)
+    ~nullsafe:(fun f -> mk f "Nullsafe" NullsafeSummary.pp)
     ~uninit:(fun f -> mk f "Uninitialised" UninitDomain.Summary.pp)
 
 
@@ -74,5 +74,5 @@ let empty =
   ; racerd= None
   ; siof= None
   ; starvation= None
-  ; typestate= None
+  ; nullsafe= None
   ; uninit= None }

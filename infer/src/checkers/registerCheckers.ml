@@ -55,7 +55,12 @@ let all_checkers =
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
   ; { name= "eradicate"
     ; active= Config.is_checker_enabled Eradicate
-    ; callbacks= [(Procedure Eradicate.callback_eradicate, Language.Java)] }
+    ; callbacks=
+        [ (Procedure Eradicate.proc_callback, Language.Java)
+        ; ( File
+              { callback= Eradicate.file_callback
+              ; issue_dir= Config.nullsafe_file_level_issues_dir_name }
+          , Language.Java ) ] }
   ; { name= "fragment retains view"
     ; active= Config.is_checker_enabled FragmentRetainsView
     ; callbacks=

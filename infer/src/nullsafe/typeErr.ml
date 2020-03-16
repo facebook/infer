@@ -316,3 +316,9 @@ let report_forall_checks_and_reset st_report_error proc_desc =
         ()
   in
   H.iter iter err_tbl ; reset ()
+
+
+let get_errors () =
+  H.fold
+    (fun (err_instance, instr_ref_opt) _err_state acc -> (err_instance, instr_ref_opt) :: acc)
+    err_tbl []

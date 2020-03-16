@@ -99,19 +99,22 @@ let is_third_party_proc storage procname =
   is_from_config || Option.is_some (lookup_sig_file ())
 
 
+let is_third_party_class_name storage java_class_name =
+  IOption.Let_syntax.(
+    let is_from_config = JavaClassName.is_external_via_config java_class_name in
+    let lookup_sig_file _ =
+      let* package = JavaClassName.package java_class_name in
+      lookup_related_sig_file storage ~package
+    in
+    is_from_config || Option.is_some (lookup_sig_file ()))
+
+
 (* There is a bit of duplication relative to [is_third_party_proc] due to mismatch between
    [Typ.Name.Java] and [JavaClassName]. When those types are consolidated would be a good
    idea to refactor this function. *)
 let is_third_party_typ storage typ =
-  IOption.Let_syntax.(
-    let* typ_name = Typ.name typ in
-    let+ class_name =
-      match typ_name with Typ.JavaClass class_name -> return class_name | _ -> None
-    in
-    let is_from_config = JavaClassName.is_external_via_config class_name in
-    let lookup_sig_file _ =
-      let* package = JavaClassName.package class_name in
-      lookup_related_sig_file storage ~package
-    in
-    is_from_config || Option.is_some (lookup_sig_file ()))
-  |> Option.value ~default:false
+  match Typ.name typ with
+  | Some (Typ.JavaClass java_class_name) ->
+      is_third_party_class_name storage java_class_name
+  | _ ->
+      false

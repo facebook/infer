@@ -199,6 +199,8 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
+let nullsafe_file_level_issues_dir_name = "nullsafe_file_level"
+
 let proc_stats_filename = "proc_stats.json"
 
 let procnames_locks_dir_name = "procnames_locks"

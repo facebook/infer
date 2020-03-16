@@ -137,6 +137,8 @@ OPTIONS
            by default),
              ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION (enabled by
            default),
+             ERADICATE_META_CLASS_IS_CLEAN (disabled by default),
+             ERADICATE_META_CLASS_NEEDS_FIXING (disabled by default),
              ERADICATE_NULLABLE_DEREFERENCE (enabled by default),
              ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
              ERADICATE_RETURN_NOT_NULLABLE (enabled by default),

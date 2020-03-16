@@ -43,3 +43,6 @@ val is_third_party_proc : storage -> Procname.t -> bool
 
 val is_third_party_typ : storage -> Typ.t -> bool
 (** See [is_third_party_proc]. *)
+
+val is_third_party_class_name : storage -> JavaClassName.t -> bool
+(** See [is_third_party_proc]. *)

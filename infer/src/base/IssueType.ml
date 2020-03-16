@@ -287,6 +287,24 @@ let eradicate_unvetted_third_party_in_nullsafe =
     ~hum:"Nullsafe mode: unchecked usage of unvetted third-party"
 
 
+(* Meta issues in eradicate are technical issues reflecting null-safety state of classes in general,
+   in contrast with concrete nullability type violations *)
+
+(* Experimental issue, meaning might be changed *)
+let eradicate_meta_class_is_clean =
+  register_from_string "ERADICATE_META_CLASS_IS_CLEAN"
+    ~hum:"Class is clean of nullability issues" (* Should be enabled for special integrations *)
+    ~enabled:false
+
+
+(* Experimental issue, meaning might be changed *)
+let eradicate_meta_class_needs_fixing =
+  register_from_string "ERADICATE_META_CLASS_NEEDS_FIXING"
+    ~hum:
+      "Class is not null-safe and needs fixing nullability issues"
+      (* Should be enabled for special integrations *) ~enabled:false
+
+
 let expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread =
   register_from_cost_string ~enabled:false ~kind ~is_on_cold_start ~is_on_ui_thread "EXPENSIVE_%s"
 

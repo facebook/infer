@@ -9,6 +9,8 @@ open! IStd
 
 type t [@@deriving compare, equal]
 
+module Map : Caml.Map.S with type key = t
+
 val make : package:string option -> classname:string -> t
 
 val from_string : string -> t

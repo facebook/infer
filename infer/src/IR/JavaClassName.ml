@@ -12,6 +12,12 @@ module L = Logging
 (** invariant: if [package = Some str] then [not (String.equal str "")] *)
 type t = {classname: string; package: string option} [@@deriving compare, equal]
 
+module Map = Caml.Map.Make (struct
+  type nonrec t = t
+
+  let compare = compare
+end)
+
 let make ~package ~classname =
   match package with Some "" -> {package= None; classname} | _ -> {package; classname}
 

@@ -10,16 +10,20 @@ module L = Logging
 module F = Format
 open Dataflow
 
+module Payload = SummaryPayload.Make (struct
+  type t = NullsafeSummary.t
+
+  let field = Payloads.Fields.nullsafe
+end)
+
 (** Type for a module that provides a main callback function *)
 module type CallBackT = sig
   val callback : TypeCheck.checks -> Callbacks.proc_callback_t
 end
 
-(* CallBackT *)
-
 (** Extension to the type checker. *)
 module type ExtensionT = sig
-  val update_payloads : TypeState.t option -> Payloads.t -> Payloads.t
+  val update_payloads : NullsafeSummary.t option -> Payloads.t -> Payloads.t
 end
 
 (** Create a module with the toplevel callback. *)
@@ -197,6 +201,17 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         Some "not a Java method"
 
 
+  let is_important err_instance =
+    match err_instance with
+    | TypeErr.Bad_assignment _
+    | TypeErr.Nullable_dereference _
+    | TypeErr.Inconsistent_subclass _
+    | TypeErr.Field_not_initialized _ ->
+        true
+    | TypeErr.Condition_redundant _ | TypeErr.Over_annotation _ ->
+        false
+
+
   (** Entry point for the nullsafe procedure-level analysis. *)
   let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
     let proc_desc = Summary.get_proc_desc summary in
@@ -221,15 +236,20 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         TypeErr.reset () ;
         analyze_procedure tenv proc_name proc_desc calls_this checks callback_args
           annotated_signature linereader loc ;
+        let type_violation_count =
+          TypeErr.get_errors ()
+          |> List.filter_map ~f:(fun (err_instance, _) ->
+                 if is_important err_instance then Some err_instance else None )
+          |> List.length
+        in
         TypeErr.report_forall_checks_and_reset (EradicateCheckers.report_error tenv) proc_desc ;
-        summary
+        Payload.update_summary NullsafeSummary.{type_violation_count} summary
 end
 
 (* MkCallback *)
 
 module EmptyExtension : ExtensionT = struct
-  let update_payloads typestate_opt (payloads : Payloads.t) =
-    {payloads with typestate= typestate_opt}
+  let update_payloads new_summary (payloads : Payloads.t) = {payloads with nullsafe= new_summary}
 end
 
 module Main = struct
@@ -238,13 +258,13 @@ module Main = struct
   let callback = Callback.callback
 end
 
-(** Eradicate checker for Java [@Nullable] annotations. *)
-let callback_eradicate =
+let proc_callback =
   let checks = {TypeCheck.eradicate= true; check_ret_type= []} in
   Main.callback checks
 
 
-(** Call the given check_return_type at the end of every procedure. *)
+let file_callback = FileLevelAnalysis.analyze_file
+
 let callback_check_return_type check_return_type callback_args =
   let checks = {TypeCheck.eradicate= false; check_ret_type= [check_return_type]} in
   Main.callback checks callback_args
