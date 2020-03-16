@@ -8,8 +8,8 @@ class HoistUnmodeled {
 
   // Any unmodeled (e.g. timing) call is assumed to be modifying global
   // state
-  void timing_calls_dont_hoist() {
-    for (int i = 0; i < 10; i++) {
+  void timing_calls_dont_hoist(int x) {
+    for (int i = 0; i < x; i++) {
       System.nanoTime();
     }
   }
@@ -20,9 +20,9 @@ class HoistUnmodeled {
 
   // It should be ok to hoist harmless_pure() since it doesn't read
   // from global state.
-  void harmless_hoist_FN() {
-    for (int i = 0; i < 10; i++) {
-      timing_calls_dont_hoist(); // don't hoist
+  void harmless_hoist_FN(int b) {
+    for (int i = 0; i < b; i++) {
+      timing_calls_dont_hoist(b); // don't hoist
       harmless_pure(); // ok to hoist
     }
   }

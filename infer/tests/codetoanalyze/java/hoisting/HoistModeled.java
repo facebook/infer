@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 class HoistModeled {
 
@@ -31,6 +31,23 @@ class HoistModeled {
     Object o;
     for (int i = 0; i < 10; i++) {
       o = specDeserializer.deserialize(p, ctx);
+    }
+  }
+
+  boolean contains_pure_FN(Integer i, ArrayList<Integer> list) {
+    Iterator<Integer> listIterator = list.iterator();
+    while (listIterator.hasNext()) {
+      Integer el = listIterator.next();
+      if (i.equals(el)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void call_contains_pure_hoist_FN(int b, ArrayList<Integer> list) {
+    for (int i = 0; i < b; i++) {
+      contains_pure_FN(b, list);
     }
   }
 }

@@ -91,9 +91,31 @@ class PurityModeled {
     }
   }
 
+  // Since n is symbolic, pruning doesn't result in infeasible path,
+  // but we assume that the parameter [n] must be 3 due to constant(4)
+  // "widening" in pulse.
   void timing_call_in_loop_symb_impure(int n) {
     for (int i = 0; i < n; i++) {
       System.nanoTime();
+    }
+  }
+
+  // Due to getting the wrong summary for the callee (a=3), Pulse ends
+  // up thinking that the parameter [a] must be 3 in the loop. Hence, as
+  // a result of pruning, exit node becomes infeasible and we get
+  // empty summary.
+  void call_timing_symb_impure_FN(int a) {
+    for (int i = 0; i < a; i++) {
+      timing_call_in_loop_symb_impure(a);
+    }
+  }
+
+  // The relation between the parameter and the argument to the callee
+  // is broken. Although, the final pulse summary for this function is
+  // still wrong.
+  void call_timing_symb_unrelated_impure(int a, int b) {
+    for (int i = 0; i < a; i++) {
+      timing_call_in_loop_symb_impure(b);
     }
   }
 
