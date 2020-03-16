@@ -8,3 +8,4 @@
 open! IStd
 
 val capture : prog:string -> args:string list -> unit
+(** do an xcodebuild capture with the given prog (i.e. xcodebuild) and args *)

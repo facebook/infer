@@ -16,7 +16,8 @@ module F = Format
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
-  | BuckClangFlavor of string list
+  | Ant of {prog: string; args: string list}
+  | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
   | BuckGenrule of string
   | BuckGenruleMaster of string list
@@ -24,9 +25,9 @@ type mode =
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
-  | NdkBuild of string list
+  | NdkBuild of {build_cmd: string list}
   | PythonCapture of Config.build_system * string list
-  | XcodeBuild of string * string list
+  | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of string * string list
 
 let is_analyze_mode = function Analyze -> true | _ -> false
@@ -34,8 +35,10 @@ let is_analyze_mode = function Analyze -> true | _ -> false
 let pp_mode fmt = function
   | Analyze ->
       F.fprintf fmt "Analyze driver mode"
-  | BuckClangFlavor args ->
-      F.fprintf fmt "BuckClangFlavor driver mode: args = %a" Pp.cli_args args
+  | Ant {prog; args} ->
+      F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | BuckClangFlavor {build_cmd} ->
+      F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckGenrule prog ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckGenruleMaster build_cmd ->
@@ -49,7 +52,7 @@ let pp_mode fmt = function
       F.fprintf fmt "PythonCapture driver mode:@\nbuild system = '%s'@\nargs = %a"
         (Config.string_of_build_system bs)
         Pp.cli_args args
-  | XcodeBuild (prog, args) ->
+  | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty (prog, args) ->
       F.fprintf fmt "XcodeXcpretty driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
@@ -57,8 +60,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Maven (prog, args) ->
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | NdkBuild args ->
-      F.fprintf fmt "NdkBuild driver mode: args = %a" Pp.cli_args args
+  | NdkBuild {build_cmd} ->
+      F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | Clang (_, prog, args) ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
 
@@ -266,7 +269,10 @@ let python_capture build_system build_cmd =
 let capture ~changed_files = function
   | Analyze ->
       ()
-  | BuckClangFlavor build_cmd ->
+  | Ant {prog; args} ->
+      L.progress "Capturing in ant mode...@." ;
+      Ant.capture ~prog ~args
+  | BuckClangFlavor {build_cmd} ->
       buck_capture build_cmd
   | BuckCompilationDB (deps, prog, args) ->
       L.progress "Capturing using Buck's compilation database...@." ;
@@ -292,12 +298,12 @@ let capture ~changed_files = function
   | Maven (prog, args) ->
       L.progress "Capturing in maven mode...@." ;
       Maven.capture ~prog ~args
-  | NdkBuild build_cmd ->
+  | NdkBuild {build_cmd} ->
       L.progress "Capturing in ndk-build mode...@." ;
       NdkBuild.capture ~build_cmd
   | PythonCapture (build_system, build_cmd) ->
       python_capture build_system build_cmd
-  | XcodeBuild (prog, args) ->
+  | XcodeBuild {prog; args} ->
       L.progress "Capturing in xcodebuild mode...@." ;
       XcodeBuild.capture ~prog ~args
   | XcodeXcpretty (prog, args) ->
@@ -526,7 +532,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           L.user_warning
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
-          BuckClangFlavor build_cmd
+          BuckClangFlavor {build_cmd}
       | BBuck, Some JavaGenruleMaster ->
           BuckGenruleMaster build_cmd
       | BClang, _ ->
@@ -542,12 +548,14 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty (prog, args)
       | BXcode, _ ->
-          XcodeBuild (prog, args)
+          XcodeBuild {prog; args}
       | BBuck, Some ClangFlavors ->
-          BuckClangFlavor build_cmd
+          BuckClangFlavor {build_cmd}
       | BNdk, _ ->
-          NdkBuild build_cmd
-      | ((BAnt | BGradle) as build_system), _ ->
+          NdkBuild {build_cmd}
+      | BAnt, _ ->
+          Ant {prog; args}
+      | (BGradle as build_system), _ ->
           PythonCapture (build_system, build_cmd) )
 
 

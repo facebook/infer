@@ -13,7 +13,8 @@ open! IStd
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
-  | BuckClangFlavor of string list
+  | Ant of {prog: string; args: string list}
+  | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
   | BuckGenrule of string
   | BuckGenruleMaster of string list
@@ -21,9 +22,9 @@ type mode =
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
-  | NdkBuild of string list
+  | NdkBuild of {build_cmd: string list}
   | PythonCapture of Config.build_system * string list
-  | XcodeBuild of string * string list
+  | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of string * string list
 
 val is_analyze_mode : mode -> bool

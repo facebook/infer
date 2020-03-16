@@ -7,5 +7,5 @@
 
 open! IStd
 
-val capture : build_cmd:string list -> unit
-(** do an ndk-build capture with the given the build commands *)
+val capture : prog:string -> args:string list -> unit
+(** do an ant capture with the given prog (i.e. ant) and args *)
