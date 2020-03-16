@@ -87,7 +87,7 @@ public class Cost_test {
   }
 
   // Expected: Linear bound
-  private static int FN_loop2(int k) {
+  private static int loop2(int k) {
 
     for (int i = 0; i < k; i++) {
       alias2_OK();
