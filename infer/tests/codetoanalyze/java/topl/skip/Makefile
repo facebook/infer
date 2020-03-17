@@ -10,4 +10,13 @@ INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)
 
-include $(TESTS_DIR)/javac.make
+# include $(TESTS_DIR)/javac.make
+
+.PHONY: test
+test: ;
+
+.PHONY: replace
+replace: ;
+
+.PHONY: clean
+clean: ;
