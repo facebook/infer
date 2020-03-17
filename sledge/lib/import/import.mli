@@ -192,39 +192,77 @@ module List : sig
     compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
 end
 
+module type OrderedType = sig
+  type t
+
+  val compare : t -> t -> int
+  val sexp_of_t : t -> Sexp.t
+end
+
+exception Duplicate
+
 module Map : sig
-  include module type of Base.Map
+  module type S = sig
+    type key
+    type +'a t
 
-  val pp : 'k pp -> 'v pp -> ('k, 'v, 'c) t pp
+    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+    val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
+    val t_of_sexp : (Sexp.t -> key) -> (Sexp.t -> 'a) -> Sexp.t -> 'a t
+    val pp : key pp -> 'a pp -> 'a t pp
 
-  val pp_diff :
-       data_equal:('v -> 'v -> bool)
-    -> 'k pp
-    -> 'v pp
-    -> ('v * 'v) pp
-    -> (('k, 'v, 'c) t * ('k, 'v, 'c) t) pp
+    val pp_diff :
+         data_equal:('a -> 'a -> bool)
+      -> key pp
+      -> 'a pp
+      -> ('a * 'a) pp
+      -> ('a t * 'a t) pp
 
-  val equal_m__t :
-       (module Compare_m)
-    -> ('v -> 'v -> bool)
-    -> ('k, 'v, 'c) t
-    -> ('k, 'v, 'c) t
-    -> bool
+    (* initial constructors *)
+    val empty : 'a t
 
-  val find_and_remove : ('k, 'v, 'c) t -> 'k -> ('v * ('k, 'v, 'c) t) option
+    (* constructors *)
+    val set : 'a t -> key:key -> data:'a -> 'a t
+    val add_exn : 'a t -> key:key -> data:'a -> 'a t
+    val add_multi : 'a list t -> key:key -> data:'a -> 'a list t
+    val remove : 'a t -> key -> 'a t
+    val update : 'a t -> key -> f:('a option -> 'a) -> 'a t
 
-  val find_or_add :
-       ('k, 'v, 'c) t
-    -> 'k
-    -> default:'v
-    -> if_found:('v -> 'a)
-    -> if_added:(('k, 'v, 'c) t -> 'a)
-    -> 'a
+    val merge :
+         'a t
+      -> 'b t
+      -> f:
+           (   key:key
+            -> [`Both of 'a * 'b | `Left of 'a | `Right of 'b]
+            -> 'c option)
+      -> 'c t
 
-  val map_preserving_phys_equal :
-    ('k, 'v, 'c) t -> f:('v -> 'v) -> ('k, 'v, 'c) t
-  (** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
-      every element. *)
+    val merge_skewed :
+      'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
+
+    val map : 'a t -> f:('a -> 'b) -> 'b t
+    val filter_keys : 'a t -> f:(key -> bool) -> 'a t
+    val filter_mapi : 'a t -> f:(key:key -> data:'a -> 'b option) -> 'b t
+
+    (* queries *)
+    val is_empty : 'b t -> bool
+    val length : 'b t -> int
+    val mem : 'a t -> key -> bool
+    val find : 'a t -> key -> 'a option
+    val find_and_remove : 'a t -> key -> ('a * 'a t) option
+    val find_multi : 'a list t -> key -> 'a list
+    val data : 'a t -> 'a list
+    val to_alist : 'a t -> (key * 'a) list
+
+    (* traversals *)
+    val iter : 'a t -> f:('a -> unit) -> unit
+    val iteri : 'a t -> f:(key:key -> data:'a -> unit) -> unit
+    val for_alli : 'a t -> f:(key:key -> data:'a -> bool) -> bool
+    val fold : 'a t -> init:'s -> f:(key:key -> data:'a -> 's -> 's) -> 's
+  end
+
+  module Make (Key : OrderedType) : S with type key = Key.t
 end
 
 module Result : sig
@@ -275,6 +313,15 @@ module Array : sig
   include module type of Base.Array
 
   val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
+end
+
+module String : sig
+  include module type of String
+
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+
+  module Map : Map.S with type key = string
 end
 
 module Q : sig

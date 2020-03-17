@@ -166,10 +166,10 @@ end
 module Block : sig
   type t = block [@@deriving compare, equal, sexp_of]
 
-  include Comparator.S with type t := t
-
   val pp : t pp
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
+
+  module Map : Map.S with type key := t
 end
 
 module Func : sig

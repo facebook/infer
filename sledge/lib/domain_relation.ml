@@ -20,7 +20,7 @@ module type State_domain_sig = sig
 end
 
 module Make (State_domain : State_domain_sig) = struct
-  type t = State_domain.t * State_domain.t [@@deriving sexp_of, equal]
+  type t = State_domain.t * State_domain.t [@@deriving equal, sexp_of]
 
   let embed b = (b, b)
 

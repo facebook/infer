@@ -7,7 +7,7 @@
 
 (** Used-globals abstract domain *)
 
-type t = Reg.Set.t [@@deriving equal, sexp_of]
+type t = Reg.Set.t [@@deriving equal, sexp]
 
 let pp = Set.pp Reg.pp
 let report_fmt_thunk = Fn.flip pp
@@ -60,7 +60,7 @@ let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
     |> fun res -> Some (Some res)
   else None
 
-type from_call = t [@@deriving sexp_of]
+type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
 let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
@@ -92,7 +92,7 @@ let by_function : r -> Reg.t -> t =
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Map.find map fn with
+    match Reg.Map.find map fn with
     | Some gs -> gs
     | None ->
         fail

@@ -110,14 +110,7 @@ module Var : sig
     val union_list : t list -> t
   end
 
-  module Map : sig
-    type var := t
-
-    type 'a t = (var, 'a, comparator_witness) Map.t
-    [@@deriving compare, equal, sexp]
-
-    val empty : 'a t
-  end
+  module Map : Map.S with type key := t
 
   val pp : t pp
 
@@ -147,16 +140,8 @@ module Var : sig
   end
 end
 
-module Map : sig
-  type term := t
+module Map : Map.S with type key := t
 
-  type 'a t = (term, 'a, comparator_witness) Map.t
-  [@@deriving compare, equal, sexp]
-
-  val empty : 'a t
-end
-
-val comparator : (t, comparator_witness) Comparator.t
 val ppx : Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp

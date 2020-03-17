@@ -84,6 +84,7 @@ module T = struct
 end
 
 include T
+module Map = Map.Make (T)
 
 let term e = e.term
 
@@ -328,16 +329,7 @@ module Reg = struct
     let vars = Set.fold ~init:Var.Set.empty ~f:(fun s r -> add s (var r))
   end
 
-  module Map = struct
-    include (
-      Map :
-        module type of Map
-          with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
-
-    type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
-
-    let empty = Map.empty (module T)
-  end
+  module Map = Map
 
   let demangle = ref (fun _ -> None)
 

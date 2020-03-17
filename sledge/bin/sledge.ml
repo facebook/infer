@@ -81,7 +81,7 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
         ; globals= Declared Reg.Set.empty }
         pgm
     in
-    Per_function (Map.map summary_table ~f:Reg.Set.union_list)
+    Per_function (Reg.Map.map summary_table ~f:Reg.Set.union_list)
   else
     Declared
       (Vector.fold pgm.globals ~init:Reg.Set.empty ~f:(fun acc g ->

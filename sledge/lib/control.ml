@@ -168,7 +168,6 @@ module Make (Dom : Domain_intf.Dom) = struct
       end
 
       include T
-      include Comparator.Make (T)
 
       let pp fs {dst; src} =
         Format.fprintf fs "#%i %%%s <--%a" dst.sort_index dst.lbl
@@ -178,27 +177,27 @@ module Make (Dom : Domain_intf.Dom) = struct
     end
 
     module Depths = struct
-      type t = int Map.M(Edge).t
+      module M = Map.Make (Edge)
 
-      let empty = Map.empty (module Edge)
-      let find = Map.find
-      let set = Map.set
+      type t = int M.t
+
+      let empty = M.empty
+      let find = M.find
+      let set = M.set
 
       let join x y =
-        Map.merge x y ~f:(fun ~key:_ -> function
+        M.merge x y ~f:(fun ~key:_ -> function
           | `Left d | `Right d -> Some d
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
     end
 
     type priority = int * Edge.t [@@deriving compare]
     type priority_queue = priority Fheap.t
-    type waiting_states = (Dom.t * Depths.t) list Map.M(Llair.Block).t
+    type waiting_states = (Dom.t * Depths.t) list Llair.Block.Map.t
     type t = priority_queue * waiting_states * int
     type x = Depths.t -> t -> t
 
-    let empty_waiting_states : waiting_states =
-      Map.empty (module Llair.Block)
-
+    let empty_waiting_states : waiting_states = Llair.Block.Map.empty
     let pp_priority fs (n, e) = Format.fprintf fs "%i: %a" n Edge.pp e
 
     let pp fs pq =
@@ -221,7 +220,9 @@ module Make (Dom : Domain_intf.Dom) = struct
         let pq = Fheap.add pq (depth, edge) in
         [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
         let depths = Depths.set depths ~key:edge ~data:depth in
-        let ws = Map.add_multi ws ~key:curr ~data:(state, depths) in
+        let ws =
+          Llair.Block.Map.add_multi ws ~key:curr ~data:(state, depths)
+        in
         (pq, ws, bound)
 
     let init state curr bound =
@@ -231,7 +232,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let rec run ~f (pq0, ws, bnd) =
       match Fheap.pop pq0 with
       | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
-        match Map.find_and_remove ws dst with
+        match Llair.Block.Map.find_and_remove ws dst with
         | Some (q :: qs, ws) ->
             let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
             let skipped, (qs, depths) =
@@ -240,7 +241,7 @@ module Make (Dom : Domain_intf.Dom) = struct
                   | Some joined, depths -> (skipped, (joined, depths))
                   | None, _ -> (curr :: skipped, joined) )
             in
-            let ws = Map.add_exn ws ~key:dst ~data:skipped in
+            let ws = Llair.Block.Map.add_exn ws ~key:dst ~data:skipped in
             run ~f (f stk qs dst depths (pq, ws, bnd))
         | _ ->
             [%Trace.info "done: %a" Edge.pp edge] ;
@@ -489,5 +490,5 @@ module Make (Dom : Domain_intf.Dom) = struct
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
     Hashtbl.fold summary_table ~init:Reg.Map.empty ~f:(fun ~key ~data map ->
-        match data with [] -> map | _ -> Map.set map ~key ~data )
+        match data with [] -> map | _ -> Reg.Map.set map ~key ~data )
 end

@@ -116,17 +116,7 @@ end
 type _t = T0.t
 
 include T
-
-module Map = struct
-  include (
-    Map :
-      module type of Map
-        with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
-
-  type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
-
-  let empty = empty (module T)
-end
+module Map = Map.Make (T)
 
 let empty_qset = Qset.empty (module T)
 
@@ -370,7 +360,9 @@ module Var = struct
 
   (** Variable renaming substitutions *)
   module Subst = struct
-    type t = T.t Map.M(T).t [@@deriving compare, equal, sexp]
+    type t = T.t Map.t [@@deriving compare, equal, sexp_of]
+
+    let t_of_sexp = Map.t_of_sexp T.t_of_sexp T.t_of_sexp
 
     let invariant s =
       Invariant.invariant [%here] s [%sexp_of: t]

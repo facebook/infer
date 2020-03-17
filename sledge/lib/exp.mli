@@ -116,14 +116,7 @@ module Reg : sig
     val vars : t -> Var.Set.t
   end
 
-  module Map : sig
-    type reg := t
-
-    type 'a t = (reg, 'a, comparator_witness) Map.t
-    [@@deriving compare, equal, sexp]
-
-    val empty : 'a t
-  end
+  module Map : Map.S with type key := t
 
   val demangle : (string -> string option) ref
   val pp : t pp

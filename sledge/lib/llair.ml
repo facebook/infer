@@ -114,7 +114,7 @@ let sexp_of_func {name; formals; freturn; fthrow; locals; entry} =
 let compare_block x y = Int.compare x.sort_index y.sort_index
 let equal_block x y = Int.equal x.sort_index y.sort_index
 
-type functions = func Map.M(String).t [@@deriving sexp_of]
+type functions = func String.Map.t [@@deriving sexp_of]
 
 type t = {globals: Global.t vector; functions: functions}
 [@@deriving sexp_of]
@@ -358,7 +358,7 @@ end
 module Block = struct
   module T = struct type t = block [@@deriving compare, equal, sexp_of] end
   include T
-  include Comparator.Make (T)
+  module Map = Map.Make (T)
 
   let pp = pp_block
 
@@ -471,7 +471,7 @@ module Func = struct
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 
-  let find functions name = Map.find functions name
+  let find functions name = String.Map.find functions name
 
   let mk ~(name : Global.t) ~formals ~freturn ~fthrow ~entry ~cfg =
     let locals =
@@ -518,9 +518,9 @@ end
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
-    Map.iter functions ~f:(fun func ->
+    String.Map.iter functions ~f:(fun func ->
         FuncQ.enqueue_back_exn roots func.name.reg func ) ;
-    Map.iter functions ~f:(fun func ->
+    String.Map.iter functions ~f:(fun func ->
         Func.fold_term func ~init:() ~f:(fun () -> function
           | Call {callee; _} -> (
             match Reg.of_exp callee with
@@ -571,10 +571,8 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let functions =
-    List.fold functions
-      ~init:(Map.empty (module String))
-      ~f:(fun m func ->
-        Map.add_exn m ~key:(Reg.name func.name.reg) ~data:func )
+    List.fold functions ~init:String.Map.empty ~f:(fun m func ->
+        String.Map.add_exn m ~key:(Reg.name func.name.reg) ~data:func )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
@@ -599,5 +597,5 @@ let pp fs {globals; functions} =
     (Vector.pp "@\n@\n" Global.pp_defn)
     globals
     (List.pp "@\n@\n" Func.pp)
-    ( Map.data functions
+    ( String.Map.data functions
     |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )

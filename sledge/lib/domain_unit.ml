@@ -7,7 +7,7 @@
 
 (** "Unit" abstract domain *)
 
-type t = unit [@@deriving equal, sexp_of]
+type t = unit [@@deriving equal, sexp]
 
 let pp fs () = Format.pp_print_string fs "()"
 let report_fmt_thunk () fs = pp fs ()
