@@ -114,15 +114,6 @@ end
 module Option = Option
 include Option.Monad_infix
 include Option.Monad_syntax
-
-module Result = struct
-  include Base.Result
-
-  let pp fmt pp_elt fs = function
-    | Ok x -> Format.fprintf fs fmt pp_elt x
-    | Error _ -> ()
-end
-
 module List = List
 
 module Vector = struct

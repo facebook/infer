@@ -107,14 +107,6 @@ module Invariant : module type of Base.Invariant
 module Option = Option
 include module type of Option.Monad_infix
 include module type of Option.Monad_syntax with type 'a t = 'a option
-
-module Result : sig
-  include module type of Base.Result
-
-  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> ('a, _) t pp
-  (** Pretty-print a result. *)
-end
-
 module List = List
 
 module Vector : sig
