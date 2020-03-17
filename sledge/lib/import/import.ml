@@ -10,20 +10,6 @@
 include Stdio
 include Import0
 
-(** Tuple operations *)
-
-let fst3 (x, _, _) = x
-let snd3 (_, y, _) = y
-let trd3 (_, _, z) = z
-
-(** Function combinators *)
-
-let ( >> ) f g x = g (f x)
-let ( << ) f g x = f (g x)
-let ( $ ) f g x = f x ; g x
-let ( $> ) x f = f x ; x
-let ( <$ ) f x = f x ; x
-
 (** Failures *)
 
 let fail = Trace.fail

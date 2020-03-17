@@ -35,6 +35,20 @@ external equal : int -> int -> bool = "%equal"
 let min x y = if x <= y then x else y
 let max x y = if x >= y then x else y
 
+(** Tuple operations *)
+
+let fst3 (x, _, _) = x
+let snd3 (_, y, _) = y
+let trd3 (_, _, z) = z
+
+(** Function combinators *)
+
+let ( >> ) f g x = g (f x)
+let ( << ) f g x = f (g x)
+let ( $ ) f g x = f x ; g x
+let ( $> ) x f = f x ; x
+let ( <$ ) f x = f x ; x
+
 (** Pretty-printer for argument type. *)
 type 'a pp = Format.formatter -> 'a -> unit
 
