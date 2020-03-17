@@ -17,7 +17,7 @@ type xseg = {us: Var.Set.t; xs: Var.Set.t; seg: Sh.seg}
 
 let fresh_var nam us xs =
   let var, us = Var.fresh nam ~wrt:us in
-  (Term.var var, us, Set.add xs var)
+  (Term.var var, us, Var.Set.add xs var)
 
 let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
   let freshen term nam us xs =
@@ -38,10 +38,10 @@ let null_eq ptr = Sh.pure (Term.eq Term.null ptr)
    precondition; [us] are the variables to which ghosts must be chosen
    fresh. *)
 let assign ~ws ~rs ~us =
-  let ovs = Set.inter ws rs in
+  let ovs = Var.Set.inter ws rs in
   let sub = Var.Subst.freshen ovs ~wrt:us in
-  let us = Set.union us (Var.Subst.range sub) in
-  let ms = Set.diff ws (Var.Subst.domain sub) in
+  let us = Var.Set.union us (Var.Subst.range sub) in
+  let ms = Var.Set.diff ws (Var.Subst.domain sub) in
   (sub, ms, us)
 
 (*
@@ -58,7 +58,7 @@ let move_spec us reg_exps =
   let ws, rs =
     Vector.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
       ~f:(fun (ws, rs) (reg, exp) ->
-        (Set.add ws reg, Set.union rs (Term.fv exp)) )
+        (Var.Set.add ws reg, Var.Set.union rs (Term.fv exp)) )
   in
   let sub, ms, _ = assign ~ws ~rs ~us in
   let post =
@@ -327,7 +327,9 @@ let posix_memalign_spec us reg ptr siz =
   let {us; xs; seg= pseg} = fresh_seg ~loc:ptr ~siz:size_of_ptr us in
   let foot = Sh.seg pseg in
   let sub, ms, us =
-    assign ~ws:(Var.Set.of_ reg) ~rs:(Set.union foot.us (Term.fv siz)) ~us
+    assign ~ws:(Var.Set.of_ reg)
+      ~rs:(Var.Set.union foot.us (Term.fv siz))
+      ~us
   in
   let q, us, xs = fresh_var "q" us xs in
   let pseg' = {pseg with arr= q} in
@@ -358,7 +360,9 @@ let realloc_spec us reg ptr siz =
   in
   let foot = Sh.or_ (null_eq ptr) (Sh.seg pseg) in
   let sub, ms, us =
-    assign ~ws:(Var.Set.of_ reg) ~rs:(Set.union foot.us (Term.fv siz)) ~us
+    assign ~ws:(Var.Set.of_ reg)
+      ~rs:(Var.Set.union foot.us (Term.fv siz))
+      ~us
   in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
@@ -421,7 +425,7 @@ let xallocx_spec us reg ptr siz ext =
   let foot = Sh.and_ Term.(dq siz zero) (Sh.seg seg) in
   let sub, ms, us =
     assign ~ws:(Var.Set.of_ reg)
-      ~rs:Set.(union foot.us (union (Term.fv siz) (Term.fv ext)))
+      ~rs:Var.Set.(union foot.us (union (Term.fv siz) (Term.fv ext)))
       ~us
   in
   let reg = Term.var reg in
@@ -601,10 +605,10 @@ let strlen_spec us reg ptr =
  *)
 
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
-  let gain_us = Set.diff q1.us q0.us in
-  let lose_us = Set.diff q0.us q1.us in
-  (Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
-  && (Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
+  let gain_us = Var.Set.diff q1.us q0.us in
+  let lose_us = Var.Set.diff q0.us q1.us in
+  (Var.Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
+  && (Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
 
 (* execute a command with given spec from pre *)
 let exec_spec pre0 {xs; foot; sub; ms; post} =
@@ -617,20 +621,20 @@ let exec_spec pre0 {xs; foot; sub; ms; post} =
            Format.fprintf fs "∧ %a" Var.Subst.pp sub )
        sub
        (fun fs ms ->
-         if not (Set.is_empty ms) then
+         if not (Var.Set.is_empty ms) then
            Format.fprintf fs "%a := " Var.Set.pp ms )
        ms Sh.pp post ;
      assert (
-       let vs = Set.diff (Set.diff foot.us xs) pre0.us in
-       Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
+       let vs = Var.Set.diff (Var.Set.diff foot.us xs) pre0.us in
+       Var.Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Set.diff (Set.diff post.us xs) pre0.us in
-       Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
+       let vs = Var.Set.diff (Var.Set.diff post.us xs) pre0.us in
+       Var.Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let foot = Sh.extend_us xs foot in
   let zs, pre = Sh.bind_exists pre0 ~wrt:xs in
   let+ frame = Solver.infer_frame pre xs foot in
-  Sh.exists (Set.union zs xs)
+  Sh.exists (Var.Set.union zs xs)
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   |>
   [%Trace.retn fun {pf} r ->

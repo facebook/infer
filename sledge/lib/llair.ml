@@ -254,9 +254,11 @@ module Inst = struct
   let union_locals inst vs =
     match inst with
     | Move {reg_exps; _} ->
-        Vector.fold ~f:(fun vs (reg, _) -> Set.add vs reg) ~init:vs reg_exps
+        Vector.fold
+          ~f:(fun vs (reg, _) -> Reg.Set.add vs reg)
+          ~init:vs reg_exps
     | Load {reg; _} | Alloc {reg; _} | Nondet {reg= Some reg; _} ->
-        Set.add vs reg
+        Reg.Set.add vs reg
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
      |Nondet {reg= None; _}
      |Abort _ ->
@@ -349,7 +351,7 @@ module Term = struct
 
   let union_locals term vs =
     match term with
-    | Call {areturn; _} -> Set.add_option areturn vs
+    | Call {areturn; _} -> Reg.Set.add_option areturn vs
     | _ -> vs
 end
 
@@ -389,8 +391,7 @@ module Block_label = struct
   end
 
   include T
-
-  let empty_set = Set.empty (module T)
+  module Set = Set.Make (T)
 end
 
 module BlockQ = Hash_queue.Make (Block_label)
@@ -535,9 +536,10 @@ let set_derived_metadata functions =
     let rec visit ancestors func src =
       if BlockQ.mem tips_to_roots src then ()
       else
-        let ancestors = Set.add ancestors src in
+        let ancestors = Block_label.Set.add ancestors src in
         let jump jmp =
-          if Set.mem ancestors jmp.dst then jmp.retreating <- true
+          if Block_label.Set.mem ancestors jmp.dst then
+            jmp.retreating <- true
           else visit ancestors func jmp.dst
         in
         ( match src.term with
@@ -551,7 +553,8 @@ let set_derived_metadata functions =
                   (Option.map ~f:Reg.name (Reg.of_exp callee))
               with
             | Some func ->
-                if Set.mem ancestors func.entry then call.recursive <- true
+                if Block_label.Set.mem ancestors func.entry then
+                  call.recursive <- true
                 else visit ancestors func func.entry
             | None ->
                 (* conservatively assume all virtual calls are recursive *)
@@ -561,7 +564,7 @@ let set_derived_metadata functions =
         BlockQ.enqueue_back_exn tips_to_roots src ()
     in
     FuncQ.iter roots ~f:(fun root ->
-        visit Block_label.empty_set root root.entry ) ;
+        visit Block_label.Set.empty root root.entry ) ;
     tips_to_roots
   in
   let set_sort_indices tips_to_roots =

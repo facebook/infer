@@ -138,6 +138,13 @@ end
 include module type of Option.Monad_infix
 include module type of Option.Monad_syntax with type 'a t = 'a option
 
+module Result : sig
+  include module type of Base.Result
+
+  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> ('a, _) t pp
+  (** Pretty-print a result. *)
+end
+
 module List : sig
   include module type of Base.List
 
@@ -192,6 +199,15 @@ module List : sig
     compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
 end
 
+module Vector : sig
+  include module type of Vector
+
+  val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
+  (** Pretty-print a vector. *)
+end
+
+include module type of Vector.Infix
+
 module type OrderedType = sig
   type t
 
@@ -200,6 +216,51 @@ module type OrderedType = sig
 end
 
 exception Duplicate
+
+module Set : sig
+  module type S = sig
+    type elt
+    type t
+
+    val compare : t -> t -> int
+    val equal : t -> t -> bool
+    val sexp_of_t : t -> Sexp.t
+    val t_of_sexp : (Sexp.t -> elt) -> Sexp.t -> t
+    val pp : elt pp -> t pp
+    val pp_diff : elt pp -> (t * t) pp
+
+    (* initial constructors *)
+    val empty : t
+    val of_ : elt -> t
+    val of_option : elt option -> t
+    val of_list : elt list -> t
+    val of_vector : elt vector -> t
+
+    (* constructors *)
+    val add : t -> elt -> t
+    val add_option : elt option -> t -> t
+    val add_list : elt list -> t -> t
+    val remove : t -> elt -> t
+    val filter : t -> f:(elt -> bool) -> t
+    val union : t -> t -> t
+    val union_list : t list -> t
+    val diff : t -> t -> t
+    val inter : t -> t -> t
+    val diff_inter : t -> t -> t * t
+
+    (* queries *)
+    val is_empty : t -> bool
+    val mem : t -> elt -> bool
+    val is_subset : t -> of_:t -> bool
+    val disjoint : t -> t -> bool
+    val max_elt : t -> elt option
+
+    (* traversals *)
+    val fold : t -> init:'s -> f:('s -> elt -> 's) -> 's
+  end
+
+  module Make (Elt : OrderedType) : S with type elt = Elt.t
+end
 
 module Map : sig
   module type S = sig
@@ -263,44 +324,6 @@ module Map : sig
   end
 
   module Make (Key : OrderedType) : S with type key = Key.t
-end
-
-module Result : sig
-  include module type of Base.Result
-
-  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> ('a, _) t pp
-  (** Pretty-print a result. *)
-end
-
-module Vector : sig
-  include module type of Vector
-
-  val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
-  (** Pretty-print a vector. *)
-end
-
-include module type of Vector.Infix
-
-module Set : sig
-  include module type of Base.Set
-
-  type ('e, 'c) tree
-
-  val equal_m__t :
-    (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
-
-  val pp : 'e pp -> ('e, 'c) t pp
-  val pp_diff : 'e pp -> (('e, 'c) t * ('e, 'c) t) pp
-  val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool
-  val add_option : 'e option -> ('e, 'c) t -> ('e, 'c) t
-  val add_list : 'e list -> ('e, 'c) t -> ('e, 'c) t
-  val diff_inter : ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t
-
-  val diff_inter_diff :
-    ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t * ('e, 'c) t
-
-  val of_vector : ('e, 'c) comparator -> 'e vector -> ('e, 'c) t
-  val to_tree : ('e, 'c) t -> ('e, 'c) tree
 end
 
 module Qset : sig

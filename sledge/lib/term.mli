@@ -93,24 +93,17 @@ module Var : sig
 
   type strength = t -> [`Universal | `Existential | `Anonymous] option
 
+  module Map : Map.S with type key := t
+
   module Set : sig
-    type var := t
+    include Set.S with type elt := t
 
-    type t = (var, comparator_witness) Set.t
-    [@@deriving compare, equal, sexp]
-
+    val sexp_of_t : t -> Sexp.t
+    val t_of_sexp : Sexp.t -> t
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
-    val empty : t
-    val of_ : var -> t
-    val of_option : var option -> t
-    val of_list : var list -> t
-    val of_vector : var vector -> t
-    val union_list : t list -> t
   end
-
-  module Map : Map.S with type key := t
 
   val pp : t pp
 

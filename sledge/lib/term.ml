@@ -118,6 +118,12 @@ type _t = T0.t
 include T
 module Map = Map.Make (T)
 
+module Set = struct
+  include Set.Make (T)
+
+  let t_of_sexp = t_of_sexp T.t_of_sexp
+end
+
 let empty_qset = Qset.empty (module T)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
@@ -316,11 +322,7 @@ module Var = struct
   module Map = Map
 
   module Set = struct
-    include (
-      Set :
-        module type of Set with type ('elt, 'cmp) t := ('elt, 'cmp) Set.t )
-
-    type t = Set.M(T).t [@@deriving compare, equal, sexp]
+    include Set
 
     let pp vs = Set.pp pp_t vs
     let ppx strength vs = Set.pp (ppx strength) vs
@@ -328,13 +330,6 @@ module Var = struct
     let pp_xs fs xs =
       if not (is_empty xs) then
         Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
-
-    let empty = Set.empty (module T)
-    let of_ = Set.add empty
-    let of_option = Option.fold ~f:Set.add ~init:empty
-    let of_list = Set.of_list (module T)
-    let of_vector = Set.of_vector (module T)
-    let union_list = Set.union_list (module T)
   end
 
   let invariant x =
@@ -415,7 +410,7 @@ module Var = struct
     let apply_set sub vs =
       Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
           let vs' = Set.remove vs key in
-          if Set.to_tree vs' == Set.to_tree vs then vs
+          if vs' == vs then vs
           else (
             assert (not (Set.equal vs' vs)) ;
             Set.add vs' data ) )

@@ -319,7 +319,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
-            ~formals:(Set.union (Reg.Set.of_list formals) globals)
+            ~formals:(Reg.Set.union (Reg.Set.of_list formals) globals)
         in
         Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;

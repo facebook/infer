@@ -85,7 +85,7 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
   else
     Declared
       (Vector.fold pgm.globals ~init:Reg.Set.empty ~f:(fun acc g ->
-           Set.add acc g.reg ))
+           Reg.Set.add acc g.reg ))
 
 let analyze =
   let%map_open bound =

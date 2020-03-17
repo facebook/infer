@@ -126,7 +126,9 @@ end = struct
       [not (is_valid_eq xs e f)] implies [not (is_valid_eq ys e f)] for
       [ys ⊆ xs]. *)
   let is_valid_eq xs e f =
-    let is_var_in xs e = Option.exists ~f:(Set.mem xs) (Var.of_term e) in
+    let is_var_in xs e =
+      Option.exists ~f:(Var.Set.mem xs) (Var.of_term e)
+    in
     ( is_var_in xs e || is_var_in xs f
     || (uninterpreted e && Term.exists ~f:(is_var_in xs) e)
     || (uninterpreted f && Term.exists ~f:(is_var_in xs) f) )
@@ -148,7 +150,8 @@ end = struct
             if is_valid_eq ks key data then (t, ks, s)
             else
               let t = Term.Map.set ~key ~data t
-              and ks = Set.diff ks (Set.union (Term.fv key) (Term.fv data))
+              and ks =
+                Var.Set.diff ks (Var.Set.union (Term.fv key) (Term.fv data))
               and s = Term.Map.remove s key in
               (t, ks, s) )
       in
@@ -202,7 +205,7 @@ let extend ?f ~var ~rep (us, xs, s) =
 
 let fresh name (us, xs, s) =
   let x, us = Var.fresh name ~wrt:us in
-  let xs = Set.add xs x in
+  let xs = Var.Set.add xs x in
   (Term.var x, (us, xs, s))
 
 let solve_poly ?f p q s =
@@ -270,14 +273,14 @@ and solve_ ?f d e s =
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
   | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
-      if not (Set.mem (Term.fv e) (Var.of_ v)) then
+      if not (Var.Set.mem (Term.fv e) (Var.of_ v)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
         extend ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
         extend ?f ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
-      if not (Set.mem (Term.fv c) (Var.of_ v)) then
+      if not (Var.Set.mem (Term.fv c) (Var.of_ v)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         extend ?f ~var:v ~rep:c s
       else
@@ -467,7 +470,7 @@ let merge us a b r =
   ;
   ( match solve ~us ~xs:r.xs a b with
   | Some (xs, s) ->
-      {r with xs= Set.union r.xs xs; rep= Subst.compose r.rep s}
+      {r with xs= Var.Set.union r.xs xs; rep= Subst.compose r.rep s}
   | None -> {r with sat= false} )
   |>
   [%Trace.retn fun {pf} r' ->
@@ -648,7 +651,7 @@ let fold_terms r ~init ~f =
 let fold_vars r ~init ~f =
   fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
+let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 let pp_classes fs r = pp_clss fs (classes r)
 let ppx_classes x fs r = ppx_clss x fs (classes r)
 
@@ -678,11 +681,11 @@ let subst_invariant us s0 s =
         (* dom of new entries not ito us *)
         assert (
           Option.for_all ~f:(Term.equal data) (Subst.find s0 key)
-          || not (Set.is_subset (Term.fv key) ~of_:us) ) ;
+          || not (Var.Set.is_subset (Term.fv key) ~of_:us) ) ;
         (* rep not ito us implies trm not ito us *)
         assert (
-          Set.is_subset (Term.fv data) ~of_:us
-          || not (Set.is_subset (Term.fv key) ~of_:us) ) ) ;
+          Var.Set.is_subset (Term.fv data) ~of_:us
+          || not (Var.Set.is_subset (Term.fv key) ~of_:us) ) ) ;
     true )
 
 type 'a zom = Zero | One of 'a | Many
@@ -696,7 +699,7 @@ let solve_poly_eq us p' q' subst =
   let max_solvables_not_ito_us =
     fold_max_solvables diff ~init:Zero ~f:(fun solvable_subterm -> function
       | Many -> Many
-      | zom when Set.is_subset (Term.fv solvable_subterm) ~of_:us -> zom
+      | zom when Var.Set.is_subset (Term.fv solvable_subterm) ~of_:us -> zom
       | One _ -> Many
       | Zero -> One solvable_subterm )
   in
@@ -710,8 +713,8 @@ let solve_memory_eq us e' f' subst =
   [%Trace.call fun {pf} -> pf "%a = %a" Term.pp e' Term.pp f']
   ;
   let f x u =
-    (not (Set.is_subset (Term.fv x) ~of_:us))
-    && Set.is_subset (Term.fv u) ~of_:us
+    (not (Var.Set.is_subset (Term.fv x) ~of_:us))
+    && Var.Set.is_subset (Term.fv u) ~of_:us
   in
   let solve_concat ms n a =
     let a, n =
@@ -720,7 +723,7 @@ let solve_memory_eq us e' f' subst =
       | None -> (Term.memory ~siz:n ~arr:a, n)
     in
     let+ _, xs, s = solve_concat ~f ms a n (us, Var.Set.empty, subst) in
-    assert (Set.is_empty xs) ;
+    assert (Var.Set.is_empty xs) ;
     s
   in
   ( match ((e' : Term.t), (f' : Term.t)) with
@@ -805,7 +808,7 @@ let solve_uninterp_eqs us (cls, subst) =
   let {rep_us; cls_us; rep_xs; cls_xs} =
     List.fold cls ~init:{rep_us= None; cls_us= []; rep_xs= None; cls_xs= []}
       ~f:(fun ({rep_us; cls_us; rep_xs; cls_xs} as s) trm ->
-        if Set.is_subset (Term.fv trm) ~of_:us then
+        if Var.Set.is_subset (Term.fv trm) ~of_:us then
           match rep_us with
           | Some rep when compare rep trm <= 0 ->
               {s with cls_us= trm :: cls_us}
@@ -869,7 +872,7 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   ;
   let cls, cls_not_ito_us_xs =
     List.partition_tf
-      ~f:(fun e -> Set.is_subset (Term.fv e) ~of_:us_xs)
+      ~f:(fun e -> Var.Set.is_subset (Term.fv e) ~of_:us_xs)
       (rep :: cls)
   in
   let cls, subst = solve_interp_eqs us (cls, subst) in
@@ -929,7 +932,8 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
               List.fold (cls_of r e) ~init:None ~f:(fun rep_ito_us trm ->
                   match rep_ito_us with
                   | Some rep when Term.compare rep trm <= 0 -> rep_ito_us
-                  | _ when Set.is_subset (Term.fv trm) ~of_:us -> Some trm
+                  | _ when Var.Set.is_subset (Term.fv trm) ~of_:us ->
+                      Some trm
                   | _ -> rep_ito_us )
             in
             Term.memory ~siz:(Term.agg_size_exn e) ~arr:rep_ito_us :: suffix
@@ -943,7 +947,7 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
   | None -> (classes, subst, us_xs)
 
 let solve_for_xs r us xs (classes, subst, us_xs) =
-  Set.fold xs ~init:(classes, subst, us_xs)
+  Var.Set.fold xs ~init:(classes, subst, us_xs)
     ~f:(fun (classes, subst, us_xs) x ->
       let x = Term.var x in
       if Subst.mem subst x then (classes, subst, us_xs)
@@ -964,7 +968,7 @@ let solve_classes r (classes, subst, us) xs =
     if subst != subst0 then solve_classes_ (classes, subst, us_xs)
     else (classes, subst, us_xs)
   in
-  (classes, subst, Set.union us xs)
+  (classes, subst, Var.Set.union us xs)
   |> solve_classes_ |> solve_for_xs r us xs
   |>
   [%Trace.retn fun {pf} (classes', subst', _) ->
@@ -1000,14 +1004,14 @@ let solve_for_vars vss r =
         assert (
           List.fold_until vss ~init:us
             ~f:(fun us xs ->
-              let us_xs = Set.union us xs in
+              let us_xs = Var.Set.union us xs in
               let ks = Term.fv key in
               let ds = Term.fv data in
               if
-                Set.is_subset ks ~of_:us_xs
-                && Set.is_subset ds ~of_:us_xs
-                && ( Set.is_subset ds ~of_:us
-                   || not (Set.is_subset ks ~of_:us) )
+                Var.Set.is_subset ks ~of_:us_xs
+                && Var.Set.is_subset ds ~of_:us_xs
+                && ( Var.Set.is_subset ds ~of_:us
+                   || not (Var.Set.is_subset ks ~of_:us) )
               then Stop true
               else Continue us_xs )
             ~finish:(fun _ -> false) ) )]

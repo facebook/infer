@@ -9,7 +9,7 @@
 
 type t = Reg.Set.t [@@deriving equal, sexp]
 
-let pp = Set.pp Reg.pp
+let pp = Reg.Set.pp
 let report_fmt_thunk = Fn.flip pp
 let empty = Reg.Set.empty
 
@@ -17,13 +17,15 @@ let init globals =
   [%Trace.info "pgm globals: {%a}" (Vector.pp ", " Global.pp) globals] ;
   empty
 
-let join l r = Some (Set.union l r)
+let join l r = Some (Reg.Set.union l r)
 let recursion_beyond_bound = `skip
 let is_false _ = false
 let post _ _ state = state
-let retn _ _ from_call post = Set.union from_call post
+let retn _ _ from_call post = Reg.Set.union from_call post
 let dnf t = [t]
-let add_if_global gs v = if Var.global (Reg.var v) then Set.add gs v else gs
+
+let add_if_global gs v =
+  if Var.global (Reg.var v) then Reg.Set.add gs v else gs
 
 let used_globals ?(init = empty) exp =
   Exp.fold_regs exp ~init ~f:add_if_global
@@ -79,7 +81,7 @@ type summary = t
 
 let pp_summary = pp
 let create_summary ~locals:_ ~formals:_ state = (state, state)
-let apply_summary st summ = Some (Set.union st summ)
+let apply_summary st summ = Some (Reg.Set.union st summ)
 
 (** Query *)
 

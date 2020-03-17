@@ -10,80 +10,82 @@
 [@@@warning "+9"]
 
 module T = struct
-  module T0 = struct
-    type op1 =
-      (* conversion *)
-      | Signed of {bits: int}
-      | Unsigned of {bits: int}
-      | Convert of {src: Typ.t}
-      (* array/struct operations *)
-      | Splat
-      | Select of int
-    [@@deriving compare, equal, hash, sexp]
+  type op1 =
+    (* conversion *)
+    | Signed of {bits: int}
+    | Unsigned of {bits: int}
+    | Convert of {src: Typ.t}
+    (* array/struct operations *)
+    | Splat
+    | Select of int
+  [@@deriving compare, equal, hash, sexp]
 
-    type op2 =
-      (* comparison *)
-      | Eq
-      | Dq
-      | Gt
-      | Ge
-      | Lt
-      | Le
-      | Ugt
-      | Uge
-      | Ult
-      | Ule
-      | Ord
-      | Uno
-      (* arithmetic, numeric and pointer *)
-      | Add
-      | Sub
-      | Mul
-      | Div
-      | Rem
-      | Udiv
-      | Urem
-      (* boolean / bitwise *)
-      | And
-      | Or
-      | Xor
-      | Shl
-      | Lshr
-      | Ashr
-      (* array/struct operations *)
-      | Update of int
-    [@@deriving compare, equal, hash, sexp]
+  type op2 =
+    (* comparison *)
+    | Eq
+    | Dq
+    | Gt
+    | Ge
+    | Lt
+    | Le
+    | Ugt
+    | Uge
+    | Ult
+    | Ule
+    | Ord
+    | Uno
+    (* arithmetic, numeric and pointer *)
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Rem
+    | Udiv
+    | Urem
+    (* boolean / bitwise *)
+    | And
+    | Or
+    | Xor
+    | Shl
+    | Lshr
+    | Ashr
+    (* array/struct operations *)
+    | Update of int
+  [@@deriving compare, equal, hash, sexp]
 
-    type op3 = (* if-then-else *)
-      | Conditional
-    [@@deriving compare, equal, hash, sexp]
+  type op3 = (* if-then-else *)
+    | Conditional
+  [@@deriving compare, equal, hash, sexp]
 
-    type opN =
-      (* array/struct constants *)
-      | Record
-      | Struct_rec  (** NOTE: may be cyclic *)
-    [@@deriving compare, equal, hash, sexp]
+  type opN =
+    (* array/struct constants *)
+    | Record
+    | Struct_rec  (** NOTE: may be cyclic *)
+  [@@deriving compare, equal, hash, sexp]
 
-    type t = {desc: desc; term: Term.t}
+  type t = {desc: desc; term: Term.t}
 
-    and desc =
-      | Reg of {name: string; typ: Typ.t}
-      | Nondet of {msg: string; typ: Typ.t}
-      | Label of {parent: string; name: string}
-      | Integer of {data: Z.t; typ: Typ.t}
-      | Float of {data: string; typ: Typ.t}
-      | Ap1 of op1 * Typ.t * t
-      | Ap2 of op2 * Typ.t * t * t
-      | Ap3 of op3 * Typ.t * t * t * t
-      | ApN of opN * Typ.t * t vector
-    [@@deriving compare, equal, hash, sexp]
-  end
-
-  include T0
-  include Comparator.Make (T0)
+  and desc =
+    | Reg of {name: string; typ: Typ.t}
+    | Nondet of {msg: string; typ: Typ.t}
+    | Label of {parent: string; name: string}
+    | Integer of {data: Z.t; typ: Typ.t}
+    | Float of {data: string; typ: Typ.t}
+    | Ap1 of op1 * Typ.t * t
+    | Ap2 of op2 * Typ.t * t * t
+    | Ap3 of op3 * Typ.t * t * t * t
+    | ApN of opN * Typ.t * t vector
+  [@@deriving compare, equal, hash, sexp]
 end
 
 include T
+
+module Set = struct
+  include Set.Make (T)
+
+  let t_of_sexp = t_of_sexp T.t_of_sexp
+end
+
 module Map = Map.Make (T)
 
 let term e = e.term
@@ -316,17 +318,12 @@ module Reg = struct
     match Var.of_term r.term with Some v -> v | _ -> violates invariant r
 
   module Set = struct
-    include (
-      Set :
-        module type of Set with type ('elt, 'cmp) t := ('elt, 'cmp) Set.t )
-
-    type t = Set.M(T).t [@@deriving compare, equal, sexp]
+    include Set
 
     let pp = Set.pp pp_exp
-    let empty = Set.empty (module T)
-    let of_list = Set.of_list (module T)
-    let union_list = Set.union_list (module T)
-    let vars = Set.fold ~init:Var.Set.empty ~f:(fun s r -> add s (var r))
+
+    let vars =
+      Set.fold ~init:Var.Set.empty ~f:(fun s r -> Var.Set.add s (var r))
   end
 
   module Map = Map

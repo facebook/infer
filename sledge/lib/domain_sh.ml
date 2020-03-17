@@ -81,7 +81,7 @@ let term_eq_class_has_only_vars_in fvs cong term =
       Equality.pp cong Term.pp term]
   ;
   let term_has_only_vars_in fvs term =
-    Set.is_subset (Term.fv term) ~of_:fvs
+    Var.Set.is_subset (Term.fv term) ~of_:fvs
   in
   let term_eq_class = Equality.class_of cong term in
   List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
@@ -100,7 +100,7 @@ let garbage_collect (q : t) ~wrt =
         List.fold ~init:current q.heap ~f:(fun current seg ->
             if term_eq_class_has_only_vars_in current q.cong seg.loc then
               List.fold (Equality.class_of q.cong seg.arr) ~init:current
-                ~f:(fun c e -> Set.union c (Term.fv e))
+                ~f:(fun c e -> Var.Set.union c (Term.fv e))
             else current )
       in
       all_reachable_vars current new_set q
@@ -121,10 +121,10 @@ let and_eqs sub formals actuals q =
 let localize_entry globals actuals formals freturn locals subst pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
-  let freturn_locals = Reg.Set.vars (Set.add_option freturn locals) in
+  let freturn_locals = Reg.Set.vars (Reg.Set.add_option freturn locals) in
   let function_summary_pre =
     garbage_collect entry
-      ~wrt:(Set.union formals_set (Reg.Set.vars globals))
+      ~wrt:(Var.Set.union formals_set (Reg.Set.vars globals))
   in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
@@ -156,18 +156,23 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   let actuals = List.map ~f:Exp.term actuals in
   let areturn = Option.map ~f:Reg.var areturn in
   let formals = List.map ~f:Reg.var formals in
-  let freturn_locals = Reg.Set.vars (Set.add_option freturn locals) in
+  let freturn_locals = Reg.Set.vars (Reg.Set.add_option freturn locals) in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current value will be overwritten and so does
      not need to be saved in the freshening renaming *)
   let q = Sh.exists modifs q in
   (* save current values of shadowed formals and locals with a renaming *)
-  let q', subst = Sh.freshen q ~wrt:(Set.add_list formals freturn_locals) in
-  assert (Set.disjoint modifs (Var.Subst.domain subst)) ;
+  let q', subst =
+    Sh.freshen q ~wrt:(Var.Set.add_list formals freturn_locals)
+  in
+  assert (Var.Set.disjoint modifs (Var.Subst.domain subst)) ;
   (* pass arguments by conjoining equations between formals and actuals *)
   let entry = and_eqs subst formals actuals q' in
   (* note: locals and formals are in scope *)
-  assert (Set.is_subset (Set.add_list formals freturn_locals) ~of_:entry.us) ;
+  assert (
+    Var.Set.is_subset
+      (Var.Set.add_list formals freturn_locals)
+      ~of_:entry.us ) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; subst; frame= Sh.emp})
@@ -218,7 +223,9 @@ let retn formals freturn {areturn; subst; frame} q =
     | None -> (q, inv_subst)
   in
   (* exit scope of formals *)
-  let q = Sh.exists (Set.add_list formals (Var.Set.of_option freturn)) q in
+  let q =
+    Sh.exists (Var.Set.add_list formals (Var.Set.of_option freturn)) q
+  in
   (* reinstate shadowed values of locals *)
   let q = Sh.rename inv_subst q in
   (* reconjoin frame *)
@@ -249,9 +256,9 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   let locals = Reg.Set.vars locals in
   let formals = Reg.Set.vars formals in
   let foot = Sh.exists locals entry in
-  let foot, subst = Sh.freshen ~wrt:(Set.union foot.us post.us) foot in
+  let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =
-    Set.fold formals ~init:q ~f:(fun q var ->
+    Var.Set.fold formals ~init:q ~f:(fun q var ->
         let var = Term.var var in
         let renamed_var = Term.rename subst var in
         Sh.and_ (Term.eq renamed_var var) q )
@@ -261,11 +268,11 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   let foot = restore_formals foot in
   let post = restore_formals post in
   [%Trace.info "subst: %a" Var.Subst.pp subst] ;
-  let xs = Set.inter (Sh.fv foot) (Sh.fv post) in
-  let xs = Set.diff xs formals in
-  let xs_and_formals = Set.union xs formals in
-  let foot = Sh.exists (Set.diff foot.us xs_and_formals) foot in
-  let post = Sh.exists (Set.diff post.us xs_and_formals) post in
+  let xs = Var.Set.inter (Sh.fv foot) (Sh.fv post) in
+  let xs = Var.Set.diff xs formals in
+  let xs_and_formals = Var.Set.union xs formals in
+  let foot = Sh.exists (Var.Set.diff foot.us xs_and_formals) foot in
+  let post = Sh.exists (Var.Set.diff post.us xs_and_formals) post in
   let current = Sh.extend_us xs post in
   ({xs; foot; post}, current)
   |>
@@ -274,8 +281,8 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
 let apply_summary q ({xs; foot; post} as fs) =
   [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_summary fs pp q]
   ;
-  let xs_in_q = Set.inter xs q.Sh.us in
-  let xs_in_fv_q = Set.inter xs (Sh.fv q) in
+  let xs_in_q = Var.Set.inter xs q.Sh.us in
+  let xs_in_fv_q = Var.Set.inter xs (Sh.fv q) in
   (* Between creation of a summary and its use, the vocabulary of q (q.us)
      might have been extended. That means infer_frame would fail, because q
      and foot have different vocabulary. This might indicate that the
@@ -286,11 +293,12 @@ let apply_summary q ({xs; foot; post} as fs) =
   [%Trace.info "xs inter q.us: %a" Var.Set.pp xs_in_q] ;
   [%Trace.info "xs inter fv.q %a" Var.Set.pp xs_in_fv_q] ;
   let q, add_back =
-    if Set.is_empty xs_in_fv_q then (Sh.exists xs_in_q q, xs_in_q)
+    if Var.Set.is_empty xs_in_fv_q then (Sh.exists xs_in_q q, xs_in_q)
     else (q, Var.Set.empty)
   in
   let frame =
-    if Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot else None
+    if Var.Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot
+    else None
   in
   [%Trace.info "frame %a" (Option.pp "%a" pp) frame] ;
   Option.map ~f:(Sh.extend_us add_back) (Option.map ~f:(Sh.star post) frame)

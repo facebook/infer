@@ -188,8 +188,7 @@ let%test_module _ =
 
     let r5 = of_eqs [(x, y); (g w x, y); (g w y, f z)]
 
-    let%test _ =
-      Set.equal (fv r5) (Set.of_list (module Var) [w_; x_; y_; z_])
+    let%test _ = Var.Set.equal (fv r5) (Var.Set.of_list [w_; x_; y_; z_])
 
     let r6 = of_eqs [(x, !1); (!1, y)]
 

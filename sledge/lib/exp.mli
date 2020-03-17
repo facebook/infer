@@ -90,8 +90,6 @@ and desc = private
   | ApN of opN * Typ.t * t vector
 [@@deriving compare, equal, hash, sexp]
 
-include Comparator.S with type t := t
-
 val pp : t pp
 
 include Invariant.S with type t := t
@@ -101,18 +99,12 @@ module Reg : sig
   type exp := t
   type t = private exp [@@deriving compare, equal, hash, sexp]
 
-  include Comparator.S with type t := t
-
   module Set : sig
-    type reg := t
+    include Set.S with type elt := t
 
-    type t = (reg, comparator_witness) Set.t
-    [@@deriving compare, equal, sexp]
-
+    val sexp_of_t : t -> Sexp.t
+    val t_of_sexp : Sexp.t -> t
     val pp : t pp
-    val empty : t
-    val of_list : reg list -> t
-    val union_list : t list -> t
     val vars : t -> Var.Set.t
   end
 

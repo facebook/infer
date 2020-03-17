@@ -219,9 +219,9 @@ let exec_move q move_vec =
   let defs, uses =
     Vector.fold move_vec ~init:(Reg.Set.empty, Reg.Set.empty)
       ~f:(fun (defs, uses) (r, e) ->
-        (Set.add defs r, Exp.fold_regs e ~init:uses ~f:Set.add) )
+        (Reg.Set.add defs r, Exp.fold_regs e ~init:uses ~f:Reg.Set.add) )
   in
-  assert (Set.disjoint defs uses) ;
+  assert (Reg.Set.disjoint defs uses) ;
   Vector.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
 
 let exec_inst q i =
@@ -259,7 +259,7 @@ let recursion_beyond_bound = `prune
 (** existentially quantify locals *)
 let post locals _ (q : t) =
   let locals =
-    Set.fold locals ~init:[] ~f:(fun a r ->
+    Reg.Set.fold locals ~init:[] ~f:(fun a r ->
         let v = apron_var_of_reg r in
         if Environment.mem_var q.env v then v :: a else a )
     |> Array.of_list

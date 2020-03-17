@@ -69,7 +69,7 @@ end = struct
     Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
       (if pgs then "t" else "f")
       Sh.pp com Sh.pp min Var.Set.pp_xs xs
-      (Sh.pp_diff_eq ~us:(Set.union min.us sub.us) ~xs min.cong)
+      (Sh.pp_diff_eq ~us:(Var.Set.union min.us sub.us) ~xs min.cong)
       sub
 
   let invariant g =
@@ -77,11 +77,11 @@ end = struct
     @@ fun () ->
     try
       let {us; com; min; xs; sub; zs; pgs= _} = g in
-      assert (Set.equal us com.us) ;
-      assert (Set.equal us min.us) ;
-      assert (Set.equal (Set.union us xs) sub.us) ;
-      assert (Set.disjoint us xs) ;
-      assert (Set.is_subset zs ~of_:(Set.union us xs))
+      assert (Var.Set.equal us com.us) ;
+      assert (Var.Set.equal us min.us) ;
+      assert (Var.Set.equal (Var.Set.union us xs) sub.us) ;
+      assert (Var.Set.disjoint us xs) ;
+      assert (Var.Set.is_subset zs ~of_:(Var.Set.union us xs))
     with exc -> [%Trace.info "%a" pp g] ; raise exc
 
   let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
@@ -91,11 +91,13 @@ end = struct
       let us = Option.value us ~default:Var.Set.empty in
       let us =
         Option.fold
-          ~f:(fun us sub -> Set.union (Set.diff sub.Sh.us xs) us)
+          ~f:(fun us sub -> Var.Set.union (Var.Set.diff sub.Sh.us xs) us)
           sub ~init:us
       in
       let union_us q_opt us' =
-        Option.fold ~f:(fun us' q -> Set.union q.Sh.us us') q_opt ~init:us'
+        Option.fold
+          ~f:(fun us' q -> Var.Set.union q.Sh.us us')
+          q_opt ~init:us'
       in
       union_us com (union_us min us)
     in
@@ -104,10 +106,10 @@ end = struct
     let xs, sub, zs =
       match sub with
       | Some sub ->
-          let sub = Sh.extend_us (Set.union new_us xs) sub in
+          let sub = Sh.extend_us (Var.Set.union new_us xs) sub in
           let ys, sub = Sh.bind_exists sub ~wrt:xs in
-          let xs = Set.union xs ys in
-          let zs = Set.union zs ys in
+          let xs = Var.Set.union xs ys in
+          let zs = Var.Set.union zs ys in
           (xs, sub, zs)
       | None ->
           let sub = Sh.extend_us new_us (Option.value sub ~default:g.sub) in
@@ -131,8 +133,8 @@ open Goal
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
-  let vs = Set.add vs v in
-  let zs = Set.add zs v in
+  let vs = Var.Set.add vs v in
+  let zs = Var.Set.add zs v in
   let v = Term.var v in
   (v, vs, zs, wrt)
 
@@ -141,21 +143,22 @@ let trace (k : Trace.pf -> _) = [%Trace.infok k]
 
 let excise_exists goal =
   trace (fun {pf} -> pf "@[<2>excise_exists@ %a@]" pp goal) ;
-  if Set.is_empty goal.xs then goal
+  if Var.Set.is_empty goal.xs then goal
   else
     let solutions_for_xs =
       let xs =
-        Set.diff goal.xs (Sh.fv ~ignore_cong:() (Sh.with_pure [] goal.sub))
+        Var.Set.diff goal.xs
+          (Sh.fv ~ignore_cong:() (Sh.with_pure [] goal.sub))
       in
       Equality.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
     in
     if Equality.Subst.is_empty solutions_for_xs then goal
     else
       let removed =
-        Set.diff goal.xs
+        Var.Set.diff goal.xs
           (Sh.fv ~ignore_cong:() (Sh.norm solutions_for_xs goal.sub))
       in
-      if Set.is_empty removed then goal
+      if Var.Set.is_empty removed then goal
       else
         let _, removed, witnesses =
           Equality.Subst.partition_valid removed solutions_for_xs
@@ -165,8 +168,8 @@ let excise_exists goal =
           excise (fun {pf} ->
               pf "@[<2>excise_exists @[%a%a@]@]" Var.Set.pp_xs removed
                 Equality.Subst.pp witnesses ) ;
-          let us = Set.union goal.us removed in
-          let xs = Set.diff goal.xs removed in
+          let us = Var.Set.union goal.us removed in
+          let xs = Var.Set.diff goal.xs removed in
           let min = Sh.and_subst witnesses goal.min in
           goal |> with_ ~us ~min ~xs ~pgs:true )
 
@@ -234,9 +237,9 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let o_n = Term.integer o_n in
-  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
+  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Var.Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
-  let xs = Set.diff xs (Term.fv n) in
+  let xs = Var.Set.diff xs (Term.fv n) in
   let com = Sh.star (Sh.seg {msg with siz= n; arr= a0}) com in
   let min =
     Sh.and_
@@ -276,7 +279,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
   let n_o = Term.integer n_o in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
-  let a1', xs, zs, _ = fresh_var "a1" xs zs ~wrt:(Set.union us xs) in
+  let a1', xs, zs, _ = fresh_var "a1" xs zs ~wrt:(Var.Set.union us xs) in
   let sub =
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
@@ -310,9 +313,9 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let l_k = Term.integer l_k in
-  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
+  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Var.Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
-  let xs = Set.diff xs (Term.fv n) in
+  let xs = Var.Set.diff xs (Term.fv n) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a1}) com
   in
@@ -354,10 +357,10 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let l_k = Term.integer l_k in
   let ko_ln = Term.integer ko_ln in
   let ln = Term.add l n in
-  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
+  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Var.Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
-  let xs = Set.diff xs (Set.union (Term.fv l) (Term.fv n)) in
+  let xs = Var.Set.diff xs (Var.Set.union (Term.fv l) (Term.fv n)) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a1}) com
   in
@@ -402,10 +405,10 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let ko_l = Term.integer ko_l in
   let ln_ko = Term.integer ln_ko in
   let ko = Term.add k o in
-  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
+  let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Var.Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
-  let xs = Set.diff xs (Term.fv l) in
+  let xs = Var.Set.diff xs (Term.fv l) in
   let com =
     Sh.star (Sh.seg {loc= l; bas= b; len= m; siz= ko_l; arr= a1}) com
   in
@@ -449,7 +452,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let k_l = Term.integer k_l in
-  let a0', xs, zs, _ = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
+  let a0', xs, zs, _ = fresh_var "a0" xs zs ~wrt:(Var.Set.union us xs) in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let sub =
@@ -488,7 +491,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let k_l = Term.integer k_l in
   let ln_ko = Term.integer ln_ko in
   let ko = Term.add k o in
-  let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
+  let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Var.Set.union us xs) in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
@@ -530,7 +533,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let ln_k = Term.integer ln_k in
   let ko_ln = Term.integer ko_ln in
   let ln = Term.add l n in
-  let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
+  let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Var.Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
   let com =
@@ -644,7 +647,7 @@ let excise_heap ({min; sub} as goal) =
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
-  if Sh.is_false min then Some (Sh.false_ (Set.diff sub.us zs))
+  if Sh.is_false min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
@@ -657,7 +660,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   let dnf_minuend = Sh.dnf minuend in
   let dnf_subtrahend = Sh.dnf subtrahend in
   List.fold_option dnf_minuend
-    ~init:(Sh.false_ (Set.union minuend.us xs))
+    ~init:(Sh.false_ (Var.Set.union minuend.us xs))
     ~f:(fun remainders minuend ->
       ([%Trace.call fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend]
       ;
@@ -683,16 +686,16 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
       subtrahend]
   ;
-  assert (Set.disjoint minuend.us xs) ;
-  assert (Set.is_subset xs ~of_:subtrahend.us) ;
-  assert (Set.is_subset (Set.diff subtrahend.us xs) ~of_:minuend.us) ;
+  assert (Var.Set.disjoint minuend.us xs) ;
+  assert (Var.Set.is_subset xs ~of_:subtrahend.us) ;
+  assert (Var.Set.is_subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend
   |>
   [%Trace.retn fun {pf} r ->
     pf "%a" (Option.pp "%a" Sh.pp) r ;
     Option.iter r ~f:(fun frame ->
-        let lost = Set.diff (Set.union minuend.us xs) frame.us in
-        let gain = Set.diff frame.us (Set.union minuend.us xs) in
-        assert (Set.is_empty lost || fail "lost: %a" Var.Set.pp lost ()) ;
-        assert (Set.is_empty gain || fail "gained: %a" Var.Set.pp gain ())
-    )]
+        let lost = Var.Set.diff (Var.Set.union minuend.us xs) frame.us in
+        let gain = Var.Set.diff frame.us (Var.Set.union minuend.us xs) in
+        assert (Var.Set.is_empty lost || fail "lost: %a" Var.Set.pp lost ()) ;
+        assert (
+          Var.Set.is_empty gain || fail "gained: %a" Var.Set.pp gain () ) )]
