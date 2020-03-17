@@ -8,61 +8,7 @@
 (** Qset - Set with (signed) rational multiplicity for each element *)
 
 open Import0
-
-module type S = sig
-  type elt
-  type t
-
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
-  val hash_fold_t : elt Hash.folder -> t Hash.folder
-  val sexp_of_t : t -> Sexp.t
-  val t_of_sexp : (Sexp.t -> elt) -> Sexp.t -> t
-  val pp : (unit, unit) fmt -> (elt * Q.t) pp -> t pp
-
-  val empty : t
-  (** The empty multiset over the provided order. *)
-
-  val add : t -> elt -> Q.t -> t
-  (** Add to multiplicity of single element. [O(log n)] *)
-
-  val remove : t -> elt -> t
-  (** Set the multiplicity of an element to zero. [O(log n)] *)
-
-  val union : t -> t -> t
-  (** Sum multiplicities pointwise. [O(n + m)] *)
-
-  val length : t -> int
-  (** Number of elements with non-zero multiplicity. [O(1)]. *)
-
-  val count : t -> elt -> Q.t
-  (** Multiplicity of an element. [O(log n)]. *)
-
-  val map : t -> f:(elt -> Q.t -> elt * Q.t) -> t
-  (** Map over the elements in ascending order. Preserves physical equality
-      if [f] does. *)
-
-  val map_counts : t -> f:(elt -> Q.t -> Q.t) -> t
-  (** Map over the multiplicities of the elements in ascending order. *)
-
-  val fold : t -> f:(elt -> Q.t -> 's -> 's) -> init:'s -> 's
-  (** Fold over the elements in ascending order. *)
-
-  val iter : t -> f:(elt -> Q.t -> unit) -> unit
-  (** Iterate over the elements in ascending order. *)
-
-  val exists : t -> f:(elt -> Q.t -> bool) -> bool
-  (** Search for an element satisfying a predicate. *)
-
-  val min_elt : t -> (elt * Q.t) option
-  (** Minimum element. *)
-
-  val min_elt_exn : t -> elt * Q.t
-  (** Minimum element. *)
-
-  val to_list : t -> (elt * Q.t) list
-  (** Convert to a list of elements in ascending order. *)
-end
+include Qset_intf
 
 module Make (Elt : OrderedType) = struct
   module M = Stdlib.Map.Make (Elt)
@@ -116,25 +62,26 @@ module Make (Elt : OrderedType) = struct
         | None, None -> None )
       m n
 
-  let length m = M.cardinal m
-  let count m x = try M.find x m with Not_found -> Q.zero
-  let fold m ~f ~init = M.fold (fun key data s -> f key data s) m init
-
   let map m ~f =
     let m' = M.empty in
     let m, m' =
-      fold m ~init:(m, m') ~f:(fun x i (m, m') ->
+      M.fold
+        (fun x i (m, m') ->
           let x', i' = f x i in
           if x' == x then
             if Q.equal i' i then (m, m') else (M.add x i' m, m')
           else (M.remove x m, add m' x' i') )
+        m (m, m')
     in
-    fold m' ~init:m ~f:(fun x i m -> add m x i)
+    M.fold (fun x i m -> add m x i) m' m
 
-  let map_counts m ~f = M.mapi (fun key data -> f key data) m
-  let iter m ~f = M.iter (fun key data -> f key data) m
-  let exists m ~f = M.exists (fun key data -> f key data) m
-  let min_elt = M.min_binding_opt
+  let map_counts m ~f = M.mapi f m
+  let length m = M.cardinal m
+  let count m x = try M.find x m with Not_found -> Q.zero
   let min_elt_exn = M.min_binding
+  let min_elt = M.min_binding_opt
   let to_list m = M.bindings m
+  let iter m ~f = M.iter f m
+  let exists m ~f = M.exists f m
+  let fold m ~f ~init = M.fold f m init
 end
