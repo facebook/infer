@@ -422,7 +422,7 @@ let congruent r a b =
 let lookup r a =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp a pp r]
   ;
-  ( Base.With_return.with_return
+  ( with_return
   @@ fun {return} ->
   (* congruent specialized to assume [a] canonized and [b] non-interpreted *)
   let semi_congruent r a b =
@@ -479,7 +479,7 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  Base.With_return.with_return
+  with_return
   @@ fun {return} ->
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
       Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->

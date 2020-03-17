@@ -7,9 +7,9 @@
 
 (** IArray - Immutable view of an array *)
 
+open Import0
 module Array = Base.Array
 module Hash = Base.Hash
-module With_return = Base.With_return
 open Base.Continue_or_stop
 
 (** = 'a array but covariant since imperative operations hidden *)
@@ -108,7 +108,7 @@ let fold_map x ~init ~f =
   (s, v x)
 
 let fold_map_until xs ~init ~f ~finish =
-  With_return.with_return (fun {return} ->
+  with_return (fun {return} ->
       finish
         (fold_map xs ~init ~f:(fun s x ->
              match f s x with Continue x -> x | Stop x -> return x )) )

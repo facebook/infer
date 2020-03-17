@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Import0
 include Base.List
 
 let rec pp ?pre ?suf sep pp_elt fs = function
@@ -30,7 +31,7 @@ let find_map_remove xs ~f =
   find_map_remove_ [] xs
 
 let fold_option xs ~init ~f =
-  Base.With_return.with_return
+  with_return
   @@ fun {return} ->
   Some
     (fold xs ~init ~f:(fun acc elt ->

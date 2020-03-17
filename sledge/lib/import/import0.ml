@@ -66,3 +66,10 @@ module type OrderedType = sig
 end
 
 exception Duplicate
+
+module Return = struct type 'r t = {return: 'a. 'r -> 'a} [@@unboxed] end
+
+let with_return (type a) f =
+  let module M = struct exception Return of a end in
+  let return a = raise_notrace (M.Return a) in
+  try f {Return.return} with M.Return a -> a
