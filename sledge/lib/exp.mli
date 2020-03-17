@@ -87,7 +87,7 @@ and desc = private
   | Ap1 of op1 * Typ.t * t
   | Ap2 of op2 * Typ.t * t * t
   | Ap3 of op3 * Typ.t * t * t * t
-  | ApN of opN * Typ.t * t vector
+  | ApN of opN * Typ.t * t iarray
 [@@deriving compare, equal, hash, sexp]
 
 val pp : t pp
@@ -183,7 +183,7 @@ val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
 val splat : Typ.t -> t -> t
 
 (* records (struct / array values) *)
-val record : Typ.t -> t vector -> t
+val record : Typ.t -> t iarray -> t
 val select : Typ.t -> t -> int -> t
 val update : Typ.t -> rcd:t -> int -> elt:t -> t
 
@@ -191,7 +191,7 @@ val struct_rec :
      (module Hashtbl.Key.S with type t = 'id)
   -> id:'id
   -> Typ.t
-  -> t lazy_t vector
+  -> t lazy_t iarray
   -> t
 (** [struct_rec Id id element_thunks] constructs a possibly-cyclic [Struct]
     value. Cycles are detected using [Id]. The caller of [struct_rec Id]

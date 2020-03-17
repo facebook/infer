@@ -64,8 +64,8 @@ and T : sig
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
-    | ApN of opN * t vector
-    | RecN of recN * t vector  (** NOTE: cyclic *)
+    | ApN of opN * t iarray
+    | RecN of recN * t iarray  (** NOTE: cyclic *)
     | Label of {parent: string; name: string}
     | Nondet of {msg: string}
     | Float of {data: string}
@@ -81,8 +81,8 @@ end = struct
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
-    | ApN of opN * t vector
-    | RecN of recN * t vector  (** NOTE: cyclic *)
+    | ApN of opN * t iarray
+    | RecN of recN * t iarray  (** NOTE: cyclic *)
     | Label of {parent: string; name: string}
     | Nondet of {msg: string}
     | Float of {data: string}
@@ -183,10 +183,10 @@ let rec ppx strength fs term =
     | Ap3 (Extract, agg, off, len) -> pf "%a[%a,%a)" pp agg pp off pp len
     | Ap1 (Splat, byt) -> pf "%a^" pp byt
     | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | ApN (Concat, args) when Vector.is_empty args -> pf "@<2>⟨⟩"
-    | ApN (Concat, args) -> pf "(%a)" (Vector.pp "@,^" pp) args
+    | ApN (Concat, args) when IArray.is_empty args -> pf "@<2>⟨⟩"
+    | ApN (Concat, args) -> pf "(%a)" (IArray.pp "@,^" pp) args
     | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
-    | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
+    | RecN (Record, elts) -> pf "{|%a|}" (IArray.pp ",@ " pp) elts
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
@@ -199,15 +199,15 @@ and pp_record strength fs elts =
     fs "%a"
       (fun fs elts ->
         match
-          String.init (Vector.length elts) ~f:(fun i ->
-              match Vector.get elts i with
+          String.init (IArray.length elts) ~f:(fun i ->
+              match IArray.get elts i with
               | Integer {data} -> Char.of_int_exn (Z.to_int data)
               | _ -> raise (Invalid_argument "not a string") )
         with
         | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
         | exception _ ->
             Format.fprintf fs "@[<h>%a@]"
-              (Vector.pp ",@ " (ppx strength))
+              (IArray.pp ",@ " (ppx strength))
               elts )
       elts]
 
@@ -270,8 +270,8 @@ let rec assert_aggregate = function
   | Ap2 (Memory, _, _) -> ()
   | Ap3 (Extract, a, _, _) -> assert_aggregate a
   | ApN (Concat, a0N) ->
-      assert (Vector.length a0N <> 1) ;
-      Vector.iter ~f:assert_aggregate a0N
+      assert (IArray.length a0N <> 1) ;
+      IArray.iter ~f:assert_aggregate a0N
   | _ -> assert false
 
 let invariant e =
@@ -283,7 +283,7 @@ let invariant e =
   | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_aggregate e
   | ApN (Record, elts) | RecN (Record, elts) ->
-      assert (not (Vector.is_empty elts))
+      assert (not (IArray.is_empty elts))
   | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
   | Ap1 (Convert {src; dst}, _) ->
       assert (Typ.convertible src dst) ;
@@ -600,7 +600,7 @@ let simp_cond cnd thn els =
 let rec agg_size_exn = function
   | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
   | ApN (Concat, a0U) ->
-      Vector.fold a0U ~init:zero ~f:(fun a0I aJ ->
+      IArray.fold a0U ~init:zero ~f:(fun a0I aJ ->
           simp_add2 a0I (agg_size_exn aJ) )
   | _ -> invalid_arg "agg_size_exn"
 
@@ -653,7 +653,7 @@ let rec simp_or x y =
 
 (* memory *)
 
-let empty_agg = ApN (Concat, Vector.of_array [||])
+let empty_agg = ApN (Concat, IArray.of_array [||])
 let simp_splat byt = Ap1 (Splat, byt)
 
 let simp_memory siz arr =
@@ -712,7 +712,7 @@ let rec simp_extract agg off len =
     | ApN (Concat, na1N) -> (
       match len with
       | Integer {data= l} ->
-          Vector.fold_map_until na1N ~init:(l, off)
+          IArray.fold_map_until na1N ~init:(l, off)
             ~f:(fun (l, oI) naI ->
               let nI = agg_size_exn naI in
               if Z.equal Z.zero l then
@@ -739,14 +739,14 @@ and simp_concat xs =
   (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)
   let flatten xs =
     let exists_sub_Concat =
-      Vector.exists ~f:(function ApN (Concat, _) -> true | _ -> false)
+      IArray.exists ~f:(function ApN (Concat, _) -> true | _ -> false)
     in
     let concat_sub_Concat xs =
-      Vector.concat
-        (Vector.fold_right xs ~init:[] ~f:(fun x s ->
+      IArray.concat
+        (IArray.fold_right xs ~init:[] ~f:(fun x s ->
              match x with
              | ApN (Concat, ys) -> ys :: s
-             | x -> Vector.of_array [|x|] :: s ))
+             | x -> IArray.of_array [|x|] :: s ))
     in
     if exists_sub_Concat xs then concat_sub_Concat xs else xs
   in
@@ -766,8 +766,8 @@ and simp_concat xs =
     | _ -> None
   in
   let xs = flatten xs in
-  let xs = Vector.map_adjacent empty_agg xs ~f:simp_adjacent in
-  (if Vector.length xs = 1 then Vector.get xs 0 else ApN (Concat, xs))
+  let xs = IArray.map_adjacent empty_agg xs ~f:simp_adjacent in
+  (if IArray.length xs = 1 then IArray.get xs 0 else ApN (Concat, xs))
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
@@ -808,18 +808,18 @@ let rec simp_eq x y =
         simp_cond c (simp_eq e t) (simp_eq e f)
     (* α^β^δ = α^γ^δ ==> β = γ *)
     | ApN (Concat, a), ApN (Concat, b) ->
-        let m = Vector.length a in
-        let n = Vector.length b in
+        let m = IArray.length a in
+        let n = IArray.length b in
         let length_common_prefix =
           let rec find_lcp i =
-            if equal (Vector.get a i) (Vector.get b i) then find_lcp (i + 1)
+            if equal (IArray.get a i) (IArray.get b i) then find_lcp (i + 1)
             else i
           in
           find_lcp 0
         in
         let length_common_suffix =
           let rec find_lcs i =
-            if equal (Vector.get a (m - 1 - i)) (Vector.get b (n - 1 - i))
+            if equal (IArray.get a (m - 1 - i)) (IArray.get b (n - 1 - i))
             then find_lcs (i + 1)
             else i
           in
@@ -829,8 +829,8 @@ let rec simp_eq x y =
         if length_common = 0 then Ap2 (Eq, x, y)
         else
           let pos = length_common_prefix in
-          let a = Vector.sub ~pos ~len:(m - length_common) a in
-          let b = Vector.sub ~pos ~len:(n - length_common) b in
+          let a = IArray.sub ~pos ~len:(m - length_common) a in
+          let b = IArray.sub ~pos ~len:(n - length_common) b in
           simp_eq (simp_concat a) (simp_concat b)
     | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
       , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
@@ -939,10 +939,10 @@ let rec_app key =
     | None ->
         (* Add placeholder to prevent computing [elts] in calls to [rec_app]
            from [elt_thks] for recursive occurrences of [id]. *)
-        let elta = Array.create ~len:(Vector.length elt_thks) dummy in
-        let elts = Vector.of_array elta in
+        let elta = Array.create ~len:(IArray.length elt_thks) dummy in
+        let elts = IArray.of_array elta in
         Hashtbl.set memo_id ~key:id ~data:elts ;
-        Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
+        IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
         RecN (op, elts) |> check invariant
     | Some elts ->
         (* Do not check invariant as invariant will be checked above after
@@ -1024,7 +1024,7 @@ let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let splat byt = norm1 Splat byt
 let memory ~siz ~arr = norm2 Memory siz arr
 let extract ~agg ~off ~len = norm3 Extract agg off len
-let concat xs = normN Concat (Vector.of_array xs)
+let concat xs = normN Concat (IArray.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
@@ -1053,7 +1053,7 @@ let map e ~f =
     if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
   in
   let mapN op ~f xs =
-    let xs' = Vector.map_preserving_phys_equal ~f xs in
+    let xs' = IArray.map_preserving_phys_equal ~f xs in
     if xs' == xs then e else normN op xs'
   in
   let map_qset mk ~f args =
@@ -1069,7 +1069,7 @@ let map e ~f =
   | ApN (op, xs) -> mapN op ~f xs
   | RecN (_, xs) ->
       assert (
-        xs == Vector.map_preserving_phys_equal ~f xs
+        xs == IArray.map_preserving_phys_equal ~f xs
         || fail "Term.map does not support updating subterms of RecN." () ) ;
       e
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> e
@@ -1089,11 +1089,11 @@ let map_rec_pre ~f e =
       | RecN (op, xs) -> (
         match List.Assoc.find ~equal:( == ) memo e with
         | None ->
-            let xs' = Vector.copy xs in
+            let xs' = IArray.copy xs in
             let e' = RecN (op, xs') in
             let memo = List.Assoc.add ~equal:( == ) memo e e' in
             let changed = ref false in
-            Vector.map_inplace xs' ~f:(fun x ->
+            IArray.map_inplace xs' ~f:(fun x ->
                 let x' = map_rec_pre_f memo x in
                 if x' != x then changed := true ;
                 x' ) ;
@@ -1115,7 +1115,7 @@ let iter e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x ; f y
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
-  | ApN (_, xs) | RecN (_, xs) -> Vector.iter ~f xs
+  | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f xs
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> ()
 
@@ -1124,7 +1124,7 @@ let exists e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
-  | ApN (_, xs) | RecN (_, xs) -> Vector.exists ~f xs
+  | ApN (_, xs) | RecN (_, xs) -> IArray.exists ~f xs
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> false
 
@@ -1134,7 +1134,7 @@ let fold e ~init:s ~f =
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
   | ApN (_, xs) | RecN (_, xs) ->
-      Vector.fold ~f:(fun s x -> f x s) xs ~init:s
+      IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> s
 
@@ -1146,7 +1146,7 @@ let fold_terms e ~init ~f =
       | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
       | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
       | ApN (_, xs) | RecN (_, xs) ->
-          Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
+          IArray.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
       | Add args | Mul args ->
           Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
       | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> s

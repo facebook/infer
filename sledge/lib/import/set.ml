@@ -32,7 +32,7 @@ module Make (Elt : OrderedType) : S with type elt = Elt.t = struct
   let of_ x = S.add x empty
   let of_option = Option.fold ~f:(fun x y -> S.add y x) ~init:empty
   let of_list = S.of_list
-  let of_vector x = S.of_list (Vector.to_list x)
+  let of_vector x = S.of_list (IArray.to_list x)
   let add s e = S.add e s
   let add_option yo x = Option.fold ~f:(fun x y -> S.add y x) ~init:x yo
   let add_list ys x = List.fold ~f:(fun x y -> S.add y x) ~init:x ys

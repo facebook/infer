@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Vector - Immutable view of an array
+(** IArray - Immutable view of an array
 
     Note that vectors and arrays can be interconverted without copying. So
-    Vector is not a safe immutable data structure, it only attempts to make
+    IArray is not a safe immutable data structure, it only attempts to make
     it inconvenient to mutate. *)
 
 open Import0
@@ -16,7 +16,7 @@ open Import0
 type +'a t [@@deriving compare, equal, hash, sexp]
 
 module Infix : sig
-  type +'a vector = 'a t [@@deriving compare, equal, hash, sexp]
+  type +'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
 val pp : (unit, unit) fmt -> 'a pp -> 'a t pp

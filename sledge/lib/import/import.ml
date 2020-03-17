@@ -172,8 +172,8 @@ module Array = struct
   let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
 end
 
-module Vector = Vector
-include Vector.Infix
+module IArray = IArray
+include IArray.Infix
 module List = List
 
 type 'a list = 'a List.t [@@deriving compare, equal, hash, sexp]

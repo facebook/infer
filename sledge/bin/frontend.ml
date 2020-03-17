@@ -245,13 +245,13 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           let packed = Llvm.is_packed llt in
           if Llvm.is_literal llt then
             let elts =
-              Vector.map ~f:(xlate_type x) (Vector.of_array llelts)
+              IArray.map ~f:(xlate_type x) (IArray.of_array llelts)
             in
             Typ.tuple elts ~bits ~byts ~packed
           else
             let name = struct_name llt in
             let elts =
-              Vector.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
+              IArray.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
             in
             Typ.struct_ ~name elts ~bits ~byts ~packed
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
@@ -263,7 +263,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           let llargs = Llvm.param_types llt in
           let len = Array.length llargs in
           let args =
-            Vector.init len ~f:(fun i -> xlate_type x llargs.(i))
+            IArray.init len ~f:(fun i -> xlate_type x llargs.(i))
           in
           Typ.function_ ~return ~args
       | Struct when Llvm.is_opaque llt -> Typ.opaque ~name:(struct_name llt)
@@ -423,17 +423,17 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
         let f i = xlate_value x (Llvm.operand llv i) in
-        Exp.record typ (Vector.init len ~f)
+        Exp.record typ (IArray.init len ~f)
     | ConstantDataVector ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.vector_size (Llvm.type_of llv) in
         let f i = xlate_value x (Llvm.const_element llv i) in
-        Exp.record typ (Vector.init len ~f)
+        Exp.record typ (IArray.init len ~f)
     | ConstantDataArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.array_length (Llvm.type_of llv) in
         let f i = xlate_value x (Llvm.const_element llv i) in
-        Exp.record typ (Vector.init len ~f)
+        Exp.record typ (IArray.init len ~f)
     | ConstantStruct ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let is_recursive =
@@ -443,13 +443,13 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         in
         if is_recursive then
           let elt_thks =
-            Vector.init (Llvm.num_operands llv) ~f:(fun i ->
+            IArray.init (Llvm.num_operands llv) ~f:(fun i ->
                 lazy (xlate_value x (Llvm.operand llv i)) )
           in
           struct_rec ~id:llv typ elt_thks
         else
           Exp.record typ
-            (Vector.init (Llvm.num_operands llv) ~f:(fun i ->
+            (IArray.init (Llvm.num_operands llv) ~f:(fun i ->
                  xlate_value x (Llvm.operand llv i) ))
     | BlockAddress ->
         let parent = find_name (Llvm.operand llv 0) in
@@ -601,7 +601,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
           match (typ : Typ.t) with
           | Tuple {elts} | Struct {elts} ->
               ( Exp.select typ rcd indices.(i)
-              , Vector.get elts indices.(i)
+              , IArray.get elts indices.(i)
               , Exp.update typ ~rcd indices.(i) )
           | Array {elt} ->
               ( Exp.select typ rcd indices.(i)
@@ -776,7 +776,7 @@ let exception_typs =
   let pi8 = Typ.pointer ~elt:Typ.byt in
   let i32 = Typ.integer ~bits:32 ~byts:4 in
   let exc =
-    Typ.tuple ~packed:false (Vector.of_array [|pi8; i32|]) ~bits:96 ~byts:12
+    Typ.tuple ~packed:false (IArray.of_array [|pi8; i32|]) ~bits:96 ~byts:12
   in
   (pi8, i32, exc)
 
@@ -815,12 +815,12 @@ let xlate_jump :
   | [] -> (jmp, blocks)
   | reg_exps ->
       let mov =
-        Llair.Inst.move ~reg_exps:(Vector.of_list_rev reg_exps) ~loc
+        Llair.Inst.move ~reg_exps:(IArray.of_list_rev reg_exps) ~loc
       in
       let lbl = find_name instr ^ ".jmp." ^ dst_lbl in
       let blk =
         Llair.Block.mk ~lbl
-          ~cmnd:(Vector.of_array [|mov|])
+          ~cmnd:(IArray.of_array [|mov|])
           ~term:(Llair.Term.goto ~dst:jmp ~loc)
       in
       let blocks =
@@ -898,7 +898,7 @@ let xlate_instr :
     else
       let reg = xlate_name x instr in
       let exp = xlate instr in
-      let reg_exps = Vector.of_array [|(reg, exp)|] in
+      let reg_exps = IArray.of_array [|(reg, exp)|] in
       emit_inst (Llair.Inst.move ~reg_exps ~loc)
   in
   let opcode = Llvm.instr_opcode instr in
@@ -1052,7 +1052,7 @@ let xlate_instr :
                 ~throw:None ~loc
             in
             continue (fun (insts, term) ->
-                let cmnd = Vector.of_list insts in
+                let cmnd = IArray.of_list insts in
                 ([], call, [Llair.Block.mk ~lbl ~cmnd ~term]) ) ) )
   | Invoke -> (
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
@@ -1149,7 +1149,7 @@ let xlate_instr :
         in
         xlate_cases 1 []
       in
-      let tbl = Vector.of_list cases in
+      let tbl = IArray.of_list cases in
       let blk = Llvm.block_of_value (Llvm.operand instr 1) in
       let els, blocks = xlate_jump x instr blk loc blocks in
       emit_term (Llair.Term.switch ~key ~tbl ~els ~loc) ~blocks
@@ -1168,7 +1168,7 @@ let xlate_instr :
         in
         dests 1 []
       in
-      let tbl = Vector.of_list lldests in
+      let tbl = IArray.of_list lldests in
       emit_term (Llair.Term.iswitch ~ptr ~tbl ~loc) ~blocks
   | LandingPad ->
       (* Translate the landingpad clauses to code to load the type_info from
@@ -1200,14 +1200,14 @@ let xlate_instr :
       let lbl = name ^ ".unwind" in
       let reg = xlate_name x instr in
       let jump_unwind i sel rev_blocks =
-        let exp = Exp.record exc_typ (Vector.of_array [|exc; sel|]) in
+        let exp = Exp.record exc_typ (IArray.of_array [|exc; sel|]) in
         let mov =
-          Llair.Inst.move ~reg_exps:(Vector.of_array [|(reg, exp)|]) ~loc
+          Llair.Inst.move ~reg_exps:(IArray.of_array [|(reg, exp)|]) ~loc
         in
         let lbl_i = lbl ^ "." ^ Int.to_string i in
         let blk =
           Llair.Block.mk ~lbl:lbl_i
-            ~cmnd:(Vector.of_array [|mov|])
+            ~cmnd:(IArray.of_array [|mov|])
             ~term:(Llair.Term.goto ~dst:(Llair.Jump.mk lbl) ~loc)
         in
         (Llair.Jump.mk lbl_i, blk :: rev_blocks)
@@ -1224,7 +1224,7 @@ let xlate_instr :
           let lbl i = name ^ "." ^ Int.to_string i in
           let jump i = Llair.Jump.mk (lbl i) in
           let block i term =
-            Llair.Block.mk ~lbl:(lbl i) ~cmnd:Vector.empty ~term
+            Llair.Block.mk ~lbl:(lbl i) ~cmnd:IArray.empty ~term
           in
           let match_filter i rev_blocks =
             jump_unwind i
@@ -1278,7 +1278,7 @@ let xlate_instr :
           ( [load_ti]
           , term_unwind
           , List.rev_append rev_blocks
-              [Llair.Block.mk ~lbl ~cmnd:(Vector.of_list insts) ~term] ) )
+              [Llair.Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term] ) )
   | Resume ->
       let llrcd = Llvm.operand instr 0 in
       let typ = xlate_type x (Llvm.type_of llrcd) in
@@ -1332,7 +1332,7 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
   let lbl = label_of_block blk in
   let pos = skip_phis blk in
   let insts, term, blocks = xlate_instrs pop x pos in
-  Llair.Block.mk ~lbl ~cmnd:(Vector.of_list insts) ~term :: blocks
+  Llair.Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term :: blocks
   |>
   [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).Llair.lbl]
 
@@ -1375,7 +1375,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
               trav_blocks
                 (List.rev_append (xlate_block pop x blk) rev_cfg)
                 blk
-          | At_end _ -> Vector.of_list_rev rev_cfg
+          | At_end _ -> IArray.of_list_rev rev_cfg
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in

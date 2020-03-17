@@ -56,13 +56,13 @@ let move_spec us reg_exps =
   let xs = Var.Set.empty in
   let foot = Sh.emp in
   let ws, rs =
-    Vector.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
+    IArray.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
       ~f:(fun (ws, rs) (reg, exp) ->
         (Var.Set.add ws reg, Var.Set.union rs (Term.fv exp)) )
   in
   let sub, ms, _ = assign ~ws ~rs ~us in
   let post =
-    Vector.fold reg_exps ~init:Sh.emp ~f:(fun post (reg, exp) ->
+    IArray.fold reg_exps ~init:Sh.emp ~f:(fun post (reg, exp) ->
         Sh.and_ (Term.eq (Term.var reg) (Term.rename sub exp)) post )
   in
   {xs; foot; sub; ms; post}

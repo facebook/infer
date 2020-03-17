@@ -153,8 +153,8 @@ module Array : sig
   val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
 end
 
-module Vector = Vector
-include module type of Vector.Infix
+module IArray = IArray
+include module type of IArray.Infix
 module List = List
 
 type 'a list = 'a List.t [@@deriving compare, equal, hash, sexp]

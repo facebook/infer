@@ -179,7 +179,7 @@ let orient e f =
       | Ap2 (Memory, _, x) -> 1 + height x
       | Ap3 (Extract, x, _, _) -> 1 + height x
       | ApN (Concat, xs) ->
-          1 + Vector.fold ~init:0 ~f:(fun h x -> max h (height x)) xs
+          1 + IArray.fold ~init:0 ~f:(fun h x -> max h (height x)) xs
       | _ -> 0
     in
     let o = compare (rank e) (rank f) in
@@ -237,7 +237,7 @@ let rec solve_extract ?f a o l b s =
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
 and solve_concat ?f a0V b m s =
-  Vector.fold_until a0V ~init:(s, Term.zero)
+  IArray.fold_until a0V ~init:(s, Term.zero)
     ~f:(fun (s, oI) aJ ->
       let nJ = Term.agg_size_exn aJ in
       let oJ = Term.add oI nJ in

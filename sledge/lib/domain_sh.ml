@@ -17,7 +17,7 @@ let simplify_states = ref true
 let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
-  Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
+  IArray.fold globals ~init:Sh.emp ~f:(fun q -> function
     | {Global.reg; init= Some arr} ->
         let loc = Term.var (Reg.var reg) in
         let len = Term.size_of (Exp.typ arr) in
@@ -38,7 +38,7 @@ let exec_assume q b = Exec.assume q (Exp.term b) |> Option.map ~f:simplify
 let exec_kill q r = Exec.kill q (Reg.var r) |> simplify
 
 let exec_move q res =
-  Exec.move q (Vector.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
+  Exec.move q (IArray.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
   |> simplify
 
 let exec_inst pre inst =
@@ -46,7 +46,7 @@ let exec_inst pre inst =
   | Move {reg_exps; _} ->
       Some
         (Exec.move pre
-           (Vector.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
+           (IArray.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
   | Load {reg; ptr; len; _} ->
       Exec.load pre ~reg:(Reg.var reg) ~ptr:(Exp.term ptr)
         ~len:(Exp.term len)
@@ -218,7 +218,7 @@ let retn formals freturn {areturn; subst; frame} q =
         (* pass return value *)
         match freturn with
         | Some freturn ->
-            (Exec.move q (Vector.of_ (areturn, Term.var freturn)), inv_subst)
+            (Exec.move q (IArray.of_ (areturn, Term.var freturn)), inv_subst)
         | None -> (Exec.kill q areturn, inv_subst) )
     | None -> (q, inv_subst)
   in

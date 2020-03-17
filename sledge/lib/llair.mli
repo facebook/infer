@@ -10,7 +10,7 @@
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
-  | Move of {reg_exps: (Reg.t * Exp.t) vector; loc: Loc.t}
+  | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
       (** Move each value [exp] into corresponding register [reg]. All of
           the moves take effect simultaneously. *)
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
@@ -36,7 +36,7 @@ type inst = private
   | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
 
 (** A (straight-line) command is a sequence of instructions. *)
-type cmnd = inst vector
+type cmnd = inst iarray
 
 (** A label is a name of a block. *)
 type label = string
@@ -58,10 +58,10 @@ and 'a call =
 
 (** Block terminators for function call/return or other control transfers. *)
 and term = private
-  | Switch of {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}
+  | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
       (** Invoke the [jump] in [tbl] associated with the integer expression
           [case] which is equal to [key], if any, otherwise invoke [els]. *)
-  | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
+  | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
   | Call of Exp.t call
       (** Call function with arguments. A [global] for non-virtual call. *)
@@ -96,7 +96,7 @@ and func = private
 type functions
 
 type t = private
-  { globals: Global.t vector  (** Global variable definitions. *)
+  { globals: Global.t iarray  (** Global variable definitions. *)
   ; functions: functions  (** (Global) function definitions. *) }
 
 val pp : t pp
@@ -109,7 +109,7 @@ module Inst : sig
   type t = inst
 
   val pp : t pp
-  val move : reg_exps:(Reg.t * Exp.t) vector -> loc:Loc.t -> inst
+  val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
   val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
@@ -143,9 +143,9 @@ module Term : sig
   (** Construct a [Switch] representing a conditional branch. *)
 
   val switch :
-    key:Exp.t -> tbl:(Exp.t * jump) vector -> els:jump -> loc:Loc.t -> term
+    key:Exp.t -> tbl:(Exp.t * jump) iarray -> els:jump -> loc:Loc.t -> term
 
-  val iswitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
+  val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:Loc.t -> term
 
   val call :
        callee:Exp.t
@@ -185,7 +185,7 @@ module Func : sig
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> entry:block
-    -> cfg:block vector
+    -> cfg:block iarray
     -> func
 
   val mk_undefined :

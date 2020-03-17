@@ -10,7 +10,7 @@
 [@@@warning "+9"]
 
 type inst =
-  | Move of {reg_exps: (Reg.t * Exp.t) vector; loc: Loc.t}
+  | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
@@ -22,7 +22,7 @@ type inst =
   | Abort of {loc: Loc.t}
 [@@deriving sexp]
 
-type cmnd = inst vector [@@deriving sexp]
+type cmnd = inst iarray [@@deriving sexp]
 type label = string [@@deriving sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
@@ -38,8 +38,8 @@ and 'a call =
   ; loc: Loc.t }
 
 and term =
-  | Switch of {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}
-  | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
+  | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
+  | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
   | Call of Exp.t call
   | Return of {exp: Exp.t option; loc: Loc.t}
   | Throw of {exc: Exp.t; loc: Loc.t}
@@ -74,9 +74,9 @@ let sexp_of_term = function
   | Switch {key; tbl; els; loc} ->
       sexp_ctor "Switch"
         [%sexp
-          {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}]
+          {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}]
   | Iswitch {ptr; tbl; loc} ->
-      sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump vector; loc: Loc.t}]
+      sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}]
   | Call {callee; typ; actuals; areturn; return; throw; recursive; loc} ->
       sexp_ctor "Call"
         [%sexp
@@ -116,16 +116,16 @@ let equal_block x y = Int.equal x.sort_index y.sort_index
 
 type functions = func String.Map.t [@@deriving sexp_of]
 
-type t = {globals: Global.t vector; functions: functions}
+type t = {globals: Global.t iarray; functions: functions}
 [@@deriving sexp_of]
 
 let pp_inst fs inst =
   let pf pp = Format.fprintf fs pp in
   match inst with
   | Move {reg_exps; loc} ->
-      let regs, exps = Vector.unzip reg_exps in
-      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (Vector.pp ",@ " Reg.pp) regs
-        (Vector.pp ",@ " Exp.pp) exps Loc.pp loc
+      let regs, exps = IArray.unzip reg_exps in
+      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs
+        (IArray.pp ",@ " Exp.pp) exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
       pf "@[<2>%a@ := load %a@ %a;@]\t%a" Reg.pp reg Exp.pp len Exp.pp ptr
         Loc.pp loc
@@ -167,19 +167,19 @@ let pp_term fs term =
   let pp_goto fs jmp = Format.fprintf fs "goto %a;" pp_jump jmp in
   match term with
   | Switch {key; tbl; els; loc} -> (
-    match Vector.to_array tbl with
+    match IArray.to_array tbl with
     | [||] -> pf "@[%a@]\t%a" pp_goto els Loc.pp loc
     | [|(z, jmp)|] when Exp.is_false z ->
         pf "@[if %a@;<1 2>%a@ @[else@;<1 2>%a@]@]\t%a" Exp.pp key pp_goto
           els pp_goto jmp Loc.pp loc
     | _ ->
         pf "@[<2>switch %a@ @[%a@ else: %a@]@]\t%a" Exp.pp key
-          (Vector.pp "@ " (fun fs (case, jmp) ->
+          (IArray.pp "@ " (fun fs (case, jmp) ->
                Format.fprintf fs "%a: %a" Exp.pp case pp_goto jmp ))
           tbl pp_goto els Loc.pp loc )
   | Iswitch {ptr; tbl; loc} ->
       pf "@[<2>iswitch %a@ @[<hv>%a@]@]\t%a" Exp.pp ptr
-        (Vector.pp "@ " (fun fs jmp ->
+        (IArray.pp "@ " (fun fs jmp ->
              Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ))
         tbl Loc.pp loc
   | Call {callee; actuals; areturn; return; throw; recursive; loc; _} ->
@@ -195,19 +195,19 @@ let pp_term fs term =
   | Throw {exc; loc} -> pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
   | Unreachable -> pf "unreachable"
 
-let pp_cmnd = Vector.pp "@ " pp_inst
+let pp_cmnd = IArray.pp "@ " pp_inst
 
 let pp_block fs {lbl; cmnd; term; parent= _; sort_index} =
   Format.fprintf fs "@[<v 2>%%%s: #%i@ @[<v>%a%t%a@]@]" lbl sort_index
     pp_cmnd cmnd
-    (fun fs -> if Vector.is_empty cmnd then () else Format.fprintf fs "@ ")
+    (fun fs -> if IArray.is_empty cmnd then () else Format.fprintf fs "@ ")
     pp_term term
 
 (** Initial cyclic values *)
 
 let rec dummy_block =
   { lbl= "dummy"
-  ; cmnd= Vector.empty
+  ; cmnd= IArray.empty
   ; term= Unreachable
   ; parent= dummy_func
   ; sort_index= 0 }
@@ -254,7 +254,7 @@ module Inst = struct
   let union_locals inst vs =
     match inst with
     | Move {reg_exps; _} ->
-        Vector.fold
+        IArray.fold
           ~f:(fun vs (reg, _) -> Reg.Set.add vs reg)
           ~init:vs reg_exps
     | Load {reg; _} | Alloc {reg; _} | Nondet {reg= Some reg; _} ->
@@ -269,7 +269,7 @@ module Inst = struct
   let fold_exps inst ~init ~f =
     match inst with
     | Move {reg_exps; loc= _} ->
-        Vector.fold reg_exps ~init ~f:(fun acc (_reg, exp) -> f acc exp)
+        IArray.fold reg_exps ~init ~f:(fun acc (_reg, exp) -> f acc exp)
     | Load {reg= _; ptr; len; loc= _} -> f (f init ptr) len
     | Store {ptr; exp; len; loc= _} -> f (f (f init ptr) exp) len
     | Memset {dst; byt; len; loc= _} -> f (f (f init dst) byt) len
@@ -307,7 +307,7 @@ module Term = struct
     | Call {typ; actuals; areturn; _} -> (
       match typ with
       | Pointer {elt= Function {args; return= retn_typ; _}} ->
-          assert (Vector.length args = List.length actuals) ;
+          assert (IArray.length args = List.length actuals) ;
           assert (Option.is_some retn_typ || Option.is_none areturn)
       | _ -> assert false )
     | Return {exp; _} -> (
@@ -318,11 +318,11 @@ module Term = struct
     | Throw _ | Unreachable -> assert true
 
   let goto ~dst ~loc =
-    Switch {key= Exp.false_; tbl= Vector.empty; els= dst; loc}
+    Switch {key= Exp.false_; tbl= IArray.empty; els= dst; loc}
     |> check invariant
 
   let branch ~key ~nzero ~zero ~loc =
-    let tbl = Vector.of_array [|(Exp.false_, zero)|] in
+    let tbl = IArray.of_array [|(Exp.false_, zero)|] in
     let els = nzero in
     Switch {key; tbl; els; loc} |> check invariant
 
@@ -398,7 +398,7 @@ module Func = struct
   type t = func [@@deriving sexp_of]
 
   let is_undefined = function
-    | {entry= {cmnd; term= Unreachable; _}; _} -> Vector.is_empty cmnd
+    | {entry= {cmnd; term= Unreachable; _}; _} -> IArray.is_empty cmnd
     | _ -> false
 
   let fold_cfg ~init ~f func =
@@ -410,9 +410,9 @@ module Func = struct
           let f s j = fold_cfg_ s j.dst in
           match blk.term with
           | Switch {tbl; els; _} ->
-              let s = Vector.fold ~f:(fun s (_, j) -> f s j) ~init:s tbl in
+              let s = IArray.fold ~f:(fun s (_, j) -> f s j) ~init:s tbl in
               f s els
-          | Iswitch {tbl; _} -> Vector.fold ~f ~init:s tbl
+          | Iswitch {tbl; _} -> IArray.fold ~f ~init:s tbl
           | Call {return; throw; _} ->
               let s = f s return in
               Option.fold ~f ~init:s throw
@@ -472,40 +472,40 @@ module Func = struct
   let mk ~(name : Global.t) ~formals ~freturn ~fthrow ~entry ~cfg =
     let locals =
       let locals_cmnd locals cmnd =
-        Vector.fold_right ~f:Inst.union_locals cmnd ~init:locals
+        IArray.fold_right ~f:Inst.union_locals cmnd ~init:locals
       in
       let locals_block locals block =
         locals_cmnd (Term.union_locals block.term locals) block.cmnd
       in
       let init = locals_block Reg.Set.empty entry in
-      Vector.fold ~f:locals_block cfg ~init
+      IArray.fold ~f:locals_block cfg ~init
     in
     let func = {name; formals; freturn; fthrow; locals; entry} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
-        Vector.find_exn cfg ~f:(fun k -> String.equal lbl k.lbl)
+        IArray.find_exn cfg ~f:(fun k -> String.equal lbl k.lbl)
       in
       let set_dst jmp = jmp.dst <- lookup cfg jmp.dst.lbl in
       match block.term with
       | Switch {tbl; els; _} ->
-          Vector.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
+          IArray.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
           set_dst els
-      | Iswitch {tbl; _} -> Vector.iter tbl ~f:set_dst
+      | Iswitch {tbl; _} -> IArray.iter tbl ~f:set_dst
       | Call {return; throw; _} ->
           set_dst return ;
           Option.iter throw ~f:set_dst
       | Return _ | Throw _ | Unreachable -> ()
     in
     resolve_parent_and_jumps entry ;
-    Vector.iter cfg ~f:resolve_parent_and_jumps ;
+    IArray.iter cfg ~f:resolve_parent_and_jumps ;
     func |> check invariant
 
   let mk_undefined ~name ~formals ~freturn ~fthrow =
     let entry =
-      Block.mk ~lbl:"" ~cmnd:Vector.empty ~term:Term.unreachable
+      Block.mk ~lbl:"" ~cmnd:IArray.empty ~term:Term.unreachable
     in
-    let cfg = Vector.empty in
+    let cfg = IArray.empty in
     mk ~name ~entry ~formals ~freturn ~fthrow ~cfg
 end
 
@@ -539,9 +539,9 @@ let set_derived_metadata functions =
         in
         ( match src.term with
         | Switch {tbl; els; _} ->
-            Vector.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
+            IArray.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
-        | Iswitch {tbl; _} -> Vector.iter tbl ~f:jump
+        | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
                 Option.bind ~f:(Func.find functions)
@@ -582,17 +582,17 @@ let invariant pgm =
   @@ fun () ->
   assert (
     not
-      (Vector.contains_dup pgm.globals ~compare:(fun g1 g2 ->
+      (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->
            Reg.compare g1.Global.reg g2.Global.reg )) )
 
 let mk ~globals ~functions =
-  { globals= Vector.of_list_rev globals
+  { globals= IArray.of_list_rev globals
   ; functions= set_derived_metadata functions }
   |> check invariant
 
 let pp fs {globals; functions} =
   Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
-    (Vector.pp "@\n@\n" Global.pp_defn)
+    (IArray.pp "@\n@\n" Global.pp_defn)
     globals
     (List.pp "@\n@\n" Func.pp)
     ( String.Map.data functions

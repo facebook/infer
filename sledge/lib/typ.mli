@@ -8,7 +8,7 @@
 (** Types *)
 
 type t = private
-  | Function of {return: t option; args: t vector}
+  | Function of {return: t option; args: t iarray}
       (** (Global) function names have type Pointer to Function. *)
   | Integer of {bits: int; byts: int}  (** Integer of given bitwidth. *)
   | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
@@ -16,10 +16,10 @@ type t = private
   | Pointer of {elt: t}  (** Pointer to element type. *)
   | Array of {elt: t; len: int; bits: int; byts: int}
       (** Statically-sized array of [len] elements of type [elt]. *)
-  | Tuple of {elts: t vector; bits: int; byts: int; packed: bool}
+  | Tuple of {elts: t iarray; bits: int; byts: int; packed: bool}
       (** Anonymous aggregate of heterogeneous types. *)
   | Struct of
-      {name: string; elts: t vector; bits: int; byts: int; packed: bool}
+      {name: string; elts: t iarray; bits: int; byts: int; packed: bool}
       (** Uniquely named aggregate of heterogeneous types. Every cycle of
           recursive types contains a [Struct]. NOTE: recursive [Struct]
           types are represented by cyclic values. *)
@@ -39,15 +39,15 @@ val byt : t
 val int : t
 val siz : t
 val ptr : t
-val function_ : return:t option -> args:t vector -> t
+val function_ : return:t option -> args:t iarray -> t
 val integer : bits:int -> byts:int -> t
 val float : bits:int -> byts:int -> enc:[`Extended | `IEEE | `Pair] -> t
 val pointer : elt:t -> t
 val array : elt:t -> len:int -> bits:int -> byts:int -> t
-val tuple : t vector -> bits:int -> byts:int -> packed:bool -> t
+val tuple : t iarray -> bits:int -> byts:int -> packed:bool -> t
 
 val struct_ :
-  name:string -> bits:int -> byts:int -> packed:bool -> t lazy_t vector -> t
+  name:string -> bits:int -> byts:int -> packed:bool -> t lazy_t iarray -> t
 
 val opaque : name:string -> t
 

@@ -11,13 +11,13 @@ module type Dom = sig
 
   val pp : t pp
   val report_fmt_thunk : t -> Format.formatter -> unit
-  val init : Global.t vector -> t
+  val init : Global.t iarray -> t
   val join : t -> t -> t option
   val is_false : t -> bool
   val dnf : t -> t list
   val exec_assume : t -> Exp.t -> t option
   val exec_kill : t -> Reg.t -> t
-  val exec_move : t -> (Reg.t * Exp.t) vector -> t
+  val exec_move : t -> (Reg.t * Exp.t) iarray -> t
   val exec_inst : t -> Llair.inst -> t option
 
   val exec_intrinsic :

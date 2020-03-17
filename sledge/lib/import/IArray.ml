@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Vector - Immutable view of an array *)
+(** IArray - Immutable view of an array *)
 
 module Array = Base.Array
 module Hash = Base.Hash
@@ -26,7 +26,7 @@ let t_of_sexp a_of_sexp s = v (Array.t_of_sexp a_of_sexp s)
 let sexp_of_t sexp_of_a x = Array.sexp_of_t sexp_of_a (a x)
 
 module Infix = struct
-  type +'a vector = 'a t [@@deriving compare, equal, hash, sexp]
+  type +'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
 let to_list x = Array.to_list (a x)

@@ -23,7 +23,7 @@ module type S = sig
   val of_ : elt -> t
   val of_option : elt option -> t
   val of_list : elt list -> t
-  val of_vector : elt Vector.t -> t
+  val of_vector : elt IArray.t -> t
 
   (* constructors *)
   val add : t -> elt -> t

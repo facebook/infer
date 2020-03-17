@@ -8,15 +8,15 @@
 (** Types *)
 
 type t =
-  | Function of {return: t option; args: t vector}
+  | Function of {return: t option; args: t iarray}
   | Integer of {bits: int; byts: int}
   | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
   | Pointer of {elt: t}
   | Array of {elt: t; len: int; bits: int; byts: int}
-  | Tuple of {elts: t vector; bits: int; byts: int; packed: bool}
+  | Tuple of {elts: t iarray; bits: int; byts: int; packed: bool}
   | Struct of
       { name: string
-      ; elts: t vector (* possibly cyclic, name unique *)
+      ; elts: t iarray (* possibly cyclic, name unique *)
             [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
       ; bits: int
       ; byts: int
@@ -48,7 +48,7 @@ let rec pp fs typ =
       pf "%s @[%a@] %s" opn pps elts cls
   | Struct {name} | Opaque {name} -> pf "%%%s" name
 
-and pps fs typs = Vector.pp ",@ " pp fs typs
+and pps fs typs = IArray.pp ",@ " pp fs typs
 
 let pp_defn fs = function
   | Struct {name; elts; packed} ->
@@ -70,9 +70,9 @@ let invariant t =
   match t with
   | Function {return; args} ->
       assert (Option.for_all ~f:is_sized return) ;
-      assert (Vector.for_all ~f:is_sized args)
+      assert (IArray.for_all ~f:is_sized args)
   | Array {elt} -> assert (is_sized elt)
-  | Tuple {elts} | Struct {elts} -> assert (Vector.for_all ~f:is_sized elts)
+  | Tuple {elts} | Struct {elts} -> assert (IArray.for_all ~f:is_sized elts)
   | Integer {bits} | Float {bits} -> assert (bits > 0)
   | Pointer _ | Opaque _ -> assert true
 
@@ -100,12 +100,12 @@ let struct_ =
     | None ->
         (* Add placeholder defn to prevent computing [elts] in calls to
            [struct] from [elts] for recursive occurrences of [name]. *)
-        let elts = Array.create ~len:(Vector.length elt_thks) dummy_typ in
+        let elts = Array.create ~len:(IArray.length elt_thks) dummy_typ in
         let typ =
-          Struct {name; elts= Vector.of_array elts; bits; byts; packed}
+          Struct {name; elts= IArray.of_array elts; bits; byts; packed}
         in
         Hashtbl.set defns ~key:name ~data:typ ;
-        Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;
+        IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;
         typ |> check invariant
 
 (** Constants *)

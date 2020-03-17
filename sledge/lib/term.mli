@@ -78,8 +78,8 @@ and T : sig
     | Ap1 of op1 * t  (** Unary application *)
     | Ap2 of op2 * t * t  (** Binary application *)
     | Ap3 of op3 * t * t * t  (** Ternary application *)
-    | ApN of opN * t vector  (** N-ary application *)
-    | RecN of recN * t vector
+    | ApN of opN * t iarray  (** N-ary application *)
+    | RecN of recN * t iarray
         (** Recursive n-ary application, may recursively refer to itself
             (transitively) from its args. NOTE: represented by cyclic
             values. *)
@@ -214,7 +214,7 @@ val concat : t array -> t
 val eq_concat : t * t -> (t * t) array -> t
 
 (* records (struct / array values) *)
-val record : t vector -> t
+val record : t iarray -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 
@@ -223,7 +223,7 @@ val rec_app :
      (module Hashtbl.Key.S with type t = 'id)
   -> id:'id
   -> recN
-  -> t lazy_t vector
+  -> t lazy_t iarray
   -> t
 
 val size_of : Typ.t -> t

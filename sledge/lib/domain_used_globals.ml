@@ -14,7 +14,7 @@ let report_fmt_thunk = Fun.flip pp
 let empty = Reg.Set.empty
 
 let init globals =
-  [%Trace.info "pgm globals: {%a}" (Vector.pp ", " Global.pp) globals] ;
+  [%Trace.info "pgm globals: {%a}" (IArray.pp ", " Global.pp) globals] ;
   empty
 
 let join l r = Some (Reg.Set.union l r)
@@ -34,7 +34,7 @@ let exec_assume st exp = Some (used_globals ~init:st exp)
 let exec_kill st _ = st
 
 let exec_move st reg_exps =
-  Vector.fold reg_exps ~init:st ~f:(fun st (_, rhs) ->
+  IArray.fold reg_exps ~init:st ~f:(fun st (_, rhs) ->
       used_globals ~init:st rhs )
 
 let exec_inst st inst =

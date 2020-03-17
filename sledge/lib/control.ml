@@ -328,7 +328,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let exit_state =
       match (freturn, exp) with
       | Some freturn, Some return_val ->
-          Dom.exec_move pre_state (Vector.of_ (freturn, return_val))
+          Dom.exec_move pre_state (IArray.of_ (freturn, return_val))
       | None, None -> pre_state
       | _ -> violates Llair.Func.invariant block.parent
     in
@@ -360,7 +360,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     | Some (from_call, retn_site, stk, unwind_state) ->
         let fthrow = func.fthrow in
         let exit_state =
-          Dom.exec_move unwind_state (Vector.of_ (fthrow, exc))
+          Dom.exec_move unwind_state (IArray.of_ (fthrow, exc))
         in
         let post_state = Dom.post func.locals from_call exit_state in
         let retn_state =
@@ -390,7 +390,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
     match block.term with
     | Switch {key; tbl; els} ->
-        Vector.fold tbl
+        IArray.fold tbl
           ~f:(fun x (case, jump) ->
             match Dom.exec_assume state (Exp.eq key case) with
             | Some state -> exec_jump stk state block jump |> Work.seq x
@@ -398,13 +398,13 @@ module Make (Dom : Domain_intf.Dom) = struct
           ~init:
             ( match
                 Dom.exec_assume state
-                  (Vector.fold tbl ~init:Exp.true_ ~f:(fun b (case, _) ->
+                  (IArray.fold tbl ~init:Exp.true_ ~f:(fun b (case, _) ->
                        Exp.and_ (Exp.dq key case) b ))
               with
             | Some state -> exec_jump stk state block els
             | None -> Work.skip )
     | Iswitch {ptr; tbl} ->
-        Vector.fold tbl ~init:Work.skip ~f:(fun x (jump : Llair.jump) ->
+        IArray.fold tbl ~init:Work.skip ~f:(fun x (jump : Llair.jump) ->
             match
               Dom.exec_assume state
                 (Exp.eq ptr
@@ -458,7 +458,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =
    fun opts pgm stk state block ->
     [%Trace.info "exec block %%%s" block.lbl] ;
-    match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
+    match IArray.fold_result ~f:exec_inst ~init:state block.cmnd with
     | Ok state -> exec_term opts pgm stk state block
     | Error (state, inst) ->
         Report.invalid_access_inst (Dom.report_fmt_thunk state) inst ;

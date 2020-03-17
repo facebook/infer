@@ -217,12 +217,12 @@ let exec_kill q r =
 (** perform a series [move_vec] of reg:=exp moves at state [q] *)
 let exec_move q move_vec =
   let defs, uses =
-    Vector.fold move_vec ~init:(Reg.Set.empty, Reg.Set.empty)
+    IArray.fold move_vec ~init:(Reg.Set.empty, Reg.Set.empty)
       ~f:(fun (defs, uses) (r, e) ->
         (Reg.Set.add defs r, Exp.fold_regs e ~init:uses ~f:Reg.Set.add) )
   in
   assert (Reg.Set.disjoint defs uses) ;
-  Vector.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
+  IArray.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
 
 let exec_inst q i =
   match (i : Llair.inst) with

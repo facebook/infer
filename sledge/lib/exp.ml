@@ -74,7 +74,7 @@ module T = struct
     | Ap1 of op1 * Typ.t * t
     | Ap2 of op2 * Typ.t * t * t
     | Ap3 of op3 * Typ.t * t * t * t
-    | ApN of opN * Typ.t * t vector
+    | ApN of opN * Typ.t * t iarray
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -174,7 +174,7 @@ let rec pp fs exp =
     | Ap3 (Conditional, _, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
     | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-    | ApN (Struct_rec, _, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
+    | ApN (Struct_rec, _, elts) -> pf "{|%a|}" (IArray.pp ",@ " pp) elts
   in
   fix_flip pp_ (fun _ _ -> ()) fs exp
   [@@warning "-9"]
@@ -184,20 +184,20 @@ and pp_record fs elts =
     fs "%a"
       (fun fs elts ->
         match
-          String.init (Vector.length elts) ~f:(fun i ->
-              match (Vector.get elts i).desc with
+          String.init (IArray.length elts) ~f:(fun i ->
+              match (IArray.get elts i).desc with
               | Integer {data} -> Char.of_int_exn (Z.to_int data)
               | _ -> raise (Invalid_argument "not a string") )
         with
         | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
         | exception _ ->
-            Format.fprintf fs "@[<h>%a@]" (Vector.pp ",@ " pp) elts )
+            Format.fprintf fs "@[<h>%a@]" (IArray.pp ",@ " pp) elts )
       elts]
   [@@warning "-9"]
 
 (** Invariant *)
 
-let valid_idx idx elts = 0 <= idx && idx < Vector.length elts
+let valid_idx idx elts = 0 <= idx && idx < IArray.length elts
 
 let rec invariant exp =
   Invariant.invariant [%here] exp [%sexp_of: t]
@@ -242,7 +242,7 @@ let rec invariant exp =
       match typ with
       | Tuple {elts} | Struct {elts} ->
           assert (valid_idx idx elts) ;
-          assert (Typ.castable (Vector.get elts idx) (typ_of elt))
+          assert (Typ.castable (IArray.get elts idx) (typ_of elt))
       | Array {elt= typ_elt} -> assert (Typ.castable typ_elt (typ_of elt))
       | _ -> assert false )
   | Ap2 (op, typ, x, y) -> (
@@ -266,12 +266,12 @@ let rec invariant exp =
     match typ with
     | Array {elt} ->
         assert (
-          Vector.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg))
+          IArray.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg))
         )
     | Tuple {elts} | Struct {elts} ->
-        assert (Vector.length elts = Vector.length args) ;
+        assert (IArray.length elts = IArray.length args) ;
         assert (
-          Vector.for_all2_exn elts args ~f:(fun typ arg ->
+          IArray.for_all2_exn elts args ~f:(fun typ arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
   [@@warning "-9"]
@@ -286,7 +286,7 @@ and typ_of exp =
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array {elt} -> elt
-    | Tuple {elts} | Struct {elts} -> Vector.get elts idx
+    | Tuple {elts} | Struct {elts} -> IArray.get elts idx
     | _ -> violates invariant exp )
   | Ap2
       ( (Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Ord | Uno)
@@ -466,7 +466,7 @@ let splat typ byt =
 
 let record typ elts =
   { desc= ApN (Record, typ, elts)
-  ; term= Term.record (Vector.map ~f:(fun elt -> elt.term) elts) }
+  ; term= Term.record (IArray.map ~f:(fun elt -> elt.term) elts) }
   |> check invariant
 
 let select typ rcd idx =
@@ -486,13 +486,13 @@ let struct_rec key =
     | None ->
         (* Add placeholder to prevent computing [elts] in calls to
            [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
-        let elta = Array.create ~len:(Vector.length elt_thks) null in
-        let elts = Vector.of_array elta in
+        let elta = Array.create ~len:(IArray.length elt_thks) null in
+        let elts = IArray.of_array elta in
         Hashtbl.set memo_id ~key:id ~data:elts ;
         let term =
-          rec_app ~id (Vector.map ~f:(fun elt -> lazy elt.term) elts)
+          rec_app ~id (IArray.map ~f:(fun elt -> lazy elt.term) elts)
         in
-        Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
+        IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
         {desc= ApN (Struct_rec, typ, elts); term} |> check invariant
     | Some elts ->
         (* Do not check invariant as invariant will be checked above after
@@ -501,7 +501,7 @@ let struct_rec key =
            constructed here shares the array in the memo table, so that the
            update after forcing the recursive thunks also updates this
            value. *)
-        {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
+        {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id IArray.empty}
 
 let size_of exp = integer Typ.siz (Z.of_int (Typ.size_of (typ exp)))
 
@@ -515,7 +515,7 @@ let fold_exps e ~init ~f =
       | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
       | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
       | ApN (_, _, xs) ->
-          Vector.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
+          IArray.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
       | _ -> z
     in
     f z e
