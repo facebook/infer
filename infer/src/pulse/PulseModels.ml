@@ -400,7 +400,9 @@ module ProcNameDispatcher = struct
   let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
-    let pushback_modeled = StringSet.of_list ["add"; "put"; "addAll"; "putAll"; "remove"] in
+    let pushback_modeled =
+      StringSet.of_list ["add"; "addAll"; "append"; "remove"; "replace"; "poll"; "put"; "putAll"]
+    in
     make_dispatcher
       [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
       ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
@@ -468,6 +470,15 @@ module ProcNameDispatcher = struct
         $--> StdVector.invalidate_references ShrinkToFit
       ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; +PatternMatch.implements_collection
+        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+        <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_queue
+        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+        <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_lang "StringBuilder"
+        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+        <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_lang "String"
         &::+ (fun _ str -> StringSet.mem str pushback_modeled)
         <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload

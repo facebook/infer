@@ -7,6 +7,7 @@
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Queue;
 
 class PurityModeled {
 
@@ -132,5 +133,30 @@ class PurityModeled {
   void clone_pure(ArrayList<String> list) {
     ArrayList<String> cloned = (ArrayList<String>) list.clone();
     cloned.add(""); // no change the list
+  }
+
+  String replace_impure(String s) {
+    return s.replace('a', 'f');
+  }
+
+  void process_queue_impure(ArrayList<Integer> list, Queue<Integer> queue) {
+    for (Integer el : list) {
+      queue.add(el);
+    }
+  }
+
+  void append_impure(StringBuilder strBuilder) {
+    strBuilder.append("JavaGuru");
+  }
+
+  void append_pure() {
+    StringBuilder strBuilder = new StringBuilder("Core");
+    strBuilder.append("JavaGuru");
+  }
+
+  // Our model of Iterator.next is wrong. It should be modeled as
+  // impure.
+  Integer next_impure_FN(Iterator<Integer> it) {
+    return it.next();
   }
 }
