@@ -29,6 +29,7 @@ external ( != ) : 'a -> 'a -> bool = "%noteq"
 include module type of Stdio
 module Command = Core.Command
 module Hash_queue = Core_kernel.Hash_queue
+include module type of Import0
 
 (** Tuple operations *)
 
@@ -62,14 +63,6 @@ val ( $> ) : 'a -> ('a -> unit) -> 'a
 val ( <$ ) : ('a -> unit) -> 'a -> 'a
 (** Apply and ignore function: [f <$ x] is exactly equivalent to [f x ; x].
     Left associative. *)
-
-(** Pretty-printing *)
-
-(** Pretty-printer for argument type. *)
-type 'a pp = Formatter.t -> 'a -> unit
-
-(** Format strings. *)
-type ('a, 'b) fmt = ('a, 'b) Trace.fmt
 
 (** Failures *)
 
@@ -109,20 +102,6 @@ val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
 (** Extensions *)
 
 module Invariant : module type of Base.Invariant
-
-module type Applicative_syntax = sig
-  type 'a t
-
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
-end
-
-module type Monad_syntax = sig
-  include Applicative_syntax
-
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-end
 
 module Option : sig
   include module type of Base.Option

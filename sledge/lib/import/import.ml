@@ -30,6 +30,7 @@ exception Not_found = Caml.Not_found
 include Stdio
 module Command = Core.Command
 module Hash_queue = Core_kernel.Hash_queue
+include Import0
 
 (** Tuple operations *)
 
@@ -44,11 +45,6 @@ let ( << ) f g x = f (g x)
 let ( $ ) f g x = f x ; g x
 let ( $> ) x f = f x ; x
 let ( <$ ) f x = f x ; x
-
-(** Pretty-printing *)
-
-type 'a pp = Formatter.t -> 'a -> unit
-type ('a, 'b) fmt = ('a, 'b) Trace.fmt
 
 (** Failures *)
 
@@ -134,20 +130,6 @@ let filter_map_preserving_phys_equal filter_map t ~f =
         x'_opt )
   in
   if !change then t' else t
-
-module type Applicative_syntax = sig
-  type 'a t
-
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
-end
-
-module type Monad_syntax = sig
-  include Applicative_syntax
-
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-end
 
 module Option = struct
   include Base.Option
