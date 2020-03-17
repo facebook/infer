@@ -55,7 +55,7 @@ watch:
 .PHONY: test
 test:
 	-dune build @_build/dbg/runtest --auto-promote
-	dune build @fmt --auto-promote
+	dune build @_build/dbg/fmt --auto-promote 2>/dev/null
 
 .PHONY: ci-test
 ci-test:
@@ -67,7 +67,7 @@ clean:
 
 .PHONY: fmt
 fmt:
-	dune build @fmt --auto-promote
+	dune build @_build/dbg/fmt --auto-promote 2>/dev/null
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt
 
