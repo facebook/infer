@@ -12,8 +12,9 @@ include module type of (
     sig
       include
         (module type of Base
+          with module Option := Base.Option
           (* prematurely deprecated, remove and use Stdlib instead *)
-          with module Filename := Base.Filename
+           and module Filename := Base.Filename
            and module Format := Base.Format
            and module Marshal := Base.Marshal
            and module Scanf := Base.Scanf
@@ -102,18 +103,7 @@ val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
 (** Extensions *)
 
 module Invariant : module type of Base.Invariant
-
-module Option : sig
-  include module type of Base.Option
-
-  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
-  (** Pretty-print an option. *)
-
-  val cons : 'a t -> 'a list -> 'a list
-
-  module Monad_syntax : Monad_syntax
-end
-
+module Option = Option
 include module type of Option.Monad_infix
 include module type of Option.Monad_syntax with type 'a t = 'a option
 

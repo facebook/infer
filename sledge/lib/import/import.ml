@@ -12,8 +12,9 @@ include (
     sig
       include
         (module type of Base
+          with module Option := Base.Option
           (* prematurely deprecated, remove and use Stdlib instead *)
-          with module Filename := Base.Filename
+           and module Filename := Base.Filename
            and module Format := Base.Format
            and module Marshal := Base.Marshal
            and module Scanf := Base.Scanf
@@ -131,25 +132,7 @@ let filter_map_preserving_phys_equal filter_map t ~f =
   in
   if !change then t' else t
 
-module Option = struct
-  include Base.Option
-
-  let pp fmt pp_elt fs = function
-    | Some x -> Format.fprintf fs fmt pp_elt x
-    | None -> ()
-
-  let cons xo xs = match xo with Some x -> x :: xs | None -> xs
-
-  module Monad_syntax = struct
-    type nonrec 'a t = 'a t
-
-    let ( let+ ) x f = map ~f x
-    let ( and+ ) x y = both x y
-    let ( let* ) x f = bind ~f x
-    let ( and* ) x y = both x y
-  end
-end
-
+module Option = Option
 include Option.Monad_infix
 include Option.Monad_syntax
 

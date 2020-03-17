@@ -1,0 +1,27 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+open (
+  Base :
+    (module type of Base with module Format := Base.Format [@warning "-3"]) )
+
+include Base.Option
+
+let pp fmt pp_elt fs = function
+  | Some x -> Format.fprintf fs fmt pp_elt x
+  | None -> ()
+
+let cons xo xs = match xo with Some x -> x :: xs | None -> xs
+
+module Monad_syntax = struct
+  type nonrec 'a t = 'a t
+
+  let ( let+ ) x f = map ~f x
+  let ( and+ ) x y = both x y
+  let ( let* ) x f = bind ~f x
+  let ( and* ) x y = both x y
+end
