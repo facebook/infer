@@ -167,6 +167,7 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
 
 (** command line interface *)
 
+module Command = Core.Command
 open Command.Let_syntax
 
 let ( |*> ) a' f' = a' |> Command.Param.apply f'

@@ -9,6 +9,7 @@
 
 let () = Printexc.record_backtrace Version.debug
 
+module Command = Core.Command
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t

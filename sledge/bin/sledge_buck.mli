@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Command = Core.Command
+
 val main :
      command:unit Command.basic_command
   -> analyze:(string list -> unit -> unit) Command.Param.t

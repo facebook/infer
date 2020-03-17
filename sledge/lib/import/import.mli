@@ -8,7 +8,6 @@
 (** Global namespace opened in each source file by the build system *)
 
 include module type of Stdio
-module Command = Core.Command
 include module type of Import0
 
 (** Tuple operations *)
