@@ -33,3 +33,5 @@ module type OrderedType = sig
   val compare : t -> t -> int
   val sexp_of_t : t -> Sexp.t
 end
+
+exception Duplicate
