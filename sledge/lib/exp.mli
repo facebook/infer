@@ -189,7 +189,10 @@ val update : Typ.t -> rcd:t -> int -> elt:t -> t
 
 val struct_rec :
      (module Hashtbl.Key.S with type t = 'id)
-  -> (id:'id -> Typ.t -> t lazy_t vector -> t) Staged.t
+  -> id:'id
+  -> Typ.t
+  -> t lazy_t vector
+  -> t
 (** [struct_rec Id id element_thunks] constructs a possibly-cyclic [Struct]
     value. Cycles are detected using [Id]. The caller of [struct_rec Id]
     must ensure that a single unstaging of [struct_rec Id] is used for each

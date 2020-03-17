@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open (
-  Base :
-    (module type of Base with module Format := Base.Format [@warning "-3"]) )
-
 include Base.Option
 
 let pp fmt pp_elt fs = function

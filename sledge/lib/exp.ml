@@ -480,28 +480,28 @@ let update typ ~rcd idx ~elt =
 
 let struct_rec key =
   let memo_id = Hashtbl.create key in
-  let rec_app = (Staged.unstage (Term.rec_app key)) Term.Record in
-  Staged.stage
-  @@ fun ~id typ elt_thks ->
-  match Hashtbl.find memo_id id with
-  | None ->
-      (* Add placeholder to prevent computing [elts] in calls to
-         [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
-      let elta = Array.create ~len:(Vector.length elt_thks) null in
-      let elts = Vector.of_array elta in
-      Hashtbl.set memo_id ~key:id ~data:elts ;
-      let term =
-        rec_app ~id (Vector.map ~f:(fun elt -> lazy elt.term) elts)
-      in
-      Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      {desc= ApN (Struct_rec, typ, elts); term} |> check invariant
-  | Some elts ->
-      (* Do not check invariant as invariant will be checked above after the
-         thunks are forced, before which invariant-checking may spuriously
-         fail. Note that it is important that the value constructed here
-         shares the array in the memo table, so that the update after
-         forcing the recursive thunks also updates this value. *)
-      {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
+  let rec_app = (Term.rec_app key) Term.Record in
+  fun ~id typ elt_thks ->
+    match Hashtbl.find memo_id id with
+    | None ->
+        (* Add placeholder to prevent computing [elts] in calls to
+           [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
+        let elta = Array.create ~len:(Vector.length elt_thks) null in
+        let elts = Vector.of_array elta in
+        Hashtbl.set memo_id ~key:id ~data:elts ;
+        let term =
+          rec_app ~id (Vector.map ~f:(fun elt -> lazy elt.term) elts)
+        in
+        Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
+        {desc= ApN (Struct_rec, typ, elts); term} |> check invariant
+    | Some elts ->
+        (* Do not check invariant as invariant will be checked above after
+           the thunks are forced, before which invariant-checking may
+           spuriously fail. Note that it is important that the value
+           constructed here shares the array in the memo table, so that the
+           update after forcing the recursive thunks also updates this
+           value. *)
+        {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
 
 let size_of exp = integer Typ.siz (Z.of_int (Typ.size_of (typ exp)))
 

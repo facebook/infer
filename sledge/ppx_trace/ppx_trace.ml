@@ -83,7 +83,7 @@ let mapper =
   in
   let expr (m : Ast_mapper.mapper) exp =
     let append_here_args args =
-      let mod_name = evar ~loc:Location.none "Caml.__MODULE__" in
+      let mod_name = evar ~loc:Location.none "Stdlib.__MODULE__" in
       let fun_name =
         estring ~loc:Location.none (get_fun_name (vb_stack_top ()))
       in
@@ -117,7 +117,7 @@ let mapper =
     | Pexp_extension
         ( {txt= "Trace.retn"; loc= retn_loc}
         , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
-        if not !debug then evar ~loc:exp.pexp_loc "Fn.id"
+        if not !debug then evar ~loc:exp.pexp_loc "Stdlib.Fun.id"
         else
           pexp_apply ~loc:exp.pexp_loc
             (evar ~loc:retn_loc "Trace.retn")

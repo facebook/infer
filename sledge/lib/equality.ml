@@ -103,7 +103,7 @@ end = struct
     let exception Found in
     match
       Term.Map.update s e ~f:(function
-        | Some _ -> Exn.raise_without_backtrace Found
+        | Some _ -> raise_notrace Found
         | None -> e )
     with
     | exception Found -> None
@@ -188,10 +188,10 @@ let orient e f =
       let o = compare (height e) (height f) in
       if o <> 0 then o else Term.compare e f
   in
-  match Ordering.of_int (compare e f) with
-  | Less -> Some (e, f)
-  | Equal -> None
-  | Greater -> Some (f, e)
+  match Int.sign (compare e f) with
+  | Neg -> Some (e, f)
+  | Zero -> None
+  | Pos -> Some (f, e)
 
 let norm (_, _, s) e = Subst.norm s e
 
@@ -422,7 +422,7 @@ let congruent r a b =
 let lookup r a =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp a pp r]
   ;
-  ( With_return.with_return
+  ( Base.With_return.with_return
   @@ fun {return} ->
   (* congruent specialized to assume [a] canonized and [b] non-interpreted *)
   let semi_congruent r a b =
@@ -479,7 +479,7 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  With_return.with_return
+  Base.With_return.with_return
   @@ fun {return} ->
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
       Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->

@@ -354,7 +354,7 @@ module Llvalue = struct
   let sexp_of_t llv = Sexp.Atom (Llvm.string_of_llvalue llv)
 end
 
-let struct_rec = Staged.unstage (Exp.struct_rec (module Llvalue))
+let struct_rec = Exp.struct_rec (module Llvalue)
 
 let ptr_fld x ~ptr ~fld ~lltyp =
   let offset =

@@ -7,7 +7,10 @@
 
 (** Vector - Immutable view of an array *)
 
-open (Base : module type of Base with module List := Base.List)
+module Array = Base.Array
+module Hash = Base.Hash
+module With_return = Base.With_return
+open Base.Continue_or_stop
 
 (** = 'a array but covariant since imperative operations hidden *)
 type +'a t
@@ -47,8 +50,8 @@ let map_adjacent ~f dummy xs_v =
             xs
       in
       map_adjacent_ (i + 1) xs
-    else if phys_equal xs xs0 then xs
-    else Array.filter xs ~f:(fun x -> not (phys_equal dummy x))
+    else if xs == xs0 then xs
+    else Array.filter xs ~f:(fun x -> not (dummy == x))
   in
   v (map_adjacent_ 0 xs0)
 
@@ -91,7 +94,7 @@ let map_preserving_phys_equal xs ~f =
   let xs' =
     map xs ~f:(fun x ->
         let x' = f x in
-        if not (phys_equal x' x) then change := true ;
+        if not (x' == x) then change := true ;
         x' )
   in
   if !change then xs' else xs
@@ -108,9 +111,7 @@ let fold_map_until xs ~init ~f ~finish =
   With_return.with_return (fun {return} ->
       finish
         (fold_map xs ~init ~f:(fun s x ->
-             match (f s x : _ Continue_or_stop.t) with
-             | Continue x -> x
-             | Stop x -> return x )) )
+             match f s x with Continue x -> x | Stop x -> return x )) )
 
 let concat xs = v (Array.concat (al xs))
 let copy x = v (Array.copy (a x))

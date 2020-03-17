@@ -7,33 +7,8 @@
 
 (** Global namespace opened in each source file by the build system *)
 
-include (
-  Base :
-    sig
-      include
-        (module type of Base
-          with module Option := Base.Option
-           and module List := Base.List
-           and module Set := Base.Set
-           and module Map := Base.Map
-          (* prematurely deprecated, remove and use Stdlib instead *)
-           and module Filename := Base.Filename
-           and module Format := Base.Format
-           and module Marshal := Base.Marshal
-           and module Scanf := Base.Scanf
-           and type ('ok, 'err) result := ('ok, 'err) Base.result
-         [@warning "-3"])
-    end )
-
-(* undeprecate *)
-external ( == ) : 'a -> 'a -> bool = "%eq"
-external ( != ) : 'a -> 'a -> bool = "%noteq"
-
-exception Not_found = Caml.Not_found
-
 include Stdio
 module Command = Core.Command
-module Hash_queue = Core_kernel.Hash_queue
 include Import0
 
 (** Tuple operations *)
@@ -102,61 +77,41 @@ module Invariant = struct
         with exn ->
           let bt = Caml.Printexc.get_raw_backtrace () in
           let exn =
-            Error.to_exn
-              (Error.create_s
+            Base.Error.to_exn
+              (Base.Error.create_s
                  (Base.Sexp.message "invariant failed"
-                    [ ("", sexp_of_exn exn)
-                    ; ("", Source_code_position.sexp_of_t here)
+                    [ ("", Sexplib.Conv.sexp_of_exn exn)
+                    ; ("", Base.Source_code_position.sexp_of_t here)
                     ; ("", sexp_of_t t) ]))
           in
           Caml.Printexc.raise_with_backtrace exn bt ) ;
       true )
 end
 
-module Option = Option
-include Option.Monad_infix
-include Option.Monad_syntax
-module List = List
-module Vector = Vector
-include Vector.Infix
-module Set = Set
-module Map = Map
-module Qset = Qset
+module Unit = Base.Unit
 
-module Array = struct
-  include Base.Array
+type unit = Unit.t [@@deriving compare, equal, hash, sexp]
 
-  let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
-end
+module Bool = Base.Bool
 
-module String = struct
-  include String
+type bool = Bool.t [@@deriving compare, equal, hash, sexp]
 
-  let t_of_sexp = Sexplib.Conv.string_of_sexp
-  let sexp_of_t = Sexplib.Conv.sexp_of_string
+module Char = Base.Char
 
-  module Map = Map.Make (String)
-end
+type char = Char.t [@@deriving compare, equal, hash, sexp]
 
-module Q = struct
-  let pp = Q.pp_print
-  let hash = Hashtbl.hash
-  let hash_fold_t s q = Int.hash_fold_t s (hash q)
-  let sexp_of_t q = Sexp.Atom (Q.to_string q)
+module Int = Base.Int
 
-  let t_of_sexp = function
-    | Sexp.Atom s -> Q.of_string s
-    | _ -> assert false
+type int = Int.t [@@deriving compare, equal, hash, sexp]
 
-  let of_z = Q.of_bigint
+module Int64 = Base.Int64
 
-  include Q
-end
+type int64 = Int64.t [@@deriving compare, equal, hash, sexp]
 
 module Z = struct
   let pp = Z.pp_print
   let hash = [%hash: Z.t]
-  let hash_fold_t s z = Int.hash_fold_t s (hash z)
+  let hash_fold_t s z = Hash.fold_int s (hash z)
   let sexp_of_t z = Sexp.Atom (Z.to_string z)
 
   let t_of_sexp = function
@@ -172,3 +127,61 @@ module Z = struct
 
   include Z
 end
+
+module Q = struct
+  let pp = Q.pp_print
+  let hash = Hashtbl.hash
+  let hash_fold_t s q = Hash.fold_int s (hash q)
+  let sexp_of_t q = Sexp.Atom (Q.to_string q)
+
+  let t_of_sexp = function
+    | Sexp.Atom s -> Q.of_string s
+    | _ -> assert false
+
+  let of_z = Q.of_bigint
+
+  include Q
+end
+
+module String = struct
+  module T = struct
+    include Base.String
+
+    let hash_fold_t = Hash.fold_string
+    let hash = Hash.of_fold hash_fold_t
+    let t_of_sexp = Sexplib.Conv.string_of_sexp
+    let sexp_of_t = Sexplib.Conv.sexp_of_string
+  end
+
+  include T
+  module Map = Map.Make (T)
+end
+
+type string = String.t [@@deriving compare, equal, hash, sexp]
+
+module Option = Option
+
+type 'a option = 'a Option.t [@@deriving compare, equal, hash, sexp]
+
+include Option.Monad_infix
+include Option.Monad_syntax
+module Result = Base.Result
+
+module Array = struct
+  include Base.Array
+
+  let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
+end
+
+module Vector = Vector
+include Vector.Infix
+module List = List
+
+type 'a list = 'a List.t [@@deriving compare, equal, hash, sexp]
+
+module Hash_queue = Core_kernel.Hash_queue
+module Set = Set
+module Hash_set = Base.Hash_set
+module Map = Map
+module Qset = Qset
+module Hashtbl = Base.Hashtbl

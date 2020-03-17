@@ -5,15 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open (
-  Base :
-    (module type of Base with module Format := Base.Format [@warning "-3"]) )
-
-(* undeprecate *)
-external ( == ) : 'a -> 'a -> bool = "%eq"
-
-exception Not_found = Caml.Not_found
-
 include Base.List
 
 let rec pp ?pre ?suf sep pp_elt fs = function
@@ -39,7 +30,7 @@ let find_map_remove xs ~f =
   find_map_remove_ [] xs
 
 let fold_option xs ~init ~f =
-  With_return.with_return
+  Base.With_return.with_return
   @@ fun {return} ->
   Some
     (fold xs ~init ~f:(fun acc elt ->
@@ -77,7 +68,7 @@ let rev_map_unzip xs ~f =
       let y, z = f x in
       (y :: ys, z :: zs) )
 
-let remove_exn ?(equal = phys_equal) xs x =
+let remove_exn ?(equal = ( == )) xs x =
   let rec remove_ ys = function
     | [] -> raise Not_found
     | z :: xs ->
@@ -101,17 +92,17 @@ let symmetric_diff ~compare xs ys =
     | x :: xs, y :: ys ->
         let ord = compare x y in
         if ord = 0 then symmetric_diff_ xs ys
-        else if ord < 0 then Either.First x :: symmetric_diff_ xs yys
-        else Either.Second y :: symmetric_diff_ xxs ys
-    | xs, [] -> map ~f:Either.first xs
-    | [], ys -> map ~f:Either.second ys
+        else if ord < 0 then `Left x :: symmetric_diff_ xs yys
+        else `Right y :: symmetric_diff_ xxs ys
+    | xs, [] -> map ~f:(fun x -> `Left x) xs
+    | [], ys -> map ~f:(fun y -> `Right y) ys
   in
   symmetric_diff_ (sort ~compare xs) (sort ~compare ys)
 
 let pp_diff ~compare sep pp_elt fs (xs, ys) =
   let pp_diff_elt fs elt =
-    match (elt : _ Either.t) with
-    | First x -> Format.fprintf fs "-- %a" pp_elt x
-    | Second y -> Format.fprintf fs "++ %a" pp_elt y
+    match elt with
+    | `Left x -> Format.fprintf fs "-- %a" pp_elt x
+    | `Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
   pp sep pp_diff_elt fs (symmetric_diff ~compare xs ys)

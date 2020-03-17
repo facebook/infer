@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Base
 open Import0
 include module type of Base.Option
 

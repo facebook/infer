@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Base
 include module type of Base.List
 open Import0
 
@@ -54,4 +53,7 @@ val remove : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list option
 val rev_init : int -> f:(int -> 'a) -> 'a list
 
 val symmetric_diff :
-  compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
+     compare:('a -> 'a -> int)
+  -> 'a t
+  -> 'a t
+  -> [`Left of 'a | `Right of 'a] t

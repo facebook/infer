@@ -7,7 +7,7 @@
 
 (** SLEdge command line interface *)
 
-let () = Backtrace.Exn.set_recording Version.debug
+let () = Printexc.record_backtrace Version.debug
 
 open Command.Let_syntax
 

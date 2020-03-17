@@ -10,7 +10,7 @@
 type t = Reg.Set.t [@@deriving equal, sexp]
 
 let pp = Reg.Set.pp
-let report_fmt_thunk = Fn.flip pp
+let report_fmt_thunk = Fun.flip pp
 let empty = Reg.Set.empty
 
 let init globals =

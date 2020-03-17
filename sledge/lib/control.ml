@@ -203,7 +203,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let pp fs pq =
       Format.fprintf fs "@[%a@]"
         (List.pp " ::@ " pp_priority)
-        (Sequence.to_list (Fheap.to_sequence pq))
+        (Fheap.to_list pq)
 
     let skip _ w = w
     let seq x y d w = y d (x d w)

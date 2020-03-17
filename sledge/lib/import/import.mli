@@ -7,32 +7,8 @@
 
 (** Global namespace opened in each source file by the build system *)
 
-include module type of (
-  Base :
-    sig
-      include
-        (module type of Base
-          with module Option := Base.Option
-           and module List := Base.List
-           and module Set := Base.Set
-           and module Map := Base.Map
-          (* prematurely deprecated, remove and use Stdlib instead *)
-           and module Filename := Base.Filename
-           and module Format := Base.Format
-           and module Marshal := Base.Marshal
-           and module Scanf := Base.Scanf
-           and type ('ok, 'err) result := ('ok, 'err) Base.result
-         [@warning "-3"])
-    end )
-
-(* undeprecate *)
-
-external ( == ) : 'a -> 'a -> bool = "%eq"
-external ( != ) : 'a -> 'a -> bool = "%noteq"
-
 include module type of Stdio
 module Command = Core.Command
-module Hash_queue = Core_kernel.Hash_queue
 include module type of Import0
 
 (** Tuple operations *)
@@ -106,42 +82,25 @@ val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
 (** Extensions *)
 
 module Invariant : module type of Base.Invariant
-module Option = Option
-include module type of Option.Monad_infix
-include module type of Option.Monad_syntax with type 'a t = 'a option
-module List = List
-module Vector = Vector
-include module type of Vector.Infix
-module Set = Set
-module Map = Map
-module Qset = Qset
+module Unit = Base.Unit
 
-module Array : sig
-  include module type of Base.Array
+type unit = Unit.t [@@deriving compare, equal, hash, sexp]
 
-  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
-end
+module Bool = Base.Bool
 
-module String : sig
-  include module type of String
+type bool = Bool.t [@@deriving compare, equal, hash, sexp]
 
-  val t_of_sexp : Sexp.t -> t
-  val sexp_of_t : t -> Sexp.t
+module Char = Base.Char
 
-  module Map : Map.S with type key = string
-end
+type char = Char.t [@@deriving compare, equal, hash, sexp]
 
-module Q : sig
-  include module type of struct include Q end
+module Int = Base.Int
 
-  val of_z : Z.t -> t
-  val compare : t -> t -> int
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
-  val t_of_sexp : Sexp.t -> t
-  val sexp_of_t : t -> Sexp.t
-  val pp : t pp
-end
+type int = Int.t [@@deriving compare, equal, hash, sexp]
+
+module Int64 = Base.Int64
+
+type int64 = Int64.t [@@deriving compare, equal, hash, sexp]
 
 module Z : sig
   include module type of struct include Z end
@@ -158,3 +117,52 @@ module Z : sig
   val is_true : t -> bool
   val is_false : t -> bool
 end
+
+module Q : sig
+  include module type of struct include Q end
+
+  val of_z : Z.t -> t
+  val compare : t -> t -> int
+  val hash : t -> int
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+  val pp : t pp
+end
+
+module String : sig
+  include module type of Base.String
+
+  type t = String.t [@@deriving compare, equal, hash, sexp]
+
+  module Map : Map.S with type key = string
+end
+
+type string = String.t [@@deriving compare, equal, hash, sexp]
+
+module Option = Option
+
+type 'a option = 'a Option.t [@@deriving compare, equal, hash, sexp]
+
+include module type of Option.Monad_infix
+include module type of Option.Monad_syntax with type 'a t = 'a option
+module Result = Base.Result
+
+module Array : sig
+  include module type of Base.Array
+
+  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
+end
+
+module Vector = Vector
+include module type of Vector.Infix
+module List = List
+
+type 'a list = 'a List.t [@@deriving compare, equal, hash, sexp]
+
+module Hash_queue = Core_kernel.Hash_queue
+module Set = Set
+module Hash_set = Base.Hash_set
+module Map = Map
+module Qset = Qset
+module Hashtbl = Base.Hashtbl
