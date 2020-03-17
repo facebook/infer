@@ -36,7 +36,7 @@ module Java = struct
     ; kind: kind }
   [@@deriving compare]
 
-  let make class_name return_type method_name parameters kind =
+  let make ~class_name ~return_type ~method_name ~parameters ~kind () =
     {class_name; return_type; method_name; parameters; kind}
 
 
@@ -729,6 +729,10 @@ let describe f pn =
       F.pp_print_string f name_without_template
   | None ->
       F.pp_print_string f name
+
+
+let make_java ~class_name ~return_type ~method_name ~parameters ~kind () =
+  Java (Java.make ~class_name ~return_type ~method_name ~parameters ~kind ())
 
 
 module Hashable = struct

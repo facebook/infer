@@ -25,10 +25,6 @@ module Java : sig
 
   val class_initializer_method_name : string
 
-  val make : Typ.Name.t -> java_type option -> string -> java_type list -> kind -> t
-  (** Create a Java procedure name from its class_name method_name args_type_name return_type_name
-      method_kind. *)
-
   val replace_method_name : string -> t -> t
   (** Replace the method name of an existing java procname. *)
 
@@ -248,6 +244,16 @@ module SQLiteList : SqliteUtils.Data with type t = t list
 module UnitCache : sig
   val create : unit -> (t -> 'a option) * (t -> 'a -> unit)
 end
+
+val make_java :
+     class_name:Typ.Name.t
+  -> return_type:Java.java_type option
+  -> method_name:string
+  -> parameters:Java.java_type list
+  -> kind:Java.kind
+  -> unit
+  -> t
+(** Create a Java procedure name. *)
 
 val empty_block : t
 (** Empty block name. *)

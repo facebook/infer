@@ -16,14 +16,14 @@ let topl_class_name : Typ.Name.t = Typ.Name.Java.from_string ToplName.topl_prope
 
 let topl_class_typ = Typ.mk (Tstruct topl_class_name)
 
-let topl_call ret_id (ret_typ : Typ.desc) loc name arg_ts : Sil.instr =
+let topl_call ret_id (ret_typ : Typ.desc) loc method_name arg_ts : Sil.instr =
   let e_fun =
-    let ret_typ = Some JavaSplitName.void in
-    let args_typ = List.map arg_ts ~f:(fun _ -> JavaSplitName.java_lang_object) in
+    let return_type = Some JavaSplitName.void in
+    let parameters = List.map arg_ts ~f:(fun _ -> JavaSplitName.java_lang_object) in
     Exp.Const
       (Const.Cfun
-         (Procname.Java
-            (Procname.Java.make topl_class_name ret_typ name args_typ Procname.Java.Static)))
+         (Procname.make_java ~class_name:topl_class_name ~return_type ~method_name ~parameters
+            ~kind:Procname.Java.Static ()))
   in
   Sil.Call ((ret_id, Typ.mk ret_typ), e_fun, arg_ts, loc, CallFlags.default)
 

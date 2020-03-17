@@ -260,20 +260,20 @@ module JNI = struct
   end
 end
 
-let create_procname ~classname ~methodname ~signature ~use_signature =
+let create_procname ~classname ~methodname:method_name ~signature ~use_signature =
   let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
-  let name = Typ.Name.Java.from_string classname in
-  let args, ret_typ = JNI.parse_method_str signature in
-  let java_type_args = List.map ~f:JNI.to_java_type args in
-  let java_type_ret_typ =
+  let class_name = Typ.Name.Java.from_string classname in
+  let args, return_type = JNI.parse_method_str signature in
+  let parameters = List.map ~f:JNI.to_java_type args in
+  let return_type =
     if
-      String.equal methodname Procname.Java.constructor_method_name
-      || String.equal methodname Procname.Java.class_initializer_method_name
+      String.equal method_name Procname.Java.constructor_method_name
+      || String.equal method_name Procname.Java.class_initializer_method_name
     then None
-    else Some (JNI.to_java_type ret_typ)
+    else Some (JNI.to_java_type return_type)
   in
-  Procname.Java
-    (Procname.Java.make name java_type_ret_typ methodname java_type_args Procname.Java.Non_Static)
+  Procname.make_java ~class_name ~return_type ~method_name ~parameters
+    ~kind:Procname.Java.Non_Static ()
 
 
 let make_void_signature_procname ~classname ~methodname =

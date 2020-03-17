@@ -728,10 +728,10 @@ let resolve_and_analyze tenv ~caller_summary ?(has_clang_model = false) prop arg
     protocol. *)
 let call_constructor_url_update_args pname actual_params =
   let url_pname =
-    Procname.Java
-      (Procname.Java.make
-         (Typ.Name.Java.from_string "java.net.URL")
-         None "<init>" [JavaSplitName.java_lang_string] Procname.Java.Non_Static)
+    Procname.make_java
+      ~class_name:(Typ.Name.Java.from_string "java.net.URL")
+      ~return_type:None ~method_name:Procname.Java.constructor_method_name
+      ~parameters:[JavaSplitName.java_lang_string] ~kind:Procname.Java.Non_Static ()
   in
   if Procname.equal url_pname pname then
     match actual_params with
