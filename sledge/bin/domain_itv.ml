@@ -74,7 +74,7 @@ let rec pow base typ = function
  * (See sledge/src/llair/term.ml functions assert_(mono|poly)mial for details)
  *)
 let rec texpr_of_nary_term subtms typ q op =
-  assert (Qset.length subtms >= 2) ;
+  assert (Term.Qset.length subtms >= 2) ;
   let term_to_texpr (tm, coeff) =
     let* base = apron_texpr_of_llair_term tm q typ in
     match op with
@@ -87,7 +87,7 @@ let rec texpr_of_nary_term subtms typ q op =
         Some (pow base typ (Q.to_int coeff))
     | _ -> None
   in
-  match Qset.to_list subtms with
+  match Term.Qset.to_list subtms with
   | hd :: tl ->
       List.fold tl ~init:(term_to_texpr hd) ~f:(fun acc curr ->
           let* c = term_to_texpr curr in

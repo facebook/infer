@@ -11,6 +11,7 @@ type 'a pp = Format.formatter -> 'a -> unit
 (** Format strings. *)
 type ('a, 'b) fmt = ('a, 'b) Trace.fmt
 
+module Hash = Ppx_hash_lib.Std.Hash
 module Sexp = Sexplib.Sexp
 
 module type Applicative_syntax = sig

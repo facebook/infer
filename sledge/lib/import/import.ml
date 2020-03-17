@@ -121,12 +121,7 @@ module Vector = Vector
 include Vector.Infix
 module Set = Set
 module Map = Map
-
-module Qset = struct
-  include Qset
-
-  let pp sep pp_elt fs s = List.pp sep pp_elt fs (to_list s)
-end
+module Qset = Qset
 
 module Array = struct
   include Base.Array

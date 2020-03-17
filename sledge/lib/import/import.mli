@@ -114,12 +114,7 @@ module Vector = Vector
 include module type of Vector.Infix
 module Set = Set
 module Map = Map
-
-module Qset : sig
-  include module type of Qset
-
-  val pp : (unit, unit) fmt -> ('a * Q.t) pp -> ('a, _) t pp
-end
+module Qset = Qset
 
 module Array : sig
   include module type of Base.Array

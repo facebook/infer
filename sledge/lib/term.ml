@@ -40,8 +40,39 @@ type op3 = Conditional | Extract [@@deriving compare, equal, hash, sexp]
 type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
 type recN = Record [@@deriving compare, equal, hash, sexp]
 
-module rec T : sig
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
+module rec Qset : sig
+  include Import.Qset.S with type elt := T.t
+
+  val hash : t -> int
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+end = struct
+  include Import.Qset.Make (T)
+
+  let hash_fold_t = hash_fold_t T.hash_fold_t
+  let hash = Hash.of_fold hash_fold_t
+  let t_of_sexp = t_of_sexp T.t_of_sexp
+end
+
+and T : sig
+  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
+
+  type t =
+    | Add of qset
+    | Mul of qset
+    | Var of {id: int; name: string}
+    | Ap1 of op1 * t
+    | Ap2 of op2 * t * t
+    | Ap3 of op3 * t * t * t
+    | ApN of opN * t vector
+    | RecN of recN * t vector  (** NOTE: cyclic *)
+    | Label of {parent: string; name: string}
+    | Nondet of {msg: string}
+    | Float of {data: string}
+    | Integer of {data: Z.t}
+  [@@deriving compare, equal, hash, sexp]
+end = struct
+  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
@@ -61,59 +92,12 @@ module rec T : sig
   (* Note: solve (and invariant) requires Qset.min_elt to return a
      non-coefficient, so Integer terms must compare higher than any valid
      monomial *)
-
-  type comparator_witness
-
-  val comparator : (t, comparator_witness) Comparator.t
-end = struct
-  include T0 include Comparator.Make (T0)
-end
-
-(* auxiliary definition for safe recursive module initialization *)
-and T0 : sig
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type t =
-    | Add of qset
-    | Mul of qset
-    | Var of {id: int; name: string}
-    | Ap1 of op1 * t
-    | Ap2 of op2 * t * t
-    | Ap3 of op3 * t * t * t
-    | ApN of opN * t vector
-    | RecN of recN * t vector
-    | Label of {parent: string; name: string}
-    | Nondet of {msg: string}
-    | Float of {data: string}
-    | Integer of {data: Z.t}
-  [@@deriving compare, equal, hash, sexp]
-end = struct
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type t =
-    | Add of qset
-    | Mul of qset
-    | Var of {id: int; name: string}
-    | Ap1 of op1 * t
-    | Ap2 of op2 * t * t
-    | Ap3 of op3 * t * t * t
-    | ApN of opN * t vector
-    | RecN of recN * t vector
-    | Label of {parent: string; name: string}
-    | Nondet of {msg: string}
-    | Float of {data: string}
-    | Integer of {data: Z.t}
-  [@@deriving compare, equal, hash, sexp]
-
   let compare x y =
     match (x, y) with
     | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
         Int.compare i j
     | _ -> compare x y
 end
-
-(* suppress spurious "Warning 60: unused module T0." *)
-type _t = T0.t
 
 include T
 module Map = Map.Make (T)
@@ -123,8 +107,6 @@ module Set = struct
 
   let t_of_sexp = t_of_sexp T.t_of_sexp
 end
-
-let empty_qset = Qset.empty (module T)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
@@ -462,7 +444,7 @@ let simp_convert src dst arg =
    elements are Xᵢ with multiplicities cᵢ. A constant is treated as the
    coefficient of the empty monomial, which is the unit of multiplication 1. *)
 module Sum = struct
-  let empty = empty_qset
+  let empty = Qset.empty
 
   let add coeff term sum =
     assert (not (Q.equal Q.zero coeff)) ;
@@ -486,7 +468,7 @@ end
    of indeterminates xᵢ is represented by a multiset where the elements are
    xᵢ and the multiplicities are the exponents nᵢ. *)
 module Prod = struct
-  let empty = empty_qset
+  let empty = Qset.empty
 
   let add term prod =
     assert (match term with Integer _ -> false | _ -> true) ;

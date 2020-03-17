@@ -180,7 +180,7 @@ let pp_block x fs segs =
 let pp_heap x ?pre cong fs heap =
   let bas_off = function
     | Term.Add poly as sum ->
-        let const = Qset.count poly Term.one in
+        let const = Term.Qset.count poly Term.one in
         (Term.sub sum (Term.rational const), const)
     | e -> (e, Q.zero)
   in

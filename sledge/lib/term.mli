@@ -60,37 +60,45 @@ type opN =
 type recN = Record  (** Recursive record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
-type comparator_witness
+module rec Qset : sig
+  include Import.Qset.S with type elt := T.t
 
-type qset = (t, comparator_witness) Qset.t
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+end
 
-and t = private
-  | Add of qset  (** Sum of terms with rational coefficients *)
-  | Mul of qset  (** Product of terms with rational exponents *)
-  | Var of {id: int; name: string}  (** Local variable / virtual register *)
-  | Ap1 of op1 * t  (** Unary application *)
-  | Ap2 of op2 * t * t  (** Binary application *)
-  | Ap3 of op3 * t * t * t  (** Ternary application *)
-  | ApN of opN * t vector  (** N-ary application *)
-  | RecN of recN * t vector
-      (** Recursive n-ary application, may recursively refer to itself
-          (transitively) from its args. NOTE: represented by cyclic values. *)
-  | Label of {parent: string; name: string}
-      (** Address of named code block within parent function *)
-  | Nondet of {msg: string}
-      (** Anonymous local variable with arbitrary value, representing
-          non-deterministic approximation of value described by [msg] *)
-  | Float of {data: string}  (** Floating-point constant *)
-  | Integer of {data: Z.t}  (** Integer constant *)
-[@@deriving compare, equal, hash, sexp]
+and T : sig
+  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
+
+  and t = private
+    | Add of qset  (** Sum of terms with rational coefficients *)
+    | Mul of qset  (** Product of terms with rational exponents *)
+    | Var of {id: int; name: string}
+        (** Local variable / virtual register *)
+    | Ap1 of op1 * t  (** Unary application *)
+    | Ap2 of op2 * t * t  (** Binary application *)
+    | Ap3 of op3 * t * t * t  (** Ternary application *)
+    | ApN of opN * t vector  (** N-ary application *)
+    | RecN of recN * t vector
+        (** Recursive n-ary application, may recursively refer to itself
+            (transitively) from its args. NOTE: represented by cyclic
+            values. *)
+    | Label of {parent: string; name: string}
+        (** Address of named code block within parent function *)
+    | Nondet of {msg: string}
+        (** Anonymous local variable with arbitrary value, representing
+            non-deterministic approximation of value described by [msg] *)
+    | Float of {data: string}  (** Floating-point constant *)
+    | Integer of {data: Z.t}  (** Integer constant *)
+  [@@deriving compare, equal, hash, sexp]
+end
+
+include module type of T with type t = T.t
 
 (** Term.Var is re-exported as Var *)
 module Var : sig
   type term := t
   type t = private term [@@deriving compare, equal, hash, sexp]
-
-  include Comparator.S with type t := t
-
   type strength = t -> [`Universal | `Existential | `Anonymous] option
 
   module Map : Map.S with type key := t
