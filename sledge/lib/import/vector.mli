@@ -12,12 +12,15 @@
     it inconvenient to mutate. *)
 
 open Base
+open Import0
 
 type +'a t [@@deriving compare, equal, hash, sexp]
 
 module Infix : sig
   type +'a vector = 'a t [@@deriving compare, equal, hash, sexp]
 end
+
+val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
 
 (* val binary_search :
  *   ('a t, 'a, 'key) Base__Binary_searchable_intf.binary_search *)

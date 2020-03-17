@@ -7,7 +7,7 @@
 
 (** Vector - Immutable view of an array *)
 
-open Base
+open (Base : module type of Base with module List := Base.List)
 
 (** = 'a array but covariant since imperative operations hidden *)
 type +'a t
@@ -26,6 +26,9 @@ module Infix = struct
   type +'a vector = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
+let to_list x = Array.to_list (a x)
+let to_array = a
+let pp sep pp_elt fs v = List.pp sep pp_elt fs (to_list v)
 let concat_map x ~f = v (Array.concat_map (a x) ~f:(fun y -> a (f y)))
 
 let map_adjacent ~f dummy xs_v =
@@ -123,6 +126,3 @@ let reduce_exn x ~f = Array.reduce_exn (a x) ~f
 let unzip x =
   let y, z = Array.unzip (a x) in
   (v y, v z)
-
-let to_list x = Array.to_list (a x)
-let to_array = a

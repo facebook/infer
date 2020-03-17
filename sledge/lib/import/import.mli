@@ -108,14 +108,7 @@ module Option = Option
 include module type of Option.Monad_infix
 include module type of Option.Monad_syntax with type 'a t = 'a option
 module List = List
-
-module Vector : sig
-  include module type of Vector
-
-  val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
-  (** Pretty-print a vector. *)
-end
-
+module Vector = Vector
 include module type of Vector.Infix
 
 module type OrderedType = sig

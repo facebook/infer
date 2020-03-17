@@ -115,13 +115,7 @@ module Option = Option
 include Option.Monad_infix
 include Option.Monad_syntax
 module List = List
-
-module Vector = struct
-  include Vector
-
-  let pp sep pp_elt fs v = List.pp sep pp_elt fs (to_list v)
-end
-
+module Vector = Vector
 include Vector.Infix
 
 module type OrderedType = sig
