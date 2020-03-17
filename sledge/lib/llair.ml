@@ -376,18 +376,13 @@ end
    compute unique sort_index ids *)
 module Block_label = struct
   module T = struct
-    module T0 = struct
-      type t = block [@@deriving sexp_of]
+    type t = block [@@deriving sexp_of]
 
-      let compare x y =
-        [%compare: string * Global.t] (x.lbl, x.parent.name)
-          (y.lbl, y.parent.name)
+    let compare x y =
+      [%compare: string * Global.t] (x.lbl, x.parent.name)
+        (y.lbl, y.parent.name)
 
-      let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
-    end
-
-    include T0
-    include Comparator.Make (T0)
+    let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
   end
 
   include T
