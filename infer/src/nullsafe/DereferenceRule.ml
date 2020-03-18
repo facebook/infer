@@ -18,6 +18,11 @@ module ReportableViolation = struct
     | ArrayLengthAccess
   [@@deriving compare]
 
+  let from nullsafe_mode ({nullability} as violation) =
+    if Nullability.is_considered_nonnull ~nullsafe_mode nullability then None
+    else Some {nullsafe_mode; violation}
+
+
   let get_origin_opt ~nullable_object_descr origin =
     let should_show_origin =
       match nullable_object_descr with
@@ -116,8 +121,3 @@ let check nullability =
       Ok ()
   | _ ->
       Error {nullability}
-
-
-let to_reportable_violation nullsafe_mode ({nullability} as violation) =
-  if Nullability.is_considered_nonnull ~nullsafe_mode nullability then None
-  else Some ReportableViolation.{nullsafe_mode; violation}

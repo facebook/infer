@@ -24,6 +24,20 @@ module ReportableViolation = struct
     ; param_position: int
     ; function_procname: Procname.t }
 
+  let from nullsafe_mode ({lhs; rhs} as violation) =
+    let falls_under_optimistic_third_party =
+      Config.nullsafe_optimistic_third_party_params_in_non_strict
+      && NullsafeMode.equal nullsafe_mode Default
+      && Nullability.equal lhs ThirdPartyNonnull
+    in
+    let is_non_reportable =
+      falls_under_optimistic_third_party
+      || (* In certain modes, we trust rhs to be non-nullable and don't report violation *)
+      Nullability.is_considered_nonnull ~nullsafe_mode rhs
+    in
+    if is_non_reportable then None else Some {nullsafe_mode; violation}
+
+
   let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
 
   let get_origin_opt assignment_type origin =
@@ -214,17 +228,3 @@ end
 let check ~lhs ~rhs =
   let is_subtype = Nullability.is_subtype ~supertype:lhs ~subtype:rhs in
   Result.ok_if_true is_subtype ~error:{lhs; rhs}
-
-
-let to_reportable_violation nullsafe_mode ({lhs; rhs} as violation) =
-  let falls_under_optimistic_third_party =
-    Config.nullsafe_optimistic_third_party_params_in_non_strict
-    && NullsafeMode.equal nullsafe_mode Default
-    && Nullability.equal lhs ThirdPartyNonnull
-  in
-  let is_non_reportable =
-    falls_under_optimistic_third_party
-    || (* In certain modes, we trust rhs to be non-nullable and don't report violation *)
-    Nullability.is_considered_nonnull ~nullsafe_mode rhs
-  in
-  if is_non_reportable then None else Some ReportableViolation.{nullsafe_mode; violation}

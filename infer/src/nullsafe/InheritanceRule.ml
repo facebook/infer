@@ -18,6 +18,19 @@ module ReportableViolation = struct
     | InconsistentReturn
   [@@deriving compare]
 
+  let from nullsafe_mode ({base; overridden} as violation) =
+    if
+      Nullability.is_nonnullish base && Nullability.is_nonnullish overridden
+      (* When both nullabilities are kind-of non-nullable we don't want to raise the
+         issue. Without this suppression there will be a lot of non-actionable issues
+         raised for classes in one [NullsafeMode] inheriting from classes in the other
+         [NullsafeMode]. *)
+      (* TODO(T62521386): consider using caller context when determining nullability to get
+         rid of white-lists. *)
+    then None
+    else Some {nullsafe_mode; violation}
+
+
   let is_java_lang_object_equals = function
     | Procname.Java java_procname -> (
       match
@@ -85,16 +98,3 @@ let check type_role ~base ~overridden =
         (base, overridden)
   in
   Result.ok_if_true (Nullability.is_subtype ~subtype ~supertype) ~error:{base; overridden}
-
-
-let to_reportable_violation nullsafe_mode ({base; overridden} as violation) =
-  if
-    Nullability.is_nonnullish base && Nullability.is_nonnullish overridden
-    (* When both nullabilities are kind-of non-nullable we don't want to raise the
-       issue. Without this suppression there will be a lot of non-actionable issues
-       raised for classes in one [NullsafeMode] inheriting from classes in the other
-       [NullsafeMode]. *)
-    (* TODO(T62521386): consider using caller context when determining nullability to get
-       rid of white-lists. *)
-  then None
-  else Some ReportableViolation.{nullsafe_mode; violation}

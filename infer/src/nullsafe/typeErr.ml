@@ -248,7 +248,7 @@ let get_error_info_if_reportable ~nullsafe_mode err_instance =
         , NullsafeMode.severity nullsafe_mode )
   | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->
       let+ reportable_violation =
-        AssignmentRule.to_reportable_violation nullsafe_mode assignment_violation
+        AssignmentRule.ReportableViolation.from nullsafe_mode assignment_violation
       in
       let description, issue_type, error_location =
         AssignmentRule.ReportableViolation.get_description ~assignment_location assignment_type
@@ -263,7 +263,7 @@ let get_error_info_if_reportable ~nullsafe_mode err_instance =
       ; dereference_type
       ; nullable_object_origin } ->
       let+ reportable_violation =
-        DereferenceRule.to_reportable_violation nullsafe_mode dereference_violation
+        DereferenceRule.ReportableViolation.from nullsafe_mode dereference_violation
       in
       let description, issue_type, error_location =
         DereferenceRule.ReportableViolation.get_description reportable_violation
@@ -274,7 +274,7 @@ let get_error_info_if_reportable ~nullsafe_mode err_instance =
   | Inconsistent_subclass
       {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
       let+ reportable_violation =
-        InheritanceRule.to_reportable_violation nullsafe_mode inheritance_violation
+        InheritanceRule.ReportableViolation.from nullsafe_mode inheritance_violation
       in
       ( InheritanceRule.ReportableViolation.get_description reportable_violation violation_type
           ~base_proc_name ~overridden_proc_name

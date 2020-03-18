@@ -27,6 +27,10 @@ module ReportableViolation : sig
     | ArrayLengthAccess
   [@@deriving compare]
 
+  val from : NullsafeMode.t -> violation -> t option
+  (** Depending on the mode, violation might or might not be important enough to be reported to the
+      user. If it should NOT be reported for that mode, this function will return None. *)
+
   val get_severity : t -> Exceptions.severity
   (** Severity of the violation to be reported *)
 
@@ -40,7 +44,3 @@ module ReportableViolation : sig
   (** Given context around violation, return error message together with the info where to put this
       message *)
 end
-
-val to_reportable_violation : NullsafeMode.t -> violation -> ReportableViolation.t option
-(** Depending on the mode, violation might or might not be important enough to be reported to the
-    user. If it should NOT be reported for that mode, this function will return None. *)
