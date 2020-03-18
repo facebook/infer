@@ -31,8 +31,7 @@ let is_virtual = function
 let check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate curr_pname node instr_ref
     object_exp dereference_type inferred_nullability loc =
   Result.iter_error
-    (DereferenceRule.check ~nullsafe_mode
-       (InferredNullability.get_nullability inferred_nullability))
+    (DereferenceRule.check (InferredNullability.get_nullability inferred_nullability))
     ~f:(fun dereference_violation ->
       let nullable_object_origin = InferredNullability.get_origin inferred_nullability in
       let nullable_object_descr = explain_expr tenv node object_exp in
@@ -407,7 +406,7 @@ let check_call_receiver ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc 
           loc
       in
       check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc node
-        instr_ref original_this_e (DereferenceRule.MethodCall callee_pname)
+        instr_ref original_this_e (DereferenceRule.ReportableViolation.MethodCall callee_pname)
         this_inferred_nullability loc
   | [] ->
       ()

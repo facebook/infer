@@ -72,7 +72,7 @@ type err_instance =
   | Nullable_dereference of
       { dereference_violation: DereferenceRule.violation
       ; dereference_location: Location.t
-      ; dereference_type: DereferenceRule.dereference_type
+      ; dereference_type: DereferenceRule.ReportableViolation.dereference_type
       ; nullable_object_descr: string option
       ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
@@ -262,15 +262,15 @@ let get_error_info_if_reportable ~nullsafe_mode err_instance =
       ; nullable_object_descr
       ; dereference_type
       ; nullable_object_origin } ->
-      let description, issue_type, error_location =
-        DereferenceRule.violation_description ~dereference_location dereference_violation
-          dereference_type ~nullable_object_descr ~nullable_object_origin
+      let+ reportable_violation =
+        DereferenceRule.to_reportable_violation nullsafe_mode dereference_violation
       in
-      Some
-        ( description
-        , issue_type
-        , Some error_location
-        , DereferenceRule.violation_severity dereference_violation )
+      let description, issue_type, error_location =
+        DereferenceRule.ReportableViolation.get_description reportable_violation
+          ~dereference_location dereference_type ~nullable_object_descr ~nullable_object_origin
+      in
+      let severity = DereferenceRule.ReportableViolation.get_severity reportable_violation in
+      (description, issue_type, Some error_location, severity)
   | Inconsistent_subclass
       {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
       Some

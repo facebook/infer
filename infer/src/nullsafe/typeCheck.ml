@@ -165,8 +165,9 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
           in
           if checks.eradicate then
             EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-              curr_pdesc node instr_ref exp (DereferenceRule.AccessToField field_name)
-              inferred_nullability loc ;
+              curr_pdesc node instr_ref exp
+              (DereferenceRule.ReportableViolation.AccessToField field_name) inferred_nullability
+              loc ;
           tr_new
       | Exp.Lindex (array_exp, index_exp) ->
           let _, inferred_nullability =
@@ -179,7 +180,7 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
           if checks.eradicate then
             EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
               curr_pdesc node instr_ref array_exp
-              (DereferenceRule.AccessByIndex {index_desc})
+              (DereferenceRule.ReportableViolation.AccessByIndex {index_desc})
               inferred_nullability loc ;
           let typ, _ = tr_default in
           (typ, InferredNullability.create TypeOrigin.ArrayAccess)
@@ -1195,7 +1196,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       if checks.eradicate then
         EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-          curr_pdesc node instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
+          curr_pdesc node instr_ref array_exp DereferenceRule.ReportableViolation.ArrayLengthAccess
+          ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create TypeOrigin.ArrayLengthResult)
         typestate ~descr:"array.length"

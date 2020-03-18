@@ -48,7 +48,7 @@ type err_instance =
   | Nullable_dereference of
       { dereference_violation: DereferenceRule.violation
       ; dereference_location: Location.t
-      ; dereference_type: DereferenceRule.dereference_type
+      ; dereference_type: DereferenceRule.ReportableViolation.dereference_type
       ; nullable_object_descr: string option
       ; nullable_object_origin: TypeOrigin.t }
   | Bad_assignment of
