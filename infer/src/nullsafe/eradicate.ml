@@ -242,7 +242,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
                  if is_important err_instance then Some err_instance else None )
           |> List.length
         in
-        TypeErr.report_forall_checks_and_reset (EradicateCheckers.report_error tenv) proc_desc ;
+        TypeErr.report_forall_issues_and_reset
+          (EradicateCheckers.report_error tenv)
+          ~nullsafe_mode:annotated_signature.nullsafe_mode proc_desc ;
         Payload.update_summary NullsafeSummary.{type_violation_count} summary
 end
 

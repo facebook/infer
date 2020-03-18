@@ -54,7 +54,7 @@ type err_instance =
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
-      ; assignment_type: AssignmentRule.assignment_type
+      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type
       ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
 
@@ -71,16 +71,21 @@ type st_report_error =
   -> string
   -> unit
 
-val report_error :
+val register_error :
      st_report_error
   -> (Procdesc.Node.t -> Procdesc.Node.t)
   -> err_instance
+  -> nullsafe_mode:NullsafeMode.t
   -> InstrRef.t option
   -> Location.t
   -> Procdesc.t
   -> unit
+(** Register the fact that issue happened. Depending on the error and mode, this error might or
+    might not be reported to the user. *)
 
-val report_forall_checks_and_reset : st_report_error -> Procdesc.t -> unit
+val report_forall_issues_and_reset :
+  st_report_error -> nullsafe_mode:NullsafeMode.t -> Procdesc.t -> unit
+(** Report registered "forall" issues (if needed), and reset the error table *)
 
 val reset : unit -> unit
 

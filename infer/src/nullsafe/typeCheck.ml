@@ -479,7 +479,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
     curr_pname curr_annotated_signature checks call_params idenv parameter_num ~is_vararg typestate'
     =
   (* clear the nullable flag of the first parameter of the procedure *)
-  let clear_nullable_flag typestate'' pvar =
+  let clear_nullable_flag ~nullsafe_mode typestate'' pvar =
     (* remove the nullable flag for the given pvar *)
     match TypeState.lookup_pvar pvar typestate'' with
     | Some (t, nullability) ->
@@ -491,12 +491,12 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
         in
         ( if checks.eradicate && should_report then
           let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
-          EradicateChecks.report_error tenv find_canonical_duplicate
+          EradicateChecks.register_error tenv find_canonical_duplicate
             (TypeErr.Condition_redundant
                { is_always_true= true
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
                ; nonnull_origin= InferredNullability.get_origin nullability })
-            (Some instr_ref) loc curr_pdesc ) ;
+            (Some instr_ref) ~nullsafe_mode loc curr_pdesc ) ;
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
@@ -521,14 +521,18 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
           match Idenv.expand_expr idenv e with
           | Exp.Lvar pvar1 ->
               pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
-                clear_nullable_flag ts pvar1 node
+                (clear_nullable_flag
+                   ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode)
+                ts pvar1 node
           | _ ->
               ts
         in
         let vararg_values = PatternMatch.java_get_vararg_values node pvar idenv in
         List.fold_right ~f:do_vararg_value vararg_values ~init:typestate'
       else
-        pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc clear_nullable_flag
+        pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
+          (clear_nullable_flag
+             ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode)
           typestate' pvar node
   | None ->
       typestate'
@@ -808,8 +812,8 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       in
       if checks.eradicate then
         EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
-          find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability idenv
-          linereader loc instr_ref ) ;
+          find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability
+          ~nullsafe_mode idenv linereader loc instr_ref ) ;
     set_nonnull pvar_expr typestate ~descr
   in
   (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
