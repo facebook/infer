@@ -89,12 +89,6 @@ type t =
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 
-let get_pre {pre} = (pre :> BaseDomain.t)
-
-let get_post {post} = (post :> BaseDomain.t)
-
-let get_skipped_calls {skipped_calls} = skipped_calls
-
 let pp f {post; pre; skipped_calls} =
   F.fprintf f "@[<v>%a@;PRE=[%a]@;skipped_calls=%a@]" Domain.pp post PreDomain.pp pre
     SkippedCalls.pp skipped_calls

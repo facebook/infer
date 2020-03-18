@@ -14,9 +14,6 @@ open! IStd
 module ClassInfo : sig
   type t
 
-  val get_class_summaries : t -> Summary.t list
-  (** Summaries for all procedures in this class (not counting anonymous nested classes) *)
-
   val get_all_summaries : t -> Summary.t list
   (** List of all summaries, user-level and anonymous, combined together *)
 end

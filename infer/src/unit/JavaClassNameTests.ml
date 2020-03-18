@@ -8,7 +8,6 @@
 open! IStd
 open OUnit2
 open JavaClassName
-module F = Format
 
 let assert_equal_to classname ~expected_package ~expected_classname =
   assert_equal ~printer:JavaClassName.to_string classname

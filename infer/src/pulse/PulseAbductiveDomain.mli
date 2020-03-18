@@ -109,12 +109,6 @@ val discard_unreachable : t -> t
 
 val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
 
-val get_pre : t -> BaseDomain.t
-
-val get_post : t -> BaseDomain.t
-
-val get_skipped_calls : t -> SkippedCalls.t
-
 module PrePost : sig
   type domain_t = t
 

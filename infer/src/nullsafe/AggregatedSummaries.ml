@@ -14,8 +14,6 @@ module ClassInfo = struct
 
   let make_empty () = {summaries= []; nested_anonymous_classes= JavaClassName.Map.empty}
 
-  let get_class_summaries {summaries} = summaries
-
   (** Add top level (not anonymous) summary belonging to this class *)
   let add_class_summary summary t = {t with summaries= summary :: t.summaries}
 
