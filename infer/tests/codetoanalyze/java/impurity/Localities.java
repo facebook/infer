@@ -174,4 +174,12 @@ class Localities {
     Foo first = get_first_pure(list);
     first.inc_impure();
   }
+
+  public static boolean is_null_pure(Byte a) {
+    return a == null;
+  }
+
+  public static boolean call_is_null_pure(Byte a) {
+    return is_null_pure(a);
+  }
 }

@@ -817,27 +817,24 @@ module PrePost = struct
       BaseMemory.add addr_caller edges_post_caller heap
     in
     let attrs =
-      let written_to =
-        let written_to_callee_opt =
-          let open IOption.Let_syntax in
-          let* attrs = BaseAddressAttributes.find_opt addr_caller attrs in
-          Attributes.get_written_to attrs
-        in
-        let callee_trace =
-          match written_to_callee_opt with
-          | None ->
-              Trace.Immediate {location= call_loc; history= []}
-          | Some access_trace ->
-              access_trace
-        in
-        Attribute.WrittenTo
-          (ViaCall
-             { in_call= callee_trace
-             ; f= Call callee_proc_name
-             ; location= call_loc
-             ; history= hist_caller })
+      let written_to_callee_opt =
+        let open IOption.Let_syntax in
+        let* attrs = BaseAddressAttributes.find_opt addr_caller attrs in
+        Attributes.get_written_to attrs
       in
-      BaseAddressAttributes.add_one addr_caller written_to attrs
+      match written_to_callee_opt with
+      | None ->
+          attrs
+      | Some callee_trace ->
+          let written_to =
+            Attribute.WrittenTo
+              (ViaCall
+                 { in_call= callee_trace
+                 ; f= Call callee_proc_name
+                 ; location= call_loc
+                 ; history= hist_caller })
+          in
+          BaseAddressAttributes.add_one addr_caller written_to attrs
     in
     let caller_post = Domain.update ~heap ~attrs call_state.astate.post in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}
