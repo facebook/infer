@@ -38,7 +38,7 @@ type err_instance =
       {is_always_true: bool; condition_descr: string option; nonnull_origin: TypeOrigin.t}
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
-      ; violation_type: InheritanceRule.violation_type
+      ; violation_type: InheritanceRule.ReportableViolation.violation_type
       ; base_proc_name: Procname.t
       ; overridden_proc_name: Procname.t }
   | Field_not_initialized of {nullsafe_mode: NullsafeMode.t; field_name: Fieldname.t}

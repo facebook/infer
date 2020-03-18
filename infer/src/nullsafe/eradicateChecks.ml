@@ -460,12 +460,12 @@ let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~nullsaf
     ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~base_nullability
     ~overridden_nullability =
   Result.iter_error
-    (InheritanceRule.check ~nullsafe_mode InheritanceRule.Ret ~base:base_nullability
+    (InheritanceRule.check InheritanceRule.Ret ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
       register_error tenv find_canonical_duplicate
         (TypeErr.Inconsistent_subclass
            { inheritance_violation
-           ; violation_type= InheritanceRule.InconsistentReturn
+           ; violation_type= InheritanceRule.ReportableViolation.InconsistentReturn
            ; overridden_proc_name
            ; base_proc_name })
         None ~nullsafe_mode loc overridden_proc_desc )
@@ -475,13 +475,13 @@ let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~nullsafe
     ~overridden_param_name ~base_proc_name ~overridden_proc_name ~overridden_proc_desc
     ~param_position ~base_nullability ~overridden_nullability =
   Result.iter_error
-    (InheritanceRule.check ~nullsafe_mode InheritanceRule.Param ~base:base_nullability
+    (InheritanceRule.check InheritanceRule.Param ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
       register_error tenv find_canonical_duplicate
         (TypeErr.Inconsistent_subclass
            { inheritance_violation
            ; violation_type=
-               InheritanceRule.InconsistentParam
+               InheritanceRule.ReportableViolation.InconsistentParam
                  {param_position; param_description= Mangled.to_string overridden_param_name}
            ; base_proc_name
            ; overridden_proc_name })

@@ -19,25 +19,30 @@ open! IStd
 
 type violation [@@deriving compare]
 
-type violation_type =
-  | InconsistentParam of {param_description: string; param_position: int}
-  | InconsistentReturn
-[@@deriving compare]
-
 type type_role = Param | Ret
 
-val check :
-     nullsafe_mode:NullsafeMode.t
-  -> type_role
-  -> base:Nullability.t
-  -> overridden:Nullability.t
-  -> (unit, violation) result
+val check : type_role -> base:Nullability.t -> overridden:Nullability.t -> (unit, violation) result
+(** See description of the rule in the header of the file. Note that formal fact of violation might
+    or might not be reported to the user, depending on the mode. See [to_reportable_violation] *)
 
-val violation_description :
-     violation
-  -> violation_type
-  -> base_proc_name:Procname.t
-  -> overridden_proc_name:Procname.t
-  -> string
+(** Violation that needs to be reported to the user. *)
+module ReportableViolation : sig
+  type t
 
-val violation_severity : violation -> Exceptions.severity
+  type violation_type =
+    | InconsistentParam of {param_description: string; param_position: int}
+    | InconsistentReturn
+  [@@deriving compare]
+
+  val get_severity : t -> Exceptions.severity
+  (** Severity of the violation to be reported *)
+
+  val get_description :
+    t -> violation_type -> base_proc_name:Procname.t -> overridden_proc_name:Procname.t -> string
+  (** Given context around violation, return error message together with the info where to put this
+      message *)
+end
+
+val to_reportable_violation : NullsafeMode.t -> violation -> ReportableViolation.t option
+(** Depending on the mode, violation might or might not be important enough to be reported to the
+    user. If it should NOT be reported for that mode, this function will return None. *)

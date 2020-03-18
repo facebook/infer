@@ -372,7 +372,7 @@ codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_IS_CLEAN, no_bucket, INFO, []
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_IS_CLEAN, no_bucket, INFO, []
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_IS_CLEAN, no_bucket, INFO, []
-codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_IS_CLEAN, no_bucket, INFO, []
+codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_NEEDS_FIXING, no_bucket, INFO, []
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_NEEDS_FIXING, no_bucket, INFO, []
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_NEEDS_FIXING, no_bucket, INFO, []
 codetoanalyze/java/nullsafe-default/TrueFalseOnNull.java, Linters_dummy_method, 1, ERADICATE_META_CLASS_NEEDS_FIXING, no_bucket, INFO, []

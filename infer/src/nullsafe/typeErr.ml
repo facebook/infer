@@ -62,7 +62,7 @@ type err_instance =
       {is_always_true: bool; condition_descr: string option; nonnull_origin: TypeOrigin.t}
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
-      ; violation_type: InheritanceRule.violation_type
+      ; violation_type: InheritanceRule.ReportableViolation.violation_type
       ; base_proc_name: Procname.t
       ; overridden_proc_name: Procname.t }
   | Field_not_initialized of {nullsafe_mode: NullsafeMode.t; field_name: Fieldname.t}
@@ -273,16 +273,18 @@ let get_error_info_if_reportable ~nullsafe_mode err_instance =
       (description, issue_type, Some error_location, severity)
   | Inconsistent_subclass
       {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
-      Some
-        ( InheritanceRule.violation_description inheritance_violation violation_type ~base_proc_name
-            ~overridden_proc_name
-        , ( match violation_type with
-          | InconsistentReturn ->
-              IssueType.eradicate_inconsistent_subclass_return_annotation
-          | InconsistentParam _ ->
-              IssueType.eradicate_inconsistent_subclass_parameter_annotation )
-        , None
-        , InheritanceRule.violation_severity inheritance_violation )
+      let+ reportable_violation =
+        InheritanceRule.to_reportable_violation nullsafe_mode inheritance_violation
+      in
+      ( InheritanceRule.ReportableViolation.get_description reportable_violation violation_type
+          ~base_proc_name ~overridden_proc_name
+      , ( match violation_type with
+        | InconsistentReturn ->
+            IssueType.eradicate_inconsistent_subclass_return_annotation
+        | InconsistentParam _ ->
+            IssueType.eradicate_inconsistent_subclass_parameter_annotation )
+      , None
+      , InheritanceRule.ReportableViolation.get_severity reportable_violation )
 
 
 let report_now_if_reportable (st_report_error : st_report_error) err_instance ~nullsafe_mode loc
