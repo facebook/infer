@@ -117,12 +117,12 @@ module Var : sig
 
   include Invariant.S with type t := t
 
+  val name : t -> string
+  val is_global : t -> bool
   val of_ : term -> t
   val of_term : term -> t option
   val program : ?global:unit -> string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
-  val name : t -> string
-  val global : t -> bool
 
   module Subst : sig
     type var := t

@@ -147,7 +147,7 @@ let rec pp fs exp =
     match exp.desc with
     | Reg {name} -> (
       match Var.of_term exp.term with
-      | Some v when Var.global v -> pf "%@%s" name
+      | Some v when Var.is_global v -> pf "%@%s" name
       | _ -> pf "%%%s" name )
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
