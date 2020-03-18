@@ -305,7 +305,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                   ()
                 else
                   register_error tenv find_canonical_duplicate
-                    (TypeErr.Field_not_initialized {nullsafe_mode; field_name})
+                    (TypeErr.Field_not_initialized {field_name})
                     None ~nullsafe_mode loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               match annotated_field with

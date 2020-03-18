@@ -65,7 +65,7 @@ type err_instance =
       ; violation_type: InheritanceRule.ReportableViolation.violation_type
       ; base_proc_name: Procname.t
       ; overridden_proc_name: Procname.t }
-  | Field_not_initialized of {nullsafe_mode: NullsafeMode.t; field_name: Fieldname.t}
+  | Field_not_initialized of {field_name: Fieldname.t}
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
       ; violation_type: OverAnnotatedRule.violation_type }
