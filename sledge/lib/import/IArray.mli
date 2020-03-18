@@ -137,7 +137,7 @@ val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
 
 (* val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t *)
 
-val map_adjacent : f:('a -> 'a -> 'a option) -> 'a -> 'a t -> 'a t
+val combine_adjacent : f:('a -> 'a -> 'a option) -> 'a t -> 'a t
 
 (* val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t *)
 (* val partitioni_tf : 'a t -> f:(int -> 'a -> bool) -> 'a t * 'a t *)

@@ -766,7 +766,7 @@ and simp_concat xs =
     | _ -> None
   in
   let xs = flatten xs in
-  let xs = IArray.map_adjacent empty_agg xs ~f:simp_adjacent in
+  let xs = IArray.combine_adjacent ~f:simp_adjacent xs in
   (if IArray.length xs = 1 then IArray.get xs 0 else ApN (Concat, xs))
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]

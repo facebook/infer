@@ -34,26 +34,23 @@ let to_array = a
 let pp sep pp_elt fs v = List.pp sep pp_elt fs (to_list v)
 let concat_map x ~f = v (Array.concat_map (a x) ~f:(fun y -> a (f y)))
 
-let map_adjacent ~f dummy xs_v =
-  let xs0 = a xs_v in
-  let copy_xs = lazy (Array.copy xs0) in
-  let n = Array.length xs0 - 1 in
-  let rec map_adjacent_ i xs =
-    if i < n then
-      let xs =
-        match f xs.(i) xs.(i + 1) with
-        | None -> xs
-        | Some x ->
-            let xs = Lazy.force copy_xs in
-            xs.(i) <- dummy ;
-            xs.(i + 1) <- x ;
-            xs
-      in
-      map_adjacent_ (i + 1) xs
-    else if xs == xs0 then xs
-    else Array.filter xs ~f:(fun x -> not (dummy == x))
+let combine_adjacent ~f xs_v =
+  let xs = a xs_v in
+  let n = Array.length xs - 1 in
+  let rec combine_adjacent_ j i xs =
+    if i < n then (
+      match f xs.(i - j) xs.(i + 1) with
+      | None ->
+          if j != 0 then xs.(i + 1 - j) <- xs.(i + 1) ;
+          combine_adjacent_ j (i + 1) xs
+      | Some x ->
+          let xs = if j = 0 then Array.copy xs else xs in
+          xs.(i - j) <- x ;
+          combine_adjacent_ (j + 1) (i + 1) xs )
+    else if j = 0 then xs
+    else Array.sub xs ~pos:0 ~len:(n + 1 - j)
   in
-  v (map_adjacent_ 0 xs0)
+  v (combine_adjacent_ 0 0 xs)
 
 let create ~len x = v (Array.create ~len x)
 let empty = v [||]
