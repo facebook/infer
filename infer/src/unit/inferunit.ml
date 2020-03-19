@@ -34,6 +34,7 @@ let () =
         ; DifferentialFiltersTests.tests
         ; DifferentialTests.tests
         ; FileDiffTests.tests
+        ; GradleTests.tests
         ; IListTests.tests
         ; JavaClassNameTests.tests
         ; JavaProfilerSamplesTest.tests

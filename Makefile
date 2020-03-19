@@ -688,8 +688,6 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 endif
 	find infer/lib/python/inferlib/* -type f -print0 | xargs -0 -I \{\} \
 	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
-	$(INSTALL_PROGRAM) -C       infer/lib/python/infer.py \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/infer.py
 	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/inferTraceBugs
 	$(INSTALL_PROGRAM) -C       infer/lib/python/report.py \

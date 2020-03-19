@@ -23,19 +23,6 @@ let extract_javac_args line =
   |> Option.join
 
 
-let do_javac_capture rev_javac_args =
-  let prog = Config.bin_dir ^/ "infer" in
-  let args =
-    "capture" :: "--continue" :: "--" :: "javac"
-    :: List.rev_filter_map rev_javac_args ~f:(fun arg ->
-           if String.equal "-Werror" arg then None
-           else if String.is_substring arg ~substring:"-g:" then Some "-g"
-           else Some arg )
-  in
-  L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
-  Process.create_process_and_wait ~prog ~args
-
-
 type fold_state = {collecting: bool; rev_javac_args: string list}
 
 let capture ~prog ~args =
@@ -59,7 +46,8 @@ let capture ~prog ~args =
           let collecting = collecting || start_collecting in
           let rev_javac_args =
             if start_collecting && not (List.is_empty rev_javac_args) then (
-              do_javac_capture rev_javac_args ; [] )
+              Javac.call_infer_javac_capture ~javac_args:(List.rev rev_javac_args) ;
+              [] )
             else rev_javac_args
           in
           let rev_javac_args =
@@ -70,4 +58,5 @@ let capture ~prog ~args =
           {collecting; rev_javac_args}
         else {collecting; rev_javac_args} )
   in
-  if not (List.is_empty res.rev_javac_args) then do_javac_capture res.rev_javac_args
+  if not (List.is_empty res.rev_javac_args) then
+    Javac.call_infer_javac_capture ~javac_args:(List.rev res.rev_javac_args)

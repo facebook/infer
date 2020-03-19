@@ -18,17 +18,17 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
-  | BuckCompilationDB of BuckMode.clang_compilation_db_deps * string * string list
-  | BuckGenrule of string
-  | BuckGenruleMaster of string list
-  | Clang of Clang.compiler * string * string list
-  | ClangCompilationDB of [`Escaped of string | `Raw of string] list
-  | Javac of Javac.compiler * string * string list
-  | Maven of string * string list
+  | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
+  | BuckGenrule of {prog: string}
+  | BuckGenruleMaster of {build_cmd: string list}
+  | Clang of {compiler: Clang.compiler; prog: string; args: string list}
+  | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
+  | Gradle of {prog: string; args: string list}
+  | Javac of {compiler: Javac.compiler; prog: string; args: string list}
+  | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
-  | PythonCapture of Config.build_system * string list
   | XcodeBuild of {prog: string; args: string list}
-  | XcodeXcpretty of string * string list
+  | XcodeXcpretty of {prog: string; args: string list}
 
 let is_analyze_mode = function Analyze -> true | _ -> false
 
@@ -39,40 +39,38 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | BuckGenrule prog ->
-      F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
-  | BuckGenruleMaster build_cmd ->
-      F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
-  | BuckCompilationDB (deps, prog, args) ->
+  | BuckCompilationDB {deps; prog; args} ->
       F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a@\ndeps = %a" prog
         Pp.cli_args args BuckMode.pp_clang_compilation_db_deps deps
+  | BuckGenrule {prog} ->
+      F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
+  | BuckGenruleMaster {build_cmd} ->
+      F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
+  | Clang {prog; args} ->
+      F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
       F.fprintf fmt "ClangCompilationDB driver mode"
-  | PythonCapture (bs, args) ->
-      F.fprintf fmt "PythonCapture driver mode:@\nbuild system = '%s'@\nargs = %a"
-        (Config.string_of_build_system bs)
-        Pp.cli_args args
-  | XcodeBuild {prog; args} ->
-      F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | XcodeXcpretty (prog, args) ->
-      F.fprintf fmt "XcodeXcpretty driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Javac (_, prog, args) ->
+  | Gradle {prog; args} ->
+      F.fprintf fmt "Gradle driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | Javac {prog; args} ->
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Maven (prog, args) ->
+  | Maven {prog; args} ->
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | Clang (_, prog, args) ->
-      F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | XcodeBuild {prog; args} ->
+      F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | XcodeXcpretty {prog; args} ->
+      F.fprintf fmt "XcodeXcpretty driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
 
 
 (* A clean command for each driver mode to be suggested to the user
    in case nothing got captured. *)
 let clean_compilation_command mode =
   match mode with
-  | BuckCompilationDB (_, prog, _) | Clang (_, prog, _) ->
+  | BuckCompilationDB {prog} | Clang {prog} ->
       Some (prog ^ " clean")
-  | XcodeXcpretty (prog, args) ->
+  | XcodeXcpretty {prog; args} ->
       Some (String.concat ~sep:" " (List.append (prog :: args) ["clean"]))
   | _ ->
       None
@@ -150,26 +148,6 @@ let reset_duplicates_file () =
   create ()
 
 
-let command_error_handling ~always_die ~prog ~args = function
-  | Ok _ ->
-      ()
-  | Error _ as status ->
-      let log =
-        if (not always_die) && Config.keep_going then
-          (* Log error and proceed past the failure when keep going mode is on *)
-          L.external_error
-        else L.die InternalError
-      in
-      log "%a:@\n  %s" Pp.cli_args (prog :: args) (Unix.Exit_or_signal.to_string_hum status)
-
-
-let run_command ~prog ~args ?(cleanup = command_error_handling ~always_die:false ~prog ~args) () =
-  Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
-  |> fun status ->
-  cleanup status ;
-  ok_exn (Unix.Exit_or_signal.or_error status)
-
-
 let check_xcpretty () =
   match Unix.system "xcpretty --version" with
   | Ok () ->
@@ -230,42 +208,6 @@ let buck_capture build_cmd =
       Buck.clang_flavor_capture ~prog ~buck_build_cmd )
 
 
-let python_capture build_system build_cmd =
-  L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
-  let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
-  let args =
-    List.rev_append Config.anon_args
-      ( (if not Config.continue_capture then [] else ["--continue"])
-      @ ( match Config.force_integration with
-        | None ->
-            []
-        | Some tool ->
-            ["--force-integration"; Config.string_of_build_system tool] )
-      @ (match Config.java_jar_compiler with None -> [] | Some p -> ["--java-jar-compiler"; p])
-      @ (if not Config.debug_mode then [] else ["--debug"])
-      @ (if Config.filtering then [] else ["--no-filtering"])
-      @ "-j" :: string_of_int Config.jobs
-        :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
-      @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
-      @ ["--project-root"; Config.project_root]
-      @ (if not Config.quiet then [] else ["--quiet"])
-      @ "--out" :: Config.results_dir
-        ::
-        (match Config.xcode_developer_dir with None -> [] | Some d -> ["--xcode-developer-dir"; d])
-      @ (if not Config.buck_merge_all_deps then [] else ["--buck-merge-all-deps"])
-      @ ("--" :: build_cmd) )
-  in
-  run_command ~prog:infer_py ~args
-    ~cleanup:(function
-      | Error (`Exit_non_zero exit_code)
-        when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
-          (* swallow infer.py argument parsing error *)
-          Config.print_usage_exit ()
-      | status ->
-          command_error_handling ~always_die:true ~prog:infer_py ~args status )
-    ()
-
-
 let capture ~changed_files = function
   | Analyze ->
       ()
@@ -274,39 +216,40 @@ let capture ~changed_files = function
       Ant.capture ~prog ~args
   | BuckClangFlavor {build_cmd} ->
       buck_capture build_cmd
-  | BuckCompilationDB (deps, prog, args) ->
+  | BuckCompilationDB {deps; prog; args} ->
       L.progress "Capturing using Buck's compilation database...@." ;
       let json_cdb =
         CaptureCompilationDatabase.get_compilation_database_files_buck deps ~prog ~args
       in
       capture_with_compilation_database ~changed_files json_cdb
-  | BuckGenrule path ->
+  | BuckGenrule {prog} ->
       L.progress "Capturing for Buck genrule compatibility...@." ;
-      JMain.from_arguments path
-  | BuckGenruleMaster build_cmd ->
+      JMain.from_arguments prog
+  | BuckGenruleMaster {build_cmd} ->
       L.progress "Capturing for BuckGenruleMaster integration...@." ;
       BuckGenrule.capture build_cmd
-  | Clang (compiler, prog, args) ->
+  | Clang {compiler; prog; args} ->
       if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
-  | ClangCompilationDB db_files ->
+  | ClangCompilationDB {db_files} ->
       L.progress "Capturing using compilation database...@." ;
       capture_with_compilation_database ~changed_files db_files
-  | Javac (compiler, prog, args) ->
+  | Gradle {prog; args} ->
+      L.progress "Capturing in gradle mode...@." ;
+      Gradle.capture ~prog ~args
+  | Javac {compiler; prog; args} ->
       if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
       Javac.capture compiler ~prog ~args
-  | Maven (prog, args) ->
+  | Maven {prog; args} ->
       L.progress "Capturing in maven mode...@." ;
       Maven.capture ~prog ~args
   | NdkBuild {build_cmd} ->
       L.progress "Capturing in ndk-build mode...@." ;
       NdkBuild.capture ~build_cmd
-  | PythonCapture (build_system, build_cmd) ->
-      python_capture build_system build_cmd
   | XcodeBuild {prog; args} ->
       L.progress "Capturing in xcodebuild mode...@." ;
       XcodeBuild.capture ~prog ~args
-  | XcodeXcpretty (prog, args) ->
+  | XcodeXcpretty {prog; args} ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
       let json_cdb =
@@ -512,7 +455,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   | [] ->
       if not (List.is_empty !Config.clang_compilation_dbs) then (
         assert_supported_mode `Clang "clang compilation database" ;
-        ClangCompilationDB !Config.clang_compilation_dbs )
+        ClangCompilationDB {db_files= !Config.clang_compilation_dbs} )
       else Analyze
   | prog :: args -> (
       let build_system =
@@ -524,39 +467,39 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       in
       assert_supported_build_system build_system ;
       match ((build_system : Config.build_system), buck_mode) with
+      | BAnt, _ ->
+          Ant {prog; args}
       | BBuck, None ->
           error_no_buck_mode_specified ()
       | BBuck, Some (ClangCompilationDB deps) ->
-          BuckCompilationDB (deps, prog, List.append args (List.rev Config.buck_build_args))
+          BuckCompilationDB {deps; prog; args= List.append args (List.rev Config.buck_build_args)}
       | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->
           L.user_warning
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
           BuckClangFlavor {build_cmd}
       | BBuck, Some JavaGenruleMaster ->
-          BuckGenruleMaster build_cmd
-      | BClang, _ ->
-          Clang (Clang.Clang, prog, args)
-      | BMake, _ ->
-          Clang (Clang.Make, prog, args)
-      | BJava, _ ->
-          Javac (Javac.Java, prog, args)
-      | BJavac, _ ->
-          Javac (Javac.Javac, prog, args)
-      | BMvn, _ ->
-          Maven (prog, args)
-      | BXcode, _ when Config.xcpretty ->
-          XcodeXcpretty (prog, args)
-      | BXcode, _ ->
-          XcodeBuild {prog; args}
+          BuckGenruleMaster {build_cmd}
       | BBuck, Some ClangFlavors ->
           BuckClangFlavor {build_cmd}
+      | BClang, _ ->
+          Clang {compiler= Clang.Clang; prog; args}
+      | BGradle, _ ->
+          Gradle {prog; args}
+      | BJava, _ ->
+          Javac {compiler= Javac.Java; prog; args}
+      | BJavac, _ ->
+          Javac {compiler= Javac.Javac; prog; args}
+      | BMake, _ ->
+          Clang {compiler= Clang.Make; prog; args}
+      | BMvn, _ ->
+          Maven {prog; args}
       | BNdk, _ ->
           NdkBuild {build_cmd}
-      | BAnt, _ ->
-          Ant {prog; args}
-      | (BGradle as build_system), _ ->
-          PythonCapture (build_system, build_cmd) )
+      | BXcode, _ when Config.xcpretty ->
+          XcodeXcpretty {prog; args}
+      | BXcode, _ ->
+          XcodeBuild {prog; args} )
 
 
 let mode_from_command_line =
@@ -571,15 +514,15 @@ let mode_from_command_line =
               assert false
           (* Sys.argv is never empty *)
         in
-        Clang (Clang.Clang, prog, args)
+        Clang {compiler= Clang.Clang; prog; args}
     | _ when Config.infer_is_javac ->
         let build_args =
           match Array.to_list (Sys.get_argv ()) with _ :: args -> args | [] -> []
         in
-        Javac (Javac.Javac, "javac", build_args)
+        Javac {compiler= Javac.Javac; prog= "javac"; args= build_args}
     | Some path ->
         assert_supported_mode `Java "Buck genrule" ;
-        BuckGenrule path
+        BuckGenrule {prog= path}
     | None ->
         mode_of_build_command (List.rev Config.rest) Config.buck_mode )
 
