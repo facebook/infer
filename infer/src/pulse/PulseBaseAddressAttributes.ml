@@ -45,6 +45,8 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
+let partition = Graph.partition
+
 let pp = Graph.pp
 
 let invalidate (address, history) invalidation location memory =

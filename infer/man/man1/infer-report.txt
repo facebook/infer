@@ -201,6 +201,7 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+             PULSE_MEMORY_LEAK (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),

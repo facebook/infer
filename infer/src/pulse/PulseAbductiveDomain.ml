@@ -27,6 +27,12 @@ module type BaseDomainSig = sig
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
   (**filter both heap and attrs *)
 
+  val partition_addr :
+       f:(AbstractValue.t -> bool)
+    -> t
+    -> (BaseMemory.t * BaseAddressAttributes.t) * (BaseMemory.t * BaseAddressAttributes.t)
+  (**partition both heap and attrs *)
+
   val pp : F.formatter -> t -> unit
 end
 
@@ -54,6 +60,14 @@ module BaseDomainCommon = struct
     let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
     let attrs' = BaseAddressAttributes.filter (fun address _ -> f address) foot.attrs in
     update ~heap:heap' ~attrs:attrs' foot
+
+
+  let partition_addr ~f foot =
+    let heap_yes, heap_no = BaseMemory.partition (fun address _ -> f address) foot.heap in
+    let attrs_yes, attrs_no =
+      BaseAddressAttributes.partition (fun address _ -> f address) foot.attrs
+    in
+    ((heap_yes, attrs_yes), (heap_no, attrs_no))
 end
 
 (** represents the post abstract state at each program point *)
@@ -324,11 +338,15 @@ let discard_unreachable ({pre; post} as astate) =
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
-  let post_new =
-    Domain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
+  let (heap_new, attrs_new), (_, attrs_unreachable) =
+    Domain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
   in
-  if phys_equal pre_new pre && phys_equal post_new post then astate
-  else {astate with pre= pre_new; post= post_new}
+  let post_new = Domain.update ~heap:heap_new ~attrs:attrs_new post in
+  let astate =
+    if phys_equal pre_new pre && phys_equal post_new post then astate
+    else {astate with pre= pre_new; post= post_new}
+  in
+  (astate, attrs_unreachable)
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -399,7 +417,9 @@ module PrePost = struct
 
 
   let of_post pdesc astate =
-    filter_for_summary astate |> discard_unreachable |> invalidate_locals pdesc
+    let domain = filter_for_summary astate in
+    let domain, _ = discard_unreachable domain in
+    invalidate_locals pdesc domain
 
 
   (* {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call

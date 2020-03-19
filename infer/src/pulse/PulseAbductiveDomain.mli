@@ -6,6 +6,7 @@
  *)
 open! IStd
 open PulseBasicInterface
+module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
@@ -103,9 +104,9 @@ end
 
 module SkippedCalls : AbstractDomain.MapS with type key = Procname.t and type value = SkippedTrace.t
 
-val discard_unreachable : t -> t
-(** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
-    keep its size down *)
+val discard_unreachable : t -> t * BaseAddressAttributes.t
+(** [discard_unreachable astate] garbage collects unreachable addresses in the state to make it
+    smaller, and retuns the new state and the attributes of discarded addresses *)
 
 val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
 

@@ -15,12 +15,13 @@ module ValueHistory = PulseValueHistory
 type t =
   | AccessToInvalidAddress of
       {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
+  | MemoryLeak of {allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 let get_location = function
   | AccessToInvalidAddress {access_trace} ->
       Trace.get_outer_location access_trace
-  | StackVariableAddressEscape {location} ->
+  | MemoryLeak {location} | StackVariableAddressEscape {location} ->
       location
 
 
@@ -66,6 +67,20 @@ let get_message = function
       F.asprintf "%a%a" pp_access_trace access_trace
         (pp_invalidation_trace invalidation_line invalidation)
         invalidation_trace
+  | MemoryLeak {location; allocation_trace} ->
+      let allocation_line =
+        let {Location.line; _} = Trace.get_outer_location allocation_trace in
+        line
+      in
+      let pp_allocation_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate _ ->
+            F.fprintf fmt "by call to `malloc()`"
+        | ViaCall {f; _} ->
+            F.fprintf fmt "by call to %a" CallEvent.describe f
+      in
+      F.asprintf "memory dynamically allocated at line %d %a, is not reachable after %a"
+        allocation_line pp_allocation_trace allocation_trace Location.pp location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
@@ -95,6 +110,13 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
            access_trace
       @@ []
+  | MemoryLeak {allocation_trace} ->
+      let access_start_location = Trace.get_start_location allocation_trace in
+      add_errlog_header ~title:"allocation part of the trace starts here" access_start_location
+      @@ Trace.add_to_errlog ~nesting:0
+           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation occurs here")
+           allocation_trace
+      @@ []
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
       @@
@@ -105,5 +127,7 @@ let get_trace = function
 let get_issue_type = function
   | AccessToInvalidAddress {invalidation; _} ->
       Invalidation.issue_type_of_cause invalidation
+  | MemoryLeak _ ->
+      IssueType.pulse_memory_leak
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape

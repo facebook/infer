@@ -167,7 +167,8 @@ module PulseTransferFunctions = struct
         dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
         |> check_error summary
     | Metadata (ExitScope (vars, location)) ->
-        [PulseOperations.remove_vars vars location astate]
+        let astate = PulseOperations.remove_vars vars location astate in
+        [check_error summary astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
         [PulseOperations.realloc_pvar pvar location astate]
     | Metadata (Abstract _ | Nullify _ | Skip) ->

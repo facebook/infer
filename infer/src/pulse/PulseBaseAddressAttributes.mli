@@ -14,6 +14,8 @@ val empty : t
 
 val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
 
+val partition : (AbstractValue.t -> Attributes.t -> bool) -> t -> t * t
+
 val find_opt : AbstractValue.t -> t -> Attributes.t option
 
 val add_one : AbstractValue.t -> Attribute.t -> t -> t

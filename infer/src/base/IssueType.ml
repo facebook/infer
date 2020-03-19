@@ -406,6 +406,8 @@ let precondition_not_met = register_from_string "PRECONDITION_NOT_MET"
 
 let premature_nil_termination = register_from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
 
+let pulse_memory_leak = register_from_string ~enabled:false "PULSE_MEMORY_LEAK"
+
 let pure_function = register_from_string "PURE_FUNCTION"
 
 let quandary_taint_error = register_from_string "QUANDARY_TAINT_ERROR"

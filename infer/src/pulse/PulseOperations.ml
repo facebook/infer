@@ -468,6 +468,29 @@ let mark_address_of_stack_variable history variable location address astate =
   AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
 
 
+let check_memory_leak_unreachable unreachable_attrs location =
+  let check_memory_leak _ attributes result =
+    let allocated_not_freed_opt =
+      Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
+        ~f:(fun acc attr ->
+          match (attr : Attribute.t) with
+          | Allocated trace ->
+              (Some trace, snd acc)
+          | Invalid (CFree, _) ->
+              (fst acc, true)
+          | _ ->
+              acc )
+    in
+    match allocated_not_freed_opt with
+    | Some trace, false ->
+        (* allocated but not freed *)
+        Error (Diagnostic.MemoryLeak {location; allocation_trace= trace})
+    | _ ->
+        result
+  in
+  PulseBaseAddressAttributes.fold check_memory_leak unreachable_attrs (Ok ())
+
+
 let remove_vars vars location astate =
   let astate =
     List.fold vars ~init:astate ~f:(fun astate var ->
@@ -485,7 +508,11 @@ let remove_vars vars location astate =
             astate )
   in
   let astate' = Stack.remove_vars vars astate in
-  if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
+  if phys_equal astate' astate then Ok astate
+  else
+    let astate, unreachable_attrs = AbductiveDomain.discard_unreachable astate' in
+    let+ () = check_memory_leak_unreachable unreachable_attrs location in
+    astate
 
 
 let is_ptr_to_const formal_typ_opt =

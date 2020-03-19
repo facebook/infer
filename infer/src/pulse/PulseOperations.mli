@@ -99,7 +99,7 @@ val shallow_copy :
   -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
-val remove_vars : Var.t list -> Location.t -> t -> t
+val remove_vars : Var.t list -> Location.t -> t -> t access_result
 
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result

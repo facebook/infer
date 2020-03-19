@@ -14,6 +14,7 @@ module ValueHistory = PulseValueHistory
 type t =
   | AccessToInvalidAddress of
       {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
+  | MemoryLeak of {allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 val get_message : t -> string
