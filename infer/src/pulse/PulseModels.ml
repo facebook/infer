@@ -401,7 +401,8 @@ module ProcNameDispatcher = struct
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     let pushback_modeled =
-      StringSet.of_list ["add"; "addAll"; "append"; "remove"; "replace"; "poll"; "put"; "putAll"]
+      StringSet.of_list
+        ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
     in
     make_dispatcher
       [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
@@ -426,6 +427,9 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
         $--> Misc.shallow_copy "std::function::operator="
       ; +PatternMatch.implements_lang "Object" &:: "clone" $ capt_arg_payload $--> JavaObject.clone
+      ; ( +PatternMatch.implements_lang "System"
+        &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
+        $+...$--> fun src dest -> Misc.shallow_copy "System.arraycopy" dest src )
       ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdAtomicInteger.constructor
       ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
@@ -478,6 +482,9 @@ module ProcNameDispatcher = struct
       ; +PatternMatch.implements_lang "StringBuilder"
         &::+ (fun _ str -> StringSet.mem str pushback_modeled)
         <>$ capt_arg_payload $+...$--> StdVector.push_back
+      ; +PatternMatch.implements_lang "StringBuilder"
+        &:: "setLength" <>$ capt_arg_payload
+        $+...$--> StdVector.invalidate_references ShrinkToFit
       ; +PatternMatch.implements_lang "String"
         &::+ (fun _ str -> StringSet.mem str pushback_modeled)
         <>$ capt_arg_payload $+...$--> StdVector.push_back

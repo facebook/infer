@@ -182,4 +182,22 @@ class Localities {
   public static boolean call_is_null_pure(Byte a) {
     return is_null_pure(a);
   }
+
+  private static final int MAX_SIZE = 2;
+
+  private static final int[][][] pool = new int[3][2][];
+
+  static int[] get_impure(int size) {
+    if (size > MAX_SIZE) {
+      return new int[size];
+    }
+    int[][] arrays = pool[size];
+    if (arrays[1] != null) {
+      int[] a = arrays[1];
+      arrays[1] = null;
+      return a;
+    } else {
+      return new int[size];
+    }
+  }
 }

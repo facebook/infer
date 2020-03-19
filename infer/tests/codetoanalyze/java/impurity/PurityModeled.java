@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -22,7 +23,7 @@ class PurityModeled {
     return 0;
   }
 
-  void arraycopy_pure_FP(int[] src) {
+  void arraycopy_pure(int[] src) {
     int[] dst = {5, 10, 20, 30, 40, 50};
     // copies an array from the specified source array
     System.arraycopy(src, 0, dst, 0, 1);
@@ -158,5 +159,20 @@ class PurityModeled {
   // impure.
   Integer next_impure_FN(Iterator<Integer> it) {
     return it.next();
+  }
+
+  public static final String toString_delete_pure(Object args) {
+    StringBuilder builder = new StringBuilder(32).append('{');
+    if (args != null) {
+      if (builder.charAt(builder.length() - 2) == ',') {
+        builder.delete(builder.length() - 2, builder.length());
+      }
+    }
+    builder.append('}').setLength(10);
+    return builder.toString();
+  }
+
+  String getCanonicalPath_pure(File file) throws IOException {
+    return file.getCanonicalPath();
   }
 }

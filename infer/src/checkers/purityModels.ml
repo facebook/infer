@@ -81,6 +81,7 @@ module ProcName = struct
       ; +PatternMatch.implements_google "common.base.Preconditions"
         &::+ startsWith "check" <>--> PurityDomain.pure
       ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_io "File" &::+ startsWith "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_io "OutputStream" &:: "write" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "InputStream" &:: "read" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_io "PrintStream" &:: "print" <>--> PurityDomain.impure_global
@@ -97,6 +98,7 @@ module ProcName = struct
         &::+ startsWith "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_pseudo_collection &:: "size" <>--> PurityDomain.pure
       ; +PatternMatch.implements_pseudo_collection &:: "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_pseudo_collection &:: "valueAt" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "Math" &:: "random" <>--> PurityDomain.impure_global
       ; +PatternMatch.implements_lang "Math" &::.*--> PurityDomain.pure
         (* for (int|short|byte...)Value*)
