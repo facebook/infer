@@ -329,6 +329,10 @@ $(INFER_GROFF_MANUALS_GZIPPED): %.gz: %
 	$(QUIET)$(REMOVE) $@
 	gzip $<
 
+manuals:
+	$(QUIET)$(call silent_on_success,Building Infer manuals,\
+	$(MAKE) $(INFER_MANUALS))
+
 infer_models: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Building infer annotations,\
@@ -581,8 +585,7 @@ mod_dep: src_build_common
 .PHONY: config_tests
 config_tests: test_build ocaml_unit_test validate-skel mod_dep
 	$(MAKE) endtoend_test checkCopyright
-	$(QUIET)$(call silent_on_success,Building Infer manuals,\
-	$(MAKE) $(INFER_MANUALS))
+	$(MAKE) manuals
 
 ifneq ($(filter endtoend_test,${MAKECMDGOALS}),)
 checkCopyright: src_build
