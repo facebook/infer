@@ -33,7 +33,7 @@ before_install:
   - export OPAMVERBOSE=1
 install:
   # ensure infer isn't installed in this switch, then deal with dependencies
-  - opam remove infer
+  - opam remove infer || true
   - opam update --upgrade
   - opam pin add --no-action infer .
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then opam depext --update infer; fi
@@ -41,7 +41,7 @@ install:
 script:
   - opam install infer
 before_cache:
-  - opam remove infer
+  - opam remove infer || true
 os:
 - linux
 - osx
