@@ -617,7 +617,7 @@ let orN us rs =
 let rec and_term_ us e r =
   let eq_false b r = and_eq us b Term.false_ r in
   match (e : Term.t) with
-  | Integer {data} -> if Z.is_false data then false_ else true_
+  | Integer {data} -> if Z.is_false data then false_ else r
   | Ap2 (And, a, b) -> and_term_ us a (and_term_ us b r)
   | Ap2 (Eq, a, b) -> and_eq us a b r
   | Ap2 (Xor, Integer {data}, a) when Z.is_true data -> eq_false a r
