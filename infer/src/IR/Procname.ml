@@ -11,7 +11,7 @@ module F = Format
 module L = Logging
 
 (** Level of verbosity of some to_string functions. *)
-type detail_level = Verbose | Non_verbose | Simple [@@deriving compare, equal]
+type detail_level = Verbose | Non_verbose | Simple
 
 let is_verbose v = match v with Verbose -> true | _ -> false
 
@@ -40,28 +40,13 @@ module Java = struct
     {class_name; return_type; method_name; parameters; kind}
 
 
-  let pp_type_verbosity verbosity fmt java_type =
-    JavaSplitName.pp_type_verbosity ~verbose:(is_verbose verbosity) fmt java_type
+  let pp_return_type ~verbose fmt j =
+    Option.iter j.return_type ~f:(JavaSplitName.pp_type_verbosity ~verbose fmt)
 
 
-  (** Given a list of types, it creates a unique string of types separated by commas *)
-  let rec pp_param_list verbosity fmt inputList =
-    match inputList with
-    | [] ->
-        ()
-    | [head] ->
-        pp_type_verbosity verbosity fmt head
-    | head :: rest ->
-        pp_type_verbosity verbosity fmt head ;
-        F.pp_print_string fmt "," ;
-        pp_param_list verbosity fmt rest
+  let constructor_method_name = "<init>"
 
-
-  (** It is the same as java_type_to_string_verbosity, but Java return types are optional because of
-      constructors without type *)
-  let pp_return_type verbosity fmt j =
-    match j.return_type with None -> () | Some typ -> pp_type_verbosity verbosity fmt typ
-
+  let class_initializer_method_name = "<clinit>"
 
   let get_class_name j = Typ.Name.name j.class_name
 
@@ -91,36 +76,39 @@ module Java = struct
 
   (** Prints a string of a java procname with the given level of verbosity *)
   let pp ?(withclass = false) verbosity fmt j =
-    let pp_class_name verbosity fmt j =
-      JavaClassName.pp_with_verbosity ~verbose:(is_verbose verbosity) fmt
-        (get_java_class_name_exn j)
+    let verbose = is_verbose verbosity in
+    let pp_class_name_dot fmt j =
+      JavaClassName.pp_with_verbosity ~verbose fmt (get_java_class_name_exn j) ;
+      F.pp_print_char fmt '.'
+    in
+    let pp_package_method_and_params fmt j =
+      let pp_param_list fmt params =
+        Pp.seq ~sep:"," (JavaSplitName.pp_type_verbosity ~verbose) fmt params
+      in
+      F.fprintf fmt "%a%s(%a)" pp_class_name_dot j j.method_name pp_param_list j.parameters
     in
     match verbosity with
-    | Verbose | Non_verbose ->
-        (* if verbose, then package.class.method(params): rtype,
-           else rtype package.class.method(params)
-           verbose is used for example to create unique filenames, non_verbose to create reports *)
-        let separator =
-          match (j.return_type, verbosity) with None, _ -> "" | Some _, Verbose -> ":" | _ -> " "
-        in
-        if not (equal_detail_level verbosity Verbose) then
-          F.fprintf fmt "%a%s" (pp_return_type verbosity) j separator ;
-        F.fprintf fmt "%a.%s(%a)" (pp_class_name verbosity) j j.method_name
-          (pp_param_list verbosity) j.parameters ;
-        if equal_detail_level verbosity Verbose then
-          F.fprintf fmt "%s%a" separator (pp_return_type verbosity) j
+    | Verbose ->
+        (* [package.class.method(params): rtype], used for example to create unique filenames *)
+        let separator = if Option.is_none j.return_type then "" else ":" in
+        pp_package_method_and_params fmt j ;
+        F.fprintf fmt "%s%a" separator (pp_return_type ~verbose) j
+    | Non_verbose ->
+        (* [rtype package.class.method(params)], for creating reports *)
+        let separator = if Option.is_none j.return_type then "" else " " in
+        F.fprintf fmt "%a%s" (pp_return_type ~verbose) j separator ;
+        pp_package_method_and_params fmt j
     | Simple ->
-        (* methodname(...) or without ... if there are no parameters *)
-        let pp_class_prefix ~withclass verbosity fmt j =
-          if withclass then F.fprintf fmt "%a." (pp_class_name verbosity) j
-        in
+        (* [methodname(...)] or without ... if there are no parameters *)
         let params = match j.parameters with [] -> "" | _ -> "..." in
-        let pp_method_name ~withclass verbosity fmt j =
-          if String.equal j.method_name "<init>" then
+        let pp_method_name fmt j =
+          if String.equal j.method_name constructor_method_name then
             F.pp_print_string fmt (get_simple_class_name j)
-          else F.fprintf fmt "%a%s" (pp_class_prefix ~withclass verbosity) j j.method_name
+          else (
+            if withclass then pp_class_name_dot fmt j ;
+            F.pp_print_string fmt j.method_name )
         in
-        F.fprintf fmt "%a(%s)" (pp_method_name ~withclass verbosity) j params
+        F.fprintf fmt "%a(%s)" pp_method_name j params
 
 
   let get_return_typ pname_java =
@@ -149,14 +137,10 @@ module Java = struct
       | typ_str ->
           Typ.(mk_ptr (mk_struct (Typ.Name.Java.from_string typ_str)))
     in
-    java_from_string (F.asprintf "%a" (pp_return_type Verbose) pname_java)
+    java_from_string (F.asprintf "%a" (pp_return_type ~verbose:true) pname_java)
 
 
   let is_close {method_name} = String.equal method_name "close"
-
-  let constructor_method_name = "<init>"
-
-  let class_initializer_method_name = "<clinit>"
 
   let is_class_initializer {method_name} = String.equal method_name class_initializer_method_name
 
