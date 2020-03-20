@@ -362,20 +362,20 @@ let capture_buck_args =
       "*//cxx.modules_default=false"
     ; "--config"
     ; "*//cxx.modules=false" ]
-    ( List.rev_append Config.buck_build_args
-        ( if not (List.is_empty Config.buck_blacklist) then
-          [ "--config"
-          ; Printf.sprintf "*//infer.blacklist_regex=(%s)"
-              (String.concat ~sep:")|(" Config.buck_blacklist) ]
-        else [] )
-    @ ( match Config.xcode_developer_dir with
+    ( ( match Config.xcode_developer_dir with
       | Some d ->
           ["--config"; Printf.sprintf "apple.xcode_developer_dir=%s" d]
       | None ->
           [] )
     @ (if Config.keep_going then ["--keep-going"] else [])
     @ ["-j"; Int.to_string Config.jobs]
-    @ match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [] )
+    @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
+    @ List.rev_append Config.buck_build_args
+        ( if not (List.is_empty Config.buck_blacklist) then
+          [ "--config"
+          ; Printf.sprintf "*//infer.blacklist_regex=(%s)"
+              (String.concat ~sep:")|(" Config.buck_blacklist) ]
+        else [] ) )
 
 
 let run_buck_build prog buck_build_args =
