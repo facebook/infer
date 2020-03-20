@@ -131,6 +131,7 @@ class PurityModeled {
     for (Color c : Color.values()) {}
   }
 
+  @SuppressWarnings("unchecked")
   void clone_pure(ArrayList<String> list) {
     ArrayList<String> cloned = (ArrayList<String>) list.clone();
     cloned.add(""); // no change the list

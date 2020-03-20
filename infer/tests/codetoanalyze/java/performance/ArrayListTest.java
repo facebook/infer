@@ -294,7 +294,7 @@ public class ArrayListTest {
     }
   }
 
-  ArrayList<Elt> arr = new ArrayList();
+  ArrayList<Elt> arr = new ArrayList<Elt>();
 
   void boolean_control_var_linear() {
     for (int i = 0; i < arr.size(); i++) {
