@@ -7,7 +7,7 @@ C++, Objective-C, and C. Infer is written in [OCaml](https://ocaml.org/).
 ## Installation
 
 Read our [Getting
-Started](http://fbinfer.com/docs/getting-started.html) page for
+Started](http://fbinfer.com/docs/getting-started) page for
 details on how to install packaged versions of Infer. To build Infer
 from source, see [INSTALL.md](./INSTALL.md).
 
