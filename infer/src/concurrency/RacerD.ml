@@ -118,19 +118,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_callee_accesses formals (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname loc =
     let open Domain in
+    let actuals_ownership =
+      (* precompute array holding ownership of each actual for fast random access *)
+      Array.of_list_map actuals ~f:(fun actual_exp ->
+          OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership )
+    in
     let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
-      match acc with
-      | Unowned ->
-          (* optimisation -- already unowned, don't compute ownership of remaining actuals *)
-          acc
-      | actuals_ownership -> (
-        match List.nth actuals actual_index with
-        | None ->
-            (* vararg methods can result into missing actuals so simply ignore *)
-            acc
-        | Some actual_exp ->
-            OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership
-            |> OwnershipAbstractValue.join actuals_ownership )
+      if actual_index >= Array.length actuals_ownership then
+        (* vararg methods can result into missing actuals so simply ignore *)
+        acc
+      else OwnershipAbstractValue.join acc actuals_ownership.(actual_index)
     in
     let update_callee_access (snapshot : AccessSnapshot.t) acc =
       let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
