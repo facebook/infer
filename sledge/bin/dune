@@ -4,12 +4,13 @@
 ; LICENSE file in the root directory of this source tree.
 
 (executable
+ (name sledge_cli)
  (public_name sledge)
  (package sledge)
  (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
    llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
-   llvm.linker shexp.process yojson trace import sledgelib model)
+   llvm.linker shexp.process yojson trace import sledge model)
  (flags
-  (:standard -open Import -open Sledgelib -open Model))
+  (:standard -open Import -open Sledge -open Model))
  (preprocess
   (pps ppx_sledge)))

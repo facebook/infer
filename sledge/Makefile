@@ -6,7 +6,7 @@
 .PHONY: default
 default: exes
 
-EXES = bin/sledge
+EXES = bin/sledge_cli
 INSTALLS = sledge
 
 DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS))
@@ -67,7 +67,7 @@ clean:
 
 .PHONY: fmt
 fmt:
-	dune build @_build/dbg/fmt --auto-promote 2>/dev/null
+	-dune build @_build/dbg/fmt --auto-promote 2>/dev/null
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt
 

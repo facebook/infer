@@ -30,7 +30,8 @@
 
 (rule
  (targets sledge-help.txt)
- (deps bin/sledge.ml bin/sledge_buck.ml tools/gen_help.sh bin/sledge.exe)
+ (deps bin/sledge_cli.ml bin/sledge_buck.ml tools/gen_help.sh
+   bin/sledge_cli.exe)
  (action
   (with-stdout-to
    sledge-help.txt
