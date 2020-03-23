@@ -7,16 +7,19 @@
 
 (** Extension point rewriter for debug trace logging
 
-    This ppx rewriter declares a [--debug] command line option, to be passed
-    by the build system in debug but not optimized build modes. Setting the
-    [PPX_TRACE_ENABLED] environment variable to [1] or [true] has the same
-    effect as passing [--debug].
+    This ppx rewriter reads a cookie to determine whether to rewrite in
+    "debug" mode or not. To enable "debug" mode, pass
+    [--cookie 'ppx_trace_enabled="1"'] (or with [true] instead or [1]).
+
+    named "ppx_trace_enabled" declares a [--debug] command line option, to
+    be passed by the build system in debug but not optimized build modes.
+    Setting the [PPX_TRACE_ENABLED] environment variable to [1] or [true]
+    has the same effect as passing [--debug].
 
     It rewrites [\[%Trace.info f\]] to a call
     [\[Trace.info mod_name fun_name f\]] where [mod_name] and [fun_name] are
     the enclosing module and function names in the parsetree. This is only
-    done in debug mode, if [--debug] is not passed, then [\[%Trace.info f\]]
-    is rewritten to [()].
+    done in debug mode, otherwise [\[%Trace.info f\]] is rewritten to [()].
 
     Similarly, [\[%Trace.call\]] is rewritten to a call to [Trace.call] or
     [()], and [\[%Trace.retn\]] to a call to [Trace.retn] or [Fn.id].
@@ -38,20 +41,20 @@
     only in debug mode.
 
     Additionally, [\[%debug\]] is rewritten to the compile-time boolean
-    constant determined by whether or not [--debug] is passed. *)
+    constant indicating if rewriting was done in debug mode. *)
 
 open Ppxlib
 open Ast_builder.Default
 module Ast_mapper = Selected_ast.Ast.Ast_mapper
 
-let debug =
-  ref
-    ( match Sys.getenv_opt "PPX_TRACE_ENABLED" with
-    | Some ("1" | "true") -> true
-    | _ -> false )
+let debug = ref false
 
 ;;
-Driver.add_arg "--debug" (Arg.Set debug) ~doc:"Enable debug tracing output"
+Driver.Cookies.add_simple_handler "ppx_trace_enabled" Ast_pattern.__
+  ~f:(function
+  | Some {pexp_desc= Pexp_constant (Pconst_string (("1" | "true"), _))} ->
+      debug := true
+  | _ -> () )
 
 let rec get_fun_name pat =
   match pat.ppat_desc with
