@@ -50,8 +50,10 @@ type op2 =
   | Add  (** Addition *)
   | Sub  (** Subtraction *)
   | Mul  (** Multiplication *)
-  | Div  (** Division *)
-  | Rem  (** Remainder of division *)
+  | Div  (** Division, for integers result is truncated toward zero *)
+  | Rem
+      (** Remainder of division, satisfies [a = b * div a b + rem a b] and
+          for integers [rem a b] has same sign as [a], and [|rem a b| < |b|] *)
   | Udiv  (** Unsigned division *)
   | Urem  (** Remainder of unsigned division *)
   | And  (** Conjunction, boolean or bitwise *)

@@ -35,8 +35,10 @@ type op2 =
   | Le  (** Less-than-or-equal test *)
   | Ord  (** Ordered test (neither arg is nan) *)
   | Uno  (** Unordered test (some arg is nan) *)
-  | Div  (** Division *)
-  | Rem  (** Remainder of division *)
+  | Div  (** Division, for integers result is truncated toward zero *)
+  | Rem
+      (** Remainder of division, satisfies [a = b * div a b + rem a b] and
+          for integers [rem a b] has same sign as [a], and [|rem a b| < |b|] *)
   | And  (** Conjunction, boolean or bitwise *)
   | Or  (** Disjunction, boolean or bitwise *)
   | Xor  (** Exclusive-or, bitwise *)
