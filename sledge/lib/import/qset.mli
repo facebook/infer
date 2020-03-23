@@ -7,6 +7,8 @@
 
 (** Qset - Set with (signed) rational multiplicity for each element *)
 
-open Import0
 include module type of Qset_intf
-module Make (Elt : OrderedType) : S with type elt = Elt.t
+
+module Make (Elt : sig
+  type t [@@deriving compare, sexp_of]
+end) : S with type elt = Elt.t

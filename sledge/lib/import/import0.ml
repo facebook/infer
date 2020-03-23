@@ -72,13 +72,6 @@ module type Monad_syntax = sig
   val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 end
 
-module type OrderedType = sig
-  type t
-
-  val compare : t -> t -> int
-  val sexp_of_t : t -> Sexp.t
-end
-
 exception Duplicate
 
 module Return = struct type 'r t = {return: 'a. 'r -> 'a} [@@unboxed] end
