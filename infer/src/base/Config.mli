@@ -373,6 +373,8 @@ val infer_is_javac : bool
 
 val implicit_sdk_root : string option
 
+val inclusive_cost : bool
+
 val inferconfig_file : string option
 
 val inferconfig_dir : string option

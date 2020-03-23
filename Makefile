@@ -168,6 +168,7 @@ DIRECT_TESTS += \
   java_infer \
   java_litho-required-props \
   java_performance \
+  java_performance-exclusive \
   java_purity \
   java_quandary \
   java_racerd \

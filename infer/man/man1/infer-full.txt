@@ -1402,6 +1402,10 @@ INTERNAL OPTIONS
        --icfg-dotty-outfile-reset
            Cancel the effect of --icfg-dotty-outfile.
 
+       --no-inclusive-cost
+           Deactivates: Computes the inclusive cost (Conversely:
+           --inclusive-cost)
+
        --incremental-analysis
            Activates: [EXPERIMENTAL] Use incremental analysis for changed
            files. Not compatible with --reanalyze and --continue-analysis.

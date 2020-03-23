@@ -60,7 +60,8 @@ module InstrBasicCost = struct
 
   let get_instr_cost_record tenv extras instr_node instr =
     match instr with
-    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
+    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) when Config.inclusive_cost
+      ->
         let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} = extras in
         let operation_cost =
           match
@@ -94,6 +95,8 @@ module InstrBasicCost = struct
         if is_allocation_function callee_pname then
           CostDomain.plus CostDomain.unit_cost_allocation operation_cost
         else operation_cost
+    | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
+        CostDomain.zero_record
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a step. In
            JDK 11, dummy deref disappears and causes cost differences
