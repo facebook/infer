@@ -5,10 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* [@@@warning "-32"] *)
+
 let%test_module _ =
   ( module struct
-    (* let () = Trace.init ~margin:68 ~config:Trace.all () *)
     let () = Trace.init ~margin:68 ()
+
+    (* let () = Trace.init ~margin:68 ~config:Trace.all () *)
 
     open Term
 

@@ -5,14 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* [@@@warning "-32"] *)
+
 let%test_module _ =
   ( module struct
     open Sh
 
+    let () = Trace.init ~margin:68 ()
+
     (* let () =
      *   Trace.init ~margin:160 ~config:(Result.ok_exn (Trace.parse "+Sh")) () *)
 
-    let () = Trace.init ~margin:68 ~config:Trace.none ()
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw
     let pp_djn = Format.printf "@\n%a@." pp_djn

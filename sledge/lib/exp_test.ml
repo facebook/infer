@@ -7,8 +7,9 @@
 
 let%test_module _ =
   ( module struct
-    (* let () = Trace.init ~margin:68 ~config:Trace.all () *)
     let () = Trace.init ~margin:68 ()
+
+    (* let () = Trace.init ~margin:68 ~config:Trace.all () *)
 
     open Exp
 

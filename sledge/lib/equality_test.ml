@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* [@@@warning "-32"] *)
+
 let%test_module _ =
   ( module struct
     open Equality
 
-    let () = Trace.init ~margin:68 ~config:Trace.none ()
+    let () = Trace.init ~margin:68 ()
 
     (* let () =
      *   Trace.init ~margin:160
