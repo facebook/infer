@@ -260,77 +260,12 @@ module ThreadsDomain = struct
     match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
 end
 
-module AccessSnapshot = struct
-  module OwnershipPrecondition = struct
-    type t = Conjunction of IntSet.t | False [@@deriving compare]
-
-    (* precondition is true if the conjunction of owned indexes is empty *)
-    let is_true = function False -> false | Conjunction set -> IntSet.is_empty set
-
-    let pp fmt = function
-      | Conjunction indexes ->
-          F.fprintf fmt "Owned(%a)"
-            (PrettyPrintable.pp_collection ~pp_item:Int.pp)
-            (IntSet.elements indexes)
-      | False ->
-          F.pp_print_string fmt "False"
-  end
-
-  type t =
-    { access: TraceElem.t
-    ; thread: ThreadsDomain.t
-    ; lock: bool
-    ; ownership_precondition: OwnershipPrecondition.t }
-  [@@deriving compare]
-
-  let make_if_not_owned formals access lock thread ownership_precondition =
-    if
-      (not (OwnershipPrecondition.is_true ownership_precondition))
-      && TraceElem.should_keep formals access
-    then Some {access; lock; thread; ownership_precondition}
-    else None
-
-
-  let make formals access lock thread ownership_precondition =
-    let lock = LocksDomain.is_locked lock in
-    make_if_not_owned formals access lock thread ownership_precondition
-
-
-  let make_from_snapshot formals access {lock; thread; ownership_precondition} =
-    make_if_not_owned formals access lock thread ownership_precondition
-
-
-  let is_unprotected {thread; lock; ownership_precondition} =
-    (not (ThreadsDomain.is_any_but_self thread))
-    && (not lock)
-    && not (OwnershipPrecondition.is_true ownership_precondition)
-
-
-  let pp fmt {access; thread; lock; ownership_precondition} =
-    F.fprintf fmt "Loc: %a Access: %a Thread: %a Lock: %b Pre: %a" Location.pp
-      (TraceElem.get_loc access) TraceElem.pp access ThreadsDomain.pp thread lock
-      OwnershipPrecondition.pp ownership_precondition
-end
-
-module AccessDomain = struct
-  include AbstractDomain.FiniteSet (AccessSnapshot)
-
-  let add ({AccessSnapshot.access= {elem}} as s) astate =
-    let skip =
-      Access.get_access_exp elem
-      |> Option.exists ~f:(fun exp -> AccessExpression.get_base exp |> fst |> should_skip_var)
-    in
-    if skip then astate else add s astate
-
-
-  let add_opt snapshot_opt astate =
-    Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
-end
-
 module OwnershipAbstractValue = struct
   type t = OwnedIf of IntSet.t | Unowned [@@deriving compare]
 
   let owned = OwnedIf IntSet.empty
+
+  let is_owned = function OwnedIf set -> IntSet.is_empty set | _ -> false
 
   let unowned = Unowned
 
@@ -369,6 +304,58 @@ module OwnershipAbstractValue = struct
           F.fprintf fmt "OwnedIf%a"
             (PrettyPrintable.pp_collection ~pp_item:Int.pp)
             (IntSet.elements s)
+end
+
+module AccessSnapshot = struct
+  type t =
+    { access: TraceElem.t
+    ; thread: ThreadsDomain.t
+    ; lock: bool
+    ; ownership_precondition: OwnershipAbstractValue.t }
+  [@@deriving compare]
+
+  let make_if_not_owned formals access lock thread ownership_precondition =
+    if
+      (not (OwnershipAbstractValue.is_owned ownership_precondition))
+      && TraceElem.should_keep formals access
+    then Some {access; lock; thread; ownership_precondition}
+    else None
+
+
+  let make formals access lock thread ownership_precondition =
+    let lock = LocksDomain.is_locked lock in
+    make_if_not_owned formals access lock thread ownership_precondition
+
+
+  let make_from_snapshot formals access {lock; thread; ownership_precondition} =
+    make_if_not_owned formals access lock thread ownership_precondition
+
+
+  let is_unprotected {thread; lock; ownership_precondition} =
+    (not (ThreadsDomain.is_any_but_self thread))
+    && (not lock)
+    && not (OwnershipAbstractValue.is_owned ownership_precondition)
+
+
+  let pp fmt {access; thread; lock; ownership_precondition} =
+    F.fprintf fmt "Loc: %a Access: %a Thread: %a Lock: %b Pre: %a" Location.pp
+      (TraceElem.get_loc access) TraceElem.pp access ThreadsDomain.pp thread lock
+      OwnershipAbstractValue.pp ownership_precondition
+end
+
+module AccessDomain = struct
+  include AbstractDomain.FiniteSet (AccessSnapshot)
+
+  let add ({AccessSnapshot.access= {elem}} as s) astate =
+    let skip =
+      Access.get_access_exp elem
+      |> Option.exists ~f:(fun exp -> AccessExpression.get_base exp |> fst |> should_skip_var)
+    in
+    if skip then astate else add s astate
+
+
+  let add_opt snapshot_opt astate =
+    Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
 end
 
 module OwnershipDomain = struct
@@ -426,16 +413,6 @@ module OwnershipDomain = struct
           IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
     in
     add ret_access_exp ret_ownership_wrt_actuals ownership
-
-
-  let get_precondition exp t =
-    match get_owned exp t with
-    | OwnedIf formal_indexes ->
-        (* access expression conditionally owned if [formal_indexes] are owned *)
-        AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes
-    | Unowned ->
-        (* access expression not rooted in a formal and not conditionally owned *)
-        AccessSnapshot.OwnershipPrecondition.False
 end
 
 module Attribute = struct
@@ -582,5 +559,5 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
 
 let add_unannotated_call_access formals pname loc (astate : t) =
   let access = TraceElem.make_unannotated_call_access pname loc in
-  let snapshot = AccessSnapshot.make formals access astate.locks astate.threads False in
+  let snapshot = AccessSnapshot.make formals access astate.locks astate.threads Unowned in
   {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}

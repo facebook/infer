@@ -83,27 +83,30 @@ module ThreadsDomain : sig
   (** integrate current state with a callee summary *)
 end
 
+module OwnershipAbstractValue : sig
+  type t = private
+    | OwnedIf of IntSet.t
+        (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned
+            if the set of formals is empty = bottom of the lattice *)
+    | Unowned  (** Unowned value; top of the lattice *)
+
+  val owned : t
+
+  val is_owned : t -> bool
+
+  val make_owned_if : int -> t
+
+  val join : t -> t -> t
+end
+
 (** snapshot of the relevant state at the time of a heap access: concurrent thread(s), lock(s) held,
     ownership precondition *)
 module AccessSnapshot : sig
-  (** precondition for owned access; access is owned if it evaluates to true *)
-  module OwnershipPrecondition : sig
-    type t =
-      | Conjunction of IntSet.t
-          (** Conjunction of "formal index must be owned" predicates. true if empty *)
-      | False
-
-    include PrettyPrintable.PrintableOrderedType with type t := t
-
-    val is_true : t -> bool
-    (** return [true] if the precondition evaluates to true *)
-  end
-
   type t = private
     { access: TraceElem.t
     ; thread: ThreadsDomain.t
     ; lock: bool
-    ; ownership_precondition: OwnershipPrecondition.t }
+    ; ownership_precondition: OwnershipAbstractValue.t }
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
@@ -112,7 +115,7 @@ module AccessSnapshot : sig
     -> TraceElem.t
     -> LocksDomain.t
     -> ThreadsDomain.t
-    -> OwnershipPrecondition.t
+    -> OwnershipAbstractValue.t
     -> t option
 
   val make_from_snapshot : FormalMap.t -> TraceElem.t -> t -> t option
@@ -129,19 +132,6 @@ module AccessDomain : sig
   val add_opt : elt option -> t -> t
 end
 
-module OwnershipAbstractValue : sig
-  type t = private
-    | OwnedIf of IntSet.t
-        (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned
-            if the set of formals is empty = bottom of the lattice *)
-    | Unowned  (** Unowned value; top of the lattice *)
-  [@@deriving compare]
-
-  val owned : t
-
-  val make_owned_if : int -> t
-end
-
 module OwnershipDomain : sig
   type t
 
@@ -155,7 +145,7 @@ module OwnershipDomain : sig
 
   val propagate_return : AccessExpression.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
 
-  val get_precondition : AccessExpression.t -> t -> AccessSnapshot.OwnershipPrecondition.t
+  val ownership_of_expr : HilExp.t -> t -> OwnershipAbstractValue.t
 end
 
 module Attribute : sig

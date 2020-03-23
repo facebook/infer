@@ -40,7 +40,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else
             let is_write = List.is_empty access_list && is_write_access in
             let access = TraceElem.make_field_access prefix_path' ~is_write loc in
-            let pre = OwnershipDomain.get_precondition prefix_path ownership in
+            let pre = OwnershipDomain.get_owned prefix_path ownership in
             let snapshot_opt = AccessSnapshot.make formals access locks threads pre in
             let access_acc' = AccessDomain.add_opt snapshot_opt acc in
             add_field_accesses prefix_path' access_acc' access_list
@@ -59,7 +59,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
-        let ownership_pre = OwnershipDomain.get_precondition receiver_ap astate.ownership in
+        let ownership_pre = OwnershipDomain.get_owned receiver_ap astate.ownership in
         AccessSnapshot.make formals container_access astate.locks astate.threads ownership_pre
       in
       let ownership_value = OwnershipDomain.get_owned receiver_ap astate.ownership in
@@ -118,33 +118,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_callee_accesses formals (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname loc =
     let open Domain in
-    let conjoin_ownership_precondition actual_indexes actual_exp :
-        AccessSnapshot.OwnershipPrecondition.t =
-      match actual_exp with
-      | HilExp.Constant _ ->
-          (* the actual is a constant, so it's owned in the caller. *)
-          Conjunction actual_indexes
-      | HilExp.AccessExpression access_expr -> (
-        match OwnershipDomain.get_owned access_expr caller_astate.ownership with
-        | OwnedIf formal_indexes ->
-            (* conditionally owned if [formal_indexes] are owned *)
-            Conjunction (IntSet.union formal_indexes actual_indexes)
-        | Unowned ->
-            (* not rooted in a formal and not conditionally owned *)
-            False )
-      | _ ->
-          (* couldn't find access expr, don't know if it's owned. assume not *)
-          False
-    in
-    let update_ownership_precondition actual_index (acc : AccessSnapshot.OwnershipPrecondition.t) =
+    let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
       match acc with
-      | False ->
-          (* precondition can't be satisfied *)
+      | Unowned ->
+          (* optimisation -- already unowned, don't compute ownership of remaining actuals *)
           acc
-      | Conjunction actual_indexes ->
-          List.nth actuals actual_index
-          (* optional args can result into missing actuals so simply ignore *)
-          |> Option.value_map ~default:acc ~f:(conjoin_ownership_precondition actual_indexes)
+      | actuals_ownership -> (
+        match List.nth actuals actual_index with
+        | None ->
+            (* vararg methods can result into missing actuals so simply ignore *)
+            acc
+        | Some actual_exp ->
+            OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership
+            |> OwnershipAbstractValue.join actuals_ownership )
     in
     let update_callee_access (snapshot : AccessSnapshot.t) acc =
       let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
@@ -155,20 +141,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (* update precondition with caller ownership info *)
       let ownership_precondition =
         match snapshot.ownership_precondition with
-        | Conjunction indexes ->
-            let empty_precondition =
-              AccessSnapshot.OwnershipPrecondition.Conjunction IntSet.empty
-            in
-            IntSet.fold update_ownership_precondition indexes empty_precondition
-        | False ->
+        | OwnedIf indexes ->
+            IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
+        | Unowned ->
             snapshot.ownership_precondition
       in
-      if AccessSnapshot.OwnershipPrecondition.is_true ownership_precondition then
-        (* discard accesses to owned memory *)
-        acc
-      else
-        let snapshot_opt = AccessSnapshot.make formals access locks thread ownership_precondition in
-        AccessDomain.add_opt snapshot_opt acc
+      let snapshot_opt = AccessSnapshot.make formals access locks thread ownership_precondition in
+      AccessDomain.add_opt snapshot_opt acc
     in
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
