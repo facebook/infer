@@ -87,6 +87,9 @@ val report_forall_issues_and_reset :
   st_report_error -> nullsafe_mode:NullsafeMode.t -> Procdesc.t -> unit
 (** Report registered "forall" issues (if needed), and reset the error table *)
 
+val is_reportable : nullsafe_mode:NullsafeMode.t -> err_instance -> bool
+(** Is a given issue reportable to the user in a given mode? *)
+
 val reset : unit -> unit
 
 val get_errors : unit -> (err_instance * InstrRef.t option) list

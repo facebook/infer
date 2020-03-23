@@ -9,6 +9,6 @@ open! IStd
 
 (** Summary of per-procedure nullsafe result analysis *)
 
-type t = {type_violation_count: int}
+type t = {issues: TypeErr.err_instance list}
 
-let pp fmt {type_violation_count} = Format.fprintf fmt "%d" type_violation_count
+let pp fmt {issues} = Format.fprintf fmt "Issues: %d" (List.length issues)

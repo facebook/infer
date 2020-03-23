@@ -84,6 +84,15 @@ let java_global_tenv =
         tenv )
 
 
+let load_java_global_tenv _exe_env =
+  (* We don't use exe_env, though require it as a param.
+     This is to make API consistent with other methods and to allow for future implementation changes.
+     If somebody wants to fetch java global environment, they'd better have exe_env instance provided.
+     If they don't they are probably doing something wrong.
+  *)
+  Lazy.force java_global_tenv
+
+
 let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env proc_name =
   let pp_loc_opt f = function
     | Some loc ->

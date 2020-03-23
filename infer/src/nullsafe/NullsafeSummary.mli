@@ -9,6 +9,9 @@ open! IStd
 
 (** Summary of per-procedure nullsafe result analysis *)
 
-type t = {type_violation_count: int}
+type t =
+  { issues: TypeErr.err_instance list
+        (** List of issues found during analysis. Note that not all of them were necessarily
+            reported to the user (some of them might be deemed non actionable.) *) }
 
 val pp : Format.formatter -> t -> unit

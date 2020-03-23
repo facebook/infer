@@ -23,5 +23,9 @@ val mk : unit -> t
 val get_tenv : t -> Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
 
+val load_java_global_tenv : t -> Tenv.t
+(** Load Java type environment (if not done yet), and return it. Useful for accessing type info not
+    related to any concrete function. *)
+
 val get_integer_type_widths : t -> Procname.t -> Typ.IntegerWidths.t
 (** return the integer type widths associated with the procedure *)

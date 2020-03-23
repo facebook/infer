@@ -290,18 +290,28 @@ let eradicate_unvetted_third_party_in_nullsafe =
 (* Meta issues in eradicate are technical issues reflecting null-safety state of classes in general,
    in contrast with concrete nullability type violations *)
 
-(* Experimental issue, meaning might be changed *)
-let eradicate_meta_class_is_clean =
-  register_from_string "ERADICATE_META_CLASS_IS_CLEAN"
-    ~hum:"Class is clean of nullability issues" (* Should be enabled for special integrations *)
+let eradicate_meta_class_is_nullsafe =
+  register_from_string "ERADICATE_META_CLASS_IS_NULLSAFE"
+    ~hum:
+      "Class is marked @Nullsafe and has 0 issues" (* Should be enabled for special integrations *)
     ~enabled:false
 
 
-(* Experimental issue, meaning might be changed *)
-let eradicate_meta_class_needs_fixing =
-  register_from_string "ERADICATE_META_CLASS_NEEDS_FIXING"
+(* Class is either: 
+   - has at least one nullability issue.
+   - has at least one (currently possibly hidden) issue in order to be marked as @Nullsafe.
+ *)
+let eradicate_meta_class_needs_improvement =
+  register_from_string "ERADICATE_META_CLASS_NEEDS_IMPROVEMENT"
     ~hum:
-      "Class is not null-safe and needs fixing nullability issues"
+      "Class needs improvement to become @Nullsafe" (* Should be enabled for special integrations *)
+    ~enabled:false
+
+
+let eradicate_meta_class_can_be_nullsafe =
+  register_from_string "ERADICATE_META_CLASS_CAN_BE_NULLSAFE"
+    ~hum:
+      "Class has 0 issues and can be marked @Nullsafe"
       (* Should be enabled for special integrations *) ~enabled:false
 
 

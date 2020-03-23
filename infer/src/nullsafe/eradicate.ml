@@ -201,17 +201,6 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         Some "not a Java method"
 
 
-  let is_important err_instance =
-    match err_instance with
-    | TypeErr.Bad_assignment _
-    | TypeErr.Nullable_dereference _
-    | TypeErr.Inconsistent_subclass _
-    | TypeErr.Field_not_initialized _ ->
-        true
-    | TypeErr.Condition_redundant _ | TypeErr.Over_annotation _ ->
-        false
-
-
   (** Entry point for the nullsafe procedure-level analysis. *)
   let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
     let proc_desc = Summary.get_proc_desc summary in
@@ -233,19 +222,20 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           annotated_signature ;
         let loc = Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
+        (* Initializing TypeErr signleton. *)
         TypeErr.reset () ;
+        (* The main method - during this the actual analysis will happen and TypeErr will be populated with
+           issues (and some of them - reported).
+        *)
         analyze_procedure tenv proc_name proc_desc calls_this checks callback_args
           annotated_signature linereader loc ;
-        let type_violation_count =
-          TypeErr.get_errors ()
-          |> List.filter_map ~f:(fun (err_instance, _) ->
-                 if is_important err_instance then Some err_instance else None )
-          |> List.length
-        in
+        (* Collect issues that were detected during analysis and put them in summary for further processing *)
+        let issues = TypeErr.get_errors () |> List.map ~f:(fun (issues, _) -> issues) in
+        (* Report errors of "farall" class - those could not be reported during analysis phase. *)
         TypeErr.report_forall_issues_and_reset
           (EradicateCheckers.report_error tenv)
           ~nullsafe_mode:annotated_signature.nullsafe_mode proc_desc ;
-        Payload.update_summary NullsafeSummary.{type_violation_count} summary
+        Payload.update_summary NullsafeSummary.{issues} summary
 end
 
 (* MkCallback *)

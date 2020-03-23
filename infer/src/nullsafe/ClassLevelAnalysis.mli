@@ -10,6 +10,11 @@ open! IStd
 (** This stage is called for each Java class after all corresponding proc summaries are calculated. *)
 
 val analyze_class :
-  SourceFile.t -> JavaClassName.t -> AggregatedSummaries.ClassInfo.t -> IssueLog.t -> IssueLog.t
+     Tenv.t
+  -> SourceFile.t
+  -> JavaClassName.t
+  -> AggregatedSummaries.ClassInfo.t
+  -> IssueLog.t
+  -> IssueLog.t
 (** Given all summaries for given class, analyze them in combination, and update issue log, if
     necessary *)
