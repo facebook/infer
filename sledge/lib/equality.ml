@@ -1015,3 +1015,51 @@ let solve_for_vars vss r =
               then Stop true
               else Continue us_xs )
             ~finish:(fun _ -> false) ) )]
+
+(* Replay debugging *)
+
+type call =
+  | And_eq of Var.Set.t * Term.t * Term.t * t
+  | And_term of Var.Set.t * Term.t * t
+  | And_ of Var.Set.t * t * t
+  | Or_ of Var.Set.t * t * t
+  | OrN of Var.Set.t * t list
+  | Rename of t * Var.Subst.t
+  | Apply_subst of Var.Set.t * Subst.t * t
+  | Solve_for_vars of Var.Set.t list * t
+[@@deriving sexp]
+
+let replay c =
+  match call_of_sexp (Sexp.of_string c) with
+  | And_eq (us, a, b, r) -> and_eq us a b r |> ignore
+  | And_term (us, e, r) -> and_term us e r |> ignore
+  | And_ (us, r, s) -> and_ us r s |> ignore
+  | Or_ (us, r, s) -> or_ us r s |> ignore
+  | OrN (us, rs) -> orN us rs |> ignore
+  | Rename (r, s) -> rename r s |> ignore
+  | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
+  | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
+
+(* Debug wrappers *)
+
+let wrap f call =
+  if not [%debug] then f ()
+  else
+    try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
+
+let and_eq us a b r =
+  wrap (fun () -> and_eq us a b r) (fun () -> And_eq (us, a, b, r))
+
+let and_term us e r =
+  wrap (fun () -> and_term us e r) (fun () -> And_term (us, e, r))
+
+let and_ us r s = wrap (fun () -> and_ us r s) (fun () -> And_ (us, r, s))
+let or_ us r s = wrap (fun () -> or_ us r s) (fun () -> Or_ (us, r, s))
+let orN us rs = wrap (fun () -> orN us rs) (fun () -> OrN (us, rs))
+let rename r s = wrap (fun () -> rename r s) (fun () -> Rename (r, s))
+
+let apply_subst us s r =
+  wrap (fun () -> apply_subst us s r) (fun () -> Apply_subst (us, s, r))
+
+let solve_for_vars vss r =
+  wrap (fun () -> solve_for_vars vss r) (fun () -> Solve_for_vars (vss, r))

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* [@@@warning "-32"] *)
-
 let%test_module _ =
   ( module struct
     open Equality
@@ -16,7 +14,9 @@ let%test_module _ =
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:(Result.ok_exn (Trace.parse "+Equality"))
-     *     () *)
+     *     ()
+     * 
+     * [@@@warning "-32"] *)
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf pp
@@ -410,4 +410,10 @@ let%test_module _ =
         {| {sat= true; rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]]} |}]
 
     let%test _ = entails_eq r19 z !0
+
+    let%expect_test _ =
+      Equality.replay
+        {|(Solve_for_vars (() () ((Var (id 8) (name m)) (Var (id 9) (name n))))
+           ((xs ()) (sat true) (rep (((Var (id 9) (name n)) (Var (id 8) (name m)))))))|} ;
+      [%expect {||}]
   end )

@@ -96,3 +96,7 @@ val solve_for_vars : Var.Set.t list -> t -> Subst.t
     with free variables contained in (the union of) a prefix [uss] of [vss]
     to terms [e] with free variables contained in as short a prefix of [uss]
     as possible. *)
+
+(* Replay debugging *)
+
+val replay : string -> unit
