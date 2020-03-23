@@ -62,8 +62,7 @@ let command ~summary ?readme param =
   Command.basic ~summary ?readme (trace *> param >>| wrap)
 
 let marshal program file =
-  Out_channel.with_file file ~f:(fun oc ->
-      Marshal.to_channel oc program [Marshal.Closures] )
+  Out_channel.with_file file ~f:(fun oc -> Marshal.to_channel oc program [])
 
 let unmarshal file () =
   In_channel.with_file
