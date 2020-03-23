@@ -160,32 +160,20 @@ end
 
 module Attribute : sig
   type t =
+    | Nothing
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
     | LockHeld  (** boolean is true if a lock is currently held *)
-
-  include PrettyPrintable.PrintableOrderedType with type t := t
-end
-
-module AttributeSetDomain : sig
-  type t
-
-  val empty : t
 end
 
 module AttributeMapDomain : sig
   type t
 
-  val find : AccessExpression.t -> t -> AttributeSetDomain.t
+  val find : AccessExpression.t -> t -> Attribute.t
 
-  val add : AccessExpression.t -> AttributeSetDomain.t -> t -> t
+  val add : AccessExpression.t -> Attribute.t -> t -> t
 
   val has_attribute : AccessExpression.t -> Attribute.t -> t -> bool
-
-  val get_choices : AccessExpression.t -> t -> Attribute.t list
-  (** get the choice attributes associated with the given access path *)
-
-  val add_attribute : AccessExpression.t -> Attribute.t -> t -> t
 
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
@@ -208,7 +196,7 @@ type summary =
   ; locks: LocksDomain.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
-  ; return_attributes: AttributeSetDomain.t }
+  ; return_attribute: Attribute.t }
 
 val empty_summary : summary
 

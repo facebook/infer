@@ -439,71 +439,62 @@ module OwnershipDomain = struct
 end
 
 module Attribute = struct
-  type t = Functional | OnMainThread | LockHeld [@@deriving compare]
+  type t = Nothing | Functional | OnMainThread | LockHeld [@@deriving equal]
 
-  let pp fmt = function
+  let pp fmt t =
+    ( match t with
+    | Nothing ->
+        "Nothing"
     | Functional ->
-        F.pp_print_string fmt "Functional"
+        "Functional"
     | OnMainThread ->
-        F.pp_print_string fmt "OnMainThread"
+        "OnMainThread"
     | LockHeld ->
-        F.pp_print_string fmt "LockHeld"
+        "LockHeld" )
+    |> F.pp_print_string fmt
+
+
+  let top = Nothing
+
+  let is_top = function Nothing -> true | _ -> false
+
+  let join t t' = if equal t t' then t else Nothing
+
+  let leq ~lhs ~rhs = equal (join lhs rhs) rhs
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute)
-
 module AttributeMapDomain = struct
-  include AbstractDomain.InvertedMap (AccessExpression) (AttributeSetDomain)
+  include AbstractDomain.SafeInvertedMap (AccessExpression) (Attribute)
 
-  let add access_expression attribute_set t =
-    if AttributeSetDomain.is_empty attribute_set then t else add access_expression attribute_set t
-
+  let find acc_exp t = find_opt acc_exp t |> Option.value ~default:Attribute.top
 
   let has_attribute access_expression attribute t =
-    find_opt access_expression t |> Option.exists ~f:(AttributeSetDomain.mem attribute)
+    find_opt access_expression t |> Option.exists ~f:(Attribute.equal attribute)
 
 
-  let get_choices access_expression t =
-    match find_opt access_expression t with
-    | None ->
-        []
-    | Some attributes ->
-        AttributeSetDomain.fold
-          (fun cc acc -> match cc with OnMainThread | LockHeld -> cc :: acc | _ -> acc)
-          attributes []
-
-
-  let add_attribute access_expression attribute t =
-    update access_expression
-      (function
-        | Some attrs ->
-            Some (AttributeSetDomain.add attribute attrs)
-        | None ->
-            Some (AttributeSetDomain.singleton attribute) )
-      t
-
-
-  let rec attributes_of_expr attribute_map (e : HilExp.t) =
+  let rec attribute_of_expr attribute_map (e : HilExp.t) =
     match e with
     | AccessExpression access_expr ->
-        find_opt access_expr attribute_map |> Option.value ~default:AttributeSetDomain.empty
+        find access_expr attribute_map
     | Constant _ ->
-        AttributeSetDomain.singleton Attribute.Functional
+        Attribute.Functional
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
-        attributes_of_expr attribute_map expr
+        attribute_of_expr attribute_map expr
     | UnaryOperator (_, expr, _) ->
-        attributes_of_expr attribute_map expr
+        attribute_of_expr attribute_map expr
     | BinaryOperator (_, expr1, expr2) ->
-        let attributes1 = attributes_of_expr attribute_map expr1 in
-        let attributes2 = attributes_of_expr attribute_map expr2 in
-        AttributeSetDomain.join attributes1 attributes2
+        let attribute1 = attribute_of_expr attribute_map expr1 in
+        let attribute2 = attribute_of_expr attribute_map expr2 in
+        Attribute.join attribute1 attribute2
     | Closure _ | Sizeof _ ->
-        AttributeSetDomain.empty
+        Attribute.top
 
 
   let propagate_assignment lhs_access_expression rhs_exp attribute_map =
-    let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
-    add lhs_access_expression rhs_attributes attribute_map
+    let rhs_attribute = attribute_of_expr attribute_map rhs_exp in
+    add lhs_access_expression rhs_attribute attribute_map
 end
 
 type t =
@@ -566,21 +557,21 @@ type summary =
   ; locks: LocksDomain.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
-  ; return_attributes: AttributeSetDomain.t }
+  ; return_attribute: Attribute.t }
 
 let empty_summary =
   { threads= ThreadsDomain.bottom
   ; locks= LocksDomain.empty
   ; accesses= AccessDomain.empty
   ; return_ownership= OwnershipAbstractValue.unowned
-  ; return_attributes= AttributeSetDomain.empty }
+  ; return_attribute= Attribute.top }
 
 
-let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes} =
+let pp_summary fmt {threads; locks; accesses; return_ownership; return_attribute} =
   F.fprintf fmt
     "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipAbstractValue.pp
-    return_ownership AttributeSetDomain.pp return_attributes
+    return_ownership Attribute.pp return_attribute
 
 
 let pp fmt {threads; locks; accesses; ownership; attribute_map} =

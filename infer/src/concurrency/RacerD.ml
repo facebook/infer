@@ -196,7 +196,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           then
             (* TODO: check for constants, which are functional? *)
             let attribute_map =
-              AttributeMapDomain.add_attribute (AccessExpression.base ret_base) Functional
+              AttributeMapDomain.add (AccessExpression.base ret_base) Functional
                 astate.attribute_map
             in
             {astate with attribute_map}
@@ -269,8 +269,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           {astate with threads= ThreadsDomain.AnyThreadButSelf}
       | MainThreadIfTrue ->
           let attribute_map =
-            AttributeMapDomain.add_attribute ret_access_exp Attribute.OnMainThread
-              astate.attribute_map
+            AttributeMapDomain.add ret_access_exp Attribute.OnMainThread astate.attribute_map
           in
           {astate with attribute_map}
       | UnknownThread ->
@@ -301,8 +300,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ; threads= update_for_lock_use astate.threads }
         | LockedIfTrue _ | GuardLockedIfTrue _ ->
             let attribute_map =
-              AttributeMapDomain.add_attribute ret_access_exp Attribute.LockHeld
-                astate.attribute_map
+              AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
             in
             {astate with attribute_map; threads= update_for_lock_use astate.threads}
         | GuardConstruct {acquire_now= false} ->
@@ -318,7 +316,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                      {summary with accesses= rebased_accesses} )
             in
             match rebased_summary_opt with
-            | Some {threads; locks; accesses; return_ownership; return_attributes} ->
+            | Some {threads; locks; accesses; return_ownership; return_attribute} ->
                 let locks =
                   LocksDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
                 in
@@ -330,7 +328,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     astate.ownership
                 in
                 let attribute_map =
-                  AttributeMapDomain.add ret_access_exp return_attributes astate.attribute_map
+                  AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
                 in
                 let threads =
                   ThreadsDomain.integrate_summary ~caller_astate:astate.threads
@@ -342,7 +340,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let add_if_annotated predicate attribute attribute_map =
       if PatternMatch.override_exists predicate tenv callee_pname then
-        AttributeMapDomain.add_attribute ret_access_exp attribute attribute_map
+        AttributeMapDomain.add ret_access_exp attribute attribute_map
       else attribute_map
     in
     let attribute_map = add_if_annotated is_functional Functional astate_callee.attribute_map in
@@ -409,7 +407,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
           in
           {acc with threads}
-      | Attribute.Functional ->
+      | Attribute.(Functional | Nothing) ->
           acc
     in
     let accesses =
@@ -420,11 +418,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match HilExp.get_access_exprs assume_exp with
       | [access_expr] ->
           HilExp.eval_boolean_exp access_expr assume_exp
-          |> Option.fold ~init:astate ~f:(fun init bool_value ->
-                 let choices = AttributeMapDomain.get_choices access_expr astate.attribute_map in
+          |> Option.value_map ~default:astate ~f:(fun bool_value ->
                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                     add the constraint that the choice must be [bool_value] to the state *)
-                 List.fold ~f:(apply_choice bool_value) ~init choices )
+                 AttributeMapDomain.find access_expr astate.attribute_map
+                 |> apply_choice bool_value astate )
       | _ ->
           astate
     in
@@ -548,15 +546,12 @@ let analyze_procedure {Callbacks.exe_env; summary} =
             (Var.of_pvar (Pvar.get_ret_pvar proc_name), Procdesc.get_ret_type proc_desc)
         in
         let return_ownership = OwnershipDomain.get_owned return_var_exp ownership in
-        let return_attributes =
-          try AttributeMapDomain.find return_var_exp attribute_map
-          with Caml.Not_found -> AttributeSetDomain.empty
-        in
+        let return_attribute = AttributeMapDomain.find return_var_exp attribute_map in
         let locks =
           (* if method is [synchronized] released the lock once. *)
           if Procdesc.is_java_synchronized proc_desc then LocksDomain.release_lock locks else locks
         in
-        let post = {threads; locks; accesses; return_ownership; return_attributes} in
+        let post = {threads; locks; accesses; return_ownership; return_attribute} in
         Payload.update_summary post summary
     | None ->
         summary
