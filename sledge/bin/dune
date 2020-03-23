@@ -6,8 +6,8 @@
 (executable
  (public_name sledge)
  (package sledge)
- (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
-   llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
+ (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
+   llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
    llvm.linker shexp.process yojson trace import sledgelib model)
  (flags
   (:standard -open Import -open Sledgelib -open Model))

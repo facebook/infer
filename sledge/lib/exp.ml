@@ -79,13 +79,7 @@ module T = struct
 end
 
 include T
-
-module Set = struct
-  include Set.Make (T)
-
-  let t_of_sexp = t_of_sexp T.t_of_sexp
-end
-
+module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 module Map = Map.Make (T)
 
 let term e = e.term

@@ -101,12 +101,7 @@ end
 
 include T
 module Map = Map.Make (T)
-
-module Set = struct
-  include Set.Make (T)
-
-  let t_of_sexp = t_of_sexp T.t_of_sexp
-end
+module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =

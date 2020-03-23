@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Import0
 include module type of Set_intf
-module Make (Elt : OrderedType) : S with type elt = Elt.t
+
+module Make (Elt : sig
+  type t [@@deriving compare, sexp_of]
+end) : S with type elt = Elt.t
