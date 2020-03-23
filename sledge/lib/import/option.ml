@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include Base.Option
+open! Import0
+include Core.Option
 
 let pp fmt pp_elt fs = function
   | Some x -> Format.fprintf fs fmt pp_elt x

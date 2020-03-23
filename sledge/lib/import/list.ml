@@ -6,7 +6,7 @@
  *)
 
 open Import0
-include Base.List
+include Core.List
 
 let rec pp ?pre ?suf sep pp_elt fs = function
   | [] -> ()
@@ -18,7 +18,9 @@ let rec pp ?pre ?suf sep pp_elt fs = function
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
       Option.iter suf ~f:(Format.fprintf fs)
 
-let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
+let pop_exn =
+  let not_found = Not_found_s (Atom "pop_exn") in
+  function x :: xs -> (x, xs) | [] -> raise not_found
 
 let find_map_remove xs ~f =
   let rec find_map_remove_ ys = function
@@ -69,16 +71,18 @@ let rev_map_unzip xs ~f =
       let y, z = f x in
       (y :: ys, z :: zs) )
 
-let remove_exn ?(equal = ( == )) xs x =
-  let rec remove_ ys = function
-    | [] -> raise Not_found
-    | z :: xs ->
-        if equal x z then rev_append ys xs else remove_ (z :: ys) xs
-  in
-  remove_ [] xs
+let remove_exn =
+  let not_found = Not_found_s (Atom "remove_exn") in
+  fun ?(equal = phys_equal) xs x ->
+    let rec remove_ ys = function
+      | [] -> raise not_found
+      | z :: xs ->
+          if equal x z then rev_append ys xs else remove_ (z :: ys) xs
+    in
+    remove_ [] xs
 
 let remove ?equal xs x =
-  try Some (remove_exn ?equal xs x) with Not_found -> None
+  try Some (remove_exn ?equal xs x) with Not_found_s _ -> None
 
 let rec rev_init n ~f =
   if n = 0 then []
@@ -88,22 +92,22 @@ let rec rev_init n ~f =
     f n :: xs
 
 let symmetric_diff ~compare xs ys =
-  let rec symmetric_diff_ xxs yys =
+  let rec symmetric_diff_ xxs yys : _ Either.t list =
     match (xxs, yys) with
     | x :: xs, y :: ys ->
         let ord = compare x y in
         if ord = 0 then symmetric_diff_ xs ys
-        else if ord < 0 then `Left x :: symmetric_diff_ xs yys
-        else `Right y :: symmetric_diff_ xxs ys
-    | xs, [] -> map ~f:(fun x -> `Left x) xs
-    | [], ys -> map ~f:(fun y -> `Right y) ys
+        else if ord < 0 then First x :: symmetric_diff_ xs yys
+        else Second y :: symmetric_diff_ xxs ys
+    | xs, [] -> map ~f:Either.first xs
+    | [], ys -> map ~f:Either.second ys
   in
   symmetric_diff_ (sort ~compare xs) (sort ~compare ys)
 
 let pp_diff ~compare sep pp_elt fs (xs, ys) =
   let pp_diff_elt fs elt =
     match elt with
-    | `Left x -> Format.fprintf fs "-- %a" pp_elt x
-    | `Right y -> Format.fprintf fs "++ %a" pp_elt y
+    | First x -> Format.fprintf fs "-- %a" pp_elt x
+    | Second y -> Format.fprintf fs "++ %a" pp_elt y
   in
   pp sep pp_diff_elt fs (symmetric_diff ~compare xs ys)

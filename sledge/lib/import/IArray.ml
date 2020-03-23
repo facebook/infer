@@ -8,24 +8,21 @@
 (** IArray - Immutable view of an array *)
 
 open Import0
-module Array = Base.Array
-module Hash = Base.Hash
-open Base.Continue_or_stop
 
 (** = 'a array but covariant since imperative operations hidden *)
 type +'a t
 
-let v (a : 'a array) : 'a t = Caml.Obj.magic a
-let a (v : 'a t) : 'a array = Caml.Obj.magic v
-let _vl (al : 'a array list) : 'a t list = Caml.Obj.magic al
-let al (vl : 'a t list) : 'a array list = Caml.Obj.magic vl
+let v (a : 'a array) : 'a t = Obj.magic a
+let a (v : 'a t) : 'a array = Obj.magic v
+let _vl (al : 'a array list) : 'a t list = Obj.magic al
+let al (vl : 'a t list) : 'a array list = Obj.magic vl
 let compare cmp x y = Array.compare cmp (a x) (a y)
 let equal cmp x y = Array.equal cmp (a x) (a y)
 let hash_fold_t f s x = Hash.Builtin.hash_fold_array_frozen f s (a x)
 let t_of_sexp a_of_sexp s = v (Array.t_of_sexp a_of_sexp s)
 let sexp_of_t sexp_of_a x = Array.sexp_of_t sexp_of_a (a x)
 
-module Infix = struct
+module Import = struct
   type +'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
@@ -108,7 +105,9 @@ let fold_map_until xs ~init ~f ~finish =
   with_return (fun {return} ->
       finish
         (fold_map xs ~init ~f:(fun s x ->
-             match f s x with Continue x -> x | Stop x -> return x )) )
+             match (f s x : _ Continue_or_stop.t) with
+             | Continue x -> x
+             | Stop x -> return x )) )
 
 let concat xs = v (Array.concat (al xs))
 let copy x = v (Array.copy (a x))

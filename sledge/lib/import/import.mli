@@ -7,19 +7,7 @@
 
 (** Global namespace opened in each source file by the build system *)
 
-include module type of Stdio
 include module type of Import0
-
-(** Tuple operations *)
-
-val fst3 : 'a * _ * _ -> 'a
-(** First projection from a triple. *)
-
-val snd3 : _ * 'a * _ -> 'a
-(** Second projection from a triple. *)
-
-val trd3 : _ * _ * 'a -> 'a
-(** Third projection from a triple. *)
 
 (** Function combinators *)
 
@@ -73,33 +61,50 @@ val check : ('a -> unit) -> 'a -> 'a
 val violates : ('a -> unit) -> 'a -> _
 (** Assert that function raises on argument. *)
 
-type 'a or_error = ('a, exn * Caml.Printexc.raw_backtrace) result
-
-val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
-(** [or_error f x] runs [f x] and converts unhandled exceptions to errors. *)
-
 (** Extensions *)
 
-module Invariant : module type of Base.Invariant
-module Unit = Base.Unit
+module Invariant : module type of Core.Invariant
 
-type unit = Unit.t [@@deriving compare, equal, hash, sexp]
+(** Containers *)
 
-module Bool = Base.Bool
+module Option = Option
+include module type of Option.Monad_infix
+include module type of Option.Monad_syntax
+module List = List
 
-type bool = Bool.t [@@deriving compare, equal, hash, sexp]
+module Array : sig
+  include module type of Array
 
-module Char = Base.Char
+  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
+end
 
-type char = Char.t [@@deriving compare, equal, hash, sexp]
+module IArray = IArray
+include module type of IArray.Import
+module Set = Set
+module Map = Map
+module Qset = Qset
 
-module Int = Base.Int
+(** Data types *)
 
-type int = Int.t [@@deriving compare, equal, hash, sexp]
+module String : sig
+  include sig
+    include module type of Core.String with module Map := Core.String.Map
+  end
 
-module Int64 = Base.Int64
+  module Map : Map.S with type key = string
+end
 
-type int64 = Int64.t [@@deriving compare, equal, hash, sexp]
+module Q : sig
+  include module type of struct include Q end
+
+  val of_z : Z.t -> t
+  val compare : t -> t -> int
+  val hash : t -> int
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+  val pp : t pp
+end
 
 module Z : sig
   include module type of struct include Z end
@@ -116,52 +121,3 @@ module Z : sig
   val is_true : t -> bool
   val is_false : t -> bool
 end
-
-module Q : sig
-  include module type of struct include Q end
-
-  val of_z : Z.t -> t
-  val compare : t -> t -> int
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
-  val t_of_sexp : Sexp.t -> t
-  val sexp_of_t : t -> Sexp.t
-  val pp : t pp
-end
-
-module String : sig
-  include module type of Base.String
-
-  type t = String.t [@@deriving compare, equal, hash, sexp]
-
-  module Map : Map.S with type key = string
-end
-
-type string = String.t [@@deriving compare, equal, hash, sexp]
-
-module Option = Option
-
-type 'a option = 'a Option.t [@@deriving compare, equal, hash, sexp]
-
-include module type of Option.Monad_infix
-include module type of Option.Monad_syntax with type 'a t = 'a option
-module Result = Base.Result
-
-module Array : sig
-  include module type of Base.Array
-
-  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
-end
-
-module IArray = IArray
-include module type of IArray.Infix
-module List = List
-
-type 'a list = 'a List.t [@@deriving compare, equal, hash, sexp]
-
-module Hash_queue = Core_kernel.Hash_queue
-module Set = Set
-module Hash_set = Base.Hash_set
-module Map = Map
-module Qset = Qset
-module Hashtbl = Base.Hashtbl

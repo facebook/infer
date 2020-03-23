@@ -11,11 +11,11 @@ let config_file_env_var = "SLEDGE_CONFIG"
 let exe_relative_config_file_path = "config"
 
 let config_file =
-  match Core.Sys.getenv config_file_env_var with
+  match Sys.getenv config_file_env_var with
   | Some file -> file
   | None ->
       Filename.concat
-        (Filename.dirname Caml.Sys.executable_name)
+        (Filename.dirname Sys.executable_name)
         exe_relative_config_file_path
 
 let contents =

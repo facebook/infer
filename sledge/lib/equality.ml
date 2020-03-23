@@ -103,7 +103,7 @@ end = struct
     let exception Found in
     match
       Term.Map.update s e ~f:(function
-        | Some _ -> raise_notrace Found
+        | Some _ -> Exn.raise_without_backtrace Found
         | None -> e )
     with
     | exception Found -> None
@@ -188,10 +188,10 @@ let orient e f =
       let o = compare (height e) (height f) in
       if o <> 0 then o else Term.compare e f
   in
-  match Int.sign (compare e f) with
-  | Neg -> Some (e, f)
-  | Zero -> None
-  | Pos -> Some (f, e)
+  match Ordering.of_int (compare e f) with
+  | Less -> Some (e, f)
+  | Equal -> None
+  | Greater -> Some (f, e)
 
 let norm (_, _, s) e = Subst.norm s e
 

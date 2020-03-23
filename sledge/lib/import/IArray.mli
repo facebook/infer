@@ -15,7 +15,7 @@ open Import0
 
 type +'a t [@@deriving compare, equal, hash, sexp]
 
-module Infix : sig
+module Import : sig
   type +'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
@@ -44,7 +44,7 @@ val fold_result :
 val fold_until :
      'a t
   -> init:'accum
-  -> f:('accum -> 'a -> ('accum, 'final) Base.Continue_or_stop.t)
+  -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
   -> finish:('accum -> 'final)
   -> 'final
 
@@ -114,7 +114,7 @@ val map_preserving_phys_equal : 'a t -> f:('a -> 'a) -> 'a t
 val fold_map_until :
      'a t
   -> init:'accum
-  -> f:('accum -> 'a -> ('accum * 'b, 'final) Base.Continue_or_stop.t)
+  -> f:('accum -> 'a -> ('accum * 'b, 'final) Continue_or_stop.t)
   -> finish:('accum * 'b t -> 'final)
   -> 'final
 

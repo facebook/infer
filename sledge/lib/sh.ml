@@ -644,7 +644,7 @@ let rec norm_ s q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp_raw q]
   ;
   let q =
-    map q ~f_sjn:(norm_ s) ~f_cong:Fun.id ~f_trm:(Equality.Subst.subst s)
+    map q ~f_sjn:(norm_ s) ~f_cong:Fn.id ~f_trm:(Equality.Subst.subst s)
   in
   let xs, cong = Equality.apply_subst (Var.Set.union q.us q.xs) s q.cong in
   exists_fresh xs {q with cong}

@@ -7,9 +7,8 @@
 
 (** SLEdge command line interface *)
 
-let () = Printexc.record_backtrace Version.debug
+let () = Backtrace.Exn.set_recording Version.debug
 
-module Command = Core.Command
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
@@ -47,7 +46,7 @@ let command ~summary ?readme param =
       Format.printf "@\nRESULT: Success: Invalid Accesses: %i@."
         (Report.invalid_access_count ())
     with exn ->
-      let bt = Caml.Printexc.get_raw_backtrace () in
+      let bt = Printexc.get_raw_backtrace () in
       Trace.flush () ;
       ( match exn with
       | Frontend.Invalid_llvm msg ->
@@ -57,8 +56,8 @@ let command ~summary ?readme param =
       | Failure msg -> Format.printf "@\nRESULT: Internal error: %s@." msg
       | _ ->
           Format.printf "@\nRESULT: Unknown error: %s@."
-            (Caml.Printexc.to_string exn) ) ;
-      Caml.Printexc.raise_with_backtrace exn bt
+            (Printexc.to_string exn) ) ;
+      Printexc.raise_with_backtrace exn bt
   in
   Command.basic ~summary ?readme (trace *> param >>| wrap)
 

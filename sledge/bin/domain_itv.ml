@@ -45,7 +45,7 @@ let pp fs =
   in
   bindings >> Array.pp "@," (pp_pair Var.print Interval.print) fs
 
-let report_fmt_thunk = Fun.flip pp
+let report_fmt_thunk = Fn.flip pp
 let init _gs = Abstract1.top (Lazy.force man) (Environment.make [||] [||])
 let apron_var_of_name = (fun nm -> "%" ^ nm) >> Apron.Var.of_string
 let apron_var_of_reg = Reg.name >> apron_var_of_name
@@ -134,8 +134,8 @@ and apron_texpr_of_llair_term tm q typ =
         | Div -> Some (mk_arith_binop typ Texpr0.Div)
         | Eq -> Some (mk_bool_binop typ q Tcons0.EQ)
         | Dq -> Some (mk_bool_binop typ q Tcons0.DISEQ)
-        | Lt -> Some (Fun.flip (mk_bool_binop typ q Tcons0.SUP))
-        | Le -> Some (Fun.flip (mk_bool_binop typ q Tcons0.SUPEQ))
+        | Lt -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUP))
+        | Le -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUPEQ))
         | _ -> None
       in
       let* te1 = apron_texpr_of_llair_term t1 q typ in

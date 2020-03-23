@@ -13,7 +13,7 @@ module type S = sig
   module Key : sig
     type t = key
 
-    include Core.Comparator.S with type t := t
+    include Comparator.S with type t := t
   end
 
   include Core_kernel.Map_intf.Make_S_plain_tree(Key).S

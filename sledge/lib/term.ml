@@ -226,8 +226,8 @@ let assert_monomial mono =
   | Mul args ->
       Qset.iter args ~f:(fun factor exponent ->
           assert (Q.sign exponent > 0) ;
-          assert_indeterminate factor |> Fun.id )
-  | _ -> assert_indeterminate mono |> Fun.id
+          assert_indeterminate factor |> Fn.id )
+  | _ -> assert_indeterminate mono |> Fn.id
 
 (* a polynomial term is a monomial multiplied by a non-zero coefficient
  *     c × ∏ᵢ xᵢ
@@ -241,8 +241,8 @@ let assert_poly_term mono coeff =
       | None | Some (Integer _, _) -> assert false
       | Some (_, n) -> assert (Qset.length args > 1 || not (Q.equal Q.one n))
       ) ;
-      assert_monomial mono |> Fun.id
-  | _ -> assert_monomial mono |> Fun.id
+      assert_monomial mono |> Fn.id
+  | _ -> assert_monomial mono |> Fn.id
 
 (* a polynomial is a linear combination of monomials, e.g.
  *     ∑ᵢ cᵢ × ∏ⱼ xᵢⱼ
@@ -256,7 +256,7 @@ let assert_polynomial poly =
       | None | Some (Integer _, _) -> assert false
       | Some (_, k) -> assert (Qset.length args > 1 || not (Q.equal Q.one k))
       ) ;
-      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fun.id)
+      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fn.id)
   | _ -> assert false
 
 (* aggregate args of Extract and Concat must be aggregate terms, in
@@ -273,8 +273,8 @@ let invariant e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
   match e with
-  | Add _ -> assert_polynomial e |> Fun.id
-  | Mul _ -> assert_monomial e |> Fun.id
+  | Add _ -> assert_polynomial e |> Fn.id
+  | Mul _ -> assert_monomial e |> Fn.id
   | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_aggregate e
   | ApN (Record, elts) | RecN (Record, elts) ->
@@ -783,10 +783,10 @@ let simp_uno x y = Ap2 (Uno, x, y)
 
 let rec simp_eq x y =
   match
-    match Int.sign (compare x y) with
-    | Zero -> None
-    | Neg -> Some (x, y)
-    | Pos -> Some (y, x)
+    match Ordering.of_int (compare x y) with
+    | Equal -> None
+    | Less -> Some (x, y)
+    | Greater -> Some (y, x)
   with
   (* e = e ==> true *)
   | None -> bool true
@@ -929,24 +929,24 @@ let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
 let rec_app key =
   let memo_id = Hashtbl.create key in
   let dummy = null in
-  fun ~id op elt_thks ->
-    match Hashtbl.find memo_id id with
-    | None ->
-        (* Add placeholder to prevent computing [elts] in calls to [rec_app]
-           from [elt_thks] for recursive occurrences of [id]. *)
-        let elta = Array.create ~len:(IArray.length elt_thks) dummy in
-        let elts = IArray.of_array elta in
-        Hashtbl.set memo_id ~key:id ~data:elts ;
-        IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-        RecN (op, elts) |> check invariant
-    | Some elts ->
-        (* Do not check invariant as invariant will be checked above after
-           the thunks are forced, before which invariant-checking may
-           spuriously fail. Note that it is important that the value
-           constructed here shares the array in the memo table, so that the
-           update after forcing the recursive thunks also updates this
-           value. *)
-        RecN (op, elts)
+  Staged.stage
+  @@ fun ~id op elt_thks ->
+  match Hashtbl.find memo_id id with
+  | None ->
+      (* Add placeholder to prevent computing [elts] in calls to [rec_app]
+         from [elt_thks] for recursive occurrences of [id]. *)
+      let elta = Array.create ~len:(IArray.length elt_thks) dummy in
+      let elts = IArray.of_array elta in
+      Hashtbl.set memo_id ~key:id ~data:elts ;
+      IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
+      RecN (op, elts) |> check invariant
+  | Some elts ->
+      (* Do not check invariant as invariant will be checked above after the
+         thunks are forced, before which invariant-checking may spuriously
+         fail. Note that it is important that the value constructed here
+         shares the array in the memo table, so that the update after
+         forcing the recursive thunks also updates this value. *)
+      RecN (op, elts)
 
 (* dispatching for normalization and invariant checking *)
 

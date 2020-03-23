@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Import0
 include Map_intf
 
 module Make (Key : sig
@@ -20,7 +21,7 @@ end) : S with type key = Key.t = struct
   let compare = compare_direct
 
   let to_map t =
-    Base.Map.Using_comparator.of_tree ~comparator:Key.comparator t
+    Core.Map.Using_comparator.of_tree ~comparator:Key.comparator t
 
   let of_map m = Base.Map.Using_comparator.to_tree m
 
@@ -51,7 +52,7 @@ end) : S with type key = Key.t = struct
       | k, `Unequal vv ->
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
-    let sd = Core.Sequence.to_list (symmetric_diff ~data_equal x y) in
+    let sd = Sequence.to_list (symmetric_diff ~data_equal x y) in
     if not (List.is_empty sd) then
       Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
 end

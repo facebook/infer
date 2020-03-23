@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include module type of Base.List
 open Import0
+include module type of Core.List
 
 val pp :
      ?pre:(unit, unit) fmt
@@ -53,7 +53,4 @@ val remove : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list option
 val rev_init : int -> f:(int -> 'a) -> 'a list
 
 val symmetric_diff :
-     compare:('a -> 'a -> int)
-  -> 'a t
-  -> 'a t
-  -> [`Left of 'a | `Right of 'a] t
+  compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Import0
-include module type of Base.Option
+open! Import0
+include module type of Core.Option
 
 val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
 (** Pretty-print an option. *)

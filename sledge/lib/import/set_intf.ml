@@ -13,7 +13,7 @@ module type S = sig
   module Elt : sig
     type t = elt
 
-    include Core.Comparator.S with type t := t
+    include Comparator.S with type t := t
   end
 
   include Core_kernel.Set_intf.Make_S_plain_tree(Elt).S
