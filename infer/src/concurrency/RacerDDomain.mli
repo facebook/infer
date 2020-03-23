@@ -158,19 +158,11 @@ module OwnershipDomain : sig
   val get_precondition : AccessExpression.t -> t -> AccessSnapshot.OwnershipPrecondition.t
 end
 
-(** attribute attached to a boolean variable specifying what it means when the boolean is true *)
-module Choice : sig
-  type t =
-    | OnMainThread  (** the current procedure is running on the main thread *)
-    | LockHeld  (** a lock is currently held *)
-
-  include PrettyPrintable.PrintableOrderedType with type t := t
-end
-
 module Attribute : sig
   type t =
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
-    | Choice of Choice.t  (** holds a boolean choice variable *)
+    | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
+    | LockHeld  (** boolean is true if a lock is currently held *)
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 end
@@ -190,7 +182,7 @@ module AttributeMapDomain : sig
 
   val has_attribute : AccessExpression.t -> Attribute.t -> t -> bool
 
-  val get_choices : AccessExpression.t -> t -> Choice.t list
+  val get_choices : AccessExpression.t -> t -> Attribute.t list
   (** get the choice attributes associated with the given access path *)
 
   val add_attribute : AccessExpression.t -> Attribute.t -> t -> t

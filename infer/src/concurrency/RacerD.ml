@@ -269,7 +269,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           {astate with threads= ThreadsDomain.AnyThreadButSelf}
       | MainThreadIfTrue ->
           let attribute_map =
-            AttributeMapDomain.add_attribute ret_access_exp (Choice Choice.OnMainThread)
+            AttributeMapDomain.add_attribute ret_access_exp Attribute.OnMainThread
               astate.attribute_map
           in
           {astate with attribute_map}
@@ -301,7 +301,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ; threads= update_for_lock_use astate.threads }
         | LockedIfTrue _ | GuardLockedIfTrue _ ->
             let attribute_map =
-              AttributeMapDomain.add_attribute ret_access_exp (Choice Choice.LockHeld)
+              AttributeMapDomain.add_attribute ret_access_exp Attribute.LockHeld
                 astate.attribute_map
             in
             {astate with attribute_map; threads= update_for_lock_use astate.threads}
@@ -397,18 +397,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_assume formals assume_exp loc proc_data (astate : Domain.t) =
     let open Domain in
-    let add_choice bool_value (acc : Domain.t) = function
-      | Choice.LockHeld ->
+    let apply_choice bool_value (acc : Domain.t) = function
+      | Attribute.LockHeld ->
           let locks =
             if bool_value then LocksDomain.acquire_lock acc.locks
             else LocksDomain.release_lock acc.locks
           in
           {acc with locks}
-      | Choice.OnMainThread ->
+      | Attribute.OnMainThread ->
           let threads =
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
           in
           {acc with threads}
+      | Attribute.Functional ->
+          acc
     in
     let accesses =
       add_access formals loc ~is_write_access:false astate.locks astate.threads astate.ownership
@@ -422,7 +424,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  let choices = AttributeMapDomain.get_choices access_expr astate.attribute_map in
                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                     add the constraint that the choice must be [bool_value] to the state *)
-                 List.fold ~f:(add_choice bool_value) ~init choices )
+                 List.fold ~f:(apply_choice bool_value) ~init choices )
       | _ ->
           astate
     in

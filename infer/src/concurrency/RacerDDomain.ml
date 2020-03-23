@@ -438,24 +438,16 @@ module OwnershipDomain = struct
         AccessSnapshot.OwnershipPrecondition.False
 end
 
-module Choice = struct
-  type t = OnMainThread | LockHeld [@@deriving compare]
-
-  let pp fmt = function
-    | OnMainThread ->
-        F.pp_print_string fmt "OnMainThread"
-    | LockHeld ->
-        F.pp_print_string fmt "LockHeld"
-end
-
 module Attribute = struct
-  type t = Functional | Choice of Choice.t [@@deriving compare]
+  type t = Functional | OnMainThread | LockHeld [@@deriving compare]
 
   let pp fmt = function
     | Functional ->
         F.pp_print_string fmt "Functional"
-    | Choice choice ->
-        Choice.pp fmt choice
+    | OnMainThread ->
+        F.pp_print_string fmt "OnMainThread"
+    | LockHeld ->
+        F.pp_print_string fmt "LockHeld"
 end
 
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute)
@@ -468,16 +460,17 @@ module AttributeMapDomain = struct
 
 
   let has_attribute access_expression attribute t =
-    try find access_expression t |> AttributeSetDomain.mem attribute with Caml.Not_found -> false
+    find_opt access_expression t |> Option.exists ~f:(AttributeSetDomain.mem attribute)
 
 
   let get_choices access_expression t =
-    try
-      let attributes = find access_expression t in
-      AttributeSetDomain.fold
-        (fun cc acc -> match cc with Attribute.Choice c -> c :: acc | _ -> acc)
-        attributes []
-    with Caml.Not_found -> []
+    match find_opt access_expression t with
+    | None ->
+        []
+    | Some attributes ->
+        AttributeSetDomain.fold
+          (fun cc acc -> match cc with OnMainThread | LockHeld -> cc :: acc | _ -> acc)
+          attributes []
 
 
   let add_attribute access_expression attribute t =
@@ -492,8 +485,8 @@ module AttributeMapDomain = struct
 
   let rec attributes_of_expr attribute_map (e : HilExp.t) =
     match e with
-    | AccessExpression access_expr -> (
-      try find access_expr attribute_map with Caml.Not_found -> AttributeSetDomain.empty )
+    | AccessExpression access_expr ->
+        find_opt access_expr attribute_map |> Option.value ~default:AttributeSetDomain.empty
     | Constant _ ->
         AttributeSetDomain.singleton Attribute.Functional
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
