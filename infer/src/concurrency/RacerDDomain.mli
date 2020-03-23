@@ -92,8 +92,6 @@ module OwnershipAbstractValue : sig
 
   val owned : t
 
-  val is_owned : t -> bool
-
   val make_owned_if : int -> t
 
   val join : t -> t -> t
