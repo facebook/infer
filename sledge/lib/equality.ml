@@ -58,7 +58,7 @@ module Subst : sig
 end = struct
   type t = Term.t Term.Map.t [@@deriving compare, equal, sexp_of]
 
-  let t_of_sexp = Term.Map.t_of_sexp Term.t_of_sexp Term.t_of_sexp
+  let t_of_sexp = Term.Map.t_of_sexp Term.t_of_sexp
   let pp = Term.Map.pp Term.pp Term.pp
 
   let pp_diff =
@@ -72,7 +72,7 @@ end = struct
   let fold = Term.Map.fold
   let iteri = Term.Map.iteri
   let for_alli = Term.Map.for_alli
-  let to_alist = Term.Map.to_alist
+  let to_alist = Term.Map.to_alist ~key_order:`Increasing
 
   (** look up a term in a substitution *)
   let apply s a = Term.Map.find s a |> Option.value ~default:a

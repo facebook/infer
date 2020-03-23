@@ -141,7 +141,11 @@ module Var : sig
   end
 end
 
-module Map : Map.S with type key := t
+module Map : sig
+  include Map.S with type key := t
+
+  val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
+end
 
 val ppx : Var.strength -> t pp
 val pp : t pp

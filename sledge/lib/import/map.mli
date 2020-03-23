@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Import0
 include module type of Map_intf
-module Make (Key : OrderedType) : S with type key = Key.t
+
+module Make (Key : sig
+  type t [@@deriving compare, sexp_of]
+end) : S with type key = Key.t

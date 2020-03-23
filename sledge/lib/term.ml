@@ -100,7 +100,7 @@ end = struct
 end
 
 include T
-module Map = Map.Make (T)
+module Map = struct include Map.Make (T) include Provide_of_sexp (T) end
 module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
@@ -334,7 +334,7 @@ module Var = struct
   module Subst = struct
     type t = T.t Map.t [@@deriving compare, equal, sexp_of]
 
-    let t_of_sexp = Map.t_of_sexp T.t_of_sexp T.t_of_sexp
+    let t_of_sexp = Map.t_of_sexp T.t_of_sexp
 
     let invariant s =
       Invariant.invariant [%here] s [%sexp_of: t]
