@@ -198,7 +198,7 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
   | NonnullConst _
   | Field _
   | CallToGetKnownToContainsKey
-  | MethodParameter _
+  | CurrMethodParameter _
   | This
   | New
   | ArrayAccess

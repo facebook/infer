@@ -13,7 +13,7 @@ type t =
   | NullConst of Location.t
   | NonnullConst of Location.t
   | Field of field_origin
-  | MethodParameter of method_parameter_origin
+  | CurrMethodParameter of method_parameter_origin
   | This
   | MethodCall of method_call_origin
   | CallToGetKnownToContainsKey
@@ -59,9 +59,24 @@ let get_nullability = function
       Nullability.StrictNonnull
   | Field {field_type= {nullability}} ->
       AnnotatedNullability.get_nullability nullability
-  | MethodParameter (Normal {param_annotated_type= {nullability}}) ->
-      AnnotatedNullability.get_nullability nullability
-  | MethodParameter ObjectEqualsOverride ->
+  | CurrMethodParameter (Normal {param_annotated_type= {nullability}}) -> (
+    match nullability with
+    | AnnotatedNullability.Nullable _ ->
+        (* Annotated as Nullable explicitly or implicitly *)
+        Nullability.Nullable
+    | AnnotatedNullability.UncheckedNonnull _
+    | AnnotatedNullability.ThirdPartyNonnull
+    | AnnotatedNullability.LocallyCheckedNonnull
+    | AnnotatedNullability.StrictNonnull _ ->
+        (* Nonnull param should be treated as trusted inside this function context:
+           Things like dereferences or conversions should be allowed without any extra check
+           independendly of mode.
+           NOTE. However, in practice a function should be allowed to check any param for null
+           and be defensive, because no function can gurantee it won't ever be called with `null`, so
+           in theory we might want to distinct that in the future.
+        *)
+        Nullability.StrictNonnull )
+  | CurrMethodParameter ObjectEqualsOverride ->
       (* `Object.equals(obj)` should expect to be called with null `obj` *)
       Nullability.Nullable
   | MethodCall {annotated_signature= {ret= {ret_annotated_type= {nullability}}}} ->
@@ -75,10 +90,10 @@ let rec to_string = function
       "Const (nonnull)"
   | Field {object_origin; field_name} ->
       "Field " ^ Fieldname.to_string field_name ^ " (object: " ^ to_string object_origin ^ ")"
-  | MethodParameter (Normal {mangled; param_annotated_type= {nullability}}) ->
+  | CurrMethodParameter (Normal {mangled; param_annotated_type= {nullability}}) ->
       Format.asprintf "Param %s <%a>" (Mangled.to_string mangled) AnnotatedNullability.pp
         nullability
-  | MethodParameter ObjectEqualsOverride ->
+  | CurrMethodParameter ObjectEqualsOverride ->
       "Param(ObjectEqualsOverride)"
   | This ->
       "this"
@@ -144,9 +159,9 @@ let get_description origin =
       Some ("null constant" ^ atline loc)
   | Field {field_name; access_loc} ->
       Some ("field " ^ Fieldname.get_field_name field_name ^ atline access_loc)
-  | MethodParameter (Normal {mangled}) ->
+  | CurrMethodParameter (Normal {mangled}) ->
       Some ("method parameter " ^ Mangled.to_string mangled)
-  | MethodParameter ObjectEqualsOverride ->
+  | CurrMethodParameter ObjectEqualsOverride ->
       Some "Object.equals() should be able to accept `null`, according to the Java specification"
   | MethodCall {pname; call_loc; annotated_signature} ->
       Some (get_method_ret_description pname call_loc annotated_signature)
@@ -171,7 +186,7 @@ let get_description origin =
 
 let join o1 o2 =
   match (o1, o2) with
-  | Field _, (NullConst _ | NonnullConst _ | MethodParameter _ | This | MethodCall _ | New) ->
+  | Field _, (NullConst _ | NonnullConst _ | CurrMethodParameter _ | This | MethodCall _ | New) ->
       (* low priority to Field, to support field initialization patterns *)
       o2
   | _ ->

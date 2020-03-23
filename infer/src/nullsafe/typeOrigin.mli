@@ -11,7 +11,8 @@ type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
   | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
-  | MethodParameter of method_parameter_origin  (** A method's parameter *)
+  | CurrMethodParameter of method_parameter_origin
+      (** Parameter of a method we are currently in, *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of method_call_origin  (** A result of a method call *)
   | CallToGetKnownToContainsKey

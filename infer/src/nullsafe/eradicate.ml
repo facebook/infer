@@ -40,8 +40,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           *)
           TypeOrigin.This
         else if PatternMatch.is_override_of_java_lang_object_equals curr_pname then
-          TypeOrigin.MethodParameter ObjectEqualsOverride
-        else TypeOrigin.MethodParameter (Normal param_signature)
+          TypeOrigin.CurrMethodParameter ObjectEqualsOverride
+        else TypeOrigin.CurrMethodParameter (Normal param_signature)
       in
       let inferred_nullability = InferredNullability.create origin in
       TypeState.add pvar
