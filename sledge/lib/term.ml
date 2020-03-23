@@ -1084,11 +1084,11 @@ let map_rec_pre ~f e =
       | RecN (op, xs) -> (
         match List.Assoc.find ~equal:( == ) memo e with
         | None ->
-            let xs' = IArray.copy xs in
-            let e' = RecN (op, xs') in
+            let xs' = IArray.to_array xs in
+            let e' = RecN (op, IArray.of_array xs') in
             let memo = List.Assoc.add ~equal:( == ) memo e e' in
             let changed = ref false in
-            IArray.map_inplace xs' ~f:(fun x ->
+            Array.map_inplace xs' ~f:(fun x ->
                 let x' = map_rec_pre_f memo x in
                 if x' != x then changed := true ;
                 x' ) ;
