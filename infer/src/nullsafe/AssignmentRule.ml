@@ -63,7 +63,7 @@ module ReportableViolation = struct
 
   let mk_description_for_bad_param_passed
       {model_source; param_signature; actual_param_expression; param_position; function_procname}
-      ~param_nullability ~nullability_evidence =
+      ~param_nullability_kind ~nullability_evidence =
     let nullability_evidence_as_suffix =
       Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
     in
@@ -73,15 +73,11 @@ module ReportableViolation = struct
       if String.equal actual_param_expression "null" then "is `null`"
       else
         let nullability_descr =
-          match param_nullability with
-          | Nullability.Null ->
+          match param_nullability_kind with
+          | ErrorRenderingUtils.UserFriendlyNullable.Null ->
               "`null`"
-          | Nullability.Nullable ->
+          | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
               "nullable"
-          | other ->
-              Logging.die InternalError
-                "mk_description_for_bad_param:: invariant violation: unexpected nullability %a"
-                Nullability.pp other
         in
         Format.asprintf "%a is %s" MF.pp_monospaced actual_param_expression nullability_descr
     in
@@ -147,82 +143,81 @@ module ReportableViolation = struct
         IssueType.eradicate_return_not_nullable
 
 
+  let mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
+      ~explicit_rhs_nullable_kind ~assignment_location =
+    let nullability_evidence =
+      get_origin_opt assignment_type rhs_origin
+      |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+    in
+    let nullability_evidence_as_suffix =
+      Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
+    in
+    let module MF = MarkupFormatter in
+    let alternative_method_description =
+      ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin
+    in
+    let alternative_recommendation =
+      Option.value_map alternative_method_description
+        ~f:(fun descr ->
+          Format.asprintf " If you don't expect null, use %a instead." MF.pp_monospaced descr )
+        ~default:""
+    in
+    let error_message =
+      match assignment_type with
+      | PassingParamToFunction function_info ->
+          Format.sprintf "%s%s"
+            (mk_description_for_bad_param_passed function_info ~nullability_evidence
+               ~param_nullability_kind:explicit_rhs_nullable_kind)
+            alternative_recommendation
+      | AssigningToField field_name ->
+          let rhs_description =
+            match explicit_rhs_nullable_kind with
+            | ErrorRenderingUtils.UserFriendlyNullable.Null ->
+                "`null`"
+            | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
+                "a nullable"
+          in
+          Format.asprintf "%a is declared non-nullable but is assigned %s%s.%s" MF.pp_monospaced
+            (Fieldname.get_field_name field_name)
+            rhs_description nullability_evidence_as_suffix alternative_recommendation
+      | ReturningFromFunction function_proc_name ->
+          let return_description =
+            match explicit_rhs_nullable_kind with
+            | ErrorRenderingUtils.UserFriendlyNullable.Null ->
+                (* Return `null` in all_whitelisted branches *)
+                "`null`"
+            | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
+                "a nullable value"
+          in
+          Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s.%s"
+            MF.pp_monospaced
+            (Procname.to_simplified_string ~withclass:false function_proc_name)
+            return_description nullability_evidence_as_suffix alternative_recommendation
+    in
+    let issue_type = get_issue_type assignment_type in
+    (error_message, issue_type, assignment_location)
+
+
   let get_description ~assignment_location assignment_type ~rhs_origin
       {nullsafe_mode; violation= {rhs}} =
-    let special_message =
-      if not (NullsafeMode.equal NullsafeMode.Default nullsafe_mode) then
-        ErrorRenderingUtils.mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability:rhs
-          ~bad_usage_location:assignment_location rhs_origin
-      else None
+    let user_friendly_nullable =
+      ErrorRenderingUtils.UserFriendlyNullable.from_nullability rhs
+      |> IOption.if_none_eval ~f:(fun () ->
+             Logging.die InternalError
+               "get_description:: Assignment violation should not be possible for non-nullable \
+                values on right hand side" )
     in
-    match special_message with
-    | Some desc ->
-        desc
-    | _ ->
-        let nullability_evidence =
-          get_origin_opt assignment_type rhs_origin
-          |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-        in
-        let nullability_evidence_as_suffix =
-          Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
-        in
-        let module MF = MarkupFormatter in
-        let alternative_method_description =
-          ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin
-        in
-        let alternative_recommendation =
-          Option.value_map alternative_method_description
-            ~f:(fun descr ->
-              Format.asprintf " If you don't expect null, use %a instead." MF.pp_monospaced descr )
-            ~default:""
-        in
-        let error_message =
-          match assignment_type with
-          | PassingParamToFunction function_info ->
-              Format.sprintf "%s%s"
-                (mk_description_for_bad_param_passed function_info ~nullability_evidence
-                   ~param_nullability:rhs)
-                alternative_recommendation
-          | AssigningToField field_name ->
-              let rhs_description =
-                Nullability.(
-                  match rhs with
-                  | Null ->
-                      "`null`"
-                  | Nullable ->
-                      "a nullable"
-                  | other ->
-                      Logging.die InternalError
-                        "violation_description(assign_field):: invariant violation: unexpected \
-                         nullability %a"
-                        Nullability.pp other)
-              in
-              Format.asprintf "%a is declared non-nullable but is assigned %s%s.%s" MF.pp_monospaced
-                (Fieldname.get_field_name field_name)
-                rhs_description nullability_evidence_as_suffix alternative_recommendation
-          | ReturningFromFunction function_proc_name ->
-              let return_description =
-                Nullability.(
-                  match rhs with
-                  | Null ->
-                      (* Return `null` in all_whitelisted branches *)
-                      "`null`"
-                  | Nullable ->
-                      "a nullable value"
-                  | other ->
-                      Logging.die InternalError
-                        "violation_description(ret_fun):: invariant violation: unexpected \
-                         nullability %a"
-                        Nullability.pp other)
-              in
-              Format.asprintf
-                "%a: return type is declared non-nullable but the method returns %s%s.%s"
-                MF.pp_monospaced
-                (Procname.to_simplified_string ~withclass:false function_proc_name)
-                return_description nullability_evidence_as_suffix alternative_recommendation
-        in
-        let issue_type = get_issue_type assignment_type in
-        (error_message, issue_type, assignment_location)
+    match user_friendly_nullable with
+    | ErrorRenderingUtils.UserFriendlyNullable.UntrustedNonnull untrusted_kind ->
+        (* Attempt to assigning a value which is not explictly declared as nullable,
+           but still can not be trusted in this particular mode.
+        *)
+        ErrorRenderingUtils.mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind
+          ~bad_usage_location:assignment_location rhs_origin
+    | ErrorRenderingUtils.UserFriendlyNullable.ExplainablyNullable explicit_kind ->
+        (* Attempt to assigning a value that can be explained to the user as nullable. *)
+        mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
+          ~explicit_rhs_nullable_kind:explicit_kind ~assignment_location
 end
 
 let check ~lhs ~rhs =

@@ -8,6 +8,28 @@
 open! IStd
 module F = Format
 
+module UserFriendlyNullable = struct
+  type t = ExplainablyNullable of explainably_nullable_kind | UntrustedNonnull of untrusted_kind
+
+  and explainably_nullable_kind = Nullable | Null
+
+  and untrusted_kind = ThirdPartyNonnull | UncheckedNonnull | LocallyCheckedNonnull
+
+  let from_nullability = function
+    | Nullability.Nullable ->
+        Some (ExplainablyNullable Nullable)
+    | Nullability.Null ->
+        Some (ExplainablyNullable Null)
+    | Nullability.UncheckedNonnull ->
+        Some (UntrustedNonnull UncheckedNonnull)
+    | Nullability.LocallyCheckedNonnull ->
+        Some (UntrustedNonnull LocallyCheckedNonnull)
+    | Nullability.ThirdPartyNonnull ->
+        Some (UntrustedNonnull ThirdPartyNonnull)
+    | Nullability.StrictNonnull ->
+        None
+end
+
 let is_object_nullability_self_explanatory ~object_expression (object_origin : TypeOrigin.t) =
   (* Fundamentally, object can be of two kinds:
      1. Indirect: local variable that was instantiated before.
@@ -83,28 +105,40 @@ let get_field_class_name field_name =
   |> Option.value_map ~f:(fun (classname, _) -> classname) ~default:"the field class"
 
 
-let mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode nullability =
-  match (nullsafe_mode, nullability) with
-  | NullsafeMode.Strict, Nullability.UncheckedNonnull ->
+let mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind =
+  match (nullsafe_mode, untrusted_kind) with
+  | NullsafeMode.Strict, UserFriendlyNullable.UncheckedNonnull ->
       "non-strict classes"
-  | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
+  | NullsafeMode.Strict, UserFriendlyNullable.LocallyCheckedNonnull ->
       "nullsafe-local classes"
-  | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
+  | NullsafeMode.Local _, _ ->
       "non-nullsafe classes"
-  | _ ->
-      Logging.die Logging.InternalError
-        "Should be called only for locally checked or unchecked nonnull cases"
+  | NullsafeMode.Default, _ ->
+      Logging.die InternalError
+        "mk_coming_from_unchecked_or_locally_checked_case_only:: not applicable to default mode"
+  | _, UserFriendlyNullable.ThirdPartyNonnull ->
+      Logging.die InternalError
+        "mk_coming_from_unchecked_or_locally_checked_case_only:: not applicable to \
+         ThirdPartyNonnull case"
 
 
-let mk_recommendation nullsafe_mode nullability what =
-  match (nullsafe_mode, nullability) with
-  | NullsafeMode.Strict, Nullability.UncheckedNonnull
-  | NullsafeMode.Strict, Nullability.LocallyCheckedNonnull ->
-      Some (F.sprintf "make %s nullsafe strict" what)
-  | NullsafeMode.Local _, Nullability.UncheckedNonnull ->
-      Some (F.sprintf "make %s nullsafe" what)
-  | _ ->
-      None
+let mk_strictification_advice_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind
+    ~what_to_strictify =
+  match untrusted_kind with
+  | UserFriendlyNullable.UncheckedNonnull | UserFriendlyNullable.LocallyCheckedNonnull -> (
+    match nullsafe_mode with
+    | NullsafeMode.Strict ->
+        F.sprintf "make %s nullsafe strict" what_to_strictify
+    | NullsafeMode.Local _ ->
+        F.sprintf "make %s nullsafe" what_to_strictify
+    | NullsafeMode.Default ->
+        Logging.die InternalError
+          "mk_recommendation_unchecked_or_locally_checked_case_only:: should not be called for \
+           default mode" )
+  | UserFriendlyNullable.ThirdPartyNonnull ->
+      Logging.die InternalError
+        "mk_recommendation_unchecked_or_locally_checked_case_only:: not applicable to \
+         ThirdPartyNonnull case"
 
 
 let mk_recommendation_for_third_party_field nullsafe_mode field =
@@ -114,12 +148,12 @@ let mk_recommendation_for_third_party_field nullsafe_mode field =
   | NullsafeMode.Local _ ->
       F.sprintf "access %s via a nullsafe getter" field
   | NullsafeMode.Default ->
-      Logging.die Logging.InternalError
-        "Should not happen: we should tolerate third party in default mode"
+      Logging.die InternalError
+        "mk_recommendation_for_third_party_field:: Should not happen: we should tolerate third \
+         party in default mode"
 
 
-let get_info object_origin nullsafe_mode bad_nullability =
-  let open IOption.Let_syntax in
+let get_info object_origin nullsafe_mode untrusted_kind =
   match object_origin with
   | TypeOrigin.MethodCall {pname; call_loc} ->
       let offending_object =
@@ -128,14 +162,9 @@ let get_info object_origin nullsafe_mode bad_nullability =
       in
       let object_loc = call_loc in
       let what_is_used = "Result of this call" in
-      let+ coming_from_explanation, recommendation, issue_type =
-        match bad_nullability with
-        | Nullability.Null | Nullability.Nullable ->
-            (* This method makes sense only for non-nullable violations *)
-            None
-        | Nullability.StrictNonnull ->
-            Logging.die InternalError "There should not be type violations involving StrictNonnull"
-        | Nullability.ThirdPartyNonnull ->
+      let coming_from_explanation, recommendation, issue_type =
+        match untrusted_kind with
+        | UserFriendlyNullable.ThirdPartyNonnull ->
             let suggested_third_party_sig_file =
               ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
                 (ThirdPartyAnnotationGlobalRepo.get_repo ())
@@ -149,19 +178,19 @@ let get_info object_origin nullsafe_mode bad_nullability =
                   (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
                 ~default:"the third party signature storage"
             in
-            return
-              ( "not vetted third party methods"
-              , F.sprintf "add the correct signature to %s" where_to_add_signature
-              , IssueType.eradicate_unvetted_third_party_in_nullsafe )
-        | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
+            ( "not vetted third party methods"
+            , F.sprintf "add the correct signature to %s" where_to_add_signature
+            , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+        | UserFriendlyNullable.UncheckedNonnull | UserFriendlyNullable.LocallyCheckedNonnull ->
             let from =
-              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode bad_nullability
+              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind
             in
-            let+ recommendation =
+            let recommendation =
               let what_to_strictify =
                 Option.value (get_method_class_name pname) ~default:offending_object
               in
-              mk_recommendation nullsafe_mode bad_nullability what_to_strictify
+              mk_strictification_advice_unchecked_or_locally_checked_case_only nullsafe_mode
+                untrusted_kind ~what_to_strictify
             in
             let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
             (from, recommendation, issue_type)
@@ -183,24 +212,19 @@ let get_info object_origin nullsafe_mode bad_nullability =
       (* TODO: currently we do not support third-party annotations for fields. Because of this,
          render error like it is a non-stict class. *)
       let what_is_used = "This field" in
-      let+ coming_from_explanation, recommendation, issue_type =
-        match bad_nullability with
-        | Nullability.Null | Nullability.Nullable ->
-            (* This method makes sense only for non-nullable violations *)
-            None
-        | Nullability.StrictNonnull ->
-            Logging.die InternalError "There should not be type violations involving StrictNonnull"
-        | Nullability.ThirdPartyNonnull ->
-            return
-              ( "third-party classes"
-              , mk_recommendation_for_third_party_field nullsafe_mode unqualified_name
-              , IssueType.eradicate_unvetted_third_party_in_nullsafe )
-        | Nullability.UncheckedNonnull | Nullability.LocallyCheckedNonnull ->
+      let coming_from_explanation, recommendation, issue_type =
+        match untrusted_kind with
+        | UserFriendlyNullable.ThirdPartyNonnull ->
+            ( "third-party classes"
+            , mk_recommendation_for_third_party_field nullsafe_mode unqualified_name
+            , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+        | UserFriendlyNullable.UncheckedNonnull | UserFriendlyNullable.LocallyCheckedNonnull ->
             let from =
-              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode bad_nullability
+              mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind
             in
-            let+ recommendation =
-              mk_recommendation nullsafe_mode bad_nullability (get_field_class_name field_name)
+            let recommendation =
+              mk_strictification_advice_unchecked_or_locally_checked_case_only nullsafe_mode
+                untrusted_kind ~what_to_strictify:(get_field_class_name field_name)
             in
             (from, recommendation, IssueType.eradicate_unchecked_usage_in_nullsafe)
       in
@@ -210,19 +234,22 @@ let get_info object_origin nullsafe_mode bad_nullability =
       ; what_is_used
       ; recommendation
       ; issue_type }
-  | _ ->
-      None
+  | other ->
+      Logging.die InternalError
+        "get_info:: untrusted_kind is possible only for MethodCall and Field origins, got %s \
+         instead"
+        (TypeOrigin.to_string other)
 
 
-let mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability ~bad_usage_location object_origin =
-  let open IOption.Let_syntax in
-  let+ { offending_object
-       ; object_loc
-       ; coming_from_explanation
-       ; what_is_used
-       ; recommendation
-       ; issue_type } =
-    get_info object_origin nullsafe_mode bad_nullability
+let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_usage_location
+    object_origin =
+  let { offending_object
+      ; object_loc
+      ; coming_from_explanation
+      ; what_is_used
+      ; recommendation
+      ; issue_type } =
+    get_info object_origin nullsafe_mode untrusted_kind
   in
   let description =
     F.asprintf

@@ -34,79 +34,87 @@ module ReportableViolation = struct
     if should_show_origin then Some origin else None
 
 
+  let mk_nullsafe_issue_for_explicitly_nullable_values ~explicit_kind ~dereference_type
+      dereference_location ~nullable_object_descr ~nullable_object_origin =
+    let module MF = MarkupFormatter in
+    let what_is_dereferred_str =
+      match dereference_type with
+      | MethodCall _ | AccessToField _ -> (
+        match nullable_object_descr with
+        | None ->
+            "Object"
+        (* Just describe an object itself *)
+        | Some descr ->
+            MF.monospaced_to_string descr )
+      | ArrayLengthAccess | AccessByIndex _ -> (
+        (* In Java, those operations can be applied only to arrays *)
+        match nullable_object_descr with
+        | None ->
+            "Array"
+        | Some descr ->
+            Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
+    in
+    let action_descr =
+      match dereference_type with
+      | MethodCall method_name ->
+          Format.sprintf "calling %s"
+            (MF.monospaced_to_string (Procname.to_simplified_string method_name))
+      | AccessToField field_name ->
+          Format.sprintf "accessing field %s"
+            (MF.monospaced_to_string (Fieldname.to_simplified_string field_name))
+      | AccessByIndex {index_desc} ->
+          Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
+      | ArrayLengthAccess ->
+          "accessing its length"
+    in
+    let origin_descr =
+      get_origin_opt ~nullable_object_descr nullable_object_origin
+      |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
+      |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:""
+    in
+    let alternative_method_description =
+      ErrorRenderingUtils.find_alternative_nonnull_method_description nullable_object_origin
+    in
+    let alternative_recommendation =
+      Option.value_map alternative_method_description
+        ~f:(fun descr ->
+          Format.asprintf " If this is intentional, use %a instead." MF.pp_monospaced descr )
+        ~default:""
+    in
+    let description =
+      match explicit_kind with
+      | ErrorRenderingUtils.UserFriendlyNullable.Null ->
+          Format.sprintf
+            "NullPointerException will be thrown at this line! %s is `null` and is dereferenced \
+             via %s%s."
+            what_is_dereferred_str action_descr origin_descr
+      | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
+          Format.sprintf "%s is nullable and is not locally checked for null when %s%s.%s"
+            what_is_dereferred_str action_descr origin_descr alternative_recommendation
+    in
+    (description, IssueType.eradicate_nullable_dereference, dereference_location)
+
+
   let get_description {nullsafe_mode; violation= {nullability}} ~dereference_location
       dereference_type ~nullable_object_descr ~nullable_object_origin =
-    let module MF = MarkupFormatter in
-    let special_message =
-      if not (NullsafeMode.equal NullsafeMode.Default nullsafe_mode) then
-        ErrorRenderingUtils.mk_special_nullsafe_issue ~nullsafe_mode ~bad_nullability:nullability
-          ~bad_usage_location:dereference_location nullable_object_origin
-      else None
+    let user_friendly_nullable =
+      ErrorRenderingUtils.UserFriendlyNullable.from_nullability nullability
+      |> IOption.if_none_eval ~f:(fun () ->
+             Logging.die InternalError
+               "get_description:: Dereference violation should not be possible for non-nullable \
+                values" )
     in
-    match special_message with
-    | Some desc ->
-        desc
-    | _ ->
-        let what_is_dereferred_str =
-          match dereference_type with
-          | MethodCall _ | AccessToField _ -> (
-            match nullable_object_descr with
-            | None ->
-                "Object"
-            (* Just describe an object itself *)
-            | Some descr ->
-                MF.monospaced_to_string descr )
-          | ArrayLengthAccess | AccessByIndex _ -> (
-            (* In Java, those operations can be applied only to arrays *)
-            match nullable_object_descr with
-            | None ->
-                "Array"
-            | Some descr ->
-                Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
-        in
-        let action_descr =
-          match dereference_type with
-          | MethodCall method_name ->
-              Format.sprintf "calling %s"
-                (MF.monospaced_to_string (Procname.to_simplified_string method_name))
-          | AccessToField field_name ->
-              Format.sprintf "accessing field %s"
-                (MF.monospaced_to_string (Fieldname.to_simplified_string field_name))
-          | AccessByIndex {index_desc} ->
-              Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
-          | ArrayLengthAccess ->
-              "accessing its length"
-        in
-        let origin_descr =
-          get_origin_opt ~nullable_object_descr nullable_object_origin
-          |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
-          |> Option.value_map ~f:(fun origin -> ": " ^ origin) ~default:""
-        in
-        let alternative_method_description =
-          ErrorRenderingUtils.find_alternative_nonnull_method_description nullable_object_origin
-        in
-        let alternative_recommendation =
-          Option.value_map alternative_method_description
-            ~f:(fun descr ->
-              Format.asprintf " If this is intentional, use %a instead." MF.pp_monospaced descr )
-            ~default:""
-        in
-        let description =
-          match nullability with
-          | Nullability.Null ->
-              Format.sprintf
-                "NullPointerException will be thrown at this line! %s is `null` and is \
-                 dereferenced via %s%s."
-                what_is_dereferred_str action_descr origin_descr
-          | Nullability.Nullable ->
-              Format.sprintf "%s is nullable and is not locally checked for null when %s%s.%s"
-                what_is_dereferred_str action_descr origin_descr alternative_recommendation
-          | other ->
-              Logging.die InternalError
-                "violation_description:: invariant violation: unexpected nullability %a"
-                Nullability.pp other
-        in
-        (description, IssueType.eradicate_nullable_dereference, dereference_location)
+    match user_friendly_nullable with
+    | ErrorRenderingUtils.UserFriendlyNullable.UntrustedNonnull untrusted_kind ->
+        (* Attempt to dereference a value which is not explictly declared as nullable,
+           but still can not be trusted in this particular mode.
+        *)
+        ErrorRenderingUtils.mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind
+          ~bad_usage_location:dereference_location nullable_object_origin
+    | ErrorRenderingUtils.UserFriendlyNullable.ExplainablyNullable explicit_kind ->
+        (* Attempt to dereference value that can be explained to the user as nullable. *)
+        mk_nullsafe_issue_for_explicitly_nullable_values ~explicit_kind ~dereference_type
+          dereference_location ~nullable_object_descr ~nullable_object_origin
 
 
   let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
