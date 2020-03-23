@@ -11,6 +11,6 @@
    llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
    llvm.linker shexp.process yojson trace import sledge model)
  (flags
-  (:standard -open Import -open Sledge -open Model))
+  (:standard -w -58 -open Import -open Sledge -open Model))
  (preprocess
   (pps ppx_sledge)))
