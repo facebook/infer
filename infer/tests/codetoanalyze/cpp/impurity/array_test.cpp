@@ -22,9 +22,16 @@ void call_array_mod_impure(int a[10]) {
   array_mod_impure(a, b, 9);
 }
 
-void call_array_mod_with_fresh_pure() {
+void call_array_mod_with_fresh_pure_FP() {
   int a[10];
-  array_mod_impure(a, a, 0);
+  array_mod_impure(a, a, 0); // aliasing of arguments, pulse returns empty
+                             // summary which causes the function to be
+                             // considered impure
+}
+void call_array_mod_with_both_fresh_pure() {
+  int a[10];
+  int b[10];
+  array_mod_impure(a, b, 0);
 }
 
 // modifies array

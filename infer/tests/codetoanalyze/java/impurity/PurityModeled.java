@@ -87,10 +87,17 @@ class PurityModeled {
   // Pulse can only widen a fixed number of times, hence it thinks
   // that the exit of the loop never reaches and results in empty
   // post.
-  void timing_call_in_loop_impure_FN() {
+  void timing_call_in_loop_impure() {
     for (int i = 0; i < 10; i++) {
       System.nanoTime();
     }
+  }
+
+  // Pulse can only widen a fixed number of times, hence it thinks
+  // that the exit of the loop never reaches and results in empty
+  // post which is considered to be impure.
+  void constant_loop_pure_FP() {
+    for (int i = 0; i < 10; i++) {}
   }
 
   // Since n is symbolic, pruning doesn't result in infeasible path,
@@ -105,8 +112,8 @@ class PurityModeled {
   // Due to getting the wrong summary for the callee (a=3), Pulse ends
   // up thinking that the parameter [a] must be 3 in the loop. Hence, as
   // a result of pruning, exit node becomes infeasible and we get
-  // empty summary.
-  void call_timing_symb_impure_FN(int a) {
+  // empty summary which is considered to be impure.
+  void call_timing_symb_impure(int a) {
     for (int i = 0; i < a; i++) {
       timing_call_in_loop_symb_impure(a);
     }

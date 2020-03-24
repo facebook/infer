@@ -4,6 +4,7 @@ codetoanalyze/cpp/impurity/array_test.cpp, alias_mod_impure, 0, IMPURE_FUNCTION,
 codetoanalyze/cpp/impurity/array_test.cpp, array_mod_both_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function array_mod_both_impure,parameter `a` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, array_mod_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function array_mod_impure,parameter `b` modified here,parameter `a` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, call_array_mod_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function call_array_mod_impure,when calling `array_mod_impure` here,parameter `a` modified here]
+codetoanalyze/cpp/impurity/array_test.cpp, call_array_mod_with_fresh_pure_FP, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function call_array_mod_with_fresh_pure_FP with empty pulse summary]
 codetoanalyze/cpp/impurity/array_test.cpp, modify_direct_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function modify_direct_impure,parameter `array` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, modify_ptr_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function modify_ptr_impure,parameter `array` modified here]
 codetoanalyze/cpp/impurity/global_test.cpp, call_modify_global, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function call_modify_global,when calling `modify_global_array_impure` here,global variable `a` modified here,when calling `modify_global_primitive_impure` here,global variable `x` modified here]

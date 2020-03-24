@@ -155,15 +155,31 @@ let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
   {modified_globals; modified_params; skipped_calls}
 
 
-let report_errors summary proc_name pname_loc modified_opt =
+let checker {exe_env; Callbacks.summary} : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
+  let pdesc = Summary.get_proc_desc summary in
+  let pname_loc = Procdesc.get_loc pdesc in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
   let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-  ( match modified_opt with
+  ( match summary.payloads.pulse with
   | None ->
       Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
         impure_fun_desc
-  | Some (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as astate) ->
-      if Purity.should_report proc_name && not (ImpurityDomain.is_pure astate) then
+  | Some [] ->
+      let impure_fun_desc =
+        F.asprintf "Impure function %a with empty pulse summary" Procname.pp proc_name
+      in
+      let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
+      Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
+        impure_fun_desc
+  | Some pre_posts ->
+      let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
+        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
+            let modified = extract_impurity tenv pdesc pre_post in
+            ImpurityDomain.join acc modified )
+      in
+      if Purity.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
         let modified_ltr param_source set acc =
           ImpurityDomain.ModifiedVarSet.fold
             (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
@@ -185,16 +201,3 @@ let report_errors summary proc_name pname_loc modified_opt =
         in
         Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc ) ;
   summary
-
-
-let checker {exe_env; Callbacks.summary} : Summary.t =
-  let proc_name = Summary.get_proc_name summary in
-  let pdesc = Summary.get_proc_desc summary in
-  let pname_loc = Procdesc.get_loc pdesc in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
-  summary.payloads.pulse
-  |> Option.map ~f:(fun pre_posts ->
-         List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
-             let modified = extract_impurity tenv pdesc pre_post in
-             ImpurityDomain.join acc modified ) )
-  |> report_errors summary proc_name pname_loc
