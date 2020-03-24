@@ -6,7 +6,12 @@
  *)
 
 (** Constraints representing equivalence relations over uninterpreted
-    functions and linear rational arithmetic *)
+    functions and linear rational arithmetic.
+
+    Functions that return relations that might be stronger than their
+    argument relations accept and return a set of variables. The input set
+    is the variables with which any generated variables must be chosen
+    fresh, and the output set is the variables that have been generated. *)
 
 type t [@@deriving compare, equal, sexp]
 
