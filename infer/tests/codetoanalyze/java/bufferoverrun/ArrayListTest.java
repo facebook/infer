@@ -242,4 +242,34 @@ class ArrayListTest {
       b.get(0); // size of b should be [0, 2]
     }
   }
+
+  interface MyI {
+    public ArrayList<Integer> mk_unknown();
+  }
+
+  boolean unknown_bool2;
+  ArrayList<Integer> unknown_array_list1;
+  ArrayList<Integer> unknown_array_list2;
+
+  void loop_on_unknown_iterator_FN(MyI x, int j) {
+    ArrayList<Integer> a = new ArrayList<>();
+    ArrayList<Integer> b;
+    if (unknown_bool) {
+      b = a;
+    } else {
+      b = x.mk_unknown();
+    }
+    // `b` points to an zero-sized array and `Unknown` pointer here.  By `b.hasNext()`, the size of
+    // the array list is pruned incorrectly to [0,-1].
+    for (Integer i : b) {
+      // Both branches are unreachable since `a.size()` is an invalid [0,-1].
+      if (a.size() <= -1) {
+        int[] c = new int[5];
+        c[5] = 0;
+      } else {
+        int[] c = new int[5];
+        c[5] = 0;
+      }
+    }
+  }
 }
