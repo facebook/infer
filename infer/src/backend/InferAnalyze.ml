@@ -13,12 +13,11 @@ module F = Format
 module L = Logging
 module CLOpt = CommandLineOption
 
-let clear_caches () =
-  Ondemand.LocalCache.clear () ;
-  Summary.OnDisk.clear_cache () ;
-  Procname.SQLite.clear_cache () ;
-  BufferOverrunUtils.clear_cache ()
+let clear_caches_except_lrus () =
+  Summary.OnDisk.clear_cache () ; Procname.SQLite.clear_cache () ; BufferOverrunUtils.clear_cache ()
 
+
+let clear_caches () = Ondemand.LocalCache.clear () ; clear_caches_except_lrus ()
 
 let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
   let analyze_source_file exe_env source_file =
@@ -52,7 +51,7 @@ let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
   fun target ->
     let exe_env = Exe_env.mk () in
     (* clear cache for each source file to avoid it growing unboundedly *)
-    clear_caches () ;
+    clear_caches_except_lrus () ;
     match target with
     | Procname procname ->
         analyze_proc_name exe_env procname

@@ -1739,6 +1739,9 @@ INTERNAL OPTIONS
            Deactivates: Use the multirange subtyping domain (Conversely:
            --subtype-multirange)
 
+       --summaries-caches-max-size int
+           The maximum amount of elements the summaries LRU caches can hold
+
        --symops-per-iteration int
            Set the number of symbolic operations per iteration (see
            --iterations)

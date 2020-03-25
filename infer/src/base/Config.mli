@@ -606,6 +606,8 @@ val starvation_whole_program : bool
 
 val subtype_multirange : bool
 
+val summaries_caches_max_size : int
+
 val symops_per_iteration : int option
 
 val test_determinator : bool

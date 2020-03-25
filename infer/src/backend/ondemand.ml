@@ -15,20 +15,25 @@ module F = Format
 let exe_env_ref = ref None
 
 module LocalCache = struct
-  let results = lazy (Procname.Hash.create 128)
+  let results =
+    lazy
+      (Procname.LRUHash.create ~initial_size:Config.summaries_caches_max_size
+         ~max_size:Config.summaries_caches_max_size)
 
-  let clear () = Procname.Hash.clear (Lazy.force results)
 
-  let remove pname = Procname.Hash.remove (Lazy.force results) pname
+  let clear () = Procname.LRUHash.clear (Lazy.force results)
+
+  let remove pname = Procname.LRUHash.remove (Lazy.force results) pname
 
   let get proc_name =
-    let summ_opt_opt = Procname.Hash.find_opt (Lazy.force results) proc_name in
+    let summ_opt_opt = Procname.LRUHash.find_opt (Lazy.force results) proc_name in
     if Option.is_some summ_opt_opt then BackendStats.incr_ondemand_local_cache_hits ()
     else BackendStats.incr_ondemand_local_cache_misses () ;
     summ_opt_opt
 
 
-  let add proc_name summary_option = Procname.Hash.add (Lazy.force results) proc_name summary_option
+  let add proc_name summary_option =
+    Procname.LRUHash.replace (Lazy.force results) proc_name summary_option
 end
 
 let set_exe_env (env : Exe_env.t) = exe_env_ref := Some env

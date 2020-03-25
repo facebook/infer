@@ -20,6 +20,8 @@ module type S = sig
 
   val replace : 'a t -> key -> 'a -> unit
 
+  val remove : 'a t -> key -> unit
+
   val clear : 'a t -> unit
 
   val pp :
@@ -55,6 +57,8 @@ module Make (Key : Hashtbl.HashedType) = struct
 
     let use {list} n = Doubly_linked.move_to_front list n
 
+    let remove {list} n = Doubly_linked.remove list n
+
     let clear {list} = Doubly_linked.clear list
   end
 
@@ -77,6 +81,14 @@ module Make (Key : Hashtbl.HashedType) = struct
           LRU.use lru n ; n
     in
     Hash.replace map k (v, n)
+
+
+  let remove {map; lru} k =
+    match Hash.find_opt map k with
+    | None ->
+        ()
+    | Some (_, n) ->
+        LRU.remove lru n ; Hash.remove map k
 
 
   let clear {map; lru} = Hash.clear map ; LRU.clear lru

@@ -20,6 +20,8 @@ module type S = sig
 
   val replace : 'a t -> key -> 'a -> unit
 
+  val remove : 'a t -> key -> unit
+
   val clear : 'a t -> unit
 
   val pp :

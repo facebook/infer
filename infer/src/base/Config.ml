@@ -2165,6 +2165,11 @@ and subtype_multirange =
     "Use the multirange subtyping domain"
 
 
+and summaries_caches_max_size =
+  CLOpt.mk_int ~long:"summaries-caches-max-size" ~default:500
+    "The maximum amount of elements the summaries LRU caches can hold"
+
+
 and symops_per_iteration =
   CLOpt.mk_int_opt ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~meta:"int"
     "Set the number of symbolic operations per iteration (see $(b,--iterations))"
@@ -3017,6 +3022,8 @@ and starvation_strict_mode = !starvation_strict_mode
 and starvation_whole_program = !starvation_whole_program
 
 and subtype_multirange = !subtype_multirange
+
+and summaries_caches_max_size = !summaries_caches_max_size
 
 and custom_symbols =
   (* Convert symbol lists to regexps just once, here *)
