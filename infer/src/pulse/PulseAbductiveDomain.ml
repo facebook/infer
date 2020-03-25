@@ -494,7 +494,7 @@ module PrePost = struct
           "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable@\n\
            note: current call state was %a" AbstractValue.pp addr_caller (Pp.option CItv.pp)
           arith_caller AbstractValue.pp addr_callee (Pp.option CItv.pp) arith_callee
-          AbstractValue.pp addr_caller pp_call_state call_state AbstractValue.pp addr_callee
+          AbstractValue.pp addr_caller AbstractValue.pp addr_callee pp_call_state call_state
     | ArithmeticBo {addr_caller; addr_callee; arith_callee; call_state} ->
         F.fprintf fmt
           "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints@\n\
