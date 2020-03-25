@@ -10,5 +10,5 @@ Findlib has been successfully loaded. Additional directives:
 The files [...]/extLib.cma
 and [...]/infertop.bc.exe
 disagree over interface Base64
-n$5
+n$4
 false

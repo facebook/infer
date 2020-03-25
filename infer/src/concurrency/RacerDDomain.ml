@@ -155,45 +155,18 @@ module TraceElem = struct
   let make_unannotated_call_access pname loc = make (Access.InterfaceCall pname) loc
 end
 
-module LockCount = AbstractDomain.CountDomain (struct
-  let max = 5
-
-  (* arbitrary threshold for max locks we expect to be held simultaneously *)
-end)
-
 module LocksDomain = struct
-  include AbstractDomain.Map (AccessPath) (LockCount)
+  include AbstractDomain.CountDomain (struct
+    let max = 5
 
-  (* TODO: eventually, we'll ask acquire_lock/release_lock to pass the lock name. for now, this is a hack
-     to model having a single lock used everywhere *)
-  let the_only_lock = ((Var.of_id (Ident.create Ident.knormal 0), Typ.void_star), [])
+    (* arbitrary threshold for max locks we expect to be held simultaneously *)
+  end)
 
-  let is_locked astate =
-    (* we only add locks with positive count, so safe to just check emptiness *)
-    not (is_empty astate)
+  let acquire_lock = increment
 
+  let release_lock = decrement
 
-  let lookup_count lock astate = find_opt lock astate |> Option.value ~default:LockCount.bottom
-
-  let acquire_lock astate =
-    let count = lookup_count the_only_lock astate in
-    add the_only_lock (LockCount.increment count) astate
-
-
-  let release_lock astate =
-    let count = lookup_count the_only_lock astate in
-    try
-      let count' = LockCount.decrement count in
-      if LockCount.is_bottom count' then remove the_only_lock astate
-      else add the_only_lock count' astate
-    with Caml.Not_found -> astate
-
-
-  let integrate_summary ~caller_astate ~callee_astate =
-    let caller_count = lookup_count the_only_lock caller_astate in
-    let callee_count = lookup_count the_only_lock callee_astate in
-    let sum = LockCount.add caller_count callee_count in
-    if LockCount.is_bottom sum then caller_astate else add the_only_lock sum caller_astate
+  let integrate_summary ~caller_astate ~callee_astate = add caller_astate callee_astate
 end
 
 module ThreadsDomain = struct
@@ -322,8 +295,8 @@ module AccessSnapshot = struct
     else None
 
 
-  let make formals access lock thread ownership_precondition =
-    let lock = LocksDomain.is_locked lock in
+  let make formals access lock_astate thread ownership_precondition =
+    let lock = not (LocksDomain.is_bottom lock_astate) in
     make_if_not_owned formals access lock thread ownership_precondition
 
 
@@ -483,7 +456,7 @@ type t =
 
 let bottom =
   let threads = ThreadsDomain.bottom in
-  let locks = LocksDomain.empty in
+  let locks = LocksDomain.bottom in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
@@ -491,7 +464,7 @@ let bottom =
 
 
 let is_bottom {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_bottom threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
+  ThreadsDomain.is_bottom threads && LocksDomain.is_bottom locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership
   && AttributeMapDomain.is_empty attribute_map
 
@@ -538,7 +511,7 @@ type summary =
 
 let empty_summary =
   { threads= ThreadsDomain.bottom
-  ; locks= LocksDomain.empty
+  ; locks= LocksDomain.bottom
   ; accesses= AccessDomain.empty
   ; return_ownership= OwnershipAbstractValue.unowned
   ; return_attribute= Attribute.top }
