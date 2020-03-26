@@ -88,4 +88,14 @@ class Test {
   static long systemNanoTime_impure() {
     return System.nanoTime();
   }
+
+  // In pulse, we get 0 disjuncts as a summary, hence consider this as impure
+  void exit_impure() {
+    System.exit(1);
+  }
+
+  // We get no pulse summary, hence consider this as impure
+  void while_true_impure() {
+    while (true) {}
+  }
 }

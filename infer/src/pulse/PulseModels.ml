@@ -413,6 +413,7 @@ module ProcNameDispatcher = struct
       ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+      ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
       ; (* consider that all fbstrings are small strings to avoid false positives due to manual
            ref-counting *)

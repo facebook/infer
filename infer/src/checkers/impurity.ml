@@ -160,10 +160,12 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
   let pdesc = Summary.get_proc_desc summary in
   let pname_loc = Procdesc.get_loc pdesc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
-  let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
   ( match summary.payloads.pulse with
   | None ->
+      let impure_fun_desc =
+        F.asprintf "Impure function %a with no pulse summary" Procname.pp proc_name
+      in
+      let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
       Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
         impure_fun_desc
   | Some [] ->
@@ -194,6 +196,8 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
                 trace acc )
             skipped_calls []
         in
+        let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
+        let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
         let ltr =
           impure_fun_ltr
           :: modified_ltr Formal modified_params
