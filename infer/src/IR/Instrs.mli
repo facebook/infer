@@ -27,17 +27,17 @@ val of_rev_list : Sil.instr list -> not_reversed_t
 
 val filter_map : not_reversed_t -> f:(Sil.instr -> Sil.instr option) -> not_reversed_t
 
-val map_changed :
-     equal:(Sil.instr -> Sil.instr -> bool)
-  -> not_reversed_t
-  -> f:(Sil.instr -> Sil.instr)
-  -> not_reversed_t
+val map : not_reversed_t -> f:(Sil.instr -> Sil.instr) -> not_reversed_t
+(** replace every instruction [instr] with [f instr]. Preserve physical equality. **)
 
-val concat_map_changed :
-     equal:(Sil.instr -> Sil.instr -> bool)
-  -> not_reversed_t
-  -> f:(Sil.instr -> Sil.instr array)
-  -> not_reversed_t
+val map_and_fold :
+  not_reversed_t -> f:('a -> Sil.instr -> 'a * Sil.instr) -> init:'a -> not_reversed_t
+(** replace every instruction [instr] with [snd (f context instr)]. The context is computed by
+    folding [f] on [init] and previous instructions (before [instr]) in the collection. Preserve
+    physical equality. **)
+
+val concat_map : not_reversed_t -> f:(Sil.instr -> Sil.instr array) -> not_reversed_t
+(** replace every instruction [instr] with the list [f instr]. Preserve physical equality. **)
 
 val reverse_order : not_reversed_t -> reversed t
 

@@ -246,7 +246,7 @@ module Node = struct
 
   (** Map and replace the instructions to be executed *)
   let replace_instrs node ~f =
-    let instrs' = Instrs.map_changed ~equal:phys_equal node.instrs ~f:(f node) in
+    let instrs' = Instrs.map node.instrs ~f:(f node) in
     if phys_equal instrs' node.instrs then false
     else (
       node.instrs <- instrs' ;
@@ -255,7 +255,7 @@ module Node = struct
 
   (** Like [replace_instrs], but 1 instr gets replaced by 0, 1, or more instructions. *)
   let replace_instrs_by node ~f =
-    let instrs' = Instrs.concat_map_changed ~equal:phys_equal node.instrs ~f:(f node) in
+    let instrs' = Instrs.concat_map node.instrs ~f:(f node) in
     if phys_equal instrs' node.instrs then false
     else (
       node.instrs <- instrs' ;

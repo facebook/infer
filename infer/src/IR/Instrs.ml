@@ -70,34 +70,41 @@ let of_rev_list l = NotReversed (Array.of_list_rev l)
 
 let filter_map (NotReversed instrs) ~f = NotReversed (Array.filter_map instrs ~f)
 
-let map_changed =
-  let aux_changed arr ~f i =
-    for i = i to Array.length arr - 1 do
-      Array.unsafe_get arr i |> f |> Array.unsafe_set arr i
-    done ;
-    arr
-  in
-  let rec aux_unchanged ~equal arr ~f i =
+let map_and_fold =
+  let rec aux_changed arr ~f current i =
     if i >= Array.length arr then arr
     else
       let e = Array.unsafe_get arr i in
-      let e' = f e in
-      if equal e e' then aux_unchanged ~equal arr ~f (i + 1)
+      let next, e' = f current e in
+      Array.unsafe_set arr i e' ;
+      aux_changed arr ~f next (i + 1)
+  in
+  let rec aux_unchanged arr ~f current i =
+    if i >= Array.length arr then arr
+    else
+      let e = Array.unsafe_get arr i in
+      let next, e' = f current e in
+      if phys_equal e e' then aux_unchanged arr ~f next (i + 1)
       else
         let arr = Array.copy arr in
         Array.unsafe_set arr i e' ;
-        aux_changed arr ~f (i + 1)
+        aux_changed arr ~f next (i + 1)
   in
-  fun ~equal (NotReversed instrs as t) ~f ->
-    let instrs' = aux_unchanged ~equal instrs ~f 0 in
+  fun (NotReversed instrs as t) ~f ~init ->
+    let instrs' = aux_unchanged instrs ~f init 0 in
     if phys_equal instrs instrs' then t else NotReversed instrs'
 
 
-let concat_map_changed ~equal (NotReversed instrs as t) ~f =
+let map (NotReversed _instrs as t) ~f =
+  let f () e = ((), f e) in
+  map_and_fold t ~f ~init:()
+
+
+let concat_map (NotReversed instrs as t) ~f =
   let instrs' = Array.concat_map ~f instrs in
   if
     Int.equal (Array.length instrs) (Array.length instrs')
-    && Array.for_all2_exn ~f:equal instrs instrs'
+    && Array.for_all2_exn ~f:phys_equal instrs instrs'
   then t
   else NotReversed instrs'
 
