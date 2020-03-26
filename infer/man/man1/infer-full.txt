@@ -188,7 +188,7 @@ OPTIONS
        --censor-report +string
            Specify a filter for issues to be censored by adding a
            'censored_reason' field in the json report. Infer will not report
-           censored issues on the console output and in bugs.txt, but tools
+           censored issues on the console output and in report.txt, but tools
            that post-process the json report can take them into account. If
            multiple filters are specified, they are applied in the order in
            which they are specified. Each filter is applied to each issue

@@ -61,7 +61,7 @@ would be to run Infer on your code, fix the errors generated, and run it again
 to find possibly more errors or to check that all the errors have been fixed.
 
 The errors will be displayed in the standard output and also in a file
-`infer-out/bugs.txt`. We filter the bugs and show the ones that are most likely
+`infer-out/report.txt`. We filter the bugs and show the ones that are most likely
 to be real.
 
 ## Global (default) and differential workflows

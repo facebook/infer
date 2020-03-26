@@ -46,7 +46,7 @@
 #    Recompile Infer.
 
 
-SOURCE_FILES=$(grep "error:" infer-out/bugs.txt | cut -f1 -d: | sort -u | grep -v test )
+SOURCE_FILES=$(grep "error:" infer-out/report.txt | cut -f1 -d: | sort -u | grep -v test )
 MATCHERS=""
 
 cat <<EOF
@@ -83,7 +83,7 @@ for SOURCE_FILE in $SOURCE_FILES ; do
 
   FULLCLASSNAME="${PACKAGE}.${CLASS}"
   METHOD_REXP="^  Method \`.* $CLASS\."
-  METHODS=$(grep -E "$METHOD_REXP" infer-out/bugs.txt | cut -f2 -d. | cut -f1 -d\` | sort -u)
+  METHODS=$(grep -E "$METHOD_REXP" infer-out/report.txt | cut -f2 -d. | cut -f1 -d\` | sort -u)
 
   if [ -z "$METHODS" ] ; then
     continue

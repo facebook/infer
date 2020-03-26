@@ -17,8 +17,8 @@ infer-out
 ├── captured/
 ├── log/
 ├── specs/
-├── bugs.txt
 ├── report.json
+├── report.txt
 ├── toplevel.log
 └── ...
 ```
@@ -28,7 +28,7 @@ infer-out
 - `specs/` contains the [specs](advanced-features#print-the-specs) of
   each function that was analyzed, as inferred by Infer.
 - `log/` and toplevel.log contains logs
-- `bugs.txt` and `report.json` contain the Infer reports in text and JSON
+- `report.txt` and `report.json` contain the Infer reports in text and JSON
   formats
 - there are other folders reserved for Infer's internal workings
 

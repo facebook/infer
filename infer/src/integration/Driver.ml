@@ -288,8 +288,10 @@ let report ?(suppress_console = false) () =
   | true, _ | false, None ->
       ()
   | false, Some prog ->
+      (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
+      Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
+          Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
       let if_true key opt args = if not opt then args else key :: args in
-      let bugs_txt = Config.results_dir ^/ "bugs.txt" in
       let args =
         if_true "--pmd-xml" Config.pmd_xml
         @@ if_true "--quiet"
@@ -297,7 +299,7 @@ let report ?(suppress_console = false) () =
              [ "--issues-json"
              ; issues_json
              ; "--issues-txt"
-             ; bugs_txt
+             ; Config.(results_dir ^/ report_txt)
              ; "--project-root"
              ; Config.project_root
              ; "--results-dir"

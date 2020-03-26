@@ -152,6 +152,9 @@ val report_json : string
 
 val report_nullable_inconsistency : bool
 
+val report_txt : string
+(** name of the file inside infer-out/ containing the issues as human-readable text *)
+
 val reporting_stats_dir_name : string
 
 val retain_cycle_dotty_dir : string

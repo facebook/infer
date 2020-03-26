@@ -214,6 +214,8 @@ let report_json = "report.json"
     inconsistencies *)
 let report_nullable_inconsistency = true
 
+let report_txt = "report.txt"
+
 let reporting_stats_dir_name = "reporting_stats"
 
 let retain_cycle_dotty_dir = "retain_cycle_dotty"
@@ -821,7 +823,7 @@ and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
     ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
     "Specify a filter for issues to be censored by adding a 'censored_reason' field in the json \
-     report. Infer will not report censored issues on the console output and in bugs.txt, but \
+     report. Infer will not report censored issues on the console output and in report.txt, but \
      tools that post-process the json report can take them into account. If multiple filters are \
      specified, they are applied in the order in which they are specified. Each filter is applied \
      to each issue detected, and only issues which are accepted by all filters are reported. Each \

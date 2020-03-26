@@ -39,7 +39,7 @@ DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(CODESET), 'infer-out')
 JSON_REPORT_FILENAME = 'report.json'
 JSON_COSTS_REPORT_FILENAME = 'costs-report.json'
 INFER_BUCK_DEPS_FILENAME = 'infer-deps.txt'
-BUGS_FILENAME = 'bugs.txt'
+BUGS_FILENAME = 'report.txt'
 JAVAC_FILELISTS_FILENAME = 'filelists'
 PMD_XML_FILENAME = 'report.xml'
 
