@@ -932,6 +932,10 @@ OPTIONS
            specified OCaml regex, even if they match the whitelist specified
            by --report-whitelist-path-regex           See also infer-report(1) and infer-run(1).
 
+       --report-console-limit int
+           Maximum number of issues to display on standard output. Unset with
+           --report-console-limit-reset to show all.           See also infer-report(1).
+
        --report-current path
            report of the latest revision           See also infer-reportdiff(1).
 

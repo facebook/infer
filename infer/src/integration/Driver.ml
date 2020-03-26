@@ -278,19 +278,23 @@ let execute_analyze ~changed_files =
 let report ?(suppress_console = false) () =
   let issues_json = Config.(results_dir ^/ report_json) in
   JsonReports.write_reports ~issues_json ~costs_json:Config.(results_dir ^/ costs_report_json) ;
-  if Config.(test_determinator && process_clang_ast) then
-    TestDeterminator.merge_test_determinator_results () ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report.
 
      Do not bother calling the report hook when called from within Buck. *)
-  match (Config.buck_cache_mode, Config.report_hook) with
-  | true, _ | false, None ->
-      ()
-  | false, Some prog ->
-      (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
-      Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
-          Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
+  if not Config.buck_cache_mode then (
+    (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
+    Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
+        Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
+    TextReport.create_from_json
+      ~quiet:(Config.quiet || suppress_console)
+      ~console_limit:Config.report_console_limit
+      ~report_txt:Config.(results_dir ^/ report_txt)
+      ~report_json:issues_json ) ;
+  if Config.(test_determinator && process_clang_ast) then
+    TestDeterminator.merge_test_determinator_results () ;
+  match Config.report_hook with
+  | Some prog when (not Config.buck_cache_mode) && Config.pmd_xml ->
       let if_true key opt args = if not opt then args else key :: args in
       let args =
         if_true "--pmd-xml" Config.pmd_xml
@@ -309,6 +313,8 @@ let report ?(suppress_console = false) () =
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
           (String.concat ~sep:" " args)
+  | _ ->
+      ()
 
 
 (* shadowed for tracing *)

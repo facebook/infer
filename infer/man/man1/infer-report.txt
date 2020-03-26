@@ -304,6 +304,10 @@ OPTIONS
            specified OCaml regex, even if they match the whitelist specified
            by --report-whitelist-path-regex
 
+       --report-console-limit int
+           Maximum number of issues to display on standard output. Unset with
+           --report-console-limit-reset to show all.
+
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report
 

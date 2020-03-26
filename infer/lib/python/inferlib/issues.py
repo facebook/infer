@@ -194,19 +194,9 @@ def _is_user_visible(report):
 
 def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
                           pmd_xml, console_out):
-    errors = utils.load_json_from_path(json_report)
-    errors = [e for e in errors if _is_user_visible(e)]
-    if console_out:
-        utils.stderr('')
-        _text_of_report_list(project_root, errors, bugs_out, console_out=True,
-                             limit=10)
-    plain_out = _text_of_report_list(project_root, errors, bugs_out,
-                                     formatter=colorize.PLAIN_FORMATTER)
-    with codecs.open(bugs_out, 'w',
-                     encoding=config.CODESET, errors='replace') as file_out:
-        file_out.write(plain_out)
-
     if pmd_xml:
+        errors = utils.load_json_from_path(json_report)
+        errors = [e for e in errors if _is_user_visible(e)]
         xml_out = os.path.join(infer_out, config.PMD_XML_FILENAME)
         with codecs.open(xml_out, 'w',
                          encoding=config.CODESET,

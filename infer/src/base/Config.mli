@@ -531,6 +531,8 @@ val reanalyze : bool
 
 val report_blacklist_files_containing : string list
 
+val report_console_limit : int option
+
 val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]

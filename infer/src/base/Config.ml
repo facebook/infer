@@ -1938,6 +1938,13 @@ and ( report_blacklist_files_containing
       ~meta:"error_name" )
 
 
+and report_console_limit =
+  CLOpt.mk_int_opt ~long:"report-console-limit" ~default:5
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Maximum number of issues to display on standard output. Unset with \
+     $(b,--report-console-limit-reset) to show all."
+
+
 and report_current =
   CLOpt.mk_path_opt ~long:"report-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -2940,6 +2947,8 @@ and relative_path_backtrack = !relative_path_backtrack
 and report = !report
 
 and report_blacklist_files_containing = !report_blacklist_files_containing
+
+and report_console_limit = !report_console_limit
 
 and report_current = !report_current
 
