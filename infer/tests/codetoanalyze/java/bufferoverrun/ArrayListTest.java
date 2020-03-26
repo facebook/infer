@@ -251,7 +251,7 @@ class ArrayListTest {
   ArrayList<Integer> unknown_array_list1;
   ArrayList<Integer> unknown_array_list2;
 
-  void loop_on_unknown_iterator_FN(MyI x, int j) {
+  void loop_on_unknown_iterator(MyI x, int j) {
     ArrayList<Integer> a = new ArrayList<>();
     ArrayList<Integer> b;
     if (unknown_bool) {
@@ -259,16 +259,19 @@ class ArrayListTest {
     } else {
       b = x.mk_unknown();
     }
-    // `b` points to an zero-sized array and `Unknown` pointer here.  By `b.hasNext()`, the size of
-    // the array list is pruned incorrectly to [0,-1].
+    // `b` points to an zero-sized array and `Unknown` pointer.  Thus, the size of array list should
+    // be evaluated to [0,+oo] in a sound design.  However, this would harm overall analysis
+    // precision with introducing a lot of FPs.  To avoie that, we ignore the size of `Unknown`
+    // array list here, instead we get some FNs.
     for (Integer i : b) {
-      // Both branches are unreachable since `a.size()` is an invalid [0,-1].
+      // `a.size()` is evaluated to bottom, rather than [0,+oo] here, but which does not make
+      // branches unreachable.
       if (a.size() <= -1) {
         int[] c = new int[5];
         c[5] = 0;
       } else {
-        int[] c = new int[5];
-        c[5] = 0;
+        int[] c = new int[10];
+        c[10] = 0;
       }
     }
   }
