@@ -231,10 +231,14 @@ type nonnull_alternative_method = {package_name: string; class_name: string; met
 let nullable_methods_with_nonnull_alternatives_list =
   [ ( (n, [o])
     , "android.view.View.findViewById(int):android.view.View"
-    , {package_name= "android.view"; class_name= "View"; method_name= "requireViewById"} )
+      (* View.requireViewById() is inaccessible from older APIs and will lead to a runtime crash *)
+    , {package_name= "androidx.core.view"; class_name= "ViewCompat"; method_name= "requireViewById"}
+    )
   ; ( (n, [o])
     , "android.app.Activity.findViewById(int):android.view.View"
-    , {package_name= "android.app"; class_name= "Activity"; method_name= "requireViewById"} ) ]
+    , { package_name= "androidx.core.app"
+      ; class_name= "ActivityCompat"
+      ; method_name= "requireViewById" } ) ]
 
 
 let nullable_method_with_nonnull_alternatives_nullability_list =
@@ -256,6 +260,11 @@ let annotated_list_nullability_other =
   ; (n1, "android.os.Parcel.writeList(java.util.List):void")
   ; (n2, "android.os.Parcel.writeParcelable(android.os.Parcelable,int):void")
   ; (n1, "android.os.Parcel.writeString(java.lang.String):void")
+  ; ( (o, [o; o])
+    , "androidx.core.view.ViewCompat.requireViewById(android.view.View,int):android.view.View" )
+  ; ( (o, [o; o])
+    , "androidx.core.app.ActivityCompat.requireViewById(android.app.Activity,int):android.view.View"
+    )
   ; ( (o, [o; o; n; n; n])
     , "com.android.sdklib.build.ApkBuilder.<init>(java.io.File,java.io.File,java.io.File,java.lang.String,java.io.PrintStream)"
     )
