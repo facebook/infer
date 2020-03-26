@@ -214,13 +214,6 @@ def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
             file_out.write(_pmd_xml_of_issues(errors))
 
 
-def merge_reports_from_paths(report_paths):
-    json_data = []
-    for json_path in report_paths:
-        json_data.extend(utils.load_json_from_path(json_path))
-    return _sort_and_uniq_rows(json_data)
-
-
 def _pmd_xml_of_issues(issues):
     if etree is None:
         print('ERROR: "lxml" Python package not found.')
@@ -267,14 +260,3 @@ def _pmd_xml_of_issues(issues):
         file_node.append(violation)
         root.append(file_node)
     return etree.tostring(root, pretty_print=True, encoding=config.CODESET)
-
-
-def _sort_and_uniq_rows(l):
-    key = operator.itemgetter(JSON_INDEX_FILENAME,
-                              JSON_INDEX_LINE,
-                              JSON_INDEX_HASH,
-                              JSON_INDEX_QUALIFIER)
-    l.sort(key=key)
-    groups = itertools.groupby(l, key)
-    # guaranteed to be at least one element in each group
-    return map(lambda (keys, dups): dups.next(), groups)
