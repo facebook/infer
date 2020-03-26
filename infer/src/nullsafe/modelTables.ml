@@ -226,7 +226,7 @@ let mapPut_list =
 
 type nonnull_alternative_method = {package_name: string; class_name: string; method_name: string}
 
-(* Nullable methods that have non-nullable signatures.
+(* Nullable methods that have non-nullable alternatives.
    Format is a triple: (<nullability>, <method>, <alternative>), *)
 let nullable_methods_with_nonnull_alternatives_list =
   [ ( (n, [o])
@@ -238,7 +238,32 @@ let nullable_methods_with_nonnull_alternatives_list =
     , "android.app.Activity.findViewById(int):android.view.View"
     , { package_name= "androidx.core.app"
       ; class_name= "ActivityCompat"
-      ; method_name= "requireViewById" } ) ]
+      ; method_name= "requireViewById" } )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getArguments():android.os.Bundle"
+    , { package_name= "androidx.fragment.app"
+      ; class_name= "Fragment"
+      ; method_name= "requireArguments" } )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getContext():android.content.Context"
+    , {package_name= "androidx.fragment.app"; class_name= "Fragment"; method_name= "requireContext"}
+    )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getActivity():androidx.fragment.app.FragmentActivity"
+    , {package_name= "androidx.fragment.app"; class_name= "Fragment"; method_name= "requireActivity"}
+    )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getHost():java.lang.Object"
+    , {package_name= "androidx.fragment.app"; class_name= "Fragment"; method_name= "requireHost"} )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getParentFragment():androidx.fragment.app.Fragment"
+    , { package_name= "androidx.fragment.app"
+      ; class_name= "Fragment"
+      ; method_name= "requireParentFragment" } )
+  ; ( (n, [])
+    , "androidx.fragment.app.Fragment.getView():android.view.View"
+    , {package_name= "androidx.fragment.app"; class_name= "Fragment"; method_name= "requireView"} )
+  ]
 
 
 let nullable_method_with_nonnull_alternatives_nullability_list =
@@ -265,6 +290,14 @@ let annotated_list_nullability_other =
   ; ( (o, [o; o])
     , "androidx.core.app.ActivityCompat.requireViewById(android.app.Activity,int):android.view.View"
     )
+  ; ((o, []), "androidx.fragment.app.Fragment.requireArguments():android.os.Bundle")
+  ; ((o, []), "androidx.fragment.app.Fragment.requireContext():android.content.Context")
+  ; ( (o, [])
+    , "androidx.fragment.app.Fragment.requireActivity():androidx.fragment.app.FragmentActivity" )
+  ; ((o, []), "androidx.fragment.app.Fragment.requireHost():java.lang.Object")
+  ; ( (o, [])
+    , "androidx.fragment.app.Fragment.requireParentFragment():androidx.fragment.app.Fragment" )
+  ; ((o, []), "androidx.fragment.app.Fragment.requireView():android.view.View")
   ; ( (o, [o; o; n; n; n])
     , "com.android.sdklib.build.ApkBuilder.<init>(java.io.File,java.io.File,java.io.File,java.lang.String,java.io.PrintStream)"
     )
