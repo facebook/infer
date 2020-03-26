@@ -293,28 +293,7 @@ let report ?(suppress_console = false) () =
       ~report_json:issues_json ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
-  match Config.report_hook with
-  | Some prog when (not Config.buck_cache_mode) && Config.pmd_xml ->
-      let if_true key opt args = if not opt then args else key :: args in
-      let args =
-        if_true "--pmd-xml" Config.pmd_xml
-        @@ if_true "--quiet"
-             (Config.quiet || suppress_console)
-             [ "--issues-json"
-             ; issues_json
-             ; "--issues-txt"
-             ; Config.(results_dir ^/ report_txt)
-             ; "--project-root"
-             ; Config.project_root
-             ; "--results-dir"
-             ; Config.results_dir ]
-      in
-      if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
-        L.external_error
-          "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-          (String.concat ~sep:" " args)
-  | _ ->
-      ()
+  ()
 
 
 (* shadowed for tracing *)

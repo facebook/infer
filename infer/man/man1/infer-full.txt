@@ -785,10 +785,6 @@ OPTIONS
            Specify the file containing perf profiler data to read       
     See also infer-analyze(1).
 
-       --pmd-xml
-           Activates: Output issues in (PMD) XML format (Conversely:
-           --no-pmd-xml)           See also infer-run(1).
-
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis
            (Conversely: --no-print-active-checkers)           See also infer-analyze(1).

@@ -88,10 +88,6 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-       --pmd-xml
-           Activates: Output issues in (PMD) XML format (Conversely:
-           --no-pmd-xml)
-
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:
            --no-print-logs)

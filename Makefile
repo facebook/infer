@@ -694,8 +694,6 @@ endif
 	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/inferTraceBugs
-	$(INSTALL_PROGRAM) -C       infer/lib/python/report.py \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/report.py
 	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
 	(cd '$(DESTDIR)$(bindir)/' && \
 	 $(REMOVE) infer && \
