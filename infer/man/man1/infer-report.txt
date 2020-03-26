@@ -293,8 +293,8 @@ OPTIONS
            Specify the root directory of the project
 
        --quiet,-q
-           Activates: Do not print specs on standard output (default: only
-           print for the report command) (Conversely: --no-quiet | -Q)
+           Activates: Do not print anything on standard output. (Conversely:
+           --no-quiet | -Q)
 
        --report-blacklist-files-containing +string
            Do not report any issues on files containing the specified string

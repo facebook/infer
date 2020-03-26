@@ -252,8 +252,8 @@ OPTIONS
            (Conversely: --no-quandary-only)
 
        --quiet,-q
-           Activates: Do not print specs on standard output (default: only
-           print for the report command) (Conversely: --no-quiet | -Q)
+           Activates: Do not print anything on standard output. (Conversely:
+           --no-quiet | -Q)
 
        --no-racerd
            Deactivates: the RacerD thread safety analysis (Conversely:

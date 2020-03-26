@@ -1861,7 +1861,7 @@ and quandary_sinks =
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:'q' ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
-    "Do not print specs on standard output (default: only print for the $(b,report) command)"
+    "Do not print anything on standard output."
 
 
 and racerd_guardedby =
@@ -2892,7 +2892,7 @@ and procedures_summary = !procedures_summary
 and process_clang_ast = !process_clang_ast
 
 and progress_bar =
-  if !progress_bar then
+  if !progress_bar && not !quiet then
     match !progress_bar_style with
     | `Auto when Unix.(isatty stdin && isatty stderr) ->
         `MultiLine

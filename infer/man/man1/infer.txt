@@ -894,9 +894,8 @@ OPTIONS
            Specify custom sources for Quandary           See also infer-analyze(1).
 
        --quiet,-q
-           Activates: Do not print specs on standard output (default: only
-           print for the report command) (Conversely: --no-quiet | -Q)       
-    See also infer-analyze(1) and infer-report(1).
+           Activates: Do not print anything on standard output. (Conversely:
+           --no-quiet | -Q)           See also infer-analyze(1) and infer-report(1).
 
        --no-racerd
            Deactivates: the RacerD thread safety analysis (Conversely:
