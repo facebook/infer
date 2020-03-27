@@ -193,7 +193,7 @@ module CostItem = struct
         CostDomain.BasicCost.pp_degree ~only_bigO fmt degree_with_term
 
 
-  let pp_cost_msg fmt ({polynomial} as curr_item) =
+  let pp_cost_msg fmt ({cost_item= {procedure_name}; polynomial} as curr_item) =
     let pp_cost fmt =
       match polynomial with
       | None ->
@@ -201,7 +201,8 @@ module CostItem = struct
       | Some p ->
           CostDomain.BasicCost.pp_hum fmt p
     in
-    Format.fprintf fmt "Cost is %t (degree is %a)" pp_cost (pp_degree ~only_bigO:false) curr_item
+    Format.fprintf fmt "Cost of %s is %t (degree is %a)" procedure_name pp_cost
+      (pp_degree ~only_bigO:false) curr_item
 end
 
 let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue; infinite_issue}
