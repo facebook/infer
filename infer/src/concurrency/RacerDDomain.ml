@@ -10,17 +10,6 @@ module AccessExpression = HilExp.AccessExpression
 module F = Format
 module MF = MarkupFormatter
 
-(** Master function for deciding whether RacerD should completely ignore a variable as the root of
-    an access expression. Currently fires on *static locals* and any variable which does not appear
-    in source code (eg, temporary variables and frontend introduced variables). This is because
-    currently reports on these variables would not be easily actionable.
-
-    This is here and not in RacerDModels to avoid dependency cycles. *)
-let should_skip_var v =
-  (not (Var.appears_in_source_code v))
-  || match v with Var.ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
-
-
 let pp_exp fmt exp =
   match !Language.curr_language with
   | Clang ->
@@ -68,16 +57,21 @@ module Access = struct
 
 
   let should_keep formals access =
-    match get_access_exp access with
-    | None ->
-        true
-    | Some acc_exp -> (
-        let ((root, _) as base) = AccessExpression.get_base acc_exp in
-        match root with
-        | Var.LogicalVar _ ->
-            false
-        | Var.ProgramVar pvar ->
-            Pvar.is_global pvar || FormalMap.is_formal base formals )
+    let rec check_access (exp : AccessExpression.t) =
+      match exp with
+      | FieldOffset (prefix, fld) ->
+          (not (String.is_substring ~substring:"$SwitchMap" (Fieldname.get_field_name fld)))
+          && check_access prefix
+      | ArrayOffset (prefix, _, _) | AddressOf prefix | Dereference prefix ->
+          check_access prefix
+      | Base (LogicalVar _, _) ->
+          false
+      | Base (((ProgramVar pvar as var), _) as base) ->
+          Var.appears_in_source_code var
+          && (not (Pvar.is_static_local pvar))
+          && (Pvar.is_global pvar || FormalMap.is_formal base formals)
+    in
+    match get_access_exp access with None -> true | Some acc_exp -> check_access acc_exp
 
 
   let map ~f access =
@@ -132,7 +126,7 @@ module CallPrinter = struct
   let pp fmt cs = F.fprintf fmt "call to %a" Procname.pp (CallSite.pname cs)
 end
 
-module LocksDomain = struct
+module LockDomain = struct
   include AbstractDomain.CountDomain (struct
     (** arbitrary threshold for max locks we expect to be held simultaneously *)
     let max = 5
@@ -216,7 +210,7 @@ module OwnershipAbstractValue = struct
 
   let owned = OwnedIf IntSet.empty
 
-  let is_owned = function OwnedIf set -> IntSet.is_empty set | _ -> false
+  let is_owned = function OwnedIf set -> IntSet.is_empty set | Unowned -> false
 
   let unowned = Unowned
 
@@ -293,20 +287,20 @@ module AccessSnapshot = struct
 
 
   let make_unannotated_call_access formals pname lock ownership loc =
-    let lock = LocksDomain.is_locked lock in
+    let lock = LockDomain.is_locked lock in
     let access = Access.make_unannotated_call_access pname in
     make_if_not_owned formals access lock ownership loc
 
 
   let make_access formals acc_exp ~is_write loc lock thread ownership_precondition =
-    let lock = LocksDomain.is_locked lock in
+    let lock = LockDomain.is_locked lock in
     let access = Access.make_field_access acc_exp ~is_write in
     make_if_not_owned formals access lock thread ownership_precondition loc
 
 
   let make_container_access formals acc_exp ~is_write callee loc lock thread ownership_precondition
       =
-    let lock = LocksDomain.is_locked lock in
+    let lock = LockDomain.is_locked lock in
     let access = Access.make_container_access acc_exp callee ~is_write in
     make_if_not_owned formals access lock thread ownership_precondition loc
 
@@ -319,7 +313,7 @@ module AccessSnapshot = struct
     let thread =
       ThreadsDomain.integrate_summary ~callee_astate:snapshot.elem.thread ~caller_astate:threads
     in
-    let lock = snapshot.elem.lock || LocksDomain.is_locked locks in
+    let lock = snapshot.elem.lock || LockDomain.is_locked locks in
     with_callsite snapshot callsite
     |> map ~f:(fun elem -> {elem with lock; thread; ownership_precondition})
     |> filter formals
@@ -333,14 +327,6 @@ end
 
 module AccessDomain = struct
   include AbstractDomain.FiniteSet (AccessSnapshot)
-
-  let add ({AccessSnapshot.elem= {access}} as s) astate =
-    let skip =
-      Access.get_access_exp access
-      |> Option.exists ~f:(fun exp -> AccessExpression.get_base exp |> fst |> should_skip_var)
-    in
-    if skip then astate else add s astate
-
 
   let add_opt snapshot_opt astate =
     Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
@@ -435,8 +421,8 @@ module AttributeMapDomain = struct
 
   let find acc_exp t = find_opt acc_exp t |> Option.value ~default:Attribute.top
 
-  let has_attribute access_expression attribute t =
-    find_opt access_expression t |> Option.exists ~f:(Attribute.equal attribute)
+  let is_functional t access_expression =
+    match find_opt access_expression t with Some Functional -> true | _ -> false
 
 
   let rec attribute_of_expr attribute_map (e : HilExp.t) =
@@ -464,14 +450,14 @@ end
 
 type t =
   { threads: ThreadsDomain.t
-  ; locks: LocksDomain.t
+  ; locks: LockDomain.t
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
 
 let bottom =
   let threads = ThreadsDomain.bottom in
-  let locks = LocksDomain.bottom in
+  let locks = LockDomain.bottom in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
@@ -479,7 +465,7 @@ let bottom =
 
 
 let is_bottom {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_bottom threads && LocksDomain.is_bottom locks && AccessDomain.is_empty accesses
+  ThreadsDomain.is_bottom threads && LockDomain.is_bottom locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership
   && AttributeMapDomain.is_empty attribute_map
 
@@ -488,7 +474,7 @@ let leq ~lhs ~rhs =
   if phys_equal lhs rhs then true
   else
     ThreadsDomain.leq ~lhs:lhs.threads ~rhs:rhs.threads
-    && LocksDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
+    && LockDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
     && AccessDomain.leq ~lhs:lhs.accesses ~rhs:rhs.accesses
     && AttributeMapDomain.leq ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
@@ -497,7 +483,7 @@ let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
-    let locks = LocksDomain.join astate1.locks astate2.locks in
+    let locks = LockDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let ownership = OwnershipDomain.join astate1.ownership astate2.ownership in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
@@ -508,7 +494,7 @@ let widen ~prev ~next ~num_iters =
   if phys_equal prev next then prev
   else
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
-    let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
+    let locks = LockDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
     let ownership = OwnershipDomain.widen ~prev:prev.ownership ~next:next.ownership ~num_iters in
     let attribute_map =
@@ -519,15 +505,15 @@ let widen ~prev ~next ~num_iters =
 
 type summary =
   { threads: ThreadsDomain.t
-  ; locks: LocksDomain.t
+  ; locks: LockDomain.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t }
 
 let empty_summary =
   { threads= ThreadsDomain.bottom
-  ; locks= LocksDomain.bottom
-  ; accesses= AccessDomain.empty
+  ; locks= LockDomain.bottom
+  ; accesses= AccessDomain.bottom
   ; return_ownership= OwnershipAbstractValue.unowned
   ; return_attribute= Attribute.top }
 
@@ -535,13 +521,13 @@ let empty_summary =
 let pp_summary fmt {threads; locks; accesses; return_ownership; return_attribute} =
   F.fprintf fmt
     "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
-    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipAbstractValue.pp
+    ThreadsDomain.pp threads LockDomain.pp locks AccessDomain.pp accesses OwnershipAbstractValue.pp
     return_ownership Attribute.pp return_attribute
 
 
 let pp fmt {threads; locks; accesses; ownership; attribute_map} =
   F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
-    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
+    ThreadsDomain.pp threads LockDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map
 
 

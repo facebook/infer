@@ -21,18 +21,15 @@ module Access : sig
         (** Write to container object *)
     | InterfaceCall of Procname.t
         (** Call to method of interface not annotated with [@ThreadSafe] *)
-  [@@deriving compare]
 
-  include ExplicitTrace.Element with type t := t
+  val pp : F.formatter -> t -> unit
 
   val get_access_exp : t -> AccessExpression.t option
 end
 
-(** Overapproximation of number of locks that are currently held *)
-module LocksDomain : sig
-  type t
-
-  val bottom : t
+(** Overapproximation of number of time the lock has been acquired *)
+module LockDomain : sig
+  include AbstractDomain.WithBottom
 
   val acquire_lock : t -> t
   (** record acquisition of a lock *)
@@ -77,6 +74,8 @@ module OwnershipAbstractValue : sig
 
   val owned : t
 
+  val unowned : t
+
   val make_owned_if : int -> t
 
   val join : t -> t -> t
@@ -107,7 +106,7 @@ module AccessSnapshot : sig
     -> AccessExpression.t
     -> is_write:bool
     -> Location.t
-    -> LocksDomain.t
+    -> LockDomain.t
     -> ThreadsDomain.t
     -> OwnershipAbstractValue.t
     -> t option
@@ -118,7 +117,7 @@ module AccessSnapshot : sig
     -> is_write:bool
     -> Procname.t
     -> Location.t
-    -> LocksDomain.t
+    -> LockDomain.t
     -> ThreadsDomain.t
     -> OwnershipAbstractValue.t
     -> t option
@@ -134,7 +133,7 @@ module AccessSnapshot : sig
     -> CallSite.t
     -> OwnershipAbstractValue.t
     -> ThreadsDomain.t
-    -> LocksDomain.t
+    -> LockDomain.t
     -> t option
 end
 
@@ -175,7 +174,7 @@ module AttributeMapDomain : sig
 
   val add : AccessExpression.t -> Attribute.t -> t -> t
 
-  val has_attribute : AccessExpression.t -> Attribute.t -> t -> bool
+  val is_functional : t -> AccessExpression.t -> bool
 
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
@@ -183,7 +182,7 @@ end
 
 type t =
   { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
-  ; locks: LocksDomain.t  (** boolean that is true if a lock must currently be held *)
+  ; locks: LockDomain.t  (** boolean that is true if a lock must currently be held *)
   ; accesses: AccessDomain.t
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
@@ -199,7 +198,7 @@ val add_unannotated_call_access : FormalMap.t -> Procname.t -> Location.t -> t -
     may escape *)
 type summary =
   { threads: ThreadsDomain.t
-  ; locks: LocksDomain.t
+  ; locks: LockDomain.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t }
