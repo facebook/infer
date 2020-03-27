@@ -19,12 +19,12 @@ module Access : sig
     | ContainerRead of {exp: AccessExpression.t; pname: Procname.t}  (** Read of container object *)
     | ContainerWrite of {exp: AccessExpression.t; pname: Procname.t}
         (** Write to container object *)
-    | InterfaceCall of Procname.t
+    | InterfaceCall of {exp: AccessExpression.t; pname: Procname.t}
         (** Call to method of interface not annotated with [@ThreadSafe] *)
 
   val pp : F.formatter -> t -> unit
 
-  val get_access_exp : t -> AccessExpression.t option
+  val get_access_exp : t -> AccessExpression.t
 end
 
 (** Overapproximation of number of time the lock has been acquired *)
@@ -191,7 +191,7 @@ type t =
 
 include AbstractDomain.WithBottom with type t := t
 
-val add_unannotated_call_access : FormalMap.t -> Procname.t -> Location.t -> t -> t
+val add_unannotated_call_access : FormalMap.t -> Procname.t -> HilExp.t list -> Location.t -> t -> t
 
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which

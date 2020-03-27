@@ -78,6 +78,15 @@ public class Dispatch {
       i.foo();
     }
   }
+
+  private void privateCallUnnanotatedInterfaceOk(UnannotatedInterface i) {
+    i.foo();
+  }
+
+  public void callOwnedUnnanotatedInterfaceOk() {
+    UnannotatedInterface owned = new UnannotadedImplementation();
+    privateCallUnnanotatedInterfaceOk(owned);
+  }
 }
 
 class Some {
@@ -101,4 +110,8 @@ class ThreadConfinedField {
   void interfaceCallOnNormalFieldBad() {
     mNormal.foo();
   }
+}
+
+class UnannotadedImplementation implements UnannotatedInterface {
+  public void foo() {}
 }

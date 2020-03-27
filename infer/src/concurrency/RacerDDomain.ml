@@ -24,7 +24,7 @@ module Access = struct
     | Write of {exp: AccessExpression.t}
     | ContainerRead of {exp: AccessExpression.t; pname: Procname.t}
     | ContainerWrite of {exp: AccessExpression.t; pname: Procname.t}
-    | InterfaceCall of Procname.t
+    | InterfaceCall of {exp: AccessExpression.t; pname: Procname.t}
   [@@deriving compare]
 
   let make_field_access exp ~is_write = if is_write then Write {exp} else Read {exp}
@@ -33,7 +33,7 @@ module Access = struct
     if is_write then ContainerWrite {exp; pname} else ContainerRead {exp; pname}
 
 
-  let make_unannotated_call_access pname = InterfaceCall pname
+  let make_unannotated_call_access exp pname = InterfaceCall {exp; pname}
 
   let is_write = function
     | InterfaceCall _ | Read _ | ContainerRead _ ->
@@ -50,10 +50,8 @@ module Access = struct
 
 
   let get_access_exp = function
-    | Read {exp} | Write {exp} | ContainerWrite {exp} | ContainerRead {exp} ->
-        Some exp
-    | InterfaceCall _ ->
-        None
+    | Read {exp} | Write {exp} | ContainerWrite {exp} | ContainerRead {exp} | InterfaceCall {exp} ->
+        exp
 
 
   let should_keep formals access =
@@ -71,7 +69,7 @@ module Access = struct
           && (not (Pvar.is_static_local pvar))
           && (Pvar.is_global pvar || FormalMap.is_formal base formals)
     in
-    match get_access_exp access with None -> true | Some acc_exp -> check_access acc_exp
+    get_access_exp access |> check_access
 
 
   let map ~f access =
@@ -88,8 +86,9 @@ module Access = struct
     | ContainerRead ({exp} as record) ->
         let exp' = f exp in
         if phys_equal exp exp' then access else ContainerRead {record with exp= exp'}
-    | InterfaceCall _ as intfcall ->
-        intfcall
+    | InterfaceCall ({exp} as record) ->
+        let exp' = f exp in
+        if phys_equal exp exp' then access else InterfaceCall {record with exp= exp'}
 
 
   let pp fmt = function
@@ -101,8 +100,9 @@ module Access = struct
         F.fprintf fmt "Read of container %a via %a" AccessExpression.pp exp Procname.pp pname
     | ContainerWrite {exp; pname} ->
         F.fprintf fmt "Write to container %a via %a" AccessExpression.pp exp Procname.pp pname
-    | InterfaceCall pname ->
-        F.fprintf fmt "Call to un-annotated interface method %a" Procname.pp pname
+    | InterfaceCall {exp; pname} ->
+        F.fprintf fmt "Call to un-annotated interface method %a.%a" AccessExpression.pp exp
+          Procname.pp pname
 
 
   let mono_lang_pp = MF.wrap_monospaced pp_exp
@@ -116,7 +116,7 @@ module Access = struct
     | ContainerWrite {exp; pname} ->
         F.fprintf fmt "Write to container %a via call to %s" mono_lang_pp exp
           (MF.monospaced_to_string (Procname.get_method pname))
-    | InterfaceCall pname ->
+    | InterfaceCall {pname} ->
         F.fprintf fmt "Call to un-annotated interface method %a" Procname.pp pname
 end
 
@@ -286,9 +286,9 @@ module AccessSnapshot = struct
     make {access; lock; thread; ownership_precondition} loc |> filter formals
 
 
-  let make_unannotated_call_access formals pname lock ownership loc =
+  let make_unannotated_call_access formals exp pname lock ownership loc =
     let lock = LockDomain.is_locked lock in
-    let access = Access.make_unannotated_call_access pname in
+    let access = Access.make_unannotated_call_access exp pname in
     make_if_not_owned formals access lock ownership loc
 
 
@@ -531,9 +531,18 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
     ownership AttributeMapDomain.pp attribute_map
 
 
-let add_unannotated_call_access formals pname loc (astate : t) =
-  let snapshot =
-    AccessSnapshot.make_unannotated_call_access formals pname astate.locks astate.threads Unowned
-      loc
-  in
-  {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}
+let add_unannotated_call_access formals pname actuals loc (astate : t) =
+  match actuals with
+  | [] ->
+      astate
+  | receiver_hilexp :: _ -> (
+    match HilExp.get_access_exprs receiver_hilexp with
+    | [] | _ :: _ :: _ ->
+        (* if no access exps involved, or if more than one (should be impossible), ignore *)
+        astate
+    | [receiver] ->
+        let snapshot =
+          AccessSnapshot.make_unannotated_call_access formals receiver pname astate.locks
+            astate.threads Unowned loc
+        in
+        {astate with accesses= AccessDomain.add_opt snapshot astate.accesses} )

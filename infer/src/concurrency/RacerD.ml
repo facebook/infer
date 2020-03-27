@@ -227,7 +227,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ret_access_exp = AccessExpression.base ret_base in
     let astate =
       if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
-        Domain.add_unannotated_call_access extras callee_pname loc astate
+        Domain.add_unannotated_call_access extras callee_pname actuals loc astate
       else astate
     in
     let astate =
@@ -776,8 +776,8 @@ end = struct
           Location (AccessExpression.to_access_path exp)
       | ContainerRead {exp} | ContainerWrite {exp} ->
           Container (AccessExpression.to_access_path exp)
-      | InterfaceCall pn ->
-          Call pn
+      | InterfaceCall {pname} ->
+          Call pname
   end
 
   module M = Caml.Map.Make (Key)
@@ -843,11 +843,10 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
   (* restrict check to access paths of length one *)
   match
     RacerDDomain.Access.get_access_exp snapshot.elem.access
-    |> Option.map ~f:AccessExpression.to_accesses
-    |> Option.map ~f:(fun (base, accesses) ->
-           (base, List.filter accesses ~f:HilExp.Access.is_field_or_array_access) )
+    |> AccessExpression.to_accesses
+    |> fun (base, accesses) -> (base, List.filter accesses ~f:HilExp.Access.is_field_or_array_access)
   with
-  | Some (AccessExpression.Base (_, base_type), [HilExp.Access.FieldAccess field_name]) -> (
+  | AccessExpression.Base (_, base_type), [HilExp.Access.FieldAccess field_name] -> (
     match base_type.desc with
     | Tstruct base_name | Tptr ({desc= Tstruct base_name}, _) ->
         (* is the base class a subclass of the one containing the GuardedBy annotation? *)
@@ -946,7 +945,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   let report_unsafe_access accesses acc
       ({snapshot; threads; tenv; procname= pname} as reported_access) =
     match snapshot.elem.access with
-    | Access.InterfaceCall reported_pname
+    | Access.InterfaceCall {pname= reported_pname}
       when AccessSnapshot.is_unprotected snapshot
            && ThreadsDomain.is_any threads && is_marked_thread_safe pname tenv ->
         (* un-annotated interface call + no lock in method marked thread-safe. warn *)
