@@ -276,11 +276,6 @@ OPTIONS
            Activates: Force converting an absolute path to a relative path to
            the root directory (Conversely: --no-report-force-relative-path)
 
-       --report-hook script
-           Specify a script to be executed after the analysis results are
-           written. This script will be passed, --issues-json, --issues-txt,
-           --issues-xml, --project-root, and --results-dir.
-
        --results-dir,-o dir
            Write results and internal files in the specified directory
 

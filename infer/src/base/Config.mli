@@ -535,8 +535,6 @@ val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 
-val report_hook : string option
-
 val report_path_regex_blacklist : string list
 
 val report_path_regex_whitelist : string list

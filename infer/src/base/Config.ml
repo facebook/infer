@@ -1961,17 +1961,6 @@ and report_formatter =
     ~eq:PolyVariantEqual.( = ) "Which formatter to use when emitting the report"
 
 
-and report_hook =
-  CLOpt.mk_string_opt ~long:"report-hook"
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
-    ~default:(lib_dir ^/ "python" ^/ "report.py")
-    ~default_to_string:(fun _ -> "<infer installation directory>/lib/python/report.py")
-    ~meta:"script"
-    "Specify a script to be executed after the analysis results are written.  This script will be \
-     passed, $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and \
-     $(b,--results-dir)."
-
-
 and report_previous =
   CLOpt.mk_path_opt ~long:"report-previous"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -2949,8 +2938,6 @@ and report_custom_error = !report_custom_error
 and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
-
-and report_hook = !report_hook
 
 and report_path_regex_blacklist = !report_path_regex_blacklist
 
