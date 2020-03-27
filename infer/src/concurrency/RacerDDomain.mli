@@ -30,17 +30,6 @@ end
 
 module TraceElem : sig
   include ExplicitTrace.TraceElem with type elem_t = Access.t
-
-  val is_write : t -> bool
-  (** is it a write OR a container write *)
-
-  val is_container_write : t -> bool
-
-  val map : f:(AccessExpression.t -> AccessExpression.t) -> t -> t
-
-  val make_container_access : AccessExpression.t -> Procname.t -> is_write:bool -> Location.t -> t
-
-  val make_field_access : AccessExpression.t -> is_write:bool -> Location.t -> t
 end
 
 (** Overapproximation of number of locks that are currently held *)
@@ -108,18 +97,50 @@ module AccessSnapshot : sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val make :
+  val is_write : t -> bool
+  (** is it a write OR a container write *)
+
+  val is_container_write : t -> bool
+
+  val make_loc_trace : t -> Errlog.loc_trace
+
+  val get_loc : t -> Location.t
+
+  val make_access :
        FormalMap.t
-    -> TraceElem.t
+    -> AccessExpression.t
+    -> is_write:bool
+    -> Location.t
     -> LocksDomain.t
     -> ThreadsDomain.t
     -> OwnershipAbstractValue.t
     -> t option
 
-  val make_from_snapshot : FormalMap.t -> TraceElem.t -> t -> t option
+  val make_container_access :
+       FormalMap.t
+    -> AccessExpression.t
+    -> is_write:bool
+    -> Procname.t
+    -> Location.t
+    -> LocksDomain.t
+    -> ThreadsDomain.t
+    -> OwnershipAbstractValue.t
+    -> t option
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
+
+  val map_opt : FormalMap.t -> f:(AccessExpression.t -> AccessExpression.t) -> t -> t option
+
+  val update_callee_access :
+       FormalMap.t
+    -> t
+    -> Procname.t
+    -> Location.t
+    -> OwnershipAbstractValue.t
+    -> ThreadsDomain.t
+    -> LocksDomain.t
+    -> t option
 end
 
 (** map of access metadata |-> set of accesses. the map should hold all accesses to a

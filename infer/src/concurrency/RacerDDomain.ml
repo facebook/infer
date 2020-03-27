@@ -142,7 +142,7 @@ module TraceElem = struct
 
   let should_keep formals {elem} = Access.should_keep formals elem
 
-  let map ~f trace_elem = map ~f:(Access.map ~f) trace_elem
+  let map_access ~f trace_elem = map ~f:(Access.map ~f) trace_elem
 
   let make_container_access access_exp pname ~is_write loc =
     make (Access.make_container_access access_exp pname ~is_write) loc
@@ -157,9 +157,8 @@ end
 
 module LocksDomain = struct
   include AbstractDomain.CountDomain (struct
+    (** arbitrary threshold for max locks we expect to be held simultaneously *)
     let max = 5
-
-    (* arbitrary threshold for max locks we expect to be held simultaneously *)
   end)
 
   let acquire_lock = increment
@@ -167,6 +166,8 @@ module LocksDomain = struct
   let release_lock = decrement
 
   let integrate_summary ~caller_astate ~callee_astate = add caller_astate callee_astate
+
+  let is_locked t = not (is_bottom t)
 end
 
 module ThreadsDomain = struct
@@ -287,6 +288,14 @@ module AccessSnapshot = struct
     ; ownership_precondition: OwnershipAbstractValue.t }
   [@@deriving compare]
 
+  let is_write {access} = TraceElem.is_write access
+
+  let make_loc_trace {access} = TraceElem.make_loc_trace access
+
+  let get_loc {access} = TraceElem.get_loc access
+
+  let is_container_write {access} = TraceElem.is_container_write access
+
   let make_if_not_owned formals access lock thread ownership_precondition =
     if
       (not (OwnershipAbstractValue.is_owned ownership_precondition))
@@ -300,8 +309,35 @@ module AccessSnapshot = struct
     make_if_not_owned formals access lock thread ownership_precondition
 
 
+  let make_access formals acc_exp ~is_write loc lock thread ownership_precondition =
+    let lock = LocksDomain.is_locked lock in
+    let access = TraceElem.make_field_access acc_exp ~is_write loc in
+    make_if_not_owned formals access lock thread ownership_precondition
+
+
+  let make_container_access formals acc_exp ~is_write callee loc lock thread ownership_precondition
+      =
+    let lock = LocksDomain.is_locked lock in
+    let access = TraceElem.make_container_access acc_exp callee ~is_write loc in
+    make_if_not_owned formals access lock thread ownership_precondition
+
+
   let make_from_snapshot formals access {lock; thread; ownership_precondition} =
     make_if_not_owned formals access lock thread ownership_precondition
+
+
+  let map_opt formals ~f t =
+    let access = TraceElem.map_access ~f t.access in
+    make_from_snapshot formals access t
+
+
+  let update_callee_access formals snapshot callee_pname loc ownership_precondition threads locks =
+    let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
+    let locks = if snapshot.lock then LocksDomain.acquire_lock locks else locks in
+    let thread =
+      ThreadsDomain.integrate_summary ~callee_astate:snapshot.thread ~caller_astate:threads
+    in
+    make formals access locks thread ownership_precondition
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
