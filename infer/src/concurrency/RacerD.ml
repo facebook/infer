@@ -115,6 +115,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_callee_accesses formals (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname loc =
     let open Domain in
+    let callsite = CallSite.make callee_pname loc in
     let actuals_ownership =
       (* precompute array holding ownership of each actual for fast random access *)
       Array.of_list_map actuals ~f:(fun actual_exp ->
@@ -129,15 +130,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let update_callee_access (snapshot : AccessSnapshot.t) acc =
       (* update precondition with caller ownership info *)
       let ownership_precondition =
-        match snapshot.ownership_precondition with
+        match snapshot.elem.ownership_precondition with
         | OwnedIf indexes ->
             IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
         | Unowned ->
-            snapshot.ownership_precondition
+            snapshot.elem.ownership_precondition
       in
       let snapshot_opt =
-        AccessSnapshot.update_callee_access formals snapshot callee_pname loc ownership_precondition
-          threads locks
+        AccessSnapshot.update_callee_access formals snapshot callsite ownership_precondition threads
+          locks
       in
       AccessDomain.add_opt snapshot_opt acc
     in
@@ -614,7 +615,7 @@ let describe_exp = MF.wrap_monospaced RacerDDomain.pp_exp
 let describe_pname = MF.wrap_monospaced (Procname.pp_simplified_string ~withclass:true)
 
 let pp_access fmt (t : RacerDDomain.AccessSnapshot.t) =
-  match t.access.elem with
+  match t.elem.access with
   | Read {exp} | Write {exp} ->
       describe_exp fmt exp
   | ContainerRead {exp; pname} | ContainerWrite {exp; pname} ->
@@ -661,9 +662,8 @@ type reported_access =
 let report_thread_safety_violation ~issue_log ~make_description ~report_kind
     ({threads; snapshot; tenv; procname= pname} : reported_access) =
   let open RacerDDomain in
-  let access = snapshot.access in
-  let final_pname = List.last access.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
-  let final_sink_site = CallSite.make final_pname access.loc in
+  let final_pname = List.last snapshot.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
+  let final_sink_site = CallSite.make final_pname snapshot.loc in
   let initial_sink_site = CallSite.make pname (AccessSnapshot.get_loc snapshot) in
   let loc = CallSite.loc initial_sink_site in
   let ltr, original_end, conflict_end = make_trace ~report_kind snapshot in
@@ -805,7 +805,7 @@ end = struct
   let empty = M.empty
 
   let add (rep : reported_access) map =
-    let access = rep.snapshot.access.elem in
+    let access = rep.snapshot.elem.access in
     if RacerDDomain.Access.get_access_exp access |> should_filter_access then map
     else
       let k = Key.of_access access in
@@ -856,13 +856,13 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
            | _ ->
                false )
   in
-  (not snapshot.lock)
+  (not snapshot.elem.lock)
   && RacerDDomain.AccessSnapshot.is_write snapshot
   && Procname.is_java procname
   &&
   (* restrict check to access paths of length one *)
   match
-    RacerDDomain.Access.get_access_exp snapshot.access.elem
+    RacerDDomain.Access.get_access_exp snapshot.elem.access
     |> Option.map ~f:AccessExpression.to_accesses
     |> Option.map ~f:(fun (base, accesses) ->
            (base, List.filter accesses ~f:HilExp.Access.is_field_or_array_access) )
@@ -918,7 +918,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     if Config.deduplicate then
       CallSite.Set.mem call_site reported_sites
       ||
-      match snapshot.access.TraceElem.elem with
+      match snapshot.elem.access with
       | Access.Write _ | Access.ContainerWrite _ ->
           Procname.Set.mem pname reported_writes
       | Access.Read _ | Access.ContainerRead _ ->
@@ -931,7 +931,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     if Config.deduplicate then
       let call_site = CallSite.make pname (AccessSnapshot.get_loc snapshot) in
       let reported_sites = CallSite.Set.add call_site reported.reported_sites in
-      match snapshot.access.TraceElem.elem with
+      match snapshot.elem.access with
       | Access.Write _ | Access.ContainerWrite _ ->
           let reported_writes = Procname.Set.add pname reported.reported_writes in
           {reported with reported_writes; reported_sites}
@@ -965,7 +965,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   in
   let report_unsafe_access accesses acc
       ({snapshot; threads; tenv; procname= pname} as reported_access) =
-    match snapshot.access.elem with
+    match snapshot.elem.access with
     | Access.InterfaceCall reported_pname
       when AccessSnapshot.is_unprotected snapshot
            && ThreadsDomain.is_any threads && is_marked_thread_safe pname tenv ->
@@ -1017,8 +1017,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     | Access.Read _ | ContainerRead _ ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
-          if snapshot1.lock && snapshot2.lock then false
-          else ThreadsDomain.can_conflict snapshot1.thread snapshot2.thread
+          if snapshot1.elem.lock && snapshot2.elem.lock then false
+          else ThreadsDomain.can_conflict snapshot1.elem.thread snapshot2.elem.thread
         in
         let is_conflict {snapshot= other_snapshot; threads= other_threads} =
           if AccessSnapshot.is_unprotected other_snapshot then

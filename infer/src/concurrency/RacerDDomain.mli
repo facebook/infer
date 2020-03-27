@@ -28,10 +28,6 @@ module Access : sig
   val get_access_exp : t -> AccessExpression.t option
 end
 
-module TraceElem : sig
-  include ExplicitTrace.TraceElem with type elem_t = Access.t
-end
-
 (** Overapproximation of number of locks that are currently held *)
 module LocksDomain : sig
   type t
@@ -89,20 +85,20 @@ end
 (** snapshot of the relevant state at the time of a heap access: concurrent thread(s), lock(s) held,
     ownership precondition *)
 module AccessSnapshot : sig
-  type t = private
-    { access: TraceElem.t
-    ; thread: ThreadsDomain.t
-    ; lock: bool
-    ; ownership_precondition: OwnershipAbstractValue.t }
+  module AccessSnapshotElem : sig
+    type t =
+      { access: Access.t
+      ; thread: ThreadsDomain.t
+      ; lock: bool
+      ; ownership_precondition: OwnershipAbstractValue.t }
+  end
 
-  include PrettyPrintable.PrintableOrderedType with type t := t
+  include ExplicitTrace.TraceElem with type elem_t = AccessSnapshotElem.t
 
   val is_write : t -> bool
   (** is it a write OR a container write *)
 
   val is_container_write : t -> bool
-
-  val make_loc_trace : t -> Errlog.loc_trace
 
   val get_loc : t -> Location.t
 
@@ -135,16 +131,13 @@ module AccessSnapshot : sig
   val update_callee_access :
        FormalMap.t
     -> t
-    -> Procname.t
-    -> Location.t
+    -> CallSite.t
     -> OwnershipAbstractValue.t
     -> ThreadsDomain.t
     -> LocksDomain.t
     -> t option
 end
 
-(** map of access metadata |-> set of accesses. the map should hold all accesses to a
-    possibly-unowned access path *)
 module AccessDomain : sig
   include AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
 
@@ -197,6 +190,10 @@ type t =
   ; attribute_map: AttributeMapDomain.t
         (** map of access paths to attributes such as owned, functional, ... *) }
 
+include AbstractDomain.WithBottom with type t := t
+
+val add_unannotated_call_access : FormalMap.t -> Procname.t -> Location.t -> t -> t
+
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which
     may escape *)
@@ -209,8 +206,4 @@ type summary =
 
 val empty_summary : summary
 
-include AbstractDomain.WithBottom with type t := t
-
 val pp_summary : F.formatter -> summary -> unit
-
-val add_unannotated_call_access : FormalMap.t -> Procname.t -> Location.t -> t -> t

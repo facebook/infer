@@ -44,6 +44,8 @@ module Access = struct
     if is_write then ContainerWrite {exp; pname} else ContainerRead {exp; pname}
 
 
+  let make_unannotated_call_access pname = InterfaceCall pname
+
   let is_write = function
     | InterfaceCall _ | Read _ | ContainerRead _ ->
         false
@@ -128,31 +130,6 @@ module CallPrinter = struct
   type t = CallSite.t
 
   let pp fmt cs = F.fprintf fmt "call to %a" Procname.pp (CallSite.pname cs)
-end
-
-module TraceElem = struct
-  include ExplicitTrace.MakeTraceElemModuloLocation (Access) (CallPrinter)
-  (** This choice means the comparator is insensitive to the location access. This preserves
-      correctness only if the overlying comparator (AccessSnapshot) takes into account the
-      characteristics of the access (eg lock status). *)
-
-  let is_write {elem} = Access.is_write elem
-
-  let is_container_write {elem} = Access.is_container_write elem
-
-  let should_keep formals {elem} = Access.should_keep formals elem
-
-  let map_access ~f trace_elem = map ~f:(Access.map ~f) trace_elem
-
-  let make_container_access access_exp pname ~is_write loc =
-    make (Access.make_container_access access_exp pname ~is_write) loc
-
-
-  let make_field_access access_exp ~is_write loc =
-    make (Access.make_field_access access_exp ~is_write) loc
-
-
-  let make_unannotated_call_access pname loc = make (Access.InterfaceCall pname) loc
 end
 
 module LocksDomain = struct
@@ -281,83 +258,85 @@ module OwnershipAbstractValue = struct
 end
 
 module AccessSnapshot = struct
-  type t =
-    { access: TraceElem.t
-    ; thread: ThreadsDomain.t
-    ; lock: bool
-    ; ownership_precondition: OwnershipAbstractValue.t }
-  [@@deriving compare]
+  module AccessSnapshotElem = struct
+    type t =
+      { access: Access.t
+      ; thread: ThreadsDomain.t
+      ; lock: bool
+      ; ownership_precondition: OwnershipAbstractValue.t }
+    [@@deriving compare]
 
-  let is_write {access} = TraceElem.is_write access
+    let pp fmt {access; thread; lock; ownership_precondition} =
+      F.fprintf fmt "Access: %a Thread: %a Lock: %b Pre: %a" Access.pp access ThreadsDomain.pp
+        thread lock OwnershipAbstractValue.pp ownership_precondition
 
-  let make_loc_trace {access} = TraceElem.make_loc_trace access
 
-  let get_loc {access} = TraceElem.get_loc access
+    let describe fmt {access} = Access.describe fmt access
+  end
 
-  let is_container_write {access} = TraceElem.is_container_write access
+  include ExplicitTrace.MakeTraceElemModuloLocation (AccessSnapshotElem) (CallPrinter)
 
-  let make_if_not_owned formals access lock thread ownership_precondition =
+  let is_write {elem= {access}} = Access.is_write access
+
+  let is_container_write {elem= {access}} = Access.is_container_write access
+
+  let filter formals t =
     if
-      (not (OwnershipAbstractValue.is_owned ownership_precondition))
-      && TraceElem.should_keep formals access
-    then Some {access; lock; thread; ownership_precondition}
+      (not (OwnershipAbstractValue.is_owned t.elem.ownership_precondition))
+      && Access.should_keep formals t.elem.access
+    then Some t
     else None
 
 
-  let make formals access lock_astate thread ownership_precondition =
-    let lock = not (LocksDomain.is_bottom lock_astate) in
-    make_if_not_owned formals access lock thread ownership_precondition
+  let make_if_not_owned formals access lock thread ownership_precondition loc =
+    make {access; lock; thread; ownership_precondition} loc |> filter formals
+
+
+  let make_unannotated_call_access formals pname lock ownership loc =
+    let lock = LocksDomain.is_locked lock in
+    let access = Access.make_unannotated_call_access pname in
+    make_if_not_owned formals access lock ownership loc
 
 
   let make_access formals acc_exp ~is_write loc lock thread ownership_precondition =
     let lock = LocksDomain.is_locked lock in
-    let access = TraceElem.make_field_access acc_exp ~is_write loc in
-    make_if_not_owned formals access lock thread ownership_precondition
+    let access = Access.make_field_access acc_exp ~is_write in
+    make_if_not_owned formals access lock thread ownership_precondition loc
 
 
   let make_container_access formals acc_exp ~is_write callee loc lock thread ownership_precondition
       =
     let lock = LocksDomain.is_locked lock in
-    let access = TraceElem.make_container_access acc_exp callee ~is_write loc in
-    make_if_not_owned formals access lock thread ownership_precondition
-
-
-  let make_from_snapshot formals access {lock; thread; ownership_precondition} =
-    make_if_not_owned formals access lock thread ownership_precondition
+    let access = Access.make_container_access acc_exp callee ~is_write in
+    make_if_not_owned formals access lock thread ownership_precondition loc
 
 
   let map_opt formals ~f t =
-    let access = TraceElem.map_access ~f t.access in
-    make_from_snapshot formals access t
+    map t ~f:(fun elem -> {elem with access= Access.map ~f elem.access}) |> filter formals
 
 
-  let update_callee_access formals snapshot callee_pname loc ownership_precondition threads locks =
-    let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
-    let locks = if snapshot.lock then LocksDomain.acquire_lock locks else locks in
+  let update_callee_access formals snapshot callsite ownership_precondition threads locks =
     let thread =
-      ThreadsDomain.integrate_summary ~callee_astate:snapshot.thread ~caller_astate:threads
+      ThreadsDomain.integrate_summary ~callee_astate:snapshot.elem.thread ~caller_astate:threads
     in
-    make formals access locks thread ownership_precondition
+    let lock = snapshot.elem.lock || LocksDomain.is_locked locks in
+    with_callsite snapshot callsite
+    |> map ~f:(fun elem -> {elem with lock; thread; ownership_precondition})
+    |> filter formals
 
 
-  let is_unprotected {thread; lock; ownership_precondition} =
+  let is_unprotected {elem= {thread; lock; ownership_precondition}} =
     (not (ThreadsDomain.is_any_but_self thread))
     && (not lock)
     && not (OwnershipAbstractValue.is_owned ownership_precondition)
-
-
-  let pp fmt {access; thread; lock; ownership_precondition} =
-    F.fprintf fmt "Loc: %a Access: %a Thread: %a Lock: %b Pre: %a" Location.pp
-      (TraceElem.get_loc access) TraceElem.pp access ThreadsDomain.pp thread lock
-      OwnershipAbstractValue.pp ownership_precondition
 end
 
 module AccessDomain = struct
   include AbstractDomain.FiniteSet (AccessSnapshot)
 
-  let add ({AccessSnapshot.access= {elem}} as s) astate =
+  let add ({AccessSnapshot.elem= {access}} as s) astate =
     let skip =
-      Access.get_access_exp elem
+      Access.get_access_exp access
       |> Option.exists ~f:(fun exp -> AccessExpression.get_base exp |> fst |> should_skip_var)
     in
     if skip then astate else add s astate
@@ -567,6 +546,8 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
 
 
 let add_unannotated_call_access formals pname loc (astate : t) =
-  let access = TraceElem.make_unannotated_call_access pname loc in
-  let snapshot = AccessSnapshot.make formals access astate.locks astate.threads Unowned in
+  let snapshot =
+    AccessSnapshot.make_unannotated_call_access formals pname astate.locks astate.threads Unowned
+      loc
+  in
   {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}
