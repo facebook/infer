@@ -680,7 +680,7 @@ let report_unannotated_interface_violation ~issue_log reported_pname reported_ac
       let make_description _ _ _ _ =
         F.asprintf
           "Unprotected call to method %a of un-annotated interface %a. Consider annotating the \
-           class with %a, adding a lock, or using an interface that is known to be thread-safe."
+           interface with %a or adding a lock."
           describe_pname reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation ~issue_log ~make_description ~report_kind:UnannotatedInterface
