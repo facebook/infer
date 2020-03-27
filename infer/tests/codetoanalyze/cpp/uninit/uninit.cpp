@@ -269,11 +269,11 @@ int no_warning_noreturn_callee_ok(bool t) {
 
 void some_f(void* p);
 
-int* FP_pointer_param_void_star_ok() {
+int* pointer_param_void_star_ok() {
   A a;
   int* res;
-  some_f(&a); // the type of a here is void*, hence no fields are found
-  return a.ptr; // false positive
+  some_f(&a);
+  return a.ptr;
 }
 
 short union_ok() {

@@ -40,6 +40,37 @@ let should_report_on_type t =
 
 type extras = {formals: FormalMap.t; summary: Summary.t}
 
+module Initial = struct
+  let get_locals tenv pdesc =
+    List.fold (Procdesc.get_locals pdesc) ~init:[]
+      ~f:(fun acc (var_data : ProcAttributes.var_data) ->
+        let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
+        let base_access_expr = HilExp.AccessExpression.base (Var.of_pvar pvar, var_data.typ) in
+        match var_data.typ.Typ.desc with
+        | Typ.Tstruct qual_name
+        (* T30105165 remove filtering after we improve union translation *)
+          when not (Typ.Name.is_union qual_name) -> (
+          match Tenv.lookup tenv qual_name with
+          | Some {fields} ->
+              let flist =
+                List.fold
+                  ~f:(fun acc' (fn, _, _) ->
+                    HilExp.AccessExpression.field_offset base_access_expr fn :: acc' )
+                  ~init:acc fields
+              in
+              base_access_expr :: flist
+              (* for struct we take the struct address, and the access_path
+                 to the fields one level down *)
+          | _ ->
+              acc )
+        | Typ.Tarray {elt} ->
+            HilExp.AccessExpression.array_offset base_access_expr elt None :: acc
+        | Typ.Tptr _ ->
+            base_access_expr :: HilExp.AccessExpression.dereference base_access_expr :: acc
+        | _ ->
+            base_access_expr :: acc )
+end
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
@@ -240,8 +271,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           {astate with maybe_uninit_vars}
         else astate
     | Call (_, call, actuals, _, loc) ->
-        (* in case of intraprocedural only analysis we assume that parameters passed by reference
-           to a function will be initialized inside that function *)
         let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
         let callee_formals_opt = Option.bind pname_opt ~f:get_formals in
         let is_initializing_all_args =
@@ -274,11 +303,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       MaybeUninitVars.remove_all_fields tenv base
                         (MaybeUninitVars.remove access_expr_to_remove acc)
                   | _, {Typ.desc= Tptr _} -> (
+                    (* in case of intraprocedural only analysis we assume that parameters passed by reference
+                       to a function will be initialized inside that function *)
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params summary pname acc idx access_expr_to_remove true
                     | _ ->
-                        MaybeUninitVars.remove_everything_under tenv access_expr_to_remove acc )
+                        let locals = MaybeUninitVars.of_list (Initial.get_locals tenv pdesc) in
+                        MaybeUninitVars.remove_everything_under tenv locals access_expr_to_remove
+                          acc )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
@@ -305,37 +338,6 @@ end
 
 module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
-
-module Initial = struct
-  let get_locals tenv pdesc =
-    List.fold (Procdesc.get_locals pdesc) ~init:[]
-      ~f:(fun acc (var_data : ProcAttributes.var_data) ->
-        let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
-        let base_access_expr = HilExp.AccessExpression.base (Var.of_pvar pvar, var_data.typ) in
-        match var_data.typ.Typ.desc with
-        | Typ.Tstruct qual_name
-        (* T30105165 remove filtering after we improve union translation *)
-          when not (Typ.Name.is_union qual_name) -> (
-          match Tenv.lookup tenv qual_name with
-          | Some {fields} ->
-              let flist =
-                List.fold
-                  ~f:(fun acc' (fn, _, _) ->
-                    HilExp.AccessExpression.field_offset base_access_expr fn :: acc' )
-                  ~init:acc fields
-              in
-              base_access_expr :: flist
-              (* for struct we take the struct address, and the access_path
-                 to the fields one level down *)
-          | _ ->
-              acc )
-        | Typ.Tarray {elt} ->
-            HilExp.AccessExpression.array_offset base_access_expr elt None :: acc
-        | Typ.Tptr _ ->
-            base_access_expr :: HilExp.AccessExpression.dereference base_access_expr :: acc
-        | _ ->
-            base_access_expr :: acc )
-end
 
 let checker {Callbacks.exe_env; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
