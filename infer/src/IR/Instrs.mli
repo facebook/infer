@@ -32,6 +32,7 @@ val map : not_reversed_t -> f:(Sil.instr -> Sil.instr) -> not_reversed_t
 
 val map_and_fold :
   not_reversed_t -> f:('a -> Sil.instr -> 'a * Sil.instr) -> init:'a -> not_reversed_t
+  [@@warning "-32"]
 (** replace every instruction [instr] with [snd (f context instr)]. The context is computed by
     folding [f] on [init] and previous instructions (before [instr]) in the collection. Preserve
     physical equality. **)

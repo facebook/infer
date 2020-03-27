@@ -74,8 +74,6 @@ module OwnershipAbstractValue : sig
 
   val owned : t
 
-  val unowned : t
-
   val make_owned_if : int -> t
 
   val join : t -> t -> t
