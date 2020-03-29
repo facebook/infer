@@ -9,7 +9,6 @@ code inside one method, or that a class or method have certain properties. We
 provide [a few checks](/docs/linters-bug-types) and we have developed a
 domain specific language (DSL) to make it easier to write checks.
 
-
 ## AL: A declarative language for writing linters in Infer
 
 One of the major advantage of Infer when compared with other static analyzers is
