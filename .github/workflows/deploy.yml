@@ -34,8 +34,7 @@ jobs:
         uses: actions/cache@v1.1.2
         with:
           path: ${{ steps.yarn.outputs.dir }}
-          # prettier-ignore
-          key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/website/yarn.lock')) }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('website/yarn.lock') }}
 
       - name: Install packages
         working-directory: ${{ env.working-directory }}
