@@ -85,26 +85,39 @@ function Home() {
             users, and help prevent crashes or poor performance.
           </p>
           <div className={styles.buttons}>
-            <Link
-              className={classnames(
-                "button button--secondary button--lg",
-                styles.getStarted
-              )}
-              to={useBaseUrl("docs/getting-started")}
-            >
-              Get Started
-            </Link>
-            <div className={styles.starCount}>
-              <GitHubButton
-                href="https://github.com/facebook/infer"
-                data-icon="octicon-star"
-                data-size="large"
-                data-show-count="true"
-                aria-label="Star facebook/infer on GitHub"
+            <div className="col col--2 margin-horiz--sm">
+              <Link
+                className={classnames(
+                  "button button--secondary button--lg",
+                  styles.getStarted
+                )}
+                to={useBaseUrl("docs/getting-started")}
               >
-                Star
-              </GitHubButton>
+                Get Started
+              </Link>
             </div>
+            <div className="col col--2 margin-horiz--sm">
+              <Link
+                className={classnames(
+                  "button button--secondary button--lg",
+                  styles.getStarted
+                )}
+                to={useBaseUrl("docs/about-Infer")}
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
+          <div className={styles.starCount}>
+            <GitHubButton
+              href="https://github.com/facebook/infer"
+              data-icon="octicon-star"
+              data-size="large"
+              data-show-count="true"
+              aria-label="Star facebook/infer on GitHub"
+            >
+              Star
+            </GitHubButton>
           </div>
         </div>
       </header>
