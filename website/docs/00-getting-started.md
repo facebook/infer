@@ -8,7 +8,8 @@ title: Getting started with Infer
 You can use Homebrew (Mac only), our binary releases, build infer from source,
 or use our Docker image.
 
-On Mac, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a terminal:
+On Mac, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a
+terminal:
 
 ```sh
 brew install infer

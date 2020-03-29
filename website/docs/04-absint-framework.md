@@ -81,9 +81,8 @@ checkers
 [here](https://github.com/facebook/infer/blob/master/infer/src/checkers/registerCheckers.ml#L42).
 
 you can then run `infer run -a checkers -- <your_build_command>` to run your
-checker on real code. See
-[here](/docs/analyzing-apps-or-projects) for more details
-on the build systems supported by Infer.
+checker on real code. See [here](/docs/analyzing-apps-or-projects) for more
+details on the build systems supported by Infer.
 
 Other examples of simple intraprocedural checkers are
 [addressTaken.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/addressTaken.ml)

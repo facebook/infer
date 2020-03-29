@@ -25,8 +25,8 @@ infer-out
 
 - `captured/` contains information for each file analyzed by Infer. See
   [below](advanced-features#captured-folder) for more information.
-- `specs/` contains the [specs](advanced-features#print-the-specs) of
-  each function that was analyzed, as inferred by Infer.
+- `specs/` contains the [specs](advanced-features#print-the-specs) of each
+  function that was analyzed, as inferred by Infer.
 - `log/` and toplevel.log contains logs
 - `report.txt` and `report.json` contain the Infer reports in text and JSON
   formats

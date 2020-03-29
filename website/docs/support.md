@@ -43,8 +43,8 @@ infer run -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld
 ### "infer [options] -- \<build command\>" fails during a linking step
 
 The linker will sometimes not work if files have been compiled using a different
-compiler, such as the one Infer uses [under the hood](/docs/infer-workflow)
-to analyze your files.
+compiler, such as the one Infer uses [under the hood](/docs/infer-workflow) to
+analyze your files.
 
 A workaround consists in setting the `LD` environment variable to a dummy
 linker, for instance:

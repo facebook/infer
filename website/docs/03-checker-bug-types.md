@@ -10,9 +10,11 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
 This will happen in one of two cases generally:
 
 1. One uses `weakSelf` but forgot to declare it weak first.
-2. One is using `strongSelf`, declared in a block, in another (inside) block. This changes the delicate balance of the
-   `weakSelf`/`strongSelf` use in the first block. The retain cycle is avoided there because `strongSelf` is a local variable
-   to the block. If `strongSelf` is used in the inside block, then it's not a local variable anymore, but a captured variable.
+2. One is using `strongSelf`, declared in a block, in another (inside) block.
+   This changes the delicate balance of the `weakSelf`/`strongSelf` use in the
+   first block. The retain cycle is avoided there because `strongSelf` is a
+   local variable to the block. If `strongSelf` is used in the inside block,
+   then it's not a local variable anymore, but a captured variable.
 
 ## Checkers immutable cast
 
@@ -234,7 +236,11 @@ instead of `strongSelf`. In this case, this could cause a retain cycle.
 
 ## Multiple weakSelf
 
-An Objective-C block uses `weakSelf` more than once. This could lead to unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could be nil in the following uses since the object that `weakSelf` points to could be freed anytime. One should assign it to a strong pointer first, and then use it in the block.
+An Objective-C block uses `weakSelf` more than once. This could lead to
+unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could
+be nil in the following uses since the object that `weakSelf` points to could be
+freed anytime. One should assign it to a strong pointer first, and then use it
+in the block.
 
 ## Memory leak
 
@@ -731,8 +737,8 @@ For more technical definition and techniques to avoid/remediate, see the
 
 This warning indicates a potential data race in Java. The analyser is called
 RacerD and this section gives brief but a mostly complete description of its
-features. See the [RacerD page](/docs/racerd) for more in-depth information
-and examples.
+features. See the [RacerD page](/docs/racerd) for more in-depth information and
+examples.
 
 NB this warning **is not related to @GuardedBy** and not issued by the same
 analysis.
@@ -989,5 +995,7 @@ Outer.java:13: error: UNSAFE_GUARDED_BY_ACCESS
 
 ## weakSelf In NOESCAPE Block
 
-In many methods that take a block as an argument, the block position is annotated with NS_NOESCAPE to mark that the block
-passed to this method won't be leaving the current scope. In those cases, there is no need to use `weakSelf` to avoid the block to capture `self`. This issue type flags this case.
+In many methods that take a block as an argument, the block position is
+annotated with NS_NOESCAPE to mark that the block passed to this method won't be
+leaving the current scope. In those cases, there is no need to use `weakSelf` to
+avoid the block to capture `self`. This issue type flags this case.

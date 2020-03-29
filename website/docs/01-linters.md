@@ -6,8 +6,8 @@ title: "Infer : AL"
 For C/C++ and Objective-C languages, we provide a linters framework. These are
 checks about the syntax of the program; it could be about a property, or about
 code inside one method, or that a class or method have certain properties. We
-provide [a few checks](/docs/linters-bug-types) and we have developed a
-domain specific language (DSL) to make it easier to write checks.
+provide [a few checks](/docs/linters-bug-types) and we have developed a domain
+specific language (DSL) to make it easier to write checks.
 
 ## AL: A declarative language for writing linters in Infer
 
