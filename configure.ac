@@ -381,8 +381,6 @@ if test x"$NDKBUILD" = x"no"; then
     [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r15c])
 fi
 
-AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
-
 AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
 
 AC_CHECK_TOOL([SED], [sed], [no])

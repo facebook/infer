@@ -95,7 +95,7 @@ Thanks!
 
 - Indent with spaces, not tabs.
 
-- Line width limit is 100 characters (except for Python for which the limit is 80).
+- Line width limit is 100 characters.
 
 - In general, follow the style of surrounding code.
 

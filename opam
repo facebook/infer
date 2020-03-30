@@ -51,8 +51,6 @@ depends: [
   "zarith" {>="1.7"}
 ]
 depexts: [
-  [ ["ubuntu"] ["python2.7-dev"] ]
-  [ ["debian"] ["python2.7-dev"] ]
   [ ["ubuntu"] ["default-jdk"] ]
   [ ["debian"] ["default-jdk"] ]
 ]

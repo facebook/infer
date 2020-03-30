@@ -96,9 +96,6 @@ endif
 ifneq ($(NDKBUILD),no)
 BUILD_SYSTEMS_TESTS += ndk_build
 endif
-ifneq ($(PYTHON_lxml),no)
-BUILD_SYSTEMS_TESTS += results_xml
-endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += \
   clang_test_determinator \
@@ -649,12 +646,6 @@ endif
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/specs/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/specs/'
-	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/' || \
-	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/'
-	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/' || \
-	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/'
-	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/' || \
-	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/bin/'
 # copy files
@@ -690,10 +681,6 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/wrappers/javac \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/wrappers/
 endif
-	find infer/lib/python/inferlib/* -type f -print0 | xargs -0 -I \{\} \
-	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
-	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/inferTraceBugs
 	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
 	(cd '$(DESTDIR)$(bindir)/' && \
 	 $(REMOVE) infer && \
@@ -756,8 +743,6 @@ endif
 
 .PHONY: conf-clean
 conf-clean: clean
-	$(REMOVE) $(PYTHON_DIR)/inferlib/*.pyc
-	$(REMOVE) $(PYTHON_DIR)/inferlib/*/*.pyc
 	$(REMOVE) .buckversion
 	$(REMOVE) Makefile.autoconf
 	$(REMOVE) acinclude.m4
