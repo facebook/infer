@@ -137,9 +137,6 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 ])
 # end if($enable_c_analyzers)
 
-AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
-AC_ASSERT_PROG([python2.7], [$PYTHON27])
-
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
 

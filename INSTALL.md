@@ -15,7 +15,6 @@ Here are the prerequisites to be able to compile Infer on MacOSX. This
 is required to compile everything from source.
 
 - opam >= 2.0.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
-- Python 2.7
 - sqlite
 - pkg-config
 - Java (only needed for the Java analysis)
@@ -42,7 +41,6 @@ Here are the prerequisites to be able to compile Infer on Linux. This
 is required to compile everything from source.
 
 - opam >= 2.0.0
-- Python 2.7
 - pkg-config
 - Java (only needed for the Java analysis)
 - gcc >= 5.X or clang >= 3.4 (only needed for the C/Objective-C analysis)
