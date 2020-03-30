@@ -57,6 +57,11 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type; qualifier; _} =
   F.fprintf fmt "%s:%d: %s: %s@\n  %s" file line (String.lowercase severity) bug_type qualifier
 
 
+let pp_jsonbug_with_number fmt (i, {Jsonbug_t.file; severity; line; bug_type; qualifier; _}) =
+  F.fprintf fmt "#%d@\n%s:%d: %s: %s@\n  %s" i file line (String.lowercase severity) bug_type
+    qualifier
+
+
 let pp_source_context ~indent fmt
     {Jsonbug_t.file= source_name; lnum= report_line; cnum= report_col; enum= _} =
   let source_name =
@@ -95,8 +100,8 @@ let pp_source_context ~indent fmt
 let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
   (* TOOD: possible optimisation: stream reading report.json to process each issue one by one *)
   let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report report_json in
-  let one_issue_to_report_txt fmt (jsonbug : Jsonbug_t.jsonbug) =
-    F.fprintf fmt "%a@\n%a@\n" pp_jsonbug jsonbug (pp_source_context ~indent:2)
+  let one_issue_to_report_txt fmt ((_, (jsonbug : Jsonbug_t.jsonbug)) as jsonbug_n) =
+    F.fprintf fmt "%a@\n%a@\n" pp_jsonbug_with_number jsonbug_n (pp_source_context ~indent:2)
       {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
   in
   let one_issue_to_console ~console_limit i (jsonbug : Jsonbug_t.jsonbug) =
@@ -125,7 +130,7 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
       let summary =
         List.foldi report ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
             let summary' = ReportSummary.add_issue summary jsonbug in
-            one_issue_to_report_txt report_txt_fmt jsonbug ;
+            one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
             if not quiet then one_issue_to_console ~console_limit i jsonbug ;
             summary' )
       in

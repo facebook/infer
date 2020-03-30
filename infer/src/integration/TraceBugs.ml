@@ -31,9 +31,9 @@ let pp_trace_item ~show_source_context fmt
       {Jsonbug_t.file= filename; lnum= line_number; cnum= column_number; enum= -1}
 
 
-let pp_issue_with_trace ~show_source_context ~max_nested_level fmt
-    (n_issue, (issue : Jsonbug_t.jsonbug)) =
-  F.fprintf fmt "#%d@\n%a@\n" n_issue TextReport.pp_jsonbug issue ;
+let pp_issue_with_trace ~show_source_context ~max_nested_level fmt issue_with_n =
+  F.fprintf fmt "%a@\n" TextReport.pp_jsonbug_with_number issue_with_n ;
+  let issue : Jsonbug_t.jsonbug = snd issue_with_n in
   if List.is_empty issue.bug_trace then F.fprintf fmt "@\nEmpty trace@\n%!"
   else
     List.iter issue.bug_trace ~f:(fun trace_item ->
@@ -49,7 +49,7 @@ let user_select_issue ~selector_limit report =
     ~f:(fun n issue ->
       if is_past_limit selector_limit n then Stop ()
       else (
-        L.result "#%d@\n%a@\n" n TextReport.pp_jsonbug issue ;
+        L.result "%a@\n" TextReport.pp_jsonbug_with_number (n, issue) ;
         Continue (n + 1) ) ) ;
   let rec ask_until_valid_input max_report =
     L.result "@\nSelect report to display (0-%d) (default: 0): %!" max_report ;

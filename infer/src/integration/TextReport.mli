@@ -14,4 +14,7 @@ val create_from_json :
 
 val pp_jsonbug : F.formatter -> Jsonbug_t.jsonbug -> unit
 
+val pp_jsonbug_with_number : F.formatter -> int * Jsonbug_t.jsonbug -> unit
+(** pretty-print an issue together with a number, e.g. to identify it in a list *)
+
 val pp_source_context : indent:int -> F.formatter -> Jsonbug_t.loc -> unit
