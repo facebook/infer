@@ -57,8 +57,8 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type; qualifier; _} =
   F.fprintf fmt "%s:%d: %s: %s@\n  %s" file line (String.lowercase severity) bug_type qualifier
 
 
-let pp_source_context fmt {Jsonbug_t.file= source_name; lnum= report_line; cnum= report_col; enum= _}
-    =
+let pp_source_context ~indent fmt
+    {Jsonbug_t.file= source_name; lnum= report_line; cnum= report_col; enum= _} =
   let source_name =
     if Filename.is_absolute source_name then source_name else Config.project_root ^/ source_name
   in
@@ -78,7 +78,7 @@ let pp_source_context fmt {Jsonbug_t.file= source_name; lnum= report_line; cnum=
             ~f:(fun line_number line ->
               if start_line <= line_number && line_number <= end_line then (
                 (* we are inside the context to print *)
-                F.fprintf fmt "  %*d. " n_length line_number ;
+                F.fprintf fmt "%t%*d. " (pp_n_spaces indent) n_length line_number ;
                 if report_col < 0 then
                   (* no column number, print caret next to the line of the report *)
                   if Int.equal line_number report_line then F.pp_print_string fmt "> "
@@ -86,7 +86,7 @@ let pp_source_context fmt {Jsonbug_t.file= source_name; lnum= report_line; cnum=
                 F.pp_print_string fmt line ;
                 F.pp_print_newline fmt () ;
                 if Int.equal line_number report_line && report_col >= 0 then (
-                  pp_n_spaces (2 + n_length + 1 + report_col) fmt ;
+                  pp_n_spaces (indent + n_length + 1 + report_col) fmt ;
                   F.pp_print_char fmt '^' ;
                   F.pp_print_newline fmt () ) ) ;
               if line_number < end_line then Continue (line_number + 1) else Stop () ) )
@@ -96,7 +96,7 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
   (* TOOD: possible optimisation: stream reading report.json to process each issue one by one *)
   let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report report_json in
   let one_issue_to_report_txt fmt (jsonbug : Jsonbug_t.jsonbug) =
-    F.fprintf fmt "%a@\n%a@\n" pp_jsonbug jsonbug pp_source_context
+    F.fprintf fmt "%a@\n%a@\n" pp_jsonbug jsonbug (pp_source_context ~indent:2)
       {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
   in
   let one_issue_to_console ~console_limit i (jsonbug : Jsonbug_t.jsonbug) =
@@ -116,7 +116,7 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
         F.printf "%!" ;
         ANSITerminal.print_string style (F.asprintf "%a" pp_jsonbug jsonbug) ;
         F.printf "%!" ;
-        F.printf "@\n%a@\n" pp_source_context
+        F.printf "@\n%a@\n" (pp_source_context ~indent:2)
           {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
   in
   Utils.with_file_out report_txt ~f:(fun report_txt_out ->

@@ -207,23 +207,31 @@ let () =
                 DotCfg.emit_frontend_cfg source_file cfgs ) ;
             L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_frontend_output )
       | false, false ->
-          let if_some key opt args =
-            match opt with None -> args | Some arg -> key :: string_of_int arg :: args
-          in
-          let if_true key opt args = if not opt then args else key :: args in
-          let if_false key opt args = if opt then args else key :: args in
-          let args =
-            if_some "--max-level" Config.max_nesting
-            @@ if_true "--only-show" Config.only_show
-            @@ if_false "--no-source" Config.source_preview
-            @@ if_true "--html" Config.html
-            @@ if_some "--select" Config.select ["-o"; Config.results_dir]
-          in
-          let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
-          if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
-            L.external_error
-              "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-              (String.concat ~sep:" " args)
+          (* explore bug traces *)
+          if Config.html then (
+            let if_some key opt args =
+              match opt with None -> args | Some arg -> key :: string_of_int arg :: args
+            in
+            let if_true key opt args = if not opt then args else key :: args in
+            let if_false key opt args = if opt then args else key :: args in
+            let args =
+              if_some "--max-level" Config.max_nesting
+              @@ if_true "--only-show" Config.only_show
+              @@ if_false "--no-source" Config.source_preview
+              @@ if_true "--html" Config.html
+              @@ if_some "--select" Config.select ["-o"; Config.results_dir]
+            in
+            let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
+            if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
+              L.external_error
+                "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
+                (String.concat ~sep:" " args) )
+          else
+            TraceBugs.explore ~selector_limit:None
+              ~report_json:Config.(results_dir ^/ report_json)
+              ~report_txt:Config.(results_dir ^/ report_txt)
+              ~selected:Config.select ~show_source_context:Config.source_preview
+              ~max_nested_level:Config.max_nesting
       | true, true ->
           L.user_error "Options --procedures and --source-files cannot be used together.@\n" ) ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
