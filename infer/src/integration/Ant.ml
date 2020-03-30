@@ -26,16 +26,20 @@ let extract_javac_args line =
 type fold_state = {collecting: bool; rev_javac_args: string list}
 
 let capture ~prog ~args =
-  let _, java_version =
-    Process.create_process_and_wait_with_output ~prog:"java" ~args:["-version"]
+  let java_version =
+    Process.create_process_and_wait_with_output ~prog:"java" ~args:["-version"] ReadStderr
   in
-  let _, javac_version =
-    Process.create_process_and_wait_with_output ~prog:"javac" ~args:["-version"]
+  let javac_version =
+    Process.create_process_and_wait_with_output ~prog:"javac" ~args:["-version"] ReadStderr
   in
-  let ant_version, _ = Process.create_process_and_wait_with_output ~prog ~args:["-version"] in
-  L.environment_info "%s %s %s@." java_version javac_version ant_version ;
-  L.debug Capture Verbose "%s %s@." prog @@ String.concat ~sep:" " args ;
-  let ant_out, _ = Process.create_process_and_wait_with_output ~prog ~args:("-verbose" :: args) in
+  let ant_version =
+    Process.create_process_and_wait_with_output ~prog ~args:["-version"] ReadStdout
+  in
+  L.environment_info "%s %s %s@\n" java_version javac_version ant_version ;
+  L.debug Capture Quiet "%s %a@." prog Pp.cli_args args ;
+  let ant_out =
+    Process.create_process_and_wait_with_output ~prog ~args:("-verbose" :: args) ReadStdout
+  in
   L.debug Capture Verbose "%s" ant_out ;
   let res =
     List.fold (String.split_lines ant_out) ~init:{collecting= false; rev_javac_args= []}

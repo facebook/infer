@@ -9,14 +9,14 @@ module L = Logging
 
 let capture ~prog ~args =
   let apple_clang =
-    Process.create_process_and_wait_with_output ~prog:"xcrun" ~args:["--find"; "clang"]
-    |> fst |> String.strip
+    Process.create_process_and_wait_with_output ~prog:"xcrun" ~args:["--find"; "clang"] ReadStdout
+    |> String.strip
   in
-  let xcode_version, _ =
-    Process.create_process_and_wait_with_output ~prog:"xcodebuild" ~args:["-version"]
+  let xcode_version =
+    Process.create_process_and_wait_with_output ~prog:"xcodebuild" ~args:["-version"] ReadStdout
   in
-  let apple_clang_version, _ =
-    Process.create_process_and_wait_with_output ~prog:apple_clang ~args:["--version"]
+  let apple_clang_version =
+    Process.create_process_and_wait_with_output ~prog:apple_clang ~args:["--version"] ReadStdout
   in
   L.environment_info "Xcode version: %s@." xcode_version ;
   L.environment_info "clang version: %s@." apple_clang_version ;

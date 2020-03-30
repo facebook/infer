@@ -12,10 +12,13 @@ val create_process_and_wait : prog:string -> args:string list -> unit
     execution. The standard out and error are not redirected. If the commands fails to execute,
     prints an error message and exits. *)
 
-val create_process_and_wait_with_output : prog:string -> args:string list -> string * string
+type action = ReadStdout | ReadStderr
+
+val create_process_and_wait_with_output : prog:string -> args:string list -> action -> string
 (** Given an command to be executed, creates a process to execute this command, and waits for its
-    execution. The standard out and error are returned. If the commands fails to execute, prints an
-    error message and exits. *)
+    execution. Depending on the action passed, either stdout or stderr is returned, with the other
+    being streamed to the console. If the commands fails to execute, prints an error message and
+    exits. *)
 
 val print_error_and_exit : ?exit_code:int -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 (** Prints an error message to a log file, prints a message saying that the error can be found in

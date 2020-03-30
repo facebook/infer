@@ -9,6 +9,8 @@ open! IStd
 module L = Logging
 module F = Format
 
+[@@@warning "+9"]
+
 (** Prints an error message to a log file, prints a message saying that the error can be found in
     that file, and exits, with default code 1 or a given code. *)
 let print_error_and_exit ?(exit_code = 1) fmt =
@@ -29,26 +31,37 @@ let create_process_and_wait ~prog ~args =
   | Ok () ->
       ()
   | Error _ as status ->
-      L.(die ExternalError)
-        "Error executing: %s@\n%s@\n"
-        (String.concat ~sep:" " (prog :: args))
+      L.die ExternalError "Error executing: %a@\n%s@\n" Pp.cli_args (prog :: args)
         (Unix.Exit_or_signal.to_string_hum status)
 
 
-let create_process_and_wait_with_output ~prog ~args =
+type action = ReadStdout | ReadStderr
+
+let create_process_and_wait_with_output ~prog ~args action =
   let {Unix.Process_info.stdin; stdout; stderr; pid} = Unix.create_process ~prog ~args in
-  let stderr_chan = Unix.in_channel_of_descr stderr in
-  let stdout_chan = Unix.in_channel_of_descr stdout in
   Unix.close stdin ;
+  (* NOTE: this simple implementation works well because we only read on *one* of stdout or
+     stderr. Reading on both is a lot more difficult: we would have to be careful not to block the
+     callee process on writing on either stdout or stderr, so issue non-blocking reads on both
+     stdout and stderr until the end of the program, probably using select(2). *)
+  let in_chan =
+    let redirect_read ~redirect:(dst, src) ~read =
+      (* redirect *)
+      Unix.dup2 ~src ~dst ; Unix.in_channel_of_descr read
+    in
+    match action with
+    | ReadStdout ->
+        redirect_read ~redirect:(stderr, Unix.stderr) ~read:stdout
+    | ReadStderr ->
+        redirect_read ~redirect:(stdout, Unix.stdout) ~read:stderr
+  in
+  let res = In_channel.input_all in_chan in
   match Unix.waitpid pid with
   | Ok () ->
-      let out = In_channel.input_all stdout_chan in
-      let err = In_channel.input_all stderr_chan in
-      In_channel.close stdout_chan ; In_channel.close stderr_chan ; (out, err)
+      Unix.close (Unix.descr_of_in_channel in_chan) ;
+      res
   | Error _ as status ->
-      L.(die ExternalError)
-        "Error executing: %s@\n%s@\n"
-        (String.concat ~sep:" " (prog :: args))
+      L.die ExternalError "Error executing: %a@\n%s@\n" Pp.cli_args (prog :: args)
         (Unix.Exit_or_signal.to_string_hum status)
 
 

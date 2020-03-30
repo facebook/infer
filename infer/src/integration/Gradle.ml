@@ -40,13 +40,15 @@ let parse_gradle_line ~line =
 let normalize path = if String.is_substring path ~substring:" " then "\"" ^ path ^ "\"" else path
 
 let capture ~prog ~args =
-  let _, java_version =
-    Process.create_process_and_wait_with_output ~prog:"java" ~args:["-version"]
+  let java_version =
+    Process.create_process_and_wait_with_output ~prog:"java" ~args:["-version"] ReadStderr
   in
-  let _, javac_version =
-    Process.create_process_and_wait_with_output ~prog:"javac" ~args:["-version"]
+  let javac_version =
+    Process.create_process_and_wait_with_output ~prog:"javac" ~args:["-version"] ReadStderr
   in
-  let gradle_version, _ = Process.create_process_and_wait_with_output ~prog ~args:["--version"] in
+  let gradle_version =
+    Process.create_process_and_wait_with_output ~prog ~args:["--version"] ReadStdout
+  in
   L.environment_info "%s %s %s@." java_version javac_version gradle_version ;
   let process_gradle_line seen line =
     match String.substr_index line ~pattern:arg_start_pattern with
