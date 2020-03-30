@@ -92,6 +92,7 @@ codetoanalyze/c/errors/null_dereference/null_pointer_dereference.c, null_pointer
 codetoanalyze/c/errors/null_dereference/null_pointer_dereference.c, null_pointer_with_function_pointer, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/null_pointer_dereference.c, potentially_null_pointer_passed_as_argument, 3, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/null_pointer_dereference.c, simple_null_pointer, 2, NULL_DEREFERENCE, B1
+codetoanalyze/c/errors/null_dereference/null_pointer_dereference.c, unreachable_null_no_return_ok_FP, 5, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/short.c, f_error, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/short.c, g_error, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/short.c, l_error, 2, NULL_DEREFERENCE, B1

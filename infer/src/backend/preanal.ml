@@ -330,7 +330,9 @@ module NoReturn = struct
   let process proc_desc =
     Procdesc.iter_nodes
       (fun node ->
-        if has_noreturn_call node then Procdesc.set_succs node ~normal:(Some []) ~exn:None )
+        if has_noreturn_call node then
+          let exit_node = Procdesc.get_exit_node proc_desc in
+          Procdesc.set_succs node ~normal:(Some [exit_node]) ~exn:None )
       proc_desc
 end
 

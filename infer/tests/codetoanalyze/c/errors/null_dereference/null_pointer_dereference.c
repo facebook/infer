@@ -145,3 +145,14 @@ void unreachable_null_ok() {
   }
   *p = 42;
 }
+
+void no_ret() { will_not_return(); }
+
+// pre-analysis is not inter-procedural for handling no_return calls
+void unreachable_null_no_return_ok_FP() {
+  int* p = NULL;
+  if (p == NULL) {
+    no_ret(); // inter-procedural call to no_return
+  }
+  *p = 42;
+}
