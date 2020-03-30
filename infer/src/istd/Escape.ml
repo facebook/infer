@@ -100,18 +100,6 @@ let escape_path s =
   escape_map map s
 
 
-(* Python 2 sucks at utf8 so do not write unicode file names to disk
-   as Python may need to see them *)
-let escape_filename s =
-  let map = function
-    | c when Char.to_int c > 127 ->
-        Some "?" (* non-ascii character: escape *)
-    | _ ->
-        None
-  in
-  escape_map map s
-
-
 let escape_json s = escape_map (function '"' -> Some "\\\"" | '\\' -> Some "\\\\" | _ -> None) s
 
 let escape_double_quotes s = escape_map (function '"' -> Some "\\\"" | _ -> None) s
