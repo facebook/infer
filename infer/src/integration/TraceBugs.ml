@@ -101,16 +101,73 @@ let explore ~selector_limit ~report_txt:_ ~report_json ~show_source_context ~sel
       L.result "@\n%a" (pp_issue_with_trace ~show_source_context ~max_nested_level) issue )
 
 
+module GitHub = struct
+  type t = {project: string; commit: string; root: string}
+
+  let pp fmt {project; commit; root} =
+    F.fprintf fmt "project '%s' at root '%s', commit '%s'" project root commit
+
+
+  let discover () =
+    let git_remote, result =
+      Utils.with_process_in "git config --get remote.origin.url" In_channel.input_all
+    in
+    let git_remote = String.strip git_remote in
+    let pattern = "github.com/" in
+    match (result, String.substr_index git_remote ~pattern) with
+    | Error _, _ | Ok (), None ->
+        None
+    | Ok (), Some i -> (
+        let project = String.drop_prefix git_remote (i + String.length pattern) in
+        (* some remotes end in .git, but the http urls don't have these *)
+        let project =
+          String.chop_suffix project ~suffix:".git"
+          |> Option.bind ~f:(String.chop_suffix ~suffix:"/")
+          |> Option.value ~default:project
+        in
+        let commit, result = Utils.with_process_in "git rev-parse HEAD" In_channel.input_all in
+        Result.bind result ~f:(fun () ->
+            let commit = String.strip commit in
+            let root, result =
+              Utils.with_process_in "git rev-parse --show-toplevel" In_channel.input_all
+            in
+            Result.map result ~f:(fun () ->
+                let root = String.strip root in
+                {project; commit; root} ) )
+        |> function
+        | Ok repo_state ->
+            L.progress "Found GitHub %a@\n" pp repo_state ;
+            Some repo_state
+        | Error _ ->
+            None )
+
+
+  let get_file_line_url {project; commit; root} (file, line) =
+    let file_path =
+      String.chop_prefix ~prefix:root (Config.project_root ^/ file) |> Option.value ~default:file
+    in
+    Printf.sprintf "https://github.com/%s/blob/%s/%s#L%d" project commit file_path line
+end
+
 let trace_path_of_bug_number ~traces_dir i = traces_dir ^/ Printf.sprintf "bug_%d.txt" i
 
 let pp_html_index ~traces_dir fmt report =
-  let pp_issue_entry fmt issue_i =
+  let github_project = GitHub.discover () in
+  let pp_issue_entry fmt ((_, (issue : Jsonbug_t.jsonbug)) as issue_i) =
     let pp_trace_uri fmt (i, (issue : Jsonbug_t.jsonbug)) =
       if has_trace issue then
         F.fprintf fmt "<a href=\"%s\">trace</a>" (trace_path_of_bug_number ~traces_dir i)
       else F.pp_print_string fmt "no trace"
     in
-    F.fprintf fmt "<li>%a (%a)</li>" TextReport.pp_jsonbug (snd issue_i) pp_trace_uri issue_i
+    let pp_github_source github_project fmt file_line =
+      match github_project with
+      | None ->
+          ()
+      | Some project ->
+          F.fprintf fmt " (<a href=\"%s\">source</a>)" (GitHub.get_file_line_url project file_line)
+    in
+    F.fprintf fmt "<li>%a (%a)%a</li>" TextReport.pp_jsonbug issue pp_trace_uri issue_i
+      (pp_github_source github_project) (issue.file, issue.line)
   in
   let pp_issues_list fmt report =
     F.fprintf fmt "<ol start=\"0\">@\n" ;
