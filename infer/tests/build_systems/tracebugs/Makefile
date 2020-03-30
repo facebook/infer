@@ -34,15 +34,9 @@ test3: infer-out/report.json
 	$(INFER_BIN) explore -o infer-out \
 	  --select 0 --no-source-preview)
 
-.PHONY: test4
-test4: infer-out/report.json
-	$(QUIET)$(call silent_on_success,Testing infer-explore: --only-show,\
-	$(INFER_BIN) explore -o infer-out \
-	  --only-show)
-
 
 .PHONY: print
-print: test1 test2 test3 test4
+print: test1 test2 test3
 
 .PHONY: test
 test: print

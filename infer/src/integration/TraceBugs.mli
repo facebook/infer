@@ -14,3 +14,10 @@ val explore :
   -> selected:int option
   -> max_nested_level:int option
   -> unit
+
+val gen_html_report :
+     show_source_context:bool
+  -> max_nested_level:int option
+  -> report_json:string
+  -> report_html_dir:string
+  -> unit

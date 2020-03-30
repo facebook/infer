@@ -777,10 +777,6 @@ OPTIONS
            
            See also infer-analyze(1).
 
-       --only-show
-           Activates: Show the list of reports and exit (Conversely:
-           --no-only-show)           See also infer-explore(1).
-
        --perf-profiler-data-file file
            Specify the file containing perf profiler data to read       
     See also infer-analyze(1).

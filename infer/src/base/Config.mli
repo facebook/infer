@@ -148,6 +148,8 @@ val report_custom_error : bool
 
 val report_force_relative_path : bool
 
+val report_html_dir : string
+
 val report_json : string
 
 val report_nullable_inconsistency : bool
@@ -460,8 +462,6 @@ val oom_threshold : int option
 val only_cheap_debug : bool
 
 val only_footprint : bool
-
-val only_show : bool
 
 val perf_profiler_data_file : string option
 

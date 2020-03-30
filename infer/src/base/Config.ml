@@ -208,6 +208,8 @@ let racerd_issues_dir_name = "racerd"
 
 let report_condition_always_true_in_clang = false
 
+let report_html_dir = "report.html"
+
 let report_json = "report.json"
 
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
@@ -1650,12 +1652,6 @@ and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint" "Skip the re-execution phase"
 
 
-and only_show =
-  CLOpt.mk_bool ~long:"only-show"
-    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
-    "Show the list of reports and exit"
-
-
 and oom_threshold =
   CLOpt.mk_int_opt ~long:"oom-threshold"
     "Available memory threshold (in MB) below which multi-worker scheduling throttles back work. \
@@ -2840,8 +2836,6 @@ and oom_threshold = !oom_threshold
 and only_cheap_debug = !only_cheap_debug
 
 and only_footprint = !only_footprint
-
-and only_show = !only_show
 
 and passthroughs = !passthroughs
 

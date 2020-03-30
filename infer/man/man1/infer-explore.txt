@@ -44,10 +44,6 @@ EXPLORE BUGS
            maximum nesting level are skipped. If omitted, all levels are
            shown.
 
-       --only-show
-           Activates: Show the list of reports and exit (Conversely:
-           --no-only-show)
-
        --select N
            Select bug number N. If omitted, prompt for input.
 
