@@ -453,7 +453,7 @@ let implicit_sdk_root =
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
-  else if !Sys.interactive then NoParse
+  else if !Sys.interactive || String.is_substring ~substring:"inferunit" exe_basename then NoParse
   else if infer_is_clang then NoParse
   else InferCommand
 
