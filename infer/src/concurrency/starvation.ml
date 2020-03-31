@@ -416,7 +416,11 @@ module ReportMap : sig
 
   val add_lockless_violation : report_add_t
 
-  val store : t -> unit
+  val issue_log_of : t -> IssueLog.t
+
+  val store_multi_file : t -> unit
+  (** generate and store issue logs for all source files involved in this report map; for use in the
+      whole-program mode only *)
 end = struct
   type problem =
     | Starvation of StarvationModels.severity
@@ -437,24 +441,18 @@ end = struct
 
   type report_t = {problem: problem; pname: Procname.t; ltr: Errlog.loc_trace; message: string}
 
-  type t = report_t list Location.Map.t SourceFile.Map.t
+  type t = report_t list Location.Map.t
 
   type report_add_t = Tenv.t -> Procdesc.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
-  let empty : t = SourceFile.Map.empty
+  let empty : t = Location.Map.empty
 
-  let add tenv pdesc loc report map =
-    if Reporting.is_suppressed tenv pdesc (issue_type_of_problem report.problem) then map
+  let add tenv pdesc loc report loc_map =
+    if Reporting.is_suppressed tenv pdesc (issue_type_of_problem report.problem) then loc_map
     else
-      let update_loc_map loc_map =
-        Location.Map.update loc
-          (function reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
-          loc_map
-      in
-      SourceFile.Map.update loc.Location.file
-        (fun loc_map_opt ->
-          Some (update_loc_map (Option.value loc_map_opt ~default:Location.Map.empty)) )
-        map
+      Location.Map.update loc
+        (function reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
+        loc_map
 
 
   let add_deadlock tenv pdesc loc ltr message (map : t) =
@@ -540,11 +538,20 @@ end = struct
     Location.Map.fold log_location loc_map IssueLog.empty
 
 
-  let store map =
+  let store_multi_file loc_map =
+    let update_loc_map key value file_loc_map_opt =
+      let file_loc_map = Option.value file_loc_map_opt ~default:Location.Map.empty in
+      Some (Location.Map.add key value file_loc_map)
+    in
+    let source_map =
+      Location.Map.fold
+        (fun key value acc -> SourceFile.Map.update key.Location.file (update_loc_map key value) acc)
+        loc_map SourceFile.Map.empty
+    in
     SourceFile.Map.iter
       (fun file loc_map ->
         issue_log_of loc_map |> IssueLog.store ~dir:Config.starvation_issues_dir_name ~file )
-      map
+      source_map
 end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
@@ -744,25 +751,7 @@ let reporting {Callbacks.procedures; exe_env} =
                |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
              else report_map )
     in
-    List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.store ;
-    (* TODO FIXME stop serializing issues inside the checker and respect callback's contract.
-       Contract of a file-level callback is that it needs to return list of issues for that file.
-       Those will be stored in corresponding directory later on.
-       Instead, starvation checker returns an empty log, but takes care of logging by itself.
-       This is for historical reasons.
-       In case the issue corresponds to two files A and B, the analysis will be ran twice on A and B.
-       Which of it should report, and where?
-
-       Desired behavior:
-       - if duplication is allowed, checker for A reports on A and checker for B reports on B.
-       - if duplication is disallowed, checker for A reports on A, checker B reports nothing, and
-       which one should report and one should not is decided based on some symmetry-breaking condition.
-
-       In both cases, desired behavior allows to preserve contract of the callback.
-       Current behavior is not like that: each of analyzers for A and B can report to both A and B,
-       which is not optimal and is (such an irony!) prone to a race condition.
-    *)
-    IssueLog.empty
+    List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.issue_log_of
 
 
 (* given a scheduled-work item, read the summary of the scheduled method from the disk
@@ -830,7 +819,7 @@ let report exe_env work_set =
            | _ ->
                acc )
   in
-  WorkHashSet.fold wrap_report work_set ReportMap.empty |> ReportMap.store
+  WorkHashSet.fold wrap_report work_set ReportMap.empty |> ReportMap.store_multi_file
 
 
 let whole_program_analysis () =
