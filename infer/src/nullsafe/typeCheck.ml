@@ -1027,72 +1027,76 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
 let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref typestate idenv
     ~callee_pname ~curr_pname curr_pdesc curr_annotated_signature calls_this ~nullsafe_mode
     ret_id_typ etl_ loc callee_pname_java cflags node =
-  let callee_attributes =
-    match PatternMatch.lookup_attributes tenv callee_pname with
-    | Some proc_attributes ->
-        proc_attributes
-    | None ->
-        let formals =
-          List.mapi
-            ~f:(fun i (_, typ) ->
-              let arg =
-                if Int.equal i 0 && not (Procname.Java.is_static callee_pname_java) then
-                  Mangled.this
-                else Printf.sprintf "arg%d" i |> Mangled.from_string
-              in
-              (arg, typ) )
-            etl_
-        in
-        let ret_type = Procname.Java.get_return_typ callee_pname_java in
-        let proc_attributes =
-          { (ProcAttributes.default (SourceFile.invalid __FILE__) callee_pname) with
-            ProcAttributes.formals
-          ; ret_type }
-        in
-        proc_attributes
-  in
-  let etl = drop_unchecked_params calls_this curr_pname callee_attributes etl_ in
-  let call_params, typestate1 =
-    let handle_et (e1, t1) (etl1, typestate1) =
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv node instr_ref typestate e1 loc ;
-      let e2 =
-        convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature
-          ~is_assignment:false ~node ~original_node:node e1 typestate1 loc
+  L.d_with_indent ~name:"typecheck_sil_call_function" (fun () ->
+      let callee_attributes =
+        match PatternMatch.lookup_attributes tenv callee_pname with
+        | Some proc_attributes ->
+            proc_attributes
+        | None ->
+            let formals =
+              List.mapi
+                ~f:(fun i (_, typ) ->
+                  let arg =
+                    if Int.equal i 0 && not (Procname.Java.is_static callee_pname_java) then
+                      Mangled.this
+                    else Printf.sprintf "arg%d" i |> Mangled.from_string
+                  in
+                  (arg, typ) )
+                etl_
+            in
+            let ret_type = Procname.Java.get_return_typ callee_pname_java in
+            let proc_attributes =
+              { (ProcAttributes.default (SourceFile.invalid __FILE__) callee_pname) with
+                ProcAttributes.formals
+              ; ret_type }
+            in
+            proc_attributes
       in
-      (((e1, e2), t1) :: etl1, typestate1)
-    in
-    List.fold_right ~f:handle_et etl ~init:([], typestate)
-  in
-  let pname = callee_attributes.ProcAttributes.proc_name in
-  let is_trusted_callee =
-    let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
-    let callee_class = Procname.get_class_type_name pname in
-    Option.value_map callee_class
-      ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
-      ~default:false
-  in
-  let callee_annotated_signature =
-    Models.get_modelled_annotated_signature ~is_trusted_callee tenv callee_attributes
-  in
-  let signature_params =
-    drop_unchecked_signature_params callee_attributes callee_annotated_signature
-  in
-  let is_anonymous_inner_class_constructor =
-    Procname.Java.is_anonymous_inner_class_constructor_exn callee_pname_java
-  in
-  let do_return (ret_ta, ret_typ) typestate' =
-    let mk_return_range () = (ret_typ, ret_ta) in
-    let id = fst ret_id_typ in
-    TypeState.add_id id (mk_return_range ()) typestate' ~descr:"typecheck_sil_call_function"
-  in
-  let typestate_after_call, finally_resolved_ret =
-    calc_typestate_after_call find_canonical_duplicate calls_this checks tenv idenv instr_ref
-      signature_params cflags call_params ~is_anonymous_inner_class_constructor
-      ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java ~curr_pname
-      ~curr_pdesc ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node
-  in
-  do_return finally_resolved_ret typestate_after_call
+      let etl = drop_unchecked_params calls_this curr_pname callee_attributes etl_ in
+      let call_params, typestate1 =
+        let handle_et (e1, t1) (etl1, typestate1) =
+          typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
+            checks tenv node instr_ref typestate e1 loc ;
+          let e2 =
+            convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature
+              ~is_assignment:false ~node ~original_node:node e1 typestate1 loc
+          in
+          (((e1, e2), t1) :: etl1, typestate1)
+        in
+        List.fold_right ~f:handle_et etl ~init:([], typestate)
+      in
+      let pname = callee_attributes.ProcAttributes.proc_name in
+      let is_trusted_callee =
+        let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
+        let callee_class = Procname.get_class_type_name pname in
+        Option.value_map callee_class
+          ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
+          ~default:false
+      in
+      let callee_annotated_signature =
+        Models.get_modelled_annotated_signature ~is_trusted_callee tenv callee_attributes
+      in
+      if Config.write_html then
+        L.d_printfln "Callee signature: %a" (AnnotatedSignature.pp pname) callee_annotated_signature ;
+      let signature_params =
+        drop_unchecked_signature_params callee_attributes callee_annotated_signature
+      in
+      let is_anonymous_inner_class_constructor =
+        Procname.Java.is_anonymous_inner_class_constructor_exn callee_pname_java
+      in
+      let do_return (ret_ta, ret_typ) typestate' =
+        let mk_return_range () = (ret_typ, ret_ta) in
+        let id = fst ret_id_typ in
+        TypeState.add_id id (mk_return_range ()) typestate' ~descr:"typecheck_sil_call_function"
+      in
+      let typestate_after_call, finally_resolved_ret =
+        calc_typestate_after_call find_canonical_duplicate calls_this checks tenv idenv instr_ref
+          signature_params cflags call_params ~is_anonymous_inner_class_constructor
+          ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java
+          ~curr_pname ~curr_pdesc ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1
+          loc node
+      in
+      do_return finally_resolved_ret typestate_after_call )
 
 
 (** Typecheck an instruction. *)
