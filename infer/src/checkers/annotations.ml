@@ -61,6 +61,8 @@ let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"
 
+let nullable_decl = "NullableDecl"
+
 let nullsafe_strict = "NullsafeStrict"
 
 let nullsafe = "Nullsafe"
@@ -183,6 +185,9 @@ let ia_is_propagates_nullable ia = ia_ends_with ia propagates_nullable
 let ia_is_nullable ia =
   List.exists ~f:(ia_ends_with ia)
     [ nullable
+    ; nullable_decl
+      (* From org.checkerframework.checker.nullness.compatqual package. Extensively used in Guava library.
+         Identical to {@code @Nullable}, but can only be written at declaration locations. *)
     ; propagates_nullable (* @PropagatesNullable is implicitly nullable *)
     ; recently_nullable
       (* @RecentlyNullable is a special annotation that was added to solve backward compatibility issues
