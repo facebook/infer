@@ -426,9 +426,6 @@ let annotated_list_nullability_other =
   ; ( o1
     , "com.google.common.collect.ImmutableMap.copyOf(java.lang.Iterable):com.google.common.collect.ImmutableMap"
     )
-  ; ( on
-    , "com.google.common.collect.Iterables.getFirst(java.lang.Iterable,java.lang.Object):java.lang.Object"
-    )
   ; ( o1
     , "com.google.common.util.concurrent.SettableFuture.setException(java.lang.Throwable):boolean"
     )
