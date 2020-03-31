@@ -19,18 +19,18 @@ module.exports = {
       "experimental-checkers",
       "advanced-features",
       "adding-models",
-      "man-pages"
+      "man-pages",
     ],
     Foundations: [
       "about-Infer",
       "separation-logic-and-bi-abduction",
-      "limitations"
+      "limitations",
     ],
     "Bug Types Reference": [
       "checkers-bug-types",
       "eradicate-warnings",
-      "linters-bug-types"
+      "linters-bug-types",
     ],
-    Contribute: ["absint-framework", "adding-checkers", "internal-API"]
-  }
+    Contribute: ["absint-framework", "adding-checkers", "internal-API"],
+  },
 };

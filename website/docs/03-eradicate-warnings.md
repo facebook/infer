@@ -32,7 +32,6 @@ could originate in third party libraries which are not under your control, and
 the best place to check for null is typically immediately after calling these
 library functions.
 
-
 ## Eradicate null method call
 
 A method call x.m(...) where x could be null.
@@ -48,7 +47,6 @@ class C {
 ```
 
 Action: Same as for Null field access.
-
 
 ## Eradicate field not nullable
 

@@ -6,8 +6,8 @@ title: Hello, World!
 Follow the instructions in this page to try Infer on a few small examples. You
 should be able to see the bugs reported by Infer, fix the bugs and run Infer
 again to check that they are not reported anymore. This should give you a first
-idea of how Infer works. See the [User Guide](infer-workflow) for more
-details about the use of Infer.
+idea of how Infer works. See the [User Guide](infer-workflow) for more details
+about the use of Infer.
 
 All these examples can be found in the
 [`infer/examples`](https://github.com/facebook/infer/tree/master/examples)

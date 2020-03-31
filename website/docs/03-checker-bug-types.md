@@ -5,15 +5,16 @@ title: Checkers bug types
 
 Here is an overview of the types of bugs currently reported by Infer checkers.
 
+## Captured Strong Self
 
-## Captured Strong Self 
+This will happen in one of two cases generally:
 
-This will happen in one of two cases generally: 
 1. One uses `weakSelf` but forgot to declare it weak first.
-2. One is using `strongSelf`, declared in a block, in another (inside) block. This changes the delicate balance of the 
-`weakSelf`/`strongSelf` use in the first block. The retain cycle is avoided there because `strongSelf` is a local variable 
-to the block. If `strongSelf` is used in the inside block, then it's not a local variable anymore, but a captured variable. 
-
+2. One is using `strongSelf`, declared in a block, in another (inside) block.
+   This changes the delicate balance of the `weakSelf`/`strongSelf` use in the
+   first block. The retain cycle is avoided there because `strongSelf` is a
+   local variable to the block. If `strongSelf` is used in the inside block,
+   then it's not a local variable anymore, but a captured variable.
 
 ## Checkers immutable cast
 
@@ -32,7 +33,6 @@ list e.g. by adding elements.
 
 Action: you can change the return type to be immutable, or make a copy of the
 collection so that it can be modified.
-
 
 ## Deadlock
 
@@ -97,12 +97,10 @@ To suppress reports of deadlocks in a method `m()` use the
   }
 ```
 
-
 ## Dead store
 
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
-
 
 ## Empty vector access
 
@@ -118,7 +116,6 @@ int foo(){
   return vec[0]; // Empty vector access reported here
 }
 ```
-
 
 ## Field should be nullable
 
@@ -169,7 +166,6 @@ Action:
   ...
 ```
 
-
 ## Fragment retains view
 
 This error type is Android-specific. It fires when a `Fragment` type fails to
@@ -182,7 +178,6 @@ retain a useless reference to that `View` that will not be cleaned up until the
 
 Action: Nullify the `View` in question in `onDestroyView`.
 
-
 ## Interface not thread-safe
 
 This error indicates that you have invoked an interface method not annotated
@@ -191,7 +186,6 @@ marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the
 interface or to the interface method. For background on why these annotations
 are needed, see the detailed explanation
 [here](racerd#interface-not-thread-safe).
-
 
 ## Ivar not null checked
 
@@ -209,7 +203,6 @@ parameter is `nil`. For example:
 
 Possible solutions are adding a check for `nil`, or making sure that the method
 is not called with `nil`.
-
 
 ## Lock Consistency Violation
 
@@ -234,7 +227,6 @@ container (an array, a vector, etc).
   Infer considers a method as private if it's not exported in the header-file
   interface.
 
-
 ## Mixed self weakSelf
 
 This happens when an Objective-C block captures both `self` and `weakSelf`, a
@@ -242,11 +234,13 @@ weak pointer to `self`. Possibly the developer meant to capture only `weakSelf`
 to avoid a retain cycle, but made a typo and used `self` as well in the block,
 instead of `strongSelf`. In this case, this could cause a retain cycle.
 
-
 ## Multiple weakSelf
 
-An Objective-C block uses `weakSelf` more than once. This could lead to unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could be nil in the following uses since the object that `weakSelf` points to could be freed anytime. One should assign it to a strong pointer first, and then use it in the block.
-
+An Objective-C block uses `weakSelf` more than once. This could lead to
+unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could
+be nil in the following uses since the object that `weakSelf` points to could be
+freed anytime. One should assign it to a strong pointer first, and then use it
+in the block.
 
 ## Memory leak
 
@@ -274,7 +268,6 @@ objects from Core Foundation or Core Graphics don't get released.
     CGPathRef shadowPath = CGPathCreateWithRect(self.inputView.bounds, NULL); //object created and not released.
 }
 ```
-
 
 ## Null Dereference
 
@@ -376,7 +369,6 @@ master. In the future we might include analysis directives (hey, analyzer, p is
 not null!) like in Hack that tell the analyzer the information that you know,
 but that is for later.
 
-
 ## Parameter not null checked
 
 This error type is reported only in Objective-C. It is similar to Null
@@ -404,7 +396,6 @@ is not called with `nil`. When an argument will never be `nil`, you can add the
 annotation `nonnull` to the argument's type, to tell Infer (and the type
 system), that the argument won't be `nil`. This will silence the warning.
 
-
 ## Premature nil termination argument
 
 This error type is reported in C and Objective-C. In many variadic methods,
@@ -422,7 +413,6 @@ An example of such variadic methods is
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
-
 
 ## Resource leak
 
@@ -700,7 +690,6 @@ way. This just illustrates that, though you might hear people say that
 try-with-resources "solves" the resource problem, it does not. It is very
 useful, but you cannot use it blindly when you see a resource-allocation site.
 
-
 ## Retain cycle
 
 A retain cycle is a situation when object A retains object B, and object B
@@ -734,7 +723,6 @@ hierarchy:
 @end
 ```
 
-
 ## Static initialization order fiasco
 
 This error is reported in C++. It fires when the initialization of a static
@@ -745,13 +733,12 @@ already initialized or not at that point.
 For more technical definition and techniques to avoid/remediate, see the
 [FAQ](https://isocpp.org/wiki/faq/ctors#static-init-order).
 
-
 ## Thread-safety violation
 
 This warning indicates a potential data race in Java. The analyser is called
 RacerD and this section gives brief but a mostly complete description of its
-features. See the [RacerD page](/docs/racerd) for more in-depth information
-and examples.
+features. See the [RacerD page](/docs/racerd) for more in-depth information and
+examples.
 
 NB this warning **is not related to @GuardedBy** and not issued by the same
 analysis.
@@ -843,7 +830,6 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   other threads. The main utility of this annotation is in interfaces, where
   Infer cannot look up the implementation and decide for itself.
 
-
 ## UI Thread Starvation
 
 This error is reported in Java, and specifically on Android. These reports are
@@ -902,7 +888,6 @@ This instructs Infer to filter out any potentially blocking calls in `m()`
 due to a call to `m()`. You will need to set up your class path appropriately to
 include the JAR files in `infer/annotations` for this annotation to work.
 
-
 ## Strict mode violation
 
 Android has a feature called
@@ -914,7 +899,6 @@ ability to statically detect such violations.
 
 To suppress this warning, it's enough to annotate the offending method with
 `@SuppressLint("STRICT_MODE_VIOLATION")`.
-
 
 ## StrongSelf Not Checked
 
@@ -930,7 +914,6 @@ __weak __typeof(self) weakSelf = self;
 the variable `strongSelf` should be checked for `null` before being used,
 otherwise this could cause a crash because the weak pointer `weakSelf` could be
 `null`.
-
 
 ## Unsafe GuardedBy Access
 
@@ -1010,8 +993,9 @@ Outer.java:13: error: UNSAFE_GUARDED_BY_ACCESS
 
 ```
 
-
 ## weakSelf In NOESCAPE Block
 
-In many methods that take a block as an argument, the block position is annotated with NS_NOESCAPE to mark that the block 
-passed to this method won't be leaving the current scope. In those cases, there is no need to use `weakSelf` to avoid the block to capture `self`. This issue type flags this case.  
+In many methods that take a block as an argument, the block position is
+annotated with NS_NOESCAPE to mark that the block passed to this method won't be
+leaving the current scope. In those cases, there is no need to use `weakSelf` to
+avoid the block to capture `self`. This issue type flags this case.

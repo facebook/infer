@@ -401,8 +401,8 @@ Facebook engineers.
 [A separate blog post looked at 100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/)
 in Infer's deployment in various bug categories, and for data races observed
 that 53 of them were inter-file (and thus involving multiple classes).
-[See above](racerd#interprocedural) for an example
-of RacerD's interprocedural capabilities.
+[See above](racerd#interprocedural) for an example of RacerD's interprocedural
+capabilities.
 
 One reaction to the challenge of developing effective static race detectors has
 been to ask the programmer to do more work to help the analyzer. Examples of

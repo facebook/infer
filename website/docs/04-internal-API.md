@@ -4,8 +4,8 @@ title: Infer Internal OCaml Modules API
 ---
 
 The generated OCaml documentation for the latest release of infer can be found
-[here](/odoc/latest/index.html). You can generate these pages from within
-an infer git checkout with `make doc`.
+[here](/odoc/latest/index.html). You can generate these pages from within an
+infer git checkout with `make doc`.
 
 You can also browse the following specific versions:
 

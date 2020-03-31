@@ -24,7 +24,7 @@ const features = [
         reachability, missing lock guards, and concurrency race conditions in
         Android and Java code.
       </>
-    )
+    ),
   },
   {
     title: <>C, C++, and iOS/Objective-C</>,
@@ -33,8 +33,8 @@ const features = [
         Infer checks for null pointer dereferences, memory leaks, coding
         conventions and unavailable API’s.
       </>
-    )
-  }
+    ),
+  },
 ];
 
 const poweredByImages = [
@@ -46,7 +46,7 @@ const poweredByImages = [
   { url: "https://www.oculus.com", image: "/img/who/oculus.png" },
   {
     url: "/blog/2016/03/17/collaboration-with-spotify",
-    image: "/img/who/spotify.png"
+    image: "/img/who/spotify.png",
   },
   { url: "https://www.uber.com", image: "/img/who/uber.svg" },
   { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg" },
@@ -85,26 +85,39 @@ function Home() {
             users, and help prevent crashes or poor performance.
           </p>
           <div className={styles.buttons}>
-            <Link
-              className={classnames(
-                "button button--secondary button--lg",
-                styles.getStarted
-              )}
-              to={useBaseUrl("docs/getting-started")}
-            >
-              Get Started
-            </Link>
-            <div className={styles.starCount}>
-              <GitHubButton
-                href="https://github.com/facebook/infer"
-                data-icon="octicon-star"
-                data-size="large"
-                data-show-count="true"
-                aria-label="Star facebook/infer on GitHub"
+            <div className="col col--2 margin-horiz--sm">
+              <Link
+                className={classnames(
+                  "button button--secondary button--lg",
+                  styles.getStarted
+                )}
+                to={useBaseUrl("docs/getting-started")}
               >
-                Star
-              </GitHubButton>
+                Get Started
+              </Link>
             </div>
+            <div className="col col--2 margin-horiz--sm">
+              <Link
+                className={classnames(
+                  "button button--secondary button--lg",
+                  styles.getStarted
+                )}
+                to={useBaseUrl("docs/about-Infer")}
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
+          <div className={styles.starCount}>
+            <GitHubButton
+              href="https://github.com/facebook/infer"
+              data-icon="octicon-star"
+              data-size="large"
+              data-show-count="true"
+              aria-label="Star facebook/infer on GitHub"
+            >
+              Star
+            </GitHubButton>
           </div>
         </div>
       </header>

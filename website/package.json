@@ -2,21 +2,23 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "fmt:check": "prettier --check .",
+    "fmt": "prettier --write .",
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.43",
-    "@docusaurus/preset-classic": "2.0.0-alpha.43",
+    "@docusaurus/core": "2.0.0-alpha.48",
+    "@docusaurus/preset-classic": "2.0.0-alpha.48",
     "classnames": "2.2.6",
-    "react": "16.13.0",
-    "react-dom": "16.13.0",
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
     "react-github-btn": "1.1.1"
   },
   "devDependencies": {
-    "prettier": "1.19.1"
+    "prettier": "2.0.2"
   },
   "browserslist": {
     "production": [
