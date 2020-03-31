@@ -178,7 +178,9 @@ module Java = struct
         false
 
 
-  let is_autogen_method {method_name} = String.contains method_name '$'
+  let is_autogen_method_name method_name = String.contains method_name '$'
+
+  let is_autogen_method {method_name} = is_autogen_method_name method_name
 
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)

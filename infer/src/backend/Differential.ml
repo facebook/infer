@@ -260,14 +260,21 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
               Format.asprintf "%a %t %s" MarkupFormatter.pp_bold
                 "This function is called during cold start!" pp_avg_inclusive_time common_msg )
       in
-      let msg =
+      let msg f =
         (* Java Only *)
-        if String.equal method_name Procname.Java.constructor_method_name then "constructor"
+        if String.equal method_name Procname.Java.constructor_method_name then
+          Format.pp_print_string f "constructor"
         else if String.equal method_name Procname.Java.class_initializer_method_name then
-          "class initializer"
-        else "this function"
+          Format.pp_print_string f "class initializer"
+        else
+          Format.fprintf f "%t%a"
+            (fun f ->
+              if Procname.Java.is_autogen_method_name method_name then
+                Format.pp_print_string f "auto-generated method " )
+            (MarkupFormatter.wrap_monospaced Format.pp_print_string)
+            method_name
       in
-      Format.asprintf "%s of %s has %a from %a to %a. %s %a"
+      Format.asprintf "%s of %t has %a from %a to %a. %s %a"
         (CostKind.to_complexity_string kind)
         msg
         (MarkupFormatter.wrap_bold pp_delta)
