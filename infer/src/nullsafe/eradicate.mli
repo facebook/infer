@@ -19,13 +19,3 @@ val file_callback : Callbacks.file_callback_t
 val callback_check_return_type : TypeCheck.check_return_type -> Callbacks.proc_callback_t
 (** For checkers that explore eradicate/nullsafe infra, but not part of nullsafe.Annot Call the
     given check_return_type at the end of every procedure. *)
-
-(** Type for a module that provides a main callback function *)
-module type CallBackT = sig
-  val callback : TypeCheck.checks -> Callbacks.proc_callback_t
-end
-
-(** Extension to the type checker. *)
-module type ExtensionT = sig
-  val update_payloads : NullsafeSummary.t option -> Payloads.t -> Payloads.t
-end
