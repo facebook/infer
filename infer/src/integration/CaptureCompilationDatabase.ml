@@ -109,8 +109,9 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
               | [_; filename] ->
                   `Raw filename :: compilation_database_files
               | _ ->
-                  L.(die ExternalError)
-                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line
+                  L.internal_error
+                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line ;
+                  compilation_database_files
             in
             List.fold ~f:scan_output ~init:[] lines
       in
