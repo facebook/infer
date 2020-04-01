@@ -23,13 +23,12 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.cost
 end)
 
-type callee_summary_and_formals = CostDomain.summary * (Pvar.t * Typ.t) list
-
 type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t
-  ; get_callee_summary_and_formals: Procname.t -> callee_summary_and_formals option }
+  ; get_summary: Procname.t -> CostDomain.summary option
+  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
@@ -62,7 +61,7 @@ module InstrBasicCost = struct
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) when Config.inclusive_cost
       ->
-        let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} = extras in
+        let {inferbo_invariant_map; integer_type_widths; get_summary; get_formals} = extras in
         let operation_cost =
           match
             BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
@@ -84,12 +83,23 @@ module InstrBasicCost = struct
                   in
                   CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
-                match get_callee_summary_and_formals callee_pname with
-                | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
+                match Tenv.get_summary_formals tenv ~get_summary ~get_formals callee_pname with
+                | `Found ({CostDomain.post= callee_cost_record}, callee_formals) ->
                     CostDomain.map callee_cost_record ~f:(fun callee_cost ->
                         instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
                           ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
-                | None ->
+                | `FoundFromSubclass
+                    (callee_pname, {CostDomain.post= callee_cost_record}, callee_formals) ->
+                    (* Note: It ignores top cost of subclass to avoid its propagations. *)
+                    let instantiated_cost =
+                      CostDomain.map callee_cost_record ~f:(fun callee_cost ->
+                          instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                            ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
+                    in
+                    if BasicCost.is_top (CostDomain.get_operation_cost instantiated_cost) then
+                      CostDomain.unit_cost_atomic_operation
+                    else instantiated_cost
+                | `NotFound ->
                     CostDomain.unit_cost_atomic_operation ) )
         in
         if is_allocation_function callee_pname then
@@ -316,10 +326,10 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
       ConstraintSolver.get_node_nb_exec equalities )
 
 
-let compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+let compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
     inferbo_invariant_map get_node_nb_exec =
   let extras =
-    {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_callee_summary_and_formals}
+    {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_summary; get_formals}
   in
   WorstCaseCost.compute tenv extras instr_cfg_wto
 
@@ -366,14 +376,13 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let get_callee_summary_and_formals callee_pname =
-      Payload.read_full ~caller_summary:summary ~callee_pname
-      |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
-             (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
+    let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
+    let get_formals callee_pname =
+      Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
-    compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+    compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
       inferbo_invariant_map get_node_nb_exec
   in
   let () =

@@ -13,14 +13,18 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
+type java_class_kind = Interface | AbstractClass | NormalClass
+
 (** Type for a structured value. *)
 type t = private
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** supers *)
+  ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
+  ; java_class_kind: java_class_kind option  (** class kind in Java *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
 type lookup = Typ.Name.t -> t option
@@ -38,6 +42,7 @@ val internal_mk_struct :
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
+  -> ?java_class_kind:java_class_kind
   -> ?dummy:bool
   -> unit
   -> t
@@ -60,3 +65,6 @@ val get_field_type_and_annotation :
 (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
 
 val is_dummy : t -> bool
+
+val add_sub : Typ.Name.t -> t -> t
+(** Add a subclass to the struct type *)

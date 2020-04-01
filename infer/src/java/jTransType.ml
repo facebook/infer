@@ -320,11 +320,11 @@ and get_class_struct_typ =
     List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;
     List.map ~f:typename_of_classname interface_names
   in
-  let make_struct program tenv node supers ~fields ~statics annots name =
+  let make_struct program tenv node supers ~fields ~statics annots ~java_class_kind name =
     let methods =
       Javalib.m_fold (fun m procnames -> translate_method_name program tenv m :: procnames) node []
     in
-    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
+    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~java_class_kind name
   in
   fun program tenv cn ->
     let name = typename_of_classname cn in
@@ -342,7 +342,8 @@ and get_class_struct_typ =
             let statics, _ = get_all_fields program tenv cn in
             let supers = create_super_list program tenv jinterface.Javalib.i_interfaces in
             let annots = JAnnotation.translate_item jinterface.Javalib.i_annotations in
-            make_struct program tenv node supers ~fields:[] ~statics annots name
+            make_struct program tenv node supers ~fields:[] ~statics annots
+              ~java_class_kind:Struct.Interface name
         | Some (Javalib.JClass jclass as node) ->
             let statics, fields =
               let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
@@ -359,7 +360,10 @@ and get_class_struct_typ =
                   let super_classname = typename_of_classname super_cn in
                   super_classname :: interface_list
             in
-            make_struct program tenv node supers ~fields ~statics annots name )
+            let java_class_kind =
+              if jclass.Javalib.c_abstract then Struct.AbstractClass else Struct.NormalClass
+            in
+            make_struct program tenv node supers ~fields ~statics annots ~java_class_kind name )
 
 
 let get_class_type_no_pointer program tenv cn =

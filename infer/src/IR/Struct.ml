@@ -12,14 +12,18 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
+type java_class_kind = Interface | AbstractClass | NormalClass
+
 (** Type for a structured value. *)
 type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
+  ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
+  ; java_class_kind: java_class_kind option  (** class kind in Java *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
 type lookup = Typ.Name.t -> t option
@@ -56,20 +60,23 @@ let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-    ?dummy () =
+    ?java_class_kind ?dummy () =
   let default_ =
     { fields= []
     ; statics= []
     ; methods= []
     ; exported_objc_methods= []
     ; supers= []
+    ; subs= Typ.Name.Set.empty
     ; annots= Annot.Item.empty
+    ; java_class_kind= None
     ; dummy= false }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
-      ?(supers = default.supers) ?(annots = default.annots) ?(dummy = default.dummy) () =
-    {fields; statics; methods; exported_objc_methods; supers; annots; dummy}
+      ?(supers = default.supers) ?(subs = default.subs) ?(annots = default.annots)
+      ?(dummy = default.dummy) () =
+    {fields; statics; methods; exported_objc_methods; supers; subs; annots; java_class_kind; dummy}
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
 
@@ -142,3 +149,5 @@ let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
 
 
 let is_dummy {dummy} = dummy
+
+let add_sub sub x = {x with subs= Typ.Name.Set.add sub x.subs}
