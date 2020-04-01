@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 LABEL maintainer "Infer team"
 
@@ -18,19 +18,17 @@ RUN apt-get update && \
       libmpfr-dev \
       libsqlite3-dev \
       make \
-      openjdk-8-jdk-headless \
+      openjdk-11-jdk-headless \
       patch \
       pkg-config \
-      python2.7 \
+      python3.7 \
+      python3-distutils \
       unzip \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Some scripts in facebook-clang-plugins assume "python" is available
-RUN cd /usr/local/bin && ln -s /usr/bin/python2.7 python
-
 # Install opam 2
-RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.5/opam-2.0.5-x86_64-linux > /usr/bin/opam && \
+RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.6/opam-2.0.6-x86_64-linux > /usr/bin/opam && \
     chmod +x /usr/bin/opam
 
 # Disable sandboxing
@@ -45,7 +43,7 @@ RUN cd / && \
 # don't lose the significant amount of work done in the previous
 # steps.
 RUN cd /infer && \
-    INFER_OPAM_SWITCH=4.07.1 ./build-infer.sh --only-setup-opam --no-opam-lock java && \
+    INFER_OPAM_SWITCH=4.08.1 ./build-infer.sh --only-setup-opam --no-opam-lock java && \
     opam clean
 
 # Make sure clang is disabled
@@ -64,11 +62,11 @@ ENV BUILD_MODE=dev
 ENV IGNOREEOF=9
 
 # should be moved earlier
-ENV INFER_OPAM_SWITCH=4.07.1
+ENV INFER_OPAM_SWITCH=4.08.1
 
 # export `opam env`
-ENV OPAM_SWITCH_PREFIX=/root/.opam/4.07.1
-ENV CAML_LD_LIBRARY_PATH=/root/.opam/4.07.1/lib/stublibs:/root/.opam/4.07.1/lib/ocaml/stublibs:/root/.opam/4.07.1/lib/ocaml
-ENV OCAML_TOPLEVEL_PATH=/root/.opam/4.07.1/lib/toplevel
-ENV MANPATH=$MANPATH:/root/.opam/4.07.1/man
-ENV PATH=/root/.opam/4.07.1/bin:$PATH
+ENV OPAM_SWITCH_PREFIX=/root/.opam/4.08.1
+ENV CAML_LD_LIBRARY_PATH=/root/.opam/4.08.1/lib/stublibs:/root/.opam/4.08.1/lib/ocaml/stublibs:/root/.opam/4.08.1/lib/ocaml
+ENV OCAML_TOPLEVEL_PATH=/root/.opam/4.08.1/lib/toplevel
+ENV MANPATH=$MANPATH:/root/.opam/4.08.1/man
+ENV PATH=/root/.opam/4.08.1/bin:$PATH
