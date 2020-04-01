@@ -1,4 +1,4 @@
-FROM debian:stretch-slim AS compilator
+FROM debian:buster-slim AS compilator
 
 LABEL maintainer "Infer team"
 
@@ -20,20 +20,18 @@ RUN apt-get update && \
       libmpfr-dev \
       libsqlite3-dev \
       make \
-      openjdk-8-jdk-headless \
+      openjdk-11-jdk-headless \
       patch \
       pkg-config \
-      python2.7 \
+      python3.7 \
+      python3-distutils \
       unzip \
       xz-utils \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Some scripts in facebook-clang-plugins assume "python" is available
-RUN cd /usr/local/bin && ln -s /usr/bin/python2.7 python
-
 # Install opam 2
-RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.5/opam-2.0.5-x86_64-linux > /usr/bin/opam && \
+RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.6/opam-2.0.6-x86_64-linux > /usr/bin/opam && \
     chmod +x /usr/bin/opam
 
 # Disable sandboxing
@@ -63,9 +61,7 @@ RUN cd /infer && \
 
 FROM debian:stretch-slim AS executor
 
-# Install python 2.7 since infer requires it to run
-RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python2.7
+RUN apt-get update && apt-get install --yes --no-install-recommends sqlite3
 
 # Get the infer release
 COPY --from=compilator /infer-release/usr/local /infer
