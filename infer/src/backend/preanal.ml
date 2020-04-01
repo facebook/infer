@@ -313,7 +313,7 @@ end
 (** pre-analysis to cut control flow after calls to functions whose type indicates they do not
     return *)
 module NoReturn = struct
-  let has_noreturn_call node =
+  let has_noreturn_call tenv node =
     Procdesc.Node.get_instrs node
     |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
            match instr with
@@ -322,17 +322,54 @@ module NoReturn = struct
              | Some {ProcAttributes.is_no_return= true} ->
                  true
              | _ ->
-                 false )
+                 NoReturnModels.dispatch tenv proc_name |> Option.value ~default:false )
            | _ ->
                false )
 
 
-  let process proc_desc =
+  let has_throw_call node =
+    Procdesc.Node.get_instrs node
+    |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
+           match instr with
+           | Call (_, Const (Cfun proc_name), _, _, _) ->
+               String.equal
+                 (Procname.get_method BuiltinDecl.objc_cpp_throw)
+                 (Procname.get_method proc_name)
+           | _ ->
+               false )
+
+
+  let get_all_reachable_catch_nodes start_node =
+    let rec worklist ~todo ~visited result =
+      if Procdesc.NodeSet.is_empty todo then result
+      else
+        let el = Procdesc.NodeSet.choose todo in
+        let todo = Procdesc.NodeSet.remove el todo in
+        if Procdesc.NodeSet.mem el visited then worklist ~todo ~visited result
+        else
+          let succs = Procdesc.Node.get_succs el |> Procdesc.NodeSet.of_list in
+          let visited = Procdesc.NodeSet.add el visited in
+          worklist
+            ~todo:(Procdesc.NodeSet.union succs todo)
+            ~visited
+            (Procdesc.Node.get_exn el @ result)
+    in
+    worklist ~todo:(Procdesc.NodeSet.singleton start_node) ~visited:Procdesc.NodeSet.empty []
+
+
+  let process tenv proc_desc =
+    let exit_node = Procdesc.get_exit_node proc_desc in
     Procdesc.iter_nodes
       (fun node ->
-        if has_noreturn_call node then
-          let exit_node = Procdesc.get_exit_node proc_desc in
-          Procdesc.set_succs node ~normal:(Some [exit_node]) ~exn:None )
+        if has_noreturn_call tenv node then
+          Procdesc.set_succs node ~normal:(Some [exit_node]) ~exn:None
+        else if has_throw_call node then
+          let catch_nodes = get_all_reachable_catch_nodes node in
+          let catch_or_exit_nodes =
+            if List.is_empty catch_nodes then (* throw with no catch *)
+              [exit_node] else catch_nodes
+          in
+          Procdesc.set_succs node ~normal:(Some catch_or_exit_nodes) ~exn:None )
       proc_desc
 end
 
@@ -345,5 +382,5 @@ let do_preanalysis exe_env pdesc =
     FunctionPointerSubstitution.process summary tenv ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
-  NoReturn.process pdesc ;
+  NoReturn.process tenv pdesc ;
   ()
