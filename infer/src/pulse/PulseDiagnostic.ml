@@ -110,13 +110,13 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
            access_trace
       @@ []
-  | MemoryLeak {allocation_trace} ->
+  | MemoryLeak {location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~title:"allocation part of the trace starts here" access_start_location
       @@ Trace.add_to_errlog ~nesting:0
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation occurs here")
            allocation_trace
-      @@ []
+      @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
       @@
