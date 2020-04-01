@@ -296,6 +296,7 @@ let parse_command_and_targets (buck_mode : BuckMode.t) ~filter_kind original_buc
       ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
       buck_targets_blacklist_regexp
   in
+  ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
   (command, parsed_args.rev_not_targets', targets)
 
 
