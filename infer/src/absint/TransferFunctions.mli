@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 
 (** Transfer functions that push abstract states across instructions. A typical client should
@@ -25,7 +23,11 @@ module type S = sig
   type instr
 
   val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t
-  (** {A} instr {A'}. [node] is the node of the current instruction *)
+  (** [exec_instr astate proc_data node instr] should usually return [astate'] such that
+      [{astate} instr {astate'}] is a valid Hoare triple. In other words, [exec_instr] defines how
+      executing an instruction from a given abstract state changes that state into a new one. This
+      is usually called the {i transfer function} in Abstract Interpretation terms. [node] is the
+      node containing the current instruction. *)
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
   (** print session name for HTML debug *)
@@ -43,8 +45,8 @@ module type DisjunctiveConfig = sig
   val join_policy :
     [ `UnderApproximateAfter of int
       (** When the set of disjuncts gets bigger than [n] then just stop adding new states to it,
-         drop any further states on the floor. This corresponds to an under-approximation/bounded
-         approach. *)
+          drop any further states on the floor. This corresponds to an under-approximation/bounded
+          approach. *)
     | `NeverJoin  (** keep accumaluting states *) ]
 
   val widen_policy : [`UnderApproximateAfterNumIterations of int]
@@ -63,9 +65,9 @@ module type DisjReady = sig
 end
 
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a
-   disjunction between these states. The transfer functions are executed on each state in the
-   disjunct independently. The join on the disjunctive state is governed by the policy described in
-   [DConfig]. *)
+    disjunction between these states. The transfer functions are executed on each state in the
+    disjunct independently. The join on the disjunctive state is governed by the policy described in
+    [DConfig]. *)
 module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveConfig) : sig
   module Disjuncts : sig
     type t

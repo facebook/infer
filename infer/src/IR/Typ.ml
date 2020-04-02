@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 (** The Smallfoot Intermediate Language: Types *)
 
 open! IStd
@@ -540,8 +538,8 @@ let is_ptr_to_ignore_quals t ~ptr =
   match ptr.desc with Tptr (t', _) -> equal_ignore_quals t t' | _ -> false
 
 
-(** If an array type, return the type of the element.
-    If not, return the default type if given, otherwise raise an exception *)
+(** If an array type, return the type of the element. If not, return the default type if given,
+    otherwise raise an exception *)
 let array_elem default_opt typ =
   match typ.desc with Tarray {elt} -> elt | _ -> unsome "array_elem" default_opt
 

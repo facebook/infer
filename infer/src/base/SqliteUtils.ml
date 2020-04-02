@@ -20,7 +20,7 @@ let check_result_code db ~log rc =
 
 
 let exec db ~log ~stmt =
-  (* Call [check_result_code] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
+  (* Call [check_result_code] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
   PerfEvent.log (fun logger ->
       PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
   let rc = Sqlite3.exec db stmt in

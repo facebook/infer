@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 
 (** Re-arrangement and extension of structures with fresh variables *)
@@ -24,11 +22,9 @@ let rec list_rev_and_concat l1 l2 =
   match l1 with [] -> l2 | x1 :: l1' -> list_rev_and_concat l1' (x1 :: l2)
 
 
-(** Check whether the index is out of bounds.
-    If the length is - 1, no check is performed.
-    If the index is provably out of bound, a bound error is given.
-    If the length is a constant and the index is not provably in bound, a warning is given.
-*)
+(** Check whether the index is out of bounds. If the length is - 1, no check is performed. If the
+    index is provably out of bound, a bound error is given. If the length is a constant and the
+    index is not provably in bound, a warning is given. *)
 let check_bad_index tenv pname p len index loc =
   let len_is_constant = match len with Exp.Const _ -> true | _ -> false in
   let index_provably_out_of_bound () =
@@ -183,11 +179,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
   res
 
 
-(** Extend the strexp by populating the path indicated by [off].
-    This means that it will add missing flds and do the case - analysis
-    for array accesses. This does not catch the array - bounds errors.
-    If we want to implement the checks for array bounds errors,
-    we need to change this function. *)
+(** Extend the strexp by populating the path indicated by [off]. This means that it will add missing
+    flds and do the case - analysis for array accesses. This does not catch the array - bounds
+    errors. If we want to implement the checks for array bounds errors, we need to change this
+    function. *)
 let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se (typ : Typ.t)
     (off : Predicates.offset list) inst =
   let new_id () = incr max_stamp ; Ident.create kind !max_stamp in
@@ -443,7 +438,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
   if not (exp_has_only_footprint_ids root) then
     if
       (* in angelic mode, purposely ignore dangling pointer warnings during the footprint phase -- we
-         * will fix them during the re - execution phase *)
+         will fix them during the re-execution phase *)
       not !BiabductionConfig.footprint
     then (
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
@@ -489,8 +484,8 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
   (ptsto, ptsto_foot, atoms @ atoms')
 
 
-(** Check if the path in exp exists already in the current ptsto predicate.
-    If it exists, return None. Otherwise, return [Some fld] with [fld] the missing field. *)
+(** Check if the path in exp exists already in the current ptsto predicate. If it exists, return
+    None. Otherwise, return [Some fld] with [fld] the missing field. *)
 let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
   let offset = Predicates.exp_get_offsets lexp in
   let _, se, _ =
@@ -519,10 +514,9 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
   check_offset se offset
 
 
-(** [prop_iter_extend_ptsto iter lexp] extends the current psto
-    predicate in [iter] with enough fields to follow the path in
-    [lexp] -- field splitting model. It also materializes all
-    indices accessed in lexp. *)
+(** [prop_iter_extend_ptsto iter lexp] extends the current psto predicate in [iter] with enough
+    fields to follow the path in [lexp] -- field splitting model. It also materializes all indices
+    accessed in lexp. *)
 let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_str "entering prop_iter_extend_ptsto lexp: " ;
@@ -668,11 +662,10 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
       assert false
 
 
-(** Add a pointsto for [root(lexp): typ] to the sigma and footprint of a
-    prop, if it's compatible with the allowed footprint
-    variables. Then, change it into a iterator. This function ensures
-    that [root(lexp): typ] is the current hpred of the iterator. typ
-    is the type of the root of lexp. *)
+(** Add a pointsto for [root(lexp): typ] to the sigma and footprint of a prop, if it's compatible
+    with the allowed footprint variables. Then, change it into a iterator. This function ensures
+    that [root(lexp): typ] is the current hpred of the iterator. typ is the type of the root of
+    lexp. *)
 let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let max_stamp = Prop.max_stamp ~f:Ident.is_footprint prop in
   let ptsto, ptsto_foot, atoms =
@@ -701,9 +694,8 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   Prop.prop_iter_set_state iter offsets_default
 
 
-(** Add a pointsto for [root(lexp): typ] to the iterator and to the
-    footprint, if it's compatible with the allowed footprint
-    variables. This function ensures that [root(lexp): typ] is the
+(** Add a pointsto for [root(lexp): typ] to the iterator and to the footprint, if it's compatible
+    with the allowed footprint variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   if Config.trace_rearrange then (
@@ -902,7 +894,8 @@ let iter_rearrange_pe_lseg tenv recurse_on_iters default_case_iter iter para e1 
   recurse_on_iters iter_subcases
 
 
-(** do re-arrangment for an iter whose current element is a possibly empty dllseg to be unrolled from lhs *)
+(** do re-arrangment for an iter whose current element is a possibly empty dllseg to be unrolled
+    from lhs *)
 let iter_rearrange_pe_dllseg_first tenv recurse_on_iters default_case_iter iter para_dll e1 e2 e3 e4
     elist =
   let iter_inductive_case =
@@ -925,7 +918,8 @@ let iter_rearrange_pe_dllseg_first tenv recurse_on_iters default_case_iter iter 
   recurse_on_iters iter_subcases
 
 
-(** do re-arrangment for an iter whose current element is a possibly empty dllseg to be unrolled from rhs *)
+(** do re-arrangment for an iter whose current element is a possibly empty dllseg to be unrolled
+    from rhs *)
 let iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter para_dll e1 e2 e3 e4
     elist =
   let iter_inductive_case =
@@ -972,8 +966,8 @@ let type_at_offset tenv texp off =
   match texp with Exp.Sizeof {typ} -> strip_offset off typ | _ -> None
 
 
-(** Check that the size of a type coming from an instruction does not exceed the size of the type from the pointsto predicate
-    For example, that a pointer to int is not used to assign to a char *)
+(** Check that the size of a type coming from an instruction does not exceed the size of the type
+    from the pointsto predicate For example, that a pointer to int is not used to assign to a char *)
 let check_type_size tenv pname prop texp off typ_from_instr =
   L.d_strln ~color:Orange "check_type_size" ;
   L.d_str "off: " ;
@@ -1002,15 +996,13 @@ let check_type_size tenv pname prop texp off typ_from_instr =
       L.d_str "texp: " ; Exp.d_texp_full texp ; L.d_ln ()
 
 
-(** Exposes lexp |->- from iter. In case that it is not possible to
- * expose lexp |->-, this function prints an error message and
- * faults. There are four things to note. First, typ is the type of the
- * root of lexp. Second, prop should mean the same as iter. Third, the
- * result [] means that the given input iter is inconsistent. This
- * happens when the theorem prover can prove the inconsistency of prop,
- * only after unrolling some predicates in prop. This function ensures
- * that the theorem prover cannot prove the inconsistency of any of the
- * new iters in the result. *)
+(** Exposes lexp |->- from iter. In case that it is not possible to * expose lexp |->-, this
+    function prints an error message and * faults. There are four things to note. First, typ is the
+    type of the * root of lexp. Second, prop should mean the same as iter. Third, the * result []
+    means that the given input iter is inconsistent. This * happens when the theorem prover can
+    prove the inconsistency of prop, * only after unrolling some predicates in prop. This function
+    ensures * that the theorem prover cannot prove the inconsistency of any of the * new iters in
+    the result. *)
 let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     Predicates.offset list Prop.prop_iter list =
   let rec root_typ_of_offsets = function
@@ -1369,9 +1361,9 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
         raise (Exceptions.Null_dereference (err_desc, __POS__))
 
 
-(** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
-    It returns an iterator with [lexp |-> strexp: typ] as current predicate
-    and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)
+(** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ]. It returns an
+    iterator with [lexp |-> strexp: typ] as current predicate and the path (an [offsetlist]) which
+    leads to [lexp] as the iterator state. *)
 let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
     Predicates.offset list Prop.prop_iter list =
   let nlexp =

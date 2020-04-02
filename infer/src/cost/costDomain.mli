@@ -36,7 +36,7 @@ val get_operation_cost : t -> BasicCost.t
 val map : f:(BasicCost.t -> BasicCost.t) -> t -> t
 
 val zero_record : t
-(** Map representing cost record {OperationCost:0; AllocationCost:0; IOCost:0} *)
+(** Map representing cost record \{OperationCost:0; AllocationCost:0; IOCost:0\} *)
 
 val mult_by : t -> nb_exec:BasicCost.t -> t
 (** Special map where each element is multiplied by the number of executions *)
@@ -45,10 +45,10 @@ val plus : t -> t -> t
 (** Union of two maps where common costs are added together *)
 
 val unit_cost_atomic_operation : t
-(** Map representing cost record {OperationCost:1; AllocationCost:0; IOCost:0} *)
+(** Map representing cost record \{OperationCost:1; AllocationCost:0; IOCost:0\} *)
 
 val unit_cost_allocation : t
-(** Map representing cost record {OperationCost:0; AllocationCost:1; IOCost:0} *)
+(** Map representing cost record \{OperationCost:0; AllocationCost:1; IOCost:0\} *)
 
 val of_operation_cost : BasicCost.t -> t
-(** Map representing cost record {OperationCost:operation_cost; AllocationCost:0; IOCost:0} *)
+(** Map representing cost record \{OperationCost:operation_cost; AllocationCost:0; IOCost:0\} *)

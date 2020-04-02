@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 (** The Smallfoot Intermediate Language: Types *)
 
 open! IStd
@@ -121,18 +119,20 @@ and template_spec_info =
   | Template of
       { mangled: string option
             (** WARNING: because of type substitutions performed by [sub_type] and [sub_tname],
-                mangling is not guaranteed to be unique to a single type. All the information in
-                the template arguments is also needed for uniqueness. *)
+                mangling is not guaranteed to be unique to a single type. All the information in the
+                template arguments is also needed for uniqueness. *)
       ; args: template_arg list }
 [@@deriving compare]
 
 val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit [@@warning "-32"]
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
-(** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)
+(** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such
+    as quals *)
 
 val mk_array : ?default:t -> ?quals:type_quals -> ?length:IntLit.t -> ?stride:IntLit.t -> t -> t
-(** Create an array type from a given element type. If [length] or [stride] value is given, use them as static length and size. *)
+(** Create an array type from a given element type. If [length] or [stride] value is given, use them
+    as static length and size. *)
 
 val mk_struct : name -> t
 
@@ -302,8 +302,8 @@ val is_ptr_to_ignore_quals : t -> ptr:t -> bool
 (** check if [ptr] is a pointer type to [t], ignoring quals *)
 
 val array_elem : t option -> t -> t
-(** If an array type, return the type of the element.
-    If not, return the default type if given, otherwise raise an exception *)
+(** If an array type, return the type of the element. If not, return the default type if given,
+    otherwise raise an exception *)
 
 val is_objc_class : t -> bool
 

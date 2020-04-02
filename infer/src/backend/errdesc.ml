@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 
 (** Create descriptions of analysis errors *)
@@ -74,8 +72,8 @@ let explain_deallocate_constant_string s ra =
 
 let verbose = Config.trace_error
 
-(** Find the function call instruction used to initialize normal variable [id],
-    and return the function name and arguments *)
+(** Find the function call instruction used to initialize normal variable [id], and return the
+    function name and arguments *)
 let find_normal_variable_funcall (node : Procdesc.Node.t) (id : Ident.t) :
     (Exp.t * Exp.t list * Location.t * CallFlags.t) option =
   let find_declaration _ = function
@@ -103,10 +101,9 @@ let find_program_variable_assignment node pvar : (Procdesc.Node.t * Ident.t) opt
   Procdesc.Node.find_in_node_or_preds node ~f:find_instr
 
 
-(** Special case for C++, where we translate code like
-      `struct X; X getX() { X x; return X; }` as
-      `void getX(struct X * frontend_generated_pvar)`.
-    This lets us recognize that X was returned from getX *)
+(** Special case for C++, where we translate code like [struct X; X getX() { X x; return X; }] as
+    [void getX(struct X * frontend_generated_pvar)]. This lets us recognize that X was returned from
+    getX *)
 let find_struct_by_value_assignment node pvar =
   if Pvar.is_frontend_tmp pvar then
     let find_instr node = function
@@ -134,8 +131,8 @@ let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
   Procdesc.Node.find_in_node_or_preds node ~f:find_instr
 
 
-(** Find a boolean assignment to a temporary variable holding a boolean condition.
-    The boolean parameter indicates whether the true or false branch is required. *)
+(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
+    parameter indicates whether the true or false branch is required. *)
 let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
   let find_instr n =
     let filter = function
@@ -155,8 +152,8 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
       None
 
 
-(** Find the Load instruction used to declare normal variable [id],
-    and return the expression dereferenced to initialize [id] *)
+(** Find the Load instruction used to declare normal variable [id], and return the expression
+    dereferenced to initialize [id] *)
 let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t option =
   let find_declaration node = function
     | Sil.Load {id= id0; e} when Ident.equal id id0 ->
@@ -381,8 +378,7 @@ let exp_lv_dexp tenv = exp_lv_dexp_ tenv Exp.Set.empty
 
 let exp_rv_dexp tenv = exp_rv_dexp_ tenv Exp.Set.empty
 
-(** Produce a description of a mismatch between an allocation function
-    and a deallocation function *)
+(** Produce a description of a mismatch between an allocation function and a deallocation function *)
 let explain_allocation_mismatch ra_alloc ra_dealloc =
   let get_primitive_called is_alloc ra =
     (* primitive alloc/dealloc function ultimately used, and function actually called  *)
@@ -402,8 +398,8 @@ let explain_allocation_mismatch ra_alloc ra_dealloc =
     (get_primitive_called false ra_dealloc)
 
 
-(** check whether the type of leaked [hpred] appears as a predicate
-    in an inductive predicate in [prop] *)
+(** check whether the type of leaked [hpred] appears as a predicate in an inductive predicate in
+    [prop] *)
 let leak_from_list_abstraction hpred prop =
   let hpred_type (hpred : Predicates.hpred) =
     match hpred with
@@ -453,10 +449,9 @@ let find_typ_without_ptr prop pvar =
   !res
 
 
-(** Produce a description of a leak by looking at the current state.
-    If the current instruction is a variable nullify, blame the variable.
-    If it is an abstraction, blame any variable nullify at the current node.
-    If there is an alloc attribute, print the function call and line number. *)
+(** Produce a description of a leak by looking at the current state. If the current instruction is a
+    variable nullify, blame the variable. If it is an abstraction, blame any variable nullify at the
+    current node. If there is an alloc attribute, print the function call and line number. *)
 let explain_leak tenv hpred prop alloc_att_opt bucket =
   let instro = State.get_instr () in
   let loc = State.get_loc_exn () in
@@ -565,8 +560,8 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   (exn_cat, Localise.desc_leak hpred_typ_opt value_str resource_opt res_action_opt loc bucket)
 
 
-(** find the dexp, if any, where the given value is stored
-    also return the type of the value if found *)
+(** find the dexp, if any, where the given value is stored also return the type of the value if
+    found *)
 let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
   if verbose then (L.d_str "in vpath_find exp:" ; Exp.d_exp exp_ ; L.d_ln ()) ;
   let rec find sigma_acc sigma_todo exp =
@@ -942,10 +937,9 @@ let rec find_outermost_dereference tenv node e =
       None
 
 
-(** explain memory access performed by the current instruction
-    if outermost_array is true, the outermost array access is removed
-    if outermost_dereference is true, stop at the outermost dereference
-    (skipping e.g. outermost field access) *)
+(** explain memory access performed by the current instruction if outermost_array is true, the
+    outermost array access is removed if outermost_dereference is true, stop at the outermost
+    dereference (skipping e.g. outermost field access) *)
 let explain_access_ proc_name tenv ?(use_buckets = false) ?(outermost_array = false)
     ?(outermost_dereference = false) ?(is_nullable = false) ?(is_premature_nil = false) deref_str
     prop loc =
@@ -1003,8 +997,8 @@ let explain_dereference proc_name tenv ?(use_buckets = false) ?(is_nullable = fa
     ~is_nullable ~is_premature_nil deref_str prop loc
 
 
-(** Produce a description of the array access performed in the current instruction, if any.
-    The subexpression to focus on is obtained by removing the outermost array access. *)
+(** Produce a description of the array access performed in the current instruction, if any. The
+    subexpression to focus on is obtained by removing the outermost array access. *)
 let explain_array_access tenv deref_str prop loc =
   explain_access_ tenv ~outermost_array:true deref_str prop loc
 
@@ -1029,8 +1023,8 @@ let dexp_apply_pvar_off dexp pvar_off =
 
 (* case should not happen *)
 
-(** Produce a description of the nth parameter of the function call, if the current instruction
-    is a function call with that parameter *)
+(** Produce a description of the nth parameter of the function call, if the current instruction is a
+    function call with that parameter *)
 let explain_nth_function_parameter proc_name tenv use_buckets deref_str prop n pvar_off =
   let node = State.get_node_exn () in
   let loc = State.get_loc_exn () in
@@ -1083,8 +1077,8 @@ let find_with_exp prop exp =
   !res
 
 
-(** return a description explaining value [exp] in [prop] in terms of a source expression
-    using the formal parameters of the call *)
+(** return a description explaining value [exp] in [prop] in terms of a source expression using the
+    formal parameters of the call *)
 let explain_dereference_as_caller_expression proc_name tenv ?(use_buckets = false) deref_str
     actual_pre spec_pre exp node loc formal_params =
   let find_formal_param_number name =

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 open! AbstractDomain.Types
 module F = Format
@@ -38,10 +36,8 @@ end
 module SymLinear = struct
   module M = Symb.SymbolMap
 
-  (**
-     Map from symbols to integer coefficients.
-     { x -> 2, y -> 5 } represents the value 2 * x + 5 * y
-  *)
+  (** Map from symbols to integer coefficients. [{ x -> 2, y -> 5 }] represents the value
+      [2 * x + 5 * y] *)
   type t = NonZeroInt.t M.t [@@deriving compare]
 
   let empty : t = M.empty
@@ -179,7 +175,8 @@ module SymLinear = struct
 
   let big_int_ub x = if is_le_zero x then Some Z.zero else None
 
-  (** When two following symbols are from the same path, simplify what would lead to a zero sum. E.g. 2 * x.lb - x.ub = x.lb *)
+  (** When two following symbols are from the same path, simplify what would lead to a zero sum.
+      E.g. 2 * x.lb - x.ub = x.lb *)
   let simplify_bound_ends_from_paths : t -> t =
    fun x ->
     let f (prev_opt, to_add) symb coeff =
@@ -232,11 +229,11 @@ module Bound = struct
     | Linear of Z.t * SymLinear.t
         (** [Linear (c, se)] represents [c+se] where [se] is Σ(c⋅x). *)
     | MinMax of Z.t * Sign.t * MinMax.t * Z.t * Symb.Symbol.t
-        (** [MinMax] represents a bound of "int [+|-] [min|max](int, symbol)" format.  For example,
+        (** [MinMax] represents a bound of "int [+|-] [min|max](int, symbol)" format. For example,
             [MinMax (1, Minus, Max, 2, s)] represents [1-max(2,s)]. *)
     | MinMaxB of MinMax.t * t * t  (** [MinMaxB] represents a min/max of two bounds. *)
     | MultB of Z.t * t * t
-        (** [MultB] represents a multiplication of two bounds.  For example, [MultB (1, x, y)]
+        (** [MultB] represents a multiplication of two bounds. For example, [MultB (1, x, y)]
             represents [1 + x × y]. *)
     | PInf  (** +oo *)
   [@@deriving compare]
@@ -1057,7 +1054,8 @@ module Bound = struct
 
   let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
 
-  (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as possible according to [subst_pos]. *)
+  (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as
+      possible according to [subst_pos]. *)
   let rec subst : subst_pos:Symb.BoundEnd.t -> t -> eval_sym -> t bottom_lifted =
     let lift1 : (t -> t) -> t bottom_lifted -> t bottom_lifted =
      fun f x -> match x with Bottom -> Bottom | NonBottom x -> NonBottom (f x)
@@ -1291,7 +1289,8 @@ module BoundTrace = struct
   let of_loop location = Loop location
 end
 
-(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
+(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a
+    non-negative value once instantiated *)
 module NonNegativeBound = struct
   type t = Bound.t * BoundTrace.t [@@deriving compare]
 

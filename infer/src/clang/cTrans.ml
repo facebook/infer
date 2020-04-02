@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 open PolyVariantEqual
 
@@ -18,10 +16,8 @@ module L = Logging
 
 module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = struct
   (** Returns the procname and whether is instance, according to the selector information and
-     according to the method signature with the following priority:
-     1. method is a predefined model
-     2. method is found by clang's resolution
-     3. Method is found by our resolution *)
+      according to the method signature with the following priority: 1. method is a predefined model
+      2. method is found by clang's resolution 3. Method is found by our resolution *)
   let get_callee_objc_method context obj_c_message_expr_info callee_ms_opt act_params =
     let open CContext in
     let selector, mc_type = CMethod_trans.get_objc_method_data obj_c_message_expr_info in
@@ -148,9 +144,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         typ
 
 
-  (** Execute translation and then possibly adjust the type of the result of translation:
-      In C++, when expression returns reference to type T, it will be lvalue to T, not T&, but
-      infer needs it to be T& *)
+  (** Execute translation and then possibly adjust the type of the result of translation: In C++,
+      when expression returns reference to type T, it will be lvalue to T, not T&, but infer needs
+      it to be T& *)
   let exec_with_glvalue_as_reference f trans_state stmt =
     let expr_info =
       match Clang_ast_proj.get_expr_tuple stmt with
@@ -172,8 +168,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** Execute translation of e forcing to release priority (if it's not free) and then setting it
-     back. This is used in conditional operators where we need to force the priority to be free for
-     the computation of the expressions*)
+      back. This is used in conditional operators where we need to force the priority to be free for
+      the computation of the expressions*)
   let exec_with_priority_exception trans_state e f =
     if PriorityNode.is_priority_free trans_state then f trans_state e
     else f {trans_state with priority= Free} e
@@ -321,10 +317,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** FROM CLANG DOCS: "Implements the GNU __null extension, which is a name for a null pointer
-     constant that has integral type (e.g., int or long) and is the same size and alignment as a
-     pointer. The __null extension is typically only used by system headers, which define NULL as
-     __null in C++ rather than using 0 (which is an integer that may not match the size of a
-     pointer)".  So we implement it as the constant zero *)
+      constant that has integral type (e.g., int or long) and is the same size and alignment as a
+      pointer. The __null extension is typically only used by system headers, which define NULL as
+      __null in C++ rather than using 0 (which is an integer that may not match the size of a
+      pointer)". So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cint IntLit.zero) in
@@ -391,9 +387,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (zero, typ) empty_control
 
 
-  (** Create instructions to initialize record with zeroes. It needs to traverse
-      whole type structure, to assign 0 values to all transitive fields because of
-      AST construction in C translation *)
+  (** Create instructions to initialize record with zeroes. It needs to traverse whole type
+      structure, to assign 0 values to all transitive fields because of AST construction in C
+      translation *)
   let implicitValueInitExpr_trans trans_state stmt_info =
     match trans_state.var_exp_typ with
     | Some var_exp_typ ->
@@ -1189,7 +1185,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr ~is_injected_destructor
       ~is_inner_destructor =
-    (* cxx_method_construct_call_trans claims a priority with the same `si`. A new pointer is
+    (* cxx_method_construct_call_trans claims a priority with the same [si]. A new pointer is
        generated to avoid premature node creation *)
     let si' = {si with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si' in
@@ -1268,7 +1264,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** If the first argument of the call is self in a static context, remove it as an argument and
-     change the call from instance to static *)
+      change the call from instance to static *)
   and objCMessageExpr_translate_args trans_state_param args obj_c_message_expr_info callee_ms_opt =
     match args with
     | stmt :: rest -> (
@@ -1387,7 +1383,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let bases = match typ_pointer_opt with Some p -> bases @ [p] | None -> bases in
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
-      (* compute `this` once that is used for all destructor calls of virtual base class *)
+      (* compute [this] once that is used for all destructor calls of virtual base class *)
       let obj_sil, this_qual_type, this_res_trans = compute_this_expr trans_state stmt_info_loc in
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info_loc in
       let bases_res_trans =
@@ -1417,9 +1413,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let bases = CAst_utils.get_cxx_base_classes decl in
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
-      (* compute `this` once that is used for all destructors of fields and base classes *)
+      (* compute [this] once that is used for all destructors of fields and base classes *)
       let obj_sil, this_qual_type, this_res_trans = compute_this_expr trans_state stmt_info_loc in
-      (* ReturnStmt claims a priority with the same `stmt_info`.
+      (* ReturnStmt claims a priority with the same [stmt_info].
          New pointer is generated to avoid premature node creation *)
       let stmt_info' =
         {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
@@ -1468,7 +1464,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (* The source location of destructor should reflect the end of the statement *)
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
-      (* ReturnStmt claims a priority with the same `stmt_info`.
+      (* ReturnStmt claims a priority with the same [stmt_info].
          New pointer is generated to avoid premature node creation *)
       let stmt_info' =
         {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
@@ -1609,8 +1605,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (** The GNU extension to the conditional operator which allows the middle operand to be
-     omitted. *)
+  (** The GNU extension to the conditional operator which allows the middle operand to be omitted. *)
   and binaryConditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     match stmt_list with
     | [stmt1; ostmt1; ostmt2; stmt2]
@@ -1646,8 +1641,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** Translate a condition for if/loops statement. It shorts-circuit and/or. The invariant is that
-     the translation of a condition always contains (at least) the prune nodes. Moreover these are
-     always the leaf nodes of the translation. *)
+      the translation of a condition always contains (at least) the prune nodes. Moreover these are
+      always the leaf nodes of the translation. *)
   and cond_trans ~if_kind ~negate_cond trans_state cond : trans_result =
     let context = trans_state.context in
     let cond_source_range = source_range_of_stmt cond in
@@ -1667,12 +1662,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else if is_cmp then
           let open Clang_ast_t in
-          (* If we have a comparision here, do not dispatch it to `instruction` function, which
+          (* If we have a comparision here, do not dispatch it to [instruction] function, which
            * invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
            * This will throw the translation process into an infinite loop immediately.
            * Instead, dispatch to binaryOperator_trans directly. *)
-          (* If one wants to add a new kind of `BinaryOperator` that will have the same behavior,
-           * she need to change both the codes here and the `match` in
+          (* If one wants to add a new kind of [BinaryOperator] that will have the same behavior,
+           * she need to change both the codes here and the [match] in
            * binaryOperator_trans_with_cond *)
           match cond with
           | BinaryOperator (si, ss, ei, boi)
@@ -2142,21 +2137,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     loop_instruction trans_state dowhile_kind stmt_info
 
 
-  (** Iteration over collection
+  (** Iteration over collections
 
-      for (v : C) { body; }
+      [for (v : C) { body; }] is translated as:
 
-     is translated as follows:
-
-      TypeC __range = C;
-      for (__begin = __range.begin(), __end = __range.end();
-           __begin != __end;
-           ++__begin)
-       {
-          v = *__begin;
-          loop_body;
-        }
-  *)
+      {[
+        TypeC __range = C;
+        for (__begin = __range.begin(), __end = __range.end();
+             __begin != __end;
+             ++__begin)
+         {
+            v = *__begin;
+            loop_body;
+          }
+      ]} *)
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
     match stmt_list with
@@ -2183,14 +2177,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (** Fast iteration for colection
-     for (type_it i in collection) { body }
-     is translate as
-     {
-      i = type_next_object();
-      while(i != nil) { body; i = type_next_object();}
-     }
-  *)
+  (** Fast iteration for collections
+
+      [for (type_it i in collection) { body }] is translated as
+
+      {[
+        i = type_next_object();
+        while(i != nil) { body; i = type_next_object();}
+      ]} *)
   and objCForCollectionStmt_trans trans_state item items body stmt_info =
     ignore (instruction trans_state item) ;
     (* Here we do ast transformation, so we don't need the value of the translation of the *)
@@ -2265,12 +2259,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** InitListExpr can have following meanings:
+
       - initialize all record fields
       - initialize array
       - initialize primitive type (int/flaot/pointer/...)
-      - perform zero initalization - http://en.cppreference.com/w/cpp/language/zero_initialization
-      Decision which case happens is based on the type of the InitListExpr
-  *)
+      - perform zero initalization -
+        {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
+        is based on the type of the InitListExpr *)
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let var_exp, var_typ =
       match trans_state.var_exp_typ with
@@ -2493,24 +2488,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             "Expected source expression for OpaqueValueExpr" )
 
 
-  (* NOTE: This translation has several hypothesis. Need to be verified when we have more*)
-  (* experience with this construct. Assert false will help to see if we encounter programs*)
-  (* that do not conform with this hypothesis.*)
-  (* Hypotheses:*)
-  (* 1. stmt_list is composed by 2 parts: the first element is a syntactic description of the*)
-  (* expression. The rest of the list has a semantic caracterization of the expression and*)
-  (* defines how that expression is going to be implemented at runtime. *)
-  (* 2. the semantic description is composed by a list of OpaqueValueExpr that define the *)
-  (* various expressions involved and one finale expression that define how the final value of*)
-  (* the PseudoObjectExpr is obtained.
-     All the OpaqueValueExpr will be part of the last expression.*)
-  (* So they can be skipped. *)
-  (* For example: 'x.f = a' when 'f' is a property will be
-     translated with a call to f's setter [x f:a]*)
-  (* the stmt_list will be [x.f = a; x; a; CallToSetter]
-     Among all element of the list we only need*)
-  (* to translate the CallToSetter which is
-     how x.f = a is actually implemented by the runtime.*)
+  (** NOTE: This translation has several hypothesis. Need to be verified when we have more
+      experience with this construct. [assert false] will help to see if we encounter programs that
+      do not conform with this hypothesis.
+
+      Hypotheses:
+
+      + [stmt_list] is composed of 2 parts: the first element is a syntactic description of the
+        expression. The rest of the list has a semantic caracterization of the expression and
+        defines how that expression is going to be implemented at runtime.
+      + The semantic description is composed by a list of OpaqueValueExpr that define the various
+        expressions involved and one finale expression that define how the final value of the
+        PseudoObjectExpr is obtained.
+
+      All the OpaqueValueExpr will be part of the last expression. So they can be skipped. For
+      example: [x.f = a] when [f] is a property will be translated with a call to [f]'s setter
+      [x f:a] the [stmt_list] will be [x.f = a; x; a; CallToSetter]. Among all element of the list
+      we only need to translate the CallToSetter which is how [x.f = a] is actually implemented by
+      the runtime.*)
   and pseudoObjectExpr_trans trans_state stmt_list =
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@\n"
@@ -2645,8 +2640,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           cxx_inject_field_destructors_in_destructor_body trans_state_pri stmt_info
         else None
       in
-      (* `cxx_inject_field_destructors_in_destructor_body` should not create new nodes for return statement,
-         this is ensured by creating a fresh pointer in `cxx_inject_field_destructors_in_destructor_body`
+      (* [cxx_inject_field_destructors_in_destructor_body] should not create new nodes for return statement,
+         this is ensured by creating a fresh pointer in [cxx_inject_field_destructors_in_destructor_body]
       *)
       check_destructor_translation destructor_res ;
       let instrs_of = function Some {control= {instrs}} -> instrs | None -> [] in
@@ -3395,7 +3390,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** inject destructors at the end of the translation of the statement if the context map says
-     there are variables to destruct *)
+      there are variables to destruct *)
   and instruction_scope trans_state stmt =
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
     let destr_trans_result =
@@ -3783,8 +3778,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           trans_state stmt_info ret_typ stmts
 
 
-  (** Function similar to instruction function, but it takes C++ constructor initializer as
-      an input parameter. *)
+  (** Function similar to instruction function, but it takes C++ constructor initializer as an input
+      parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
     let context = trans_state.context in
     let source_range = ctor_init.Clang_ast_t.xci_source_range in
@@ -3804,8 +3799,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->
           let this_exp, this_typ = this_res_trans.return in
-          (* Hack: Strip pointer from type here since cxxConstructExpr_trans expects it this way *)
-          (* it will add pointer back before making it a parameter to a call *)
+          (* Hack: Strip pointer from type here since cxxConstructExpr_trans expects it this way
+             it will add pointer back before making it a parameter to a call *)
           let class_typ = match this_typ.Typ.desc with Tptr (t, _) -> t | _ -> assert false in
           {this_res_trans with return= (this_exp, class_typ)}
       | `Member decl_ref ->

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 module F = Format
 
@@ -18,11 +16,9 @@ module BasicCost = struct
   let version = 5
 end
 
-(**
-  Module to simulate a record
-    {OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t} with a map
-    {OperationCost, AllocationCost, IOCost} -> BasicCost.t
-*)
+(** Module to simulate a record
+    [{OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t}] with a map
+    [{OperationCost, AllocationCost, IOCost} -> BasicCost.t] *)
 module VariantCostMap = struct
   include PrettyPrintable.PPMonoMapOfPPMap (CostIssues.CostKindMap) (BasicCost)
 

@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 
 (** Interprocedural footprint analysis *)
@@ -47,24 +45,18 @@ type valid_res =
   ; vr_cons_res: (Prop.normal Prop.t * Paths.Path.t) list  (** consistent result props *)
   ; vr_incons_res: (Prop.normal Prop.t * Paths.Path.t) list  (** inconsistent result props *) }
 
-(** Result of (bi)-abduction on a single spec.
-    A result is invalid if no splitting was found,
-    or if combine failed, or if we are in re - execution mode and the sigma
-    part of the splitting is not empty.
-    A valid result contains the missing pi ans sigma, as well as the resulting props. *)
+(** Result of (bi)-abduction on a single spec. A result is invalid if no splitting was found, or if
+    combine failed, or if we are in re - execution mode and the sigma part of the splitting is not
+    empty. A valid result contains the missing pi ans sigma, as well as the resulting props. *)
 type abduction_res =
   | Valid_res of valid_res  (** valid result for a function cal *)
   | Invalid_res of invalid_res  (** reason for invalid result *)
-
-(**************** printing functions ****************)
 
 let print_results tenv actual_pre results =
   L.d_strln "***** RESULTS FUNCTION CALL *******" ;
   Propset.d actual_pre (Propset.from_proplist tenv results) ;
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
 
-
-(***************)
 
 let get_specs_from_payload summary =
   Option.map summary.Summary.payloads.biabduction ~f:(fun BiabductionSummary.{preposts} -> preposts)
@@ -102,8 +94,8 @@ let spec_rename_vars pname spec =
   BiabductionSummary.{pre= pre''; posts= posts''; visited= spec.BiabductionSummary.visited}
 
 
-(** Find and number the specs for [proc_name],
-    after renaming their vars, and also return the parameters *)
+(** Find and number the specs for [proc_name], after renaming their vars, and also return the
+    parameters *)
 let spec_find_rename summary : (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
   let proc_name = Summary.get_proc_name summary in
   try
@@ -127,10 +119,9 @@ let spec_find_rename summary : (int * Prop.exposed BiabductionSummary.spec) list
          (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
 
 
-(** Process a splitting coming straight from a call to the prover:
-    change the instantiating substitution so that it returns primed vars,
-    except for vars occurring in the missing part, where it returns
-    footprint vars. *)
+(** Process a splitting coming straight from a call to the prover: change the instantiating
+    substitution so that it returns primed vars, except for vars occurring in the missing part,
+    where it returns footprint vars. *)
 let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
     frame_typ missing_typ =
   let hpred_has_only_footprint_vars hpred =
@@ -268,8 +259,8 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
   ; missing_typ= norm_missing_typ }
 
 
-(** Check whether an inst represents a dereference without null check,
-    and return the line number and path position *)
+(** Check whether an inst represents a dereference without null check, and return the line number
+    and path position *)
 let find_dereference_without_null_check_in_inst = function
   | Predicates.Iupdate (Some true, _, n, pos) | Predicates.Irearrange (Some true, _, n, pos) ->
       Some (n, pos)
@@ -277,8 +268,8 @@ let find_dereference_without_null_check_in_inst = function
       None
 
 
-(** Check whether a sexp contains a dereference without null check,
-    and return the line number and path position *)
+(** Check whether a sexp contains a dereference without null check, and return the line number and
+    path position *)
 let rec find_dereference_without_null_check_in_sexp = function
   | Predicates.Eexp (_, inst) ->
       find_dereference_without_null_check_in_inst inst
@@ -303,8 +294,8 @@ and find_dereference_without_null_check_in_sexp_list = function
         Some x )
 
 
-(** Check dereferences implicit in the spec pre.
-    In case of dereference error, return [Some(deref_error, description)], otherwise [None] *)
+(** Check dereferences implicit in the spec pre. In case of dereference error, return
+    [Some(deref_error, description)], otherwise [None] *)
 let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre formal_params =
   let check_dereference e sexp =
     let e_sub = Predicates.exp_sub sub e in
@@ -418,9 +409,8 @@ let check_path_errors_in_post tenv caller_pname post post_path =
   List.iter ~f:check_attr (Attribute.get_all post)
 
 
-(** Post process the instantiated post after the function call so that
-    x.f |-> se becomes x |-> { f: se }.
-    Also, update any Aresource attributes to refer to the caller *)
+(** Post process the instantiated post after the function call so that [x.f |-> se] becomes
+    [x |-> { f: se }]. Also, update any Aresource attributes to refer to the caller *)
 let post_process_post tenv caller_pname callee_pname loc actual_pre
     ((post : Prop.exposed Prop.t), post_path) =
   let actual_pre_has_freed_attribute e =
@@ -645,9 +635,8 @@ let sigma_star_typ (sigma1 : Predicates.hpred list) (typings2 : (Exp.t * Exp.t) 
     raise (Exceptions.Cannot_star __POS__)
 
 
-(** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld]
-    extends the footprint of [prop] with [pi,sigma]
-    and extends the fields of |-> with [missing_fld] *)
+(** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld] extends the footprint of
+    [prop] with [pi,sigma] and extends the fields of |-> with [missing_fld] *)
 let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop : 'a Prop.t) pi_new sigma_new missing_fld
     missing_typ : Prop.normal Prop.t option =
   let rec extend_sigma current_sigma new_sigma =
@@ -683,8 +672,8 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop : 'a Prop.t) pi_new sig
       Some (Prop.normalize tenv (Prop.set prop ~pi:pi' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp''))
 
 
-(** Check if the attribute change is a mismatch between a kind
-    of allocation and a different kind of deallocation *)
+(** Check if the attribute change is a mismatch between a kind of allocation and a different kind of
+    deallocation *)
 let check_attr_dealloc_mismatch att_old att_new =
   match (att_old, att_new) with
   | ( PredSymb.Aresource ({ra_kind= Racquire; ra_res= Rmemory mk_old} as ra_old)
@@ -920,9 +909,8 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
     Some results
 
 
-(** Construct the actual precondition: add to the current state a copy
-    of the (callee's) formal parameters instantiated with the actual
-    parameters. *)
+(** Construct the actual precondition: add to the current state a copy of the (callee's) formal
+    parameters instantiated with the actual parameters. *)
 let mk_actual_precondition tenv prop actual_params formal_params =
   let formals_actuals =
     let rec comb fpars apars =
@@ -1212,9 +1200,8 @@ let remove_constant_string_class tenv prop =
   Prop.normalize tenv prop'
 
 
-(** existentially quantify the path identifier generated
-    by the prover to keep track of expansions of lhs paths
-    and remove pointsto's whose lhs is a constant string *)
+(** existentially quantify the path identifier generated by the prover to keep track of expansions
+    of lhs paths and remove pointsto's whose lhs is a constant string *)
 let quantify_path_idents_remove_constant_strings tenv (prop : Prop.normal Prop.t) :
     Prop.normal Prop.t =
   let ids_queue =

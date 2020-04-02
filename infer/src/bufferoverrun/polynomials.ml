@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@ocamlformat "parse-docstrings = false"]
-
 open! IStd
 open! AbstractDomain.Types
 module Bound = Bounds.Bound
@@ -177,35 +175,38 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       |> PartialOrder.container ~fold:fold_no_key ~xcompare_elt:(PartialOrder.of_opt ~xcompare_elt)
   end
 
-  (** If x < y < z then
-    2 + 3 * x + 4 * x ^ 2 + x * y + 7 * y ^ 2 * z
-    is represented by
-    {const= 2; terms= {
-      x -> {const= 3; terms= {
-        x -> {const= 4; terms={}},
-        y -> {const= 1; terms={}}
-      }},
-      y -> {const= 0; terms= {
-        y -> {const= 0; terms= {
-          z -> {const= 7; terms={}}
+  (** If x < y < z then [2 + 3 * x + 4 * x ^ 2 + x * y + 7 * y ^ 2 * z] is represented by
+
+      {[
+        {const= 2; terms= {
+          x -> {const= 3; terms= {
+            x -> {const= 4; terms={}},
+            y -> {const= 1; terms={}}
+          }},
+          y -> {const= 0; terms= {
+            y -> {const= 0; terms= {
+              z -> {const= 7; terms={}}
+            }}
+          }}
         }}
-      }}
-    }}
+      ]}
 
-    The representation is a tree, each edge from a node to a child (terms) represents a multiplication by a symbol. If a node has a non-zero const, it represents the multiplication (of the path) by this constant.
-    In the example above, we have the following paths:
-    2
-    x * 3
-    x * x * 4
-    x * y * 1
-    y * y * z * 7
+      The representation is a tree, each edge from a node to a child (terms) represents a
+      multiplication by a symbol. If a node has a non-zero const, it represents the multiplication
+      (of the path) by this constant. In the example above, we have the following paths:
 
-    Invariants:
-      - except for the root, terms <> {} \/ const <> 0
+      - [2]
+      - [x * 3]
+      - [x * x * 4]
+      - [x * y * 1]
+      - [y * y * z * 7]
+
+      Invariants:
+
+      - except for the root, [terms <> {} || const <> 0]
       - symbols children of a term are 'smaller' than its self symbol
       - contents of terms are not zero
-      - symbols in terms are only symbolic values
-  *)
+      - symbols in terms are only symbolic values *)
   type t = {const: NonNegativeInt.t; terms: t M.t} [@@deriving compare]
 
   let of_non_negative_int : NonNegativeInt.t -> t = fun const -> {const; terms= M.empty}
