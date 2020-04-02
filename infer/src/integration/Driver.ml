@@ -76,68 +76,6 @@ let clean_compilation_command mode =
       None
 
 
-(** Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
-    get rid of non-deterministic outputs.*)
-let clean_results_dir () =
-  let cache_capture =
-    Config.genrule_mode || Option.exists Config.buck_mode ~f:BuckMode.is_clang_flavors
-  in
-  if cache_capture then DBWriter.canonicalize () ;
-  (* make sure we are done with the database *)
-  ResultsDatabase.db_close () ;
-  (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
-  let should_delete_dir =
-    let dirs_to_delete = ResultsDir.dirs_to_clean ~cache_capture in
-    List.mem ~equal:String.equal dirs_to_delete
-  in
-  let should_delete_file =
-    let files_to_delete =
-      (* we do not need to keep the database in Buck/Java mode *)
-      (if cache_capture then [] else [ResultsDatabase.database_filename])
-      @ [ Config.log_file
-        ; (* some versions of sqlite do not clean up after themselves *)
-          ResultsDatabase.database_filename ^ "-shm"
-        ; ResultsDatabase.database_filename ^ "-wal" ]
-    in
-    let suffixes_to_delete = [".txt"; ".json"] in
-    fun name ->
-      (* Keep the JSON report and the JSON costs report *)
-      (not
-         (List.exists
-            ~f:(String.equal (Filename.basename name))
-            [ Config.report_json
-            ; Config.costs_report_json
-            ; Config.test_determinator_output
-            ; Config.export_changed_functions_output ]))
-      && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
-         || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
-  in
-  let rec delete_temp_results name =
-    let rec cleandir dir =
-      match Unix.readdir_opt dir with
-      | Some entry ->
-          if should_delete_dir entry then Utils.rmtree (name ^/ entry)
-          else if
-            not
-              ( String.equal entry Filename.current_dir_name
-              || String.equal entry Filename.parent_dir_name )
-          then delete_temp_results (name ^/ entry) ;
-          cleandir dir (* next entry *)
-      | None ->
-          Unix.closedir dir
-    in
-    match Unix.opendir name with
-    | dir ->
-        cleandir dir
-    | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
-        if should_delete_file name then Unix.unlink name ;
-        ()
-    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
-        ()
-  in
-  delete_temp_results Config.results_dir
-
-
 let reset_duplicates_file () =
   let start = Config.results_dir ^/ Config.duplicates_filename in
   let delete () = Unix.unlink start in
@@ -532,7 +470,7 @@ let run_epilogue () =
   if CLOpt.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
-  if Config.buck_cache_mode then clean_results_dir () ;
+  if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;
   ()
 
 

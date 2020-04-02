@@ -34,23 +34,6 @@ let non_empty_directory_exists results_dir =
   Sys.is_directory results_dir = `Yes && not (Utils.directory_is_empty results_dir)
 
 
-let dirs_to_clean ~cache_capture =
-  let open Config in
-  let common_list =
-    [classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ()
-  in
-  if cache_capture then common_list else captured_dir_name :: common_list
-
-
-let delete_capture_and_results_data () =
-  DBWriter.reset_capture_tables () ;
-  let dirs_to_delete =
-    List.map ~f:(Filename.concat Config.results_dir) (dirs_to_clean ~cache_capture:true)
-  in
-  List.iter ~f:Utils.rmtree dirs_to_delete ;
-  ()
-
-
 let remove_results_dir () =
   if non_empty_directory_exists Config.results_dir then (
     if not Config.force_delete_results_dir then
@@ -96,3 +79,80 @@ let assert_results_dir advice =
          L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   prepare_logging_and_db () ;
   ()
+
+
+let dirs_to_clean ~cache_capture =
+  let open Config in
+  let common_list =
+    [classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ()
+  in
+  if cache_capture then common_list else captured_dir_name :: common_list
+
+
+let delete_capture_and_results_data () =
+  DBWriter.reset_capture_tables () ;
+  let dirs_to_delete =
+    List.map ~f:(Filename.concat Config.results_dir) (dirs_to_clean ~cache_capture:true)
+  in
+  List.iter ~f:Utils.rmtree dirs_to_delete ;
+  ()
+
+
+let scrub_for_caching () =
+  let cache_capture =
+    Config.genrule_mode || Option.exists Config.buck_mode ~f:BuckMode.is_clang_flavors
+  in
+  if cache_capture then DBWriter.canonicalize () ;
+  (* make sure we are done with the database *)
+  ResultsDatabase.db_close () ;
+  (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
+  let should_delete_dir =
+    let dirs_to_delete = dirs_to_clean ~cache_capture in
+    List.mem ~equal:String.equal dirs_to_delete
+  in
+  let should_delete_file =
+    let files_to_delete =
+      (* we do not need to keep the database in Buck/Java mode *)
+      (if cache_capture then [] else [ResultsDatabase.database_filename])
+      @ [ Config.log_file
+        ; (* some versions of sqlite do not clean up after themselves *)
+          ResultsDatabase.database_filename ^ "-shm"
+        ; ResultsDatabase.database_filename ^ "-wal" ]
+    in
+    let suffixes_to_delete = [".txt"; ".json"] in
+    fun name ->
+      (* Keep the JSON report and the JSON costs report *)
+      (not
+         (List.exists
+            ~f:(String.equal (Filename.basename name))
+            [ Config.report_json
+            ; Config.costs_report_json
+            ; Config.test_determinator_output
+            ; Config.export_changed_functions_output ]))
+      && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
+         || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
+  in
+  let rec delete_temp_results name =
+    let rec cleandir dir =
+      match Unix.readdir_opt dir with
+      | Some entry ->
+          if should_delete_dir entry then Utils.rmtree (name ^/ entry)
+          else if
+            not
+              ( String.equal entry Filename.current_dir_name
+              || String.equal entry Filename.parent_dir_name )
+          then delete_temp_results (name ^/ entry) ;
+          cleandir dir (* next entry *)
+      | None ->
+          Unix.closedir dir
+    in
+    match Unix.opendir name with
+    | dir ->
+        cleandir dir
+    | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
+        if should_delete_file name then Unix.unlink name ;
+        ()
+    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+        ()
+  in
+  delete_temp_results Config.results_dir

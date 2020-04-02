@@ -20,5 +20,6 @@ val delete_capture_and_results_data : unit -> unit
   [@@warning "-32"]
 (** delete capture and results data in the results directory *)
 
-val dirs_to_clean : cache_capture:bool -> string list
-(** directories in the results directory containing capture or results data *)
+val scrub_for_caching : unit -> unit
+(** Clean up the results dir to keep only what's relevant to go in a cache (e.g., the distributed
+    Buck cache). In particular, get rid of non-deterministic outputs.*)
