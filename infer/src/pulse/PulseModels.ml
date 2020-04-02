@@ -11,18 +11,17 @@ open PulseDomainInterface
 
 type arg_payload = AbstractValue.t * ValueHistory.t
 
-type exec_fun =
+type model =
      caller_summary:Summary.t
+  -> callee_procname:Procname.t
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t list PulseOperations.access_result
 
-type model = exec_fun
-
 module Misc = struct
   let shallow_copy model_desc dest_pointer_hist src_pointer_hist : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
     let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
     let* astate, obj_copy = PulseOperations.shallow_copy location obj astate in
@@ -34,10 +33,10 @@ module Misc = struct
     [PulseOperations.havoc_id ret_id [event] astate]
 
 
-  let early_exit : model = fun ~caller_summary:_ _ ~ret:_ _ -> Ok []
+  let early_exit : model = fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ _ -> Ok []
 
   let return_int : Int64.t -> model =
-   fun i64 ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun i64 ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
       let i = IntLit.of_int64 i64 in
@@ -49,7 +48,7 @@ module Misc = struct
 
 
   let return_unknown_size : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
       AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.nat) astate
@@ -59,22 +58,22 @@ module Misc = struct
     Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
 
 
-  let skip : model = fun ~caller_summary:_ _ ~ret:_ astate -> Ok [astate]
+  let skip : model = fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ astate -> Ok [astate]
 
   let nondet ~fn_name : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
     Ok [PulseOperations.havoc_id ret_id [event] astate]
 
 
   let id_first_arg arg_access_hist : model =
-   fun ~caller_summary:_ _ ~ret astate ->
+   fun ~caller_summary:_ ~callee_procname:_ _ ~ret astate ->
     Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
 end
 
 module C = struct
   let free deleted_access : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     let is_known_zero =
@@ -90,19 +89,19 @@ module C = struct
 
 
   let malloc access : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let astate = PulseOperations.allocate location access astate in
     Ok [PulseOperations.write_id ret_id access astate]
 end
 
 module Cplusplus = struct
   let delete deleted_access : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate >>| List.return
 
 
   let placement_new actuals : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
     match List.rev actuals with
     | ProcnameDispatcher.Call.FuncArg.{arg_payload= address, hist} :: _ ->
@@ -128,7 +127,7 @@ module StdAtomicInteger = struct
 
 
   let constructor this_address init_value : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []} in
     let this = (AbstractValue.mk_fresh (), [event]) in
     let* astate, int_field =
@@ -153,7 +152,7 @@ module StdAtomicInteger = struct
 
 
   let fetch_add this (increment, _) _memory_ordering : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= []} in
     let+ astate =
       arith_bop `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
@@ -163,7 +162,7 @@ module StdAtomicInteger = struct
 
 
   let fetch_sub this (increment, _) _memory_ordering : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= []} in
     let+ astate =
       arith_bop `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
@@ -173,7 +172,7 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_pre this : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= []} in
     let+ astate =
       arith_bop `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
@@ -182,7 +181,7 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_post this _int : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event =
       ValueHistory.Call {f= Model "std::atomic<T>::operator++(T)"; location; in_call= []}
     in
@@ -193,7 +192,7 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_pre this : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= []} in
     let+ astate =
       arith_bop `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
@@ -202,7 +201,7 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_post this _int : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event =
       ValueHistory.Call {f= Model "std::atomic<T>::operator--(T)"; location; in_call= []}
     in
@@ -213,7 +212,7 @@ module StdAtomicInteger = struct
 
 
   let load_instr model_desc this _memory_ordering_opt : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
     let+ astate, _int_addr, (int, hist) = load_backing_int location this astate in
     [PulseOperations.write_id ret_id (int, event :: hist) astate]
@@ -232,14 +231,14 @@ module StdAtomicInteger = struct
 
 
   let store this_address (new_value, new_hist) _memory_ordering : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []} in
     let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
     [astate]
 
 
   let exchange this_address (new_value, new_hist) _memory_ordering : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []} in
     let* astate, _int_addr, (old_int, old_hist) = load_backing_int location this_address astate in
     let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
@@ -249,7 +248,7 @@ end
 module JavaObject = struct
   (* naively modeled as shallow copy. *)
   let clone src_pointer_hist : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []} in
     let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
     let+ astate, obj_copy = PulseOperations.shallow_copy location obj astate in
@@ -270,7 +269,7 @@ module StdBasicString = struct
 
 
   let data this_hist : model =
-   fun ~caller_summary:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
     let* astate, string_addr_hist = to_internal_string location this_hist astate in
     let+ astate, (string, hist) =
@@ -280,7 +279,7 @@ module StdBasicString = struct
 
 
   let destructor this_hist : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let model = CallEvent.Model "std::basic_string::~basic_string()" in
     let call_event = ValueHistory.Call {f= model; location; in_call= []} in
     let* astate, (string_addr, string_hist) = to_internal_string location this_hist astate in
@@ -292,7 +291,7 @@ end
 
 module StdFunction = struct
   let operator_call lambda_ptr_hist actuals : model =
-   fun ~caller_summary location ~ret astate ->
+   fun ~caller_summary ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -341,7 +340,7 @@ module StdVector = struct
 
 
   let invalidate_references vector_f vector : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let crumb =
       ValueHistory.Call
         { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
@@ -352,14 +351,14 @@ module StdVector = struct
 
 
   let at ~desc vector index : model =
-   fun ~caller_summary:_ location ~ret astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let+ astate, (addr, hist) = element_of_internal_array location vector (fst index) astate in
     [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
 
 
   let reserve vector : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
     reallocate_internal_array [crumb] vector Reserve location astate
     >>| AddressAttributes.std_vector_reserve (fst vector)
@@ -367,7 +366,7 @@ module StdVector = struct
 
 
   let push_back vector : model =
-   fun ~caller_summary:_ location ~ret:_ astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let crumb = ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []} in
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
@@ -380,7 +379,7 @@ end
 
 module JavaCollection = struct
   let set coll index new_elem : model =
-   fun ~caller_summary:_ location ~ret astate ->
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
     let* astate, ((old_addr, old_hist) as old_elem) =
       StdVector.element_of_internal_array location coll (fst index) astate

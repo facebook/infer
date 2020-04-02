@@ -7,14 +7,13 @@
 open! IStd
 open PulseBasicInterface
 
-type exec_fun =
+type model =
      caller_summary:Summary.t
+  -> callee_procname:Procname.t
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t list PulseOperations.access_result
-
-type model = exec_fun
 
 val dispatch :
      Tenv.t

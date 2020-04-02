@@ -93,6 +93,7 @@ module PulseTransferFunctions = struct
       match proc_name_of_call call_exp with
       | Some callee_pname ->
           PulseModels.dispatch tenv callee_pname func_args
+          |> Option.map ~f:(fun model -> (model, callee_pname))
       | None ->
           (* function pointer, etc.: skip for now *)
           None
@@ -100,9 +101,9 @@ module PulseTransferFunctions = struct
     (* do interprocedural call then destroy objects going out of scope *)
     let posts =
       match model with
-      | Some model ->
+      | Some (model, callee_procname) ->
           L.d_printfln "Found model for call@\n" ;
-          model ~caller_summary:summary call_loc ~ret astate
+          model ~caller_summary:summary ~callee_procname call_loc ~ret astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let only_actuals_evaled =
