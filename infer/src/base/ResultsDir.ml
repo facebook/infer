@@ -37,8 +37,7 @@ let non_empty_directory_exists results_dir =
 let dirs_to_clean ~cache_capture =
   let open Config in
   let common_list =
-    [backend_stats_dir_name; classnames_dir_name; frontend_stats_dir_name; reporting_stats_dir_name]
-    @ FileLevelAnalysisIssueDirs.get_registered_dir_names ()
+    [classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ()
   in
   if cache_capture then common_list else captured_dir_name :: common_list
 

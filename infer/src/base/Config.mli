@@ -43,8 +43,6 @@ val append_buck_flavors : string list
 
 val assign : string
 
-val backend_stats_dir_name : string
-
 val biabduction_models_dir : string
 
 val biabduction_models_jar : string
@@ -86,8 +84,6 @@ val etc_dir : string
 val fail_on_issue_exit_code : int
 
 val fcp_dir : string
-
-val frontend_stats_dir_name : string
 
 val global_tenv_filename : string
 
@@ -156,8 +152,6 @@ val report_nullable_inconsistency : bool
 
 val report_txt : string
 (** name of the file inside infer-out/ containing the issues as human-readable text *)
-
-val reporting_stats_dir_name : string
 
 val retain_cycle_dotty_dir : string
 

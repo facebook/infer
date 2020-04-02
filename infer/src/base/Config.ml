@@ -102,8 +102,6 @@ let anonymous_block_prefix = "objc_block"
 
 let assign = "<\"Assign\">"
 
-let backend_stats_dir_name = "backend_stats"
-
 (** If true, a procedure call succeeds even when there is a bound error this mimics what happens
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
@@ -137,8 +135,6 @@ let trace_events_file = "perf_events.json"
 
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
-
-let frontend_stats_dir_name = "frontend_stats"
 
 let global_tenv_filename = ".global.tenv"
 
@@ -217,8 +213,6 @@ let report_json = "report.json"
 let report_nullable_inconsistency = true
 
 let report_txt = "report.txt"
-
-let reporting_stats_dir_name = "reporting_stats"
 
 let retain_cycle_dotty_dir = "retain_cycle_dotty"
 
