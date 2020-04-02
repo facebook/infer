@@ -5,13 +5,9 @@
 
 (library
  (name InferStdlib)
- (public_name InferStdlib)
+ (public_name infer.InferStdlib)
  (flags
   (:standard -open Core))
  (libraries ANSITerminal core str yojson)
  (preprocess
   (pps ppx_compare)))
-
-(documentation
- (package InferStdlib)
- (mld_files index))

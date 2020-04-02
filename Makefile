@@ -851,7 +851,7 @@ doc: src_build_common
 # do not call the browser if we are publishing the docs
 ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 	$(QUIET)$(call silent_on_success,Opening in browser,\
-	browse $(SRC_DIR)/_build/default/_doc/_html/index.html)
+	browse $(INFER_DIR)/_build/default/_doc/_html/index.html)
 	$(QUIET)echo "Tip: you can generate the doc for all the opam dependencies of infer like this:"
 	$(QUIET)echo
 	$(QUIET)echo "  odig odoc # takes a while, run it only when the dependencies change"

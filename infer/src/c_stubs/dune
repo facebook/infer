@@ -5,7 +5,7 @@
 
 (library
  (name InferCStubs)
- (public_name InferCStubs)
+ (public_name infer.InferCStubs)
  (foreign_stubs
   (language c)
   (names fnv64_hash)))

@@ -95,7 +95,7 @@ test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)$(DUNE_BUILD) @doc
+	$(QUIET)cd .. && $(DUNE_BUILD) @doc
 
 .PHONY: check
 check: src_build_common

@@ -50,7 +50,7 @@ Tips & Tricks:
 {2 eradicate/ }
 Eradicate [@Nullable] Checker
 
-Eradicate is a type checker for [@Nullable] annotations for Java. The goal is to eradicate null pointer exceptions. See the online docs at {:http://fbinfer.com/docs/eradicate.html}.
+Eradicate is a type checker for [@Nullable] annotations for Java. The goal is to eradicate null pointer exceptions. See the online docs at {:http://fbinfer.com/docs/eradicate}.
 
 The main entry point is module {!module-InferModules.Eradicate}.
 

@@ -91,13 +91,6 @@ let main_lib_stanza =
     (String.concat " " infer_binaries)
 
 
-let docs_stanza = {|
-(documentation
- (package infer)
- (mld_files index)
-)
-|}
-
 let infer_exe_stanza =
   Format.sprintf
     {|
@@ -150,8 +143,7 @@ let flatten_sources_stanzas =
 
 (** The build stanzas to be passed to dune *)
 let stanzas =
-  env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: docs_stanza
-  :: clang_lexer_stanzas
+  (env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: clang_lexer_stanzas)
   @ topl_stanzas @ flatten_sources_stanzas
 
 
