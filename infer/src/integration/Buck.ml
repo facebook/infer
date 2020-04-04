@@ -381,19 +381,24 @@ let capture_buck_args =
 
 let run_buck_build prog buck_build_args =
   L.debug Capture Verbose "%s %s@." prog (List.to_string ~f:Fn.id buck_build_args) ;
+  let buck_output_file = Filename.temp_file ~in_dir:Config.temp_file_dir "buck_output" ".log" in
   let infer_args =
     Option.fold (Sys.getenv CommandLineOption.args_env_var) ~init:"--fcp-syntax-only"
       ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
   in
+  let shell_cmd =
+    List.map ~f:Escape.escape_shell (prog :: buck_build_args)
+    |> String.concat ~sep:" "
+    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd buck_output_file
+  in
+  let env = `Extend [(CommandLineOption.args_env_var, infer_args)] in
   let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog ~args:buck_build_args
-      ~env:(`Extend [(CommandLineOption.args_env_var, infer_args)])
-      ()
+    Unix.create_process_env ~prog:"sh" ~args:["-c"; shell_cmd] ~env ()
   in
   let buck_stderr = Unix.in_channel_of_descr stderr in
-  let buck_stdout = Unix.in_channel_of_descr stdout in
   Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
   Unix.close stdin ;
+  Unix.close stdout ;
   In_channel.close buck_stderr ;
   (* Process a line of buck stdout output, in this case the result of '--show-output'
      These paths (may) contain a 'infer-deps.txt' file, which we will later merge
@@ -408,9 +413,12 @@ let run_buck_build prog buck_build_args =
         L.die ExternalError "Couldn't parse buck target output: %s" line
   in
   match Unix.waitpid pid with
-  | Ok () ->
-      let res = In_channel.fold_lines buck_stdout ~init:[] ~f:process_buck_line in
-      In_channel.close buck_stdout ; res
+  | Ok () -> (
+    match Utils.read_file buck_output_file with
+    | Ok lines ->
+        List.fold lines ~init:[] ~f:process_buck_line
+    | Error err ->
+        L.die ExternalError "*** capture failed to execute: %s" err )
   | Error _ as err ->
       L.die ExternalError "*** capture failed to execute: %s"
         (Unix.Exit_or_signal.to_string_hum err)
