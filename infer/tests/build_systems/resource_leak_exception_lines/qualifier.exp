@@ -1,3 +1,3 @@
-false, RESOURCE_LEAK, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 0
-false, NULL_DEREFERENCE, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 6
-true, RESOURCE_LEAK, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 7
+false, RESOURCE_LEAK, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 2
+false, NULL_DEREFERENCE, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 8
+true, RESOURCE_LEAK, no_bucket, SimpleLeak.java, SimpleLeak.method(boolean):void, 9

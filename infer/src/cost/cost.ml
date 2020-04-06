@@ -283,7 +283,7 @@ module Check = struct
 
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
-    let proc_loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+    let proc_loc = Procdesc.get_loc proc_desc in
     if not (Procname.is_java_access_method pname) then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
         ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function

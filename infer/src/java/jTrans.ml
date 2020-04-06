@@ -23,9 +23,49 @@ let get_location source_file impl pc =
   {Location.line= line_number; col= -1; file= source_file}
 
 
-let get_start_location source_file bytecode =
+let get_start_location_heuristics =
+  let lines_to_find = 10 (* This is set by an arbitrary number. *) in
+  (* [is_proc_line ~name line] checks two conditions:
+     - [line] starts with [name] or [line] includes [" " ^ name].
+     - The [name] found should be followed by a space, '<', '(', or end of line. *)
+  let is_proc_line ~name line =
+    let found_idx =
+      if String.is_prefix line ~prefix:name then Some 0
+      else String.substr_index ~pos:0 line ~pattern:(" " ^ name) |> Option.map ~f:(( + ) 1)
+    in
+    Option.value_map found_idx ~default:false ~f:(fun i ->
+        let next_char_idx = i + String.length name in
+        if next_char_idx < String.length line then
+          match line.[next_char_idx] with ' ' | '<' | '(' -> true | _ -> false
+        else false )
+  in
+  let line_reader = lazy (Printer.LineReader.create ()) in
+  let rec find_proc_loc_backward name ~lines_to_find loc =
+    if lines_to_find <= 0 || loc.Location.line <= 0 then None
+    else
+      match Printer.LineReader.from_loc (Lazy.force_val line_reader) loc with
+      | None ->
+          None
+      | Some line when is_proc_line line ~name ->
+          Some loc
+      | Some _ ->
+          find_proc_loc_backward name ~lines_to_find:(lines_to_find - 1)
+            Location.{loc with line= loc.line - 1}
+  in
+  fun ~default pname ->
+    let name = Procname.get_method pname in
+    if
+      (not (Procname.Java.is_autogen_method_name name))
+      && (not (String.equal name Procname.Java.constructor_method_name))
+      && not (String.equal name Procname.Java.class_initializer_method_name)
+    then Option.value ~default (find_proc_loc_backward name ~lines_to_find default)
+    else default
+
+
+let get_start_location source_file proc_name bytecode =
   let line_number = Option.value (JCode.get_source_line_number 0 bytecode) ~default:(-1) in
-  {Location.line= line_number; col= -1; file= source_file}
+  let loc = {Location.line= line_number; col= -1; file= source_file} in
+  get_start_location_heuristics ~default:loc proc_name
 
 
 let get_exit_location source_file bytecode =
@@ -353,7 +393,7 @@ let create_empty_procdesc source_file program icfg cm proc_name =
   let m = Javalib.ConcreteMethod cm in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   let bytecode = get_bytecode cm in
-  let loc_start = get_start_location source_file bytecode in
+  let loc_start = get_start_location source_file proc_name bytecode in
   let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
   let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
   let proc_attributes =
@@ -382,7 +422,7 @@ let create_cm_procdesc source_file program icfg cm proc_name =
   try
     let bytecode = get_bytecode cm in
     let jbir_code = get_jbir_representation cm bytecode in
-    let loc_start = get_start_location source_file bytecode in
+    let loc_start = get_start_location source_file proc_name bytecode in
     let loc_exit = get_exit_location source_file bytecode in
     let formals = translate_formals program tenv cn jbir_code in
     let locals_ = translate_locals program tenv formals bytecode jbir_code in

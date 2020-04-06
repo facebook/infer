@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass2.java, com.example.DiffClass2.doStuff():int, 0
+NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass2.java, com.example.DiffClass2.doStuff():int, 1
