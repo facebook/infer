@@ -213,8 +213,8 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.invalidate address invalidation location)
 
 
-  let allocate address location astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.allocate address location)
+  let allocate procname address location astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.allocate procname address location)
 
 
   let add_one address attributes astate =
@@ -696,8 +696,9 @@ module PrePost = struct
             (invalidation, add_call_to_trace proc_name call_location caller_history trace)
       | CItv (arith, trace) ->
           Attribute.CItv (arith, add_call_to_trace proc_name call_location caller_history trace)
-      | Allocated trace ->
-          Attribute.Allocated (add_call_to_trace proc_name call_location caller_history trace)
+      | Allocated (procname, trace) ->
+          Attribute.Allocated
+            (procname, add_call_to_trace proc_name call_location caller_history trace)
       | AddressOfCppTemporary _
       | AddressOfStackVariable _
       | BoItv _

@@ -89,8 +89,8 @@ module C = struct
 
 
   let malloc access : model =
-   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let astate = PulseOperations.allocate location access astate in
+   fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
+    let astate = PulseOperations.allocate callee_procname location access astate in
     Ok [PulseOperations.write_id ret_id access astate]
 end
 
@@ -243,6 +243,17 @@ module StdAtomicInteger = struct
     let* astate, _int_addr, (old_int, old_hist) = load_backing_int location this_address astate in
     let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
     [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
+end
+
+module ObjectiveC = struct
+  let alloc _ : model =
+   fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
+    let hist =
+      [ValueHistory.Call {f= Model (Procname.to_string callee_procname); location; in_call= []}]
+    in
+    let ret_addr = AbstractValue.mk_fresh () in
+    let astate = PulseOperations.allocate callee_procname location (ret_addr, []) astate in
+    Ok [PulseOperations.write_id ret_id (ret_addr, hist) astate]
 end
 
 module JavaObject = struct
@@ -513,7 +524,8 @@ module ProcNameDispatcher = struct
       ; ( +PatternMatch.implements_enumeration
         &:: "nextElement" <>$ capt_arg_payload
         $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])
-        ) ]
+        )
+      ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> ObjectiveC.alloc ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args

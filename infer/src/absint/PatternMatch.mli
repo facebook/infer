@@ -160,3 +160,7 @@ val has_same_signature : Procname.t -> (Procname.t -> bool) Staged.t
 val is_override_of_java_lang_object_equals : Procname.t -> bool
 (** Whether the method is an override of `java.lang.Object.equals(Object)` or
     `java.lang.Object.equals(Object)` itself *)
+
+module ObjectiveC : sig
+  val is_core_graphics_create_or_copy : Tenv.t -> string -> bool
+end

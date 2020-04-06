@@ -53,8 +53,8 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
-let allocate (address, history) location memory =
-  add_one address (Attribute.Allocated (Immediate {location; history})) memory
+let allocate procname (address, history) location memory =
+  add_one address (Attribute.Allocated (procname, Immediate {location; history})) memory
 
 
 let check_valid address attrs =

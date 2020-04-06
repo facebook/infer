@@ -14,7 +14,8 @@ module ValueHistory = PulseValueHistory
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-  | Allocated of Trace.t
+  | Allocated of Procname.t * Trace.t
+      (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
   | CItv of CItv.t * Trace.t
   | BoItv of Itv.ItvPure.t
   | Closure of Procname.t

@@ -374,7 +374,9 @@ let havoc_field location addr_trace field trace_obj astate =
   write_field location addr_trace field (AbstractValue.mk_fresh (), trace_obj) astate
 
 
-let allocate location addr_trace astate = AddressAttributes.allocate addr_trace location astate
+let allocate procname location addr_trace astate =
+  AddressAttributes.allocate procname addr_trace location astate
+
 
 let invalidate location cause addr_trace astate =
   check_addr_access location addr_trace astate
@@ -474,17 +476,17 @@ let check_memory_leak_unreachable unreachable_attrs location =
       Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
         ~f:(fun acc attr ->
           match (attr : Attribute.t) with
-          | Allocated trace ->
-              (Some trace, snd acc)
+          | Allocated (procname, trace) ->
+              (Some (procname, trace), snd acc)
           | Invalid (CFree, _) ->
               (fst acc, true)
           | _ ->
               acc )
     in
     match allocated_not_freed_opt with
-    | Some trace, false ->
+    | Some (procname, trace), false ->
         (* allocated but not freed *)
-        Error (Diagnostic.MemoryLeak {location; allocation_trace= trace})
+        Error (Diagnostic.MemoryLeak {procname; location; allocation_trace= trace})
     | _ ->
         result
   in

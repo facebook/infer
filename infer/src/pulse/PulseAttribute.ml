@@ -28,7 +28,7 @@ module Attribute = struct
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-    | Allocated of Trace.t
+    | Allocated of Procname.t * Trace.t
     | CItv of CItv.t * Trace.t
     | BoItv of Itv.ItvPure.t
     | Closure of Procname.t
@@ -76,8 +76,11 @@ module Attribute = struct
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, location, history) ->
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
-    | Allocated trace ->
-        F.fprintf f "Allocated %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "allocation")) trace
+    | Allocated (procname, trace) ->
+        F.fprintf f "Allocated %a"
+          (Trace.pp
+             ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)))
+          trace
     | BoItv bo_itv ->
         F.fprintf f "BoItv (%a)" Itv.ItvPure.pp bo_itv
     | Closure pname ->

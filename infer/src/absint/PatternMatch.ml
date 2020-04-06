@@ -472,3 +472,11 @@ let is_override_of_java_lang_object_equals curr_pname =
   in
   String.equal (Procname.get_method curr_pname) "equals"
   && is_only_param_of_object_type (Procname.get_parameters curr_pname)
+
+
+module ObjectiveC = struct
+  let is_core_graphics_create_or_copy _ procname =
+    String.is_prefix ~prefix:"CG" procname
+    && ( String.is_substring ~substring:"Create" procname
+       || String.is_substring ~substring:"Copy" procname )
+end
