@@ -163,4 +163,6 @@ val is_override_of_java_lang_object_equals : Procname.t -> bool
 
 module ObjectiveC : sig
   val is_core_graphics_create_or_copy : Tenv.t -> string -> bool
+
+  val is_core_graphics_release : Tenv.t -> string -> bool
 end

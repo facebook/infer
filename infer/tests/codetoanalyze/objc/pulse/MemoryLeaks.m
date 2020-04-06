@@ -16,7 +16,7 @@
 
 @implementation MemoryLeaks
 
-- (void)cg_path_create_with_rect_no_leak_good_FP {
+- (void)cg_path_create_with_rect_no_leak_good {
   UIView* attachmentContainerView = [UIView alloc];
   CGPathRef shadowPath =
       CGPathCreateWithRect(attachmentContainerView.bounds, NULL);
@@ -34,16 +34,21 @@
   CGPathCreateMutable();
 }
 
-+ (void)cg_path_create_mutable_no_leak_good_FP:(CGRect)rect {
++ (void)cg_path_create_mutable_no_leak_good:(CGRect)rect {
   CGFloat lineThickness = 0.20f * CGRectGetHeight(rect);
   // One rectangle
   CGMutablePathRef path1 = CGPathCreateMutable();
   CFRelease(path1);
 }
 
-+ (void)cg_bitmap_context_create_image_no_leak_good_FP {
++ (void)cg_bitmap_context_create_image_no_leak_good {
   CGImageRef newImage = CGBitmapContextCreateImage(nil);
   CGImageRelease(newImage);
+}
+
++ (void)cg_bitmap_context_create_image1_no_leak_good {
+  CGImageRef newImage = CGBitmapContextCreateImage(nil);
+  CFAutoRelease(newImage);
 }
 
 @end
