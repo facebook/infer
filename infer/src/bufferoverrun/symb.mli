@@ -88,6 +88,8 @@ module SymbolPath : sig
   val is_cpp_vector_elem : partial -> bool
 
   val is_global_partial : partial -> bool
+
+  val is_field_depth_beyond_limit : int -> bool
 end
 
 module Symbol : sig

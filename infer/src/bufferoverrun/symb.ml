@@ -27,6 +27,14 @@ module SymbolPath = struct
 
   let compare_field_typ _ _ = 0
 
+  let is_field_depth_beyond_limit =
+    match Config.bo_field_depth_limit with
+    | None ->
+        fun _depth -> false
+    | Some limit ->
+        fun depth -> depth > limit
+
+
   include (* Enforce invariants on Field and StarField *) (
     struct
       type partial =
@@ -58,19 +66,22 @@ module SymbolPath = struct
 
 
       let field ?typ p0 fn =
-        let rec aux = function
-          | Pvar _ | Callsite _ ->
-              Field {fn; prefix= p0; typ}
-          | Field {fn= fn'} when Fieldname.equal fn fn' ->
-              StarField {last_field= fn; prefix= p0}
-          | Field {prefix= p} | Deref (_, p) ->
-              aux p
-          | StarField {last_field} as p when Fieldname.equal fn last_field ->
-              p
-          | StarField {prefix} ->
-              StarField {last_field= fn; prefix}
+        let rec aux ~depth p =
+          if is_field_depth_beyond_limit depth then star_field p0 fn
+          else
+            match p with
+            | Pvar _ | Callsite _ ->
+                Field {fn; prefix= p0; typ}
+            | Field {fn= fn'} when Fieldname.equal fn fn' ->
+                StarField {last_field= fn; prefix= p0}
+            | Field {prefix= p} | Deref (_, p) ->
+                aux ~depth:(depth + 1) p
+            | StarField {last_field} as p when Fieldname.equal fn last_field ->
+                p
+            | StarField {prefix} ->
+                StarField {last_field= fn; prefix}
         in
-        aux p0
+        aux ~depth:0 p0
     end :
       sig
         type partial = private

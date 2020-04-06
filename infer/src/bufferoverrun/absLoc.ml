@@ -142,22 +142,6 @@ module Loc = struct
 
       let of_allocsite a = Allocsite a
 
-      let append_field ?typ l0 ~fn =
-        let rec aux = function
-          | Var _ | Allocsite _ ->
-              Field {prefix= l0; fn; typ}
-          | StarField {last_field} as l when Fieldname.equal fn last_field ->
-              l
-          | StarField {prefix} ->
-              StarField {prefix; last_field= fn}
-          | Field {fn= fn'} when Fieldname.equal fn fn' ->
-              StarField {prefix= l0; last_field= fn}
-          | Field {prefix= l} ->
-              aux l
-        in
-        aux l0
-
-
       let append_star_field l0 ~fn =
         let rec aux = function
           | Var _ | Allocsite _ ->
@@ -170,6 +154,25 @@ module Loc = struct
               aux l
         in
         aux l0
+
+
+      let append_field ?typ l0 ~fn =
+        let rec aux ~depth l =
+          if Symb.SymbolPath.is_field_depth_beyond_limit depth then append_star_field l0 ~fn
+          else
+            match l with
+            | Var _ | Allocsite _ ->
+                Field {prefix= l0; fn; typ}
+            | StarField {last_field} as l when Fieldname.equal fn last_field ->
+                l
+            | StarField {prefix} ->
+                StarField {prefix; last_field= fn}
+            | Field {fn= fn'} when Fieldname.equal fn fn' ->
+                StarField {prefix= l0; last_field= fn}
+            | Field {prefix= l} ->
+                aux ~depth:(depth + 1) l
+        in
+        aux ~depth:0 l0
     end :
       sig
         type t = private

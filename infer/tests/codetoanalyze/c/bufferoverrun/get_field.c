@@ -89,3 +89,56 @@ int call_get_v2_Bad() {
   next->v = 0;
   a[get_v2(l)] = 0;
 }
+
+struct t1 {
+  struct t1* a;
+  struct t1* b;
+  struct t1* c;
+  struct t1* d;
+  struct t1* e;
+  struct t1* f;
+  struct t1* g;
+  struct t1* h;
+  struct t1* i;
+  struct t1* j;
+};
+
+int unknown;
+
+// The analysis should be terminated within a reasonable amount of time.
+void make_many_locations(struct t1* x) {
+  while (1) {
+    switch (unknown) {
+      case 0:
+        x = x->a;
+        break;
+      case 1:
+        x = x->b;
+        break;
+      case 2:
+        x = x->c;
+        break;
+      case 3:
+        x = x->d;
+        break;
+      case 4:
+        x = x->e;
+        break;
+      case 5:
+        x = x->f;
+        break;
+      case 6:
+        x = x->g;
+        break;
+      case 7:
+        x = x->h;
+        break;
+      case 8:
+        x = x->i;
+        break;
+      default:
+        x = x->j;
+        break;
+    }
+  }
+}

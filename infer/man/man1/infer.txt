@@ -129,6 +129,10 @@ OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
+       --bo-field-depth-limit int
+           Limit of field depth of abstract location in buffer-overrun
+           checker           See also infer-analyze(1).
+
        --bo-service-handler-request
            Activates: [EXPERIMENTAL] Use taint flow of service handler
            requests in buffer overflow checking. (Conversely:

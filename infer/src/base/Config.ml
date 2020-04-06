@@ -1003,6 +1003,7 @@ and custom_symbols =
 
 and ( biabduction_models_mode
     , bo_debug
+    , bo_field_depth_limit
     , bo_service_handler_request
     , deduplicate
     , developer_mode
@@ -1037,6 +1038,10 @@ and ( biabduction_models_mode
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
+  and bo_field_depth_limit =
+    CLOpt.mk_int_opt ~long:"bo-field-depth-limit"
+      ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+      "Limit of field depth of abstract location in buffer-overrun checker"
   and bo_service_handler_request =
     CLOpt.mk_bool ~long:"bo-service-handler-request"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
@@ -1163,6 +1168,7 @@ and ( biabduction_models_mode
   in
   ( biabduction_models_mode
   , bo_debug
+  , bo_field_depth_limit
   , bo_service_handler_request
   , deduplicate
   , developer_mode
@@ -2582,6 +2588,8 @@ and biabduction_models_mode = !biabduction_models_mode
 and bootclasspath = !bootclasspath
 
 and bo_debug = !bo_debug
+
+and bo_field_depth_limit = !bo_field_depth_limit
 
 and bo_service_handler_request = !bo_service_handler_request
 

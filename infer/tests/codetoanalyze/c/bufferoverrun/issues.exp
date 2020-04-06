@@ -126,6 +126,7 @@ codetoanalyze/c/bufferoverrun/get_field.c, call_get_field_cond_Bad, 6, BUFFER_OV
 codetoanalyze/c/bufferoverrun/get_field.c, call_get_v2_Bad, 8, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 10]
 codetoanalyze/c/bufferoverrun/get_field.c, call_get_v2_Good_FP, 8, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 10]
 codetoanalyze/c/bufferoverrun/get_field.c, call_get_v_Bad, 8, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Call,Parameter `l->next->prev->v`,Assignment,<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
+codetoanalyze/c/bufferoverrun/get_field.c, make_many_locations, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_Good_FP, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_variable_bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
