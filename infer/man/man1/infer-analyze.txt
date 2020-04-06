@@ -371,6 +371,11 @@ CLANG OPTIONS
            Override sources in all cxx annotation reachability specs with the
            given sources spec
 
+       --clang-compound-literal-init-limit int
+           Limit after which initialization of compound types (structs and
+           arrays) is not done element by element but using a builtin
+           function that each analysis has to model.
+
        --cxx-scope-guards json
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores.

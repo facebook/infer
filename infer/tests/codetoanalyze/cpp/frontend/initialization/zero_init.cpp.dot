@@ -1,0 +1,36 @@
+/* @generated */
+digraph cfg {
+"kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_1" [label="1: Start __infer_globals_initializer_zero_init::X::kMaxKeys\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_1" -> "kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_3" ;
+"kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_2" [label="2: Exit __infer_globals_initializer_zero_init::X::kMaxKeys \n  " color=yellow style=filled]
+	
+
+"kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/initialization/zero_init.cpp|const|ice>$zero_init::X::kMaxKeys:unsigned int const ); [line 13, column 3]\n  *&#GB<codetoanalyze/cpp/frontend/initialization/zero_init.cpp|const|ice>$zero_init::X::kMaxKeys:unsigned int const =(unsigned int const )(1 << 16) [line 13, column 3]\n " shape="box"]
+	
+
+	 "kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_3" -> "kMaxKeys#X#__infer_globals_initializer_zero_init.cd983beeff3879de64cad137bc5d5f8c_2" ;
+"X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_1" [label="1: Start zero_init::X::X\nFormals:  this:zero_init::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_1" -> "X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_3" ;
+"X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_2" [label="2: Exit zero_init::X::X \n  " color=yellow style=filled]
+	
+
+"X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_3" [label="3:  Constructor Init \n   n$1=*&this:zero_init::X* [line 15, column 19]\n  n$2=_fun___infer_zero_initialization(n$1.keys_:void*[65536*8]) [line 15, column 25]\n " shape="box"]
+	
+
+	 "X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_3" -> "X#X#zero_init#{277870330798338824|constexpr}.16c2d483086de887db705c1e51a1bf78_2" ;
+"Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_1" [label="1: Start zero_init::Y::Y\nFormals:  this:zero_init::Y*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_1" -> "Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_3" ;
+"Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_2" [label="2: Exit zero_init::Y::Y \n  " color=yellow style=filled]
+	
+
+"Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_3" [label="3:  Constructor Init \n   n$1=*&this:zero_init::Y* [line 22, column 19]\n  *n$1.keys_[0]:void*=null [line 22, column 25]\n  *n$1.keys_[1]:void*=null [line 22, column 25]\n  *n$1.keys_[2]:void*=null [line 22, column 25]\n " shape="box"]
+	
+
+	 "Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_3" -> "Y#Y#zero_init#{11751607535979846847|constexpr}.3d7bacd58f9f66a28604db198e91fa11_2" ;
+}

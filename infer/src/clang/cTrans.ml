@@ -387,57 +387,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (zero, typ) empty_control
 
 
-  (** Create instructions to initialize record with zeroes. It needs to traverse whole type
-      structure, to assign 0 values to all transitive fields because of AST construction in C
-      translation *)
-  let implicitValueInitExpr_trans trans_state stmt_info =
-    match trans_state.var_exp_typ with
-    | Some var_exp_typ ->
-        (* This node will always be child of InitListExpr, claiming priority will always fail *)
-        let tenv = trans_state.context.CContext.tenv in
-        let sil_loc =
-          CLocation.location_of_stmt_info
-            trans_state.context.CContext.translation_unit_context.source_file stmt_info
-        in
-        (* Traverse structure of a type and initialize int/float/ptr fields with zero *)
-        let rec fill_typ_with_zero ((exp, typ) as exp_typ) =
-          match typ.Typ.desc with
-          | Tstruct tn ->
-              let field_exp_typs =
-                match Tenv.lookup tenv tn with
-                | Some {fields} ->
-                    List.map fields ~f:(fun (fieldname, fieldtype, _) ->
-                        (Exp.Lfield (exp, fieldname, typ), fieldtype) )
-                | None ->
-                    assert false
-              in
-              List.map field_exp_typs ~f:(fun exp_typ -> (fill_typ_with_zero exp_typ).control)
-              |> collect_controls trans_state.context.procdesc
-              |> mk_trans_result exp_typ
-          | Tarray {elt= field_typ; length= Some n} ->
-              let size = IntLit.to_int_exn n in
-              let indices = CGeneral_utils.list_range 0 (size - 1) in
-              List.map indices ~f:(fun i ->
-                  let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in
-                  let field_exp = Exp.Lindex (exp, idx_exp) in
-                  (fill_typ_with_zero (field_exp, field_typ)).control )
-              |> collect_controls trans_state.context.procdesc
-              |> mk_trans_result exp_typ
-          | Tint _ | Tfloat _ | Tptr _ ->
-              let zero_exp = Exp.zero_of_type_exn typ in
-              let instrs = [Sil.Store {e1= exp; root_typ= typ; typ; e2= zero_exp; loc= sil_loc}] in
-              mk_trans_result (exp, typ) {empty_control with instrs}
-          | Tfun | Tvoid | Tarray _ | TVar _ ->
-              CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-                "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
-        in
-        let res_trans = fill_typ_with_zero var_exp_typ in
-        {res_trans with control= {res_trans.control with initd_exps= [fst var_exp_typ]}}
-    | None ->
-        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-          "Retrieving var from non-InitListExpr parent"
-
-
   let no_op_trans succ_nodes =
     mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= succ_nodes}
 
@@ -745,6 +694,86 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Procdesc.node_set_succs context.procdesc root_node' ~normal:res_trans.control.root_nodes ~exn:[] ;
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
+
+
+  (** Create instructions to initialize record with zeroes. It needs to traverse whole type
+      structure, to assign 0 values to all transitive fields because of AST construction in C
+      translation *)
+  and implicitValueInitExpr_trans trans_state stmt_info =
+    match trans_state.var_exp_typ with
+    | None ->
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+          "Retrieving var from non-InitListExpr parent"
+    | Some var_exp_typ ->
+        (* This node will always be child of InitListExpr, claiming priority will always fail *)
+        let tenv = trans_state.context.CContext.tenv in
+        let sil_loc =
+          CLocation.location_of_stmt_info
+            trans_state.context.CContext.translation_unit_context.source_file stmt_info
+        in
+        (* Traverse structure of a type and initialize int/float/ptr fields with zero *)
+        let rec fill_typ_with_zero ((exp, typ) as exp_typ) =
+          let init_with_builtin =
+            match typ.Typ.desc with
+            | Tstruct tn -> (
+              match Tenv.lookup tenv tn with
+              | Some {fields} ->
+                  List.length fields > Config.clang_compound_literal_init_limit
+              | None ->
+                  assert false )
+            | Tarray {length= Some n} ->
+                IntLit.gt n (IntLit.of_int Config.clang_compound_literal_init_limit)
+            | Tint _ | Tfloat _ | Tptr _ ->
+                false
+            | Tfun | Tvoid | Tarray _ | TVar _ ->
+                true
+          in
+          if init_with_builtin then
+            let ret_id = Ident.create_fresh Ident.knormal in
+            let call_instr =
+              Sil.Call
+                ( (ret_id, Typ.void)
+                , Const (Cfun BuiltinDecl.zero_initialization)
+                , [exp_typ]
+                , sil_loc
+                , CallFlags.default )
+            in
+            mk_trans_result exp_typ {empty_control with instrs= [call_instr]}
+          else
+            match typ.Typ.desc with
+            | Tstruct tn ->
+                let field_exp_typs =
+                  match Tenv.lookup tenv tn with
+                  | Some {fields} ->
+                      List.map fields ~f:(fun (fieldname, fieldtype, _) ->
+                          (Exp.Lfield (exp, fieldname, typ), fieldtype) )
+                  | None ->
+                      assert false
+                in
+                List.map field_exp_typs ~f:(fun exp_typ -> (fill_typ_with_zero exp_typ).control)
+                |> collect_controls trans_state.context.procdesc
+                |> mk_trans_result exp_typ
+            | Tarray {elt= field_typ; length= Some n} ->
+                let size = IntLit.to_int_exn n in
+                let indices = CGeneral_utils.list_range 0 (size - 1) in
+                List.map indices ~f:(fun i ->
+                    let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in
+                    let field_exp = Exp.Lindex (exp, idx_exp) in
+                    (fill_typ_with_zero (field_exp, field_typ)).control )
+                |> collect_controls trans_state.context.procdesc
+                |> mk_trans_result exp_typ
+            | Tint _ | Tfloat _ | Tptr _ ->
+                let zero_exp = Exp.zero_of_type_exn typ in
+                let instrs =
+                  [Sil.Store {e1= exp; root_typ= typ; typ; e2= zero_exp; loc= sil_loc}]
+                in
+                mk_trans_result (exp, typ) {empty_control with instrs}
+            | Tfun | Tvoid | Tarray _ | TVar _ ->
+                CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+                  "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
+        in
+        let res_trans = fill_typ_with_zero var_exp_typ in
+        {res_trans with control= {res_trans.control with initd_exps= [fst var_exp_typ]}}
 
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
@@ -2292,7 +2321,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       let all_res_trans =
         match var_typ.Typ.desc with
-        | Typ.Tarray {elt} ->
+        | Tarray {elt} ->
             initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp elt
         | Tstruct _ ->
             initListExpr_struct_trans trans_state_pri init_stmt_info stmts var_exp var_typ

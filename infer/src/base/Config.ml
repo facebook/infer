@@ -851,6 +851,13 @@ and clang_biniou_file =
     ~meta:"file" "Specify a file containing the AST of the program, in biniou format"
 
 
+and clang_compound_literal_init_limit =
+  CLOpt.mk_int ~default:5 ~long:"clang-compound-literal-init-limit"
+    ~in_help:InferCommand.[(Analyze, manual_clang); (Capture, manual_clang)]
+    "Limit after which initialization of compound types (structs and arrays) is not done element \
+     by element but using a builtin function that each analysis has to model."
+
+
 and clang_extra_flags =
   CLOpt.mk_string_list ~long:"Xclang"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -2636,6 +2643,8 @@ and check_version = !check_version
 and checkers = List.map !all_checkers ~f:(fun (checker, _, var) -> (checker, !var))
 
 and clang_biniou_file = !clang_biniou_file
+
+and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
 and clang_extra_flags = !clang_extra_flags
 

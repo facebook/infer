@@ -174,3 +174,5 @@ let vswscanf = create_procname "vswscanf"
 let vwscanf = create_procname "vwscanf"
 
 let wscanf = create_procname "wscanf"
+
+let zero_initialization = create_procname "__infer_zero_initialization"

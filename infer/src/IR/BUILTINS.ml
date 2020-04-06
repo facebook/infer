@@ -135,4 +135,6 @@ module type S = sig
   val vwscanf : t
 
   val wscanf : t
+
+  val zero_initialization : t
 end

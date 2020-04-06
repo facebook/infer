@@ -220,6 +220,11 @@ OPTIONS
        --clang-blacklisted-flags-with-arg +string
            Clang flags (taking args) to filter out           See also infer-capture(1).
 
+       --clang-compound-literal-init-limit int
+           Limit after which initialization of compound types (structs and
+           arrays) is not done element by element but using a builtin
+           function that each analysis has to model.           See also infer-analyze(1) and infer-capture(1).
+
        --class-loads
            Activates: Java class loading analysis (Conversely:
            --no-class-loads)           See also infer-analyze(1).

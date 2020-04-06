@@ -1006,6 +1006,8 @@ let vwscanf = Builtin.register BuiltinDecl.vwscanf (execute_scan_function 1)
 
 let wscanf = Builtin.register BuiltinDecl.wscanf (execute_scan_function 1)
 
+let zero_initialization = Builtin.register BuiltinDecl.zero_initialization execute_skip
+
 (* Function exists to load module and guarantee that the side-effects of Builtin.register
    calls have been done. *)
 let init () = ()
