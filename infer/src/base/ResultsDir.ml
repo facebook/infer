@@ -81,18 +81,12 @@ let assert_results_dir advice =
   ()
 
 
-let dirs_to_clean ~cache_capture =
-  let open Config in
-  let common_list =
-    [classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ()
-  in
-  if cache_capture then common_list else captured_dir_name :: common_list
-
-
 let delete_capture_and_results_data () =
   DBWriter.reset_capture_tables () ;
   let dirs_to_delete =
-    List.map ~f:(Filename.concat Config.results_dir) (dirs_to_clean ~cache_capture:true)
+    List.map
+      ~f:(Filename.concat Config.results_dir)
+      (Config.[classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ())
   in
   List.iter ~f:Utils.rmtree dirs_to_delete ;
   ()
@@ -105,14 +99,20 @@ let scrub_for_caching () =
   if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
-  (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
   let should_delete_dir =
-    let dirs_to_delete = dirs_to_clean ~cache_capture in
+    let dirs_to_delete =
+      Config.
+        [ captured_dir_name (* debug only *)
+        ; classnames_dir_name (* a cache for the Java frontend *)
+        ; temp_dir_name
+          (* debug only *) ]
+      @ (* temporarily needed to build report.json, safe to delete *)
+      FileLevelAnalysisIssueDirs.get_registered_dir_names ()
+    in
     List.mem ~equal:String.equal dirs_to_delete
   in
   let should_delete_file =
     let files_to_delete =
-      (* we do not need to keep the database in Buck/Java mode *)
       (if cache_capture then [] else [ResultsDatabase.database_filename])
       @ [ Config.log_file
         ; (* some versions of sqlite do not clean up after themselves *)
@@ -125,10 +125,11 @@ let scrub_for_caching () =
       (not
          (List.exists
             ~f:(String.equal (Filename.basename name))
-            [ Config.report_json
-            ; Config.costs_report_json
-            ; Config.test_determinator_output
-            ; Config.export_changed_functions_output ]))
+            Config.
+              [ report_json
+              ; costs_report_json
+              ; test_determinator_output
+              ; export_changed_functions_output ]))
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
