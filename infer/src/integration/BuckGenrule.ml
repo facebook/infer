@@ -23,7 +23,7 @@ let write_infer_deps infile =
 
 
 let run_buck_capture cmd =
-  let buck_output_file = Filename.temp_file ~in_dir:Config.temp_file_dir "buck_output" ".log" in
+  let buck_output_file = Filename.temp_file ~in_dir:Config.temp_dir "buck_output" ".log" in
   let shell_cmd =
     List.map ~f:Escape.escape_shell cmd
     |> String.concat ~sep:" "

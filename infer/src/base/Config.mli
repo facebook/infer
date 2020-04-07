@@ -128,8 +128,6 @@ val pp_version : Format.formatter -> unit -> unit
 
 val proc_stats_filename : string
 
-val procnames_locks_dir : string
-
 val property_attributes : string
 
 val racerd_issues_dir_name : string
@@ -251,9 +249,6 @@ val capture : bool
 
 val capture_blacklist : string option
 
-val captured_dir : string
-(** directory where the results of the capture phase are stored *)
-
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val changed_files_index : string option
@@ -323,8 +318,6 @@ val differential_filter_set : [`Introduced | `Fixed | `Preexisting] list
 val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
-
-val dynamic_dispatch : bool
 
 val eradicate_condition_redundant : bool
 
@@ -625,12 +618,6 @@ val threadsafe_aliases : Yojson.Basic.t
 
 val topl_properties : string list
 
-val toplevel_results_dir : string
-(** In some integrations, eg Buck, infer subprocesses started by the build system (started by the
-    toplevel infer process) will have their own results directory; this points to the results
-    directory of the toplevel infer process, which can be useful for, eg, storing debug info. In
-    other cases this is equal to {!results_dir}. *)
-
 val trace_error : bool
 
 val trace_events : bool
@@ -666,17 +653,24 @@ val write_html_whitelist_regex : string list
 val xcode_developer_dir : string option
 
 val xcpretty : bool
-(** {2 Global variables with initial values specified by command-line options} *)
 
-val temp_file_dir : string
+(** {2 Configuration values derived from command-line options} *)
 
-val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
+val dynamic_dispatch : bool
 
-(** {2 Command Line Interface Documentation} *)
+val captured_dir : string
+(** directory where the results of the capture phase are stored *)
 
-val print_usage_exit : unit -> 'a
+val procnames_locks_dir : string
 
-(** {2 Miscellanous} *)
+val temp_dir : string
+(** directory inside {!results_dir} to put temporary files *)
+
+val toplevel_results_dir : string
+(** In some integrations, eg Buck, infer subprocesses started by the build system (started by the
+    toplevel infer process) will have their own results directory; this points to the results
+    directory of the toplevel infer process, which can be useful for, eg, storing debug info. In
+    other cases this is equal to {!results_dir}. *)
 
 val is_in_custom_symbols : string -> string -> bool
 (** Does named symbol match any prefix in the named custom symbol list? *)
@@ -685,3 +679,11 @@ val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
 val execution_id : Int64.t
+
+(** {2 Global variables with initial values specified by command-line options} *)
+
+val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
+
+(** {2 Command Line Interface Documentation} *)
+
+val print_usage_exit : unit -> 'a

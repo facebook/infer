@@ -59,7 +59,7 @@ let capture ~prog ~args =
         else
           let javac_data = parse_gradle_line ~line:content in
           let tmpfile, oc =
-            Core.Filename.open_temp_file ~in_dir:Config.temp_file_dir "gradle_files" ""
+            Core.Filename.open_temp_file ~in_dir:Config.temp_dir "gradle_files" ""
           in
           List.iter javac_data.files ~f:(fun file ->
               Out_channel.output_string oc (normalize file ^ "\n") ) ;
@@ -69,7 +69,7 @@ let capture ~prog ~args =
     | None ->
         seen
   in
-  let gradle_output_file = Filename.temp_file ~in_dir:Config.temp_file_dir "gradle_output" ".log" in
+  let gradle_output_file = Filename.temp_file ~in_dir:Config.temp_dir "gradle_output" ".log" in
   let shell_cmd =
     List.map ~f:Escape.escape_shell (prog :: "--debug" :: args)
     |> String.concat ~sep:" "
