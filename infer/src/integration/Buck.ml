@@ -410,7 +410,8 @@ let run_buck_build prog buck_build_args =
         let filename = Config.project_root ^/ target_path ^/ Config.buck_infer_deps_file_name in
         if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
     | _ ->
-        L.die ExternalError "Couldn't parse buck target output: %s" line
+        L.internal_error "Couldn't parse buck target output: %s" line ;
+        acc
   in
   match Unix.waitpid pid with
   | Ok () -> (

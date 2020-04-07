@@ -15,7 +15,7 @@ let write_infer_deps infile =
     | [target; target_output_path] ->
         Printf.fprintf out_channel "%s\t-\t%s\n" target (Config.project_root ^/ target_output_path)
     | _ ->
-        L.die ExternalError "Couldn't parse buck target output: %s@." line
+        L.internal_error "Couldn't parse buck target output: %s@." line
   in
   let infer_deps = Config.(results_dir ^/ buck_infer_deps_file_name) in
   Utils.with_file_out infer_deps ~f:(fun out_channel ->
