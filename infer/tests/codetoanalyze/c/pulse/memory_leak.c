@@ -15,8 +15,10 @@ int* malloc_returned_ok() {
 
 void malloc_then_free_ok() {
   int* p = malloc(sizeof(p));
-  *p = 5;
-  free(p);
+  if (p) {
+    *p = 5;
+    free(p);
+  }
 }
 
 int* create_p() {

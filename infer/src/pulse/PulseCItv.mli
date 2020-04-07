@@ -39,3 +39,5 @@ val binop : Binop.t -> t -> t -> t option
 val unop : Unop.t -> t -> t option
 
 val zero_inf : t
+
+val ge_to : IntLit.t -> t

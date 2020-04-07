@@ -31,6 +31,9 @@ module ItvPure : sig
 
   val nat : t
 
+  val pos : t
+  (** [1, +oo] *)
+
   val of_int : int -> t
 
   val lb : t -> Bound.t

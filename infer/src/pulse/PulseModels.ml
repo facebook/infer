@@ -88,10 +88,25 @@ module C = struct
       [astate]
 
 
-  let malloc access : model =
+  let malloc _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
-    let astate = PulseOperations.allocate callee_procname location access astate in
-    Ok [PulseOperations.write_id ret_id access astate]
+    let ret_addr = AbstractValue.mk_fresh () in
+    let astate_alloc =
+      PulseOperations.allocate callee_procname location (ret_addr, []) astate
+      |> PulseOperations.write_id ret_id (ret_addr, [])
+      |> AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.pos)
+      |> AddressAttributes.add_one ret_addr
+           (CItv (CItv.ge_to IntLit.one, Immediate {location; history= []}))
+    in
+    let+ astate_null =
+      AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit IntLit.zero)) astate
+      |> AddressAttributes.add_one ret_addr
+           (CItv (CItv.equal_to IntLit.zero, Immediate {location; history= []}))
+      |> PulseOperations.write_id ret_id (ret_addr, [])
+      |> PulseOperations.invalidate location (Invalidation.ConstantDereference IntLit.zero)
+           (ret_addr, [])
+    in
+    [astate_alloc; astate_null]
 end
 
 module Cplusplus = struct

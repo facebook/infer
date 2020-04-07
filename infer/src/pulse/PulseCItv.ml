@@ -121,6 +121,8 @@ module Unsafe : sig
   val equal_to : IntLit.t -> t
 
   val not_equal_to : IntLit.t -> t
+
+  val ge_to : IntLit.t -> t
 end = struct
   type t = Between of Bound.t * Bound.t | Outside of IntLit.t * IntLit.t [@@deriving compare]
 
@@ -140,6 +142,10 @@ end = struct
 
 
   let not_equal_to i = Outside (i, i)
+
+  let ge_to i =
+    let b = Bound.Int i in
+    Between (b, Bound.PlusInfinity)
 end
 
 include Unsafe
