@@ -1435,7 +1435,9 @@ and iphoneos_target_sdk_version_path_regex =
 and issues_tests_fields =
   CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
-    ~default:IssuesTestField.[File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace]
+    ~default:
+      IssuesTestField.
+        [File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace; NullsafeExtra]
     ~symbols:IssuesTestField.all_symbols ~eq:IssuesTestField.equal
     "Fields to emit with $(b,--issues-tests)"
 

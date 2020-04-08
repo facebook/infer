@@ -22,6 +22,7 @@ type t =
   | Hash
   | LineOffset
   | QualifierContainsPotentialExceptionNote
+  | NullsafeExtra
 [@@deriving equal]
 
 let all_symbols =
@@ -38,4 +39,5 @@ let all_symbols =
   ; ("key", Key)
   ; ("hash", Hash)
   ; ("line_offset", LineOffset)
-  ; ("qualifier_contains_potential_exception_note", QualifierContainsPotentialExceptionNote) ]
+  ; ("qualifier_contains_potential_exception_note", QualifierContainsPotentialExceptionNote)
+  ; ("nullsafe_extra", NullsafeExtra) ]

@@ -20,9 +20,23 @@ type loc = {
   enum: int;
 }
 
+type nullsafe_mode = [Default | LocalTrustAll | LocalTrustSome | LocalTrustNone | Strict]
+
+type nullsafe_meta_issue_info = {
+  num_issues: int;
+  curr_nullsafe_mode: nullsafe_mode;
+}
+
+type nullsafe_extra = {
+  class_name: string;
+  package: string option;
+  ?meta_issue_info: nullsafe_meta_issue_info option (* Should be present if the issue is "nullsafe meta issue" *)
+}
+
 type extra = {
   ?cost_polynomial : string option;
-  ?cost_degree : int option
+  ?cost_degree : int option;
+  ?nullsafe_extra : nullsafe_extra option
 }
 
 type jsonbug = {

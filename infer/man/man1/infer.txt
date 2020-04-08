@@ -673,7 +673,7 @@ OPTIONS
        --issues-tests-fields ,-separated sequence of { bug_type | bucket |
        qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
-       qualifier_contains_potential_exception_note }
+       qualifier_contains_potential_exception_note | nullsafe_extra }
            Fields to emit with --issues-tests           See also infer-report(1).
 
        --java-jar-compiler path

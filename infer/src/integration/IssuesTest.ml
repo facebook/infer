@@ -8,6 +8,13 @@
 open! IStd
 module F = Format
 
+let pp_nullsafe_extra fmt Jsonbug_t.{class_name; package; meta_issue_info} =
+  F.fprintf fmt "%s, %s" class_name (Option.value package ~default:"<no package>") ;
+  Option.iter meta_issue_info ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode} ->
+      F.fprintf fmt ", issues: %d, curr_mode: %s" num_issues
+        (Jsonbug_j.string_of_nullsafe_mode curr_nullsafe_mode) )
+
+
 let pp_custom_of_report fmt report fields =
   let pp_custom_of_issue fmt (issue : Jsonbug_t.jsonbug) =
     let open Jsonbug_t in
@@ -61,6 +68,10 @@ let pp_custom_of_report fmt report fields =
       | QualifierContainsPotentialExceptionNote ->
           F.pp_print_bool fmt
             (String.is_substring issue.qualifier ~substring:JsonReports.potential_exception_message)
+      | NullsafeExtra ->
+          let nullsafe_extra = Option.bind issue.extras ~f:(fun extras -> extras.nullsafe_extra) in
+          Option.iter nullsafe_extra ~f:(fun nullsafe_extra ->
+              F.fprintf fmt "%s%a" (comma_separator index) pp_nullsafe_extra nullsafe_extra )
     in
     List.iteri ~f:pp_field fields ; F.fprintf fmt "@."
   in

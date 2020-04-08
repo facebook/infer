@@ -48,6 +48,7 @@ val log_issue_external :
   -> loc:Location.t
   -> ltr:Errlog.loc_trace
   -> ?access:string
+  -> ?extras:Jsonbug_t.extra
   -> IssueType.t
   -> string
   -> IssueLog.t

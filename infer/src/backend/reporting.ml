@@ -86,11 +86,12 @@ let log_error = log_issue_from_summary_simplified Exceptions.Error
 
 let log_warning = log_issue_from_summary_simplified Exceptions.Warning
 
-let log_issue_external procname ~issue_log severity ~loc ~ltr ?access issue_type error_message =
+let log_issue_external procname ~issue_log severity ~loc ~ltr ?access ?extras issue_type
+    error_message =
   let exn = checker_exception issue_type error_message in
   let issue_log, errlog = IssueLog.get_or_add issue_log ~proc:procname in
   let node = Errlog.UnknownNode in
-  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access ~extras:None exn ;
+  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access ~extras exn ;
   issue_log
 
 

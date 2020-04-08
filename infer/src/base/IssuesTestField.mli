@@ -22,6 +22,7 @@ type t =
   | Hash
   | LineOffset
   | QualifierContainsPotentialExceptionNote
+  | NullsafeExtra
 [@@deriving equal]
 
 val all_symbols : (string * t) list

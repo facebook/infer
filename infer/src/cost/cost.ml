@@ -150,7 +150,8 @@ end
 
 let compute_errlog_extras cost =
   { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp_hum cost)
-  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
+  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
+  ; nullsafe_extra= None }
 
 
 module ThresholdReports = struct
