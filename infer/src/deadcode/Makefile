@@ -39,23 +39,30 @@ ALL_MLI_FILES_COPIED = all_mli_files_copied
 
 default: detect_dead_code
 
+# Annoying find being different on OSX/BSD and GNU/Linux
+ifeq ($(PLATFORM),Linux)
+DEPTH_ONE=-mindepth 1 -maxdepth 1
+else
+DEPTH_ONE=-depth 1
+endif
+
 # ./ is necessary for find to work correctly.
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
-# -depth 1 and iteration over main and library folders.
+# $(DEPTH_ONE) and iteration over main and library folders.
 LIBRARY_FOLDERS = . ./IR ./atd ./base ./c_stubs ./istd ./scripts
 INCLUDE_FOLDERS = -I IR -I atd -I base -I c_stubs -I istd -I scripts
 
 ml_src_files:=$(shell \
 	cd $(INFER_BUILD_DIR); \
 	for d in $(LIBRARY_FOLDERS); do \
-	[ -d $$d ] && echo $$(find $$d -depth 1 -regex '\./[a-zA-Z].*\.ml' \( -not -regex '.*\.pp\.ml' \) \
+	[ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.ml' \( -not -regex '.*\.pp\.ml' \) \
 				| sed 's/^\.\///'); \
 	done)
 mli_src_files:=$(shell \
 	cd $(INFER_BUILD_DIR); \
 	for d in $(LIBRARY_FOLDERS); do \
-	[ -d $$d ] && echo $$(find $$d -depth 1 -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
+	[ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
 				| sed 's/^\.\///'); \
 	done)
 ml_src_files_without_mli:=$(shell \
