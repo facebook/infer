@@ -70,9 +70,6 @@ val pp_text : Format.formatter -> t -> unit
 (** Print the summary in text format *)
 
 module OnDisk : sig
-  val has_model : Procname.t -> bool
-  (** Check if a summary for a given procedure exists in the models directory *)
-
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
 

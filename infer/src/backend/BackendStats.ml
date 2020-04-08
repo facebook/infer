@@ -17,7 +17,6 @@ include struct
     ; mutable summary_read_from_disk: int
     ; mutable summary_cache_hits: int
     ; mutable summary_cache_misses: int
-    ; mutable summary_has_model_queries: int
     ; mutable ondemand_procs_analyzed: int
     ; mutable ondemand_local_cache_hits: int
     ; mutable ondemand_local_cache_misses: int
@@ -39,7 +38,6 @@ let global_stats =
   ; summary_read_from_disk= 0
   ; summary_cache_hits= 0
   ; summary_cache_misses= 0
-  ; summary_has_model_queries= 0
   ; ondemand_procs_analyzed= 0
   ; ondemand_local_cache_hits= 0
   ; ondemand_local_cache_misses= 0
@@ -71,8 +69,6 @@ let incr_summary_read_from_disk () = incr Fields.summary_read_from_disk
 let incr_summary_cache_hits () = incr Fields.summary_cache_hits
 
 let incr_summary_cache_misses () = incr Fields.summary_cache_misses
-
-let incr_summary_has_model_queries () = incr Fields.summary_has_model_queries
 
 let incr_ondemand_procs_analyzed () = incr Fields.ondemand_procs_analyzed
 
@@ -106,7 +102,6 @@ let copy from ~into : unit =
       ; summary_read_from_disk
       ; summary_cache_hits
       ; summary_cache_misses
-      ; summary_has_model_queries
       ; ondemand_procs_analyzed
       ; ondemand_local_cache_hits
       ; ondemand_local_cache_misses
@@ -118,10 +113,9 @@ let copy from ~into : unit =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
-    ~summary_cache_hits ~summary_cache_misses ~summary_has_model_queries ~ondemand_procs_analyzed
-    ~ondemand_local_cache_hits ~ondemand_local_cache_misses ~proc_locker_lock_time
-    ~proc_locker_unlock_time ~restart_scheduler_useful_time ~restart_scheduler_total_time
-    ~scheduler_process_analysis_time
+    ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed ~ondemand_local_cache_hits
+    ~ondemand_local_cache_misses ~proc_locker_lock_time ~proc_locker_unlock_time
+    ~restart_scheduler_useful_time ~restart_scheduler_total_time ~scheduler_process_analysis_time
 
 
 let merge stats1 stats2 =
@@ -129,7 +123,6 @@ let merge stats1 stats2 =
   ; summary_read_from_disk= stats1.summary_read_from_disk + stats2.summary_read_from_disk
   ; summary_cache_hits= stats1.summary_cache_hits + stats2.summary_cache_hits
   ; summary_cache_misses= stats1.summary_cache_misses + stats2.summary_cache_misses
-  ; summary_has_model_queries= stats1.summary_has_model_queries + stats2.summary_has_model_queries
   ; ondemand_procs_analyzed= stats1.ondemand_procs_analyzed + stats2.ondemand_procs_analyzed
   ; ondemand_local_cache_hits= stats1.ondemand_local_cache_hits + stats2.ondemand_local_cache_hits
   ; ondemand_local_cache_misses=
@@ -151,7 +144,6 @@ let initial =
   ; summary_read_from_disk= 0
   ; summary_cache_hits= 0
   ; summary_cache_misses= 0
-  ; summary_has_model_queries= 0
   ; ondemand_procs_analyzed= 0
   ; ondemand_local_cache_hits= 0
   ; ondemand_local_cache_misses= 0
@@ -186,8 +178,7 @@ let pp f stats =
     Fields.iter ~summary_file_try_load:(pp_int_field stats f)
       ~summary_read_from_disk:(pp_int_field stats f)
       ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses f)
-      ~summary_cache_misses:(pp_int_field stats f) ~summary_has_model_queries:(pp_int_field stats f)
-      ~ondemand_procs_analyzed:(pp_int_field stats f)
+      ~summary_cache_misses:(pp_int_field stats f) ~ondemand_procs_analyzed:(pp_int_field stats f)
       ~ondemand_local_cache_hits:(pp_cache_hits stats stats.ondemand_local_cache_misses f)
       ~ondemand_local_cache_misses:(pp_int_field stats f)
       ~proc_locker_lock_time:(pp_execution_duration_field stats f)
@@ -219,10 +210,9 @@ let log_to_scuba stats =
   let entries =
     Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
-      ~summary_has_model_queries:create_counter ~ondemand_procs_analyzed:create_counter
-      ~ondemand_local_cache_hits:create_counter ~ondemand_local_cache_misses:create_counter
-      ~proc_locker_lock_time:create_time_entry ~proc_locker_unlock_time:create_time_entry
-      ~restart_scheduler_useful_time:create_time_entry
+      ~ondemand_procs_analyzed:create_counter ~ondemand_local_cache_hits:create_counter
+      ~ondemand_local_cache_misses:create_counter ~proc_locker_lock_time:create_time_entry
+      ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
       ~restart_scheduler_total_time:create_time_entry
       ~scheduler_process_analysis_time:create_time_entry
     |> List.concat

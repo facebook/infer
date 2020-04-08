@@ -117,8 +117,6 @@ let pp_html source fmt summary =
 
 
 module OnDisk = struct
-  open PolyVariantEqual
-
   type cache = t Procname.Hash.t
 
   let cache : cache = Procname.Hash.create 128
@@ -148,11 +146,6 @@ module OnDisk = struct
     DB.filename_from_string (Filename.concat Config.biabduction_models_dir (specs_filename pname))
 
 
-  let has_model pname =
-    BackendStats.incr_summary_has_model_queries () ;
-    Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
-
-
   let summary_serializer : t Serialization.serializer =
     Serialization.create_serializer Serialization.Key.summary
 
@@ -163,6 +156,11 @@ module OnDisk = struct
     let opt = Serialization.read_from_file summary_serializer specs_file in
     if Option.is_some opt then BackendStats.incr_summary_read_from_disk () ;
     opt
+
+
+  let load_biabduction_model proc_name =
+    if BiabductionModels.mem proc_name then load_from_file (specs_models_filename proc_name)
+    else None
 
 
   (** Load procedure summary for the given procedure name and update spec table *)
@@ -177,7 +175,7 @@ module OnDisk = struct
     fun proc_name ->
       let summ_opt =
         load_from_file (specs_filename_of_procname proc_name)
-        |> or_from load_from_file specs_models_filename proc_name
+        |> or_from load_biabduction_model Fn.id proc_name
         |> or_from load_summary_ziplibs specs_filename proc_name
       in
       Option.iter ~f:(add proc_name) summ_opt ;

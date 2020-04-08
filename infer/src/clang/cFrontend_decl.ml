@@ -13,10 +13,6 @@ module F = Format
 module L = Logging
 
 module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend = struct
-  let model_exists procname =
-    (not Config.biabduction_models_mode) && Summary.OnDisk.has_model procname
-
-
   (** Translates the method/function's body into nodes of the cfg. *)
   let add_method ?(is_destructor_wrapper = false) trans_unit_ctx tenv cfg class_decl_opt procname
       body ms has_return_param outer_context_opt extra_instrs =
@@ -35,7 +31,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     in
     let f () =
       match Procname.Hash.find_opt cfg procname with
-      | Some procdesc when Procdesc.is_defined procdesc && not (model_exists procname) ->
+      | Some procdesc when Procdesc.is_defined procdesc && not (BiabductionModels.mem procname) ->
           L.(debug Capture Verbose)
             "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
             (Procname.to_string procname) ;

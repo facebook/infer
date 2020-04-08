@@ -509,7 +509,7 @@ let method_exists right_proc_name methods =
     | Some attrs ->
         attrs.ProcAttributes.is_defined
     | None ->
-        Summary.OnDisk.has_model right_proc_name
+        BiabductionModels.mem right_proc_name
 
 
 let resolve_method tenv class_name proc_name =
@@ -1108,7 +1108,7 @@ let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee
     (* to be extended to other methods *)
   then
     try
-      let has_clang_model = Summary.OnDisk.has_model callee_pname in
+      let has_clang_model = BiabductionModels.mem callee_pname in
       let resolve_and_analyze_result =
         resolve_and_analyze tenv ~caller_summary:current_summary ~has_clang_model prop_r
           n_actual_params callee_pname call_flags
