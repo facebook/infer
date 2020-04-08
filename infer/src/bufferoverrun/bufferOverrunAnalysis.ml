@@ -398,11 +398,14 @@ module TransferFunctions = struct
             let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
               BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
             in
-            match (get_summary callee_pname, get_formals callee_pname) with
-            | Some callee_exit_mem, Some callee_formals ->
+            match
+              (callee_pname, Tenv.get_summary_formals tenv ~get_summary ~get_formals callee_pname)
+            with
+            | callee_pname, `Found (callee_exit_mem, callee_formals)
+            | _, `FoundFromSubclass (callee_pname, callee_exit_mem, callee_formals) ->
                 instantiate_mem ~is_params_ref integer_type_widths ret callee_formals callee_pname
                   params mem callee_exit_mem location
-            | _, _ ->
+            | _, `NotFound ->
                 (* This may happen for procedures with a biabduction model too. *)
                 L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
                 Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
