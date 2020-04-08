@@ -78,11 +78,9 @@ let add_nonnull_to_fields fields tenv =
     match Typ.name typ with
     | Some typ_name -> (
       match Tenv.lookup tenv typ_name with
-      | Some {fields; statics; supers; methods; annots} ->
+      | Some ({fields} as struct_typ) ->
           let fields_with_annot = List.map ~f:(add_nonnull_to_selected_field field) fields in
-          ignore
-            (Tenv.mk_struct tenv ~fields:fields_with_annot ~statics ~supers ~methods ~annots
-               typ_name)
+          ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields_with_annot typ_name)
       | None ->
           () )
     | None ->

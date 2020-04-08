@@ -26,6 +26,10 @@ type program
 
 val get_classmap : program -> classmap
 
+val set_java_location : program -> JBasics.class_name -> Location.t -> unit
+
+val get_java_location : program -> JBasics.class_name -> Location.t option
+
 val mem_classmap : JBasics.class_name -> program -> bool
 
 val cleanup : program -> unit

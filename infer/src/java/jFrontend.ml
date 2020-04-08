@@ -163,7 +163,7 @@ let create_icfg source_file program tenv icfg cn node =
 
 
 (* returns true for the set of classes that are selected to be translated in the given
-   progam *)
+   program *)
 let should_capture program package_opt source_basename node =
   let classname = Javalib.get_name node in
   let match_package pkg cn =
@@ -193,6 +193,19 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
+  in
+  let set_java_location cn _node =
+    let cn_name = JBasics.cn_name cn in
+    let loc = JSourceFileInfo.class_name_location source_file cn_name in
+    L.debug Capture Verbose "set_java_location %s with location %a@." cn_name Location.pp_file_pos
+      loc ;
+    JClasspath.set_java_location program cn loc
+  in
+  (* we must set the java location for all classes in the source file before translation *)
+  let () =
+    JBasics.ClassMap.iter
+      (select (should_capture program package_opt source_basename) set_java_location)
+      (JClasspath.get_classmap program)
   in
   let () =
     JBasics.ClassMap.iter

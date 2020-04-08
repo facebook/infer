@@ -324,7 +324,16 @@ and get_class_struct_typ =
     let methods =
       Javalib.m_fold (fun m procnames -> translate_method_name program tenv m :: procnames) node []
     in
-    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~java_class_kind name
+    let node_name = Javalib.get_name node in
+    let java_location : Location.t option = JClasspath.get_java_location program node_name in
+    ( match java_location with
+    | Some loc ->
+        L.debug Capture Verbose "Java location %s -> %a@." (JBasics.cn_name node_name)
+          Location.pp_file_pos loc
+    | None ->
+        () ) ;
+    let java_class_info : Struct.java_class_info = {kind= java_class_kind; loc= java_location} in
+    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~java_class_info name
   in
   fun program tenv cn ->
     let name = typename_of_classname cn in

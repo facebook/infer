@@ -30,10 +30,10 @@ let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
 let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-    ?java_class_kind ?dummy name =
+    ?java_class_info ?dummy name =
   let struct_typ =
     Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?annots ?java_class_kind ?dummy ()
+      ?annots ?java_class_info ?dummy ()
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ
@@ -224,13 +224,15 @@ let get_summary_formals tenv ~get_summary ~get_formals =
           `NotFound
       | Some class_name -> (
         match lookup tenv class_name with
-        | Some {Struct.java_class_kind= Some Interface; subs}
-          when Int.equal (Typ.Name.Set.cardinal subs) 1 ->
+        | Some {Struct.java_class_info= Some info; subs}
+          when Struct.equal_java_class_kind info.kind Interface
+               && Int.equal (Typ.Name.Set.cardinal subs) 1 ->
             let unique_sub = Typ.Name.Set.choose subs in
             Logging.d_printfln_escaped "Found a unique sub-class %a" Typ.Name.pp unique_sub ;
             let sub_pname = Procname.replace_class pname unique_sub in
             get_summary_formals_aux sub_pname |> found_from_subclass sub_pname
-        | Some {Struct.java_class_kind= Some AbstractClass; subs} ->
+        | Some {Struct.java_class_info= Some info; subs}
+          when Struct.equal_java_class_kind info.kind AbstractClass ->
             Option.value_map (Typ.Name.Set.min_elt_opt subs) ~default:`NotFound ~f:(fun sub ->
                 Logging.d_printfln_escaped "Found an arbitrary sub-class %a" Typ.Name.pp sub ;
                 let sub_pname = Procname.replace_class pname sub in

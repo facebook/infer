@@ -199,12 +199,27 @@ type callee_status = Translated | Missing of JBasics.class_name * JBasics.method
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
+(** We store for each classname the location of its declaration. This map is filled during
+    JFrontend.compute_source_icfg and then it is used in JTransType.get_class_struct_typ before we
+    lose access to JClasspath.program. At the end, the information seats in each Struct.t (stored in
+    Tenv.t) *)
+type java_location_map = Location.t JBasics.ClassMap.t
+
 type program =
   { classpath_channel: Javalib.class_path
   ; mutable classmap: classmap
+  ; mutable java_location_map: java_location_map
   ; callees: callee_status Procname.Hash.t }
 
 let get_classmap program = program.classmap
+
+let set_java_location program cn loc =
+  program.java_location_map <- JBasics.ClassMap.add cn loc program.java_location_map
+
+
+let get_java_location program cn =
+  try Some (JBasics.ClassMap.find cn program.java_location_map) with Caml.Not_found -> None
+
 
 let mem_classmap cn program = JBasics.ClassMap.mem cn program.classmap
 
@@ -258,6 +273,7 @@ let load_program ~classpath classes =
   let program =
     { classpath_channel= Javalib.class_path classpath
     ; classmap= JBasics.ClassMap.empty
+    ; java_location_map= JBasics.ClassMap.empty
     ; callees= Procname.Hash.create 128 }
   in
   JBasics.ClassSet.iter (fun cn -> ignore (lookup_node cn program)) classes ;

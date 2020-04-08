@@ -13,18 +13,24 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
-type java_class_kind = Interface | AbstractClass | NormalClass
+type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
+
+type java_class_info =
+  { kind: java_class_kind  (** class kind in Java *)
+  ; loc: Location.t option
+        (** None should correspond to rare cases when it was impossible to fetch the location in
+            source file *) }
 
 (** Type for a structured value. *)
-type t = private
+type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
-  ; supers: Typ.Name.t list  (** supers *)
+  ; supers: Typ.Name.t list  (** superclasses *)
   ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; java_class_kind: java_class_kind option  (** class kind in Java *)
+  ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
 type lookup = Typ.Name.t -> t option
@@ -42,7 +48,7 @@ val internal_mk_struct :
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
-  -> ?java_class_kind:java_class_kind
+  -> ?java_class_info:java_class_info
   -> ?dummy:bool
   -> unit
   -> t

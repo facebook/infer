@@ -12,7 +12,13 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type fields = field list
 
-type java_class_kind = Interface | AbstractClass | NormalClass
+type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
+
+type java_class_info =
+  { kind: java_class_kind  (** class kind in Java *)
+  ; loc: Location.t option
+        (** None should correspond to rare cases when it was impossible to fetch the location in
+            source file *) }
 
 (** Type for a structured value. *)
 type t =
@@ -23,7 +29,7 @@ type t =
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; java_class_kind: java_class_kind option  (** class kind in Java *)
+  ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *) }
 
 type lookup = Typ.Name.t -> t option
@@ -60,7 +66,7 @@ let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-    ?java_class_kind ?dummy () =
+    ?java_class_info ?dummy () =
   let default_ =
     { fields= []
     ; statics= []
@@ -69,14 +75,14 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; supers= []
     ; subs= Typ.Name.Set.empty
     ; annots= Annot.Item.empty
-    ; java_class_kind= None
+    ; java_class_info= None
     ; dummy= false }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
       ?(supers = default.supers) ?(subs = default.subs) ?(annots = default.annots)
       ?(dummy = default.dummy) () =
-    {fields; statics; methods; exported_objc_methods; supers; subs; annots; java_class_kind; dummy}
+    {fields; statics; methods; exported_objc_methods; supers; subs; annots; java_class_info; dummy}
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
 
