@@ -22,10 +22,11 @@ type final = UnknownFrom of Procname.t option
 (** Trace elements *)
 type elem =
   | ArrayDeclaration
-  | JavaIntDecleration
   | Assign of AbsLoc.PowLoc.t
   | Global of AbsLoc.Loc.t
+  | JavaIntDecleration
   | Parameter of AbsLoc.Loc.t
+  | SetArraySize
   | Through of {risky_fun: lib_fun option}
 
 val through : risky_fun:lib_fun option -> elem

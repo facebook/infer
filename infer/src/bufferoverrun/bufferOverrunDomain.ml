@@ -611,7 +611,7 @@ module Val = struct
    fun location ~length v ->
     { v with
       arrayblk= ArrayBlk.set_length length.itv v.arrayblk
-    ; traces= Trace.(Set.add_elem location ArrayDeclaration) length.traces }
+    ; traces= Trace.(Set.add_elem location SetArraySize) length.traces }
 
 
   let transform_array_length : Location.t -> f:(Itv.t -> Itv.t) -> t -> t =

@@ -16,10 +16,11 @@ module BoTrace = struct
 
   type elem =
     | ArrayDeclaration
-    | JavaIntDecleration
     | Assign of PowLoc.t
     | Global of Loc.t
+    | JavaIntDecleration
     | Parameter of Loc.t
+    | SetArraySize
     | Through of {risky_fun: lib_fun option}
   [@@deriving compare]
 
@@ -78,14 +79,16 @@ module BoTrace = struct
   let pp_elem f = function
     | ArrayDeclaration ->
         F.pp_print_string f "ArrayDeclaration"
-    | JavaIntDecleration ->
-        F.pp_print_string f "JavaIntDeclaration"
     | Assign locs ->
         F.fprintf f "Assign `%a`" PowLoc.pp locs
     | Global loc ->
         F.fprintf f "Global `%a`" Loc.pp loc
+    | JavaIntDecleration ->
+        F.pp_print_string f "JavaIntDeclaration"
     | Parameter loc ->
         F.fprintf f "Parameter `%a`" Loc.pp loc
+    | SetArraySize ->
+        F.pp_print_string f "SetArraySize"
     | Through {risky_fun} ->
         F.pp_print_string f "Through" ;
         if Option.is_some risky_fun then F.pp_print_string f " RiskyLibCall"
@@ -118,7 +121,7 @@ module BoTrace = struct
   let has_unknown = final_exists ~f:(function UnknownFrom _ -> true)
 
   let elem_has_risky = function
-    | JavaIntDecleration | ArrayDeclaration | Assign _ | Global _ | Parameter _ ->
+    | JavaIntDecleration | ArrayDeclaration | Assign _ | Global _ | Parameter _ | SetArraySize ->
         false
     | Through {risky_fun} ->
         Option.is_some risky_fun
@@ -158,16 +161,18 @@ module BoTrace = struct
 
 
   let elem_err_desc = function
-    | JavaIntDecleration ->
-        "int declaration (java)"
     | ArrayDeclaration ->
         "Array declaration"
     | Assign _ ->
         "Assignment"
     | Global loc ->
         if Loc.is_pretty loc then F.asprintf "Global `%a`" Loc.pp loc else ""
+    | JavaIntDecleration ->
+        "int declaration (java)"
     | Parameter loc ->
         if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
+    | SetArraySize ->
+        "Set array size"
     | Through {risky_fun} -> (
       match risky_fun with
       | None ->
