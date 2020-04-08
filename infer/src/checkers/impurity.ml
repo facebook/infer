@@ -138,21 +138,24 @@ let is_modeled_pure tenv pname =
 
 (** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
     modified by the function and skipped functions. *)
-let extract_impurity tenv pdesc pre_post : ImpurityDomain.t =
-  let pre_heap = (AbductiveDomain.PrePost.get_pre pre_post).BaseDomain.heap in
-  let post = AbductiveDomain.PrePost.get_post pre_post in
-  let post_stack = post.BaseDomain.stack in
-  let pname = Procdesc.get_proc_name pdesc in
-  let modified_params =
-    Procdesc.get_formals pdesc |> get_modified_params pname post_stack pre_heap post
-  in
-  let modified_globals = get_modified_globals pre_heap post post_stack in
-  let skipped_calls =
-    AbductiveDomain.PrePost.get_skipped_calls pre_post
-    |> PulseAbductiveDomain.SkippedCalls.filter (fun proc_name _ ->
-           Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
-  in
-  {modified_globals; modified_params; skipped_calls}
+let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityDomain.t =
+  match exec_state with
+  | ExitProgram astate | ContinueProgram astate ->
+      (* TODO: consider impure even though the program only exits with pre=post *)
+      let pre_heap = (PulseAbductiveDomain.get_pre astate).BaseDomain.heap in
+      let post = PulseAbductiveDomain.get_post astate in
+      let post_stack = post.BaseDomain.stack in
+      let pname = Procdesc.get_proc_name pdesc in
+      let modified_params =
+        Procdesc.get_formals pdesc |> get_modified_params pname post_stack pre_heap post
+      in
+      let modified_globals = get_modified_globals pre_heap post post_stack in
+      let skipped_calls =
+        PulseAbductiveDomain.get_skipped_calls astate
+        |> PulseAbductiveDomain.SkippedCalls.filter (fun proc_name _ ->
+               Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
+      in
+      {modified_globals; modified_params; skipped_calls}
 
 
 let checker {exe_env; Callbacks.summary} : Summary.t =
@@ -177,8 +180,8 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
         impure_fun_desc
   | Some pre_posts ->
       let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
-        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
-            let modified = extract_impurity tenv pdesc pre_post in
+        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
+            let modified = extract_impurity tenv pdesc exec_state in
             ImpurityDomain.join acc modified )
       in
       if Purity.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then

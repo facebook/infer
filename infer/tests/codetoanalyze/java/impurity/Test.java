@@ -89,8 +89,15 @@ class Test {
     return System.nanoTime();
   }
 
-  // In pulse, we get 0 disjuncts as a summary, hence consider this as impure
-  void exit_impure() {
+  // In pulse, we get Exited summary where pre=post
+  // TODO: change impurity to track exit as impure
+  void exit_impure_FN() {
+    System.exit(1);
+  }
+
+  // In pulse, we get Exited summary where pre=post
+  void modify_exit_impure(int[] a) {
+    a[0] = 0;
     System.exit(1);
   }
 

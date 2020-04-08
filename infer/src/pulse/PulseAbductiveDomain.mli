@@ -110,29 +110,25 @@ val discard_unreachable : t -> t * BaseAddressAttributes.t
 
 val add_skipped_calls : Procname.t -> PulseTrace.t -> t -> t
 
-module PrePost : sig
-  type domain_t = t
+val leq : lhs:t -> rhs:t -> bool
 
-  type t = private domain_t
+val pp : Format.formatter -> t -> unit
 
-  val pp : Format.formatter -> t -> unit
+val of_post : Procdesc.t -> t -> t
 
-  val of_post : Procdesc.t -> domain_t -> t
+val get_pre : t -> BaseDomain.t
 
-  val apply :
-       Procname.t
-    -> Location.t
-    -> t
-    -> formals:Var.t list
-    -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-    -> domain_t
-    -> ((domain_t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
-  (** return the abstract state after the call along with an optional return value, or [None] if the
-      precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
+val get_post : t -> BaseDomain.t
 
-  val get_pre : t -> BaseDomain.t
+val get_skipped_calls : t -> SkippedCalls.t
 
-  val get_post : t -> BaseDomain.t
-
-  val get_skipped_calls : t -> SkippedCalls.t
-end
+val apply :
+     Procname.t
+  -> Location.t
+  -> t
+  -> formals:Var.t list
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
+  -> t
+  -> ((t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
+(** return the abstract state after the call along with an optional return value, or [None] if the
+    precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)

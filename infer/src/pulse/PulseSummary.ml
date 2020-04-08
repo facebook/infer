@@ -6,15 +6,14 @@
  *)
 open! IStd
 module F = Format
-open PulseDomainInterface
 
-type t = AbductiveDomain.PrePost.t list
+type t = PulseExecutionState.t list
 
-let of_posts pdesc posts = List.map posts ~f:(PulseAbductiveDomain.PrePost.of_post pdesc)
+let of_posts pdesc posts = List.map posts ~f:(PulseExecutionState.of_post pdesc)
 
 let pp fmt summary =
   F.open_vbox 0 ;
   F.fprintf fmt "%d pre/post(s)@;" (List.length summary) ;
   List.iteri summary ~f:(fun i pre_post ->
-      F.fprintf fmt "#%d: @[%a@]@;" i PulseAbductiveDomain.PrePost.pp pre_post ) ;
+      F.fprintf fmt "#%d: @[%a@]@;" i PulseExecutionState.pp pre_post ) ;
   F.close_box ()

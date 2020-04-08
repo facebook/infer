@@ -13,7 +13,7 @@ type model =
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> PulseAbductiveDomain.t
-  -> PulseAbductiveDomain.t list PulseOperations.access_result
+  -> PulseExecutionState.t list PulseOperations.access_result
 
 val dispatch :
      Tenv.t

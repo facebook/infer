@@ -14,6 +14,8 @@ type t = AbductiveDomain.t
 
 type 'a access_result = ('a, Diagnostic.t) result
 
+let ok_continue post = Ok [PulseExecutionState.ContinueProgram post]
+
 (** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -570,33 +572,47 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate =
+let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals astate =
+  let apply callee_prepost ~f =
+    PulseAbductiveDomain.apply callee_pname call_loc callee_prepost ~formals ~actuals astate
+    >>| function
+    | None ->
+        (* couldn't apply pre/post pair *) None
+    | Some (post, return_val_opt) ->
+        let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
+        let post =
+          match return_val_opt with
+          | Some (return_val, return_hist) ->
+              write_id (fst ret) (return_val, event :: return_hist) post
+          | None ->
+              havoc_id (fst ret) [event] post
+        in
+        Some (f post)
+  in
+  let open PulseExecutionState in
+  match callee_exec_state with
+  | ContinueProgram astate ->
+      apply astate ~f:(fun astate -> ContinueProgram astate)
+  | ExitProgram astate ->
+      apply astate ~f:(fun astate -> ExitProgram astate)
+
+
+let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt
+    (astate : PulseAbductiveDomain.t) : (PulseExecutionState.t list, Diagnostic.t) result =
   match PulsePayload.read_full ~caller_summary ~callee_pname with
-  | Some (callee_proc_desc, preposts) ->
+  | Some (callee_proc_desc, exec_states) ->
       let formals =
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
       in
       (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
+      List.fold_result exec_states ~init:[] ~f:(fun posts callee_exec_state ->
           (* apply all pre/post specs *)
-          AbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals astate
+          apply_callee callee_pname call_loc callee_exec_state ~formals ~actuals ~ret astate
           >>| function
-          | None ->
-              (* couldn't apply pre/post pair *) posts
-          | Some (post, return_val_opt) ->
-              let event =
-                ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []}
-              in
-              let post =
-                match return_val_opt with
-                | Some (return_val, return_hist) ->
-                    write_id (fst ret) (return_val, event :: return_hist) post
-                | None ->
-                    havoc_id (fst ret) [event] post
-              in
-              post :: posts )
+          | None -> (* couldn't apply pre/post pair *) posts | Some post -> post :: posts )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
-      Ok [unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate]
+      unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
+      |> ok_continue

@@ -6,8 +6,8 @@
  *)
 open! IStd
 
-type t = PulseAbductiveDomain.PrePost.t list
+type t = PulseExecutionState.t list
 
-val of_posts : Procdesc.t -> PulseAbductiveDomain.t list -> t
+val of_posts : Procdesc.t -> PulseExecutionState.t list -> t
 
 val pp : Format.formatter -> t -> unit

@@ -27,6 +27,10 @@ let check_error summary = function
       raise_notrace AbstractDomain.Stop_analysis
 
 
+let check_error_continue summary result =
+  PulseExecutionState.ContinueProgram (check_error summary result)
+
+
 let proc_name_of_call call_exp =
   match (call_exp : Exp.t) with
   | Const (Cfun proc_name) | Closure {name= proc_name} ->
@@ -39,7 +43,7 @@ type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = PulseAbductiveDomain
+  module Domain = PulseExecutionState
 
   type extras = get_formals
 
@@ -50,9 +54,9 @@ module PulseTransferFunctions = struct
         PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
-        Ok
-          [ PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
-              ~formals_opt:None astate ]
+        PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
+          ~formals_opt:None astate
+        |> PulseOperations.ok_continue
 
 
   (** has an object just gone out of scope? *)
@@ -70,11 +74,16 @@ module PulseTransferFunctions = struct
 
 
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
-  let exec_object_out_of_scope call_loc (pvar, typ) astate =
-    let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
-    (* invalidate [&x] *)
-    let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
-    PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
+  let exec_object_out_of_scope call_loc (pvar, typ) exec_state =
+    match exec_state with
+    | PulseExecutionState.ContinueProgram astate ->
+        let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
+        let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
+        (* invalidate [&x] *)
+        PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
+        >>| PulseExecutionState.continue
+    | PulseExecutionState.ExitProgram _ ->
+        Ok exec_state
 
 
   let dispatch_call tenv summary ret call_exp actuals call_loc flags get_formals astate =
@@ -99,7 +108,7 @@ module PulseTransferFunctions = struct
           None
     in
     (* do interprocedural call then destroy objects going out of scope *)
-    let posts =
+    let exec_state_res =
       match model with
       | Some (model, callee_procname) ->
           L.d_printfln "Found model for call@\n" ;
@@ -121,59 +130,67 @@ module PulseTransferFunctions = struct
     match get_out_of_scope_object call_exp actuals flags with
     | Some pvar_typ ->
         L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
-        let* posts = posts in
-        List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc pvar_typ astate)
+        let* exec_states = exec_state_res in
+        List.map exec_states ~f:(fun exec_state ->
+            exec_object_out_of_scope call_loc pvar_typ exec_state )
         |> Result.all
     | None ->
-        posts
+        exec_state_res
 
 
   let exec_instr (astate : Domain.t) {tenv; ProcData.summary; extras= get_formals} _cfg_node
-      (instr : Sil.instr) =
-    match instr with
-    | Load {id= lhs_id; e= rhs_exp; loc} ->
-        (* [lhs_id := *rhs_exp] *)
-        let result =
-          let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
-          PulseOperations.write_id lhs_id rhs_addr_hist astate
-        in
-        [check_error summary result]
-    | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
-        (* [*lhs_exp := rhs_exp] *)
-        let event = ValueHistory.Assignment loc in
-        let result =
-          let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
-          let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
-          let* astate =
-            PulseOperations.write_deref loc ~ref:lhs_addr_hist
-              ~obj:(rhs_addr, event :: rhs_history)
-              astate
-          in
-          match lhs_exp with
-          | Lvar pvar when Pvar.is_return pvar ->
-              PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr
-                rhs_history astate
-          | _ ->
-              Ok astate
-        in
-        [check_error summary result]
-    | Prune (condition, loc, is_then_branch, if_kind) ->
-        let post, cond_satisfiable =
-          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate |> check_error summary
-        in
-        if cond_satisfiable then (* [condition] is true or unknown value: go into the branch *)
-          [post]
-        else (* [condition] is known to be unsatisfiable: prune path *) []
-    | Call (ret, call_exp, actuals, loc, call_flags) ->
-        dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
-        |> check_error summary
-    | Metadata (ExitScope (vars, location)) ->
-        let astate = PulseOperations.remove_vars vars location astate in
-        [check_error summary astate]
-    | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
-        [PulseOperations.realloc_pvar pvar location astate]
-    | Metadata (Abstract _ | Nullify _ | Skip) ->
+      (instr : Sil.instr) : Domain.t list =
+    match astate with
+    | ExitProgram _ ->
+        (* program already exited, simply propagate the exited state upwards  *)
         [astate]
+    | ContinueProgram astate -> (
+      match instr with
+      | Load {id= lhs_id; e= rhs_exp; loc} ->
+          (* [lhs_id := *rhs_exp] *)
+          let result =
+            let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
+            PulseOperations.write_id lhs_id rhs_addr_hist astate
+          in
+          [check_error_continue summary result]
+      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+          (* [*lhs_exp := rhs_exp] *)
+          let event = ValueHistory.Assignment loc in
+          let result =
+            let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+            let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
+            let* astate =
+              PulseOperations.write_deref loc ~ref:lhs_addr_hist
+                ~obj:(rhs_addr, event :: rhs_history)
+                astate
+            in
+            match lhs_exp with
+            | Lvar pvar when Pvar.is_return pvar ->
+                PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr
+                  rhs_history astate
+            | _ ->
+                Ok astate
+          in
+          [check_error_continue summary result]
+      | Prune (condition, loc, is_then_branch, if_kind) ->
+          let exec_state, cond_satisfiable =
+            PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
+            |> check_error summary
+          in
+          if cond_satisfiable then
+            (* [condition] is true or unknown value: go into the branch *)
+            [Domain.continue exec_state]
+          else (* [condition] is known to be unsatisfiable: prune path *) []
+      | Call (ret, call_exp, actuals, loc, call_flags) ->
+          dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
+          |> check_error summary
+      | Metadata (ExitScope (vars, location)) ->
+          let astate = PulseOperations.remove_vars vars location astate in
+          [check_error_continue summary astate]
+      | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
+          [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
+      | Metadata (Abstract _ | Nullify _ | Skip) ->
+          [Domain.ContinueProgram astate] )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -197,7 +214,7 @@ let checker {Callbacks.exe_env; summary} =
   AbstractValue.init () ;
   let pdesc = Summary.get_proc_desc summary in
   let initial =
-    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial pdesc)
+    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseExecutionState.mk_initial pdesc)
   in
   let get_formals callee_pname =
     Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals

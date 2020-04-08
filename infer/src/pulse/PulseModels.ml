@@ -17,7 +17,7 @@ type model =
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> PulseAbductiveDomain.t
-  -> PulseAbductiveDomain.t list PulseOperations.access_result
+  -> PulseExecutionState.t list PulseOperations.access_result
 
 module Misc = struct
   let shallow_copy model_desc dest_pointer_hist src_pointer_hist : model =
@@ -30,10 +30,14 @@ module Misc = struct
         ~obj:(fst obj_copy, event :: snd obj_copy)
         astate
     in
-    [PulseOperations.havoc_id ret_id [event] astate]
+    let astate = PulseOperations.havoc_id ret_id [event] astate in
+    [PulseExecutionState.ContinueProgram astate]
 
 
-  let early_exit : model = fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ _ -> Ok []
+  let early_exit : model =
+   fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ astate ->
+    Ok [PulseExecutionState.ExitProgram astate]
+
 
   let return_int : Int64.t -> model =
    fun i64 ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
@@ -44,7 +48,7 @@ module Misc = struct
       |> AddressAttributes.add_one ret_addr
            (CItv (CItv.equal_to i, Immediate {location; history= []}))
     in
-    Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
   let return_unknown_size : model =
@@ -55,20 +59,22 @@ module Misc = struct
       |> AddressAttributes.add_one ret_addr
            (CItv (CItv.zero_inf, Immediate {location; history= []}))
     in
-    Ok [PulseOperations.write_id ret_id (ret_addr, []) astate]
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
-  let skip : model = fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ astate -> Ok [astate]
+  let skip : model =
+   fun ~caller_summary:_ ~callee_procname:_ _ ~ret:_ astate -> PulseOperations.ok_continue astate
+
 
   let nondet ~fn_name : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
-    Ok [PulseOperations.havoc_id ret_id [event] astate]
+    PulseOperations.havoc_id ret_id [event] astate |> PulseOperations.ok_continue
 
 
   let id_first_arg arg_access_hist : model =
    fun ~caller_summary:_ ~callee_procname:_ _ ~ret astate ->
-    Ok [PulseOperations.write_id (fst ret) arg_access_hist astate]
+    PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
 end
 
 module C = struct
@@ -82,10 +88,10 @@ module C = struct
       || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv (fst deleted_access) astate)
     in
     if is_known_zero then (* freeing 0 is a no-op *)
-      Ok [astate]
+      PulseOperations.ok_continue astate
     else
       let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
-      [astate]
+      [PulseExecutionState.ContinueProgram astate]
 
 
   let malloc _ : model =
@@ -97,6 +103,7 @@ module C = struct
       |> AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.pos)
       |> AddressAttributes.add_one ret_addr
            (CItv (CItv.ge_to IntLit.one, Immediate {location; history= []}))
+      |> PulseExecutionState.continue
     in
     let+ astate_null =
       AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit IntLit.zero)) astate
@@ -106,23 +113,27 @@ module C = struct
       |> PulseOperations.invalidate location (Invalidation.ConstantDereference IntLit.zero)
            (ret_addr, [])
     in
-    [astate_alloc; astate_null]
+    [astate_alloc; PulseExecutionState.ContinueProgram astate_null]
 end
 
 module Cplusplus = struct
   let delete deleted_access : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
-    PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate >>| List.return
+    let+ astate =
+      PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
+    in
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let placement_new actuals : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
-    match List.rev actuals with
+    ( match List.rev actuals with
     | ProcnameDispatcher.Call.FuncArg.{arg_payload= address, hist} :: _ ->
-        Ok [PulseOperations.write_id ret_id (address, event :: hist) astate]
+        PulseOperations.write_id ret_id (address, event :: hist) astate
     | _ ->
-        Ok [PulseOperations.havoc_id ret_id [event] astate]
+        PulseOperations.havoc_id ret_id [event] astate )
+    |> PulseOperations.ok_continue
 end
 
 module StdAtomicInteger = struct
@@ -150,7 +161,7 @@ module StdAtomicInteger = struct
     in
     let* astate = PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate in
     let+ astate = PulseOperations.write_deref location ~ref:this_address ~obj:this astate in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let arith_bop prepost location event ret_id bop this operand astate =
@@ -173,7 +184,7 @@ module StdAtomicInteger = struct
       arith_bop `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
         astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let fetch_sub this (increment, _) _memory_ordering : model =
@@ -183,7 +194,7 @@ module StdAtomicInteger = struct
       arith_bop `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
         astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let operator_plus_plus_pre this : model =
@@ -192,7 +203,7 @@ module StdAtomicInteger = struct
     let+ astate =
       arith_bop `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let operator_plus_plus_post this _int : model =
@@ -203,7 +214,7 @@ module StdAtomicInteger = struct
     let+ astate =
       arith_bop `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let operator_minus_minus_pre this : model =
@@ -212,7 +223,7 @@ module StdAtomicInteger = struct
     let+ astate =
       arith_bop `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let operator_minus_minus_post this _int : model =
@@ -223,14 +234,15 @@ module StdAtomicInteger = struct
     let+ astate =
       arith_bop `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one) astate
     in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let load_instr model_desc this _memory_ordering_opt : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
     let+ astate, _int_addr, (int, hist) = load_backing_int location this astate in
-    [PulseOperations.write_id ret_id (int, event :: hist) astate]
+    let astate = PulseOperations.write_id ret_id (int, event :: hist) astate in
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let load = load_instr "std::atomic<T>::load()"
@@ -249,7 +261,7 @@ module StdAtomicInteger = struct
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []} in
     let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let exchange this_address (new_value, new_hist) _memory_ordering : model =
@@ -257,7 +269,8 @@ module StdAtomicInteger = struct
     let event = ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []} in
     let* astate, _int_addr, (old_int, old_hist) = load_backing_int location this_address astate in
     let+ astate = store_backing_int location this_address (new_value, event :: new_hist) astate in
-    [PulseOperations.write_id ret_id (old_int, event :: old_hist) astate]
+    let astate = PulseOperations.write_id ret_id (old_int, event :: old_hist) astate in
+    [PulseExecutionState.ContinueProgram astate]
 end
 
 module ObjectiveC = struct
@@ -268,7 +281,7 @@ module ObjectiveC = struct
     in
     let ret_addr = AbstractValue.mk_fresh () in
     let astate = PulseOperations.allocate callee_procname location (ret_addr, []) astate in
-    Ok [PulseOperations.write_id ret_id (ret_addr, hist) astate]
+    PulseOperations.write_id ret_id (ret_addr, hist) astate |> PulseOperations.ok_continue
 end
 
 module JavaObject = struct
@@ -278,7 +291,8 @@ module JavaObject = struct
     let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []} in
     let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
     let+ astate, obj_copy = PulseOperations.shallow_copy location obj astate in
-    [PulseOperations.write_id ret_id (fst obj_copy, event :: snd obj_copy) astate]
+    let astate = PulseOperations.write_id ret_id (fst obj_copy, event :: snd obj_copy) astate in
+    [PulseExecutionState.ContinueProgram astate]
 end
 
 module StdBasicString = struct
@@ -301,7 +315,8 @@ module StdBasicString = struct
     let+ astate, (string, hist) =
       PulseOperations.eval_access location string_addr_hist Dereference astate
     in
-    [PulseOperations.write_id ret_id (string, event :: hist) astate]
+    let astate = PulseOperations.write_id ret_id (string, event :: hist) astate in
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let destructor this_hist : model =
@@ -312,7 +327,7 @@ module StdBasicString = struct
     let string_addr_hist = (string_addr, call_event :: string_hist) in
     let* astate = PulseOperations.invalidate_deref location CppDelete string_addr_hist astate in
     let+ astate = PulseOperations.invalidate location CppDelete string_addr_hist astate in
-    [astate]
+    [PulseExecutionState.ContinueProgram astate]
 end
 
 module StdFunction = struct
@@ -328,7 +343,8 @@ module StdFunction = struct
     let* astate = PulseOperations.Closures.check_captured_addresses location lambda astate in
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
-        (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
+        (* we don't know what proc name this lambda resolves to *)
+        Ok (havoc_ret ret astate |> List.map ~f:PulseExecutionState.continue)
     | Some callee_proc_name ->
         let actuals =
           List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
@@ -373,14 +389,16 @@ module StdVector = struct
         ; location
         ; in_call= [] }
     in
-    reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
+    reallocate_internal_array [crumb] vector vector_f location astate
+    >>| PulseExecutionState.continue >>| List.return
 
 
   let at ~desc vector index : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let+ astate, (addr, hist) = element_of_internal_array location vector (fst index) astate in
-    [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
+    let astate = PulseOperations.write_id (fst ret) (addr, event :: hist) astate in
+    [PulseExecutionState.ContinueProgram astate]
 
 
   let reserve vector : model =
@@ -388,7 +406,7 @@ module StdVector = struct
     let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
     reallocate_internal_array [crumb] vector Reserve location astate
     >>| AddressAttributes.std_vector_reserve (fst vector)
-    >>| List.return
+    >>| PulseExecutionState.continue >>| List.return
 
 
   let push_back vector : model =
@@ -397,10 +415,11 @@ module StdVector = struct
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
-      Ok [astate]
+      PulseOperations.ok_continue astate
     else
       (* simulate a re-allocation of the underlying array every time an element is added *)
-      reallocate_internal_array [crumb] vector PushBack location astate >>| List.return
+      reallocate_internal_array [crumb] vector PushBack location astate
+      >>| PulseExecutionState.continue >>| List.return
 end
 
 module JavaCollection = struct
@@ -416,7 +435,8 @@ module JavaCollection = struct
         astate
       >>= PulseOperations.invalidate_deref location (StdVector Assign) old_elem
     in
-    [PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate]
+    let astate = PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate in
+    [PulseExecutionState.ContinueProgram astate]
 end
 
 module StringSet = Caml.Set.Make (String)
