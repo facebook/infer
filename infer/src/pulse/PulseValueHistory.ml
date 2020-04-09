@@ -9,6 +9,7 @@ module F = Format
 module CallEvent = PulseCallEvent
 
 type event =
+  | Allocation of {f: CallEvent.t; location: Location.t}
   | Assignment of Location.t
   | Call of {f: CallEvent.t; location: Location.t; in_call: t}
   | Capture of {captured_as: Pvar.t; location: Location.t}
@@ -30,6 +31,8 @@ let pp_event_no_location fmt event =
       F.pp_print_string fmt "assigned"
   | Call {f; location= _} ->
       F.fprintf fmt "passed as argument to %a" CallEvent.pp f
+  | Allocation {f} ->
+      F.fprintf fmt "allocated by call to %a" CallEvent.pp f
   | Capture {captured_as; location= _} ->
       F.fprintf fmt "value captured as `%a`" Pvar.pp_value_non_verbose captured_as
   | Conditional {is_then_branch; if_kind; location= _} ->
@@ -50,6 +53,7 @@ let pp_event_no_location fmt event =
 
 
 let location_of_event = function
+  | Allocation {location}
   | Assignment location
   | Call {location}
   | Capture {location}

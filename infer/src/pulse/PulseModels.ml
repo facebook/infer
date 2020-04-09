@@ -97,21 +97,23 @@ module C = struct
   let malloc _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
+    let hist =
+      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
+    in
+    let ret_value = (ret_addr, hist) in
+    let astate = PulseOperations.write_id ret_id ret_value astate in
+    let immediate_hist = Trace.Immediate {location; history= hist} in
     let astate_alloc =
-      PulseOperations.allocate callee_procname location (ret_addr, []) astate
-      |> PulseOperations.write_id ret_id (ret_addr, [])
+      PulseOperations.allocate callee_procname location ret_value astate
       |> AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.pos)
-      |> AddressAttributes.add_one ret_addr
-           (CItv (CItv.ge_to IntLit.one, Immediate {location; history= []}))
+      |> AddressAttributes.add_one ret_addr (CItv (CItv.ge_to IntLit.one, immediate_hist))
       |> PulseExecutionState.continue
     in
     let+ astate_null =
       AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit IntLit.zero)) astate
-      |> AddressAttributes.add_one ret_addr
-           (CItv (CItv.equal_to IntLit.zero, Immediate {location; history= []}))
-      |> PulseOperations.write_id ret_id (ret_addr, [])
+      |> AddressAttributes.add_one ret_addr (CItv (CItv.equal_to IntLit.zero, immediate_hist))
       |> PulseOperations.invalidate location (Invalidation.ConstantDereference IntLit.zero)
-           (ret_addr, [])
+           ret_value
     in
     [astate_alloc; PulseExecutionState.ContinueProgram astate_null]
 end
@@ -277,10 +279,10 @@ module ObjectiveC = struct
   let alloc _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
     let hist =
-      [ValueHistory.Call {f= Model (Procname.to_string callee_procname); location; in_call= []}]
+      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
     in
     let ret_addr = AbstractValue.mk_fresh () in
-    let astate = PulseOperations.allocate callee_procname location (ret_addr, []) astate in
+    let astate = PulseOperations.allocate callee_procname location (ret_addr, hist) astate in
     PulseOperations.write_id ret_id (ret_addr, hist) astate |> PulseOperations.ok_continue
 end
 

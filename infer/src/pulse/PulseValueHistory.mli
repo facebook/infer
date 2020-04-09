@@ -9,6 +9,7 @@ module F = Format
 module CallEvent = PulseCallEvent
 
 type event =
+  | Allocation of {f: CallEvent.t; location: Location.t}
   | Assignment of Location.t
   | Call of {f: CallEvent.t; location: Location.t; in_call: t}
   | Capture of {captured_as: Pvar.t; location: Location.t}
