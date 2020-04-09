@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
-
 type category = InferEvents
 
 let log _ _ = ()

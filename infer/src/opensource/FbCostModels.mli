@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
-
 module Call : sig
-  val dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher
+  val dispatch : 'context -> 'procname_t -> 'arg_payload_FuncArg_t_list -> 'f option
 end

@@ -76,7 +76,7 @@ GENERATED_FROM_AUTOCONF = dune.common ../dune-workspace base/Version.ml
 .PHONY: dune-workspace
 dune-workspace: ../dune-workspace
 
-GENERATED_DUNES += dune
+GENERATED_DUNES += dune opensource/dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -243,6 +243,7 @@ $(GENERATED_DUNES): dune.common
 
 dune: dune.in
 deadcode/dune: deadcode/dune.in
+opensource/dune: opensource/dune.in
 
 .PHONY: clean
 clean:

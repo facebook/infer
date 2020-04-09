@@ -6,9 +6,8 @@
 (library
  (name InferBase)
  (public_name infer.InferBase)
- (flags
-  (:standard -open Core -open InferStdlib -open IStd -open InferGenerated))
+ (flags (:standard -open Core -open InferStdlib -open IStd -open InferGenerated -open OpenSource))
  (libraries cmdliner core mtime.clock.os parmap re sqlite3 zip InferGenerated
-   InferStdlib)
+   InferStdlib OpenSource)
  (preprocess
   (pps ppx_compare ppx_enumerate)))

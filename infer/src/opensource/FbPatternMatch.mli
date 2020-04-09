@@ -5,6 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
-
-val is_subtype_of_fb_service_handler : Tenv.t -> Typ.Name.t -> bool
+val is_subtype_of_fb_service_handler : 'tenv_t -> 'typ_Name_t -> bool

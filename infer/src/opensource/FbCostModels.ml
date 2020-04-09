@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
-
 module Call = struct
-  let dispatch = ProcnameDispatcher.Call.make_dispatcher []
+  let dispatch _ _ _ = None
 end
