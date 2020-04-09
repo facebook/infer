@@ -143,7 +143,7 @@ let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityD
     match exec_state with
     | ExitProgram astate ->
         (astate, true)
-    | ContinueProgram astate ->
+    | AbortProgram astate | ContinueProgram astate ->
         (astate, false)
   in
   let pre_heap = (PulseAbductiveDomain.get_pre astate).BaseDomain.heap in

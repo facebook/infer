@@ -18,8 +18,6 @@ end
 
 open! Types
 
-exception Stop_analysis
-
 module type NoJoin = sig
   include PrettyPrintable.PrintableType
 

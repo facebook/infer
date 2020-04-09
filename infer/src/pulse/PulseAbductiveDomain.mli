@@ -129,6 +129,6 @@ val apply :
   -> formals:Var.t list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
-  -> ((t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
+  -> ((t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t * t) result
 (** return the abstract state after the call along with an optional return value, or [None] if the
     precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)

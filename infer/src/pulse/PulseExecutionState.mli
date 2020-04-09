@@ -7,6 +7,8 @@
 open! IStd
 
 type exec_state =
+  | AbortProgram of PulseAbductiveDomain.t
+      (** represents the state at the program point that caused an error *)
   | ContinueProgram of PulseAbductiveDomain.t  (** represents the state at the program point *)
   | ExitProgram of PulseAbductiveDomain.t
       (** represents the state originating at exit/divergence. *)

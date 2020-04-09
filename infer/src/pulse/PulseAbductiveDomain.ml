@@ -1023,8 +1023,9 @@ let check_all_valid callee_proc_name call_location {pre; post= _} call_state =
             AddressAttributes.check_valid access_trace addr_caller astate
             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-                   Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}
-               ) ) )
+                   ( Diagnostic.AccessToInvalidAddress
+                       {invalidation; invalidation_trace; access_trace}
+                   , astate ) ) ) )
     call_state.subst (Ok call_state.astate)
 
 

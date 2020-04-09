@@ -179,8 +179,6 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     match post with
     | Ok astate_post ->
         InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
-    | Error (AbstractDomain.Stop_analysis, _, _) ->
-        raise_notrace AbstractDomain.Stop_analysis
     | Error (exn, backtrace, instr) ->
         if not !logged_error then (
           L.internal_error "In instruction %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;

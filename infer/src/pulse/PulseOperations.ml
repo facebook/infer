@@ -12,7 +12,7 @@ open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = ('a, Diagnostic.t) result
+type 'a access_result = ('a, Diagnostic.t * t) result
 
 let ok_continue post = Ok [PulseExecutionState.ContinueProgram post]
 
@@ -21,7 +21,8 @@ let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid access_trace address astate
   |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-         Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} )
+         (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate)
+     )
 
 
 module Closures = struct
@@ -439,8 +440,9 @@ let check_address_escape escape_location proc_desc address history astate =
                    (* The returned address corresponds to a C++ temporary. It will have gone out of
                       scope by now except if it was bound to a global. *)
                    Error
-                     (Diagnostic.StackVariableAddressEscape
-                        {variable; location= escape_location; history})
+                     ( Diagnostic.StackVariableAddressEscape
+                         {variable; location= escape_location; history}
+                     , astate )
                | _ ->
                    Ok () ) )
   in
@@ -457,7 +459,8 @@ let check_address_escape escape_location proc_desc address history astate =
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable
             AbstractValue.pp address ;
           Error
-            (Diagnostic.StackVariableAddressEscape {variable; location= escape_location; history}) )
+            ( Diagnostic.StackVariableAddressEscape {variable; location= escape_location; history}
+            , astate ) )
         else Ok () )
   in
   let+ () = check_address_of_cpp_temporary () >>= check_address_of_stack_variable in
@@ -472,7 +475,7 @@ let mark_address_of_stack_variable history variable location address astate =
   AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
 
 
-let check_memory_leak_unreachable unreachable_attrs location =
+let check_memory_leak_unreachable unreachable_attrs location astate =
   let check_memory_leak _ attributes result =
     let allocated_not_freed_opt =
       Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
@@ -488,7 +491,7 @@ let check_memory_leak_unreachable unreachable_attrs location =
     match allocated_not_freed_opt with
     | Some (procname, trace), false ->
         (* allocated but not freed *)
-        Error (Diagnostic.MemoryLeak {procname; location; allocation_trace= trace})
+        Error (Diagnostic.MemoryLeak {procname; location; allocation_trace= trace}, astate)
     | _ ->
         result
   in
@@ -515,7 +518,7 @@ let remove_vars vars location astate =
   if phys_equal astate' astate then Ok astate
   else
     let astate, unreachable_attrs = AbductiveDomain.discard_unreachable astate' in
-    let+ () = check_memory_leak_unreachable unreachable_attrs location in
+    let+ () = check_memory_leak_unreachable unreachable_attrs location astate in
     astate
 
 
@@ -591,6 +594,9 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals 
   in
   let open PulseExecutionState in
   match callee_exec_state with
+  | AbortProgram _ ->
+      (* Callee has failed; don't propagate the failure *)
+      Ok (Some callee_exec_state)
   | ContinueProgram astate ->
       apply astate ~f:(fun astate -> ContinueProgram astate)
   | ExitProgram astate ->
@@ -598,7 +604,7 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals 
 
 
 let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt
-    (astate : PulseAbductiveDomain.t) : (PulseExecutionState.t list, Diagnostic.t) result =
+    (astate : PulseAbductiveDomain.t) : (PulseExecutionState.t list, Diagnostic.t * t) result =
   match PulsePayload.read_full ~caller_summary ~callee_pname with
   | Some (callee_proc_desc, exec_states) ->
       let formals =

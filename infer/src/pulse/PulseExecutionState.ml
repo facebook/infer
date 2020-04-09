@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 
 type exec_state =
+  | AbortProgram of PulseAbductiveDomain.t
   | ContinueProgram of PulseAbductiveDomain.t
   | ExitProgram of PulseAbductiveDomain.t
 
@@ -19,9 +20,11 @@ let mk_initial pdesc = ContinueProgram (PulseAbductiveDomain.mk_initial pdesc)
 
 let leq ~lhs ~rhs =
   match (lhs, rhs) with
-  | ContinueProgram astate1, ContinueProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
+  | AbortProgram astate1, AbortProgram astate2
+  | ContinueProgram astate1, ContinueProgram astate2
+  | ExitProgram astate1, ExitProgram astate2 ->
       PulseAbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
-  | ExitProgram _, ContinueProgram _ | ContinueProgram _, ExitProgram _ ->
+  | _ ->
       false
 
 
@@ -30,10 +33,14 @@ let pp fmt = function
       PulseAbductiveDomain.pp fmt astate
   | ExitProgram astate ->
       F.fprintf fmt "{ExitProgram %a}" PulseAbductiveDomain.pp astate
+  | AbortProgram astate ->
+      F.fprintf fmt "{AbortProgram %a}" PulseAbductiveDomain.pp astate
 
 
 let map ~f exec_state =
   match exec_state with
+  | AbortProgram astate ->
+      AbortProgram (f astate)
   | ContinueProgram astate ->
       ContinueProgram (f astate)
   | ExitProgram astate ->

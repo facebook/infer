@@ -17,10 +17,6 @@ end
 
 open! Types
 
-exception Stop_analysis
-(** This exception can be raised by abstract interpreters to stop the analysis early without
-    triggering further errors. Clients who raise this exception should catch it eventually. *)
-
 (** Abstract domains and domain combinators *)
 
 module type NoJoin = sig

@@ -17,18 +17,18 @@ let report summary diagnostic =
     (get_issue_type diagnostic) (get_message diagnostic)
 
 
-let check_error summary = function
-  | Ok ok ->
-      ok
-  | Error diagnostic ->
+let check_error_transform summary ~f = function
+  | Ok astate ->
+      f astate
+  | Error (diagnostic, astate) ->
       report summary diagnostic ;
-      (* We can also continue the analysis by returning {!PulseDomain.initial} here but there might
-         be a risk we would get nonsense. This seems safer for now but TODO. *)
-      raise_notrace AbstractDomain.Stop_analysis
+      [PulseExecutionState.AbortProgram astate]
 
 
 let check_error_continue summary result =
-  PulseExecutionState.ContinueProgram (check_error summary result)
+  check_error_transform summary
+    ~f:(fun astate -> [PulseExecutionState.ContinueProgram astate])
+    result
 
 
 let proc_name_of_call call_exp =
@@ -82,7 +82,7 @@ module PulseTransferFunctions = struct
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| PulseExecutionState.continue
-    | PulseExecutionState.ExitProgram _ ->
+    | PulseExecutionState.AbortProgram _ | PulseExecutionState.ExitProgram _ ->
         Ok exec_state
 
 
@@ -141,6 +141,10 @@ module PulseTransferFunctions = struct
   let exec_instr (astate : Domain.t) {tenv; ProcData.summary; extras= get_formals} _cfg_node
       (instr : Sil.instr) : Domain.t list =
     match astate with
+    | AbortProgram _ ->
+        (* We can also continue the analysis with the error state here
+           but there might be a risk we would get nonsense. *)
+        [astate]
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
         [astate]
@@ -152,7 +156,7 @@ module PulseTransferFunctions = struct
             let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
             PulseOperations.write_id lhs_id rhs_addr_hist astate
           in
-          [check_error_continue summary result]
+          check_error_continue summary result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
@@ -171,22 +175,21 @@ module PulseTransferFunctions = struct
             | _ ->
                 Ok astate
           in
-          [check_error_continue summary result]
+          check_error_continue summary result
       | Prune (condition, loc, is_then_branch, if_kind) ->
-          let exec_state, cond_satisfiable =
-            PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
-            |> check_error summary
-          in
-          if cond_satisfiable then
-            (* [condition] is true or unknown value: go into the branch *)
-            [Domain.continue exec_state]
-          else (* [condition] is known to be unsatisfiable: prune path *) []
+          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
+          |> check_error_transform summary ~f:(fun (exec_state, cond_satisfiable) ->
+                 if cond_satisfiable then
+                   (* [condition] is true or unknown value: go into the branch *)
+                   [Domain.ContinueProgram exec_state]
+                 else (* [condition] is known to be unsatisfiable: prune path *)
+                   [] )
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
-          |> check_error summary
+          |> check_error_transform summary ~f:(fun id -> id)
       | Metadata (ExitScope (vars, location)) ->
           let astate = PulseOperations.remove_vars vars location astate in
-          [check_error_continue summary astate]
+          check_error_continue summary astate
       | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
           [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
       | Metadata (Abstract _ | Nullify _ | Skip) ->
@@ -226,6 +229,4 @@ let checker {Callbacks.exe_env; summary} =
         (PulseSummary.of_posts pdesc (DisjunctiveTransferFunctions.Disjuncts.elements posts))
         summary
   | None ->
-      summary
-  | exception AbstractDomain.Stop_analysis ->
       summary

@@ -11,12 +11,12 @@ open PulseDomainInterface
 
 type t = PulseAbductiveDomain.t
 
-type 'a access_result = ('a, Diagnostic.t) result
+type 'a access_result = ('a, Diagnostic.t * t) result
 
 val ok_continue : t -> (PulseExecutionState.exec_state list, 'a) result
 
 module Closures : sig
-  val check_captured_addresses : Location.t -> AbstractValue.t -> t -> (t, Diagnostic.t) result
+  val check_captured_addresses : Location.t -> AbstractValue.t -> t -> (t, Diagnostic.t * t) result
   (** assert the validity of the addresses captured by the lambda *)
 end
 
