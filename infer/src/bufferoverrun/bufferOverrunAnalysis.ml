@@ -373,8 +373,8 @@ module TransferFunctions = struct
         in
         let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
         mem
-    | Prune (exp, _, _, _) ->
-        Sem.Prune.prune integer_type_widths exp mem
+    | Prune (exp, location, _, _) ->
+        Sem.Prune.prune location integer_type_widths exp mem
     | Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_java_enum_values tenv callee_pname
       ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in

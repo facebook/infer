@@ -80,6 +80,11 @@ val mk_eval_sym_cost :
 (** Make [eval_sym] function of [EvalCost] mode for on-demand symbol evaluation *)
 
 module Prune : sig
-  val prune : Typ.IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Mem.t
+  val prune :
+       Location.t
+    -> Typ.IntegerWidths.t
+    -> Exp.t
+    -> BufferOverrunDomain.Mem.t
+    -> BufferOverrunDomain.Mem.t
   (** Prune memory with the given condition expression *)
 end

@@ -1201,7 +1201,9 @@ end
 
 module Preconditions = struct
   let check_argument exp =
-    let exec {integer_type_widths} ~ret:_ mem = Sem.Prune.prune integer_type_widths exp mem in
+    let exec {integer_type_widths; location} ~ret:_ mem =
+      Sem.Prune.prune location integer_type_widths exp mem
+    in
     {exec; check= no_check}
 end
 
