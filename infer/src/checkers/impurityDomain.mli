@@ -19,10 +19,13 @@ module ModifiedVarSet : sig
   include AbstractDomain.FiniteSetS with type elt = ModifiedVar.t
 end
 
+module Exited = AbstractDomain.BooleanOr
+
 type t =
   { modified_params: ModifiedVarSet.t
   ; modified_globals: ModifiedVarSet.t
-  ; skipped_calls: PulseAbductiveDomain.SkippedCalls.t }
+  ; skipped_calls: PulseAbductiveDomain.SkippedCalls.t
+  ; exited: Exited.t }
 
 val pure : t
 

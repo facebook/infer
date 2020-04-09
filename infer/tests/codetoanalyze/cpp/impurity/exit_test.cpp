@@ -8,13 +8,13 @@
 
 int x;
 
-void exit_positive_impure_FN(int a[10], int b) {
+void exit_positive_impure(int a[10], int b) {
   if (b > 0) {
     exit(0);
   }
 }
 
-void unreachable_impure_FN(int a[10], int b) {
-  exit_positive_impure_FN(a, 10);
-  x = 9;
+void unreachable_impure(int a[10]) {
+  exit_positive_impure(a, 10);
+  x = 9; // unreachable
 }

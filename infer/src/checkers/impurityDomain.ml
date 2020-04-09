@@ -20,34 +20,39 @@ module ModifiedVar = struct
 end
 
 module ModifiedVarSet = AbstractDomain.FiniteSet (ModifiedVar)
+module Exited = AbstractDomain.BooleanOr
 
 type t =
   { modified_params: ModifiedVarSet.t
   ; modified_globals: ModifiedVarSet.t
-  ; skipped_calls: SkippedCalls.t }
+  ; skipped_calls: SkippedCalls.t
+  ; exited: Exited.t }
 
-let is_pure {modified_globals; modified_params; skipped_calls} =
+let is_pure {modified_globals; modified_params; skipped_calls; exited} =
   ModifiedVarSet.is_empty modified_globals
   && ModifiedVarSet.is_empty modified_params
   && SkippedCalls.is_empty skipped_calls
+  && Exited.is_bottom exited
 
 
 let pure =
   { modified_params= ModifiedVarSet.empty
   ; modified_globals= ModifiedVarSet.empty
-  ; skipped_calls= SkippedCalls.empty }
+  ; skipped_calls= SkippedCalls.empty
+  ; exited= Exited.bottom }
 
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
-    let {modified_globals= mg1; modified_params= mp1; skipped_calls= uk1} = astate1 in
-    let {modified_globals= mg2; modified_params= mp2; skipped_calls= uk2} = astate2 in
+    let {modified_globals= mg1; modified_params= mp1; skipped_calls= uk1; exited= e1} = astate1 in
+    let {modified_globals= mg2; modified_params= mp2; skipped_calls= uk2; exited= e2} = astate2 in
     PhysEqual.optim2
       ~res:
         { modified_globals= ModifiedVarSet.join mg1 mg2
         ; modified_params= ModifiedVarSet.join mp1 mp2
-        ; skipped_calls= SkippedCalls.union (fun _pname t1 _ -> Some t1) uk1 uk2 }
+        ; skipped_calls= SkippedCalls.union (fun _pname t1 _ -> Some t1) uk1 uk2
+        ; exited= Exited.join e1 e2 }
       astate1 astate2
 
 

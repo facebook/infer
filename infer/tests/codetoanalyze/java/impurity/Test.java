@@ -89,13 +89,10 @@ class Test {
     return System.nanoTime();
   }
 
-  // In pulse, we get Exited summary where pre=post
-  // TODO: change impurity to track exit as impure
-  void exit_impure_FN() {
+  void exit_impure() {
     System.exit(1);
   }
 
-  // In pulse, we get Exited summary where pre=post
   void modify_exit_impure(int[] a) {
     a[0] = 0;
     System.exit(1);
