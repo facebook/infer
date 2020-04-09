@@ -39,17 +39,21 @@ let set_common_fields sample =
 
 
 let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =
-  let event_name, value =
-    match data with
-    | LogEntry.Count {value} ->
-        (Printf.sprintf "count.%s" label, value)
-    | LogEntry.Time {duration_ms} ->
-        (Printf.sprintf "time.%s" label, duration_ms)
+  let create_sample_with_label label =
+    Scuba.new_sample ~time:(Some created_at_ts)
+    |> set_common_fields |> set_command_line_normales |> set_command_line_tagsets
+    |> Scuba.add_normal ~name:"event" ~value:label
   in
-  Scuba.new_sample ~time:(Some created_at_ts)
-  |> set_common_fields |> set_command_line_normales |> set_command_line_tagsets
-  |> Scuba.add_normal ~name:"event" ~value:event_name
-  |> Scuba.add_int ~name:"value" ~value
+  match data with
+  | Count {value} ->
+      create_sample_with_label (Printf.sprintf "count.%s" label)
+      |> Scuba.add_int ~name:"value" ~value
+  | Time {duration_ms} ->
+      create_sample_with_label (Printf.sprintf "time.%s" label)
+      |> Scuba.add_int ~name:"value" ~value:duration_ms
+  | String {message} ->
+      create_sample_with_label (Printf.sprintf "msg.%s" label)
+      |> Scuba.add_normal ~name:"message" ~value:message
 
 
 (** Consider buffering or batching if proves to be a problem *)
@@ -65,6 +69,8 @@ let log_many = if Config.scuba_logging then log_many else fun _ -> ()
 let log_one entry = log_many [entry]
 
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
+
+let log_message ~label ~message = log_one (LogEntry.mk_string ~label ~message)
 
 let execute_with_time_logging label f =
   let ret_val, duration_ms = Utils.timeit ~f in

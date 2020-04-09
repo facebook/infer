@@ -14,7 +14,9 @@ type count_entry_data = {value: int}
 
 type time_entry_data = {duration_ms: int}
 
-type entry_data = Count of count_entry_data | Time of time_entry_data
+type string_data = {message: string}
+
+type entry_data = Count of count_entry_data | Time of time_entry_data | String of string_data
 
 (** created_at_ts is a unix timestamp (in seconds) *)
 type t = {label: string; created_at_ts: int; data: entry_data}
@@ -22,6 +24,8 @@ type t = {label: string; created_at_ts: int; data: entry_data}
 val mk_count : label:string -> value:int -> t
 
 val mk_time : label:string -> duration_ms:int -> t
+
+val mk_string : label:string -> message:string -> t
 
 val global_log_get : unit -> t list
 

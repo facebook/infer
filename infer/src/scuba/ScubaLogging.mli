@@ -16,7 +16,11 @@ val log_many : LogEntry.t list -> unit
     aggregated results at once. *)
 
 val log_count : label:string -> value:int -> unit
-(** Log anything that can be counted. Events will be prefixed with "count." *)
+(** Log anything that can be counted. Events will be prefixed with ["count."] *)
+
+val log_message : label:string -> message:string -> unit
+  [@@warning "-32"]
+(** Log a [string]. Event is prefixed with ["msg."] *)
 
 val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 (** A helper to log execution time of a particular function. Use this to measure a performance of a
