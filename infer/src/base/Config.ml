@@ -220,8 +220,6 @@ let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
-let specs_dir_name = "specs"
-
 let specs_files_suffix = ".specs"
 
 let starvation_issues_dir_name = "starvation_issues"
@@ -369,7 +367,7 @@ let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
 (** Path to lib/specs to retrieve the default models *)
-let biabduction_models_dir = lib_dir ^/ specs_dir_name
+let biabduction_models_dir = lib_dir ^/ "specs"
 
 let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 

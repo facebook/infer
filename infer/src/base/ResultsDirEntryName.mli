@@ -9,7 +9,9 @@ open! IStd
 (** Entries in the results directory (infer-out/). Unless you want to specify a custom results
     directory you probably want to use {!ResultsDir.Entry} instead of this module. *)
 
-type id = Temporary  (** directory containing temp files *)
+type id =
+  | Specs  (** directory containing summaries as .specs files *)
+  | Temporary  (** directory containing temp files *)
 
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)

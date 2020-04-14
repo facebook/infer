@@ -159,8 +159,6 @@ val sourcepath : string option
 
 val sources : string list
 
-val specs_dir_name : string
-
 val specs_files_suffix : string
 
 val starvation_issues_dir_name : string

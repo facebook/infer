@@ -137,8 +137,7 @@ module OnDisk = struct
 
   (** Return the path to the .specs file for the given procedure in the current results directory *)
   let specs_filename_of_procname pname =
-    DB.Results_dir.path_to_filename DB.Results_dir.Abs_root
-      [Config.specs_dir_name; specs_filename pname]
+    DB.filename_from_string (ResultsDir.get_path Specs ^/ specs_filename pname)
 
 
   (** paths to the .specs file for the given procedure in the models folder *)

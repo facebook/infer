@@ -81,7 +81,7 @@ module RunState = struct
     store ()
 end
 
-let results_dir_dir_markers = [Config.results_dir ^/ Config.specs_dir_name]
+let results_dir_dir_markers = [get_path Specs]
 
 let is_results_dir ~check_correct_version () =
   let not_found = ref "" in
@@ -109,7 +109,7 @@ let non_empty_directory_exists results_dir =
 
 let remove_results_dir () =
   if non_empty_directory_exists Config.results_dir then (
-    if not Config.force_delete_results_dir then
+    if (not Config.buck) && not Config.force_delete_results_dir then
       Result.iter_error (is_results_dir ~check_correct_version:false ()) ~f:(fun err ->
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
@@ -138,7 +138,7 @@ let create_results_dir () =
        ) ;
   Unix.mkdir_p Config.results_dir ;
   Unix.mkdir_p (get_path Temporary) ;
-  List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
+  Unix.mkdir_p (get_path Specs) ;
   prepare_logging_and_db () ;
   ()
 

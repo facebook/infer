@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type id = Temporary [@@deriving enumerate]
+type id = Specs | Temporary [@@deriving enumerate]
 
 type cleanup_action = Delete | Keep [@@deriving equal]
 
@@ -22,6 +22,11 @@ type t =
             e.g., a distributed Buck cache. *) }
 
 let of_id = function
+  | Specs ->
+      { rel_path= "specs"
+      ; kind= Directory
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
   | Temporary ->
       { rel_path= "tmp"
       ; kind= Directory

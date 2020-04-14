@@ -126,7 +126,7 @@ module Results_dir = struct
 
 
   (** directory of spec files *)
-  let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
+  let specs_dir = ResultsDir.get_path Specs
 
   (** initialize the results directory *)
   let init ?(debug = false) source =
