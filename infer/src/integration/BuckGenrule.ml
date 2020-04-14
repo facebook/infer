@@ -9,25 +9,96 @@ open! IStd
 module F = Format
 module L = Logging
 
-let write_infer_deps infile =
-  let out_line out_channel line =
-    match String.split ~on:' ' line with
-    | [target; target_output_path] ->
-        Printf.fprintf out_channel "%s\t-\t%s\n" target (Config.project_root ^/ target_output_path)
+(* example build report json output 
+[
+  {
+  "success" : true,
+  "results" : {
+    "//annotations:annotations_infer" : {
+      "success" : true,
+      "type" : "BUILT_LOCALLY",
+      "output" : "buck-out/gen/annotations/annotations_infer/infer_out"
+    },
+    "//module2:module2_infer" : {
+      "success" : true,
+      "type" : "BUILT_LOCALLY",
+      "output" : "buck-out/gen/module2/module2_infer/infer_out"
+    },
+    "//module1:module1_infer" : {
+      "success" : true,
+      "type" : "BUILT_LOCALLY",
+      "output" : "buck-out/gen/module1/module1_infer/infer_out"
+    },
+    "//module3:module1_infer" : {                    
+      "success" : "SUCCESS",                                                                                           
+      "type" : "BUILT_LOCALLY",                                                                                        
+      "outputs" : {                                                                                                    
+        "DEFAULT" : [ "buck-out/gen/module1/module3_infer/infer_out" ]                                                                                             
+      }                                                                                                                
+    }    
+  },
+  "failures" : { }
+}%
+]
+*)
+
+(** Read the build report json file buck produced, and parse into a list of pairs
+    [(target, output-path)]. NB contrary to what buck documentation says, the output path is always
+    present even when the target is locally cached. *)
+let read_and_parse_report build_report =
+  let get_json_field fieldname = function
+    | `Assoc fields ->
+        List.Assoc.find fields ~equal:String.equal fieldname
     | _ ->
-        L.internal_error "Couldn't parse buck target output: %s@." line
+        None
   in
-  let infer_deps = Config.(results_dir ^/ buck_infer_deps_file_name) in
-  Utils.with_file_out infer_deps ~f:(fun out_channel ->
-      Utils.with_file_in infile ~f:(In_channel.iter_lines ~f:(out_line out_channel)) )
+  let parse_target (target, json) =
+    let path_opt =
+      match get_json_field "output" json with
+      | Some (`String str) ->
+          Some str
+      | _ -> (
+        match get_json_field "outputs" json |> Option.bind ~f:(get_json_field "DEFAULT") with
+        | Some (`List [`String str]) ->
+            Some str
+        | _ ->
+            None )
+    in
+    match path_opt with
+    | None ->
+        L.internal_error "Could not parse target json: %s" (Yojson.Basic.to_string json) ;
+        None
+    | Some path ->
+        Some (target, path)
+  in
+  let parse_results = function
+    | `Assoc results ->
+        (* NB this will simply skip unparseable targets *)
+        List.filter_map results ~f:parse_target |> Option.some
+    | _ ->
+        None
+  in
+  Yojson.Basic.from_file build_report |> get_json_field "results" |> Option.bind ~f:parse_results
+
+
+let infer_deps_of_build_report build_report =
+  match read_and_parse_report build_report with
+  | None ->
+      L.die InternalError "Couldn't parse buck build report: %s@." build_report
+  | Some target_path_list ->
+      let out_line out_channel (target, target_output_path) =
+        Printf.fprintf out_channel "%s\t-\t%s\n" target (Config.project_root ^/ target_output_path)
+      in
+      let infer_deps = Config.(results_dir ^/ buck_infer_deps_file_name) in
+      Utils.with_file_out infer_deps ~f:(fun out_channel ->
+          List.iter target_path_list ~f:(out_line out_channel) )
 
 
 let run_buck_capture cmd =
-  let buck_output_file = Filename.temp_file ~in_dir:Config.temp_dir "buck_output" ".log" in
   let shell_cmd =
     List.map ~f:Escape.escape_shell cmd
     |> String.concat ~sep:" "
-    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd buck_output_file
+    |> fun cmd -> Printf.sprintf "%s 2>&1" cmd
   in
   let path_var = "PATH" in
   let new_path =
@@ -38,14 +109,14 @@ let run_buck_capture cmd =
   let ({stdin; stdout; stderr; pid} : Unix.Process_info.t) =
     Unix.create_process_env ~prog:"sh" ~args:["-c"; shell_cmd] ~env ()
   in
-  let buck_stderr = Unix.in_channel_of_descr stderr in
-  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
+  let buck_stdout = Unix.in_channel_of_descr stdout in
+  Utils.with_channel_in buck_stdout ~f:(L.progress "BUCK: %s@.") ;
   Unix.close stdin ;
-  Unix.close stdout ;
-  In_channel.close buck_stderr ;
+  Unix.close stderr ;
+  In_channel.close buck_stdout ;
   match Unix.waitpid pid with
   | Ok () ->
-      write_infer_deps buck_output_file
+      ()
   | Error _ as err ->
       L.(die ExternalError)
         "*** Buck genrule capture failed to execute: %s@\n***@."
@@ -62,9 +133,10 @@ let capture build_cmd =
   L.progress "Found %d genrule capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
   let all_args = List.rev_append args targets in
+  let build_report_file = Filename.temp_file ~in_dir:Config.temp_dir "buck_build_report" ".json" in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    (prog :: command :: "--show-output" :: Buck.buck_config JavaGenruleMaster)
+    (prog :: command :: "--build-report" :: build_report_file :: Buck.buck_config JavaGenruleMaster)
     @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
   in
   L.(debug Capture Quiet)
@@ -73,6 +145,7 @@ let capture build_cmd =
   else
     let time0 = Mtime_clock.counter () in
     run_buck_capture updated_buck_cmd ;
+    infer_deps_of_build_report build_report_file ;
     L.progress "Genrule capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
     RunState.set_merge_capture true ;
     RunState.store ()
