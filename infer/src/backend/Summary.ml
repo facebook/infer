@@ -158,23 +158,17 @@ module OnDisk = struct
     opt
 
 
-  let load_biabduction_model proc_name =
-    if BiabductionModels.mem proc_name then load_from_file (specs_models_filename proc_name)
-    else None
-
-
   (** Load procedure summary for the given procedure name and update spec table *)
-  let load_summary_to_spec_table =
-    let or_from f_load f_filenames proc_name summ_opt =
-      match summ_opt with Some _ -> summ_opt | None -> f_load (f_filenames proc_name)
+  let load_summary_to_spec_table proc_name =
+    let summ_opt =
+      match load_from_file (specs_filename_of_procname proc_name) with
+      | None when BiabductionModels.mem proc_name ->
+          load_from_file (specs_models_filename proc_name)
+      | summ_opt ->
+          summ_opt
     in
-    fun proc_name ->
-      let summ_opt =
-        load_from_file (specs_filename_of_procname proc_name)
-        |> or_from load_biabduction_model Fn.id proc_name
-      in
-      Option.iter ~f:(add proc_name) summ_opt ;
-      summ_opt
+    Option.iter ~f:(add proc_name) summ_opt ;
+    summ_opt
 
 
   let get proc_name =
