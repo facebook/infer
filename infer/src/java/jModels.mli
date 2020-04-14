@@ -9,11 +9,8 @@
 open! IStd
 open Javalib_pack
 
-val set_models : jar_filename:string -> unit
+val load_models : jar_filename:string -> unit
 (** Sets the procnames in the given jar file as models *)
-
-val is_model : Procname.t -> bool
-(** Check if there is a model for the given procname *)
 
 val get_classmap : unit -> JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 (** get map of model classes *)
