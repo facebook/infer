@@ -409,8 +409,6 @@ val linters_validate_syntax_only : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
-val log_file : string
-
 val max_nesting : int option
 
 val merge : bool

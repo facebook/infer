@@ -135,7 +135,7 @@ let () =
   setup () ;
   log_environment_info () ;
   if Config.debug_mode && CLOpt.is_originator then (
-    L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
+    L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
   ( if Config.test_determinator && not Config.process_clang_ast then
     TestDeterminator.compute_and_emit_test_to_run ()

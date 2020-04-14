@@ -322,7 +322,9 @@ let setup_log_file () =
       let fmt, chan, preexisting_logfile =
         (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log file *)
         (* assumes the results dir exists already *)
-        let logfile_path = Config.toplevel_results_dir ^/ Config.log_file in
+        let logfile_path =
+          ResultsDirEntryName.get_path ~results_dir:Config.toplevel_results_dir Logs
+        in
         let preexisting_logfile = PolyVariantEqual.( = ) (Sys.file_exists logfile_path) `Yes in
         let chan = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
         let file_fmt =

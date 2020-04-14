@@ -6,15 +6,15 @@
  *)
 open! IStd
 
-type id = Specs | Temporary [@@deriving enumerate]
+type id = Logs | Specs | Temporary [@@deriving enumerate]
 
 type cleanup_action = Delete | Keep [@@deriving equal]
 
-type entry_kind = Directory
+type entry_kind = Directory | File
 
 type t =
   { rel_path: string  (** path inside infer-out/ *)
-  ; kind: entry_kind
+  ; kind: entry_kind  (** unused for now, useful for documentation *)
   ; before_incremental_analysis: cleanup_action
         (** whether this should be deleted before an incremental analysis *)
   ; before_caching_capture: cleanup_action
@@ -22,6 +22,11 @@ type t =
             e.g., a distributed Buck cache. *) }
 
 let of_id = function
+  | Logs ->
+      { rel_path= "logs"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
   | Specs ->
       { rel_path= "specs"
       ; kind= Directory

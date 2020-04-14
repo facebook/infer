@@ -1461,9 +1461,6 @@ INTERNAL OPTIONS
        --load-average-reset
            Cancel the effect of --load-average.
 
-       --log-file file
-           Specify the file to use for logging
-
        --margin int
            Set right margin for the pretty printing functions
 

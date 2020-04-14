@@ -1489,11 +1489,6 @@ and _log_events =
     "[DOES NOTHING] Turn on the feature that logs events in a machine-readable format"
 
 
-and log_file =
-  CLOpt.mk_string ~deprecated:["out_file"; "-out-file"] ~long:"log-file" ~meta:"file"
-    ~default:"logs" "Specify the file to use for logging"
-
-
 and _log_skipped =
   CLOpt.mk_bool ~long:"" ~deprecated:["-log-skipped"] ~deprecated_no:["-no-log-skipped"]
     "[DOES NOTHING] Turn on the feature that logs skipped functions (one per file) in a \
@@ -2799,8 +2794,6 @@ and liveness_dangerous_classes = !liveness_dangerous_classes
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
-
-and log_file = !log_file
 
 and perf_profiler_data_file = !perf_profiler_data_file
 

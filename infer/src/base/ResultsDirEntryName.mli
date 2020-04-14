@@ -10,6 +10,7 @@ open! IStd
     directory you probably want to use {!ResultsDir.Entry} instead of this module. *)
 
 type id =
+  | Logs  (** log file *)
   | Specs  (** directory containing summaries as .specs files *)
   | Temporary  (** directory containing temp files *)
 

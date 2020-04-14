@@ -187,8 +187,7 @@ let scrub_for_caching () =
   let should_delete_file =
     let files_to_delete =
       (if cache_capture then [] else [ResultsDatabase.database_filename])
-      @ [ Config.log_file
-        ; (* some versions of sqlite do not clean up after themselves *)
+      @ [ (* some versions of sqlite do not clean up after themselves *)
           ResultsDatabase.database_filename ^ "-shm"
         ; ResultsDatabase.database_filename ^ "-wal" ]
     in
