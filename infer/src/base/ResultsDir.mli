@@ -28,7 +28,6 @@ val create_results_dir : unit -> unit
 (** Create the results dir and sets up logging, the database, etc. *)
 
 val delete_capture_and_results_data : unit -> unit
-  [@@warning "-32"]
 (** delete capture and results data in the results directory *)
 
 val scrub_for_caching : unit -> unit
