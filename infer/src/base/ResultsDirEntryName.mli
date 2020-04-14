@@ -14,6 +14,7 @@ type id =
   | Logs  (** log file *)
   | Specs  (** directory containing summaries as .specs files *)
   | Temporary  (** directory containing temp files *)
+  | TestDeterminatorReport  (** the report produced by the test determinator capture mode *)
 
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)

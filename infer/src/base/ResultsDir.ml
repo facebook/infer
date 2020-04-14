@@ -200,7 +200,8 @@ let scrub_for_caching () =
             Config.
               [ report_json
               ; costs_report_json
-              ; test_determinator_output
+              ; (* TestDeterminatorReport; TODO: delete, see next entry *)
+                "test_determinator.json"
               ; (* ChangedFunctions; TODO: this hard-coded string will be deleted in a next diff
                    when the logic for scrubbing will be entirely in {!ResultsDirEntryName}. *)
                 "changed_functions.json" ]))

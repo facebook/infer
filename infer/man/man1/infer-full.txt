@@ -1751,9 +1751,6 @@ INTERNAL OPTIONS
            which specify the relevant arguments. (Conversely:
            --no-test-determinator)
 
-       --test-determinator-output path
-           Name of file for test-determinator results
-
        --test-filtering
            Activates: List all the files Infer can report on (should be
            called from the root of the project) (Conversely:

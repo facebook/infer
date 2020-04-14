@@ -310,8 +310,7 @@ let clang_test_to_run ~clang_range_map ~source_file () =
 
 let emit_tests_to_run_java relevant_tests =
   let json = `List (List.map ~f:(fun t -> `String t) relevant_tests) in
-  let outpath = Config.results_dir ^/ Config.test_determinator_output in
-  YB.to_file outpath json
+  YB.to_file (ResultsDir.get_path TestDeterminatorReport) json
 
 
 let emit_tests_to_run_clang source_file relevant_tests =
@@ -343,7 +342,6 @@ let merge_test_determinator_results () =
     main_results_list := List.append changed_json !main_results_list
   in
   let test_determinator_results_path = Config.results_dir ^/ Config.test_determinator_results in
-  let main_results_file = Config.results_dir ^/ Config.test_determinator_output in
   Utils.directory_iter merge_json_results test_determinator_results_path ;
   let main_results_list_sorted =
     List.dedup_and_sort
@@ -351,6 +349,7 @@ let merge_test_determinator_results () =
         match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
       !main_results_list
   in
+  let main_results_file = ResultsDir.get_path TestDeterminatorReport in
   YB.to_file main_results_file (`List main_results_list_sorted) ;
   Logging.progress "Finished executing Test Determinator successfully, results are in %s@."
     main_results_file

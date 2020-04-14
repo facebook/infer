@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type id = ChangedFunctions | Logs | Specs | Temporary [@@deriving enumerate]
+type id = ChangedFunctions | Logs | Specs | Temporary | TestDeterminatorReport
+[@@deriving enumerate]
 
 type cleanup_action = Delete | Keep [@@deriving equal]
 
@@ -42,6 +43,11 @@ let of_id = function
       ; kind= Directory
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
+  | TestDeterminatorReport ->
+      { rel_path= "test_determinator.json"
+      ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Keep }
 
 
 let path_of_entry ~results_dir {rel_path; _} = results_dir ^/ rel_path

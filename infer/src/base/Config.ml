@@ -2167,11 +2167,6 @@ and test_determinator =
      $(b,--profiler-samples) flags, which specify the relevant arguments."
 
 
-and test_determinator_output =
-  CLOpt.mk_path ~long:"test-determinator-output" ~default:"test_determinator.json"
-    "Name of file for test-determinator results"
-
-
 and export_changed_functions =
   CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
     ~default:false
@@ -3022,8 +3017,6 @@ and symops_per_iteration = !symops_per_iteration
 and keep_going = !keep_going
 
 and test_determinator = !test_determinator
-
-and test_determinator_output = !test_determinator_output
 
 and export_changed_functions = !export_changed_functions
 
