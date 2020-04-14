@@ -28,7 +28,7 @@ let quote style =
 
 
 let mk_arg_file prefix style args =
-  let file = Filename.temp_file prefix ~in_dir:Config.temp_dir ".txt" in
+  let file = Filename.temp_file prefix ~in_dir:(ResultsDir.get_path Temporary) ".txt" in
   let write_args outc =
     List.iter
       ~f:(fun arg ->

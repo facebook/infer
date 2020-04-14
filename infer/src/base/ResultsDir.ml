@@ -8,6 +8,8 @@ open! IStd
 open PolyVariantEqual
 module L = Logging
 
+let get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
+
 module RunState = struct
   let run_time_string = Time.now () |> Time.to_string
 
@@ -135,7 +137,7 @@ let create_results_dir () =
              L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir
        ) ;
   Unix.mkdir_p Config.results_dir ;
-  Unix.mkdir_p Config.temp_dir ;
+  Unix.mkdir_p (get_path Temporary) ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
   prepare_logging_and_db () ;
   ()
@@ -152,7 +154,7 @@ let assert_results_dir advice =
   ()
 
 
-let delete_capture_and_results_data () =
+let scrub_for_incremental () =
   DBWriter.reset_capture_tables () ;
   let dirs_to_delete =
     List.map
@@ -160,6 +162,9 @@ let delete_capture_and_results_data () =
       (Config.[classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ())
   in
   List.iter ~f:Utils.rmtree dirs_to_delete ;
+  List.iter ~f:Utils.rmtree
+    (ResultsDirEntryName.to_delete_before_incremental_capture_and_analysis
+       ~results_dir:Config.results_dir) ;
   ()
 
 
@@ -173,10 +178,7 @@ let scrub_for_caching () =
   let should_delete_dir =
     let dirs_to_delete =
       Config.
-        [ captured_dir_name (* debug only *)
-        ; classnames_dir_name (* a cache for the Java frontend *)
-        ; temp_dir_name
-          (* debug only *) ]
+        [captured_dir_name (* debug only *); classnames_dir_name (* a cache for the Java frontend *)]
       @ (* temporarily needed to build report.json, safe to delete *)
       FileLevelAnalysisIssueDirs.get_registered_dir_names ()
     in
@@ -227,4 +229,6 @@ let scrub_for_caching () =
     | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
         ()
   in
-  delete_temp_results Config.results_dir
+  delete_temp_results Config.results_dir ;
+  List.iter ~f:Utils.rmtree
+    (ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir)

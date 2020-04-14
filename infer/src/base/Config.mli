@@ -165,8 +165,6 @@ val specs_files_suffix : string
 
 val starvation_issues_dir_name : string
 
-val temp_dir_name : string
-
 val test_determinator_results : string
 
 val trace_absarray : bool
@@ -660,9 +658,6 @@ val captured_dir : string
 (** directory where the results of the capture phase are stored *)
 
 val procnames_locks_dir : string
-
-val temp_dir : string
-(** directory inside {!results_dir} to put temporary files *)
 
 val toplevel_results_dir : string
 (** In some integrations, eg Buck, infer subprocesses started by the build system (started by the

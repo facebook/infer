@@ -133,7 +133,9 @@ let capture build_cmd =
   L.progress "Found %d genrule capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
   let all_args = List.rev_append args targets in
-  let build_report_file = Filename.temp_file ~in_dir:Config.temp_dir "buck_build_report" ".json" in
+  let build_report_file =
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
+  in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
     (prog :: command :: "--build-report" :: build_report_file :: Buck.buck_config JavaGenruleMaster)

@@ -18,6 +18,11 @@ module RunState : sig
   (** fetch the value of the 'merge after capture' smart option *)
 end
 
+val get_path : ResultsDirEntryName.id -> string
+(** Wrapper around {!ResultsDirEntryName.get_path} that implicitly applies to the current results
+    directory {!Config.results_dir}. If you need to specify another results directory use
+    {!ResultsDirEntryName} directly. *)
+
 val assert_results_dir : string -> unit
 (** Check that the results dir exists and sets up logging, the database, etc. *)
 
@@ -27,8 +32,8 @@ val remove_results_dir : unit -> unit
 val create_results_dir : unit -> unit
 (** Create the results dir and sets up logging, the database, etc. *)
 
-val delete_capture_and_results_data : unit -> unit
-(** delete capture and results data in the results directory *)
+val scrub_for_incremental : unit -> unit
+(** scrub capture data in preparation of an incremental capture + analysis *)
 
 val scrub_for_caching : unit -> unit
 (** Clean up the results dir to keep only what's relevant to go in a cache (e.g., the distributed

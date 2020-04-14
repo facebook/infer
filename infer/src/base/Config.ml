@@ -228,8 +228,6 @@ let starvation_issues_dir_name = "starvation_issues"
 
 let test_determinator_results = "test_determinator_results"
 
-let temp_dir_name = "tmp"
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 
@@ -3103,8 +3101,6 @@ let is_checker_enabled c =
 
 
 let captured_dir = results_dir ^/ captured_dir_name
-
-let temp_dir = results_dir ^/ temp_dir_name
 
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
