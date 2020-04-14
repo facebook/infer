@@ -54,7 +54,7 @@ depends: [
   "core_kernel" {= "v0.13.0"}
   "cppo" {= "1.6.6"}
   "ctypes" {= "0.16.0"}
-  "dune" {= "2.3.1"}
+  "dune" {= "2.5.0"}
   "dune-configurator" {= "2.3.1"}
   "dune-private-libs" {= "2.3.1"}
   "easy-format" {= "1.3.2"}
