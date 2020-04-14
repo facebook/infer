@@ -325,8 +325,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
         {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} )
     !all_issues ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
-  List.iter (Config.lint_issues_dir_name :: FileLevelAnalysisIssueDirs.get_registered_dir_names ())
-    ~f:(fun dir_name ->
+  List.iter (ResultsDirEntryName.get_issues_directories ()) ~f:(fun dir_name ->
       IssueLog.load dir_name |> IssueLog.iter ~f:(write_lint_issues filters issues_outf linereader)
   ) ;
   ()

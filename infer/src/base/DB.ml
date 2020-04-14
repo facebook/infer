@@ -63,7 +63,7 @@ let source_dir_get_internal_file source_dir extension =
 
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
-  Filename.concat Config.captured_dir (source_file_encoding source_file)
+  ResultsDir.get_path Debug ^/ source_file_encoding source_file
 
 
 (** {2 Filename} *)
@@ -132,7 +132,7 @@ module Results_dir = struct
   let init ?(debug = false) source =
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
     if debug || Config.html || Config.debug_mode || Config.frontend_tests then (
-      Utils.create_dir (path_to_filename Abs_root [Config.captured_dir_name]) ;
+      Utils.create_dir (ResultsDir.get_path Debug) ;
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
 
 

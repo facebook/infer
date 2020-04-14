@@ -7,12 +7,6 @@
 
 open! IStd
 
-val database_filename : string
-(** the relative path to the database from the results directory *)
-
-val database_fullpath : string
-(** the absolute path to the database file *)
-
 val schema_hum : string
 (** some human-readable string describing the tables *)
 

@@ -42,6 +42,6 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
         ~skip_duplicated_types:Config.skip_duplicated_types ~interesting_paths
     else unfiltered_diff
   in
-  let out_path = Config.results_dir ^/ "differential" in
+  let out_path = ResultsDir.get_path Differential in
   Unix.mkdir_p out_path ;
   Differential.to_files diff out_path

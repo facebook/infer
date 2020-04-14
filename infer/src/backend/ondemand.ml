@@ -280,8 +280,8 @@ let dump_duplicate_procs source_file procs =
             None )
   in
   let output_to_file duplicate_procs =
-    Out_channel.with_file (Config.results_dir ^/ Config.duplicates_filename)
-      ~append:true ~perm:0o666 ~f:(fun outc ->
+    Out_channel.with_file (ResultsDir.get_path DuplicateFunctions) ~append:true ~perm:0o666
+      ~f:(fun outc ->
         let fmt = F.formatter_of_out_channel outc in
         List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
             F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n" SourceFile.pp

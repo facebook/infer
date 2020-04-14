@@ -21,7 +21,7 @@ let () =
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
-  | File of {callback: Callbacks.file_callback_t; issue_dir: string}
+  | File of {callback: Callbacks.file_callback_t; issue_dir: ResultsDirEntryName.id}
 
 type callback = callback_fun * Language.t
 
@@ -57,10 +57,8 @@ let all_checkers =
     ; active= Config.is_checker_enabled Eradicate
     ; callbacks=
         [ (Procedure Eradicate.proc_callback, Language.Java)
-        ; ( File
-              { callback= Eradicate.file_callback
-              ; issue_dir= Config.nullsafe_file_level_issues_dir_name }
-          , Language.Java ) ] }
+        ; (File {callback= Eradicate.file_callback; issue_dir= NullsafeFileIssues}, Language.Java)
+        ] }
   ; { name= "fragment retains view"
     ; active= Config.is_checker_enabled FragmentRetainsView
     ; callbacks=
@@ -99,10 +97,8 @@ let all_checkers =
     ; callbacks=
         [ (Procedure RacerD.analyze_procedure, Language.Clang)
         ; (Procedure RacerD.analyze_procedure, Language.Java)
-        ; ( File {callback= RacerD.file_analysis; issue_dir= Config.racerd_issues_dir_name}
-          , Language.Clang )
-        ; ( File {callback= RacerD.file_analysis; issue_dir= Config.racerd_issues_dir_name}
-          , Language.Java ) ] }
+        ; (File {callback= RacerD.file_analysis; issue_dir= RacerDIssues}, Language.Clang)
+        ; (File {callback= RacerD.file_analysis; issue_dir= RacerDIssues}, Language.Java) ] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
     ; active= Config.is_checker_enabled ResourceLeak
@@ -136,11 +132,9 @@ let all_checkers =
     ; active= Config.is_checker_enabled Starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
-          , Language.Java )
+        ; (File {callback= Starvation.reporting; issue_dir= StarvationIssues}, Language.Java)
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
-        ; ( File {callback= Starvation.reporting; issue_dir= Config.starvation_issues_dir_name}
-          , Language.Clang ) ] }
+        ; (File {callback= Starvation.reporting; issue_dir= StarvationIssues}, Language.Clang) ] }
   ; { name= "purity"
     ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
     ; callbacks=

@@ -142,7 +142,7 @@ module Implementation = struct
 
 
   let merge_db infer_out_src =
-    let db_file = infer_out_src ^/ ResultsDatabase.database_filename in
+    let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
     let main_db = ResultsDatabase.get_database () in
     Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
     |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;

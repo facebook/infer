@@ -29,10 +29,10 @@ let issues_serializer : Errlog.t Procname.Map.t Serialization.serializer =
 
 let iter ~f m = Procname.Map.iter f m
 
-let store ~dir ~file m =
+let store ~entry ~file m =
   if not (Procname.Map.is_empty m) then (
     let abbrev_source_file = DB.source_file_encoding file in
-    let issues_dir = Config.results_dir ^/ dir in
+    let issues_dir = ResultsDir.get_path entry in
     Utils.create_dir issues_dir ;
     let filename =
       DB.filename_from_string (Filename.concat issues_dir (abbrev_source_file ^ ".issue"))
@@ -45,8 +45,8 @@ let store ~dir ~file m =
 let load_issues issues_file = Serialization.read_from_file issues_serializer issues_file
 
 (** Load all the issues in the given dir and update the issues map *)
-let load dir =
-  let issues_dir = Filename.concat Config.results_dir dir in
+let load entry =
+  let issues_dir = ResultsDir.get_path entry in
   let load_issues_to_map init issues_file =
     let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
     load_issues file

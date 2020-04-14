@@ -45,8 +45,8 @@ val register_procedure_callback :
 (** Register a procedure callback (see details above) *)
 
 val register_file_callback :
-  checker_name:string -> Language.t -> file_callback_t -> issue_dir:string -> unit
-(** Register a file callback (see details above). [issue_dir] must be unique for this type of
+  checker_name:string -> Language.t -> file_callback_t -> issue_dir:ResultsDirEntryName.id -> unit
+(** Register a file callback (see details above). [issues_dir] must be unique for this type of
     checker. *)
 
 val iterate_procedure_callbacks : Exe_env.t -> Summary.t -> Summary.t

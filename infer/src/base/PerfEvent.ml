@@ -225,7 +225,7 @@ let logger =
   lazy
     (let log_file =
        (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log file *)
-       Config.toplevel_results_dir ^/ Config.trace_events_file
+       ResultsDirEntryName.get_path ~results_dir:Config.toplevel_results_dir PerfEvents
      in
      let is_toplevel_process = CommandLineOption.is_originator && not !ProcessPoolState.in_child in
      ( if is_toplevel_process then

@@ -106,35 +106,21 @@ let assign = "<\"Assign\">"
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
 
-let buck_infer_deps_file_name = "infer-deps.txt"
-
 let buck_out_gen = "buck-out" ^/ "gen"
 
 let buck_results_dir_name = "infer"
 
-let captured_dir_name = "captured"
-
 let clang_initializer_prefix = "__infer_globals_initializer_"
 
 let clang_inner_destructor_prefix = "__infer_inner_destructor_"
-
-let classnames_dir_name = "classnames"
-
-let costs_report_json = "costs-report.json"
 
 let default_failure_name = "ASSERTION_FAILURE"
 
 (** Dotty output filename **)
 let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
-let duplicates_filename = "duplicates.txt"
-
-let trace_events_file = "perf_events.json"
-
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
-
-let global_tenv_filename = ".global.tenv"
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
@@ -142,10 +128,6 @@ let idempotent_getters = true
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
-
-let lint_dotty_dir_name = "lint_dotty"
-
-let lint_issues_dir_name = "lint_issues"
 
 let manual_biabduction = "BIABDUCTION CHECKER OPTIONS"
 
@@ -190,27 +172,13 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
-let nullsafe_file_level_issues_dir_name = "nullsafe_file_level"
-
-let procnames_locks_dir_name = "procnames_locks"
-
 let property_attributes = "property_attributes"
 
-let racerd_issues_dir_name = "racerd"
-
 let report_condition_always_true_in_clang = false
-
-let report_html_dir = "report.html"
-
-let report_json = "report.json"
 
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
-
-let report_txt = "report.txt"
-
-let retain_cycle_dotty_dir = "retain_cycle_dotty"
 
 (** If true, compact summaries before saving *)
 let save_compact_summaries = true
@@ -221,10 +189,6 @@ let smt_output = false
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
 let specs_files_suffix = ".specs"
-
-let starvation_issues_dir_name = "starvation_issues"
-
-let test_determinator_results = "test_determinator_results"
 
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
@@ -2055,9 +2019,8 @@ and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
     ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     (Printf.sprintf
-       "Output a dotty file in infer-out/%s for each source file in the output of \
-        $(b,--source-files)"
-       captured_dir_name)
+       "Output a dotty file in %s for each source file in the output of $(b,--source-files)"
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
 
 
 and source_files_filter =
@@ -2216,7 +2179,8 @@ and threadsafe_aliases =
 
 and trace_events =
   CLOpt.mk_bool ~long:"trace-events"
-    (Printf.sprintf "Emit Chrome performance trace events in infer-out/%s" trace_events_file)
+    (Printf.sprintf "Emit Chrome performance trace events in %s"
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" PerfEvents))
 
 
 and trace_join =
@@ -2721,7 +2685,10 @@ and force_delete_results_dir = !force_delete_results_dir
 
 and force_integration = !force_integration
 
-and from_json_report = Option.value !from_json_report ~default:(!results_dir ^/ report_json)
+and from_json_report =
+  Option.value !from_json_report
+    ~default:(ResultsDirEntryName.get_path ~results_dir:!results_dir ReportJson)
+
 
 and frontend_stats = !frontend_stats
 
@@ -3077,8 +3044,6 @@ let is_checker_enabled c =
       if Checker.equal checker c then Some enabled else None )
 
 
-let captured_dir = results_dir ^/ captured_dir_name
-
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
   let text = if is_checker_enabled Linters then "linting" :: text else text in
@@ -3091,8 +3056,6 @@ let clang_frontend_action_string =
   in
   String.concat ~sep:", " text
 
-
-let procnames_locks_dir = results_dir ^/ procnames_locks_dir_name
 
 (* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as
    a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the

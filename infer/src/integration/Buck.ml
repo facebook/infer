@@ -409,7 +409,11 @@ let run_buck_build prog buck_build_args =
     L.debug Capture Verbose "BUCK OUT: %s@." line ;
     match String.split ~on:' ' line with
     | [_; target_path] ->
-        let filename = Config.project_root ^/ target_path ^/ Config.buck_infer_deps_file_name in
+        let filename =
+          ResultsDirEntryName.get_path
+            ~results_dir:(Config.project_root ^/ target_path)
+            BuckDependencies
+        in
         if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
     | _ ->
         L.internal_error "Couldn't parse buck target output: %s" line ;
@@ -430,20 +434,23 @@ let run_buck_build prog buck_build_args =
 let merge_deps_files depsfiles =
   let buck_out = Config.project_root ^/ Config.buck_out_gen in
   let depslines, depsfiles =
-    match (depsfiles, Config.keep_going, Config.buck_merge_all_deps) with
-    | [], true, _ ->
+    match depsfiles with
+    | [] when Config.keep_going || Config.buck_merge_all_deps ->
         let infouts =
           Utils.fold_folders ~init:[] ~path:buck_out ~f:(fun acc dir ->
               if
                 String.is_substring dir ~substring:"infer-out"
                 && PolyVariantEqual.(
-                     Sys.file_exists @@ dir ^/ ResultsDatabase.database_filename = `Yes)
+                     Sys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
+                     = `Yes)
               then Printf.sprintf "\t\t%s" dir :: acc
               else acc )
         in
-        (infouts, depsfiles)
-    | [], _, true ->
-        let files = Utils.find_files ~path:buck_out ~extension:Config.buck_infer_deps_file_name in
+        (infouts, [])
+    | [] when Config.buck_merge_all_deps ->
+        let files =
+          Utils.find_files ~path:buck_out ~extension:ResultsDirEntryName.buck_infer_deps_file_name
+        in
         ([], files)
     | _ ->
         ([], depsfiles)
@@ -459,7 +466,7 @@ let clang_flavor_capture ~prog ~buck_build_cmd =
     Process.create_process_and_wait ~prog ~args:["clean"] ;
   let depsfiles = run_buck_build prog (buck_build_cmd @ capture_buck_args) in
   let deplines = merge_deps_files depsfiles in
-  let infer_out_depsfile = Config.(results_dir ^/ buck_infer_deps_file_name) in
+  let infer_out_depsfile = ResultsDir.get_path BuckDependencies in
   Utils.with_file_out infer_out_depsfile ~f:(fun out_chan ->
       Out_channel.output_lines out_chan deplines ) ;
   ()

@@ -8,9 +8,8 @@
 open! IStd
 module L = Logging
 
-let database_filename = "results.db"
-
-let database_fullpath = Config.results_dir ^/ database_filename
+(** cannot use {!ResultsDir.get_path} due to circular dependency so re-implement it *)
+let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
 
 let procedures_schema prefix =
   Printf.sprintf
@@ -55,7 +54,7 @@ let create_tables ?(prefix = "") db =
 
 
 let create_db () =
-  let temp_db = Filename.temp_file ~in_dir:Config.results_dir database_filename ".tmp" in
+  let temp_db = Filename.temp_file ~in_dir:(results_dir_get_path Temporary) "results.db" ".tmp" in
   let db = Sqlite3.db_open ~mutex:`FULL temp_db in
   SqliteUtils.exec db ~log:"sqlite page size"
     ~stmt:(Printf.sprintf "PRAGMA page_size=%d" Config.sqlite_page_size) ;
@@ -70,7 +69,7 @@ let create_db () =
       (* Can't use WAL with custom VFS *)
       () ) ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db database_fullpath
+  try Sys.rename temp_db (results_dir_get_path CaptureDB)
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 
@@ -154,7 +153,7 @@ end = struct
     db_close () ;
     let db =
       Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
-        database_fullpath
+        (results_dir_get_path CaptureDB)
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;

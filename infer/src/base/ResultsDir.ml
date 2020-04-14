@@ -17,16 +17,15 @@ module RunState = struct
     let open Runstate_t in
     { run_sequence= []
     ; results_dir_format=
-        Printf.sprintf "db_filename: %s\ndb_schema: %s" ResultsDatabase.database_filename
+        Printf.sprintf "db_filename: %s\ndb_schema: %s"
+          (ResultsDirEntryName.get_path ~results_dir:"infer-out" CaptureDB)
           ResultsDatabase.schema_hum
     ; should_merge_capture= false }
 
 
   let state : Runstate_t.t ref = ref state0
 
-  let state_filename = ".infer_runstate.json"
-
-  let state_file_path = Config.results_dir ^/ state_filename
+  let state_file_path = get_path RunState
 
   let store () =
     Utils.with_file_out state_file_path ~f:(fun oc ->
@@ -85,6 +84,7 @@ let results_dir_dir_markers = [get_path Specs]
 
 let is_results_dir ~check_correct_version () =
   let not_found = ref "" in
+  let capture_db_path = get_path CaptureDB in
   let has_all_markers =
     List.for_all results_dir_dir_markers ~f:(fun d ->
         Sys.is_directory d = `Yes
@@ -92,9 +92,9 @@ let is_results_dir ~check_correct_version () =
         ( not_found := d ^ "/" ;
           false ) )
     && ( (not check_correct_version)
-       || Sys.is_file ResultsDatabase.database_fullpath = `Yes
+       || Sys.is_file capture_db_path = `Yes
        ||
-       ( not_found := ResultsDatabase.database_fullpath ;
+       ( not_found := capture_db_path ;
          false ) )
   in
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" !not_found)
@@ -121,7 +121,7 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  if Sys.is_file ResultsDatabase.database_fullpath <> `Yes then ResultsDatabase.create_db () ;
+  if Sys.is_file (get_path CaptureDB) <> `Yes then ResultsDatabase.create_db () ;
   ResultsDatabase.new_database_connection ()
 
 
@@ -156,12 +156,6 @@ let assert_results_dir advice =
 
 let scrub_for_incremental () =
   DBWriter.reset_capture_tables () ;
-  let dirs_to_delete =
-    List.map
-      ~f:(Filename.concat Config.results_dir)
-      (Config.[classnames_dir_name] @ FileLevelAnalysisIssueDirs.get_registered_dir_names ())
-  in
-  List.iter ~f:Utils.rmtree dirs_to_delete ;
   List.iter ~f:Utils.rmtree
     (ResultsDirEntryName.to_delete_before_incremental_capture_and_analysis
        ~results_dir:Config.results_dir) ;
@@ -175,62 +169,7 @@ let scrub_for_caching () =
   if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
-  let should_delete_dir =
-    let dirs_to_delete =
-      Config.
-        [captured_dir_name (* debug only *); classnames_dir_name (* a cache for the Java frontend *)]
-      @ (* temporarily needed to build report.json, safe to delete *)
-      FileLevelAnalysisIssueDirs.get_registered_dir_names ()
-    in
-    List.mem ~equal:String.equal dirs_to_delete
-  in
-  let should_delete_file =
-    let files_to_delete =
-      (if cache_capture then [] else [ResultsDatabase.database_filename])
-      @ [ (* some versions of sqlite do not clean up after themselves *)
-          ResultsDatabase.database_filename ^ "-shm"
-        ; ResultsDatabase.database_filename ^ "-wal" ]
-    in
-    let suffixes_to_delete = [".txt"; ".json"] in
-    fun name ->
-      (* Keep the JSON report and the JSON costs report *)
-      (not
-         (List.exists
-            ~f:(String.equal (Filename.basename name))
-            Config.
-              [ report_json
-              ; costs_report_json
-              ; (* TestDeterminatorReport; TODO: delete, see next entry *)
-                "test_determinator.json"
-              ; (* ChangedFunctions; TODO: this hard-coded string will be deleted in a next diff
-                   when the logic for scrubbing will be entirely in {!ResultsDirEntryName}. *)
-                "changed_functions.json" ]))
-      && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
-         || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
-  in
-  let rec delete_temp_results name =
-    let rec cleandir dir =
-      match Unix.readdir_opt dir with
-      | Some entry ->
-          if should_delete_dir entry then Utils.rmtree (name ^/ entry)
-          else if
-            not
-              ( String.equal entry Filename.current_dir_name
-              || String.equal entry Filename.parent_dir_name )
-          then delete_temp_results (name ^/ entry) ;
-          cleandir dir (* next entry *)
-      | None ->
-          Unix.closedir dir
-    in
-    match Unix.opendir name with
-    | dir ->
-        cleandir dir
-    | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
-        if should_delete_file name then Unix.unlink name ;
-        ()
-    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
-        ()
-  in
-  delete_temp_results Config.results_dir ;
   List.iter ~f:Utils.rmtree
-    (ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir)
+    ( (* some versions of sqlite do not clean up after themselves *) (get_path CaptureDB ^ "-shm")
+    :: (get_path CaptureDB ^ "-wal")
+    :: ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir )

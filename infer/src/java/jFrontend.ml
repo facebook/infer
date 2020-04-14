@@ -101,7 +101,7 @@ let add_cmethod source_file program icfg cm proc_name =
 
 
 let path_of_cached_classname cn =
-  let root_path = Config.(results_dir ^/ classnames_dir_name) in
+  let root_path = ResultsDir.get_path JavaClassnamesCache in
   let package_path = List.fold ~f:Filename.concat ~init:root_path (JBasics.cn_package cn) in
   Filename.concat package_path (JBasics.cn_simple_name cn ^ ".java")
 

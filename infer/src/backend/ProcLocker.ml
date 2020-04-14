@@ -18,7 +18,7 @@ let record_time_of ~f ~log_f =
   log_f execution_duration ; result
 
 
-let locks_dir = Config.procnames_locks_dir
+let locks_dir = ResultsDir.get_path ProcnamesLocks
 
 let locks_target = locks_dir ^/ "locks_target"
 

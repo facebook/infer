@@ -317,7 +317,7 @@ let emit_tests_to_run_clang source_file relevant_tests =
   if not (List.is_empty relevant_tests) then (
     let json = `List (List.map ~f:(fun t -> `String t) relevant_tests) in
     let abbrev_source_file = DB.source_file_encoding source_file in
-    let test_determinator_results_path = Config.results_dir ^/ Config.test_determinator_results in
+    let test_determinator_results_path = ResultsDir.get_path TestDeterminatorTempResults in
     let outpath = test_determinator_results_path ^/ abbrev_source_file ^ ".json" in
     Utils.create_dir test_determinator_results_path ;
     Utils.write_json_to_file outpath json )
@@ -341,7 +341,7 @@ let merge_test_determinator_results () =
     in
     main_results_list := List.append changed_json !main_results_list
   in
-  let test_determinator_results_path = Config.results_dir ^/ Config.test_determinator_results in
+  let test_determinator_results_path = ResultsDir.get_path TestDeterminatorTempResults in
   Utils.directory_iter merge_json_results test_determinator_results_path ;
   let main_results_list_sorted =
     List.dedup_and_sort

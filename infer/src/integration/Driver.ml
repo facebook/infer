@@ -77,7 +77,7 @@ let clean_compilation_command mode =
 
 
 let reset_duplicates_file () =
-  let start = Config.results_dir ^/ Config.duplicates_filename in
+  let start = ResultsDir.get_path DuplicateFunctions in
   let delete () = Unix.unlink start in
   let create () =
     Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start)
@@ -214,8 +214,8 @@ let execute_analyze ~changed_files =
 
 
 let report ?(suppress_console = false) () =
-  let issues_json = Config.(results_dir ^/ report_json) in
-  JsonReports.write_reports ~issues_json ~costs_json:Config.(results_dir ^/ costs_report_json) ;
+  let issues_json = ResultsDir.get_path ReportJson in
+  JsonReports.write_reports ~issues_json ~costs_json:(ResultsDir.get_path ReportCostsJson) ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report.
 
@@ -226,8 +226,7 @@ let report ?(suppress_console = false) () =
         Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
     TextReport.create_from_json
       ~quiet:(Config.quiet || suppress_console)
-      ~console_limit:Config.report_console_limit
-      ~report_txt:Config.(results_dir ^/ report_txt)
+      ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
       ~report_json:issues_json ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
@@ -306,9 +305,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
-  let issues_json =
-    DB.Results_dir.(path_to_filename Abs_root [Config.report_json]) |> DB.filename_to_string
-  in
+  let issues_json = ResultsDir.get_path ReportJson in
   match Utils.read_file issues_json with
   | Ok lines ->
       let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in

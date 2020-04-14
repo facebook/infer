@@ -89,7 +89,7 @@ let infer_deps_of_build_report build_report =
       let out_line out_channel (target, target_output_path) =
         Printf.fprintf out_channel "%s\t-\t%s\n" target (Config.project_root ^/ target_output_path)
       in
-      let infer_deps = Config.(results_dir ^/ buck_infer_deps_file_name) in
+      let infer_deps = ResultsDir.get_path BuckDependencies in
       Utils.with_file_out infer_deps ~f:(fun out_channel ->
           List.iter target_path_list ~f:(out_line out_channel) )
 
