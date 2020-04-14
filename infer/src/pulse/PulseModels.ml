@@ -275,17 +275,6 @@ module StdAtomicInteger = struct
     [PulseExecutionState.ContinueProgram astate]
 end
 
-module ObjectiveC = struct
-  let alloc _ : model =
-   fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
-    let hist =
-      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
-    in
-    let ret_addr = AbstractValue.mk_fresh () in
-    let astate = PulseOperations.allocate callee_procname location (ret_addr, hist) astate in
-    PulseOperations.write_id ret_id (ret_addr, hist) astate |> PulseOperations.ok_continue
-end
-
 module JavaObject = struct
   (* naively modeled as shallow copy. *)
   let clone src_pointer_hist : model =
@@ -562,7 +551,7 @@ module ProcNameDispatcher = struct
         &:: "nextElement" <>$ capt_arg_payload
         $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])
         )
-      ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> ObjectiveC.alloc
+      ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
       ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
       ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free ]
