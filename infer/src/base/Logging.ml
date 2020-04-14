@@ -265,6 +265,16 @@ let debug kind level fmt =
   log ~to_console:false ~to_file debug_file_fmts fmt
 
 
+(** log to scuba as well as in the original logger *)
+let wrap_in_scuba_log ~label ~log fmt =
+  let wrapper message =
+    ScubaLogging.log_message ~label ~message ;
+    (* [format_of_string] is there to satisfy the type checker *)
+    log (format_of_string "%s") message
+  in
+  F.kasprintf wrapper fmt
+
+
 let result fmt = log ~to_console:true result_file_fmts fmt
 
 let environment_info fmt = log ~to_console:false environment_info_file_fmts fmt
@@ -274,6 +284,9 @@ let external_warning fmt = log ~to_console:(not Config.quiet) external_warning_f
 let external_error fmt = log ~to_console:true external_error_file_fmts fmt
 
 let internal_error fmt = log ~to_console:true internal_error_file_fmts fmt
+
+(* mask original function and replicate log in scuba *)
+let internal_error fmt = wrap_in_scuba_log ~label:"internal_error" ~log:internal_error fmt
 
 (** Type of location in ml source: __POS__ *)
 type ocaml_pos = string * int * int * int
