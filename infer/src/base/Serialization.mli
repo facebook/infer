@@ -33,12 +33,9 @@ val create_serializer : Key.t -> 'a serializer
 val read_from_file : 'a serializer -> DB.filename -> 'a option
 (** Deserialize a file and check the keys *)
 
-val read_from_string : 'a serializer -> string -> 'a option
-(** Deserialize a string and check the keys *)
-
 val write_to_file : 'a serializer -> data:'a -> DB.filename -> unit
 (** Serialize into a file writing value *)
 
-val generate_keys : unit -> int * int * int * int * int
+val generate_keys : unit -> int * int * int
   [@@warning "-32"]
 (** Generate new (random) serialization keys, to be used in an ocaml toplevel *)

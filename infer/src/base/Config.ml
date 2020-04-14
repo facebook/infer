@@ -124,8 +124,6 @@ let costs_report_json = "costs-report.json"
 
 let default_failure_name = "ASSERTION_FAILURE"
 
-let default_in_zip_results_dir = "infer"
-
 (** Dotty output filename **)
 let dotty_frontend_output = "proc_cfgs_frontend.dot"
 

@@ -165,10 +165,6 @@ module OnDisk = struct
 
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table =
-    let load_summary_ziplibs zip_specs_filename =
-      let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
-      ZipLib.load summary_serializer zip_specs_path
-    in
     let or_from f_load f_filenames proc_name summ_opt =
       match summ_opt with Some _ -> summ_opt | None -> f_load (f_filenames proc_name)
     in
@@ -176,7 +172,6 @@ module OnDisk = struct
       let summ_opt =
         load_from_file (specs_filename_of_procname proc_name)
         |> or_from load_biabduction_model Fn.id proc_name
-        |> or_from load_summary_ziplibs specs_filename proc_name
       in
       Option.iter ~f:(add proc_name) summ_opt ;
       summ_opt

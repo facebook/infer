@@ -73,8 +73,6 @@ val costs_report_json : string
 
 val default_failure_name : string
 
-val default_in_zip_results_dir : string
-
 val dotty_frontend_output : string
 
 val duplicates_filename : string
