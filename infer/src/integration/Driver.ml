@@ -141,8 +141,8 @@ let buck_capture build_cmd =
   in
   Option.iter prog_build_cmd_opt ~f:(fun (prog, buck_build_cmd) ->
       L.progress "Capturing in buck mode...@." ;
-      if Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then (
-        RunState.set_merge_capture true ; RunState.store () ) ;
+      if Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then
+        ResultsDir.RunState.set_merge_capture true ;
       Buck.clang_flavor_capture ~prog ~buck_build_cmd )
 
 
@@ -283,15 +283,14 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
     | Analyze | BuckGenruleMaster _ ->
-        RunState.get_merge_capture ()
+        ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
   in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     MergeCapture.merge_captured_targets () ;
-    RunState.set_merge_capture false ;
-    RunState.store () ) ;
+    ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (

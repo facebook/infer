@@ -147,5 +147,5 @@ let capture build_cmd =
     run_buck_capture updated_buck_cmd ;
     infer_deps_of_build_report build_report_file ;
     L.progress "Genrule capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
-    RunState.set_merge_capture true ;
-    RunState.store ()
+    ResultsDir.RunState.set_merge_capture true ;
+    ()

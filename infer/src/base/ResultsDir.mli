@@ -7,6 +7,17 @@
 
 open! IStd
 
+module RunState : sig
+  val add_run_to_sequence : unit -> unit
+  (** add an entry with the current run date *)
+
+  val set_merge_capture : bool -> unit
+  (** update the 'merge after capture' smart option *)
+
+  val get_merge_capture : unit -> bool
+  (** fetch the value of the 'merge after capture' smart option *)
+end
+
 val assert_results_dir : string -> unit
 (** Check that the results dir exists and sets up logging, the database, etc. *)
 
