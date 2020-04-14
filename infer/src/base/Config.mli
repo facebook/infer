@@ -600,8 +600,6 @@ val test_determinator_output : string
 
 val export_changed_functions : bool
 
-val export_changed_functions_output : string
-
 val test_filtering : bool
 
 val testing_mode : bool

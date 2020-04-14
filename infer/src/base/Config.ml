@@ -2179,11 +2179,6 @@ and export_changed_functions =
      the $(b,--modified-lines)."
 
 
-and export_changed_functions_output =
-  CLOpt.mk_path ~long:"export-changed-functions-output" ~default:"changed_functions.json"
-    "Name of file for export-changed-functions results"
-
-
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
     ~symbols:[("file", File); ("restart", Restart); ("callgraph", SyntacticCallGraph)]
@@ -3031,8 +3026,6 @@ and test_determinator = !test_determinator
 and test_determinator_output = !test_determinator_output
 
 and export_changed_functions = !export_changed_functions
-
-and export_changed_functions_output = !export_changed_functions_output
 
 and test_filtering = !test_filtering
 

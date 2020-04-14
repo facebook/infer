@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type id = Logs | Specs | Temporary [@@deriving enumerate]
+type id = ChangedFunctions | Logs | Specs | Temporary [@@deriving enumerate]
 
 type cleanup_action = Delete | Keep [@@deriving equal]
 
@@ -22,6 +22,11 @@ type t =
             e.g., a distributed Buck cache. *) }
 
 let of_id = function
+  | ChangedFunctions ->
+      { rel_path= "changed_functions.json"
+      ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Keep }
   | Logs ->
       { rel_path= "logs"
       ; kind= File

@@ -172,7 +172,7 @@ let emit_relevant_methods relevant_methods =
       (List.map (Procname.Set.elements relevant_methods) ~f:Procname.to_string)
   in
   let json = `List (List.map ~f:(fun t -> `String t) cleaned_methods) in
-  let outpath = Config.results_dir ^/ Config.export_changed_functions_output in
+  let outpath = ResultsDir.get_path ChangedFunctions in
   YB.to_file outpath json
 
 

@@ -1346,9 +1346,6 @@ INTERNAL OPTIONS
            test-determinator. It is used together with the --modified-lines.
            (Conversely: --no-export-changed-functions)
 
-       --export-changed-functions-output path
-           Name of file for export-changed-functions results
-
        --external-java-packages-reset
            Set --external-java-packages to the empty list.
 

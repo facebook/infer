@@ -201,7 +201,9 @@ let scrub_for_caching () =
               [ report_json
               ; costs_report_json
               ; test_determinator_output
-              ; export_changed_functions_output ]))
+              ; (* ChangedFunctions; TODO: this hard-coded string will be deleted in a next diff
+                   when the logic for scrubbing will be entirely in {!ResultsDirEntryName}. *)
+                "changed_functions.json" ]))
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
