@@ -124,8 +124,6 @@ val patterns_skip_translation : string * Yojson.Basic.t
 
 val pp_version : Format.formatter -> unit -> unit
 
-val proc_stats_filename : string
-
 val property_attributes : string
 
 val racerd_issues_dir_name : string

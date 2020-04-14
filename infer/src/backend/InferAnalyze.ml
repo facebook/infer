@@ -59,19 +59,6 @@ let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
         analyze_source_file exe_env source_file
 
 
-let output_json_makefile_stats files =
-  let num_files = List.length files in
-  let num_procs = 0 in
-  (* can't compute it at this stage *)
-  let num_lines = 0 in
-  let file_stats =
-    `Assoc [("files", `Int num_files); ("procedures", `Int num_procs); ("lines", `Int num_lines)]
-  in
-  (* write stats file to disk, intentionally overwriting old file if it already exists *)
-  let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename) in
-  Yojson.Basic.pretty_to_channel f file_stats
-
-
 let source_file_should_be_analyzed ~changed_files source_file =
   (* whether [fname] is one of the [changed_files] *)
   let is_changed_file = Option.map changed_files ~f:(SourceFile.Set.mem source_file) in
@@ -217,4 +204,4 @@ let main ~changed_files =
     (ExecutionDuration.wall_time analysis_duration) ;
   L.debug Analysis Quiet "Collected stats:@\n%a@." BackendStats.pp stats ;
   BackendStats.log_to_scuba stats ;
-  output_json_makefile_stats source_files
+  ()
