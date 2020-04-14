@@ -48,7 +48,7 @@
 
 + (void)cg_bitmap_context_create_image1_no_leak_good {
   CGImageRef newImage = CGBitmapContextCreateImage(nil);
-  CFAutoRelease(newImage);
+  CFAutorelease(newImage);
 }
 
 @end

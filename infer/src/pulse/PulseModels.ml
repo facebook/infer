@@ -565,7 +565,7 @@ module ProcNameDispatcher = struct
       ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> ObjectiveC.alloc
       ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
-      ; -"CFAutoRelease" <>$ capt_arg_payload $--> C.free ]
+      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
