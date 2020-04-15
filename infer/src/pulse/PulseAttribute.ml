@@ -176,3 +176,19 @@ let is_suitable_for_pre = function
   | StdVectorReserve
   | WrittenTo _ ->
       false
+
+
+let map_trace ~f = function
+  | Allocated (procname, trace) ->
+      Allocated (procname, f trace)
+  | CItv (arith, trace) ->
+      CItv (arith, f trace)
+  | Invalid (invalidation, trace) ->
+      Invalid (invalidation, f trace)
+  | MustBeValid trace ->
+      MustBeValid (f trace)
+  | WrittenTo trace ->
+      WrittenTo (f trace)
+  | (AddressOfCppTemporary _ | AddressOfStackVariable _ | BoItv _ | Closure _ | StdVectorReserve) as
+    attr ->
+      attr

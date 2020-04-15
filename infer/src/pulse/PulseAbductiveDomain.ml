@@ -681,32 +681,12 @@ let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
 
 let add_call_to_attributes proc_name call_location ~addr_callee ~addr_caller caller_history attrs
     call_state =
-  let add_call_to_attribute attr =
-    match (attr : Attribute.t) with
-    | Invalid (invalidation, trace) ->
-        Attribute.Invalid
-          (invalidation, add_call_to_trace proc_name call_location caller_history trace)
-    | CItv (arith, trace) ->
-        Attribute.CItv (arith, add_call_to_trace proc_name call_location caller_history trace)
-    | Allocated (procname, trace) ->
-        Attribute.Allocated
-          (procname, add_call_to_trace proc_name call_location caller_history trace)
-    | AddressOfCppTemporary _
-    | AddressOfStackVariable _
-    | BoItv _
-    | Closure _
-    | MustBeValid _
-    | StdVectorReserve
-    | WrittenTo _ ->
-        attr
-  in
   let subst_ref = ref call_state.subst in
   let attrs =
     Attributes.map attrs ~f:(fun attr ->
-        let attr =
-          subst_attribute call_state subst_ref call_state.astate ~addr_callee ~addr_caller attr
-        in
-        add_call_to_attribute attr )
+        subst_attribute call_state subst_ref call_state.astate ~addr_callee ~addr_caller attr
+        |> PulseAttribute.map_trace ~f:(fun trace ->
+               add_call_to_trace proc_name call_location caller_history trace ) )
   in
   (!subst_ref, attrs)
 
@@ -788,22 +768,21 @@ let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_c
 
 
 let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
-    ~cell_post:(edges_post, attrs_post) ~addr_hist_caller:(addr_caller, hist_caller) call_state =
+    ~cell_callee_post:(edges_callee_post, attrs_callee_post)
+    ~addr_hist_caller:(addr_caller, hist_caller) call_state =
   let post_edges_minus_pre =
     delete_edges_in_callee_pre_from_caller ~addr_callee ~edges_pre_opt ~addr_caller call_state
   in
   let call_state =
     let subst, attrs_post_caller =
       add_call_to_attributes ~addr_callee ~addr_caller callee_proc_name call_loc hist_caller
-        attrs_post call_state
+        attrs_callee_post call_state
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_post_caller call_state.astate in
     {call_state with subst; astate}
   in
-  let heap = (call_state.astate.post :> base_domain).heap in
-  let attrs = (call_state.astate.post :> base_domain).attrs in
   let subst, translated_post_edges =
-    BaseMemory.Edges.fold_map ~init:call_state.subst edges_post
+    BaseMemory.Edges.fold_map ~init:call_state.subst edges_callee_post
       ~f:(fun subst (addr_callee, trace_post) ->
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
@@ -819,29 +798,9 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
         (fun _ _ post_cell -> Some post_cell)
         post_edges_minus_pre translated_post_edges
     in
-    BaseMemory.add addr_caller edges_post_caller heap
+    BaseMemory.add addr_caller edges_post_caller (call_state.astate.post :> base_domain).heap
   in
-  let attrs =
-    let written_to_callee_opt =
-      let open IOption.Let_syntax in
-      let* attrs = BaseAddressAttributes.find_opt addr_caller attrs in
-      Attributes.get_written_to attrs
-    in
-    match written_to_callee_opt with
-    | None ->
-        attrs
-    | Some callee_trace ->
-        let written_to =
-          Attribute.WrittenTo
-            (ViaCall
-               { in_call= callee_trace
-               ; f= Call callee_proc_name
-               ; location= call_loc
-               ; history= hist_caller })
-        in
-        BaseAddressAttributes.add_one addr_caller written_to attrs
-  in
-  let caller_post = Domain.update ~heap ~attrs call_state.astate.post in
+  let caller_post = Domain.update ~heap call_state.astate.post in
   {call_state with subst; astate= {call_state.astate with post= caller_post}}
 
 
@@ -855,13 +814,13 @@ let rec record_post_for_address callee_proc_name call_loc ({pre} as pre_post) ~a
     match find_post_cell_opt addr_callee pre_post with
     | None ->
         call_state
-    | Some ((edges_post, _attrs_post) as cell_post) ->
+    | Some ((edges_post, _attrs_post) as cell_callee_post) ->
         let edges_pre_opt = BaseMemory.find_opt addr_callee (pre :> BaseDomain.t).BaseDomain.heap in
         let call_state_after_post =
-          if is_cell_read_only ~edges_pre_opt ~cell_post then call_state
+          if is_cell_read_only ~edges_pre_opt ~cell_post:cell_callee_post then call_state
           else
             record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt ~addr_hist_caller
-              ~cell_post call_state
+              ~cell_callee_post call_state
         in
         IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold ~init:call_state_after_post
           edges_post ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
