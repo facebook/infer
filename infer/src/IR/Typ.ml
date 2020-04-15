@@ -499,16 +499,20 @@ module Name = struct
     let is_class = function ObjcClass _ -> true | _ -> false
   end
 
-  module Set = Caml.Set.Make (struct
+  module Set = PrettyPrintable.MakePPSet (struct
     type nonrec t = t
 
     let compare = compare
+
+    let pp = pp
   end)
 
-  module Map = Caml.Map.Make (struct
+  module Map = PrettyPrintable.MakePPMap (struct
     type nonrec t = t
 
     let compare = compare
+
+    let pp = pp
   end)
 end
 
