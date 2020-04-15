@@ -25,6 +25,7 @@ type nullsafe_mode = [Default | LocalTrustAll | LocalTrustSome | LocalTrustNone 
 type nullsafe_meta_issue_info = {
   num_issues: int;
   curr_nullsafe_mode: nullsafe_mode;
+  can_be_promoted_to: nullsafe_mode option (* If present, it implies that the class is not only free of issues, but the mode can be promoted to a stricter one *)
 }
 
 type nullsafe_extra = {

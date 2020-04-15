@@ -40,6 +40,22 @@ module Trust = struct
     match t with All -> true | Only classes -> List.exists classes ~f:(Typ.Name.equal name)
 
 
+  let is_stricter ~stricter ~weaker =
+    let is_stricter_trust_list stricter_list weaker_list =
+      (* stricter trust list should be a strict subset of the weaker one *)
+      List.length stricter_list < List.length weaker_list
+      && List.for_all stricter_list ~f:(fun strict_name ->
+             List.exists weaker_list ~f:(fun name -> Typ.Name.equal name strict_name) )
+    in
+    match (stricter, weaker) with
+    | All, All | All, Only _ ->
+        false
+    | Only _, All ->
+        true
+    | Only stricter_trust_list, Only weaker_trust_list ->
+        is_stricter_trust_list stricter_trust_list weaker_trust_list
+
+
   let pp fmt t =
     match t with
     | All ->
@@ -110,6 +126,15 @@ let of_procname tenv pname =
 
 let is_trusted_name t name =
   match t with Strict -> false | Default -> true | Local trust -> Trust.is_trusted_name trust name
+
+
+let is_stricter_than ~stricter ~weaker =
+  let strict_level mode = match mode with Default -> 0 | Local _ -> 1 | Strict -> 2 in
+  match (stricter, weaker) with
+  | Local stricter_trust, Local weaker_trust ->
+      Trust.is_stricter ~stricter:stricter_trust ~weaker:weaker_trust
+  | _ ->
+      strict_level stricter > strict_level weaker
 
 
 let severity = function

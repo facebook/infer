@@ -38,6 +38,9 @@ val of_procname : Tenv.t -> Procname.t -> t
 val is_trusted_name : t -> Typ.name -> bool
 (** Check whether [Typ.name] can be trusted under a given mode *)
 
+val is_stricter_than : stricter:t -> weaker:t -> bool
+(** Check whether [stricter] is (strongly) stricter than [weaker] *)
+
 val severity : t -> Exceptions.severity
 (** Provides a default choice of issue severity for a particular mode. Rule is: severity should be
     ERROR if and only if it is enforced. *)

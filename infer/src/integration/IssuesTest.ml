@@ -10,9 +10,16 @@ module F = Format
 
 let pp_nullsafe_extra fmt Jsonbug_t.{class_name; package; meta_issue_info} =
   F.fprintf fmt "%s, %s" class_name (Option.value package ~default:"<no package>") ;
-  Option.iter meta_issue_info ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode} ->
-      F.fprintf fmt ", issues: %d, curr_mode: %s" num_issues
-        (Jsonbug_j.string_of_nullsafe_mode curr_nullsafe_mode) )
+  Option.iter meta_issue_info
+    ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode; can_be_promoted_to} ->
+      let can_be_promoted_to_str =
+        Option.value_map can_be_promoted_to
+          ~f:(fun mode -> F.sprintf ", promote_mode: %s" (Jsonbug_j.string_of_nullsafe_mode mode))
+          ~default:""
+      in
+      F.fprintf fmt ", issues: %d, curr_mode: %s%s" num_issues
+        (Jsonbug_j.string_of_nullsafe_mode curr_nullsafe_mode)
+        can_be_promoted_to_str )
 
 
 let pp_custom_of_report fmt report fields =

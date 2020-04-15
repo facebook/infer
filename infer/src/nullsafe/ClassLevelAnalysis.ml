@@ -56,64 +56,74 @@ let mode_to_json = function
       `Strict
 
 
-(* analyze all isses for the current class and classify them into one meta-issue.
+let is_clean_in_mode nullsafe_mode all_issues =
+  get_reportable_typing_rules_violations ~nullsafe_mode all_issues |> List.is_empty
+
+
+(* Return the maximum mode where we still have zero issues, or None if no such mode exists.
+*)
+let calc_strictest_mode_with_zero_issues all_issues =
+  let modes_to_try = NullsafeMode.[Strict; Local Trust.none; Local Trust.All; Default] in
+  List.find modes_to_try ~f:(fun mode -> is_clean_in_mode mode all_issues)
+
+
+(* The maximum strict mode this mode can be promoted to with still having zero issues, if exists *)
+let calc_mode_to_promote_to curr_mode all_issues =
+  let open IOption.Let_syntax in
+  let* strictest_mode = calc_strictest_mode_with_zero_issues all_issues in
+  if NullsafeMode.is_stricter_than ~stricter:strictest_mode ~weaker:curr_mode then
+    Some strictest_mode
+  else None
+
+
+(* analyze all issues for the current class and classify them into one meta-issue.
  *)
 let make_meta_issue all_issues current_mode class_name =
-  (* If current mode is Default, we want to see what would it take to make it @Nullsafe.
-  *)
-  let target_mode =
-    if NullsafeMode.equal current_mode Default then NullsafeMode.Local NullsafeMode.Trust.All
-    else current_mode
-  in
   let issue_count_in_curr_mode =
     get_reportable_typing_rules_violations ~nullsafe_mode:current_mode all_issues |> List.length
   in
-  let issue_count_in_target_mode =
-    (* NOTE: This is a tricky place. There are issues that are not surfaced in Default mode, but
-       would be surfaced if mode becomes @Nullsafe.
-       We want to take those issues into account, hence we evaluate against target_mode, and not current mode!
-       With that logic, we will classify class as [eradicate_meta_class_can_be_nullsafe] only
-       if it indeed can be made @Nullsafe without any (including currently hidden!) issues occurred.
-    *)
-    get_reportable_typing_rules_violations ~nullsafe_mode:target_mode all_issues |> List.length
-  in
+  let mode_to_promote_to = calc_mode_to_promote_to current_mode all_issues in
   let meta_issue_info =
-    Jsonbug_t.{num_issues= issue_count_in_curr_mode; curr_nullsafe_mode= mode_to_json current_mode}
+    Jsonbug_t.
+      { num_issues= issue_count_in_curr_mode
+      ; curr_nullsafe_mode= mode_to_json current_mode
+      ; can_be_promoted_to= Option.map mode_to_promote_to ~f:mode_to_json }
   in
-  if Int.equal issue_count_in_target_mode 0 then
-    (* Good news. No issues in target mode! *)
+  let issue_type, description, severity =
     if NullsafeMode.equal current_mode Default then
-      (* This class is not @Nullsafe yet, but can become such! *)
-      { issue_type= IssueType.eradicate_meta_class_can_be_nullsafe
-      ; description=
-          Format.asprintf
-            "Congrats! Class %a is free of nullability issues. Mark it \
-             `@Nullsafe(Nullsafe.Mode.Local)` to prevent regressions."
-            JavaClassName.pp class_name
-      ; severity= Exceptions.Advice
-      ; meta_issue_info }
-    else
+      match mode_to_promote_to with
+      | Some _ ->
+          (* This class is not @Nullsafe yet, but can become such! *)
+          ( IssueType.eradicate_meta_class_can_be_nullsafe
+          , Format.asprintf
+              "Congrats! Class %a is free of nullability issues. Mark it \
+               `@Nullsafe(Nullsafe.Mode.Local)` to prevent regressions."
+              JavaClassName.pp class_name
+          , Exceptions.Advice )
+      | None ->
+          (* This class can not be made @Nullsafe without extra work *)
+          let issue_count_to_make_nullsafe =
+            get_reportable_typing_rules_violations
+              ~nullsafe_mode:(NullsafeMode.Local NullsafeMode.Trust.All) all_issues
+            |> List.length
+          in
+          ( IssueType.eradicate_meta_class_needs_improvement
+          , Format.asprintf "Class %a needs %d issues to be fixed in order to be marked @Nullsafe."
+              JavaClassName.pp class_name issue_count_to_make_nullsafe
+          , Exceptions.Info )
+    else if issue_count_in_curr_mode > 0 then
       (* This class is already nullsafe *)
-      { issue_type= IssueType.eradicate_meta_class_is_nullsafe
-      ; description=
-          Format.asprintf "Class %a is free of nullability issues." JavaClassName.pp class_name
-      ; severity= Exceptions.Info
-      ; meta_issue_info }
-  else
-    (* At least one nullability issue. *)
-    let description =
-      if NullsafeMode.equal current_mode Default then
-        Format.asprintf "Class %a needs %d issues to be fixed in order to be marked @Nullsafe."
-          JavaClassName.pp class_name issue_count_in_target_mode
-      else
-        Format.asprintf
+      ( IssueType.eradicate_meta_class_needs_improvement
+      , Format.asprintf
           "@Nullsafe classes should have exactly zero nullability issues. Class %a has %d."
-          JavaClassName.pp class_name issue_count_in_target_mode
-    in
-    { issue_type= IssueType.eradicate_meta_class_needs_improvement
-    ; description
-    ; severity= Exceptions.Info
-    ; meta_issue_info }
+          JavaClassName.pp class_name issue_count_in_curr_mode
+      , Exceptions.Info )
+    else
+      ( IssueType.eradicate_meta_class_is_nullsafe
+      , Format.asprintf "Class %a is free of nullability issues." JavaClassName.pp class_name
+      , Exceptions.Info )
+  in
+  {issue_type; description; severity; meta_issue_info}
 
 
 (* Meta issues are those related to null-safety of the class in general, not concrete nullability violations *)
