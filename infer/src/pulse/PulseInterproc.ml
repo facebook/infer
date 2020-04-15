@@ -226,12 +226,12 @@ let materialize_pre_for_globals callee_proc_name call_location pre_post call_sta
 
 let eval_sym_of_subst astate subst s bound_end =
   let v = Symb.Symbol.get_pulse_value_exn s in
-  match PulseAbstractValue.Map.find_opt v !subst with
+  match AbstractValue.Map.find_opt v !subst with
   | Some (v', _) ->
       Itv.ItvPure.get_bound (AddressAttributes.get_bo_itv v' astate) bound_end
   | None ->
-      let v' = PulseAbstractValue.mk_fresh () in
-      subst := PulseAbstractValue.Map.add v (v', []) !subst ;
+      let v' = AbstractValue.mk_fresh () in
+      subst := AbstractValue.Map.add v (v', []) !subst ;
       Bounds.Bound.of_pulse_value v'
 
 
@@ -281,7 +281,7 @@ let add_call_to_attributes proc_name call_location ~addr_callee ~addr_caller cal
   let attrs =
     Attributes.map attrs ~f:(fun attr ->
         subst_attribute call_state subst_ref call_state.astate ~addr_callee ~addr_caller attr
-        |> PulseAttribute.map_trace ~f:(fun trace ->
+        |> Attribute.map_trace ~f:(fun trace ->
                add_call_to_trace proc_name call_location caller_history trace ) )
   in
   (!subst_ref, attrs)

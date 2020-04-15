@@ -12,7 +12,7 @@ open PulseBasicInterface
 module AttributesNoRank = struct
   include Attributes
 
-  let pp fmt t : unit = PulseAttribute.Attributes.pp fmt t
+  let pp fmt t : unit = Attributes.pp ?print_rank:None fmt t
 end
 
 module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (AttributesNoRank)

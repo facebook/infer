@@ -18,3 +18,23 @@ module Invalidation = PulseInvalidation
 module SkippedCalls = PulseSkippedCalls
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
+
+(** {2 Enforce short form usage} *)
+
+include struct
+  [@@@warning "-60"]
+
+  module PulseAbstractValue = PulseAbstractValue
+  [@@deprecated "use the short form AbstractValue instead"]
+  module PulseAttribute = PulseAttribute [@@deprecated "use the short form Attribute instead"]
+  module PulseCallEvent = PulseCallEvent [@@deprecated "use the short form CallEvent instead"]
+  module PulseCItv = PulseCItv [@@deprecated "use the short form CItv instead"]
+  module PulseDiagnostic = PulseDiagnostic [@@deprecated "use the short form Diagnostic instead"]
+  module PulseInvalidation = PulseInvalidation
+  [@@deprecated "use the short form Invalidation instead"]
+  module PulseSkippedCalls = PulseSkippedCalls
+  [@@deprecated "use the short form SkippedCalls instead"]
+  module PulseTrace = PulseTrace [@@deprecated "use the short form Trace instead"]
+  module PulseValueHistory = PulseValueHistory
+  [@@deprecated "use the short form ValueHistory instead"]
+end

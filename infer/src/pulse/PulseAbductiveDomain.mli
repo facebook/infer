@@ -151,7 +151,7 @@ val discard_unreachable : t -> t * BaseAddressAttributes.t
 (** [discard_unreachable astate] garbage collects unreachable addresses in the state to make it
     smaller, and retuns the new state and the attributes of discarded addresses *)
 
-val add_skipped_call : Procname.t -> PulseTrace.t -> t -> t
+val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 

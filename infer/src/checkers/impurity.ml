@@ -49,7 +49,7 @@ let add_invalid_and_modified ~var ~access ~check_empty attrs acc : ImpurityDomai
   in
   let invalid_and_modified =
     match Attributes.get_invalid attrs with
-    | None | Some (PulseInvalidation.ConstantDereference _, _) ->
+    | None | Some (Invalidation.ConstantDereference _, _) ->
         modified
     | Some invalid ->
         ImpurityDomain.Invalid invalid :: modified
@@ -156,7 +156,7 @@ let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityD
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
     PulseAbductiveDomain.get_skipped_calls astate
-    |> PulseSkippedCalls.filter (fun proc_name _ ->
+    |> SkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
   in
   {modified_globals; modified_params; skipped_calls; exited}
@@ -195,9 +195,9 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
             set acc
         in
         let skipped_functions =
-          PulseSkippedCalls.fold
+          SkippedCalls.fold
             (fun proc_name trace acc ->
-              PulseTrace.add_to_errlog ~nesting:1 ~include_value_history:false
+              Trace.add_to_errlog ~nesting:1 ~include_value_history:false
                 ~pp_immediate:(fun fmt ->
                   F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
                 trace acc )
