@@ -39,6 +39,7 @@ and strict_nonnull_origin =
   | StrictMode
   | PrimitiveType
   | EnumValue
+  | SyntheticField
 [@@deriving compare]
 
 let get_nullability = function
@@ -83,6 +84,8 @@ let pp fmt t =
         "primitive"
     | EnumValue ->
         "enum"
+    | SyntheticField ->
+        "synthetic_field"
   in
   match t with
   | Nullable origin ->

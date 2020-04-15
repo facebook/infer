@@ -36,6 +36,8 @@ let is_enum_value tenv ~class_typ (field_info : Struct.field_info) =
         false
 
 
+let is_synthetic field_name = String.contains field_name '$'
+
 let get tenv field_name class_typ =
   let open IOption.Let_syntax in
   let lookup = Tenv.lookup tenv in
@@ -59,13 +61,19 @@ let get tenv field_name class_typ =
       ~is_third_party field_typ annotations
   in
   let corrected_nullability =
-    if Nullability.is_nonnullish (AnnotatedNullability.get_nullability nullability) && is_enum_value
-    then
-      (* Enum values are the special case - they can not be null. So we can strengten nullability.
-         Note that if it is nullable, we do NOT change nullability: in this case this is probably
-         not an enum value, but just a static field annotated as nullable.
-      *)
-      AnnotatedNullability.StrictNonnull EnumValue
+    if Nullability.is_nonnullish (AnnotatedNullability.get_nullability nullability) then
+      if
+        is_enum_value
+        (* Enum values are the special case - they can not be null. So we can strengten nullability.
+           Note that if it is nullable, we do NOT change nullability: in this case this is probably
+           not an enum value, but just a static field annotated as nullable.
+        *)
+      then AnnotatedNullability.StrictNonnull EnumValue
+      else if is_synthetic (Fieldname.get_field_name field_name) then
+        (* This field is artifact of codegen and is not visible to the user.
+           Surfacing it as non-strict is non-actionable for the user *)
+        AnnotatedNullability.StrictNonnull SyntheticField
+      else nullability
     else nullability
   in
   let annotated_type = AnnotatedType.{nullability= corrected_nullability; typ= field_typ} in

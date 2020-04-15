@@ -61,6 +61,9 @@ and strict_nonnull_origin =
   | PrimitiveType  (** Primitive types are non-nullable by language design *)
   | EnumValue
       (** Java enum value are statically initialized with non-nulls according to language semantics *)
+  | SyntheticField
+      (** Fake field that is not part of user codebase, but rather artifact of codegen/annotation
+          processor *)
 [@@deriving compare]
 
 val get_nullability : t -> Nullability.t
