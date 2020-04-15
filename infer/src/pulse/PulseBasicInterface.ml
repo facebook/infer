@@ -15,5 +15,6 @@ module CallEvent = PulseCallEvent
 module CItv = PulseCItv
 module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
+module SkippedCalls = PulseSkippedCalls
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory

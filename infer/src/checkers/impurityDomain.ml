@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module SkippedCalls = PulseAbductiveDomain.SkippedCalls
+module SkippedCalls = PulseSkippedCalls
 
 type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 [@@deriving compare]

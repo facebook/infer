@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
 module L = Logging
@@ -79,23 +80,6 @@ end
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
 module PreDomain : BaseDomainSig = Domain
 (** represents the inferred pre-condition at each program point, biabduction style *)
-
-module SkippedTrace = struct
-  type t = PulseTrace.t [@@deriving compare]
-
-  let pp fmt =
-    PulseTrace.pp fmt ~pp_immediate:(fun fmt ->
-        F.pp_print_string fmt "call to skipped function occurs here" )
-
-
-  let leq ~lhs ~rhs = phys_equal lhs rhs
-
-  let join s1 _ = s1
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-end
-
-module SkippedCalls = AbstractDomain.Map (Procname) (SkippedTrace)
 
 (** biabduction-style pre/post state + skipped calls *)
 type t =

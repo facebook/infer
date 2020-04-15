@@ -24,7 +24,7 @@ module Exited = AbstractDomain.BooleanOr
 type t =
   { modified_params: ModifiedVarSet.t
   ; modified_globals: ModifiedVarSet.t
-  ; skipped_calls: PulseAbductiveDomain.SkippedCalls.t
+  ; skipped_calls: PulseSkippedCalls.t
   ; exited: Exited.t }
 
 val pure : t

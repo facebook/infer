@@ -134,7 +134,7 @@ let visit call_state ~addr_callee ~addr_hist_caller =
 let pp f {AbductiveDomain.pre; post; skipped_calls} =
   F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
   F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
-  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" AbductiveDomain.SkippedCalls.pp skipped_calls
+  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls
 
 
 (* {3 reading the pre from the current state} *)
@@ -534,8 +534,7 @@ let record_post_remaining_attributes callee_proc_name call_loc pre_post call_sta
 let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   let callee_skipped_map =
     pre_post.AbductiveDomain.skipped_calls
-    |> AbductiveDomain.SkippedCalls.map (fun trace ->
-           add_call_to_trace callee_proc_name call_loc [] trace )
+    |> SkippedCalls.map (fun trace -> add_call_to_trace callee_proc_name call_loc [] trace)
   in
   let astate = AbductiveDomain.add_skipped_calls callee_skipped_map call_state.astate in
   {call_state with astate}

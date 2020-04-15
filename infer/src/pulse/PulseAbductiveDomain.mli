@@ -51,8 +51,6 @@ module PreDomain : BaseDomainSig
     lattice of [Domain], but since we never actually join states or check implication the two
     collapse into one. * *)
 
-module SkippedCalls : AbstractDomain.MapS with type key = Procname.t and type value = PulseTrace.t
-
 (** biabduction-style pre/post state + skipped calls *)
 type t = private
   { post: Domain.t  (** state at the current program point*)

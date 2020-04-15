@@ -156,7 +156,7 @@ let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityD
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
     PulseAbductiveDomain.get_skipped_calls astate
-    |> PulseAbductiveDomain.SkippedCalls.filter (fun proc_name _ ->
+    |> PulseSkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
   in
   {modified_globals; modified_params; skipped_calls; exited}
@@ -195,7 +195,7 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
             set acc
         in
         let skipped_functions =
-          PulseAbductiveDomain.SkippedCalls.fold
+          PulseSkippedCalls.fold
             (fun proc_name trace acc ->
               PulseTrace.add_to_errlog ~nesting:1 ~include_value_history:false
                 ~pp_immediate:(fun fmt ->
