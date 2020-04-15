@@ -41,7 +41,7 @@ module type BaseDomainSig = sig
   val pp : F.formatter -> t -> unit
 end
 
-module Domain : BaseDomainSig
+module PostDomain : BaseDomainSig
 (** The post abstract state at each program point, or current state. *)
 
 module PreDomain : BaseDomainSig
@@ -53,7 +53,7 @@ module PreDomain : BaseDomainSig
 
 (** biabduction-style pre/post state + skipped calls *)
 type t = private
-  { post: Domain.t  (** state at the current program point*)
+  { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 

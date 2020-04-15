@@ -72,23 +72,23 @@ module BaseDomainCommon = struct
 end
 
 (** represents the post abstract state at each program point *)
-module Domain : BaseDomainSig = struct
+module PostDomain : BaseDomainSig = struct
   include BaseDomainCommon
   include BaseDomain
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
-module PreDomain : BaseDomainSig = Domain
+module PreDomain : BaseDomainSig = PostDomain
 (** represents the inferred pre-condition at each program point, biabduction style *)
 
 (** biabduction-style pre/post state + skipped calls *)
 type t =
-  { post: Domain.t  (** state at the current program point*)
+  { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
 
 let pp f {post; pre; skipped_calls} =
-  F.fprintf f "@[<v>%a@;PRE=[%a]@;skipped_calls=%a@]" Domain.pp post PreDomain.pp pre
+  F.fprintf f "@[<v>%a@;PRE=[%a]@;skipped_calls=%a@]" PostDomain.pp post PreDomain.pp pre
     SkippedCalls.pp skipped_calls
 
 
@@ -116,7 +116,7 @@ module Stack = struct
 
   (** [astate] with [astate.post.stack = f astate.post.stack] *)
   let map_post_stack ~f astate =
-    let new_post = Domain.update astate.post ~stack:(f (astate.post :> base_domain).stack) in
+    let new_post = PostDomain.update astate.post ~stack:(f (astate.post :> base_domain).stack) in
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
@@ -138,7 +138,7 @@ module Stack = struct
             PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
         in
-        ( { post= Domain.update astate.post ~stack:post_stack
+        ( { post= PostDomain.update astate.post ~stack:post_stack
           ; pre
           ; skipped_calls= astate.skipped_calls }
         , addr_hist )
@@ -189,7 +189,7 @@ module AddressAttributes = struct
 
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
   let map_post_attrs ~f astate =
-    let new_post = Domain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
+    let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
@@ -241,7 +241,7 @@ module Memory = struct
 
   (** [astate] with [astate.post.heap = f astate.post.heap] *)
   let map_post_heap ~f astate =
-    let new_post = Domain.update astate.post ~heap:(f (astate.post :> base_domain).heap) in
+    let new_post = PostDomain.update astate.post ~heap:(f (astate.post :> base_domain).heap) in
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
@@ -272,7 +272,7 @@ module Memory = struct
             |> BaseMemory.register_address addr_dst
           else (astate.pre :> base_domain).heap
         in
-        ( { post= Domain.update astate.post ~heap:post_heap
+        ( { post= PostDomain.update astate.post ~heap:post_heap
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
           ; skipped_calls= astate.skipped_calls }
         , addr_hist_dst )
@@ -304,7 +304,7 @@ let mk_initial proc_desc =
     in
     PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
-  let post = Domain.update ~stack:initial_stack Domain.empty in
+  let post = PostDomain.update ~stack:initial_stack PostDomain.empty in
   let skipped_calls = SkippedCalls.empty in
   {pre; post; skipped_calls}
 
@@ -333,9 +333,9 @@ let discard_unreachable ({pre; post} as astate) =
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
   let (heap_new, attrs_new), (_, attrs_unreachable) =
-    Domain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
+    PostDomain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
   in
-  let post_new = Domain.update ~heap:heap_new ~attrs:attrs_new post in
+  let post_new = PostDomain.update ~heap:heap_new ~attrs:attrs_new post in
   let astate =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
@@ -372,7 +372,7 @@ let filter_for_summary astate =
   let post_heap = deregister_empty (astate.post :> base_domain).heap in
   { astate with
     pre= PreDomain.update astate.pre ~heap:pre_heap
-  ; post= Domain.update ~stack:post_stack ~heap:post_heap astate.post }
+  ; post= PostDomain.update ~stack:post_stack ~heap:post_heap astate.post }
 
 
 let add_out_of_scope_attribute addr pvar location history heap typ =
@@ -404,7 +404,7 @@ let invalidate_locals pdesc astate : t =
       attrs attrs
   in
   if phys_equal attrs attrs' then astate
-  else {astate with pre= astate.pre; post= Domain.update astate.post ~attrs:attrs'}
+  else {astate with pre= astate.pre; post= PostDomain.update astate.post ~attrs:attrs'}
 
 
 let of_post pdesc astate =
