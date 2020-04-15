@@ -416,5 +416,3 @@ let of_post pdesc astate =
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
-
-let get_skipped_calls {skipped_calls} = skipped_calls

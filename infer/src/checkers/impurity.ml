@@ -155,9 +155,9 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
   in
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
-    AbductiveDomain.get_skipped_calls astate
-    |> SkippedCalls.filter (fun proc_name _ ->
-           Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
+    SkippedCalls.filter
+      (fun proc_name _ -> Purity.should_report proc_name && not (is_modeled_pure tenv proc_name))
+      astate.AbductiveDomain.skipped_calls
   in
   {modified_globals; modified_params; skipped_calls; exited}
 
