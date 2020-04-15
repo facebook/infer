@@ -44,9 +44,7 @@ module Misc = struct
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
       let i = IntLit.of_int64 i64 in
-      AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit i)) astate
-      |> AddressAttributes.add_one ret_addr
-           (CItv (CItv.equal_to i, Immediate {location; history= []}))
+      PulseArithmetic.and_eq_int (Immediate {location; history= []}) ret_addr i astate
     in
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
@@ -55,9 +53,7 @@ module Misc = struct
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate =
-      AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.nat) astate
-      |> AddressAttributes.add_one ret_addr
-           (CItv (CItv.zero_inf, Immediate {location; history= []}))
+      PulseArithmetic.and_nonnegative (Immediate {location; history= []}) ret_addr astate
     in
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
@@ -82,12 +78,8 @@ module C = struct
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
-    let is_known_zero =
-      ( AddressAttributes.get_citv (fst deleted_access) astate
-      |> function Some (arith, _) -> CItv.is_equal_to_zero arith | None -> false )
-      || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv (fst deleted_access) astate)
-    in
-    if is_known_zero then (* freeing 0 is a no-op *)
+    (* freeing 0 is a no-op *)
+    if PulseArithmetic.is_known_zero astate (fst deleted_access) then
       PulseOperations.ok_continue astate
     else
       let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
@@ -105,13 +97,11 @@ module C = struct
     let immediate_hist = Trace.Immediate {location; history= hist} in
     let astate_alloc =
       PulseOperations.allocate callee_procname location ret_value astate
-      |> AddressAttributes.add_one ret_addr (BoItv Itv.ItvPure.pos)
-      |> AddressAttributes.add_one ret_addr (CItv (CItv.ge_to IntLit.one, immediate_hist))
+      |> PulseArithmetic.and_positive immediate_hist ret_addr
       |> ExecutionDomain.continue
     in
     let+ astate_null =
-      AddressAttributes.add_one ret_addr (BoItv (Itv.ItvPure.of_int_lit IntLit.zero)) astate
-      |> AddressAttributes.add_one ret_addr (CItv (CItv.equal_to IntLit.zero, immediate_hist))
+      PulseArithmetic.and_eq_int immediate_hist ret_addr IntLit.zero astate
       |> PulseOperations.invalidate location (Invalidation.ConstantDereference IntLit.zero)
            ret_value
     in
@@ -169,7 +159,7 @@ module StdAtomicInteger = struct
   let arith_bop prepost location event ret_id bop this operand astate =
     let* astate, int_addr, (old_int, old_int_hist) = load_backing_int location this astate in
     let astate, (new_int, hist) =
-      PulseOperations.eval_binop location bop (AbstractValueOperand old_int) operand old_int_hist
+      PulseArithmetic.eval_binop location bop (AbstractValueOperand old_int) operand old_int_hist
         astate
     in
     let+ astate =
