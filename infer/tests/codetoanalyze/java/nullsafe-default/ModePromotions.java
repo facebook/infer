@@ -36,7 +36,7 @@ class Strict_NoDeps_NoPromos {
   }
 }
 
-// FIXME - promo is incorrectly calculated as Strict.
+// FIXME - promo is incorrectly calculated as Trust None.
 class Default_UsesDefault_CanBePromotedToTrustAll_FIXME {
   static String f() {
     // We use unknown default function. Since we don't support trust some in promotions,
@@ -45,8 +45,19 @@ class Default_UsesDefault_CanBePromotedToTrustAll_FIXME {
   }
 }
 
-// FIXME - promo is incorrectly calculated as Strict.
-class Default_UsesLocal_CanBePromotedToTrustNone_FIXME {
+class Default_UsesItself_CanBePromotedToStrict {
+  static String f() {
+    // We use only the function from its own class. The class can be promoted to strict staight
+    // ahead.
+    return g();
+  }
+
+  static String g() {
+    return "";
+  }
+}
+
+class Default_UsesLocal_CanBePromotedToTrustNone {
   static String f() {
     // We depend only on a nullsafe method.
     // Hence the class can be promoted to "trust none" (but not to strict).
@@ -62,17 +73,16 @@ class Default_UsesStrict_CanBePromotedToStrict {
   }
 }
 
-// FIXME: promo is incorrectly calculated as strict
 @Nullsafe(
     value = Nullsafe.Mode.LOCAL,
     trustOnly = @Nullsafe.TrustList({Default_NoDeps_CanBePromotedToStrict.class}))
-class TrustSome_DoesNotUseTrusted_CanBePromotedToTrustNone_FIXME {
+class TrustSome_DoesNotUseTrusted_CanBePromotedToTrustNone {
   static String f() {
     return Local_NoDeps_CanBePromotedToStrict.f();
   }
 }
 
-// FIXME: promo is incorrectly calculated as strict
+// FIXME: promo is incorrectly calculated as trust none
 @Nullsafe(
     value = Nullsafe.Mode.LOCAL,
     trustOnly = @Nullsafe.TrustList({Default_NoDeps_CanBePromotedToStrict.class}))
@@ -82,11 +92,10 @@ class TrustSome_UsesTrusted_NoPromo_FIXME {
   }
 }
 
-// FIXME: promo is incorrectly calculated as strict
 @Nullsafe(
     value = Nullsafe.Mode.LOCAL,
     trustOnly = @Nullsafe.TrustList({Local_NoDeps_CanBePromotedToStrict.class}))
-class TrustSome_TrustToLocalIsNotNeeded_CanBePromotedToTrustNone_FIXME {
+class TrustSome_TrustToLocalIsNotNeeded_CanBePromotedToTrustNone {
   static String f() {
     return Local_NoDeps_CanBePromotedToStrict.f();
   }

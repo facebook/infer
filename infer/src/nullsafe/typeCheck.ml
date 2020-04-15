@@ -365,7 +365,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
      - pvar representing "result of a function call"
      - pvar representing field access.
      Such synthetic pvars are needed to store once inferred nullability to make nullsafe remember
-     it in future accesses (so that the next call of the same method or access to the same field 
+     it in future accesses (so that the next call of the same method or access to the same field
      does not require the programmer to write a check.
    What is the difference between ~node and ~original_node? I don't know. This is an artifact of refactoring of
    very old code. Sorry, dear future supporter, if names don't make sense.
@@ -1065,19 +1065,29 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
         in
         List.fold_right ~f:handle_et etl ~init:([], typestate)
       in
-      let pname = callee_attributes.ProcAttributes.proc_name in
-      let is_trusted_callee =
-        let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
-        let callee_class = Procname.get_class_type_name pname in
-        Option.value_map callee_class
-          ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
-          ~default:false
-      in
       let callee_annotated_signature =
-        Models.get_modelled_annotated_signature ~is_trusted_callee tenv callee_attributes
+        match
+          (Procname.get_class_type_name callee_pname, Procname.get_class_type_name curr_pname)
+        with
+        | Some callee_class, Some class_under_analysis
+          when Typ.Name.equal callee_class class_under_analysis ->
+            (* The method call is to the method in the same class as we are currently analyzing. *)
+            AnnotatedSignature.get_for_class_under_analysis tenv callee_attributes
+        | _ ->
+            (* The call is to external (relatively to the class under analysis) method. Lookup models, trust lists, etc. *)
+            let is_trusted_callee =
+              let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
+              let callee_class = Procname.get_class_type_name callee_pname in
+              Option.value_map callee_class
+                ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
+                ~default:false
+            in
+            Models.get_modelled_annotated_signature ~is_trusted_callee tenv callee_attributes
       in
       if Config.write_html then
-        L.d_printfln "Callee signature: %a" (AnnotatedSignature.pp pname) callee_annotated_signature ;
+        L.d_printfln "Callee signature: %a"
+          (AnnotatedSignature.pp callee_pname)
+          callee_annotated_signature ;
       let signature_params =
         drop_unchecked_signature_params callee_attributes callee_annotated_signature
       in

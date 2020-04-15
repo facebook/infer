@@ -127,6 +127,20 @@ let get ~is_trusted_callee ~nullsafe_mode proc_attributes : t =
   {nullsafe_mode; model_source= None; ret; params}
 
 
+let get_for_class_under_analysis tenv proc_attributes =
+  (* Signature makes special meaning when the method is inside the class we are currently analysing.
+     Various non-nullable levels (as dictated by nullsafe mode of the class)
+     make sense only for external (for the class under analysis) methods.
+     But in context of currently analyzed class we effectively have two levels of nullability for signatures:
+     nullable and (strict) non-null.
+     We achieve it via passing Strict mode to the signature extractor.
+  *)
+  let result = get ~is_trusted_callee:false ~nullsafe_mode:NullsafeMode.Strict proc_attributes in
+  (* Don't forget about the original mode *)
+  let nullsafe_mode = NullsafeMode.of_procname tenv proc_attributes.ProcAttributes.proc_name in
+  {result with nullsafe_mode}
+
+
 let param_has_annot predicate pvar ann_sig =
   List.exists
     ~f:(fun {mangled; param_annotation_deprecated} ->

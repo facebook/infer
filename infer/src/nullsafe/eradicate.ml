@@ -206,8 +206,7 @@ let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
       let calls_this = ref false in
       let tenv = Exe_env.get_tenv callback_args.exe_env proc_name in
       let annotated_signature =
-        Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv
-          (Procdesc.get_attributes proc_desc)
+        AnnotatedSignature.get_for_class_under_analysis tenv (Procdesc.get_attributes proc_desc)
       in
       L.debug Analysis Medium "Signature: %a@\n" (AnnotatedSignature.pp proc_name)
         annotated_signature ;

@@ -38,5 +38,8 @@ val set_modelled_nullability : Procname.t -> t -> model_source -> bool * bool li
 val get : is_trusted_callee:bool -> nullsafe_mode:NullsafeMode.t -> ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
 
+val get_for_class_under_analysis : Tenv.t -> ProcAttributes.t -> t
+(** Signature of the method belonging to the currently analyzed class. *)
+
 val pp : Procname.t -> Format.formatter -> t -> unit
 (** Pretty print a method signature with annotations. *)
