@@ -36,8 +36,7 @@ class Strict_NoDeps_NoPromos {
   }
 }
 
-// FIXME - promo is incorrectly calculated as Trust None.
-class Default_UsesDefault_CanBePromotedToTrustAll_FIXME {
+class Default_UsesDefault_CanBePromotedToTrustAll {
   static String f() {
     // We use unknown default function. Since we don't support trust some in promotions,
     // the possible promotion is trust all.

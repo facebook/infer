@@ -35,8 +35,8 @@ val of_class : Tenv.t -> Typ.name -> t
 val of_procname : Tenv.t -> Procname.t -> t
 (** Extracts mode information from a class where procname is defined *)
 
-val is_trusted_name : t -> Typ.name -> bool
-(** Check whether [Typ.name] can be trusted under a given mode *)
+val is_in_trust_list : t -> Typ.name -> bool
+(** Check whether [Typ.name] is in explicit trust list specified in the mode *)
 
 val is_stricter_than : stricter:t -> weaker:t -> bool
 (** Check whether [stricter] is (strongly) stricter than [weaker] *)

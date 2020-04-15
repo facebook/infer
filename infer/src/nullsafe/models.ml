@@ -34,7 +34,7 @@ let table_has_procedure table proc_name =
 let get_modelled_annotated_signature_for_biabduction proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let annotated_signature =
-    AnnotatedSignature.get ~is_trusted_callee:false ~nullsafe_mode:NullsafeMode.Default
+    AnnotatedSignature.get ~is_callee_in_trust_list:false ~nullsafe_mode:NullsafeMode.Default
       proc_attributes
   in
   let proc_id = Procname.to_unique_id proc_name in
@@ -67,14 +67,14 @@ let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability
 
 (** Return the annotated signature of the procedure, taking into account models. External models
     take precedence over internal ones. *)
-let get_modelled_annotated_signature ~is_trusted_callee tenv proc_attributes =
+let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let nullsafe_mode =
     Procname.get_class_type_name proc_name
     |> Option.value_map ~default:NullsafeMode.Default ~f:(NullsafeMode.of_class tenv)
   in
   let annotated_signature =
-    AnnotatedSignature.get ~is_trusted_callee ~nullsafe_mode proc_attributes
+    AnnotatedSignature.get ~is_callee_in_trust_list ~nullsafe_mode proc_attributes
   in
   let proc_id = Procname.to_unique_id proc_name in
   (* Look in the infer internal models *)

@@ -112,7 +112,8 @@ let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_fi
        ||
        let ia =
          (* TODO(T62825735): support trusted callees for fields *)
-         (Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv proc_attributes)
+         (Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv
+            proc_attributes)
            .AnnotatedSignature.ret
            .ret_annotation_deprecated
        in

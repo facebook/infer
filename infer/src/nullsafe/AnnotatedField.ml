@@ -55,7 +55,7 @@ let get tenv field_name class_typ =
   let is_enum_value = is_enum_value tenv ~class_typ field_info in
   let nullability =
     (* TODO(T62825735): support trusted callees for fields *)
-    AnnotatedNullability.of_type_and_annotation ~is_trusted_callee:false ~nullsafe_mode
+    AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list:false ~nullsafe_mode
       ~is_third_party field_typ annotations
   in
   let corrected_nullability =

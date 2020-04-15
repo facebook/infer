@@ -121,14 +121,14 @@ let analyze_procedure tenv proc_name proc_desc calls_this checks Callbacks.{get_
       | Some (ann_sig, loc, idenv_pn) ->
           (ann_sig, loc, idenv_pn)
       | None ->
-          let is_trusted_callee =
+          let is_callee_in_trust_list =
             let callee_class = Procname.get_class_type_name pname in
             Option.value_map callee_class
-              ~f:(NullsafeMode.is_trusted_name caller_nullsafe_mode)
+              ~f:(NullsafeMode.is_in_trust_list caller_nullsafe_mode)
               ~default:false
           in
           let ann_sig =
-            Models.get_modelled_annotated_signature ~is_trusted_callee tenv
+            Models.get_modelled_annotated_signature ~is_callee_in_trust_list tenv
               (Procdesc.get_attributes pdesc)
           in
           let loc = Procdesc.get_loc pdesc in

@@ -36,8 +36,13 @@ module Trust = struct
         None
 
 
-  let is_trusted_name t name =
-    match t with All -> true | Only classes -> List.exists classes ~f:(Typ.Name.equal name)
+  let is_in_trust_list t name =
+    match t with
+    | All ->
+        (* We are interested only in explicit lists *)
+        false
+    | Only classes ->
+        List.exists classes ~f:(Typ.Name.equal name)
 
 
   let is_stricter ~stricter ~weaker =
@@ -124,8 +129,8 @@ let of_procname tenv pname =
   of_class tenv class_name
 
 
-let is_trusted_name t name =
-  match t with Strict -> false | Default -> true | Local trust -> Trust.is_trusted_name trust name
+let is_in_trust_list t name =
+  match t with Strict | Default -> false | Local trust -> Trust.is_in_trust_list trust name
 
 
 let is_stricter_than ~stricter ~weaker =

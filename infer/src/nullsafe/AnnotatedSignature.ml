@@ -35,11 +35,11 @@ and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_num
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
-let nullability_for_return ~is_trusted_callee ~nullsafe_mode ~is_third_party ret_type
+let nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
     ret_annotations ~has_propagates_nullable_in_param =
   let nullability =
-    AnnotatedNullability.of_type_and_annotation ~is_trusted_callee ~nullsafe_mode ~is_third_party
-      ret_type ret_annotations
+    AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
+      ~is_third_party ret_type ret_annotations
   in
   (* if any param is annotated with propagates nullable, then the result is nullable *)
   match nullability with
@@ -54,11 +54,11 @@ let nullability_for_return ~is_trusted_callee ~nullsafe_mode ~is_third_party ret
 
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
-let extract_nullability ~is_trusted_callee ~nullsafe_mode ~is_third_party ret_type ret_annotations
-    param_annotated_types =
+let extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
+    ret_annotations param_annotated_types =
   let params_nullability =
     List.map param_annotated_types ~f:(fun (typ, annotations) ->
-        AnnotatedNullability.of_type_and_annotation ~is_trusted_callee ~nullsafe_mode
+        AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
           ~is_third_party typ annotations )
   in
   let has_propagates_nullable_in_param =
@@ -69,13 +69,13 @@ let extract_nullability ~is_trusted_callee ~nullsafe_mode ~is_third_party ret_ty
           false )
   in
   let return_nullability =
-    nullability_for_return ~is_trusted_callee ~nullsafe_mode ~is_third_party ret_type
+    nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
       ret_annotations ~has_propagates_nullable_in_param
   in
   (return_nullability, params_nullability)
 
 
-let get ~is_trusted_callee ~nullsafe_mode proc_attributes : t =
+let get ~is_callee_in_trust_list ~nullsafe_mode proc_attributes : t =
   let Annot.Method.{return= ret_annotation; params= original_params_annotation} =
     proc_attributes.ProcAttributes.method_annotation
   in
@@ -110,8 +110,8 @@ let get ~is_trusted_callee ~nullsafe_mode proc_attributes : t =
     List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
   in
   let return_nullability, params_nullability =
-    extract_nullability ~is_trusted_callee ~nullsafe_mode ~is_third_party ret_type ret_annotation
-      param_annotated_types
+    extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
+      ret_annotation param_annotated_types
   in
   let ret =
     { ret_annotation_deprecated= ret_annotation
@@ -135,7 +135,9 @@ let get_for_class_under_analysis tenv proc_attributes =
      nullable and (strict) non-null.
      We achieve it via passing Strict mode to the signature extractor.
   *)
-  let result = get ~is_trusted_callee:false ~nullsafe_mode:NullsafeMode.Strict proc_attributes in
+  let result =
+    get ~is_callee_in_trust_list:false ~nullsafe_mode:NullsafeMode.Strict proc_attributes
+  in
   (* Don't forget about the original mode *)
   let nullsafe_mode = NullsafeMode.of_procname tenv proc_attributes.ProcAttributes.proc_name in
   {result with nullsafe_mode}

@@ -136,7 +136,8 @@ let check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate curr_pde
       let field_is_in_cleanup_context () =
         let AnnotatedSignature.{ret_annotation_deprecated} =
           (* TODO(T62825735): support trusted callees for fields *)
-          (Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv curr_pattrs).ret
+          (Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv curr_pattrs)
+            .ret
         in
         Annotations.ia_is_cleanup ret_annotation_deprecated
       in
@@ -557,7 +558,8 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
         let base_signature =
           (* TODO(T62825735): fully support trusted callees. Note that for inheritance
              rule it doesn't make much difference, but would be nice to refactor anyway. *)
-          Models.get_modelled_annotated_signature ~is_trusted_callee:false tenv base_attributes
+          Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv
+            base_attributes
         in
         check_inheritance_rule_for_signature
           ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode

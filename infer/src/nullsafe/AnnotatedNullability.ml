@@ -94,7 +94,7 @@ let pp fmt t =
       F.fprintf fmt "StrictNonnull[%s]" (string_of_nonnull_origin origin)
 
 
-let of_type_and_annotation ~is_trusted_callee ~nullsafe_mode ~is_third_party typ annotations =
+let of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party typ annotations =
   if not (PatternMatch.type_is_class typ) then StrictNonnull PrimitiveType
   else if Annotations.ia_is_nullable annotations then
     (* Explicitly nullable always means Nullable *)
@@ -131,4 +131,4 @@ let of_type_and_annotation ~is_trusted_callee ~nullsafe_mode ~is_third_party typ
             if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
             else UncheckedNonnull ImplicitlyNonnull
           in
-          if is_trusted_callee then LocallyCheckedNonnull else preliminary_nullability
+          if is_callee_in_trust_list then LocallyCheckedNonnull else preliminary_nullability
