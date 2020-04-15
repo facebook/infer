@@ -92,13 +92,25 @@ let make_meta_issue all_issues current_mode class_name =
   let issue_type, description, severity =
     if NullsafeMode.equal current_mode Default then
       match mode_to_promote_to with
-      | Some _ ->
+      | Some mode_to_promote_to ->
           (* This class is not @Nullsafe yet, but can become such! *)
+          let promo_recommendation =
+            match mode_to_promote_to with
+            | NullsafeMode.Local NullsafeMode.Trust.All ->
+                "`@Nullsafe(Nullsafe.Mode.Local)`"
+            | NullsafeMode.Local (NullsafeMode.Trust.Only [])
+            | NullsafeMode.Strict
+            (* We don't recommend "strict" for now as it is harder to keep a class in strict mode than it "trust none" mode.
+               Trust none is almost as safe alternative, but adding a dependency will require just updating trust list,
+               without need to strictify it first. *) ->
+                "`@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))`"
+            | NullsafeMode.Default | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
+                Logging.die InternalError "Unexpected promotion mode"
+          in
           ( IssueType.eradicate_meta_class_can_be_nullsafe
           , Format.asprintf
-              "Congrats! Class %a is free of nullability issues. Mark it \
-               `@Nullsafe(Nullsafe.Mode.Local)` to prevent regressions."
-              JavaClassName.pp class_name
+              "Congrats! Class %a is free of nullability issues. Mark it %s to prevent regressions."
+              JavaClassName.pp class_name promo_recommendation
           , Exceptions.Advice )
       | None ->
           (* This class can not be made @Nullsafe without extra work *)

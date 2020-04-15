@@ -107,3 +107,10 @@ class TrustSome_TrustStrictIsNotNeeded_CanBePromotedToStrict {
     return Strict_NoDeps_NoPromos.f();
   }
 }
+
+@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))
+class TrustNone_CanBePromotedToStrict {
+  static String f() {
+    return Strict_NoDeps_NoPromos.f();
+  }
+}
