@@ -66,6 +66,7 @@ let get_nullability = function
         Nullability.Nullable
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.ThirdPartyNonnull
+    | AnnotatedNullability.LocallyTrustedNonnull
     | AnnotatedNullability.LocallyCheckedNonnull
     | AnnotatedNullability.StrictNonnull _ ->
         (* Nonnull param should be treated as trusted inside this function context:
@@ -131,6 +132,7 @@ let get_method_ret_description pname call_loc
         "nullable"
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.UncheckedNonnull _
+    | AnnotatedNullability.LocallyTrustedNonnull
     | AnnotatedNullability.LocallyCheckedNonnull
     | AnnotatedNullability.StrictNonnull _ ->
         "non-nullable"

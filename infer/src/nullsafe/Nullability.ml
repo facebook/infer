@@ -13,6 +13,7 @@ type t =
   | Nullable
   | ThirdPartyNonnull
   | UncheckedNonnull
+  | LocallyTrustedNonnull
   | LocallyCheckedNonnull
   | StrictNonnull
 [@@deriving compare, equal]
@@ -33,6 +34,8 @@ let join x y =
       ThirdPartyNonnull
   | UncheckedNonnull, _ | _, UncheckedNonnull ->
       UncheckedNonnull
+  | LocallyTrustedNonnull, _ | _, LocallyTrustedNonnull ->
+      LocallyTrustedNonnull
   | LocallyCheckedNonnull, _ | _, LocallyCheckedNonnull ->
       LocallyCheckedNonnull
   | StrictNonnull, StrictNonnull ->
@@ -46,12 +49,17 @@ let is_considered_nonnull ~nullsafe_mode nullability =
     match nullsafe_mode with
     | NullsafeMode.Strict ->
         StrictNonnull
-    | NullsafeMode.Local (NullsafeMode.Trust.Only _classes) ->
-        (* TODO(T61473665). For now treat trust with specified classes as trust=none.  *)
+    | NullsafeMode.Local (NullsafeMode.Trust.Only []) ->
+        (* Though "trust none" is technically a subcase of trust some,
+           we need this pattern to be different from the one below so we can detect possible
+           promotions from "trust some" to "trust none" *)
         LocallyCheckedNonnull
+    | NullsafeMode.Local (NullsafeMode.Trust.Only _classes) ->
+        LocallyTrustedNonnull
     | NullsafeMode.Local NullsafeMode.Trust.All ->
         UncheckedNonnull
     | NullsafeMode.Default ->
+        (* In default mode, we trust everything, even not annotated third party. *)
         ThirdPartyNonnull
   in
   is_subtype ~subtype:nullability ~supertype:least_required
@@ -68,6 +76,8 @@ let to_string = function
       "ThirdPartyNonnull"
   | UncheckedNonnull ->
       "UncheckedNonnull"
+  | LocallyTrustedNonnull ->
+      "LocallyTrustedNonnull"
   | LocallyCheckedNonnull ->
       "LocallyCheckedNonnull"
   | StrictNonnull ->

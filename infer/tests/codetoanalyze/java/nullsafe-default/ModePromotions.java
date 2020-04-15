@@ -81,11 +81,10 @@ class TrustSome_DoesNotUseTrusted_CanBePromotedToTrustNone {
   }
 }
 
-// FIXME: promo is incorrectly calculated as trust none
 @Nullsafe(
     value = Nullsafe.Mode.LOCAL,
     trustOnly = @Nullsafe.TrustList({Default_NoDeps_CanBePromotedToStrict.class}))
-class TrustSome_UsesTrusted_NoPromo_FIXME {
+class TrustSome_UsesTrusted_NoPromo {
   static String f() {
     return Default_NoDeps_CanBePromotedToStrict.f();
   }

@@ -28,6 +28,10 @@ type t =
           conventions) as non-nullable. Hovewer, the class is not checked under [@Nullsafe], so its
           actual nullability is not truthworhy, as the class might contain arbitrary number of
           nullability issues *)
+  | LocallyTrustedNonnull
+      (** The same as [UncheckedNonnull], but the value comes from a class explicitly listed as
+          trusted in the class under analysis. It is less truthworthy than [LocallyCheckedNonnull]
+          as no actual verification were performed. *)
   | LocallyCheckedNonnull
       (** Non-nullable value that comes from a class checked under [@NullsafeLocal] mode. Local mode
           type-checks files against its dependencies but does not require the dependencies to be

@@ -26,6 +26,9 @@ module UserFriendlyNullable = struct
         Some (UntrustedNonnull LocallyCheckedNonnull)
     | Nullability.ThirdPartyNonnull ->
         Some (UntrustedNonnull ThirdPartyNonnull)
+    | Nullability.LocallyTrustedNonnull ->
+        (* The value is trusted in the current mode by definition, hence is not treated as nullable. *)
+        None
     | Nullability.StrictNonnull ->
         None
 end

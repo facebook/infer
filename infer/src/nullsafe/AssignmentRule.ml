@@ -113,8 +113,10 @@ module ReportableViolation = struct
           MF.pp_monospaced procname_str param_position pp_param_name param_signature.mangled
           argument_description nullability_evidence_as_suffix MF.pp_monospaced procname_str
           where_to_add_signature
-    | Nullability.LocallyCheckedNonnull | Nullability.UncheckedNonnull | Nullability.StrictNonnull
-      ->
+    | Nullability.LocallyCheckedNonnull
+    | Nullability.LocallyTrustedNonnull
+    | Nullability.UncheckedNonnull
+    | Nullability.StrictNonnull ->
         let nonnull_evidence =
           match model_source with
           | None ->

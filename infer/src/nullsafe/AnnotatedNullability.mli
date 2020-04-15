@@ -21,6 +21,7 @@ type t =
   | Nullable of nullable_origin
   | ThirdPartyNonnull
   | UncheckedNonnull of unchecked_nonnull_origin
+  | LocallyTrustedNonnull
   | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]

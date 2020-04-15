@@ -19,6 +19,7 @@ type t =
   | Nullable of nullable_origin
   | ThirdPartyNonnull
   | UncheckedNonnull of unchecked_nonnull_origin
+  | LocallyTrustedNonnull
   | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
 [@@deriving compare]
@@ -47,6 +48,8 @@ let get_nullability = function
       Nullability.ThirdPartyNonnull
   | UncheckedNonnull _ ->
       Nullability.UncheckedNonnull
+  | LocallyTrustedNonnull ->
+      Nullability.LocallyTrustedNonnull
   | LocallyCheckedNonnull ->
       Nullability.LocallyCheckedNonnull
   | StrictNonnull _ ->
@@ -88,6 +91,8 @@ let pp fmt t =
       F.fprintf fmt "ThirdPartyNonnull"
   | UncheckedNonnull origin ->
       F.fprintf fmt "UncheckedNonnull[%s]" (string_of_declared_nonnull_origin origin)
+  | LocallyTrustedNonnull ->
+      F.fprintf fmt "LocallyTrustedNonnull"
   | LocallyCheckedNonnull ->
       F.fprintf fmt "LocallyCheckedNonnull"
   | StrictNonnull origin ->
@@ -131,4 +136,4 @@ let of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode ~is_third_par
             if Annotations.ia_is_nonnull annotations then UncheckedNonnull AnnotatedNonnull
             else UncheckedNonnull ImplicitlyNonnull
           in
-          if is_callee_in_trust_list then LocallyCheckedNonnull else preliminary_nullability
+          if is_callee_in_trust_list then LocallyTrustedNonnull else preliminary_nullability
