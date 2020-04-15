@@ -9,11 +9,11 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-type t = PulseAbductiveDomain.t
+type t = AbductiveDomain.t
 
 type 'a access_result = ('a, Diagnostic.t * t) result
 
-val ok_continue : t -> (PulseExecutionState.exec_state list, 'a) result
+val ok_continue : t -> (ExecutionDomain.exec_state list, 'a) result
 
 module Closures : sig
   val check_captured_addresses : Location.t -> AbstractValue.t -> t -> (t, Diagnostic.t * t) result
@@ -114,7 +114,7 @@ val call :
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> t
-  -> PulseExecutionState.t list access_result
+  -> ExecutionDomain.t list access_result
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if
     it exists *)
 

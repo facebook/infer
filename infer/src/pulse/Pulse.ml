@@ -10,6 +10,7 @@ module F = Format
 module L = Logging
 open IResult.Let_syntax
 open PulseBasicInterface
+open PulseDomainInterface
 
 let report summary diagnostic =
   let open Diagnostic in
@@ -22,13 +23,11 @@ let check_error_transform summary ~f = function
       f astate
   | Error (diagnostic, astate) ->
       report summary diagnostic ;
-      [PulseExecutionState.AbortProgram astate]
+      [ExecutionDomain.AbortProgram astate]
 
 
 let check_error_continue summary result =
-  check_error_transform summary
-    ~f:(fun astate -> [PulseExecutionState.ContinueProgram astate])
-    result
+  check_error_transform summary ~f:(fun astate -> [ExecutionDomain.ContinueProgram astate]) result
 
 
 let proc_name_of_call call_exp =
@@ -43,7 +42,7 @@ type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = PulseExecutionState
+  module Domain = ExecutionDomain
 
   type extras = get_formals
 
@@ -76,13 +75,13 @@ module PulseTransferFunctions = struct
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope call_loc (pvar, typ) exec_state =
     match exec_state with
-    | PulseExecutionState.ContinueProgram astate ->
+    | ExecutionDomain.ContinueProgram astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
         let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
-        >>| PulseExecutionState.continue
-    | PulseExecutionState.AbortProgram _ | PulseExecutionState.ExitProgram _ ->
+        >>| ExecutionDomain.continue
+    | ExecutionDomain.AbortProgram _ | ExecutionDomain.ExitProgram _ ->
         Ok exec_state
 
 
@@ -217,7 +216,7 @@ let checker {Callbacks.exe_env; summary} =
   AbstractValue.init () ;
   let pdesc = Summary.get_proc_desc summary in
   let initial =
-    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseExecutionState.mk_initial pdesc)
+    DisjunctiveTransferFunctions.Disjuncts.singleton (ExecutionDomain.mk_initial pdesc)
   in
   let get_formals callee_pname =
     Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals

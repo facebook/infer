@@ -6,9 +6,10 @@
  *)
 
 open! IStd
+open PulseDomainInterface
 
-type t = PulseExecutionState.t list
+type t = ExecutionDomain.t list
 
-val of_posts : Procdesc.t -> PulseExecutionState.t list -> t
+val of_posts : Procdesc.t -> ExecutionDomain.t list -> t
 
 val pp : Format.formatter -> t -> unit

@@ -6,14 +6,15 @@
  *)
 open! IStd
 open PulseBasicInterface
+open PulseDomainInterface
 
 type model =
      caller_summary:Summary.t
   -> callee_procname:Procname.t
   -> Location.t
   -> ret:Ident.t * Typ.t
-  -> PulseAbductiveDomain.t
-  -> PulseExecutionState.t list PulseOperations.access_result
+  -> AbductiveDomain.t
+  -> ExecutionDomain.t list PulseOperations.access_result
 
 val dispatch :
      Tenv.t

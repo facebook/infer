@@ -14,7 +14,7 @@ type t = AbductiveDomain.t
 
 type 'a access_result = ('a, Diagnostic.t * t) result
 
-let ok_continue post = Ok [PulseExecutionState.ContinueProgram post]
+let ok_continue post = Ok [ExecutionDomain.ContinueProgram post]
 
 (** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
@@ -495,7 +495,7 @@ let check_memory_leak_unreachable unreachable_attrs location astate =
     | _ ->
         result
   in
-  PulseBaseAddressAttributes.fold check_memory_leak unreachable_attrs (Ok ())
+  BaseAddressAttributes.fold check_memory_leak unreachable_attrs (Ok ())
 
 
 let remove_vars vars location astate =
@@ -592,7 +592,7 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals 
         in
         Some (f post)
   in
-  let open PulseExecutionState in
+  let open ExecutionDomain in
   match callee_exec_state with
   | AbortProgram _ ->
       (* Callee has failed; don't propagate the failure *)
@@ -604,7 +604,7 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals 
 
 
 let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt
-    (astate : PulseAbductiveDomain.t) : (PulseExecutionState.t list, Diagnostic.t * t) result =
+    (astate : AbductiveDomain.t) : (ExecutionDomain.t list, Diagnostic.t * t) result =
   match PulsePayload.read_full ~caller_summary ~callee_pname with
   | Some (callee_proc_desc, exec_states) ->
       let formals =

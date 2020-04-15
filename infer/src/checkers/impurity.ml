@@ -138,7 +138,7 @@ let is_modeled_pure tenv pname =
 
 (** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
     modified by the function and skipped functions. *)
-let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityDomain.t =
+let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomain.t =
   let astate, exited =
     match exec_state with
     | ExitProgram astate ->
@@ -146,8 +146,8 @@ let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityD
     | AbortProgram astate | ContinueProgram astate ->
         (astate, false)
   in
-  let pre_heap = (PulseAbductiveDomain.get_pre astate).BaseDomain.heap in
-  let post = PulseAbductiveDomain.get_post astate in
+  let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in
+  let post = AbductiveDomain.get_post astate in
   let post_stack = post.BaseDomain.stack in
   let pname = Procdesc.get_proc_name pdesc in
   let modified_params =
@@ -155,7 +155,7 @@ let extract_impurity tenv pdesc (exec_state : PulseExecutionState.t) : ImpurityD
   in
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
-    PulseAbductiveDomain.get_skipped_calls astate
+    AbductiveDomain.get_skipped_calls astate
     |> SkippedCalls.filter (fun proc_name _ ->
            Purity.should_report proc_name && not (is_modeled_pure tenv proc_name) )
   in
