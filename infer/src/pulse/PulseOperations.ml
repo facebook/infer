@@ -547,7 +547,7 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   let add_skipped_proc astate =
     match reason with
     | PulseCallEvent.SkippedKnownCall proc_name ->
-        AbductiveDomain.add_skipped_calls proc_name
+        AbductiveDomain.add_skipped_call proc_name
           (Trace.Immediate {location= call_loc; history= []})
           astate
     | _ ->
@@ -577,7 +577,7 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
 
 let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals astate =
   let apply callee_prepost ~f =
-    PulseAbductiveDomain.apply callee_pname call_loc callee_prepost ~formals ~actuals astate
+    PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~formals ~actuals astate
     >>| function
     | None ->
         (* couldn't apply pre/post pair *) None

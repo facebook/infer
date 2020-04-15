@@ -18,3 +18,4 @@ module BaseDomain = PulseBaseDomain
 
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
+module BaseAddressAttributes = PulseBaseAddressAttributes
