@@ -20,23 +20,30 @@ type t =
   | Null  (** The only possible value for that type is null *)
   | Nullable  (** No guarantees on the nullability *)
   | ThirdPartyNonnull
-      (** Values coming from third-party methods and fields not explictly annotated as [@Nullable].
-          We still consider those as non-nullable but with the least level of confidence. *)
+      (** Values coming from third-party methods and fields not explictly annotated neither as
+          [@Nullable], nor as [@Nonnull]. We still consider those as non-nullable but with the least
+          level of confidence. *)
   | UncheckedNonnull
       (** The type comes from a signature that is annotated (explicitly or implicitly according to
-          conventions) as non-nullable. Hovewer, it might still contain null since the truthfullness
-          of the declaration was not checked. *)
+          conventions) as non-nullable. Hovewer, the class is not checked under [@Nullsafe], so its
+          actual nullability is not truthworhy, as the class might contain arbitrary number of
+          nullability issues *)
   | LocallyCheckedNonnull
-      (** Non-nullable value that comes from a class checked under local mode. Local mode
+      (** Non-nullable value that comes from a class checked under [@NullsafeLocal] mode. Local mode
           type-checks files against its dependencies but does not require the dependencies to be
           transitively checked. Therefore this type of non-nullable value is differentiated from
           StrictNonnull. *)
   | StrictNonnull
-      (** We believe that this value can not be null because it is either a non-null literal, an
-          expression that semantically cannot be null, or a non-null value that should not be null
-          according to typechecking rules. If the latter is not the case, this is an unsoundness
-          issue for nullsafe, and we aim to minimize number of such issues occuring in real-world
-          programs. *)
+      (** Non-nullable value with the highest degree of certainty, because it is either:
+
+          - a non-null literal,
+          - an expression that semantically cannot be null,
+          - comes from code checked under [@NullsafeStrict] mode,
+          - comes from a third-party method with an appropriate built-in model, user-defined
+            nullability signature, or explicit [@NonNull] annotation.
+
+          The latter two are potential sources of unsoundness issues for nullsafe, but we need to
+          strike the balance between the strictness of analysis, convenience, and real-world risk. *)
 [@@deriving compare, equal]
 
 type pair = t * t [@@deriving compare, equal]

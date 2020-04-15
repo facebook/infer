@@ -9,30 +9,12 @@ open! IStd
 module F = Format
 
 type t =
-  | Null  (** The only possible value for that type is null *)
-  | Nullable  (** No guarantees on the nullability *)
+  | Null
+  | Nullable
   | ThirdPartyNonnull
-      (** Values coming from third-party methods and fields not explictly annotated as [@Nullable].
-          We still consider those as non-nullable but with the least level of confidence. *)
   | UncheckedNonnull
-      (** The type comes from a signature that is annotated (explicitly or implicitly according to
-          conventions) as non-nullable. However, it might still contain null since the truthfulness
-          of the declaration was not checked. *)
   | LocallyCheckedNonnull
-      (** Non-nullable value the comes from a class checked under local mode. Local mode type-checks
-          files against its dependencies but does not require the dependencies to be transitively
-          checked. Therefore this type of non-nullable value is differentiated from StrictNonnull. *)
   | StrictNonnull
-      (** Non-nullable value with the highest degree of certainty, because it is either:
-
-          - a non-null literal,
-          - an expression that semantically cannot be null,
-          - comes from internal code checked under strict mode,
-          - comes from a third-party method with an appropriate built-in model or user-defined
-            nullability signature.
-
-          The latter two are potential sources of unsoundness issues for nullsafe, but we need to
-          strike the balance between the strictness of analysis, convenience, and real-world risk. *)
 [@@deriving compare, equal]
 
 type pair = t * t [@@deriving compare, equal]
