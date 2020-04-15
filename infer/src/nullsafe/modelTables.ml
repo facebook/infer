@@ -307,6 +307,19 @@ let annotated_list_nullability_other =
   ; ( on
     , "com.android.util.CommandLineParser$Mode.process(com.android.util.CommandLineParser$Arg,java.lang.String):java.lang.Object"
     )
+    (* The following FbInjector functions are not being called explicitly, they are artifacts of DI framework.
+       They are technically @Nullable, but the case when they are returning null is rather exceptional,
+       so the right tradeoff here is to treat them as non-nullables.
+    *)
+  ; ( (o, [o; o; n])
+    , "com.facebook.inject.FbInjector.lazyInstance(int,int,com.facebook.inject.InjectionContext):java.lang.Object"
+    )
+  ; ( (o, [o; o; n])
+    , "com.facebook.inject.FbInjector.lazyApplicationInstance(int,int,com.facebook.inject.InjectionContext):java.lang.Object"
+    )
+  ; ( (o, [o; n])
+    , "com.facebook.inject.FbInjector.localInstance(int,com.facebook.inject.InjectionContext):java.lang.Object"
+    )
   ; ( on
     , "com.google.common.base.Objects$ToStringHelper.add(java.lang.String,java.lang.Object):com.google.common.base.Objects$ToStringHelper"
     )
