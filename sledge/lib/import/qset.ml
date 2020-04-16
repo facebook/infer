@@ -55,6 +55,7 @@ struct
     M.change m x ~f:(function Some j -> if_nz Q.(i + j) | None -> if_nz i)
 
   let remove m x = M.remove m x
+  let find_and_remove = M.find_and_remove
 
   let union m n =
     M.merge m n ~f:(fun ~key:_ -> function
@@ -77,8 +78,8 @@ struct
   let count m x = match M.find m x with Some q -> q | None -> Q.zero
   let choose = M.choose
   let pop = M.pop
-  let min_elt_exn = M.min_elt_exn
   let min_elt = M.min_elt
+  let pop_min_elt = M.pop_min_elt
   let to_list m = M.to_alist m
   let iter m ~f = M.iteri ~f:(fun ~key ~data -> f key data) m
   let exists m ~f = M.existsi ~f:(fun ~key ~data -> f key data) m

@@ -14,8 +14,10 @@ type kind = Interpreted | Simplified | Atomic | Uninterpreted
 
 let classify e =
   match (e : Term.t) with
-  | Add _ | Mul _ -> Interpreted
-  | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
+  | Add _ | Mul _
+   |Ap2 ((Div | Memory), _, _)
+   |Ap3 (Extract, _, _, _)
+   |ApN (Concat, _) ->
       Interpreted
   | Ap2 ((Eq | Dq), _, _) -> Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
@@ -308,6 +310,8 @@ and solve_ ?f d e s =
       ( ((Add _ | Mul _ | Integer _ | Rational _) as p), q
       | q, ((Add _ | Mul _ | Integer _ | Rational _) as p) ) ->
       solve_poly ?f p q s
+  (* e = n / d ==> e × d = n *)
+  | Some (rep, Ap2 (Div, num, den)) -> solve_ ?f (Term.mul rep den) num s
   | Some (rep, var) ->
       assert (non_interpreted var) ;
       assert (non_interpreted rep) ;

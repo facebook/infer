@@ -54,13 +54,19 @@ module type S = sig
   (** Multiplicity of an element. [O(log n)]. *)
 
   val choose : t -> (elt * Q.t) option
-  val pop : t -> (elt * Q.t * t) option
+  (** Find an unspecified element. [O(1)]. *)
 
-  val min_elt_exn : t -> elt * Q.t
-  (** Minimum element. *)
+  val pop : t -> (elt * Q.t * t) option
+  (** Find and remove an unspecified element. [O(1)]. *)
 
   val min_elt : t -> (elt * Q.t) option
-  (** Minimum element. *)
+  (** Minimum element. [O(log n)]. *)
+
+  val pop_min_elt : t -> (elt * Q.t * t) option
+  (** Find and remove minimum element. [O(log n)]. *)
+
+  val find_and_remove : t -> elt -> (Q.t * t) option
+  (** Find and remove an element. *)
 
   val to_list : t -> (elt * Q.t) list
   (** Convert to a list of elements in ascending order. *)

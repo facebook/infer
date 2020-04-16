@@ -47,8 +47,17 @@ module type S = sig
     -> 'r
 
   val choose : 'a t -> (key * 'a) option
+  (** Find an unspecified element. [O(1)]. *)
+
   val pop : 'a t -> (key * 'a * 'a t) option
+  (** Find and remove an unspecified element. [O(1)]. *)
+
+  val pop_min_elt : 'a t -> (key * 'a * 'a t) option
+  (** Find and remove minimum element. [O(log n)]. *)
+
   val find_and_remove : 'a t -> key -> ('a * 'a t) option
+  (** Find and remove an element. *)
+
   val pp : key pp -> 'a pp -> 'a t pp
 
   val pp_diff :

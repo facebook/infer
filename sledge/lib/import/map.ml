@@ -61,6 +61,9 @@ end) : S with type key = Key.t = struct
 
   let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
 
+  let pop_min_elt m =
+    min_elt m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+
   let find_and_remove m k =
     let found = ref None in
     let m =
