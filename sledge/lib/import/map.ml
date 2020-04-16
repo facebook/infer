@@ -30,6 +30,19 @@ end) : S with type key = Key.t = struct
 
   let map_endo t ~f = map_endo map t ~f
 
+  let merge_endo t u ~f =
+    let change = ref false in
+    let t' =
+      merge t u ~f:(fun ~key side ->
+          let f_side = f ~key side in
+          ( match (side, f_side) with
+          | (`Both (data, _) | `Left data), Some data' when data' == data ->
+              ()
+          | _ -> change := true ) ;
+          f_side )
+    in
+    if !change then t' else t
+
   let fold_until m ~init ~f ~finish =
     let fold m ~init ~f =
       let f ~key ~data s = f s (key, data) in

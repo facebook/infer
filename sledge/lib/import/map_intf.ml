@@ -24,6 +24,18 @@ module type S = sig
   (** Like map, but specialized to require [f] to be an endofunction, which
       enables preserving [==] if [f] preserves [==] of every element. *)
 
+  val merge_endo :
+       'a t
+    -> 'b t
+    -> f:
+         (   key:key
+          -> [`Both of 'a * 'b | `Left of 'a | `Right of 'b]
+          -> 'a option)
+    -> 'a t
+  (** Like merge, but specialized to require [f] to preserve the type of the
+      left argument, which enables preserving [==] if [f] preserves [==] of
+      every element. *)
+
   val merge_skewed :
     'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
 

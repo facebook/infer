@@ -89,10 +89,20 @@ end = struct
 
   (** compose two substitutions *)
   let compose r s =
-    let r' = Term.Map.map ~f:(norm s) r in
-    Term.Map.merge_skewed r' s ~combine:(fun ~key v1 v2 ->
-        if Term.equal v1 v2 then v1
-        else fail "domains intersect: %a" Term.pp key () )
+    [%Trace.call fun {pf} -> pf "%a@ %a" pp r pp s]
+    ;
+    let r' = Term.Map.map_endo ~f:(norm s) r in
+    Term.Map.merge_endo r' s ~f:(fun ~key -> function
+      | `Both (data_r, data_s) ->
+          assert (
+            Term.equal data_s data_r
+            || fail "domains intersect: %a" Term.pp key () ) ;
+          Some data_r
+      | `Left data | `Right data -> Some data )
+    |>
+    [%Trace.retn fun {pf} r' ->
+      pf "%a" pp_diff (r, r') ;
+      assert (r' != r ==> not (equal r' r))]
 
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data s =
