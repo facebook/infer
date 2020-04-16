@@ -595,17 +595,6 @@ let simp_cond cnd thn els =
   | Integer {data} when Z.is_false data -> els
   | _ -> Ap3 (Conditional, cnd, thn, els)
 
-(* aggregate sizes *)
-
-let rec agg_size_exn = function
-  | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
-  | ApN (Concat, a0U) ->
-      IArray.fold a0U ~init:zero ~f:(fun a0I aJ ->
-          simp_add2 a0I (agg_size_exn aJ) )
-  | _ -> invalid_arg "agg_size_exn"
-
-let agg_size e = try Some (agg_size_exn e) with Invalid_argument _ -> None
-
 (* boolean / bitwise *)
 
 let rec is_boolean = function
@@ -650,6 +639,17 @@ let rec simp_or x y =
   (* e || e ==> e *)
   | _ when equal x y -> x
   | _ -> Ap2 (Or, x, y)
+
+(* aggregate sizes *)
+
+let rec agg_size_exn = function
+  | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
+  | ApN (Concat, a0U) ->
+      IArray.fold a0U ~init:zero ~f:(fun a0I aJ ->
+          simp_add2 a0I (agg_size_exn aJ) )
+  | _ -> invalid_arg "agg_size_exn"
+
+let agg_size e = try Some (agg_size_exn e) with Invalid_argument _ -> None
 
 (* memory *)
 
