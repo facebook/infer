@@ -1398,19 +1398,6 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
                         let ret_type = attrs.ProcAttributes.ret_type in
                         let model_as_malloc ret_type resolved_pname =
                           Objc_models.is_malloc_model ret_type resolved_pname
-                          ||
-                          match Config.biabduction_model_alloc_pattern with
-                          | Some pat ->
-                              Str.string_match pat (Procname.to_string resolved_pname) 0
-                          | None ->
-                              false
-                        in
-                        let model_as_free resolved_pname =
-                          match Config.biabduction_model_free_pattern with
-                          | Some pat ->
-                              Str.string_match pat (Procname.to_string resolved_pname) 0
-                          | None ->
-                              false
                         in
                         match attrs.ProcAttributes.objc_accessor with
                         | Some objc_accessor ->
@@ -1421,10 +1408,6 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
                         | None when model_as_malloc ret_type resolved_pname ->
                             (* If it's an alloc model, call alloc rather than skipping *)
                             sym_exec_alloc_model exe_env resolved_pname ret_type tenv ret_id_typ
-                              current_summary loc prop path
-                        | None when model_as_free resolved_pname ->
-                            (* If it's an free model, call free rather than skipping *)
-                            sym_exec_free_model exe_env ret_id_typ n_actual_params tenv
                               current_summary loc prop path
                         | _ ->
                             let is_objc_instance_method =
@@ -1823,13 +1806,6 @@ and sym_exec_alloc_model exe_env pname ret_typ tenv ret_id_typ summary loc prop 
   let alloc_instr = Sil.Call (ret_id_typ, alloc_fun, args, loc, CallFlags.default) in
   L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
   instrs exe_env tenv summary (Instrs.singleton alloc_instr) [(prop, path)]
-
-
-and sym_exec_free_model exe_env ret_id_typ args tenv summary loc prop path : Builtin.ret_typ =
-  let free_fun = Exp.Const (Const.Cfun BuiltinDecl.free) in
-  let free_instr = Sil.Call (ret_id_typ, free_fun, args, loc, CallFlags.default) in
-  L.d_strln "No spec found, method is modelled as free, executing free... " ;
-  instrs exe_env tenv summary (Instrs.singleton free_instr) [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)

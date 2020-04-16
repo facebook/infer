@@ -172,10 +172,6 @@ val anon_args : string list
 
 val array_level : int
 
-val biabduction_model_alloc_pattern : Str.regexp option
-
-val biabduction_model_free_pattern : Str.regexp option
-
 val biabduction_models_mode : bool
 
 val bo_debug : int

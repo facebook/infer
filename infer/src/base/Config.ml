@@ -129,8 +129,6 @@ let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
 
-let manual_biabduction = "BIABDUCTION CHECKER OPTIONS"
-
 let manual_buck = "BUCK OPTIONS"
 
 let manual_buffer_overrun = "BUFFER OVERRUN OPTIONS"
@@ -643,18 +641,6 @@ and array_level =
 - 1 = assumes that the size of every array is infinite
 - 2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct
 |}
-
-
-and biabduction_model_alloc_pattern =
-  CLOpt.mk_string_opt ~long:"biabduction-fallback-model-alloc-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_biabduction)]
-    "Regex of methods that should be modelled as allocs if definition is missing"
-
-
-and biabduction_model_free_pattern =
-  CLOpt.mk_string_opt ~long:"biabduction-fallback-model-free-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_biabduction)]
-    "Regex of methods that should be modelled as free if definition is missing"
 
 
 and bootclasspath =
@@ -2535,10 +2521,6 @@ and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 and append_buck_flavors = !append_buck_flavors
 
 and array_level = !array_level
-
-and biabduction_model_alloc_pattern = Option.map ~f:Str.regexp !biabduction_model_alloc_pattern
-
-and biabduction_model_free_pattern = Option.map ~f:Str.regexp !biabduction_model_free_pattern
 
 and biabduction_models_mode = !biabduction_models_mode
 

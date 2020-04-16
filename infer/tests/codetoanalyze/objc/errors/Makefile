@@ -9,8 +9,7 @@ CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
               issues.exp.test.all issues.exp.test.arc issues.exp.test.default
-INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions --project-root $(TESTS_DIR) \
-		--biabduction-fallback-model-alloc-pattern AB[IF].*Create.* --biabduction-fallback-model-free-pattern ABFRelease
+INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
@@ -22,7 +21,6 @@ SOURCES_DEFAULT = \
   memory_leaks_benchmark/CoreVideoExample.m \
   memory_leaks_benchmark/RetainCycleLength3.m \
   memory_leaks_benchmark/ReleasedInBlock.m \
-  memory_leaks_benchmark/BAPatLeak.m \
   npe/dynamic_dispatch.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
