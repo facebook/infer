@@ -15,7 +15,7 @@ let%test_module _ =
      *   Trace.init ~margin:160
      *     ~config:(Result.ok_exn (Trace.parse "+Equality"))
      *     ()
-     * 
+     *
      * [@@@warning "-32"] *)
 
     let printf pp = Format.printf "@\n%a@." pp
@@ -365,10 +365,10 @@ let%test_module _ =
       [%expect
         {|
       {sat= false;
-       rep= [[%x_5 ↦ (((u8) %y_6) + 3)];
-             [%y_6 ↦ (((u8) %y_6) + 2)];
-             [((u8) (%x_5 + -1)) ↦ (((u8) %y_6) + 5)];
-             [((u8) %y_6) ↦ ]]} |}]
+       rep= [[%x_5 ↦ (((u8) (%x_5 + -1)) + -2)];
+             [%y_6 ↦ (((u8) (%x_5 + -1)) + -3)];
+             [((u8) %y_6) ↦ (((u8) (%x_5 + -1)) + -5)];
+             [((u8) (%x_5 + -1)) ↦ ]]} |}]
 
     let%test _ = is_false r16
 
@@ -398,9 +398,9 @@ let%test_module _ =
                [((u8) %x_5) ↦ %x_5];
                [((u8) %y_6) ↦ ]]}
 
-          (((u8) %y_6) + 1) = %y_6
-        ∧ %x_5 = ((u8) %x_5)
-        ∧ ((u8) %y_6) = ((u8) (((u8) %y_6) + 1)) |}]
+          %x_5 = ((u8) %x_5)
+        ∧ ((u8) %y_6) = ((u8) (((u8) %y_6) + 1))
+        ∧ (((u8) %y_6) + 1) = %y_6 |}]
 
     let r19 = of_eqs [(x, y + z); (x, !0); (y, !0)]
 
@@ -413,7 +413,8 @@ let%test_module _ =
 
     let%expect_test _ =
       Equality.replay
-        {|(Solve_for_vars (() () ((Var (id 8) (name m)) (Var (id 9) (name n))))
-           ((xs ()) (sat true) (rep (((Var (id 9) (name n)) (Var (id 8) (name m)))))))|} ;
-      [%expect {||}]
+        {|(And_eq () (Var (id 10) (name v))
+           (Mul (((Var (id 8) (name v)) 1) ((Var (id 9) (name v)) 1)))
+           ((xs ()) (sat true) (rep ())))|} ;
+      [%expect {| |}]
   end )

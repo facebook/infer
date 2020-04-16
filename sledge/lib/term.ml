@@ -58,14 +58,14 @@ and T : sig
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | Add of qset
-    | Mul of qset
     | Var of {id: int; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
     | RecN of recN * t iarray  (** NOTE: cyclic *)
+    | Add of qset
+    | Mul of qset
     | Label of {parent: string; name: string}
     | Nondet of {msg: string}
     | Float of {data: string}
@@ -75,14 +75,14 @@ end = struct
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | Add of qset
-    | Mul of qset
     | Var of {id: int; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
     | RecN of recN * t iarray  (** NOTE: cyclic *)
+    | Add of qset
+    | Mul of qset
     | Label of {parent: string; name: string}
     | Nondet of {msg: string}
     | Float of {data: string}

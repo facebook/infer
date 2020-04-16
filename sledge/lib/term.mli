@@ -73,8 +73,6 @@ and T : sig
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   and t = private
-    | Add of qset  (** Sum of terms with rational coefficients *)
-    | Mul of qset  (** Product of terms with rational exponents *)
     | Var of {id: int; name: string}
         (** Local variable / virtual register *)
     | Ap1 of op1 * t  (** Unary application *)
@@ -85,6 +83,8 @@ and T : sig
         (** Recursive n-ary application, may recursively refer to itself
             (transitively) from its args. NOTE: represented by cyclic
             values. *)
+    | Add of qset  (** Sum of terms with rational coefficients *)
+    | Mul of qset  (** Product of terms with rational exponents *)
     | Label of {parent: string; name: string}
         (** Address of named code block within parent function *)
     | Nondet of {msg: string}
