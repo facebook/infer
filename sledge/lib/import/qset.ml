@@ -48,6 +48,7 @@ struct
 
   let pp sep pp_elt fs s = List.pp sep pp_elt fs (M.to_alist s)
   let empty = M.empty
+  let of_ = M.singleton
   let if_nz q = if Q.equal Q.zero q then None else Some q
 
   let add m x i =

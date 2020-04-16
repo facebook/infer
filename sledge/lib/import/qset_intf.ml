@@ -25,6 +25,8 @@ module type S = sig
   val empty : t
   (** The empty multiset over the provided order. *)
 
+  val of_ : elt -> Q.t -> t
+
   val add : t -> elt -> Q.t -> t
   (** Add to multiplicity of single element. [O(log n)] *)
 

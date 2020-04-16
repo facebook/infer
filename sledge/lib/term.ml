@@ -235,6 +235,7 @@ let assert_monomial mono =
   match mono with
   | Mul args ->
       Qset.iter args ~f:(fun factor exponent ->
+          assert (Q.is_real exponent) ;
           assert (Q.sign exponent > 0) ;
           assert_indeterminate factor |> Fn.id )
   | _ -> assert_indeterminate mono |> Fn.id
@@ -243,7 +244,8 @@ let assert_monomial mono =
  *     c × ∏ᵢ xᵢ
  *)
 let assert_poly_term mono coeff =
-  assert (not (Q.equal Q.zero coeff)) ;
+  assert (Q.is_real coeff) ;
+  assert (Q.sign coeff <> 0) ;
   match mono with
   | Integer {data} -> assert (Z.equal Z.one data)
   | Mul args ->
@@ -467,7 +469,7 @@ module Sum = struct
     | Rational {data} -> Qset.add sum one Q.(coeff * data)
     | _ -> Qset.add sum term coeff
 
-  let singleton ?(coeff = Q.one) term = add coeff term empty
+  let of_ ?(coeff = Q.one) term = add coeff term empty
 
   let map sum ~f =
     Qset.fold sum ~init:empty ~f:(fun e c sum -> add c (f e) sum)
@@ -521,7 +523,7 @@ let rec simp_add_ es poly =
     (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ cᵢ × Xᵢ *)
     | _, Add args -> Sum.to_term (Sum.add coeff term args)
     (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
-    | _ -> Sum.to_term (Sum.add coeff term (Sum.singleton poly))
+    | _ -> Sum.to_term (Sum.add coeff term (Sum.of_ poly))
   in
   Qset.fold ~f es ~init:poly
 
@@ -541,9 +543,9 @@ and simp_mul2 e f =
       Sum.to_term (Sum.mul_const data args)
   (* c₁ × x₁ ==> ∑ᵢ₌₁ cᵢ × xᵢ *)
   | Integer {data= c}, x | x, Integer {data= c} ->
-      Sum.to_term (Sum.singleton ~coeff:(Q.of_z c) x)
+      Sum.to_term (Sum.of_ ~coeff:(Q.of_z c) x)
   | Rational {data= c}, x | x, Rational {data= c} ->
-      Sum.to_term (Sum.singleton ~coeff:c x)
+      Sum.to_term (Sum.of_ ~coeff:c x)
   (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==> ∏ⱼ₌₀ⁿ xⱼ *)
   | Mul xs1, Mul xs2 -> Mul (Prod.union xs1 xs2)
   (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ × ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
@@ -561,21 +563,28 @@ and simp_mul2 e f =
   (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
   | _ -> Mul (Prod.add e (Prod.singleton f))
 
-let simp_div x y =
+let rec simp_div x y =
   match (x, y) with
-  (* i / j *)
-  | Integer {data= i}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      integer (Z.div i j)
-  | Rational {data= i}, Rational {data= j} -> rational (Q.div i j)
+  (* e / 0 ==> e / 0 *)
+  | _, Integer {data} when Z.equal Z.zero data -> Ap2 (Div, x, y)
   (* e / 1 ==> e *)
   | e, Integer {data} when Z.equal Z.one data -> e
   (* e / -1 ==> -1×e *)
   | e, (Integer {data} as c) when Z.equal Z.minus_one data -> simp_mul2 e c
+  (* i / j ==> i/j *)
+  | Integer {data= i}, Integer {data= j} -> integer (Z.div i j)
+  | Rational {data= i}, Rational {data= j} -> rational (Q.div i j)
   (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
   | Add args, Integer {data} ->
       Sum.to_term (Sum.mul_const Q.(inv (of_z data)) args)
   | Add args, Rational {data} ->
       Sum.to_term (Sum.mul_const Q.(inv data) args)
+  (* x / n ==> 1/n × x *)
+  | _, Integer {data} -> Sum.to_term (Sum.of_ ~coeff:Q.(inv (of_z data)) x)
+  | _, Rational {data} -> Sum.to_term (Sum.of_ ~coeff:Q.(inv data) x)
+  (* e / (n / d) ==> (e × d) / n *)
+  | e, Ap2 (Div, n, d) -> simp_div (simp_mul2 e d) n
+  (* x / y *)
   | _ -> Ap2 (Div, x, y)
 
 let simp_rem x y =
@@ -588,7 +597,7 @@ let simp_rem x y =
   | _ -> Ap2 (Rem, x, y)
 
 let simp_add es = simp_add_ es zero
-let simp_add2 e f = simp_add_ (Sum.singleton e) f
+let simp_add2 e f = simp_add_ (Sum.of_ e) f
 let simp_negate x = simp_mul2 minus_one x
 
 let simp_sub x y =
