@@ -535,23 +535,23 @@ module PowLoc = struct
 
 
   let append_field ploc ~fn =
-    match normalize ploc with
+    match ploc with
     | Bottom ->
         (* Return the unknown location to avoid unintended unreachable nodes *)
         Unknown
     | Unknown ->
-        ploc
+        Unknown
     | Known ploc ->
         Known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l ~fn)) ploc LocSet.empty)
 
 
   let append_star_field ploc ~fn =
-    match normalize ploc with
+    match ploc with
     | Bottom ->
         (* Return the unknown location to avoid unintended unreachable nodes *)
         Unknown
     | Unknown ->
-        ploc
+        Unknown
     | Known ploc ->
         Known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l ~fn)) ploc LocSet.empty)
 
