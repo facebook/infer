@@ -79,6 +79,9 @@ module type S = sig
   val exists : t -> f:(elt -> Q.t -> bool) -> bool
   (** Search for an element satisfying a predicate. *)
 
+  val for_all : t -> f:(elt -> Q.t -> bool) -> bool
+  (** Test whether all elements satisfy a predicate. *)
+
   val fold : t -> f:(elt -> Q.t -> 's -> 's) -> init:'s -> 's
   (** Fold over the elements in ascending order. *)
 end

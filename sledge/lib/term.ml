@@ -1186,6 +1186,15 @@ let exists e ~f =
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> false
 
+let for_all e ~f =
+  match e with
+  | Ap1 (_, x) -> f x
+  | Ap2 (_, x, y) -> f x && f y
+  | Ap3 (_, x, y, z) -> f x && f y && f z
+  | ApN (_, xs) | RecN (_, xs) -> IArray.for_all ~f xs
+  | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
+
 let fold e ~init:s ~f =
   match e with
   | Ap1 (_, x) -> f x s
@@ -1244,6 +1253,11 @@ let fold_vars e ~init ~f =
 let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
+
+let rec is_constant = function
+  | Var _ -> false
+  | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
+  | a -> for_all ~f:is_constant a
 
 let height e =
   let height_ height_ = function

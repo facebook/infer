@@ -83,5 +83,6 @@ struct
   let to_list m = M.to_alist m
   let iter m ~f = M.iteri ~f:(fun ~key ~data -> f key data) m
   let exists m ~f = M.existsi ~f:(fun ~key ~data -> f key data) m
+  let for_all m ~f = M.for_alli ~f:(fun ~key ~data -> f key data) m
   let fold m ~f ~init = M.fold ~f:(fun ~key ~data -> f key data) m ~init
 end

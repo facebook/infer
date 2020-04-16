@@ -251,6 +251,10 @@ val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
+
+val is_constant : t -> bool
+(** Test if a term's semantics is independent of the values of variables. *)
+
 val height : t -> int
 
 (** Solve *)
