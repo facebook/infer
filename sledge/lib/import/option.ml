@@ -15,8 +15,6 @@ let pp fmt pp_elt fs = function
 let cons xo xs = match xo with Some x -> x :: xs | None -> xs
 
 module Monad_syntax = struct
-  type nonrec 'a t = 'a t
-
   let ( let+ ) x f = map ~f x
   let ( and+ ) x y = both x y
   let ( let* ) x f = bind ~f x

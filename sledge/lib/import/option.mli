@@ -13,4 +13,4 @@ val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
 
 val cons : 'a t -> 'a list -> 'a list
 
-module Monad_syntax : Monad_syntax with type 'a t = 'a option
+module Monad_syntax : Monad_syntax with type 'a t := 'a option
