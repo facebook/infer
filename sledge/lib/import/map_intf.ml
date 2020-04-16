@@ -20,6 +20,10 @@ module type S = sig
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
+  val map_endo : 'a t -> f:('a -> 'a) -> 'a t
+  (** Like map, but specialized to require [f] to be an endofunction, which
+      enables preserving [==] if [f] preserves [==] of every element. *)
+
   val merge_skewed :
     'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
 

@@ -28,6 +28,8 @@ end) : S with type key = Key.t = struct
   let merge_skewed x y ~combine =
     of_map (Core.Map.merge_skewed (to_map x) (to_map y) ~combine)
 
+  let map_endo t ~f = map_endo map t ~f
+
   let fold_until m ~init ~f ~finish =
     let fold m ~init ~f =
       let f ~key ~data s = f s (key, data) in

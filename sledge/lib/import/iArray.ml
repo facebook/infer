@@ -51,15 +51,7 @@ let fold_map_until xs ~init ~f ~finish =
              | Continue x -> x
              | Stop x -> return x )) )
 
-let map_endo xs ~f =
-  let change = ref false in
-  let xs' =
-    map xs ~f:(fun x ->
-        let x' = f x in
-        if not (x' == x) then change := true ;
-        x' )
-  in
-  if !change then xs' else xs
+let map_endo xs ~f = map_endo map xs ~f
 
 let combine_adjacent ~f xs =
   let xs = i2a xs in

@@ -49,3 +49,25 @@ module type Monad_syntax = sig
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 end
+
+let map_endo map t ~f =
+  let change = ref false in
+  let t' =
+    map t ~f:(fun x ->
+        let x' = f x in
+        if x' != x then change := true ;
+        x' )
+  in
+  if !change then t' else t
+
+let filter_map_endo filter_map t ~f =
+  let change = ref false in
+  let t' =
+    filter_map t ~f:(fun x ->
+        let x'_opt = f x in
+        ( match x'_opt with
+        | Some x' when x' == x -> ()
+        | _ -> change := true ) ;
+        x'_opt )
+  in
+  if !change then t' else t
