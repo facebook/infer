@@ -407,11 +407,12 @@ let pp_diff_clss =
 (** test membership in carrier *)
 let in_car r e = Subst.mem r.rep e
 
+(** congruent specialized to assume subterms of [a'] are [Subst.norm]alized
+    wrt [r] (or canonized) *)
+let semi_congruent r a' b = Term.equal a' (Term.map ~f:(Subst.norm r.rep) b)
+
 (** terms are congruent if equal after normalizing subterms *)
-let congruent r a b =
-  Term.equal
-    (Term.map ~f:(Subst.norm r.rep) a)
-    (Term.map ~f:(Subst.norm r.rep) b)
+let congruent r a b = semi_congruent r (Term.map ~f:(Subst.norm r.rep) a) b
 
 (** Invariant *)
 
@@ -454,12 +455,8 @@ let lookup r a =
   ;
   ( with_return
   @@ fun {return} ->
-  (* congruent specialized to assume [a] canonized and [b] non-interpreted *)
-  let semi_congruent r a b =
-    Term.equal a (Term.map ~f:(Subst.norm r.rep) b)
-  in
-  Subst.iteri r.rep ~f:(fun ~key ~data ->
-      if semi_congruent r a key then return data ) ;
+  Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
+      if semi_congruent r a b then return b' ) ;
   a )
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
@@ -482,13 +479,19 @@ let rec canon r a =
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
 let rec extend_ a r =
-  match classify a with
-  | Interpreted | Simplified -> Term.fold ~f:extend_ a ~init:r
-  | Uninterpreted -> (
-    match Subst.extend a r with
-    | Some r -> Term.fold ~f:extend_ a ~init:r
-    | None -> r )
-  | Atomic -> r
+  (* omit identity mappings for constants *)
+  if Term.is_constant a then r
+  else
+    match classify a with
+    (* omit interpreted terms, but consider their subterms *)
+    | Interpreted | Simplified -> Term.fold ~f:extend_ a ~init:r
+    (* add uninterpreted terms *)
+    | Uninterpreted -> (
+      match Subst.extend a r with
+      (* and their subterms if newly added *)
+      | Some r -> Term.fold ~f:extend_ a ~init:r
+      | None -> r )
+    | Atomic -> r
 
 (** add a term to the carrier *)
 let extend a r =
@@ -512,12 +515,27 @@ let find_missing r =
   with_return
   @@ fun {return} ->
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
-      Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-          if
-            Term.compare a b < 0
-            && (not (Term.equal a' b'))
-            && congruent r a b
-          then return (Some (a', b')) ) ) ;
+      let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
+      (* rep omits identity mappings for constants, so check for them *)
+      if
+        (* a normalizes to a constant *)
+        Term.is_constant a_subnorm
+        (* distinct from its representative *)
+        && not (Term.equal a' a_subnorm)
+      then
+        (* need to equate current representative and constant *)
+        return (Some (a', a_subnorm))
+      else
+        Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
+            if
+              (* optimize: do not consider both a = b and b = a *)
+              Term.compare a b < 0
+              (* a and b are not already equal *)
+              && (not (Term.equal a' b'))
+              (* a and b are congruent *)
+              && semi_congruent r a_subnorm b
+            then (* need to equate a' and b' *)
+              return (Some (a', b')) ) ) ;
   None
 
 let rec close us r =
