@@ -114,12 +114,16 @@ end = struct
      non-coefficient, so Integer and Rational terms must compare higher than
      any valid monomial *)
   let compare x y =
-    match (x, y) with
-    | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
-        Int.compare i j
-    | _ -> compare x y
+    if x == y then 0
+    else
+      match (x, y) with
+      | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
+          Int.compare i j
+      | _ -> compare x y
 
   let equal x y =
+    x == y
+    ||
     match (x, y) with
     | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
         Int.equal i j
