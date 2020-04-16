@@ -74,9 +74,11 @@ struct
 
   let map_counts m ~f = M.mapi ~f:(fun ~key ~data -> f key data) m
   let is_empty = M.is_empty
+  let is_singleton = M.is_singleton
   let length m = M.length m
   let count m x = match M.find m x with Some q -> q | None -> Q.zero
   let choose = M.choose
+  let choose_exn = M.choose_exn
   let pop = M.pop
   let min_elt = M.min_elt
   let pop_min_elt = M.pop_min_elt

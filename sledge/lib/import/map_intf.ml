@@ -19,6 +19,7 @@ module type S = sig
   include Core_kernel.Map_intf.Make_S_plain_tree(Key).S
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val is_singleton : 'a t -> bool
 
   val map_endo : 'a t -> f:('a -> 'a) -> 'a t
   (** Like map, but specialized to require [f] to be an endofunction, which
@@ -45,6 +46,9 @@ module type S = sig
     -> f:(key:key -> data:'v -> 'a -> ('a, 'r) Continue_or_stop.t)
     -> finish:('a -> 'r)
     -> 'r
+
+  val choose_exn : 'a t -> key * 'a
+  (** Find an unspecified element. [O(1)]. *)
 
   val choose : 'a t -> (key * 'a) option
   (** Find an unspecified element. [O(1)]. *)

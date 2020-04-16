@@ -46,12 +46,16 @@ module type S = sig
   (* queries *)
 
   val is_empty : t -> bool
+  val is_singleton : t -> bool
 
   val length : t -> int
   (** Number of elements with non-zero multiplicity. [O(1)]. *)
 
   val count : t -> elt -> Q.t
   (** Multiplicity of an element. [O(log n)]. *)
+
+  val choose_exn : t -> elt * Q.t
+  (** Find an unspecified element. [O(1)]. *)
 
   val choose : t -> (elt * Q.t) option
   (** Find an unspecified element. [O(1)]. *)

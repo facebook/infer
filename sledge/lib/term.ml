@@ -592,6 +592,10 @@ let rec simp_div x y =
   | _, Rational {data} -> Sum.to_term (Sum.of_ ~coeff:Q.(inv data) x)
   (* e / (n / d) ==> (e × d) / n *)
   | e, Ap2 (Div, n, d) -> simp_div (simp_mul2 e d) n
+  (* x / (q × y) ==> (1/q × x) / y *)
+  | _, Add sum when Qset.is_singleton sum ->
+      let y, q = Qset.choose_exn sum in
+      simp_div (simp_mul2 (rational (Q.inv q)) x) y
   (* x / y *)
   | _ -> Ap2 (Div, x, y)
 

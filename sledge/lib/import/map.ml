@@ -51,18 +51,33 @@ end) : S with type key = Key.t = struct
     let f s (k, v) = f ~key:k ~data:v s in
     Container.fold_until ~fold ~init ~f ~finish m
 
-  let choose m =
+  let root_key_exn m =
+    with_return
+    @@ fun {return} ->
+    binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data:_ ->
+        return key )
+    |> ignore ;
+    raise (Not_found_s (Atom __LOC__))
+
+  let choose_exn m =
     with_return
     @@ fun {return} ->
     binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data ->
-        return (Some (key, data)) )
+        return (key, data) )
     |> ignore ;
-    None
+    raise (Not_found_s (Atom __LOC__))
 
+  let choose m = try Some (choose_exn m) with Not_found_s _ -> None
   let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
 
   let pop_min_elt m =
     min_elt m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+
+  let is_singleton m =
+    try
+      let l, _, r = split m (root_key_exn m) in
+      is_empty l && is_empty r
+    with Not_found_s _ -> false
 
   let find_and_remove m k =
     let found = ref None in
