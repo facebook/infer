@@ -57,8 +57,6 @@ Proof
   rw [EXISTS_OR_THM, inc_pc_def, inc_bip_def]
 QED
 
-
-
 (* ----- The invariant on emaps ----- *)
 (* Essentially that the emap is what the llvm->llair translation generates in
   * the end. Such emaps enjoy the nice property that they don't change when used
@@ -339,7 +337,8 @@ QED
 Theorem similar_emap_translate_instr_to_exp:
   ∀gmap emap1 inst is emap2 r t.
     similar_emap (fst (instrs_live (inst::is))) emap1 emap2 ∧
-    classify_instr inst = Exp r t
+    classify_instr inst = Exp r t ∧
+    is_implemented inst
     ⇒
     translate_instr_to_exp gmap emap1 inst = translate_instr_to_exp gmap emap2 inst
 Proof
@@ -349,14 +348,14 @@ Proof
   drule similar_emap_translate_arg >>
   TRY (disch_then irule) >>
   rw [SUBSET_DEF] >>
-  (* TODO: unimplemented instructions *)
-  cheat
+  fs [is_implemented_def]
 QED
 
 Theorem similar_emap_translate_instr_to_inst:
   ∀gmap emap1 inst is emap2 r t.
     similar_emap (fst (instrs_live (inst::is))) emap1 emap2 ∧
-    classify_instr inst = Non_exp
+    classify_instr inst = Non_exp ∧
+    is_implemented inst
     ⇒
     translate_instr_to_inst gmap emap1 inst = translate_instr_to_inst gmap emap2 inst
 Proof
@@ -365,44 +364,44 @@ Proof
   pairarg_tac >> fs [instr_uses_def, instr_assigns_def] >>
   drule similar_emap_translate_arg >>
   TRY (disch_then irule) >>
-  rw [SUBSET_DEF] >>
-  (* TODO: unimplemented instructions *)
-  cheat
+  rw [SUBSET_DEF]
+  >- (rename1 `Extractvalue _ x _` >> Cases_on `x` >> fs [classify_instr_def])
+  >- (rename1 `Insertvalue _ x _ _` >> Cases_on `x` >> fs [classify_instr_def]) >>
+  fs [is_implemented_def]
 QED
 
 Theorem similar_emap_translate_instr_to_term:
   ∀inst l gmap emap1 is emap2 r t.
     similar_emap (fst (instrs_live (inst::is))) emap1 emap2 ∧
-    classify_instr inst = Term
+    classify_instr inst = Term ∧
+    is_implemented inst
     ⇒
     translate_instr_to_term l gmap emap1 inst = translate_instr_to_term l gmap emap2 inst
 Proof
   ho_match_mp_tac classify_instr_ind >>
   rw [translate_instr_to_term_def, classify_instr_def, instrs_live_def,
       instr_uses_def]
-  >- ( (* TODO: unimplemented Ret *)
-    cheat)
+  >- fs [is_implemented_def]
   >- (
     CASE_TAC >> rw [] >>
     irule similar_emap_translate_arg >>
     pairarg_tac >>
     fs [similar_emap_union, SUBSET_DEF] >>
     metis_tac [])
-  >- ( (* TODO: unimplemented Unreachable *)
-    cheat)
+  >- fs [is_implemented_def]
   >- (
     irule similar_emap_translate_arg >>
     pairarg_tac >>
     fs [similar_emap_union, SUBSET_DEF] >>
     metis_tac [])
-  >- ( (* TODO: unimplemented Throw *)
-    cheat)
+  >- fs [is_implemented_def]
 QED
 
 Theorem similar_emap_translate_call:
   ∀inst gmap emap1 is emap2 ret exret.
     similar_emap (fst (instrs_live (inst::is))) emap1 emap2 ∧
-    classify_instr inst = Call
+    classify_instr inst = Call ∧
+    is_implemented inst
     ⇒
     translate_call gmap emap1 ret exret inst = translate_call gmap emap2 ret exret inst
 Proof
@@ -417,8 +416,7 @@ Proof
     qexists_tac `bigunion (set (map (arg_to_regs ∘ snd) l))` >>
     rw [SUBSET_DEF, MEM_MAP, PULL_EXISTS] >>
     metis_tac [EL_MEM, SND])
-  >- ( (* TODO: unimplemented Invoke *)
-    cheat)
+  >- fs [is_implemented_def]
 QED
 
 Theorem translate_header_similar_emap:
@@ -478,7 +476,8 @@ QED
 Theorem translate_instrs_similar_emap:
   ∀f l gmap emap1 emap2 regs_to_keep is i.
     similar_emap (fst (instrs_live is)) emap1 emap2 ∧
-    (∀i. i < length is ∧ classify_instr (el i is) = Term ⇒ Suc i = length is)
+    (∀i. i < length is ∧ classify_instr (el i is) = Term ⇒ Suc i = length is) ∧
+    every is_implemented is
     ⇒
     (λ(b1, emap1') (b2, emap2').
        b1 = b2 ∧
@@ -650,7 +649,8 @@ Theorem translate_block_emap_restr_live:
   ∀emap1 emap2 b f gmap r x l.
     similar_emap (linear_live [b]) emap1 emap2 ∧
     (l = None ⇔ b.h = Entry) ∧
-    (∀i. i < length b.body ∧ classify_instr (el i b.body) = Term ⇒ Suc i = length b.body)
+    (∀i. i < length b.body ∧ classify_instr (el i b.body) = Term ⇒ Suc i = length b.body) ∧
+    every is_implemented b.body
     ⇒
     (λ(b1, emap1') (b2, emap2').
         b1 = b2 ∧
@@ -700,7 +700,8 @@ Theorem translate_blocks_emap_restr_live:
     similar_emap (linear_live (map snd blocks)) emap1 emap2 ∧
     every (\(l,b). l = None ⇔ b.h = Entry) blocks ∧
     every (\(l,b). (∀i. i < length b.body ∧ classify_instr (el i b.body) = Term ⇒ Suc i = length b.body))
-      blocks
+      blocks ∧
+    every (\(l,b). every is_implemented b.body) blocks
     ⇒
     translate_blocks f gmap emap1 r x blocks = translate_blocks f gmap emap2 r x blocks
 Proof
@@ -902,7 +903,8 @@ Theorem get_block_translate_prog_mov:
     alookup prog (Fn f) = Some d ∧
     alookup d.blocks from_l = Some b ∧
     mem (Lab to_l) (instr_to_labs (last b.body)) ∧
-    alookup d.blocks (Some (Lab to_l)) = Some block ∧ (∃l. block.h = Head phis l)
+    alookup d.blocks (Some (Lab to_l)) = Some block ∧ (∃l. block.h = Head phis l) ∧
+    every (\(l,b). every is_implemented b.body) d.blocks
     ⇒
     get_block (translate_prog prog)
       (Mov_name f (option_map dest_label from_l) to_l)

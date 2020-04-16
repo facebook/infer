@@ -15,6 +15,30 @@ new_theory "llvm_to_llair";
 
 numLib.prefer_num ();
 
+(* Record which LLVM instructions the translation is implemented for *)
+Definition is_implemented_def:
+  (is_implemented (Ret _) ⇔ F) ∧
+  (is_implemented (Br _ _ _) ⇔ T) ∧
+  (is_implemented (Invoke _ _ _ _ _ _) ⇔ F) ∧
+  (is_implemented Unreachable ⇔ F) ∧
+  (is_implemented (Exit _) ⇔ T) ∧
+  (is_implemented (Sub _ _ _ _ _ _) ⇔ T) ∧
+  (is_implemented (Extractvalue _ _ _) ⇔ T) ∧
+  (is_implemented (Insertvalue _ _ _ _) ⇔ T) ∧
+  (is_implemented (Alloca _ _ _) ⇔ F) ∧
+  (is_implemented (Load _ _ _) ⇔ T) ∧
+  (is_implemented (Store _ _) ⇔ T) ∧
+  (is_implemented (Gep _ _ _ _) ⇔ F) ∧
+  (is_implemented (Cast _ _ _ _) ⇔ T) ∧
+  (is_implemented (Icmp _ _ _ _ _) ⇔ F) ∧
+  (is_implemented (Call _ _ _ _) ⇔ F) ∧
+  (is_implemented (Cxa_allocate_exn _ _) ⇔ F) ∧
+  (is_implemented (Cxa_throw _ _ _) ⇔ F) ∧
+  (is_implemented (Cxa_begin_catch _ _) ⇔ F) ∧
+  (is_implemented Cxa_end_catch ⇔ F) ∧
+  (is_implemented (Cxa_get_exception_ptr _ _) ⇔ F)
+End
+
 Definition the_def:
   (the None x = x) ∧
   (the (Some x) _ = x)
