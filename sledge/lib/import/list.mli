@@ -46,7 +46,7 @@ val rev_map_unzip : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
 
 val remove_exn : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list
 (** Returns the input list without the first element [equal] to the
-    argument, or raise [Not_found] if no such element exists. [equal]
+    argument, or raise [Not_found_s] if no such element exists. [equal]
     defaults to physical equality. *)
 
 val remove : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list option
