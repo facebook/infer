@@ -132,12 +132,31 @@ let cache_classname cn =
 
 let is_classname_cached cn = Sys.file_exists (path_of_cached_classname cn) = `Yes
 
+let test_source_file_location source_file program cn node =
+  let is_synthetic = function
+    | Javalib.JInterface _ ->
+        false
+    | Javalib.JClass jc ->
+        jc.Javalib.c_synthetic
+  in
+  if not (is_synthetic node) then
+    match JClasspath.get_java_location program cn with
+    | None ->
+        L.(debug Capture Verbose)
+          "WARNING SOURCE FILE PARSER: location not found for class %s in source file %s \n"
+          (JBasics.cn_name cn)
+          (SourceFile.to_abs_path source_file)
+    | Some _ ->
+        ()
+
+
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
 let create_icfg source_file program tenv icfg cn node =
   L.(debug Capture Verbose) "\tclassname: %s@." (JBasics.cn_name cn) ;
   if Config.dependency_mode && not (is_classname_cached cn) then cache_classname cn ;
+  test_source_file_location source_file program cn node ;
   let translate m =
     let proc_name = JTransType.translate_method_name program tenv m in
     JClasspath.set_callee_translated program proc_name ;
@@ -194,19 +213,8 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
   in
-  let set_java_location cn _node =
-    let cn_name = JBasics.cn_name cn in
-    let loc = JSourceFileInfo.class_name_location source_file cn_name in
-    L.debug Capture Verbose "set_java_location %s with location %a@." cn_name Location.pp_file_pos
-      loc ;
-    JClasspath.set_java_location program cn loc
-  in
   (* we must set the java location for all classes in the source file before translation *)
-  let () =
-    JBasics.ClassMap.iter
-      (select (should_capture program package_opt source_basename) set_java_location)
-      (JClasspath.get_classmap program)
-  in
+  JSourceFileInfo.collect_class_location program source_file ;
   let () =
     JBasics.ClassMap.iter
       (select

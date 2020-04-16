@@ -129,6 +129,8 @@ let topl_stanzas =
   ["(ocamllex ToplLexer)"; "(menhir (flags --unused-token INDENT --explain) (modules ToplParser))"]
 
 
+let java_sources_lexer = if java then ["(ocamllex jSourceFileInfo)"] else []
+
 let flatten_sources_stanzas =
   List.map
     (fun source_dir ->
@@ -143,7 +145,7 @@ let flatten_sources_stanzas =
 (** The build stanzas to be passed to dune *)
 let stanzas =
   (env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: clang_lexer_stanzas)
-  @ topl_stanzas @ flatten_sources_stanzas
+  @ java_sources_lexer @ topl_stanzas @ flatten_sources_stanzas
 
 
 ;;
