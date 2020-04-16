@@ -100,8 +100,11 @@ end = struct
 
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data s =
-    if Term.equal key data then s
-    else compose s (Term.Map.singleton key data)
+    match (key : Term.t) with
+    | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> s
+    | _ ->
+        if Term.equal key data then s
+        else compose s (Term.Map.singleton key data)
 
   (** add an identity entry if the term is not already present *)
   let extend e s =
@@ -128,8 +131,11 @@ end = struct
         if Term.equal key' key then
           if Term.equal data' data then s
           else Term.Map.set s ~key ~data:data'
-        else Term.Map.remove s key |> Term.Map.add_exn ~key:key' ~data:data'
-    )
+        else
+          let s = Term.Map.remove s key in
+          match (key : Term.t) with
+          | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> s
+          | _ -> Term.Map.add_exn ~key:key' ~data:data' s )
 
   (** Holds only if [true ⊢ ∃xs. e=f]. Clients assume
       [not (is_valid_eq xs e f)] implies [not (is_valid_eq ys e f)] for
@@ -471,13 +477,16 @@ let rec canon r a =
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
 let rec extend_ a r =
-  if interpreted a then Term.fold ~f:extend_ a ~init:r
-  else
-    (* add uninterpreted terms *)
-    match Subst.extend a r with
-    (* and their subterms if newly added *)
-    | Some r -> Term.fold ~f:extend_ a ~init:r
-    | None -> r
+  match (a : Term.t) with
+  | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> r
+  | _ -> (
+      if interpreted a then Term.fold ~f:extend_ a ~init:r
+      else
+        (* add uninterpreted terms *)
+        match Subst.extend a r with
+        (* and their subterms if newly added *)
+        | Some r -> Term.fold ~f:extend_ a ~init:r
+        | None -> r )
 
 (** add a term to the carrier *)
 let extend a r =
