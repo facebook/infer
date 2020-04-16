@@ -478,12 +478,14 @@ module Sum = struct
     else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
 
   let to_term sum =
-    match Qset.length sum with
-    | 0 -> zero
-    | 1 -> (
-      match Qset.min_elt sum with
-      | Some (Integer _, q) -> rational q
-      | Some (arg, q) when Q.equal Q.one q -> arg
+    match Qset.pop sum with
+    | None -> zero
+    | Some (arg, q, sum') when Qset.is_empty sum' -> (
+      match arg with
+      | Integer {data} ->
+          assert (Z.equal Z.one data) ;
+          rational q
+      | _ when Q.equal Q.one q -> arg
       | _ -> Add sum )
     | _ -> Add sum
 end
