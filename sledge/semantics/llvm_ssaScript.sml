@@ -9,14 +9,14 @@
  * simplifies it *)
 
 open HolKernel boolLib bossLib Parse;
-open pred_setTheory listTheory rich_listTheory;
+open pred_setTheory listTheory rich_listTheory pairTheory arithmeticTheory;
 open settingsTheory miscTheory llvmTheory llvm_propTheory;
 
 new_theory "llvm_ssa";
 
 numLib.prefer_num ();
 
-(* ----- Static paths through a program *)
+(* ----- Static paths through a program ----- *)
 
 Definition inc_pc_def:
   inc_pc ip = ip with i := inc_bip ip.i
@@ -535,6 +535,302 @@ Proof
   simp [good_path_append] >>
   simp [Once good_path_cases] >>
   fs [next_ips_cases, IN_DEF] >>
+  metis_tac []
+QED
+
+(* ----- A theory of *dominator ordered* programs ------ *)
+(* A list of basic blocks is dominator ordered if each variable use occurs after
+ * the assignment to that variable. We can also define a notion of variable
+ * liveness that follows the list structure, rather than the CFG structure, and
+ * show that for dominator ordered lists, the live set is empty at the entry
+ * point *)
+
+Definition instrs_live_def:
+  (instrs_live [] = ({}, {})) ∧
+  (instrs_live (i::is) =
+    let (gen, kill) = instrs_live is in
+      (instr_uses i ∪ (gen DIFF image fst (instr_assigns i)),
+       (image fst (instr_assigns i) ∪ (kill DIFF instr_uses i))))
+End
+
+Definition header_uses_def:
+  (header_uses (Head phis land) =
+    bigunion { phi_uses from_l p | from_l,p | mem p phis }) ∧
+  (header_uses Entry = {})
+End
+
+Definition header_assigns_def:
+  (header_assigns (Head phis land) = set (map (fst o phi_assigns) phis)) ∧
+  (header_assigns Entry = {})
+End
+
+Definition linear_live_def:
+  (linear_live [] = {}) ∧
+  (linear_live (b::bs) =
+    let (gen,kill) = instrs_live b.body in
+    header_uses b.h ∪ (gen ∪ (linear_live bs DIFF kill) DIFF header_assigns b.h))
+End
+Definition bip_less_def:
+  (bip_less (Phi_ip _) (Offset _) ⇔ T) ∧
+  (bip_less (Offset m) (Offset n) ⇔ m < n) ∧
+  (bip_less _ _ ⇔ F)
+End
+
+Definition linear_pc_less_def:
+  linear_pc_less = $< LEX bip_less
+End
+
+Inductive lpc_get_instr:
+ (∀i idx bs.
+  i < length bs ∧
+  idx < length (el i bs).body
+  ⇒
+  lpc_get_instr bs (i, Offset idx) (Inl (el idx (el i bs).body))) ∧
+ (∀i from_l phis bs landing.
+  i < length bs ∧
+  (el i bs).h = Head phis landing
+  ⇒
+  lpc_get_instr bs (i, Phi_ip from_l) (Inr (from_l, phis)))
+End
+
+Inductive lpc_assigns:
+ (∀bs ip i r.
+    lpc_get_instr bs ip (Inl i) ∧
+    r ∈ instr_assigns i
+    ⇒
+    lpc_assigns bs ip r) ∧
+ (∀bs ip from_l phis r.
+    lpc_get_instr bs ip (Inr (from_l, phis)) ∧
+    r ∈ set (map phi_assigns phis)
+    ⇒
+    lpc_assigns bs ip r)
+End
+
+Inductive lpc_uses:
+ (∀bs ip i r.
+    lpc_get_instr bs ip (Inl i) ∧
+    r ∈ instr_uses i
+    ⇒
+    lpc_uses bs ip r) ∧
+ (∀bs ip from_l phis r.
+    lpc_get_instr bs ip (Inr (from_l, phis)) ∧
+    r ∈ BIGUNION (set (map (phi_uses from_l) phis))
+    ⇒
+    lpc_uses bs ip r)
+End
+
+Definition dominator_ordered_def:
+  dominator_ordered p ⇔
+    ∀f d lip1 r.
+      alookup p (Fn f) = Some d ∧
+      r ∈ lpc_uses (map snd d.blocks) lip1
+      ⇒
+      ∃lip2. linear_pc_less lip2 lip1 ∧ r ∈ image fst (lpc_assigns (map snd d.blocks) lip2)
+End
+
+Theorem instrs_kill_subset_assigns:
+  snd (instrs_live is) ⊆ bigunion (image (λi. image fst (instr_assigns i)) (set is))
+Proof
+  Induct_on `is` >> rw [instrs_live_def] >>
+  pairarg_tac >> rw [] >>
+  fs [SUBSET_DEF]
+QED
+
+Theorem instrs_gen_subset_uses:
+  fst (instrs_live is) ⊆ bigunion (image instr_uses (set is))
+Proof
+  Induct_on `is` >> rw [instrs_live_def] >>
+  pairarg_tac >> rw [] >>
+  fs [SUBSET_DEF]
+QED
+
+Theorem instrs_subset_assigns_subset_kill_gen:
+  bigunion (image (λi. image fst (instr_assigns i)) (set is)) ⊆
+    snd (instrs_live is) ∪ fst (instrs_live is)
+Proof
+  Induct_on `is` >> rw [instrs_live_def] >>
+  pairarg_tac >> rw [] >> fs [SUBSET_DEF] >> rw [] >>
+  metis_tac []
+QED
+
+Theorem use_assign_in_gen_kill:
+  ∀n is r.
+    n < length is ∧ (r ∈ image fst (instr_assigns (el n is)) ∨ r ∈ instr_uses (el n is))
+    ⇒
+    r ∈ fst (instrs_live is) ∨ r ∈ snd (instrs_live is)
+Proof
+  Induct_on `n` >> rw [] >> Cases_on `is` >> rw [] >> fs [] >>
+  rw [instrs_live_def] >>
+  pairarg_tac >> rw [] >>
+  metis_tac [FST, SND, pair_CASES]
+QED
+
+Theorem instrs_live_uses:
+  ∀is r.
+    r ∈ fst (instrs_live is)
+    ⇒
+    ∃i. i < length is ∧ r ∈ instr_uses (el i is) ∧
+        ∀j. j < i ⇒ r ∉ instr_uses (el j is) ∧ r ∉ image fst (instr_assigns (el j is))
+Proof
+  Induct >> rw [instrs_live_def] >> pairarg_tac >> fs []
+  >- (qexists_tac `0` >> rw []) >>
+  rename1 `(i1::is)` >>
+  Cases_on `r ∈ instr_uses i1`
+  >- (qexists_tac `0` >> rw []) >>
+  first_x_assum drule >> rw [] >>
+  qexists_tac `Suc i` >> rw [] >>
+  Cases_on `j` >> fs []
+QED
+
+Theorem lpc_get_instr_cons:
+  ∀b bs i bip.
+    lpc_get_instr (b::bs) (i + 1, bip) = lpc_get_instr bs (i, bip)
+Proof
+  rw [lpc_get_instr_cases, EXTENSION, IN_DEF, EL_CONS] >>
+  `PRE (i + 1) = i` by decide_tac >>
+  rw [ADD1]
+QED
+
+Theorem lpc_uses_cons:
+  ∀b bs i bip.
+    lpc_uses (b::bs) (i + 1, bip) = lpc_uses bs (i, bip)
+Proof
+  rw [lpc_uses_cases, EXTENSION, IN_DEF, lpc_get_instr_cons]
+QED
+
+Theorem lpc_uses_0_head:
+  ∀b bs. header_uses b.h = bigunion { lpc_uses (b::bs) (0, Phi_ip from_l) | from_l | T}
+Proof
+  rw [EXTENSION, IN_DEF] >>
+  rw [lpc_uses_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+  Cases_on `b.h` >> rw [header_uses_def, MEM_MAP, PULL_EXISTS]
+  >- metis_tac [] >>
+  eq_tac >> rw []
+  >- (
+    qexists_tac `(\x'. ∃y. x' ∈ phi_uses from_l y ∧ mem y l)` >>
+    qexists_tac `from_l` >>
+    rw [] >>
+    metis_tac []) >>
+  metis_tac []
+QED
+
+Theorem lpc_uses_0_body:
+  ∀b bs. lpc_uses (b::bs) (0, Offset n) ⊆ fst (instrs_live b.body) ∪ snd (instrs_live b.body)
+Proof
+  rw [SUBSET_DEF, IN_DEF] >>
+  fs [lpc_uses_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+  metis_tac [use_assign_in_gen_kill, IN_DEF]
+QED
+
+Theorem lpc_assigns_cons:
+  ∀b bs i bip.
+    lpc_assigns (b::bs) (i + 1, bip) = lpc_assigns bs (i, bip)
+Proof
+  rw [lpc_assigns_cases, EXTENSION, IN_DEF, lpc_get_instr_cons]
+QED
+
+Theorem lpc_assigns_0_head:
+  ∀b bs from_l.
+    image fst (lpc_assigns (b::bs) (0, Phi_ip from_l)) = header_assigns b.h
+Proof
+  rw [EXTENSION, Once IN_DEF] >>
+  rw [lpc_assigns_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+  Cases_on `b.h` >> rw [header_assigns_def, MEM_MAP] >>
+  metis_tac []
+QED
+
+Theorem lpc_assigns_0_body:
+  ∀b bs. image fst (lpc_assigns (b::bs) (0, Offset n)) ⊆ fst (instrs_live b.body) ∪ snd (instrs_live b.body)
+Proof
+  rw [SUBSET_DEF, IN_DEF] >>
+  fs [lpc_assigns_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+  drule use_assign_in_gen_kill >>
+  rw [] >>
+  metis_tac [IN_DEF]
+QED
+
+Theorem linear_live_uses:
+  ∀bs r. r ∈ linear_live bs ⇒
+    ∃lip. r ∈ lpc_uses bs lip ∧
+        ∀lip2. linear_pc_less lip2 lip ⇒ r ∉ lpc_uses bs lip2 ∧ r ∉ image fst (lpc_assigns bs lip2)
+Proof
+  Induct >> rw [linear_live_def] >>
+  rename1 `header_uses b.h` >>
+  Cases_on `r ∈ header_uses b.h`
+  >- (
+    fs [header_uses_def] >> pairarg_tac >> fs [] >>
+    Cases_on `b.h` >> fs [header_uses_def] >>
+    qexists_tac `(0, Phi_ip from_l)` >> fs [header_uses_def] >>
+    conj_tac
+    >- (
+      simp [IN_DEF] >>
+      rw [lpc_uses_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+      rw [MEM_MAP] >> metis_tac [])
+    >- (
+      gen_tac >> simp [linear_pc_less_def, LEX_DEF] >>
+      pairarg_tac >> simp [bip_less_def])) >>
+  pairarg_tac >> Cases_on `r ∈ gen` >> fs []
+  >- (
+    `r ∈ fst (instrs_live b.body)` by metis_tac [FST] >>
+    drule instrs_live_uses >> rw [] >>
+    qexists_tac `(0, Offset i)` >>
+    conj_tac
+    >- (
+      simp [IN_DEF] >>
+      rw [lpc_uses_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+      rw [MEM_MAP] >> metis_tac [])
+    >- (
+      gen_tac >> strip_tac >>
+      PairCases_on `lip2` >> fs [linear_pc_less_def, LEX_DEF_THM] >>
+      Cases_on `lip21` >> fs [bip_less_def]
+      >- (
+        Cases_on `b.h` >> fs [header_assigns_def, header_uses_def] >>
+        simp [IN_DEF] >>
+        rw [lpc_uses_cases, lpc_assigns_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+        fs [MEM_MAP] >>
+        metis_tac [FST])
+      >- (
+        first_x_assum drule >>
+        simp [IN_DEF] >>
+        rw [lpc_uses_cases, lpc_assigns_cases, lpc_get_instr_cases, PULL_EXISTS] >>
+        rw [IN_DEF])))
+  >- (
+    first_x_assum drule >> rw [] >>
+    PairCases_on `lip` >>
+    qexists_tac `lip0+1,lip1` >> simp [IN_DEF] >>
+    conj_tac
+    >- fs [lpc_uses_cons, IN_DEF] >>
+    gen_tac >> disch_tac >>
+    PairCases_on `lip2` >>
+    Cases_on `lip20` >> fs [ADD1]
+    >- (
+      Cases_on `lip21`
+      >- (
+        rename1 `Phi_ip from_l` >>
+        `r ∉ bigunion {lpc_uses (b::bs) (0,Phi_ip from_l) | from_l | T} ∧
+         r ∉ image fst (lpc_assigns (b::bs) (0,Phi_ip from_l))`
+        by metis_tac [lpc_assigns_0_head, lpc_uses_0_head] >>
+        fs [IN_DEF] >> metis_tac [])
+      >- (
+        `r ∉ image fst (lpc_assigns (b::bs) (0,Offset n)) ∧
+         r ∉ lpc_uses (b::bs) (0,Offset n)`
+        by metis_tac [IN_UNION, lpc_assigns_0_body, lpc_uses_0_body, FST, SND, SUBSET_DEF] >>
+        fs [IN_DEF]))
+    >- (
+      `linear_pc_less (n, lip21) (lip0, lip1)` by fs [linear_pc_less_def, LEX_DEF] >>
+      first_x_assum drule >>
+      rw [lpc_uses_cons, lpc_assigns_cons] >> fs [IN_DEF]))
+QED
+
+Theorem dominator_ordered_linear_live:
+  ∀p f d.
+    dominator_ordered p ∧
+    alookup p (Fn f) = Some d
+    ⇒
+    linear_live (map snd d.blocks) = {}
+Proof
+  rw [dominator_ordered_def] >> first_x_assum drule >> rw [EXTENSION] >>
+  CCONTR_TAC >> fs [] >> drule linear_live_uses >> rw [] >>
   metis_tac []
 QED
 
