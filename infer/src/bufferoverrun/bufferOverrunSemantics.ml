@@ -285,7 +285,7 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
   | BinOp ((Binop.MinusPI | Binop.PlusPI), e, _) | Cast (_, e) ->
       eval_locs e mem
   | BinOp _ | Closure _ | Const _ | Exn _ | Sizeof _ | UnOp _ ->
-      PowLoc.empty
+      PowLoc.bot
   | Lfield (e, fn, _) ->
       eval_locs e mem |> PowLoc.append_field ~fn
   | Lindex (((Lfield _ | Lindex _) as e), _) ->
@@ -425,7 +425,7 @@ and eval_locpath ~mode params p mem =
         let locs = eval_locpath ~mode params prefix mem in
         PowLoc.append_star_field ~fn locs
   in
-  if PowLoc.is_empty res then (
+  if PowLoc.is_bot res then (
     match mode with
     | EvalPOReachability ->
         res
@@ -510,7 +510,7 @@ let conservative_array_length ?traces arr_locs mem =
 
 
 let eval_array_locs_length arr_locs mem =
-  if PowLoc.is_empty arr_locs then Val.Itv.top
+  if PowLoc.is_bot arr_locs then Val.Itv.top
   else
     let arr = Mem.find_set arr_locs mem in
     let traces = Val.get_traces arr in

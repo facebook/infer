@@ -143,10 +143,13 @@ module Loc = struct
       let of_allocsite a = Allocsite a
 
       let append_star_field l0 ~fn =
-        let rec aux = function
+        let rec aux l =
+          match l with
+          | Allocsite a when Allocsite.is_unknown a ->
+              l
           | Var _ | Allocsite _ ->
               StarField {prefix= l0; last_field= fn}
-          | StarField {last_field} as l when Fieldname.equal fn last_field ->
+          | StarField {last_field} when Fieldname.equal fn last_field ->
               l
           | StarField {prefix} ->
               StarField {prefix; last_field= fn}
@@ -161,6 +164,8 @@ module Loc = struct
           if Symb.SymbolPath.is_field_depth_beyond_limit depth then append_star_field l0 ~fn
           else
             match l with
+            | Allocsite a when Allocsite.is_unknown a ->
+                l
             | Var _ | Allocsite _ ->
                 Field {prefix= l0; fn; typ}
             | StarField {last_field} as l when Fieldname.equal fn last_field ->
@@ -392,30 +397,174 @@ module Loc = struct
         x
 end
 
+module LocSet = PrettyPrintable.MakePPSet (Loc)
+
 module PowLoc = struct
-  include AbstractDomain.FiniteSet (Loc)
+  (* The known set of locations should not be empty and not include the unknown location.  Every
+     constructors in this module should be defined carefully to keep that constraint. *)
+  type t = Bottom | Unknown | Known of LocSet.t [@@deriving compare]
 
-  let bot = empty
+  let pp f = function
+    | Bottom ->
+        F.pp_print_string f SpecialChars.up_tack
+    | Unknown ->
+        Loc.pp f Loc.unknown
+    | Known locs ->
+        LocSet.pp f locs
 
-  let is_bot = is_empty
 
-  let unknown = singleton Loc.unknown
+  let leq ~lhs ~rhs =
+    match (lhs, rhs) with
+    | Bottom, _ ->
+        true
+    | _, Bottom ->
+        false
+    | Unknown, _ ->
+        true
+    | _, Unknown ->
+        false
+    | Known lhs, Known rhs ->
+        LocSet.subset lhs rhs
+
+
+  let join x y =
+    match (x, y) with
+    | Bottom, _ ->
+        y
+    | _, Bottom ->
+        x
+    | Unknown, _ ->
+        y
+    | _, Unknown ->
+        x
+    | Known x, Known y ->
+        Known (LocSet.union x y)
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let bot = Bottom
+
+  let is_bot = function Bottom -> true | Unknown | Known _ -> false
+
+  let unknown = Unknown
+
+  let singleton l = if Loc.is_unknown l then Unknown else Known (LocSet.singleton l)
+
+  let fold f ploc init =
+    match ploc with
+    | Bottom ->
+        init
+    | Unknown ->
+        f Loc.unknown init
+    | Known ploc ->
+        LocSet.fold f ploc init
+
+
+  let exists f ploc =
+    match ploc with
+    | Bottom ->
+        false
+    | Unknown ->
+        f Loc.unknown
+    | Known ploc ->
+        LocSet.exists f ploc
+
+
+  let normalize ploc =
+    match ploc with
+    | Bottom | Unknown ->
+        ploc
+    | Known ploc' -> (
+      match LocSet.is_singleton_or_more ploc' with
+      | Empty ->
+          Bottom
+      | Singleton loc when Loc.is_unknown loc ->
+          Unknown
+      | More when LocSet.mem Loc.unknown ploc' ->
+          Known (LocSet.remove Loc.unknown ploc')
+      | _ ->
+          ploc )
+
+
+  let map f ploc =
+    match ploc with
+    | Bottom ->
+        Bottom
+    | Unknown ->
+        singleton (f Loc.unknown)
+    | Known ploc ->
+        Known (LocSet.map f ploc) |> normalize
+
+
+  let is_singleton_or_more = function
+    | Bottom ->
+        IContainer.Empty
+    | Unknown ->
+        IContainer.Singleton Loc.unknown
+    | Known ploc ->
+        LocSet.is_singleton_or_more ploc
+
+
+  let min_elt_opt = function
+    | Bottom ->
+        None
+    | Unknown ->
+        Some Loc.unknown
+    | Known ploc ->
+        LocSet.min_elt_opt ploc
+
+
+  let add l ploc =
+    match ploc with
+    | Bottom | Unknown ->
+        singleton l
+    | Known _ when Loc.is_unknown l ->
+        ploc
+    | Known ploc ->
+        Known (LocSet.add l ploc)
+
+
+  let mem l = function
+    | Bottom ->
+        false
+    | Unknown ->
+        Loc.is_unknown l
+    | Known ploc ->
+        LocSet.mem l ploc
+
 
   let append_field ploc ~fn =
-    if is_bot ploc then singleton Loc.unknown
-    else fold (fun l -> add (Loc.append_field l ~fn)) ploc empty
+    match normalize ploc with
+    | Bottom ->
+        (* Return the unknown location to avoid unintended unreachable nodes *)
+        Unknown
+    | Unknown ->
+        ploc
+    | Known ploc ->
+        Known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l ~fn)) ploc LocSet.empty)
 
 
   let append_star_field ploc ~fn =
-    if is_bot ploc then singleton Loc.unknown
-    else fold (fun l -> add (Loc.append_star_field l ~fn)) ploc empty
+    match normalize ploc with
+    | Bottom ->
+        (* Return the unknown location to avoid unintended unreachable nodes *)
+        Unknown
+    | Unknown ->
+        ploc
+    | Known ploc ->
+        Known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l ~fn)) ploc LocSet.empty)
 
 
   let lift_cmp cmp_loc ploc1 ploc2 =
-    match (is_singleton_or_more ploc1, is_singleton_or_more ploc2) with
-    | IContainer.Singleton loc1, IContainer.Singleton loc2 ->
-        Boolean.EqualOrder.of_equal cmp_loc (Loc.eq loc1 loc2)
-    | _ ->
+    match (ploc1, ploc2) with
+    | Known ploc1, Known ploc2 -> (
+      match (LocSet.is_singleton_or_more ploc1, LocSet.is_singleton_or_more ploc2) with
+      | IContainer.Singleton loc1, IContainer.Singleton loc2 ->
+          Boolean.EqualOrder.of_equal cmp_loc (Loc.eq loc1 loc2)
+      | _ ->
+          Boolean.Top )
+    | _, _ ->
         Boolean.Top
 
 
@@ -432,7 +581,7 @@ module PowLoc = struct
 
 
   let subst x (eval_locpath : eval_locpath) =
-    fold (fun l acc -> join acc (subst_loc l eval_locpath)) x empty
+    fold (fun l acc -> join acc (subst_loc l eval_locpath)) x bot
 
 
   let exists_str ~f x = exists (fun l -> Loc.exists_str ~f l) x
@@ -440,6 +589,14 @@ module PowLoc = struct
   let of_c_strlen x = map Loc.of_c_strlen x
 
   let cast typ x = map (Loc.cast typ) x
+
+  let to_set = function
+    | Bottom ->
+        LocSet.empty
+    | Unknown ->
+        LocSet.singleton Loc.unknown
+    | Known ploc ->
+        ploc
 end
 
 let always_strong_update = false

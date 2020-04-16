@@ -251,7 +251,7 @@ class ArrayListTest {
   ArrayList<Integer> unknown_array_list1;
   ArrayList<Integer> unknown_array_list2;
 
-  void loop_on_unknown_iterator(MyI x, int j) {
+  void loop_on_unknown_iterator_FN(MyI x, int j) {
     ArrayList<Integer> a = new ArrayList<>();
     ArrayList<Integer> b;
     if (unknown_bool) {
@@ -264,8 +264,7 @@ class ArrayListTest {
     // precision with introducing a lot of FPs.  To avoie that, we ignore the size of `Unknown`
     // array list here, instead we get some FNs.
     for (Integer i : b) {
-      // `a.size()` is evaluated to bottom, rather than [0,+oo] here, but which does not make
-      // branches unreachable.
+      // Since size of `b` is evaluted to [0,0], here is unreachable.
       if (a.size() <= -1) {
         int[] c = new int[5];
         c[5] = 0;

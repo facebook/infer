@@ -357,7 +357,7 @@ let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> PowLoc.t * t =
         in
         PowLoc.fold add_allocsite locs (powloc_acc, acc)
   in
-  fold subst1 a (PowLoc.empty, empty)
+  fold subst1 a (PowLoc.bot, empty)
 
 
 let is_symbolic : t -> bool = fun a -> exists (fun _ ai -> ArrInfo.is_symbolic ai) a

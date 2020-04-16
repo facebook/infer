@@ -778,7 +778,7 @@ module JavaInteger = struct
   let intValue exp =
     let exec _ ~ret:(id, _) mem =
       let powloc = Sem.eval_locs exp mem in
-      let v = if PowLoc.is_empty powloc then Dom.Val.Itv.top else Dom.Mem.find_set powloc mem in
+      let v = if PowLoc.is_bot powloc then Dom.Val.Itv.top else Dom.Mem.find_set powloc mem in
       model_by_value v id mem
     in
     {exec; check= no_check}

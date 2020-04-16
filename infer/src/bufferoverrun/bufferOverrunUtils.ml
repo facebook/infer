@@ -285,7 +285,7 @@ module Check = struct
     let arr =
       if Language.curr_language_is Java then
         let arr_locs = Sem.eval_locs array_exp mem in
-        if PowLoc.is_empty arr_locs then Dom.Val.Itv.top else Dom.Mem.find_set arr_locs mem
+        if PowLoc.is_bot arr_locs then Dom.Val.Itv.top else Dom.Mem.find_set arr_locs mem
       else Sem.eval_arr integer_type_widths array_exp mem
     in
     let latest_prune = Dom.Mem.get_latest_prune mem in

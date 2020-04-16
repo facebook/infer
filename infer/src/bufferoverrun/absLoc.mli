@@ -108,14 +108,32 @@ module Loc : sig
   (** It appends field. [typ] is the type of [fn]. *)
 end
 
+module LocSet : PrettyPrintable.PPSet with type elt = Loc.t
+
 module PowLoc : sig
-  include AbstractDomain.FiniteSetS with type elt = Loc.t
+  include AbstractDomain.S
+
+  val compare : t -> t -> int
 
   val append_field : t -> fn:Fieldname.t -> t
 
   val append_star_field : t -> fn:Fieldname.t -> t
 
   val bot : t
+
+  val add : Loc.t -> t -> t
+
+  val exists : (Loc.t -> bool) -> t -> bool
+
+  val mem : Loc.t -> t -> bool
+
+  val is_singleton_or_more : t -> Loc.t IContainer.singleton_or_more
+
+  val min_elt_opt : t -> Loc.t option
+
+  val singleton : Loc.t -> t
+
+  val fold : (Loc.t -> 'a -> 'a) -> t -> 'a -> 'a
 
   val cast : Typ.typ -> t -> t
 
@@ -141,6 +159,8 @@ module PowLoc : sig
   val lift_cmp : Boolean.EqualOrder.t -> t -> t -> Boolean.t
   (** It lifts a comparison of [Loc.t] to [t]. The comparison can be [Boolean.EqualOrder.eq],
       [Boolean.EqualOrder.ne], etc. *)
+
+  val to_set : t -> LocSet.t
 end
 
 val can_strong_update : PowLoc.t -> bool
