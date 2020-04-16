@@ -12,6 +12,7 @@ let pp fmt pp_elt fs = function
   | Some x -> Format.fprintf fs fmt pp_elt x
   | None -> ()
 
+let or_else ~f = function None -> f () | o -> o
 let cons xo xs = match xo with Some x -> x :: xs | None -> xs
 
 module Monad_syntax = struct
