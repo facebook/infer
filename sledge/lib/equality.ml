@@ -52,6 +52,7 @@ module Subst : sig
   val compose : t -> t -> t
   val compose1 : key:Term.t -> data:Term.t -> t -> t
   val extend : Term.t -> t -> t option
+  val remove : Var.Set.t -> t -> t
   val map_entries : f:(Term.t -> Term.t) -> t -> t
   val to_alist : t -> (Term.t * Term.t) list
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
@@ -108,6 +109,10 @@ end = struct
     with
     | exception Found -> None
     | s -> Some s
+
+  (** remove entries for vars *)
+  let remove xs s =
+    Var.Set.fold ~f:(fun s x -> Term.Map.remove s (Term.var x)) ~init:s xs
 
   (** map over a subst, applying [f] to both domain and range, requires that
       [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
@@ -1015,6 +1020,8 @@ let solve_for_vars vss r =
               then Stop true
               else Continue us_xs )
             ~finish:(fun _ -> false) ) )]
+
+let elim xs r = {r with rep= Subst.remove xs r.rep}
 
 (* Replay debugging *)
 

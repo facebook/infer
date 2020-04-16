@@ -725,17 +725,19 @@ let remove_absent_xs ks q =
   if Var.Set.is_empty ks then q
   else
     let xs = Var.Set.diff q.xs ks in
+    let cong = Equality.elim ks q.cong in
     let djns =
       let rec trim_ks ks djns =
         List.map djns ~f:(fun djn ->
             List.map djn ~f:(fun sjn ->
                 { sjn with
                   us= Var.Set.diff sjn.us ks
+                ; cong= Equality.elim ks sjn.cong
                 ; djns= trim_ks ks sjn.djns } ) )
       in
       trim_ks ks q.djns
     in
-    {q with xs; djns}
+    {q with xs; cong; djns}
 
 let rec simplify_ us rev_xss q =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp_vss (List.rev rev_xss) pp_raw q]
