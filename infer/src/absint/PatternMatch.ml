@@ -483,4 +483,20 @@ module ObjectiveC = struct
 
   let is_core_graphics_release _ procname =
     String.is_prefix ~prefix:"CG" procname && String.is_suffix ~suffix:"Release" procname
+
+
+  let is_modelled_as_alloc _ procname =
+    match Config.pulse_model_alloc_pattern with
+    | Some regex ->
+        Str.string_match regex procname 0
+    | None ->
+        false
+
+
+  let is_modelled_as_free _ procname =
+    match Config.pulse_model_free_pattern with
+    | Some regex ->
+        Str.string_match regex procname 0
+    | None ->
+        false
 end

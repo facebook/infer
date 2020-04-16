@@ -106,6 +106,20 @@ module C = struct
            ret_value
     in
     [astate_alloc; ExecutionDomain.ContinueProgram astate_null]
+
+
+  let malloc_not_null _ : model =
+   fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let hist =
+      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
+    in
+    let ret_value = (ret_addr, hist) in
+    let immediate_hist = Trace.Immediate {location; history= hist} in
+    let astate = PulseOperations.write_id ret_id ret_value astate in
+    PulseOperations.allocate callee_procname location ret_value astate
+    |> PulseArithmetic.and_positive immediate_hist ret_addr
+    |> PulseOperations.ok_continue
 end
 
 module Cplusplus = struct
@@ -544,7 +558,9 @@ module ProcNameDispatcher = struct
       ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
       ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
-      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free ]
+      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free
+      ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+      ; +PatternMatch.ObjectiveC.is_modelled_as_free <>$ capt_arg_payload $--> C.free ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args

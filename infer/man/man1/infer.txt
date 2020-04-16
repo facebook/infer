@@ -862,6 +862,14 @@ OPTIONS
            Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
            --no-pulse)           See also infer-analyze(1).
 
+       --pulse-model-alloc-pattern string
+           Regex of methods that should be modelled as allocs in Pulse       
+    See also infer-analyze(1).
+
+       --pulse-model-free-pattern string
+           Regex of methods that should be modelled as free in Pulse       
+    See also infer-analyze(1).
+
        --pulse-only
            Activates: Enable --pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).

@@ -1778,6 +1778,18 @@ and pulse_max_disjuncts =
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
+and pulse_model_alloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as allocs in Pulse"
+
+
+and pulse_model_free_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as free in Pulse"
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -2849,6 +2861,10 @@ and project_root = !project_root
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
+
+and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 
 and pulse_widen_threshold = !pulse_widen_threshold
 
