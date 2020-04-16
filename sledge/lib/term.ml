@@ -1188,6 +1188,20 @@ let fold e ~init:s ~f =
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> s
 
+let iter_terms e ~f =
+  let iter_terms_ iter_terms_ e =
+    ( match e with
+    | Ap1 (_, x) -> iter_terms_ x
+    | Ap2 (_, x, y) -> iter_terms_ x ; iter_terms_ y
+    | Ap3 (_, x, y, z) -> iter_terms_ x ; iter_terms_ y ; iter_terms_ z
+    | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f:iter_terms_ xs
+    | Add args | Mul args ->
+        Qset.iter args ~f:(fun arg _ -> iter_terms_ arg)
+    | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> () ) ;
+    f e
+  in
+  fix iter_terms_ (fun _ -> ()) e
+
 let fold_terms e ~init ~f =
   let fold_terms_ fold_terms_ e s =
     let s =
@@ -1204,6 +1218,9 @@ let fold_terms e ~init ~f =
     f s e
   in
   fix fold_terms_ (fun _ s -> s) e init
+
+let iter_vars e ~f =
+  iter_terms e ~f:(function Var _ as v -> f (v :> Var.t) | _ -> ())
 
 let fold_vars e ~init ~f =
   fold_terms e ~init ~f:(fun s -> function
@@ -1231,18 +1248,38 @@ let height e =
 
 (** Solve *)
 
+let find_for ?for_ args =
+  let exists_var args ~f =
+    with_return (fun {return} ->
+        Qset.iter args ~f:(fun arg _ ->
+            iter_vars arg ~f:(fun v -> if f v then return true) ) ;
+        false )
+  in
+  let remove_if_non_occuring rejected args c q =
+    let args = Qset.remove args c in
+    let fv_c = fv c in
+    if exists_var ~f:(Var.Set.mem fv_c) args then None
+    else Some (c, q, Qset.union rejected args)
+  in
+  let rec find_for_ rejected args =
+    let* c, q = Qset.min_elt args in
+    remove_if_non_occuring rejected args c q
+    |> Option.or_else ~f:(fun () ->
+           find_for_ (Qset.add rejected c q) (Qset.remove args c) )
+  in
+  match for_ with
+  | Some c ->
+      let q = Qset.count args c in
+      if Q.equal Q.zero q then None
+      else remove_if_non_occuring Qset.empty args c q
+  | None -> find_for_ Qset.empty args
+
 let solve_zero_eq ?for_ e =
   [%Trace.call fun {pf} -> pf "%a%a" pp e (Option.pp " for %a" pp) for_]
   ;
   ( match e with
   | Add args ->
-      let+ c, q =
-        match for_ with
-        | Some f ->
-            let q = Qset.count args f in
-            if Q.equal Q.zero q then None else Some (f, q)
-        | None -> Some (Qset.min_elt_exn args)
-      in
+      let+ c, q, args = find_for ?for_ args in
       let n = Sum.to_term (Qset.remove args c) in
       let d = rational (Q.neg q) in
       let r = div n d in
