@@ -435,8 +435,7 @@ let simp_unsigned bits arg =
   | Integer {data} -> integer (Z.extract data 0 bits)
   | _ -> Ap1 (Unsigned {bits}, arg)
 
-let simp_convert src dst arg =
-  if Typ.equivalent src dst then arg else Ap1 (Convert {src; dst}, arg)
+let simp_convert src dst arg = Ap1 (Convert {src; dst}, arg)
 
 (* arithmetic *)
 
@@ -999,7 +998,10 @@ let normN op xs =
 
 let signed bits term = norm1 (Signed {bits}) term
 let unsigned bits term = norm1 (Unsigned {bits}) term
-let convert src ~to_:dst term = norm1 (Convert {src; dst}) term
+
+let convert src ~to_:dst arg =
+  if Typ.equivalent src dst then arg else norm1 (Convert {src; dst}) arg
+
 let eq = norm2 Eq
 let dq = norm2 Dq
 let lt = norm2 Lt
