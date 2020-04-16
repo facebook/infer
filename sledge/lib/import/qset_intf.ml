@@ -65,6 +65,9 @@ module type S = sig
   val pop_min_elt : t -> (elt * Q.t * t) option
   (** Find and remove minimum element. [O(log n)]. *)
 
+  val classify : t -> [`Zero | `One of elt * Q.t | `Many]
+  (** Classify a set as either empty, singleton, or otherwise. *)
+
   val find_and_remove : t -> elt -> (Q.t * t) option
   (** Find and remove an element. *)
 

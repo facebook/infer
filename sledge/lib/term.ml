@@ -480,16 +480,16 @@ module Sum = struct
     else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
 
   let to_term sum =
-    match Qset.pop sum with
-    | None -> zero
-    | Some (arg, q, sum') when Qset.is_empty sum' -> (
+    match Qset.classify sum with
+    | `Zero -> zero
+    | `One (arg, q) -> (
       match arg with
       | Integer {data} ->
           assert (Z.equal Z.one data) ;
           rational q
       | _ when Q.equal Q.one q -> arg
       | _ -> Add sum )
-    | _ -> Add sum
+    | `Many -> Add sum
 end
 
 (* Products of indeterminants represented by multisets. A product ∏ᵢ xᵢ^nᵢ

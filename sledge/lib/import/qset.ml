@@ -80,6 +80,13 @@ struct
   let pop = M.pop
   let min_elt = M.min_elt
   let pop_min_elt = M.pop_min_elt
+
+  let classify s =
+    match pop s with
+    | None -> `Zero
+    | Some (elt, q, s') when is_empty s' -> `One (elt, q)
+    | _ -> `Many
+
   let to_list m = M.to_alist m
   let iter m ~f = M.iteri ~f:(fun ~key ~data -> f key data) m
   let exists m ~f = M.existsi ~f:(fun ~key ~data -> f key data) m
