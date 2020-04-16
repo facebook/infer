@@ -345,7 +345,8 @@ let%test_module _ =
     let%expect_test _ =
       pp r14 ;
       [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
+        {|
+          {sat= true; rep= [[%x_5 ↦ 1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
 
     let%test _ = entails_eq r14 a Term.true_
     let%test _ = entails_eq r14 b Term.true_

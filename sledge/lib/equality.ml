@@ -456,7 +456,7 @@ let lookup r a =
   @@ fun {return} ->
   (* congruent specialized to assume [a] canonized and [b] non-interpreted *)
   let semi_congruent r a b =
-    Term.equal a (Term.map ~f:(Subst.apply r.rep) b)
+    Term.equal a (Term.map ~f:(Subst.norm r.rep) b)
   in
   Subst.iteri r.rep ~f:(fun ~key ~data ->
       if semi_congruent r a key then return data ) ;
@@ -476,7 +476,7 @@ let rec canon r a =
       let a' = Term.map ~f:(canon r) a in
       match classify a' with
       | Atomic -> Subst.apply r.rep a'
-      | Interpreted -> Term.map ~f:(canon r) a'
+      | Interpreted -> a'
       | Simplified | Uninterpreted -> lookup r a' ) )
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
@@ -557,7 +557,7 @@ let is_false {sat} = not sat
 let entails_eq r d e =
   [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp d Term.pp e pp r]
   ;
-  Term.is_true (canon r (Term.eq d e))
+  Term.is_true (Term.eq (canon r d) (canon r e))
   |>
   [%Trace.retn fun {pf} -> pf "%b"]
 
