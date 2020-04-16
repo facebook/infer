@@ -43,6 +43,8 @@ module type S = sig
 
   (* queries *)
 
+  val is_empty : t -> bool
+
   val length : t -> int
   (** Number of elements with non-zero multiplicity. [O(1)]. *)
 

@@ -71,6 +71,7 @@ struct
     M.fold m' ~init:m ~f:(fun ~key:x ~data:i m -> add m x i)
 
   let map_counts m ~f = M.mapi ~f:(fun ~key ~data -> f key data) m
+  let is_empty = M.is_empty
   let length m = M.length m
   let count m x = match M.find m x with Some q -> q | None -> Q.zero
   let choose = M.choose
