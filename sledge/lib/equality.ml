@@ -9,7 +9,7 @@
 
 (** Classification of Terms by Theory *)
 
-type kind = Interpreted | Simplified | Atomic | Uninterpreted
+type kind = Interpreted | Atomic | Uninterpreted
 [@@deriving compare, equal]
 
 let classify e =
@@ -19,7 +19,6 @@ let classify e =
    |Ap3 (Extract, _, _, _)
    |ApN (Concat, _) ->
       Interpreted
-  | Ap2 ((Eq | Dq), _, _) -> Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
     ->
@@ -86,10 +85,7 @@ end = struct
 
   (** apply a substitution to maximal non-interpreted subterms *)
   let rec norm s a =
-    match classify a with
-    | Interpreted -> Term.map ~f:(norm s) a
-    | Simplified -> apply s (Term.map ~f:(norm s) a)
-    | Atomic | Uninterpreted -> apply s a
+    if interpreted a then Term.map ~f:(norm s) a else apply s a
 
   (** compose two substitutions *)
   let compose r s =
@@ -353,8 +349,8 @@ let classes r =
   Subst.fold r.rep ~init:Term.Map.empty ~f:(fun ~key ~data cls ->
       match classify key with
       | Interpreted | Atomic -> add key data cls
-      | Simplified | Uninterpreted ->
-          add (Term.map ~f:(Subst.apply r.rep) key) data cls )
+      | Uninterpreted -> add (Term.map ~f:(Subst.apply r.rep) key) data cls
+  )
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in
@@ -469,29 +465,26 @@ let rec canon r a =
   ( match classify a with
   | Atomic -> Subst.apply r.rep a
   | Interpreted -> Term.map ~f:(canon r) a
-  | Simplified | Uninterpreted -> (
+  | Uninterpreted -> (
       let a' = Term.map ~f:(canon r) a in
       match classify a' with
       | Atomic -> Subst.apply r.rep a'
       | Interpreted -> a'
-      | Simplified | Uninterpreted -> lookup r a' ) )
+      | Uninterpreted -> lookup r a' ) )
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
 let rec extend_ a r =
   (* omit identity mappings for constants *)
   if Term.is_constant a then r
-  else
-    match classify a with
     (* omit interpreted terms, but consider their subterms *)
-    | Interpreted | Simplified -> Term.fold ~f:extend_ a ~init:r
+  else if interpreted a then Term.fold ~f:extend_ a ~init:r
+  else
     (* add uninterpreted terms *)
-    | Uninterpreted -> (
-      match Subst.extend a r with
-      (* and their subterms if newly added *)
-      | Some r -> Term.fold ~f:extend_ a ~init:r
-      | None -> r )
-    | Atomic -> r
+    match Subst.extend a r with
+    (* and their subterms if newly added *)
+    | Some r -> Term.fold ~f:extend_ a ~init:r
+    | None -> r
 
 (** add a term to the carrier *)
 let extend a r =
