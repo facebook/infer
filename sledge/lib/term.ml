@@ -97,6 +97,12 @@ end = struct
     | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
         Int.compare i j
     | _ -> compare x y
+
+  let equal x y =
+    match (x, y) with
+    | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
+        Int.equal i j
+    | _ -> equal x y
 end
 
 include T
