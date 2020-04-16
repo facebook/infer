@@ -92,6 +92,7 @@ and T : sig
             non-deterministic approximation of value described by [msg] *)
     | Float of {data: string}  (** Floating-point constant *)
     | Integer of {data: Z.t}  (** Integer constant *)
+    | Rational of {data: Q.t}  (** Rational constant *)
   [@@deriving compare, equal, hash, sexp]
 end
 

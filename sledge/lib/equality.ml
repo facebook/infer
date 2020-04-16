@@ -19,7 +19,9 @@ let classify e =
       Interpreted
   | Ap2 ((Eq | Dq), _, _) -> Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
-  | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> Atomic
+  | RecN _ | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
+    ->
+      Atomic
 
 let interpreted e = equal_kind (classify e) Interpreted
 let non_interpreted e = not (interpreted e)
@@ -264,7 +266,7 @@ and solve_ ?f d e s =
   (* e' = f' ==> true when e' ≡ f' *)
   | None -> Some s
   (* i = j ==> false when i ≠ j *)
-  | Some (Integer _, Integer _) -> None
+  | Some (Integer _, Integer _) | Some (Rational _, Rational _) -> None
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
   | Some (Ap2 (Memory, n, a), b) when Term.equal n Term.zero ->
       s |> solve_ ?f a (Term.concat [||]) >>= solve_ ?f b (Term.concat [||])
@@ -303,8 +305,8 @@ and solve_ ?f d e s =
   | Some (Ap3 (Extract, a, o, l), e) -> solve_extract ?f a o l e s
   (* p = q ==> p-q = 0 *)
   | Some
-      ( ((Add _ | Mul _ | Integer _) as p), q
-      | q, ((Add _ | Mul _ | Integer _) as p) ) ->
+      ( ((Add _ | Mul _ | Integer _ | Rational _) as p), q
+      | q, ((Add _ | Mul _ | Integer _ | Rational _) as p) ) ->
       solve_poly ?f p q s
   | Some (rep, var) ->
       assert (non_interpreted var) ;
