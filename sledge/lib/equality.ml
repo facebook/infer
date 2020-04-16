@@ -189,18 +189,10 @@ let prefer e f =
     | ApN (Concat, _) -> 3
     | _ -> 4
   in
-  let rec height e =
-    match (e : Term.t) with
-    | Ap2 (Memory, _, x) -> 1 + height x
-    | Ap3 (Extract, x, _, _) -> 1 + height x
-    | ApN (Concat, xs) ->
-        1 + IArray.fold ~init:0 ~f:(fun h x -> max h (height x)) xs
-    | _ -> 0
-  in
   let o = compare (rank e) (rank f) in
   if o <> 0 then o
   else
-    let o = compare (height e) (height f) in
+    let o = compare (Term.height e) (Term.height f) in
     if o <> 0 then o else Term.compare e f
 
 (** orient equations based on representative preference *)

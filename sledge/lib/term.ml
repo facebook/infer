@@ -1178,6 +1178,20 @@ let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
+let height e =
+  let height_ height_ = function
+    | Var _ -> 0
+    | Ap1 (_, a) -> 1 + height_ a
+    | Ap2 (_, a, b) -> 1 + max (height_ a) (height_ b)
+    | Ap3 (_, a, b, c) -> 1 + max (height_ a) (max (height_ b) (height_ c))
+    | ApN (_, v) | RecN (_, v) ->
+        1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height_ a))
+    | Add qs | Mul qs ->
+        1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height_ a))
+    | Label _ | Nondet _ | Float _ | Integer _ -> 0
+  in
+  fix height_ (fun _ -> 0) e
+
 (** Solve *)
 
 let solve_zero_eq ?for_ e =
