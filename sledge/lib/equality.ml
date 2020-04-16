@@ -439,7 +439,10 @@ let invariant r =
 (** Core operations *)
 
 let true_ =
-  {xs= Var.Set.empty; sat= true; rep= Subst.empty} |> check invariant
+  let rep = Subst.empty in
+  let rep = Option.value_exn (Subst.extend Term.true_ rep) in
+  let rep = Option.value_exn (Subst.extend Term.false_ rep) in
+  {xs= Var.Set.empty; sat= true; rep} |> check invariant
 
 let false_ = {true_ with sat= false}
 
@@ -473,10 +476,7 @@ let rec canon r a =
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
 let rec extend_ a r =
-  (* omit identity mappings for constants *)
-  if Term.is_constant a then r
-    (* omit interpreted terms, but consider their subterms *)
-  else if interpreted a then Term.fold ~f:extend_ a ~init:r
+  if interpreted a then Term.fold ~f:extend_ a ~init:r
   else
     (* add uninterpreted terms *)
     match Subst.extend a r with
@@ -507,26 +507,16 @@ let find_missing r =
   @@ fun {return} ->
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
       let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
-      (* rep omits identity mappings for constants, so check for them *)
-      if
-        (* a normalizes to a constant *)
-        Term.is_constant a_subnorm
-        (* distinct from its representative *)
-        && not (Term.equal a' a_subnorm)
-      then
-        (* need to equate current representative and constant *)
-        return (Some (a', a_subnorm))
-      else
-        Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-            if
-              (* optimize: do not consider both a = b and b = a *)
-              Term.compare a b < 0
-              (* a and b are not already equal *)
-              && (not (Term.equal a' b'))
-              (* a and b are congruent *)
-              && semi_congruent r a_subnorm b
-            then (* need to equate a' and b' *)
-              return (Some (a', b')) ) ) ;
+      Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
+          if
+            (* optimize: do not consider both a = b and b = a *)
+            Term.compare a b < 0
+            (* a and b are not already equal *)
+            && (not (Term.equal a' b'))
+            (* a and b are congruent *)
+            && semi_congruent r a_subnorm b
+          then (* need to equate a' and b' *)
+            return (Some (a', b')) ) ) ;
   None
 
 let rec close us r =

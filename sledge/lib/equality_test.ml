@@ -58,7 +58,11 @@ let%test_module _ =
     let f1 = of_eqs [(!0, !1)]
 
     let%test _ = is_false f1
-    let%expect_test _ = pp f1 ; [%expect {| {sat= false; rep= []} |}]
+
+    let%expect_test _ =
+      pp f1 ;
+      [%expect {| {sat= false; rep= [[-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
+
     let%test _ = is_false (and_eq !1 !1 f1)
 
     let f2 = of_eqs [(x, x + !1)]
@@ -66,14 +70,18 @@ let%test_module _ =
     let%test _ = is_false f2
 
     let%expect_test _ =
-      pp f2 ; [%expect {| {sat= false; rep= [[%x_5 ↦ ]]} |}]
+      pp f2 ;
+      [%expect
+        {| {sat= false; rep= [[%x_5 ↦ ]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let f3 = of_eqs [(x + !0, x + !1)]
 
     let%test _ = is_false f3
 
     let%expect_test _ =
-      pp f3 ; [%expect {| {sat= false; rep= [[%x_5 ↦ ]]} |}]
+      pp f3 ;
+      [%expect
+        {| {sat= false; rep= [[%x_5 ↦ ]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let f4 = of_eqs [(x, y); (x + !0, y + !1)]
 
@@ -81,7 +89,10 @@ let%test_module _ =
 
     let%expect_test _ =
       pp f4 ;
-      [%expect {| {sat= false; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]]} |}]
+      [%expect
+        {|
+          {sat= false;
+           rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let t1 = of_eqs [(!1, !1)]
 
@@ -95,7 +106,9 @@ let%test_module _ =
 
     let r0 = true_
 
-    let%expect_test _ = pp r0 ; [%expect {| {sat= true; rep= []} |}]
+    let%expect_test _ =
+      pp r0 ; [%expect {| {sat= true; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
+
     let%expect_test _ = pp_classes r0 ; [%expect {||}]
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
@@ -109,7 +122,7 @@ let%test_module _ =
         {|
         %x_5 = %y_6
 
-      {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]]} |}]
+      {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r1 x y
 
@@ -126,7 +139,9 @@ let%test_module _ =
        rep= [[%x_5 ↦ ];
              [%y_6 ↦ %x_5];
              [%z_7 ↦ %x_5];
-             [((u8) %x_5) ↦ %x_5]]} |}]
+             [((u8) %x_5) ↦ %x_5];
+             [-1 ↦ ];
+             [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r2 x z
     let%test _ = entails_eq (or_ r1 r2) x y
@@ -147,11 +162,13 @@ let%test_module _ =
       pp rs ;
       [%expect
         {|
-        {sat= true; rep= [[%w_4 ↦ ]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
-    
-        {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]}
-    
-        {sat= true; rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]]} |}]
+        {sat= true;
+         rep= [[%w_4 ↦ ]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]; [-1 ↦ ]; [0 ↦ ]]}
+
+        {sat= true;
+         rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [-1 ↦ ]; [0 ↦ ]]}
+
+        {sat= true; rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ =
       let r = of_eqs [(w, y); (y, z)] in
@@ -178,7 +195,9 @@ let%test_module _ =
              [%y_6 ↦ ];
              [%z_7 ↦ %t_1];
              [(%y_6 rem %v_3) ↦ %t_1];
-             [(%y_6 rem %z_7) ↦ %t_1]]} |}]
+             [(%y_6 rem %z_7) ↦ %t_1];
+             [-1 ↦ ];
+             [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r3 t z
     let%test _ = entails_eq r3 x z
@@ -197,7 +216,10 @@ let%test_module _ =
        rep= [[%w_4 ↦ (%z_7 + 3)];
              [%x_5 ↦ (%z_7 + 8)];
              [%y_6 ↦ (%z_7 + -4)];
-             [%z_7 ↦ ]]} |}]
+             [%z_7 ↦ ];
+             [-1 ↦ ];
+             [0 ↦ ];
+             [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r4 x (w + !5)
     let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
@@ -215,7 +237,7 @@ let%test_module _ =
         {|
         1 = %x_5 = %y_6
 
-      {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]]} |}]
+      {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r6 x y
 
@@ -235,14 +257,18 @@ let%test_module _ =
                [%w_4 ↦ ];
                [%x_5 ↦ %v_3];
                [%y_6 ↦ %w_4];
-               [%z_7 ↦ %w_4]]}
+               [%z_7 ↦ %w_4];
+               [-1 ↦ ];
+               [0 ↦ ]]}
 
         {sat= true;
          rep= [[%v_3 ↦ ];
                [%w_4 ↦ %v_3];
                [%x_5 ↦ %v_3];
                [%y_6 ↦ %v_3];
-               [%z_7 ↦ %v_3]]}
+               [%z_7 ↦ %v_3];
+               [-1 ↦ ];
+               [0 ↦ ]]}
 
           %v_3 = %w_4 = %x_5 = %y_6 = %z_7 |}]
 
@@ -272,7 +298,9 @@ let%test_module _ =
              [%w_4 ↦ %v_3];
              [%x_5 ↦ %v_3];
              [%y_6 ↦ %v_3];
-             [%z_7 ↦ %v_3]]} |}]
+             [%z_7 ↦ %v_3];
+             [-1 ↦ ];
+             [0 ↦ ]]} |}]
 
     let%test _ = normalize r7' w |> Term.equal v
 
@@ -291,7 +319,13 @@ let%test_module _ =
         {|
         (13 × %z_7) = %x_5 ∧ 14 = %y_6
     
-      {sat= true; rep= [[%x_5 ↦ (13 × %z_7)]; [%y_6 ↦ 14]; [%z_7 ↦ ]]} |}]
+      {sat= true;
+       rep= [[%x_5 ↦ (13 × %z_7)];
+             [%y_6 ↦ 14];
+             [%z_7 ↦ ];
+             [-1 ↦ ];
+             [0 ↦ ];
+             [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r8 y !14
 
@@ -304,7 +338,8 @@ let%test_module _ =
         {|
         (%z_7 + -16) = %x_5
     
-      {sat= true; rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]]} |}]
+      {sat= true;
+       rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
 
@@ -321,8 +356,9 @@ let%test_module _ =
         {|
           (%z_7 + -16) = %x_5
     
-        {sat= true; rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]]}
-    
+        {sat= true;
+         rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]; [16 ↦ ]]}
+
         (-1 × %x_5 + %z_7 + -8)
 
         8
@@ -355,7 +391,10 @@ let%test_module _ =
              [%y_6 ↦ ];
              [%z_7 ↦ %y_6];
              [(%x_5 = 2) ↦ %y_6];
-             [(%x_5 ≠ 2) ↦ %y_6]]} |}]
+             [(%x_5 ≠ 2) ↦ %y_6];
+             [-1 ↦ ];
+             [0 ↦ ];
+             [2 ↦ ]]} |}]
 
     let%test _ = not (is_false r13) (* incomplete *)
 
@@ -365,7 +404,9 @@ let%test_module _ =
     let%expect_test _ =
       pp r14 ;
       [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]]} |}]
+        {|
+          {sat= true;
+           rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r14 a Term.true_
 
@@ -377,7 +418,13 @@ let%test_module _ =
       [%expect
         {|
           {sat= true;
-           rep= [[%x_5 ↦ 1]; [%y_6 ↦ ]; [(%x_5 ≠ 0) ↦ -1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
+           rep= [[%x_5 ↦ 1];
+                 [%y_6 ↦ ];
+                 [(%x_5 ≠ 0) ↦ -1];
+                 [(%y_6 ≠ 0) ↦ -1];
+                 [-1 ↦ ];
+                 [0 ↦ ];
+                 [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r14 a Term.true_
     let%test _ = entails_eq r14 b Term.true_
@@ -388,7 +435,9 @@ let%test_module _ =
     let%expect_test _ =
       pp r15 ;
       [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]]} |}]
+        {|
+          {sat= true;
+           rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
 
     let%test _ = entails_eq r15 b (Term.signed 1 !1)
     let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
@@ -405,7 +454,10 @@ let%test_module _ =
        rep= [[%x_5 ↦ (%y_6 + 1)];
              [%y_6 ↦ ];
              [((u8) %y_6) ↦ (%y_6 + -2)];
-             [((u8) (%x_5 + -1)) ↦ (%y_6 + 3)]]} |}]
+             [((u8) (%x_5 + -1)) ↦ (%y_6 + 3)];
+             [-1 ↦ ];
+             [0 ↦ ];
+             [1 ↦ ]]} |}]
 
     let%test _ = is_false r16
 
@@ -420,7 +472,10 @@ let%test_module _ =
        rep= [[%x_5 ↦ ];
              [%y_6 ↦ %x_5];
              [((u8) %x_5) ↦ %x_5];
-             [((u8) %y_6) ↦ (%x_5 + -1)]]} |}]
+             [((u8) %y_6) ↦ (%x_5 + -1)];
+             [-1 ↦ ];
+             [0 ↦ ];
+             [1 ↦ ]]} |}]
 
     let%test _ = is_false r17
 
@@ -434,7 +489,10 @@ let%test_module _ =
          rep= [[%x_5 ↦ ];
                [%y_6 ↦ ];
                [((u8) %x_5) ↦ %x_5];
-               [((u8) %y_6) ↦ (%y_6 + -1)]]}
+               [((u8) %y_6) ↦ (%y_6 + -1)];
+               [-1 ↦ ];
+               [0 ↦ ];
+               [1 ↦ ]]}
 
           %x_5 = ((u8) %x_5) ∧ (%y_6 + -1) = ((u8) %y_6) |}]
 
@@ -443,7 +501,9 @@ let%test_module _ =
     let%expect_test _ =
       pp r19 ;
       [%expect
-        {| {sat= true; rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]]} |}]
+        {|
+          {sat= true;
+           rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r19 z !0
 
