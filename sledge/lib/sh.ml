@@ -520,7 +520,9 @@ let rec pure (e : Term.t) =
   [%Trace.call fun {pf} -> pf "%a" Term.pp e]
   ;
   ( match e with
-  | Ap2 (Or, e1, e2) -> or_ (pure e1) (pure e2)
+  | Or es ->
+      let e0, e1N = Term.Set.pop_exn es in
+      Term.Set.fold e1N ~init:(pure e0) ~f:(fun q e -> or_ q (pure e))
   | Ap3 (Conditional, cnd, thn, els) ->
       or_
         (star (pure cnd) (pure thn))

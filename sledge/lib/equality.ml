@@ -19,7 +19,7 @@ let classify e =
    |Ap3 (Extract, _, _, _)
    |ApN (Concat, _) ->
       Interpreted
-  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> Uninterpreted
+  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ | And _ | Or _ -> Uninterpreted
   | RecN _ | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
     ->
       Atomic
@@ -673,7 +673,7 @@ let rec and_term_ us e r =
   let eq_false b r = and_eq_ us b Term.false_ r in
   match (e : Term.t) with
   | Integer {data} -> if Z.is_false data then false_ else r
-  | Ap2 (And, a, b) -> and_term_ us a (and_term_ us b r)
+  | And cs -> Term.Set.fold cs ~init:r ~f:(fun r e -> and_term_ us e r)
   | Ap2 (Eq, a, b) -> and_eq_ us a b r
   | Ap2 (Xor, Integer {data}, a) when Z.is_true data -> eq_false a r
   | Ap2 (Xor, a, Integer {data}) when Z.is_true data -> eq_false a r

@@ -230,7 +230,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp ~~(!2 < y && z <= !3) ;
-      [%expect {| ((%y_1 ≤ 2) || (3 < %z_2)) |}]
+      [%expect {| ((3 < %z_2) || (%y_1 ≤ 2)) |}]
 
     let%expect_test _ =
       pp ~~(!2 <= y || z < !3) ;

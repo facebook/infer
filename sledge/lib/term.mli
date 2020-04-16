@@ -39,8 +39,6 @@ type op2 =
   | Rem
       (** Remainder of division, satisfies [a = b * div a b + rem a b] and
           for integers [rem a b] has same sign as [a], and [|rem a b| < |b|] *)
-  | And  (** Conjunction, boolean or bitwise *)
-  | Or  (** Disjunction, boolean or bitwise *)
   | Xor  (** Exclusive-or, bitwise *)
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
@@ -62,7 +60,14 @@ type opN =
 type recN = Record  (** Recursive record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
-module rec Qset : sig
+module rec Set : sig
+  include Import.Set.S with type elt := T.t
+
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+end
+
+and Qset : sig
   include Import.Qset.S with type elt := T.t
 
   val hash_fold_t : t Hash.folder
@@ -70,6 +75,8 @@ module rec Qset : sig
 end
 
 and T : sig
+  type set = Set.t [@@deriving compare, equal, hash, sexp]
+
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   and t = private
@@ -83,6 +90,8 @@ and T : sig
         (** Recursive n-ary application, may recursively refer to itself
             (transitively) from its args. NOTE: represented by cyclic
             values. *)
+    | And of set  (** Conjunction, boolean or bitwise *)
+    | Or of set  (** Disjunction, boolean or bitwise *)
     | Add of qset  (** Sum of terms with rational coefficients *)
     | Mul of qset  (** Product of terms with rational exponents *)
     | Label of {parent: string; name: string}
@@ -107,8 +116,9 @@ module Var : sig
   module Map : Map.S with type key := t
 
   module Set : sig
-    include Set.S with type elt := t
+    include Import.Set.S with type elt := t
 
+    val hash_fold_t : t Hash.folder
     val sexp_of_t : t -> Sexp.t
     val t_of_sexp : Sexp.t -> t
     val ppx : strength -> t pp

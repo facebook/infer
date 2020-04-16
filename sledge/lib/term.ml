@@ -26,8 +26,6 @@ type op2 =
   | Uno
   | Div
   | Rem
-  | And
-  | Or
   | Xor
   | Shl
   | Lshr
@@ -40,7 +38,22 @@ type op3 = Conditional | Extract [@@deriving compare, equal, hash, sexp]
 type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
 type recN = Record [@@deriving compare, equal, hash, sexp]
 
-module rec Qset : sig
+module rec Set : sig
+  include Import.Set.S with type elt := T.t
+
+  val hash : t -> int
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+end = struct
+  include Import.Set.Make (T)
+
+  let hash_fold_t = hash_fold_t T.hash_fold_t
+  let hash = Hash.of_fold hash_fold_t
+
+  include Provide_of_sexp (T)
+end
+
+and Qset : sig
   include Import.Qset.S with type elt := T.t
 
   val hash : t -> int
@@ -55,6 +68,7 @@ end = struct
 end
 
 and T : sig
+  type set = Set.t [@@deriving compare, equal, hash, sexp]
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   type t =
@@ -64,6 +78,8 @@ and T : sig
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
     | RecN of recN * t iarray  (** NOTE: cyclic *)
+    | And of set
+    | Or of set
     | Add of qset
     | Mul of qset
     | Label of {parent: string; name: string}
@@ -73,6 +89,7 @@ and T : sig
     | Rational of {data: Q.t}
   [@@deriving compare, equal, hash, sexp]
 end = struct
+  type set = Set.t [@@deriving compare, equal, hash, sexp]
   type qset = Qset.t [@@deriving compare, equal, hash, sexp]
 
   type t =
@@ -82,6 +99,8 @@ end = struct
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
     | RecN of recN * t iarray  (** NOTE: cyclic *)
+    | And of set
+    | Or of set
     | Add of qset
     | Mul of qset
     | Label of {parent: string; name: string}
@@ -109,7 +128,6 @@ end
 
 include T
 module Map = struct include Map.Make (T) include Provide_of_sexp (T) end
-module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
@@ -174,8 +192,8 @@ let rec ppx strength fs term =
         pf "(%a)" (Qset.pp "@ @<2>× " pp_mono_term) args
     | Ap2 (Div, x, y) -> pf "(%a@ / %a)" pp x pp y
     | Ap2 (Rem, x, y) -> pf "(%a@ rem %a)" pp x pp y
-    | Ap2 (And, x, y) -> pf "(%a@ && %a)" pp x pp y
-    | Ap2 (Or, x, y) -> pf "(%a@ || %a)" pp x pp y
+    | And xs -> pf "(@[%a@])" (Set.pp ~sep:" &&@ " pp) xs
+    | Or xs -> pf "(@[%a@])" (Set.pp ~sep:" ||@ " pp) xs
     | Ap2 (Xor, x, Integer {data}) when Z.is_true data -> pf "¬%a" pp x
     | Ap2 (Xor, Integer {data}, x) when Z.is_true data -> pf "¬%a" pp x
     | Ap2 (Xor, x, y) -> pf "(%a@ xor %a)" pp x pp y
@@ -220,6 +238,18 @@ let pp_t = pp
 let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
 
 (** Invariant *)
+
+let assert_conjunction = function
+  | And cs ->
+      Set.iter cs ~f:(fun c ->
+          assert (match c with And _ -> false | _ -> true) )
+  | _ -> assert false
+
+let assert_disjunction = function
+  | Or cs ->
+      Set.iter cs ~f:(fun c ->
+          assert (match c with Or _ -> false | _ -> true) )
+  | _ -> assert false
 
 (* an indeterminate (factor of a monomial) is any
    non-Add/Mul/Integer/Rational term *)
@@ -285,6 +315,8 @@ let invariant e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
   match e with
+  | And _ -> assert_conjunction e |> Fn.id
+  | Or _ -> assert_disjunction e |> Fn.id
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
   | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
@@ -646,12 +678,13 @@ let rec is_boolean = function
   | Ap1 ((Unsigned {bits= 1} | Convert {dst= Integer {bits= 1; _}; _}), _)
    |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
       true
-  | Ap2 ((Div | Rem | And | Or | Xor | Shl | Lshr | Ashr), x, y)
+  | Ap2 ((Div | Rem | Xor | Shl | Lshr | Ashr), x, y)
    |Ap3 (Conditional, _, x, y) ->
       is_boolean x || is_boolean y
+  | And xs | Or xs -> Set.for_all ~f:is_boolean xs
   | _ -> false
 
-let rec simp_and x y =
+let rec simp_and2 x y =
   match (x, y) with
   (* i && j *)
   | Integer {data= i}, Integer {data= j} -> integer (Z.logand i j)
@@ -663,12 +696,16 @@ let rec simp_and x y =
       f
   (* e && (c ? t : f) ==> (c ? e && t : e && f) *)
   | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
-      simp_cond c (simp_and e t) (simp_and e f)
+      simp_cond c (simp_and2 e t) (simp_and2 e f)
   (* e && e ==> e *)
   | _ when equal x y -> x
-  | _ -> Ap2 (And, x, y)
+  | _ ->
+      let add s = function And cs -> Set.union s cs | c -> Set.add s c in
+      And (add (add Set.empty x) y)
 
-let rec simp_or x y =
+let simp_and xs = Set.fold xs ~init:true_ ~f:simp_and2
+
+let rec simp_or2 x y =
   match (x, y) with
   (* i || j *)
   | Integer {data= i}, Integer {data= j} -> integer (Z.logor i j)
@@ -680,10 +717,14 @@ let rec simp_or x y =
   | (Integer {data}, e | e, Integer {data}) when Z.is_false data -> e
   (* e || (c ? t : f) ==> (c ? e || t : e || f) *)
   | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
-      simp_cond c (simp_or e t) (simp_or e f)
+      simp_cond c (simp_or2 e t) (simp_or2 e f)
   (* e || e ==> e *)
   | _ when equal x y -> x
-  | _ -> Ap2 (Or, x, y)
+  | _ ->
+      let add s = function Or cs -> Set.union s cs | c -> Set.add s c in
+      Or (add (add Set.empty x) y)
+
+let simp_or xs = Set.fold xs ~init:false_ ~f:simp_or2
 
 (* aggregate sizes *)
 
@@ -920,9 +961,9 @@ and simp_not term =
   (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
   | Ap2 (Uno, x, y) -> simp_ord x y
   (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
-  | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
+  | And xs -> simp_or (Set.map ~f:simp_not xs)
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
-  | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
+  | Or xs -> simp_and (Set.map ~f:simp_not xs)
   (* ¬¬e ==> e *)
   | Ap2 (Xor, Integer {data}, e) when Z.is_true data -> e
   | Ap2 (Xor, e, Integer {data}) when Z.is_true data -> e
@@ -1024,8 +1065,6 @@ let norm2 op x y =
   | Uno -> simp_uno x y
   | Div -> simp_div x y
   | Rem -> simp_rem x y
-  | And -> simp_and x y
-  | Or -> simp_or x y
   | Xor -> simp_xor x y
   | Shl -> simp_shl x y
   | Lshr -> simp_lshr x y
@@ -1065,8 +1104,10 @@ let mul e f = simp_mul2 e f |> check invariant
 let mulN args = simp_mul args |> check invariant
 let div = norm2 Div
 let rem = norm2 Rem
-let and_ = norm2 And
-let or_ = norm2 Or
+let and_ e f = simp_and2 e f |> check invariant
+let or_ e f = simp_or2 e f |> check invariant
+let andN es = simp_and es |> check invariant
+let orN es = simp_or es |> check invariant
 let not_ e = simp_not e |> check invariant
 let xor = norm2 Xor
 let shl = norm2 Shl
@@ -1108,11 +1149,17 @@ let map e ~f =
     let xs' = IArray.map_endo ~f xs in
     if xs' == xs then e else normN op xs'
   in
+  let map_set mk ~f args =
+    let args' = Set.map ~f args in
+    if args' == args then e else mk args'
+  in
   let map_qset mk ~f args =
     let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
     if args' == args then e else mk args'
   in
   match e with
+  | And args -> map_set andN ~f args
+  | Or args -> map_set orN ~f args
   | Add args -> map_qset addN ~f args
   | Mul args -> map_qset mulN ~f args
   | Ap1 (op, x) -> map1 op ~f x
@@ -1197,6 +1244,7 @@ let iter e ~f =
   | Ap2 (_, x, y) -> f x ; f y
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
   | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f xs
+  | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> ()
 
@@ -1206,6 +1254,7 @@ let exists e ~f =
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
   | ApN (_, xs) | RecN (_, xs) -> IArray.exists ~f xs
+  | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> false
 
@@ -1215,6 +1264,7 @@ let for_all e ~f =
   | Ap2 (_, x, y) -> f x && f y
   | Ap3 (_, x, y, z) -> f x && f y && f z
   | ApN (_, xs) | RecN (_, xs) -> IArray.for_all ~f xs
+  | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
 
@@ -1225,6 +1275,7 @@ let fold e ~init:s ~f =
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
   | ApN (_, xs) | RecN (_, xs) ->
       IArray.fold ~f:(fun s x -> f x s) xs ~init:s
+  | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> s
 
@@ -1235,6 +1286,7 @@ let iter_terms e ~f =
     | Ap2 (_, x, y) -> iter_terms_ x ; iter_terms_ y
     | Ap3 (_, x, y, z) -> iter_terms_ x ; iter_terms_ y ; iter_terms_ z
     | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f:iter_terms_ xs
+    | And args | Or args -> Set.iter args ~f:iter_terms_
     | Add args | Mul args ->
         Qset.iter args ~f:(fun arg _ -> iter_terms_ arg)
     | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> () ) ;
@@ -1251,6 +1303,8 @@ let fold_terms e ~init ~f =
       | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
       | ApN (_, xs) | RecN (_, xs) ->
           IArray.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
+      | And args | Or args ->
+          Set.fold args ~init:s ~f:(fun s x -> fold_terms_ x s)
       | Add args | Mul args ->
           Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
       | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> s
@@ -1290,6 +1344,8 @@ let height e =
     | Ap3 (_, a, b, c) -> 1 + max (height_ a) (max (height_ b) (height_ c))
     | ApN (_, v) | RecN (_, v) ->
         1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height_ a))
+    | And bs | Or bs ->
+        1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height_ a))
     | Add qs | Mul qs ->
         1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height_ a))
     | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> 0

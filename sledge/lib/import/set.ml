@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Import0
 include Set_intf
 
 module Make (Elt : sig
@@ -17,7 +18,11 @@ end) : S with type elt = Elt.t = struct
 
   include EltSet.Tree
 
-  let pp pp_elt fs x = List.pp ",@ " pp_elt fs (elements x)
+  let hash_fold_t hash_fold_elt s m =
+    fold ~f:hash_fold_elt ~init:(Hash.fold_int s (length m)) m
+
+  let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
+    List.pp ?pre ?suf sep pp_elt fs (elements x)
 
   let pp_diff pp_elt fs (xs, ys) =
     let lose = diff xs ys and gain = diff ys xs in
@@ -41,4 +46,18 @@ end) : S with type elt = Elt.t = struct
         match split s2 x with
         | _, Some _, _ -> false
         | l2, None, r2 -> disjoint l1 l2 && disjoint r1 r2 )
+
+  let choose_exn s =
+    with_return
+    @@ fun {return} ->
+    binary_search_segmented s `Last_on_left ~segment_of:return |> ignore ;
+    raise (Not_found_s (Atom __LOC__))
+
+  let choose s = try Some (choose_exn s) with Not_found_s _ -> None
+
+  let pop_exn s =
+    let elt = choose_exn s in
+    (elt, remove s elt)
+
+  let pop s = choose s |> Option.map ~f:(fun elt -> (elt, remove s elt))
 end
