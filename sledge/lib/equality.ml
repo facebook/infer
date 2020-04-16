@@ -32,9 +32,6 @@ let rec fold_max_solvables e ~init ~f =
   if non_interpreted e then f e init
   else Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
 
-let rec iter_max_solvables e ~f =
-  if non_interpreted e then f e else Term.iter ~f:(iter_max_solvables ~f) e
-
 (** Solution Substitutions *)
 module Subst : sig
   type t [@@deriving compare, equal, sexp]
@@ -419,10 +416,11 @@ let pre_invariant r =
       (* no interpreted terms in carrier *)
       assert (non_interpreted trm || fail "non-interp %a" Term.pp trm ()) ;
       (* carrier is closed under subterms *)
-      iter_max_solvables trm ~f:(fun subtrm ->
+      Term.iter trm ~f:(fun subtrm ->
           assert (
-            in_car r subtrm
-            || fail "@[subterm %a of %a not in carrier of@ %a@]" Term.pp
+            non_interpreted subtrm
+            ==> (Term.is_constant subtrm || in_car r subtrm)
+            || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Term.pp
                  subtrm Term.pp trm pp r () ) ) )
 
 let invariant r =
