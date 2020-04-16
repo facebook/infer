@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* [@@@warning "-32"] *)
-
 let%test_module _ =
   ( module struct
     open Sh
@@ -14,7 +12,9 @@ let%test_module _ =
     let () = Trace.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160 ~config:(Result.ok_exn (Trace.parse "+Sh")) () *)
+     *   Trace.init ~margin:160 ~config:(Result.ok_exn (Trace.parse "+Sh")) ()
+     *
+     * [@@@warning "-32"] *)
 
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw
@@ -41,6 +41,9 @@ let%test_module _ =
     let x = Term.var x_
     let y = Term.var y_
 
+    let of_eqs l =
+      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
+
     let%expect_test _ =
       let p = exists ~$[x_] (extend_us ~$[x_] emp) in
       let q = pure (x = !0) in
@@ -50,9 +53,9 @@ let%test_module _ =
       [%expect
         {|
         ∃ %x_6 .   emp
-
+    
           0 = %x_6 ∧ emp
-
+    
           0 = %x_6 ∧ emp |}]
 
     let%expect_test _ =
@@ -124,9 +127,6 @@ let%test_module _ =
         )
 
         ( (  1 = %y_7 ∧ emp) ∨ (  emp) ∨ (  emp) ) |}]
-
-    let of_eqs l =
-      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in

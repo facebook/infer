@@ -52,6 +52,9 @@ let%test_module _ =
     let and_eq a b r = and_eq wrt a b r |> snd
     let and_ r s = and_ wrt r s |> snd
     let or_ r s = or_ wrt r s |> snd
+
+    (* tests *)
+
     let f1 = of_eqs [(!0, !1)]
 
     let%test _ = is_false f1
@@ -100,7 +103,7 @@ let%test_module _ =
       [%expect
         {|
         %x_5 = %y_6
-
+    
       {sat= true; rep= [[%y_6 ↦ %x_5]]} |}]
 
     let%test _ = entails_eq r1 x y
@@ -137,9 +140,9 @@ let%test_module _ =
       [%expect
         {|
         {sat= true; rep= [[%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
-
+    
         {sat= true; rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]}
-
+    
         {sat= true; rep= [[%z_7 ↦ %y_6]]} |}]
 
     let%test _ =
@@ -215,7 +218,7 @@ let%test_module _ =
       [%expect
         {|
           %v_3 = %x_5 ∧ %w_4 = %y_6 = %z_7
-
+    
         {sat= true; rep= [[%x_5 ↦ %v_3]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
 
         {sat= true;
@@ -263,7 +266,7 @@ let%test_module _ =
       [%expect
         {|
         (13 × %z_7) = %x_5 ∧ 14 = %y_6
-
+    
       {sat= true; rep= [[%x_5 ↦ (13 × %z_7)]; [%y_6 ↦ 14]]} |}]
 
     let%test _ = entails_eq r8 y !14
@@ -276,7 +279,7 @@ let%test_module _ =
       [%expect
         {|
         (%z_7 + -16) = %x_5
-
+    
       {sat= true; rep= [[%x_5 ↦ (%z_7 + -16)]]} |}]
 
     let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
@@ -293,9 +296,9 @@ let%test_module _ =
       [%expect
         {|
           (%z_7 + -16) = %x_5
-
+    
         {sat= true; rep= [[%x_5 ↦ (%z_7 + -16)]]}
-
+    
         (-1 × %x_5 + %z_7 + -8)
 
         8

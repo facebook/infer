@@ -73,7 +73,7 @@ end) : S with type key = Key.t = struct
   let pp pp_k pp_v fs m =
     Format.fprintf fs "@[<1>[%a]@]"
       (List.pp ",@ " (fun fs (k, v) ->
-           Format.fprintf fs "@[%a @<2>↦ %a@]" pp_k k pp_v v ))
+           Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v ))
       (to_alist m)
 
   let pp_diff ~data_equal pp_key pp_val pp_diff_val fs (x, y) =

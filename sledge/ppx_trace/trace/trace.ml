@@ -213,6 +213,6 @@ let fail fmt =
   let margin = Format.pp_get_margin fs () in
   raisef ~margin
     (fun msg ->
-      Format.fprintf fs "@\n@[<2>| %s@]@." msg ;
+      Format.fprintf fs "@\n%s@." msg ;
       Failure msg )
     fmt

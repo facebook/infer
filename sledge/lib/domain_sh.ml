@@ -308,6 +308,7 @@ let apply_summary q ({xs; foot; post} as fs) =
 
 let%test_module _ =
   ( module struct
+    let () = Trace.init ~margin:68 ()
     let pp = Format.printf "@.%a@." Sh.pp
     let wrt = Var.Set.empty
     let main_, wrt = Var.fresh "main" ~wrt
