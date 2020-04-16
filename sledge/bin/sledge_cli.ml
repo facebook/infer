@@ -115,6 +115,8 @@ let analyze =
   and no_simplify_states =
     flag "no-simplify-states" no_arg
       ~doc:"do not simplify states during symbolic execution"
+  and stats =
+    flag "stats" no_arg ~doc:"output performance statistics to stderr"
   in
   fun program () ->
     let pgm = program () in
@@ -122,6 +124,7 @@ let analyze =
     let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
+    Timer.enabled := stats ;
     exec {bound; skip_throw; function_summaries; entry_points; globals} pgm
 
 let analyze_cmd =
