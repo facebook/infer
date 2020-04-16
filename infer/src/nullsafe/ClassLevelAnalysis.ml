@@ -138,12 +138,24 @@ let make_meta_issue all_issues current_mode class_name =
   {issue_type; description; severity; meta_issue_info}
 
 
+let get_class_loc Struct.{java_class_info} =
+  match java_class_info with
+  | Some {loc} ->
+      loc
+  | None ->
+      Logging.die InternalError "java_class_info should be present for Java classes"
+
+
 (* Meta issues are those related to null-safety of the class in general, not concrete nullability violations *)
-let report_meta_issues tenv source_file class_name class_info issue_log =
+let report_meta_issues tenv source_file class_name class_struct class_info issue_log =
   (* For purposes of aggregation, we consider all nested anonymous summaries as belonging to this class *)
   let current_mode = NullsafeMode.of_class tenv (Typ.JavaClass class_name) in
   let summaries = AggregatedSummaries.ClassInfo.get_all_summaries class_info in
-  let loc = Location.{file= source_file; line= 1; col= 0} in
+  let class_loc =
+    get_class_loc class_struct
+    |> (* In rare cases location is not present, fall back to the first line of the file *)
+    Option.value ~default:Location.{file= source_file; line= 1; col= 0}
+  in
   let all_issues =
     List.map summaries ~f:(fun Summary.{payloads= {nullsafe}} ->
         Option.value_map nullsafe ~f:(fun NullsafeSummary.{issues} -> issues) ~default:[] )
@@ -155,8 +167,8 @@ let report_meta_issues tenv source_file class_name class_info issue_log =
   let package = JavaClassName.package class_name in
   let class_name = JavaClassName.classname class_name in
   let nullsafe_extra = Jsonbug_t.{class_name; package; meta_issue_info= Some meta_issue_info} in
-  let trace = [Errlog.make_trace_element 0 loc description []] in
-  log_issue ~issue_log ~loc ~trace ~severity ~nullsafe_extra issue_type description
+  let trace = [Errlog.make_trace_element 0 class_loc description []] in
+  log_issue ~issue_log ~loc:class_loc ~trace ~severity ~nullsafe_extra issue_type description
 
 
 (* Optimization - if issues are disabled, don't bother analyzing them *)
@@ -167,6 +179,13 @@ let should_analyze_meta_issues () =
 
 
 let analyze_class tenv source_file class_name class_info issue_log =
-  if should_analyze_meta_issues () then
-    report_meta_issues tenv source_file class_name class_info issue_log
+  if should_analyze_meta_issues () then (
+    match Tenv.lookup tenv (Typ.JavaClass class_name) with
+    | Some class_struct ->
+        report_meta_issues tenv source_file class_name class_struct class_info issue_log
+    | None ->
+        Logging.debug Analysis Medium
+          "%a: could not load class info in environment: skipping class analysis@\n"
+          JavaClassName.pp class_name ;
+        issue_log )
   else issue_log
