@@ -33,13 +33,13 @@ val fold_option :
     runs in the [Option] monad. If [f] returns [None], that value is
     returned without any additional invocations of [f]. *)
 
-val map_preserving_phys_equal : 'a t -> f:('a -> 'a) -> 'a t
-(** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
-    every element. *)
+val map_endo : 'a t -> f:('a -> 'a) -> 'a t
+(** Like map, but specialized to require [f] to be an endofunction, which
+    enables preserving [==] if [f] preserves [==] of every element. *)
 
-val filter_map_preserving_phys_equal : 'a t -> f:('a -> 'a option) -> 'a t
-(** Like filter_map, but preserves [phys_equal] if [f] preserves
-    [phys_equal] of every element. *)
+val filter_map_endo : 'a t -> f:('a -> 'a option) -> 'a t
+(** Like filter_map, but specialized to require [f] to be an endofunction,
+    which enables preserving [==] if [f] preserves [==] of every element. *)
 
 val rev_map_unzip : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
 (** [rev_map_unzip ~f xs] is [unzip (rev_map ~f xs)] but more efficient. *)

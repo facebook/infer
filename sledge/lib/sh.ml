@@ -56,17 +56,14 @@ let map ~f_sjn ~f_cong ~f_trm ({us; xs= _; cong; pure; heap; djns} as q) =
   try
     let cong = f_cong cong in
     let pure =
-      List.filter_map_preserving_phys_equal pure ~f:(fun e ->
+      List.filter_map_endo pure ~f:(fun e ->
           let e' = f_trm e in
           if Term.is_false e' then raise Unsat
           else if Term.is_true e' then None
           else Some e' )
     in
-    let heap = List.map_preserving_phys_equal heap ~f:(map_seg ~f:f_trm) in
-    let djns =
-      List.map_preserving_phys_equal djns
-        ~f:(List.map_preserving_phys_equal ~f:f_sjn)
-    in
+    let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
+    let djns = List.map_endo djns ~f:(List.map_endo ~f:f_sjn) in
     if cong == q.cong && pure == q.pure && heap == q.heap && djns == q.djns
     then q
     else {q with cong; pure; heap; djns}
@@ -595,8 +592,7 @@ let is_false = function
 let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   let heap = emp.heap in
   let djns =
-    List.map_preserving_phys_equal djns ~f:(fun djn ->
-        List.map_preserving_phys_equal djn ~f:pure_approx )
+    List.map_endo djns ~f:(fun djn -> List.map_endo djn ~f:pure_approx)
   in
   if heap == q.heap && djns == q.djns then q
   else {us; xs; cong; pure; heap; djns} |> check invariant

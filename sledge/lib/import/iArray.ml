@@ -51,7 +51,7 @@ let fold_map_until xs ~init ~f ~finish =
              | Continue x -> x
              | Stop x -> return x )) )
 
-let map_preserving_phys_equal xs ~f =
+let map_endo xs ~f =
   let change = ref false in
   let xs' =
     map xs ~f:(fun x ->

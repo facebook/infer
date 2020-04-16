@@ -49,8 +49,8 @@ val fold_map_until :
   -> finish:('accum * 'b t -> 'final)
   -> 'final
 
-val map_preserving_phys_equal : 'a t -> f:('a -> 'a) -> 'a t
-(** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
-    every element. *)
+val map_endo : 'a t -> f:('a -> 'a) -> 'a t
+(** Like map, but specialized to require [f] to be an endofunction, which
+    enables preserving [==] if [f] preserves [==] of every element. *)
 
 val combine_adjacent : f:('a -> 'a -> 'a option) -> 'a t -> 'a t

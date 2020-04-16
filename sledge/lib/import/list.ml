@@ -39,7 +39,7 @@ let fold_option xs ~init ~f =
     (fold xs ~init ~f:(fun acc elt ->
          match f acc elt with Some res -> res | None -> return None ))
 
-let map_preserving_phys_equal map t ~f =
+let map_endo map t ~f =
   let change = ref false in
   let t' =
     map t ~f:(fun x ->
@@ -49,7 +49,7 @@ let map_preserving_phys_equal map t ~f =
   in
   if !change then t' else t
 
-let filter_map_preserving_phys_equal filter_map t ~f =
+let filter_map_endo filter_map t ~f =
   let change = ref false in
   let t' =
     filter_map t ~f:(fun x ->
@@ -61,10 +61,8 @@ let filter_map_preserving_phys_equal filter_map t ~f =
   in
   if !change then t' else t
 
-let filter_map_preserving_phys_equal t ~f =
-  filter_map_preserving_phys_equal filter_map t ~f
-
-let map_preserving_phys_equal t ~f = map_preserving_phys_equal map t ~f
+let filter_map_endo t ~f = filter_map_endo filter_map t ~f
+let map_endo t ~f = map_endo map t ~f
 
 let rev_map_unzip xs ~f =
   fold xs ~init:([], []) ~f:(fun (ys, zs) x ->

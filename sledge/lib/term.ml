@@ -1048,7 +1048,7 @@ let map e ~f =
     if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
   in
   let mapN op ~f xs =
-    let xs' = IArray.map_preserving_phys_equal ~f xs in
+    let xs' = IArray.map_endo ~f xs in
     if xs' == xs then e else normN op xs'
   in
   let map_qset mk ~f args =
@@ -1064,7 +1064,7 @@ let map e ~f =
   | ApN (op, xs) -> mapN op ~f xs
   | RecN (_, xs) ->
       assert (
-        xs == IArray.map_preserving_phys_equal ~f xs
+        xs == IArray.map_endo ~f xs
         || fail "Term.map does not support updating subterms of RecN." () ) ;
       e
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> e
