@@ -18,9 +18,9 @@ let rec pp ?pre ?suf sep pp_elt fs = function
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
       Option.iter suf ~f:(Format.fprintf fs)
 
-let pop_exn =
-  let not_found = Not_found_s (Atom "pop_exn") in
-  function x :: xs -> (x, xs) | [] -> raise not_found
+let pop_exn = function
+  | x :: xs -> (x, xs)
+  | [] -> raise (Not_found_s (Atom __LOC__))
 
 let find_map_remove xs ~f =
   let rec find_map_remove_ ys = function
@@ -71,15 +71,13 @@ let rev_map_unzip xs ~f =
       let y, z = f x in
       (y :: ys, z :: zs) )
 
-let remove_exn =
-  let not_found = Not_found_s (Atom "remove_exn") in
-  fun ?(equal = phys_equal) xs x ->
-    let rec remove_ ys = function
-      | [] -> raise not_found
-      | z :: xs ->
-          if equal x z then rev_append ys xs else remove_ (z :: ys) xs
-    in
-    remove_ [] xs
+let remove_exn ?(equal = phys_equal) xs x =
+  let rec remove_ ys = function
+    | [] -> raise (Not_found_s (Atom __LOC__))
+    | z :: xs ->
+        if equal x z then rev_append ys xs else remove_ (z :: ys) xs
+  in
+  remove_ [] xs
 
 let remove ?equal xs x =
   try Some (remove_exn ?equal xs x) with Not_found_s _ -> None
