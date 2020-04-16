@@ -1075,6 +1075,16 @@ let map e ~f =
       e
   | Var _ | Label _ | Nondet _ | Float _ | Integer _ -> e
 
+let fold_map e ~init ~f =
+  let s = ref init in
+  let f x =
+    let s', x' = f !s x in
+    s := s' ;
+    x'
+  in
+  let e' = map e ~f in
+  (!s, e')
+
 (** Pre-order transformation that preserves cycles. Each subterm [x] from
     root to leaves is presented to [f]. If [f x = Some x'] then the subterms
     of [x] are not traversed and [x] is transformed to [x']. Otherwise

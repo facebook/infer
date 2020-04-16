@@ -234,6 +234,7 @@ val size_of : Typ.t -> t
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
+val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
 val rename : Var.Subst.t -> t -> t
 
 (** Traverse *)
