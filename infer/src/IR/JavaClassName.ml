@@ -72,14 +72,29 @@ let strip_anonymous_suffixes_if_present classname =
   strip_recursively classname 0
 
 
+(* Strips everything after $Lambda$ (if it is a lambda-class),
+   and returns the result string together with if it was stripped *)
+let strip_lambda_if_present classname =
+  match String.substr_index classname ~pattern:"$Lambda$" with
+  | Some index ->
+      (String.prefix classname index, true)
+  | None ->
+      (classname, false)
+
+
 (*
- Anonymous classes have suffixes in form of $<int>; but they can be nested inside of each other.
+ Anonymous classes have two forms:
+ - classic anonymous classes: suffixes in form of $<int>.
+ - classes corresponding to lambda-expressions: they are manifested as $Lambda$.
+ - two forms above nested inside each other.
  Also non-anonymous (user-defined) name can be nested as well (Class$NestedClass).
- So in general case anonymous class name looks something like
- Class$NestedClass$1$17$5, and we need to return Class$NestedClass *)
+ In general case anonymous class name looks something like
+ Class$NestedClass$1$17$5$Lambda$_1_2, and we need to return Class$NestedClass *)
 let get_user_defined_class_if_anonymous_inner {package; classname} =
-  let outer_class_name, nesting_level = strip_anonymous_suffixes_if_present classname in
-  if nesting_level > 0 then Some {package; classname= outer_class_name} else None
+  let without_lambda, was_lambda_stripped = strip_lambda_if_present classname in
+  let outer_class_name, nesting_level = strip_anonymous_suffixes_if_present without_lambda in
+  let was_stripped = was_lambda_stripped || nesting_level > 0 in
+  if was_stripped then Some {package; classname= outer_class_name} else None
 
 
 let is_anonymous_inner_class_name t = get_user_defined_class_if_anonymous_inner t |> is_some
