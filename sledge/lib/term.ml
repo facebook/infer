@@ -634,6 +634,9 @@ let simp_rem x y =
   (* i % j *)
   | Integer {data= i}, Integer {data= j} when not (Z.equal Z.zero j) ->
       integer (Z.rem i j)
+  (* (n/d) % i ==> (n / d) % i *)
+  | Rational {data= q}, Integer {data= i} when not (Z.equal Z.zero i) ->
+      integer (Z.rem (Z.div q.num q.den) i)
   (* e % 1 ==> 0 *)
   | _, Integer {data} when Z.equal Z.one data -> zero
   | _ -> Ap2 (Rem, x, y)
