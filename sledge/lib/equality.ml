@@ -200,7 +200,7 @@ let orient e f =
 
 let norm (_, _, s) e = Subst.norm s e
 
-let extend ?f ~var ~rep (us, xs, s) =
+let compose1 ?f ~var ~rep (us, xs, s) =
   let s =
     match f with
     | Some f when not (f var rep) -> s
@@ -216,11 +216,11 @@ let fresh name (us, xs, s) =
 let solve_poly ?f p q s =
   match Term.sub p q with
   | Integer {data} -> if Z.equal Z.zero data then Some s else None
-  | Var _ as var -> extend ?f ~var ~rep:Term.zero s
+  | Var _ as var -> compose1 ?f ~var ~rep:Term.zero s
   | p_q -> (
     match Term.solve_zero_eq p_q with
-    | Some (var, rep) -> extend ?f ~var ~rep s
-    | None -> extend ?f ~var:p_q ~rep:Term.zero s )
+    | Some (var, rep) -> compose1 ?f ~var ~rep s
+    | None -> compose1 ?f ~var:p_q ~rep:Term.zero s )
 
 (* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
    = |α| and c fresh *)
@@ -280,14 +280,14 @@ and solve_ ?f d e s =
   | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
       if not (Var.Set.mem (Term.fv e) (Var.of_ v)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
-        extend ?f ~var:v ~rep:e s
+        compose1 ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        extend ?f ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
+        compose1 ?f ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
       if not (Var.Set.mem (Term.fv c) (Var.of_ v)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
-        extend ?f ~var:v ~rep:c s
+        compose1 ?f ~var:v ~rep:c s
       else
         (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
         let m = Term.agg_size_exn c in
@@ -305,7 +305,7 @@ and solve_ ?f d e s =
   | Some (rep, var) ->
       assert (non_interpreted var) ;
       assert (non_interpreted rep) ;
-      extend ?f ~var ~rep s )
+      compose1 ?f ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
     function
