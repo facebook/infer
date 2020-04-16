@@ -1132,13 +1132,7 @@ let fold_map e ~init ~f =
   let e' = map e ~f in
   (!s, e')
 
-(** Pre-order transformation that preserves cycles. Each subterm [x] from
-    root to leaves is presented to [f]. If [f x = Some x'] then the subterms
-    of [x] are not traversed and [x] is transformed to [x']. Otherwise
-    traversal proceeds to the subterms of [x], followed by rebuilding the
-    term structure on the transformed subterms. Cycles (through terms
-    involving [RecN]) are preserved. *)
-let map_rec_pre ~f e =
+let map_rec_pre e ~f =
   let rec map_rec_pre_f memo e =
     match f e with
     | Some e' -> e'
@@ -1160,6 +1154,31 @@ let map_rec_pre ~f e =
       | _ -> map ~f:(map_rec_pre_f memo) e )
   in
   map_rec_pre_f [] e
+
+let fold_map_rec_pre e ~init ~f =
+  let rec fold_map_rec_pre_f memo s e =
+    match f s e with
+    | Some (s, e') -> (s, e')
+    | None -> (
+      match e with
+      | RecN (op, xs) -> (
+        match List.Assoc.find ~equal:( == ) memo e with
+        | None ->
+            let xs' = IArray.to_array xs in
+            let e' = RecN (op, IArray.of_array xs') in
+            let memo = List.Assoc.add ~equal:( == ) memo e e' in
+            let changed = ref false in
+            let s =
+              Array.fold_map_inplace ~init:s xs' ~f:(fun s x ->
+                  let s, x' = fold_map_rec_pre_f memo s x in
+                  if x' != x then changed := true ;
+                  (s, x') )
+            in
+            if !changed then (s, e') else (s, e)
+        | Some e' -> (s, e') )
+      | _ -> fold_map ~f:(fold_map_rec_pre_f memo) ~init:s e )
+  in
+  fold_map_rec_pre_f [] init e
 
 let rename sub e =
   map_rec_pre e ~f:(function

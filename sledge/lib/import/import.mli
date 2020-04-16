@@ -76,6 +76,9 @@ module Array : sig
   include module type of Array
 
   val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
+
+  val fold_map_inplace :
+    'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
 end
 
 module IArray = IArray

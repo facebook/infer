@@ -235,7 +235,20 @@ val size_of : Typ.t -> t
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
+
+val map_rec_pre : t -> f:(t -> t option) -> t
+(** Pre-order transformation that preserves cycles. Each subterm [x] from
+    root to leaves is presented to [f]. If [f x = Some x'] then the subterms
+    of [x] are not traversed and [x] is transformed to [x']. Otherwise
+    traversal proceeds to the subterms of [x], followed by rebuilding the
+    term structure on the transformed subterms. Cycles (through terms
+    involving [RecN]) are preserved. *)
+
 val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
+
+val fold_map_rec_pre :
+  t -> init:'a -> f:('a -> t -> ('a * t) option) -> 'a * t
+
 val rename : Var.Subst.t -> t -> t
 
 (** Traverse *)

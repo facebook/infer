@@ -77,6 +77,15 @@ module Array = struct
   include Core.Array
 
   let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
+
+  let fold_map_inplace a ~init ~f =
+    let s = ref init in
+    let f x =
+      let s', x' = f !s x in
+      s := s' ;
+      x'
+    in
+    map_inplace a ~f ; !s
 end
 
 module IArray = IArray
