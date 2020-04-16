@@ -23,6 +23,8 @@ module type S = sig
   val merge_skewed :
     'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
 
+  val choose : 'a t -> (key * 'a) option
+  val pop : 'a t -> (key * 'a * 'a t) option
   val find_and_remove : 'a t -> key -> ('a * 'a t) option
   val pp : key pp -> 'a pp -> 'a t pp
 

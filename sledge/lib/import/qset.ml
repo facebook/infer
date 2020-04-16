@@ -73,6 +73,8 @@ struct
   let map_counts m ~f = M.mapi ~f:(fun ~key ~data -> f key data) m
   let length m = M.length m
   let count m x = match M.find m x with Some q -> q | None -> Q.zero
+  let choose = M.choose
+  let pop = M.pop
   let min_elt_exn = M.min_elt_exn
   let min_elt = M.min_elt
   let to_list m = M.to_alist m

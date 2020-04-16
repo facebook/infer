@@ -49,6 +49,9 @@ module type S = sig
   val count : t -> elt -> Q.t
   (** Multiplicity of an element. [O(log n)]. *)
 
+  val choose : t -> (elt * Q.t) option
+  val pop : t -> (elt * Q.t * t) option
+
   val min_elt_exn : t -> elt * Q.t
   (** Minimum element. *)
 

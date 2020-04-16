@@ -28,6 +28,16 @@ end) : S with type key = Key.t = struct
   let merge_skewed x y ~combine =
     of_map (Core.Map.merge_skewed (to_map x) (to_map y) ~combine)
 
+  let choose m =
+    with_return
+    @@ fun {return} ->
+    binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data ->
+        return (Some (key, data)) )
+    |> ignore ;
+    None
+
+  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+
   let find_and_remove m k =
     let found = ref None in
     let m =
