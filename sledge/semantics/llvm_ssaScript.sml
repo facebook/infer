@@ -195,26 +195,40 @@ Inductive uses:
     uses prog ip r)
 End
 
+Definition cidx_to_num_def:
+  (cidx_to_num (IntC _ n) = Num (ABS n)) ∧
+  (cidx_to_num _ = 0)
+
+End
+(* Convert index lists as for GEP into number lists, for the purpose of
+ * calculating types. Everything goes to 0 but for positive integer constants,
+ * because those things can't be used to index anything but arrays, and the type
+ * for the array contents doesn't depend on the index's value. *)
+Definition idx_to_num_def:
+  (idx_to_num (_, (Constant (IntC _ n))) = Num (ABS n)) ∧
+  (idx_to_num (_, _) = 0)
+End
+
 (* The registers that an instruction assigns *)
 Definition instr_assigns_def:
-  (instr_assigns (Invoke r _ _ _ _ _) = {r}) ∧
-  (instr_assigns (Sub r _ _ _ _ _) = {r}) ∧
-  (instr_assigns (Extractvalue r _ _) = {r}) ∧
-  (instr_assigns (Insertvalue r _ _ _) = {r}) ∧
-  (instr_assigns (Alloca r _ _) = {r}) ∧
-  (instr_assigns (Load r _ _) = {r}) ∧
-  (instr_assigns (Gep r _ _ _) = {r}) ∧
-  (instr_assigns (Cast r _ _ _) = {r}) ∧
-  (instr_assigns (Icmp r _ _ _ _) = {r}) ∧
-  (instr_assigns (Call r _ _ _) = {r}) ∧
-  (instr_assigns (Cxa_allocate_exn r _) = {r}) ∧
-  (instr_assigns (Cxa_begin_catch r _) = {r}) ∧
-  (instr_assigns (Cxa_get_exception_ptr r _) = {r}) ∧
+  (instr_assigns (Invoke r t _ _ _ _) = {(r,t)}) ∧
+  (instr_assigns (Sub r _ _ t _ _) = {(r,t)}) ∧
+  (instr_assigns (Extractvalue r (t,_) idx) = {(r,THE (extract_type t (map cidx_to_num idx)))}) ∧
+  (instr_assigns (Insertvalue r (t,_) _ _) = {(r, t)}) ∧
+  (instr_assigns (Alloca r t _) = {(r,PtrT t)}) ∧
+  (instr_assigns (Load r t _) = {(r,t)}) ∧
+  (instr_assigns (Gep r t _ idx) = {(r,PtrT (THE (extract_type t (map idx_to_num idx))))}) ∧
+  (instr_assigns (Cast r _ _ t) = {(r,t)}) ∧
+  (instr_assigns (Icmp r _ _ _ _) = {(r, IntT W1)}) ∧
+  (instr_assigns (Call r t _ _) = {(r,t)}) ∧
+  (instr_assigns (Cxa_allocate_exn r _) = {(r,ARB)}) ∧
+  (instr_assigns (Cxa_begin_catch r _) = {(r,ARB)}) ∧
+  (instr_assigns (Cxa_get_exception_ptr r _) = {(r,ARB)}) ∧
   (instr_assigns _ = {})
 End
 
 Definition phi_assigns_def:
-  phi_assigns (Phi r _ _) = r
+  phi_assigns (Phi r t _) = (r,t)
 End
 
 Inductive assigns:
@@ -256,11 +270,13 @@ Definition is_ssa_def:
     (∀fname.
       (* No register is assigned in two different instructions *)
       (∀r ip1 ip2.
-        r ∈ assigns prog ip1 ∧ r ∈ assigns prog ip2 ∧ ip1.f = fname ∧ ip2.f = fname
+        r ∈ image fst (assigns prog ip1) ∧ r ∈ image fst (assigns prog ip2) ∧
+        ip1.f = fname ∧ ip2.f = fname
         ⇒
         ip1 = ip2)) ∧
     (* Each use is dominated by its assignment *)
-    (∀ip1 r. r ∈ uses prog ip1 ⇒ ∃ip2. ip2.f = ip1.f ∧ r ∈ assigns prog ip2 ∧ dominates prog ip2 ip1)
+    (∀ip1 r. r ∈ uses prog ip1 ⇒
+      ∃ip2. ip2.f = ip1.f ∧ r ∈ image fst (assigns prog ip2) ∧ dominates prog ip2 ip1)
 End
 
 Theorem dominates_trans:
@@ -389,7 +405,7 @@ Definition live_def:
     { r | ∃path.
             good_path prog (ip::path) ∧
             r ∈ uses prog (last (ip::path)) ∧
-            ∀ip2. ip2 ∈ set (front (ip::path)) ⇒ r ∉ assigns prog ip2 }
+            ∀ip2. ip2 ∈ set (front (ip::path)) ⇒ r ∉ image fst (assigns prog ip2) }
 End
 
 Theorem get_instr_live:
@@ -412,7 +428,7 @@ QED
 Theorem live_gen_kill:
   ∀prog ip ip'.
     live prog ip =
-    BIGUNION {live prog ip' | ip' | ip' ∈ next_ips prog ip} DIFF assigns prog ip ∪ uses prog ip
+    BIGUNION {live prog ip' | ip' | ip' ∈ next_ips prog ip} DIFF image fst (assigns prog ip) ∪ uses prog ip
 Proof
   rw [live_def, EXTENSION] >> eq_tac >> rw []
   >- (
@@ -433,7 +449,7 @@ QED
 
 Theorem ssa_dominates_live_range_lem:
   ∀prog r ip1 ip2.
-    is_ssa prog ∧ ip1.f = ip2.f ∧ r ∈ assigns prog ip1 ∧ r ∈ live prog ip2 ⇒
+    is_ssa prog ∧ ip1.f = ip2.f ∧ r ∈ image fst (assigns prog ip1) ∧ r ∈ live prog ip2 ⇒
     dominates prog ip1 ip2
 Proof
   rw [dominates_def, is_ssa_def, live_def] >>
@@ -492,7 +508,7 @@ Theorem ssa_dominates_live_range:
   ∀prog r ip.
     is_ssa prog ∧ r ∈ uses prog ip
     ⇒
-    ∃ip1. ip1.f = ip.f ∧ r ∈ assigns prog ip1 ∧
+    ∃ip1. ip1.f = ip.f ∧ r ∈ image fst (assigns prog ip1) ∧
       ∀ip2. ip2.f = ip.f ∧ r ∈ live prog ip2 ⇒
         dominates prog ip1 ip2
 Proof

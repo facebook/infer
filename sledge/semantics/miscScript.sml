@@ -942,12 +942,27 @@ Proof
   metis_tac []
 QED
 
+Theorem union_diff:
+  !s1 s2 s3. s1 ∪ s2 DIFF s3 = (s1 DIFF s3) ∪ (s2 DIFF s3)
+Proof
+  rw [EXTENSION] >> metis_tac []
+QED
+
 (* ----- finite map theorems ----- *)
 
 Theorem drestrict_fupdate_list[simp]:
   ∀l m s. DRESTRICT (m |++ l) s = DRESTRICT m s |++ filter (\(x,y). x ∈ s) l
 Proof
   Induct_on `l` >> rw [FUPDATE_LIST_THM] >> pairarg_tac >> fs []
+QED
+
+Theorem fupdate_list_elim:
+  ∀m l. (∀k v. mem (k,v) l ⇒ flookup m k = Some v) ⇒ m |++ l = m
+Proof
+  Induct_on `l` >> rw [FUPDATE_LIST_THM] >>
+  rename1 `_ |+ kv |++ _ = _` >>
+  `m |+ kv = m` by (PairCases_on `kv` >> irule FUPDATE_ELIM >> fs [FLOOKUP_DEF]) >>
+  rw []
 QED
 
 export_theory ();
