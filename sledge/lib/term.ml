@@ -1382,6 +1382,7 @@ let solve_for_factor rejected_sum coeff prod sum =
 (* solve [0 = rejected_sum + (coeff × mono) + sum] *)
 let solve_for_mono rejected_sum coeff mono sum =
   match mono with
+  | Integer _ -> None
   | Mul prod -> solve_for_factor rejected_sum coeff prod sum
   | _ ->
       if exists_fv_in (fv mono) sum then None
