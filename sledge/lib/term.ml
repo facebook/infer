@@ -603,7 +603,7 @@ and simp_mul2 e f =
   (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
   | _ -> Prod.to_term (Prod.add e (Prod.of_ f))
 
-let rec simp_div x y =
+let simp_div x y =
   match (x, y) with
   (* e / 0 ==> e / 0 *)
   | _, Integer {data} when Z.equal Z.zero data -> Ap2 (Div, x, y)
@@ -622,12 +622,6 @@ let rec simp_div x y =
   (* x / n ==> 1/n × x *)
   | _, Integer {data} -> Sum.to_term (Sum.of_ ~coeff:Q.(inv (of_z data)) x)
   | _, Rational {data} -> Sum.to_term (Sum.of_ ~coeff:Q.(inv data) x)
-  (* e / (n / d) ==> (e × d) / n *)
-  | e, Ap2 (Div, n, d) -> simp_div (simp_mul2 e d) n
-  (* x / (q × y) ==> (1/q × x) / y *)
-  | _, Add sum when Qset.is_singleton sum ->
-      let y, q = Qset.choose_exn sum in
-      simp_div (simp_mul2 (rational (Q.inv q)) x) y
   (* x / y *)
   | _ -> Ap2 (Div, x, y)
 
@@ -1357,33 +1351,10 @@ let height e =
 let exists_fv_in vs qset =
   Qset.exists qset ~f:(fun e _ -> exists_vars e ~f:(Var.Set.mem vs))
 
-let exists_fv_in4 vs w x y z =
-  exists_fv_in vs w || exists_fv_in vs x || exists_fv_in vs y
-  || exists_fv_in vs z
-
-(* solve [0 = rejected_sum + (coeff × prod) + sum] *)
-let solve_for_factor rejected_sum coeff prod sum =
-  let rec find_factor rejected_prod prod =
-    let* factor, power, prod = Qset.pop_min_elt prod in
-    if
-      (not (Q.equal Q.one power))
-      || exists_fv_in4 (fv factor) rejected_sum rejected_prod prod sum
-    then find_factor (Qset.add rejected_prod factor power) prod
-    else Some (factor, Qset.union rejected_prod prod)
-  in
-  let+ factor, prod = find_factor Qset.empty prod in
-  (* solve [0 = rejected_sum + (coeff × factor × prod) + sum] yielding
-     [factor = (rejected_sum + sum) / (-coeff × prod)] *)
-  ( factor
-  , div
-      (Sum.to_term (Qset.union rejected_sum sum))
-      (mul (rational (Q.neg coeff)) (Prod.to_term prod)) )
-
 (* solve [0 = rejected_sum + (coeff × mono) + sum] *)
 let solve_for_mono rejected_sum coeff mono sum =
   match mono with
   | Integer _ -> None
-  | Mul prod -> solve_for_factor rejected_sum coeff prod sum
   | _ ->
       if exists_fv_in (fv mono) sum then None
       else
@@ -1401,23 +1372,17 @@ let rec solve_sum rejected_sum sum =
   |> Option.or_else ~f:(fun () ->
          solve_sum (Qset.add rejected_sum mono coeff) sum )
 
-let rec solve_div = function
-  (* [n / d = t] ==> [n = d × t] *)
-  | Some (Ap2 (Div, num, den), trm) -> solve_div (Some (num, mul den trm))
-  | o -> o
-
 (* solve [0 = e] *)
 let solve_zero_eq ?for_ e =
   [%Trace.call fun {pf} -> pf "0 = %a%a" pp e (Option.pp " for %a" pp) for_]
   ;
   ( match e with
-  | Add sum ->
-      ( match for_ with
-      | None -> solve_sum Qset.empty sum
-      | Some mono ->
-          let* coeff, sum = Qset.find_and_remove sum mono in
-          solve_for_mono Qset.empty coeff mono sum )
-      |> solve_div
+  | Add sum -> (
+    match for_ with
+    | None -> solve_sum Qset.empty sum
+    | Some mono ->
+        let* coeff, sum = Qset.find_and_remove sum mono in
+        solve_for_mono Qset.empty coeff mono sum )
   | _ -> None )
   |>
   [%Trace.retn fun {pf} s ->
@@ -1426,7 +1391,5 @@ let solve_zero_eq ?for_ e =
            Format.fprintf fs "%a ↦ %a" pp c pp r ))
       s ;
     match (for_, s) with
-    | Some (Mul prod), Some (var, _) ->
-        assert (not (Q.equal Q.zero (Qset.count prod var)))
     | Some f, Some (c, _) -> assert (equal f c)
     | _ -> ()]
