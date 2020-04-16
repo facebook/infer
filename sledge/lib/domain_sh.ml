@@ -130,9 +130,9 @@ let localize_entry globals actuals formals freturn locals subst pre entry =
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
   let frame =
-    Option.value_exn
-      (Solver.infer_frame pre xs foot)
-      ~message:"Solver couldn't infer frame of a garbage-collected pre"
+    try Option.value_exn (Solver.infer_frame pre xs foot)
+    with _ ->
+      fail "Solver couldn't infer frame of a garbage-collected pre" ()
   in
   let q'' =
     Sh.extend_us freturn_locals (and_eqs subst formals actuals foot)

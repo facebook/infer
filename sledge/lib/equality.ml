@@ -107,14 +107,14 @@ end = struct
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data s =
     if Term.equal key data then s
-    else compose s (Term.Map.set Term.Map.empty ~key ~data)
+    else compose s (Term.Map.singleton key data)
 
   (** add an identity entry if the term is not already present *)
   let extend e s =
     let exception Found in
     match
       Term.Map.update s e ~f:(function
-        | Some _ -> Exn.raise_without_backtrace Found
+        | Some _ -> raise_notrace Found
         | None -> e )
     with
     | exception Found -> None

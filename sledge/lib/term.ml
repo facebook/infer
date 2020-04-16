@@ -624,7 +624,7 @@ let rec simp_and x y =
   | Integer {data= i}, Integer {data= j} -> integer (Z.logand i j)
   (* e && true ==> e *)
   | (Integer {data}, e | e, Integer {data}) when Z.is_true data -> e
-  (* e && false ==> 0 *)
+  (* e && false ==> false *)
   | ((Integer {data} as f), _ | _, (Integer {data} as f))
     when Z.is_false data ->
       f
