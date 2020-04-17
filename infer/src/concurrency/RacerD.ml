@@ -430,9 +430,22 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let open ConcurrencyModels in
-  let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
+  let add_owned_formal acc base = OwnershipDomain.add base OwnershipAbstractValue.owned acc in
+  let add_conditionally_owned_formal =
+    let is_owned_formal {Annot.class_name} =
+      (* [@InjectProp] allocates a fresh object to bind to the parameter *)
+      String.is_suffix ~suffix:Annotations.inject_prop class_name
+    in
+    let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
+    let is_inject_prop = Annotations.ma_has_annotation_with method_annotation is_owned_formal in
+    fun acc formal formal_index ->
+      let ownership_value =
+        if is_inject_prop then OwnershipAbstractValue.owned
+        else OwnershipAbstractValue.make_owned_if formal_index
+      in
+      OwnershipDomain.add formal ownership_value acc
+  in
   if RacerDModels.should_analyze_proc tenv proc_name then
-    let formal_map = FormalMap.make proc_desc in
     let locks =
       if Procdesc.is_java_synchronized proc_desc then LockDomain.(acquire_lock bottom)
       else LockDomain.bottom
@@ -447,57 +460,28 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       then ThreadsDomain.AnyThread
       else ThreadsDomain.NoThread
     in
-    let add_owned_local acc (var_data : ProcAttributes.var_data) =
-      let pvar = Pvar.mk var_data.name proc_name in
-      let base = AccessPath.base_of_pvar pvar var_data.typ in
-      OwnershipDomain.add (AccessExpression.base base) OwnershipAbstractValue.owned acc
-    in
-    (* Add ownership to local variables. In cpp, stack-allocated local
-       variables cannot be raced on as every thread has its own stack.
-       More generally, we will never be confident that a race exists on a local/temp. *)
-    let own_locals =
-      List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc) ~init:OwnershipDomain.empty
-    in
-    let is_owned_formal {Annot.class_name} =
-      (* @InjectProp allocates a fresh object to bind to the parameter *)
-      String.is_suffix ~suffix:Annotations.inject_prop class_name
-    in
-    let add_conditional_owned_formal acc (formal, formal_index) =
-      let ownership_value =
-        if Annotations.ma_has_annotation_with method_annotation is_owned_formal then
-          OwnershipAbstractValue.owned
-        else OwnershipAbstractValue.make_owned_if formal_index
-      in
-      OwnershipDomain.add (AccessExpression.base formal) ownership_value acc
-    in
     let ownership =
-      if RacerDModels.is_initializer tenv proc_name then
-        let add_owned_formal acc formal_index =
-          match FormalMap.get_formal_base formal_index formal_map with
-          | Some base ->
-              OwnershipDomain.add (AccessExpression.base base) OwnershipAbstractValue.owned acc
-          | None ->
-              acc
-        in
-        (* if a constructor is called via DI, all of its formals will be freshly allocated and
-           therefore owned. we assume that constructors annotated with @Inject will only be
-           called via DI or using fresh parameters. *)
-        if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
-          List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
-          |> List.fold ~f:add_owned_formal ~init:own_locals
-        else
-          (* express that the constructor owns [this] *)
-          let init = add_owned_formal own_locals 0 in
-          FormalMap.get_formals_indexes formal_map
-          |> List.filter ~f:(fun (_, index) -> not (Int.equal 0 index))
-          |> List.fold ~init ~f:add_conditional_owned_formal
-      else
-        (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
-           it is owned in the caller *)
-        List.fold ~init:own_locals ~f:add_conditional_owned_formal
-          (FormalMap.get_formals_indexes formal_map)
+      let is_initializer = RacerDModels.is_initializer tenv proc_name in
+      let is_injected =
+        is_initializer && Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject
+      in
+      Procdesc.get_formals proc_desc
+      |> List.foldi ~init:OwnershipDomain.empty ~f:(fun index acc (name, typ) ->
+             let base =
+               AccessPath.base_of_pvar (Pvar.mk name proc_name) typ |> AccessExpression.base
+             in
+             if is_injected then
+               (* if a constructor is called via DI, all of its formals will be freshly allocated and
+                  therefore owned. we assume that constructors annotated with [@Inject] will only be
+                  called via DI or using fresh parameters. *)
+               add_owned_formal acc base
+             else if is_initializer && Int.equal 0 index then
+               (* express that the constructor owns [this] *)
+               add_owned_formal acc base
+             else add_conditionally_owned_formal acc base index )
     in
     let initial = {bottom with ownership; threads; locks} in
+    let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make summary tenv formal_map in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:(astate_to_summary proc_desc)

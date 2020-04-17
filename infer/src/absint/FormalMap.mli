@@ -27,9 +27,6 @@ val get_formal_base : int -> t -> AccessPath.base option
 (** return the base var for the given index if it exists, or None if it does not. Note: this is
     linear in the size of the formal map *)
 
-val get_formals_indexes : t -> (AccessPath.base * int) list
-(** Get a list of (base * index) pairs. Note: these are sorted by base, not index *)
-
 val pp : F.formatter -> t -> unit [@@warning "-32"]
 
 val cardinal : t -> int
