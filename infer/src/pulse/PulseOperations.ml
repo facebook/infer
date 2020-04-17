@@ -181,8 +181,7 @@ let prune ~is_then_branch if_kind location ~condition astate =
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->
-        let zero = Exp.Const (Cint IntLit.zero) in
-        prune_aux ~negated (Exp.BinOp (Ne, exp, zero)) astate
+        prune_aux ~negated (Exp.BinOp (Ne, exp, Exp.zero)) astate
   in
   prune_aux ~negated:false condition astate
 
@@ -363,7 +362,7 @@ let remove_vars vars location astate =
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then Ok astate
   else
-    let astate, unreachable_attrs = AbductiveDomain.discard_unreachable astate' in
+    let astate, _, unreachable_attrs = AbductiveDomain.discard_unreachable astate' in
     let+ () = check_memory_leak_unreachable unreachable_attrs location astate in
     astate
 

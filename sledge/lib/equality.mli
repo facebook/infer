@@ -74,6 +74,9 @@ val difference : t -> Term.t -> Term.t -> Z.t option
 
 val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
 
+val classes : t -> Term.t list Term.Map.t
+(** The equalities that make up the relation. *)
+
 (** Solution Substitutions *)
 module Subst : sig
   type t [@@deriving compare, equal, sexp]

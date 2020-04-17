@@ -85,12 +85,17 @@ module PreDomain : BaseDomainSig = PostDomain
 type t =
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
-  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *) }
+  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
+  ; path_condition: PathCondition.t }
 
-let pp f {post; pre; skipped_calls} =
-  F.fprintf f "@[<v>%a@;PRE=[%a]@;skipped_calls=%a@]" PostDomain.pp post PreDomain.pp pre
-    SkippedCalls.pp skipped_calls
+let pp f {post; pre; path_condition; skipped_calls} =
+  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@]" PathCondition.pp path_condition
+    PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls
 
+
+let get_path_condition {path_condition} = path_condition
+
+let set_path_condition path_condition astate = {astate with path_condition}
 
 let leq ~lhs ~rhs =
   SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
@@ -140,7 +145,8 @@ module Stack = struct
         in
         ( { post= PostDomain.update astate.post ~stack:post_stack
           ; pre
-          ; skipped_calls= astate.skipped_calls }
+          ; skipped_calls= astate.skipped_calls
+          ; path_condition= astate.path_condition }
         , addr_hist )
 
 
@@ -274,7 +280,8 @@ module Memory = struct
         in
         ( { post= PostDomain.update astate.post ~heap:post_heap
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
-          ; skipped_calls= astate.skipped_calls }
+          ; skipped_calls= astate.skipped_calls
+          ; path_condition= astate.path_condition }
         , addr_hist_dst )
 
 
@@ -305,8 +312,7 @@ let mk_initial proc_desc =
     PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
   let post = PostDomain.update ~stack:initial_stack PostDomain.empty in
-  let skipped_calls = SkippedCalls.empty in
-  {pre; post; skipped_calls}
+  {pre; post; skipped_calls= SkippedCalls.empty; path_condition= PathCondition.true_}
 
 
 let add_skipped_call pname trace astate =
@@ -331,16 +337,17 @@ let discard_unreachable ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
-  let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
+  let live_addresses = AbstractValue.Set.union pre_addresses post_addresses in
   let (heap_new, attrs_new), (_, attrs_unreachable) =
-    PostDomain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address all_addresses) post
+    PostDomain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address live_addresses) post
   in
   let post_new = PostDomain.update ~heap:heap_new ~attrs:attrs_new post in
+  (* note: we don't call {!PulsePathCondition.simplify} *)
   let astate =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
   in
-  (astate, attrs_unreachable)
+  (astate, live_addresses, attrs_unreachable)
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -404,13 +411,16 @@ let invalidate_locals pdesc astate : t =
       attrs attrs
   in
   if phys_equal attrs attrs' then astate
-  else {astate with pre= astate.pre; post= PostDomain.update astate.post ~attrs:attrs'}
+  else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
 let of_post pdesc astate =
-  let domain = filter_for_summary astate in
-  let domain, _ = discard_unreachable domain in
-  invalidate_locals pdesc domain
+  let astate = filter_for_summary astate in
+  let astate, live_addresses, _ = discard_unreachable astate in
+  let astate =
+    {astate with path_condition= PathCondition.simplify ~keep:live_addresses astate.path_condition}
+  in
+  invalidate_locals pdesc astate
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)

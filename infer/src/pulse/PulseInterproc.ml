@@ -73,6 +73,7 @@ type contradiction =
           state *)
   | FormalActualLength of
       {formals: Var.t list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+  | UnsatPathCondition of call_state
 
 let pp_contradiction fmt = function
   | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
@@ -94,6 +95,8 @@ let pp_contradiction fmt = function
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
+  | UnsatPathCondition call_state ->
+      F.fprintf fmt "UNSAT %a" pp_call_state call_state
 
 
 exception Contradiction of contradiction
@@ -131,7 +134,8 @@ let visit call_state ~addr_callee ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
-let pp f {AbductiveDomain.pre; post; skipped_calls} =
+let pp f {AbductiveDomain.pre; post; path_condition; skipped_calls} =
+  F.fprintf f "COND:@\n  @[%a@]@\n" PathCondition.pp path_condition ;
   F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
   F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
   F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls
@@ -287,6 +291,42 @@ let add_call_to_attributes proc_name call_location ~addr_callee ~addr_caller cal
   (!subst_ref, attrs)
 
 
+let subst_find_or_new subst addr_callee ~default_hist_caller =
+  match AddressMap.find_opt addr_callee subst with
+  | None ->
+      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
+      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
+  | Some addr_hist_caller ->
+      (subst, addr_hist_caller)
+
+
+let conjoin_callee_arith pre_post call_state =
+  L.d_printfln "applying callee path condition: %a[%a]" PathCondition.pp
+    pre_post.AbductiveDomain.path_condition
+    (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
+    call_state.subst ;
+  let subst, callee_path_cond =
+    (* need to translate callee variables to make sense for the caller, thereby possibly extending
+       the current substitution *)
+    PathCondition.fold_map_variables pre_post.AbductiveDomain.path_condition ~init:call_state.subst
+      ~f:(fun subst v_callee_arith ->
+        let v_callee = PathCondition.Var.to_absval v_callee_arith in
+        let subst', (v_caller, _) = subst_find_or_new subst v_callee ~default_hist_caller:[] in
+        (subst', PathCondition.Var.of_absval v_caller) )
+  in
+  let path_condition = PathCondition.and_ call_state.astate.path_condition callee_path_cond in
+  let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
+  let call_state = {call_state with astate; subst} in
+  if PathCondition.is_unsat path_condition then
+    raise (Contradiction (UnsatPathCondition call_state))
+  else call_state
+
+
+(* shadowed to take config into account *)
+let conjoin_callee_arith pre_post call_state =
+  if Config.pulse_path_conditions then conjoin_callee_arith pre_post call_state else call_state
+
+
 let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
   let one_address_sat addr_callee callee_attrs (addr_caller, caller_history) call_state =
     let subst, attrs_caller =
@@ -297,6 +337,7 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
     if phys_equal subst call_state.subst && phys_equal astate call_state.astate then call_state
     else {call_state with subst; astate}
   in
+  let call_state = conjoin_callee_arith pre_post call_state in
   (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
   AddressMap.fold
     (fun addr_callee addr_hist_caller call_state ->
@@ -328,15 +369,6 @@ let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals ca
 
 
 (* {3 applying the post to the current state} *)
-
-let subst_find_or_new subst addr_callee ~default_hist_caller =
-  match AddressMap.find_opt addr_callee subst with
-  | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
-      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
-  | Some addr_hist_caller ->
-      (subst, addr_hist_caller)
-
 
 let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
   let new_subst, addr_hist_caller =
@@ -473,6 +505,8 @@ let record_post_for_return callee_proc_name call_loc pre_post call_state =
               ( AbstractValue.mk_fresh ()
               , [ (* this could maybe include an event like "returned here" *) ] )
         in
+        L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
+          (fst return_caller_addr_hist) ;
         let call_state =
           record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:return_callee
             ~addr_hist_caller:return_caller_addr_hist call_state
@@ -547,10 +581,10 @@ let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_st
     |> apply_post_for_globals callee_proc_name call_location pre_post
     |> record_post_for_return callee_proc_name call_location pre_post
     |> fun (call_state, return_caller) ->
-    ( record_post_remaining_attributes callee_proc_name call_location pre_post call_state
-      |> record_skipped_calls callee_proc_name call_location pre_post
-    , return_caller )
-    |> fun ({astate; _}, return_caller) -> (astate, return_caller)
+    record_post_remaining_attributes callee_proc_name call_location pre_post call_state
+    |> record_skipped_calls callee_proc_name call_location pre_post
+    |> conjoin_callee_arith pre_post
+    |> fun {astate; _} -> (astate, return_caller)
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r

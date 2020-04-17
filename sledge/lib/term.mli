@@ -131,11 +131,19 @@ module Var : sig
   include Invariant.S with type t := t
 
   val name : t -> string
+  val id : t -> int
   val is_global : t -> bool
   val of_ : term -> t
   val of_term : term -> t option
   val program : ?global:unit -> string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
+
+  val identified : name:string -> id:int -> t
+  (** Variable with the given [id]. Variables are compared by [id] alone,
+      [name] is used only for printing. The only way to ensure [identified]
+      variables do not clash with [fresh] variables is to pass the
+      [identified] variables to [fresh] in [wrt]:
+      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
 
   module Subst : sig
     type var := t

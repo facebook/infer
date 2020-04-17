@@ -19,6 +19,8 @@ val pp : F.formatter -> t -> unit
 
 val init : unit -> unit
 
+val of_id : int -> t
+
 type state
 
 val get_state : unit -> state

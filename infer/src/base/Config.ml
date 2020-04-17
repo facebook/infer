@@ -1776,6 +1776,13 @@ and pulse_model_free_pattern =
     "Regex of methods that should be modelled as free in Pulse"
 
 
+and pulse_path_conditions =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-pulse-path-conditions"]
+    ~deprecated_no:["-no-pulse-path-conditions"] ~default:false
+    "Experimental flag to enable arithmetic on path conditions. This is intended for Pulse \
+     development only and will be removed once the feature is stable."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -2847,6 +2854,8 @@ and pulse_max_disjuncts = !pulse_max_disjuncts
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
+
+and pulse_path_conditions = !pulse_path_conditions
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

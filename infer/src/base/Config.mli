@@ -451,6 +451,8 @@ val pulse_model_alloc_pattern : Str.regexp option
 
 val pulse_model_free_pattern : Str.regexp option
 
+val pulse_path_conditions : bool
+
 val pulse_widen_threshold : int
 
 val pure_by_default : bool

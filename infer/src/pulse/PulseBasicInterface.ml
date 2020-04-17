@@ -15,6 +15,11 @@ module CallEvent = PulseCallEvent
 module CItv = PulseCItv
 module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
+
+module PathCondition = ( val if Config.pulse_path_conditions then (module PulsePathCondition)
+                             else (module PulseDummyPathCondition) : PulsePathConditionModuleType.S
+                       )
+
 module SkippedCalls = PulseSkippedCalls
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -32,6 +37,8 @@ include struct
   module PulseDiagnostic = PulseDiagnostic [@@deprecated "use the short form Diagnostic instead"]
   module PulseInvalidation = PulseInvalidation
   [@@deprecated "use the short form Invalidation instead"]
+  module PulsePathCondition = PulsePathCondition
+  [@@deprecated "use the short form PathCondition instead"]
   module PulseSkippedCalls = PulseSkippedCalls
   [@@deprecated "use the short form SkippedCalls instead"]
   module PulseTrace = PulseTrace [@@deprecated "use the short form Trace instead"]

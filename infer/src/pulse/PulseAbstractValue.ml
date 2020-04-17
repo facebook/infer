@@ -22,6 +22,8 @@ let pp f l = F.fprintf f "v%d" l
 
 let init () = next_fresh := 1
 
+let of_id v = v
+
 type state = int
 
 let get_state () = !next_fresh

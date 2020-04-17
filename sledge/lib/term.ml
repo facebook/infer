@@ -381,6 +381,8 @@ module Var = struct
     let x' = Var {name; id= max + 1} in
     (x', Set.add wrt x')
 
+  let identified ~name ~id = Var {name; id}
+
   (** Variable renaming substitutions *)
   module Subst = struct
     type t = T.t Map.t [@@deriving compare, equal, sexp_of]
