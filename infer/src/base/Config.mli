@@ -525,6 +525,8 @@ val skip_duplicated_types : bool
 
 val skip_translation_headers : string list
 
+val sledge_timers : bool
+
 val source_files : bool
 
 val source_files_cfg : bool

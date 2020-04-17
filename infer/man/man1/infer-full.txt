@@ -1694,6 +1694,11 @@ INTERNAL OPTIONS
        --skip-translation-headers-reset
            Set --skip-translation-headers to the empty list.
 
+       --sledge-timers
+           Activates: Enable debug timing info from sledge on stderr (you
+           probably want --no-progress-bar as well). (Conversely:
+           --no-sledge-timers)
+
        --source-files-filter-reset
            Cancel the effect of --source-files-filter.
 

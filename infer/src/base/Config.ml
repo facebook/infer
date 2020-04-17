@@ -2008,6 +2008,12 @@ and skip_translation_headers =
     ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
 
 
+and sledge_timers =
+  CLOpt.mk_bool ~long:"sledge-timers"
+    "Enable debug timing info from sledge on stderr (you probably want $(b,--no-progress-bar) as \
+     well)."
+
+
 and source_preview =
   CLOpt.mk_bool ~long:"source-preview" ~default:true
     ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
@@ -2934,6 +2940,8 @@ and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compi
 and skip_duplicated_types = !skip_duplicated_types
 
 and skip_translation_headers = !skip_translation_headers
+
+and sledge_timers = !sledge_timers
 
 and source_preview = !source_preview
 
