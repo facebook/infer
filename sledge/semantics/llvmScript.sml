@@ -830,15 +830,15 @@ Definition prog_ok_def:
        alookup p fname = Some dec ⇒
        every (\b. fst b = None ⇔ (snd b).h = Entry) dec.blocks) ∧
      ((* The blocks in a definition have distinct labels.*)
-      ∀fname dec.
-       alookup p fname = Some dec ⇒
-       all_distinct (map fst dec.blocks)) ∧
+      every (\(fname,dec). all_distinct (map fst dec.blocks)) p) ∧
      (* There is a main function *)
      (∃dec. alookup p (Fn "main") = Some dec) ∧
      (* No phi instruction assigns the same register twice *)
      (∀ip from_l phis.
        get_instr p ip (Inr (from_l, phis)) ⇒
-       all_distinct (map (λp. case p of Phi r _ _ => r) phis))
+       all_distinct (map (λp. case p of Phi r _ _ => r) phis)) ∧
+     (* No duplicate function names *)
+     (all_distinct (map fst p))
 End
 
 (* All call frames have a good return address, and the stack allocations of the

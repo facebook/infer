@@ -31,6 +31,8 @@ Proof
   rw [prog_ok_def] >> rpt (first_x_assum drule) >>
   rw [] >> fs [EVERY_MEM] >> rw [] >>
   pairarg_tac >> rw [] >>
+  `mem (Fn f,d) prog` by metis_tac [ALOOKUP_MEM] >>
+  last_x_assum drule >> rw [] >> fs [] >>
   `alookup d.blocks l = Some b` by metis_tac [ALOOKUP_ALL_DISTINCT_MEM] >>
   last_x_assum drule >> rw [] >>
   CCONTR_TAC >> fs [] >>
@@ -42,6 +44,7 @@ Proof
   `~mem (el i b.body) (front b.body)` by metis_tac [] >>
   metis_tac [mem_el_front]
 QED
+
 Theorem prog_ok_nonterm:
   ∀prog i ip.
     prog_ok prog ∧ get_instr prog ip (Inl i) ∧ ¬terminator i ⇒ inc_pc ip ∈ next_ips prog ip
@@ -935,7 +938,14 @@ Proof
     imp_res_tac ALOOKUP_MEM >>
     fs [MEM_MAP] >>
     metis_tac [FST])
-  >- metis_tac [ALOOKUP_ALL_DISTINCT_MEM, prog_ok_def]
+  >- (
+    fs [prog_ok_def] >>
+    qexists_tac `prog` >> rw [] >>
+    irule ALOOKUP_ALL_DISTINCT_MEM >> rw [] >>
+    fs [EVERY_MEM] >>
+    `(λ(fname,dec). all_distinct (map fst dec.blocks)) (Fn f, d)`
+    by metis_tac [ALOOKUP_MEM] >>
+    fs [])
 QED
 
 Theorem alookup_translate_header_lab:

@@ -11,7 +11,8 @@
 open HolKernel boolLib bossLib Parse;
 open listTheory rich_listTheory arithmeticTheory integerTheory llistTheory pathTheory;
 open integer_wordTheory wordsTheory pred_setTheory alistTheory;
-open finite_mapTheory open logrootTheory numposrepTheory;
+open finite_mapTheory open logrootTheory numposrepTheory set_relationTheory;
+open sortingTheory;
 open settingsTheory;
 
 new_theory "misc";
@@ -963,6 +964,64 @@ Proof
   rename1 `_ |+ kv |++ _ = _` >>
   `m |+ kv = m` by (PairCases_on `kv` >> irule FUPDATE_ELIM >> fs [FLOOKUP_DEF]) >>
   rw []
+QED
+
+(* ---- set_relation theorems ---- *)
+
+Theorem finite_imp_finite_prefixes:
+  ∀r s. finite s ∧ domain r ⊆ s ⇒ finite_prefixes r s
+Proof
+  rw [finite_prefixes_def] >>
+  irule SUBSET_FINITE_I >> fs [SUBSET_DEF, domain_def] >> metis_tac []
+QED
+
+Theorem finite_linear_order_of_finite_po:
+  ∀r s. finite s ∧ partial_order r s ⇒ ∃r'. linear_order r' s ∧ r ⊆ r'
+Proof
+  rw [] >>
+  `countable s` by metis_tac [finite_countable] >>
+  `finite_prefixes r s` by metis_tac [finite_imp_finite_prefixes, partial_order_def] >>
+  metis_tac [linear_order_of_countable_po]
+QED
+
+Theorem finite_linear_order_to_list:
+  ∀lo X. finite X ∧ linear_order lo X ⇒
+    ∃l. X = set l ∧ SORTED (λx y. (x, y) ∈ lo ∨ y ∉ X) l ∧ all_distinct l
+Proof
+  rw [] >>
+  qmatch_goalsub_abbrev_tac `SORTED R _` >>
+  qexists_tac `QSORT R (SET_TO_LIST X)` >> rw [SET_TO_LIST_INV]
+  >- rw [EXTENSION, QSORT_MEM]
+  >- (
+    irule QSORT_SORTED >>
+    rw [Abbr `R`, relationTheory.total_def]
+    >- (fs [linear_order_def] >> metis_tac []) >>
+    fs [linear_order_def, transitive_def, relationTheory.transitive_def,
+        domain_def, range_def, SUBSET_DEF] >>
+    rw [] >> metis_tac [])
+  >- metis_tac [ALL_DISTINCT_SET_TO_LIST, ALL_DISTINCT_PERM, QSORT_PERM]
+QED
+
+Definition rc_def:
+  rc R s = R ∪ {(x,x) | x ∈ s}
+End
+
+Theorem rc_is_reflexive:
+  ∀R s. reflexive (rc R s) s
+Proof
+  rw [rc_def, reflexive_def]
+QED
+
+Theorem transitive_rc:
+  ∀R s. transitive R ⇒ transitive (rc R s)
+Proof
+  rw [rc_def, transitive_def] >> metis_tac []
+QED
+
+Theorem antisym_rc:
+  ∀R s. antisym (rc R s) ⇔ antisym R
+Proof
+  rw [rc_def, antisym_def] >> metis_tac []
 QED
 
 export_theory ();

@@ -328,7 +328,7 @@ Proof
     first_x_assum drule >> simp [] >>
     disch_then (qspec_then `translate_reg r1 ty1` mp_tac) >> rw [] >>
     CCONTR_TAC >> fs [] >>
-    `ip2 = s.ip`
+    `ip_equiv ip2 s.ip`
     by (
       fs [is_ssa_def, EXTENSION, IN_DEF] >>
       Cases_on `r1` >> fs [translate_reg_def, untranslate_reg_def] >>
@@ -337,7 +337,7 @@ Proof
       `assigns prog s.ip (Reg reg, ty1)`
       suffices_by metis_tac [reachable_dominates_same_func, FST] >>
       metis_tac [EL_MEM, IN_DEF]) >>
-    metis_tac [dominates_irrefl]) >>
+    metis_tac [dominates_irrefl, ip_equiv_dominates2]) >>
   drule ALOOKUP_MEM >> rw [MEM_MAP, MEM_ZIP] >>
   metis_tac [EL_MEM, LIST_REL_LENGTH, LENGTH_MAP]
 QED
@@ -1493,9 +1493,10 @@ Proof
           >- (
             fs [reachable_def] >>
             qexists_tac `path ++ [<|f := s1.ip.f; b := Some target; i := Phi_ip s1.ip.b|>]` >>
-            rw_tac std_ss [good_path_append, GSYM APPEND] >> rw [] >>
-            rw [Once good_path_cases] >> fs [next_ips_cases, IN_DEF] >>
-            metis_tac [])))
+            rw_tac std_ss [good_path_append, GSYM APPEND] >> rw []
+            >- (rw [Once good_path_cases] >> fs [next_ips_cases, IN_DEF] >> metis_tac [])
+            >- metis_tac [ip_equiv_next_ips, ip_equiv_sym]
+            >- metis_tac [ip_equiv_refl])))
       >- fs [is_implemented_def]
       >- fs [is_implemented_def]
       >- ( (* Exit *)
@@ -1923,7 +1924,11 @@ Proof
     rw [] >>
     drule alookup_translate_blocks >> rpt (disch_then drule) >>
     impl_tac
-    >- metis_tac [ALOOKUP_ALL_DISTINCT_MEM, prog_ok_def] >>
+    >- (
+      fs [prog_ok_def, EVERY_MEM] >> rw [] >>
+      irule ALOOKUP_ALL_DISTINCT_MEM >> rw [] >>
+      imp_res_tac ALOOKUP_MEM >>
+      res_tac >> fs []) >>
     simp [translate_label_def] >>
     rw [] >> rw [dest_label_def, num_calls_def] >>
     rw [translate_instrs_take_to_call] >>
