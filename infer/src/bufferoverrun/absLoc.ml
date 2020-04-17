@@ -404,6 +404,11 @@ module PowLoc = struct
      constructors in this module should be defined carefully to keep that constraint. *)
   type t = Bottom | Unknown | Known of LocSet.t [@@deriving compare]
 
+  let mk_known ploc =
+    assert ((not (LocSet.is_empty ploc)) && not (LocSet.mem Loc.unknown ploc)) ;
+    Known ploc
+
+
   let pp f = function
     | Bottom ->
         F.pp_print_string f SpecialChars.up_tack
@@ -438,7 +443,7 @@ module PowLoc = struct
     | _, Unknown ->
         x
     | Known x, Known y ->
-        Known (LocSet.union x y)
+        mk_known (LocSet.union x y)
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
@@ -449,7 +454,7 @@ module PowLoc = struct
 
   let unknown = Unknown
 
-  let singleton l = if Loc.is_unknown l then Unknown else Known (LocSet.singleton l)
+  let singleton l = if Loc.is_unknown l then Unknown else mk_known (LocSet.singleton l)
 
   let fold f ploc init =
     match ploc with
@@ -472,19 +477,15 @@ module PowLoc = struct
 
 
   let normalize ploc =
-    match ploc with
-    | Bottom | Unknown ->
-        ploc
-    | Known ploc' -> (
-      match LocSet.is_singleton_or_more ploc' with
-      | Empty ->
-          Bottom
-      | Singleton loc when Loc.is_unknown loc ->
-          Unknown
-      | More when LocSet.mem Loc.unknown ploc' ->
-          Known (LocSet.remove Loc.unknown ploc')
-      | _ ->
-          ploc )
+    match LocSet.is_singleton_or_more ploc with
+    | Empty ->
+        Bottom
+    | Singleton loc when Loc.is_unknown loc ->
+        Unknown
+    | More when LocSet.mem Loc.unknown ploc ->
+        mk_known (LocSet.remove Loc.unknown ploc)
+    | _ ->
+        mk_known ploc
 
 
   let map f ploc =
@@ -494,7 +495,7 @@ module PowLoc = struct
     | Unknown ->
         singleton (f Loc.unknown)
     | Known ploc ->
-        Known (LocSet.map f ploc) |> normalize
+        normalize (LocSet.map f ploc)
 
 
   let is_singleton_or_more = function
@@ -522,7 +523,7 @@ module PowLoc = struct
     | Known _ when Loc.is_unknown l ->
         ploc
     | Known ploc ->
-        Known (LocSet.add l ploc)
+        mk_known (LocSet.add l ploc)
 
 
   let mem l = function
@@ -542,7 +543,7 @@ module PowLoc = struct
     | Unknown ->
         Unknown
     | Known ploc ->
-        Known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l ~fn)) ploc LocSet.empty)
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l ~fn)) ploc LocSet.empty)
 
 
   let append_star_field ploc ~fn =
@@ -553,7 +554,7 @@ module PowLoc = struct
     | Unknown ->
         Unknown
     | Known ploc ->
-        Known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l ~fn)) ploc LocSet.empty)
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l ~fn)) ploc LocSet.empty)
 
 
   let lift_cmp cmp_loc ploc1 ploc2 =
