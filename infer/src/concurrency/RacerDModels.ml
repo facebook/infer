@@ -495,3 +495,7 @@ let is_builder_passthrough callee =
                     false )
   | _ ->
       false
+
+
+let is_initializer tenv proc_name =
+  Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name

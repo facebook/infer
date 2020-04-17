@@ -204,3 +204,5 @@ type summary =
 val empty_summary : summary
 
 val pp_summary : F.formatter -> summary -> unit
+
+val astate_to_summary : Procdesc.t -> t -> summary

@@ -425,57 +425,53 @@ end
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
 let analyze_procedure {Callbacks.exe_env; summary} =
+  let open RacerDDomain in
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  let open RacerDModels in
   let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
-  let is_initializer tenv proc_name =
-    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
-  in
-  let open RacerDDomain in
-  if should_analyze_proc tenv proc_name then
+  if RacerDModels.should_analyze_proc tenv proc_name then
     let formal_map = FormalMap.make proc_desc in
-    let proc_data = ProcData.make summary tenv (FormalMap.make proc_desc) in
-    let initial =
-      let locks =
-        if Procdesc.is_java_synchronized proc_desc then LockDomain.(acquire_lock bottom)
-        else LockDomain.bottom
+    let locks =
+      if Procdesc.is_java_synchronized proc_desc then LockDomain.(acquire_lock bottom)
+      else LockDomain.bottom
+    in
+    let threads =
+      if
+        runs_on_ui_thread ~attrs_of_pname tenv proc_name
+        || RacerDModels.is_thread_confined_method tenv proc_name
+      then ThreadsDomain.AnyThreadButSelf
+      else if
+        Procdesc.is_java_synchronized proc_desc || RacerDModels.is_marked_thread_safe proc_name tenv
+      then ThreadsDomain.AnyThread
+      else ThreadsDomain.NoThread
+    in
+    let add_owned_local acc (var_data : ProcAttributes.var_data) =
+      let pvar = Pvar.mk var_data.name proc_name in
+      let base = AccessPath.base_of_pvar pvar var_data.typ in
+      OwnershipDomain.add (AccessExpression.base base) OwnershipAbstractValue.owned acc
+    in
+    (* Add ownership to local variables. In cpp, stack-allocated local
+       variables cannot be raced on as every thread has its own stack.
+       More generally, we will never be confident that a race exists on a local/temp. *)
+    let own_locals =
+      List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc) ~init:OwnershipDomain.empty
+    in
+    let is_owned_formal {Annot.class_name} =
+      (* @InjectProp allocates a fresh object to bind to the parameter *)
+      String.is_suffix ~suffix:Annotations.inject_prop class_name
+    in
+    let add_conditional_owned_formal acc (formal, formal_index) =
+      let ownership_value =
+        if Annotations.ma_has_annotation_with method_annotation is_owned_formal then
+          OwnershipAbstractValue.owned
+        else OwnershipAbstractValue.make_owned_if formal_index
       in
-      let threads =
-        if
-          runs_on_ui_thread ~attrs_of_pname tenv proc_name
-          || is_thread_confined_method tenv proc_name
-        then ThreadsDomain.AnyThreadButSelf
-        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv then
-          ThreadsDomain.AnyThread
-        else ThreadsDomain.NoThread
-      in
-      let add_owned_local acc (var_data : ProcAttributes.var_data) =
-        let pvar = Pvar.mk var_data.name proc_name in
-        let base = AccessPath.base_of_pvar pvar var_data.typ in
-        OwnershipDomain.add (AccessExpression.base base) OwnershipAbstractValue.owned acc
-      in
-      (* Add ownership to local variables. In cpp, stack-allocated local
-         variables cannot be raced on as every thread has its own stack.
-         More generally, we will never be confident that a race exists on a local/temp. *)
-      let own_locals =
-        List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc) ~init:OwnershipDomain.empty
-      in
-      let is_owned_formal {Annot.class_name} =
-        (* @InjectProp allocates a fresh object to bind to the parameter *)
-        String.is_suffix ~suffix:Annotations.inject_prop class_name
-      in
-      let add_conditional_owned_formal acc (formal, formal_index) =
-        let ownership_value =
-          if Annotations.ma_has_annotation_with method_annotation is_owned_formal then
-            OwnershipAbstractValue.owned
-          else OwnershipAbstractValue.make_owned_if formal_index
-        in
-        OwnershipDomain.add (AccessExpression.base formal) ownership_value acc
-      in
-      if is_initializer tenv proc_name then
+      OwnershipDomain.add (AccessExpression.base formal) ownership_value acc
+    in
+    let ownership =
+      if RacerDModels.is_initializer tenv proc_name then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
           | Some base ->
@@ -483,46 +479,29 @@ let analyze_procedure {Callbacks.exe_env; summary} =
           | None ->
               acc
         in
-        let ownership =
-          (* if a constructor is called via DI, all of its formals will be freshly allocated and
-             therefore owned. we assume that constructors annotated with @Inject will only be
-             called via DI or using fresh parameters. *)
-          if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
-            List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
-            |> List.fold ~f:add_owned_formal ~init:own_locals
-          else
-            (* express that the constructor owns [this] *)
-            let init = add_owned_formal own_locals 0 in
-            FormalMap.get_formals_indexes formal_map
-            |> List.filter ~f:(fun (_, index) -> not (Int.equal 0 index))
-            |> List.fold ~init ~f:add_conditional_owned_formal
-        in
-        {RacerDDomain.bottom with ownership; threads; locks}
+        (* if a constructor is called via DI, all of its formals will be freshly allocated and
+           therefore owned. we assume that constructors annotated with @Inject will only be
+           called via DI or using fresh parameters. *)
+        if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
+          List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
+          |> List.fold ~f:add_owned_formal ~init:own_locals
+        else
+          (* express that the constructor owns [this] *)
+          let init = add_owned_formal own_locals 0 in
+          FormalMap.get_formals_indexes formal_map
+          |> List.filter ~f:(fun (_, index) -> not (Int.equal 0 index))
+          |> List.fold ~init ~f:add_conditional_owned_formal
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
-        let ownership =
-          List.fold ~init:own_locals ~f:add_conditional_owned_formal
-            (FormalMap.get_formals_indexes formal_map)
-        in
-        {RacerDDomain.bottom with ownership; threads; locks}
+        List.fold ~init:own_locals ~f:add_conditional_owned_formal
+          (FormalMap.get_formals_indexes formal_map)
     in
-    match Analyzer.compute_post proc_data ~initial with
-    | Some {threads; locks; accesses; ownership; attribute_map} ->
-        let return_var_exp =
-          AccessExpression.base
-            (Var.of_pvar (Pvar.get_ret_pvar proc_name), Procdesc.get_ret_type proc_desc)
-        in
-        let return_ownership = OwnershipDomain.get_owned return_var_exp ownership in
-        let return_attribute = AttributeMapDomain.find return_var_exp attribute_map in
-        let locks =
-          (* if method is [synchronized] released the lock once. *)
-          if Procdesc.is_java_synchronized proc_desc then LockDomain.release_lock locks else locks
-        in
-        let post = {threads; locks; accesses; return_ownership; return_attribute} in
-        Payload.update_summary post summary
-    | None ->
-        summary
+    let initial = {bottom with ownership; threads; locks} in
+    let proc_data = ProcData.make summary tenv formal_map in
+    Analyzer.compute_post proc_data ~initial
+    |> Option.map ~f:(astate_to_summary proc_desc)
+    |> Option.value_map ~default:summary ~f:(fun post -> Payload.update_summary post summary)
   else Payload.update_summary empty_summary summary
 
 

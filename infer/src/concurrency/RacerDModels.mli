@@ -61,3 +61,6 @@ val creates_builder : Procname.t -> bool
 
 val is_builder_passthrough : Procname.t -> bool
 (** is the callee a non-static [Builder] method returning the same type as its receiver *)
+
+val is_initializer : Tenv.t -> Procname.t -> bool
+(** should the given procedure be treated as a constructor/initializer? *)

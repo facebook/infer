@@ -546,3 +546,18 @@ let add_unannotated_call_access formals pname actuals loc (astate : t) =
             astate.threads Unowned loc
         in
         {astate with accesses= AccessDomain.add_opt snapshot astate.accesses} )
+
+
+let astate_to_summary proc_desc {threads; locks; accesses; ownership; attribute_map} =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let return_var_exp =
+    AccessExpression.base
+      (Var.of_pvar (Pvar.get_ret_pvar proc_name), Procdesc.get_ret_type proc_desc)
+  in
+  let return_ownership = OwnershipDomain.get_owned return_var_exp ownership in
+  let return_attribute = AttributeMapDomain.find return_var_exp attribute_map in
+  let locks =
+    (* if method is [synchronized] released the lock once. *)
+    if Procdesc.is_java_synchronized proc_desc then LockDomain.release_lock locks else locks
+  in
+  {threads; locks; accesses; return_ownership; return_attribute}
