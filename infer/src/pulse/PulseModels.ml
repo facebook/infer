@@ -41,11 +41,9 @@ module Misc = struct
 
   let return_int : Int64.t -> model =
    fun i64 ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let ret_addr = AbstractValue.mk_fresh () in
-    let astate =
-      let i = IntLit.of_int64 i64 in
-      PulseArithmetic.and_eq_int (Immediate {location; history= []}) ret_addr i astate
-    in
+    let i = IntLit.of_int64 i64 in
+    let ret_addr = AbstractValue.Constants.get_int i in
+    let astate = PulseArithmetic.and_eq_int (Immediate {location; history= []}) ret_addr i astate in
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
@@ -88,24 +86,22 @@ module C = struct
 
   let malloc _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
-    let ret_addr = AbstractValue.mk_fresh () in
     let hist =
       [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
     in
+    let immediate_hist = Trace.Immediate {location; history= hist} in
+    let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, hist) in
     let astate = PulseOperations.write_id ret_id ret_value astate in
-    let immediate_hist = Trace.Immediate {location; history= hist} in
     let astate_alloc =
-      PulseOperations.allocate callee_procname location ret_value astate
-      |> PulseArithmetic.and_positive immediate_hist ret_addr
-      |> ExecutionDomain.continue
+      PulseArithmetic.and_positive immediate_hist ret_addr astate
+      |> PulseOperations.allocate callee_procname location ret_value
     in
     let+ astate_null =
       PulseArithmetic.and_eq_int immediate_hist ret_addr IntLit.zero astate
-      |> PulseOperations.invalidate location (Invalidation.ConstantDereference IntLit.zero)
-           ret_value
+      |> PulseOperations.invalidate location (ConstantDereference IntLit.zero) ret_value
     in
-    [astate_alloc; ExecutionDomain.ContinueProgram astate_null]
+    [ExecutionDomain.ContinueProgram astate_alloc; ExecutionDomain.ContinueProgram astate_null]
 
 
   let malloc_not_null _ : model =

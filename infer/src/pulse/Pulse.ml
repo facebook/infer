@@ -230,7 +230,7 @@ let sledge_test_fmt =
 
 let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  AbstractValue.init () ;
+  AbstractValue.State.reset () ;
   let pdesc = Summary.get_proc_desc summary in
   let initial =
     DisjunctiveTransferFunctions.Disjuncts.singleton (ExecutionDomain.mk_initial pdesc)

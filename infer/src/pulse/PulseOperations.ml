@@ -133,15 +133,14 @@ let eval location exp0 astate =
     | Cast (_, exp') ->
         eval exp' astate
     | Const (Cint i) ->
-        (* TODO: make identical const the same address *)
-        let addr = AbstractValue.mk_fresh () in
+        let v = AbstractValue.Constants.get_int i in
         let astate =
-          PulseArithmetic.and_eq_int (Immediate {location; history= []}) addr i astate
+          PulseArithmetic.and_eq_int (Immediate {location; history= []}) v i astate
           |> AddressAttributes.invalidate
-               (addr, [ValueHistory.Assignment location])
+               (v, [ValueHistory.Assignment location])
                (ConstantDereference i) location
         in
-        Ok (astate, (addr, []))
+        Ok (astate, (v, []))
     | UnOp (unop, exp, _typ) ->
         let+ astate, (addr, hist) = eval exp astate in
         PulseArithmetic.eval_unop location unop addr hist astate
