@@ -349,31 +349,88 @@ module StdFunction = struct
           ~formals_opt:None astate
 end
 
-module StdVector = struct
-  let internal_array =
+module GenericArrayBackedCollection = struct
+  let field =
     Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["std"; "vector"]))
+      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
       "__infer_model_backing_array"
 
 
-  let internal_array_access = HilExp.Access.FieldAccess internal_array
+  let access = HilExp.Access.FieldAccess field
 
-  let to_internal_array location vector astate =
-    PulseOperations.eval_access location vector internal_array_access astate
+  let eval location collection astate =
+    PulseOperations.eval_access location collection access astate
 
 
-  let element_of_internal_array location vector index astate =
-    let* astate, vector_internal_array = to_internal_array location vector astate in
-    PulseOperations.eval_access location vector_internal_array
-      (ArrayAccess (Typ.void, index))
+  let eval_element location internal_array index astate =
+    PulseOperations.eval_access location internal_array (ArrayAccess (Typ.void, index)) astate
+
+
+  let element location collection index astate =
+    let* astate, internal_array = eval location collection astate in
+    eval_element location internal_array index astate
+end
+
+module GenericArrayBackedCollectionIterator = struct
+  let internal_pointer =
+    Fieldname.make
+      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
+      "__infer_model_backing_pointer"
+
+
+  let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
+
+  let to_internal_pointer location iterator astate =
+    PulseOperations.eval_access location iterator internal_pointer_access astate
+
+
+  let constructor ~desc this init : model =
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, (arr_addr, arr_hist) = GenericArrayBackedCollection.eval location init astate in
+    let* astate =
+      PulseOperations.write_field location ~ref:this GenericArrayBackedCollection.field
+        ~obj:(arr_addr, event :: arr_hist)
+        astate
+    in
+    let* astate, (p_addr, p_hist) = to_internal_pointer location init astate in
+    PulseOperations.write_field location ~ref:this internal_pointer
+      ~obj:(p_addr, event :: p_hist)
       astate
+    >>| ExecutionDomain.continue >>| List.return
 
 
+  let operator_star ~desc iter ~caller_summary:_ ~callee_procname:_ location ~ret astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, iter_index = to_internal_pointer location iter astate in
+    let+ astate, (elem_val, elem_hist) =
+      GenericArrayBackedCollection.element location iter (fst iter_index) astate
+    in
+    let astate = PulseOperations.write_id (fst ret) (elem_val, event :: elem_hist) astate in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  let operator_plus_plus ~desc iter ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let index_next = AbstractValue.mk_fresh () in
+    let* astate, current_index = to_internal_pointer location iter astate in
+    let* astate, element =
+      GenericArrayBackedCollection.element location iter (fst current_index) astate
+    in
+    (* Iterator is invalid if the value it points to is invalid *)
+    let* astate, _ = PulseOperations.eval_access location element Dereference astate in
+    PulseOperations.write_field location ~ref:iter internal_pointer
+      ~obj:(index_next, [event])
+      astate
+    >>| ExecutionDomain.continue >>| List.return
+end
+
+module StdVector = struct
   let reallocate_internal_array trace vector vector_f location astate =
-    let* astate, array_address = to_internal_array location vector astate in
+    let* astate, array_address = GenericArrayBackedCollection.eval location vector astate in
     PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
     >>= PulseOperations.invalidate_deref location (StdVector vector_f) array_address
-    >>= PulseOperations.havoc_field location vector internal_array trace
+    >>= PulseOperations.havoc_field location vector GenericArrayBackedCollection.field trace
 
 
   let invalidate_references vector_f vector : model =
@@ -391,9 +448,31 @@ module StdVector = struct
   let at ~desc vector index : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let+ astate, (addr, hist) = element_of_internal_array location vector (fst index) astate in
+    let+ astate, (addr, hist) =
+      GenericArrayBackedCollection.element location vector (fst index) astate
+    in
     let astate = PulseOperations.write_id (fst ret) (addr, event :: hist) astate in
     [ExecutionDomain.ContinueProgram astate]
+
+
+  let vector_begin vector iter : model =
+   fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= []} in
+    let index_zero = AbstractValue.mk_fresh () in
+    let astate =
+      PulseArithmetic.and_eq_int (Immediate {location; history= []}) index_zero IntLit.zero astate
+    in
+    let* astate, ((arr_addr, hist) as arr) =
+      GenericArrayBackedCollection.eval location vector astate
+    in
+    let* astate, _ = GenericArrayBackedCollection.eval_element location arr index_zero astate in
+    PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
+      ~obj:(arr_addr, event :: hist)
+      astate
+    >>= PulseOperations.write_field location ~ref:iter
+          GenericArrayBackedCollectionIterator.internal_pointer
+          ~obj:(index_zero, [event])
+    >>| ExecutionDomain.continue >>| List.return
 
 
   let reserve vector : model =
@@ -422,7 +501,7 @@ module JavaCollection = struct
    fun ~caller_summary:_ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
     let* astate, ((old_addr, old_hist) as old_elem) =
-      StdVector.element_of_internal_array location coll (fst index) astate
+      GenericArrayBackedCollection.element location coll (fst index) astate
     in
     let+ astate =
       PulseOperations.write_deref location ~ref:new_elem
@@ -497,10 +576,25 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "integral_constant" < any_typ &+ capt_int
         >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
         <>--> Misc.return_int
+      ; -"std" &:: "__wrap_iter" &:: "__wrap_iter" <>$ capt_arg_payload $+ capt_arg_payload
+        $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
+      ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
+      ; -"std" &:: "__wrap_iter" &:: "operator++" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_plus_plus ~desc:"iterator operator++"
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
+        $+ capt_arg_payload
+        $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_plus_plus ~desc:"iterator operator++"
       ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
         $+...$--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
         $--> StdVector.at ~desc:"std::vector::at()"
+      ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+        $--> StdVector.vector_begin
       ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
         $--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload

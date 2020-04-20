@@ -214,12 +214,12 @@ let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref Dereference addr_trace_obj astate
 
 
-let write_field location addr_trace_ref field addr_trace_obj astate =
+let write_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref (FieldAccess field) addr_trace_obj astate
 
 
 let havoc_field location addr_trace field trace_obj astate =
-  write_field location addr_trace field (AbstractValue.mk_fresh (), trace_obj) astate
+  write_field location ~ref:addr_trace field ~obj:(AbstractValue.mk_fresh (), trace_obj) astate
 
 
 let allocate procname location addr_trace astate =

@@ -61,6 +61,15 @@ val realloc_pvar : Pvar.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
+val write_field :
+     Location.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> Fieldname.t
+  -> obj:AbstractValue.t * ValueHistory.t
+  -> t
+  -> t access_result
+(** write the edge [ref --.field--> obj] *)
+
 val write_deref :
      Location.t
   -> ref:AbstractValue.t * ValueHistory.t
