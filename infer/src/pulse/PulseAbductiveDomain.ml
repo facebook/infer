@@ -93,8 +93,6 @@ let pp f {post; pre; path_condition; skipped_calls} =
     PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls
 
 
-let get_path_condition {path_condition} = path_condition
-
 let set_path_condition path_condition astate = {astate with path_condition}
 
 let leq ~lhs ~rhs =

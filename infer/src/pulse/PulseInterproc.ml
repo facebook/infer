@@ -73,7 +73,6 @@ type contradiction =
           state *)
   | FormalActualLength of
       {formals: Var.t list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
-  | UnsatPathCondition of call_state
 
 let pp_contradiction fmt = function
   | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
@@ -95,8 +94,6 @@ let pp_contradiction fmt = function
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
-  | UnsatPathCondition call_state ->
-      F.fprintf fmt "UNSAT %a" pp_call_state call_state
 
 
 exception Contradiction of contradiction
@@ -316,10 +313,9 @@ let conjoin_callee_arith pre_post call_state =
   in
   let path_condition = PathCondition.and_ call_state.astate.path_condition callee_path_cond in
   let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
-  let call_state = {call_state with astate; subst} in
-  if PathCondition.is_unsat path_condition then
-    raise (Contradiction (UnsatPathCondition call_state))
-  else call_state
+  (* Don't trigger the computation of [path_condition] by asking for satisfiability here. Instead,
+     (un-)satisfiability is computed lazily when we discover issues. *)
+  {call_state with astate; subst}
 
 
 (* shadowed to take config into account *)

@@ -6,19 +6,19 @@
  *)
 
 open! IStd
-module L = Logging
 open PulseBasicInterface
-open PulseDomainInterface
+module AbductiveDomain = PulseAbductiveDomain
+module AddressAttributes = AbductiveDomain.AddressAttributes
 
 (** {2 Building arithmetic constraints} *)
 
 let and_eq_terms t1 t2 astate =
-  let phi = PathCondition.and_eq t1 t2 (AbductiveDomain.get_path_condition astate) in
+  let phi = PathCondition.and_eq t1 t2 astate.AbductiveDomain.path_condition in
   AbductiveDomain.set_path_condition phi astate
 
 
 let and_term t astate =
-  let phi = PathCondition.and_term t (AbductiveDomain.get_path_condition astate) in
+  let phi = PathCondition.and_term t astate.AbductiveDomain.path_condition in
   AbductiveDomain.set_path_condition phi astate
 
 
@@ -197,49 +197,44 @@ let prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op asta
   let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, path_cond_rhs =
     eval_operand location astate rhs_op
   in
-  let astate, path_condition =
+  let astate =
     let path_condition =
       let t_positive = PathCondition.Term.of_binop bop path_cond_lhs path_cond_rhs in
       let t = if negated then PathCondition.Term.not_ t_positive else t_positive in
-      AbductiveDomain.get_path_condition astate |> PathCondition.and_term t
+      PathCondition.and_term t astate.AbductiveDomain.path_condition
     in
-    let astate = AbductiveDomain.set_path_condition path_condition astate in
-    (astate, path_condition)
+    AbductiveDomain.set_path_condition path_condition astate
   in
-  if PathCondition.is_unsat path_condition then (
-    L.d_printfln "Contradiction detected in path condition" ;
-    (astate, false) )
-  else
-    match
-      CItv.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
-        (Option.map ~f:fst arith_rhs_opt)
-    with
-    | Unsatisfiable ->
-        (astate, false)
-    | Satisfiable (abduced_lhs, abduced_rhs) ->
-        let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
-        let astate =
-          record_abduced event location value_lhs_opt arith_lhs_opt abduced_lhs astate
-          |> record_abduced event location value_rhs_opt arith_rhs_opt abduced_rhs
-        in
-        let satisfiable =
-          match Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean with
-          | False ->
-              negated
-          | True ->
-              not negated
-          | Top ->
-              true
-          | Bottom ->
-              false
-        in
-        let astate, satisfiable =
+  match
+    CItv.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
+      (Option.map ~f:fst arith_rhs_opt)
+  with
+  | Unsatisfiable ->
+      (astate, false)
+  | Satisfiable (abduced_lhs, abduced_rhs) ->
+      let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
+      let astate =
+        record_abduced event location value_lhs_opt arith_lhs_opt abduced_lhs astate
+        |> record_abduced event location value_rhs_opt arith_rhs_opt abduced_rhs
+      in
+      let satisfiable =
+        match Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean with
+        | False ->
+            negated
+        | True ->
+            not negated
+        | Top ->
+            true
+        | Bottom ->
+            false
+      in
+      let astate, satisfiable =
+        bind_satisfiable ~satisfiable astate ~f:(fun astate ->
+            prune_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs astate )
+      in
+      Option.value_map (Binop.symmetric bop) ~default:(astate, satisfiable) ~f:(fun bop' ->
           bind_satisfiable ~satisfiable astate ~f:(fun astate ->
-              prune_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs astate )
-        in
-        Option.value_map (Binop.symmetric bop) ~default:(astate, satisfiable) ~f:(fun bop' ->
-            bind_satisfiable ~satisfiable astate ~f:(fun astate ->
-                prune_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs astate ) )
+              prune_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs astate ) )
 
 
 (** {2 Queries} *)
@@ -247,6 +242,12 @@ let prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op asta
 let is_known_zero astate v =
   ( AddressAttributes.get_citv v astate
   |> function Some (arith, _) -> CItv.is_equal_to_zero arith | None -> false )
-  || (let phi = AbductiveDomain.get_path_condition astate in
+  || (let phi = astate.AbductiveDomain.path_condition in
       PathCondition.is_known_zero (PathCondition.Term.of_absval v) phi )
   || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv v astate)
+
+
+let is_unsat astate =
+  (* note: contradictions are detected eagerly for all domains except path conditions, so just
+     evaluate that one *)
+  PathCondition.is_unsat astate.AbductiveDomain.path_condition

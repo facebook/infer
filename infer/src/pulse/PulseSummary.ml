@@ -11,7 +11,7 @@ open PulseDomainInterface
 
 type t = ExecutionDomain.t list
 
-let of_posts pdesc posts = List.map posts ~f:(ExecutionDomain.of_post pdesc)
+let of_posts pdesc posts = ExecutionDomain.of_posts pdesc posts
 
 let pp fmt summary =
   F.open_vbox 0 ;

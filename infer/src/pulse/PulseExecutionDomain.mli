@@ -6,17 +6,17 @@
  *)
 open! IStd
 
-type exec_state =
+type t =
   | AbortProgram of PulseAbductiveDomain.t
       (** represents the state at the program point that caused an error *)
   | ContinueProgram of PulseAbductiveDomain.t  (** represents the state at the program point *)
   | ExitProgram of PulseAbductiveDomain.t
       (** represents the state originating at exit/divergence. *)
 
-include AbstractDomain.NoJoin with type t = exec_state
+include AbstractDomain.NoJoin with type t := t
 
 val continue : PulseAbductiveDomain.t -> t
 
-val of_post : Procdesc.t -> t -> t
+val of_posts : Procdesc.t -> t list -> t list
 
 val mk_initial : Procdesc.t -> t

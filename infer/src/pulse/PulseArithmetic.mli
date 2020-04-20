@@ -7,7 +7,7 @@
 
 open! IStd
 open PulseBasicInterface
-open PulseDomainInterface
+module AbductiveDomain = PulseAbductiveDomain
 
 (** {2 Building arithmetic constraints} *)
 
@@ -56,3 +56,6 @@ val prune_binop :
 
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 (** [is_known_zero astate t] returns [true] if [astate |- t = 0], [false] if we don't know for sure *)
+
+val is_unsat : AbductiveDomain.t -> bool
+(** returns whether the state contains a contradiction *)

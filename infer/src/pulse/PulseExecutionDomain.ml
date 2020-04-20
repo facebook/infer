@@ -9,12 +9,10 @@ open! IStd
 module F = Format
 module AbductiveDomain = PulseAbductiveDomain
 
-type exec_state =
+type t =
   | AbortProgram of AbductiveDomain.t
   | ContinueProgram of AbductiveDomain.t
   | ExitProgram of AbductiveDomain.t
-
-type t = exec_state
 
 let continue astate = ContinueProgram astate
 
@@ -49,4 +47,8 @@ let map ~f exec_state =
       ExitProgram (f astate)
 
 
-let of_post pdesc = map ~f:(AbductiveDomain.of_post pdesc)
+let of_posts pdesc posts =
+  List.filter_map posts ~f:(fun exec_state ->
+      let (AbortProgram astate | ContinueProgram astate | ExitProgram astate) = exec_state in
+      if PulseArithmetic.is_unsat astate then None
+      else Some (map exec_state ~f:(AbductiveDomain.of_post pdesc)) )

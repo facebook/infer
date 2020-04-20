@@ -22,8 +22,10 @@ let check_error_transform summary ~f = function
   | Ok astate ->
       f astate
   | Error (diagnostic, astate) ->
-      report summary diagnostic ;
-      [ExecutionDomain.AbortProgram astate]
+      if PulseArithmetic.is_unsat astate then []
+      else (
+        report summary diagnostic ;
+        [ExecutionDomain.AbortProgram astate] )
 
 
 let check_error_continue summary result =

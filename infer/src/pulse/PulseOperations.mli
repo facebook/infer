@@ -13,7 +13,7 @@ type t = AbductiveDomain.t
 
 type 'a access_result = ('a, Diagnostic.t * t) result
 
-val ok_continue : t -> (ExecutionDomain.exec_state list, 'a) result
+val ok_continue : t -> (ExecutionDomain.t list, 'a) result
 
 module Closures : sig
   val check_captured_addresses : Location.t -> AbstractValue.t -> t -> (t, Diagnostic.t * t) result

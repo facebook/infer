@@ -154,8 +154,6 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
-val get_path_condition : t -> PathCondition.t
-
 val set_path_condition : PathCondition.t -> t -> t
 
 val of_post : Procdesc.t -> t -> t
