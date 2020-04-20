@@ -36,11 +36,11 @@ module Term = struct
 end
 
 (* same type as {!PulsePathCondition.t} to be nice to summary serialization *)
-type t = {eqs: Sledge.Equality.t; non_eqs: Sledge.Term.t}
+type t = {eqs: Sledge.Equality.t lazy_t; non_eqs: Sledge.Term.t lazy_t}
 
 let pp _ _ = ()
 
-let true_ = {eqs= Sledge.Equality.true_; non_eqs= Sledge.Term.true_}
+let true_ = {eqs= Lazy.from_val Sledge.Equality.true_; non_eqs= Lazy.from_val Sledge.Term.true_}
 
 let and_eq () () phi = phi
 

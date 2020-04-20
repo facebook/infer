@@ -102,39 +102,46 @@ module Equality = struct
 
   let apply_subst subst r =
     let new_vars, r' = Sledge.Equality.apply_subst Var.Set.empty subst r in
-    assert_no_new_vars "Equality.and_" new_vars ;
+    assert_no_new_vars "Equality.apply_subst" new_vars ;
     r'
 end
 
 (** We distinguish between what the equality relation of sledge can express and the "non-equalities"
     terms that this relation ignores. We keep the latter around for completeness: we can still
     substitute known equalities into these and sometimes get contradictions back. *)
-type t = {eqs: Equality.t; non_eqs: Term.t}
+type t = {eqs: Equality.t lazy_t; non_eqs: Term.t lazy_t}
 
-let pp fmt {eqs; non_eqs} = F.fprintf fmt "%a∧%a" Equality.pp eqs Term.pp non_eqs
+let pp fmt {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
+  F.fprintf fmt "%a∧%a" Equality.pp eqs Term.pp non_eqs
 
-let true_ = {eqs= Equality.true_; non_eqs= Term.true_}
 
-let and_eq t1 t2 phi = {phi with eqs= Equality.and_eq t1 t2 phi.eqs}
+let true_ = {eqs= Lazy.from_val Equality.true_; non_eqs= Lazy.from_val Term.true_}
+
+let and_eq t1 t2 phi = {phi with eqs= lazy (Equality.and_eq t1 t2 (Lazy.force phi.eqs))}
 
 let and_term (t : Term.t) phi =
   (* add the term to the relation *)
-  let eqs = Equality.and_term t phi.eqs in
+  let eqs = lazy (Equality.and_term t (Lazy.force phi.eqs)) in
   (* [t] normalizes to [true_] so [non_eqs] never changes, do this regardless for now *)
-  let non_eqs = Term.and_ phi.non_eqs (Equality.normalize eqs t) in
+  let non_eqs = lazy (Term.and_ (Lazy.force phi.non_eqs) (Equality.normalize (Lazy.force eqs) t)) in
   {eqs; non_eqs}
 
 
 let and_ phi1 phi2 =
-  {eqs= Equality.and_ phi1.eqs phi2.eqs; non_eqs= Term.and_ phi1.non_eqs phi2.non_eqs}
+  { eqs= lazy (Equality.and_ (Lazy.force phi1.eqs) (Lazy.force phi2.eqs))
+  ; non_eqs= lazy (Term.and_ (Lazy.force phi1.non_eqs) (Lazy.force phi2.non_eqs)) }
 
 
-let is_known_zero t phi = Equality.entails_eq phi.eqs t Term.zero
+let is_known_zero t phi = Equality.entails_eq (Lazy.force phi.eqs) t Term.zero
 
 (* NOTE: not normalizing non_eqs here gives imprecise results but is cheaper *)
-let is_unsat {eqs; non_eqs} = Equality.is_false eqs || Term.is_false non_eqs
+let is_unsat {eqs; non_eqs} =
+  Equality.is_false (Lazy.force eqs) || Term.is_false (Lazy.force non_eqs)
 
-let fv {eqs; non_eqs} = Term.Var.Set.union (Equality.fv eqs) (Term.fv non_eqs)
+
+let fv {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
+  Term.Var.Set.union (Equality.fv eqs) (Term.fv non_eqs)
+
 
 let fold_map_variables phi ~init ~f =
   let term_fold_map t ~init ~f =
@@ -145,15 +152,15 @@ let fold_map_variables phi ~init ~f =
                (acc', Term.var v') ) )
   in
   let acc, eqs' =
-    Equality.classes phi.eqs
+    Equality.classes (Lazy.force phi.eqs)
     |> Term.Map.fold ~init:(init, Equality.true_) ~f:(fun ~key:t ~data:equal_ts (acc, eqs') ->
            let acc, t' = term_fold_map ~init:acc ~f t in
            List.fold equal_ts ~init:(acc, eqs') ~f:(fun (acc, eqs') equal_t ->
                let acc, t_mapped = term_fold_map ~init:acc ~f equal_t in
                (acc, Equality.and_eq t' t_mapped eqs') ) )
   in
-  let acc, non_eqs' = term_fold_map ~init:acc ~f phi.non_eqs in
-  (acc, {eqs= eqs'; non_eqs= non_eqs'})
+  let acc, non_eqs' = term_fold_map ~init:acc ~f (Lazy.force phi.non_eqs) in
+  (acc, {eqs= Lazy.from_val eqs'; non_eqs= Lazy.from_val non_eqs'})
 
 
 let simplify ~keep phi =
@@ -163,5 +170,5 @@ let simplify ~keep phi =
       (fun v keep_vs -> Term.Var.Set.add keep_vs (Var.of_absval v))
       keep Term.Var.Set.empty
   in
-  let simpl_subst = Equality.solve_for_vars [keep_vs; all_vs] phi.eqs in
-  {phi with eqs= Equality.apply_subst simpl_subst phi.eqs}
+  let simpl_subst = Equality.solve_for_vars [keep_vs; all_vs] (Lazy.force phi.eqs) in
+  {phi with eqs= Lazy.from_val (Equality.apply_subst simpl_subst (Lazy.force phi.eqs))}
