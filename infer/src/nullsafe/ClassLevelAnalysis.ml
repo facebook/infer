@@ -109,8 +109,9 @@ let make_meta_issue all_issues current_mode class_name =
           in
           ( IssueType.eradicate_meta_class_can_be_nullsafe
           , Format.asprintf
-              "Congrats! Class %a is free of nullability issues. Mark it %s to prevent regressions."
-              JavaClassName.pp class_name promo_recommendation
+              "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
+              (JavaClassName.classname class_name)
+              promo_recommendation
           , Exceptions.Advice )
       | None ->
           (* This class can not be made @Nullsafe without extra work *)
@@ -120,15 +121,17 @@ let make_meta_issue all_issues current_mode class_name =
             |> List.length
           in
           ( IssueType.eradicate_meta_class_needs_improvement
-          , Format.asprintf "Class %a needs %d issues to be fixed in order to be marked @Nullsafe."
-              JavaClassName.pp class_name issue_count_to_make_nullsafe
+          , Format.asprintf "`%s` needs %d issues to be fixed in order to be marked @Nullsafe."
+              (JavaClassName.classname class_name)
+              issue_count_to_make_nullsafe
           , Exceptions.Info )
     else if issue_count_in_curr_mode > 0 then
       (* This class is already nullsafe *)
       ( IssueType.eradicate_meta_class_needs_improvement
       , Format.asprintf
-          "@Nullsafe classes should have exactly zero nullability issues. Class %a has %d."
-          JavaClassName.pp class_name issue_count_in_curr_mode
+          "@Nullsafe classes should have exactly zero nullability issues. `%s` has %d."
+          (JavaClassName.classname class_name)
+          issue_count_in_curr_mode
       , Exceptions.Info )
     else
       ( IssueType.eradicate_meta_class_is_nullsafe
