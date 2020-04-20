@@ -193,10 +193,7 @@ let struct_name : Llvm.lltype -> string =
       Hashtbl.find_or_add anon_struct_name llt ~default:(fun () ->
           Int.to_string (Hashtbl.length anon_struct_name) )
 
-type x =
-  { llcontext: Llvm.llcontext
-  ; llmodule: Llvm.llmodule
-  ; lldatalayout: Llvm_target.DataLayout.t }
+type x = {llcontext: Llvm.llcontext; lldatalayout: Llvm_target.DataLayout.t}
 
 let ptr_siz : x -> int =
  fun x -> Llvm_target.DataLayout.pointer_size x.lldatalayout
@@ -1472,7 +1469,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
   in
   check_datalayout llcontext lldatalayout ;
-  let x = {llcontext; llmodule; lldatalayout} in
+  let x = {llcontext; lldatalayout} in
   let globals =
     Llvm.fold_left_globals
       (fun globals llg ->
