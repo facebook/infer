@@ -5,6 +5,6 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
-(context (opam (switch sledge) (name dbg) (profile dbg) (merlin)))
-(context (opam (switch sledge) (name dbg-opt) (profile dbg-opt)))
-(context (opam (switch sledge) (name opt) (profile opt)))
+(context (opam (switch sledge) (name debug) (profile debug) (merlin)))
+(context (opam (switch sledge) (name trace) (profile trace)))
+(context (opam (switch sledge) (name release) (profile release)))

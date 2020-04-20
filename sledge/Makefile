@@ -9,18 +9,18 @@ default: exes
 EXES = bin/sledge_cli
 INSTALLS = sledge
 
-DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS))
+DEBUG_TARGETS = $(patsubst %,_build/debug/%.exe,$(EXES)) $(patsubst %,_build/debug/%.install,$(INSTALLS))
 
-TARGETS = $(DBG_TARGETS) $(subst dbg,dbg-opt,$(DBG_TARGETS)) $(subst dbg,opt,$(DBG_TARGETS)) _build/opt/sledge-help.txt
+TARGETS = $(DEBUG_TARGETS) $(subst debug,trace,$(DEBUG_TARGETS)) $(subst debug,release,$(DEBUG_TARGETS)) _build/release/sledge-help.txt
 
-dune_build_dbg = dune build $(DBG_TARGETS)
-dune_install_dbg = dune install --context=dbg --prefix=_build/_install/dbg sledge 2>/dev/null
+dune_build_debug = dune build $(DEBUG_TARGETS)
+dune_install_debug = dune install --context=debug --prefix=_build/_install/debug sledge 2>/dev/null
 
-dune_build_dbg_opt = $(subst dbg,dbg-opt,$(dune_build_dbg))
-dune_install_dbg_opt = $(subst dbg,dbg-opt,$(dune_install_dbg))
+dune_build_debug_release = $(subst debug,trace,$(dune_build_debug))
+dune_install_debug_release = $(subst debug,trace,$(dune_install_debug))
 
-dune_build_opt = $(subst dbg,opt,$(dune_build_dbg))
-dune_install_opt = $(subst dbg,opt,$(dune_install_dbg))
+dune_build_release = $(subst debug,release,$(dune_build_debug))
+dune_install_release = $(subst debug,release,$(dune_install_debug))
 
 .PHONY: check
 check:
@@ -29,24 +29,24 @@ check:
 .PHONY: exes
 exes:
 	dune build $(TARGETS)
-	$(dune_install_dbg)
-	$(dune_install_dbg_opt)
-	$(dune_install_opt)
+	$(dune_install_debug)
+	$(dune_install_debug_release)
+	$(dune_install_release)
 
-.PHONY: dbg
-dbg:
-	$(dune_build_dbg)
-	$(dune_install_dbg)
+.PHONY: debug
+debug:
+	$(dune_build_debug)
+	$(dune_install_debug)
 
-.PHONY: dbg-opt
-dbg-opt:
-	$(dune_build_dbg_opt)
-	$(dune_install_dbg_opt)
+.PHONY: trace
+trace:
+	$(dune_build_debug_release)
+	$(dune_install_debug_release)
 
-.PHONY: opt
-opt:
-	$(dune_build_opt)
-	$(dune_install_opt)
+.PHONY: release
+release:
+	$(dune_build_release)
+	$(dune_install_release)
 
 .PHONY: watch
 watch:
@@ -54,12 +54,12 @@ watch:
 
 .PHONY: test
 test:
-	-dune build @_build/dbg/runtest --auto-promote
-	dune build @_build/dbg/fmt --auto-promote 2>/dev/null
+	-dune build @_build/debug/runtest --auto-promote
+	dune build @_build/debug/fmt --auto-promote 2>/dev/null
 
 .PHONY: ci-test
 ci-test:
-	dune build @_build/dbg/runtest
+	dune build @_build/debug/runtest
 
 .PHONY: clean
 clean:
@@ -67,7 +67,7 @@ clean:
 
 .PHONY: fmt
 fmt:
-	-dune build @_build/dbg/fmt --auto-promote 2>/dev/null
+	-dune build @_build/debug/fmt --auto-promote 2>/dev/null
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt
 

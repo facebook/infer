@@ -6,11 +6,11 @@
 
 - `make check` while coding to run the type-checker and populate the data merlin needs as fast as possible
 
-- `make dbg` to build the _debug_ binary (`_build/_install/dbg/bin/sledge`), which enables debug tracing (calls to functions in the `Trace` module) and executes `assert`ions
+- `make debug` to build the _debug_ binary (`_build/_install/debug/bin/sledge`), which enables debug tracing (calls to functions in the `Trace` module) and executes `assert`ions
 
-- `make dbg-opt` to build the _optimized debug_ binary (`_build/_install/dbg-opt/bin/sledge`), which enables debug tracing but does not execute `assert`ions
+- `make trace` to build the _optimized debug_ binary (`_build/_install/trace/bin/sledge`), which enables debug tracing but does not execute `assert`ions
 
-- `make opt` to build the _optimized_ binary (`_build/_install/opt/bin/sledge`), which disables debug tracing and does not execute `assert`ions
+- `make release` to build the _optimized_ binary (`_build/_install/release/bin/sledge`), which disables debug tracing and does not execute `assert`ions
 
 - `make exes`, the default target, to build all 3 binaries
 

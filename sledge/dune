@@ -4,14 +4,14 @@
 ; LICENSE file in the root directory of this source tree.
 
 (env
- (dbg
+ (debug
   (flags
    (-w +a-4-9-18-40-42-44-48@50-66 -strict-formats -strict-sequence
      -short-paths -bin-annot -keep-locs -keep-docs -opaque))
   (env-vars
    (PPX_TRACE_ENABLED 1))
   (inline_tests enabled))
- (dbg-opt
+ (trace
   (flags
    (-w -a -noassert -unboxed-types))
   (ocamlopt_flags (-O3))
