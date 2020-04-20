@@ -292,16 +292,16 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.N
 let set_class_init_attributes procname (astate : Domain.t) =
   let open Domain in
   let attributes =
-    Procname.get_class_type_name procname
-    |> Option.map ~f:(fun tname -> Procname.(Java (Java.get_class_initializer tname)))
-    |> Option.bind ~f:Payload.read_toplevel_procedure
+    ConcurrencyUtils.get_java_class_initializer_summary_of procname
+    |> Option.bind ~f:Payload.of_summary
     |> Option.value_map ~default:AttributeDomain.top ~f:(fun summary -> summary.attributes)
   in
   ({astate with attributes} : t)
 
 
 (** Compute the attributes of instance variables that all constructors agree on. *)
-let set_constructor_attributes tenv procname (astate : Domain.t) =
+let set_constructor_attributes tenv summary (astate : Domain.t) =
+  let procname = Summary.get_proc_name summary in
   let open Domain in
   (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
   let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
@@ -319,15 +319,8 @@ let set_constructor_attributes tenv procname (astate : Domain.t) =
     AttributeDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
   in
   let attributes =
-    Procname.get_class_type_name procname
-    (* retrieve its definition *)
-    |> Option.bind ~f:(Tenv.lookup tenv)
-    (* get the list of methods in the class *)
-    |> Option.value_map ~default:[] ~f:(fun (tstruct : Struct.t) -> tstruct.methods)
-    (* keep only the constructors *)
-    |> List.filter ~f:Procname.(function Java jname -> Java.is_constructor jname | _ -> false)
-    (* get the summaries of the constructors *)
-    |> List.filter_map ~f:Payload.read_toplevel_procedure
+    ConcurrencyUtils.get_java_constructor_summaries_of tenv summary
+    |> List.filter_map ~f:Payload.of_summary
     (* make instances of [this] local to the current procedure and select only the attributes *)
     |> List.map ~f:(fun (summary : Domain.summary) -> localize_attrs summary.attributes)
     (* join all the attribute maps together *)
@@ -337,7 +330,8 @@ let set_constructor_attributes tenv procname (astate : Domain.t) =
   {astate with attributes}
 
 
-let set_initial_attributes tenv procname astate =
+let set_initial_attributes tenv summary astate =
+  let procname = Summary.get_proc_name summary in
   if not Config.starvation_whole_program then astate
   else
     match procname with
@@ -348,11 +342,11 @@ let set_initial_attributes tenv procname astate =
       when Procname.Java.(is_constructor java_pname || is_static java_pname) ->
         (* analyzing a constructor or static method, so we need the attributes established by the
            class initializer *)
-        set_class_init_attributes procname astate
+        set_class_init_attributes summary astate
     | Procname.Java _ ->
         (* we are analyzing an instance method, so we need constructor-established attributes
            which will include those by the class initializer *)
-        set_constructor_attributes tenv procname astate
+        set_constructor_attributes tenv summary astate
     | _ ->
         astate
 
@@ -391,7 +385,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let initial =
       Domain.bottom
       (* set the attributes of instance variables set up by all constructors or the class initializer *)
-      |> set_initial_attributes tenv procname
+      |> set_initial_attributes tenv summary
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
     Analyzer.compute_post proc_data ~initial

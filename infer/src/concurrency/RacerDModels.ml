@@ -406,20 +406,27 @@ let should_flag_interface_call tenv exps call_flags pname =
       false
 
 
+let synchronized_container_classes =
+  [ "android.support.v4.util.Pools$SynchronizedPool"
+  ; "androidx.core.util.Pools$SynchronizedPool"
+  ; "java.util.concurrent.ConcurrentMap"
+  ; "java.util.concurrent.CopyOnWriteArrayList" ]
+
+
+let is_synchronized_container_constructor =
+  let open MethodMatcher in
+  let default = {default with methods= [Procname.Java.constructor_method_name]} in
+  List.map synchronized_container_classes ~f:(fun classname -> {default with classname})
+  |> of_records
+
+
 let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression.t) tenv =
   let is_threadsafe_collection pn tenv =
     match pn with
     | Procname.Java java_pname ->
         let typename = Procname.Java.get_class_type_name java_pname in
         let aux tn _ =
-          match Typ.Name.name tn with
-          | "java.util.concurrent.ConcurrentMap"
-          | "java.util.concurrent.CopyOnWriteArrayList"
-          | "android.support.v4.util.Pools$SynchronizedPool"
-          | "androidx.core.util.Pools$SynchronizedPool" ->
-              true
-          | _ ->
-              false
+          List.mem synchronized_container_classes ~equal:String.equal (Typ.Name.name tn)
         in
         PatternMatch.supertype_exists tenv aux typename
     | _ ->

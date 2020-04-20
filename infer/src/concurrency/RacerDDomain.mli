@@ -163,16 +163,19 @@ module Attribute : sig
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
     | LockHeld  (** boolean is true if a lock is currently held *)
+    | Synchronized  (** the object is a synchronized data structure *)
 end
 
 module AttributeMapDomain : sig
-  type t
+  include
+    AbstractDomain.InvertedMapS with type key = AccessExpression.t and type value = Attribute.t
 
-  val find : AccessExpression.t -> t -> Attribute.t
-
-  val add : AccessExpression.t -> Attribute.t -> t -> t
+  val get : AccessExpression.t -> t -> Attribute.t
+  (** find the [Attribute.t] associated with a given access expression or return [Attribute.bottom] *)
 
   val is_functional : t -> AccessExpression.t -> bool
+
+  val is_synchronized : t -> AccessExpression.t -> bool
 
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
@@ -199,10 +202,11 @@ type summary =
   ; locks: LockDomain.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
-  ; return_attribute: Attribute.t }
+  ; return_attribute: Attribute.t
+  ; attributes: AttributeMapDomain.t }
 
 val empty_summary : summary
 
 val pp_summary : F.formatter -> summary -> unit
 
-val astate_to_summary : Procdesc.t -> t -> summary
+val astate_to_summary : Procdesc.t -> FormalMap.t -> t -> summary

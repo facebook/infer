@@ -308,4 +308,10 @@ class Containers {
     Map<String, String> alias = mAliasedMap;
     return alias.get("a");
   }
+
+  Map<String, String> mConcurrentMap = new ConcurrentHashMap<String, String>();
+
+  void dynamicallyTypedConcurrentMapPutOk(String key, String value) {
+    mConcurrentMap.put(key, value);
+  }
 }

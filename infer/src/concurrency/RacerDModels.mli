@@ -64,3 +64,5 @@ val is_builder_passthrough : Procname.t -> bool
 
 val is_initializer : Tenv.t -> Procname.t -> bool
 (** should the given procedure be treated as a constructor/initializer? *)
+
+val is_synchronized_container_constructor : Tenv.t -> Procname.t -> HilExp.t list -> bool

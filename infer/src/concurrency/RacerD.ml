@@ -25,6 +25,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
+  let rec get_access_exp = function
+    | HilExp.AccessExpression access_expr ->
+        Some access_expr
+    | HilExp.Cast (_, e) | HilExp.Exception e ->
+        get_access_exp e
+    | _ ->
+        None
+
+
   let add_access formals loc ~is_write_access locks threads ownership
       (proc_data : extras ProcData.t) access_domain exp =
     let open Domain in
@@ -54,7 +63,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let make_container_access formals ret_base callee_pname ~is_write receiver_ap callee_loc tenv
       (astate : Domain.t) =
     let open Domain in
-    if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
+    if
+      AttributeMapDomain.is_synchronized astate.attribute_map receiver_ap
+      || RacerDModels.is_synchronized_container callee_pname receiver_ap tenv
+    then None
     else
       let ownership_pre = OwnershipDomain.get_owned receiver_ap astate.ownership in
       let callee_access =
@@ -81,14 +93,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     if AccessDomain.is_empty accesses then accesses
     else
-      let rec get_access_exp = function
-        | HilExp.AccessExpression access_expr ->
-            Some access_expr
-        | HilExp.Cast (_, e) | HilExp.Exception e ->
-            get_access_exp e
-        | _ ->
-            None
-      in
       let formal_map = FormalMap.make pdesc in
       let expand_exp exp =
         match FormalMap.get_formal_index (AccessExpression.get_base exp) formal_map with
@@ -145,7 +149,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
 
-  let call_without_summary callee_pname ret_base call_flags actuals astate =
+  let call_without_summary tenv callee_pname ret_base call_flags actuals astate =
     let open RacerDModels in
     let open RacerDDomain in
     let should_assume_returns_ownership callee_pname (call_flags : CallFlags.t) actuals =
@@ -187,6 +191,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate.ownership
       in
       {astate with ownership}
+    else if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
+      List.hd actuals |> Option.bind ~f:get_access_exp
+      |> Option.value_map ~default:astate ~f:(fun receiver ->
+             let attribute_map =
+               AttributeMapDomain.add receiver Synchronized astate.attribute_map
+             in
+             {astate with attribute_map} )
     else astate
 
 
@@ -305,7 +316,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 in
                 {locks; threads; accesses; ownership; attribute_map}
             | None ->
-                call_without_summary callee_pname ret_base call_flags actuals astate )
+                call_without_summary tenv callee_pname ret_base call_flags actuals astate )
     in
     let add_if_annotated predicate attribute attribute_map =
       if PatternMatch.override_exists predicate tenv callee_pname then
@@ -375,7 +386,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
           in
           {acc with threads}
-      | Attribute.(Functional | Nothing) ->
+      | Attribute.(Functional | Nothing | Synchronized) ->
           acc
     in
     let accesses =
@@ -389,7 +400,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           |> Option.value_map ~default:astate ~f:(fun bool_value ->
                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                     add the constraint that the choice must be [bool_value] to the state *)
-                 AttributeMapDomain.find access_expr astate.attribute_map
+                 AttributeMapDomain.get access_expr astate.attribute_map
                  |> apply_choice bool_value astate )
       | _ ->
           astate
@@ -423,6 +434,67 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
+
+(** Compute the attributes (of static variables) set up by the class initializer. *)
+let set_class_init_attributes summary (astate : RacerDDomain.t) =
+  let open RacerDDomain in
+  let attribute_map =
+    ConcurrencyUtils.get_java_class_initializer_summary_of summary
+    |> Option.bind ~f:Payload.of_summary
+    |> Option.value_map ~default:AttributeMapDomain.top ~f:(fun summary -> summary.attributes)
+  in
+  ({astate with attribute_map} : t)
+
+
+(** Compute the attributes of instance variables that all constructors agree on. *)
+let set_constructor_attributes tenv summary (astate : RacerDDomain.t) =
+  let open RacerDDomain in
+  let procname = Summary.get_proc_name summary in
+  (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
+  let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
+  let make_local exp =
+    (* contract here matches that of [StarvationDomain.summary_of_astate] *)
+    let var, typ = HilExp.AccessExpression.get_base exp in
+    if Var.is_global var then
+      (* let expressions rooted at globals unchanged, these are probably from class initialiser *)
+      exp
+    else (
+      assert (Var.is_this var) ;
+      HilExp.AccessExpression.replace_base ~remove_deref_after_base:false (local_this, typ) exp )
+  in
+  let localize_attrs attributes =
+    AttributeMapDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
+  in
+  let attribute_map =
+    ConcurrencyUtils.get_java_constructor_summaries_of tenv summary
+    |> List.filter_map ~f:Payload.of_summary
+    (* make instances of [this] local to the current procedure and select only the attributes *)
+    |> List.map ~f:(fun (summary : summary) -> localize_attrs summary.attributes)
+    (* join all the attribute maps together *)
+    |> List.reduce ~f:AttributeMapDomain.join
+    |> Option.value ~default:AttributeMapDomain.top
+  in
+  {astate with attribute_map}
+
+
+let set_initial_attributes tenv summary astate =
+  let procname = Summary.get_proc_name summary in
+  match procname with
+  | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
+      (* we are analyzing the class initializer, don't go through on-demand again *)
+      astate
+  | Procname.Java java_pname when Procname.Java.(is_constructor java_pname || is_static java_pname)
+    ->
+      (* analyzing a constructor or static method, so we need the attributes established by the
+         class initializer *)
+      set_class_init_attributes summary astate
+  | Procname.Java _ ->
+      (* we are analyzing an instance method, so we need constructor-established attributes
+         which will include those by the class initializer *)
+      set_constructor_attributes tenv summary astate
+  | _ ->
+      astate
+
 
 let analyze_procedure {Callbacks.exe_env; summary} =
   let open RacerDDomain in
@@ -480,11 +552,11 @@ let analyze_procedure {Callbacks.exe_env; summary} =
                add_owned_formal acc base
              else add_conditionally_owned_formal acc base index )
     in
-    let initial = {bottom with ownership; threads; locks} in
+    let initial = set_initial_attributes tenv summary {bottom with ownership; threads; locks} in
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make summary tenv formal_map in
     Analyzer.compute_post proc_data ~initial
-    |> Option.map ~f:(astate_to_summary proc_desc)
+    |> Option.map ~f:(astate_to_summary proc_desc formal_map)
     |> Option.value_map ~default:summary ~f:(fun post -> Payload.update_summary post summary)
   else Payload.update_summary empty_summary summary
 
