@@ -184,7 +184,7 @@ let component_file_cyclomatic_complexity =
   register_from_string "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
 
 
-let component_file_line_count = register_from_string "COMPONENT_FILE_LINE_COUNT"
+let component_file_line_count = register_from_string ~enabled:false "COMPONENT_FILE_LINE_COUNT"
 
 let component_initializer_with_side_effects =
   register_from_string "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
@@ -297,7 +297,7 @@ let eradicate_meta_class_is_nullsafe =
     ~enabled:false
 
 
-(* Class is either: 
+(* Class is either:
    - has at least one nullability issue.
    - has at least one (currently possibly hidden) issue in order to be marked as @Nullsafe.
  *)
@@ -436,9 +436,9 @@ let return_statement_missing = register_from_string "RETURN_STATEMENT_MISSING"
 
 let return_value_ignored = register_from_string ~enabled:false "RETURN_VALUE_IGNORED"
 
-let skip_function = register_from_string "SKIP_FUNCTION"
+let skip_function = register_from_string ~enabled:false "SKIP_FUNCTION"
 
-let skip_pointer_dereference = register_from_string "SKIP_POINTER_DEREFERENCE"
+let skip_pointer_dereference = register_from_string ~enabled:false "SKIP_POINTER_DEREFERENCE"
 
 let shell_injection = register_from_string "SHELL_INJECTION"
 

@@ -59,27 +59,22 @@ let loc_trace_to_jsonbug_record trace_list ekind =
       record_list
 
 
-let should_report (issue_kind : Exceptions.severity) issue_type error_desc eclass =
+let should_report issue_type error_desc eclass =
   if (not Config.filtering) || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
-    let issue_kind_is_blacklisted =
-      match issue_kind with Info -> true | Advice | Error | Like | Warning -> false
-    in
-    if issue_kind_is_blacklisted then false
-    else
-      let issue_type_is_null_deref =
-        let null_deref_issue_types =
-          let open IssueType in
-          [ field_not_null_checked
-          ; null_dereference
-          ; parameter_not_null_checked
-          ; premature_nil_termination
-          ; empty_vector_access
-          ; biabd_use_after_free ]
-        in
-        List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
+    let issue_type_is_null_deref =
+      let null_deref_issue_types =
+        let open IssueType in
+        [ field_not_null_checked
+        ; null_dereference
+        ; parameter_not_null_checked
+        ; premature_nil_termination
+        ; empty_vector_access
+        ; biabd_use_after_free ]
       in
-      if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
+      List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
+    in
+    if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
 
 
 (* The reason an issue should be censored (that is, not reported). The empty
@@ -171,7 +166,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     if
       error_filter source_file err_key.err_name
       && should_report_source_file
-      && should_report err_key.severity err_key.err_name err_key.err_desc err_data.err_class
+      && should_report err_key.err_name err_key.err_desc err_data.err_class
     then
       let severity = Exceptions.severity_string err_key.severity in
       let bug_type = err_key.err_name.IssueType.unique_id in
