@@ -33,21 +33,34 @@ let is_java_container_write =
   let array_methods =
     ["append"; "clear"; "delete"; "put"; "remove"; "removeAt"; "removeAtRange"; "setValueAt"]
   in
+  (* https://developer.android.com/reference/androidx/core/util/Pools.SimplePool *)
   make_android_support_template "Pools$SimplePool" ["acquire"; "release"]
+  (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
   @ make_android_support_template "SimpleArrayMap"
       ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"]
+  (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
   @ make_android_support_template "SparseArrayCompat" array_methods
-  @ [ {default with classname= "android.util.SparseArray"; methods= array_methods}
-    ; { default with
-        classname= "java.util.List"
-      ; methods= ["add"; "addAll"; "clear"; "remove"; "set"] }
-    ; {default with classname= "java.util.Map"; methods= ["clear"; "put"; "putAll"; "remove"]} ]
+  @ (* https://developer.android.com/reference/android/util/SparseArray *)
+  [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
+       Only methods not in parent interface [Collection] are listed *)
+    {default with classname= "java.util.List"; methods= ["replaceAll"; "retainAll"; "set"; "sort"]}
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
+    { default with
+      classname= "java.util.Map"
+    ; methods= ["clear"; "merge"; "put"; "putAll"; "putIfAbsent"; "remove"; "replace"; "replaceAll"]
+    }
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
+    { default with
+      classname= "java.util.Collection"
+    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] } ]
   |> of_records
 
 
 let is_java_container_read =
   let open MethodMatcher in
   let array_methods = ["clone"; "get"; "indexOfKey"; "indexOfValue"; "keyAt"; "size"; "valueAt"] in
+  (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
   make_android_support_template "SimpleArrayMap"
     [ "containsKey"
     ; "containsValue"
@@ -58,36 +71,50 @@ let is_java_container_read =
     ; "keyAt"
     ; "size"
     ; "valueAt" ]
+  (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
   @ make_android_support_template "SparseArrayCompat" array_methods
-  @ [ {default with classname= "android.util.SparseArray"; methods= array_methods}
-    ; { default with
-        classname= "java.util.List"
-      ; methods=
-          [ "contains"
-          ; "containsAll"
-          ; "equals"
-          ; "get"
-          ; "hashCode"
-          ; "indexOf"
-          ; "isEmpty"
-          ; "iterator"
-          ; "lastIndexOf"
-          ; "listIterator"
-          ; "size"
-          ; "toArray" ] }
-    ; { default with
-        classname= "java.util.Map"
-      ; methods=
-          [ "containsKey"
-          ; "containsValue"
-          ; "entrySet"
-          ; "equals"
-          ; "get"
-          ; "hashCode"
-          ; "isEmpty"
-          ; "keySet"
-          ; "size"
-          ; "values" ] } ]
+  @ (* https://developer.android.com/reference/android/util/SparseArray *)
+  [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
+       Only methods not in parent interface [Collection] are listed *)
+    { default with
+      classname= "java.util.List"
+    ; methods= ["get"; "indexOf"; "isEmpty"; "lastIndexOf"; "listIterator"] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
+    { default with
+      classname= "java.util.Map"
+    ; methods=
+        [ "compute"
+        ; "computeIfAbsent"
+        ; "computeIfPresent"
+        ; "containsKey"
+        ; "containsValue"
+        ; "entrySet"
+        ; "equals"
+        ; "forEach"
+        ; "get"
+        ; "getOrDefault"
+        ; "hashCode"
+        ; "isEmpty"
+        ; "keySet"
+        ; "size"
+        ; "values" ] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
+    { default with
+      classname= "java.util.Collection"
+    ; methods=
+        [ "contains"
+        ; "containsAll"
+        ; "equals"
+        ; "get"
+        ; "hashCode"
+        ; "isEmpty"
+        ; "iterator"
+        ; "parallelStream"
+        ; "size"
+        ; "spliterator"
+        ; "stream"
+        ; "toArray" ] } ]
   |> of_records
 
 

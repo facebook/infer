@@ -314,4 +314,20 @@ class Containers {
   void dynamicallyTypedConcurrentMapPutOk(String key, String value) {
     mConcurrentMap.put(key, value);
   }
+
+  List<String> mSomeList = new ArrayList<String>();
+
+  void addToUnsynchronizedListBad(String value) {
+    mSomeList.add(value);
+  }
+
+  List<String> mSomeOtherList = new ArrayList<String>();
+
+  int getListSizeBad() {
+    return mSomeOtherList.size();
+  }
+
+  synchronized void raceWithSizeBad(String value) {
+    mSomeOtherList.remove(value);
+  }
 }
