@@ -16,10 +16,13 @@ import android.util.SparseArray;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -329,5 +332,27 @@ class Containers {
 
   synchronized void raceWithSizeBad(String value) {
     mSomeOtherList.remove(value);
+  }
+
+  Map<String, String> mSomeMap = new HashMap<String, String>();
+
+  int getMapSizeBad() {
+    return mSomeMap.size();
+  }
+
+  synchronized void raceWithMapSizeBad(String value) {
+    mSomeMap.remove(value);
+  }
+
+  Map<String, String> mSomeOtherMap = new Hashtable<String, String>();
+
+  void writeToHashtableOk(String value) {
+    mSomeOtherMap.remove(value);
+  }
+
+  Set<String> mConcurrentSet = new ConcurrentSkipListSet<String>();
+
+  void dynamicallyTypedConcurrentSetAddOk(String value) {
+    mConcurrentSet.add(value);
   }
 }

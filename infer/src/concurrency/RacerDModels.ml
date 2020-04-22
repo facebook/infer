@@ -433,11 +433,23 @@ let should_flag_interface_call tenv exps call_flags pname =
       false
 
 
+(** Set of standard classes/interfaces that guarantee thread-safe access. This list is heavily
+    deduplicated using the inheritance relation as represented in Infer, that is, any class that
+    implements/inherits the interfaces/classes below is considered to be thread-safe. For instance,
+    all thread-safe maps implement [ConcurrentMap] and thus need not be explicitly represented. On
+    the other hand, there is no equivalent interface for sets [ConcurrentSet], so all set-like
+    classes have to be listed. Information is mostly drawn from
+    https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html *)
 let synchronized_container_classes =
   [ "android.support.v4.util.Pools$SynchronizedPool"
   ; "androidx.core.util.Pools$SynchronizedPool"
+  ; "java.util.concurrent.BlockingDeque"
+  ; "java.util.concurrent.BlockingQueue"
   ; "java.util.concurrent.ConcurrentMap"
-  ; "java.util.concurrent.CopyOnWriteArrayList" ]
+  ; "java.util.concurrent.ConcurrentSkipListSet"
+  ; "java.util.concurrent.CopyOnWriteArrayList"
+  ; "java.util.concurrent.CopyOnWriteArraySet"
+  ; "java.util.Hashtable" ]
 
 
 let is_synchronized_container_constructor =
