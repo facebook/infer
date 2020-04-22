@@ -542,11 +542,18 @@ let close us r =
 let and_eq_ us a b r =
   if not r.sat then r
   else
+    let r0 = r in
     let a' = canon r a in
     let b' = canon r b in
     let r = extend a' r in
     let r = extend b' r in
-    if Term.equal a' b' then r else close us (merge us a' b' r)
+    if Term.equal a' b' then r
+    else
+      let r = merge us a' b' r in
+      match (a, b) with
+      | (Var _ as v), _ when not (in_car r0 v) -> r
+      | _, (Var _ as v) when not (in_car r0 v) -> r
+      | _ -> close us r
 
 let extract_xs r = (r.xs, {r with xs= Var.Set.empty})
 
