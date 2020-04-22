@@ -149,40 +149,37 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     L.d_printfln_escaped "%t" pp_all
 
 
-  let exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map =
+  let exec_instrs ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
-    let post =
-      if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
-      let compute_post pre instr =
-        AnalysisState.set_instr instr ;
-        let result =
-          try
-            let post = TransferFunctions.exec_instr pre proc_data node instr in
-            (* don't forget to reset this so we output messages for future errors too *)
-            logged_error := false ;
-            Ok post
-          with exn ->
-            IExn.reraise_if exn ~f:(fun () ->
-                match exn with RestartScheduler.ProcnameAlreadyLocked _ -> true | _ -> false ) ;
-            (* delay reraising to get a chance to write the debug HTML *)
-            let backtrace = Caml.Printexc.get_raw_backtrace () in
-            Error (exn, backtrace, instr)
-        in
-        if Config.write_html then dump_html ~pp_instr pre instr result ;
-        result
+    if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
+    let compute_post pre instr =
+      AnalysisState.set_instr instr ;
+      let result =
+        try
+          let post = TransferFunctions.exec_instr pre proc_data node instr in
+          (* don't forget to reset this so we output messages for future errors too *)
+          logged_error := false ;
+          Ok post
+        with exn ->
+          IExn.reraise_if exn ~f:(fun () ->
+              match exn with RestartScheduler.ProcnameAlreadyLocked _ -> true | _ -> false ) ;
+          (* delay reraising to get a chance to write the debug HTML *)
+          let backtrace = Caml.Printexc.get_raw_backtrace () in
+          Error (exn, backtrace, instr)
       in
-      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      let instrs = if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs in
-      Container.fold_result ~fold:Instrs.fold ~init:pre instrs ~f:compute_post
+      if Config.write_html then dump_html ~pp_instr pre instr result ;
+      match result with
+      | Ok post ->
+          post
+      | Error (exn, backtrace, instr) ->
+          if not !logged_error then (
+            L.internal_error "In instruction %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
+            logged_error := true ) ;
+          Caml.Printexc.raise_with_backtrace exn backtrace
     in
-    match post with
-    | Ok astate_post ->
-        InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
-    | Error (exn, backtrace, instr) ->
-        if not !logged_error then (
-          L.internal_error "In instruction %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-          logged_error := true ) ;
-        Caml.Printexc.raise_with_backtrace exn backtrace
+    (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+    let instrs = if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs in
+    Instrs.fold ~f:compute_post ~init:pre instrs
 
 
   (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
@@ -190,9 +187,18 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
   let exec_node ~pp_instr ({ProcData.summary} as proc_data) node ~is_loop_head ~is_narrowing
       astate_pre inv_map =
     let node_id = Node.id node in
-    let update_inv_map pre ~visit_count =
-      let inv_map' = exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map in
-      (inv_map', DidNotReachFixPoint)
+    let update_inv_map inv_map new_pre old_state_opt =
+      let new_post = exec_instrs ~pp_instr proc_data node new_pre in
+      let new_visit_count =
+        match old_state_opt with
+        | None ->
+            VisitCount.first_time
+        | Some {State.visit_count; _} ->
+            VisitCount.succ ~pdesc:(Summary.get_proc_desc summary) visit_count
+      in
+      InvariantMap.add node_id
+        {State.pre= new_pre; post= new_post; visit_count= new_visit_count}
+        inv_map
     in
     let inv_map, converged =
       if InvariantMap.mem node_id inv_map then
@@ -218,14 +224,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
             "Terminate narrowing because old and new states are not comparable at %a:%a@."
             Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;
           (inv_map, ReachedFixPoint) )
-        else
-          let visit_count' =
-            VisitCount.succ ~pdesc:(Summary.get_proc_desc summary) old_state.State.visit_count
-          in
-          update_inv_map new_pre ~visit_count:visit_count'
+        else (update_inv_map inv_map new_pre (Some old_state), DidNotReachFixPoint)
       else
         (* first time visiting this node *)
-        update_inv_map astate_pre ~visit_count:VisitCount.first_time
+        (update_inv_map inv_map astate_pre None, DidNotReachFixPoint)
     in
     ( match converged with
     | ReachedFixPoint ->
