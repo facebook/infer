@@ -83,6 +83,29 @@ end
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
   S with module TransferFunctions = TransferFunctions
 
+(** internal module that extends transfer functions *)
+module type NodeTransferFunctions = sig
+  include TransferFunctions.SIL
+
+  val exec_node_instrs :
+       Domain.t State.t option
+    -> exec_instr:(Domain.t -> Sil.instr -> Domain.t)
+    -> Domain.t
+    -> _ Instrs.t
+    -> Domain.t
+  (** specifies how to symbolically execute the instructions of a node, using [exec_instr] to go
+      over a single instruction *)
+end
+
+(** most transfer functions will use this simple [Instrs.fold] approach *)
+module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
+  include T
+
+  let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
+    Instrs.fold ~init:pre instrs ~f:exec_instr
+end
+
+(** build a disjunctive domain and transfer functions *)
 module MakeDisjunctiveTransferFunctions
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) =
@@ -91,47 +114,18 @@ struct
 
   type extras = T.extras
 
-  module Disjuncts = struct
-    (* The disjunctive domain transformer should really be part of the Abstract Interpreter instead
-       of the Transfer Functions as the scheduler needs to know which disjuncts have already been
-       explored. But for now let's emulate that with a disgusting hack in the transfer functions
-       that try to skip disjuncts we have already explored, using the [visited] flag. *)
-    type disjunct = {visited: bool; astate: T.Domain.t}
-
-    let pp_disjunct fmt ({visited; astate}[@warning "+9"]) =
-      F.fprintf fmt "@[<hv>visited=%b;@;@[%a@]@]" visited T.Domain.pp astate
-
-
-    type t = disjunct list
-
-    let mk_disjunct astate = {visited= false; astate}
-
-    let singleton astate = [mk_disjunct astate]
-
-    let elements disjuncts = List.map disjuncts ~f:(fun {astate} -> astate)
-
-    let pp f disjuncts =
-      let pp_disjuncts f disjuncts =
-        List.iteri disjuncts ~f:(fun i disjunct ->
-            F.fprintf f "#%d: @[%a@]@;" i pp_disjunct disjunct )
-      in
-      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
-  end
-
-  type disjunct_t = Disjuncts.disjunct = {visited: bool; astate: T.Domain.t}
-
   module Domain = struct
-    type t = Disjuncts.t
+    (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
+    type t = T.Domain.t list
 
     let rev_filter_not_over_approximated disjuncts ~not_in =
       List.rev_filter disjuncts ~f:(fun disjunct ->
-          List.exists not_in ~f:(fun disj_not_in ->
-              T.Domain.leq ~lhs:disjunct.astate ~rhs:disj_not_in.astate )
+          List.exists not_in ~f:(fun disj_not_in -> T.Domain.leq ~lhs:disjunct ~rhs:disj_not_in)
           |> not )
 
 
-    (* Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
-       states in [lhs]. *)
+    (** Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
+        states in [lhs]. *)
     let join_up_to_imply lhs rhs =
       let rev_rhs_not_in_lhs = rev_filter_not_over_approximated rhs ~not_in:lhs in
       (* cheeky: this is only used in pulse, whose (<=) is actually a symmetric relation so there's
@@ -151,18 +145,13 @@ struct
             if lhs_length >= n then lhs else List.rev_append rhs lhs
 
 
-    let set_visited b disjuncts =
-      if List.for_all disjuncts ~f:(fun {visited} -> Bool.equal visited b) then disjuncts
-      else List.map disjuncts ~f:(fun disjunct -> {disjunct with visited= b})
-
-
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on
         abstract states to compare elements quickly *)
     let rec is_trivial_subset disj ~of_ =
       match (disj, of_) with
       | [], _ ->
           true
-      | x :: disj', y :: of' when phys_equal x.astate y.astate ->
+      | x :: disj', y :: of' when phys_equal x y ->
           is_trivial_subset disj' ~of_:of'
       | _, _ :: of' ->
           is_trivial_subset disj ~of_:of'
@@ -174,41 +163,57 @@ struct
 
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
-      if phys_equal prev next || num_iters > max_iter then set_visited false prev
+      if phys_equal prev next then prev
+      else if num_iters > max_iter then (
+        L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
+        prev )
       else
-        let visited_prev = set_visited true prev in
-        let post = join_up_to_imply visited_prev next in
-        if leq ~lhs:post ~rhs:prev then set_visited false prev else post
+        let post = join_up_to_imply prev next in
+        if leq ~lhs:post ~rhs:prev then prev else post
 
 
-    let pp = Disjuncts.pp
+    let pp f disjuncts =
+      let pp_disjuncts f disjuncts =
+        List.iteri disjuncts ~f:(fun i disjunct ->
+            F.fprintf f "#%d: @[%a@]@;" i T.Domain.pp disjunct )
+      in
+      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
   end
 
   let exec_instr pre_disjuncts extras node instr =
     List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
-        if pre_disjunct.visited then
-          (* SUBTLE/WORST HACK EVER: ignore pres that we know we have gone through already. This
-             means that the invariant map at that program point will be junk since they are going to
-             miss some states, but the overall result will still be ok because the loop heads are
-             ok.
+        L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
+        let disjuncts' = T.exec_instr pre_disjunct extras node instr in
+        ( if Config.write_html then
+          let n = List.length disjuncts' in
+          L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
+        Domain.join post_disjuncts disjuncts' )
 
-             This should really be implemented in {!AbstractInterpreter}. *)
-          post_disjuncts
+
+  let exec_node_instrs old_state_opt ~exec_instr pre instrs =
+    let is_new_pre disjunct =
+      match old_state_opt with
+      | None ->
+          true
+      | Some {State.pre= previous_pre; _} ->
+          not (List.mem ~equal:phys_equal previous_pre disjunct)
+    in
+    let current_post = match old_state_opt with None -> [] | Some {State.post; _} -> post in
+    List.foldi pre ~init:current_post ~f:(fun i post_disjuncts pre_disjunct ->
+        if is_new_pre pre_disjunct then (
+          L.d_printfln "@[<v2>Executing node from disjunct #%d@;" i ;
+          let disjuncts' = Instrs.fold ~init:[pre_disjunct] instrs ~f:exec_instr in
+          L.d_printfln "@]@\n" ;
+          Domain.join post_disjuncts disjuncts' )
         else (
-          L.d_printfln "@[<v2>Executing from disjunct #%d@;" i ;
-          let disjuncts' =
-            T.exec_instr pre_disjunct.astate extras node instr |> List.map ~f:Disjuncts.mk_disjunct
-          in
-          ( if Config.write_html then
-            let n = List.length disjuncts' in
-            L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
-          Domain.join post_disjuncts disjuncts' ) )
+          L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
+          post_disjuncts ) )
 
 
   let pp_session_name node f = T.pp_session_name node f
 end
 
-module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = struct
+module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = struct
   module CFG = TransferFunctions.CFG
   module Node = CFG.Node
   module TransferFunctions = TransferFunctions
@@ -277,10 +282,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     L.d_printfln_escaped "%t" pp_all
 
 
-  let exec_instrs ~pp_instr proc_data node pre =
+  let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
     if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
-    let compute_post pre instr =
+    let exec_instr pre instr =
       AnalysisState.set_instr instr ;
       let result =
         try
@@ -307,7 +312,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     in
     (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
     let instrs = if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs in
-    Instrs.fold ~init:pre ~f:compute_post instrs
+    TransferFunctions.exec_node_instrs old_state_opt ~exec_instr pre instrs
 
 
   (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
@@ -316,7 +321,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       astate_pre inv_map =
     let node_id = Node.id node in
     let update_inv_map inv_map new_pre old_state_opt =
-      let new_post = exec_instrs ~pp_instr proc_data node new_pre in
+      let new_post = exec_node_instrs old_state_opt ~pp_instr proc_data node new_pre in
       let new_visit_count =
         match old_state_opt with
         | None ->
@@ -416,7 +421,7 @@ module MakeWithScheduler
     (Scheduler : Scheduler.S)
     (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
 struct
-  include AbstractInterpreterCommon (TransferFunctions)
+  include AbstractInterpreterCommon (SimpleNodeTransferFunctions (TransferFunctions))
 
   let rec exec_worklist ~pp_instr cfg ({ProcData.summary} as proc_data) work_queue inv_map =
     match Scheduler.pop work_queue with
@@ -464,7 +469,7 @@ end
 module MakeRPO (T : TransferFunctions.SIL) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
 
-module MakeWTO (TransferFunctions : TransferFunctions.SIL) = struct
+module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
   include AbstractInterpreterCommon (TransferFunctions)
 
   let debug_wto wto node =
@@ -584,11 +589,8 @@ module MakeWTO (TransferFunctions : TransferFunctions.SIL) = struct
   let compute_post ?(do_narrowing = false) = make_compute_post ~exec_cfg_internal ~do_narrowing
 end
 
+module MakeWTO (T : TransferFunctions.SIL) = MakeWTONode (SimpleNodeTransferFunctions (T))
 module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) =
-struct
-  module DisjT = MakeDisjunctiveTransferFunctions (T) (DConfig)
-  module Disjuncts = DisjT.Disjuncts
-  include MakeWTO (DisjT)
-end
+  MakeWTONode (MakeDisjunctiveTransferFunctions (T) (DConfig))

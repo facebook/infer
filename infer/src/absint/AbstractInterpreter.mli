@@ -75,18 +75,8 @@ module MakeWTO : Make
     [DConfig]. *)
 module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
-    (DConfig : TransferFunctions.DisjunctiveConfig) : sig
-  module Disjuncts : sig
-    type t
-
-    val singleton : T.Domain.t -> t
-
-    val elements : t -> T.Domain.t list
-  end
-
-  include
-    S
-      with type TransferFunctions.extras = T.extras
-       and module TransferFunctions.CFG = T.CFG
-       and type TransferFunctions.Domain.t = Disjuncts.t
-end
+    (DConfig : TransferFunctions.DisjunctiveConfig) :
+  S
+    with type TransferFunctions.extras = T.extras
+     and module TransferFunctions.CFG = T.CFG
+     and type TransferFunctions.Domain.t = T.Domain.t list

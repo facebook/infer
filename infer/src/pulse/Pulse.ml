@@ -232,16 +232,14 @@ let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   AbstractValue.State.reset () ;
   let pdesc = Summary.get_proc_desc summary in
-  let initial = DisjunctiveAnalyzer.Disjuncts.singleton (ExecutionDomain.mk_initial pdesc) in
+  let initial = [ExecutionDomain.mk_initial pdesc] in
   let get_formals callee_pname =
     Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
   in
   let proc_data = ProcData.make summary tenv get_formals in
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
-      PulsePayload.update_summary
-        (PulseSummary.of_posts pdesc (DisjunctiveAnalyzer.Disjuncts.elements posts))
-        summary
+      PulsePayload.update_summary (PulseSummary.of_posts pdesc posts) summary
   | None ->
       summary
   | exception exn ->
