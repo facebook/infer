@@ -7,40 +7,44 @@
 
 open! IStd
 
+(** Manipulate possibly-reversed lists of instructions efficiently *)
+
 type reversed
 
 type not_reversed
 
-type 'r t
+type _ t
 
+(** defined for convenience: we can write [Instrs.not_reversed_t] in other modules instead of
+    [Instrs.not_reversed Instrs.t] *)
 type not_reversed_t = not_reversed t
 
-val empty : not_reversed_t
+val empty : _ t
 
-val singleton : Sil.instr -> not_reversed_t
+val singleton : Sil.instr -> _ t
 
-val append_list : not_reversed_t -> Sil.instr list -> not_reversed_t
+val append_list : not_reversed t -> Sil.instr list -> not_reversed t
 
-val of_list : Sil.instr list -> not_reversed_t
+val of_list : Sil.instr list -> not_reversed t
 
-val of_rev_list : Sil.instr list -> not_reversed_t
+val of_rev_list : Sil.instr list -> not_reversed t
 
-val filter_map : not_reversed_t -> f:(Sil.instr -> Sil.instr option) -> not_reversed_t
+val filter_map : not_reversed t -> f:(Sil.instr -> Sil.instr option) -> not_reversed t
 
-val map : not_reversed_t -> f:(Sil.instr -> Sil.instr) -> not_reversed_t
+val map : not_reversed t -> f:(Sil.instr -> Sil.instr) -> not_reversed t
 (** replace every instruction [instr] with [f instr]. Preserve physical equality. **)
 
 val map_and_fold :
-  not_reversed_t -> f:('a -> Sil.instr -> 'a * Sil.instr) -> init:'a -> not_reversed_t
+  not_reversed t -> f:('a -> Sil.instr -> 'a * Sil.instr) -> init:'a -> not_reversed t
   [@@warning "-32"]
 (** replace every instruction [instr] with [snd (f context instr)]. The context is computed by
     folding [f] on [init] and previous instructions (before [instr]) in the collection. Preserve
     physical equality. **)
 
-val concat_map : not_reversed_t -> f:(Sil.instr -> Sil.instr array) -> not_reversed_t
+val concat_map : not_reversed t -> f:(Sil.instr -> Sil.instr array) -> not_reversed t
 (** replace every instruction [instr] with the list [f instr]. Preserve physical equality. **)
 
-val reverse_order : not_reversed_t -> reversed t
+val reverse_order : not_reversed t -> reversed t
 
 val is_empty : _ t -> bool
 

@@ -171,10 +171,9 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         if Config.write_html then dump_html ~pp_instr pre instr result ;
         result
       in
-      if Instrs.is_empty instrs then
-        (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-        compute_post pre Sil.skip_instr
-      else Container.fold_result ~fold:Instrs.fold ~init:pre instrs ~f:compute_post
+      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+      let instrs = if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs in
+      Container.fold_result ~fold:Instrs.fold ~init:pre instrs ~f:compute_post
     in
     match post with
     | Ok astate_post ->
