@@ -200,8 +200,8 @@ module PulseTransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
-module DisjunctiveTransferFunctions =
-  TransferFunctions.MakeDisjunctive
+module DisjunctiveAnalyzer =
+  AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
       let join_policy =
@@ -210,8 +210,6 @@ module DisjunctiveTransferFunctions =
 
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
-
-module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFunctions)
 
 (* Output cases that sledge was unhappy with in files for later replay or inclusion as sledge test
    cases. We create one file for each PID to avoid all analysis processes racing on writing to the same
@@ -234,9 +232,7 @@ let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   AbstractValue.State.reset () ;
   let pdesc = Summary.get_proc_desc summary in
-  let initial =
-    DisjunctiveTransferFunctions.Disjuncts.singleton (ExecutionDomain.mk_initial pdesc)
-  in
+  let initial = DisjunctiveAnalyzer.Disjuncts.singleton (ExecutionDomain.mk_initial pdesc) in
   let get_formals callee_pname =
     Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
   in
@@ -244,7 +240,7 @@ let checker {Callbacks.exe_env; summary} =
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
       PulsePayload.update_summary
-        (PulseSummary.of_posts pdesc (DisjunctiveTransferFunctions.Disjuncts.elements posts))
+        (PulseSummary.of_posts pdesc (DisjunctiveAnalyzer.Disjuncts.elements posts))
         summary
   | None ->
       summary
