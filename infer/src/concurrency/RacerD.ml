@@ -165,7 +165,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       || (* non-static [$Builder] methods with same return type as receiver type *)
       is_builder_passthrough callee_pname
     in
-    if is_box callee_pname then
+    if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
+      List.hd actuals |> Option.bind ~f:get_access_exp
+      |> Option.value_map ~default:astate ~f:(fun receiver ->
+             let attribute_map =
+               AttributeMapDomain.add receiver Synchronized astate.attribute_map
+             in
+             {astate with attribute_map} )
+    else if RacerDModels.is_converter_to_synchronized_container tenv callee_pname actuals then
+      let attribute_map =
+        AttributeMapDomain.add (AccessExpression.base ret_base) Synchronized astate.attribute_map
+      in
+      {astate with attribute_map}
+    else if is_box callee_pname then
       match actuals with
       | HilExp.AccessExpression actual_access_expr :: _
         when AttributeMapDomain.is_functional astate.attribute_map actual_access_expr ->
@@ -191,13 +203,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate.ownership
       in
       {astate with ownership}
-    else if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
-      List.hd actuals |> Option.bind ~f:get_access_exp
-      |> Option.value_map ~default:astate ~f:(fun receiver ->
-             let attribute_map =
-               AttributeMapDomain.add receiver Synchronized astate.attribute_map
-             in
-             {astate with attribute_map} )
     else astate
 
 

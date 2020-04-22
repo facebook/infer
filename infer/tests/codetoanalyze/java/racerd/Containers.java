@@ -13,8 +13,10 @@ import android.support.v4.util.Pools.SynchronizedPool;
 import android.support.v4.util.SimpleArrayMap;
 import android.support.v4.util.SparseArrayCompat;
 import android.util.SparseArray;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -354,5 +356,17 @@ class Containers {
 
   void dynamicallyTypedConcurrentSetAddOk(String value) {
     mConcurrentSet.add(value);
+  }
+
+  List<String> mWrappedList = Collections.synchronizedList(new ArrayList<String>());
+
+  void wrappedListAddOk(String value) {
+    mWrappedList.add(value);
+  }
+
+  Set<String> mGoogleSynchronizedSet = Sets.newConcurrentHashSet();
+
+  void googleSynchronizedSetAddOk(String value) {
+    mGoogleSynchronizedSet.add(value);
   }
 }

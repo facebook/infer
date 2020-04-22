@@ -452,6 +452,18 @@ let synchronized_container_classes =
   ; "java.util.Hashtable" ]
 
 
+let is_converter_to_synchronized_container =
+  let open MethodMatcher in
+  [ (* any method in [java.util.Collections] that starts with [synchronized] is a wrapper that produces a thread-safe container *)
+    {default with classname= "java.util.Collections"; method_prefix= true; methods= ["synchronized"]}
+  ; {default with classname= "com.google.common.collect.Maps"; methods= ["newConcurrentMap"]}
+  ; {default with classname= "com.google.common.collect.Sets"; methods= ["newConcurrentHashSet"]}
+  ; { default with
+      classname= "com.google.common.collect.Queues"
+    ; methods= ["newConcurrentLinkedQueue"] } ]
+  |> of_records
+
+
 let is_synchronized_container_constructor =
   let open MethodMatcher in
   let default = {default with methods= [Procname.Java.constructor_method_name]} in
