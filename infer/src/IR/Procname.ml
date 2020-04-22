@@ -158,6 +158,10 @@ module Java = struct
     Typ.Name.Java.is_anonymous_inner_class_name_exn class_name
 
 
+  let is_anonymous_inner_class_method {class_name} =
+    Option.value ~default:false (Typ.Name.Java.is_anonymous_inner_class_name_opt class_name)
+
+
   let is_static {kind} = match kind with Static -> true | _ -> false
 
   let is_lambda {method_name} = String.is_prefix ~prefix:"lambda$" method_name
@@ -423,6 +427,10 @@ let is_java_lift f = function Java java_pname -> f java_pname | _ -> false
 let is_java_access_method = is_java_lift Java.is_access_method
 
 let is_java_class_initializer = is_java_lift Java.is_class_initializer
+
+let is_java_anonymous_inner_class_method = is_java_lift Java.is_anonymous_inner_class_method
+
+let is_java_autogen_method = is_java_lift Java.is_autogen_method
 
 let is_objc_method procname =
   match procname with ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | _ -> false

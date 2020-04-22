@@ -233,6 +233,9 @@ module Name : sig
     val is_anonymous_inner_class_name_exn : t -> bool
     (** Throws if it is not a Java class *)
 
+    val is_anonymous_inner_class_name_opt : t -> bool option
+    (** return None if it is not a Java class *)
+
     val java_lang_object : t
 
     val java_io_serializable : t

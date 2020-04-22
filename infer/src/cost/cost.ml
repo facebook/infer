@@ -285,7 +285,11 @@ module Check = struct
   let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
     let proc_loc = Procdesc.get_loc proc_desc in
-    if not (Procname.is_java_access_method pname) then (
+    if
+      (not (Procname.is_java_access_method pname))
+      && (not (Procname.is_java_anonymous_inner_class_method pname))
+      && not (Procname.is_java_autogen_method pname)
+    then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
         ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
         | ThresholdReports.Threshold _ | ThresholdReports.NoReport ->

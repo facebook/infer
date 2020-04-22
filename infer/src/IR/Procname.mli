@@ -218,6 +218,10 @@ val is_java_access_method : t -> bool
 
 val is_java_class_initializer : t -> bool
 
+val is_java_anonymous_inner_class_method : t -> bool
+
+val is_java_autogen_method : t -> bool
+
 val is_objc_method : t -> bool
 
 module Hash : Caml.Hashtbl.S with type key = t
