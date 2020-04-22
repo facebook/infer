@@ -43,3 +43,5 @@ val std_vector_reserve : AbstractValue.t -> t -> t
 val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
 val pp : F.formatter -> t -> unit
+
+val remove_allocation_attr : AbstractValue.t -> t -> t

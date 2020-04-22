@@ -28,6 +28,15 @@ let add_one addr attribute attrs =
       Graph.add addr new_attrs attrs
 
 
+let remove_one addr attribute attrs =
+  match Graph.find_opt addr attrs with
+  | None ->
+      attrs
+  | Some old_attrs ->
+      let new_attrs = Attributes.remove attribute old_attrs in
+      Graph.add addr new_attrs attrs
+
+
 let add addr attributes attrs =
   match Graph.find_opt addr attrs with
   | None ->
@@ -69,6 +78,14 @@ let check_valid address attrs =
 let get_attribute getter address attrs =
   let open Option.Monad_infix in
   Graph.find_opt address attrs >>= getter
+
+
+let remove_allocation_attr address memory =
+  match get_attribute Attributes.get_allocation address memory with
+  | Some (procname, trace) ->
+      remove_one address (Attribute.Allocated (procname, trace)) memory
+  | None ->
+      memory
 
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name

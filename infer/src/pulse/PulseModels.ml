@@ -116,6 +116,12 @@ module C = struct
     PulseOperations.allocate callee_procname location ret_value astate
     |> PulseArithmetic.and_positive immediate_hist ret_addr
     |> PulseOperations.ok_continue
+
+
+  let cf_bridging_release access : model =
+   fun ~caller_summary:_ ~callee_procname:_ _ ~ret:(ret_id, _) astate ->
+    let astate = PulseOperations.write_id ret_id access astate in
+    PulseOperations.remove_allocation_attr (fst access) astate |> PulseOperations.ok_continue
 end
 
 module Cplusplus = struct
@@ -649,6 +655,7 @@ module ProcNameDispatcher = struct
       ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
       ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free
+      ; -"CFBridgingRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
       ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
       ; +PatternMatch.ObjectiveC.is_modelled_as_free <>$ capt_arg_payload $--> C.free ]
 end

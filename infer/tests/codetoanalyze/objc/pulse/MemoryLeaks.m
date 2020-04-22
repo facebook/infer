@@ -53,4 +53,13 @@
   CFAutorelease(newImage);
 }
 
+- (void)bridge_no_leak_good {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  NSLocale* a = CFBridgingRelease(nameRef);
+}
+
+- (void)no_bridge_leak_bad {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+}
+
 @end

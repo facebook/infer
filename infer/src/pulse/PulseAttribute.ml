@@ -67,6 +67,8 @@ module Attribute = struct
 
   let bo_itv_rank = Variants.to_rank (BoItv Itv.ItvPure.zero)
 
+  let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -144,6 +146,13 @@ module Attributes = struct
   let is_modified attrs =
     Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
+
+
+  let get_allocation attrs =
+    Set.find_rank attrs Attribute.allocated_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Allocated (procname, trace)) = attr in
+           (procname, trace) )
 
 
   let get_citv attrs =

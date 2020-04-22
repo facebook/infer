@@ -84,6 +84,8 @@ val invalidate :
 
 val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
+val remove_allocation_attr : AbstractValue.t -> t -> t
+
 val invalidate_deref :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that what the address points to is invalid *)

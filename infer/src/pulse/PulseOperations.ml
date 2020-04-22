@@ -225,6 +225,8 @@ let allocate procname location addr_trace astate =
   AddressAttributes.allocate procname addr_trace location astate
 
 
+let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
+
 let invalidate location cause addr_trace astate =
   check_addr_access location addr_trace astate
   >>| AddressAttributes.invalidate addr_trace cause location

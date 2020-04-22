@@ -39,6 +39,8 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Procname.t option
 
+  val get_allocation : t -> (Procname.t * Trace.t) option
+
   val get_citv : t -> (CItv.t * Trace.t) option
 
   val get_bo_itv : t -> Itv.ItvPure.t option
