@@ -854,6 +854,11 @@ module Collection = struct
     |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
 
 
+  let get_collection_internal_elements_locs coll_id mem =
+    let arr_locs = get_collection_internal_array_locs coll_id mem in
+    Dom.Mem.find_set arr_locs mem |> Dom.Val.get_all_locs
+
+
   let eval_collection_length coll_exp mem =
     let arr_locs = eval_collection_internal_array_locs coll_exp mem in
     Sem.eval_array_locs_length arr_locs mem
@@ -879,7 +884,18 @@ module Collection = struct
     |> Dom.Mem.incr_or_not_size_alias arr_locs
 
 
-  let add coll_id = {exec= change_size_by_incr coll_id; check= no_check}
+  let set_elem_exec {integer_type_widths} coll_id elem_exp mem =
+    let locs = get_collection_internal_elements_locs coll_id mem in
+    let v = Sem.eval integer_type_widths elem_exp mem in
+    Dom.Mem.update_mem locs v mem
+
+
+  let add coll_id elem_exp =
+    let exec env ~ret mem =
+      change_size_by_incr coll_id env ~ret mem |> set_elem_exec env coll_id elem_exp
+    in
+    {exec; check= no_check}
+
 
   let singleton_collection =
     let exec env ~ret:((id, _) as ret) mem =
@@ -1012,8 +1028,17 @@ module Collection = struct
     {exec; check= check_index ~last_included:true coll_id index_exp}
 
 
-  let get_or_set_at_index coll_id index_exp =
-    let exec _model_env ~ret:_ mem = mem in
+  let set_at_index coll_id index_exp elem_exp =
+    let exec env ~ret:_ mem = set_elem_exec env coll_id elem_exp mem in
+    {exec; check= check_index ~last_included:false coll_id index_exp}
+
+
+  let get_at_index coll_id index_exp =
+    let exec _model_env ~ret:(ret_id, _) mem =
+      let locs = get_collection_internal_elements_locs coll_id mem in
+      let v = Dom.Mem.find_set locs mem in
+      model_by_value v ret_id mem
+    in
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
@@ -1462,13 +1487,13 @@ module Call = struct
       ; +PatternMatch.implements_collections
         &:: "singletonList" <>--> Collection.singleton_collection
       ; +PatternMatch.implements_collection
-        &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
+        &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
       ; +PatternMatch.implements_collection
-        &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg $--> Collection.get_or_set_at_index
+        &:: "set" <>$ capt_var_exn $+ capt_exp $+ capt_exp $--> Collection.set_at_index
       ; +PatternMatch.implements_collection
         &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
       ; +PatternMatch.implements_collection
-        &:: "add" <>$ capt_var_exn $+ any_arg $--> Collection.add
+        &:: "add" <>$ capt_var_exn $+ capt_exp $--> Collection.add
       ; +PatternMatch.implements_pseudo_collection
         &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg $--> Collection.put
       ; +PatternMatch.implements_collection

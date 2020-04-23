@@ -334,6 +334,12 @@ public class ArrayListTest {
     id(c);
     iterate_over_arraylist(a);
   }
+
+  void array_get_elem_constant() {
+    ArrayList<Integer> a = new ArrayList<>();
+    a.add(5);
+    for (int i = 0; i < a.get(0); i++) {}
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {
