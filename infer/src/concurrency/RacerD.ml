@@ -149,22 +149,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
 
-  let call_without_summary tenv callee_pname ret_base call_flags actuals astate =
+  let call_without_summary tenv callee_pname ret_base actuals astate =
     let open RacerDModels in
     let open RacerDDomain in
-    let should_assume_returns_ownership callee_pname (call_flags : CallFlags.t) actuals =
-      Config.racerd_unknown_returns_owned
-      (* non-interface methods with no summary and no parameters *)
-      || ((not call_flags.cf_interface) && List.is_empty actuals)
-      || (* static [$Builder] creation methods *)
-      creates_builder callee_pname
-    in
-    let should_assume_returns_conditional_ownership callee_pname =
-      (* non-interface methods with  no parameters  *)
-      is_abstract_getthis_like callee_pname
-      || (* non-static [$Builder] methods with same return type as receiver type *)
-      is_builder_passthrough callee_pname
-    in
     if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
       List.hd actuals |> Option.bind ~f:get_access_exp
       |> Option.value_map ~default:astate ~f:(fun receiver ->
@@ -188,22 +175,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           {astate with attribute_map}
       | _ ->
           astate
-    else if should_assume_returns_ownership callee_pname call_flags actuals then
+    else
       let ownership =
         OwnershipDomain.add (AccessExpression.base ret_base) OwnershipAbstractValue.owned
           astate.ownership
       in
       {astate with ownership}
-    else if should_assume_returns_conditional_ownership callee_pname then
-      (* assume abstract, single-parameter methods whose return type is equal to that of the first
-         formal return conditional ownership -- an example is getThis in Litho *)
-      let ownership =
-        OwnershipDomain.add (AccessExpression.base ret_base)
-          (OwnershipAbstractValue.make_owned_if 0)
-          astate.ownership
-      in
-      {astate with ownership}
-    else astate
 
 
   let treat_call_acquiring_ownership ret_base procname actuals loc
@@ -321,7 +298,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 in
                 {locks; threads; accesses; ownership; attribute_map}
             | None ->
-                call_without_summary tenv callee_pname ret_base call_flags actuals astate )
+                call_without_summary tenv callee_pname ret_base actuals astate )
     in
     let add_if_annotated predicate attribute attribute_map =
       if PatternMatch.override_exists predicate tenv callee_pname then

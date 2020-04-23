@@ -911,8 +911,7 @@ OPTIONS
            (Conversely: --no-racerd-only)           See also infer-analyze(1).
 
        --no-racerd-unknown-returns-owned
-           Deactivates: Assume that all methods without a CFG (including
-           abstract methods) return owned objects (Conversely:
+           Deactivates: DEPRECATED, does nothing. (Conversely:
            --racerd-unknown-returns-owned)           See also infer-analyze(1).
 
        --reactive,-r

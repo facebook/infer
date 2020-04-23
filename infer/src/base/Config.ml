@@ -1829,10 +1829,11 @@ and racerd_guardedby =
     "Check @GuardedBy annotations with RacerD"
 
 
-and racerd_unknown_returns_owned =
-  CLOpt.mk_bool ~long:"racerd-unknown-returns-owned" ~default:true
+and[@warning "-32"] racerd_unknown_returns_owned =
+  CLOpt.mk_bool ~deprecated:["racerd-unknown-returns-owned"] ~long:"racerd-unknown-returns-owned"
+    ~default:true
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
-    "Assume that all methods without a CFG (including abstract methods) return owned objects"
+    "DEPRECATED, does nothing."
 
 
 and reactive =
@@ -2878,8 +2879,6 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 
 and racerd_guardedby = !racerd_guardedby
-
-and racerd_unknown_returns_owned = !racerd_unknown_returns_owned
 
 and reactive_mode = !reactive
 

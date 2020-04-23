@@ -53,15 +53,6 @@ val should_flag_interface_call : Tenv.t -> HilExp.t list -> CallFlags.t -> Procn
 val is_synchronized_container : Procname.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** is a call on an access expression to a method of a synchronized container? *)
 
-val is_abstract_getthis_like : Procname.t -> bool
-(** is the callee an abstract method with one argument where argument type is equal to return type *)
-
-val creates_builder : Procname.t -> bool
-(** is the callee a static java method returning a [Builder] object? *)
-
-val is_builder_passthrough : Procname.t -> bool
-(** is the callee a non-static [Builder] method returning the same type as its receiver *)
-
 val is_initializer : Tenv.t -> Procname.t -> bool
 (** should the given procedure be treated as a constructor/initializer? *)
 

@@ -513,47 +513,5 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
         false
 
 
-(** check that callee is abstract and accepts one argument. In addition, its argument type must be
-    equal to its return type. *)
-let is_abstract_getthis_like callee =
-  attrs_of_pname callee
-  |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
-         attrs.is_abstract
-         &&
-         match attrs.formals with
-         | [(_, typ)] when Typ.equal typ attrs.ret_type ->
-             true
-         | _ ->
-             false )
-
-
-let creates_builder callee =
-  (match callee with Procname.Java jpname -> Procname.Java.is_static jpname | _ -> false)
-  && String.equal "create" (Procname.get_method callee)
-  && attrs_of_pname callee
-     |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
-            match attrs.ret_type with
-            | Typ.{desc= Tptr ({desc= Tstruct ret_class}, _)} ->
-                is_builder_class ret_class
-            | _ ->
-                false )
-
-
-let is_builder_passthrough callee =
-  match callee with
-  | Procname.Java java_pname ->
-      (not (Procname.Java.is_static java_pname))
-      && is_builder_method java_pname
-      && attrs_of_pname callee
-         |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
-                match attrs.formals with
-                | (_, typ) :: _ when Typ.equal typ attrs.ret_type ->
-                    true
-                | _ ->
-                    false )
-  | _ ->
-      false
-
-
 let is_initializer tenv proc_name =
   Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
