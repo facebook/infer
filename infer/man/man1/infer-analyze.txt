@@ -430,10 +430,10 @@ RACERD CHECKER OPTIONS
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)
 
-       --racerd-unknown-returns-owned
-           Activates: Assume that all methods without a CFG (including
+       --no-racerd-unknown-returns-owned
+           Deactivates: Assume that all methods without a CFG (including
            abstract methods) return owned objects (Conversely:
-           --no-racerd-unknown-returns-owned)
+           --racerd-unknown-returns-owned)
 
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of

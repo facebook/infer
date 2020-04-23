@@ -1830,7 +1830,7 @@ and racerd_guardedby =
 
 
 and racerd_unknown_returns_owned =
-  CLOpt.mk_bool ~long:"racerd-unknown-returns-owned" ~default:false
+  CLOpt.mk_bool ~long:"racerd-unknown-returns-owned" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
     "Assume that all methods without a CFG (including abstract methods) return owned objects"
 

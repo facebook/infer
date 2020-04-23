@@ -910,10 +910,10 @@ OPTIONS
            Activates: Enable --racerd and disable all other checkers
            (Conversely: --no-racerd-only)           See also infer-analyze(1).
 
-       --racerd-unknown-returns-owned
-           Activates: Assume that all methods without a CFG (including
+       --no-racerd-unknown-returns-owned
+           Deactivates: Assume that all methods without a CFG (including
            abstract methods) return owned objects (Conversely:
-           --no-racerd-unknown-returns-owned)           See also infer-analyze(1).
+           --racerd-unknown-returns-owned)           See also infer-analyze(1).
 
        --reactive,-r
            Activates: Reactive mode: the analysis starts from the files
