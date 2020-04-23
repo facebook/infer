@@ -29,6 +29,11 @@ void deref_local_vector_element_after_push_back_bad() {
   std::cout << *elt << "\n";
 }
 
+void deref_null_local_vector_element_bad() {
+  std::vector<int*> vec = {nullptr};
+  std::cout << *vec[0] << "\n";
+}
+
 void two_push_back_ok(std::vector<int>& vec) {
   vec.push_back(32);
   vec.push_back(52);

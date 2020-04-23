@@ -435,6 +435,18 @@ module StdVector = struct
     >>= PulseOperations.havoc_field location vector GenericArrayBackedCollection.field trace
 
 
+  let init_list_constructor this init_list ~caller_summary:_ ~callee_procname:_ location ~ret:_
+      astate =
+    let event = ValueHistory.Call {f= Model "std::vector::vector()"; location; in_call= []} in
+    let* astate, init_copy = PulseOperations.shallow_copy location init_list astate in
+    let+ astate =
+      PulseOperations.write_field location ~ref:this GenericArrayBackedCollection.field
+        ~obj:(fst init_copy, event :: snd init_copy)
+        astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
+
+
   let invalidate_references vector_f vector : model =
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let crumb =
@@ -534,6 +546,8 @@ module ProcNameDispatcher = struct
       ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+      ; +match_builtin BuiltinDecl.__infer_initializer_list
+        <>$ capt_arg_payload $+...$--> Misc.id_first_arg
       ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
       ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
       ; (* consider that all fbstrings are small strings to avoid false positives due to manual
@@ -578,6 +592,9 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "integral_constant" < any_typ &+ capt_int
         >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
         <>--> Misc.return_int
+      ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+        $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
+        $+...$--> StdVector.init_list_constructor
       ; -"std" &:: "__wrap_iter" &:: "__wrap_iter" <>$ capt_arg_payload $+ capt_arg_payload
         $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
       ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload

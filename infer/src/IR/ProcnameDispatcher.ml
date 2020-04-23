@@ -729,6 +729,10 @@ module Call = struct
 
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
 
+  let capt_arg_payload_of_typ m =
+    {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_val}
+
+
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
 
   let one_arg_matcher_of_prim_typ typ =

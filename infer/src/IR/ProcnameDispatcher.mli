@@ -199,6 +199,11 @@ module Call : sig
        one_arg
   (** Captures one arg of the given type *)
 
+  val capt_arg_payload_of_typ :
+       ('context, unit, _, 'arg_payload) name_matcher
+    -> ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
+  (** Captures the payload of one arg of the given type *)
+
   val capt_exp_of_typ :
        ('context, unit, _, 'arg_payload) name_matcher
     -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
