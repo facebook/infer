@@ -1183,7 +1183,20 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let empty_constructor tgt_exp = copy_constructor tgt_exp (Exp.Const (Const.Cstr ""))
+  let copy_constructor_constant tgt_exp s = copy_constructor tgt_exp (Exp.Const (Const.Cstr s))
+
+  let empty_constructor tgt_exp = copy_constructor_constant tgt_exp ""
+
+  (* We model Enum.name as returing a constant name, rather than getting real field names.  We did
+     this because we couldn't think of any big gains from getting the real names. *)
+  let enum_name tgt_exp =
+    let {exec= constructor_exec} = copy_constructor_constant tgt_exp "EnumName" in
+    let exec ({integer_type_widths} as model_env) ~ret:((ret_id, _) as ret) mem =
+      let v = Sem.eval integer_type_widths tgt_exp mem in
+      constructor_exec model_env ~ret mem |> model_by_value v ret_id
+    in
+    {exec; check= no_check}
+
 
   let create_with_length {pname; node_hash; location; integer_type_widths} ~ret:(id, _) ~begin_idx
       ~end_v mem =
@@ -1550,5 +1563,6 @@ module Call = struct
         $--> eval_binop ~f:(Itv.max_sem ~use_minmax_bound:true)
       ; +PatternMatch.implements_lang "Math"
         &:: "min" <>$ capt_exp $+ capt_exp
-        $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true) ]
+        $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true)
+      ; +PatternMatch.implements_lang "Enum" &:: "name" <>$ capt_exp $--> JavaString.enum_name ]
 end
