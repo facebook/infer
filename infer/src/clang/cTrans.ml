@@ -3248,12 +3248,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Exp.Var ret_id in
     let res_instr =
-      match params with
-      | [(exp, typ)] ->
-          Sil.Load {id= ret_id; e= exp; root_typ= typ; typ; loc= sil_loc}
-      | _ ->
-          let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function) in
-          Sil.Call ((ret_id, typ), sil_fun, params, sil_loc, CallFlags.default)
+      let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__infer_initializer_list) in
+      Sil.Call ((ret_id, typ), sil_fun, params, sil_loc, CallFlags.default)
     in
     let res_trans_call = mk_trans_result (ret_exp, typ) {empty_control with instrs= [res_instr]} in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in

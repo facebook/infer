@@ -13,6 +13,8 @@ include BUILTINS.S with type t = Procname.t
 
 val is_declared : Procname.t -> bool
 
+val __infer_initializer_list : Procname.t
+
 val __infer_skip_function : Procname.t
 
 val __infer_skip_gcc_asm_stmt : Procname.t

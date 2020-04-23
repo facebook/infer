@@ -72,6 +72,8 @@ let __infer_fail = create_procname "__infer_fail"
 
 let __infer_generic_selection_expr = Procname.from_string_c_fun "__infer_generic_selection_expr"
 
+let __infer_initializer_list = create_procname "__infer_initializer_list"
+
 let __infer_skip = create_procname "__infer_skip"
 
 let __infer_skip_function = Procname.from_string_c_fun "__infer_skip_function"

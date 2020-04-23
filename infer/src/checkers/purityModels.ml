@@ -16,6 +16,7 @@ let pure_builtins =
     ; BuiltinDecl.__set_array_length
     ; BuiltinDecl.__get_type_of
     ; BuiltinDecl.__infer_assume
+    ; BuiltinDecl.__infer_initializer_list
     ; BuiltinDecl.__infer_skip
     ; BuiltinDecl.__infer_skip_gcc_asm_stmt
     ; BuiltinDecl.__infer_generic_selection_expr
