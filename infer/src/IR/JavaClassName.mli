@@ -31,6 +31,10 @@ val classname : t -> string
 val is_external_via_config : t -> bool
 (** Considered external based on config flags. *)
 
+val get_outer_class_name : t -> t option
+(** If this is an inner class, return the closest outer, e.g. A$B for A$B$C. None if the class is
+    outermost *)
+
 val is_anonymous_inner_class_name : t -> bool
 (** True if it is either "classic" anonymous Java class:
     https://docs.oracle.com/javase/tutorial/java/javaOO/anonymousclasses.html, or a synthetic Java

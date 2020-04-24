@@ -105,4 +105,18 @@ let test_anonymous =
        ~expected_classname:"SomeClass$NestedClass$AgainNestedClass"
 
 
-let tests = "JavaClassNameTests" >::: [test_from_string; test_anonymous]
+let test_outer =
+  "test_outer"
+  >:: fun _ ->
+  get_outer_class_name (make ~package:(Some "some.package") ~classname:"SomeClass") |> assert_none ;
+  get_outer_class_name (make ~package:(Some "some.package") ~classname:"SomeClass$NestedClass")
+  |> assert_some
+  |> assert_equal_to ~expected_package:(Some "some.package") ~expected_classname:"SomeClass" ;
+  get_outer_class_name
+    (make ~package:(Some "some.package") ~classname:"SomeClass$NestedClass$AnotherNested")
+  |> assert_some
+  |> assert_equal_to ~expected_package:(Some "some.package")
+       ~expected_classname:"SomeClass$NestedClass"
+
+
+let tests = "JavaClassNameTests" >::: [test_from_string; test_anonymous; test_outer]

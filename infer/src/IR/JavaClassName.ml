@@ -63,6 +63,10 @@ let is_int s =
   with Failure _ -> false
 
 
+let get_outer_class_name {package; classname} =
+  String.rsplit2 classname ~on:'$' |> Option.map ~f:(fun (outer, _) -> {package; classname= outer})
+
+
 (* Strips $<int> suffixes from the class name, and return how many were stripped *)
 let strip_anonymous_suffixes_if_present classname =
   let rec strip_recursively classname nesting_level =
