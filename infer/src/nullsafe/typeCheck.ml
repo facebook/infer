@@ -1080,7 +1080,9 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
               let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
               let callee_class = Procname.get_class_type_name callee_pname in
               Option.value_map callee_class
-                ~f:(NullsafeMode.is_in_trust_list caller_nullsafe_mode)
+                ~f:(fun class_name ->
+                  Typ.Name.Java.get_java_class_name_exn class_name
+                  |> NullsafeMode.is_in_trust_list caller_nullsafe_mode )
                 ~default:false
             in
             Models.get_modelled_annotated_signature ~is_callee_in_trust_list tenv callee_attributes

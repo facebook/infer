@@ -69,10 +69,7 @@ let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability
     take precedence over internal ones. *)
 let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let nullsafe_mode =
-    Procname.get_class_type_name proc_name
-    |> Option.value_map ~default:NullsafeMode.Default ~f:(NullsafeMode.of_class tenv)
-  in
+  let nullsafe_mode = NullsafeMode.of_procname tenv proc_name in
   let annotated_signature =
     AnnotatedSignature.get ~is_callee_in_trust_list ~nullsafe_mode proc_attributes
   in

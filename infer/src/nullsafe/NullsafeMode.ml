@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Trust = struct
-  type t = All | Only of Typ.name list [@@deriving compare, equal]
+  type t = All | Only of JavaClassName.t list [@@deriving compare, equal]
 
   let none = Only []
 
@@ -17,7 +17,12 @@ module Trust = struct
     | Annot.Array class_values ->
         (* The only elements of this array can be class names; therefore short-circuit and return None if it's not the case. *)
         IList.traverse_opt class_values ~f:(fun el ->
-            match el with Annot.Class class_typ -> Typ.name class_typ | _ -> None )
+            match el with
+            | Annot.Class class_typ ->
+                Typ.name class_typ
+                |> Option.map ~f:(fun name -> Typ.Name.Java.get_java_class_name_exn name)
+            | _ ->
+                None )
     | _ ->
         None
 
@@ -42,7 +47,7 @@ module Trust = struct
         (* We are interested only in explicit lists *)
         false
     | Only classes ->
-        List.exists classes ~f:(Typ.Name.equal name)
+        List.exists classes ~f:(JavaClassName.equal name)
 
 
   let is_stricter ~stricter ~weaker =
@@ -50,7 +55,7 @@ module Trust = struct
       (* stricter trust list should be a strict subset of the weaker one *)
       List.length stricter_list < List.length weaker_list
       && List.for_all stricter_list ~f:(fun strict_name ->
-             List.exists weaker_list ~f:(fun name -> Typ.Name.equal name strict_name) )
+             List.exists weaker_list ~f:(fun name -> JavaClassName.equal name strict_name) )
     in
     match (stricter, weaker) with
     | All, All | All, Only _ ->
@@ -103,18 +108,14 @@ let of_annot annot =
       None
 
 
-let extract_user_defined_class_name typ_name =
-  match typ_name with
-  | Typ.JavaClass java_class_name ->
-      (* Anonymous inner classes are not proper classes and can not be annotated. Refer to underlying user class *)
-      JavaClassName.get_user_defined_class_if_anonymous_inner java_class_name
-      |> Option.value ~default:java_class_name
-  | _ ->
-      Logging.die InternalError "Unexpected non-Java class name"
+let extract_user_defined_class_name java_class_name =
+  (* Anonymous inner classes are not proper classes and can not be annotated. Refer to underlying user class *)
+  JavaClassName.get_user_defined_class_if_anonymous_inner java_class_name
+  |> Option.value ~default:java_class_name
 
 
-let of_class tenv typ_name =
-  let user_defined_class = extract_user_defined_class_name typ_name in
+let of_class tenv class_name =
+  let user_defined_class = extract_user_defined_class_name class_name in
   match PatternMatch.type_name_get_annotation tenv (Typ.JavaClass user_defined_class) with
   | Some annots -> (
       if Annotations.ia_is_nullsafe_strict annots then Strict
@@ -137,7 +138,7 @@ let of_procname tenv pname =
     | _ ->
         Logging.die InternalError "Unexpected non-Java procname %a" Procname.pp pname
   in
-  of_class tenv class_name
+  of_class tenv (Typ.Name.Java.get_java_class_name_exn class_name)
 
 
 let is_in_trust_list t name =

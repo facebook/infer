@@ -154,7 +154,7 @@ let get_class_loc Struct.{java_class_info} =
 (* Meta issues are those related to null-safety of the class in general, not concrete nullability violations *)
 let report_meta_issues tenv source_file class_name class_struct class_info issue_log =
   (* For purposes of aggregation, we consider all nested anonymous summaries as belonging to this class *)
-  let current_mode = NullsafeMode.of_class tenv (Typ.JavaClass class_name) in
+  let current_mode = NullsafeMode.of_class tenv class_name in
   let summaries = AggregatedSummaries.ClassInfo.get_all_summaries class_info in
   let class_loc =
     get_class_loc class_struct

@@ -124,7 +124,9 @@ let analyze_procedure tenv proc_name proc_desc calls_this checks Callbacks.{get_
           let is_callee_in_trust_list =
             let callee_class = Procname.get_class_type_name pname in
             Option.value_map callee_class
-              ~f:(NullsafeMode.is_in_trust_list caller_nullsafe_mode)
+              ~f:(fun class_name ->
+                Typ.Name.Java.get_java_class_name_exn class_name
+                |> NullsafeMode.is_in_trust_list caller_nullsafe_mode )
               ~default:false
           in
           let ann_sig =

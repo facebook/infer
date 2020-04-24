@@ -44,7 +44,10 @@ let get tenv field_name class_typ =
   (* We currently don't support field-level strict mode annotation, so fetch it from class *)
   let nullsafe_mode =
     Typ.name class_typ
-    |> Option.value_map ~f:(NullsafeMode.of_class tenv) ~default:NullsafeMode.Default
+    |> Option.value_map
+         ~f:(fun class_name ->
+           Typ.Name.Java.get_java_class_name_exn class_name |> NullsafeMode.of_class tenv )
+         ~default:NullsafeMode.Default
   in
   let is_third_party =
     ThirdPartyAnnotationInfo.is_third_party_typ
