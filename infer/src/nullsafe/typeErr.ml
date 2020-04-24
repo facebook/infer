@@ -9,6 +9,7 @@ open! IStd
 module Hashtbl = Caml.Hashtbl
 module MF = MarkupFormatter
 module P = Printf
+module F = Format
 
 (** Module for Type Error messages. *)
 
@@ -82,6 +83,22 @@ type err_instance =
       ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
 
+let pp_err_instance fmt err_instance =
+  match err_instance with
+  | Condition_redundant _ ->
+      F.pp_print_string fmt "Condition_redundant"
+  | Inconsistent_subclass _ ->
+      F.pp_print_string fmt "Inconsistent_subclass"
+  | Field_not_initialized _ ->
+      F.pp_print_string fmt "Field_not_initialized"
+  | Over_annotation _ ->
+      F.pp_print_string fmt "Over_annotation"
+  | Nullable_dereference _ ->
+      F.pp_print_string fmt "Nullable_dereference"
+  | Bad_assignment {rhs_origin} ->
+      F.fprintf fmt "Bad_assignment: rhs %s" (TypeOrigin.to_string rhs_origin)
+
+
 module H = Hashtbl.Make (struct
   type t = err_instance * InstrRef.t option [@@deriving compare]
 
@@ -147,6 +164,7 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
       | _ ->
           instr_ref_opt
     in
+    Logging.debug Analysis Medium "Registering an issue: %a@\n" pp_err_instance err_instance ;
     H.add err_tbl (err_instance, instr_ref_opt_deduplicate) {loc; always= true} ;
     not is_forall
 
@@ -325,6 +343,7 @@ let report_now_if_reportable (st_report_error : st_report_error) err_instance ~n
   let pname = Procdesc.get_proc_name pdesc in
   get_error_info_if_reportable ~nullsafe_mode err_instance
   |> Option.iter ~f:(fun (err_description, infer_issue_type, updated_location, severity) ->
+         Logging.debug Analysis Medium "About to report: %s" err_description ;
          let field_name = get_field_name_for_error_suppressing err_instance in
          let error_location = Option.value updated_location ~default:loc in
          st_report_error pname pdesc infer_issue_type error_location ~field_name

@@ -82,6 +82,8 @@ let make_meta_issue all_issues current_mode class_name =
   let issue_count_in_curr_mode =
     get_reportable_typing_rules_violations ~nullsafe_mode:current_mode all_issues |> List.length
   in
+  List.iter (get_reportable_typing_rules_violations ~nullsafe_mode:current_mode all_issues)
+    ~f:(fun issue -> Logging.debug Analysis Medium "Issue: %a@\n" TypeErr.pp_err_instance issue) ;
   let mode_to_promote_to = calc_mode_to_promote_to current_mode all_issues in
   let meta_issue_info =
     Jsonbug_t.

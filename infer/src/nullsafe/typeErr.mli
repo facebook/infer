@@ -58,6 +58,8 @@ type err_instance =
       ; rhs_origin: TypeOrigin.t }
 [@@deriving compare]
 
+val pp_err_instance : Format.formatter -> err_instance -> unit
+
 val node_reset_forall : Procdesc.Node.t -> unit
 
 type st_report_error =
