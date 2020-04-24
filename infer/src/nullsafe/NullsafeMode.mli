@@ -12,7 +12,7 @@ open! IStd
 module Trust : sig
   [@@@warning "-32"]
 
-  type t = All | Only of JavaClassName.t list [@@deriving compare, equal]
+  type t = All | Only of JavaClassName.Set.t [@@deriving compare, equal]
 
   val none : t
 

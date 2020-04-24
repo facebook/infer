@@ -49,7 +49,8 @@ let is_considered_nonnull ~nullsafe_mode nullability =
     match nullsafe_mode with
     | NullsafeMode.Strict ->
         StrictNonnull
-    | NullsafeMode.Local (NullsafeMode.Trust.Only []) ->
+    | NullsafeMode.Local (NullsafeMode.Trust.Only classes) when JavaClassName.Set.is_empty classes
+      ->
         (* Though "trust none" is technically a subcase of trust some,
            we need this pattern to be different from the one below so we can detect possible
            promotions from "trust some" to "trust none" *)

@@ -48,7 +48,7 @@ let mode_to_json = function
       `Default
   | NullsafeMode.Local NullsafeMode.Trust.All ->
       `LocalTrustAll
-  | NullsafeMode.Local (NullsafeMode.Trust.Only []) ->
+  | NullsafeMode.Local (NullsafeMode.Trust.Only names) when JavaClassName.Set.is_empty names ->
       `LocalTrustNone
   | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
       `LocalTrustSome
@@ -96,16 +96,22 @@ let make_meta_issue all_issues current_mode class_name =
       match mode_to_promote_to with
       | Some mode_to_promote_to ->
           (* This class is not @Nullsafe yet, but can become such! *)
+          let trust_none_mode =
+            "`@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))`"
+          in
+          let trust_all_mode = "`@Nullsafe(Nullsafe.Mode.Local)`" in
           let promo_recommendation =
             match mode_to_promote_to with
             | NullsafeMode.Local NullsafeMode.Trust.All ->
-                "`@Nullsafe(Nullsafe.Mode.Local)`"
-            | NullsafeMode.Local (NullsafeMode.Trust.Only [])
+                trust_all_mode
+            | NullsafeMode.Local (NullsafeMode.Trust.Only names)
+              when JavaClassName.Set.is_empty names ->
+                trust_none_mode
             | NullsafeMode.Strict
             (* We don't recommend "strict" for now as it is harder to keep a class in strict mode than it "trust none" mode.
                Trust none is almost as safe alternative, but adding a dependency will require just updating trust list,
                without need to strictify it first. *) ->
-                "`@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))`"
+                trust_none_mode
             | NullsafeMode.Default | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
                 Logging.die InternalError "Unexpected promotion mode"
           in

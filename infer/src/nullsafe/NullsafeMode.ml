@@ -9,20 +9,23 @@ open! IStd
 module F = Format
 
 module Trust = struct
-  type t = All | Only of JavaClassName.t list [@@deriving compare, equal]
+  type t = All | Only of JavaClassName.Set.t [@@deriving compare, equal]
 
-  let none = Only []
+  let none = Only JavaClassName.Set.empty
 
   let extract_trust_list = function
     | Annot.Array class_values ->
         (* The only elements of this array can be class names; therefore short-circuit and return None if it's not the case. *)
-        IList.traverse_opt class_values ~f:(fun el ->
-            match el with
-            | Annot.Class class_typ ->
-                Typ.name class_typ
-                |> Option.map ~f:(fun name -> Typ.Name.Java.get_java_class_name_exn name)
-            | _ ->
-                None )
+        let trust_list =
+          IList.traverse_opt class_values ~f:(fun el ->
+              match el with
+              | Annot.Class class_typ ->
+                  Typ.name class_typ
+                  |> Option.map ~f:(fun name -> Typ.Name.Java.get_java_class_name_exn name)
+              | _ ->
+                  None )
+        in
+        Option.map trust_list ~f:JavaClassName.Set.of_list
     | _ ->
         None
 
@@ -47,15 +50,14 @@ module Trust = struct
         (* We are interested only in explicit lists *)
         false
     | Only classes ->
-        List.exists classes ~f:(JavaClassName.equal name)
+        JavaClassName.Set.exists (JavaClassName.equal name) classes
 
 
   let is_stricter ~stricter ~weaker =
-    let is_stricter_trust_list stricter_list weaker_list =
+    let is_stricter_trust_list stricter_set weaker_set =
       (* stricter trust list should be a strict subset of the weaker one *)
-      List.length stricter_list < List.length weaker_list
-      && List.for_all stricter_list ~f:(fun strict_name ->
-             List.exists weaker_list ~f:(fun name -> JavaClassName.equal name strict_name) )
+      JavaClassName.Set.cardinal stricter_set < JavaClassName.Set.cardinal weaker_set
+      && JavaClassName.Set.subset stricter_set weaker_set
     in
     match (stricter, weaker) with
     | All, All | All, Only _ ->
@@ -70,7 +72,7 @@ module Trust = struct
     match t with
     | All ->
         F.fprintf fmt "all"
-    | Only [] ->
+    | Only names when JavaClassName.Set.is_empty names ->
         F.fprintf fmt "none"
     | Only _names ->
         F.fprintf fmt "selected"

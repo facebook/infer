@@ -18,6 +18,12 @@ module Map = Caml.Map.Make (struct
   let compare = compare
 end)
 
+module Set = Caml.Set.Make (struct
+  type nonrec t = t
+
+  let compare = compare
+end)
+
 let make ~package ~classname =
   match package with Some "" -> {package= None; classname} | _ -> {package; classname}
 

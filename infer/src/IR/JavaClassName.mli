@@ -11,6 +11,8 @@ type t [@@deriving compare, equal]
 
 module Map : Caml.Map.S with type key = t
 
+module Set : Caml.Set.S with type elt = t
+
 val make : package:string option -> classname:string -> t
 
 val from_string : string -> t
