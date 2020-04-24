@@ -20,8 +20,6 @@ module AnnotationAliases = struct
           "Couldn't parse thread-safety annotation aliases; expected list of strings"
 end
 
-type container_access = ContainerRead | ContainerWrite
-
 let make_android_support_template suffix methods =
   let open MethodMatcher in
   [ {default with classname= "android.support.v4.util." ^ suffix; methods}
@@ -137,23 +135,27 @@ let is_cpp_container_write =
   fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
 
-let get_container_access pn tenv =
+let is_container_write tenv pn =
   match pn with
   | Procname.Java _ when is_java_container_write tenv pn [] ->
-      Some ContainerWrite
-  | Procname.Java _ when is_java_container_read tenv pn [] ->
-      Some ContainerRead
+      true
+  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
+      true
+  | _ ->
+      false
+
+
+let is_container_read tenv pn =
+  match pn with
   | Procname.Java _ ->
-      None
+      is_java_container_read tenv pn []
   (* The following order matters: we want to check if pname is a container write
      before we check if pname is a container read. This is due to a different
      treatment between std::map::operator[] and all other operator[]. *)
-  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
-      Some ContainerWrite
-  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_read pn ->
-      Some ContainerRead
+  | Procname.ObjC_Cpp _ | C _ ->
+      (not (is_cpp_container_write pn)) && is_cpp_container_read pn
   | _ ->
-      None
+      false
 
 
 (** holds of procedure names which should not be analyzed in order to avoid known sources of

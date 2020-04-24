@@ -7,9 +7,9 @@
 
 open! IStd
 
-type container_access = ContainerRead | ContainerWrite
+val is_container_read : Tenv.t -> Procname.t -> bool
 
-val get_container_access : Procname.t -> Tenv.t -> container_access option
+val is_container_write : Tenv.t -> Procname.t -> bool
 (** return Some (access) if this procedure accesses the contents of a container (e.g., Map.get) *)
 
 val has_return_annot : (Annot.Item.t -> bool) -> Procname.t -> bool
