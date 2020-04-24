@@ -103,8 +103,19 @@ let of_annot annot =
       None
 
 
+let extract_user_defined_class_name typ_name =
+  match typ_name with
+  | Typ.JavaClass java_class_name ->
+      (* Anonymous inner classes are not proper classes and can not be annotated. Refer to underlying user class *)
+      JavaClassName.get_user_defined_class_if_anonymous_inner java_class_name
+      |> Option.value ~default:java_class_name
+  | _ ->
+      Logging.die InternalError "Unexpected non-Java class name"
+
+
 let of_class tenv typ_name =
-  match PatternMatch.type_name_get_annotation tenv typ_name with
+  let user_defined_class = extract_user_defined_class_name typ_name in
+  match PatternMatch.type_name_get_annotation tenv (Typ.JavaClass user_defined_class) with
   | Some annots -> (
       if Annotations.ia_is_nullsafe_strict annots then Strict
       else
