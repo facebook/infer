@@ -404,25 +404,27 @@ module GenericArrayBackedCollectionIterator = struct
 
   let operator_star ~desc iter ~caller_summary:_ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, iter_index = to_internal_pointer location iter astate in
-    let+ astate, (elem_val, elem_hist) =
-      GenericArrayBackedCollection.element location iter (fst iter_index) astate
+    let* astate, (iter_index_addr, iter_index_hist) = to_internal_pointer location iter astate in
+    let+ astate, (elem_val, _) =
+      GenericArrayBackedCollection.element location iter iter_index_addr astate
     in
-    let astate = PulseOperations.write_id (fst ret) (elem_val, event :: elem_hist) astate in
+    let astate = PulseOperations.write_id (fst ret) (elem_val, event :: iter_index_hist) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
   let operator_plus_plus ~desc iter ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let index_next = AbstractValue.mk_fresh () in
-    let* astate, current_index = to_internal_pointer location iter astate in
+    let* astate, (current_index, current_index_hist) = to_internal_pointer location iter astate in
     let* astate, element =
-      GenericArrayBackedCollection.element location iter (fst current_index) astate
+      GenericArrayBackedCollection.element location iter current_index astate
     in
     (* Iterator is invalid if the value it points to is invalid *)
-    let* astate, _ = PulseOperations.eval_access location element Dereference astate in
+    let* astate, _ =
+      PulseOperations.eval_access location (fst element, current_index_hist) Dereference astate
+    in
     PulseOperations.write_field location ~ref:iter internal_pointer
-      ~obj:(index_next, [event])
+      ~obj:(index_next, event :: current_index_hist)
       astate
     >>| ExecutionDomain.continue >>| List.return
 end
@@ -476,16 +478,16 @@ module StdVector = struct
     let astate =
       PulseArithmetic.and_eq_int (Immediate {location; history= []}) index_zero IntLit.zero astate
     in
-    let* astate, ((arr_addr, hist) as arr) =
+    let* astate, ((arr_addr, _) as arr) =
       GenericArrayBackedCollection.eval location vector astate
     in
     let* astate, _ = GenericArrayBackedCollection.eval_element location arr index_zero astate in
     PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
-      ~obj:(arr_addr, event :: hist)
+      ~obj:(arr_addr, event :: snd iter)
       astate
     >>= PulseOperations.write_field location ~ref:iter
           GenericArrayBackedCollectionIterator.internal_pointer
-          ~obj:(index_zero, [event])
+          ~obj:(index_zero, event :: snd iter)
     >>| ExecutionDomain.continue >>| List.return
 
 
