@@ -68,6 +68,18 @@ module Trust = struct
         is_stricter_trust_list stricter_trust_list weaker_trust_list
 
 
+  let intersect trust1 trust2 =
+    match (trust1, trust2) with
+    | Only classes, All ->
+        Only classes
+    | All, Only classes ->
+        Only classes
+    | Only list1, Only list2 ->
+        Only (JavaClassName.Set.inter list1 list2)
+    | All, All ->
+        All
+
+
   let pp fmt t =
     match t with
     | All ->
@@ -116,9 +128,8 @@ let extract_user_defined_class_name java_class_name =
   |> Option.value ~default:java_class_name
 
 
-let of_class tenv class_name =
-  let user_defined_class = extract_user_defined_class_name class_name in
-  match PatternMatch.type_name_get_annotation tenv (Typ.JavaClass user_defined_class) with
+let extract_mode_from_explicit_class_annotation tenv classname =
+  match PatternMatch.type_name_get_annotation tenv (Typ.JavaClass classname) with
   | Some annots -> (
       if Annotations.ia_is_nullsafe_strict annots then Strict
       else
@@ -130,6 +141,33 @@ let of_class tenv class_name =
             Default )
   | None ->
       Default
+
+
+(** Get the minimal mode that is stricter or equal than both of given modes *)
+let intersect mode1 mode2 =
+  match (mode1, mode2) with
+  | Strict, _ | _, Strict ->
+      Strict
+  | Local trust1, Local trust2 ->
+      Local (Trust.intersect trust1 trust2)
+  | Local trust, Default | Default, Local trust ->
+      Local trust
+  | Default, Default ->
+      Default
+
+
+let of_class tenv class_name =
+  (* The mode of the class is the strictest over this class's mode annotation and its outer classes *)
+  let rec of_class_and_outer_classes class_name =
+    let curr_class_mode = extract_mode_from_explicit_class_annotation tenv class_name in
+    match JavaClassName.get_outer_class_name class_name with
+    | Some outer_name ->
+        intersect curr_class_mode (of_class_and_outer_classes outer_name)
+    | None ->
+        curr_class_mode
+  in
+  let user_defined_class = extract_user_defined_class_name class_name in
+  of_class_and_outer_classes user_defined_class
 
 
 let of_procname tenv pname =
