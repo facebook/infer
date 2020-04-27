@@ -132,9 +132,9 @@ let mk_strictification_advice_unchecked_or_locally_checked_case_only nullsafe_mo
   | UserFriendlyNullable.UncheckedNonnull | UserFriendlyNullable.LocallyCheckedNonnull -> (
     match nullsafe_mode with
     | NullsafeMode.Strict ->
-        F.sprintf "make %s nullsafe strict" what_to_strictify
+        F.sprintf "make `%s` nullsafe strict" what_to_strictify
     | NullsafeMode.Local _ ->
-        F.sprintf "make %s nullsafe" what_to_strictify
+        F.sprintf "make `%s` @Nullsafe (or add it to trust list)" what_to_strictify
     | NullsafeMode.Default ->
         Logging.die InternalError
           "mk_recommendation_unchecked_or_locally_checked_case_only:: should not be called for \
