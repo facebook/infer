@@ -118,12 +118,22 @@ let make_meta_issue all_issues current_mode class_name =
             | NullsafeMode.Default | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
                 Logging.die InternalError "Unexpected promotion mode"
           in
-          ( IssueType.eradicate_meta_class_can_be_nullsafe
-          , Format.asprintf
-              "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
-              (JavaClassName.classname class_name)
-              promo_recommendation
-          , Exceptions.Advice )
+          let severity, message =
+            if Option.is_some (JavaClassName.get_outer_class_name class_name) then
+              (* This is a nested class. We don't recommend explicitly marking it as @Nullsafe to the users:
+                 recommended granularity is outer level class. However, we still report meta-issue for statistics/metric reasons.
+              *)
+              ( Exceptions.Info
+              , Format.sprintf "`%s` is free of nullability issues."
+                  (JavaClassName.classname class_name) )
+            else
+              ( Exceptions.Advice
+              , Format.sprintf
+                  "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
+                  (JavaClassName.classname class_name)
+                  promo_recommendation )
+          in
+          (IssueType.eradicate_meta_class_can_be_nullsafe, message, severity)
       | None ->
           (* This class can not be made @Nullsafe without extra work *)
           let issue_count_to_make_nullsafe =
