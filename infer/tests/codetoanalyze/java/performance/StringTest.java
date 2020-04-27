@@ -108,4 +108,8 @@ class StringTest {
       i = j;
     }
   }
+
+  void class_get_canonical_name_constant(Integer a) {
+    for (int i = 0; i < a.getClass().getCanonicalName().length(); i++) {}
+  }
 }

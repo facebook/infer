@@ -522,10 +522,15 @@ module ArrObjCommon = struct
     Sem.eval_array_locs_length (deref_of model_env exp ~fn mem) mem
 
 
-  let size_exec exp ~fn model_env ~ret:(id, _) mem =
-    let arr_locs = deref_of model_env exp ~fn mem in
-    let mem = Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_array_locs_length arr_locs mem) mem in
-    load_size_alias id arr_locs mem
+  let size_exec exp ~fn ({integer_type_widths} as model_env) ~ret:(id, _) mem =
+    let locs = Sem.eval integer_type_widths exp mem |> Dom.Val.get_all_locs in
+    match PowLoc.is_singleton_or_more locs with
+    | Singleton (Loc.Allocsite (Allocsite.LiteralString s)) ->
+        model_by_value (Dom.Val.of_int (String.length s)) id mem
+    | _ ->
+        let arr_locs = deref_of model_env exp ~fn mem in
+        let mem = Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_array_locs_length arr_locs mem) mem in
+        load_size_alias id arr_locs mem
 
 
   let at arr_exp ~fn index_exp =
@@ -1183,18 +1188,16 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let copy_constructor_constant tgt_exp s = copy_constructor tgt_exp (Exp.Const (Const.Cstr s))
+  let empty_constructor tgt_exp = copy_constructor tgt_exp (Exp.Const (Const.Cstr ""))
 
-  let empty_constructor tgt_exp = copy_constructor_constant tgt_exp ""
-
-  (* We model Enum.name as returing a constant name, rather than getting real field names.  We did
-     this because we couldn't think of any big gains from getting the real names. *)
-  let enum_name tgt_exp =
-    let {exec= constructor_exec} = copy_constructor_constant tgt_exp "EnumName" in
-    let exec ({integer_type_widths} as model_env) ~ret:((ret_id, _) as ret) mem =
-      let v = Sem.eval integer_type_widths tgt_exp mem in
-      constructor_exec model_env ~ret mem |> model_by_value v ret_id
+  (* We model Enum.name or Class.getCanonicalName as returning an arbitrary constant name, rather
+     than getting real names.  We did this because we couldn't think of any big gains from getting
+     the real names in terms of analysis precision. *)
+  let inferbo_constant_string =
+    let constant_string_val =
+      Loc.of_allocsite (Allocsite.literal_string "__constant_string") |> Dom.Val.of_loc
     in
+    let exec _model_env ~ret:(ret_id, _) mem = model_by_value constant_string_val ret_id mem in
     {exec; check= no_check}
 
 
@@ -1564,5 +1567,7 @@ module Call = struct
       ; +PatternMatch.implements_lang "Math"
         &:: "min" <>$ capt_exp $+ capt_exp
         $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true)
-      ; +PatternMatch.implements_lang "Enum" &:: "name" <>$ capt_exp $--> JavaString.enum_name ]
+      ; +PatternMatch.implements_lang "Enum" &:: "name" &::.*--> JavaString.inferbo_constant_string
+      ; +PatternMatch.implements_lang "Class"
+        &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string ]
 end
