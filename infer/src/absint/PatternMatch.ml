@@ -101,6 +101,10 @@ let implements_google class_name = implements ("com.google." ^ class_name)
 
 let implements_android class_name = implements ("android." ^ class_name)
 
+let implements_infer_annotation class_name =
+  implements ("com.facebook.infer.annotation." ^ class_name)
+
+
 let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class_name)
 
 let implements_org_json class_name = implements ("org.json." ^ class_name)

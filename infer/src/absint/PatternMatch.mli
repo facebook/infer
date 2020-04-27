@@ -91,6 +91,9 @@ val implements_google : string -> Tenv.t -> string -> bool
 val implements_android : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class of Android *)
 
+val implements_infer_annotation : string -> Tenv.t -> string -> bool
+(** Check whether class implements a class of Infer annotation *)
+
 val implements_xmob_utils : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class of xmod.utils *)
 

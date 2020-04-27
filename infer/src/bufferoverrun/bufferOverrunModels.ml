@@ -915,6 +915,12 @@ module Collection = struct
       key is found in the map *)
   let put coll_id = {exec= change_size_by_incr_or_not coll_id; check= no_check}
 
+  let put_with_elem coll_id elem_exp =
+    let put_model = put coll_id in
+    let exec env ~ret mem = put_model.exec env ~ret mem |> set_elem_exec env coll_id elem_exp in
+    {put_model with exec}
+
+
   (* The return value is set by [set_itv_updated_by_addition] in order to be sure that it can be
      used as a control variable value in the cost checker. *)
   let size coll_exp =
@@ -1304,6 +1310,15 @@ module Object = struct
     {exec; check= no_check}
 end
 
+module InferAnnotation = struct
+  let assert_get index_exp coll_exp =
+    match coll_exp with
+    | Exp.Var coll_id ->
+        Collection.get_at_index coll_id index_exp
+    | _ ->
+        no_model
+end
+
 module Call = struct
   let dispatch : (Tenv.t, model, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -1520,8 +1535,8 @@ module Call = struct
       ; +PatternMatch.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg
-        $--> Collection.put
+      ; +PatternMatch.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ capt_exp
+        $--> Collection.put_with_elem
       ; +PatternMatch.implements_org_json "JSONArray"
         &:: "put" <>$ capt_var_exn $+...$--> Collection.put
       ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
@@ -1569,5 +1584,14 @@ module Call = struct
         $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true)
       ; +PatternMatch.implements_lang "Enum" &:: "name" &::.*--> JavaString.inferbo_constant_string
       ; +PatternMatch.implements_lang "Class"
-        &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string ]
+        &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string
+      ; +PatternMatch.implements_infer_annotation "Assertions"
+        &:: "assertNotNull" <>$ capt_exp $+...$--> id
+      ; +PatternMatch.implements_infer_annotation "Assertions"
+        &:: "assumeNotNull" <>$ capt_exp $+...$--> id
+      ; +PatternMatch.implements_infer_annotation "Assertions"
+        &:: "nullsafeFIXME" <>$ capt_exp $+...$--> id
+      ; +PatternMatch.implements_infer_annotation "Assertions"
+        &:: "assertGet" <>$ capt_exp $+ capt_exp $--> InferAnnotation.assert_get
+      ; +PatternMatch.implements_infer_annotation "Assertions" &::.*--> no_model ]
 end
