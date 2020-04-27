@@ -128,6 +128,7 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
+             ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
              ERADICATE_CONDITION_REDUNDANT_NONNULL (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
@@ -142,6 +143,8 @@ OPTIONS
              ERADICATE_META_CLASS_NEEDS_IMPROVEMENT (disabled by default),
              ERADICATE_NULLABLE_DEREFERENCE (enabled by default),
              ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
+             ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION (enabled by
+           default),
              ERADICATE_RETURN_NOT_NULLABLE (enabled by default),
              ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
              ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE (enabled by default),

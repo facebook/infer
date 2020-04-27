@@ -261,6 +261,16 @@ let eradicate_inconsistent_subclass_return_annotation =
     ~hum:"Inconsistent Subclass Return Annotation"
 
 
+let eradicate_redundant_nested_class_annotation =
+  register_from_string "ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION"
+    ~hum:"@Nullsafe annotation is redundant"
+
+
+let eradicate_bad_nested_class_annotation =
+  register_from_string "ERADICATE_BAD_NESTED_CLASS_ANNOTATION"
+    ~hum:"@Nullsafe annotation is inconsistent with outer class"
+
+
 let eradicate_nullable_dereference =
   register_from_string "ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
 

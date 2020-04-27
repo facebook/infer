@@ -158,6 +158,10 @@ val eradicate_inconsistent_subclass_parameter_annotation : t
 
 val eradicate_inconsistent_subclass_return_annotation : t
 
+val eradicate_redundant_nested_class_annotation : t
+
+val eradicate_bad_nested_class_annotation : t
+
 val eradicate_nullable_dereference : t
 
 val eradicate_parameter_not_nullable : t

@@ -46,3 +46,17 @@ val severity : t -> Exceptions.severity
     ERROR if and only if it is enforced. *)
 
 val pp : Format.formatter -> t -> unit
+
+type nested_class_annotation_problem =
+  | RedundantNestedClassAnnotation
+      (** Nested mode is explicitly annotated exactly like the outer one. *)
+  | NestedModeIsWeaker of weak_type  (** Attempt to relax the mode imposed in the outer class. *)
+
+and weak_type =
+  | ExtraTrustClass of JavaClassName.t list  (** Nested class has this extra list of classes *)
+  | Other
+
+val check_problematic_class_annotation :
+  Tenv.t -> JavaClassName.t -> (unit, nested_class_annotation_problem) result
+(** Given a (not anonymous) class name, check if there are semantic problems with [@Nullsafe] mode
+    annotation for this class *)

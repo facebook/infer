@@ -181,10 +181,6 @@ let of_procname tenv pname =
   of_class tenv (Typ.Name.Java.get_java_class_name_exn class_name)
 
 
-let is_in_trust_list t name =
-  match t with Strict | Default -> false | Local trust -> Trust.is_in_trust_list trust name
-
-
 let is_stricter_than ~stricter ~weaker =
   let strict_level mode = match mode with Default -> 0 | Local _ -> 1 | Strict -> 2 in
   match (stricter, weaker) with
@@ -192,6 +188,52 @@ let is_stricter_than ~stricter ~weaker =
       Trust.is_stricter ~stricter:stricter_trust ~weaker:weaker_trust
   | _ ->
       strict_level stricter > strict_level weaker
+
+
+type nested_class_annotation_problem =
+  | RedundantNestedClassAnnotation
+  | NestedModeIsWeaker of weak_type
+
+and weak_type = ExtraTrustClass of JavaClassName.t list | Other
+
+let check_problematic_class_annotation tenv user_defined_class =
+  if JavaClassName.is_anonymous_inner_class_name user_defined_class then
+    Logging.die InternalError
+      "check_problematic_class_annotation: should not be called for anonymous classes" ;
+  Option.value_map
+    (JavaClassName.get_outer_class_name user_defined_class)
+    ~f:(fun outer_class_name ->
+      (* Check if the mode of the nested class contradicts the outer's one or is redundant *)
+      let nested_mode = extract_mode_from_explicit_class_annotation tenv user_defined_class in
+      if equal Default nested_mode then (* Nested class is not explicitly annotated. *)
+        Ok ()
+      else
+        let outer_mode = of_class tenv outer_class_name in
+        if equal nested_mode outer_mode then Error RedundantNestedClassAnnotation
+        else
+          match (nested_mode, outer_mode) with
+          | Local (Trust.Only nested_trust_list), Local (Trust.Only outer_trust_list) ->
+              (* Special processing for pair of two Trust(some).
+                 The problem if when there is an attempt to introduce additional trust in nested that did not exist
+                 in outer.
+              *)
+              let extra_trusted_classes_in_nested =
+                JavaClassName.Set.diff nested_trust_list outer_trust_list
+              in
+              if not (JavaClassName.Set.is_empty extra_trusted_classes_in_nested) then
+                Error
+                  (NestedModeIsWeaker
+                     (ExtraTrustClass (JavaClassName.Set.elements extra_trusted_classes_in_nested)))
+              else Ok ()
+          | _ ->
+              if is_stricter_than ~stricter:outer_mode ~weaker:nested_mode then
+                Error (NestedModeIsWeaker Other)
+              else Ok () )
+    ~default:(Ok ())
+
+
+let is_in_trust_list t name =
+  match t with Strict | Default -> false | Local trust -> Trust.is_in_trust_list trust name
 
 
 let severity = function

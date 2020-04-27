@@ -7,11 +7,12 @@
 
 open! IStd
 
-let log_issue ?proc_name ~issue_log ~loc ~trace ~severity ~nullsafe_extra issue_type error_message =
+let log_issue ?proc_name ~issue_log ~loc ~severity ~nullsafe_extra issue_type error_message =
   let extras =
     Jsonbug_t.{nullsafe_extra= Some nullsafe_extra; cost_polynomial= None; cost_degree= None}
   in
   let proc_name = Option.value proc_name ~default:Procname.Linters_dummy_method in
+  let trace = [Errlog.make_trace_element 0 loc error_message []] in
   Reporting.log_issue_external proc_name severity ~issue_log ~loc ~extras ~ltr:trace issue_type
     error_message
 
@@ -149,10 +150,11 @@ let make_meta_issue all_issues current_mode class_name =
   {issue_type; description; severity; meta_issue_info}
 
 
-let get_class_loc Struct.{java_class_info} =
+let get_class_loc source_file Struct.{java_class_info} =
   match java_class_info with
   | Some {loc} ->
-      loc
+      (* In rare cases location is not present, fall back to the first line of the file *)
+      Option.value loc ~default:Location.{file= source_file; line= 1; col= 0}
   | None ->
       Logging.die InternalError "java_class_info should be present for Java classes"
 
@@ -162,11 +164,7 @@ let report_meta_issues tenv source_file class_name class_struct class_info issue
   (* For purposes of aggregation, we consider all nested anonymous summaries as belonging to this class *)
   let current_mode = NullsafeMode.of_class tenv class_name in
   let summaries = AggregatedSummaries.ClassInfo.get_all_summaries class_info in
-  let class_loc =
-    get_class_loc class_struct
-    |> (* In rare cases location is not present, fall back to the first line of the file *)
-    Option.value ~default:Location.{file= source_file; line= 1; col= 0}
-  in
+  let class_loc = get_class_loc source_file class_struct in
   let all_issues =
     List.map summaries ~f:(fun Summary.{payloads= {nullsafe}} ->
         Option.value_map nullsafe ~f:(fun NullsafeSummary.{issues} -> issues) ~default:[] )
@@ -178,8 +176,7 @@ let report_meta_issues tenv source_file class_name class_struct class_info issue
   let package = JavaClassName.package class_name in
   let class_name = JavaClassName.classname class_name in
   let nullsafe_extra = Jsonbug_t.{class_name; package; meta_issue_info= Some meta_issue_info} in
-  let trace = [Errlog.make_trace_element 0 class_loc description []] in
-  log_issue ~issue_log ~loc:class_loc ~trace ~severity ~nullsafe_extra issue_type description
+  log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
 
 
 (* Optimization - if issues are disabled, don't bother analyzing them *)
@@ -189,14 +186,65 @@ let should_analyze_meta_issues () =
   || IssueType.eradicate_meta_class_is_nullsafe.enabled
 
 
-let analyze_class tenv source_file class_name class_info issue_log =
-  if should_analyze_meta_issues () then (
-    match Tenv.lookup tenv (Typ.JavaClass class_name) with
-    | Some class_struct ->
-        report_meta_issues tenv source_file class_name class_struct class_info issue_log
-    | None ->
-        Logging.debug Analysis Medium
-          "%a: could not load class info in environment: skipping class analysis@\n"
-          JavaClassName.pp class_name ;
-        issue_log )
+let analyze_meta_issues tenv source_file class_name class_struct class_info issue_log =
+  if should_analyze_meta_issues () then
+    report_meta_issues tenv source_file class_name class_struct class_info issue_log
   else issue_log
+
+
+let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_log =
+  let loc = get_class_loc source_file class_struct in
+  let nullsafe_extra =
+    let package = JavaClassName.package class_name in
+    let class_name = JavaClassName.classname class_name in
+    Jsonbug_t.{class_name; package; meta_issue_info= None}
+  in
+  match NullsafeMode.check_problematic_class_annotation tenv class_name with
+  | Ok () ->
+      issue_log
+  | Error NullsafeMode.RedundantNestedClassAnnotation ->
+      let description =
+        Format.sprintf
+          "`%s`: the same @Nullsafe mode is already specified in the outer class, so this \
+           annotation can be removed."
+          (JavaClassName.classname class_name)
+      in
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Advice
+        IssueType.eradicate_redundant_nested_class_annotation description
+  | Error (NullsafeMode.NestedModeIsWeaker (ExtraTrustClass wrongly_trusted_classes)) ->
+      (* The list can not be empty *)
+      let example_of_wrongly_trusted_class = List.nth_exn wrongly_trusted_classes 0 in
+      let description =
+        Format.sprintf
+          "Nested classes cannot add classes to trust list if they are not in the outer class \
+           trust list. Remove `%s` from trust list."
+          (JavaClassName.classname example_of_wrongly_trusted_class)
+      in
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Warning
+        IssueType.eradicate_bad_nested_class_annotation description
+  | Error (NullsafeMode.NestedModeIsWeaker Other) ->
+      let description =
+        Format.sprintf
+          "`%s`: nested classes are disallowed to weaken @Nullsafe mode specified in the outer \
+           class. This annotation will be ignored."
+          (JavaClassName.classname class_name)
+      in
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Warning
+        IssueType.eradicate_bad_nested_class_annotation description
+
+
+let analyze_class_impl tenv source_file class_name class_struct class_info issue_log =
+  issue_log
+  |> analyze_meta_issues tenv source_file class_name class_struct class_info
+  |> analyze_nullsafe_annotations tenv source_file class_name class_struct
+
+
+let analyze_class tenv source_file class_name class_info issue_log =
+  match Tenv.lookup tenv (Typ.JavaClass class_name) with
+  | Some class_struct ->
+      analyze_class_impl tenv source_file class_name class_struct class_info issue_log
+  | None ->
+      Logging.debug Analysis Medium
+        "%a: could not load class info in environment: skipping class analysis@\n" JavaClassName.pp
+        class_name ;
+      issue_log

@@ -110,3 +110,57 @@ class Default {
     }
   }
 }
+
+class A {
+  public static String getString() {
+    return "";
+  }
+}
+
+class B {}
+
+class C {
+  public static String getString() {
+    return "";
+  }
+}
+
+@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({A.class, B.class}))
+class TrustSome {
+
+  public String trustA_OK() {
+    return A.getString();
+  }
+
+  public String dontTrustC_Bad() {
+    return C.getString();
+  }
+
+  // Inherits mode from the outer, the same trust
+  class NotAnnotatedNested {
+    public String trustA_OK() {
+      return A.getString();
+    }
+
+    public String dontTrustC_Bad() {
+      return C.getString();
+    }
+  }
+
+  // This class does not trust A anymore
+  @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({B.class}))
+  class CanRemoveFromTrustList {
+    public String dontTrustA_BAD() {
+      return A.getString();
+    }
+  }
+
+  // Lousy attempt to add a class C to trust list
+  // Should have a special issue suggesting to remove C from the list.
+  @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({A.class, C.class}))
+  class CanNotAddToTrustList {
+    public String stillDontTrustC_BAD() {
+      return C.getString();
+    }
+  }
+}
