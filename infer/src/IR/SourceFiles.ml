@@ -93,21 +93,6 @@ let proc_names_of_source source =
       |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
 
 
-let exists_source_statement =
-  ResultsDatabase.register_statement "SELECT 1 FROM source_files WHERE source_file = :k"
-
-
-let is_captured source =
-  ResultsDatabase.with_registered_statement exists_source_statement ~f:(fun db exists_stmt ->
-      SourceFile.SQLite.serialize source
-      |> Sqlite3.bind exists_stmt 1
-      (* :k *)
-      |> SqliteUtils.check_result_code db ~log:"load captured source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.is_captured" db
-        exists_stmt
-      |> Option.is_some )
-
-
 let is_non_empty_statement = ResultsDatabase.register_statement "SELECT 1 FROM source_files LIMIT 1"
 
 let is_empty () =

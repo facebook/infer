@@ -81,10 +81,6 @@ let get_proc_attr proc_name =
 
 let procedure_should_be_analyzed proc_name =
   match get_proc_attr proc_name with
-  | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
-      (* try to capture procedure first *)
-      let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
-      Option.value_map ~f:should_be_analyzed ~default:false defined_proc_attributes
   | Some proc_attributes ->
       should_be_analyzed proc_attributes
   | None ->

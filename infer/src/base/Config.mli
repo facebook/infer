@@ -469,8 +469,6 @@ val quiet : bool
 
 val racerd_guardedby : bool
 
-val reactive_capture : bool
-
 val reactive_mode : bool
 
 val reanalyze : bool

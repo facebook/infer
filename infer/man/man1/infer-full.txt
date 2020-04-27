@@ -1615,10 +1615,6 @@ INTERNAL OPTIONS
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)
 
-       --reactive-capture
-           Activates: Compile source files only when required by analyzer
-           (clang only) (Conversely: --no-reactive-capture)
-
        --reanalyze
            Activates: Rerun the analysis. Not compatible with
            --incremental-analysis and --continue-analysis. (Conversely:

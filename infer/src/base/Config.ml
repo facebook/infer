@@ -1843,11 +1843,6 @@ and reactive =
      started"
 
 
-and reactive_capture =
-  CLOpt.mk_bool ~long:"reactive-capture"
-    "Compile source files only when required by analyzer (clang only)"
-
-
 and reanalyze =
   CLOpt.mk_bool ~long:"reanalyze"
     "Rerun the analysis. Not compatible with $(b,--incremental-analysis) and \
@@ -2881,8 +2876,6 @@ and quiet = !quiet
 and racerd_guardedby = !racerd_guardedby
 
 and reactive_mode = !reactive
-
-and reactive_capture = !reactive_capture
 
 and reanalyze = !reanalyze
 

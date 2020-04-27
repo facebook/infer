@@ -49,9 +49,6 @@ let get_file_data exe_env pname =
       | None ->
           L.debug Analysis Medium "can't find attributes for %a@." Procname.pp pname ;
           None
-      | Some proc_attributes when Config.reactive_capture ->
-          let get_captured_file {ProcAttributes.translation_unit} = translation_unit in
-          OndemandCapture.try_capture proc_attributes |> Option.map ~f:get_captured_file
       | Some proc_attributes ->
           Some proc_attributes.ProcAttributes.translation_unit
     in

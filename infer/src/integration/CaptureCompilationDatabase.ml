@@ -155,7 +155,3 @@ let capture_files_in_database ~changed_files compilation_database =
         fun source_file -> SourceFile.Set.mem source_file changed_files_set
   in
   run_compilation_database compilation_database filter_changed
-
-
-let capture_file_in_database compilation_database source_file =
-  run_compilation_database compilation_database (SourceFile.equal source_file)

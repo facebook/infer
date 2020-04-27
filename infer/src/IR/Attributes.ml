@@ -66,23 +66,15 @@ let select_statement =
   ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_name = :k"
 
 
-let select_defined_statement =
-  ResultsDatabase.register_statement
-    "SELECT proc_attributes FROM procedures WHERE proc_name = :k AND attr_kind = %Ld"
-    (int64_of_attributes_kind ProcDefined)
+let find pname_blob =
+  ResultsDatabase.with_registered_statement select_statement ~f:(fun db select_stmt ->
+      Sqlite3.bind select_stmt 1 pname_blob
+      |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db select_stmt
+      |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
-let find ~defined pname_blob =
-  (if defined then select_defined_statement else select_statement)
-  |> ResultsDatabase.with_registered_statement ~f:(fun db select_stmt ->
-         Sqlite3.bind select_stmt 1 pname_blob
-         |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
-         SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db
-           select_stmt
-         |> Option.map ~f:ProcAttributes.SQLite.deserialize )
-
-
-let load pname = Procname.SQLite.serialize pname |> find ~defined:false
+let load pname = find (Procname.SQLite.serialize pname)
 
 let store ~proc_desc (attr : ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
@@ -94,8 +86,6 @@ let store ~proc_desc (attr : ProcAttributes.t) =
       proc_desc
       (Option.map proc_desc ~f:Procdesc.get_static_callees |> Option.value ~default:[])
 
-
-let load_defined pname = Procname.SQLite.serialize pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =
   Option.map (load pname) ~f:(fun proc_attributes ->

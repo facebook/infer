@@ -12,8 +12,6 @@ val capture_files_in_database :
 (** Run the capture of the files for which we have compilation commands in the database and in
     [changed_files], if specified. *)
 
-val capture_file_in_database : CompilationDatabase.t -> SourceFile.t -> unit
-
 val get_compilation_database_files_buck :
   BuckMode.clang_compilation_db_deps -> prog:string -> args:string list -> [> `Raw of string] list
 (** Get the compilation database files that contain the compilation given by the buck command. It

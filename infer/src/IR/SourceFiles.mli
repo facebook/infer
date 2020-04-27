@@ -16,9 +16,6 @@ val get_all : filter:Filtering.source_files_filter -> unit -> SourceFile.t list
 val proc_names_of_source : SourceFile.t -> Procname.t list
 (** list of all the proc names (declared and defined) found in a source file *)
 
-val is_captured : SourceFile.t -> bool
-(** has the source file been captured? *)
-
 val is_empty : unit -> bool
 (** whether there exists at least one captured source file *)
 
