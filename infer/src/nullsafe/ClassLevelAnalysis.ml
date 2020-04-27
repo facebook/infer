@@ -99,7 +99,7 @@ let make_meta_issue all_issues current_mode class_name =
           let trust_none_mode =
             "`@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))`"
           in
-          let trust_all_mode = "`@Nullsafe(Nullsafe.Mode.Local)`" in
+          let trust_all_mode = "`@Nullsafe(Nullsafe.Mode.LOCAL)`" in
           let promo_recommendation =
             match mode_to_promote_to with
             | NullsafeMode.Local NullsafeMode.Trust.All ->
