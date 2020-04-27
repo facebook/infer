@@ -9,7 +9,11 @@ open! IStd
 module F = Format
 
 module Trust = struct
-  type t = All | Only of JavaClassName.Set.t [@@deriving compare, equal]
+  type trust_list = JavaClassName.Set.t [@@deriving compare, equal]
+
+  type t = All | Only of trust_list [@@deriving compare, equal]
+
+  let is_trust_none trust_list = JavaClassName.Set.is_empty trust_list
 
   let none = Only JavaClassName.Set.empty
 

@@ -12,7 +12,11 @@ open! IStd
 module Trust : sig
   [@@@warning "-32"]
 
-  type t = All | Only of JavaClassName.Set.t [@@deriving compare, equal]
+  type trust_list
+
+  val is_trust_none : trust_list -> bool
+
+  type t = All | Only of trust_list [@@deriving compare, equal]
 
   val none : t
 

@@ -44,16 +44,18 @@ type meta_issue =
   ; severity: Exceptions.severity
   ; meta_issue_info: Jsonbug_t.nullsafe_meta_issue_info }
 
-let mode_to_json = function
-  | NullsafeMode.Default ->
+let mode_to_json mode =
+  let open NullsafeMode in
+  match mode with
+  | Default ->
       `Default
-  | NullsafeMode.Local NullsafeMode.Trust.All ->
+  | Local Trust.All ->
       `LocalTrustAll
-  | NullsafeMode.Local (NullsafeMode.Trust.Only names) when JavaClassName.Set.is_empty names ->
+  | Local (Trust.Only trust_list) when Trust.is_trust_none trust_list ->
       `LocalTrustNone
-  | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
+  | Local (Trust.Only _) ->
       `LocalTrustSome
-  | NullsafeMode.Strict ->
+  | Strict ->
       `Strict
 
 
@@ -105,8 +107,8 @@ let make_meta_issue all_issues current_mode class_name =
             match mode_to_promote_to with
             | NullsafeMode.Local NullsafeMode.Trust.All ->
                 trust_all_mode
-            | NullsafeMode.Local (NullsafeMode.Trust.Only names)
-              when JavaClassName.Set.is_empty names ->
+            | NullsafeMode.Local (NullsafeMode.Trust.Only trust_list)
+              when NullsafeMode.Trust.is_trust_none trust_list ->
                 trust_none_mode
             | NullsafeMode.Strict
             (* We don't recommend "strict" for now as it is harder to keep a class in strict mode than it "trust none" mode.
