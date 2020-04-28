@@ -424,7 +424,7 @@ let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc 
   ; return= (cast_exp, cast_typ) }
 
 
-let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
+let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
   match cast_kind with
   | `NoOp | `DerivedToBase | `UncheckedDerivedToBase ->
       (* These casts ignore change of type *)
@@ -436,10 +436,6 @@ let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
   | `BitCast | `IntegralCast | `IntegralToBoolean ->
       (* This is treated as a nop by returning the same expressions exps*)
       ([], (exp, cast_typ))
-  | `CPointerToObjCPointerCast when Objc_models.is_core_lib_type typ ->
-      (* Translation of __bridge_transfer *)
-      let instr = create_call_to_free_cf sil_loc exp typ in
-      ([instr], (exp, cast_typ))
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
       (* So we assign the LValue to a temp and we pass it to the parent.*)
@@ -457,11 +453,25 @@ let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
         Sil.Call ((no_id, cast_typ), skip_builtin, args, sil_loc, CallFlags.default)
       in
       ([call_instr], (exp, cast_typ))
-  | _ ->
-      L.(debug Capture Verbose)
-        "@\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...@\n"
-        (Clang_ast_j.string_of_cast_kind cast_kind) ;
-      ([], (exp, cast_typ))
+  | _ -> (
+    match objc_bridge_cast_kind with
+    | Some `OBC_BridgeTransfer ->
+        let instr = create_call_to_free_cf sil_loc exp typ in
+        ([instr], (exp, cast_typ))
+    | Some cast_kind ->
+        L.debug Capture Verbose
+          "@\n\
+           WARNING: Missing translation for ObjC Bridge Cast Kind %a. The construct has been \
+           ignored...@\n"
+          (Pp.of_string ~f:Clang_ast_j.string_of_obj_c_bridge_cast_kind)
+          cast_kind ;
+        ([], (exp, cast_typ))
+    | _ ->
+        L.debug Capture Verbose
+          "@\nWARNING: Missing translation for Cast Kind %a. The construct has been ignored...@\n"
+          (Pp.of_string ~f:Clang_ast_j.string_of_cast_kind)
+          cast_kind ;
+        ([], (exp, cast_typ)) )
 
 
 let trans_assertion_failure sil_loc (context : CContext.t) =

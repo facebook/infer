@@ -62,4 +62,9 @@
   CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
 }
 
+- (void)bridge_transfer_no_leak_good {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  NSLocale* locale = (__bridge_transfer NSLocale*)nameRef;
+}
+
 @end

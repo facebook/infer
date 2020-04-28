@@ -10,6 +10,9 @@
 typedef struct ABFDataRef {
 } ABFDataRef;
 
+@interface ABFData
+@end
+
 ABFDataRef* ABFDataCreate(size_t size);
 void ABFRelease(ABFDataRef*);
 
@@ -25,6 +28,10 @@ void ABFRelease(ABFDataRef*);
 - (void)create_then_release_ok {
   ABFDataRef* someData = ABFDataCreate(4);
   ABFRelease(someData);
+}
+
+- (void)bridge_no_leak_good {
+  ABFData* someData = (__bridge_transfer ABFData*)ABFDataCreate(4);
 }
 
 @end

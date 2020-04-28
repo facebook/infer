@@ -90,7 +90,12 @@ val dereference_value_from_result :
     assigned to it *)
 
 val cast_operation :
-  Clang_ast_t.cast_kind -> Exp.t * Typ.t -> Typ.t -> Location.t -> Sil.instr list * (Exp.t * Typ.t)
+     ?objc_bridge_cast_kind:Clang_ast_t.obj_c_bridge_cast_kind
+  -> Clang_ast_t.cast_kind
+  -> Exp.t * Typ.t
+  -> Typ.t
+  -> Location.t
+  -> Sil.instr list * (Exp.t * Typ.t)
 
 val trans_assertion : trans_state -> Location.t -> trans_result
 

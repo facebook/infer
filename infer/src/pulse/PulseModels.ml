@@ -675,6 +675,7 @@ module ProcNameDispatcher = struct
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
       ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free
       ; -"CFBridgingRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; +match_builtin BuiltinDecl.__free_cf <>$ capt_arg_payload $--> C.cf_bridging_release
       ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
       ; +PatternMatch.ObjectiveC.is_modelled_as_free <>$ capt_arg_payload $--> C.free ]
 end
