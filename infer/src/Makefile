@@ -153,7 +153,7 @@ roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif
-clusters:=base clang java IR
+clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs deadcode integration IR istd java java_stubs labs llvm nullsafe opensource pulse quandary scripts test_determinator third-party topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))
