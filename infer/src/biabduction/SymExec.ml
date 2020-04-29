@@ -338,13 +338,14 @@ let dangerous_functions =
   ref (List.map ~f:Procname.from_string_c_fun dangerous_list)
 
 
-let check_inherently_dangerous_function caller_pname callee_pname =
+let check_inherently_dangerous_function {InterproceduralAnalysis.proc_desc; err_log} callee_pname =
   if List.exists ~f:(Procname.equal callee_pname) !dangerous_functions then
     let exn =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname)
     in
-    SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn
+    let attrs = Procdesc.get_attributes proc_desc in
+    BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
 
 
 let reason_to_skip ~callee_desc : string option =
@@ -1803,16 +1804,15 @@ and sym_exec_alloc_model analysis_data pname ret_typ ret_id_typ loc prop path : 
 
 (** Perform symbolic execution for a function call *)
 and proc_call (callee_pdesc, callee_summary)
-    { Builtin.analysis_data= {proc_desc= caller_pdesc; tenv; _} as analysis_data
+    { Builtin.analysis_data= {tenv; proc_desc= caller_pdesc; _} as analysis_data
     ; prop_= pre
     ; path
     ; ret_id_typ
     ; args= actual_pars
     ; loc } =
-  let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
-  check_inherently_dangerous_function caller_pname callee_pname ;
+  check_inherently_dangerous_function analysis_data callee_pname ;
   let formal_types = List.map ~f:snd callee_attributes.ProcAttributes.formals in
   let rec comb actual_pars formal_types =
     match (actual_pars, formal_types) with
