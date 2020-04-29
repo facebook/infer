@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> string -> unit
 
@@ -24,9 +23,8 @@ let log_frontend_issue severity errlog ~loc ~node_key ~ltr exn =
   log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None exn
 
 
-let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn =
-  let attrs = Summary.get_attributes summary in
-  let procname = attrs.proc_name in
+let log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc ~ltr ?extras exn =
+  let procname = proc_attributes.ProcAttributes.proc_name in
   let is_java_generated_method =
     match procname with
     | Procname.Java java_pname ->
@@ -43,48 +41,33 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
   in
   let should_suppress_lint =
     Language.curr_language_is Java
-    && Annotations.ia_is_suppress_lint
-         (Summary.get_attributes summary).ProcAttributes.method_annotation.return
+    && Annotations.ia_is_suppress_lint proc_attributes.ProcAttributes.method_annotation.return
   in
   if should_suppress_lint || is_java_generated_method || is_java_external_package then ()
     (* Skip the reporting *)
-  else
-    let err_log = Summary.get_err_log summary in
-    log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access:None ~extras exn
-
-
-let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
-  if !BiabductionConfig.footprint then
-    match Summary.OnDisk.get proc_name with
-    | Some summary ->
-        let node =
-          let node = match node with None -> State.get_node_exn () | Some node -> node in
-          Errlog.BackendNode {node}
-        in
-        let session = State.get_session () in
-        let loc = match loc with None -> State.get_loc_exn () | Some loc -> loc in
-        let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-        log_issue_from_summary severity summary ~node ~session ~loc ~ltr exn
-    | None ->
-        L.(die InternalError)
-          "Trying to report error on procedure %a, but cannot because no summary exists for this \
-           procedure. Did you mean to log the error on the caller of %a instead?"
-          Procname.pp proc_name Procname.pp proc_name
+  else log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access:None ~extras exn
 
 
 let checker_exception issue_type error_message =
   Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message)
 
 
-let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?extras issue_type
+let log_issue_from_summary_simplified severity attrs err_log ~loc ?(ltr = []) ?extras issue_type
     error_message =
   let exn = checker_exception issue_type error_message in
-  log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr ?extras exn
+  log_issue_from_summary severity attrs err_log ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr
+    ?extras exn
 
 
-let log_error = log_issue_from_summary_simplified Exceptions.Error
+let log_error attrs err_log ~loc ?ltr ?extras issue_type error_message =
+  log_issue_from_summary_simplified Exceptions.Error attrs err_log ~loc ?ltr ?extras issue_type
+    error_message
 
-let log_warning = log_issue_from_summary_simplified Exceptions.Warning
+
+let log_warning attrs err_log ~loc ?ltr ?extras issue_type error_message =
+  log_issue_from_summary_simplified Exceptions.Warning attrs err_log ~loc ?ltr ?extras issue_type
+    error_message
+
 
 let log_issue_external procname ~issue_log severity ~loc ~ltr ?access ?extras issue_type
     error_message =
@@ -93,22 +76,6 @@ let log_issue_external procname ~issue_log severity ~loc ~ltr ?access ?extras is
   let node = Errlog.UnknownNode in
   log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access ~extras exn ;
   issue_log
-
-
-let log_error_using_state summary exn =
-  if !BiabductionConfig.footprint then
-    let node' =
-      match State.get_node () with
-      | Some n ->
-          n
-      | None ->
-          Procdesc.get_start_node (Summary.get_proc_desc summary)
-    in
-    let node = Errlog.BackendNode {node= node'} in
-    let session = State.get_session () in
-    let loc = match State.get_loc () with Some l -> l | None -> Procdesc.Node.get_loc node' in
-    let ltr = State.get_loc_trace () in
-    log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr exn
 
 
 let is_suppressed ?(field_name = None) tenv proc_desc kind =

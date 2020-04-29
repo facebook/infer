@@ -88,7 +88,7 @@ let report_missing_required_prop summary prop parent_typename ~create_loc call_c
            in
            Errlog.make_trace_element 0 location call_msg [] )
   in
-  Reporting.log_error summary ~loc:create_loc ~ltr IssueType.missing_required_prop message
+  SummaryReporting.log_error summary ~loc:create_loc ~ltr IssueType.missing_required_prop message
 
 
 let has_prop prop_set prop =

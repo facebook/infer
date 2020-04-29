@@ -2573,7 +2573,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
       L.d_printfln "WARNING: footprint failed to find MISSING because: %s" s ;
       None
   | Exceptions.Abduction_case_not_implemented _ as exn ->
-      Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
+      BiabductionReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
       None
 
 

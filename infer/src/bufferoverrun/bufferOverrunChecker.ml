@@ -41,7 +41,7 @@ module UnusedBranch = struct
       if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
     in
     let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-    Reporting.log_warning summary ~loc:location ~ltr issue_type desc
+    SummaryReporting.log_warning summary ~loc:location ~ltr issue_type desc
 end
 
 module UnusedBranches = struct
@@ -58,7 +58,7 @@ module UnreachableStatement = struct
 
   let report summary {location} =
     let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-    Reporting.log_error summary ~loc:location ~ltr IssueType.unreachable_code_after
+    SummaryReporting.log_error summary ~loc:location ~ltr IssueType.unreachable_code_after
       "Unreachable code after statement"
 end
 
@@ -411,7 +411,8 @@ let report_errors : Tenv.t -> checks -> Summary.t -> unit =
       Trace.Issue.make_err_trace ~description (PO.ConditionTrace.get_val_traces trace)
       |> Errlog.concat_traces
     in
-    Reporting.log_error summary ~loc:location ~ltr:trace issue_type (description ~markup:true)
+    SummaryReporting.log_error summary ~loc:location ~ltr:trace issue_type
+      (description ~markup:true)
   in
   PO.ConditionSet.report_errors ~report cond_set
 

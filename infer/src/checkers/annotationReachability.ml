@@ -91,8 +91,8 @@ let report_allocation_stack src_annot summary fst_call_loc trace constructor_pna
       MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
       ("new " ^ constr_str)
   in
-  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace IssueType.checkers_allocates_memory
-    description
+  SummaryReporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace
+    IssueType.checkers_allocates_memory description
 
 
 let report_annotation_stack src_annot snk_annot src_summary loc trace snk_pname call_loc =
@@ -114,7 +114,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace snk_pname 
         IssueType.checkers_calls_expensive_method
       else IssueType.checkers_annotation_reachability_error
     in
-    Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
+    SummaryReporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
 
 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
@@ -333,7 +333,7 @@ module CxxAnnotationSpecs = struct
         let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
         IssueType.register_from_string spec_name ~doc_url ~linters_def_file
       in
-      Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
+      SummaryReporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
     in
     let snk_annot = annotation_of_str snk_name in
     let report proc_data annot_map =
@@ -412,7 +412,7 @@ module ExpensiveAnnotationSpec = struct
           (Procname.to_string overridden_pname)
           MF.pp_monospaced ("@" ^ Annotations.expensive)
       in
-      Reporting.log_error summary ~loc IssueType.checkers_expensive_overrides_unexpensive
+      SummaryReporting.log_error summary ~loc IssueType.checkers_expensive_overrides_unexpensive
         description
 
 

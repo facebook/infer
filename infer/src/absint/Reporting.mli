@@ -11,16 +11,17 @@ open! IStd
 
 type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> string -> unit
 
-val log_issue_deprecated_using_state :
+val log_issue_from_summary :
      Exceptions.severity
-  -> Procname.t
-  -> ?node:Procdesc.Node.t
-  -> ?loc:Location.t
-  -> ?ltr:Errlog.loc_trace
+  -> ProcAttributes.t
+  -> Errlog.t
+  -> node:Errlog.node
+  -> session:int
+  -> loc:Location.t
+  -> ltr:Errlog.loc_trace
+  -> ?extras:Jsonbug_t.extra
   -> exn
   -> unit
-(** Report an issue in the given procedure using biabduction state (DO NOT USE ELSEWHERE).
-    DEPRECATED as it can create race conditions between checkers. Use log_error/warning instead *)
 
 val log_frontend_issue :
      Exceptions.severity
@@ -32,14 +33,11 @@ val log_frontend_issue :
   -> unit
 (** Report a frontend issue of a given kind in the given error log. *)
 
-val log_error : Summary.t -> loc:Location.t -> log_t
-(** Add an error to the given summary. *)
+val log_error : ProcAttributes.t -> Errlog.t -> loc:Location.t -> log_t
+(** Add an error to the given error log. *)
 
-val log_warning : Summary.t -> loc:Location.t -> log_t
-(** Add an warning to the given summary. *)
-
-val log_error_using_state : Summary.t -> exn -> unit
-(** Add an error to the given summary using biabduction state (DO NOT USE ELSEWHERE). *)
+val log_warning : ProcAttributes.t -> Errlog.t -> loc:Location.t -> log_t
+(** Add a warning to the given error log. *)
 
 val log_issue_external :
      Procname.t

@@ -75,8 +75,8 @@ let report_matching_get tenv summary pvar loop_nodes : unit =
                         in
                         let loc = Procdesc.Node.get_loc node in
                         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-                        Reporting.log_error summary ~loc ~ltr IssueType.inefficient_keyset_iterator
-                          exp_desc ) ) )
+                        SummaryReporting.log_error summary ~loc ~ltr
+                          IssueType.inefficient_keyset_iterator exp_desc ) ) )
     loop_nodes
 
 

@@ -111,7 +111,8 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
               "%s at line %s: parameter %d is expected to be of type %s but %s was given."
               instr_name instr_line n_arg (default_format_type_name ft) gt
           in
-          Reporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
+          SummaryReporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args
+            description
         else check_type_names instr_loc (n_arg + 1) instr_proc_name fs gs
     | [], [] ->
         ()
@@ -120,7 +121,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
           Printf.sprintf "format string arguments don't mach provided arguments in %s at line %s"
             instr_name instr_line
         in
-        Reporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
+        SummaryReporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
   in
   (* Get the array ivar for a given nvar *)
   let array_ivar instrs nvar =
@@ -156,7 +157,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
               vararg_ivar_type_names
         | None ->
             if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
-              Reporting.log_warning summary ~loc:cl IssueType.checkers_printf_args
+              SummaryReporting.log_warning summary ~loc:cl IssueType.checkers_printf_args
                 "Format string must be string literal"
       with e ->
         L.internal_error "%s Exception when analyzing %s: %s@."

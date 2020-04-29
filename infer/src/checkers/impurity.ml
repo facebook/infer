@@ -173,15 +173,15 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
         F.asprintf "Impure function %a with no pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
-        impure_fun_desc
+      SummaryReporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr]
+        IssueType.impure_function impure_fun_desc
   | Some [] ->
       let impure_fun_desc =
         F.asprintf "Impure function %a with empty pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
-        impure_fun_desc
+      SummaryReporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr]
+        IssueType.impure_function impure_fun_desc
   | Some pre_posts ->
       let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
         List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
@@ -210,5 +210,6 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
           :: modified_ltr Formal modified_params
                (modified_ltr Global modified_globals skipped_functions)
         in
-        Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc ) ;
+        SummaryReporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function
+          impure_fun_desc ) ;
   summary

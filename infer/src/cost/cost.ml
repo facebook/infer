@@ -263,7 +263,7 @@ module Check = struct
       in
       Errlog.make_trace_element 0 location cost_desc []
     in
-    Reporting.log_error summary ~loc:location
+    SummaryReporting.log_error summary ~loc:location
       ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
@@ -272,7 +272,7 @@ module Check = struct
       CostIssues.{unreachable_issue; infinite_issue} =
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
-      Reporting.log_error ~loc
+      SummaryReporting.log_error ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) summary issue message
     in

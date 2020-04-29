@@ -243,7 +243,7 @@ let report_cycle tenv summary prop =
     RetainCyclesType.Set.iter
       (fun cycle ->
         let exn = exn_retain_cycle tenv cycle in
-        Reporting.log_error_using_state summary exn )
+        SummaryReporting.log_error_using_state summary exn )
       cycles ;
     (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
     raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )

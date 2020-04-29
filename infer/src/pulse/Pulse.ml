@@ -14,7 +14,7 @@ open PulseDomainInterface
 
 let report summary diagnostic =
   let open Diagnostic in
-  Reporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
+  SummaryReporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
     (get_issue_type diagnostic) (get_message diagnostic)
 
 

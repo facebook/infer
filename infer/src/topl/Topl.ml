@@ -269,7 +269,7 @@ let add_errors exe_env summary =
               let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
               let message = Printf.sprintf "property %s reaches error" property in
               tt "WARN@\n" ;
-              Reporting.log_error summary IssueType.topl_error ~loc message )
+              SummaryReporting.log_error summary IssueType.topl_error ~loc message )
           in
           (* Don't warn if [lookup_static_var] fails. *)
           Option.iter ~f:handle_state_post_value (lookup_static_var env state_var post)

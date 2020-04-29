@@ -207,7 +207,7 @@ let report_errors astate summary =
         let loc = Procdesc.get_loc pdesc in
         let exp_desc = F.asprintf "Side-effect free function %a" Procname.pp proc_name in
         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-        Reporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
+        SummaryReporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
   | None ->
       L.internal_error "Analyzer failed to compute purity information for %a@." Procname.pp
         proc_name

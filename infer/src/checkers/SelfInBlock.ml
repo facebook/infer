@@ -240,7 +240,7 @@ module TransferFunctions = struct
             (Pvar.pp Pp.text) pvar var_use Location.pp loc
         in
         let ltr = make_trace_unchecked_strongself domain in
-        Reporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message ;
+        SummaryReporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message ;
         let strongVars =
           StrongEqualToWeakCapturedVars.add pvar
             {strongVarElem with reported= true}
@@ -434,7 +434,7 @@ let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (se
       Location.pp self.loc
   in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
+  SummaryReporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
 
 
 let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) procname
@@ -451,7 +451,8 @@ let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainD
         (Procname.to_simplified_string procname)
     in
     let ltr = make_trace_use_self_weakself domain in
-    Reporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block message ;
+    SummaryReporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block
+      message ;
     reported_weak_self_in_noescape_block )
   else reported_weak_self_in_noescape_block
 
@@ -468,7 +469,7 @@ let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
       (Pvar.pp Pp.text) weakSelf1.pvar (Pvar.pp Pp.text) weakSelf1.pvar
   in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
+  SummaryReporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
 
 
 let report_captured_strongself_issue domain summary attributes (capturedStrongSelf : DomainData.t)
@@ -488,8 +489,8 @@ let report_captured_strongself_issue domain summary attributes (capturedStrongSe
         (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
     in
     let ltr = make_trace_captured_strong_self domain in
-    Reporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc IssueType.captured_strong_self
-      message ;
+    SummaryReporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc
+      IssueType.captured_strong_self message ;
     report_captured_strongself )
   else report_captured_strongself
 

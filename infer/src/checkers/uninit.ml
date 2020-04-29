@@ -83,7 +83,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         access_expr
     in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
-    Reporting.log_error summary ~loc ~ltr IssueType.uninitialized_value message
+    SummaryReporting.log_error summary ~loc ~ltr IssueType.uninitialized_value message
 
 
   let is_struct t = match t.Typ.desc with Typ.Tstruct _ -> true | _ -> false

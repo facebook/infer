@@ -259,7 +259,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
         (Typ.pp_full Pp.text) typ
     in
     let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
-    Reporting.log_error summary ~loc ~ltr IssueType.dead_store message
+    SummaryReporting.log_error summary ~loc ~ltr IssueType.dead_store message
   in
   let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store {e1= Lvar pvar; typ; e2= rhs_exp; loc}

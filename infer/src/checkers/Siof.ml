@@ -237,7 +237,8 @@ let report_siof summary trace gname loc =
             GlobalVar.pp (SiofTrace.Sink.kind final_sink)
     in
     let ltr = SiofTrace.trace_of_error loc gname trace in
-    Reporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco description
+    SummaryReporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco
+      description
   in
   let reportable_paths = SiofTrace.get_reportable_sink_paths trace ~trace_of_pname in
   (* FIXME(T54950303) replace use of filtering with deduplicate *)

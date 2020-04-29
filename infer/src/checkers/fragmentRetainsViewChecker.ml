@@ -43,7 +43,7 @@ let report_warning class_name fld fld_typ summary =
       pp_m (Typ.Name.name class_name) pp_m (Fieldname.get_field_name fld) pp_m (format_typ fld_typ)
       pp_m (format_method pname) pp_m on_create_view pp_m on_destroy_view
   in
-  Reporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
+  SummaryReporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
 
 
 let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} =

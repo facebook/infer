@@ -55,7 +55,7 @@ let check_bad_index tenv pname p len index loc =
         Exceptions.Array_out_of_bounds_l1
           (Errdesc.explain_array_access pname tenv deref_str p loc, __POS__)
       in
-      Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      BiabductionReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
     else if len_is_constant then
       let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
       let desc = Errdesc.explain_array_access pname tenv deref_str p loc in
@@ -63,7 +63,7 @@ let check_bad_index tenv pname p len index loc =
         if index_has_bounds () then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
         else Exceptions.Array_out_of_bounds_l3 (desc, __POS__)
       in
-      Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      BiabductionReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
 
 
 (** Perform bounds checking *)
@@ -991,7 +991,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
           Exceptions.Pointer_size_mismatch
             (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
         in
-        Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+        BiabductionReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
   | None ->
       L.d_str "texp: " ; Exp.d_texp_full texp ; L.d_ln ()
 

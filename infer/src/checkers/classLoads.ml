@@ -115,7 +115,7 @@ let report_loads summary astate =
     else
       let ltr = ClassLoadsDomain.Event.make_loc_trace event in
       let msg = Format.asprintf "Class %s loaded" elem in
-      Reporting.log_warning summary ~loc ~ltr IssueType.class_load msg
+      SummaryReporting.log_warning summary ~loc ~ltr IssueType.class_load msg
   in
   let pname = Summary.get_proc_name summary in
   Procname.get_class_name pname
