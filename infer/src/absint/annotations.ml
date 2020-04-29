@@ -160,10 +160,8 @@ let pdesc_return_annot_ends_with pdesc annot =
   pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
 
 
-(* note: we would use Summary.proc_resolve_attributes directly instead of requiring [attrs_of_pname],
-   but doing so creates a circular dependency *)
-let pname_has_return_annot pname ~attrs_of_pname predicate =
-  match attrs_of_pname pname with
+let pname_has_return_annot pname predicate =
+  match AnalysisCallbacks.proc_resolve_attributes pname with
   | Some attributes ->
       predicate attributes.ProcAttributes.method_annotation.return
   | None ->

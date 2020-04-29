@@ -12,8 +12,6 @@ module Domain = StarvationDomain
 
 let pname_pp = MF.wrap_monospaced Procname.pp
 
-let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
-
 module Payload = SummaryPayload.Make (struct
   type t = Domain.summary
 
@@ -123,7 +121,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let make_thread thread = {empty_summary with thread} in
     let actuals_acc_exps = get_access_expr_list actuals in
     let get_returned_executor_summary () =
-      StarvationModels.get_returned_executor ~attrs_of_pname tenv callee actuals
+      StarvationModels.get_returned_executor tenv callee actuals
       |> Option.map ~f:(fun thread_constraint -> make_ret_attr (WorkScheduler thread_constraint))
     in
     let get_thread_assert_summary () =
@@ -369,17 +367,15 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     let set_thread_status_by_annotation (astate : Domain.t) =
       let thread =
-        if ConcurrencyModels.annotated_as_worker_thread ~attrs_of_pname tenv procname then
+        if ConcurrencyModels.annotated_as_worker_thread tenv procname then
           Domain.ThreadDomain.BGThread
-        else if ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv procname then
-          Domain.ThreadDomain.UIThread
+        else if ConcurrencyModels.runs_on_ui_thread tenv procname then Domain.ThreadDomain.UIThread
         else astate.thread
       in
       {astate with thread}
     in
     let filter_blocks =
-      if StarvationModels.is_annotated_nonblocking ~attrs_of_pname tenv procname then
-        Domain.filter_blocking_calls
+      if StarvationModels.is_annotated_nonblocking tenv procname then Domain.filter_blocking_calls
       else Fn.id
     in
     let initial =
@@ -695,7 +691,7 @@ let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_strict_mode_violation tenv pdesc loc ltr error_message report_map
-  | LockAcquire _ when StarvationModels.is_annotated_lockless ~attrs_of_pname tenv pname ->
+  | LockAcquire _ when StarvationModels.is_annotated_lockless tenv pname ->
       let error_message =
         Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
           (MF.monospaced_to_string Annotations.lockless)

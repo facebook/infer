@@ -18,7 +18,11 @@ let () =
     ()
 
 
-let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session}
+let () =
+  AnalysisCallbacks.set_callbacks
+    { html_debug_new_node_session_f= NodePrinter.with_session
+    ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
+
 
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t

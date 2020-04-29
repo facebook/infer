@@ -1687,7 +1687,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
     let callee_loc_opt =
       Option.map
         ~f:(fun attributes -> attributes.ProcAttributes.loc)
-        (Summary.OnDisk.proc_resolve_attributes callee_pname)
+        (AnalysisCallbacks.proc_resolve_attributes callee_pname)
     in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason callee_loc_opt in
     [(prop_with_undef_attr, skip_path)]
@@ -1729,7 +1729,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
 
 
 and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as builtin_args) =
-  match Summary.OnDisk.proc_resolve_attributes proc_name with
+  match AnalysisCallbacks.proc_resolve_attributes proc_name with
   | Some callee_attributes -> (
     match callee_attributes.ProcAttributes.sentinel_attr with
     | Some sentinel ->

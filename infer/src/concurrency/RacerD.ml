@@ -11,8 +11,6 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
-
 module Payload = SummaryPayload.Make (struct
   type t = RacerDDomain.summary
 
@@ -496,9 +494,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       else LockDomain.bottom
     in
     let threads =
-      if
-        runs_on_ui_thread ~attrs_of_pname tenv proc_name
-        || RacerDModels.is_thread_confined_method tenv proc_name
+      if runs_on_ui_thread tenv proc_name || RacerDModels.is_thread_confined_method tenv proc_name
       then ThreadsDomain.AnyThreadButSelf
       else if
         Procdesc.is_java_synchronized proc_desc || RacerDModels.is_marked_thread_safe proc_name tenv

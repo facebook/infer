@@ -473,7 +473,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
-    AnalysisData.html_debug_new_node_session ~pp_name curr_node ~f:(fun () ->
+    AnalysisCallbacks.html_debug_new_node_session ~pp_name curr_node ~f:(fun () ->
         do_node_and_handle curr_node )
   done ;
   L.d_strln ".... Work list empty. Stop ...." ;
@@ -704,7 +704,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   let init_edgeset =
-    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+    AnalysisCallbacks.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
         L.d_printfln "#### Start: RE-execution for %a ####" Procname.pp pname ;
         L.d_indent 1 ;
         L.d_strln "Precond:" ;
@@ -720,7 +720,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
     Worklist.add wl init_node ;
     ignore (path_set_put_todo wl init_node init_edgeset) ;
     forward_tabulate summary exe_env tenv proc_cfg wl ;
-    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+    AnalysisCallbacks.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
         L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Procname.pp pname ;
         L.d_increase_indent () ;
         L.d_strln "Precond:" ;
@@ -743,7 +743,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
         let spec = BiabductionSummary.{pre; posts; visited} in
         L.d_decrease_indent () ; Some spec )
   with RE_EXE_ERROR ->
-    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+    AnalysisCallbacks.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
         L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Procname.pp pname ;
         L.d_increase_indent () ;
         L.d_strln "when starting from pre:" ;
@@ -1081,7 +1081,7 @@ let perform_transition proc_cfg tenv proc_name summary =
       let with_start_node_session ~f =
         match ProcCfg.Exceptional.start_node proc_cfg with
         | start_node ->
-            AnalysisData.html_debug_new_node_session ~pp_name start_node ~f
+            AnalysisCallbacks.html_debug_new_node_session ~pp_name start_node ~f
         | exception exn when SymOp.exn_not_failure exn ->
             f ()
       in

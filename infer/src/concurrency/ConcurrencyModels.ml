@@ -353,8 +353,8 @@ let is_modeled_ui_method =
 type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name
 [@@deriving compare]
 
-let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_name =
-  let is_annotated pn = Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot in
+let find_override_or_superclass_annotated is_annot tenv proc_name =
+  let is_annotated pn = Annotations.pname_has_return_annot pn is_annot in
   let is_override = Staged.unstage (PatternMatch.has_same_signature proc_name) in
   let rec find_override_or_superclass_aux class_name =
     match Tenv.lookup tenv class_name with
@@ -376,20 +376,18 @@ let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_nam
   else Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
-let annotated_as ~attrs_of_pname predicate tenv pname =
-  find_override_or_superclass_annotated ~attrs_of_pname predicate tenv pname |> Option.is_some
+let annotated_as predicate tenv pname =
+  find_override_or_superclass_annotated predicate tenv pname |> Option.is_some
 
 
-let annotated_as_worker_thread ~attrs_of_pname tenv pname =
-  annotated_as ~attrs_of_pname Annotations.ia_is_worker_thread tenv pname
+let annotated_as_worker_thread tenv pname = annotated_as Annotations.ia_is_worker_thread tenv pname
+
+let annotated_as_uithread_equivalent tenv pname =
+  annotated_as Annotations.ia_is_uithread_equivalent tenv pname
 
 
-let annotated_as_uithread_equivalent ~attrs_of_pname tenv pname =
-  annotated_as ~attrs_of_pname Annotations.ia_is_uithread_equivalent tenv pname
-
-
-let runs_on_ui_thread ~attrs_of_pname tenv pname =
-  is_modeled_ui_method tenv pname || annotated_as_uithread_equivalent ~attrs_of_pname tenv pname
+let runs_on_ui_thread tenv pname =
+  is_modeled_ui_method tenv pname || annotated_as_uithread_equivalent tenv pname
 
 
 let is_recursive_lock_type = function

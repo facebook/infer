@@ -9,8 +9,6 @@ open! IStd
 module L = Logging
 open ConcurrencyModels
 
-let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
-
 module AnnotationAliases = struct
   let of_json = function
     | `List aliases ->
@@ -185,7 +183,7 @@ let should_skip =
       false
 
 
-let has_return_annot predicate pn = Annotations.pname_has_return_annot pn ~attrs_of_pname predicate
+let has_return_annot predicate pn = Annotations.pname_has_return_annot pn predicate
 
 let is_functional pname =
   let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
@@ -290,8 +288,8 @@ let is_box = function
   completely different classes that don't necessarily run on the same thread as the confined
   object. *)
 let is_thread_confined_method tenv pname =
-  ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
-    Annotations.ia_is_thread_confined tenv pname
+  ConcurrencyModels.find_override_or_superclass_annotated Annotations.ia_is_thread_confined tenv
+    pname
   |> Option.is_some
 
 
@@ -329,8 +327,7 @@ let is_assumed_thread_safe item_annot =
 
 
 let is_assumed_thread_safe tenv pname =
-  ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname is_assumed_thread_safe
-    tenv pname
+  ConcurrencyModels.find_override_or_superclass_annotated is_assumed_thread_safe tenv pname
   |> Option.is_some
 
 
@@ -357,7 +354,7 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
 
 
 let is_thread_safe_method pname tenv =
-  match find_override_or_superclass_annotated ~attrs_of_pname is_thread_safe tenv pname with
+  match find_override_or_superclass_annotated is_thread_safe tenv pname with
   | Some (DirectlyAnnotated | Override _) ->
       true
   | _ ->
@@ -368,8 +365,7 @@ let is_marked_thread_safe pname tenv =
   ((* current class not marked [@NotThreadSafe] *)
    not
      (PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
-  && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname is_thread_safe tenv
-       pname
+  && ConcurrencyModels.find_override_or_superclass_annotated is_thread_safe tenv pname
      |> Option.is_some
 
 
@@ -426,8 +422,8 @@ let should_flag_interface_call tenv exps call_flags pname =
       && (not (is_builder_method java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
          thread-safe (would be unreasonable to ask everyone to annotate them) *)
-      && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
-           thread_safe_or_thread_confined tenv pname
+      && ConcurrencyModels.find_override_or_superclass_annotated thread_safe_or_thread_confined tenv
+           pname
          |> Option.is_none
       && receiver_is_not_safe exps tenv
       && not (implements_threadsafe_interface java_pname tenv)

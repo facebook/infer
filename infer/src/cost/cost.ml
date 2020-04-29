@@ -15,8 +15,6 @@ module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
 module Node = ProcCfg.DefaultNode
 
-let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
-
 module Payload = SummaryPayload.Make (struct
   type t = CostDomain.summary
 
@@ -378,7 +376,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let bound_map =
     compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_inv_map
   in
-  let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv proc_name in
+  let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in

@@ -17,6 +17,9 @@ val html_debug_new_node_session :
   -> 'a
 (** set to {!NodePrinter.with_session} *)
 
+val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
+(** set to {!Summary.OnDisk.proc_resolve_attributes} *)
+
 (** {2 Callbacks management}*)
 
 (** These callbacks are used to break the dependency cycles between some modules. Specifically, we
@@ -25,7 +28,8 @@ val html_debug_new_node_session :
 type callbacks =
   { html_debug_new_node_session_f:
       'a.    ?kind:[`ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
-      -> pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a }
+      -> pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a
+  ; proc_resolve_attributes_f: Procname.t -> ProcAttributes.t option }
 
 val set_callbacks : callbacks -> unit
 (** make sure this is called before starting any actual analysis *)

@@ -296,7 +296,9 @@ module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
   let create_tests ?(test_pname = Procname.empty_block) ~initial ?pp_opt make_analysis_data tests =
-    AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session} ;
+    AnalysisCallbacks.set_callbacks
+      { html_debug_new_node_session_f= NodePrinter.with_session
+      ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes } ;
     let open OUnit2 in
     List.concat_map
       ~f:(fun (name, test_program) ->

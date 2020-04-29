@@ -11,7 +11,8 @@ module L = Logging
 type callbacks =
   { html_debug_new_node_session_f:
       'a.    ?kind:[`ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
-      -> pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a }
+      -> pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a
+  ; proc_resolve_attributes_f: Procname.t -> ProcAttributes.t option }
 
 let callbacks_ref : callbacks option ref = ref None
 
@@ -27,3 +28,6 @@ let get_callbacks () =
 
 let html_debug_new_node_session ?kind ~pp_name node ~f =
   (get_callbacks ()).html_debug_new_node_session_f ?kind ~pp_name node ~f
+
+
+let proc_resolve_attributes proc_name = (get_callbacks ()).proc_resolve_attributes_f proc_name
