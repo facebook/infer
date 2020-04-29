@@ -58,11 +58,6 @@ let print_results tenv actual_pre results =
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
 
 
-let get_specs_from_payload summary =
-  Option.map summary.Summary.payloads.biabduction ~f:(fun BiabductionSummary.{preposts} -> preposts)
-  |> BiabductionSummary.get_specs_from_preposts
-
-
 (** Rename the variables in the spec. *)
 let spec_rename_vars pname spec =
   let prop_add_callee_suffix p =
@@ -94,23 +89,24 @@ let spec_rename_vars pname spec =
   BiabductionSummary.{pre= pre''; posts= posts''; visited= spec.BiabductionSummary.visited}
 
 
-(** Find and number the specs for [proc_name], after renaming their vars, and also return the
+(** Find and number the specs for [proc_attrs], after renaming their vars, and also return the
     parameters *)
-let spec_find_rename summary : (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
-  let proc_name = Summary.get_proc_name summary in
+let spec_find_rename proc_attrs specs :
+    (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
+  let proc_name = proc_attrs.ProcAttributes.proc_name in
   try
     let count = ref 0 in
     let rename_vars spec =
       incr count ;
       (!count, spec_rename_vars proc_name spec)
     in
-    let specs = get_specs_from_payload summary in
-    let formals = Summary.get_formals summary in
     if List.is_empty specs then
       raise
         (Exceptions.Precondition_not_found
            (Localise.verbatim_desc (Procname.to_string proc_name), __POS__)) ;
-    let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
+    let formal_parameters =
+      List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) proc_attrs.ProcAttributes.formals
+    in
     (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->
     L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Procname.pp proc_name ;
@@ -404,8 +400,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
           in
           State.set_path new_path path_pos_opt ;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          BiabductionReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn
-          )
+          SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn )
     | _ ->
         ()
   in
@@ -1041,13 +1036,12 @@ let missing_sigma_need_adding_to_tenv tenv hpreds =
   List.exists hpreds ~f:missing_hpred_need_adding_to_tenv
 
 
-let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hpreds callee_summary
-    =
+let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hpreds
+    callee_attributes =
   (* if hpreds are missing_sigma, we may not need to add the fields to the tenv, so we check that first *)
   let add_fields =
     if missing_sigma then missing_sigma_need_adding_to_tenv caller_tenv hpreds else true
   in
-  let callee_attributes = Summary.get_attributes callee_summary in
   (* if the callee is a model, then we don't have a tenv for it *)
   if (not callee_attributes.ProcAttributes.is_biabduction_model) && add_fields then
     let callee_tenv_opt =
@@ -1133,7 +1127,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
           missing_sigma_objc_class callee_summary ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
-        BiabductionReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn
+        SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn
       in
       let do_split () =
         process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
@@ -1379,18 +1373,19 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pname loc actual_params
-    prop path =
-  let callee_attributes = Summary.get_attributes callee_summary in
-  let spec_list, formal_params = spec_find_rename callee_summary in
+let exe_function_call {InterproceduralAnalysis.exe_env; proc_desc= caller_pdesc; tenv}
+    ~callee_attributes ~callee_pname ~callee_summary ~ret_id loc ~actuals prop path =
+  let spec_list, formal_params =
+    spec_find_rename callee_attributes (BiabductionSummary.get_specs callee_summary)
+  in
   let nspecs = List.length spec_list in
   L.d_printfln "Found %d specs for function %s" nspecs (Procname.to_unique_id callee_pname) ;
   L.d_printfln "START EXECUTING SPECS FOR %s from state" (Procname.to_unique_id callee_pname) ;
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec
-      actual_params formal_params callee_summary
+    exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec actuals
+      formal_params callee_attributes
   in
   let results = List.map ~f:exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id callee_pname callee_attributes loc results

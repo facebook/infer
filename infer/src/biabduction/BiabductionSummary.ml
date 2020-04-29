@@ -295,6 +295,8 @@ type t = {preposts: NormSpec.t list; phase: phase}
 
 let opt_get_phase = function None -> FOOTPRINT | Some {phase} -> phase
 
+let get_specs {preposts} = get_specs_from_preposts (Some preposts)
+
 let pp pe fmt {preposts; phase} =
   F.fprintf fmt "phase= %s@\n%a" (string_of_phase phase) (pp_specs pe)
     (List.map ~f:NormSpec.tospec preposts)

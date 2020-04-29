@@ -27,8 +27,6 @@ module Status : sig
   type t
 
   val is_analyzed : t -> bool
-
-  val to_string : t -> string
 end
 
 (** summary of a procedure name *)
@@ -52,9 +50,6 @@ val get_proc_desc : t -> Procdesc.t
 
 val get_attributes : t -> ProcAttributes.t
 (** Get the attributes of the procedure. *)
-
-val get_formals : t -> (Mangled.t * Typ.t) list
-(** Get the formal parameters of the procedure *)
 
 val get_err_log : t -> Errlog.t
 

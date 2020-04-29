@@ -43,13 +43,14 @@ let get_extended_args_for_method_with_block_analysis act_params =
   List.map ~f:(fun (exp, _, typ) -> (exp, typ)) args_and_captured
 
 
-let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params =
+let resolve_method_with_block_args_and_analyze
+    {InterproceduralAnalysis.analyze_dependency; analyze_pdesc_dependency} pname act_params =
   let pdesc_opt =
-    match Ondemand.analyze_proc_name ~caller_summary pname with
-    | Some summary ->
-        Some (Summary.get_proc_desc summary)
+    match analyze_dependency pname with
+    | Some (proc_desc, _) ->
+        Some proc_desc
     | None ->
-        Ondemand.get_proc_desc pname
+        AnalysisCallbacks.get_proc_desc pname
   in
   match pdesc_opt with
   | Some pdesc
@@ -88,12 +89,12 @@ let resolve_method_with_block_args_and_analyze ~caller_summary pname act_params 
           Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr ~print_types:false Pp.text) instr )
         specialized_pdesc ;
       Logging.(debug Analysis Verbose) "End of instructions@." ;
-      match Ondemand.analyze_proc_desc ~caller_summary specialized_pdesc with
+      match analyze_pdesc_dependency specialized_pdesc with
       | Some summary ->
           (* Since the closures in the formals were replaced by the captured variables,
              we do the same with the actual arguments *)
           let extended_args = get_extended_args_for_method_with_block_analysis act_params in
-          Some (summary, extended_args)
+          Some ((specialized_pdesc, summary), extended_args)
       | None ->
           None )
   | _ ->

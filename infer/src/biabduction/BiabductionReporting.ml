@@ -6,26 +6,17 @@
  *)
 
 open! IStd
-module L = Logging
 
-let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
+let log_issue_deprecated_using_state proc_attributes err_log severity ?node ?loc ?ltr exn =
   if !BiabductionConfig.footprint then
-    match Summary.OnDisk.get proc_name with
-    | Some summary ->
-        let node =
-          let node = match node with None -> AnalysisState.get_node_exn () | Some node -> node in
-          Errlog.BackendNode {node}
-        in
-        let session = AnalysisState.get_session () in
-        let loc = match loc with None -> AnalysisState.get_loc_exn () | Some loc -> loc in
-        let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-        Reporting.log_issue_from_summary severity (Summary.get_attributes summary)
-          summary.Summary.err_log ~node ~session ~loc ~ltr exn
-    | None ->
-        L.(die InternalError)
-          "Trying to report error on procedure %a, but cannot because no summary exists for this \
-           procedure. Did you mean to log the error on the caller of %a instead?"
-          Procname.pp proc_name Procname.pp proc_name
+    let node =
+      let node = match node with None -> AnalysisState.get_node_exn () | Some node -> node in
+      Errlog.BackendNode {node}
+    in
+    let session = AnalysisState.get_session () in
+    let loc = match loc with None -> AnalysisState.get_loc_exn () | Some loc -> loc in
+    let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
+    Reporting.log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc ~ltr exn
 
 
 let log_error_using_state proc_desc err_log exn =

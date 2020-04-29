@@ -236,7 +236,7 @@ let exn_retain_cycle tenv cycle =
   Exceptions.Retain_cycle (desc, __POS__)
 
 
-let report_cycle tenv summary prop =
+let report_cycle {InterproceduralAnalysis.proc_desc; tenv; err_log} prop =
   (* When there is a cycle in objc we ignore it only if it's empty or it has weak or
      unsafe_unretained fields.  Otherwise we report a retain cycle. *)
   let cycles = get_retain_cycles tenv prop in
@@ -245,7 +245,7 @@ let report_cycle tenv summary prop =
     RetainCyclesType.Set.iter
       (fun cycle ->
         let exn = exn_retain_cycle tenv cycle in
-        SummaryReporting.log_error_using_state summary exn )
+        BiabductionReporting.log_error_using_state proc_desc err_log exn )
       cycles ;
     (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
     raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )

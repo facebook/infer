@@ -7,4 +7,4 @@
 
 open! IStd
 
-val report_cycle : Tenv.t -> Summary.t -> Prop.normal Prop.t -> unit
+val report_cycle : BiabductionSummary.t InterproceduralAnalysis.t -> Prop.normal Prop.t -> unit

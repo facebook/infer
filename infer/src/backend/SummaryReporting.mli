@@ -19,3 +19,14 @@ val log_warning : Summary.t -> loc:Location.t -> log_t
 
 val log_error_using_state : Summary.t -> exn -> unit
 (** Add an error to the given summary using biabduction state (DO NOT USE ELSEWHERE). *)
+
+val log_issue_deprecated_using_state :
+     Exceptions.severity
+  -> Procname.t
+  -> ?node:Procdesc.Node.t
+  -> ?loc:Location.t
+  -> ?ltr:Errlog.loc_trace
+  -> exn
+  -> unit
+(** Report an issue in the given procedure using biabduction state. DEPRECATED as it can create race
+    conditions between checkers. Use log_error_using_state instead *)

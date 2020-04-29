@@ -81,9 +81,9 @@ val equal_phase : phase -> phase -> bool
 
 val string_of_phase_short : phase -> string
 
-val get_specs_from_preposts : NormSpec.t list option -> Prop.normal spec list
-
 type t = {preposts: NormSpec.t list; phase: phase}
+
+val get_specs : t -> Prop.normal spec list
 
 val opt_get_phase : t option -> phase
 

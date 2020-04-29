@@ -10,5 +10,6 @@ open! IStd
 
 (** Interprocedural Analysis *)
 
-val analyze_procedure : Callbacks.proc_callback_t
+val analyze_procedure :
+  BiabductionSummary.t InterproceduralAnalysis.t -> BiabductionSummary.t option
 (** Run the biabduction analysis on the given procedure *)

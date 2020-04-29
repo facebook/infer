@@ -16,4 +16,4 @@ let report_error tenv proc_name proc_desc kind loc ?(field_name = None)
     let localized_description = Localise.verbatim_desc description in
     let exn = exception_kind kind localized_description in
     let trace = [Errlog.make_trace_element 0 loc description []] in
-    BiabductionReporting.log_issue_deprecated_using_state severity proc_name ~loc ~ltr:trace exn
+    SummaryReporting.log_issue_deprecated_using_state severity proc_name ~loc ~ltr:trace exn

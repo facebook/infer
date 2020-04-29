@@ -15,9 +15,7 @@ val declare_locals_and_ret : Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Prop.
 
 val node :
      (exn -> unit)
-  -> Exe_env.t
-  -> Tenv.t
-  -> Summary.t
+  -> BiabductionSummary.t InterproceduralAnalysis.t
   -> ProcCfg.Exceptional.t
   -> ProcCfg.Exceptional.Node.t
   -> Paths.PathSet.t
@@ -26,9 +24,7 @@ val node :
 
 val instrs :
      ?mask_errors:bool
-  -> Exe_env.t
-  -> Tenv.t
-  -> Summary.t
+  -> BiabductionSummary.t InterproceduralAnalysis.t
   -> Instrs.not_reversed_t
   -> (Prop.normal Prop.t * Paths.Path.t) list
   -> (Prop.normal Prop.t * Paths.Path.t) list
@@ -38,7 +34,7 @@ val instrs :
 val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of the divergent pure computation. *)
 
-val proc_call : Exe_env.t -> Summary.t -> Builtin.t
+val proc_call : Procdesc.t * BiabductionSummary.t -> Builtin.t
 
 val unknown_or_scan_call : is_scan:bool -> reason:string -> Typ.t -> Annot.Item.t -> Builtin.t
 
