@@ -402,7 +402,7 @@ let check_constant_string_dereference lexp =
 
 
 (** Normalize an expression and check for arithmetic problems *)
-let check_arith_norm_exp tenv pname exp prop =
+let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp prop =
   match Attribute.find_arithmetic_problem tenv (State.get_path_pos ()) prop exp with
   | Some (Attribute.Div0 div), prop' ->
       let desc =
@@ -410,7 +410,8 @@ let check_arith_norm_exp tenv pname exp prop =
           (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn ;
+      let attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
@@ -418,14 +419,15 @@ let check_arith_norm_exp tenv pname exp prop =
           (AnalysisState.get_node_exn ()) (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn ;
+      let attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | None, prop' ->
       (Prop.exp_normalize_prop tenv prop exp, prop')
 
 
 (** Check if [cond] is testing for NULL a pointer already dereferenced *)
-let check_already_dereferenced tenv pname cond prop =
+let check_already_dereferenced {InterproceduralAnalysis.proc_desc; err_log; tenv} cond prop =
   let find_hpred lhs =
     List.find
       ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e lhs | _ -> false)
@@ -476,7 +478,8 @@ let check_already_dereferenced tenv pname cond prop =
           (AnalysisState.get_node_exn ()) n (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Null_test_after_dereference (desc, __POS__) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      let attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
   | None ->
       ()
 
@@ -860,9 +863,9 @@ let handle_objc_instance_method_call actual_pars pre tenv ret_id pdesc callee_pn
   handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre ret_id res
 
 
-let normalize_params tenv pdesc prop actual_params =
+let normalize_params analysis_data prop actual_params =
   let norm_arg (p, args) (e, t) =
-    let e', p' = check_arith_norm_exp tenv pdesc e p in
+    let e', p' = check_arith_norm_exp analysis_data e p in
     (p', (e', t) :: args)
   in
   let prop, args = List.fold ~f:norm_arg ~init:(prop, []) actual_params in
@@ -958,16 +961,15 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
     else add_ret_non_null ret_exp typ prop
 
 
-let execute_load ?(report_deref_errors = true) pname
-    ({InterproceduralAnalysis.proc_desc= pdesc; tenv; _} as analysis_data) id rhs_exp typ loc prop_
-    =
+let execute_load ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _} as analysis_data)
+    id rhs_exp typ loc prop_ =
   let execute_load_ acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed tenv id iter in
     let prop_ren = Prop.prop_iter_to_prop tenv iter_ren in
     match Prop.prop_iter_current tenv iter_ren with
     | Predicates.Hpointsto (lexp, strexp, Exp.Sizeof sizeof_data), offlist -> (
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
-          ptsto_lookup pdesc tenv prop_ren (lexp, strexp, sizeof_data) offlist id
+          ptsto_lookup analysis_data tenv prop_ren (lexp, strexp, sizeof_data) offlist id
         in
         let is_union_field =
           match rhs_exp with
@@ -1005,7 +1007,7 @@ let execute_load ?(report_deref_errors = true) pname
         assert false
   in
   try
-    let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_ in
+    let n_rhs_exp, prop = check_arith_norm_exp analysis_data rhs_exp prop_ in
     let n_rhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_rhs_exp in
     match check_constant_string_dereference n_rhs_exp' with
     | Some value ->
@@ -1036,8 +1038,8 @@ let load_ret_annots pname =
       Annot.Item.empty
 
 
-let execute_store ?(report_deref_errors = true) pname
-    ({InterproceduralAnalysis.tenv; _} as analysis_data) lhs_exp typ rhs_exp loc prop_ =
+let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _} as analysis_data)
+    lhs_exp typ rhs_exp loc prop_ =
   let execute_store_ analysis_data tenv rhs_exp acc_in iter =
     let lexp, strexp, sizeof, offlist =
       match Prop.prop_iter_current tenv iter with
@@ -1063,8 +1065,8 @@ let execute_store ?(report_deref_errors = true) pname
         List.fold ~f:update ~init:acc_in pred_insts
   in
   try
-    let n_lhs_exp, prop_' = check_arith_norm_exp tenv pname lhs_exp prop_ in
-    let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_' in
+    let n_lhs_exp, prop_' = check_arith_norm_exp analysis_data lhs_exp prop_ in
+    let n_rhs_exp, prop = check_arith_norm_exp analysis_data rhs_exp prop_' in
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list =
@@ -1171,8 +1173,9 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec
-    ({InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; tenv} as analysis_data)
-    instr_ (prop_ : Prop.normal Prop.t) path : (Prop.normal Prop.t * Paths.Path.t) list =
+    ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
+    analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
+    (Prop.normal Prop.t * Paths.Path.t) list =
   let current_pname = Procdesc.get_proc_name current_pdesc in
   AnalysisState.set_instr instr_ ;
   (* mark instruction last seen *)
@@ -1206,7 +1209,8 @@ let rec sym_exec
       ret_id_typ ret_typ actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Info current_pname exn ;
+      let attrs = Procdesc.get_attributes current_pdesc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Info exn ;
       L.d_printfln "Skipping function '%a': %s" Procname.pp callee_pname reason ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
         { Builtin.instr
@@ -1228,9 +1232,9 @@ let rec sym_exec
   in
   match instr with
   | Sil.Load {id; e= rhs_exp; root_typ= typ; loc} ->
-      execute_load current_pname analysis_data id rhs_exp typ loc prop_ |> ret_old_path
+      execute_load analysis_data id rhs_exp typ loc prop_ |> ret_old_path
   | Sil.Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
-      execute_store current_pname analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
+      execute_store analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
@@ -1257,14 +1261,16 @@ let rec sym_exec
               let exn =
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__)
               in
-              SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning current_pname exn
+              let attrs = Procdesc.get_attributes current_pdesc in
+              BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning
+                exn
           | _ ->
               ()
       in
       if not (Procname.is_java current_pname) then
-        check_already_dereferenced tenv current_pname cond prop__ ;
+        check_already_dereferenced analysis_data cond prop__ ;
       check_condition_always_true_false () ;
-      let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in
+      let n_cond, prop = check_arith_norm_exp analysis_data cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
   | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) -> (
     match Builtin.get callee_pname with
@@ -1273,7 +1279,7 @@ let rec sym_exec
     | None -> (
       match callee_pname with
       | Java callee_pname_java when Config.dynamic_dispatch -> (
-          let norm_prop, norm_args' = normalize_params tenv current_pname prop_ actual_params in
+          let norm_prop, norm_args' = normalize_params analysis_data prop_ actual_params in
           let norm_args = call_constructor_url_update_args callee_pname norm_args' in
           let exec_skip_call ~reason skipped_pname ret_annots ret_type =
             skip_call ~reason norm_prop path skipped_pname ret_annots loc ret_id_typ ret_type
@@ -1298,7 +1304,7 @@ let rec sym_exec
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
             ) )
       | Java callee_pname_java ->
-          let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
+          let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
           let resolved_pnames =
             resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags
@@ -1326,7 +1332,7 @@ let rec sym_exec
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _ -> (
           (* Generic fun call with known name *)
-          let prop_r, n_actual_params = normalize_params tenv current_pname prop_ actual_params in
+          let prop_r, n_actual_params = normalize_params analysis_data prop_ actual_params in
           (* method with block parameters *)
           let with_block_parameters_summary_opt =
             if call_flags.CallFlags.cf_with_block_parameters then
@@ -1337,7 +1343,7 @@ let rec sym_exec
           match with_block_parameters_summary_opt with
           | Some (resolved_summary, extended_actual_params) ->
               let prop_r, n_extended_actual_params =
-                normalize_params tenv current_pname prop_r extended_actual_params
+                normalize_params analysis_data prop_r extended_actual_params
               in
               Logging.d_strln "Calling method specialized with blocks... " ;
               proc_call resolved_summary
@@ -1416,7 +1422,7 @@ let rec sym_exec
               List.concat_map ~f:do_call sentinel_result ) ) )
   | Sil.Call (ret_id_typ, fun_exp, actual_params, loc, call_flags) ->
       (* Call via function pointer *)
-      let prop_r, n_actual_params = normalize_params tenv current_pname prop_ actual_params in
+      let prop_r, n_actual_params = normalize_params analysis_data prop_ actual_params in
       if
         call_flags.CallFlags.cf_is_objc_block
         && not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp)
@@ -1730,7 +1736,7 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
 
 
 and sym_exec_objc_getter field ret_typ ret_id ({InterproceduralAnalysis.tenv; _} as analysis_data)
-    pname loc args prop =
+    loc args prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom getter found. Executing the ObjC builtin getter with ivar %a."
     Fieldname.pp field_name ;
@@ -1740,14 +1746,13 @@ and sym_exec_objc_getter field ret_typ ret_id ({InterproceduralAnalysis.tenv; _}
         | {desc= Tptr (({desc= Tstruct struct_name} as typ), _)} ) ) ] ->
       Tenv.add_field tenv struct_name field ;
       let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
-      execute_load ~report_deref_errors:false pname analysis_data ret_id field_access_exp ret_typ
-        loc prop
+      execute_load ~report_deref_errors:false analysis_data ret_id field_access_exp ret_typ loc prop
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-and sym_exec_objc_setter field _ _ ({InterproceduralAnalysis.tenv; _} as analysis_data) pname loc
-    args prop =
+and sym_exec_objc_setter field _ _ ({InterproceduralAnalysis.tenv; _} as analysis_data) loc args
+    prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom setter found. Executing the ObjC builtin setter with ivar %a."
     Fieldname.pp field_name ;
@@ -1758,15 +1763,13 @@ and sym_exec_objc_setter field _ _ ({InterproceduralAnalysis.tenv; _} as analysi
     :: (lexp2, typ2) :: _ ->
       Tenv.add_field tenv struct_name field ;
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
-      execute_store ~report_deref_errors:false pname analysis_data field_access_exp typ2 lexp2 loc
-        prop
+      execute_store ~report_deref_errors:false analysis_data field_access_exp typ2 lexp2 loc prop
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-and sym_exec_objc_accessor callee_pname property_accesor ret_typ ret_id
-    ({InterproceduralAnalysis.proc_desc= pdesc} as analysis_data) _ loc args prop path :
-    Builtin.ret_typ =
+and sym_exec_objc_accessor callee_pname property_accesor ret_typ ret_id analysis_data _ loc args
+    prop path : Builtin.ret_typ =
   let f_accessor =
     match property_accesor with
     | ProcAttributes.Objc_getter field ->
@@ -1776,15 +1779,13 @@ and sym_exec_objc_accessor callee_pname property_accesor ret_typ ret_id
   in
   (* we want to execute in the context of the current procedure, not in the context of callee_pname,
      since this is the procname of the setter/getter method *)
-  let cur_pname = Procdesc.get_proc_name pdesc in
   let path_description =
     F.sprintf "Executing synthesized %s %s"
       (ProcAttributes.kind_of_objc_accessor_type property_accesor)
       (Procname.to_simplified_string callee_pname)
   in
   let path = Paths.Path.add_description path path_description in
-  f_accessor ret_typ ret_id analysis_data cur_pname loc args prop
-  |> List.map ~f:(fun p -> (p, path))
+  f_accessor ret_typ ret_id analysis_data loc args prop |> List.map ~f:(fun p -> (p, path))
 
 
 and sym_exec_alloc_model analysis_data pname ret_typ ret_id_typ loc prop path : Builtin.ret_typ =

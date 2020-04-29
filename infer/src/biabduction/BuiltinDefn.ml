@@ -53,9 +53,8 @@ let return_result tenv e prop (ret_id, _) = Prop.conjoin_eq tenv e (Exp.Var ret_
 (* Add an array of typ pointed to by lexp to prop_ if it doesn't already exist *)
 (*  Return the new prop and the array length *)
 (*  Return None if it fails to add the array *)
-let add_array_to_prop tenv pdesc prop_ lexp typ =
-  let pname = Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+let add_array_to_prop ({InterproceduralAnalysis.tenv; _} as analysis_data) prop_ lexp typ =
+  let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
   let hpred_opt =
     List.find
       ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
@@ -85,11 +84,10 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
 
 
 (* Add an array in prop if it is not allocated.*)
-let execute___require_allocated_array {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args}
-    : Builtin.ret_typ =
+let execute___require_allocated_array {Builtin.analysis_data; prop_; path; args} : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] -> (
-    match add_array_to_prop tenv proc_desc prop_ lexp typ with
+    match add_array_to_prop analysis_data prop_ lexp typ with
     | None ->
         []
     | Some (_, prop) ->
@@ -99,10 +97,11 @@ let execute___require_allocated_array {Builtin.analysis_data= {proc_desc; tenv};
 
 
 let execute___get_array_length
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] -> (
-    match add_array_to_prop tenv proc_desc prop_ lexp typ with
+    match add_array_to_prop analysis_data prop_ lexp typ with
     | None ->
         []
     | Some (len, prop) ->
@@ -111,18 +110,17 @@ let execute___get_array_length
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___set_array_length {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args} :
-    Builtin.ret_typ =
+let execute___set_array_length {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; args}
+    : Builtin.ret_typ =
   match args with
   | [(lexp, typ); (len, _)] -> (
-    match add_array_to_prop tenv proc_desc prop_ lexp typ with
+    match add_array_to_prop analysis_data prop_ lexp typ with
     | None ->
         []
     | Some (_, prop_a) -> (
         (* Invariant: prop_a has an array pointed to by lexp *)
-        let pname = Procdesc.get_proc_name proc_desc in
-        let n_lexp, prop__ = check_arith_norm_exp tenv pname lexp prop_a in
-        let n_len, prop = check_arith_norm_exp tenv pname len prop__ in
+        let n_lexp, prop__ = check_arith_norm_exp analysis_data lexp prop_a in
+        let n_len, prop = check_arith_norm_exp analysis_data len prop__ in
         let hpred, sigma' =
           List.partition_tf
             ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
@@ -140,12 +138,10 @@ let execute___set_array_length {Builtin.analysis_data= {proc_desc; tenv}; prop_;
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___print_value {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args} :
-    Builtin.ret_typ =
+let execute___print_value {Builtin.analysis_data; prop_; path; args} : Builtin.ret_typ =
   L.(debug Analysis Medium) "__print_value: " ;
-  let pname = Procdesc.get_proc_name proc_desc in
   let do_arg (lexp, _) =
-    let n_lexp, _ = check_arith_norm_exp tenv pname lexp prop_ in
+    let n_lexp, _ = check_arith_norm_exp analysis_data lexp prop_ in
     L.(debug Analysis Medium) "%a " Exp.pp n_lexp
   in
   List.iter ~f:do_arg args ;
@@ -213,12 +209,12 @@ let create_type tenv n_lexp typ prop =
   else null_case @ non_null_case
 
 
-let execute___get_type_of {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute___get_type_of
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
       let props = create_type tenv n_lexp typ prop in
       let aux prop =
         let hpred_opt =
@@ -261,12 +257,12 @@ let replace_ptsto_texp tenv prop root_e texp =
 
 
 let execute___instanceof_cast ~instof
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(val1_, typ1); (texp2_, _)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
-      let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
+      let val1, prop__ = check_arith_norm_exp analysis_data val1_ prop_ in
+      let texp2, prop = check_arith_norm_exp analysis_data texp2_ prop__ in
       let is_cast_to_reference =
         match typ1.desc with Typ.Tptr (_, Typ.Pk_reference) -> true | _ -> false
       in
@@ -363,12 +359,11 @@ let set_resource_attribute tenv prop path n_lexp loc ra_res =
 
 
 (** Set the attibute of the value as file *)
-let execute___set_file_attribute {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args; loc}
-    : Builtin.ret_typ =
+let execute___set_file_attribute
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc PredSymb.Rfile
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
@@ -377,56 +372,50 @@ let execute___set_file_attribute {Builtin.analysis_data= {proc_desc; tenv}; prop
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
 let execute___method_set_ignore_attribute
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args; loc} : Builtin.ret_typ =
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [_; (lexp, _)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc PredSymb.Rignore
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
 (** Set the attibute of the value as memory *)
-let execute___set_mem_attribute {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args; loc} :
-    Builtin.ret_typ =
+let execute___set_mem_attribute
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc (PredSymb.Rmemory PredSymb.Mnew)
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let set_attr tenv pdesc prop path exp attr =
-  let pname = Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
+let set_attr ({InterproceduralAnalysis.tenv; _} as analysis_data) prop path exp attr =
+  let n_lexp, prop = check_arith_norm_exp analysis_data exp prop in
   [(Attribute.add_or_replace tenv prop (Apred (attr, [n_lexp])), path)]
 
 
-let delete_attr tenv pdesc prop path exp attr =
-  let pname = Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
+let delete_attr ({InterproceduralAnalysis.tenv; _} as analysis_data) prop path exp attr =
+  let n_lexp, prop = check_arith_norm_exp analysis_data exp prop in
   [(Attribute.remove tenv prop (Apred (attr, [n_lexp])), path)]
 
 
 (** Set attibute att *)
-let execute___set_attr attr {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args} :
-    Builtin.ret_typ =
+let execute___set_attr attr {Builtin.analysis_data; prop_; path; args} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      set_attr tenv proc_desc prop_ path lexp attr
+      set_attr analysis_data prop_ path lexp attr
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
 (** Delete the locked attibute of the value*)
-let execute___delete_locked_attribute {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; args}
-    : Builtin.ret_typ =
+let execute___delete_locked_attribute {Builtin.analysis_data; prop_; path; args} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      delete_attr tenv proc_desc prop_ path lexp PredSymb.Alocked
+      delete_attr analysis_data prop_ path lexp PredSymb.Alocked
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -500,12 +489,11 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true)
 
 
 let execute_free mk ?(mark_as_freed = true)
-    {Builtin.analysis_data= {proc_desc; tenv} as analysis_data; instr; prop_; path; args; loc} :
+    {Builtin.analysis_data= {tenv; _} as analysis_data; instr; prop_; path; args; loc} :
     Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
       let prop_nonzero =
         (* case n_lexp!=0 *)
         Propset.to_proplist (prune tenv ~positive:true n_lexp prop)
@@ -537,9 +525,8 @@ let execute_free mk ?(mark_as_freed = true)
 let execute_free_cf mk = execute_free mk ~mark_as_freed:false
 
 let execute_alloc mk can_return_null
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args; loc} : Builtin.ret_typ
-    =
-  let pname = Procdesc.get_proc_name proc_desc in
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args; loc} :
+    Builtin.ret_typ =
   let rec evaluate_char_sizeof e =
     match e with
     | Exp.Var _ ->
@@ -578,7 +565,7 @@ let execute_alloc mk can_return_null
   in
   let ret_id = fst ret_id_typ in
   let size_exp', prop =
-    let n_size_exp, prop = check_arith_norm_exp tenv pname size_exp prop_ in
+    let n_size_exp, prop = check_arith_norm_exp analysis_data size_exp prop_ in
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     (Prop.exp_normalize_prop tenv prop n_size_exp', prop)
   in
@@ -611,16 +598,13 @@ let execute_alloc mk can_return_null
   else [(prop_alloc, path)]
 
 
-let execute___cxx_typeid
-    ({Builtin.analysis_data= {proc_desc; tenv} as analysis_data; prop_; args; loc} as r) :
-    Builtin.ret_typ =
+let execute___cxx_typeid ({Builtin.analysis_data; prop_; args; loc} as r) : Builtin.ret_typ =
   match args with
   | type_info_exp :: rest -> (
       let res = execute_alloc PredSymb.Mnew false {r with args= [type_info_exp]} in
       match rest with
       | [(field_exp, _); (lexp, typ_)] ->
-          let pname = Procdesc.get_proc_name proc_desc in
-          let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+          let n_lexp, prop = check_arith_norm_exp analysis_data lexp prop_ in
           let typ =
             List.find
               ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e n_lexp | _ -> false)
@@ -697,11 +681,11 @@ let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_a
 
 
 let execute__unwrap_exception
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(ret_exn, _)] -> (
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_ret_exn, prop = check_arith_norm_exp tenv pname ret_exn prop_ in
+      let n_ret_exn, prop = check_arith_norm_exp analysis_data ret_exn prop_ in
       match n_ret_exn with
       | Exp.Exn exp ->
           let prop_with_exn = return_result tenv exp prop ret_id_typ in
@@ -713,25 +697,25 @@ let execute__unwrap_exception
 
 
 let execute_return_first_argument
-    {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | (arg1_, _) :: _ ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      let arg1, prop = check_arith_norm_exp tenv pname arg1_ prop_ in
+      let arg1, prop = check_arith_norm_exp analysis_data arg1_ prop_ in
       let prop' = return_result tenv arg1 prop ret_id_typ in
       [(prop', path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___split_get_nth {Builtin.analysis_data= {proc_desc; tenv}; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute___split_get_nth
+    {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(lexp1, _); (lexp2, _); (lexp3, _)] -> (
-      let pname = Procdesc.get_proc_name proc_desc in
-      let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
-      let n_lexp2, prop___ = check_arith_norm_exp tenv pname lexp2 prop__ in
-      let n_lexp3, prop = check_arith_norm_exp tenv pname lexp3 prop___ in
+      let n_lexp1, prop__ = check_arith_norm_exp analysis_data lexp1 prop_ in
+      let n_lexp2, prop___ = check_arith_norm_exp analysis_data lexp2 prop__ in
+      let n_lexp3, prop = check_arith_norm_exp analysis_data lexp3 prop___ in
       match (n_lexp1, n_lexp2, n_lexp3) with
       | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil) -> (
           let n = IntLit.to_int_exn n_sil in
