@@ -369,7 +369,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   (* shadowed for HTML debug *)
   let exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map =
-    NodePrinter.with_session (Node.underlying_node node)
+    AnalysisCallbacks.html_debug_new_node_session (Node.underlying_node node)
       ~kind:(if is_narrowing then `ExecNodeNarrowing else `ExecNode)
       ~pp_name:(TransferFunctions.pp_session_name node)
       ~f:(fun () ->
@@ -394,7 +394,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   (* shadowed for HTML debug *)
   let compute_pre cfg node inv_map =
-    NodePrinter.with_session (Node.underlying_node node) ~kind:`ComputePre
+    AnalysisCallbacks.html_debug_new_node_session (Node.underlying_node node) ~kind:`ComputePre
       ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map
     )
 
@@ -470,7 +470,7 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
 
   let debug_wto wto node =
     let underlying_node = Node.underlying_node node in
-    NodePrinter.with_session underlying_node ~kind:`WTO
+    AnalysisCallbacks.html_debug_new_node_session underlying_node ~kind:`WTO
       ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () ->
         let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
         L.d_printfln "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto ;
