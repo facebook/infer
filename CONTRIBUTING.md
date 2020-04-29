@@ -33,9 +33,9 @@ make devsetup
   use infer), while running `make` commands from within subdirectories generally assumes that
   dependencies are already up-to-date.
 
-  For instance, running `make direct_java_infer_test` will rebuild infer and the models if necessary
-  before running the test, but running `make -C infer/tests/codetoanalyze/java/infer test` will just
-  execute the test.
+  For instance, running `make direct_java_biabduction_test` will rebuild infer and the models if
+  necessary before running the test, but running `make -C infer/tests/codetoanalyze/java/biabduction/ test`
+  will just execute the test.
 
 - To switch the default build mode to flambda disabled, you can `export BUILD_MODE=dev` in your
   shell.

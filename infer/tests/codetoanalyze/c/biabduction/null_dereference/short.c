@@ -11,53 +11,52 @@ struct data {
 
 static struct data d;
 
-int f(int x) {
+int ternary1_ok(int x) {
   struct data* p = x ? &d : 0;
   return (p && p->flag);
 }
 
-int f_error(int x) {
+int ternary2_bad(int x) {
   struct data* p = x ? &d : 0;
   return p->flag && p; // NULL_DEREF
 }
 
-int g(int x) {
+int ternary3_ok(int x) {
   struct data* p = x ? &d : 0;
   return !(p && p->flag); // OK
 }
 
-int h(int x) {
+int ternary4_ok(int x) {
   struct data* p = x ? &d : 0;
   return !(p && p->flag); // OK
 }
 
-int g_error(int x) {
+int ternary4_bad(int x) {
   struct data* p = x ? &d : 0;
   return !(p->flag && p); // NULL_DEREF
 }
 
-int k(int x) {
+int ternary5_ok(int x) {
   struct data* p = x ? &d : 0;
   return !(p && p->flag); // OK
 }
 
-int l(int x) {
+int ternary6_ok(int x) {
   struct data* p = x ? &d : 0;
   return !p || p->flag; // OK
 }
 
-int l_error(int x) {
+int ternary7_bad(int x) {
   struct data* p = x ? &d : 0;
   return p || p->flag; // NULL_DEREF
 }
 
-int m(int x) {
+int ternary8_ok(int x) {
   struct data* p = x ? &d : 0;
-  return (!p || p->flag) && !(p && p->flag);
-  ; // OK
+  return (!p || p->flag) && !(p && p->flag); // OK
 }
 
-int n(int x) {
+int ternary9_ok(int x) {
   struct data* p = x ? &d : 0;
   return p && (p->flag || !(p->flag)); // OK
 }

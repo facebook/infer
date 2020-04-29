@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-# see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR) \
                 --use-cost-threshold

@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../..
 
-# see explanations in cpp/errors/Makefile for the custom isystem
+# see explanations in cpp/biabduction/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 
 ROOT = ../codetoanalyze/clang_translation/src

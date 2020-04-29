@@ -52,16 +52,15 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   c_biabduction \
   c_bufferoverrun \
-  c_errors \
   c_frontend \
   c_performance \
   c_pulse \
   c_purity \
   c_uninit \
   cpp_annotation-reachability \
+  cpp_biabduction \
   cpp_bufferoverrun \
   cpp_conflicts \
-  cpp_errors \
   cpp_frontend \
   cpp_impurity \
   cpp_linters \
@@ -105,7 +104,7 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles_weak
 
 DIRECT_TESTS += \
-  objc_errors \
+  objc_biabduction \
   objc_frontend \
   objc_ioslints \
   objc_linters \
@@ -117,7 +116,7 @@ DIRECT_TESTS += \
   objc_quandary \
   objc_self-in-block \
   objc_uninit \
-  objcpp_errors \
+  objcpp_biabduction \
   objcpp_frontend \
   objcpp_linters \
   objcpp_linters-for-test-only \
@@ -154,6 +153,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   java_annotreach \
+  java_biabduction \
   java_bufferoverrun \
   java_checkers \
   java_classloads \
@@ -162,7 +162,6 @@ DIRECT_TESTS += \
   java_hoistingExpensive \
   java_impurity \
   java_inefficientKeysetIterator \
-  java_infer \
   java_litho-required-props \
   java_performance \
   java_performance-exclusive \

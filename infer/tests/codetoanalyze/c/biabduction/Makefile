@@ -6,10 +6,14 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --biabduction-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = \
+  --biabduction-only --report-custom-error --developer-mode --no-filtering --debug-exceptions \
+  --project-root $(TESTS_DIR) \
 
-INFERPRINT_OPTIONS = --issues-tests
+# we need to disable traces in C tests because assertions/assertion_failure.c has different traces
+# on Linux and OSX because of different implementations of assert() on each platform
+INFERPRINT_OPTIONS = --issues-tests-fields "file,procedure,line_offset,bug_type,bucket" --issues-tests
 
-SOURCES = $(wildcard *.c)
+SOURCES = $(wildcard */*.c)
 
 include $(TESTS_DIR)/clang.make

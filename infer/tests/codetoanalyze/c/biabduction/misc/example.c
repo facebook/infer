@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void foo() {
+void null_deref_bad() {
   int* p = 0;
   *p = 42;
 }

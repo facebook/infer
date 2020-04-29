@@ -35,15 +35,14 @@ void* my_realloc(void* ptr, size_t size) {
     exit(0); // assume that new allocation does not fail
 }
 
-void foo(int* p) {
+void call_my_realloc_array_ok(int* p) {
   p = my_realloc(p, 10 * sizeof(int));
   p[0] = 42;
   free(p);
 }
 
-int main() {
-
+int call_call_my_realloc_array_ok() {
   int* p;
   p = xmalloc(sizeof(int));
-  foo(p);
+  call_my_realloc_array_ok(p);
 }

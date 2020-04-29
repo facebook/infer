@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-# see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --uninit-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
