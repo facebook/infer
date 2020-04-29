@@ -182,11 +182,8 @@ detect_dead_code:
 	sort -u "$$tmp_file_copied" > $(ALL_ML_FILES_COPIED); \
 	rm "$$tmp_file_copied"
 	$(MAKE) -j 1 detect_dead_src_file
-#	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
-	if ! dune build --profile test all_infer_in_one_file.bc; then \
-	  $(MAKE) clean; \
-	  exit 1; \
-	fi
+#	build and get dead code warnings
+	dune build --profile test all_infer_in_one_file.bc
 #	be paranoid about cleaning because we do not want to include infer_in_one_file into infer by
 #	accident and I don't know enough dune to be positive that it won't happen
 	$(MAKE) clean
@@ -232,17 +229,9 @@ detect_dead_src_file:
 	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_MLI_FILES_COPIED); \
-	rm "$$tmp_file"; \
-
-	if ! diff $(ALL_ML_FILES) $(ALL_ML_FILES_COPIED) 1>&2; then \
-	  $(MAKE) clean; \
-	  exit 1; \
-	fi
-
-	if ! diff $(ALL_MLI_FILES) $(ALL_MLI_FILES_COPIED) 1>&2; then \
-	  $(MAKE) clean; \
-	  exit 1; \
-	fi
+	rm "$$tmp_file"
+	diff $(ALL_ML_FILES) $(ALL_ML_FILES_COPIED) 1>&2
+	diff $(ALL_MLI_FILES) $(ALL_MLI_FILES_COPIED) 1>&2
 
 .PHONY: clean
 clean:
