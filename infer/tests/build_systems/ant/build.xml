@@ -6,7 +6,7 @@
 
     <target name="compile">
         <mkdir dir="ant_out"/>
-        <javac srcdir="src/infer" destdir="ant_out" includeantruntime="false">
+        <javac srcdir="src/" destdir="ant_out" includeantruntime="false">
             <classpath>
               <pathelement location="../../../lib/java/android/android-23.jar"/>
               <pathelement location="../../../lib/java/android/support/v4/android-support-v4.jar"/>
