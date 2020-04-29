@@ -383,7 +383,8 @@ let post_process_sigma tenv (sigma : Predicates.hpred list) loc : Predicates.hpr
 
 
 (** check for interprocedural path errors in the post *)
-let check_path_errors_in_post tenv caller_pname post post_path =
+let check_path_errors_in_post {InterproceduralAnalysis.proc_desc= caller_pdesc; err_log; tenv} post
+    post_path =
   let check_attr atom =
     match atom with
     | Predicates.Apred (Adiv0 path_pos, [e]) ->
@@ -400,7 +401,9 @@ let check_path_errors_in_post tenv caller_pname post post_path =
           in
           State.set_path new_path path_pos_opt ;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn )
+          let attrs = Procdesc.get_attributes caller_pdesc in
+          BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
+          )
     | _ ->
         ()
   in
@@ -409,8 +412,8 @@ let check_path_errors_in_post tenv caller_pname post post_path =
 
 (** Post process the instantiated post after the function call so that [x.f |-> se] becomes
     [x |-> { f: se }]. Also, update any Aresource attributes to refer to the caller *)
-let post_process_post tenv caller_pname callee_pname loc actual_pre
-    ((post : Prop.exposed Prop.t), post_path) =
+let post_process_post ({InterproceduralAnalysis.tenv; _} as analysis_data) callee_pname loc
+    actual_pre ((post : Prop.exposed Prop.t), post_path) =
   let actual_pre_has_freed_attribute e =
     match Attribute.get_resource tenv actual_pre e with
     | Some (Apred (Aresource {ra_kind= Rrelease}, _)) ->
@@ -434,7 +437,7 @@ let post_process_post tenv caller_pname callee_pname loc actual_pre
   let pi' = List.map ~f:atom_update_alloc_attribute prop'.Prop.pi in
   (* update alloc attributes to refer to the caller *)
   let post' = Prop.set prop' ~pi:pi' in
-  check_path_errors_in_post tenv caller_pname post' post_path ;
+  check_path_errors_in_post analysis_data post' post_path ;
   (post', post_path)
 
 
@@ -775,9 +778,8 @@ let include_subtrace callee_pname =
 
 
 (** combine the spec's post with a splitting and actual precondition *)
-let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre path_pre split
-    caller_pdesc callee_pname loc =
-  let caller_pname = Procdesc.get_proc_name caller_pdesc in
+let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; _} as analysis_data) ret_id
+    (posts : ('a Prop.t * Paths.Path.t) list) actual_pre path_pre split callee_pname loc =
   let instantiated_post =
     let posts' =
       if !BiabductionConfig.footprint && List.is_empty posts then
@@ -793,8 +795,8 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
     in
     List.map
       ~f:(fun (p, path) ->
-        post_process_post tenv caller_pname callee_pname loc actual_pre
-          (Prop.prop_sub split.sub p, path) )
+        post_process_post analysis_data callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)
+        )
       posts'
   in
   L.d_increase_indent () ;
@@ -878,6 +880,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
             | Predicates.Hpointsto (_, Eexp (e', inst), _) when exp_is_exn e' ->
                 (* resuls is an exception: set in caller *)
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
+                let caller_pname = Procdesc.get_proc_name caller_pdesc in
                 prop_set_exn tenv caller_pname p (Eexp (e', inst))
             | Predicates.Hpointsto (_, Eexp (e', _), _) ->
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
@@ -1070,8 +1073,9 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
 
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec ({InterproceduralAnalysis.exe_env; tenv; _} as analysis_data) ret_id (n, nspecs)
-    caller_pdesc callee_pname loc prop path_pre (spec : Prop.exposed BiabductionSummary.spec)
+let exe_spec
+    ({InterproceduralAnalysis.exe_env; proc_desc= caller_pdesc; err_log; tenv} as analysis_data)
+    ret_id (n, nspecs) callee_pname loc prop path_pre (spec : Prop.exposed BiabductionSummary.spec)
     actual_params formal_params callee_summary : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let posts = mk_posts tenv prop callee_pname spec.BiabductionSummary.posts in
@@ -1127,14 +1131,15 @@ let exe_spec ({InterproceduralAnalysis.exe_env; tenv; _} as analysis_data) ret_i
           missing_sigma_objc_class callee_summary ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
-        SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning caller_pname exn
+        let attrs = Procdesc.get_attributes caller_pdesc in
+        BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
       in
       let do_split () =
         process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
           frame_typ missing_typ
       in
       let report_valid_res split =
-        match combine tenv ret_id posts actual_pre path_pre split caller_pdesc callee_pname loc with
+        match combine analysis_data ret_id posts actual_pre path_pre split callee_pname loc with
         | None ->
             Invalid_res Cannot_combine
         | Some results ->
@@ -1373,8 +1378,8 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv} as analysis_data)
-    ~callee_attributes ~callee_pname ~callee_summary ~ret_id loc ~actuals prop path =
+let exe_function_call ({InterproceduralAnalysis.tenv; _} as analysis_data) ~callee_attributes
+    ~callee_pname ~callee_summary ~ret_id loc ~actuals prop path =
   let spec_list, formal_params =
     spec_find_rename callee_attributes (BiabductionSummary.get_specs callee_summary)
   in
@@ -1384,8 +1389,8 @@ let exe_function_call ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv} a
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec analysis_data ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec actuals
-      formal_params callee_attributes
+    exe_spec analysis_data ret_id (n, nspecs) callee_pname loc prop path spec actuals formal_params
+      callee_attributes
   in
   let results = List.map ~f:exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id callee_pname callee_attributes loc results
