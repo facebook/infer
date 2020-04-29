@@ -13,21 +13,12 @@ module type S = sig
   type t
 
   val schedule_succs : t -> CFG.Node.t -> t
-  (** schedule the successors of [node] *)
 
   val pop : t -> (CFG.Node.t * CFG.Node.id list * t) option
-  (** remove and return the node with the highest priority, the ids of its visited predecessors, and
-      the new schedule *)
 
   val empty : CFG.t -> t
 end
 
-module type Make = functor (CFG : ProcCfg.S) -> sig
-  include S with module CFG = CFG
-end
-
-(** simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
-    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module M = CFG.Node.IdMap
