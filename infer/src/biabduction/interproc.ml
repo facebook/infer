@@ -385,7 +385,8 @@ let do_symbolic_execution ({InterproceduralAnalysis.tenv; _} as analysis_data) p
   pset
 
 
-let forward_tabulate ({InterproceduralAnalysis.tenv; _} as analysis_data) proc_cfg summary wl =
+let forward_tabulate ({InterproceduralAnalysis.proc_desc; err_log; tenv; _} as analysis_data)
+    proc_cfg summary wl =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let handle_exn_node curr_node exn =
     Exceptions.print_exception_html "Failure of symbolic execution: " exn ;
@@ -401,7 +402,8 @@ let forward_tabulate ({InterproceduralAnalysis.tenv; _} as analysis_data) proc_c
     L.d_strln "SIL INSTR:" ;
     Procdesc.Node.d_instrs ~highlight:(AnalysisState.get_instr ()) curr_node ;
     L.d_ln () ;
-    SummaryReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
+    let attrs = Procdesc.get_attributes proc_desc in
+    BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn ;
     State.mark_instr_fail exn
   in
   let exe_iter f pathset =
@@ -476,9 +478,9 @@ let forward_tabulate ({InterproceduralAnalysis.tenv; _} as analysis_data) proc_c
 
 
 (** Remove locals and formals, and check if the address of a stack variable is left in the result *)
-let remove_locals_formals_and_check tenv proc_cfg p =
+let remove_locals_formals_and_check {InterproceduralAnalysis.proc_desc; err_log; tenv; _} proc_cfg p
+    =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
-  let pname = Procdesc.get_proc_name pdesc in
   let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
     if not (Pvar.is_frontend_tmp pvar) then
@@ -486,17 +488,18 @@ let remove_locals_formals_and_check tenv proc_cfg p =
       let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
       let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
       let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      let attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
   in
   List.iter ~f:check_pvar pvars ; p'
 
 
 (** Collect the analysis results for the exit node. *)
-let collect_analysis_result tenv wl proc_cfg : Paths.PathSet.t =
+let collect_analysis_result analysis_data wl proc_cfg : Paths.PathSet.t =
   let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
   let exit_node_id = ProcCfg.Exceptional.Node.id exit_node in
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
-  Paths.PathSet.map (remove_locals_formals_and_check tenv proc_cfg) pathset
+  Paths.PathSet.map (remove_locals_formals_and_check analysis_data proc_cfg) pathset
 
 
 let vset_add_path vset path =
@@ -528,7 +531,8 @@ let compute_visited vset =
 
 (* Extract specs from a pathset, after the footprint phase. The postconditions will be thrown away
   by the re-execution phase, but they are first used to detect custom errors. *)
-let extract_specs analysis_data tenv pdesc pathset : Prop.normal BiabductionSummary.spec list =
+let extract_specs ({InterproceduralAnalysis.tenv; _} as analysis_data) pdesc pathset :
+    Prop.normal BiabductionSummary.spec list =
   if not !BiabductionConfig.footprint then
     L.die InternalError
       "Interproc.extract_specs should not be used for footprint but not for re-execution, because \
@@ -577,7 +581,7 @@ let extract_specs analysis_data tenv pdesc pathset : Prop.normal BiabductionSumm
 let collect_postconditions analysis_data wl tenv proc_cfg :
     Paths.PathSet.t * BiabductionSummary.Visitedset.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
-  let pathset = collect_analysis_result tenv wl proc_cfg in
+  let pathset = collect_analysis_result analysis_data wl proc_cfg in
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
   let pathset =
     match pname with
@@ -756,7 +760,7 @@ type exe_phase =
     [do, get_results] where [go ()] performs the analysis phase and [get_results ()] returns the
     results computed. This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data)
+let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; err_log; tenv} as analysis_data)
     (proc_cfg : ProcCfg.Exceptional.t) summary_opt : exe_phase =
   let pname = Procdesc.get_proc_name proc_desc in
   let start_node = ProcCfg.Exceptional.start_node proc_cfg in
@@ -792,18 +796,18 @@ let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; tenv} as analysi
       forward_tabulate analysis_data proc_cfg summary_opt wl
     in
     let get_results (wl : Worklist.t) () =
+      let attrs = Procdesc.get_attributes proc_desc in
       State.process_execution_failures
-        (SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning)
-        pname ;
-      let results = collect_analysis_result tenv wl proc_cfg in
+        (BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning) ;
+      let results = collect_analysis_result analysis_data wl proc_cfg in
       let specs =
-        try extract_specs analysis_data tenv (ProcCfg.Exceptional.proc_desc proc_cfg) results
+        try extract_specs analysis_data (ProcCfg.Exceptional.proc_desc proc_cfg) results
         with Exceptions.Leak _ ->
           let exn =
             Exceptions.Internal_error
               (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint")
           in
-          SummaryReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
+          BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn ;
           (* returning no specs *) []
       in
       (specs, BiabductionSummary.FOOTPRINT)
@@ -912,15 +916,15 @@ let is_unavoidable tenv pre =
       false
 
 
-let report_custom_errors {InterproceduralAnalysis.proc_desc; tenv} summary =
+let report_custom_errors {InterproceduralAnalysis.proc_desc; err_log; tenv} summary =
   let error_preconditions, all_post_error = custom_error_preconditions summary in
   let report (pre, custom_error) =
     if all_post_error || is_unavoidable tenv pre then
       let loc = Procdesc.get_loc proc_desc in
-      let pname = Procdesc.get_proc_name proc_desc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Error pname exn
+      let attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn
   in
   List.iter ~f:report error_preconditions
 

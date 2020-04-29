@@ -233,10 +233,9 @@ let mark_instr_fail exn =
   fs.instr_fail <- fs.instr_fail + 1
 
 
-type log_issue =
-  Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
+type log_issue = ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace -> exn -> unit
 
-let process_execution_failures (log_issue : log_issue) pname =
+let process_execution_failures (log_issue : log_issue) =
   let do_failure _ fs =
     (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match (fs.node_ok, fs.first_failure) with
@@ -244,7 +243,7 @@ let process_execution_failures (log_issue : log_issue) pname =
         let error = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
         let exn' = Exceptions.Analysis_stops (desc', error.ocaml_pos) in
-        log_issue pname ~loc ~node ~ltr:loc_trace exn'
+        log_issue ~loc ~node ~ltr:loc_trace exn'
     | _ ->
         ()
   in
