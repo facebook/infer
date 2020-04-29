@@ -21,7 +21,7 @@
   return self;
 }
 
-- (void)writeZero {
+- (void)write_zero_ok {
   [self write:0];
 }
 @end

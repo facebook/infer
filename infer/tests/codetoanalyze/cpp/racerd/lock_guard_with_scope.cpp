@@ -13,34 +13,40 @@ class LockGuardWithScope {
  public:
   LockGuardWithScope() {}
 
-  void set(int new_value) {
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      well_guarded = new_value;
-      suspiciously_read = new_value;
+  void not_guarded_ok(int b, int new_value) {
+    if (b) {
+      not_guarded = new_value;
+    } else {
+      return not_guarded;
     }
-
-    not_guarded = new_value;
-    suspiciously_written = new_value;
   }
 
-  int get1() {
-    int result;
+  void well_guarded_ok(int b, int new_value) {
     std::lock_guard<std::mutex> lock(mutex_);
-    result = well_guarded;
-    return result;
+    if (b) {
+      well_guarded = new_value;
+    } else {
+      return well_guarded;
+    }
   }
 
-  int get2() {
-    int result;
-    std::lock_guard<std::mutex> lock(mutex_);
-    result = suspiciously_written;
-    return result;
+  void suspiciously_read_bad(int b, int new_value) {
+    if (b) {
+      std::lock_guard<std::mutex> lock(mutex_);
+      suspiciously_read = new_value;
+    } else {
+      return suspiciously_read;
+    }
   }
 
-  int get3() { return not_guarded; }
-
-  int get4() { return suspiciously_read; }
+  void FP_suspiciously_written_ok(int b, int new_value) {
+    if (b) {
+      suspiciously_written = new_value;
+    } else {
+      std::lock_guard<std::mutex> lock(mutex_);
+      return suspiciously_written;
+    }
+  }
 
  private:
   int well_guarded;

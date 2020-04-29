@@ -11,19 +11,15 @@ class BasicsNoMutex {
  public:
   BasicsNoMutex() {}
 
-  void set(int new_value) {
+  void set_ok(int new_value) {
     field_1 = new_value;
     field_2 = new_value;
-    field_3 = new_value;
   }
 
-  int get1() { return field_1; }
-
-  int get2() { return field_2; }
+  int get_field1_ok() { return field_1; }
 
  private:
   int field_1;
   int field_2;
-  int field_3;
 };
 } // namespace basics

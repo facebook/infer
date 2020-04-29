@@ -11,16 +11,22 @@ namespace locals_char_array {
 
 void f() {
   char line[1024];
+  int x;
   line[0] = line[1];
+  x = 0;
 }
 
 struct A {
-  void not_locked() { f(); }
-
-  bool locked() {
-    mutex_.lock();
-    f();
+  void locals_ok(int b) {
+    if (b) {
+      f();
+    } else {
+      mutex_.lock();
+      f();
+      mutex_.unlock();
+    }
   }
+
   std::mutex mutex_;
 };
 

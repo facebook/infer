@@ -16,11 +16,15 @@ struct A {
 
 struct B {
 
-  void access_container_and_contents_ok(int key, int value) {
-    int s = map.size();
+  void FN_write_container_bad(int key, int value) {
     mutex_.lock();
     map[key].value = value;
+    mutex_.unlock();
   }
+
+  int FN_get_bad(int key) { return map[key].value; }
+
+  int FN_size_bad() { return map.size(); }
 
  private:
   std::map<int, A> map;

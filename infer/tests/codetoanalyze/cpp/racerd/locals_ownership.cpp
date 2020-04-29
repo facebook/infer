@@ -17,7 +17,7 @@ class Ownership {
  public:
   Ownership() {}
 
-  int test0_ok() {
+  int struct_ok() {
     X x;
     mutex_.lock();
     x.f = 7;
@@ -25,7 +25,7 @@ class Ownership {
     return x.f;
   }
 
-  int test1_ok() {
+  int ptr_to_struct_ok() {
     X* x = new X();
     mutex_.lock();
     x->f = 7;
@@ -33,7 +33,7 @@ class Ownership {
     return x->f;
   }
 
-  int test2_ok() {
+  int copy_constructor_ok() {
     X x = current; // copy constructor
     mutex_.lock();
     x.f = 7;
@@ -41,7 +41,7 @@ class Ownership {
     return x.f;
   }
 
-  int FN_test2_bad() {
+  int FN_ptr_to_field_struct_bad() {
     X* x = &current;
     mutex_.lock();
     x->f = 7;
@@ -49,7 +49,7 @@ class Ownership {
     return x->f;
   }
 
-  int test3_ok(X xformal) {
+  int copy_formal_ok(X xformal) {
     X x = xformal; // copy constructor
     mutex_.lock();
     x.f = 7;
@@ -57,7 +57,7 @@ class Ownership {
     return x.f;
   }
 
-  int FN_test3_bad(X* xformal) {
+  int FN_ptr_to_formal_bad(X* xformal) {
     X* x = xformal;
     mutex_.lock();
     x->f = 7;

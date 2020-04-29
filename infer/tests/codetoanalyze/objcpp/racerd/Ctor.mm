@@ -9,7 +9,7 @@
 
 @interface Ctor : NSObject
 - (instancetype)init;
-- (void)write:(int)data;
+- (void)write_ok:(int)data;
 @end
 
 @implementation Ctor {
@@ -27,7 +27,7 @@
   return self;
 }
 
-- (void)write:(int)data {
+- (void)write_ok:(int)data {
   _mutex.lock();
   _data = data;
   _mutex.unlock();

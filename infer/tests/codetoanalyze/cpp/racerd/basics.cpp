@@ -13,16 +13,17 @@ class Basic {
  public:
   Basic() {}
 
-  void set(int new_value) {
-    not_guarded = new_value;
+  void set_not_guarded_ok(int new_value) { not_guarded = new_value; }
+
+  int get_not_guarded_ok() { return not_guarded; }
+
+  void set_well_guarded_ok(int new_value) {
     mutex_.lock();
     well_guarded = new_value;
-    suspiciously_read = new_value;
     mutex_.unlock();
-    suspiciously_written = new_value;
   }
 
-  int get1() {
+  int get_well_guarded_ok() {
     int result;
     mutex_.lock();
     result = well_guarded;
@@ -30,19 +31,28 @@ class Basic {
     return result;
   }
 
-  int get2() {
+  void set_suspiciously_read_bad(int new_value) {
+    mutex_.lock();
+    suspiciously_read = new_value;
+    mutex_.unlock();
+  }
+
+  int get_suspiciously_read_bad() { return suspiciously_read; }
+
+  void set_suspiciously_written_bad(int new_value) {
+    // the only reason we report here is because of the use of a mutex
+    mutex_.lock();
+    mutex_.unlock();
+    suspiciously_written = new_value;
+  }
+
+  int get_suspiciously_written_bad() {
     int result;
     mutex_.lock();
     result = suspiciously_written;
     mutex_.unlock();
     return result;
   }
-
-  int get3() { return not_guarded; }
-
-  int get4() { return suspiciously_read; }
-
-  int get5() { return get_private_suspiciously_read(); }
 
   void write_array_under_lock_ok(char* arr1) {
     mutex_.lock();
@@ -52,17 +62,15 @@ class Basic {
 
   int read_array_outside_lock_ok(char* arr2, int i) { return arr2[i]; }
 
-  void set_double(int new_value) {
+  void set_double_lock_guarded_ok(int new_value) {
     mutex_.lock();
     mutex_2.lock();
     double_lock_guarded = new_value;
     mutex_2.unlock();
-    single_lock_guarded = new_value;
-    single_lock_suspiciously_read = new_value;
     mutex_.unlock();
   }
 
-  int test_double_lock_1_ok() {
+  int read_double_lock_guarded_ok() {
     int result;
     mutex_2.lock();
     result = double_lock_guarded;
@@ -70,15 +78,17 @@ class Basic {
     return result;
   }
 
-  int test_double_lock_2_ok() {
-    int result;
+  void set_double_suspiciously_read_bad(int new_value) {
     mutex_.lock();
-    result = single_lock_guarded;
+    mutex_2.lock();
+    single_lock_suspiciously_read = new_value;
+    mutex_2.unlock();
     mutex_.unlock();
-    return result;
   }
 
-  int test_double_lock_bad() { return single_lock_suspiciously_read; }
+  int read_double_suspiciously_read_bad() {
+    return single_lock_suspiciously_read;
+  }
 
  private:
   int well_guarded;
@@ -86,11 +96,10 @@ class Basic {
   int suspiciously_written;
   int not_guarded;
   int double_lock_guarded;
-  int single_lock_guarded;
   int single_lock_suspiciously_read;
   std::mutex mutex_;
   std::mutex mutex_2;
 
-  int get_private_suspiciously_read() { return suspiciously_read; }
+  int get_private_suspiciously_read_ok() { return suspiciously_read; }
 };
 } // namespace basics

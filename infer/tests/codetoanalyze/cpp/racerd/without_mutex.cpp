@@ -12,14 +12,14 @@ class WithoutMutex {
  public:
   WithoutMutex() {}
 
-  int get() { return field_1; }
+  int get_bad() { return field; }
 
-  int set(std::mutex& mutex, int data) {
+  int set_bad(std::mutex& mutex, int data) {
     std::lock_guard<std::mutex> lock(mutex);
-    field_1 = data;
+    field = data;
   }
 
  private:
-  int field_1;
+  int field;
 };
 } // namespace without_mutex
