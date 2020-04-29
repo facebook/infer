@@ -165,3 +165,14 @@ let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
                ~log:"printing all source files")
       in
       F.fprintf fmt "@[<v>%a@]" pp_result stmt )
+
+
+let get_procs_in_file proc_name =
+  let source_file =
+    match Attributes.load proc_name with
+    | Some {ProcAttributes.translation_unit} ->
+        Some translation_unit
+    | None ->
+        None
+  in
+  Option.value_map source_file ~default:[] ~f:proc_names_of_source

@@ -22,7 +22,6 @@ val final_initializer_typestates_lazy :
      Tenv.t
   -> Procname.t
   -> Procdesc.t
-  -> (Procname.t -> Procname.t list)
   -> (bool -> Procname.t -> Procdesc.t -> 'a option -> 'b * 'c option)
   -> (Procname.t * 'c) list lazy_t
 (** Typestates after the current constructor and all initializer procedures. *)
@@ -30,7 +29,6 @@ val final_initializer_typestates_lazy :
 val final_constructor_typestates_lazy :
      Tenv.t
   -> Procname.t
-  -> (Procname.t -> Procname.t list)
   -> (bool -> Procname.t -> Procdesc.t -> 'a option -> 'b * 'c option)
   -> (Procname.t * 'c) list lazy_t
 (** Typestates after all constructors. *)

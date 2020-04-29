@@ -7,8 +7,7 @@
 
 open! IStd
 
-type proc_callback_args =
-  {get_procs_in_file: Procname.t -> Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
+type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t}
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
@@ -47,16 +46,6 @@ let iterate_procedure_callbacks exe_env summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
-  let get_procs_in_file proc_name =
-    let source_file =
-      match Attributes.load proc_name with
-      | Some {ProcAttributes.translation_unit} ->
-          Some translation_unit
-      | None ->
-          None
-    in
-    Option.value_map source_file ~default:[] ~f:SourceFiles.proc_names_of_source
-  in
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold_right ~init:summary !procedure_callbacks_rev
     ~f:(fun {checker_name; dynamic_dispatch; language; callback} summary ->
@@ -66,7 +55,7 @@ let iterate_procedure_callbacks exe_env summary =
               log_begin_event logger ~name:checker_name ~categories:["backend"]
                 ~arguments:[("proc", `String (Procname.to_string proc_name))]
                 () )) ;
-        let summary = callback {get_procs_in_file; summary; exe_env} in
+        let summary = callback {summary; exe_env} in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
       else summary )

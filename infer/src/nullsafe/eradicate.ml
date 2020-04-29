@@ -106,8 +106,8 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
       (!calls_this, None)
 
 
-let analyze_procedure tenv proc_name proc_desc calls_this checks Callbacks.{get_procs_in_file}
-    annotated_signature linereader proc_loc : unit =
+let analyze_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
+    proc_loc : unit =
   let idenv = Idenv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
   let find_canonical_duplicate node =
@@ -152,12 +152,10 @@ let analyze_procedure tenv proc_name proc_desc calls_this checks Callbacks.{get_
         && checks.TypeCheck.eradicate
       then (
         let typestates_for_curr_constructor_and_all_initializer_methods =
-          Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc get_procs_in_file
-            typecheck_proc
+          Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc typecheck_proc
         in
         let typestates_for_all_constructors_incl_current =
-          Initializers.final_constructor_typestates_lazy tenv proc_name get_procs_in_file
-            typecheck_proc
+          Initializers.final_constructor_typestates_lazy tenv proc_name typecheck_proc
         in
         EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate proc_name
           proc_desc start_node ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
@@ -195,7 +193,7 @@ let find_reason_to_skip_analysis proc_name proc_desc =
 
 
 (** Entry point for the nullsafe procedure-level analysis. *)
-let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
+let callback checks {Callbacks.summary; exe_env} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   L.debug Analysis Medium "Analysis of %a@\n" Procname.pp proc_name ;
@@ -206,7 +204,7 @@ let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
   | None ->
       (* start the analysis! *)
       let calls_this = ref false in
-      let tenv = Exe_env.get_tenv callback_args.exe_env proc_name in
+      let tenv = Exe_env.get_tenv exe_env proc_name in
       let annotated_signature =
         AnnotatedSignature.get_for_class_under_analysis tenv (Procdesc.get_attributes proc_desc)
       in
@@ -219,8 +217,8 @@ let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
       (* The main method - during this the actual analysis will happen and TypeErr will be populated with
          issues (and some of them - reported).
       *)
-      analyze_procedure tenv proc_name proc_desc calls_this checks callback_args annotated_signature
-        linereader loc ;
+      analyze_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
+        loc ;
       (* Collect issues that were detected during analysis and put them in summary for further processing *)
       let issues = TypeErr.get_errors () |> List.map ~f:(fun (issues, _) -> issues) in
       (* Report errors of "farall" class - those could not be reported during analysis phase. *)

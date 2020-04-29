@@ -27,8 +27,7 @@ open! IStd
     - get_proc_desc to get a proc desc from a proc name
     - Type environment.
     - Procedure for the callback to act on. *)
-type proc_callback_args =
-  {get_procs_in_file: Procname.t -> Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
+type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t}
 
 (* Result is updated summary with all information relevant for the checker (including list of errors found by the checker for this procedure *)
 type proc_callback_t = proc_callback_args -> Summary.t

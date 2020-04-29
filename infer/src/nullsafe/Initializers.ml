@@ -79,7 +79,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
   List.rev !final_typestates
 
 
-let pname_and_pdescs_with tenv curr_pname get_procs_in_file f =
+let pname_and_pdescs_with tenv curr_pname f =
   let res = ref [] in
   let filter pname =
     match PatternMatch.lookup_attributes tenv pname with
@@ -96,7 +96,7 @@ let pname_and_pdescs_with tenv curr_pname get_procs_in_file f =
       | None ->
           ()
   in
-  List.iter ~f:do_proc (get_procs_in_file curr_pname) ;
+  List.iter ~f:do_proc (SourceFiles.get_procs_in_file curr_pname) ;
   List.rev !res
 
 
@@ -105,7 +105,7 @@ let get_class pn =
 
 
 (** Typestates after the current procedure and all initializer procedures. *)
-let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_file typecheck_proc =
+let final_initializer_typestates_lazy tenv curr_pname curr_pdesc typecheck_proc =
   lazy
     (let is_initializer proc_attributes =
        PatternMatch.method_is_initializer tenv proc_attributes
@@ -120,7 +120,7 @@ let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_fi
        Annotations.ia_is_initializer ia
      in
      let initializers_current_class =
-       pname_and_pdescs_with tenv curr_pname get_procs_in_file (function pname, proc_attributes ->
+       pname_and_pdescs_with tenv curr_pname (function pname, proc_attributes ->
            is_initializer proc_attributes
            && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
@@ -129,10 +129,10 @@ let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_fi
 
 
 (** Typestates after all constructors. *)
-let final_constructor_typestates_lazy tenv curr_pname get_procs_in_file typecheck_proc =
+let final_constructor_typestates_lazy tenv curr_pname typecheck_proc =
   lazy
     (let constructors_current_class =
-       pname_and_pdescs_with tenv curr_pname get_procs_in_file (fun (pname, _) ->
+       pname_and_pdescs_with tenv curr_pname (fun (pname, _) ->
            Procname.is_constructor pname && equal_class_opt (get_class pname) (get_class curr_pname)
        )
      in

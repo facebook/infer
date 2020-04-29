@@ -267,7 +267,7 @@ let siof_check gname (summary : Summary.t) =
       ()
 
 
-let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
+let checker {Callbacks.exe_env; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let pname = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env pname in
@@ -282,7 +282,7 @@ let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
                  "__infer_translation_unit_init_streams")
           |> Pvar.get_initializer_pname )
       in
-      get_procs_in_file pname |> List.exists ~f:(Procname.equal magic_iostream_marker)
+      SourceFiles.get_procs_in_file pname |> List.exists ~f:(Procname.equal magic_iostream_marker)
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
