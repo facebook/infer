@@ -1113,11 +1113,10 @@ let analyze_procedure_aux ({InterproceduralAnalysis.proc_desc; _} as analysis_da
   summary_compact
 
 
-let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv; err_log} as analysis_data) :
+let analyze_procedure ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) :
     BiabductionSummary.t option =
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
-  if Topl.is_active () then Topl.instrument tenv proc_desc ;
   try Some (analyze_procedure_aux analysis_data)
   with exn ->
     IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;

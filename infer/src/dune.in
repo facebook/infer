@@ -13,7 +13,6 @@ let source_dirs =
   (if clang then ["al"; "clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
   @ [ (if java then "java" else "java_stubs")
     ; "backend"
-    ; "biabduction"
     ; "bufferoverrun"
     ; "checkers"
     ; "concurrency"
@@ -56,6 +55,8 @@ let infer_cflags =
   [ "-open"
   ; "Core"
   ; "-open"
+  ; "Biabduction"
+  ; "-open"
   ; "Absint"
   ; "-open"
   ; "OpenSource"
@@ -87,7 +88,8 @@ let main_lib_stanza =
 )
 |}
     infer_cflags
-    (String.concat " " ("absint" :: "InferCStubs" :: "InferIR" :: common_libraries))
+    (String.concat " "
+       ("biabduction" :: "absint" :: "InferCStubs" :: "InferIR" :: common_libraries))
     (String.concat " " infer_binaries)
 
 

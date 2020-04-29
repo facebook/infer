@@ -294,3 +294,8 @@ let sourcefile () =
 let cfg () =
   if not (is_active ()) then L.die InternalError "Called Topl.cfg when Topl is inactive" ;
   ToplMonitor.cfg ()
+
+
+let instrument_callback biabduction ({InterproceduralAnalysis.proc_desc; tenv; _} as callback) =
+  if is_active () then instrument tenv proc_desc ;
+  biabduction callback

@@ -177,9 +177,12 @@ let all_checkers =
   ; { name= "biabduction"
     ; active= Config.is_checker_enabled Biabduction
     ; callbacks=
-        [ (dynamic_dispatch Payloads.Fields.biabduction Interproc.analyze_procedure, Language.Clang)
-        ; (dynamic_dispatch Payloads.Fields.biabduction Interproc.analyze_procedure, Language.Java)
-        ] }
+        [ ( dynamic_dispatch Payloads.Fields.biabduction
+              (Topl.instrument_callback Interproc.analyze_procedure)
+          , Language.Clang )
+        ; ( dynamic_dispatch Payloads.Fields.biabduction
+              (Topl.instrument_callback Interproc.analyze_procedure)
+          , Language.Java ) ] }
   ; { name= "annotation reachability"
     ; active= Config.is_checker_enabled AnnotationReachability
     ; callbacks=
