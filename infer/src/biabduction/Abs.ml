@@ -1006,7 +1006,7 @@ let check_observer_is_unsubscribed_deallocation tenv prop e =
       ()
 
 
-let check_junk pname tenv prop =
+let check_junk {InterproceduralAnalysis.proc_desc; err_log; tenv} prop =
   let leaks_reported = ref [] in
   let remove_junk_once fp_part fav_root sigma =
     let id_considered_reachable =
@@ -1138,7 +1138,9 @@ let check_junk pname tenv prop =
             let report_leak () =
               if not report_and_continue then raise exn
               else (
-                SummaryReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
+                BiabductionReporting.log_issue_deprecated_using_state
+                  (Procdesc.get_attributes proc_desc)
+                  err_log Exceptions.Error exn ;
                 leaks_reported := alloc_attribute :: !leaks_reported )
             in
             if not ignore_leak then report_leak () ;
@@ -1254,19 +1256,20 @@ let abstract_spec pname tenv spec =
 
 (** Check whether the prop contains junk. If it does, and [Config.allowleak] is true, remove the
     junk, otherwise raise a Leak exception. *)
-let abstract_junk pname tenv prop =
+let abstract_junk analysis_data prop =
   Absarray.array_abstraction_performed := false ;
-  check_junk pname tenv prop
+  check_junk analysis_data prop
 
 
 (** Remove redundant elements in an array, and check for junk afterwards *)
-let remove_redundant_array_elements pname tenv prop =
+let remove_redundant_array_elements ({InterproceduralAnalysis.tenv; _} as analysis_data) prop =
   Absarray.array_abstraction_performed := false ;
   let prop' = Absarray.remove_redundant_elements tenv prop in
-  check_junk pname tenv prop'
+  check_junk analysis_data prop'
 
 
-let abstract_prop pname tenv ~(rename_primed : bool) ~(from_abstract_footprint : bool) p =
+let abstract_prop ({InterproceduralAnalysis.tenv; _} as analysis_data) ~(rename_primed : bool)
+    ~(from_abstract_footprint : bool) p =
   Absarray.array_abstraction_performed := false ;
   let pure_abs_p = abstract_pure_part tenv ~from_abstract_footprint:true p in
   let array_abs_p =
@@ -1278,7 +1281,7 @@ let abstract_prop pname tenv ~(rename_primed : bool) ~(from_abstract_footprint :
   let abs_p = abs_rules_apply tenv array_abs_p in
   let abs_p = abstract_gc tenv abs_p in
   (* abstraction might enable more gc *)
-  let abs_p = check_junk pname tenv abs_p in
+  let abs_p = check_junk analysis_data abs_p in
   let ren_abs_p =
     if rename_primed then Prop.prop_rename_primed_footprint_vars tenv abs_p else abs_p
   in
@@ -1344,29 +1347,30 @@ let set_footprint_for_abs (p : 'a Prop.t) (p_foot : 'a Prop.t) local_stack_pvars
 
 
 (** Abstract the footprint of prop *)
-let abstract_footprint pname (tenv : Tenv.t) (prop : Prop.normal Prop.t) : Prop.normal Prop.t =
+let abstract_footprint ({InterproceduralAnalysis.tenv; _} as analysis_data)
+    (prop : Prop.normal Prop.t) : Prop.normal Prop.t =
   let p, added_local_vars = extract_footprint_for_abs prop in
   let p_abs =
-    abstract_prop pname tenv ~rename_primed:false ~from_abstract_footprint:true
+    abstract_prop analysis_data ~rename_primed:false ~from_abstract_footprint:true
       (Prop.normalize tenv p)
   in
   let prop' = set_footprint_for_abs prop p_abs added_local_vars in
   Prop.normalize tenv prop'
 
 
-let abstract_ pname pay tenv p =
+let abstract_ analysis_data pay p =
   if pay then SymOp.pay () ;
   (* pay one symop *)
-  let p' = if !BiabductionConfig.footprint then abstract_footprint pname tenv p else p in
-  abstract_prop pname tenv ~rename_primed:true ~from_abstract_footprint:false p'
+  let p' = if !BiabductionConfig.footprint then abstract_footprint analysis_data p else p in
+  abstract_prop analysis_data ~rename_primed:true ~from_abstract_footprint:false p'
 
 
-let abstract pname tenv p = abstract_ pname true tenv p
+let abstract analysis_data p = abstract_ analysis_data true p
 
-let abstract_no_symop pname tenv p = abstract_ pname false tenv p
+let abstract_no_symop analysis_data p = abstract_ analysis_data false p
 
-let lifted_abstract pname tenv pset =
-  let f p = if Prover.check_inconsistency tenv p then None else Some (abstract pname tenv p) in
+let lifted_abstract ({InterproceduralAnalysis.tenv; _} as analysis_data) pset =
+  let f p = if Prover.check_inconsistency tenv p then None else Some (abstract analysis_data p) in
   let abstracted_pset = Propset.map_option tenv f pset in
   abstracted_pset
 

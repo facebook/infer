@@ -1455,8 +1455,7 @@ let rec sym_exec
       if Prover.check_inconsistency tenv prop_ then ret_old_path []
       else
         ret_old_path
-          [ Abs.remove_redundant_array_elements current_pname tenv
-              (Abs.abstract current_pname tenv prop_) ]
+          [Abs.remove_redundant_array_elements analysis_data (Abs.abstract analysis_data prop_)]
   | Sil.Metadata (ExitScope (dead_vars, _)) ->
       let dead_ids = List.filter_map dead_vars ~f:Var.get_ident in
       ret_old_path [Prop.exist_quantify tenv dead_ids prop_]
@@ -1854,9 +1853,8 @@ and proc_call (callee_pdesc, callee_summary)
 
 
 (** perform symbolic execution for a single prop, and check for junk *)
-and sym_exec_wrapper ({InterproceduralAnalysis.tenv; _} as analysis_data) handle_exn proc_cfg instr
+and sym_exec_wrapper ({InterproceduralAnalysis.tenv; _} as analysis_data) handle_exn instr
     ((prop : Prop.normal Prop.t), path) : Paths.PathSet.t =
-  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let prop_primed_to_normal p =
     (* Rename primed vars with fresh normal vars, and return them *)
     let ids_primed =
@@ -1912,7 +1910,7 @@ and sym_exec_wrapper ({InterproceduralAnalysis.tenv; _} as analysis_data) handle
           (* but force them into either branch *)
           p'
       | _ ->
-          check_deallocate_static_memory (Abs.abstract_junk pname tenv p')
+          check_deallocate_static_memory (Abs.abstract_junk analysis_data p')
     in
     L.d_str "Instruction " ;
     Sil.d_instr instr ;
@@ -1966,7 +1964,7 @@ let node handle_exn analysis_data proc_cfg (node : ProcCfg.Exceptional.Node.t)
         Sil.d_instr instr ;
         L.d_strln " due to exception" ;
         Paths.PathSet.from_renamed_list [(p, tr)] )
-      else sym_exec_wrapper analysis_data handle_exn proc_cfg instr (p, tr)
+      else sym_exec_wrapper analysis_data handle_exn instr (p, tr)
     in
     Paths.PathSet.union pset2 pset1
   in
