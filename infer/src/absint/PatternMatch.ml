@@ -300,26 +300,6 @@ let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) :
       false
 
 
-(** Get the vararg values by looking for array assignments to the pvar. *)
-let java_get_vararg_values node pvar idenv =
-  let values_of_instr acc = function
-    | Sil.Store {e1= Exp.Lindex (array_exp, _); e2= content_exp}
-      when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
-        (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
-        content_exp :: acc
-    | _ ->
-        acc
-  in
-  let values_of_node acc n =
-    Procdesc.Node.get_instrs n |> Instrs.fold ~f:values_of_instr ~init:acc
-  in
-  match Errdesc.find_program_variable_assignment node pvar with
-  | Some (node', _) ->
-      Procdesc.fold_slope_range node' node ~f:values_of_node ~init:[]
-  | None ->
-      []
-
-
 let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
   let res = ref [] in
   let do_instruction _ instr =

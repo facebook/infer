@@ -476,6 +476,27 @@ let typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc
        node instr_ref typestate1 exp1 Typ.void TypeOrigin.OptimisticFallback loc1)
 
 
+(** Get the values of a vararg parameter given the pvar used to assign the elements by looking for
+    array assignments to the pvar. *)
+let java_get_vararg_values node pvar idenv =
+  let values_of_instr acc = function
+    | Sil.Store {e1= Exp.Lindex (array_exp, _); e2= content_exp}
+      when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
+        (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
+        content_exp :: acc
+    | _ ->
+        acc
+  in
+  let values_of_node acc n =
+    Procdesc.Node.get_instrs n |> Instrs.fold ~f:values_of_instr ~init:acc
+  in
+  match Errdesc.find_program_variable_assignment node pvar with
+  | Some (node', _) ->
+      Procdesc.fold_slope_range node' node ~f:values_of_node ~init:[]
+  | None ->
+      []
+
+
 (* Handle Preconditions.checkNotNull. *)
 let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc curr_pdesc
     curr_pname curr_annotated_signature checks call_params idenv parameter_num ~is_vararg typestate'
@@ -529,7 +550,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
           | _ ->
               ts
         in
-        let vararg_values = PatternMatch.java_get_vararg_values node pvar idenv in
+        let vararg_values = java_get_vararg_values node pvar idenv in
         List.fold_right ~f:do_vararg_value vararg_values ~init:typestate'
       else
         pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
