@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 (** Simplified html node printer for checkers *)
 
@@ -36,9 +37,12 @@ let kind_to_string = function
 let with_kind pp_name kind f = Format.fprintf f "[%s] %t" (kind_to_string kind) pp_name
 
 let with_session ?kind ~pp_name node ~f =
+  AnalysisState.set_node node ;
   if Config.write_html then (
+    L.reset_delayed_prints () ;
     let session = new_session node in
+    AnalysisState.set_session session ;
     let pp_name = Option.fold kind ~init:pp_name ~f:with_kind in
     Printer.node_start_session ~pp_name node session ;
-    Utils.try_finally_swallow_timeout ~f ~finally:(fun () -> Printer.node_finish_session node) )
+    SymOp.try_finally ~f ~finally:(fun () -> Printer.node_finish_session node) )
   else f ()

@@ -1054,7 +1054,6 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     then rearrange_arith tenv lexp prop
     else (
       pp_rearrangement_error "cannot find predicate with root" prop lexp ;
-      if not !BiabductionConfig.footprint then Printer.force_delayed_prints () ;
       raise (Exceptions.Symexec_memory_error __POS__) )
   in
   let recurse_on_iters iters =

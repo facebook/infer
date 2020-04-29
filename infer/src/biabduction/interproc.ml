@@ -353,16 +353,7 @@ let reset_prop_metrics () =
 
 exception RE_EXE_ERROR
 
-let pp_name fmt = F.pp_print_string fmt "interproc"
-
-let do_before_node session node =
-  AnalysisState.set_node node ;
-  AnalysisState.set_session session ;
-  L.reset_delayed_prints () ;
-  Printer.node_start_session ~pp_name node (session :> int)
-
-
-let do_after_node node = Printer.node_finish_session node
+let pp_name fmt = F.pp_print_string fmt "biabduction"
 
 (** Return the list of normal ids occurring in the instructions *)
 let instrs_get_normal_vars instrs =
@@ -395,13 +386,6 @@ let do_symbolic_execution exe_env summary proc_cfg handle_exn tenv
   pset
 
 
-let mark_visited summary node =
-  if not !BiabductionConfig.footprint then
-    let node_id = (Procdesc.Node.get_id node :> int) in
-    let stats = summary.Summary.stats in
-    Summary.Stats.add_visited stats node_id
-
-
 let forward_tabulate summary exe_env tenv proc_cfg wl =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let handle_exn_node curr_node exn =
@@ -427,7 +411,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     let exe prop path = State.set_path path None ; incr cnt ; f prop path !cnt ps_size in
     Paths.PathSet.iter exe pathset
   in
-  let print_node_preamble curr_node session pathset_todo =
+  let print_node_preamble curr_node pathset_todo =
     let log_string proc_name =
       let phase_string =
         let open BiabductionSummary in
@@ -437,8 +421,8 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
         (Procname.to_string proc_name)
     in
-    L.d_printfln "**** %s Node: %a, Procedure: %a, Session: %d, Todo: %d ****" (log_string pname)
-      Procdesc.Node.pp curr_node Procname.pp pname session (Paths.PathSet.size pathset_todo) ;
+    L.d_printfln "**** %s Node: %a, Procedure: %a, Todo: %d ****" (log_string pname)
+      Procdesc.Node.pp curr_node Procname.pp pname (Paths.PathSet.size pathset_todo) ;
     L.d_increase_indent () ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
     L.d_strln ".... Instructions: ...." ;
@@ -464,20 +448,16 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       L.d_decrease_indent () ;
       L.d_ln ()
   in
-  let do_node curr_node pathset_todo session handle_exn =
+  let do_node curr_node pathset_todo handle_exn =
     check_prop_size pathset_todo ;
-    print_node_preamble curr_node session pathset_todo ;
+    print_node_preamble curr_node pathset_todo ;
     match Procdesc.Node.get_kind curr_node with
-    | Procdesc.Node.Join_node ->
+    | Join_node ->
         do_symexec_join proc_cfg tenv wl curr_node pathset_todo
-    | Procdesc.Node.Stmt_node _
-    | Procdesc.Node.Prune_node _
-    | Procdesc.Node.Exit_node
-    | Procdesc.Node.Skip_node _
-    | Procdesc.Node.Start_node ->
+    | Stmt_node _ | Prune_node _ | Exit_node | Skip_node _ | Start_node ->
         exe_iter (do_prop curr_node handle_exn) pathset_todo
   in
-  let do_node_and_handle curr_node session =
+  let do_node_and_handle curr_node =
     let pathset_todo = path_set_checkout_todo wl curr_node in
     try
       let handle_exn_called = ref false in
@@ -485,26 +465,16 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
         handle_exn_called := true ;
         handle_exn_node curr_node exn
       in
-      do_node curr_node pathset_todo session handle_exn ;
-      if !handle_exn_called then Printer.force_delayed_prints () ;
-      do_after_node curr_node
+      do_node curr_node pathset_todo handle_exn
     with exn ->
       IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       handle_exn_node curr_node exn ;
-      Printer.force_delayed_prints () ;
-      do_after_node curr_node ;
       if not !BiabductionConfig.footprint then raise RE_EXE_ERROR
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
-    mark_visited summary curr_node ;
-    (* mark nodes visited in fp and re phases *)
-    let session =
-      summary.Summary.sessions <- summary.Summary.sessions + 1 ;
-      summary.Summary.sessions
-    in
-    do_before_node session curr_node ;
-    do_node_and_handle curr_node session
+    AnalysisData.html_debug_new_node_session ~pp_name curr_node ~f:(fun () ->
+        do_node_and_handle curr_node )
   done ;
   L.d_strln ".... Work list empty. Stop ...." ;
   L.d_ln ()
@@ -733,55 +703,54 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   let wl = path_set_create_worklist proc_cfg in
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
-  do_before_node 0 init_node ;
-  L.d_printfln "#### Start: RE-execution for %a ####" Procname.pp pname ;
-  L.d_indent 1 ;
-  L.d_strln "Precond:" ;
-  BiabductionSummary.Jprop.d_shallow precondition ;
-  L.d_ln () ;
-  L.d_ln () ;
-  let init_prop =
-    initial_prop_from_pre tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
-  in
   let init_edgeset =
-    Paths.PathSet.add_renamed_prop init_prop (Paths.Path.start init_node) Paths.PathSet.empty
+    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+        L.d_printfln "#### Start: RE-execution for %a ####" Procname.pp pname ;
+        L.d_indent 1 ;
+        L.d_strln "Precond:" ;
+        BiabductionSummary.Jprop.d_shallow precondition ;
+        L.d_ln () ;
+        L.d_ln () ;
+        let init_prop =
+          initial_prop_from_pre tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
+        in
+        Paths.PathSet.add_renamed_prop init_prop (Paths.Path.start init_node) Paths.PathSet.empty )
   in
-  do_after_node init_node ;
   try
     Worklist.add wl init_node ;
     ignore (path_set_put_todo wl init_node init_edgeset) ;
     forward_tabulate summary exe_env tenv proc_cfg wl ;
-    do_before_node 0 init_node ;
-    L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Procname.pp pname ;
-    L.d_increase_indent () ;
-    L.d_strln "Precond:" ;
-    Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
-    L.d_ln () ;
-    let posts, visited =
-      let pset, visited = collect_postconditions wl tenv proc_cfg in
-      let plist =
-        List.map
-          ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
-          (Paths.PathSet.elements pset)
-      in
-      (plist, visited)
-    in
-    let pre =
-      BiabductionSummary.Jprop.shallow_map ~f:(PropUtil.remove_locals_ret tenv pdesc) precondition
-    in
-    let spec = BiabductionSummary.{pre; posts; visited} in
-    L.d_decrease_indent () ; do_after_node init_node ; Some spec
+    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+        L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Procname.pp pname ;
+        L.d_increase_indent () ;
+        L.d_strln "Precond:" ;
+        Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
+        L.d_ln () ;
+        let posts, visited =
+          let pset, visited = collect_postconditions wl tenv proc_cfg in
+          let plist =
+            List.map
+              ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
+              (Paths.PathSet.elements pset)
+          in
+          (plist, visited)
+        in
+        let pre =
+          BiabductionSummary.Jprop.shallow_map
+            ~f:(PropUtil.remove_locals_ret tenv pdesc)
+            precondition
+        in
+        let spec = BiabductionSummary.{pre; posts; visited} in
+        L.d_decrease_indent () ; Some spec )
   with RE_EXE_ERROR ->
-    do_before_node 0 init_node ;
-    Printer.force_delayed_prints () ;
-    L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Procname.pp pname ;
-    L.d_increase_indent () ;
-    L.d_strln "when starting from pre:" ;
-    Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
-    L.d_strln "This precondition is filtered out." ;
-    L.d_decrease_indent () ;
-    do_after_node init_node ;
-    None
+    AnalysisData.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
+        L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Procname.pp pname ;
+        L.d_increase_indent () ;
+        L.d_strln "when starting from pre:" ;
+        Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
+        L.d_strln "This precondition is filtered out." ;
+        L.d_decrease_indent () ;
+        None )
 
 
 type exe_phase =
@@ -1109,25 +1078,27 @@ let perform_transition proc_cfg tenv proc_name summary =
     let joined_pres =
       let allow_leak = !BiabductionConfig.allow_leak in
       (* apply the start node to f, and do nothing in case of exception *)
-      let apply_start_node f =
-        try f (ProcCfg.Exceptional.start_node proc_cfg)
-        with exn when SymOp.exn_not_failure exn -> ()
+      let with_start_node_session ~f =
+        match ProcCfg.Exceptional.start_node proc_cfg with
+        | start_node ->
+            AnalysisData.html_debug_new_node_session ~pp_name start_node ~f
+        | exception exn when SymOp.exn_not_failure exn ->
+            f ()
       in
-      apply_start_node (do_before_node 0) ;
-      try
-        BiabductionConfig.allow_leak := true ;
-        let res = collect_preconditions tenv summary in
-        BiabductionConfig.allow_leak := allow_leak ;
-        apply_start_node do_after_node ;
-        res
-      with exn when SymOp.exn_not_failure exn ->
-        apply_start_node do_after_node ;
-        BiabductionConfig.allow_leak := allow_leak ;
-        L.(debug Analysis Medium) "Error in collect_preconditions for %a@." Procname.pp proc_name ;
-        let error = Exceptions.recognize_exception exn in
-        let err_str = "exception raised " ^ error.name.IssueType.unique_id in
-        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;
-        []
+      with_start_node_session ~f:(fun () ->
+          try
+            BiabductionConfig.allow_leak := true ;
+            let res = collect_preconditions tenv summary in
+            BiabductionConfig.allow_leak := allow_leak ;
+            res
+          with exn when SymOp.exn_not_failure exn ->
+            BiabductionConfig.allow_leak := allow_leak ;
+            L.(debug Analysis Medium)
+              "Error in collect_preconditions for %a@." Procname.pp proc_name ;
+            let error = Exceptions.recognize_exception exn in
+            let err_str = "exception raised " ^ error.name.IssueType.unique_id in
+            L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;
+            [] )
     in
     transition_footprint_re_exe summary tenv joined_pres
   in

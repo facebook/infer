@@ -25,9 +25,6 @@ end
 val curr_html_formatter : Format.formatter ref
 (** Current html formatter *)
 
-val force_delayed_prints : unit -> unit
-(** Execute the delayed print actions *)
-
 val node_finish_session : Procdesc.Node.t -> unit
 (** Finish a session, and perform delayed print actions if required *)
 
