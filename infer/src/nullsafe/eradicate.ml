@@ -53,7 +53,7 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
     let ret_implicitly_nullable =
       String.equal (PatternMatch.get_type_name ret_annotated_type.typ) "java.lang.Void"
     in
-    State.set_node exit_node ;
+    AnalysisState.set_node exit_node ;
     if not (List.is_empty checks.TypeCheck.check_ret_type) then
       List.iter
         ~f:(fun f -> f curr_pname curr_pdesc ret_annotated_type.typ typ_found_opt loc)
@@ -81,7 +81,7 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
 
     let do_node tenv node typestate =
       NodePrinter.with_session ~pp_name node ~f:(fun () ->
-          State.set_node node ;
+          AnalysisState.set_node node ;
           if Config.write_html then L.d_printfln "before:@\n%a@\n" TypeState.pp typestate ;
           let TypeCheck.{normal_flow_typestate; exception_flow_typestates} =
             TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc

@@ -32,7 +32,7 @@ let mk_empty_array len = Predicates.Earray (len, [], Predicates.inst_none)
    return a null pointer deref *)
 let mk_empty_array_rearranged len =
   Predicates.Earray
-    (len, [], Predicates.inst_rearrange true (State.get_loc_exn ()) (State.get_path_pos ()))
+    (len, [], Predicates.inst_rearrange true (AnalysisState.get_loc_exn ()) (State.get_path_pos ()))
 
 
 let extract_array_type typ =

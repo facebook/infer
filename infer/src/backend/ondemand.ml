@@ -97,7 +97,8 @@ type global_state =
   ; proc_analysis_time: (Mtime.Span.t * string) option
         (** the time elapsed doing [status] so far *)
   ; pulse_address_generator: PulseAbstractValue.State.t
-  ; symexec_state: State.t }
+  ; absint_state: AnalysisState.t
+  ; biabduction_state: State.t }
 
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
@@ -112,7 +113,8 @@ let save_global_state () =
       Option.map !current_taskbar_status ~f:(fun (t0, status) ->
           (Mtime.span t0 (Mtime_clock.now ()), status) )
   ; pulse_address_generator= PulseAbstractValue.State.get ()
-  ; symexec_state= State.save_state () }
+  ; absint_state= AnalysisState.save ()
+  ; biabduction_state= State.save_state () }
 
 
 let restore_global_state st =
@@ -123,7 +125,8 @@ let restore_global_state st =
   Printer.curr_html_formatter := st.html_formatter ;
   Ident.NameGenerator.set_current st.name_generator ;
   PulseAbstractValue.State.set st.pulse_address_generator ;
-  State.restore_state st.symexec_state ;
+  AnalysisState.restore st.absint_state ;
+  State.restore_state st.biabduction_state ;
   current_taskbar_status :=
     Option.map st.proc_analysis_time ~f:(fun (suspended_span, status) ->
         (* forget about the time spent doing a nested analysis and resend the status of the outer

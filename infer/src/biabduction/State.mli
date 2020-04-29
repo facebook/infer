@@ -25,23 +25,8 @@ val get_diverging_states_proc : unit -> Paths.PathSet.t
 val get_inst_update : PredSymb.path_pos -> Predicates.inst
 (** Get update instrumentation for the current loc *)
 
-val get_instr : unit -> Sil.instr option
-(** Get last instruction seen in symbolic execution *)
-
-val get_loc_exn : unit -> Location.t
-(** Get last location seen in symbolic execution *)
-
-val get_loc : unit -> Location.t option
-(** Get last location seen in symbolic execution *)
-
 val get_loc_trace : unit -> Errlog.loc_trace
 (** Get the location trace of the last path seen in symbolic execution *)
-
-val get_node_exn : unit -> Procdesc.Node.t
-(** Get last node seen in symbolic execution *)
-
-val get_node : unit -> Procdesc.Node.t option
-(** Get last node seen in symbolic execution *)
 
 val get_normalized_pre :
   (Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
@@ -56,9 +41,6 @@ val get_path_pos : unit -> PredSymb.path_pos
 
 val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Tenv.t * Procdesc.t) option
 (** Get last last prop,tenv,pdesc seen in symbolic execution *)
-
-val get_session : unit -> int
-(** Get last session seen in symbolic execution *)
 
 val mark_execution_end : Procdesc.Node.t -> unit
 (** Mark the end of symbolic execution of a node *)
@@ -94,17 +76,8 @@ val restore_state : t -> unit
 val save_state : unit -> t
 (** Return the old state, and revert the current state to the initial one. *)
 
-val set_instr : Sil.instr -> unit
-(** Set last instruction seen in symbolic execution *)
-
-val set_node : Procdesc.Node.t -> unit
-(** Set last node seen in symbolic execution *)
-
 val set_path : Paths.Path.t -> PredSymb.path_pos option -> unit
 (** Get last path seen in symbolic execution *)
 
 val set_prop_tenv_pdesc : Prop.normal Prop.t -> Tenv.t -> Procdesc.t -> unit
 (** Set last prop,tenv,pdesc seen in symbolic execution *)
-
-val set_session : int -> unit
-(** Set last session seen in symbolic execution *)

@@ -265,7 +265,7 @@ let propagate (wl : Worklist.t) pname ~is_exception (pset : Paths.PathSet.t)
     let f prop path edgeset_curr =
       let exn_opt = if is_exception then Tabulation.prop_get_exn_name pname prop else None in
       Paths.PathSet.add_renamed_prop prop
-        (Paths.Path.extend curr_node exn_opt (State.get_session ()) path)
+        (Paths.Path.extend curr_node exn_opt (AnalysisState.get_session ()) path)
         edgeset_curr
     in
     Paths.PathSet.fold f pset Paths.PathSet.empty
@@ -283,7 +283,7 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
     !BiabductionConfig.footprint
     && not (Paths.PathSet.is_empty (State.get_diverging_states_node ()))
   then (
-    Errdesc.warning_err (State.get_loc_exn ()) "Propagating Divergence@." ;
+    Errdesc.warning_err (AnalysisState.get_loc_exn ()) "Propagating Divergence@." ;
     let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
     let diverging_states = State.get_diverging_states_node () in
     let prop_incons =
@@ -356,8 +356,8 @@ exception RE_EXE_ERROR
 let pp_name fmt = F.pp_print_string fmt "interproc"
 
 let do_before_node session node =
-  State.set_node node ;
-  State.set_session session ;
+  AnalysisState.set_node node ;
+  AnalysisState.set_session session ;
   L.reset_delayed_prints () ;
   Printer.node_start_session ~pp_name node (session :> int)
 
@@ -416,7 +416,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     | None ->
         () ) ;
     L.d_strln "SIL INSTR:" ;
-    Procdesc.Node.d_instrs ~highlight:(State.get_instr ()) curr_node ;
+    Procdesc.Node.d_instrs ~highlight:(AnalysisState.get_instr ()) curr_node ;
     L.d_ln () ;
     BiabductionReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
     State.mark_instr_fail exn
@@ -442,7 +442,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     L.d_increase_indent () ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
     L.d_strln ".... Instructions: ...." ;
-    Procdesc.Node.d_instrs ~highlight:(State.get_instr ()) curr_node ;
+    Procdesc.Node.d_instrs ~highlight:(AnalysisState.get_instr ()) curr_node ;
     L.d_ln () ;
     L.d_ln ()
   in

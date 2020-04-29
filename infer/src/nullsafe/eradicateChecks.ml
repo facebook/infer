@@ -232,7 +232,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
     curr_constructor_pdesc start_node ~nullsafe_mode
     ~typestates_for_curr_constructor_and_all_initializer_methods
     ~typestates_for_all_constructors_incl_current loc : unit =
-  State.set_node start_node ;
+  AnalysisState.set_node start_node ;
   if Procname.is_constructor curr_constructor_pname then
     match
       PatternMatch.get_this_type_nonstatic_methods_only

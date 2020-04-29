@@ -107,11 +107,11 @@ let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env pro
       | Some v ->
           v
       | None ->
-          let loc_opt = State.get_loc () in
+          let loc_opt = AnalysisState.get_loc () in
           L.die InternalError "get_column_value: %s not found for %a%a" column_name Procname.pp
             proc_name pp_loc_opt loc_opt )
     | None ->
-        let loc_opt = State.get_loc () in
+        let loc_opt = AnalysisState.get_loc () in
         L.die InternalError "get_column_value: file_data not found for %a%a" Procname.pp proc_name
           pp_loc_opt loc_opt )
 

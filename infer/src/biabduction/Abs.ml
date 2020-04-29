@@ -990,7 +990,7 @@ let check_observer_is_unsubscribed_deallocation tenv prop e =
     | _ ->
         None
   in
-  let loc = State.get_loc_exn () in
+  let loc = AnalysisState.get_loc_exn () in
   match Attribute.get_observer tenv prop e with
   | Some (Apred (Aobserver, _)) -> (
     match pvar_opt with

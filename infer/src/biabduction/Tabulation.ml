@@ -302,7 +302,8 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
     let desc use_buckets deref_str =
       let error_desc =
         Errdesc.explain_dereference_as_caller_expression caller_pname tenv ~use_buckets deref_str
-          actual_pre spec_pre e (State.get_node_exn ()) (State.get_loc_exn ()) formal_params
+          actual_pre spec_pre e (AnalysisState.get_node_exn ()) (AnalysisState.get_loc_exn ())
+          formal_params
       in
       L.d_strln ~color:Red "found error in dereference" ;
       L.d_strln "spec_pre:" ;
@@ -392,7 +393,8 @@ let check_path_errors_in_post tenv caller_pname post post_path =
     | Predicates.Apred (Adiv0 path_pos, [e]) ->
         if Prover.check_zero tenv e then (
           let desc =
-            Errdesc.explain_divide_by_zero tenv e (State.get_node_exn ()) (State.get_loc_exn ())
+            Errdesc.explain_divide_by_zero tenv e (AnalysisState.get_node_exn ())
+              (AnalysisState.get_loc_exn ())
           in
           let new_path, path_pos_opt =
             let current_path, _ = State.get_path () in
@@ -989,8 +991,8 @@ let inconsistent_actualpre_missing tenv actual_pre split_opt =
 
 let class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc =
   let desc =
-    Errdesc.explain_class_cast_exception tenv pname_opt texp1 texp2 exp (State.get_node_exn ())
-      (State.get_loc_exn ())
+    Errdesc.explain_class_cast_exception tenv pname_opt texp1 texp2 exp
+      (AnalysisState.get_node_exn ()) (AnalysisState.get_loc_exn ())
   in
   Exceptions.Class_cast_exception (desc, ml_loc)
 

@@ -365,7 +365,7 @@ let report_forall_issues_and_reset st_report_error ~nullsafe_mode proc_desc =
     match (instr_ref_opt, get_forall err_instance) with
     | Some instr_ref, is_forall ->
         let node = InstrRef.get_node instr_ref in
-        State.set_node node ;
+        AnalysisState.set_node node ;
         if is_forall && err_state.always then
           report_now_if_reportable st_report_error err_instance err_state.loc ~nullsafe_mode
             proc_desc

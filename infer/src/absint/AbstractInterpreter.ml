@@ -8,7 +8,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module AnalysisState = State
 
 type exec_node_schedule_result = ReachedFixPoint | DidNotReachFixPoint
 
