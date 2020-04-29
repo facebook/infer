@@ -67,4 +67,28 @@
   NSLocale* locale = (__bridge_transfer NSLocale*)nameRef;
 }
 
+- (NSLocale*)ret_bridge {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  return CFBridgingRelease(nameRef);
+}
+
+- (void)call_bridge_no_leak_good {
+  NSLocale* locale = [self ret_bridge];
+}
+
+- (CFLocaleRef)ret_no_bridge {
+  return CFLocaleCreate(NULL, NULL);
+}
+
+- (void)call_no_bridge_leak_bad {
+  CFLocaleRef locale = [self ret_no_bridge];
+}
+
+NSLocale* wrap_bridge(CFLocaleRef x) { CFBridgingRelease(x); }
+
+NSLocale* call_bridge_interproc_leak_bad_FP() {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  NSLocale* locale = wrap_bridge(nameRef);
+}
+
 @end
