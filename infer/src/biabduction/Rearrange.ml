@@ -25,7 +25,7 @@ let rec list_rev_and_concat l1 l2 =
 (** Check whether the index is out of bounds. If the length is - 1, no check is performed. If the
     index is provably out of bound, a bound error is given. If the length is a constant and the
     index is not provably in bound, a warning is given. *)
-let check_bad_index tenv pname p len index loc =
+let check_bad_index {InterproceduralAnalysis.proc_desc; err_log; tenv} pname p len index loc =
   let len_is_constant = match len with Exp.Const _ -> true | _ -> false in
   let index_provably_out_of_bound () =
     let index_too_large = Prop.mk_inequality tenv (Exp.BinOp (Binop.Le, len, index)) in
@@ -55,7 +55,9 @@ let check_bad_index tenv pname p len index loc =
         Exceptions.Array_out_of_bounds_l1
           (Errdesc.explain_array_access pname tenv deref_str p loc, __POS__)
       in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      let proc_attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state proc_attrs err_log Exceptions.Warning
+        exn
     else if len_is_constant then
       let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
       let desc = Errdesc.explain_array_access pname tenv deref_str p loc in
@@ -63,18 +65,21 @@ let check_bad_index tenv pname p len index loc =
         if index_has_bounds () then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
         else Exceptions.Array_out_of_bounds_l3 (desc, __POS__)
       in
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+      let proc_attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state proc_attrs err_log Exceptions.Warning
+        exn
 
 
 (** Perform bounds checking *)
-let bounds_check tenv pname prop len e =
+let bounds_check analysis_data pname prop len e =
   if Config.trace_rearrange then (
     L.d_str "Bounds check index:" ; Exp.d_exp e ; L.d_str " len: " ; Exp.d_exp len ; L.d_ln () ) ;
-  check_bad_index tenv pname prop len e
+  check_bad_index analysis_data pname prop len e
 
 
-let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp (t : Typ.t)
-    (off : Predicates.offset list) inst : Predicates.atom list * Predicates.strexp * Typ.t =
+let rec create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
+    (t : Typ.t) (off : Predicates.offset list) inst :
+    Predicates.atom list * Predicates.strexp * Typ.t =
   if Config.trace_rearrange then (
     L.d_increase_indent () ;
     L.d_strln "entering create_struct_values" ;
@@ -104,7 +109,8 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         match List.find ~f:(fun (f', _, _) -> Fieldname.equal f f') (fields @ statics) with
         | Some (_, t', _) ->
             let atoms', se', res_t' =
-              create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
+              create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
+                t' off' inst
             in
             let se = Predicates.Estruct ([(f, se')], inst) in
             let replace_typ_of_f (f', t', a') =
@@ -121,7 +127,8 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
           fail t off __POS__ )
     | Tstruct _, Off_index e :: off' ->
         let atoms', se', res_t' =
-          create_struct_values pname tenv orig_prop footprint_part kind max_stamp t off' inst
+          create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp t
+            off' inst
         in
         let e' = Absarray.array_clean_new_index footprint_part e in
         let len = Exp.Var (new_id ()) in
@@ -136,9 +143,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         | [] ->
             ([], Predicates.Earray (len, [], inst), t)
         | Predicates.Off_index e :: off' ->
-            bounds_check tenv pname orig_prop len e (AnalysisState.get_loc_exn ()) ;
+            bounds_check analysis_data pname orig_prop len e (AnalysisState.get_loc_exn ()) ;
             let atoms', se', res_t' =
-              create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
+              create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
+                t' off' inst
             in
             let e' = Absarray.array_clean_new_index footprint_part e in
             let se = Predicates.Earray (len, [(e', se')], inst) in
@@ -160,7 +168,8 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         in
         let len = Exp.Var (new_id ()) in
         let atoms', se', res_t' =
-          create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
+          create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp t'
+            off' inst
         in
         let e' = Absarray.array_clean_new_index footprint_part e in
         let se = Predicates.Earray (len, [(e', se')], inst) in
@@ -183,18 +192,20 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     flds and do the case - analysis for array accesses. This does not catch the array - bounds
     errors. If we want to implement the checks for array bounds errors, we need to change this
     function. *)
-let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se (typ : Typ.t)
-    (off : Predicates.offset list) inst =
+let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se
+    (typ : Typ.t) (off : Predicates.offset list) inst =
   let new_id () = incr max_stamp ; Ident.create kind !max_stamp in
   match (off, se, typ.desc) with
   | [], Predicates.Eexp _, _ | [], Predicates.Estruct _, _ ->
       [([], se, typ)]
   | [], Predicates.Earray _, _ ->
       let off_new = Predicates.Off_index Exp.zero :: off in
-      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
+      strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se typ
+        off_new inst
   | Off_fld _ :: _, Predicates.Earray _, Tarray _ ->
       let off_new = Predicates.Off_index Exp.zero :: off in
-      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
+      strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se typ
+        off_new inst
   | Off_fld (f, _) :: off', Predicates.Estruct (fsel, inst'), Tstruct name -> (
     match Tenv.lookup tenv name with
     | Some ({fields; statics} as struct_typ) -> (
@@ -203,8 +214,8 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
         match List.find ~f:(fun (f', _) -> Fieldname.equal f f') fsel with
         | Some (_, se') ->
             let atoms_se_typ_list' =
-              strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ' off'
-                inst
+              strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp
+                se' typ' off' inst
             in
             let replace acc (res_atoms', res_se', res_typ') =
               let replace_fse ((f1, _) as ft1) =
@@ -226,7 +237,8 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
             List.fold ~f:replace ~init:[] atoms_se_typ_list'
         | None ->
             let atoms', se', res_typ' =
-              create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ' off' inst
+              create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
+                typ' off' inst
             in
             let res_fsel' =
               List.sort ~compare:[%compare: Fieldname.t * Predicates.strexp] ((f, se') :: fsel)
@@ -258,17 +270,17 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
       in
       let se_new = Predicates.Earray (len, [(Exp.zero, se)], inst) in
       let typ_new = Typ.mk_array typ in
-      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off
-        inst
+      strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se_new
+        typ_new off inst
   | ( Off_index e :: off'
     , Predicates.Earray (len, esel, inst_arr)
     , Tarray {elt= typ'; length= len_for_typ'; stride} ) -> (
-      bounds_check tenv pname orig_prop len e (AnalysisState.get_loc_exn ()) ;
+      bounds_check analysis_data pname orig_prop len e (AnalysisState.get_loc_exn ()) ;
       match List.find ~f:(fun (e', _) -> Exp.equal e e') esel with
       | Some (_, se') ->
           let atoms_se_typ_list' =
-            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ' off'
-              inst
+            strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp
+              se' typ' off' inst
           in
           let replace acc (res_atoms', res_se', res_typ') =
             let replace_ise ise = if Exp.equal e (fst ise) then (e, res_se') else ise in
@@ -282,14 +294,14 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
           in
           List.fold ~f:replace ~init:[] atoms_se_typ_list'
       | None ->
-          array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp len esel
-            len_for_typ' typ' typ e off' inst_arr inst )
+          array_case_analysis_index analysis_data pname tenv orig_prop footprint_part kind max_stamp
+            len esel len_for_typ' typ' typ e off' inst_arr inst )
   | _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
 
 
-and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp array_len
-    array_cont typ_array_len typ_cont typ_array index off inst_arr inst =
+and array_case_analysis_index analysis_data pname tenv orig_prop footprint_part kind max_stamp
+    array_len array_cont typ_array_len typ_cont typ_array index off inst_arr inst =
   let check_sound t' =
     if not (Typ.equal typ_cont t' || List.is_empty array_cont) then
       raise (Exceptions.Bad_footprint __POS__)
@@ -310,7 +322,8 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
     [([], array_default, typ_default)]
   else if !BiabductionConfig.footprint then (
     let atoms, elem_se, elem_typ =
-      create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst
+      create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp typ_cont
+        off inst
     in
     check_sound elem_typ ;
     let cont_new =
@@ -324,7 +337,8 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
       if array_is_full then []
       else
         let atoms, elem_se, elem_typ =
-          create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst
+          create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
+            typ_cont off inst
         in
         check_sound elem_typ ;
         let cont_new =
@@ -339,8 +353,8 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
           List.concat (List.rev (res_new :: acc))
       | ((i, se) as ise) :: isel_unseen ->
           let atoms_se_typ_list =
-            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ_cont off
-              inst
+            strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp
+              se typ_cont off inst
           in
           let atoms_se_typ_list' =
             List.fold
@@ -386,7 +400,7 @@ let laundry_offset_for_footprint max_stamp offs_in =
   laundry [] [] offs_in
 
 
-let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se te
+let strexp_extend_values analysis_data pname tenv orig_prop footprint_part kind max_stamp se te
     (off : Predicates.offset list) inst =
   let typ = Exp.texp_to_typ None te in
   let off', laundry_atoms =
@@ -404,7 +418,8 @@ let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se t
     Predicates.d_offset_list off' ;
     L.d_strln (if footprint_part then " FP" else " RE") ) ;
   let atoms_se_typ_list =
-    strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off' inst
+    strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se typ
+      off' inst
   in
   let atoms_se_typ_list_filtered =
     let check_neg_atom atom = Prover.check_atom tenv Prop.prop_emp (Prover.atom_negate tenv atom) in
@@ -432,7 +447,7 @@ let collect_root_offset exp =
 
 
 (** Exp.Construct a points-to predicate for an expression, to add to a footprint. *)
-let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
+let mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) max_stamp inst :
     Predicates.hpred * Predicates.hpred * Predicates.atom list =
   let root, off = collect_root_offset lexp in
   if not (exp_has_only_footprint_ids root) then
@@ -462,16 +477,16 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
             (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype}) )
     | _, [], Typ.Tfun ->
         let atoms, se, typ =
-          create_struct_values pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ
-            off0 inst
+          create_struct_values analysis_data pname tenv orig_prop footprint_part Ident.kfootprint
+            max_stamp typ off0 inst
         in
         ( atoms
         , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
         )
     | _ ->
         let atoms, se, typ =
-          create_struct_values pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ
-            off0 inst
+          create_struct_values analysis_data pname tenv orig_prop footprint_part Ident.kfootprint
+            max_stamp typ off0 inst
         in
         ( atoms
         , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
@@ -517,7 +532,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
 (** [prop_iter_extend_ptsto iter lexp] extends the current psto predicate in [iter] with enough
     fields to follow the path in [lexp] -- field splitting model. It also materializes all indices
     accessed in lexp. *)
-let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
+let prop_iter_extend_ptsto analysis_data pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_str "entering prop_iter_extend_ptsto lexp: " ;
     Exp.d_exp lexp ;
@@ -527,8 +542,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
   let extend_footprint_pred = function
     | Predicates.Hpointsto (e, se, te) ->
         let atoms_se_te_list =
-          strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp) se te
-            offset inst
+          strexp_extend_values analysis_data pname tenv orig_prop true Ident.kfootprint
+            (ref max_stamp) se te offset inst
         in
         List.map
           ~f:(fun (atoms', se', te') -> (atoms', Predicates.Hpointsto (e, se', te')))
@@ -537,8 +552,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
       match hpara.Predicates.body with
       | Predicates.Hpointsto (e', se', te') :: body_rest ->
           let atoms_se_te_list =
-            strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp) se' te'
-              offset inst
+            strexp_extend_values analysis_data pname tenv orig_prop true Ident.kfootprint
+              (ref max_stamp) se' te' offset inst
           in
           let atoms_body_list =
             List.map
@@ -588,8 +603,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     in
     let iter_list =
       let atoms_se_te_list =
-        strexp_extend_values pname tenv orig_prop false extend_kind (ref max_stamp) se te offset
-          inst
+        strexp_extend_values analysis_data pname tenv orig_prop false extend_kind (ref max_stamp) se
+          te offset inst
       in
       List.map ~f:(atoms_se_te_to_iter e) atoms_se_te_list
     in
@@ -666,10 +681,10 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     with the allowed footprint variables. Then, change it into a iterator. This function ensures
     that [root(lexp): typ] is the current hpred of the iterator. typ is the type of the root of
     lexp. *)
-let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
+let prop_iter_add_hpred_footprint_to_prop analysis_data pname tenv prop (lexp, typ) inst =
   let max_stamp = Prop.max_stamp ~f:Ident.is_footprint prop in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv prop (lexp, typ) (ref max_stamp) inst
+    mk_ptsto_exp_footprint analysis_data pname tenv prop (lexp, typ) (ref max_stamp) inst
   in
   L.d_strln "++++ Adding footprint frame" ;
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto) ;
@@ -697,7 +712,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 (** Add a pointsto for [root(lexp): typ] to the iterator and to the footprint, if it's compatible
     with the allowed footprint variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
-let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
+let prop_iter_add_hpred_footprint analysis_data pname tenv orig_prop iter (lexp, typ) inst =
   if Config.trace_rearrange then (
     L.d_strln "entering prop_iter_add_hpred_footprint" ;
     L.d_str "lexp: " ;
@@ -708,7 +723,7 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
     L.d_ln () ) ;
   let max_stamp = Prop.prop_iter_max_stamp ~f:Ident.is_footprint iter in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) (ref max_stamp) inst
+    mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) (ref max_stamp) inst
   in
   L.d_strln "++++ Adding footprint frame" ;
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto) ;
@@ -757,7 +772,7 @@ let pp_rearrangement_error message prop lexp =
 
 
 (** do re-arrangement for an iter whose current element is a pointsto *)
-let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
+let iter_rearrange_ptsto analysis_data pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange_ptsto" ;
@@ -780,15 +795,16 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
         raise (Exceptions.Missing_fld (fld, __POS__))
   in
   let res =
-    if !BiabductionConfig.footprint then prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst
+    if !BiabductionConfig.footprint then
+      prop_iter_extend_ptsto analysis_data pname tenv orig_prop iter lexp inst
     else (
       check_field_splitting () ;
       match Prop.prop_iter_current tenv iter with
       | Predicates.Hpointsto (e, se, te), offset ->
           let max_stamp = Prop.prop_iter_max_stamp iter in
           let atoms_se_te_list =
-            strexp_extend_values pname tenv orig_prop false Ident.kprimed (ref max_stamp) se te
-              offset inst
+            strexp_extend_values analysis_data pname tenv orig_prop false Ident.kprimed
+              (ref max_stamp) se te offset inst
           in
           let handle_case (atoms', se', te') =
             let iter' =
@@ -968,7 +984,8 @@ let type_at_offset tenv texp off =
 
 (** Check that the size of a type coming from an instruction does not exceed the size of the type
     from the pointsto predicate For example, that a pointer to int is not used to assign to a char *)
-let check_type_size tenv pname prop texp off typ_from_instr =
+let check_type_size {InterproceduralAnalysis.proc_desc; err_log; tenv} pname prop texp off
+    typ_from_instr =
   L.d_strln ~color:Orange "check_type_size" ;
   L.d_str "off: " ;
   Predicates.d_offset_list off ;
@@ -991,7 +1008,8 @@ let check_type_size tenv pname prop texp off typ_from_instr =
           Exceptions.Pointer_size_mismatch
             (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
         in
-        SummaryReporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
+        let attrs = Procdesc.get_attributes proc_desc in
+        BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
   | None ->
       L.d_str "texp: " ; Exp.d_texp_full texp ; L.d_ln ()
 
@@ -1003,7 +1021,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
     prove the inconsistency of prop, * only after unrolling some predicates in prop. This function
     ensures * that the theorem prover cannot prove the inconsistency of any of the * new iters in
     the result. *)
-let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
+let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter inst :
     Predicates.offset list Prop.prop_iter list =
   let rec root_typ_of_offsets = function
     | Predicates.Off_fld (f, fld_typ) :: _ -> (
@@ -1049,7 +1067,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
   let default_case_iter (iter' : unit Prop.prop_iter) =
     if Config.trace_rearrange then L.d_strln "entering default_case_iter" ;
     if !BiabductionConfig.footprint then
-      prop_iter_add_hpred_footprint pname tenv prop iter' (lexp, typ) inst
+      prop_iter_add_hpred_footprint analysis_data pname tenv prop iter' (lexp, typ) inst
     else if Config.array_level >= 1 && (not !BiabductionConfig.footprint) && Exp.pointer_arith lexp
     then rearrange_arith tenv lexp prop
     else (
@@ -1060,7 +1078,10 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     let f_one_iter iter' =
       let prop' = Prop.prop_iter_to_prop tenv iter' in
       if Prover.check_inconsistency tenv prop' then []
-      else iter_rearrange pname tenv (Prop.lexp_normalize_prop tenv prop' lexp) typ prop' iter' inst
+      else
+        iter_rearrange analysis_data pname tenv
+          (Prop.lexp_normalize_prop tenv prop' lexp)
+          typ prop' iter' inst
     in
     let rec f_many_iters iters_lst = function
       | [] ->
@@ -1089,8 +1110,8 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     | Some iter -> (
       match Prop.prop_iter_current tenv iter with
       | Predicates.Hpointsto (_, _, texp), off ->
-          if Config.type_size then check_type_size tenv pname prop texp off typ_from_instr ;
-          iter_rearrange_ptsto pname tenv prop iter lexp inst
+          if Config.type_size then check_type_size analysis_data pname prop texp off typ_from_instr ;
+          iter_rearrange_ptsto analysis_data pname tenv prop iter lexp inst
       | Predicates.Hlseg (Lseg_NE, para, e1, e2, elist), _ ->
           iter_rearrange_ne_lseg tenv recurse_on_iters iter para e1 e2 elist
       | Predicates.Hlseg (Lseg_PE, para, e1, e2, elist), _ ->
@@ -1365,7 +1386,8 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ]. It returns an
     iterator with [lexp |-> strexp: typ] as current predicate and the path (an [offsetlist]) which
     leads to [lexp] as the iterator state. *)
-let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
+let rearrange ?(report_deref_errors = true)
+    ({InterproceduralAnalysis.proc_desc= pdesc; tenv} as analysis_data) lexp typ prop loc :
     Predicates.offset list Prop.prop_iter list =
   let nlexp =
     match Prop.exp_normalize_prop tenv prop lexp with
@@ -1391,9 +1413,9 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   match Prop.prop_iter_create prop with
   | None ->
       if !BiabductionConfig.footprint then
-        [prop_iter_add_hpred_footprint_to_prop pname tenv prop (nlexp, typ) inst]
+        [prop_iter_add_hpred_footprint_to_prop analysis_data pname tenv prop (nlexp, typ) inst]
       else (
         pp_rearrangement_error "sigma is empty" prop nlexp ;
         raise (Exceptions.Symexec_memory_error __POS__) )
   | Some iter ->
-      iter_rearrange pname tenv nlexp typ prop iter inst
+      iter_rearrange analysis_data pname tenv nlexp typ prop iter inst

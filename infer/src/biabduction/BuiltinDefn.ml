@@ -471,7 +471,8 @@ let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
 
 (* should not happen *)
 
-let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp typ loc =
+let execute_free_nonzero_ mk ?(mark_as_freed = true)
+    ({InterproceduralAnalysis.tenv; _} as analysis_data) instr prop lexp typ loc =
   try
     match Prover.is_root tenv prop lexp lexp with
     | None ->
@@ -482,7 +483,7 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp 
           List.fold
             ~f:(execute_free_ tenv mk ~mark_as_freed loc)
             ~init:[]
-            (Rearrange.rearrange pdesc tenv lexp typ prop loc)
+            (Rearrange.rearrange analysis_data lexp typ prop loc)
         in
         List.rev prop_list
   with Rearrange.ARRAY_ACCESS ->
@@ -499,7 +500,8 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp 
 
 
 let execute_free mk ?(mark_as_freed = true)
-    {Builtin.analysis_data= {proc_desc; tenv}; instr; prop_; path; args; loc} : Builtin.ret_typ =
+    {Builtin.analysis_data= {proc_desc; tenv} as analysis_data; instr; prop_; path; args; loc} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
       let pname = Procdesc.get_proc_name proc_desc in
@@ -517,7 +519,7 @@ let execute_free mk ?(mark_as_freed = true)
         @ (* model: if 0 then skip else execute_free_nonzero_ *)
         List.concat_map
           ~f:(fun p ->
-            execute_free_nonzero_ mk ~mark_as_freed proc_desc tenv instr p
+            execute_free_nonzero_ mk ~mark_as_freed analysis_data instr p
               (Prop.exp_normalize_prop tenv p lexp)
               typ loc )
           prop_nonzero

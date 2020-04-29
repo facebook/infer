@@ -26,8 +26,7 @@ val check_call_to_objc_block_error :
 
 val rearrange :
      ?report_deref_errors:bool
-  -> Procdesc.t
-  -> Tenv.t
+  -> BiabductionSummary.t InterproceduralAnalysis.t
   -> Exp.t
   -> Typ.t
   -> Prop.normal Prop.t

@@ -55,7 +55,7 @@ let unroll_type tenv (typ : Typ.t) (off : Predicates.offset) =
     should run strexp_extend_value in rearrange.ml for the same strexp and offlist, so that all the
     necessary extensions of strexp are done before this function. If the tool follows this protocol,
     it will never hit the assert false cases for field and array accesses. *)
-let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
+let rec apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
     (f : Exp.t option -> Exp.t) inst lookup_inst =
   let pp_error () =
     L.d_strln ".... Invalid Field ...." ;
@@ -96,12 +96,12 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
         (f None, Prop.create_strexp_of_type tenv Prop.Fld_init typ None inst, typ, None) )
   | [], Predicates.Earray _, _ ->
       let offlist' = Predicates.Off_index Exp.zero :: offlist in
-      apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst
-        lookup_inst
+      apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f
+        inst lookup_inst
   | Predicates.Off_fld _ :: _, Predicates.Earray _, _ ->
       let offlist_new = Predicates.Off_index Exp.zero :: offlist in
-      apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst
-        lookup_inst
+      apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new
+        f inst lookup_inst
   | ( Predicates.Off_fld (fld, fld_typ) :: offlist'
     , Predicates.Estruct (fsel, inst')
     , Typ.Tstruct name ) -> (
@@ -111,8 +111,8 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
         match List.find ~f:(fun fse -> Fieldname.equal fld (fst fse)) fsel with
         | Some (_, se') ->
             let res_e', res_se', res_t', res_pred_insts_op' =
-              apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f inst
-                lookup_inst
+              apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, se', t')
+                offlist' f inst lookup_inst
             in
             let replace_fse fse = if Fieldname.equal fld (fst fse) then (fld, res_se') else fse in
             let res_se = Predicates.Estruct (List.map ~f:replace_fse fsel, inst') in
@@ -140,8 +140,8 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
       match List.find ~f:(fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel with
       | Some (idx_ese', se') ->
           let res_e', res_se', res_t', res_pred_insts_op' =
-            apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, se', t') offlist' f inst
-              lookup_inst
+            apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, se', t') offlist'
+              f inst lookup_inst
           in
           let replace_ese ese = if Exp.equal idx_ese' (fst ese) then (idx_ese', res_se') else ese in
           let res_se = Predicates.Earray (len, List.map ~f:replace_ese esel, inst1) in
@@ -171,12 +171,12 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
     prover with [p]. Finally, before running this function, the tool should run strexp_extend_value
     in rearrange.ml for the same se and offlist, so that all the necessary extensions of se are done
     before this function. *)
-let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
+let ptsto_lookup analysis_data tenv p (lexp, se, sizeof) offlist id =
   let f = function Some exp -> exp | None -> Exp.Var id in
   let fp_root = match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
   let lookup_inst = ref None in
   let e', se', typ', pred_insts_op' =
-    apply_offlist pdesc tenv p fp_root false (lexp, se, sizeof.Exp.typ) offlist f
+    apply_offlist analysis_data tenv p fp_root false (lexp, se, sizeof.Exp.typ) offlist f
       Predicates.inst_lookup lookup_inst
   in
   let lookup_uninitialized =
@@ -198,13 +198,13 @@ let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
     proposition [p], so it is ok call prover with [p]. Finally, before running this function, the
     tool should run strexp_extend_value in rearrange.ml for the same se and offlist, so that all the
     necessary extensions of se are done before this function. *)
-let ptsto_update pdesc tenv p (lexp, se, sizeof) offlist exp =
+let ptsto_update analysis_data tenv p (lexp, se, sizeof) offlist exp =
   let f _ = exp in
   let fp_root = match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
   let lookup_inst = ref None in
   let _, se', typ', pred_insts_op' =
     let pos = State.get_path_pos () in
-    apply_offlist pdesc tenv p fp_root true (lexp, se, sizeof.Exp.typ) offlist f
+    apply_offlist analysis_data tenv p fp_root true (lexp, se, sizeof.Exp.typ) offlist f
       (State.get_inst_update pos) lookup_inst
   in
   let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof {sizeof with typ= typ'}) in
@@ -957,7 +957,9 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
     else add_ret_non_null ret_exp typ prop
 
 
-let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ loc prop_ =
+let execute_load ?(report_deref_errors = true) pname
+    ({InterproceduralAnalysis.proc_desc= pdesc; tenv; _} as analysis_data) id rhs_exp typ loc prop_
+    =
   let execute_load_ acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed tenv id iter in
     let prop_ren = Prop.prop_iter_to_prop tenv iter_ren in
@@ -1010,7 +1012,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
     | None -> (
       try
         let iter_list =
-          Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop loc
+          Rearrange.rearrange ~report_deref_errors analysis_data n_rhs_exp' typ prop loc
         in
         List.rev (List.fold ~f:execute_load_ ~init:[] iter_list)
       with Exceptions.Symexec_memory_error _ ->
@@ -1033,8 +1035,9 @@ let load_ret_annots pname =
       Annot.Item.empty
 
 
-let execute_store ?(report_deref_errors = true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
-  let execute_store_ pdesc tenv rhs_exp acc_in iter =
+let execute_store ?(report_deref_errors = true) pname
+    ({InterproceduralAnalysis.tenv; _} as analysis_data) lhs_exp typ rhs_exp loc prop_ =
+  let execute_store_ analysis_data tenv rhs_exp acc_in iter =
     let lexp, strexp, sizeof, offlist =
       match Prop.prop_iter_current tenv iter with
       | Predicates.Hpointsto (lexp, strexp, Exp.Sizeof sizeof), offlist ->
@@ -1044,7 +1047,7 @@ let execute_store ?(report_deref_errors = true) pname pdesc tenv lhs_exp typ rhs
     in
     let p = Prop.prop_iter_to_prop tenv iter in
     let new_ptsto, pred_insts_op =
-      ptsto_update pdesc tenv p (lexp, strexp, sizeof) offlist rhs_exp
+      ptsto_update analysis_data tenv p (lexp, strexp, sizeof) offlist rhs_exp
     in
     let update acc (pi, sigma) =
       let sigma' = new_ptsto :: sigma in
@@ -1063,9 +1066,11 @@ let execute_store ?(report_deref_errors = true) pname pdesc tenv lhs_exp typ rhs
     let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_' in
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
-    let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
+    let iter_list =
+      Rearrange.rearrange ~report_deref_errors analysis_data n_lhs_exp' typ prop loc
+    in
     let prop_list =
-      List.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
+      List.rev (List.fold ~f:(execute_store_ analysis_data tenv n_rhs_exp) ~init:[] iter_list)
     in
     prop_list
   with Rearrange.ARRAY_ACCESS -> if Int.equal Config.array_level 0 then assert false else [prop_]
@@ -1222,9 +1227,9 @@ let rec sym_exec
   in
   match instr with
   | Sil.Load {id; e= rhs_exp; root_typ= typ; loc} ->
-      execute_load current_pname current_pdesc tenv id rhs_exp typ loc prop_ |> ret_old_path
+      execute_load current_pname analysis_data id rhs_exp typ loc prop_ |> ret_old_path
   | Sil.Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
-      execute_store current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_ |> ret_old_path
+      execute_store current_pname analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
@@ -1385,8 +1390,8 @@ let rec sym_exec
                             (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
                             handle_objc_instance_method_call n_actual_params prop tenv
                               (fst ret_id_typ) current_pdesc resolved_pname path (fun () ->
-                                sym_exec_objc_accessor resolved_pname objc_accessor ret_type tenv
-                                  (fst ret_id_typ) current_pdesc callee_pname loc n_actual_params
+                                sym_exec_objc_accessor resolved_pname objc_accessor ret_type
+                                  (fst ret_id_typ) analysis_data callee_pname loc n_actual_params
                                   prop path )
                         | None when model_as_malloc ret_type resolved_pname ->
                             (* If it's an alloc model, call alloc rather than skipping *)
@@ -1723,7 +1728,8 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
       [(prop_, path)]
 
 
-and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
+and sym_exec_objc_getter field ret_typ ret_id ({InterproceduralAnalysis.tenv; _} as analysis_data)
+    pname loc args prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom getter found. Executing the ObjC builtin getter with ivar %a."
     Fieldname.pp field_name ;
@@ -1733,13 +1739,14 @@ and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
         | {desc= Tptr (({desc= Tstruct struct_name} as typ), _)} ) ) ] ->
       Tenv.add_field tenv struct_name field ;
       let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
-      execute_load ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc
-        prop
+      execute_load ~report_deref_errors:false pname analysis_data ret_id field_access_exp ret_typ
+        loc prop
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
+and sym_exec_objc_setter field _ _ ({InterproceduralAnalysis.tenv; _} as analysis_data) pname loc
+    args prop =
   let field_name, _, _ = field in
   L.d_printfln "No custom setter found. Executing the ObjC builtin setter with ivar %a."
     Fieldname.pp field_name ;
@@ -1750,13 +1757,15 @@ and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
     :: (lexp2, typ2) :: _ ->
       Tenv.add_field tenv struct_name field ;
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
-      execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
+      execute_store ~report_deref_errors:false pname analysis_data field_access_exp typ2 lexp2 loc
+        prop
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-and sym_exec_objc_accessor callee_pname property_accesor ret_typ tenv ret_id pdesc _ loc args prop
-    path : Builtin.ret_typ =
+and sym_exec_objc_accessor callee_pname property_accesor ret_typ ret_id
+    ({InterproceduralAnalysis.proc_desc= pdesc} as analysis_data) _ loc args prop path :
+    Builtin.ret_typ =
   let f_accessor =
     match property_accesor with
     | ProcAttributes.Objc_getter field ->
@@ -1773,7 +1782,8 @@ and sym_exec_objc_accessor callee_pname property_accesor ret_typ tenv ret_id pde
       (Procname.to_simplified_string callee_pname)
   in
   let path = Paths.Path.add_description path path_description in
-  f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop |> List.map ~f:(fun p -> (p, path))
+  f_accessor ret_typ ret_id analysis_data cur_pname loc args prop
+  |> List.map ~f:(fun p -> (p, path))
 
 
 and sym_exec_alloc_model analysis_data pname ret_typ ret_id_typ loc prop path : Builtin.ret_typ =
