@@ -55,4 +55,6 @@ val default : SourceFile.t -> Procname.t -> t
 
 val pp : Format.formatter -> t -> unit
 
+val get_annotated_formals : t -> ((Mangled.t * Typ.t) * Annot.Item.t) list
+
 module SQLite : SqliteUtils.Data with type t = t

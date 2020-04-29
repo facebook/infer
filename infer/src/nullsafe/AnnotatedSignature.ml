@@ -75,37 +75,15 @@ let extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party 
   (return_nullability, params_nullability)
 
 
-let get ~is_callee_in_trust_list ~nullsafe_mode proc_attributes : t =
-  let Annot.Method.{return= ret_annotation; params= original_params_annotation} =
-    proc_attributes.ProcAttributes.method_annotation
-  in
-  let formals = proc_attributes.ProcAttributes.formals in
-  let ret_type = proc_attributes.ProcAttributes.ret_type in
-  let procname = proc_attributes.ProcAttributes.proc_name in
+let get ~is_callee_in_trust_list ~nullsafe_mode
+    ( {ProcAttributes.proc_name; ret_type; method_annotation= {return= ret_annotation}} as
+    proc_attributes ) : t =
   let is_third_party =
     ThirdPartyAnnotationInfo.is_third_party_proc
       (ThirdPartyAnnotationGlobalRepo.get_repo ())
-      procname
+      proc_name
   in
-  (* zip formal params with annotation *)
-  let params_with_annotations =
-    let rec zip_params ial parl =
-      match (ial, parl) with
-      | ia :: ial', param :: parl' ->
-          (param, ia) :: zip_params ial' parl'
-      | [], param :: parl' ->
-          (* List of annotations exhausted before the list of params -
-             treat lack of annotation info as an empty annotation *)
-          (param, Annot.Item.empty) :: zip_params [] parl'
-      | [], [] ->
-          []
-      | _ :: _, [] ->
-          (* List of params exhausted before the list of annotations -
-             this should never happen *)
-          assert false
-    in
-    List.rev (zip_params (List.rev original_params_annotation) (List.rev formals))
-  in
+  let params_with_annotations = ProcAttributes.get_annotated_formals proc_attributes in
   let param_annotated_types =
     List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
   in
@@ -143,13 +121,6 @@ let get_for_class_under_analysis tenv proc_attributes =
   {result with nullsafe_mode}
 
 
-let param_has_annot predicate pvar ann_sig =
-  List.exists
-    ~f:(fun {mangled; param_annotation_deprecated} ->
-      Mangled.equal mangled (Pvar.get_name pvar) && predicate param_annotation_deprecated )
-    ann_sig.params
-
-
 let pp proc_name fmt annotated_signature =
   let pp_ia fmt ia = if not (List.is_empty ia) then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
@@ -171,8 +142,8 @@ let mk_ia_nullable ia =
 
 let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia
 
-(* Override existing information about nullability for a given type and
-   set it to either nullable or nonnull *)
+(** Override existing information about nullability for a given type and set it to either nullable
+    or nonnull *)
 let set_modelled_nullability_for_annotated_type annotated_type should_set_nullable =
   let nullability =
     if should_set_nullable then AnnotatedNullability.Nullable ModelledNullable

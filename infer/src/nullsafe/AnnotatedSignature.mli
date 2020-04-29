@@ -28,9 +28,6 @@ and param_signature =
 and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
-val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
-(** Check if the given parameter has an annotation in the given signature *)
-
 val set_modelled_nullability : Procname.t -> t -> model_source -> bool * bool list -> t
 (** Override nullability for a function signature given its modelled nullability (for ret value and
     params) *)

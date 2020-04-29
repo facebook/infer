@@ -66,6 +66,26 @@ type t =
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
 
+let get_annotated_formals {method_annotation= {params}; formals} =
+  let rec zip_params ial parl =
+    match (ial, parl) with
+    | ia :: ial', param :: parl' ->
+        (param, ia) :: zip_params ial' parl'
+    | [], param :: parl' ->
+        (* List of annotations exhausted before the list of params -
+           treat lack of annotation info as an empty annotation *)
+        (param, Annot.Item.empty) :: zip_params [] parl'
+    | [], [] ->
+        []
+    | _ :: _, [] ->
+        (* List of params exhausted before the list of annotations -
+           this should never happen *)
+        assert false
+  in
+  (* zip formal params with annotation *)
+  List.rev (zip_params (List.rev params) (List.rev formals))
+
+
 let default translation_unit proc_name =
   { access= PredSymb.Default
   ; captured= []
@@ -150,7 +170,11 @@ let pp f
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
-  if not ([%compare.equal : Procname.t option] default.passed_as_noescape_block_to passed_as_noescape_block_to) then
+  if
+    not
+      ([%compare.equal: Procname.t option] default.passed_as_noescape_block_to
+         passed_as_noescape_block_to)
+  then
     F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
       passed_as_noescape_block_to ;
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;

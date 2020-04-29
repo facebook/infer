@@ -27,27 +27,6 @@ let table_has_procedure table proc_name =
   with Caml.Not_found -> false
 
 
-(* This is used outside of nullsafe for biabduction.
-   If biabduction and nullsafe want to depend on common functionality, this functionality
-   should be refactored out in a dedicated library.
- *)
-let get_modelled_annotated_signature_for_biabduction proc_attributes =
-  let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let annotated_signature =
-    AnnotatedSignature.get ~is_callee_in_trust_list:false ~nullsafe_mode:NullsafeMode.Default
-      proc_attributes
-  in
-  let proc_id = Procname.to_unique_id proc_name in
-  let lookup_models_nullable ann_sig =
-    try
-      let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
-      AnnotatedSignature.set_modelled_nullability proc_name ann_sig InternalModel
-        modelled_nullability
-    with Caml.Not_found -> ann_sig
-  in
-  annotated_signature |> lookup_models_nullable
-
-
 let get_unique_repr proc_name =
   let java_proc_name =
     match proc_name with Procname.Java java_proc_name -> Some java_proc_name | _ -> None
