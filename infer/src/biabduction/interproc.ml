@@ -309,12 +309,12 @@ let propagate_nodes_divergence ({InterproceduralAnalysis.tenv; _} as analysis_da
 (* =============== START of forward_tabulate =============== *)
 
 (** Symbolic execution for a Join node *)
-let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo : Paths.PathSet.t) =
+let do_symexec_join analysis_data proc_cfg wl curr_node (edgeset_todo : Paths.PathSet.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let curr_node_id = ProcCfg.Exceptional.Node.id curr_node in
   let new_dset = edgeset_todo in
   let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
-  let old_dset', new_dset' = Dom.pathset_join pname tenv old_dset new_dset in
+  let old_dset', new_dset' = Dom.pathset_join analysis_data old_dset new_dset in
   Join_table.add wl.Worklist.join_table curr_node_id (Paths.PathSet.union old_dset' new_dset') ;
   Container.iter curr_node ~fold:(ProcCfg.Exceptional.fold_normal_succs proc_cfg) ~f:(fun node ->
       Paths.PathSet.iter
@@ -448,7 +448,7 @@ let forward_tabulate ({InterproceduralAnalysis.tenv; _} as analysis_data) proc_c
     print_node_preamble curr_node pathset_todo ;
     match Procdesc.Node.get_kind curr_node with
     | Join_node ->
-        do_symexec_join proc_cfg tenv wl curr_node pathset_todo
+        do_symexec_join analysis_data proc_cfg wl curr_node pathset_todo
     | Stmt_node _ | Prune_node _ | Exit_node | Skip_node _ | Start_node ->
         exe_iter (do_prop curr_node handle_exn) pathset_todo
   in
@@ -932,7 +932,7 @@ module SpecMap = Caml.Map.Make (struct
 end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs {InterproceduralAnalysis.proc_desc; tenv} prev_summary_opt phase
+let update_specs analysis_data prev_summary_opt phase
     (new_specs : BiabductionSummary.NormSpec.t list) : BiabductionSummary.NormSpec.t list * bool =
   let new_specs = BiabductionSummary.normalized_specs_to_specs new_specs in
   let old_specs = Option.value_map ~default:[] ~f:BiabductionSummary.get_specs prev_summary_opt in
@@ -986,10 +986,9 @@ let update_specs {InterproceduralAnalysis.proc_desc; tenv} prev_summary_opt phas
   in
   let res = ref [] in
   let convert pre (post_set, visited) =
-    let pname = Procdesc.get_proc_name proc_desc in
     res :=
-      Abs.abstract_spec pname tenv
-        BiabductionSummary.{pre; posts= Paths.PathSet.elements post_set; visited}
+      Abs.abstract_spec analysis_data
+        {BiabductionSummary.pre; posts= Paths.PathSet.elements post_set; visited}
       :: !res
   in
   List.iter ~f:re_exe_filter old_specs ;

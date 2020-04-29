@@ -1199,7 +1199,7 @@ functions in Prop abstain from dropping free variables. Here, however, we can do
 atom an orphan when it contains a variable v that does not occur anywhere else in the spec. Orphans
 can be dropped. Alpha-renaming can create orphans. Thus, we will perform a best-effort fixpoint
 computation (rename, drop)*, stopping when the last drop is a no-op. *)
-let abstract_spec pname tenv spec =
+let abstract_spec ({InterproceduralAnalysis.tenv; _} as analysis_data) spec =
   let open BiabductionSummary in
   let rename spec = spec_normalize tenv spec in
   let drop spec =
@@ -1239,7 +1239,7 @@ let abstract_spec pname tenv spec =
       let toprove = AtomSet.of_list prop2.Prop.pi in
       let toprove = AtomSet.diff toprove known in
       let prop2 = Prop.set prop2 ~pi:(AtomSet.elements toprove) in
-      Prover.check_implication pname tenv prop1 prop2
+      Prover.check_implication analysis_data prop1 prop2
     in
     let rec filter kept x unseen =
       (* INV: if a is kept and b is kept or unseen then (not (implies a b)).

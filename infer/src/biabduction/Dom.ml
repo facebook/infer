@@ -1974,11 +1974,11 @@ let footprint_partial_join' tenv (p1 : Prop.normal Prop.t) (p2 : Prop.normal Pro
     (Prop.normalize tenv ep1', Prop.normalize tenv ep2')
 
 
-let prop_partial_join pname tenv mode p1 p2 =
+let prop_partial_join ({InterproceduralAnalysis.tenv; _} as analysis_data) mode p1 p2 =
   let res_by_implication_only =
     if !BiabductionConfig.footprint then None
-    else if Prover.check_implication pname tenv p1 (Prop.expose p2) then Some p2
-    else if Prover.check_implication pname tenv p2 (Prop.expose p1) then Some p1
+    else if Prover.check_implication analysis_data p1 (Prop.expose p2) then Some p2
+    else if Prover.check_implication analysis_data p2 (Prop.expose p1) then Some p1
     else None
   in
   match res_by_implication_only with
@@ -2092,8 +2092,8 @@ let proplist_collapse_pre tenv plist =
   List.map ~f:fst (proplist_collapse tenv JoinState.Pre plist')
 
 
-let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) :
-    Paths.PathSet.t * Paths.PathSet.t =
+let pathset_join ({InterproceduralAnalysis.tenv; _} as analysis_data) (pset1 : Paths.PathSet.t)
+    (pset2 : Paths.PathSet.t) : Paths.PathSet.t * Paths.PathSet.t =
   let mode = JoinState.Post in
   let rec join_proppath_plist ppalist2_acc ((p2, pa2) as ppa2) = function
     | [] ->
@@ -2107,7 +2107,7 @@ let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) 
         Prop.d_prop p2' ;
         L.d_ln () ;
         L.d_ln () ;
-        match prop_partial_join pname tenv mode p2 p2' with
+        match prop_partial_join analysis_data mode p2 p2' with
         | None ->
             L.d_strln ~color:Red ".... JOIN FAILED ...." ;
             L.d_ln () ;

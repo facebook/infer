@@ -18,7 +18,9 @@ val abstract :
 (** Abstract a proposition. *)
 
 val abstract_spec :
-  Procname.t -> Tenv.t -> Prop.normal BiabductionSummary.spec -> BiabductionSummary.NormSpec.t
+     BiabductionSummary.t InterproceduralAnalysis.t
+  -> Prop.normal BiabductionSummary.spec
+  -> BiabductionSummary.NormSpec.t
 (** Normalizes names and applies simplifications, soem of which require looking at both pre and
     post. *)
 

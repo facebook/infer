@@ -2507,7 +2507,8 @@ let check_array_bounds tenv (sub1, sub2) prop =
 
 (** [check_implication_base] returns true if [prop1|-prop2], ignoring the footprint part of the
     props *)
-let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2 =
+let check_implication_base {InterproceduralAnalysis.proc_desc; err_log; tenv} check_frame_empty
+    calc_missing prop1 prop2 =
   try
     ProverState.reset prop1 prop2 ;
     let filter (id, e) =
@@ -2573,7 +2574,8 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
       L.d_printfln "WARNING: footprint failed to find MISSING because: %s" s ;
       None
   | Exceptions.Abduction_case_not_implemented _ as exn ->
-      SummaryReporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
+      let proc_attrs = Procdesc.get_attributes proc_desc in
+      BiabductionReporting.log_issue_deprecated_using_state proc_attrs err_log Exceptions.Error exn ;
       None
 
 
@@ -2594,10 +2596,10 @@ type implication_result =
 (** [check_implication_for_footprint p1 p2] returns [Some(sub, frame, missing)] if
     [sub(p1 * missing) |- sub(p2 * frame)] where [sub] is a substitution which instantiates the
     primed vars of [p1] and [p2], which are assumed to be disjoint. *)
-let check_implication_for_footprint pname tenv p1 (p2 : Prop.exposed Prop.t) =
+let check_implication_for_footprint analysis_data p1 (p2 : Prop.exposed Prop.t) =
   let check_frame_empty = false in
   let calc_missing = true in
-  match check_implication_base pname tenv check_frame_empty calc_missing p1 p2 with
+  match check_implication_base analysis_data check_frame_empty calc_missing p1 p2 with
   | Some ((sub1, sub2), frame) ->
       ImplOK
         ( !ProverState.checks
@@ -2615,11 +2617,11 @@ let check_implication_for_footprint pname tenv p1 (p2 : Prop.exposed Prop.t) =
 
 
 (** [check_implication p1 p2] returns true if [p1|-p2] *)
-let check_implication pname tenv p1 p2 =
+let check_implication ({InterproceduralAnalysis.tenv; _} as analysis_data) p1 p2 =
   let check p1 p2 =
     let check_frame_empty = true in
     let calc_missing = false in
-    match check_implication_base pname tenv check_frame_empty calc_missing p1 p2 with
+    match check_implication_base analysis_data check_frame_empty calc_missing p1 p2 with
     | Some _ ->
         true
     | None ->

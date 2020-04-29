@@ -13,7 +13,10 @@ open! IStd
 (** {2 Join Operators} *)
 
 val pathset_join :
-  Procname.t -> Tenv.t -> Paths.PathSet.t -> Paths.PathSet.t -> Paths.PathSet.t * Paths.PathSet.t
+     BiabductionSummary.t InterproceduralAnalysis.t
+  -> Paths.PathSet.t
+  -> Paths.PathSet.t
+  -> Paths.PathSet.t * Paths.PathSet.t
 (** Join two pathsets *)
 
 val proplist_collapse_pre :

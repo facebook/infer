@@ -1070,9 +1070,9 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
 
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path_pre
-    (spec : Prop.exposed BiabductionSummary.spec) actual_params formal_params callee_summary :
-    abduction_res =
+let exe_spec ({InterproceduralAnalysis.exe_env; tenv; _} as analysis_data) ret_id (n, nspecs)
+    caller_pdesc callee_pname loc prop path_pre (spec : Prop.exposed BiabductionSummary.spec)
+    actual_params formal_params callee_summary : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let posts = mk_posts tenv prop callee_pname spec.BiabductionSummary.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
@@ -1090,7 +1090,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
   L.d_ln () ;
   SymOp.pay () ;
   (* pay one symop *)
-  match Prover.check_implication_for_footprint caller_pname tenv actual_pre spec_pre with
+  match Prover.check_implication_for_footprint analysis_data actual_pre spec_pre with
   | Prover.ImplFail checks ->
       Invalid_res (Prover_checks checks)
   | Prover.ImplOK
@@ -1373,7 +1373,7 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call {InterproceduralAnalysis.exe_env; proc_desc= caller_pdesc; tenv}
+let exe_function_call ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv} as analysis_data)
     ~callee_attributes ~callee_pname ~callee_summary ~ret_id loc ~actuals prop path =
   let spec_list, formal_params =
     spec_find_rename callee_attributes (BiabductionSummary.get_specs callee_summary)
@@ -1384,7 +1384,7 @@ let exe_function_call {InterproceduralAnalysis.exe_env; proc_desc= caller_pdesc;
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec actuals
+    exe_spec analysis_data ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec actuals
       formal_params callee_attributes
   in
   let results = List.map ~f:exe_one_spec spec_list in

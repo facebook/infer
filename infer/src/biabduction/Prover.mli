@@ -59,7 +59,11 @@ val get_bounds : Tenv.t -> Prop.normal Prop.t -> Exp.t -> IntLit.t option * IntL
 
 (** {2 Abduction prover} *)
 
-val check_implication : Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> bool
+val check_implication :
+     BiabductionSummary.t InterproceduralAnalysis.t
+  -> Prop.normal Prop.t
+  -> Prop.exposed Prop.t
+  -> bool
 (** [check_implication p1 p2] returns true if [p1|-p2] *)
 
 type check = Bounds_check | Class_cast_check of Exp.t * Exp.t * Exp.t
@@ -81,7 +85,10 @@ type implication_result =
   | ImplFail of check list
 
 val check_implication_for_footprint :
-  Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> implication_result
+     BiabductionSummary.t InterproceduralAnalysis.t
+  -> Prop.normal Prop.t
+  -> Prop.exposed Prop.t
+  -> implication_result
 (** [check_implication_for_footprint p1 p2] returns [Some(sub, frame, missing)] if
     [sub(p1 * missing) |- sub(p2 * frame)] where [sub] is a substitution which instantiates the
     primed vars of [p1] and [p2], which are assumed to be disjoint. *)
