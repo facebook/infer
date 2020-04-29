@@ -157,7 +157,7 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_classloads \
-  java_nullsafe-default \
+  java_nullsafe \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
