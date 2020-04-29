@@ -161,7 +161,7 @@ module Liveness = struct
 
     module CFG = ProcCfg.Exceptional
 
-    type extras = LivenessAnalysis.invariant_map
+    type analysis_data = LivenessAnalysis.invariant_map ProcData.t
 
     let postprocess ((reaching_defs, _) as astate) node {ProcData.extras} =
       let node_id = Procdesc.Node.get_id (CFG.Node.underlying_node node) in
@@ -234,14 +234,18 @@ module Liveness = struct
         (* can't take the address of a variable in Java *)
       else
         let initial = AddressTaken.Domain.empty in
-        match AddressTaken.Analyzer.compute_post (ProcData.make_default summary tenv) ~initial with
+        match
+          AddressTaken.Analyzer.compute_post
+            {ProcData.summary; tenv; extras= ()}
+            ~initial (Summary.get_proc_desc summary)
+        with
         | Some post ->
             post
         | None ->
             AddressTaken.Domain.empty
     in
     let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc (Summary.get_proc_desc summary) in
-    let nullify_proc_data = ProcData.make summary tenv liveness_inv_map in
+    let nullify_proc_data = {ProcData.summary; tenv; extras= liveness_inv_map} in
     let initial = (VarDomain.empty, VarDomain.empty) in
     let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
     (* only nullify pvars that are local; don't nullify those that can escape *)
@@ -298,7 +302,7 @@ module Liveness = struct
     let liveness_proc_cfg = BackwardCfg.from_pdesc (Summary.get_proc_desc summary) in
     let initial = Liveness.Domain.empty in
     let liveness_inv_map =
-      LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default summary tenv) ~initial
+      LivenessAnalysis.exec_cfg liveness_proc_cfg {ProcData.summary; tenv; extras= ()} ~initial
     in
     add_nullify_instrs summary tenv liveness_inv_map
 end

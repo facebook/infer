@@ -17,12 +17,12 @@ module type S = sig
   (** abstract domain whose state we propagate *)
 
   (** read-only extra state (results of previous analyses, globals, etc.) *)
-  type extras
+  type analysis_data
 
   (** type of the instructions the transfer functions operate on *)
   type instr
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t
+  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> instr -> Domain.t
   (** [exec_instr astate proc_data node instr] should usually return [astate'] such that
       [{astate} instr {astate'}] is a valid Hoare triple. In other words, [exec_instr] defines how
       executing an instruction from a given abstract state changes that state into a new one. This
@@ -57,9 +57,9 @@ module type DisjReady = sig
 
   module Domain : AbstractDomain.NoJoin
 
-  type extras
+  type analysis_data
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t list
+  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

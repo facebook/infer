@@ -66,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = SiofDomain
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   let is_compile_time_constructed summary pv =
     let init_pname = Pvar.get_initializer_pname pv in
@@ -287,7 +287,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
-  let proc_data = ProcData.make_default summary tenv in
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let initial =
     ( Bottom
     , if standard_streams_initialized_in_tu then SiofDomain.VarNames.of_list standard_streams
@@ -302,7 +302,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
       match pname with ObjC_Cpp cpp_pname -> Procname.ObjC_Cpp.is_constexpr cpp_pname | _ -> false
     then Payload.update_summary initial summary
     else
-      match Analyzer.compute_post proc_data ~initial with
+      match Analyzer.compute_post proc_data ~initial proc_desc with
       | Some post ->
           Payload.update_summary post summary
       | None ->

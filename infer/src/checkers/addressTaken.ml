@@ -17,7 +17,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   let rec add_address_taken_pvars exp astate =
     match exp with

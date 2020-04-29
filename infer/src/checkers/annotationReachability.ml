@@ -485,7 +485,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = AnnotationSpec.t list
+  type analysis_data = AnnotationSpec.t list ProcData.t
 
   let is_sink tenv (spec : AnnotationSpec.t) ~caller_pname ~callee_pname =
     spec.sink_predicate tenv callee_pname
@@ -548,8 +548,8 @@ let checker ({Callbacks.exe_env; summary} as callback) : Summary.t =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let initial = Domain.empty in
   let specs = get_annot_specs proc_name in
-  let proc_data = ProcData.make summary tenv specs in
-  match Analyzer.compute_post proc_data ~initial with
+  let proc_data = {ProcData.summary; tenv; extras= specs} in
+  match Analyzer.compute_post proc_data ~initial (Summary.get_proc_desc summary) with
   | Some annot_map ->
       List.iter specs ~f:(fun spec -> spec.AnnotationSpec.report callback annot_map) ;
       Payload.update_summary annot_map summary

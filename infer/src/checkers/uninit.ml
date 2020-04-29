@@ -75,7 +75,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
 
-  type nonrec extras = extras
+  type analysis_data = extras ProcData.t
 
   let report_intra access_expr loc summary =
     let message =
@@ -352,9 +352,9 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   in
   let proc_data =
     let formals = FormalMap.make proc_desc in
-    ProcData.make summary tenv {formals; summary}
+    {ProcData.summary; tenv; extras= {formals; summary}}
   in
-  match Analyzer.compute_post proc_data ~initial with
+  match Analyzer.compute_post proc_data ~initial proc_desc with
   | Some {RecordDomain.prepost} ->
       Payload.update_summary prepost summary
   | None ->

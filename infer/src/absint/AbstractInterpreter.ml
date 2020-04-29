@@ -17,19 +17,19 @@ module VisitCount : sig
 
   val first_time : t
 
-  val succ : pdesc:Procdesc.t -> t -> t
+  val succ : t -> t
 end = struct
   type t = int
 
   let first_time = 1
 
-  let succ ~pdesc visit_count =
+  let succ visit_count =
     let visit_count' = visit_count + 1 in
     if visit_count' > Config.max_widens then
-      L.(die InternalError)
-        "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
-         operator or increase the threshold"
-        Config.max_widens Procname.pp (Procdesc.get_proc_name pdesc) ;
+      L.die InternalError
+        "Exceeded max widening threshold %d. Please check your widening operator or increase the \
+         threshold"
+        Config.max_widens ;
     visit_count'
 end
 
@@ -56,21 +56,23 @@ module type S = sig
   val compute_post :
        ?do_narrowing:bool
     -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
     -> TransferFunctions.Domain.t option
 
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
     -> invariant_map
 
   val exec_pdesc :
        ?do_narrowing:bool
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
     -> invariant_map
 
   val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
@@ -112,7 +114,7 @@ module MakeDisjunctiveTransferFunctions
 struct
   module CFG = T.CFG
 
-  type extras = T.extras
+  type analysis_data = T.analysis_data
 
   module Domain = struct
     (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
@@ -180,10 +182,10 @@ struct
       F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
   end
 
-  let exec_instr pre_disjuncts extras node instr =
+  let exec_instr pre_disjuncts analysis_data node instr =
     List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
         L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
-        let disjuncts' = T.exec_instr pre_disjunct extras node instr in
+        let disjuncts' = T.exec_instr pre_disjunct analysis_data node instr in
         ( if Config.write_html then
           let n = List.length disjuncts' in
           L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
@@ -315,17 +317,16 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
      So, as of now, the termination of narrowing is not guaranteed in general. *)
-  let exec_node ~pp_instr ({ProcData.summary} as proc_data) node ~is_loop_head ~is_narrowing
-      astate_pre inv_map =
+  let exec_node ~pp_instr analysis_data node ~is_loop_head ~is_narrowing astate_pre inv_map =
     let node_id = Node.id node in
     let update_inv_map inv_map new_pre old_state_opt =
-      let new_post = exec_node_instrs old_state_opt ~pp_instr proc_data node new_pre in
+      let new_post = exec_node_instrs old_state_opt ~pp_instr analysis_data node new_pre in
       let new_visit_count =
         match old_state_opt with
         | None ->
             VisitCount.first_time
         | Some {State.visit_count; _} ->
-            VisitCount.succ ~pdesc:(Summary.get_proc_desc summary) visit_count
+            VisitCount.succ visit_count
       in
       InvariantMap.add node_id
         {State.pre= new_pre; post= new_post; visit_count= new_visit_count}
@@ -351,9 +352,8 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           else Domain.leq ~lhs:new_pre ~rhs:old_state.State.pre
         then (inv_map, ReachedFixPoint)
         else if is_narrowing && not (Domain.leq ~lhs:new_pre ~rhs:old_state.State.pre) then (
-          L.(debug Analysis Verbose)
-            "Terminate narrowing because old and new states are not comparable at %a:%a@."
-            Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;
+          L.d_printfln "Terminate narrowing because old and new states are not comparable: %a@."
+            Node.pp_id node_id ;
           (inv_map, ReachedFixPoint) )
         else (update_inv_map inv_map new_pre (Some old_state), DidNotReachFixPoint)
       else
@@ -401,17 +401,16 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
 
   (** compute and return an invariant map for [pdesc] *)
-  let make_exec_pdesc ~exec_cfg_internal ({ProcData.summary} as proc_data) ~do_narrowing ~initial =
-    exec_cfg_internal ~pp_instr:pp_sil_instr
-      (CFG.from_pdesc (Summary.get_proc_desc summary))
-      proc_data ~do_narrowing ~initial
+  let make_exec_pdesc ~exec_cfg_internal analysis_data ~do_narrowing ~initial proc_desc =
+    exec_cfg_internal ~pp_instr:pp_sil_instr (CFG.from_pdesc proc_desc) analysis_data ~do_narrowing
+      ~initial
 
 
   (** compute and return the postcondition of [pdesc] *)
-  let make_compute_post ~exec_cfg_internal ?(pp_instr = pp_sil_instr)
-      ({ProcData.summary} as proc_data) ~do_narrowing ~initial =
-    let cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
-    let inv_map = exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial in
+  let make_compute_post ~exec_cfg_internal ?(pp_instr = pp_sil_instr) analysis_data ~do_narrowing
+      ~initial proc_desc =
+    let cfg = CFG.from_pdesc proc_desc in
+    let inv_map = exec_cfg_internal ~pp_instr cfg analysis_data ~do_narrowing ~initial in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
 
@@ -421,17 +420,17 @@ module MakeWithScheduler
 struct
   include AbstractInterpreterCommon (SimpleNodeTransferFunctions (TransferFunctions))
 
-  let rec exec_worklist ~pp_instr cfg ({ProcData.summary} as proc_data) work_queue inv_map =
+  let rec exec_worklist ~pp_instr cfg analysis_data work_queue inv_map =
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist ~pp_instr cfg proc_data work_queue' inv_map
+        exec_worklist ~pp_instr cfg analysis_data work_queue' inv_map
     | Some (node, _, work_queue') ->
         let inv_map_post, work_queue_post =
           match compute_pre cfg node inv_map with
           | Some astate_pre -> (
-              let is_loop_head = CFG.is_loop_head (Summary.get_proc_desc summary) node in
+              let is_loop_head = CFG.is_loop_head (CFG.proc_desc cfg) node in
               match
-                exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing:false astate_pre
+                exec_node ~pp_instr analysis_data node ~is_loop_head ~is_narrowing:false astate_pre
                   inv_map
               with
               | inv_map, ReachedFixPoint ->
@@ -441,20 +440,20 @@ struct
           | None ->
               (inv_map, work_queue')
         in
-        exec_worklist ~pp_instr cfg proc_data work_queue_post inv_map_post
+        exec_worklist ~pp_instr cfg analysis_data work_queue_post inv_map_post
     | None ->
         inv_map
 
 
   (** compute and return an invariant map for [cfg] *)
-  let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing:_ ~initial =
+  let exec_cfg_internal ~pp_instr cfg analysis_data ~do_narrowing:_ ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map, _did_not_reach_fix_point =
-      exec_node ~pp_instr proc_data start_node ~is_loop_head:false ~is_narrowing:false initial
+      exec_node ~pp_instr analysis_data start_node ~is_loop_head:false ~is_narrowing:false initial
         InvariantMap.empty
     in
     let work_queue = Scheduler.schedule_succs (Scheduler.empty cfg) start_node in
-    exec_worklist ~pp_instr cfg proc_data work_queue inv_map
+    exec_worklist ~pp_instr cfg analysis_data work_queue inv_map
 
 
   let exec_cfg ?do_narrowing:_ = exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing:false

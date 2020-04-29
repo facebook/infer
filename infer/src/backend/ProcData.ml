@@ -8,11 +8,3 @@
 open! IStd
 
 type 'a t = {summary: Summary.t; tenv: Tenv.t; extras: 'a}
-
-type no_extras = unit
-
-let empty_extras = ()
-
-let make summary tenv extras = {summary; tenv; extras}
-
-let make_default summary tenv = make summary tenv empty_extras

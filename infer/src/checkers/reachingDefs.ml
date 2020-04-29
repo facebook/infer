@@ -24,7 +24,7 @@ module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ReachingDefsMap
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   (* for each  x := e at node n, remove x's definitions and introduce x -> n *)
   let exec_instr astate _ (node : CFG.Node.t) instr =
@@ -70,7 +70,7 @@ type invariant_map = Analyzer.invariant_map
 
 let compute_invariant_map summary tenv =
   let pdesc = Summary.get_proc_desc summary in
-  let proc_data = ProcData.make_default summary tenv in
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let node_cfg = NodeCFG.from_pdesc pdesc in
   Analyzer.exec_cfg node_cfg proc_data ~initial:(init_reaching_defs_with_formals pdesc)
 

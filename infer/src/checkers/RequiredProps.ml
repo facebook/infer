@@ -205,6 +205,8 @@ module TransferFunctions = struct
 
   type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals}
 
+  type analysis_data = extras ProcData.t
+
   let apply_callee_summary summary_opt callsite ~caller_pname ~callee_pname ret_id_typ formals
       actuals astate =
     Option.value_map summary_opt ~default:astate ~f:(fun callee_summary ->
@@ -291,21 +293,21 @@ let init_extras summary =
     |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
            (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
   in
-  TransferFunctions.{get_proc_summary_and_formals}
+  {TransferFunctions.get_proc_summary_and_formals}
 
 
 let checker {Callbacks.summary; exe_env} =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  let proc_data = ProcData.make summary tenv (init_extras summary) in
+  let proc_data = {ProcData.summary; tenv; extras= init_extras summary} in
   let ret_path =
     let ret_var = Procdesc.get_ret_var proc_desc in
     let ret_typ = Procdesc.get_ret_type proc_desc in
     Domain.LocalAccessPath.make_from_pvar ret_var ret_typ proc_name
   in
   let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) ret_path in
-  match Analyzer.compute_post proc_data ~initial with
+  match Analyzer.compute_post proc_data ~initial proc_desc with
   | Some post ->
       let is_void_func = Procdesc.get_ret_type proc_desc |> Typ.is_void in
       let post = Domain.get_summary ~is_void_func post in

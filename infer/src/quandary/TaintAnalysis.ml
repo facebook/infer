@@ -28,7 +28,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     module CFG = CFG
     module Domain = Domain
 
-    type nonrec extras = extras
+    type analysis_data = extras ProcData.t
 
     (* get the node associated with [access_path] in [access_tree] *)
     let access_path_get_node access_path access_tree (proc_data : extras ProcData.t) =
@@ -863,8 +863,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let formal_map = FormalMap.make proc_desc in
       {formal_map; summary}
     in
-    let proc_data = ProcData.make summary tenv extras in
-    match Analyzer.compute_post proc_data ~initial with
+    let proc_data = {ProcData.summary; tenv; extras} in
+    match Analyzer.compute_post proc_data ~initial proc_desc with
     | Some access_tree ->
         Payload.update_summary (make_summary proc_data access_tree) summary
     | None ->

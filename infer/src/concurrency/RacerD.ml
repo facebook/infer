@@ -23,7 +23,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RacerDDomain
 
-  type extras = FormalMap.t
+  type analysis_data = FormalMap.t ProcData.t
 
   let rec get_access_exp = function
     | HilExp.AccessExpression access_expr ->
@@ -527,8 +527,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     let initial = set_initial_attributes tenv summary {bottom with ownership; threads; locks} in
     let formal_map = FormalMap.make proc_desc in
-    let proc_data = ProcData.make summary tenv formal_map in
-    Analyzer.compute_post proc_data ~initial
+    let proc_data = {ProcData.summary; tenv; extras= formal_map} in
+    Analyzer.compute_post proc_data ~initial proc_desc
     |> Option.map ~f:(astate_to_summary proc_desc formal_map)
     |> Option.value_map ~default:summary ~f:(fun post -> Payload.update_summary post summary)
   else Payload.update_summary empty_summary summary

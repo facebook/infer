@@ -92,7 +92,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   (** add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
@@ -181,7 +181,7 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = VarSet
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   let exec_instr astate _ _ instr =
     List.fold (Sil.exps_of_instr instr)
@@ -213,7 +213,7 @@ let get_captured_by_ref_invariant_map proc_desc proc_data =
 let checker {Callbacks.exe_env; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  let proc_data = ProcData.make_default summary tenv in
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
   let cfg = CFG.from_pdesc proc_desc in
   let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_data ~initial:Domain.empty in

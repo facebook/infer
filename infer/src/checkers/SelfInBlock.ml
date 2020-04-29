@@ -143,7 +143,7 @@ module TransferFunctions = struct
   module Domain = Domain
   module CFG = ProcCfg.Normal
 
-  type extras = unit
+  type analysis_data = unit ProcData.t
 
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
@@ -555,10 +555,10 @@ let checker {Callbacks.exe_env; summary} =
   let initial = {Domain.vars= Vars.empty; strongVars= StrongEqualToWeakCapturedVars.empty} in
   let procname = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env procname in
-  let proc_data = ProcData.make summary tenv () in
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let attributes = Summary.get_attributes summary in
   ( if Procname.is_objc_block procname then
-    match Analyzer.compute_post proc_data ~initial with
+    match Analyzer.compute_post proc_data ~initial (Summary.get_proc_desc summary) with
     | Some domain ->
         report_issues summary domain.vars attributes
     | None ->

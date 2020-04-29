@@ -46,7 +46,7 @@ module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = ExecutionDomain
 
-  type extras = get_formals
+  type analysis_data = get_formals ProcData.t
 
   let interprocedural_call caller_summary ret call_exp actuals call_loc get_formals astate =
     match proc_name_of_call call_exp with
@@ -236,8 +236,8 @@ let checker {Callbacks.exe_env; summary} =
   let get_formals callee_pname =
     Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
   in
-  let proc_data = ProcData.make summary tenv get_formals in
-  match DisjunctiveAnalyzer.compute_post proc_data ~initial with
+  let proc_data = {ProcData.summary; tenv; extras= get_formals} in
+  match DisjunctiveAnalyzer.compute_post proc_data ~initial pdesc with
   | Some posts ->
       PulsePayload.update_summary (PulseSummary.of_posts pdesc posts) summary
   | None ->

@@ -24,7 +24,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = FormalMap.t
+  type analysis_data = FormalMap.t ProcData.t
 
   let log_parse_error error pname actuals =
     L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Procname.pp pname
@@ -358,7 +358,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   if StarvationModels.should_skip_analysis tenv procname [] then summary
   else
     let formals = FormalMap.make proc_desc in
-    let proc_data = ProcData.make summary tenv formals in
+    let proc_data = {ProcData.summary; tenv; extras= formals} in
     let loc = Procdesc.get_loc proc_desc in
     let set_lock_state_for_synchronized_proc astate =
       if Procdesc.is_java_synchronized proc_desc then
@@ -388,7 +388,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       |> set_initial_attributes tenv summary
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
-    Analyzer.compute_post proc_data ~initial
+    Analyzer.compute_post proc_data ~initial proc_desc
     |> Option.map ~f:filter_blocks
     |> Option.map ~f:(Domain.summary_of_astate proc_desc)
     |> Option.fold ~init:summary ~f:(fun acc payload -> Payload.update_summary payload acc)

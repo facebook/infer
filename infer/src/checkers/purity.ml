@@ -29,7 +29,7 @@ module TransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = PurityDomain
 
-  type extras = purity_extras
+  type analysis_data = purity_extras ProcData.t
 
   let get_alias_set inferbo_mem var =
     let default = ModifiedVarSet.empty in
@@ -215,12 +215,15 @@ let report_errors astate summary =
 
 let compute_summary summary tenv get_callee_summary inferbo_invariant_map =
   let proc_name = Summary.get_proc_name summary in
+  let proc_desc = Summary.get_proc_desc summary in
   let formals =
-    Procdesc.get_formals (Summary.get_proc_desc summary)
+    Procdesc.get_formals proc_desc
     |> List.map ~f:(fun (mname, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
-  let proc_data = ProcData.make summary tenv {inferbo_invariant_map; formals; get_callee_summary} in
-  Analyzer.compute_post proc_data ~initial:PurityDomain.pure
+  let proc_data =
+    {ProcData.summary; tenv; extras= {inferbo_invariant_map; formals; get_callee_summary}}
+  in
+  Analyzer.compute_post proc_data ~initial:PurityDomain.pure proc_desc
 
 
 let checker {Callbacks.exe_env; summary} : Summary.t =

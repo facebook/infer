@@ -21,7 +21,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   let exec_instr astate _ _ = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
@@ -91,7 +91,7 @@ let substitute_function_ptrs ~function_pointers node instr =
 
 
 let get_function_pointers summary tenv =
-  let proc_data = ProcData.make_default summary tenv in
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
   Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty
 

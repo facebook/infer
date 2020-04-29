@@ -97,6 +97,8 @@ let tests =
         ; While (unknown_cond, [id_assign_var "b" "d"])
         ; invariant "{ b }"
         ; id_assign_var "a" "b" ] ) ]
-    |> TestInterpreter.create_tests ProcData.empty_extras ~initial:Liveness.Domain.empty
+    |> TestInterpreter.create_tests
+         (fun summary -> {ProcData.summary; tenv= Tenv.create (); extras= ()})
+         ~initial:Liveness.Domain.empty
   in
   "liveness_test_suite" >::: test_list

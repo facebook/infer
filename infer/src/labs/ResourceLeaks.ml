@@ -20,7 +20,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ResourceLeakDomain
 
-  type extras = unit
+  type analysis_data = unit ProcData.t
 
   let is_closeable_typename tenv typename =
     let is_closable_interface typename _ =
@@ -88,8 +88,11 @@ let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
 let checker {Callbacks.summary; exe_env} : Summary.t =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  let proc_data = ProcData.make summary tenv () in
-  match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial with
+  let proc_data = {ProcData.summary; tenv; extras= ()} in
+  match
+    Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial
+      (Summary.get_proc_desc summary)
+  with
   | Some post ->
       report_if_leak post summary proc_data ;
       Payload.update_summary post summary

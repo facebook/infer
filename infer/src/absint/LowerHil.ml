@@ -30,7 +30,7 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
   module CFG = TransferFunctions.CFG
   module Domain = MakeHILDomain (TransferFunctions.Domain)
 
-  type extras = TransferFunctions.extras
+  type analysis_data = TransferFunctions.analysis_data
 
   let pp_session_name = TransferFunctions.pp_session_name
 
@@ -40,7 +40,7 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
     && match ConcurrencyModels.get_lock_effect pname actuals with Unlock _ -> true | _ -> false
 
 
-  let exec_instr_actual extras bindings node hil_instr actual_state =
+  let exec_instr_actual analysis_data bindings node hil_instr actual_state =
     match (hil_instr : HilInstr.t) with
     | Call (_, Direct callee_pname, actuals, _, loc) as hil_instr
       when is_java_unlock callee_pname actuals ->
@@ -53,11 +53,11 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
               let dummy_assign =
                 HilInstr.Assign (lhs_access_path, HilExp.AccessExpression access_expr, loc)
               in
-              TransferFunctions.exec_instr astate_acc extras node dummy_assign )
+              TransferFunctions.exec_instr astate_acc analysis_data node dummy_assign )
         in
-        (TransferFunctions.exec_instr actual_state' extras node hil_instr, Bindings.empty)
+        (TransferFunctions.exec_instr actual_state' analysis_data node hil_instr, Bindings.empty)
     | hil_instr ->
-        (TransferFunctions.exec_instr actual_state extras node hil_instr, bindings)
+        (TransferFunctions.exec_instr actual_state analysis_data node hil_instr, bindings)
 
 
   let append_bindings = IList.append_no_duplicates ~cmp:Var.compare |> Staged.unstage
@@ -84,13 +84,13 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
         (Some instr, bindings)
 
 
-  let exec_instr ((actual_state, bindings) as astate) extras node instr =
+  let exec_instr ((actual_state, bindings) as astate) analysis_data node instr =
     let actual_state', bindings' =
       match hil_instr_of_sil bindings instr with
       | None, bindings ->
           (actual_state, bindings)
       | Some hil_instr, bindings ->
-          exec_instr_actual extras bindings node hil_instr actual_state
+          exec_instr_actual analysis_data bindings node hil_instr actual_state
     in
     if phys_equal bindings bindings' && phys_equal actual_state actual_state' then astate
     else (actual_state', bindings')
@@ -102,7 +102,7 @@ module type S = sig
   type domain
 
   val compute_post :
-    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
+    Interpreter.TransferFunctions.analysis_data -> initial:domain -> Procdesc.t -> domain option
 end
 
 module MakeAbstractInterpreterWithConfig
@@ -117,7 +117,7 @@ module MakeAbstractInterpreterWithConfig
 
   type domain = TransferFunctions.Domain.t
 
-  let compute_post proc_data ~initial =
+  let compute_post analysis_data ~initial proc_desc =
     let initial' = (initial, Bindings.empty) in
     let pp_instr (_, bindings) instr =
       match LowerHilInterpreter.hil_instr_of_sil bindings instr with
@@ -126,7 +126,8 @@ module MakeAbstractInterpreterWithConfig
       | None, _ ->
           None
     in
-    Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst
+    Interpreter.compute_post ~pp_instr analysis_data ~initial:initial' proc_desc
+    |> Option.map ~f:fst
 end
 
 module MakeAbstractInterpreter (TransferFunctions : TransferFunctions.HIL) =

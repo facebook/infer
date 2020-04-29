@@ -12,11 +12,11 @@ module type S = sig
 
   module Domain : AbstractDomain.S
 
-  type extras
+  type analysis_data
 
   type instr
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t
+  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> instr -> Domain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
@@ -44,9 +44,9 @@ module type DisjReady = sig
 
   module Domain : AbstractDomain.NoJoin
 
-  type extras
+  type analysis_data
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t list
+  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

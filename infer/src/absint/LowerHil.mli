@@ -27,9 +27,9 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
 
   module Domain : module type of AbstractDomain.Pair (TransferFunctions.Domain) (Bindings)
 
-  type extras = TransferFunctions.extras
+  type analysis_data = TransferFunctions.analysis_data
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t
+  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Domain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
@@ -40,7 +40,7 @@ module type S = sig
   type domain
 
   val compute_post :
-    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
+    Interpreter.TransferFunctions.analysis_data -> initial:domain -> Procdesc.t -> domain option
   (** compute and return the postcondition for the given procedure starting from [initial]. *)
 end
 

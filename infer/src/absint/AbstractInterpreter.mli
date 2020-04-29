@@ -27,24 +27,26 @@ module type S = sig
   val compute_post :
        ?do_narrowing:bool
     -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
     -> TransferFunctions.Domain.t option
-  (** compute and return the postcondition for the given procedure starting from [initial].
+  (** compute and return the postcondition for the given {Procdesc.t} starting from [initial].
       [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
     -> invariant_map
   (** compute and return invariant map for the given CFG/procedure starting from [initial]. *)
 
   val exec_pdesc :
        ?do_narrowing:bool
-    -> TransferFunctions.extras ProcData.t
+    -> TransferFunctions.analysis_data
     -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
     -> invariant_map
   (** compute and return invariant map for the given procedure starting from [initial] *)
 
@@ -77,6 +79,6 @@ module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) :
   S
-    with type TransferFunctions.extras = T.extras
+    with type TransferFunctions.analysis_data = T.analysis_data
      and module TransferFunctions.CFG = T.CFG
      and type TransferFunctions.Domain.t = T.Domain.t list

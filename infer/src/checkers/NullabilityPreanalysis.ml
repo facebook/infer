@@ -20,7 +20,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = FieldsAssignedInConstructors
 
-  type extras = Exp.t Ident.Hash.t
+  type analysis_data = Exp.t Ident.Hash.t ProcData.t
 
   let exp_is_null ids_map exp =
     match exp with
@@ -95,7 +95,8 @@ let analysis cfg tenv =
     if Procdesc.is_defined pdesc && Procname.is_constructor proc_name then
       match
         FieldsAssignedInConstructorsChecker.compute_post ~initial
-          (ProcData.make (Summary.OnDisk.reset pdesc) tenv (Ident.Hash.create 10))
+          {ProcData.summary= Summary.OnDisk.reset pdesc; tenv; extras= Ident.Hash.create 10}
+          pdesc
       with
       | Some new_domain ->
           FieldsAssignedInConstructors.union new_domain domain

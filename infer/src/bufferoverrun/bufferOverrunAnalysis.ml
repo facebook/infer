@@ -58,7 +58,7 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Dom.Mem
 
-  type nonrec extras = extras
+  type analysis_data = extras ProcData.t
 
   let instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location mem =
     match
@@ -455,10 +455,10 @@ let compute_invariant_map :
   let cfg = CFG.from_pdesc pdesc in
   let pdata =
     let oenv = OndemandEnv.mk pdesc tenv integer_type_widths in
-    ProcData.make summary tenv {get_summary; get_formals; oenv}
+    {ProcData.summary; tenv; extras= {get_summary; get_formals; oenv}}
   in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
-  Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
+  Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata pdesc
 
 
 let cached_compute_invariant_map =

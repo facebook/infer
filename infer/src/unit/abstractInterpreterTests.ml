@@ -49,7 +49,7 @@ module PathCountTransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = PathCountDomain
 
-  type extras = ProcData.no_extras
+  type analysis_data = unit ProcData.t
 
   (* just propagate the current path count *)
   let exec_instr astate _ _ _ = astate
@@ -102,7 +102,9 @@ let tests =
             , (* we expect the finally block to be visited *)
               [invariant "1"] )
         ; invariant "1" ] ) ]
-    |> NormalTestInterpreter.create_tests ProcData.empty_extras ~initial
+    |> NormalTestInterpreter.create_tests
+         (fun summary -> {ProcData.summary; tenv= Tenv.create (); extras= ()})
+         ~initial
   in
   let exceptional_test_list =
     [ ( "try1"
@@ -127,6 +129,8 @@ let tests =
             , (* could arrive here via (1, 2, 3), (1, 4), or (2, 4) *)
               [invariant "3"] )
         ; invariant "3" ] ) ]
-    |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras ~initial
+    |> ExceptionalTestInterpreter.create_tests
+         (fun summary -> {ProcData.summary; tenv= Tenv.create (); extras= ()})
+         ~initial
   in
   "analyzer_tests_suite" >::: normal_test_list @ exceptional_test_list
