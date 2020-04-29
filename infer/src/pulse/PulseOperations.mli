@@ -86,9 +86,14 @@ val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
-val invalidate_deref :
-  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
-(** record that what the address points to is invalid *)
+val invalidate_access :
+     Location.t
+  -> Invalidation.t
+  -> AbstractValue.t * ValueHistory.t
+  -> BaseMemory.Access.t
+  -> t
+  -> t access_result
+(** record that what the address points via the access to is invalid *)
 
 val invalidate_array_elements :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result

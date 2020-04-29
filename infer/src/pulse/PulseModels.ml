@@ -322,7 +322,9 @@ module StdBasicString = struct
     let call_event = ValueHistory.Call {f= model; location; in_call= []} in
     let* astate, (string_addr, string_hist) = to_internal_string location this_hist astate in
     let string_addr_hist = (string_addr, call_event :: string_hist) in
-    let* astate = PulseOperations.invalidate_deref location CppDelete string_addr_hist astate in
+    let* astate =
+      PulseOperations.invalidate_access location CppDelete string_addr_hist Dereference astate
+    in
     let+ astate = PulseOperations.invalidate location CppDelete string_addr_hist astate in
     [ExecutionDomain.ContinueProgram astate]
 end
@@ -433,7 +435,8 @@ module StdVector = struct
   let reallocate_internal_array trace vector vector_f location astate =
     let* astate, array_address = GenericArrayBackedCollection.eval location vector astate in
     PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
-    >>= PulseOperations.invalidate_deref location (StdVector vector_f) array_address
+    >>= PulseOperations.invalidate_access location (StdVector vector_f) vector
+          GenericArrayBackedCollection.access
     >>= PulseOperations.havoc_field location vector GenericArrayBackedCollection.field trace
 
 
@@ -523,7 +526,7 @@ module JavaCollection = struct
       PulseOperations.write_deref location ~ref:new_elem
         ~obj:(old_addr, ValueHistory.Assignment location :: old_hist)
         astate
-      >>= PulseOperations.invalidate_deref location (StdVector Assign) old_elem
+      >>= PulseOperations.invalidate_access location (StdVector Assign) old_elem Dereference
     in
     let astate = PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate in
     [ExecutionDomain.ContinueProgram astate]
