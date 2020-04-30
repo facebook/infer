@@ -674,6 +674,7 @@ module ProcNameDispatcher = struct
         $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])
         )
       ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
+      ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
       ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
       ; -"CFRelease" <>$ capt_arg_payload $--> C.free
       ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free

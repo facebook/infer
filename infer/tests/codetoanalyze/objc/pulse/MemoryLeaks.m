@@ -72,7 +72,12 @@
   return CFBridgingRelease(nameRef);
 }
 
-- (void)call_bridge_no_leak_good {
+- (void)create_release_no_leak_ok {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  CFRelease(nameRef);
+}
+
+- (void)call_bridge_no_leak_ok {
   NSLocale* locale = [self ret_bridge];
 }
 

@@ -465,6 +465,12 @@ module ObjectiveC = struct
        || String.is_substring ~substring:"Copy" procname )
 
 
+  let is_core_foundation_create_or_copy _ procname =
+    String.is_prefix ~prefix:"CF" procname
+    && ( String.is_substring ~substring:"Create" procname
+       || String.is_substring ~substring:"Copy" procname )
+
+
   let is_core_graphics_release _ procname =
     String.is_prefix ~prefix:"CG" procname && String.is_suffix ~suffix:"Release" procname
 
