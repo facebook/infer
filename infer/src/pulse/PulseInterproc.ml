@@ -238,8 +238,8 @@ let eval_sym_of_subst astate subst s bound_end =
 
 let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
   match (attr : Attribute.t) with
-  | CItv (arith_callee, hist) -> (
-      let arith_caller_opt = AddressAttributes.get_citv addr_caller astate |> Option.map ~f:fst in
+  | CItv arith_callee -> (
+      let arith_caller_opt = AddressAttributes.get_citv addr_caller astate in
       match CItv.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee) with
       | Unsatisfiable ->
           raise
@@ -251,7 +251,7 @@ let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
                   ; arith_callee= Some arith_callee
                   ; call_state }))
       | Satisfiable (Some abduce_caller, _abduce_callee) ->
-          Attribute.CItv (abduce_caller, hist)
+          Attribute.CItv abduce_caller
       | Satisfiable (None, _) ->
           attr )
   | BoItv itv -> (

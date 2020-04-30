@@ -29,7 +29,7 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
-    | CItv of CItv.t * Trace.t
+    | CItv of CItv.t
     | BoItv of Itv.ItvPure.t
     | Closure of Procname.t
     | Invalid of Invalidation.t * Trace.t
@@ -63,7 +63,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let const_rank = Variants.to_rank (CItv (CItv.equal_to IntLit.zero, dummy_trace))
+  let citv_rank = Variants.to_rank (CItv (CItv.equal_to IntLit.zero))
 
   let bo_itv_rank = Variants.to_rank (BoItv Itv.ItvPure.zero)
 
@@ -87,8 +87,8 @@ module Attribute = struct
         F.fprintf f "BoItv (%a)" Itv.ItvPure.pp bo_itv
     | Closure pname ->
         Procname.pp f pname
-    | CItv (phi, trace) ->
-        F.fprintf f "Arith %a" (Trace.pp ~pp_immediate:(fun fmt -> CItv.pp fmt phi)) trace
+    | CItv phi ->
+        F.fprintf f "Arith %a" CItv.pp phi
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -156,10 +156,10 @@ module Attributes = struct
 
 
   let get_citv attrs =
-    Set.find_rank attrs Attribute.const_rank
+    Set.find_rank attrs Attribute.citv_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.CItv (a, trace)) = attr in
-           (a, trace) )
+           let[@warning "-8"] (Attribute.CItv a) = attr in
+           a )
 
 
   let get_bo_itv attrs =
@@ -190,14 +190,16 @@ let is_suitable_for_pre = function
 let map_trace ~f = function
   | Allocated (procname, trace) ->
       Allocated (procname, f trace)
-  | CItv (arith, trace) ->
-      CItv (arith, f trace)
   | Invalid (invalidation, trace) ->
       Invalid (invalidation, f trace)
   | MustBeValid trace ->
       MustBeValid (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
-  | (AddressOfCppTemporary _ | AddressOfStackVariable _ | BoItv _ | Closure _ | StdVectorReserve) as
-    attr ->
+  | ( AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | BoItv _
+    | CItv _
+    | Closure _
+    | StdVectorReserve ) as attr ->
       attr

@@ -36,13 +36,6 @@ let rec pp ~pp_immediate fmt trace =
         F.fprintf fmt "%a::%a[%a]" ValueHistory.pp history CallEvent.pp f (pp ~pp_immediate) in_call
 
 
-let add_event event = function
-  | Immediate {location; history} ->
-      Immediate {location; history= event :: history}
-  | ViaCall {f; in_call; location; history} ->
-      ViaCall {f; in_call; location; history= event :: history}
-
-
 let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate trace errlog =
   match trace with
   | Immediate {location; history} ->

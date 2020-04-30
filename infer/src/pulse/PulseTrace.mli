@@ -27,8 +27,6 @@ val get_outer_location : t -> Location.t
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)
 
-val add_event : ValueHistory.event -> t -> t
-
 val add_to_errlog :
      ?include_value_history:bool
   -> nesting:int

@@ -40,19 +40,17 @@ module Misc = struct
 
 
   let return_int : Int64.t -> model =
-   fun i64 ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+   fun i64 ~caller_summary:_ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
-    let astate = PulseArithmetic.and_eq_int (Immediate {location; history= []}) ret_addr i astate in
+    let astate = PulseArithmetic.and_eq_int ret_addr i astate in
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
   let return_unknown_size : model =
-   fun ~caller_summary:_ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+   fun ~caller_summary:_ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let astate =
-      PulseArithmetic.and_nonnegative (Immediate {location; history= []}) ret_addr astate
-    in
+    let astate = PulseArithmetic.and_nonnegative ret_addr astate in
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
@@ -86,19 +84,17 @@ module C = struct
 
   let malloc _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
-    let hist =
-      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
-    in
-    let immediate_hist = Trace.Immediate {location; history= hist} in
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, hist) in
+    let ret_value =
+      (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
+    in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_alloc =
-      PulseArithmetic.and_positive immediate_hist ret_addr astate
+      PulseArithmetic.and_positive ret_addr astate
       |> PulseOperations.allocate callee_procname location ret_value
     in
     let+ astate_null =
-      PulseArithmetic.and_eq_int immediate_hist ret_addr IntLit.zero astate
+      PulseArithmetic.and_eq_int ret_addr IntLit.zero astate
       |> PulseOperations.invalidate location (ConstantDereference IntLit.zero) ret_value
     in
     [ExecutionDomain.ContinueProgram astate_alloc; ExecutionDomain.ContinueProgram astate_null]
@@ -107,14 +103,12 @@ module C = struct
   let malloc_not_null _ : model =
    fun ~caller_summary:_ ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let hist =
-      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
+    let ret_value =
+      (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
     in
-    let ret_value = (ret_addr, hist) in
-    let immediate_hist = Trace.Immediate {location; history= hist} in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     PulseOperations.allocate callee_procname location ret_value astate
-    |> PulseArithmetic.and_positive immediate_hist ret_addr
+    |> PulseArithmetic.and_positive ret_addr
     |> PulseOperations.ok_continue
 
 
@@ -173,15 +167,15 @@ module StdAtomicInteger = struct
 
 
   let arith_bop prepost location event ret_id bop this operand astate =
-    let* astate, int_addr, (old_int, old_int_hist) = load_backing_int location this astate in
-    let astate, (new_int, hist) =
-      PulseArithmetic.eval_binop location bop (AbstractValueOperand old_int) operand old_int_hist
-        astate
+    let* astate, int_addr, (old_int, hist) = load_backing_int location this astate in
+    let bop_addr = AbstractValue.mk_fresh () in
+    let astate =
+      PulseArithmetic.eval_binop bop_addr bop (AbstractValueOperand old_int) operand astate
     in
     let+ astate =
-      PulseOperations.write_deref location ~ref:int_addr ~obj:(new_int, event :: hist) astate
+      PulseOperations.write_deref location ~ref:int_addr ~obj:(bop_addr, event :: hist) astate
     in
-    let ret_int = match prepost with `Pre -> new_int | `Post -> old_int in
+    let ret_int = match prepost with `Pre -> bop_addr | `Post -> old_int in
     PulseOperations.write_id ret_id (ret_int, event :: hist) astate
 
 
@@ -478,9 +472,7 @@ module StdVector = struct
    fun ~caller_summary:_ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= []} in
     let index_zero = AbstractValue.mk_fresh () in
-    let astate =
-      PulseArithmetic.and_eq_int (Immediate {location; history= []}) index_zero IntLit.zero astate
-    in
+    let astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
     let* astate, ((arr_addr, _) as arr) =
       GenericArrayBackedCollection.eval location vector astate
     in

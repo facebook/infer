@@ -177,8 +177,8 @@ module PulseTransferFunctions = struct
                 Ok astate
           in
           check_error_continue summary result
-      | Prune (condition, loc, is_then_branch, if_kind) ->
-          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
+      | Prune (condition, loc, _is_then_branch, _if_kind) ->
+          PulseOperations.prune loc ~condition astate
           |> check_error_transform summary ~f:(fun (exec_state, cond_satisfiable) ->
                  if cond_satisfiable then
                    (* [condition] is true or unknown value: go into the branch *)

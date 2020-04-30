@@ -135,7 +135,7 @@ let eval location exp0 astate =
     | Const (Cint i) ->
         let v = AbstractValue.Constants.get_int i in
         let astate =
-          PulseArithmetic.and_eq_int (Immediate {location; history= []}) v i astate
+          PulseArithmetic.and_eq_int v i astate
           |> AddressAttributes.invalidate
                (v, [ValueHistory.Assignment location])
                (ConstantDereference i) location
@@ -143,17 +143,16 @@ let eval location exp0 astate =
         Ok (astate, (v, []))
     | UnOp (unop, exp, _typ) ->
         let+ astate, (addr, hist) = eval exp astate in
-        PulseArithmetic.eval_unop location unop addr hist astate
+        let unop_addr = AbstractValue.mk_fresh () in
+        (PulseArithmetic.eval_unop unop_addr unop addr astate, (unop_addr, hist))
     | BinOp (bop, e_lhs, e_rhs) ->
         let* astate, (addr_lhs, hist_lhs) = eval e_lhs astate in
-        let+ ( astate
-             , ( addr_rhs
-               , (* NOTE: arbitrarily track only the history of the lhs, maybe not the brightest idea *)
-               _ ) ) =
-          eval e_rhs astate
-        in
-        PulseArithmetic.eval_binop location bop (AbstractValueOperand addr_lhs)
-          (AbstractValueOperand addr_rhs) hist_lhs astate
+        (* NOTE: keeping track of only [hist_lhs] into the binop is not the best *)
+        let+ astate, (addr_rhs, _hist_rhs) = eval e_rhs astate in
+        let binop_addr = AbstractValue.mk_fresh () in
+        ( PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
+            (AbstractValueOperand addr_rhs) astate
+        , (binop_addr, hist_lhs) )
     | Const _ | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
@@ -169,14 +168,13 @@ let eval_to_operand location exp astate =
       (astate, PulseArithmetic.AbstractValueOperand value)
 
 
-let prune ~is_then_branch if_kind location ~condition astate =
+let prune location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
         let* astate, lhs_op = eval_to_operand location exp_lhs astate in
         let+ astate, rhs_op = eval_to_operand location exp_rhs astate in
-        PulseArithmetic.prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op
-          astate
+        PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->

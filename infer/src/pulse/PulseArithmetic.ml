@@ -22,21 +22,21 @@ let and_term t astate =
   AbductiveDomain.set_path_condition phi astate
 
 
-let and_nonnegative trace v astate =
+let and_nonnegative v astate =
   AddressAttributes.add_one v (BoItv Itv.ItvPure.nat) astate
-  |> AddressAttributes.add_one v (CItv (CItv.zero_inf, trace))
+  |> AddressAttributes.add_one v (CItv CItv.zero_inf)
   |> and_term PathCondition.Term.(le zero (of_absval v))
 
 
-let and_positive trace v astate =
+let and_positive v astate =
   AddressAttributes.add_one v (BoItv Itv.ItvPure.pos) astate
-  |> AddressAttributes.add_one v (CItv (CItv.ge_to IntLit.one, trace))
+  |> AddressAttributes.add_one v (CItv (CItv.ge_to IntLit.one))
   |> and_term PathCondition.Term.(lt zero (of_absval v))
 
 
-let and_eq_int trace v i astate =
+let and_eq_int v i astate =
   AddressAttributes.add_one v (BoItv (Itv.ItvPure.of_int_lit i)) astate
-  |> AddressAttributes.add_one v (CItv (CItv.equal_to i, trace))
+  |> AddressAttributes.add_one v (CItv (CItv.equal_to i))
   |> and_eq_terms (PathCondition.Term.of_absval v) (PathCondition.Term.of_intlit i)
 
 
@@ -44,13 +44,13 @@ let and_eq_int trace v i astate =
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
 
-let eval_citv_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
+let eval_citv_operand binop_addr bop op_lhs op_rhs astate =
   let citv_of_op op astate =
     match op with
     | LiteralOperand i ->
         Some (CItv.equal_to i)
     | AbstractValueOperand v ->
-        AddressAttributes.get_citv v astate |> Option.map ~f:fst
+        AddressAttributes.get_citv v astate
   in
   match
     Option.both (citv_of_op op_lhs astate) (citv_of_op op_rhs astate)
@@ -59,8 +59,7 @@ let eval_citv_operand location binop_addr binop_hist bop op_lhs op_rhs astate =
   | None ->
       astate
   | Some binop_a ->
-      let binop_trace = Trace.Immediate {location; history= binop_hist} in
-      let astate = AddressAttributes.add_one binop_addr (CItv (binop_a, binop_trace)) astate in
+      let astate = AddressAttributes.add_one binop_addr (CItv binop_a) astate in
       astate
 
 
@@ -91,26 +90,20 @@ let eval_path_condition_binop binop_addr binop op_lhs op_rhs astate =
     astate
 
 
-let eval_binop location binop op_lhs op_rhs binop_hist astate =
-  let binop_addr = AbstractValue.mk_fresh () in
-  let astate =
-    eval_path_condition_binop binop_addr binop op_lhs op_rhs astate
-    |> eval_citv_operand location binop_addr binop_hist binop op_lhs op_rhs
-    |> eval_bo_itv_binop binop_addr binop op_lhs op_rhs
-  in
-  (astate, (binop_addr, binop_hist))
+let eval_binop binop_addr binop op_lhs op_rhs astate =
+  eval_path_condition_binop binop_addr binop op_lhs op_rhs astate
+  |> eval_citv_operand binop_addr binop op_lhs op_rhs
+  |> eval_bo_itv_binop binop_addr binop op_lhs op_rhs
 
 
-let eval_unop_citv location unop_addr unop operand_addr unop_hist astate =
+let eval_unop_citv unop_addr unop operand_addr astate =
   match
-    AddressAttributes.get_citv operand_addr astate
-    |> Option.bind ~f:(function a, _ -> CItv.unop unop a)
+    AddressAttributes.get_citv operand_addr astate |> Option.bind ~f:(fun a -> CItv.unop unop a)
   with
   | None ->
       astate
   | Some unop_a ->
-      let unop_trace = Trace.Immediate {location; history= unop_hist} in
-      AddressAttributes.add_one unop_addr (CItv (unop_a, unop_trace)) astate
+      AddressAttributes.add_one unop_addr (CItv unop_a) astate
 
 
 let eval_unop_bo_itv unop_addr unop operand_addr astate =
@@ -128,14 +121,10 @@ let eval_path_condition_unop unop_addr unop addr astate =
     astate
 
 
-let eval_unop location unop addr unop_hist astate =
-  let unop_addr = AbstractValue.mk_fresh () in
-  let astate =
-    eval_path_condition_unop unop_addr unop addr astate
-    |> eval_unop_citv location unop_addr unop addr unop_hist
-    |> eval_unop_bo_itv unop_addr unop addr
-  in
-  (astate, (unop_addr, unop_hist))
+let eval_unop unop_addr unop addr astate =
+  eval_path_condition_unop unop_addr unop addr astate
+  |> eval_unop_citv unop_addr unop addr
+  |> eval_unop_bo_itv unop_addr unop addr
 
 
 let prune_with_bop ~negated v_opt arith bop arith' astate =
@@ -157,13 +146,9 @@ let prune_with_bop ~negated v_opt arith bop arith' astate =
       (astate, true)
 
 
-let eval_operand location astate = function
+let eval_operand astate = function
   | LiteralOperand i ->
-      ( None
-      , Some
-          (CItv.equal_to i, Trace.Immediate {location; history= [ValueHistory.Assignment location]})
-      , Itv.ItvPure.of_int_lit i
-      , PathCondition.Term.of_intlit i )
+      (None, Some (CItv.equal_to i), Itv.ItvPure.of_int_lit i, PathCondition.Term.of_intlit i)
   | AbstractValueOperand v ->
       ( Some v
       , AddressAttributes.get_citv v astate
@@ -171,32 +156,21 @@ let eval_operand location astate = function
       , PathCondition.Term.of_absval v )
 
 
-let record_abduced event location addr_opt orig_arith_hist_opt arith_opt astate =
+let record_abduced addr_opt arith_opt astate =
   match Option.both addr_opt arith_opt with
   | None ->
       astate
   | Some (addr, arith) ->
-      let trace =
-        match orig_arith_hist_opt with
-        | None ->
-            Trace.Immediate {location; history= [event]}
-        | Some (_, trace) ->
-            Trace.add_event event trace
-      in
-      let attribute = Attribute.CItv (arith, trace) in
+      let attribute = Attribute.CItv arith in
       AddressAttributes.abduce_attribute addr attribute astate
       |> AddressAttributes.add_one addr attribute
 
 
 let bind_satisfiable ~satisfiable astate ~f = if satisfiable then f astate else (astate, false)
 
-let prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op astate =
-  let value_lhs_opt, arith_lhs_opt, bo_itv_lhs, path_cond_lhs =
-    eval_operand location astate lhs_op
-  in
-  let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, path_cond_rhs =
-    eval_operand location astate rhs_op
-  in
+let prune_binop ~negated bop lhs_op rhs_op astate =
+  let value_lhs_opt, arith_lhs_opt, bo_itv_lhs, path_cond_lhs = eval_operand astate lhs_op in
+  let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, path_cond_rhs = eval_operand astate rhs_op in
   let astate =
     let path_condition =
       let t_positive = PathCondition.Term.of_binop bop path_cond_lhs path_cond_rhs in
@@ -205,17 +179,12 @@ let prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op asta
     in
     AbductiveDomain.set_path_condition path_condition astate
   in
-  match
-    CItv.abduce_binop_is_true ~negated bop (Option.map ~f:fst arith_lhs_opt)
-      (Option.map ~f:fst arith_rhs_opt)
-  with
+  match CItv.abduce_binop_is_true ~negated bop arith_lhs_opt arith_rhs_opt with
   | Unsatisfiable ->
       (astate, false)
   | Satisfiable (abduced_lhs, abduced_rhs) ->
-      let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
       let astate =
-        record_abduced event location value_lhs_opt arith_lhs_opt abduced_lhs astate
-        |> record_abduced event location value_rhs_opt arith_rhs_opt abduced_rhs
+        record_abduced value_lhs_opt abduced_lhs astate |> record_abduced value_rhs_opt abduced_rhs
       in
       let satisfiable =
         match Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean with
@@ -240,8 +209,7 @@ let prune_binop ~is_then_branch if_kind location ~negated bop lhs_op rhs_op asta
 (** {2 Queries} *)
 
 let is_known_zero astate v =
-  ( AddressAttributes.get_citv v astate
-  |> function Some (arith, _) -> CItv.is_equal_to_zero arith | None -> false )
+  AddressAttributes.get_citv v astate |> Option.value_map ~default:false ~f:CItv.is_equal_to_zero
   || (let phi = astate.AbductiveDomain.path_condition in
       PathCondition.is_known_zero (PathCondition.Term.of_absval v) phi )
   || Itv.ItvPure.is_zero (AddressAttributes.get_bo_itv v astate)

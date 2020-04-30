@@ -16,7 +16,7 @@ type t =
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of Procname.t * Trace.t
       (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
-  | CItv of CItv.t * Trace.t
+  | CItv of CItv.t
   | BoItv of Itv.ItvPure.t
   | Closure of Procname.t
   | Invalid of Invalidation.t * Trace.t
@@ -41,7 +41,7 @@ module Attributes : sig
 
   val get_allocation : t -> (Procname.t * Trace.t) option
 
-  val get_citv : t -> (CItv.t * Trace.t) option
+  val get_citv : t -> CItv.t option
 
   val get_bo_itv : t -> Itv.ItvPure.t option
 
