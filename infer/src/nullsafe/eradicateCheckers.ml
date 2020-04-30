@@ -12,7 +12,8 @@ open! IStd
 let report_error tenv proc_name proc_desc kind loc ?(field_name = None)
     ?(exception_kind = fun k d -> Exceptions.Checkers (k, d)) ~severity description =
   let suppressed = Reporting.is_suppressed tenv proc_desc kind ~field_name in
-  if not suppressed then
+  if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"
+  else
     let localized_description = Localise.verbatim_desc description in
     let exn = exception_kind kind localized_description in
     let trace = [Errlog.make_trace_element 0 loc description []] in

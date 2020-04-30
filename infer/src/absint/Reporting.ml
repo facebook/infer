@@ -43,8 +43,8 @@ let log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc 
     Language.curr_language_is Java
     && Annotations.ia_is_suppress_lint proc_attributes.ProcAttributes.method_annotation.return
   in
-  if should_suppress_lint || is_java_generated_method || is_java_external_package then ()
-    (* Skip the reporting *)
+  if should_suppress_lint || is_java_generated_method || is_java_external_package then
+    Logging.debug Analysis Medium "Reporting is suppressed!@\n" (* Skip the reporting *)
   else log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access:None ~extras exn
 
 
