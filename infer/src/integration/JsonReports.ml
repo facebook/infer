@@ -289,10 +289,10 @@ let collect_issues summary issues_acc =
 
 
 let write_costs summary (outfile : Utils.outfile) =
-  JsonCostsPrinter.pp outfile.fmt
-    { loc= Summary.get_loc summary
-    ; proc_name= Summary.get_proc_name summary
-    ; cost_opt= summary.Summary.payloads.Payloads.cost }
+  let proc_name = Summary.get_proc_name summary in
+  if not (Cost.is_report_suppressed proc_name) then
+    JsonCostsPrinter.pp outfile.fmt
+      {loc= Summary.get_loc summary; proc_name; cost_opt= summary.Summary.payloads.Payloads.cost}
 
 
 (** Process lint issues of a procedure *)

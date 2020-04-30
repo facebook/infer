@@ -20,3 +20,5 @@ val instantiate_cost :
   -> callee_cost:CostDomain.BasicCost.t
   -> loc:Location.t
   -> CostDomain.BasicCost.t
+
+val is_report_suppressed : Procname.t -> bool
