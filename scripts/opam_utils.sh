@@ -59,6 +59,7 @@ opam_switch_create_if_needed () {
         fi
     done
     if [ "$switch_exists" = "no" ]; then
+        rm -rf "$OPAMROOT/$switch"
         opam switch create "$switch" "$compiler"
     fi
 }
