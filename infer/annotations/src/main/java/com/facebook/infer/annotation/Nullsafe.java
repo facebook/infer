@@ -11,9 +11,22 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import javax.annotation.Nonnull;
+import javax.annotation.meta.TypeQualifierDefault;
+import kotlin.annotations.jvm.MigrationStatus;
+import kotlin.annotations.jvm.UnderMigration;
 
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
+// These 2 annotations are needed for better interop of @Nullsafe with Kotlin,
+// essentially telling it that both params and return values are non-null by
+// default.
+@Nonnull
+@TypeQualifierDefault({ElementType.METHOD, ElementType.PARAMETER})
+// This annotation is needed for kotlinc to recognize {@code
+// TypeQualifierDefault} without explicitly passing -Xjsr305=strict flag (which
+// may be problematic in large codebases).
+@UnderMigration(status = MigrationStatus.STRICT)
 /**
  * Configures nullability checking mode of annotated classes; a more general version of {@link
  * NullsafeStrict}.
