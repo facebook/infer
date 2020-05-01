@@ -86,7 +86,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
-      Process.create_process_and_wait ~prog ~args:build_args ;
+      Buck.wrap_buck_call ~label:"compdb_build" (prog :: build_args) |> ignore ;
       let buck_targets_shell =
         prog :: "targets"
         :: List.rev_append
@@ -115,9 +115,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
             in
             List.fold ~f:scan_output ~init:[] lines
       in
-      Utils.with_process_lines
-        ~debug:L.(debug Capture Quiet)
-        ~cmd:buck_targets_shell ~tmp_prefix:"buck_targets_" ~f:on_target_lines
+      Buck.wrap_buck_call ~label:"compdb_targets" buck_targets_shell |> on_target_lines
   | _ ->
       Process.print_error_and_exit "Incorrect buck command: %s %a. Please use buck build <targets>"
         prog (Pp.seq F.pp_print_string) args

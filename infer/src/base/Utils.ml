@@ -260,27 +260,6 @@ let with_process_in command read =
   do_finally_swallow_timeout ~f ~finally
 
 
-let with_process_lines ~(debug : ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp_prefix ~f =
-  let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
-  let verbose_err_file = Filename.temp_file tmp_prefix ".err" in
-  let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_err_file in
-  debug "Trying to execute: %s@\n%!" shell_cmd_redirected ;
-  let input_lines chan = In_channel.input_lines ~fix_win_eol:true chan in
-  let res = with_process_in shell_cmd_redirected input_lines in
-  let verbose_errlog = with_file_in verbose_err_file ~f:In_channel.input_all in
-  if not (String.equal verbose_errlog "") then
-    debug "@\nlog:@\n<<<<<<@\n%s@\n>>>>>>@\n%!" verbose_errlog ;
-  match res with
-  | lines, Ok () ->
-      f lines
-  | lines, (Error _ as err) ->
-      let output = String.concat ~sep:"\n" lines in
-      L.(die ExternalError)
-        "*** Failed to execute: %s@\n*** Command: %s@\n*** Output:@\n%s@."
-        (Unix.Exit_or_signal.to_string_hum err)
-        shell_cmd output
-
-
 let is_dir_kind (kind : Unix.file_kind) = match kind with S_DIR -> true | _ -> false
 
 (** Recursively create a directory if it does not exist already. *)
