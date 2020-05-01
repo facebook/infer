@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-(* example build report json output 
+(* example build report json output
 [
   {
   "success" : true,
@@ -29,13 +29,13 @@ module L = Logging
       "type" : "BUILT_LOCALLY",
       "output" : "buck-out/gen/module1/module1_infer/infer_out"
     },
-    "//module3:module1_infer" : {                    
-      "success" : "SUCCESS",                                                                                           
-      "type" : "BUILT_LOCALLY",                                                                                        
-      "outputs" : {                                                                                                    
-        "DEFAULT" : [ "buck-out/gen/module1/module3_infer/infer_out" ]                                                                                             
-      }                                                                                                                
-    }    
+    "//module3:module1_infer" : {
+      "success" : "SUCCESS",
+      "type" : "BUILT_LOCALLY",
+      "outputs" : {
+        "DEFAULT" : [ "buck-out/gen/module1/module3_infer/infer_out" ]
+      }
+    }
   },
   "failures" : { }
 }%
@@ -95,32 +95,13 @@ let infer_deps_of_build_report build_report =
 
 
 let run_buck_capture cmd =
-  let shell_cmd =
-    List.map ~f:Escape.escape_shell cmd
-    |> String.concat ~sep:" "
-    |> fun cmd -> Printf.sprintf "%s 2>&1" cmd
-  in
   let path_var = "PATH" in
   let new_path =
     Sys.getenv path_var
     |> Option.value_map ~default:Config.bin_dir ~f:(fun old_path -> Config.bin_dir ^ ":" ^ old_path)
   in
-  let env = `Extend [(path_var, new_path)] in
-  let ({stdin; stdout; stderr; pid} : Unix.Process_info.t) =
-    Unix.create_process_env ~prog:"sh" ~args:["-c"; shell_cmd] ~env ()
-  in
-  let buck_stdout = Unix.in_channel_of_descr stdout in
-  Utils.with_channel_in buck_stdout ~f:(L.progress "BUCK: %s@.") ;
-  Unix.close stdin ;
-  Unix.close stderr ;
-  In_channel.close buck_stdout ;
-  match Unix.waitpid pid with
-  | Ok () ->
-      ()
-  | Error _ as err ->
-      L.(die ExternalError)
-        "*** Buck genrule capture failed to execute: %s@\n***@."
-        (Unix.Exit_or_signal.to_string_hum err)
+  let extend_env = [(path_var, new_path)] in
+  Buck.wrap_buck_call ~extend_env ~label:"build" cmd |> ignore
 
 
 let capture build_cmd =

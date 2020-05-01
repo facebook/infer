@@ -7,6 +7,18 @@
 
 open! IStd
 
+val wrap_buck_call :
+  ?extend_env:(string * string) list -> label:string -> string list -> string list
+(** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
+    redirecting standard out to a file, the contents of which are returned; (iii) protect the child
+    process from [SIGQUIT].
+
+    In a call [wrap_buck_call ~extend_env ~label cmd], [extend_env] is a list of pairs
+    [(variable, value)] that will extend the environment of the subprocess; [label] is appended to
+    [buck_] to make the prefix of the temporary file storing the standard output of the command, for
+    quick identification; [cmd] is a list of strings making up the shell command to execute; the
+    return value is the standard output of the command split on newlines. *)
+
 val buck_config : BuckMode.t -> string list
 
 val parse_command_and_targets :
