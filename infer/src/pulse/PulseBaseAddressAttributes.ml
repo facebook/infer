@@ -90,16 +90,6 @@ let remove_allocation_attr address memory =
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_citv = get_attribute Attributes.get_citv
-
-let get_bo_itv v memory =
-  match get_attribute Attributes.get_bo_itv v memory with
-  | None ->
-      Itv.ItvPure.of_pulse_value v
-  | Some itv ->
-      itv
-
-
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory

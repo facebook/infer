@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module Var = struct
   type t = unit
@@ -38,7 +39,10 @@ end
 (* same type as {!PulsePathCondition.t} to be nice to summary serialization *)
 type t = {eqs: Sledge.Equality.t lazy_t; non_eqs: Sledge.Term.t lazy_t}
 
-let pp _ _ = ()
+(* still print to make sure the formula never changes in debug *)
+let pp fmt {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
+  F.fprintf fmt "%a∧%a" Sledge.Equality.pp eqs Sledge.Term.pp non_eqs
+
 
 let true_ = {eqs= Lazy.from_val Sledge.Equality.true_; non_eqs= Lazy.from_val Sledge.Term.true_}
 

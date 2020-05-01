@@ -9,20 +9,17 @@ open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 
-(** {2 Building arithmetic constraints} *)
+(** Wrapper around {!PathCondition} that operates on {!AbductiveDomain.t}. *)
 
 val and_nonnegative : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
-(** [and_nonnegative v astate] is [astate ∧ v≥0] *)
 
 val and_positive : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
-(** [and_positive v astate] is [astate ∧ v>0] *)
 
 val and_eq_int : AbstractValue.t -> IntLit.t -> AbductiveDomain.t -> AbductiveDomain.t
-(** [and_eq_int v i astate] is [astate ∧ v=i] *)
 
-(** {2 Operations} *)
-
-type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+type operand = PathCondition.operand =
+  | LiteralOperand of IntLit.t
+  | AbstractValueOperand of AbstractValue.t
 
 val eval_binop :
   AbstractValue.t -> Binop.t -> operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t
@@ -31,12 +28,10 @@ val eval_unop :
   AbstractValue.t -> Unop.t -> AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
 
 val prune_binop :
-  negated:bool -> Binop.t -> operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t * bool
-
-(** {2 Queries} *)
+  negated:bool -> Binop.t -> operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t
 
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
-(** [is_known_zero astate t] returns [true] if [astate |- t = 0], [false] if we don't know for sure *)
 
-val is_unsat : AbductiveDomain.t -> bool
-(** returns whether the state contains a contradiction *)
+val is_unsat_cheap : AbductiveDomain.t -> bool
+
+val is_unsat_expensive : AbductiveDomain.t -> bool

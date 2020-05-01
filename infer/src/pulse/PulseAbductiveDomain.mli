@@ -114,9 +114,6 @@ end
 (** attribute operations like {!BaseAddressAttributes} but that also take care of propagating facts
     to the precondition *)
 module AddressAttributes : sig
-  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
-  (** add the attribute to the pre, if meaningful (does not modify the post) *)
-
   val abduce_and_add : AbstractValue.t -> Attributes.t -> t -> t
   (** add the attributes to both the current state and, if meaningful, the pre *)
 
@@ -136,10 +133,6 @@ module AddressAttributes : sig
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
   val std_vector_reserve : AbstractValue.t -> t -> t
-
-  val get_citv : AbstractValue.t -> t -> CItv.t option
-
-  val get_bo_itv : AbstractValue.t -> t -> Itv.ItvPure.t
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 end

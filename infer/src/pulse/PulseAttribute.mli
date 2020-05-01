@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module CItv = PulseCItv
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -16,8 +15,6 @@ type t =
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of Procname.t * Trace.t
       (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
-  | CItv of CItv.t
-  | BoItv of Itv.ItvPure.t
   | Closure of Procname.t
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
@@ -40,10 +37,6 @@ module Attributes : sig
   val get_closure_proc_name : t -> Procname.t option
 
   val get_allocation : t -> (Procname.t * Trace.t) option
-
-  val get_citv : t -> CItv.t option
-
-  val get_bo_itv : t -> Itv.ItvPure.t option
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 

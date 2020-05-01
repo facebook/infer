@@ -50,5 +50,5 @@ let map ~f exec_state =
 let of_posts pdesc posts =
   List.filter_map posts ~f:(fun exec_state ->
       let (AbortProgram astate | ContinueProgram astate | ExitProgram astate) = exec_state in
-      if PulseArithmetic.is_unsat astate then None
+      if PulseArithmetic.is_unsat_expensive astate then None
       else Some (map exec_state ~f:(AbductiveDomain.of_post pdesc)) )

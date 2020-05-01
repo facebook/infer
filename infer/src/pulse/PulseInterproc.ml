@@ -56,23 +56,9 @@ type contradiction =
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
-  | CItv of
-      { addr_caller: AbstractValue.t
-      ; addr_callee: AbstractValue.t
-      ; arith_caller: CItv.t option
-      ; arith_callee: CItv.t option
-      ; call_state: call_state }
-      (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
-          state *)
-  | ArithmeticBo of
-      { addr_caller: AbstractValue.t
-      ; addr_callee: AbstractValue.t
-      ; arith_callee: Itv.ItvPure.t
-      ; call_state: call_state }
-      (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
-          state *)
   | FormalActualLength of
       {formals: Var.t list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+  | PathCondition
 
 let pp_contradiction fmt = function
   | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
@@ -80,20 +66,11 @@ let pp_contradiction fmt = function
         "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
         AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
         pp_call_state call_state
-  | CItv {addr_caller; addr_callee; arith_caller; arith_callee; call_state} ->
-      F.fprintf fmt
-        "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable@\n\
-         note: current call state was %a" AbstractValue.pp addr_caller (Pp.option CItv.pp)
-        arith_caller AbstractValue.pp addr_callee (Pp.option CItv.pp) arith_callee AbstractValue.pp
-        addr_caller AbstractValue.pp addr_callee pp_call_state call_state
-  | ArithmeticBo {addr_caller; addr_callee; arith_callee; call_state} ->
-      F.fprintf fmt
-        "callee addr %a%a is incompatible with caller addr %a's arithmetic constraints@\n\
-         note: current call state was %a" AbstractValue.pp addr_callee Itv.ItvPure.pp arith_callee
-        AbstractValue.pp addr_caller pp_call_state call_state
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
+  | PathCondition ->
+      F.pp_print_string fmt "path condition evaluates to false"
 
 
 exception Contradiction of contradiction
@@ -225,67 +202,10 @@ let materialize_pre_for_globals callee_proc_name call_location pre_post call_sta
         ~addr_pre ~addr_hist_caller call_state )
 
 
-let eval_sym_of_subst astate subst s bound_end =
-  let v = Symb.Symbol.get_pulse_value_exn s in
-  match AbstractValue.Map.find_opt v !subst with
-  | Some (v', _) ->
-      Itv.ItvPure.get_bound (AddressAttributes.get_bo_itv v' astate) bound_end
-  | None ->
-      let v' = AbstractValue.mk_fresh () in
-      subst := AbstractValue.Map.add v (v', []) !subst ;
-      Bounds.Bound.of_pulse_value v'
-
-
-let subst_attribute call_state subst_ref astate ~addr_caller attr ~addr_callee =
-  match (attr : Attribute.t) with
-  | CItv arith_callee -> (
-      let arith_caller_opt = AddressAttributes.get_citv addr_caller astate in
-      match CItv.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee) with
-      | Unsatisfiable ->
-          raise
-            (Contradiction
-               (CItv
-                  { addr_caller
-                  ; addr_callee
-                  ; arith_caller= arith_caller_opt
-                  ; arith_callee= Some arith_callee
-                  ; call_state }))
-      | Satisfiable (Some abduce_caller, _abduce_callee) ->
-          Attribute.CItv abduce_caller
-      | Satisfiable (None, _) ->
-          attr )
-  | BoItv itv -> (
-    match
-      Itv.ItvPure.subst itv (fun symb bound ->
-          AbstractDomain.Types.NonBottom (eval_sym_of_subst astate subst_ref symb bound) )
-    with
-    | NonBottom itv' ->
-        Attribute.BoItv itv'
-    | Bottom ->
-        raise
-          (Contradiction (ArithmeticBo {addr_callee; addr_caller; arith_callee= itv; call_state})) )
-  | AddressOfCppTemporary _
-  | AddressOfStackVariable _
-  | Allocated _
-  | Closure _
-  | Invalid _
-  | MustBeValid _
-  | StdVectorReserve
-  | WrittenTo _ ->
-      (* non-relational attributes *)
-      attr
-
-
-let add_call_to_attributes proc_name call_location ~addr_callee ~addr_caller caller_history attrs
-    call_state =
-  let subst_ref = ref call_state.subst in
-  let attrs =
-    Attributes.map attrs ~f:(fun attr ->
-        subst_attribute call_state subst_ref call_state.astate ~addr_callee ~addr_caller attr
-        |> Attribute.map_trace ~f:(fun trace ->
-               add_call_to_trace proc_name call_location caller_history trace ) )
-  in
-  (!subst_ref, attrs)
+let add_call_to_attributes proc_name call_location caller_history attrs =
+  Attributes.map attrs ~f:(fun attr ->
+      Attribute.map_trace attr ~f:(fun trace ->
+          add_call_to_trace proc_name call_location caller_history trace ) )
 
 
 let subst_find_or_new subst addr_callee ~default_hist_caller =
@@ -298,40 +218,27 @@ let subst_find_or_new subst addr_callee ~default_hist_caller =
 
 
 let conjoin_callee_arith pre_post call_state =
-  L.d_printfln "applying callee path condition: %a[%a]" PathCondition.pp
+  L.d_printfln "applying callee path condition: (%a)[%a]" PathCondition.pp
     pre_post.AbductiveDomain.path_condition
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     call_state.subst ;
-  let subst, callee_path_cond =
-    (* need to translate callee variables to make sense for the caller, thereby possibly extending
-       the current substitution *)
-    PathCondition.fold_map_variables pre_post.AbductiveDomain.path_condition ~init:call_state.subst
-      ~f:(fun subst v_callee_arith ->
-        let v_callee = PathCondition.Var.to_absval v_callee_arith in
-        let subst', (v_caller, _) = subst_find_or_new subst v_callee ~default_hist_caller:[] in
-        (subst', PathCondition.Var.of_absval v_caller) )
+  let subst, path_condition =
+    PathCondition.and_callee call_state.subst call_state.astate.path_condition
+      ~callee:pre_post.AbductiveDomain.path_condition
   in
-  let path_condition = PathCondition.and_ call_state.astate.path_condition callee_path_cond in
-  let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
-  (* Don't trigger the computation of [path_condition] by asking for satisfiability here. Instead,
-     (un-)satisfiability is computed lazily when we discover issues. *)
-  {call_state with astate; subst}
-
-
-(* shadowed to take config into account *)
-let conjoin_callee_arith pre_post call_state =
-  if Config.pulse_path_conditions then conjoin_callee_arith pre_post call_state else call_state
+  if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
+  else
+    let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
+    {call_state with astate; subst}
 
 
 let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
-  let one_address_sat addr_callee callee_attrs (addr_caller, caller_history) call_state =
-    let subst, attrs_caller =
-      add_call_to_attributes callee_proc_name call_location ~addr_callee ~addr_caller caller_history
-        callee_attrs call_state
+  let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
+    let attrs_caller =
+      add_call_to_attributes callee_proc_name call_location caller_history callee_attrs
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
-    if phys_equal subst call_state.subst && phys_equal astate call_state.astate then call_state
-    else {call_state with subst; astate}
+    if phys_equal astate call_state.astate then call_state else {call_state with astate}
   in
   let call_state = conjoin_callee_arith pre_post call_state in
   (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
@@ -344,7 +251,7 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
       | None ->
           call_state
       | Some callee_attrs ->
-          one_address_sat addr_callee callee_attrs addr_hist_caller call_state )
+          one_address_sat callee_attrs addr_hist_caller call_state )
     call_state.subst call_state
 
 
@@ -398,12 +305,11 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post)
     ~addr_hist_caller:(addr_caller, hist_caller) call_state =
   let call_state =
-    let subst, attrs_post_caller =
-      add_call_to_attributes ~addr_callee ~addr_caller callee_proc_name call_loc hist_caller
-        attrs_callee_post call_state
+    let attrs_post_caller =
+      add_call_to_attributes callee_proc_name call_loc hist_caller attrs_callee_post
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_post_caller call_state.astate in
-    {call_state with subst; astate}
+    {call_state with astate}
   in
   let subst, translated_post_edges =
     BaseMemory.Edges.fold_map ~init:call_state.subst edges_callee_post
@@ -549,12 +455,9 @@ let record_post_remaining_attributes callee_proc_name call_loc pre_post call_sta
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
-            let subst, attrs' =
-              add_call_to_attributes callee_proc_name call_loc ~addr_callee ~addr_caller history
-                attrs call_state
-            in
+            let attrs' = add_call_to_attributes callee_proc_name call_loc history attrs in
             let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
-            {call_state with subst; astate} )
+            {call_state with astate} )
     (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state
 
 

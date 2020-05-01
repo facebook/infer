@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module CItv = PulseCItv
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -29,8 +28,6 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
-    | CItv of CItv.t
-    | BoItv of Itv.ItvPure.t
     | Closure of Procname.t
     | Invalid of Invalidation.t * Trace.t
     | MustBeValid of Trace.t
@@ -63,10 +60,6 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let citv_rank = Variants.to_rank (CItv (CItv.equal_to IntLit.zero))
-
-  let bo_itv_rank = Variants.to_rank (BoItv Itv.ItvPure.zero)
-
   let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
 
   let pp f attribute =
@@ -83,12 +76,8 @@ module Attribute = struct
           (Trace.pp
              ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)))
           trace
-    | BoItv bo_itv ->
-        F.fprintf f "BoItv (%a)" Itv.ItvPure.pp bo_itv
     | Closure pname ->
         Procname.pp f pname
-    | CItv phi ->
-        F.fprintf f "Arith %a" CItv.pp phi
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -155,27 +144,13 @@ module Attributes = struct
            (procname, trace) )
 
 
-  let get_citv attrs =
-    Set.find_rank attrs Attribute.citv_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.CItv a) = attr in
-           a )
-
-
-  let get_bo_itv attrs =
-    Set.find_rank attrs Attribute.bo_itv_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.BoItv itv) = attr in
-           itv )
-
-
   include Set
 end
 
 include Attribute
 
 let is_suitable_for_pre = function
-  | CItv _ | BoItv _ | MustBeValid _ ->
+  | MustBeValid _ ->
       true
   | AddressOfCppTemporary _
   | AddressOfStackVariable _
@@ -196,10 +171,5 @@ let map_trace ~f = function
       MustBeValid (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
-  | ( AddressOfCppTemporary _
-    | AddressOfStackVariable _
-    | BoItv _
-    | CItv _
-    | Closure _
-    | StdVectorReserve ) as attr ->
+  | (AddressOfCppTemporary _ | AddressOfStackVariable _ | Closure _ | StdVectorReserve) as attr ->
       attr

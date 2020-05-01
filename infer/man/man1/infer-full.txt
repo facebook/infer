@@ -1594,6 +1594,11 @@ INTERNAL OPTIONS
        --profiler-samples-reset
            Cancel the effect of --profiler-samples.
 
+       --pudge
+           Activates: Experimental flag to enable sledge arithmetic on path
+           conditions. This is intended for Pulse development only and will
+           be removed once the feature is stable. (Conversely: --no-pudge)
+
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:

@@ -7,4 +7,7 @@
 
 open! IStd
 
-include PulsePathConditionModuleType.S
+module Pudge = ( val if Config.pudge then (module PulseSledge) else (module PulseDummySledge)
+                   : Pudge_intf.S )
+
+include Pudge

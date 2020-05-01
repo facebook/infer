@@ -217,12 +217,6 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_closure_proc_name addr (astate.post :> base_domain).attrs
 
 
-  let get_citv addr astate = BaseAddressAttributes.get_citv addr (astate.post :> base_domain).attrs
-
-  let get_bo_itv addr astate =
-    BaseAddressAttributes.get_bo_itv addr (astate.post :> base_domain).attrs
-
-
   let std_vector_reserve addr astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.std_vector_reserve addr)
 

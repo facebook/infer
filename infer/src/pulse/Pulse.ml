@@ -22,7 +22,7 @@ let check_error_transform summary ~f = function
   | Ok astate ->
       f astate
   | Error (diagnostic, astate) ->
-      if PulseArithmetic.is_unsat astate then []
+      if PulseArithmetic.is_unsat_expensive astate then []
       else (
         report summary diagnostic ;
         [ExecutionDomain.AbortProgram astate] )
@@ -179,12 +179,13 @@ module PulseTransferFunctions = struct
           check_error_continue summary result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           PulseOperations.prune loc ~condition astate
-          |> check_error_transform summary ~f:(fun (exec_state, cond_satisfiable) ->
-                 if cond_satisfiable then
+          |> check_error_transform summary ~f:(fun astate ->
+                 if PulseArithmetic.is_unsat_cheap astate then
+                   (* [condition] is known to be unsatisfiable: prune path *)
+                   []
+                 else
                    (* [condition] is true or unknown value: go into the branch *)
-                   [Domain.ContinueProgram exec_state]
-                 else (* [condition] is known to be unsatisfiable: prune path *)
-                   [] )
+                   [Domain.ContinueProgram astate] )
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call tenv summary ret call_exp actuals loc call_flags get_formals astate
           |> check_error_transform summary ~f:(fun id -> id)

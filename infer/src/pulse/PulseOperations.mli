@@ -27,7 +27,7 @@ val eval : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
 
-val prune : Location.t -> condition:Exp.t -> t -> (t * bool) access_result
+val prune : Location.t -> condition:Exp.t -> t -> t access_result
 
 val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Like [eval] but evaluates [*exp]. *)

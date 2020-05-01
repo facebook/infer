@@ -1754,6 +1754,12 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
+and pudge =
+  CLOpt.mk_bool ~long:"pudge" ~default:false
+    "Experimental flag to enable sledge arithmetic on path conditions. This is intended for Pulse \
+     development only and will be removed once the feature is stable."
+
+
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
     "Maximum number of array elements and structure fields to keep track of for a given array \
@@ -1780,13 +1786,6 @@ and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Regex of methods that should be modelled as free in Pulse"
-
-
-and pulse_path_conditions =
-  CLOpt.mk_bool ~long:"" ~deprecated:["-pulse-path-conditions"]
-    ~deprecated_no:["-no-pulse-path-conditions"] ~default:false
-    "Experimental flag to enable arithmetic on path conditions. This is intended for Pulse \
-     development only and will be removed once the feature is stable."
 
 
 and pulse_widen_threshold =
@@ -2855,6 +2854,8 @@ and progress_bar =
 
 and project_root = !project_root
 
+and pudge = !pudge
+
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
@@ -2864,8 +2865,6 @@ and pulse_max_disjuncts = !pulse_max_disjuncts
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
-
-and pulse_path_conditions = !pulse_path_conditions
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

@@ -32,10 +32,6 @@ val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.
 
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
-val get_citv : AbstractValue.t -> t -> CItv.t option
-
-val get_bo_itv : AbstractValue.t -> t -> Itv.ItvPure.t
-
 val get_must_be_valid : AbstractValue.t -> t -> Trace.t option
 
 val std_vector_reserve : AbstractValue.t -> t -> t
