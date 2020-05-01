@@ -136,7 +136,11 @@ let is_known_zero t phi = Equality.entails_eq (Lazy.force phi.eqs) t Term.zero
 
 (* NOTE: not normalizing non_eqs here gives imprecise results but is cheaper *)
 let is_unsat {eqs; non_eqs} =
-  Equality.is_false (Lazy.force eqs) || Term.is_false (Lazy.force non_eqs)
+  (* [Term.is_false] is cheap, forcing [eqs] is expensive, then calling [Equality.normalize] is
+     expensive on top of that *)
+  Term.is_false (Lazy.force non_eqs)
+  || Equality.is_false (Lazy.force eqs)
+  || Term.is_false (Equality.normalize (Lazy.force eqs) (Lazy.force non_eqs))
 
 
 let fv {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
