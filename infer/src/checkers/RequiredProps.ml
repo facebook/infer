@@ -181,9 +181,7 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
 
 let should_report proc_desc tenv =
   let pname = Procdesc.get_proc_name proc_desc in
-  (not (is_litho_function pname))
-  && (not (is_component_build_method pname tenv))
-  && not (PredSymb.equal_access (Procdesc.get_access proc_desc) Private)
+  (not (is_litho_function pname)) && not (is_component_build_method pname tenv)
 
 
 let report astate tenv summary =
