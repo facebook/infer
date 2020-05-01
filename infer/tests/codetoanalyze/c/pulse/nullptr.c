@@ -73,7 +73,7 @@ void malloc_free_ok() {
 
 void wrap_free(void* p) { free(p); }
 
-void FP_interproc_free_ok() {
+void interproc_free_ok() {
   int* p = (int*)malloc(sizeof(int));
   wrap_free(p);
 }

@@ -78,6 +78,7 @@ module C = struct
     if PulseArithmetic.is_known_zero astate (fst deleted_access) then
       PulseOperations.ok_continue astate
     else
+      let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
       let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
       [ExecutionDomain.ContinueProgram astate]
 
