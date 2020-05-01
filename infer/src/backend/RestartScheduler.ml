@@ -7,9 +7,7 @@
 open! IStd
 module L = Logging
 
-exception ProcnameAlreadyLocked of Procname.t
-
-type work_with_dependency = {work: SchedulerTypes.target; need_to_finish: Procname.t option}
+type work_with_dependency = {work: TaskSchedulerTypes.target; need_to_finish: Procname.t option}
 
 let of_list (lst : work_with_dependency list) : ('a, Procname.t) ProcessPool.TaskGenerator.t =
   let content = Queue.of_list lst in
@@ -39,10 +37,10 @@ let make sources =
     List.map sources ~f:SourceFiles.proc_names_of_source
     |> List.concat
     |> List.rev_map ~f:(fun procname ->
-           {work= SchedulerTypes.Procname procname; need_to_finish= None} )
+           {work= TaskSchedulerTypes.Procname procname; need_to_finish= None} )
   in
   let files =
-    List.map sources ~f:(fun file -> {work= SchedulerTypes.File file; need_to_finish= None})
+    List.map sources ~f:(fun file -> {work= TaskSchedulerTypes.File file; need_to_finish= None})
   in
   let permute = List.permute ~random_state:(Random.State.make (Array.create ~len:1 0)) in
   permute pnames @ permute files |> of_list
@@ -91,7 +89,7 @@ let lock_exn pname =
       if ProcLocker.try_lock pname then record_locked_proc pname
       else (
         unlock_all () ;
-        raise (ProcnameAlreadyLocked pname) ) )
+        raise (TaskSchedulerTypes.ProcnameAlreadyLocked pname) ) )
 
 
 let unlock pname =

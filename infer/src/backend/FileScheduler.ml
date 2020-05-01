@@ -7,7 +7,7 @@
 open! IStd
 
 let make sources =
-  let open SchedulerTypes in
+  let open TaskSchedulerTypes in
   let gen =
     List.rev_map sources ~f:(fun sf -> File sf)
     |> List.permute ~random_state:(Random.State.make (Array.create ~len:1 0))

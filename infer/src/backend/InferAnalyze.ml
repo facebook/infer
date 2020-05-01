@@ -19,7 +19,7 @@ let clear_caches_except_lrus () =
 
 let clear_caches () = Ondemand.LocalCache.clear () ; clear_caches_except_lrus ()
 
-let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
+let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
   let analyze_source_file exe_env source_file =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
@@ -30,7 +30,7 @@ let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
             DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
-        with RestartScheduler.ProcnameAlreadyLocked pname -> Some pname )
+        with TaskSchedulerTypes.ProcnameAlreadyLocked pname -> Some pname )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
@@ -46,7 +46,7 @@ let analyze_target : (SchedulerTypes.target, Procname.t) Tasks.doer =
     try
       Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
       None
-    with RestartScheduler.ProcnameAlreadyLocked pname -> Some pname
+    with TaskSchedulerTypes.ProcnameAlreadyLocked pname -> Some pname
   in
   fun target ->
     let exe_env = Exe_env.mk () in
@@ -124,7 +124,9 @@ let tasks_generator_builder_for sources =
 
 let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
-    let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> SchedulerTypes.File sf) in
+    let target_files =
+      List.rev_map source_files_to_analyze ~f:(fun sf -> TaskSchedulerTypes.File sf)
+    in
     Tasks.run_sequentially ~f:analyze_target target_files ;
     BackendStats.get () )
   else (

@@ -304,9 +304,16 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       | Ok post ->
           post
       | Error (exn, backtrace, instr) ->
-          if not !logged_error then (
-            L.internal_error "In instruction %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-            logged_error := true ) ;
+          ( match exn with
+          | TaskSchedulerTypes.ProcnameAlreadyLocked _ ->
+              (* this isn't an error; don't log it *)
+              ()
+          | _ ->
+              if not !logged_error then (
+                L.internal_error "In instruction %a@\n"
+                  (Sil.pp_instr ~print_types:true Pp.text)
+                  instr ;
+                logged_error := true ) ) ;
           Caml.Printexc.raise_with_backtrace exn backtrace
     in
     (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)

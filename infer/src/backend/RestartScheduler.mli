@@ -6,8 +6,6 @@
  *)
 open! IStd
 
-exception ProcnameAlreadyLocked of Procname.t
-
 val setup : unit -> unit
 
 val clean : unit -> unit
@@ -16,4 +14,4 @@ val lock_exn : Procname.t -> unit
 
 val unlock : Procname.t -> unit
 
-val make : SourceFile.t list -> (SchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t
+val make : SourceFile.t list -> (TaskSchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t
