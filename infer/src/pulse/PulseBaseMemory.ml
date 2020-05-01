@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 open PulseBasicInterface
 
@@ -26,7 +27,12 @@ module AddrTrace = struct
     else AbstractValue.pp fmt (fst addr_trace)
 end
 
-module Edges = PrettyPrintable.MakePPMonoMap (Access) (AddrTrace)
+module Edges =
+  RecencyMap.Make (Access) (AddrTrace)
+    (struct
+      let limit = Config.pulse_recency_limit
+    end)
+
 module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (Edges)
 
 let register_address addr memory =

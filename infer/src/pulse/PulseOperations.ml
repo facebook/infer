@@ -46,11 +46,9 @@ module Closures = struct
 
 
   let mk_capture_edges captured =
-    let fake_fields =
-      List.rev_mapi captured ~f:(fun id captured_addr_trace ->
-          (HilExp.Access.FieldAccess (mk_fake_field ~id), captured_addr_trace) )
-    in
-    Memory.Edges.of_seq (Caml.List.to_seq fake_fields)
+    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges captured_addr_trace ->
+        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id)) captured_addr_trace edges
+    )
 
 
   let check_captured_addresses action lambda_addr (astate : t) =
@@ -61,8 +59,7 @@ module Closures = struct
         let+ () =
           IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
             | Attribute.Closure _ ->
-                IContainer.iter_result
-                  ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
+                IContainer.iter_result ~fold:Memory.Edges.fold_bindings edges
                   ~f:(fun (access, addr_trace) ->
                     if is_captured_fake_access access then
                       let+ _ = check_addr_access action addr_trace astate in
@@ -241,14 +238,12 @@ let invalidate_array_elements location cause addr_trace astate =
   | None ->
       astate
   | Some edges ->
-      Memory.Edges.fold
-        (fun access dest_addr_trace astate ->
+      Memory.Edges.fold edges ~init:astate ~f:(fun astate access dest_addr_trace ->
           match (access : Memory.Access.t) with
           | ArrayAccess _ ->
               AddressAttributes.invalidate dest_addr_trace cause location astate
           | _ ->
               astate )
-        edges astate
 
 
 let shallow_copy location addr_hist astate =

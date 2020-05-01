@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 open PulseBasicInterface
 
@@ -17,7 +18,7 @@ module AddrTrace : sig
   type t = AbstractValue.t * ValueHistory.t
 end
 
-module Edges : PrettyPrintable.PPMonoMap with type key = Access.t and type value = AddrTrace.t
+module Edges : RecencyMap.S with type key = Access.t and type value = AddrTrace.t
 
 include PrettyPrintable.PPMonoMap with type key = AbstractValue.t and type value = Edges.t
 

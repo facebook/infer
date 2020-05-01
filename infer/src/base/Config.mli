@@ -443,6 +443,8 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
 
+val pulse_recency_limit : int
+
 val pulse_intraprocedural_only : bool
 
 val pulse_max_disjuncts : int

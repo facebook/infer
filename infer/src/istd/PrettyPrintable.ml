@@ -205,6 +205,8 @@ module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) =
 module type PrintableRankedType = sig
   include PrintableType
 
+  val compare : t -> t -> int
+
   val equal : t -> t -> bool
 
   val to_rank : t -> int

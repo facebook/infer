@@ -1608,6 +1608,10 @@ INTERNAL OPTIONS
        --pulse-model-free-pattern-reset
            Cancel the effect of --pulse-model-free-pattern.
 
+       --pulse-recency-limit int
+           Maximum number of array elements and structure fields to keep
+           track of for a given array address.
+
        --pulse-widen-threshold int
            Under-approximate after int loop iterations
 

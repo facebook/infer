@@ -1754,6 +1754,12 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
+and pulse_recency_limit =
+  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
+
+
 and pulse_intraprocedural_only =
   CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
@@ -2848,6 +2854,8 @@ and progress_bar =
 
 
 and project_root = !project_root
+
+and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 

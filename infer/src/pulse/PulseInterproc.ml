@@ -157,8 +157,8 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
     | None ->
         Ok call_state
     | Some edges_pre ->
-        Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
-          ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
+        Container.fold_result ~fold:Memory.Edges.fold_bindings ~init:call_state edges_pre
+          ~f:(fun call_state (access, (addr_pre_dest, _)) ->
             let astate, addr_hist_dest_caller =
               Memory.eval_edge addr_hist_caller access call_state.astate
             in
@@ -385,15 +385,13 @@ let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_c
     | None ->
         old_post_edges
     | Some edges_pre ->
-        BaseMemory.Edges.merge
-          (fun _access old_opt pre_opt ->
+        BaseMemory.Edges.merge old_post_edges edges_pre ~f:(fun _access old_opt pre_opt ->
             (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
                whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
             if Option.is_some pre_opt then
               (* delete edge if some edge for the same access exists in the pre *)
               None
-            else (* keep old edge if it exists *) old_opt )
-          old_post_edges edges_pre )
+            else (* keep old edge if it exists *) old_opt ) )
 
 
 let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
@@ -423,9 +421,8 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
       delete_edges_in_callee_pre_from_caller ~addr_callee ~edges_pre_opt ~addr_caller call_state
     in
     let edges_post_caller =
-      BaseMemory.Edges.union
-        (fun _ _ post_cell -> Some post_cell)
-        post_edges_minus_pre translated_post_edges
+      BaseMemory.Edges.union post_edges_minus_pre translated_post_edges ~f:(fun _ _ post_cell ->
+          Some post_cell )
     in
     AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate
   in
@@ -450,8 +447,8 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
             record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt ~addr_hist_caller
               ~cell_callee_post call_state
         in
-        IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold ~init:call_state_after_post
-          edges_post ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
+        Memory.Edges.fold ~init:call_state_after_post edges_post
+          ~f:(fun call_state _access (addr_callee_dest, _) ->
             let call_state, addr_hist_curr_dest =
               call_state_subst_find_or_new call_state addr_callee_dest
                 ~default_hist_caller:(snd addr_hist_caller)

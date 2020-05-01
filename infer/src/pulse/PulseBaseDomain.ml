@@ -231,9 +231,8 @@ end = struct
 
   and visit_edges orig_var ~f rev_accesses ~edges astate visited_accum =
     let finish visited_accum = Continue visited_accum in
-    Container.fold_until edges
-      ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
-      ~finish ~init:visited_accum ~f:(fun visited_accum (access, (address, _trace)) ->
+    Container.fold_until edges ~fold:Memory.Edges.fold_bindings ~finish ~init:visited_accum
+      ~f:(fun visited_accum (access, (address, _trace)) ->
         match visit_address orig_var ~f (access :: rev_accesses) astate address visited_accum with
         | Continue _ as cont ->
             cont
