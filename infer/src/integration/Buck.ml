@@ -9,6 +9,50 @@ open! IStd
 module F = Format
 module L = Logging
 
+(** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
+    redirecting standard out to a file, the contents of which are returned; (iii) protect the child
+    process from [SIGQUIT].
+
+    We want to ihnibit [SIGQUIT] because the standard action of the JVM is to print a thread dump on
+    stdout, polluting the output we want to collect (and normally does not lead to process death).
+    To achieve this we need to do two things: (i) tell the JVM not to use signals, meaning it leaves
+    the default handler for [SIGQUIT] in place; (ii) uninstall the default handler for [SIGQUIT]
+    because now that the JVM doesn't touch it, it will lead to process death. *)
+let wrap_buck_call ?(extend_env = []) ~label cmd =
+  let stdout_file =
+    let prefix = Printf.sprintf "buck_%s" label in
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
+  in
+  let escaped_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
+  let sigquit_protected_cmd =
+    (* Uninstall the default handler for [SIGQUIT]. *)
+    Printf.sprintf "trap '' SIGQUIT ; exec %s >'%s'" escaped_cmd stdout_file
+  in
+  let env =
+    (* Instruct the JVM to avoid using signals. *)
+    `Extend (("BUCK_EXTRA_JAVA_ARGS", "-Xrs") :: extend_env)
+  in
+  let Unix.Process_info.{stdin; stdout; stderr; pid} =
+    Unix.create_process_env ~prog:"sh" ~args:["-c"; sigquit_protected_cmd] ~env ()
+  in
+  let buck_stderr = Unix.in_channel_of_descr stderr in
+  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
+  Unix.close stdin ;
+  Unix.close stdout ;
+  In_channel.close buck_stderr ;
+  match Unix.waitpid pid with
+  | Ok () -> (
+    match Utils.read_file stdout_file with
+    | Ok lines ->
+        lines
+    | Error err ->
+        L.die ExternalError "*** failed to read output of buck command %s: %s" sigquit_protected_cmd
+          err )
+  | Error _ as err ->
+      L.die ExternalError "*** failed to execute buck command %s: %s" sigquit_protected_cmd
+        (Unix.Exit_or_signal.to_string_hum err)
+
+
 module Target = struct
   type t = {name: string; flavors: string list}
 
@@ -121,9 +165,7 @@ module Query = struct
     let cmd =
       ("buck" :: "query" :: buck_config) @ List.rev_append Config.buck_build_args_no_inline [query]
     in
-    let tmp_prefix = "buck_query_" in
-    let debug = L.(debug Capture Medium) in
-    Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:Fn.id
+    wrap_buck_call ~label:"query" cmd
 end
 
 let accepted_buck_commands = ["build"]
@@ -194,15 +236,13 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
 
 
 let resolve_alias_targets aliases =
-  let debug = L.(debug Capture Medium) in
   (* we could use buck query to resolve aliases but buck targets --resolve-alias is faster *)
   let cmd = "buck" :: "targets" :: "--resolve-alias" :: aliases in
-  let tmp_prefix = "buck_targets_" in
   let on_result_lines =
     die_if_empty (fun die ->
         die "*** No alias found for: '%a'." (Pp.seq ~sep:"', '" F.pp_print_string) aliases )
   in
-  Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:on_result_lines
+  wrap_buck_call ~label:"targets" cmd |> on_result_lines
 
 
 type parsed_args =
@@ -381,27 +421,12 @@ let capture_buck_args =
 
 let run_buck_build prog buck_build_args =
   L.debug Capture Verbose "%s %s@." prog (List.to_string ~f:Fn.id buck_build_args) ;
-  let buck_output_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_output" ".log"
-  in
   let infer_args =
     Option.fold (Sys.getenv CommandLineOption.args_env_var) ~init:"--fcp-syntax-only"
       ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
   in
-  let shell_cmd =
-    List.map ~f:Escape.escape_shell (prog :: buck_build_args)
-    |> String.concat ~sep:" "
-    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd buck_output_file
-  in
-  let env = `Extend [(CommandLineOption.args_env_var, infer_args)] in
-  let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog:"sh" ~args:["-c"; shell_cmd] ~env ()
-  in
-  let buck_stderr = Unix.in_channel_of_descr stderr in
-  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
-  Unix.close stdin ;
-  Unix.close stdout ;
-  In_channel.close buck_stderr ;
+  let extend_env = [(CommandLineOption.args_env_var, infer_args)] in
+  let lines = wrap_buck_call ~extend_env ~label:"build" (prog :: buck_build_args) in
   (* Process a line of buck stdout output, in this case the result of '--show-output'
      These paths (may) contain a 'infer-deps.txt' file, which we will later merge
   *)
@@ -419,16 +444,7 @@ let run_buck_build prog buck_build_args =
         L.internal_error "Couldn't parse buck target output: %s" line ;
         acc
   in
-  match Unix.waitpid pid with
-  | Ok () -> (
-    match Utils.read_file buck_output_file with
-    | Ok lines ->
-        List.fold lines ~init:[] ~f:process_buck_line
-    | Error err ->
-        L.die ExternalError "*** capture failed to execute: %s" err )
-  | Error _ as err ->
-      L.die ExternalError "*** capture failed to execute: %s"
-        (Unix.Exit_or_signal.to_string_hum err)
+  List.fold lines ~init:[] ~f:process_buck_line
 
 
 let merge_deps_files depsfiles =
