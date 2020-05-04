@@ -36,7 +36,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
         PatternMatch.proc_calls (PatternMatch.lookup_attributes tenv) init_pd filter
       in
       let do_called (callee_pn, _) =
-        match Ondemand.get_proc_desc callee_pn with
+        match Procdesc.load callee_pn with
         | Some callee_pd ->
             res := (callee_pn, callee_pd) :: !res
         | None ->
@@ -90,11 +90,7 @@ let pname_and_pdescs_with tenv curr_pname f =
   in
   let do_proc pname =
     if filter pname then
-      match Ondemand.get_proc_desc pname with
-      | Some pdesc ->
-          res := (pname, pdesc) :: !res
-      | None ->
-          ()
+      match Procdesc.load pname with Some pdesc -> res := (pname, pdesc) :: !res | None -> ()
   in
   List.iter ~f:do_proc (SourceFiles.get_procs_in_file curr_pname) ;
   List.rev !res
