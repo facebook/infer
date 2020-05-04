@@ -9,11 +9,30 @@ open! IStd
 
 module ClassInfo = struct
   type t =
-    {summaries: NullsafeSummary.t list; nested_anonymous_classes: anonymous_class_to_summaries}
+    { class_name: JavaClassName.t
+    ; summaries: NullsafeSummary.t list
+    ; mutable nested_classes_info: t list
+    ; nested_anonymous_classes: anonymous_class_to_summaries }
 
   and anonymous_class_to_summaries = NullsafeSummary.t list JavaClassName.Map.t
 
-  let make_empty () = {summaries= []; nested_anonymous_classes= JavaClassName.Map.empty}
+  let get_class_name {class_name} = class_name
+
+  let get_summaries {summaries} = summaries
+
+  let get_nested_anonymous_summaries {nested_anonymous_classes} = nested_anonymous_classes
+
+  let get_nested_classes_info {nested_classes_info} = nested_classes_info
+
+  (** Add a link between this class and a nested class info *)
+  let add_nested_class_info ~nested t = t.nested_classes_info <- nested :: t.nested_classes_info
+
+  let make_empty class_name =
+    { class_name
+    ; summaries= []
+    ; nested_classes_info= []
+    ; nested_anonymous_classes= JavaClassName.Map.empty }
+
 
   (** Add top level (not anonymous) summary belonging to this class *)
   let add_class_summary summary t = {t with summaries= summary :: t.summaries}
@@ -28,24 +47,19 @@ module ClassInfo = struct
     {t with nested_anonymous_classes= updated_anonymous_classes}
 
 
-  let get_anonymous_summaries {nested_anonymous_classes} =
-    JavaClassName.Map.fold
-      (fun class_name summaries acc -> (class_name, summaries) :: acc)
-      nested_anonymous_classes []
-
-
-  let get_all_summaries t =
+  let rec get_recursive_summaries t =
+    let this_summaries = List.map t.summaries ~f:(fun summary -> (t.class_name, summary)) in
     let anonymous_summaries =
-      get_anonymous_summaries t
-      |> List.map ~f:(fun (_, summaries) -> summaries)
-      |> List.fold ~init:[] ~f:( @ )
+      JavaClassName.Map.bindings t.nested_anonymous_classes
+      |> List.map ~f:(fun (class_name, summaries) ->
+             List.map summaries ~f:(fun summary -> (class_name, summary)) )
+      |> List.concat
     in
-    t.summaries @ anonymous_summaries
+    let nested_summaries =
+      List.map t.nested_classes_info ~f:get_recursive_summaries |> List.concat
+    in
+    this_summaries @ nested_summaries @ anonymous_summaries
 end
-
-type t = ClassInfo.t JavaClassName.Map.t
-
-let make_empty () = JavaClassName.Map.empty
 
 (* If key (class_name) was not in the map yet, add it, otherwise modify the existing value.
    [update] is a function that modifies value.
@@ -53,23 +67,66 @@ let make_empty () = JavaClassName.Map.empty
 let update_in_map class_name ~update t =
   JavaClassName.Map.update class_name
     (fun class_info ->
-      let info_to_update = Option.value class_info ~default:(ClassInfo.make_empty ()) in
+      let info_to_update = Option.value class_info ~default:(ClassInfo.make_empty class_name) in
       Some (update info_to_update) )
     t
 
 
-let register_summary java_class_name summary t =
-  match JavaClassName.get_user_defined_class_if_anonymous_inner java_class_name with
+(* Add (empty) class info for all outer classes for this class recursively,
+   if it did not exist yet *)
+let rec register_ancestors user_defined_class map =
+  match JavaClassName.get_outer_class_name user_defined_class with
+  | Some outer_class ->
+      (* add to the map if not added and to the same for parent *)
+      update_in_map outer_class ~update:ident map |> register_ancestors outer_class
+  | None ->
+      map
+
+
+(* Register this class and all it ancestor classes, if not registered yet,
+   and update list of summaries for this class.
+*)
+let register_classes_and_add_summary class_name summary map =
+  match JavaClassName.get_user_defined_class_if_anonymous_inner class_name with
   | Some outer_class_name ->
       (* That was a nested anonymous class.
          We don't register it at top level, registed outer class instead. *)
       update_in_map outer_class_name
-        ~update:(ClassInfo.add_anonymous_summary java_class_name summary)
-        t
+        ~update:(ClassInfo.add_anonymous_summary class_name summary)
+        map
+      |> register_ancestors outer_class_name
   | None ->
       (* This is not an anonymous class, register it as is *)
-      update_in_map java_class_name ~update:(ClassInfo.add_class_summary summary) t
+      update_in_map class_name ~update:(ClassInfo.add_class_summary summary) map
+      |> register_ancestors class_name
 
 
-let group_by_user_class t =
-  JavaClassName.Map.fold (fun class_name class_info acc -> (class_name, class_info) :: acc) t []
+(* the result is the map from all class names (including all ancestors) to corresponding info with summaries,
+   without links to nested classes *)
+let create_initial_map all_summaries =
+  List.fold all_summaries ~init:JavaClassName.Map.empty ~f:(fun map (class_name, summary) ->
+      register_classes_and_add_summary class_name summary map )
+
+
+(* given a map containing all nested and parent class names (excluding anonymous classes),
+   update [nested_classes_info] links for all outer classes
+*)
+let set_links map =
+  JavaClassName.Map.iter
+    (fun class_name class_info ->
+      Option.iter (JavaClassName.get_outer_class_name class_name) ~f:(fun outer_class_name ->
+          let outer_info = JavaClassName.Map.find outer_class_name map in
+          ClassInfo.add_nested_class_info ~nested:class_info outer_info ) )
+    map
+
+
+let aggregate all_summaries =
+  let class_name_to_info = create_initial_map all_summaries in
+  set_links class_name_to_info ;
+  (* Return only list of top level classes that are not nested *)
+  JavaClassName.Map.bindings class_name_to_info
+  |> List.filter_map ~f:(fun (class_name, class_info) ->
+         if Option.is_none (JavaClassName.get_outer_class_name class_name) then
+           (* This class is the outermost, leave it *)
+           Some class_info
+         else None )

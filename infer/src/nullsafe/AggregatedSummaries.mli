@@ -14,17 +14,21 @@ open! IStd
 module ClassInfo : sig
   type t
 
-  val get_all_summaries : t -> NullsafeSummary.t list
-  (** List of all summaries, user-level and anonymous, combined together *)
+  val get_class_name : t -> JavaClassName.t
+
+  val get_summaries : t -> NullsafeSummary.t list
+
+  val get_nested_classes_info : t -> t list
+
+  val get_nested_anonymous_summaries : t -> NullsafeSummary.t list JavaClassName.Map.t
+  (** List of all anonymous class summaries belonging to this class, together with name of anonymous
+      class. This is a flattenned list, so we don't care if one anonymous class is nested inside the
+      other. *)
+
+  val get_recursive_summaries : t -> (JavaClassName.t * NullsafeSummary.t) list
+  (** A flattened list of all summaries, user-level, nested, and anonymous, combined together *)
 end
 
-type t
-
-val make_empty : unit -> t
-
-val register_summary : JavaClassName.t -> NullsafeSummary.t -> t -> t
-(** Add information about summary to the class map. Depending on if this an anonymous or
-    user-defined class, adds it to corresponding lists. *)
-
-val group_by_user_class : t -> (JavaClassName.t * ClassInfo.t) list
-(** List of pairs <user defined class name, info about this class *)
+val aggregate : (JavaClassName.t * NullsafeSummary.t) list -> ClassInfo.t list
+(** Given a list of all summaries and their classes, group them by names and aggregate in a list of
+    top-level classes. *)

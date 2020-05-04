@@ -34,8 +34,14 @@ let is_reportable_typing_rules_violation ~nullsafe_mode issue =
   is_typing_rules_violation issue && TypeErr.is_reportable ~nullsafe_mode issue
 
 
-let get_reportable_typing_rules_violations ~nullsafe_mode issues =
-  List.filter issues ~f:(is_reportable_typing_rules_violation ~nullsafe_mode)
+let get_reportable_typing_rules_violations modes_with_issues =
+  List.filter modes_with_issues ~f:(fun (nullsafe_mode, issue) ->
+      is_reportable_typing_rules_violation ~nullsafe_mode issue )
+  |> List.map ~f:(fun (_, a) -> a)
+
+
+let get_reportable_typing_rules_violations_for_mode ~nullsafe_mode issues =
+  List.map issues ~f:(fun issue -> (nullsafe_mode, issue)) |> get_reportable_typing_rules_violations
 
 
 type meta_issue =
@@ -60,7 +66,7 @@ let mode_to_json mode =
 
 
 let is_clean_in_mode nullsafe_mode all_issues =
-  get_reportable_typing_rules_violations ~nullsafe_mode all_issues |> List.is_empty
+  get_reportable_typing_rules_violations_for_mode ~nullsafe_mode all_issues |> List.is_empty
 
 
 (* Return the maximum mode where we still have zero issues, or None if no such mode exists.
@@ -79,23 +85,32 @@ let calc_mode_to_promote_to curr_mode all_issues =
   else None
 
 
-(* analyze all issues for the current class and classify them into one meta-issue.
+(* analyze all issues for the current class (including all nested and anonymous classes recursively)
+   and classify them into one meta-issue.
  *)
-let make_meta_issue all_issues current_mode class_name =
-  let issue_count_in_curr_mode =
-    get_reportable_typing_rules_violations ~nullsafe_mode:current_mode all_issues |> List.length
+let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
+  let currently_reportable_issues = get_reportable_typing_rules_violations modes_and_issues in
+  List.iter currently_reportable_issues ~f:(fun issue ->
+      Logging.debug Analysis Medium "Issue: %a@\n" TypeErr.pp_err_instance issue ) ;
+  let currently_reportable_issue_count = List.length currently_reportable_issues in
+  let all_issues = List.map modes_and_issues ~f:(fun (_, a) -> a) in
+  let mode_to_promote_to =
+    if currently_reportable_issue_count > 0 then
+      (* This is not an optimization - consider a class with a nested class that is in the stricter mode than top level mode,
+         and has issues in this mode, but not in the top level mode.
+         This class is already broken now, so mode to promote to should be None.
+         But [calc_mode_to_promote_to] can return some mode for this case, which would be wrong. *)
+      None
+    else calc_mode_to_promote_to top_level_class_mode all_issues
   in
-  List.iter (get_reportable_typing_rules_violations ~nullsafe_mode:current_mode all_issues)
-    ~f:(fun issue -> Logging.debug Analysis Medium "Issue: %a@\n" TypeErr.pp_err_instance issue) ;
-  let mode_to_promote_to = calc_mode_to_promote_to current_mode all_issues in
   let meta_issue_info =
     Jsonbug_t.
-      { num_issues= issue_count_in_curr_mode
-      ; curr_nullsafe_mode= mode_to_json current_mode
+      { num_issues= currently_reportable_issue_count
+      ; curr_nullsafe_mode= mode_to_json top_level_class_mode
       ; can_be_promoted_to= Option.map mode_to_promote_to ~f:mode_to_json }
   in
   let issue_type, description, severity =
-    if NullsafeMode.equal current_mode Default then
+    if NullsafeMode.equal top_level_class_mode Default then
       match mode_to_promote_to with
       | Some mode_to_promote_to ->
           (* This class is not @Nullsafe yet, but can become such! *)
@@ -118,45 +133,38 @@ let make_meta_issue all_issues current_mode class_name =
             | NullsafeMode.Default | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
                 Logging.die InternalError "Unexpected promotion mode"
           in
-          let severity, message =
-            if Option.is_some (JavaClassName.get_outer_class_name class_name) then
-              (* This is a nested class. We don't recommend explicitly marking it as @Nullsafe to the users:
-                 recommended granularity is outer level class. However, we still report meta-issue for statistics/metric reasons.
-              *)
-              ( Exceptions.Info
-              , Format.sprintf "`%s` is free of nullability issues."
-                  (JavaClassName.classname class_name) )
-            else
-              ( Exceptions.Advice
-              , Format.sprintf
-                  "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
-                  (JavaClassName.classname class_name)
-                  promo_recommendation )
+          let message =
+            Format.sprintf
+              "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
+              (JavaClassName.classname top_level_class_name)
+              promo_recommendation
           in
-          (IssueType.eradicate_meta_class_can_be_nullsafe, message, severity)
+          (IssueType.eradicate_meta_class_can_be_nullsafe, message, Exceptions.Advice)
       | None ->
           (* This class can not be made @Nullsafe without extra work *)
           let issue_count_to_make_nullsafe =
-            get_reportable_typing_rules_violations
+            get_reportable_typing_rules_violations_for_mode
               ~nullsafe_mode:(NullsafeMode.Local NullsafeMode.Trust.All) all_issues
             |> List.length
           in
           ( IssueType.eradicate_meta_class_needs_improvement
           , Format.asprintf "`%s` needs %d issues to be fixed in order to be marked @Nullsafe."
-              (JavaClassName.classname class_name)
+              (JavaClassName.classname top_level_class_name)
               issue_count_to_make_nullsafe
           , Exceptions.Info )
-    else if issue_count_in_curr_mode > 0 then
-      (* This class is already nullsafe *)
+    else if currently_reportable_issue_count > 0 then
+      (* This class is @Nullsafe, but broken. This should not happen often if there is enforcement for
+         @Nullsafe mode error in the target codebase. *)
       ( IssueType.eradicate_meta_class_needs_improvement
       , Format.asprintf
           "@Nullsafe classes should have exactly zero nullability issues. `%s` has %d."
-          (JavaClassName.classname class_name)
-          issue_count_in_curr_mode
+          (JavaClassName.classname top_level_class_name)
+          currently_reportable_issue_count
       , Exceptions.Info )
     else
       ( IssueType.eradicate_meta_class_is_nullsafe
-      , Format.asprintf "Class %a is free of nullability issues." JavaClassName.pp class_name
+      , Format.asprintf "Class %a is free of nullability issues." JavaClassName.pp
+          top_level_class_name
       , Exceptions.Info )
   in
   {issue_type; description; severity; meta_issue_info}
@@ -172,19 +180,30 @@ let get_class_loc source_file Struct.{java_class_info} =
 
 
 (* Meta issues are those related to null-safety of the class in general, not concrete nullability violations *)
-let report_meta_issues tenv source_file class_name class_struct class_info issue_log =
-  (* For purposes of aggregation, we consider all nested anonymous summaries as belonging to this class *)
-  let current_mode = NullsafeMode.of_class tenv class_name in
-  let summaries = AggregatedSummaries.ClassInfo.get_all_summaries class_info in
-  let class_loc = get_class_loc source_file class_struct in
-  let all_issues = List.concat_map summaries ~f:(fun {NullsafeSummary.issues} -> issues) in
-  let {issue_type; description; severity; meta_issue_info} =
-    make_meta_issue all_issues current_mode class_name
-  in
-  let package = JavaClassName.package class_name in
-  let class_name = JavaClassName.classname class_name in
-  let nullsafe_extra = Jsonbug_t.{class_name; package; meta_issue_info= Some meta_issue_info} in
-  log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
+let report_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
+    issue_log =
+  if Option.is_some (JavaClassName.get_outer_class_name class_name) then
+    (* We record meta-issues only for top-level classes *) issue_log
+  else
+    let current_mode = NullsafeMode.of_class tenv class_name in
+    (* For purposes of aggregation, we consider all nested summaries as belonging to this class *)
+    let class_names_and_summaries =
+      AggregatedSummaries.ClassInfo.get_recursive_summaries class_info
+    in
+    let class_loc = get_class_loc source_file class_struct in
+    let all_issues =
+      List.map class_names_and_summaries ~f:(fun (class_name, NullsafeSummary.{issues}) ->
+          let mode_for_class_name = NullsafeMode.of_class tenv class_name in
+          List.map issues ~f:(fun issue -> (mode_for_class_name, issue)) )
+      |> List.fold ~init:[] ~f:( @ )
+    in
+    let {issue_type; description; severity; meta_issue_info} =
+      make_meta_issue all_issues current_mode class_name
+    in
+    let package = JavaClassName.package class_name in
+    let class_name = JavaClassName.classname class_name in
+    let nullsafe_extra = Jsonbug_t.{class_name; package; meta_issue_info= Some meta_issue_info} in
+    log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
 
 
 (* Optimization - if issues are disabled, don't bother analyzing them *)
@@ -194,9 +213,11 @@ let should_analyze_meta_issues () =
   || IssueType.eradicate_meta_class_is_nullsafe.enabled
 
 
-let analyze_meta_issues tenv source_file class_name class_struct class_info issue_log =
+let analyze_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
+    issue_log =
   if should_analyze_meta_issues () then
-    report_meta_issues tenv source_file class_name class_struct class_info issue_log
+    report_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
+      issue_log
   else issue_log
 
 
@@ -243,11 +264,12 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
 
 let analyze_class_impl tenv source_file class_name class_struct class_info issue_log =
   issue_log
-  |> analyze_meta_issues tenv source_file class_name class_struct class_info
+  |> analyze_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
   |> analyze_nullsafe_annotations tenv source_file class_name class_struct
 
 
-let analyze_class tenv source_file class_name class_info issue_log =
+let analyze_class tenv source_file class_info issue_log =
+  let class_name = AggregatedSummaries.ClassInfo.get_class_name class_info in
   match Tenv.lookup tenv (Typ.JavaClass class_name) with
   | Some class_struct ->
       analyze_class_impl tenv source_file class_name class_struct class_info issue_log
