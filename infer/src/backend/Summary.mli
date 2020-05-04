@@ -88,9 +88,6 @@ module OnDisk : sig
   (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
       by analysis) then look at the attributes table. If no attributes can be found, return None. *)
 
-  val proc_is_library : ProcAttributes.t -> bool
-  (** Check if the procedure is from a library: It's not defined, and there is no spec file for it. *)
-
   val store : t -> unit
   (** Save summary for the procedure into the spec database *)
 

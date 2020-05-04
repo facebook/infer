@@ -102,7 +102,7 @@ let check_condition_for_redundancy tenv ~is_always_true find_canonical_duplicate
     InferredNullability.is_nonnullish inferred_nullability
     && Config.eradicate_condition_redundant && (not is_temp) && PatternMatch.type_is_class typ
     && (not (from_try_with_resources ()))
-    && not (InferredNullability.origin_is_fun_library inferred_nullability)
+    && not (InferredNullability.origin_is_fun_defined inferred_nullability)
   in
   if should_report then
     (* TODO(T61051649) this is not really condition. This is an expression.

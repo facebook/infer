@@ -9,13 +9,24 @@ open! IStd
 
 (** Describe the origin of values propagated by the checker. *)
 
+type method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
+[@@deriving compare]
+
 type t =
   | NullConst of Location.t
   | NonnullConst of Location.t
-  | Field of field_origin
+  | Field of
+      { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
+      ; field_name: Fieldname.t
+      ; field_type: AnnotatedType.t
+      ; access_loc: Location.t }
   | CurrMethodParameter of method_parameter_origin
   | This
-  | MethodCall of method_call_origin
+  | MethodCall of
+      { pname: Procname.t
+      ; call_loc: Location.t
+      ; annotated_signature: AnnotatedSignature.t
+      ; is_defined: bool }
   | CallToGetKnownToContainsKey
   | New
   | ArrayLengthResult
@@ -23,20 +34,6 @@ type t =
   | InferredNonnull of {previous_origin: t}
   | OptimisticFallback
 [@@deriving compare]
-
-and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
-
-and field_origin =
-  { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
-  ; field_name: Fieldname.t
-  ; field_type: AnnotatedType.t
-  ; access_loc: Location.t }
-
-and method_call_origin =
-  { pname: Procname.t
-  ; call_loc: Location.t
-  ; annotated_signature: AnnotatedSignature.t
-  ; is_library: bool }
 
 let get_nullability = function
   | NullConst _ ->

@@ -48,9 +48,5 @@ let join t1 t2 =
 
 let get_origin t = t.origin
 
-let origin_is_fun_library t =
-  match get_origin t with
-  | TypeOrigin.MethodCall proc_origin ->
-      proc_origin.TypeOrigin.is_library
-  | _ ->
-      false
+let origin_is_fun_defined t =
+  match get_origin t with TypeOrigin.MethodCall {is_defined; _} -> is_defined | _ -> false

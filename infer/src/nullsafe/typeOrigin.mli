@@ -7,14 +7,25 @@
 
 open! IStd
 
+type method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
+
 type t =
   | NullConst of Location.t  (** A null literal in the source *)
   | NonnullConst of Location.t  (** A constant (not equal to null) in the source. *)
-  | Field of field_origin  (** A field access (result of expression `some_object.some_field`) *)
+  | Field of
+      { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
+      ; field_name: Fieldname.t
+      ; field_type: AnnotatedType.t
+      ; access_loc: Location.t }
+      (** A field access (result of expression `some_object.some_field`) *)
   | CurrMethodParameter of method_parameter_origin
       (** Parameter of a method we are currently in, *)
   | This (* `this` object. Can not be null, according to Java rules. *)
-  | MethodCall of method_call_origin  (** A result of a method call *)
+  | MethodCall of
+      { pname: Procname.t
+      ; call_loc: Location.t
+      ; annotated_signature: AnnotatedSignature.t
+      ; is_defined: bool }  (** A result of a method call *)
   | CallToGetKnownToContainsKey
       (** This is a result of accessing a map element that is known to contains this particular key,
           normally because it was explicitly checked for presense before *)
@@ -32,20 +43,6 @@ type t =
           either processed gracefully (and a dedicated type constructor should be added), or fixed.
           T54687014 tracks unsoundness issues caused by this type. *)
 [@@deriving compare]
-
-and method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
-
-and field_origin =
-  { object_origin: t  (** field's object origin (object is before field access operator `.`) *)
-  ; field_name: Fieldname.t
-  ; field_type: AnnotatedType.t
-  ; access_loc: Location.t }
-
-and method_call_origin =
-  { pname: Procname.t
-  ; call_loc: Location.t
-  ; annotated_signature: AnnotatedSignature.t
-  ; is_library: bool }
 
 val get_nullability : t -> Nullability.t
 

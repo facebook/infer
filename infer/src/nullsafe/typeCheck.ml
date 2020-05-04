@@ -510,7 +510,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
           Config.eradicate_condition_redundant
           (* TODO: This condition should be extracted into a dedicated rule *)
           && InferredNullability.is_nonnullish nullability
-          && not (InferredNullability.origin_is_fun_library nullability)
+          && not (InferredNullability.origin_is_fun_defined nullability)
         in
         ( if checks.eradicate && should_report then
           let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
@@ -973,13 +973,13 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
   (* Infer nullability of function call result based on its signature *)
   let preliminary_resolved_ret =
     let ret = callee_annotated_signature.AnnotatedSignature.ret in
-    let is_library = Summary.OnDisk.proc_is_library callee_attributes in
+    let is_defined = not callee_attributes.ProcAttributes.is_defined in
     let origin =
       TypeOrigin.MethodCall
-        { TypeOrigin.pname= callee_pname
+        { pname= callee_pname
         ; call_loc= loc
         ; annotated_signature= callee_annotated_signature
-        ; is_library }
+        ; is_defined }
     in
     (InferredNullability.create origin, ret.ret_annotated_type.typ)
   in

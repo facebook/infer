@@ -38,6 +38,6 @@ val join : t -> t -> t
       // what is nullability of `a` at this point?
     ]} *)
 
-val origin_is_fun_library : t -> bool
+val origin_is_fun_defined : t -> bool
 
 val pp : Format.formatter -> t -> unit
