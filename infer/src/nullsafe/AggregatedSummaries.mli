@@ -14,7 +14,7 @@ open! IStd
 module ClassInfo : sig
   type t
 
-  val get_all_summaries : t -> Summary.t list
+  val get_all_summaries : t -> NullsafeSummary.t list
   (** List of all summaries, user-level and anonymous, combined together *)
 end
 
@@ -22,7 +22,7 @@ type t
 
 val make_empty : unit -> t
 
-val register_summary : JavaClassName.t -> Summary.t -> t -> t
+val register_summary : JavaClassName.t -> NullsafeSummary.t -> t -> t
 (** Add information about summary to the class map. Depending on if this an anonymous or
     user-defined class, adds it to corresponding lists. *)
 

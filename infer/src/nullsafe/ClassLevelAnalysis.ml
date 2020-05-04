@@ -177,11 +177,7 @@ let report_meta_issues tenv source_file class_name class_struct class_info issue
   let current_mode = NullsafeMode.of_class tenv class_name in
   let summaries = AggregatedSummaries.ClassInfo.get_all_summaries class_info in
   let class_loc = get_class_loc source_file class_struct in
-  let all_issues =
-    List.map summaries ~f:(fun Summary.{payloads= {nullsafe}} ->
-        Option.value_map nullsafe ~f:(fun NullsafeSummary.{issues} -> issues) ~default:[] )
-    |> List.fold ~init:[] ~f:( @ )
-  in
+  let all_issues = List.concat_map summaries ~f:(fun {NullsafeSummary.issues} -> issues) in
   let {issue_type; description; severity; meta_issue_info} =
     make_meta_issue all_issues current_mode class_name
   in

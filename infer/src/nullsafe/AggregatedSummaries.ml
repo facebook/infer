@@ -8,9 +8,10 @@
 open! IStd
 
 module ClassInfo = struct
-  type t = {summaries: Summary.t list; nested_anonymous_classes: anonymous_class_to_summaries}
+  type t =
+    {summaries: NullsafeSummary.t list; nested_anonymous_classes: anonymous_class_to_summaries}
 
-  and anonymous_class_to_summaries = Summary.t list JavaClassName.Map.t
+  and anonymous_class_to_summaries = NullsafeSummary.t list JavaClassName.Map.t
 
   let make_empty () = {summaries= []; nested_anonymous_classes= JavaClassName.Map.empty}
 

@@ -16,12 +16,12 @@ let get_java_class_name = function
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
-let aggregate_by_class procedures =
+let aggregate_by_class {InterproceduralAnalysis.procedures; analyze_file_dependency; _} =
   let open IOption.Let_syntax in
   List.fold procedures ~init:(AggregatedSummaries.make_empty ()) ~f:(fun map_to_update procname ->
       (let* class_name = Procname.get_class_type_name procname in
        let* java_class_name = get_java_class_name class_name in
-       let* summary = Ondemand.analyze_proc_name_no_caller procname in
+       let* _proc_desc, summary = analyze_file_dependency procname in
        return (AggregatedSummaries.register_summary java_class_name summary map_to_update))
       |> Option.value ~default:map_to_update )
 
@@ -38,8 +38,8 @@ let analyze_class tenv source_file issue_log (class_name, class_info) =
   else ClassLevelAnalysis.analyze_class tenv source_file class_name class_info issue_log
 
 
-let analyze_file {InterproceduralAnalysis.procedures; file_exe_env; source_file} =
-  let class_map = aggregate_by_class procedures in
+let analyze_file ({InterproceduralAnalysis.file_exe_env; source_file} as analysis_data) =
+  let class_map = aggregate_by_class analysis_data in
   let tenv = Exe_env.load_java_global_tenv file_exe_env in
   let user_class_info = AggregatedSummaries.group_by_user_class class_map in
   List.fold user_class_info ~init:IssueLog.empty ~f:(analyze_class tenv source_file)
