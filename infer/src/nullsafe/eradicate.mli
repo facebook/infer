@@ -9,13 +9,14 @@ open! IStd
 
 (** The main entry point for Nullsafe typechecker. *)
 
-val proc_callback : Callbacks.proc_callback_t
+val analyze_procedure : IntraproceduralAnalysis.t -> NullsafeSummary.t option
 (** Proc-level callback for nullsafe. *)
 
 val file_callback : Callbacks.file_callback_t
 (** File-level callback for nullsafe. Is called after all proc-level callbacks are called and
     calculated their summaries *)
 
-val callback_check_return_type : TypeCheck.check_return_type -> Callbacks.proc_callback_t
+val analyze_for_immutable_cast_checker :
+  TypeCheck.check_return_type -> IntraproceduralAnalysis.t -> NullsafeSummary.t option
 (** For checkers that explore eradicate/nullsafe infra, but not part of nullsafe.Annot Call the
     given check_return_type at the end of every procedure. *)

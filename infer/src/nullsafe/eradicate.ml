@@ -10,12 +10,6 @@ module L = Logging
 module F = Format
 open Dataflow
 
-module Payload = SummaryPayload.Make (struct
-  type t = NullsafeSummary.t
-
-  let field = Payloads.Fields.nullsafe
-end)
-
 let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
     annotated_signature linereader proc_loc : bool * TypeState.t option =
   let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
@@ -106,7 +100,7 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
       (!calls_this, None)
 
 
-let analyze_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
+let analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
     proc_loc : unit =
   let idenv = Idenv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
@@ -194,18 +188,16 @@ let find_reason_to_skip_analysis proc_name proc_desc =
 
 
 (** Entry point for the nullsafe procedure-level analysis. *)
-let callback checks {Callbacks.summary; exe_env} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
+let analyze checks {IntraproceduralAnalysis.proc_desc; tenv} : NullsafeSummary.t option =
   let proc_name = Procdesc.get_proc_name proc_desc in
   L.debug Analysis Medium "Analysis of %a@\n" Procname.pp proc_name ;
   match find_reason_to_skip_analysis proc_name proc_desc with
   | Some reason ->
       L.debug Analysis Medium "Skipping analysis: %s@\n" reason ;
-      summary
+      None
   | None ->
       (* start the analysis! *)
       let calls_this = ref false in
-      let tenv = Exe_env.get_tenv exe_env proc_name in
       let annotated_signature =
         AnnotatedSignature.get_for_class_under_analysis tenv (Procdesc.get_attributes proc_desc)
       in
@@ -218,24 +210,24 @@ let callback checks {Callbacks.summary; exe_env} : Summary.t =
       (* The main method - during this the actual analysis will happen and TypeErr will be populated with
          issues (and some of them - reported).
       *)
-      analyze_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
-        loc ;
+      analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_signature
+        linereader loc ;
       (* Collect issues that were detected during analysis and put them in summary for further processing *)
       let issues = TypeErr.get_errors () |> List.map ~f:(fun (issues, _) -> issues) in
       (* Report errors of "farall" class - those could not be reported during analysis phase. *)
       TypeErr.report_forall_issues_and_reset
         (EradicateCheckers.report_error tenv)
         ~nullsafe_mode:annotated_signature.nullsafe_mode proc_desc ;
-      Payload.update_summary NullsafeSummary.{issues} summary
+      Some {NullsafeSummary.issues}
 
 
-let proc_callback =
+let analyze_procedure analysis_data =
   let checks = {TypeCheck.eradicate= true; check_ret_type= []} in
-  callback checks
+  analyze checks analysis_data
 
 
 let file_callback = FileLevelAnalysis.analyze_file
 
-let callback_check_return_type check_return_type callback_args =
+let analyze_for_immutable_cast_checker check_return_type analysis_data =
   let checks = {TypeCheck.eradicate= false; check_ret_type= [check_return_type]} in
-  callback checks callback_args
+  analyze checks analysis_data

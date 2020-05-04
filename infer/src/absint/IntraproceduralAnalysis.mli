@@ -7,4 +7,6 @@
 
 open! IStd
 
-val analyze : IntraproceduralAnalysis.t -> NullsafeSummary.t option
+(** a subset of {!InterproceduralAnalysis.t} that doesn't have any inter-procedural callbacks and
+    cannot read summaries *)
+type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t}

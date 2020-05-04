@@ -7,4 +7,4 @@
 
 open! IStd
 
-val analyze : IntraproceduralAnalysis.t -> NullsafeSummary.t option
+type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t}

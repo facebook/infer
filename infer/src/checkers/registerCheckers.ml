@@ -62,6 +62,24 @@ let dynamic_dispatch payload_field checker =
   DynamicDispatch (proc_callback_of_interprocedural payload_field checker)
 
 
+let proc_callback_of_intraprocedural ?payload_field checker {Callbacks.summary; exe_env} =
+  let result =
+    checker
+      { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
+      ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
+      ; err_log= Summary.get_err_log summary }
+  in
+  match payload_field with
+  | None ->
+      summary
+  | Some payload_field ->
+      {summary with payloads= Field.fset payload_field summary.payloads result}
+
+
+let intraprocedural_with_payload payload_field checker =
+  Procedure (proc_callback_of_intraprocedural ~payload_field checker)
+
+
 type callback = callback_fun * Language.t
 
 type checker = {name: string; active: bool; callbacks: callback list}
@@ -150,7 +168,9 @@ let all_checkers =
     ; callbacks= [(Procedure InefficientKeysetIterator.checker, Language.Java)] }
   ; { name= "immutable cast"
     ; active= Config.is_checker_enabled ImmutableCast
-    ; callbacks= [(Procedure ImmutableChecker.callback_check_immutable_cast, Language.Java)] }
+    ; callbacks=
+        [ ( intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze
+          , Language.Java ) ] }
   ; { name= "fragment retains view"
     ; active= Config.is_checker_enabled FragmentRetainsView
     ; callbacks=
@@ -158,7 +178,8 @@ let all_checkers =
   ; { name= "eradicate"
     ; active= Config.is_checker_enabled Eradicate
     ; callbacks=
-        [ (Procedure Eradicate.proc_callback, Language.Java)
+        [ ( intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure
+          , Language.Java )
         ; (File {callback= Eradicate.file_callback; issue_dir= NullsafeFileIssues}, Language.Java)
         ] }
   ; { name= "buffer overrun checker"
