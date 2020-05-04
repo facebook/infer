@@ -42,7 +42,7 @@ module L = Logging
 ]
 *)
 
-(** Read the build report json file buck produced, and parse into a list of pairs
+(** Read the build report json file buck produced, and parse into a sorted list of pairs
     [(target, output-path)]. NB contrary to what buck documentation says, the output path is always
     present even when the target is locally cached. *)
 let read_and_parse_report build_report =
@@ -78,7 +78,9 @@ let read_and_parse_report build_report =
     | _ ->
         None
   in
-  Yojson.Basic.from_file build_report |> get_json_field "results" |> Option.bind ~f:parse_results
+  Yojson.Basic.from_file build_report
+  |> get_json_field "results" |> Option.bind ~f:parse_results
+  |> Option.map ~f:(List.stable_sort ~compare:[%compare: string * string])
 
 
 let infer_deps_of_build_report build_report =
