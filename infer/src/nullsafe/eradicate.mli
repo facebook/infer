@@ -12,10 +12,6 @@ open! IStd
 val analyze_procedure : IntraproceduralAnalysis.t -> NullsafeSummary.t option
 (** Proc-level callback for nullsafe. *)
 
-val file_callback : Callbacks.file_callback_t
-(** File-level callback for nullsafe. Is called after all proc-level callbacks are called and
-    calculated their summaries *)
-
 val analyze_for_immutable_cast_checker :
   TypeCheck.check_return_type -> IntraproceduralAnalysis.t -> NullsafeSummary.t option
 (** For checkers that explore eradicate/nullsafe infra, but not part of nullsafe.Annot Call the

@@ -226,8 +226,6 @@ let analyze_procedure analysis_data =
   analyze checks analysis_data
 
 
-let file_callback = FileLevelAnalysis.analyze_file
-
 let analyze_for_immutable_cast_checker check_return_type analysis_data =
   let checks = {TypeCheck.eradicate= false; check_ret_type= [check_return_type]} in
   analyze checks analysis_data

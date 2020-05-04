@@ -24,3 +24,12 @@ type 'payload t =
         (** same as above when we already know the {!Procdesc.t} *)
   ; update_stats: ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> unit -> unit
         (** update the [Summary.Stats.t] of the summary of the current procedure *) }
+
+(** Analysis data for the analysis of a source file. *)
+type 'payload file_t =
+  { source_file: SourceFile.t  (** the source file under analysis *)
+  ; procedures: Procname.t list  (** list of procedures declared in the source file *)
+  ; file_exe_env: Exe_env.t  (** {!Exe_env.t} for the current analysis *)
+  ; analyze_file_dependency: Procname.t -> (Procdesc.t * 'payload) option
+        (** On-demand analysis of dependencies needed for the file analysis, e.g. the proc names in
+            [procedures] *) }

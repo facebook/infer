@@ -62,6 +62,21 @@ let dynamic_dispatch payload_field checker =
   DynamicDispatch (proc_callback_of_interprocedural payload_field checker)
 
 
+let file_callback_of_interprocedural_file payload_field checker
+    {Callbacks.procedures; exe_env; source_file} =
+  let analyze_file_dependency proc_name =
+    let summary = Ondemand.analyze_proc_name_no_caller proc_name in
+    Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
+        Field.get payload_field payloads |> Option.map ~f:(fun payload -> (proc_desc, payload)) )
+  in
+  checker
+    {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
+
+
+let file issue_dir payload_field checker =
+  File {callback= file_callback_of_interprocedural_file payload_field checker; issue_dir}
+
+
 let proc_callback_of_intraprocedural ?payload_field checker {Callbacks.summary; exe_env} =
   let result =
     checker
@@ -180,8 +195,8 @@ let all_checkers =
     ; callbacks=
         [ ( intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure
           , Language.Java )
-        ; (File {callback= Eradicate.file_callback; issue_dir= NullsafeFileIssues}, Language.Java)
-        ] }
+        ; ( file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file
+          , Language.Java ) ] }
   ; { name= "buffer overrun checker"
     ; active= Config.(is_checker_enabled BufferOverrun)
     ; callbacks=

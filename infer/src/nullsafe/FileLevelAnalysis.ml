@@ -38,8 +38,8 @@ let analyze_class tenv source_file issue_log (class_name, class_info) =
   else ClassLevelAnalysis.analyze_class tenv source_file class_name class_info issue_log
 
 
-let analyze_file ({exe_env; procedures; source_file} : Callbacks.file_callback_args) =
+let analyze_file {InterproceduralAnalysis.procedures; file_exe_env; source_file} =
   let class_map = aggregate_by_class procedures in
-  let tenv = Exe_env.load_java_global_tenv exe_env in
+  let tenv = Exe_env.load_java_global_tenv file_exe_env in
   let user_class_info = AggregatedSummaries.group_by_user_class class_map in
   List.fold user_class_info ~init:IssueLog.empty ~f:(analyze_class tenv source_file)

@@ -15,3 +15,9 @@ type 'payload t =
   ; analyze_dependency: Procname.t -> (Procdesc.t * 'payload) option
   ; analyze_pdesc_dependency: Procdesc.t -> 'payload option
   ; update_stats: ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> unit -> unit }
+
+type 'payload file_t =
+  { source_file: SourceFile.t
+  ; procedures: Procname.t list
+  ; file_exe_env: Exe_env.t
+  ; analyze_file_dependency: Procname.t -> (Procdesc.t * 'payload) option }
