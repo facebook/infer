@@ -169,17 +169,6 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
     not is_forall
 
 
-type st_report_error =
-     Procname.t
-  -> Procdesc.t
-  -> IssueType.t
-  -> Location.t
-  -> ?field_name:Fieldname.t option
-  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> severity:Exceptions.severity
-  -> string
-  -> unit
-
 (* If an error is related to a particular field, we support suppressing the
    error via a supress annotation placed near the field declaration *)
 let get_field_name_for_error_suppressing = function
@@ -338,37 +327,33 @@ let is_reportable ~nullsafe_mode err_instance =
   get_error_info_fetcher_if_reportable ~nullsafe_mode err_instance |> Option.is_some
 
 
-let report_now_if_reportable (st_report_error : st_report_error) err_instance ~nullsafe_mode loc
-    pdesc =
-  let pname = Procdesc.get_proc_name pdesc in
+let report_now_if_reportable analysis_data err_instance ~nullsafe_mode loc =
   get_error_info_if_reportable ~nullsafe_mode err_instance
   |> Option.iter ~f:(fun (err_description, infer_issue_type, updated_location, severity) ->
          Logging.debug Analysis Medium "About to report: %s" err_description ;
          let field_name = get_field_name_for_error_suppressing err_instance in
          let error_location = Option.value updated_location ~default:loc in
-         st_report_error pname pdesc infer_issue_type error_location ~field_name
+         EradicateCheckers.report_error analysis_data infer_issue_type error_location ~field_name
            ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
            ~severity err_description )
 
 
 (** Register issue (unless exactly the same issue was already registered). If needed, report this
     error immediately. *)
-let register_error (st_report_error : st_report_error) find_canonical_duplicate err_instance
-    ~nullsafe_mode instr_ref_opt loc pdesc =
+let register_error analysis_data find_canonical_duplicate err_instance ~nullsafe_mode instr_ref_opt
+    loc =
   let should_report_now = add_err find_canonical_duplicate err_instance instr_ref_opt loc in
-  if should_report_now then
-    report_now_if_reportable st_report_error err_instance ~nullsafe_mode loc pdesc
+  if should_report_now then report_now_if_reportable analysis_data err_instance ~nullsafe_mode loc
 
 
-let report_forall_issues_and_reset st_report_error ~nullsafe_mode proc_desc =
+let report_forall_issues_and_reset analysis_data ~nullsafe_mode =
   let iter (err_instance, instr_ref_opt) err_state =
     match (instr_ref_opt, get_forall err_instance) with
     | Some instr_ref, is_forall ->
         let node = InstrRef.get_node instr_ref in
         AnalysisState.set_node node ;
         if is_forall && err_state.always then
-          report_now_if_reportable st_report_error err_instance err_state.loc ~nullsafe_mode
-            proc_desc
+          report_now_if_reportable analysis_data err_instance err_state.loc ~nullsafe_mode
     | None, _ ->
         ()
   in

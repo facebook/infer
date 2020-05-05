@@ -62,31 +62,19 @@ val pp_err_instance : Format.formatter -> err_instance -> unit
 
 val node_reset_forall : Procdesc.Node.t -> unit
 
-type st_report_error =
-     Procname.t
-  -> Procdesc.t
-  -> IssueType.t
-  -> Location.t
-  -> ?field_name:Fieldname.t option
-  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> severity:Exceptions.severity
-  -> string
-  -> unit
-
 val register_error :
-     st_report_error
+     IntraproceduralAnalysis.t
   -> (Procdesc.Node.t -> Procdesc.Node.t)
   -> err_instance
   -> nullsafe_mode:NullsafeMode.t
   -> InstrRef.t option
   -> Location.t
-  -> Procdesc.t
   -> unit
 (** Register the fact that issue happened. Depending on the error and mode, this error might or
     might not be reported to the user. *)
 
 val report_forall_issues_and_reset :
-  st_report_error -> nullsafe_mode:NullsafeMode.t -> Procdesc.t -> unit
+  IntraproceduralAnalysis.t -> nullsafe_mode:NullsafeMode.t -> unit
 (** Report registered "forall" issues (if needed), and reset the error table *)
 
 val is_reportable : nullsafe_mode:NullsafeMode.t -> err_instance -> bool

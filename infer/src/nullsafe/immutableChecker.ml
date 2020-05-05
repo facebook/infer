@@ -9,7 +9,7 @@ open! IStd
 
 (** Check an implicit cast when returning an immutable collection from a method whose type is
     mutable. *)
-let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt loc : unit =
+let check_immutable_cast analysis_data proc_desc typ_expected typ_found_opt loc : unit =
   match typ_found_opt with
   | Some typ_found -> (
       let casts =
@@ -32,16 +32,16 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
               Format.asprintf
                 "Method %s returns %a but the return type is %a. Make sure that users of this \
                  method do not try to modify the collection."
-                (Procname.to_simplified_string curr_pname)
+                (Procname.to_simplified_string (Procdesc.get_proc_name proc_desc))
                 Typ.Name.pp name_given Typ.Name.pp name_expected
             in
-            EradicateCheckers.report_error tenv curr_pname curr_pdesc
-              IssueType.checkers_immutable_cast loc description ~severity:Exceptions.Warning
+            EradicateCheckers.report_error analysis_data IssueType.checkers_immutable_cast loc
+              description ~severity:Exceptions.Warning
       | _ ->
           () )
   | None ->
       ()
 
 
-let analyze ({IntraproceduralAnalysis.tenv} as analysis_data) =
-  Eradicate.analyze_for_immutable_cast_checker (check_immutable_cast tenv) analysis_data
+let analyze analysis_data =
+  Eradicate.analyze_for_immutable_cast_checker (check_immutable_cast analysis_data) analysis_data

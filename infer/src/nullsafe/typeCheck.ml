@@ -104,15 +104,16 @@ end
 
 (* ComplexExpressions *)
 
-type check_return_type = Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+type check_return_type = Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
 type checks = {eradicate: bool; check_ret_type: check_return_type list}
 
 (** Typecheck an expression. *)
-let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
-    (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
+let rec typecheck_expr ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nullsafe_mode
+    find_canonical_duplicate visited checks node instr_ref typestate e tr_default loc :
+    TypeState.range =
   L.d_with_indent ~name:"typecheck_expr" ~pp_result:TypeState.pp_range (fun () ->
       L.d_printfln "Expr: %a" Exp.pp e ;
       match e with
@@ -142,13 +143,13 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
                  L.d_strln "WARNING: could not lookup Id in typestate: fallback to default" ;
                  tr_default )
       | Exp.Exn e1 ->
-          typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node instr_ref
-            curr_pdesc typestate e1 tr_default loc
+          typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate visited checks node
+            instr_ref typestate e1 tr_default loc
       | Exp.Lfield (exp, field_name, typ) ->
           let _, _ = tr_default in
           let _, inferred_nullability =
-            typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node
-              instr_ref curr_pdesc typestate exp
+            typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate visited checks node
+              instr_ref typestate exp
               (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
               (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
               loc
@@ -165,23 +166,22 @@ let rec typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks te
                 tr_default
           in
           if checks.eradicate then
-            EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-              curr_pdesc node instr_ref exp
-              (DereferenceRule.ReportableViolation.AccessToField field_name) inferred_nullability
-              loc ;
+            EradicateChecks.check_object_dereference analysis_data ~nullsafe_mode
+              find_canonical_duplicate node instr_ref exp (AccessToField field_name)
+              inferred_nullability loc ;
           tr_new
       | Exp.Lindex (array_exp, index_exp) ->
           let _, inferred_nullability =
-            typecheck_expr ~nullsafe_mode find_canonical_duplicate visited checks tenv node
-              instr_ref curr_pdesc typestate array_exp tr_default loc
+            typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate visited checks node
+              instr_ref typestate array_exp tr_default loc
           in
           let index_desc =
             match EradicateChecks.explain_expr tenv node index_exp with Some s -> s | None -> "?"
           in
           if checks.eradicate then
-            EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-              curr_pdesc node instr_ref array_exp
-              (DereferenceRule.ReportableViolation.AccessByIndex {index_desc})
+            EradicateChecks.check_object_dereference analysis_data ~nullsafe_mode
+              find_canonical_duplicate node instr_ref array_exp
+              (AccessByIndex {index_desc})
               inferred_nullability loc ;
           let typ, _ = tr_default in
           (typ, InferredNullability.create TypeOrigin.ArrayAccess)
@@ -460,19 +460,19 @@ let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc hand
 
 
 (* typecheck_expr with fewer parameters, using a common template for typestate range  *)
-let typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks tenv
+let typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks
     node instr_ref typestate1 exp1 typ1 origin1 loc1 =
-  typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv node instr_ref
-    curr_pdesc typestate1 exp1
+  typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks node
+    instr_ref typestate1 exp1
     (typ1, InferredNullability.create origin1)
     loc1
 
 
 (* check if there are errors in exp1 *)
-let typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-    tenv node instr_ref typestate1 exp1 loc1 : unit =
+let typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+    checks node instr_ref typestate1 exp1 loc1 : unit =
   ignore
-    (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks tenv
+    (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks
        node instr_ref typestate1 exp1 Typ.void TypeOrigin.OptimisticFallback loc1)
 
 
@@ -498,9 +498,10 @@ let java_get_vararg_values node pvar idenv =
 
 
 (* Handle Preconditions.checkNotNull. *)
-let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc curr_pdesc
-    curr_pname curr_annotated_signature checks call_params idenv parameter_num ~is_vararg typestate'
-    =
+let do_preconditions_check_not_null
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data) instr_ref
+    find_canonical_duplicate node loc curr_annotated_signature checks call_params idenv
+    parameter_num ~is_vararg typestate' =
   (* clear the nullable flag of the first parameter of the procedure *)
   let clear_nullable_flag ~nullsafe_mode typestate'' pvar =
     (* remove the nullable flag for the given pvar *)
@@ -514,12 +515,12 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
         in
         ( if checks.eradicate && should_report then
           let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
-          EradicateChecks.register_error tenv find_canonical_duplicate
-            (TypeErr.Condition_redundant
+          TypeErr.register_error analysis_data find_canonical_duplicate
+            (Condition_redundant
                { is_always_true= true
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
                ; nonnull_origin= InferredNullability.get_origin nullability })
-            (Some instr_ref) ~nullsafe_mode loc curr_pdesc ) ;
+            (Some instr_ref) ~nullsafe_mode loc ) ;
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
@@ -539,6 +540,7 @@ let do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node
   in
   match find_parameter parameter_num call_params with
   | Some (pvar, _) ->
+      let curr_pname = Procdesc.get_proc_name curr_pdesc in
       if is_vararg then
         let do_vararg_value e ts =
           match Idenv.expand_expr idenv e with
@@ -626,8 +628,9 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
 
 
 (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
-let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc calls_this checks
-    instr_ref ~nullsafe_mode find_canonical_duplicate typestate' =
+let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    call_params callee_pname loc node calls_this checks instr_ref ~nullsafe_mode
+    find_canonical_duplicate typestate' =
   (* Get the proc name for map.get() from map.put() *)
   let pname_get_from_pname_put pname_put =
     let object_t = JavaSplitName.java_lang_object in
@@ -656,11 +659,12 @@ let do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc call
         ComplexExpressions.exp_to_string_map_dexp tenv convert_dexp_key_to_dexp_get node exp_key
       with
       | Some map_get_str ->
+          let curr_pname = Procdesc.get_proc_name curr_pdesc in
           let pvar_map_get = Pvar.mk (Mangled.from_string map_get_str) curr_pname in
           TypeState.add pvar_map_get
-            (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
-               checks tenv node instr_ref typestate' exp_value typ_value
-               TypeOrigin.OptimisticFallback loc)
+            (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+               checks node instr_ref typestate' exp_value typ_value TypeOrigin.OptimisticFallback
+               loc)
             typestate' ~descr:"do_map_put"
       | None ->
           typestate' )
@@ -719,9 +723,11 @@ let normalize_cond_for_sil_prune idenv ~node cond =
   normalize_cond_for_sil_prune_rec idenv ~node ~original_node:node cond
 
 
-let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
-    curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
-    ~nullsafe_mode ~original_node ~node c : TypeState.t =
+let rec check_condition_for_sil_prune
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data) idenv calls_this
+    find_canonical_duplicate loc curr_annotated_signature linereader typestate checks true_branch
+    instr_ref ~nullsafe_mode ~original_node ~node c : TypeState.t =
+  let curr_pname = Procdesc.get_proc_name curr_pdesc in
   (* check if the expression is coming from a call, and return the arguments *)
   let extract_arguments_from_call filter_callee expr =
     match expr with
@@ -829,14 +835,14 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
          This means the corresponding condition (initiated this PRUNE branch) was redudant.
       *)
       let typ, inferred_nullability =
-        typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-          tenv original_node instr_ref typestate pvar_expr Typ.void TypeOrigin.OptimisticFallback
+        typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+          checks original_node instr_ref typestate pvar_expr Typ.void TypeOrigin.OptimisticFallback
           loc
       in
       if checks.eradicate then
-        EradicateChecks.check_condition_for_redundancy ~is_always_true:true_branch tenv
-          find_canonical_duplicate curr_pdesc original_node pvar_expr typ inferred_nullability
-          ~nullsafe_mode idenv linereader loc instr_ref ) ;
+        EradicateChecks.check_condition_for_redundancy analysis_data ~is_always_true:true_branch
+          find_canonical_duplicate original_node pvar_expr typ inferred_nullability ~nullsafe_mode
+          idenv linereader loc instr_ref ) ;
     set_nonnull pvar_expr typestate ~descr
   in
   (* Assuming [expr] is a boolean, this is the branch where, according to PRUNE semantics,
@@ -910,14 +916,14 @@ let rec check_condition_for_sil_prune tenv idenv calls_this find_canonical_dupli
       *)
       typestate |> handle_boolean_equal_true expr |> handle_object_not_equal_null expr
   | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
-      check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
-        curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
-        ~nullsafe_mode ~original_node ~node
+      check_condition_for_sil_prune analysis_data idenv calls_this find_canonical_duplicate loc
+        curr_annotated_signature linereader typestate checks true_branch instr_ref ~nullsafe_mode
+        ~original_node ~node
         (Exp.BinOp (Binop.Ne, e1, e2))
   | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ne, e1, e2), _) ->
-      check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
-        curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
-        ~nullsafe_mode ~original_node ~node
+      check_condition_for_sil_prune analysis_data idenv calls_this find_canonical_duplicate loc
+        curr_annotated_signature linereader typestate checks true_branch instr_ref ~nullsafe_mode
+        ~original_node ~node
         (Exp.BinOp (Binop.Eq, e1, e2))
   | _ ->
       (* TODO(T54687014): silenced warning may be an unsoundeness issue; investigate *)
@@ -949,15 +955,17 @@ let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.re
       (upper_bound_nullability, ret_typ)
 
 
-let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv idenv instr_ref
-    signature_params cflags call_params ~is_anonymous_inner_class_constructor
-    ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java ~curr_pname
-    ~curr_pdesc ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node =
+let calc_typestate_after_call
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    find_canonical_duplicate calls_this checks idenv instr_ref signature_params cflags call_params
+    ~is_anonymous_inner_class_constructor ~callee_annotated_signature ~callee_attributes
+    ~callee_pname ~callee_pname_java ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1
+    loc node =
   let resolve_param i (formal_param, actual_param) =
     let (orig_e2, e2), t2 = actual_param in
     let _, inferred_nullability_actual =
-      typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv node instr_ref
-        curr_pdesc typestate e2
+      typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks node
+        instr_ref typestate e2
         (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
         (t2, InferredNullability.create TypeOrigin.OptimisticFallback)
         loc
@@ -1011,34 +1019,35 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
   let typestate_after_call =
     if not is_anonymous_inner_class_constructor then (
       if cflags.CallFlags.cf_virtual && checks.eradicate then
-        EradicateChecks.check_call_receiver ~nullsafe_mode tenv find_canonical_duplicate curr_pdesc
+        EradicateChecks.check_call_receiver analysis_data ~nullsafe_mode find_canonical_duplicate
           node typestate1 call_params callee_pname instr_ref loc
-          (typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
+          (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
-        EradicateChecks.check_call_parameters ~nullsafe_mode ~callee_annotated_signature tenv
-          find_canonical_duplicate curr_pdesc node callee_attributes resolved_params loc instr_ref ;
+        EradicateChecks.check_call_parameters analysis_data ~nullsafe_mode
+          ~callee_annotated_signature find_canonical_duplicate node callee_attributes
+          resolved_params loc instr_ref ;
       if Models.is_check_not_null callee_pname then
         match Models.get_check_not_null_parameter callee_pname with
         | Some index ->
-            do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
-              curr_pdesc curr_pname curr_annotated_signature checks call_params idenv index
-              ~is_vararg:false typestate1
+            do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
+              loc curr_annotated_signature checks call_params idenv index ~is_vararg:false
+              typestate1
         | None when Procname.Java.is_vararg callee_pname_java ->
             let last_parameter = List.length call_params in
-            do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
-              curr_pdesc curr_pname curr_annotated_signature checks call_params idenv last_parameter
-              ~is_vararg:true typestate1
+            do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
+              loc curr_annotated_signature checks call_params idenv last_parameter ~is_vararg:true
+              typestate1
         | None ->
             (* assume the first parameter is checked for null *)
-            do_preconditions_check_not_null instr_ref tenv find_canonical_duplicate node loc
-              curr_pdesc curr_pname curr_annotated_signature checks call_params idenv 1
-              ~is_vararg:false typestate1
+            do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
+              loc curr_annotated_signature checks call_params idenv 1 ~is_vararg:false typestate1
       else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname then
+        let curr_pname = Procdesc.get_proc_name curr_pdesc in
         do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_signature
           call_params loc node typestate1
       else if Models.is_mapPut callee_pname then
-        do_map_put call_params callee_pname tenv loc node curr_pname curr_pdesc calls_this checks
-          instr_ref ~nullsafe_mode find_canonical_duplicate typestate1
+        do_map_put analysis_data call_params callee_pname loc node calls_this checks instr_ref
+          ~nullsafe_mode find_canonical_duplicate typestate1
       else typestate1 )
     else typestate1
   in
@@ -1046,9 +1055,10 @@ let calc_typestate_after_call find_canonical_duplicate calls_this checks tenv id
 
 
 (* SIL instruction in form of [ret = fun(args);] where fun is a non-builtin Java function *)
-let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref typestate idenv
-    ~callee_pname ~curr_pname curr_pdesc curr_annotated_signature calls_this ~nullsafe_mode
-    ret_id_typ etl_ loc callee_pname_java cflags node =
+let typecheck_sil_call_function
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    find_canonical_duplicate checks instr_ref typestate idenv ~callee_pname curr_annotated_signature
+    calls_this ~nullsafe_mode ret_id_typ etl_ loc callee_pname_java cflags node =
   L.d_with_indent ~name:"typecheck_sil_call_function" (fun () ->
       let callee_attributes =
         match PatternMatch.lookup_attributes tenv callee_pname with
@@ -1074,11 +1084,12 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
             in
             proc_attributes
       in
+      let curr_pname = Procdesc.get_proc_name curr_pdesc in
       let etl = drop_unchecked_params calls_this curr_pname callee_attributes etl_ in
       let call_params, typestate1 =
         let handle_et (e1, t1) (etl1, typestate1) =
-          typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
-            checks tenv node instr_ref typestate e1 loc ;
+          typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+            checks node instr_ref typestate e1 loc ;
           let e2 =
             convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature
               ~is_assignment:false ~node ~original_node:node e1 typestate1 loc
@@ -1124,19 +1135,19 @@ let typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref t
         TypeState.add_id id (mk_return_range ()) typestate' ~descr:"typecheck_sil_call_function"
       in
       let typestate_after_call, finally_resolved_ret =
-        calc_typestate_after_call find_canonical_duplicate calls_this checks tenv idenv instr_ref
-          signature_params cflags call_params ~is_anonymous_inner_class_constructor
+        calc_typestate_after_call analysis_data find_canonical_duplicate calls_this checks idenv
+          instr_ref signature_params cflags call_params ~is_anonymous_inner_class_constructor
           ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java
-          ~curr_pname ~curr_pdesc ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1
-          loc node
+          ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node
       in
       do_return finally_resolved_ret typestate_after_call )
 
 
 (** Typecheck an instruction. *)
-let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_pname curr_pdesc
-    find_canonical_duplicate (curr_annotated_signature : AnnotatedSignature.t) instr_ref linereader
-    typestate instr =
+let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    calls_this checks (node : Procdesc.Node.t) idenv find_canonical_duplicate
+    (curr_annotated_signature : AnnotatedSignature.t) instr_ref linereader typestate instr =
+  let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let is_return pvar =
     let ret_pvar = Procdesc.get_ret_var curr_pdesc in
     Pvar.equal pvar ret_pvar
@@ -1153,22 +1164,22 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
       typestate
   | Sil.Load {id; e; typ; loc} ->
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv node instr_ref typestate e loc ;
+      typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+        checks node instr_ref typestate e loc ;
       let e', typestate' =
         convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_pname
           curr_annotated_signature ~node ~original_node:node ~is_assignment:false e typestate loc
       in
       TypeState.add_id id
-        (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-           tenv node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
+        (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+           checks node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
         ~descr:"Sil.Load" typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
   | Sil.Store {e1; typ; e2; loc} ->
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv node instr_ref typestate e1 loc ;
+      typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+        checks node instr_ref typestate e1 loc ;
       let e1' =
         convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature ~node
           ~original_node:node ~is_assignment:true e1 typestate loc
@@ -1179,10 +1190,11 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           match AnnotatedField.get tenv field_name field_class_type with
           | Some annotated_field ->
               if checks.eradicate then
-                EradicateChecks.check_field_assignment ~nullsafe_mode tenv find_canonical_duplicate
-                  curr_pdesc node instr_ref typestate ~expr_rhs:e2 ~field_type:typ loc field_name
-                  annotated_field
-                  (typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv)
+                EradicateChecks.check_field_assignment analysis_data ~nullsafe_mode
+                  find_canonical_duplicate node instr_ref typestate ~expr_rhs:e2 ~field_type:typ loc
+                  field_name annotated_field
+                  (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+                     checks)
           | None ->
               L.d_strln "WARNING: could not fetch field declaration; skipping assignment check" )
         | _ ->
@@ -1192,8 +1204,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         match e1' with
         | Exp.Lvar pvar ->
             TypeState.add pvar
-              (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this
-                 checks tenv node instr_ref typestate e2 typ TypeOrigin.OptimisticFallback loc)
+              (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate
+                 calls_this checks node instr_ref typestate e2 typ TypeOrigin.OptimisticFallback
+                 loc)
               typestate ~descr:"Sil.Store: Exp.Lvar case"
         | Exp.Lfield _ ->
             typestate
@@ -1211,31 +1224,31 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   (* Type cast *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Procname.equal pn BuiltinDecl.__cast ->
-      typecheck_expr_for_errors ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-        tenv node instr_ref typestate e loc ;
+      typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+        checks node instr_ref typestate e loc ;
       let e' =
         convert_complex_exp_to_pvar tenv idenv curr_pname curr_annotated_signature
           ~is_assignment:false ~node ~original_node:node e typestate loc
       in
       (* cast copies the type of the first argument *)
       TypeState.add_id id
-        (typecheck_expr_simple ~nullsafe_mode find_canonical_duplicate curr_pdesc calls_this checks
-           tenv node instr_ref typestate e' typ TypeOrigin.OptimisticFallback loc)
+        (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
+           checks node instr_ref typestate e' typ TypeOrigin.OptimisticFallback loc)
         typestate ~descr:"type cast"
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn BuiltinDecl.__get_array_length ->
       let _, ta =
-        typecheck_expr ~nullsafe_mode find_canonical_duplicate calls_this checks tenv node instr_ref
-          curr_pdesc typestate array_exp
+        typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks node
+          instr_ref typestate array_exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
           (t, InferredNullability.create TypeOrigin.OptimisticFallback)
           loc
       in
       if checks.eradicate then
-        EradicateChecks.check_object_dereference ~nullsafe_mode tenv find_canonical_duplicate
-          curr_pdesc node instr_ref array_exp DereferenceRule.ReportableViolation.ArrayLengthAccess
-          ta loc ;
+        EradicateChecks.check_object_dereference analysis_data ~nullsafe_mode
+          find_canonical_duplicate node instr_ref array_exp
+          DereferenceRule.ReportableViolation.ArrayLengthAccess ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create TypeOrigin.ArrayLengthResult)
         typestate ~descr:"array.length"
@@ -1249,9 +1262,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       , etl_
       , loc
       , cflags ) ->
-      typecheck_sil_call_function find_canonical_duplicate checks tenv instr_ref typestate idenv
-        ~callee_pname ~curr_pname curr_pdesc curr_annotated_signature calls_this ~nullsafe_mode
-        ret_id_typ etl_ loc callee_pname_java cflags node
+      typecheck_sil_call_function analysis_data find_canonical_duplicate checks instr_ref typestate
+        idenv ~callee_pname curr_annotated_signature calls_this ~nullsafe_mode ret_id_typ etl_ loc
+        callee_pname_java cflags node
   (* Calls instruction that is not a function call *)
   | Sil.Call _ ->
       (* This is something weird, we don't normally expect this type of instruction
@@ -1261,9 +1274,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       typestate
   | Sil.Prune (cond, loc, true_branch, _) ->
       let node', normalized_cond = normalize_cond_for_sil_prune idenv ~node cond in
-      check_condition_for_sil_prune tenv idenv calls_this find_canonical_duplicate loc curr_pname
-        curr_pdesc curr_annotated_signature linereader typestate checks true_branch instr_ref
-        ~nullsafe_mode ~node:node' ~original_node:node normalized_cond
+      check_condition_for_sil_prune analysis_data idenv calls_this find_canonical_duplicate loc
+        curr_annotated_signature linereader typestate checks true_branch instr_ref ~nullsafe_mode
+        ~node:node' ~original_node:node normalized_cond
 
 
 let can_instrunction_throw tenv node instr =
@@ -1298,8 +1311,8 @@ let is_noreturn_instruction = function
 
 
 (** Typecheck the instructions in a cfg node. *)
-let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canonical_duplicate
-    annotated_signature typestate node linereader =
+let typecheck_node ({IntraproceduralAnalysis.tenv; _} as analysis_data) calls_this checks idenv
+    find_canonical_duplicate annotated_signature typestate node linereader =
   if Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind then
     {normal_flow_typestate= None; exception_flow_typestates= []}
   else
@@ -1324,9 +1337,8 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
             TypeErr.InstrRef.gen instr_ref_gen
           in
           let normal_flow_typestate =
-            typecheck_instr tenv calls_this checks node idenv curr_pname curr_pdesc
-              find_canonical_duplicate annotated_signature instr_ref linereader
-              normal_flow_typestate_prev instr
+            typecheck_instr analysis_data calls_this checks node idenv find_canonical_duplicate
+              annotated_signature instr_ref linereader normal_flow_typestate_prev instr
           in
           if Config.write_html then
             L.d_printfln "New state: @\n%a@\n" TypeState.pp normal_flow_typestate ;

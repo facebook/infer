@@ -10,8 +10,10 @@ module L = Logging
 module F = Format
 open Dataflow
 
-let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
-    annotated_signature linereader proc_loc : bool * TypeState.t option =
+let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    find_canonical_duplicate calls_this checks idenv annotated_signature linereader proc_loc :
+    bool * TypeState.t option =
+  let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
     let pvar = Pvar.mk param_signature.mangled curr_pname in
     let formal_name = param_signature.mangled in
@@ -37,7 +39,7 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
   (* Check the nullable flag computed for the return value and report inconsistencies. *)
   let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc : unit
       =
-    let AnnotatedSignature.{ret_annotated_type} = annotated_signature.AnnotatedSignature.ret in
+    let {AnnotatedSignature.ret_annotated_type} = annotated_signature.AnnotatedSignature.ret in
     let ret_pvar = Procdesc.get_ret_var curr_pdesc in
     let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
     let typ_found_opt =
@@ -50,10 +52,10 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
     AnalysisState.set_node exit_node ;
     if not (List.is_empty checks.TypeCheck.check_ret_type) then
       List.iter
-        ~f:(fun f -> f curr_pname curr_pdesc ret_annotated_type.typ typ_found_opt loc)
+        ~f:(fun f -> f curr_pdesc ret_annotated_type.typ typ_found_opt loc)
         checks.TypeCheck.check_ret_type ;
     if checks.TypeCheck.eradicate then
-      EradicateChecks.check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
+      EradicateChecks.check_return_annotation analysis_data find_canonical_duplicate ret_range
         annotated_signature ret_implicitly_nullable loc
   in
   let do_before_dataflow initial_typestate =
@@ -73,13 +75,13 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
 
     let pp_name fmt = F.pp_print_string fmt "eradicate"
 
-    let do_node tenv node typestate =
+    let do_node _tenv node typestate =
       NodePrinter.with_session ~pp_name node ~f:(fun () ->
           AnalysisState.set_node node ;
           if Config.write_html then L.d_printfln "before:@\n%a@\n" TypeState.pp typestate ;
-          let TypeCheck.{normal_flow_typestate; exception_flow_typestates} =
-            TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc
-              find_canonical_duplicate annotated_signature typestate node linereader
+          let {TypeCheck.normal_flow_typestate; exception_flow_typestates} =
+            TypeCheck.typecheck_node analysis_data calls_this checks idenv find_canonical_duplicate
+              annotated_signature typestate node linereader
           in
           let normal_flow_typestates =
             Option.value_map normal_flow_typestate ~f:(fun a -> [a]) ~default:[]
@@ -100,14 +102,15 @@ let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname c
       (!calls_this, None)
 
 
-let analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_signature linereader
-    proc_loc : unit =
+let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data) calls_this
+    checks annotated_signature linereader proc_loc : unit =
   let idenv = Idenv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
   let find_canonical_duplicate node =
     let duplicate_nodes = find_duplicate_nodes node in
     try Procdesc.NodeSet.min_elt duplicate_nodes with Caml.Not_found -> node
   in
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let caller_nullsafe_mode = NullsafeMode.of_procname tenv proc_name in
   let typecheck_proc do_checks pname pdesc proc_details_opt =
     let ann_sig, loc, idenv_pn =
@@ -134,8 +137,10 @@ let analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_s
       if do_checks then (checks, calls_this)
       else ({TypeCheck.eradicate= false; check_ret_type= []}, ref false)
     in
-    callback1 tenv find_canonical_duplicate calls_this' checks' idenv_pn pname pdesc ann_sig
-      linereader loc
+    (* NOTE: [analysis_data] has the new [pdesc] *)
+    callback1
+      {analysis_data with proc_desc= pdesc}
+      find_canonical_duplicate calls_this' checks' idenv_pn ann_sig linereader loc
   in
   let do_final_typestate typestate_opt calls_this =
     let do_typestate typestate =
@@ -151,8 +156,8 @@ let analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_s
         let typestates_for_all_constructors_incl_current =
           Initializers.final_constructor_typestates_lazy tenv proc_name typecheck_proc
         in
-        EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate proc_name
-          proc_desc start_node ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
+        EradicateChecks.check_constructor_initialization analysis_data find_canonical_duplicate
+          start_node ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
           ~typestates_for_curr_constructor_and_all_initializer_methods
           ~typestates_for_all_constructors_incl_current proc_loc ;
         if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate )
@@ -164,7 +169,7 @@ let analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_s
   in
   do_final_typestate final_typestate_opt calls_this ;
   if checks.TypeCheck.eradicate then
-    EradicateChecks.check_overridden_annotations find_canonical_duplicate tenv proc_name proc_desc
+    EradicateChecks.check_overridden_annotations analysis_data find_canonical_duplicate
       annotated_signature ;
   ()
 
@@ -188,7 +193,8 @@ let find_reason_to_skip_analysis proc_name proc_desc =
 
 
 (** Entry point for the nullsafe procedure-level analysis. *)
-let analyze checks {IntraproceduralAnalysis.proc_desc; tenv} : NullsafeSummary.t option =
+let analyze checks ({IntraproceduralAnalysis.proc_desc; tenv; _} as analysis_data) :
+    NullsafeSummary.t option =
   let proc_name = Procdesc.get_proc_name proc_desc in
   L.debug Analysis Medium "Analysis of %a@\n" Procname.pp proc_name ;
   match find_reason_to_skip_analysis proc_name proc_desc with
@@ -210,14 +216,12 @@ let analyze checks {IntraproceduralAnalysis.proc_desc; tenv} : NullsafeSummary.t
       (* The main method - during this the actual analysis will happen and TypeErr will be populated with
          issues (and some of them - reported).
       *)
-      analyze_one_procedure tenv proc_name proc_desc calls_this checks annotated_signature
-        linereader loc ;
+      analyze_one_procedure analysis_data calls_this checks annotated_signature linereader loc ;
       (* Collect issues that were detected during analysis and put them in summary for further processing *)
       let issues = TypeErr.get_errors () |> List.map ~f:(fun (issues, _) -> issues) in
       (* Report errors of "farall" class - those could not be reported during analysis phase. *)
-      TypeErr.report_forall_issues_and_reset
-        (EradicateCheckers.report_error tenv)
-        ~nullsafe_mode:annotated_signature.nullsafe_mode proc_desc ;
+      TypeErr.report_forall_issues_and_reset analysis_data
+        ~nullsafe_mode:annotated_signature.nullsafe_mode ;
       Some {NullsafeSummary.issues}
 
 

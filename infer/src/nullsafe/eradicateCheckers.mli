@@ -10,9 +10,7 @@ open! IStd
 (** Module for Eradicate-based user-defined checkers. *)
 
 val report_error :
-     Tenv.t
-  -> Procname.t
-  -> Procdesc.t
+     IntraproceduralAnalysis.t
   -> IssueType.t
   -> Location.t
   -> ?field_name:Fieldname.t option

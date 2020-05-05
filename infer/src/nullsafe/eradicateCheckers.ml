@@ -9,7 +9,7 @@ open! IStd
 
 (** Module for Eradicate-based user-defined checkers. *)
 
-let report_error tenv proc_name proc_desc kind loc ?(field_name = None)
+let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} kind loc ?(field_name = None)
     ?(exception_kind = fun k d -> Exceptions.Checkers (k, d)) ~severity description =
   let suppressed = Reporting.is_suppressed tenv proc_desc kind ~field_name in
   if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"
@@ -17,4 +17,9 @@ let report_error tenv proc_name proc_desc kind loc ?(field_name = None)
     let localized_description = Localise.verbatim_desc description in
     let exn = exception_kind kind localized_description in
     let trace = [Errlog.make_trace_element 0 loc description []] in
-    SummaryReporting.log_issue_deprecated_using_state severity proc_name ~loc ~ltr:trace exn
+    let attrs = Procdesc.get_attributes proc_desc in
+    let node = AnalysisState.get_node_exn () in
+    let session = AnalysisState.get_session () in
+    Reporting.log_issue_from_summary severity attrs err_log
+      ~node:(BackendNode {node})
+      ~session ~loc ~ltr:trace exn

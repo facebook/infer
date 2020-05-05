@@ -9,7 +9,7 @@ open! IStd
 
 (** Module type for the type checking functions. *)
 
-type check_return_type = Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+type check_return_type = Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -26,12 +26,10 @@ type typecheck_result =
             together) will be passed to all "exception output" nodes of the current node. *) }
 
 val typecheck_node :
-     Tenv.t
+     IntraproceduralAnalysis.t
   -> bool ref
   -> checks
   -> Idenv.t
-  -> Procname.t
-  -> Procdesc.t
   -> find_canonical_duplicate
   -> AnnotatedSignature.t
   -> TypeState.t
