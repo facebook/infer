@@ -34,6 +34,6 @@ val typecheck_node :
   -> AnnotatedSignature.t
   -> TypeState.t
   -> Procdesc.Node.t
-  -> Printer.LineReader.t
+  -> LineReader.t
   -> typecheck_result
 (** Main entry point. Typecheck the CFG node given input typestate, and report issues, if found *)

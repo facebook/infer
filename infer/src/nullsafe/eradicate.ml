@@ -210,7 +210,7 @@ let analyze checks ({IntraproceduralAnalysis.proc_desc; tenv; _} as analysis_dat
       L.debug Analysis Medium "Signature: %a@\n" (AnnotatedSignature.pp proc_name)
         annotated_signature ;
       let loc = Procdesc.get_loc proc_desc in
-      let linereader = Printer.LineReader.create () in
+      let linereader = LineReader.create () in
       (* Initializing TypeErr signleton. *)
       TypeErr.reset () ;
       (* The main method - during this the actual analysis will happen and TypeErr will be populated with

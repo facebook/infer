@@ -79,7 +79,7 @@ let check_condition_for_redundancy
   in
   let from_try_with_resources () : bool =
     (* heuristic to check if the condition is the translation of try-with-resources *)
-    match Printer.LineReader.from_loc linereader loc with
+    match LineReader.from_loc linereader loc with
     | Some line ->
         (not (String.is_substring ~substring:"==" line || String.is_substring ~substring:"!=" line))
         && String.is_substring ~substring:"}" line

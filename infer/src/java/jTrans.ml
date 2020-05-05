@@ -39,11 +39,11 @@ let get_start_location_heuristics =
           match line.[next_char_idx] with ' ' | '<' | '(' -> true | _ -> false
         else false )
   in
-  let line_reader = lazy (Printer.LineReader.create ()) in
+  let line_reader = lazy (LineReader.create ()) in
   let rec find_proc_loc_backward name ~lines_to_find loc =
     if lines_to_find <= 0 || loc.Location.line <= 0 then None
     else
-      match Printer.LineReader.from_loc (Lazy.force_val line_reader) loc with
+      match LineReader.from_loc (Lazy.force_val line_reader) loc with
       | None ->
           None
       | Some line when is_proc_line line ~name ->

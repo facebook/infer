@@ -307,7 +307,7 @@ let process_summary ~costs_outf summary issues_acc =
 
 
 let process_all_summaries_and_issues ~issues_outf ~costs_outf =
-  let linereader = Printer.LineReader.create () in
+  let linereader = LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
   SpecsFiles.iter_from_config ~f:(fun summary ->
