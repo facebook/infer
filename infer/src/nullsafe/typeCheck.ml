@@ -206,7 +206,7 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
         None
   in
   let handle_temporary e =
-    match Idenv.expand_expr idenv e with
+    match IDEnv.expand_expr idenv e with
     | Exp.Lvar pvar when name_is_temporary (Pvar.to_string pvar) -> (
       match pvar_get_origin pvar with
       | Some TypeOrigin.This ->
@@ -230,7 +230,7 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
 (* Try to convert a function call to a pvar that originated it; fallback to an original expression in case of failure *)
 let funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment ~call_node ~node
     id =
-  match Errdesc.find_normal_variable_funcall call_node id with
+  match Decompile.find_normal_variable_funcall call_node id with
   | Some (Exp.Const (Const.Cfun pn), _, _, _)
     when not (ComplexExpressions.procname_used_in_condition pn) -> (
     match ComplexExpressions.exp_to_string tenv node exp with
@@ -276,17 +276,17 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
       F.fprintf f "Exp: %a;@\nTypestate: @\n%a" Exp.pp exp TypeState.pp typestate )
     (fun () ->
       let exp =
-        handle_field_access_via_temporary idenv curr_pname typestate (Idenv.expand_expr idenv exp_)
+        handle_field_access_via_temporary idenv curr_pname typestate (IDEnv.expand_expr idenv exp_)
       in
       let default = (exp, typestate) in
       match exp with
-      | Exp.Var id when Option.is_some (Errdesc.find_normal_variable_funcall node id) ->
+      | Exp.Var id when Option.is_some (Decompile.find_normal_variable_funcall node id) ->
           ( funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignment
               ~call_node:node ~node id
           , typestate )
       | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
           let frontend_variable_assignment =
-            Errdesc.find_program_variable_assignment original_node pvar
+            Decompile.find_program_variable_assignment original_node pvar
           in
           match frontend_variable_assignment with
           | Some (call_node, id) ->
@@ -310,7 +310,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
                  ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
                  ~default:TypeOrigin.OptimisticFallback
           in
-          let exp' = Idenv.expand_expr_temps idenv original_node exp_ in
+          let exp' = IDEnv.expand_expr_temps idenv original_node exp_ in
           let is_parameter_field pvar =
             (* parameter.field *)
             let name = Pvar.get_name pvar in
@@ -440,7 +440,7 @@ let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc hand
       let typestate' = handle_pvar typestate pvar in
       let curr_node = TypeErr.InstrRef.get_node instr_ref in
       let frontent_variable_assignment =
-        if Pvar.is_frontend_tmp pvar then Errdesc.find_program_variable_assignment curr_node pvar
+        if Pvar.is_frontend_tmp pvar then Decompile.find_program_variable_assignment curr_node pvar
         else None
       in
       match frontent_variable_assignment with
@@ -448,7 +448,7 @@ let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc hand
           typestate'
       | Some (node', id) -> (
           (* handle the case where pvar is a frontend-generated program variable *)
-          let exp = Idenv.expand_expr idenv (Exp.Var id) in
+          let exp = IDEnv.expand_expr idenv (Exp.Var id) in
           match
             convert_complex_exp_to_pvar ~is_assignment:false tenv idenv curr_pname
               curr_annotated_signature ~node:node' ~original_node:node exp typestate' loc
@@ -481,7 +481,7 @@ let typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplic
 let java_get_vararg_values node pvar idenv =
   let values_of_instr acc = function
     | Sil.Store {e1= Exp.Lindex (array_exp, _); e2= content_exp}
-      when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
+      when Exp.equal (Exp.Lvar pvar) (IDEnv.expand_expr idenv array_exp) ->
         (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
         content_exp :: acc
     | _ ->
@@ -490,7 +490,7 @@ let java_get_vararg_values node pvar idenv =
   let values_of_node acc n =
     Procdesc.Node.get_instrs n |> Instrs.fold ~f:values_of_instr ~init:acc
   in
-  match Errdesc.find_program_variable_assignment node pvar with
+  match Decompile.find_program_variable_assignment node pvar with
   | Some (node', _) ->
       Procdesc.fold_slope_range node' node ~f:values_of_node ~init:[]
   | None ->
@@ -543,7 +543,7 @@ let do_preconditions_check_not_null
       let curr_pname = Procdesc.get_proc_name curr_pdesc in
       if is_vararg then
         let do_vararg_value e ts =
-          match Idenv.expand_expr idenv e with
+          match IDEnv.expand_expr idenv e with
           | Exp.Lvar pvar1 ->
               pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
                 (clear_nullable_flag
@@ -588,7 +588,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
   let handle_negated_condition cond_node =
     let do_instr instr =
       let set_flag expression =
-        let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
+        let cond_e = IDEnv.expand_expr_temps idenv cond_node expression in
         match
           convert_complex_exp_to_pvar ~is_assignment:false tenv idenv curr_pname
             curr_annotated_signature ~node:cond_node ~original_node:node cond_e typestate' loc
@@ -615,7 +615,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       (* temporary variable for the value of the boolean condition *)
       let curr_node = TypeErr.InstrRef.get_node instr_ref in
       let branch = false in
-      match Errdesc.find_boolean_assignment curr_node pvar branch with
+      match Decompile.find_boolean_assignment curr_node pvar branch with
       (* In foo(cond1 && cond2), the node that sets the result to false
          has all the negated conditions as parents. *)
       | Some boolean_assignment_node ->
@@ -680,7 +680,7 @@ let handle_assignment_in_condition_for_sil_prune idenv node pvar =
       let found = ref None in
       let do_instr i =
         match i with
-        | Sil.Store {e1= e; e2= e'} when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
+        | Sil.Store {e1= e; e2= e'} when Exp.equal (Exp.Lvar pvar) (IDEnv.expand_expr idenv e') ->
             found := Some e
         | _ ->
             ()
@@ -701,13 +701,13 @@ let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =
       let node'', c2' = normalize_cond_for_sil_prune_rec idenv ~node:node' ~original_node c2 in
       (node'', Exp.BinOp (bop, c1', c2'))
   | Exp.Var _ ->
-      let c' = Idenv.expand_expr idenv cond in
+      let c' = IDEnv.expand_expr idenv cond in
       if not (Exp.equal c' cond) then normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
       else (node, c')
   | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
     match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
     | None -> (
-      match Errdesc.find_program_variable_assignment node pvar with
+      match Decompile.find_program_variable_assignment node pvar with
       | Some (node', id) ->
           (node', Exp.Var id)
       | None ->
@@ -732,7 +732,7 @@ let rec check_condition_for_sil_prune
   let extract_arguments_from_call filter_callee expr =
     match expr with
     | Exp.Var id -> (
-      match Errdesc.find_normal_variable_funcall node id with
+      match Decompile.find_normal_variable_funcall node id with
       | Some (Exp.Const (Const.Cfun pn), arguments, _, _) when filter_callee pn ->
           Some arguments
       | _ ->

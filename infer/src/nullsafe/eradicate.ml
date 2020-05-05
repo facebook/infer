@@ -8,7 +8,6 @@
 open! IStd
 module L = Logging
 module F = Format
-open Dataflow
 
 let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
     find_canonical_duplicate calls_this checks idenv annotated_signature linereader proc_loc :
@@ -66,7 +65,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
     let exit_node = Procdesc.get_exit_node curr_pdesc in
     check_return find_canonical_duplicate exit_node final_typestate annotated_signature proc_loc
   in
-  let module DFTypeCheck = MakeDF (struct
+  let module DFTypeCheck = DataFlow.MakeDF (struct
     type t = TypeState.t
 
     let equal = TypeState.equal
@@ -76,7 +75,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
     let pp_name fmt = F.pp_print_string fmt "eradicate"
 
     let do_node node typestate =
-      NodePrinter.with_session ~pp_name node ~f:(fun () ->
+      AnalysisCallbacks.html_debug_new_node_session ~pp_name node ~f:(fun () ->
           AnalysisState.set_node node ;
           if Config.write_html then L.d_printfln "before:@\n%a@\n" TypeState.pp typestate ;
           let {TypeCheck.normal_flow_typestate; exception_flow_typestates} =
@@ -89,7 +88,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
           (normal_flow_typestates, exception_flow_typestates) )
 
 
-    let proc_throws _ = DontKnow
+    let proc_throws _ = DataFlow.DontKnow
   end) in
   let initial_typestate = get_initial_typestate () in
   do_before_dataflow initial_typestate ;
@@ -104,7 +103,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
 
 let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data) calls_this
     checks annotated_signature linereader proc_loc : unit =
-  let idenv = Idenv.create proc_desc in
+  let idenv = IDEnv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
   let find_canonical_duplicate node =
     let duplicate_nodes = find_duplicate_nodes node in
@@ -131,7 +130,7 @@ let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analy
               (Procdesc.get_attributes pdesc)
           in
           let loc = Procdesc.get_loc pdesc in
-          (ann_sig, loc, Idenv.create pdesc)
+          (ann_sig, loc, IDEnv.create pdesc)
     in
     let checks', calls_this' =
       if do_checks then (checks, calls_this)

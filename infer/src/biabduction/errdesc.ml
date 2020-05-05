@@ -72,35 +72,6 @@ let explain_deallocate_constant_string s ra =
 
 let verbose = Config.trace_error
 
-(** Find the function call instruction used to initialize normal variable [id], and return the
-    function name and arguments *)
-let find_normal_variable_funcall (node : Procdesc.Node.t) (id : Ident.t) :
-    (Exp.t * Exp.t list * Location.t * CallFlags.t) option =
-  let find_declaration _ = function
-    | Sil.Call ((id0, _), fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
-        Some (fun_exp, List.map ~f:fst args, loc, call_flags)
-    | _ ->
-        None
-  in
-  let res = Procdesc.Node.find_in_node_or_preds node ~f:find_declaration in
-  if verbose && is_none res then
-    L.d_printfln "find_normal_variable_funcall could not find %a in node %a" Ident.pp id
-      Procdesc.Node.pp node ;
-  res
-
-
-(** Find a program variable assignment in the current node or predecessors. *)
-let find_program_variable_assignment node pvar : (Procdesc.Node.t * Ident.t) option =
-  let find_instr node = function
-    | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Var id}
-      when Pvar.equal pvar pvar_ && Ident.is_normal id ->
-        Some (node, id)
-    | _ ->
-        None
-  in
-  Procdesc.Node.find_in_node_or_preds node ~f:find_instr
-
-
 (** Special case for C++, where we translate code like [struct X; X getX() { X x; return X; }] as
     [void getX(struct X * frontend_generated_pvar)]. This lets us recognize that X was returned from
     getX *)
@@ -129,27 +100,6 @@ let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
         None
   in
   Procdesc.Node.find_in_node_or_preds node ~f:find_instr
-
-
-(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
-    parameter indicates whether the true or false branch is required. *)
-let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
-  let find_instr n =
-    let filter = function
-      | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Const (Const.Cint i)} when Pvar.equal pvar pvar_ ->
-          Bool.(IntLit.iszero i <> true_branch)
-      | _ ->
-          false
-    in
-    Instrs.exists ~f:filter (Procdesc.Node.get_instrs n)
-  in
-  match Procdesc.Node.get_preds node with
-  | [pred_node] ->
-      find_boolean_assignment pred_node pvar true_branch
-  | [n1; n2] ->
-      if find_instr n1 then Some n1 else if find_instr n2 then Some n2 else None
-  | _ ->
-      None
 
 
 (** Find the Load instruction used to declare normal variable [id], and return the expression
@@ -243,7 +193,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
           Exp.d_exp e ;
           L.d_ln () ) ;
         if Pvar.is_frontend_tmp pvar then
-          match find_program_variable_assignment node pvar with
+          match Decompile.find_program_variable_assignment node pvar with
           | None -> (
             match find_struct_by_value_assignment node pvar with
             | Some (_, pname, loc, call_flags) ->
@@ -251,7 +201,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
             | None ->
                 None )
           | Some (node', id) -> (
-            match find_normal_variable_funcall node' id with
+            match Decompile.find_normal_variable_funcall node' id with
             | Some (fun_exp, eargs, loc, call_flags) ->
                 let fun_dexpo = exp_rv_dexp_ tenv seen node' fun_exp in
                 let blame_args = List.map ~f:(exp_rv_dexp_ tenv seen node') eargs in

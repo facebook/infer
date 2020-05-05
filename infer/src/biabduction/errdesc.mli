@@ -17,21 +17,8 @@ val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t opt
 val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Predicates.hpred -> PredSymb.resource option
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 
-val find_normal_variable_funcall :
-  Procdesc.Node.t -> Ident.t -> (Exp.t * Exp.t list * Location.t * CallFlags.t) option
-(** Find the function call instruction used to initialize normal variable [id], and return the
-    function name and arguments *)
-
-val find_program_variable_assignment :
-  Procdesc.Node.t -> Pvar.t -> (Procdesc.Node.t * Ident.t) option
-(** Find a program variable assignment in the current node or straightline predecessor. *)
-
 val find_ident_assignment : Procdesc.Node.t -> Ident.t -> (Procdesc.Node.t * Exp.t) option
 (** Find a program variable assignment to id in the current node or predecessors. *)
-
-val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node.t option
-(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
-    parameter indicates whether the true or false branch is required. *)
 
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 (** describe rvalue [e] as a dexp *)

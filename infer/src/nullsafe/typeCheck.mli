@@ -29,7 +29,7 @@ val typecheck_node :
      IntraproceduralAnalysis.t
   -> bool ref
   -> checks
-  -> Idenv.t
+  -> IDEnv.t
   -> find_canonical_duplicate
   -> AnnotatedSignature.t
   -> TypeState.t

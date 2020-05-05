@@ -1,0 +1,14 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name nullsafe)
+ (public_name infer.nullsafe)
+ (flags
+  (:standard -open Core -open InferIR -open InferStdlib -open IStd -open InferGenerated
+    -open InferBase -open Absint -open Biabduction))
+ (libraries core InferStdlib InferGenerated InferBase InferIR absint biabduction)
+ (preprocess (pps ppx_compare ppx_sexp_conv))
+)

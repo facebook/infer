@@ -38,7 +38,7 @@ let expand_expr_temps idenv node exp_ =
   let exp = expand_expr idenv exp_ in
   match exp with
   | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
-    match Errdesc.find_program_variable_assignment node pvar with
+    match Decompile.find_program_variable_assignment node pvar with
     | None ->
         exp
     | Some (_, id) ->

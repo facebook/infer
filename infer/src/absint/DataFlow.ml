@@ -166,9 +166,8 @@ end
 
 (* MakeDF *)
 
-(** Example dataflow callback: compute the the distance from a node to the start node. *)
-let _callback_test_dataflow {Callbacks.summary; _} =
-  let proc_desc = Summary.get_proc_desc summary in
+(** Example dataflow analysis: compute the the distance from a node to the start node. *)
+let _test_dataflow proc_desc =
   let verbose = false in
   let module DFCount = MakeDF (struct
     type t = int
@@ -189,5 +188,4 @@ let _callback_test_dataflow {Callbacks.summary; _} =
   let do_node node =
     match transitions node with DFCount.Transition _ -> () | DFCount.Dead_state -> ()
   in
-  List.iter ~f:do_node (Procdesc.get_nodes proc_desc) ;
-  summary
+  List.iter ~f:do_node (Procdesc.get_nodes proc_desc)

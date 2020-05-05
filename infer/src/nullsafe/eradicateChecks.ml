@@ -87,7 +87,7 @@ let check_condition_for_redundancy
     | None ->
         false
   in
-  let is_temp = Idenv.exp_is_temp idenv expr in
+  let is_temp = IDEnv.exp_is_temp idenv expr in
   let should_report =
     (* NOTE: We have different levels of non-nullability. In practice there is a big difference
        between certainty for different cases: whether expression is the result of something that can not be null
