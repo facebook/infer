@@ -659,8 +659,8 @@ type reported_access =
   ; tenv: Tenv.t
   ; procname: Procname.t }
 
-let report_thread_safety_violation ~issue_log ~make_description ~report_kind
-    ({threads; snapshot; tenv; procname= pname} : reported_access) =
+let report_thread_safety_violation ~make_description ~report_kind
+    ({threads; snapshot; tenv; procname= pname} : reported_access) issue_log =
   let open RacerDDomain in
   let final_pname = List.last snapshot.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
   let final_sink_site = CallSite.make final_pname snapshot.loc in
@@ -677,7 +677,7 @@ let report_thread_safety_violation ~issue_log ~make_description ~report_kind
   log_issue pname ~issue_log ~loc ~ltr ~access issue_type error_message
 
 
-let report_unannotated_interface_violation ~issue_log reported_pname reported_access =
+let report_unannotated_interface_violation reported_pname reported_access issue_log =
   match reported_pname with
   | Procname.Java java_pname ->
       let class_name = Procname.Java.get_class_name java_pname in
@@ -687,8 +687,8 @@ let report_unannotated_interface_violation ~issue_log reported_pname reported_ac
            interface with %a or adding a lock."
           describe_pname reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
-      report_thread_safety_violation ~issue_log ~make_description ~report_kind:UnannotatedInterface
-        reported_access
+      report_thread_safety_violation ~make_description ~report_kind:UnannotatedInterface
+        reported_access issue_log
   | _ ->
       (* skip reporting on C++ *)
       issue_log
@@ -728,23 +728,80 @@ let make_read_write_race_description ~read_is_sync (conflict : reported_access) 
     pp_access final_sink conflicts_description
 
 
-(** type for remembering what we have already reported to avoid duplicates. our policy is to report
-    each kind of access (read/write) to the same field reachable from the same procedure only once.
-    in addition, if a call to a procedure (transitively) accesses multiple fields, we will only
-    report one of each kind of access *)
-type reported =
-  { reported_sites: CallSite.Set.t
-  ; reported_writes: Procname.Set.t
-  ; reported_reads: Procname.Set.t
-  ; reported_unannotated_calls: Procname.Set.t }
+module ReportedSet : sig
+  (** Type for deduplicating and storing reports. *)
+  type t
 
-let empty_reported =
-  let reported_sites = CallSite.Set.empty in
-  let reported_writes = Procname.Set.empty in
-  let reported_reads = Procname.Set.empty in
-  let reported_unannotated_calls = Procname.Set.empty in
-  {reported_sites; reported_reads; reported_writes; reported_unannotated_calls}
+  val reset : t -> t
+  (** Reset recorded writes and reads, while maintaining the same [IssueLog.t]. *)
 
+  val empty_of_issue_log : IssueLog.t -> t
+  (** Create a set of reports containing the given [IssueLog.t] but otherwise having no records of
+      previous reports. *)
+
+  val to_issue_log : t -> IssueLog.t
+  (** Recover deduplicated [IssueLog.t] from [t]. *)
+
+  val deduplicate : f:(reported_access -> IssueLog.t -> IssueLog.t) -> reported_access -> t -> t
+  (** Deduplicate [f]. *)
+end = struct
+  type reported_set =
+    { sites: CallSite.Set.t
+    ; writes: Procname.Set.t
+    ; reads: Procname.Set.t
+    ; unannotated_calls: Procname.Set.t }
+
+  let empty_reported_set =
+    { sites= CallSite.Set.empty
+    ; reads= Procname.Set.empty
+    ; writes= Procname.Set.empty
+    ; unannotated_calls= Procname.Set.empty }
+
+
+  type t = reported_set * IssueLog.t
+
+  let empty_of_issue_log issue_log = (empty_reported_set, issue_log)
+
+  let to_issue_log = snd
+
+  let reset (reported_set, issue_log) =
+    ({reported_set with writes= Procname.Set.empty; reads= Procname.Set.empty}, issue_log)
+
+
+  let is_duplicate {snapshot; procname} (reported_set, _) =
+    let call_site = CallSite.make procname (RacerDDomain.AccessSnapshot.get_loc snapshot) in
+    CallSite.Set.mem call_site reported_set.sites
+    ||
+    match snapshot.elem.access with
+    | Write _ | ContainerWrite _ ->
+        Procname.Set.mem procname reported_set.writes
+    | Read _ | ContainerRead _ ->
+        Procname.Set.mem procname reported_set.reads
+    | InterfaceCall _ ->
+        Procname.Set.mem procname reported_set.unannotated_calls
+
+
+  let update {snapshot; procname} (reported_set, issue_log) =
+    let call_site = CallSite.make procname (RacerDDomain.AccessSnapshot.get_loc snapshot) in
+    let sites = CallSite.Set.add call_site reported_set.sites in
+    let reported_set = {reported_set with sites} in
+    let reported_set =
+      match snapshot.elem.access with
+      | Write _ | ContainerWrite _ ->
+          {reported_set with writes= Procname.Set.add procname reported_set.writes}
+      | Read _ | ContainerRead _ ->
+          {reported_set with reads= Procname.Set.add procname reported_set.reads}
+      | InterfaceCall _ ->
+          { reported_set with
+            unannotated_calls= Procname.Set.add procname reported_set.unannotated_calls }
+    in
+    (reported_set, issue_log)
+
+
+  let deduplicate ~f reported_access ((reported_set, issue_log) as acc) =
+    if Config.deduplicate && is_duplicate reported_access acc then acc
+    else update reported_access (reported_set, f reported_access issue_log)
+end
 
 (** Map containing reported accesses, which groups them in lists, by abstract location. The
     equivalence relation used for grouping them is equality of access paths. This is slightly
@@ -895,68 +952,27 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
 let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportMap.t) =
   let open RacerDDomain in
   let open RacerDModels in
-  let is_duplicate_report ({snapshot; procname= pname} : reported_access)
-      ({reported_sites; reported_writes; reported_reads; reported_unannotated_calls}, _) =
-    let call_site = CallSite.make pname (AccessSnapshot.get_loc snapshot) in
-    if Config.deduplicate then
-      CallSite.Set.mem call_site reported_sites
-      ||
-      match snapshot.elem.access with
-      | Access.Write _ | Access.ContainerWrite _ ->
-          Procname.Set.mem pname reported_writes
-      | Access.Read _ | Access.ContainerRead _ ->
-          Procname.Set.mem pname reported_reads
-      | Access.InterfaceCall _ ->
-          Procname.Set.mem pname reported_unannotated_calls
-    else false
-  in
-  let update_reported ({snapshot; procname= pname} : reported_access) reported =
-    if Config.deduplicate then
-      let call_site = CallSite.make pname (AccessSnapshot.get_loc snapshot) in
-      let reported_sites = CallSite.Set.add call_site reported.reported_sites in
-      match snapshot.elem.access with
-      | Access.Write _ | Access.ContainerWrite _ ->
-          let reported_writes = Procname.Set.add pname reported.reported_writes in
-          {reported with reported_writes; reported_sites}
-      | Access.Read _ | Access.ContainerRead _ ->
-          let reported_reads = Procname.Set.add pname reported.reported_reads in
-          {reported with reported_reads; reported_sites}
-      | Access.InterfaceCall _ ->
-          let reported_unannotated_calls =
-            Procname.Set.add pname reported.reported_unannotated_calls
-          in
-          {reported with reported_unannotated_calls; reported_sites}
-    else reported
-  in
   let report_thread_safety_violation ~acc ~make_description ~report_kind reported_access =
-    if is_duplicate_report reported_access acc then acc
-    else
-      let reported_acc, issue_log = acc in
-      let issue_log =
-        report_thread_safety_violation ~issue_log ~make_description ~report_kind reported_access
-      in
-      (update_reported reported_access reported_acc, issue_log)
+    ReportedSet.deduplicate
+      ~f:(report_thread_safety_violation ~make_description ~report_kind)
+      reported_access acc
   in
   let report_unannotated_interface_violation ~acc reported_pname reported_access =
-    if is_duplicate_report reported_access acc then acc
-    else
-      let reported_acc, issue_log = acc in
-      let issue_log =
-        report_unannotated_interface_violation ~issue_log reported_pname reported_access
-      in
-      (update_reported reported_access reported_acc, issue_log)
+    ReportedSet.deduplicate
+      ~f:(report_unannotated_interface_violation reported_pname)
+      reported_access acc
   in
   let report_unsafe_access accesses acc
       ({snapshot; threads; tenv; procname= pname} as reported_access) =
     match snapshot.elem.access with
-    | Access.InterfaceCall {pname= reported_pname}
+    | InterfaceCall {pname= reported_pname}
       when AccessSnapshot.is_unprotected snapshot
            && ThreadsDomain.is_any threads && is_marked_thread_safe pname tenv ->
         (* un-annotated interface call + no lock in method marked thread-safe. warn *)
         report_unannotated_interface_violation ~acc reported_pname reported_access
-    | Access.InterfaceCall _ ->
+    | InterfaceCall _ ->
         acc
-    | (Access.Write _ | ContainerWrite _) when Procname.is_java pname ->
+    | (Write _ | ContainerWrite _) when Procname.is_java pname ->
         let conflict =
           if ThreadsDomain.is_any threads then
             (* unprotected write in method that may run in parallel with itself. warn *)
@@ -977,10 +993,10 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
           report_thread_safety_violation ~acc ~make_description:make_unprotected_write_description
             ~report_kind:(WriteWriteRace conflict) reported_access
         else acc
-    | Access.Write _ | ContainerWrite _ ->
+    | Write _ | ContainerWrite _ ->
         (* Do not report unprotected writes for ObjC_Cpp *)
         acc
-    | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
+    | (Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
         (* unprotected read. report all writes as conflicts for java. for c++ filter out
            unprotected writes *)
         let is_conflict {snapshot; threads= other_threads} =
@@ -997,7 +1013,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                in
                let report_kind = ReadWriteRace conflict.snapshot in
                report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
-    | Access.Read _ | ContainerRead _ ->
+    | Read _ | ContainerRead _ ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
           if snapshot1.elem.lock && snapshot2.elem.lock then false
@@ -1034,15 +1050,14 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
           else acc )
     else init
   in
-  let report grouped_accesses (reported, issue_log) =
+  let report grouped_accesses acc =
     (* reset the reported reads and writes for each memory location *)
-    let reported =
-      {reported with reported_writes= Procname.Set.empty; reported_reads= Procname.Set.empty}
-    in
-    report_guardedby_violations_on_location grouped_accesses (reported, issue_log)
+    ReportedSet.reset acc
+    |> report_guardedby_violations_on_location grouped_accesses
     |> report_accesses_on_location grouped_accesses
   in
-  ReportMap.fold report aggregated_access_map (empty_reported, issue_log) |> snd
+  ReportMap.fold report aggregated_access_map (ReportedSet.empty_of_issue_log issue_log)
+  |> ReportedSet.to_issue_log
 
 
 (* create a map from [abstraction of a memory loc] -> accesses that
