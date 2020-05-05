@@ -39,7 +39,7 @@ class LockGuardWithScope {
     }
   }
 
-  void FP_suspiciously_written_ok(int b, int new_value) {
+  void suspiciously_written_ok(int b, int new_value) {
     if (b) {
       suspiciously_written = new_value;
     } else {

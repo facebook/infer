@@ -1013,7 +1013,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                in
                let report_kind = ReadWriteRace conflict.snapshot in
                report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
-    | Read _ | ContainerRead _ ->
+    | (Read _ | ContainerRead _) when Procname.is_java pname ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
           if snapshot1.elem.lock && snapshot2.elem.lock then false
@@ -1032,6 +1032,9 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                in
                let report_kind = ReadWriteRace conflict.snapshot in
                report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+    | Read _ | ContainerRead _ ->
+        (* Do not report protected reads for ObjC_Cpp *)
+        acc
   in
   let report_accesses_on_location reportable_accesses init =
     (* Don't report on location if all accesses are on non-concurrent contexts *)

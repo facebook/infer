@@ -39,14 +39,13 @@ class Basic {
 
   int get_suspiciously_read_bad() { return suspiciously_read; }
 
-  void set_suspiciously_written_bad(int new_value) {
-    // the only reason we report here is because of the use of a mutex
+  void set_suspiciously_written_ok(int new_value) {
     mutex_.lock();
     mutex_.unlock();
     suspiciously_written = new_value;
   }
 
-  int get_suspiciously_written_bad() {
+  int get_suspiciously_written_ok() {
     int result;
     mutex_.lock();
     result = suspiciously_written;
