@@ -47,6 +47,22 @@ module BoundsOf (Container : CostUtils.S) = struct
     BasicCost.mult n log_n
 end
 
+module IntHashMap = struct
+  let keys {ProcnameDispatcher.Call.FuncArg.exp; typ} {location} ~ret:_ inferbo_mem =
+    let locs = BufferOverrunSemantics.eval_locs exp inferbo_mem in
+    match AbsLoc.PowLoc.is_singleton_or_more locs with
+    | Singleton this_loc -> (
+      match (AbsLoc.Loc.get_path this_loc, Typ.strip_ptr typ |> Typ.name) with
+      | Some path, Some typ_name ->
+          let path = Symb.SymbolPath.field path (Fieldname.make typ_name "size") in
+          let itv = Itv.of_normal_path ~unsigned:true path in
+          CostUtils.of_itv ~itv ~degree_kind:Linear ~of_function:"IntHashMap.keys" location
+      | _, _ ->
+          BasicCost.top )
+    | Empty | More ->
+        BasicCost.top
+end
+
 module JavaString = struct
   let substring_aux ~begin_idx ~end_v {integer_type_widths; location} inferbo_mem =
     let begin_v = BufferOverrunSemantics.eval integer_type_widths begin_idx inferbo_mem in
@@ -189,6 +205,8 @@ module Call = struct
         ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> provider_get
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
+        ; +PatternMatch.implements_xmob_utils "IntHashMap"
+          &:: "keys" <>$ capt_arg $--> IntHashMap.keys
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model
         ; +PatternMatch.implements_google "common.collect.ImmutableSet"
