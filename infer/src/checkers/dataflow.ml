@@ -24,7 +24,7 @@ module type DFStateType = sig
   val join : t -> t -> t
   (** Join two states (the old one is the first parameter). *)
 
-  val do_node : Tenv.t -> Procdesc.Node.t -> t -> t list * t list
+  val do_node : Procdesc.Node.t -> t -> t list * t list
   (** Perform a state transition on a node. *)
 
   val proc_throws : Procname.t -> throws
@@ -41,7 +41,7 @@ module type DF = sig
 
   val join : state list -> state -> state
 
-  val run : Tenv.t -> Procdesc.t -> state -> Procdesc.Node.t -> transition
+  val run : Procdesc.t -> state -> Procdesc.Node.t -> transition
 end
 
 (** Determine if the node can throw an exception. *)
@@ -132,7 +132,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
 
 
   (** Run the worklist-based dataflow algorithm. *)
-  let run tenv proc_desc state =
+  let run proc_desc state =
     let t =
       let start_node = Procdesc.get_start_node proc_desc in
       let init_set = S.singleton start_node in
@@ -152,7 +152,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
         t.worklist <- S.remove node t.worklist ;
         try
           let state = H.find t.pre_states node in
-          let states_succ, states_exn = St.do_node tenv node state in
+          let states_succ, states_exn = St.do_node node state in
           propagate t node states_succ states_exn (node_throws proc_desc node St.proc_throws)
         with Caml.Not_found -> ()
       done
@@ -167,9 +167,8 @@ end
 (* MakeDF *)
 
 (** Example dataflow callback: compute the the distance from a node to the start node. *)
-let _callback_test_dataflow {Callbacks.exe_env; summary} =
+let _callback_test_dataflow {Callbacks.summary; _} =
   let proc_desc = Summary.get_proc_desc summary in
-  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let verbose = false in
   let module DFCount = MakeDF (struct
     type t = int
@@ -178,7 +177,7 @@ let _callback_test_dataflow {Callbacks.exe_env; summary} =
 
     let join n m = if Int.equal n 0 then m else n
 
-    let do_node _ n s =
+    let do_node n s =
       if verbose then
         L.(debug Analysis Verbose) "visiting node %a with state %d@." Procdesc.Node.pp n s ;
       ([s + 1], [s + 1])
@@ -186,7 +185,7 @@ let _callback_test_dataflow {Callbacks.exe_env; summary} =
 
     let proc_throws _ = DoesNotThrow
   end) in
-  let transitions = DFCount.run tenv proc_desc 0 in
+  let transitions = DFCount.run proc_desc 0 in
   let do_node node =
     match transitions node with DFCount.Transition _ -> () | DFCount.Dead_state -> ()
   in

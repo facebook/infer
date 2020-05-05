@@ -10,7 +10,7 @@ module L = Logging
 module F = Format
 open Dataflow
 
-let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
     find_canonical_duplicate calls_this checks idenv annotated_signature linereader proc_loc :
     bool * TypeState.t option =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
@@ -75,7 +75,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analy
 
     let pp_name fmt = F.pp_print_string fmt "eradicate"
 
-    let do_node _tenv node typestate =
+    let do_node node typestate =
       NodePrinter.with_session ~pp_name node ~f:(fun () ->
           AnalysisState.set_node node ;
           if Config.write_html then L.d_printfln "before:@\n%a@\n" TypeState.pp typestate ;
@@ -93,7 +93,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analy
   end) in
   let initial_typestate = get_initial_typestate () in
   do_before_dataflow initial_typestate ;
-  let transitions = DFTypeCheck.run tenv curr_pdesc initial_typestate in
+  let transitions = DFTypeCheck.run curr_pdesc initial_typestate in
   match transitions (Procdesc.get_exit_node curr_pdesc) with
   | DFTypeCheck.Transition (final_typestate, _, _) ->
       do_after_dataflow find_canonical_duplicate final_typestate ;
