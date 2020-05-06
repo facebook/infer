@@ -169,7 +169,7 @@ let all_checkers =
          [(impurity, Language.Java); (impurity, Language.Clang)] ) }
   ; { name= "printf args"
     ; active= Config.is_checker_enabled PrintfArgs
-    ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }
+    ; callbacks= [(intraprocedural PrintfArgs.checker, Language.Java)] }
   ; { name= "liveness"
     ; active= Config.is_checker_enabled Liveness
     ; callbacks= [(intraprocedural Liveness.checker, Language.Clang)] }

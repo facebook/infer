@@ -98,7 +98,8 @@ let rec format_string_type_names (fmt_string : string) (start : int) : string li
 
 
 let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc_name : Procname.t)
-    (proc_desc : Procdesc.t) summary : unit =
+    (proc_desc : Procdesc.t) err_log : unit =
+  let attrs = Procdesc.get_attributes proc_desc in
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
     let instr_name = Procname.to_simplified_string instr_proc_name in
@@ -111,7 +112,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
               "%s at line %s: parameter %d is expected to be of type %s but %s was given."
               instr_name instr_line n_arg (default_format_type_name ft) gt
           in
-          SummaryReporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args
+          Reporting.log_error attrs err_log ~loc:instr_loc IssueType.checkers_printf_args
             description
         else check_type_names instr_loc (n_arg + 1) instr_proc_name fs gs
     | [], [] ->
@@ -121,7 +122,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
           Printf.sprintf "format string arguments don't mach provided arguments in %s at line %s"
             instr_name instr_line
         in
-        SummaryReporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
+        Reporting.log_error attrs err_log ~loc:instr_loc IssueType.checkers_printf_args description
   in
   (* Get the array ivar for a given nvar *)
   let array_ivar instrs nvar =
@@ -157,7 +158,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
               vararg_ivar_type_names
         | None ->
             if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
-              SummaryReporting.log_warning summary ~loc:cl IssueType.checkers_printf_args
+              Reporting.log_warning attrs err_log ~loc:cl IssueType.checkers_printf_args
                 "Format string must be string literal"
       with e ->
         L.internal_error "%s Exception when analyzing %s: %s@."
@@ -169,11 +170,8 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
       ()
 
 
-let callback_printf_args {Callbacks.exe_env; summary} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
+let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
   Procdesc.iter_instrs
-    (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc summary)
-    proc_desc ;
-  summary
+    (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc err_log)
+    proc_desc

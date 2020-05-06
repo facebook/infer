@@ -7,4 +7,4 @@
 
 open! IStd
 
-val callback_printf_args : Callbacks.proc_callback_t
+val checker : IntraproceduralAnalysis.t -> unit

@@ -15,12 +15,6 @@ let log_error summary ~loc ?ltr ?extras issue_type error_message =
   Reporting.log_error attrs err_log ~loc ?ltr ?extras issue_type error_message
 
 
-let log_warning summary ~loc ?ltr ?extras issue_type error_message =
-  let attrs = Summary.get_attributes summary in
-  let err_log = Summary.get_err_log summary in
-  Reporting.log_warning attrs err_log ~loc ?ltr ?extras issue_type error_message
-
-
 let log_error_using_state summary exn =
   BiabductionReporting.log_error_using_state (Summary.get_proc_desc summary)
     (Summary.get_err_log summary) exn
