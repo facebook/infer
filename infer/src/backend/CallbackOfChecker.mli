@@ -39,6 +39,12 @@ val intraprocedural : (IntraproceduralAnalysis.t -> unit) -> Callbacks.proc_call
 (** runs a simple intra-procedural analysis (one that doesn't need the results of the analysis on
     any transitive dependencies to analyze a given procedure) *)
 
+val intraprocedural_with_field_dependency :
+     (Payloads.t, 'payload) Field.t
+  -> (IntraproceduralAnalysis.t -> 'payload -> unit)
+  -> Callbacks.proc_callback_t
+(** an intra-procedural analysis that depends on the summary payload found by another *)
+
 val intraprocedural_with_field :
      (Payloads.t, 'payload option) Field.t
   -> (IntraproceduralAnalysis.t -> 'payload option)

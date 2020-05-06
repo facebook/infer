@@ -7,5 +7,5 @@
 
 open! IStd
 
-val checker : Callbacks.proc_callback_t
+val checker : IntraproceduralAnalysis.t -> PulseSummary.t option -> unit
 (** An impurity analysis that relies on pulse summaries to determine how the state changes *)

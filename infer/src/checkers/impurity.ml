@@ -161,30 +161,29 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
   {modified_globals; modified_params; skipped_calls; exited}
 
 
-let checker {exe_env; Callbacks.summary} : Summary.t =
-  let proc_name = Summary.get_proc_name summary in
-  let pdesc = Summary.get_proc_desc summary in
-  let pname_loc = Procdesc.get_loc pdesc in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
-  ( match summary.payloads.pulse with
+let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let pname_loc = Procdesc.get_loc proc_desc in
+  let attrs = Procdesc.get_attributes proc_desc in
+  match pulse_summary_opt with
   | None ->
       let impure_fun_desc =
         F.asprintf "Impure function %a with no pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      SummaryReporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr]
+      Reporting.log_error attrs err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
         IssueType.impure_function impure_fun_desc
   | Some [] ->
       let impure_fun_desc =
         F.asprintf "Impure function %a with empty pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      SummaryReporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr]
+      Reporting.log_error attrs err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
         IssueType.impure_function impure_fun_desc
   | Some pre_posts ->
       let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
         List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
-            let modified = extract_impurity tenv pdesc exec_state in
+            let modified = extract_impurity tenv proc_desc exec_state in
             ImpurityDomain.join acc modified )
       in
       if Purity.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
@@ -209,6 +208,5 @@ let checker {exe_env; Callbacks.summary} : Summary.t =
           :: modified_ltr Formal modified_params
                (modified_ltr Global modified_globals skipped_functions)
         in
-        SummaryReporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function
-          impure_fun_desc ) ;
-  summary
+        Reporting.log_error attrs err_log ~loc:pname_loc ~ltr IssueType.impure_function
+          impure_fun_desc

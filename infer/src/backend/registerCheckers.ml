@@ -67,6 +67,10 @@ let intraprocedural_with_payload payload_field checker =
   Procedure (CallbackOfChecker.intraprocedural_with_field payload_field checker)
 
 
+let intraprocedural_with_field_dependency payload_field checker =
+  Procedure (CallbackOfChecker.intraprocedural_with_field_dependency payload_field checker)
+
+
 type callback = callback_fun * Language.t
 
 type checker = {name: string; active: bool; callbacks: callback list}
@@ -159,8 +163,10 @@ let all_checkers =
   ; { name= "impurity"
     ; active= Config.is_checker_enabled Impurity
     ; callbacks=
-        [(Procedure Impurity.checker, Language.Java); (Procedure Impurity.checker, Language.Clang)]
-    }
+        (let impurity =
+           intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
+         in
+         [(impurity, Language.Java); (impurity, Language.Clang)] ) }
   ; { name= "printf args"
     ; active= Config.is_checker_enabled PrintfArgs
     ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }

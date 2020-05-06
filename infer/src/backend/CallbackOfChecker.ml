@@ -62,19 +62,22 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
 
 
-let intraprocedural checker {Callbacks.summary; exe_env} =
-  checker
-    { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
-    ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
-    ; err_log= Summary.get_err_log summary } ;
+let to_intraprocedural_t {Callbacks.summary; exe_env} =
+  { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
+  ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
+  ; err_log= Summary.get_err_log summary }
+
+
+let intraprocedural checker ({Callbacks.summary} as callbacks) =
+  checker (to_intraprocedural_t callbacks) ;
   summary
 
 
-let intraprocedural_with_field payload_field checker {Callbacks.summary; exe_env} =
-  let result =
-    checker
-      { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
-      ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
-      ; err_log= Summary.get_err_log summary }
-  in
+let intraprocedural_with_field_dependency payload_field checker ({Callbacks.summary} as callbacks) =
+  checker (to_intraprocedural_t callbacks) (Field.get payload_field summary.payloads) ;
+  summary
+
+
+let intraprocedural_with_field payload_field checker ({Callbacks.summary} as callbacks) =
+  let result = checker (to_intraprocedural_t callbacks) in
   {summary with payloads= Field.fset payload_field summary.payloads result}
