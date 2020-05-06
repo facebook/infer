@@ -143,7 +143,7 @@ module TransferFunctions = struct
   module Domain = Domain
   module CFG = ProcCfg.Normal
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = IntraproceduralAnalysis.t
 
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
@@ -229,7 +229,7 @@ module TransferFunctions = struct
         Location.compare loc1 loc2 )
 
 
-  let report_unchecked_strongself_issues summary (domain : Domain.t) var_use var =
+  let report_unchecked_strongself_issues attributes err_log (domain : Domain.t) var_use var =
     match find_strong_var domain var with
     | Some ({DomainData.pvar; loc; kind}, _, strongVarElem)
       when DomainData.is_unchecked_strong_self kind && not strongVarElem.reported ->
@@ -240,7 +240,7 @@ module TransferFunctions = struct
             (Pvar.pp Pp.text) pvar var_use Location.pp loc
         in
         let ltr = make_trace_unchecked_strongself domain in
-        SummaryReporting.log_error summary ~ltr ~loc IssueType.strong_self_not_checked message ;
+        Reporting.log_error attributes err_log ~ltr ~loc IssueType.strong_self_not_checked message ;
         let strongVars =
           StrongEqualToWeakCapturedVars.add pvar
             {strongVarElem with reported= true}
@@ -251,11 +251,12 @@ module TransferFunctions = struct
         domain
 
 
-  let report_unchecked_strongself_issues_on_exps (domain : Domain.t) summary (instr : Sil.instr) =
+  let report_unchecked_strongself_issues_on_exps attributes err_log (domain : Domain.t)
+      (instr : Sil.instr) =
     let report_unchecked_strongself_issues_on_exp strongVars (exp : Exp.t) =
       match exp with
       | Lfield (Var var, _, _) ->
-          report_unchecked_strongself_issues summary domain "dereferenced" var
+          report_unchecked_strongself_issues attributes err_log domain "dereferenced" var
       | _ ->
           strongVars
     in
@@ -305,9 +306,9 @@ module TransferFunctions = struct
         None
 
 
-  let report_unchecked_strongself_issues_on_args (domain : Domain.t) summary pname args =
+  let report_unchecked_strongself_issues_on_args attributes err_log (domain : Domain.t) pname args =
     let report_issue var =
-      report_unchecked_strongself_issues summary domain
+      report_unchecked_strongself_issues attributes err_log domain
         (F.sprintf "passed to `%s`" (Procname.to_simplified_string pname))
         var
     in
@@ -342,9 +343,10 @@ module TransferFunctions = struct
     report_on_non_nullable_arg ?annotations domain args
 
 
-  let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
-    let attributes = Summary.get_attributes summary in
-    let astate = report_unchecked_strongself_issues_on_exps astate summary instr in
+  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log} _cfg_node
+      (instr : Sil.instr) =
+    let attributes = Procdesc.get_attributes proc_desc in
+    let astate = report_unchecked_strongself_issues_on_exps attributes err_log astate instr in
     let astate = remove_ids_in_closures_from_domain astate instr in
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
@@ -385,8 +387,7 @@ module TransferFunctions = struct
     | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, _) ->
         if Exp.is_null_literal e then exec_null_check_id astate id else astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
-        let astate = report_unchecked_strongself_issues_on_args astate summary callee_pn args in
-        astate
+        report_unchecked_strongself_issues_on_args attributes err_log astate callee_pn args
     | _ ->
         astate
 end
@@ -425,7 +426,8 @@ let make_trace_captured_strong_self domain =
       Location.compare loc1 loc2 )
 
 
-let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (self : DomainData.t) =
+let report_mix_self_weakself_issues attributes err_log domain (weakSelf : DomainData.t)
+    (self : DomainData.t) =
   let message =
     F.asprintf
       "This block uses both `%a` (%a) and `%a` (%a). This could lead to retain cycles or \
@@ -434,11 +436,11 @@ let report_mix_self_weakself_issues summary domain (weakSelf : DomainData.t) (se
       Location.pp self.loc
   in
   let ltr = make_trace_use_self_weakself domain in
-  SummaryReporting.log_error summary ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
+  Reporting.log_error attributes err_log ~ltr ~loc:self.loc IssueType.mixed_self_weakself message
 
 
-let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainData.t) procname
-    reported_weak_self_in_noescape_block =
+let report_weakself_in_no_escape_block_issues attributes err_log domain (weakSelf : DomainData.t)
+    procname reported_weak_self_in_noescape_block =
   if not (Pvar.Set.mem weakSelf.pvar reported_weak_self_in_noescape_block) then (
     let reported_weak_self_in_noescape_block =
       Pvar.Set.add weakSelf.pvar reported_weak_self_in_noescape_block
@@ -451,13 +453,13 @@ let report_weakself_in_no_escape_block_issues summary domain (weakSelf : DomainD
         (Procname.to_simplified_string procname)
     in
     let ltr = make_trace_use_self_weakself domain in
-    SummaryReporting.log_error summary ~ltr ~loc:weakSelf.loc IssueType.weak_self_in_noescape_block
-      message ;
+    Reporting.log_error attributes err_log ~ltr ~loc:weakSelf.loc
+      IssueType.weak_self_in_noescape_block message ;
     reported_weak_self_in_noescape_block )
   else reported_weak_self_in_noescape_block
 
 
-let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
+let report_weakself_multiple_issue attributes err_log domain (weakSelf1 : DomainData.t)
     (weakSelf2 : DomainData.t) =
   let message =
     F.asprintf
@@ -469,10 +471,10 @@ let report_weakself_multiple_issue summary domain (weakSelf1 : DomainData.t)
       (Pvar.pp Pp.text) weakSelf1.pvar (Pvar.pp Pp.text) weakSelf1.pvar
   in
   let ltr = make_trace_use_self_weakself domain in
-  SummaryReporting.log_error summary ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
+  Reporting.log_error attributes err_log ~ltr ~loc:weakSelf1.loc IssueType.multiple_weakself message
 
 
-let report_captured_strongself_issue domain summary attributes (capturedStrongSelf : DomainData.t)
+let report_captured_strongself_issue attributes err_log domain (capturedStrongSelf : DomainData.t)
     report_captured_strongself =
   if
     Option.is_none attributes.ProcAttributes.passed_as_noescape_block_to
@@ -489,18 +491,18 @@ let report_captured_strongself_issue domain summary attributes (capturedStrongSe
         (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
     in
     let ltr = make_trace_captured_strong_self domain in
-    SummaryReporting.log_error summary ~ltr ~loc:capturedStrongSelf.loc
+    Reporting.log_error attributes err_log ~ltr ~loc:capturedStrongSelf.loc
       IssueType.captured_strong_self message ;
     report_captured_strongself )
   else report_captured_strongself
 
 
-let report_issues summary domain attributes =
+let report_issues attributes err_log domain =
   let process_domain_item (result : report_issues_result) (_, (domain_data : DomainData.t)) =
     match domain_data.kind with
     | DomainData.CAPTURED_STRONG_SELF ->
         let reported_captured_strong_self =
-          report_captured_strongself_issue domain summary attributes domain_data
+          report_captured_strongself_issue attributes err_log domain domain_data
             result.reported_captured_strong_self
         in
         {result with reported_captured_strong_self}
@@ -508,8 +510,8 @@ let report_issues summary domain attributes =
         let reported_weak_self_in_noescape_block =
           match attributes.ProcAttributes.passed_as_noescape_block_to with
           | Some procname ->
-              report_weakself_in_no_escape_block_issues summary domain domain_data procname
-                result.reported_weak_self_in_noescape_block
+              report_weakself_in_no_escape_block_issues attributes err_log domain domain_data
+                procname result.reported_weak_self_in_noescape_block
           | None ->
               result.reported_weak_self_in_noescape_block
         in
@@ -539,28 +541,25 @@ let report_issues summary domain attributes =
   let selfList = List.rev selfList in
   ( match (weakSelfList, selfList) with
   | weakSelf :: _, self :: _ ->
-      report_mix_self_weakself_issues summary domain weakSelf self
+      report_mix_self_weakself_issues attributes err_log domain weakSelf self
   | _ ->
       () ) ;
   match weakSelfList with
   | weakSelf1 :: weakSelf2 :: _ ->
-      report_weakself_multiple_issue summary domain weakSelf1 weakSelf2
+      report_weakself_multiple_issue attributes err_log domain weakSelf1 weakSelf2
   | _ ->
       ()
 
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let checker {Callbacks.exe_env; summary} =
+let checker ({IntraproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   let initial = {Domain.vars= Vars.empty; strongVars= StrongEqualToWeakCapturedVars.empty} in
-  let procname = Summary.get_proc_name summary in
-  let tenv = Exe_env.get_tenv exe_env procname in
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
-  let attributes = Summary.get_attributes summary in
-  ( if Procname.is_objc_block procname then
-    match Analyzer.compute_post proc_data ~initial (Summary.get_proc_desc summary) with
+  let procname = Procdesc.get_proc_name proc_desc in
+  if Procname.is_objc_block procname then
+    match Analyzer.compute_post analysis_data ~initial proc_desc with
     | Some domain ->
-        report_issues summary domain.vars attributes
+        let attributes = Procdesc.get_attributes proc_desc in
+        report_issues attributes err_log domain.vars
     | None ->
-        () ) ;
-  summary
+        ()

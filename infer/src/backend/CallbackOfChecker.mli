@@ -35,6 +35,10 @@ val interprocedural_file :
     file-level analysis, given an inter-procedural analysis of dependencies that computes the
     payload type corresponding to [field] *)
 
+val intraprocedural : (IntraproceduralAnalysis.t -> unit) -> Callbacks.proc_callback_t
+(** runs a simple intra-procedural analysis (one that doesn't need the results of the analysis on
+    any transitive dependencies to analyze a given procedure) *)
+
 val intraprocedural_with_field :
      (Payloads.t, 'payload option) Field.t
   -> (IntraproceduralAnalysis.t -> 'payload option)

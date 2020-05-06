@@ -61,6 +61,8 @@ let file issue_dir payload_field checker =
   File {callback= CallbackOfChecker.interprocedural_file payload_field checker; issue_dir}
 
 
+let intraprocedural checker = Procedure (CallbackOfChecker.intraprocedural checker)
+
 let intraprocedural_with_payload payload_field checker =
   Procedure (CallbackOfChecker.intraprocedural_with_field payload_field checker)
 
@@ -74,7 +76,7 @@ let all_checkers =
      before them. *)
   [ { name= "Self captured in block checker"
     ; active= Config.is_checker_enabled SelfInBlock
-    ; callbacks= [(Procedure SelfInBlock.checker, Language.Clang)] }
+    ; callbacks= [(intraprocedural SelfInBlock.checker, Language.Clang)] }
   ; { name= "Class loading analysis"
     ; active= Config.is_checker_enabled ClassLoads
     ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] }
