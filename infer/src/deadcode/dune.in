@@ -14,7 +14,7 @@ Format.sprintf
  (name all_infer_in_one_file)
  (modes byte)
  (flags (:standard -w +60))
- (libraries %s)
+ (libraries %s sledge)
  (modules All_infer_in_one_file)
  (preprocess (pps ppx_compare ppx_enumerate ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )

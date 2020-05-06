@@ -62,7 +62,6 @@ let common_libraries =
     ; "oUnit"
     ; "parmap"
     ; "re"
-    ; "sledge"
     ; "sqlite3"
     ; "str"
     ; "unix"
