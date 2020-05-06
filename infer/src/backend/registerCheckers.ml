@@ -214,8 +214,10 @@ let all_checkers =
   ; { name= "annotation reachability"
     ; active= Config.is_checker_enabled AnnotationReachability
     ; callbacks=
-        [ (Procedure AnnotationReachability.checker, Language.Java)
-        ; (Procedure AnnotationReachability.checker, Language.Clang) ] } ]
+        (let annot_reach =
+           interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
+         in
+         [(annot_reach, Language.Java); (annot_reach, Language.Clang)] ) } ]
 
 
 let get_active_checkers () =
