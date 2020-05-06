@@ -79,7 +79,9 @@ let all_checkers =
     ; callbacks= [(intraprocedural SelfInBlock.checker, Language.Clang)] }
   ; { name= "Class loading analysis"
     ; active= Config.is_checker_enabled ClassLoads
-    ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] }
+    ; callbacks=
+        [(interprocedural Payloads.Fields.class_loads ClassLoads.analyze_procedure, Language.Java)]
+    }
   ; { name= "purity"
     ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
     ; callbacks=

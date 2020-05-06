@@ -7,4 +7,5 @@
 
 open! IStd
 
-val analyze_procedure : Callbacks.proc_callback_t
+val analyze_procedure :
+  ClassLoadsDomain.summary InterproceduralAnalysis.t -> ClassLoadsDomain.summary option
