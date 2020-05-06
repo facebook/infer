@@ -125,7 +125,7 @@ let all_checkers =
          [(checker, Language.Clang); (checker, Language.Java)] ) }
   ; { name= "uninitialized variables"
     ; active= Config.is_checker_enabled Uninit
-    ; callbacks= [(Procedure Uninit.checker, Language.Clang)] }
+    ; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Language.Clang)] }
   ; { name= "SIOF"
     ; active= Config.is_checker_enabled SIOF
     ; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Language.Clang)] }
