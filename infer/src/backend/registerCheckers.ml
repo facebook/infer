@@ -178,7 +178,8 @@ let all_checkers =
   ; { name= "fragment retains view"
     ; active= Config.is_checker_enabled FragmentRetainsView
     ; callbacks=
-        [(Procedure FragmentRetainsViewChecker.callback_fragment_retains_view, Language.Java)] }
+        [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Language.Java)]
+    }
   ; { name= "eradicate"
     ; active= Config.is_checker_enabled Eradicate
     ; callbacks=

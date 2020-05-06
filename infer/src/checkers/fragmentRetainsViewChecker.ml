@@ -31,9 +31,7 @@ let format_method pname =
       Procname.to_string pname
 
 
-let report_warning class_name fld fld_typ summary =
-  let pname = Summary.get_proc_name summary in
-  let loc = Summary.get_loc summary in
+let report_warning ({ProcAttributes.proc_name; loc} as attrs) err_log class_name fld fld_typ =
   let pp_m = MarkupFormatter.pp_monospaced in
   let description =
     Format.asprintf
@@ -41,15 +39,15 @@ let report_warning class_name fld fld_typ summary =
        the back stack, a reference to this (probably dead) View will be retained. In general, it \
        is a good idea to initialize View's in %a, then nullify them in %a."
       pp_m (Typ.Name.name class_name) pp_m (Fieldname.get_field_name fld) pp_m (format_typ fld_typ)
-      pp_m (format_method pname) pp_m on_create_view pp_m on_destroy_view
+      pp_m (format_method proc_name) pp_m on_create_view pp_m on_destroy_view
   in
-  SummaryReporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
+  Reporting.log_warning attrs err_log ~loc IssueType.checkers_fragment_retain_view description
 
 
-let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} =
+let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv; err_log}
+    java_pname =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
-  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let is_on_destroy_view = String.equal (Procname.Java.get_method java_pname) on_destroy_view in
   let fld_typ_is_view typ =
     match typ.Typ.desc with
@@ -68,7 +66,7 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
     match Tenv.lookup tenv class_name with
     | Some {fields} when AndroidFramework.is_fragment tenv class_name ->
         let declared_view_fields = List.filter ~f:(is_declared_view_typ class_name) fields in
-        let fields_nullified = PatternMatch.get_fields_nullified (Summary.get_proc_desc summary) in
+        let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
         (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
         List.iter
           ~f:(fun (fname, fld_typ, ia) ->
@@ -76,17 +74,18 @@ let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} 
               not
                 ( Annotations.ia_ends_with ia Annotations.auto_cleanup
                 || Fieldname.Set.mem fname fields_nullified )
-            then report_warning class_name fname fld_typ summary )
+            then
+              let attrs = Procdesc.get_attributes proc_desc in
+              report_warning attrs err_log class_name fname fld_typ )
           declared_view_fields
     | _ ->
         ()
 
 
-let callback_fragment_retains_view ({Callbacks.summary} as args) : Summary.t =
-  let proc_name = Summary.get_proc_name summary in
-  ( match proc_name with
+let callback_fragment_retains_view ({IntraproceduralAnalysis.proc_desc} as analysis_data) : unit =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  match proc_name with
   | Procname.Java java_pname ->
-      callback_fragment_retains_view_java java_pname args
+      callback_fragment_retains_view_java analysis_data java_pname
   | _ ->
-      () ) ;
-  summary
+      ()

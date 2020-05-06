@@ -7,4 +7,4 @@
 
 open! IStd
 
-val callback_fragment_retains_view : Callbacks.proc_callback_t
+val callback_fragment_retains_view : IntraproceduralAnalysis.t -> unit
