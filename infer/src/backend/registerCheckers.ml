@@ -18,63 +18,17 @@ let () =
     ()
 
 
-let () =
-  AnalysisCallbacks.set_callbacks
-    { get_proc_desc_f= Ondemand.get_proc_desc
-    ; html_debug_new_node_session_f= NodePrinter.with_session
-    ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
-
-
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
   | File of {callback: Callbacks.file_callback_t; issue_dir: ResultsDirEntryName.id}
 
-let proc_callback_of_interprocedural payload_field checker {Callbacks.summary; exe_env} =
-  let analyze_dependency proc_name =
-    let summary = Ondemand.analyze_proc_name ~caller_summary:summary proc_name in
-    Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
-        Field.get payload_field payloads |> Option.map ~f:(fun payload -> (proc_desc, payload)) )
-  in
-  let analyze_pdesc_dependency proc_desc =
-    let summary = Ondemand.analyze_proc_desc ~caller_summary:summary proc_desc in
-    Option.bind summary ~f:(fun {Summary.payloads; _} ->
-        Field.get payload_field payloads |> Option.map ~f:(fun payload -> payload) )
-  in
-  let stats = ref summary.Summary.stats in
-  let update_stats ?add_symops ?failure_kind () =
-    stats := Summary.Stats.update ?add_symops ?failure_kind !stats
-  in
-  let result =
-    checker
-      { InterproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
-      ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
-      ; err_log= Summary.get_err_log summary
-      ; exe_env
-      ; analyze_dependency
-      ; analyze_pdesc_dependency
-      ; update_stats }
-  in
-  {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats}
-
-
 let dynamic_dispatch payload_field checker =
-  DynamicDispatch (proc_callback_of_interprocedural payload_field checker)
-
-
-let file_callback_of_interprocedural_file payload_field checker
-    {Callbacks.procedures; exe_env; source_file} =
-  let analyze_file_dependency proc_name =
-    let summary = Ondemand.analyze_proc_name_no_caller proc_name in
-    Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
-        Field.get payload_field payloads |> Option.map ~f:(fun payload -> (proc_desc, payload)) )
-  in
-  checker
-    {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
+  DynamicDispatch (CallbackOfChecker.interprocedural payload_field checker)
 
 
 let file issue_dir payload_field checker =
-  File {callback= file_callback_of_interprocedural_file payload_field checker; issue_dir}
+  File {callback= CallbackOfChecker.interprocedural_file payload_field checker; issue_dir}
 
 
 let proc_callback_of_intraprocedural ?payload_field checker {Callbacks.summary; exe_env} =
