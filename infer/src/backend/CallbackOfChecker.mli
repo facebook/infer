@@ -24,3 +24,9 @@ val interprocedural_file :
 (** [interprocedural_file field checker] expects [checker] to compute an {!IssueLog.t} from the
     file-level analysis, given an inter-procedural analysis of dependencies that computes the
     payload type corresponding to [field] *)
+
+val intraprocedural_with_payload :
+     (Payloads.t, 'payload option) Field.t
+  -> (IntraproceduralAnalysis.t -> 'payload option)
+  -> Callbacks.proc_callback_t
+(** runs an intra-procedural analysis that nonetheless produces a payload *)

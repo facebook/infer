@@ -56,25 +56,16 @@ let is_modelled =
     Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers models_matcher
 
 
-module Payload = SummaryPayload.Make (struct
-  type t = SiofDomain.Summary.t
-
-  let field = Payloads.Fields.siof
-end)
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = SiofDomain
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = Domain.t InterproceduralAnalysis.t
 
-  let is_compile_time_constructed summary pv =
+  let is_compile_time_constructed {InterproceduralAnalysis.analyze_dependency} pv =
     let init_pname = Pvar.get_initializer_pname pv in
-    match
-      Option.bind init_pname ~f:(fun callee_pname ->
-          Payload.read ~caller_summary:summary ~callee_pname )
-    with
-    | Some (Bottom, _) ->
+    match Option.bind init_pname ~f:(fun callee_pname -> analyze_dependency callee_pname) with
+    | Some (_, (Bottom, _)) ->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
         true
@@ -96,13 +87,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Staged.unstage (filter_global_accesses (Domain.VarNames.of_list always_initialized))
 
 
-  let get_globals summary e =
+  let get_globals analysis_data e =
     let is_dangerous_global pv =
       Pvar.is_global pv
       && (not (Pvar.is_static_local pv))
       && (not (Pvar.is_pod pv))
       && (not (Pvar.is_compile_constant pv))
-      && (not (is_compile_time_constructed summary pv))
+      && (not (is_compile_time_constructed analysis_data pv))
       && is_not_always_initialized pv
     in
     Exp.program_vars e
@@ -129,19 +120,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (NonBottom trace_with_non_init_globals, snd astate)
 
 
-  let add_actuals_globals astate0 summary call_loc actuals =
+  let add_actuals_globals analysis_data astate0 call_loc actuals =
     List.fold_left actuals ~init:astate0 ~f:(fun astate (e, _) ->
-        get_globals summary e |> add_globals astate call_loc )
+        get_globals analysis_data e |> add_globals astate call_loc )
 
 
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
-  let exec_instr astate {ProcData.summary} _ (instr : Sil.instr) =
+  let exec_instr astate
+      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _
+      (instr : Sil.instr) =
     match instr with
     | Store {e1= Lvar global; typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}
       when (Option.equal Procname.equal)
              (Pvar.get_initializer_pname global)
-             (Some (Summary.get_proc_name summary)) ->
+             (Some (Procdesc.get_proc_name proc_desc)) ->
         (* if we are just taking the reference of another global then we are not really accessing
            it. This is a dumb heuristic as something also might take that result and then
            dereference it, thus requiring the target object to be initialized. Solving this would
@@ -153,7 +146,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Load {e= exp; loc} (* dereference -> add all the dangerous variables *)
     | Store {e2= exp; loc} (* except in the case above, consider all reads as dangerous *)
     | Prune (exp, loc, _, _) ->
-        get_globals summary exp |> add_globals astate loc
+        get_globals analysis_data exp |> add_globals astate loc
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
         at_least_nonbottom astate
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->
@@ -169,11 +162,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
       when Procname.is_constructor callee_pname && Procname.ObjC_Cpp.is_constexpr cpp_pname ->
-        add_actuals_globals astate summary loc actuals_without_self
+        add_actuals_globals analysis_data astate loc actuals_without_self
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
-          match Payload.read ~caller_summary:summary ~callee_pname with
-          | Some (NonBottom trace, initialized_by_callee) ->
+          match analyze_dependency callee_pname with
+          | Some (_, (NonBottom trace, initialized_by_callee)) ->
               let already_initialized = snd astate in
               let dangerous_accesses =
                 SiofTrace.sinks trace
@@ -188,17 +181,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   dangerous_accesses
               in
               (NonBottom (SiofTrace.update_sinks trace sinks), initialized_by_callee)
-          | Some ((Bottom, _) as callee_astate) ->
+          | Some (_, ((Bottom, _) as callee_astate)) ->
               callee_astate
           | None ->
               (Bottom, Domain.VarNames.empty)
         in
-        add_actuals_globals astate summary loc actuals
+        add_actuals_globals analysis_data astate loc actuals
         |> Domain.join callee_astate
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_nonbottom
     | Call (_, _, actuals, loc, _) ->
-        add_actuals_globals astate summary loc actuals
+        add_actuals_globals analysis_data astate loc actuals
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_nonbottom
     | Metadata _ ->
@@ -218,10 +211,11 @@ let is_foreign current_tu v =
       true
 
 
-let report_siof summary trace gname loc =
+let report_siof {InterproceduralAnalysis.proc_desc; err_log; analyze_dependency; _} trace gname loc
+    =
   let trace_of_pname pname =
-    match Payload.read ~caller_summary:summary ~callee_pname:pname with
-    | Some (NonBottom summary, _) ->
+    match analyze_dependency pname with
+    | Some (_, (NonBottom summary, _)) ->
         summary
     | _ ->
         SiofTrace.bottom
@@ -237,7 +231,8 @@ let report_siof summary trace gname loc =
             GlobalVar.pp (SiofTrace.Sink.kind final_sink)
     in
     let ltr = SiofTrace.trace_of_error loc gname trace in
-    SummaryReporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco
+    let attrs = Procdesc.get_attributes proc_desc in
+    Reporting.log_error attrs err_log ~loc ~ltr IssueType.static_initialization_order_fiasco
       description
   in
   let reportable_paths = SiofTrace.get_reportable_sink_paths trace ~trace_of_pname in
@@ -246,32 +241,26 @@ let report_siof summary trace gname loc =
   else List.iter ~f:report_one_path reportable_paths
 
 
-let siof_check gname (summary : Summary.t) =
-  let pdesc = Summary.get_proc_desc summary in
-  match summary.payloads.siof with
+let siof_check ({InterproceduralAnalysis.proc_desc} as analysis_data) gname summary =
+  match summary with
   | Some (NonBottom post, _) ->
-      let attrs = Procdesc.get_attributes pdesc in
-      let tu =
-        let attrs = Procdesc.get_attributes pdesc in
-        attrs.ProcAttributes.translation_unit
-      in
+      let attrs = Procdesc.get_attributes proc_desc in
+      let tu = attrs.ProcAttributes.translation_unit in
       let foreign_sinks =
         SiofTrace.Sinks.filter
           (fun sink -> SiofTrace.Sink.kind sink |> is_foreign tu)
           (SiofTrace.sinks post)
       in
       if not (SiofTrace.Sinks.is_empty foreign_sinks) then
-        report_siof summary
+        report_siof analysis_data
           (SiofTrace.update_sinks post foreign_sinks)
           gname attrs.ProcAttributes.loc
   | Some (Bottom, _) | None ->
       ()
 
 
-let checker {Callbacks.exe_env; summary} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let pname = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env pname in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =
       let magic_iostream_marker =
@@ -287,30 +276,24 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
   let initial =
     ( Bottom
     , if standard_streams_initialized_in_tu then SiofDomain.VarNames.of_list standard_streams
       else SiofDomain.VarNames.empty )
   in
-  let updated_summary =
+  let summary =
     (* If the function is constexpr then it doesn't participate in SIOF. The checker should be able
        to figure this out when analyzing the function, but we might as well use the user's
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
     if
       match pname with ObjC_Cpp cpp_pname -> Procname.ObjC_Cpp.is_constexpr cpp_pname | _ -> false
-    then Payload.update_summary initial summary
-    else
-      match Analyzer.compute_post proc_data ~initial proc_desc with
-      | Some post ->
-          Payload.update_summary post summary
-      | None ->
-          summary
+    then Some initial
+    else Analyzer.compute_post analysis_data ~initial proc_desc
   in
   ( match Procname.get_global_name_of_initializer pname with
   | Some gname ->
-      siof_check gname updated_summary
+      siof_check analysis_data gname summary
   | None ->
       () ) ;
-  updated_summary
+  summary

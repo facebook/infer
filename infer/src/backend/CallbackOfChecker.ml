@@ -52,3 +52,13 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
   in
   checker
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
+
+
+let intraprocedural_with_payload payload_field checker {Callbacks.summary; exe_env} =
+  let result =
+    checker
+      { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
+      ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
+      ; err_log= Summary.get_err_log summary }
+  in
+  {summary with payloads= Field.fset payload_field summary.payloads result}
