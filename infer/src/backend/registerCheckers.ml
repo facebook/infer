@@ -123,7 +123,9 @@ let all_checkers =
     ; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Language.Clang)] }
   ; { name= "litho-required-props"
     ; active= Config.is_checker_enabled LithoRequiredProps
-    ; callbacks= [(Procedure RequiredProps.checker, Language.Java)] }
+    ; callbacks=
+        [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Language.Java)]
+    }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     { name= "resource leak"
     ; active= Config.is_checker_enabled ResourceLeak
