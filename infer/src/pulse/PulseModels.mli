@@ -9,7 +9,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 type model =
-     caller_summary:Summary.t
+     PulseSummary.t InterproceduralAnalysis.t
   -> callee_procname:Procname.t
   -> Location.t
   -> ret:Ident.t * Typ.t

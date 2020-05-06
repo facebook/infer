@@ -442,9 +442,9 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals 
       apply astate ~f:(fun astate -> ExitProgram astate)
 
 
-let call ~caller_summary call_loc callee_pname ~ret ~actuals ~formals_opt
-    (astate : AbductiveDomain.t) : (ExecutionDomain.t list, Diagnostic.t * t) result =
-  match PulsePayload.read_full ~caller_summary ~callee_pname with
+let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t)
+    : (ExecutionDomain.t list, Diagnostic.t * t) result =
+  match callee_data with
   | Some (callee_proc_desc, exec_states) ->
       let formals =
         Procdesc.get_formals callee_proc_desc

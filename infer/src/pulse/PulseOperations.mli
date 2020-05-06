@@ -106,7 +106,7 @@ val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result
 
 val call :
-     caller_summary:Summary.t
+     callee_data:(Procdesc.t * PulseSummary.t) option
   -> Location.t
   -> Procname.t
   -> ret:Ident.t * Typ.t

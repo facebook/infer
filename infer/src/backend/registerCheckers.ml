@@ -107,10 +107,9 @@ let all_checkers =
   ; { name= "pulse"
     ; active= Config.(is_checker_enabled Pulse || is_checker_enabled Impurity)
     ; callbacks=
-        (Procedure Pulse.checker, Language.Clang)
-        ::
-        ( if Config.is_checker_enabled Impurity then [(Procedure Pulse.checker, Language.Java)]
-        else [] ) }
+        (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
+         (pulse, Language.Clang)
+         :: (if Config.is_checker_enabled Impurity then [(pulse, Language.Java)] else []) ) }
   ; { name= "impurity"
     ; active= Config.is_checker_enabled Impurity
     ; callbacks=
