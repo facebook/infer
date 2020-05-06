@@ -66,9 +66,7 @@ Moreover, we obtain an HTML page for each captured file inside
 the file there are links to the nodes of the control flow graph that correspond
 to that line of code. So one can see what the translation looks like. Moreover,
 when you click on those links you can see details of the symbolic execution of
-that particular node. If the option `--no_test` is also passed to `infer`, then
-the page pointed to from the nodes contains the printout of the whole symbolic
-execution.
+that particular node.
 
 ## Print the specs
 
