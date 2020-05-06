@@ -322,7 +322,7 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
       {ConstraintSolver.f}
   in
   let start_node = NodeCFG.start_node node_cfg in
-  NodePrinter.with_session start_node
+  AnalysisCallbacks.html_debug_new_node_session start_node
     ~pp_name:(fun fmt -> F.pp_print_string fmt "cost(constraints)")
     ~f:(fun () ->
       let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
@@ -380,7 +380,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
           None
     in
     let get_formals callee_pname =
-      Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
+      AnalysisCallbacks.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
