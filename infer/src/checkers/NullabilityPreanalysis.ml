@@ -20,7 +20,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = FieldsAssignedInConstructors
 
-  type analysis_data = Exp.t Ident.Hash.t ProcData.t
+  type analysis_data = Exp.t Ident.Hash.t
 
   let exp_is_null ids_map exp =
     match exp with
@@ -38,18 +38,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     with Caml.Not_found -> false
 
 
-  let exec_instr astate (proc_data : Exp.t Ident.Hash.t ProcData.t) _ instr =
+  let exec_instr astate id_table _ instr =
     match instr with
     | Sil.Load {id; e= exp} ->
-        Ident.Hash.add proc_data.extras id exp ;
-        astate
+        Ident.Hash.add id_table id exp ; astate
     | Sil.Store {e1= Exp.Lfield (Exp.Var lhs_id, name, typ); typ= exp_typ; e2= rhs} -> (
       match exp_typ.Typ.desc with
       (* block field of a ObjC class *)
       | Typ.Tptr ({desc= Tfun}, _)
-        when Typ.is_objc_class typ && is_self proc_data.extras lhs_id
+        when Typ.is_objc_class typ && is_self id_table lhs_id
              && (* lhs is self, rhs is not null *)
-             not (exp_is_null proc_data.extras rhs) ->
+             not (exp_is_null id_table rhs) ->
           FieldsAssignedInConstructors.add (name, typ) astate
       | _ ->
           astate )
@@ -94,9 +93,7 @@ let analysis cfg tenv =
   let f proc_name pdesc domain =
     if Procdesc.is_defined pdesc && Procname.is_constructor proc_name then
       match
-        FieldsAssignedInConstructorsChecker.compute_post ~initial
-          {ProcData.summary= Summary.OnDisk.reset pdesc; tenv; extras= Ident.Hash.create 10}
-          pdesc
+        FieldsAssignedInConstructorsChecker.compute_post ~initial (Ident.Hash.create 10) pdesc
       with
       | Some new_domain ->
           FieldsAssignedInConstructors.union new_domain domain

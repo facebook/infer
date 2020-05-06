@@ -234,11 +234,7 @@ module Liveness = struct
         (* can't take the address of a variable in Java *)
       else
         let initial = AddressTaken.Domain.empty in
-        match
-          AddressTaken.Analyzer.compute_post
-            {ProcData.summary; tenv; extras= ()}
-            ~initial (Summary.get_proc_desc summary)
-        with
+        match AddressTaken.Analyzer.compute_post () ~initial (Summary.get_proc_desc summary) with
         | Some post ->
             post
         | None ->
@@ -306,10 +302,9 @@ module Liveness = struct
 end
 
 module FunctionPointerSubstitution = struct
-  let process summary tenv =
-    let updated = FunctionPointers.substitute_function_pointers summary tenv in
-    let pdesc = Summary.get_proc_desc summary in
-    if updated then Attributes.store ~proc_desc:(Some pdesc) (Procdesc.get_attributes pdesc)
+  let process proc_desc =
+    let updated = FunctionPointers.substitute_function_pointers proc_desc in
+    if updated then Attributes.store ~proc_desc:(Some proc_desc) (Procdesc.get_attributes proc_desc)
 end
 
 (** pre-analysis to cut control flow after calls to functions whose type indicates they do not
@@ -381,7 +376,7 @@ let do_preanalysis exe_env pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name then InlineJavaSyntheticMethods.process pdesc ;
   if Config.function_pointer_specialization && not (Procname.is_java proc_name) then
-    FunctionPointerSubstitution.process summary tenv ;
+    FunctionPointerSubstitution.process pdesc ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
   NoReturn.process tenv pdesc ;

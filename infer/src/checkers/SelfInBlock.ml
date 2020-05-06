@@ -329,7 +329,7 @@ module TransferFunctions = struct
       | _ ->
           domain
     in
-    let proc_desc_opt = Ondemand.get_proc_desc pname in
+    let proc_desc_opt = AnalysisCallbacks.get_proc_desc pname in
     let annotations = get_annotations proc_desc_opt in
     let args =
       if is_objc_instance proc_desc_opt then match args with _ :: rest -> rest | [] -> []

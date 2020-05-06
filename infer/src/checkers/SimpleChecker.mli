@@ -20,7 +20,7 @@ module type Spec = sig
 end
 
 module type S = sig
-  val checker : Callbacks.proc_callback_t
+  val checker : IntraproceduralAnalysis.t -> unit
 end
 
 module Make (Spec : Spec) : S

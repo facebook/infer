@@ -31,7 +31,7 @@ module type Spec = sig
 end
 
 module type S = sig
-  val checker : Callbacks.proc_callback_t
+  val checker : IntraproceduralAnalysis.t -> unit
   (** add YourChecker.checker to registerCallbacks.ml to run your checker *)
 end
 
@@ -60,14 +60,13 @@ module Make (Spec : Spec) : S = struct
     module CFG = CFG
     module Domain = Domain
 
-    type analysis_data = unit ProcData.t
+    type analysis_data = IntraproceduralAnalysis.t
 
-    let exec_instr astate_set proc_data node instr =
+    let exec_instr astate_set {IntraproceduralAnalysis.proc_desc; tenv} node instr =
       let node_kind = CFG.Node.kind node in
-      let pname = Summary.get_proc_name proc_data.ProcData.summary in
+      let pname = Procdesc.get_proc_name proc_desc in
       Domain.fold
-        (fun astate acc ->
-          Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc )
+        (fun astate acc -> Domain.add (Spec.exec_instr astate instr node_kind pname tenv) acc)
         astate_set Domain.empty
 
 
@@ -76,10 +75,8 @@ module Make (Spec : Spec) : S = struct
 
   module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))
 
-  let checker {Callbacks.exe_env; summary} : Summary.t =
-    let proc_desc = Summary.get_proc_desc summary in
+  let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let tenv = Exe_env.get_tenv exe_env proc_name in
     let nodes = Procdesc.get_nodes proc_desc in
     let do_reporting node_id state =
       let astate_set = state.AbstractInterpreter.State.post in
@@ -94,9 +91,6 @@ module Make (Spec : Spec) : S = struct
           (fun astate -> Spec.report astate (ProcCfg.Exceptional.Node.loc node) proc_name)
           astate_set
     in
-    let inv_map =
-      Analyzer.exec_pdesc {ProcData.summary; tenv; extras= ()} ~initial:Domain.empty proc_desc
-    in
-    Analyzer.InvariantMap.iter do_reporting inv_map ;
-    summary
+    let inv_map = Analyzer.exec_pdesc analysis_data ~initial:Domain.empty proc_desc in
+    Analyzer.InvariantMap.iter do_reporting inv_map
 end

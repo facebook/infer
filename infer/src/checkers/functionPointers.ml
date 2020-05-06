@@ -21,9 +21,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = unit
 
-  let exec_instr astate _ _ = function
+  let exec_instr astate () _ = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         astate
     | Sil.Load {id= lhs_id; e= Exp.Lvar rhs_pvar; typ= Typ.{desc= Tptr ({desc= Tfun}, _)}} ->
@@ -90,13 +90,12 @@ let substitute_function_ptrs ~function_pointers node instr =
       instr
 
 
-let get_function_pointers summary tenv =
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
-  let cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
-  Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty
+let get_function_pointers proc_desc =
+  let cfg = CFG.from_pdesc proc_desc in
+  Analyzer.exec_cfg cfg () ~initial:Domain.empty
 
 
-let substitute_function_pointers summary tenv =
-  let function_pointers = get_function_pointers summary tenv in
+let substitute_function_pointers proc_desc =
+  let function_pointers = get_function_pointers proc_desc in
   let f = substitute_function_ptrs ~function_pointers in
-  Procdesc.replace_instrs (Summary.get_proc_desc summary) ~f
+  Procdesc.replace_instrs proc_desc ~f

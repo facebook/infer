@@ -17,7 +17,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = unit
 
   let rec add_address_taken_pvars exp astate =
     match exp with
@@ -35,7 +35,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr astate _ _ = function
+  let exec_instr astate () _ = function
     | Sil.Store {typ= {desc= Tptr _}; e2= rhs_exp} ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->

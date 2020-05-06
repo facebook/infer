@@ -86,7 +86,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_array t = match t.Typ.desc with Typ.Tarray _ -> true | _ -> false
 
-  let get_formals pname = Ondemand.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
+  let get_formals pname =
+    AnalysisCallbacks.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
+
 
   let should_report_var pdesc tenv maybe_uninit_vars access_expr =
     let base = HilExp.AccessExpression.get_base access_expr in

@@ -57,8 +57,6 @@ let tests =
         ; invariant "{ &b, &d }"
         ; var_assign_addrof_var ~rhs_typ:int_ptr_typ "e" "f"
         ; invariant "{ &b, &f, &d }" ] ) ]
-    |> TestInterpreter.create_tests
-         (fun summary -> {ProcData.summary; tenv= Tenv.create (); extras= ()})
-         ~initial:AddressTaken.Domain.empty
+    |> TestInterpreter.create_tests (fun _summary -> ()) ~initial:AddressTaken.Domain.empty
   in
   "address_taken_suite" >::: test_list
