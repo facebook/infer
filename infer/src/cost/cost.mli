@@ -7,9 +7,12 @@
 
 open! IStd
 
-module Payload : SummaryPayload.S with type t = CostDomain.summary
-
-val checker : Callbacks.proc_callback_t
+val checker :
+     ( CostDomain.summary option
+     * BufferOverrunAnalysisSummary.t option
+     * PurityDomain.summary option )
+     InterproceduralAnalysis.t
+  -> CostDomain.summary option
 
 val instantiate_cost :
      Typ.IntegerWidths.t

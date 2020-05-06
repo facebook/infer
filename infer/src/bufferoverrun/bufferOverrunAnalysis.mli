@@ -10,7 +10,8 @@ module CFG = ProcCfg.NormalOneInstrPerNode
 
 type invariant_map
 
-val cached_compute_invariant_map : Summary.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map
+val cached_compute_invariant_map :
+  BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t -> invariant_map
 
 val extract_pre : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t option
 
@@ -19,4 +20,5 @@ val extract_post : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t opt
 val extract_state :
   CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t AbstractInterpreter.State.t option
 
-val do_analysis : Callbacks.proc_callback_t
+val analyze_procedure :
+  BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t -> BufferOverrunAnalysisSummary.t option

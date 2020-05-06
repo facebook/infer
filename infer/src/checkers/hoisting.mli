@@ -7,4 +7,9 @@
 
 open! IStd
 
-val checker : Callbacks.proc_callback_t
+val checker :
+     ( BufferOverrunAnalysisSummary.t option
+     * PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted option
+     * CostDomain.summary option )
+     InterproceduralAnalysis.t
+  -> unit

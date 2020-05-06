@@ -11,6 +11,16 @@ open! IStd
     {!Callbacks.proc_callback_t} and friends. *)
 
 val interprocedural :
+     f_analyze_dep:(Procdesc.t -> 'payloads_orig -> (Procdesc.t * 'payloads) option)
+  -> f_analyze_pdesc_dep:('payloads_orig -> 'payloads option)
+  -> get_payload:(Payloads.t -> 'payloads_orig)
+  -> set_payload:(Payloads.t -> 'payload_checker -> Payloads.t)
+  -> ('payloads InterproceduralAnalysis.t -> 'payload_checker)
+  -> Callbacks.proc_callback_t
+(** the general form of interprocedural checkers: can read and update several payloads, and massage
+    analysis results (mostly used to join option types) *)
+
+val interprocedural_with_field :
      (Payloads.t, 'payload option) Field.t
   -> ('payload InterproceduralAnalysis.t -> 'payload option)
   -> Callbacks.proc_callback_t
@@ -25,7 +35,7 @@ val interprocedural_file :
     file-level analysis, given an inter-procedural analysis of dependencies that computes the
     payload type corresponding to [field] *)
 
-val intraprocedural_with_payload :
+val intraprocedural_with_field :
      (Payloads.t, 'payload option) Field.t
   -> (IntraproceduralAnalysis.t -> 'payload option)
   -> Callbacks.proc_callback_t

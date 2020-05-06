@@ -15,12 +15,6 @@ module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
 module Node = ProcCfg.DefaultNode
 
-module Payload = SummaryPayload.Make (struct
-  type t = CostDomain.summary
-
-  let field = Payloads.Fields.cost
-end)
-
 type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
@@ -242,8 +236,8 @@ let is_report_suppressed pname =
 
 
 module Check = struct
-  let report_threshold pname summary ~name ~location ~cost CostIssues.{expensive_issue} ~threshold
-      ~is_on_ui_thread =
+  let report_threshold pname attrs err_log ~name ~location ~cost CostIssues.{expensive_issue}
+      ~threshold ~is_on_ui_thread =
     let report_issue_type =
       L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map pname in
@@ -267,18 +261,18 @@ module Check = struct
       in
       Errlog.make_trace_element 0 location cost_desc []
     in
-    SummaryReporting.log_error summary ~loc:location
+    Reporting.log_error attrs err_log ~loc:location
       ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_unreachable pname loc summary ~name ~cost
-      CostIssues.{unreachable_issue; infinite_issue} =
+  let report_top_and_unreachable pname attrs err_log loc ~name ~cost
+      {CostIssues.unreachable_issue; infinite_issue} =
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
-      SummaryReporting.log_error ~loc
+      Reporting.log_error attrs err_log ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
-        ~extras:(compute_errlog_extras cost) summary issue message
+        ~extras:(compute_errlog_extras cost) issue message
     in
     if BasicCost.is_top cost then report infinite_issue "cannot be computed"
     else if BasicCost.is_unreachable cost then
@@ -286,7 +280,8 @@ module Check = struct
         "cannot be computed since the program's exit state is never reachable"
 
 
-  let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
+  let check_and_report {InterproceduralAnalysis.proc_desc; err_log} ~is_on_ui_thread
+      {WorstCaseCost.costs; reports} =
     let pname = Procdesc.get_proc_name proc_desc in
     let proc_loc = Procdesc.get_loc proc_desc in
     if not (is_report_suppressed pname) then (
@@ -295,12 +290,16 @@ module Check = struct
         | ThresholdReports.Threshold _ | ThresholdReports.NoReport ->
             ()
         | ThresholdReports.ReportOn {location; cost} ->
-            report_threshold pname summary ~name ~location ~cost kind_spec
-              ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
+            report_threshold pname
+              (Procdesc.get_attributes proc_desc)
+              err_log ~name ~location ~cost kind_spec ~threshold:(Option.value_exn threshold)
+              ~is_on_ui_thread ) ;
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
         ~f:(fun _kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
           if top_and_unreachable then
-            report_top_and_unreachable pname proc_loc summary ~name ~cost issue_spec ) )
+            report_top_and_unreachable pname
+              (Procdesc.get_attributes proc_desc)
+              err_log proc_loc ~name ~cost issue_spec ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
@@ -340,36 +339,28 @@ let compute_worst_case_cost tenv integer_type_widths get_summary get_formals ins
 
 
 let get_cost_summary ~is_on_ui_thread astate =
-  CostDomain.{post= astate.WorstCaseCost.costs; is_on_ui_thread}
+  {CostDomain.post= astate.WorstCaseCost.costs; is_on_ui_thread}
 
 
-let report_errors ~is_on_ui_thread proc_desc astate summary =
-  Check.check_and_report ~is_on_ui_thread astate proc_desc summary
-
-
-let checker {Callbacks.exe_env; summary} : Summary.t =
-  let proc_name = Summary.get_proc_name summary in
+let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) =
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-  let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
-    BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map
+      (InterproceduralAnalysis.bind_payload ~f:snd3 analysis_data)
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map summary tenv in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps node_cfg in
   (* computes the control dependencies: node -> var set *)
-  let control_dep_invariant_map = Control.compute_invariant_map summary tenv control_maps in
+  let control_dep_invariant_map = Control.compute_invariant_map proc_desc control_maps in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
     let get_callee_purity callee_pname =
-      match Ondemand.analyze_proc_name ~caller_summary:summary callee_pname with
-      | Some {Summary.payloads= {Payloads.purity}} ->
-          purity
-      | _ ->
-          None
+      match analyze_dependency callee_pname with Some (_, (_, _, purity)) -> purity | _ -> None
     in
     LoopInvariant.get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map
       loop_head_to_loop_nodes
@@ -381,7 +372,13 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let get_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
+    let get_summary callee_pname =
+      match analyze_dependency callee_pname with
+      | Some (_, (payload, _, _)) ->
+          payload
+      | None ->
+          None
+    in
     let get_formals callee_pname =
       Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
     in
@@ -397,5 +394,5 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
       CostDomain.VariantCostMap.pp exit_cost_record
   in
-  report_errors ~is_on_ui_thread proc_desc astate summary ;
-  Payload.update_summary (get_cost_summary ~is_on_ui_thread astate) summary
+  Check.check_and_report analysis_data ~is_on_ui_thread astate ;
+  Some (get_cost_summary ~is_on_ui_thread astate)

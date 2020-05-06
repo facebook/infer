@@ -21,3 +21,15 @@ type 'payload file_t =
   ; procedures: Procname.t list
   ; file_exe_env: Exe_env.t
   ; analyze_file_dependency: Procname.t -> (Procdesc.t * 'payload) option }
+
+let bind_payload ~f analysis_data =
+  { analysis_data with
+    analyze_dependency=
+      (fun proc_name ->
+        analysis_data.analyze_dependency proc_name
+        |> Option.bind ~f:(fun (proc_desc, payloads) ->
+               Option.map (f payloads) ~f:(fun payloads' -> (proc_desc, payloads')) ) )
+  ; analyze_pdesc_dependency=
+      (fun proc_desc ->
+        analysis_data.analyze_pdesc_dependency proc_desc
+        |> Option.bind ~f:(fun payloads -> f payloads) ) }

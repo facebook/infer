@@ -70,7 +70,8 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
     loop_head_to_source_nodes LoopHeadToHoistInstrs.empty
 
 
-let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop_head_loc =
+let do_report extract_cost_if_expensive proc_attrs err_log (Call.{pname; loc} as call) loop_head_loc
+    =
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Procname.pp pname Location.pp loc
   in
@@ -95,7 +96,7 @@ let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop
     F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
       loop_head_loc
   in
-  SummaryReporting.log_error summary ~loc ~ltr issue message
+  Reporting.log_error proc_attrs err_log ~loc ~ltr issue message
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
@@ -132,8 +133,8 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
   Option.filter cost_opt ~f:CostDomain.BasicCost.is_symbolic
 
 
-let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
-    loop_head_to_source_nodes extract_cost_if_expensive summary =
+let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map
+    loop_head_to_source_nodes extract_cost_if_expensive =
   (* get dominators *)
   let idom = Dominators.get_idoms proc_desc in
   (* get a map,  loop head -> instrs that can be hoisted out of the loop *)
@@ -148,41 +149,43 @@ let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
     (fun loop_head inv_instrs ->
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
-        (fun call -> do_report extract_cost_if_expensive summary call loop_head_loc)
+        (fun call ->
+          let proc_attrs = Procdesc.get_attributes proc_desc in
+          do_report extract_cost_if_expensive proc_attrs err_log call loop_head_loc )
         inv_instrs )
     loop_head_to_inv_instrs
 
 
-let checker Callbacks.{summary; exe_env} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
-  let proc_name = Summary.get_proc_name summary in
+let checker
+    ({InterproceduralAnalysis.proc_desc; exe_env; err_log; analyze_dependency} as analysis_data) =
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map summary tenv in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
   let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
   let extract_cost_if_expensive =
     if Config.hoisting_report_only_expensive then
       let inferbo_invariant_map =
-        BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
+        BufferOverrunAnalysis.cached_compute_invariant_map
+          (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
       in
       let get_callee_cost_summary_and_formals callee_pname =
-        Cost.Payload.read_full ~caller_summary:summary ~callee_pname
-        |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
-               (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
+        analyze_dependency callee_pname
+        |> Option.bind ~f:(function
+             | callee_pdesc, (_inferbo, _purity, Some callee_costs_summary) ->
+                 Some (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
+             | _, (_, _, None) ->
+                 None )
       in
       get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
         inferbo_invariant_map
     else fun _ -> None
   in
   let get_callee_purity callee_pname =
-    match Ondemand.analyze_proc_name ~caller_summary:summary callee_pname with
-    | Some {Summary.payloads= {Payloads.purity}} ->
-        purity
-    | _ ->
-        None
+    match analyze_dependency callee_pname with Some (_, (_, purity, _)) -> purity | _ -> None
   in
-  report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
-    loop_head_to_source_nodes extract_cost_if_expensive summary ;
-  summary
+  report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map
+    loop_head_to_source_nodes extract_cost_if_expensive ;
+  ()

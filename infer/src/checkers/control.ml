@@ -56,7 +56,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ControlDepSet
 
-  type analysis_data = loop_control_maps ProcData.t
+  type analysis_data = loop_control_maps
 
   let collect_vars_in_exp exp loop_head =
     Var.get_all_vars_in_exp exp
@@ -117,8 +117,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
      along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate {ProcData.extras= {exit_map; loop_head_to_guard_nodes}} (node : CFG.Node.t)
-      _ =
+  let exec_instr astate {exit_map; loop_head_to_guard_nodes} (node : CFG.Node.t) _ =
     let node = CFG.Node.underlying_node node in
     let astate' =
       match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with
@@ -159,10 +158,9 @@ module ControlDepAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctionsContro
 
 type invariant_map = ControlDepAnalyzer.invariant_map
 
-let compute_invariant_map summary tenv control_maps : invariant_map =
-  let proc_data = {ProcData.summary; tenv; extras= control_maps} in
-  let node_cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
-  ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:ControlDepSet.empty
+let compute_invariant_map proc_desc control_maps : invariant_map =
+  let node_cfg = CFG.from_pdesc proc_desc in
+  ControlDepAnalyzer.exec_cfg node_cfg control_maps ~initial:ControlDepSet.empty
 
 
 (* Filter CVs which are invariant in the loop where the CV originated from *)

@@ -7,4 +7,7 @@
 
 open! IStd
 
-val checker : Callbacks.proc_callback_t
+val checker :
+     (BufferOverrunCheckerSummary.t option * BufferOverrunAnalysisSummary.t option)
+     InterproceduralAnalysis.t
+  -> BufferOverrunCheckerSummary.t option

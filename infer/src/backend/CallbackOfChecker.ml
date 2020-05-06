@@ -16,16 +16,16 @@ let () =
     ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
 
 
-let interprocedural payload_field checker {Callbacks.summary; exe_env} =
+let interprocedural ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload ~set_payload checker
+    {Callbacks.summary; exe_env} =
   let analyze_dependency proc_name =
     let summary = Ondemand.analyze_proc_name ~caller_summary:summary proc_name in
     Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
-        Field.get payload_field payloads |> Option.map ~f:(fun payload -> (proc_desc, payload)) )
+        f_analyze_dep proc_desc (get_payload payloads) )
   in
   let analyze_pdesc_dependency proc_desc =
     let summary = Ondemand.analyze_proc_desc ~caller_summary:summary proc_desc in
-    Option.bind summary ~f:(fun {Summary.payloads; _} ->
-        Field.get payload_field payloads |> Option.map ~f:(fun payload -> payload) )
+    Option.bind summary ~f:(fun {Summary.payloads; _} -> f_analyze_pdesc_dep (get_payload payloads))
   in
   let stats = ref summary.Summary.stats in
   let update_stats ?add_symops ?failure_kind () =
@@ -41,7 +41,15 @@ let interprocedural payload_field checker {Callbacks.summary; exe_env} =
       ; analyze_pdesc_dependency
       ; update_stats }
   in
-  {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats}
+  {summary with payloads= set_payload summary.payloads result; stats= !stats}
+
+
+let interprocedural_with_field payload_field checker =
+  interprocedural
+    ~f_analyze_dep:(fun pdesc payload_opt ->
+      Option.map payload_opt ~f:(fun payload -> (pdesc, payload)) )
+    ~f_analyze_pdesc_dep:Fn.id ~get_payload:(Field.get payload_field)
+    ~set_payload:(Field.fset payload_field) checker
 
 
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
@@ -54,7 +62,7 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
 
 
-let intraprocedural_with_payload payload_field checker {Callbacks.summary; exe_env} =
+let intraprocedural_with_field payload_field checker {Callbacks.summary; exe_env} =
   let result =
     checker
       { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary

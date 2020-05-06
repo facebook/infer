@@ -18,6 +18,6 @@ module ReachingDefsMap : module type of AbstractDomain.Map (Var) (Defs)
 
 type invariant_map
 
-val compute_invariant_map : Summary.t -> Tenv.t -> invariant_map
+val compute_invariant_map : Procdesc.t -> invariant_map
 
 val extract_post : Procdesc.Node.id -> invariant_map -> ReachingDefsMap.t option

@@ -24,10 +24,10 @@ module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ReachingDefsMap
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = unit
 
   (* for each  x := e at node n, remove x's definitions and introduce x -> n *)
-  let exec_instr astate _ (node : CFG.Node.t) instr =
+  let exec_instr astate () (node : CFG.Node.t) instr =
     let node = CFG.Node.underlying_node node in
     let strong_update_def astate var = Domain.add var (Defs.singleton node) astate in
     let weak_update_def astate var =
@@ -68,11 +68,9 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (No
 
 type invariant_map = Analyzer.invariant_map
 
-let compute_invariant_map summary tenv =
-  let pdesc = Summary.get_proc_desc summary in
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
-  let node_cfg = NodeCFG.from_pdesc pdesc in
-  Analyzer.exec_cfg node_cfg proc_data ~initial:(init_reaching_defs_with_formals pdesc)
+let compute_invariant_map proc_desc =
+  let node_cfg = NodeCFG.from_pdesc proc_desc in
+  Analyzer.exec_cfg node_cfg () ~initial:(init_reaching_defs_with_formals proc_desc)
 
 
 let extract_post = Analyzer.extract_post

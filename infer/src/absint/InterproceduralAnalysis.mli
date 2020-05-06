@@ -33,3 +33,5 @@ type 'payload file_t =
   ; analyze_file_dependency: Procname.t -> (Procdesc.t * 'payload) option
         (** On-demand analysis of dependencies needed for the file analysis, e.g. the proc names in
             [procedures] *) }
+
+val bind_payload : f:('payload1 -> 'payload2 option) -> 'payload1 t -> 'payload2 t

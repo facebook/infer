@@ -24,11 +24,37 @@ type callback_fun =
   | File of {callback: Callbacks.file_callback_t; issue_dir: ResultsDirEntryName.id}
 
 let interprocedural payload_field checker =
-  Procedure (CallbackOfChecker.interprocedural payload_field checker)
+  Procedure (CallbackOfChecker.interprocedural_with_field payload_field checker)
 
 
 let dynamic_dispatch payload_field checker =
-  DynamicDispatch (CallbackOfChecker.interprocedural payload_field checker)
+  DynamicDispatch (CallbackOfChecker.interprocedural_with_field payload_field checker)
+
+
+(** For checkers that read two separate payloads. Assumes that [checker] produces payloads for
+    [payload_field1] *)
+let interprocedural2 payload_field1 payload_field2 checker =
+  Procedure
+    (CallbackOfChecker.interprocedural
+       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+       ~f_analyze_pdesc_dep:Option.some
+       ~get_payload:(fun payloads ->
+         (Field.get payload_field1 payloads, Field.get payload_field2 payloads) )
+       ~set_payload:(fun payloads payload1 -> Field.fset payload_field1 payloads payload1)
+       checker)
+
+
+(** For checkers that read three separate payloads. *)
+let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload checker =
+  Procedure
+    (CallbackOfChecker.interprocedural
+       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+       ~f_analyze_pdesc_dep:Option.some
+       ~get_payload:(fun payloads ->
+         ( Field.get payload_field1 payloads
+         , Field.get payload_field2 payloads
+         , Field.get payload_field3 payloads ) )
+       ~set_payload checker)
 
 
 let file issue_dir payload_field checker =
@@ -36,7 +62,7 @@ let file issue_dir payload_field checker =
 
 
 let intraprocedural_with_payload payload_field checker =
-  Procedure (CallbackOfChecker.intraprocedural_with_payload payload_field checker)
+  Procedure (CallbackOfChecker.intraprocedural_with_field payload_field checker)
 
 
 type callback = callback_fun * Language.t
@@ -55,7 +81,11 @@ let all_checkers =
   ; { name= "purity"
     ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
     ; callbacks=
-        [(Procedure Purity.checker, Language.Java); (Procedure Purity.checker, Language.Clang)] }
+        (let purity =
+           interprocedural2 Payloads.Fields.purity Payloads.Fields.buffer_overrun_analysis
+             Purity.checker
+         in
+         [(purity, Language.Java); (purity, Language.Clang)] ) }
   ; { name= "Starvation analysis"
     ; active= Config.is_checker_enabled Starvation
     ; callbacks=
@@ -66,15 +96,25 @@ let all_checkers =
   ; { name= "loop hoisting"
     ; active= Config.is_checker_enabled LoopHoisting
     ; callbacks=
-        [(Procedure Hoisting.checker, Language.Clang); (Procedure Hoisting.checker, Language.Java)]
-    }
+        (let hoisting =
+           interprocedural3
+             ~set_payload:(fun payloads () ->
+               (* this analysis doesn't produce additional payloads *) payloads )
+             Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Payloads.Fields.cost
+             Hoisting.checker
+         in
+         [(hoisting, Language.Clang); (hoisting, Language.Java)] ) }
   ; { name= "cost analysis"
     ; active=
         Config.(
           is_checker_enabled Cost
           || (is_checker_enabled LoopHoisting && hoisting_report_only_expensive))
-    ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
-    }
+    ; callbacks=
+        (let checker =
+           interprocedural3 ~set_payload:(Field.fset Payloads.Fields.cost) Payloads.Fields.cost
+             Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Cost.checker
+         in
+         [(checker, Language.Clang); (checker, Language.Java)] ) }
   ; { name= "uninitialized variables"
     ; active= Config.is_checker_enabled Uninit
     ; callbacks= [(Procedure Uninit.checker, Language.Clang)] }
@@ -143,25 +183,30 @@ let all_checkers =
   ; { name= "buffer overrun checker"
     ; active= Config.(is_checker_enabled BufferOverrun)
     ; callbacks=
-        [ (Procedure BufferOverrunChecker.checker, Language.Clang)
-        ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
+        (let bo_checker =
+           interprocedural2 Payloads.Fields.buffer_overrun_checker
+             Payloads.Fields.buffer_overrun_analysis BufferOverrunChecker.checker
+         in
+         [(bo_checker, Language.Clang); (bo_checker, Language.Java)] ) }
   ; { name= "buffer overrun analysis"
     ; active=
         Config.(
           is_checker_enabled BufferOverrun || is_checker_enabled Cost
           || is_checker_enabled LoopHoisting || is_checker_enabled Purity)
     ; callbacks=
-        [ (Procedure BufferOverrunAnalysis.do_analysis, Language.Clang)
-        ; (Procedure BufferOverrunAnalysis.do_analysis, Language.Java) ] }
+        (let bo_analysis =
+           interprocedural Payloads.Fields.buffer_overrun_analysis
+             BufferOverrunAnalysis.analyze_procedure
+         in
+         [(bo_analysis, Language.Clang); (bo_analysis, Language.Java)] ) }
   ; { name= "biabduction"
     ; active= Config.is_checker_enabled Biabduction
     ; callbacks=
-        [ ( dynamic_dispatch Payloads.Fields.biabduction
-              (Topl.instrument_callback Interproc.analyze_procedure)
-          , Language.Clang )
-        ; ( dynamic_dispatch Payloads.Fields.biabduction
-              (Topl.instrument_callback Interproc.analyze_procedure)
-          , Language.Java ) ] }
+        (let biabduction =
+           dynamic_dispatch Payloads.Fields.biabduction
+             (Topl.instrument_callback Interproc.analyze_procedure)
+         in
+         [(biabduction, Language.Clang); (biabduction, Language.Java)] ) }
   ; { name= "annotation reachability"
     ; active= Config.is_checker_enabled AnnotationReachability
     ; callbacks=
