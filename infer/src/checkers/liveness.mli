@@ -14,6 +14,6 @@ module PreAnalysisTransferFunctions (CFG : ProcCfg.S) :
   TransferFunctions.SIL
     with module CFG = CFG
      and module Domain = Domain
-     and type analysis_data = unit ProcData.t
+     and type analysis_data = unit
 
-val checker : Callbacks.proc_callback_args -> Summary.t
+val checker : IntraproceduralAnalysis.t -> unit

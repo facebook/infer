@@ -301,9 +301,7 @@ module Liveness = struct
   let process summary tenv =
     let liveness_proc_cfg = BackwardCfg.from_pdesc (Summary.get_proc_desc summary) in
     let initial = Liveness.Domain.empty in
-    let liveness_inv_map =
-      LivenessAnalysis.exec_cfg liveness_proc_cfg {ProcData.summary; tenv; extras= ()} ~initial
-    in
+    let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg () ~initial in
     add_nullify_instrs summary tenv liveness_inv_map
 end
 

@@ -92,7 +92,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = unit
 
   (** add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
@@ -122,7 +122,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         add_live_actuals_ actuals live_acc
 
 
-  let exec_instr astate _ _ = function
+  let exec_instr astate () _ = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
@@ -181,9 +181,9 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = VarSet
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = unit
 
-  let exec_instr astate _ _ instr =
+  let exec_instr astate () _ instr =
     List.fold (Sil.exps_of_instr instr)
       ~f:(fun acc exp ->
         Exp.fold_captured exp
@@ -205,18 +205,15 @@ end
 module CapturedByRefAnalyzer =
   AbstractInterpreter.MakeRPO (CapturedByRefTransferFunctions (ProcCfg.Exceptional))
 
-let get_captured_by_ref_invariant_map proc_desc proc_data =
+let get_captured_by_ref_invariant_map proc_desc =
   let cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
-  CapturedByRefAnalyzer.exec_cfg cfg proc_data ~initial:VarSet.empty
+  CapturedByRefAnalyzer.exec_cfg cfg () ~initial:VarSet.empty
 
 
-let checker {Callbacks.exe_env; summary} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
-  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
-  let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
+let checker {IntraproceduralAnalysis.proc_desc; err_log} =
+  let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_data ~initial:Domain.empty in
+  let invariant_map = CheckerAnalyzer.exec_cfg cfg () ~initial:Domain.empty in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
@@ -259,7 +256,8 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
         (Typ.pp_full Pp.text) typ
     in
     let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
-    SummaryReporting.log_error summary ~loc ~ltr IssueType.dead_store message
+    let attrs = Procdesc.get_attributes proc_desc in
+    Reporting.log_error attrs err_log ~loc ~ltr IssueType.dead_store message
   in
   let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store {e1= Lvar pvar; typ; e2= rhs_exp; loc}
@@ -296,5 +294,4 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
         | None ->
             () )
   in
-  Container.iter cfg ~fold:CFG.fold_nodes ~f:report_on_node ;
-  summary
+  Container.iter cfg ~fold:CFG.fold_nodes ~f:report_on_node
