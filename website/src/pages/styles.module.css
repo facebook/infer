@@ -56,14 +56,14 @@
 }
 
 .whoUses {
-  color: var(--ifm-font-base-color-inverse);
+  color: var(--ifm-font-color-base-inverse);
   background-color: var(--ifm-color-primary);
   padding: 4rem 0;
   text-align: left;
 }
 
 .whoUses a {
-  color: var(--ifm-font-base-color-inverse);
+  color: var(--ifm-font-color-base-inverse);
 }
 
 .whoUsesItems {
