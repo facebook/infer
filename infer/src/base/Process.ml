@@ -38,28 +38,28 @@ let create_process_and_wait ~prog ~args =
 type action = ReadStdout | ReadStderr
 
 let create_process_and_wait_with_output ~prog ~args action =
-  let {Unix.Process_info.stdin; stdout; stderr; pid} = Unix.create_process ~prog ~args in
-  Unix.close stdin ;
-  (* NOTE: this simple implementation works well because we only read on *one* of stdout or
-     stderr. Reading on both is a lot more difficult: we would have to be careful not to block the
-     callee process on writing on either stdout or stderr, so issue non-blocking reads on both
-     stdout and stderr until the end of the program, probably using select(2). *)
-  let in_chan =
-    let redirect_read ~redirect:(dst, src) ~read =
-      (* redirect *)
-      Unix.dup2 ~src ~dst ; Unix.in_channel_of_descr read
-    in
-    match action with
-    | ReadStdout ->
-        redirect_read ~redirect:(stderr, Unix.stderr) ~read:stdout
-    | ReadStderr ->
-        redirect_read ~redirect:(stdout, Unix.stdout) ~read:stderr
+  let redirected_fd_name, redirect_spec =
+    match action with ReadStderr -> ("stderr", "2>") | ReadStdout -> ("stdout", ">")
   in
-  let res = In_channel.input_all in_chan in
+  let output_file =
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prog redirected_fd_name
+  in
+  let escaped_cmd = List.map ~f:Escape.escape_shell (prog :: args) |> String.concat ~sep:" " in
+  let redirected_cmd = Printf.sprintf "exec %s %s'%s'" escaped_cmd redirect_spec output_file in
+  let {Unix.Process_info.stdin; stdout; stderr; pid} =
+    Unix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
+  in
+  let fd_to_log, redirected_fd =
+    match action with ReadStderr -> (stdout, stderr) | ReadStdout -> (stderr, stdout)
+  in
+  let channel_to_log = Unix.in_channel_of_descr fd_to_log in
+  Utils.with_channel_in channel_to_log ~f:(L.progress "%s-%s: %s@." prog redirected_fd_name) ;
+  In_channel.close channel_to_log ;
+  Unix.close redirected_fd ;
+  Unix.close stdin ;
   match Unix.waitpid pid with
   | Ok () ->
-      Unix.close (Unix.descr_of_in_channel in_chan) ;
-      res
+      Utils.with_file_in output_file ~f:In_channel.input_all
   | Error _ as status ->
       L.die ExternalError "Error executing: %a@\n%s@\n" Pp.cli_args (prog :: args)
         (Unix.Exit_or_signal.to_string_hum status)
