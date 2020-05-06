@@ -432,7 +432,7 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
   in
   let underlying_exit_node = Procdesc.get_exit_node proc_desc in
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
-  NodePrinter.with_session ~pp_name underlying_exit_node ~f:(fun () ->
+  AnalysisCallbacks.html_debug_new_node_session ~pp_name underlying_exit_node ~f:(fun () ->
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
         let get_checks_summary callee_pname =
@@ -440,7 +440,7 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
           |> Option.bind ~f:(fun (_, (checker_summary, _analysis_summary)) -> checker_summary)
         in
         let get_formals callee_pname =
-          Ondemand.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
+          AnalysisCallbacks.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
         in
         compute_checks get_checks_summary get_formals proc_name tenv integer_type_widths cfg inv_map
       in

@@ -108,7 +108,7 @@ module ItvPure : sig
 
   val of_int_lit : IntLit.t -> t
 
-  val of_pulse_value : PulseAbstractValue.t -> t
+  val of_foreign_id : int -> t
 
   val get_bound : t -> Symb.BoundEnd.t -> Bound.t
 

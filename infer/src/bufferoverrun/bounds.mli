@@ -27,7 +27,7 @@ module Bound : sig
 
   val of_big_int : Z.t -> t
 
-  val of_pulse_value : PulseAbstractValue.t -> t
+  val of_foreign_id : int -> t
 
   val minf : t
 

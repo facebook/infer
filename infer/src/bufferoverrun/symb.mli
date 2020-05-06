@@ -121,11 +121,14 @@ module Symbol : sig
 
   val make_boundend : BoundEnd.t -> make_t
 
-  val of_pulse_value : PulseAbstractValue.t -> t
-
   val exists_str : f:(string -> bool) -> t -> bool
 
-  val get_pulse_value_exn : t -> PulseAbstractValue.t
+  val of_foreign_id : int -> t
+  (** make a symbol out of any type of variables that can be represented by their [int] id *)
+
+  val get_foreign_id_exn : t -> int
+  (** Return the [int] id of the foreign variable represented by the symbol. Will fail if called on
+      a symbol not created with [of_foreign_id]. *)
 end
 
 module SymbolSet : sig

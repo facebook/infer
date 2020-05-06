@@ -15,8 +15,12 @@ module ValueHistory = PulseValueHistory
 module BoItvs = struct
   include PrettyPrintable.MakePPMonoMap (AbstractValue) (Itv.ItvPure)
 
-  let find_or_default v bo_itvs =
-    match find_opt v bo_itvs with Some bo_itv -> bo_itv | None -> Itv.ItvPure.of_pulse_value v
+  let find_or_default (v : AbstractValue.t) bo_itvs =
+    match find_opt v bo_itvs with
+    | Some bo_itv ->
+        bo_itv
+    | None ->
+        Itv.ItvPure.of_foreign_id (v :> int)
 end
 
 module CItvs = PrettyPrintable.MakePPMonoMap (AbstractValue) (CItv)
@@ -88,14 +92,14 @@ let subst_find_or_new subst addr_callee =
 
 
 let eval_sym_of_subst bo_itvs subst s bound_end =
-  let v = Symb.Symbol.get_pulse_value_exn s in
+  let v = Symb.Symbol.get_foreign_id_exn s |> AbstractValue.of_id in
   match AbstractValue.Map.find_opt v !subst with
   | Some (v', _) ->
       Itv.ItvPure.get_bound (BoItvs.find_or_default v' bo_itvs) bound_end
   | None ->
       let v' = AbstractValue.mk_fresh () in
       subst := AbstractValue.Map.add v (v', []) !subst ;
-      Bounds.Bound.of_pulse_value v'
+      Bounds.Bound.of_foreign_id (v' :> int)
 
 
 exception Contradiction

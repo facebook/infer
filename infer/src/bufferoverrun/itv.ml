@@ -125,7 +125,7 @@ module ItvPure = struct
 
   let of_int_lit n = of_big_int (IntLit.to_big_int n)
 
-  let of_pulse_value v = of_bound (Bound.of_pulse_value v)
+  let of_foreign_id id = of_bound (Bound.of_foreign_id id)
 
   let mone = of_bound Bound.mone
 
