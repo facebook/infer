@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-(* Extension of Base.Container, i.e. generic definitions of container operations in terms of fold. *)
 
 open! IStd
 module F = Format
@@ -16,8 +15,6 @@ let singleton_or_more ~fold t =
       fold t ~init:Empty ~f:(fun acc item ->
           match acc with Empty -> Singleton item | _ -> return More ) )
 
-
-let is_singleton ~fold t = match singleton_or_more ~fold t with Singleton _ -> true | _ -> false
 
 let mem_nth ~fold t index =
   With_return.with_return (fun {return} ->
