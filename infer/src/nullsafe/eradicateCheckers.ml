@@ -17,9 +17,8 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} kind loc ?(f
     let localized_description = Localise.verbatim_desc description in
     let exn = exception_kind kind localized_description in
     let trace = [Errlog.make_trace_element 0 loc description []] in
-    let attrs = Procdesc.get_attributes proc_desc in
     let node = AnalysisState.get_node_exn () in
     let session = AnalysisState.get_session () in
-    Reporting.log_issue_from_summary severity attrs err_log
+    Reporting.log_issue_from_summary severity proc_desc err_log
       ~node:(BackendNode {node})
       ~session ~loc ~ltr:trace exn

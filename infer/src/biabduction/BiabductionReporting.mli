@@ -11,7 +11,7 @@ val log_error_using_state : Procdesc.t -> Errlog.t -> exn -> unit
 (** Add an error to the given summary using biabduction state. *)
 
 val log_issue_deprecated_using_state :
-     ProcAttributes.t
+     Procdesc.t
   -> Errlog.t
   -> Exceptions.severity
   -> ?node:Procdesc.Node.t

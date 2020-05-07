@@ -13,7 +13,7 @@ type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> 
 
 val log_issue_from_summary :
      Exceptions.severity
-  -> ProcAttributes.t
+  -> Procdesc.t
   -> Errlog.t
   -> node:Errlog.node
   -> session:int
@@ -33,10 +33,10 @@ val log_frontend_issue :
   -> unit
 (** Report a frontend issue of a given kind in the given error log. *)
 
-val log_error : ProcAttributes.t -> Errlog.t -> loc:Location.t -> log_t
+val log_error : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
 (** Add an error to the given error log. *)
 
-val log_warning : ProcAttributes.t -> Errlog.t -> loc:Location.t -> log_t
+val log_warning : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
 (** Add a warning to the given error log. *)
 
 val log_issue_external :

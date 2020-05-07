@@ -70,7 +70,7 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
     loop_head_to_source_nodes LoopHeadToHoistInstrs.empty
 
 
-let do_report extract_cost_if_expensive proc_attrs err_log (Call.{pname; loc} as call) loop_head_loc
+let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as call) loop_head_loc
     =
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Procname.pp pname Location.pp loc
@@ -96,7 +96,7 @@ let do_report extract_cost_if_expensive proc_attrs err_log (Call.{pname; loc} as
     F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
       loop_head_loc
   in
-  Reporting.log_error proc_attrs err_log ~loc ~ltr issue message
+  Reporting.log_error proc_desc err_log ~loc ~ltr issue message
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
@@ -149,9 +149,7 @@ let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invaria
     (fun loop_head inv_instrs ->
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
-        (fun call ->
-          let proc_attrs = Procdesc.get_attributes proc_desc in
-          do_report extract_cost_if_expensive proc_attrs err_log call loop_head_loc )
+        (fun call -> do_report extract_cost_if_expensive proc_desc err_log call loop_head_loc)
         inv_instrs )
     loop_head_to_inv_instrs
 

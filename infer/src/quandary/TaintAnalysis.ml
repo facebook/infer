@@ -298,8 +298,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           get_short_trace_string initial_source initial_source_caller final_sink final_sink_caller
         in
         let ltr = source_trace @ List.rev sink_trace in
-        let attrs = Procdesc.get_attributes proc_desc in
-        Reporting.log_error attrs err_log ~loc:(CallSite.loc cur_site) ~ltr issue trace_str
+        Reporting.log_error proc_desc err_log ~loc:(CallSite.loc cur_site) ~ltr issue trace_str
       in
       List.iter ~f:report_one (TraceDomain.get_reports ~cur_site trace)
 

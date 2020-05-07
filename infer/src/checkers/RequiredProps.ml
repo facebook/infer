@@ -59,7 +59,7 @@ let get_required_props typename tenv =
       []
 
 
-let report_missing_required_prop proc_attrs err_log prop parent_typename ~create_loc call_chain =
+let report_missing_required_prop proc_desc err_log prop parent_typename ~create_loc call_chain =
   let message =
     let prop_string =
       match prop with
@@ -82,8 +82,7 @@ let report_missing_required_prop proc_attrs err_log prop parent_typename ~create
            in
            Errlog.make_trace_element 0 location call_msg [] )
   in
-  Reporting.log_error proc_attrs err_log ~loc:create_loc ~ltr IssueType.missing_required_prop
-    message
+  Reporting.log_error proc_desc err_log ~loc:create_loc ~ltr IssueType.missing_required_prop message
 
 
 let has_prop prop_set prop =
@@ -182,10 +181,9 @@ let should_report proc_desc tenv =
 let report {InterproceduralAnalysis.proc_desc; tenv; err_log} astate =
   let check_on_string_set parent_typename create_loc call_chain prop_set =
     let required_props = get_required_props parent_typename tenv in
-    let attrs = Procdesc.get_attributes proc_desc in
     List.iter required_props ~f:(fun required_prop ->
         if not (has_prop prop_set required_prop) then
-          report_missing_required_prop attrs err_log required_prop parent_typename ~create_loc
+          report_missing_required_prop proc_desc err_log required_prop parent_typename ~create_loc
             call_chain )
   in
   Domain.check_required_props ~check_on_string_set astate

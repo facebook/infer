@@ -201,8 +201,7 @@ let report_errors {InterproceduralAnalysis.proc_desc; err_log} astate_opt =
         let loc = Procdesc.get_loc proc_desc in
         let exp_desc = F.asprintf "Side-effect free function %a" Procname.pp proc_name in
         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-        let attrs = Procdesc.get_attributes proc_desc in
-        Reporting.log_error attrs err_log ~loc ~ltr IssueType.pure_function exp_desc
+        Reporting.log_error proc_desc err_log ~loc ~ltr IssueType.pure_function exp_desc
   | None ->
       L.internal_error "Analyzer failed to compute purity information for %a@." Procname.pp
         proc_name

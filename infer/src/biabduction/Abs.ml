@@ -1138,9 +1138,8 @@ let check_junk {InterproceduralAnalysis.proc_desc; err_log; tenv} prop =
             let report_leak () =
               if not report_and_continue then raise exn
               else (
-                BiabductionReporting.log_issue_deprecated_using_state
-                  (Procdesc.get_attributes proc_desc)
-                  err_log Exceptions.Error exn ;
+                BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log
+                  Exceptions.Error exn ;
                 leaks_reported := alloc_attribute :: !leaks_reported )
             in
             if not ignore_leak then report_leak () ;

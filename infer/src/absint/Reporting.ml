@@ -23,8 +23,8 @@ let log_frontend_issue severity errlog ~loc ~node_key ~ltr exn =
   log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None exn
 
 
-let log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc ~ltr ?extras exn =
-  let procname = proc_attributes.ProcAttributes.proc_name in
+let log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr ?extras exn =
+  let procname = Procdesc.get_proc_name proc_desc in
   let is_java_generated_method =
     match procname with
     | Procname.Java java_pname ->
@@ -41,7 +41,8 @@ let log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc 
   in
   let should_suppress_lint =
     Language.curr_language_is Java
-    && Annotations.ia_is_suppress_lint proc_attributes.ProcAttributes.method_annotation.return
+    && Annotations.ia_is_suppress_lint
+         (Procdesc.get_attributes proc_desc).ProcAttributes.method_annotation.return
   in
   if should_suppress_lint || is_java_generated_method || is_java_external_package then
     Logging.debug Analysis Medium "Reporting is suppressed!@\n" (* Skip the reporting *)

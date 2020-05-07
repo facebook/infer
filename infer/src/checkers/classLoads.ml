@@ -111,8 +111,7 @@ let report_loads {InterproceduralAnalysis.proc_desc; err_log} astate =
     else
       let ltr = ClassLoadsDomain.Event.make_loc_trace event in
       let msg = Format.asprintf "Class %s loaded" elem in
-      let attrs = Procdesc.get_attributes proc_desc in
-      Reporting.log_warning attrs err_log ~loc ~ltr IssueType.class_load msg
+      Reporting.log_warning proc_desc err_log ~loc ~ltr IssueType.class_load msg
   in
   let pname = Procdesc.get_proc_name proc_desc in
   Procname.get_class_name pname

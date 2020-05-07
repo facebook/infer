@@ -402,8 +402,7 @@ let forward_tabulate ({InterproceduralAnalysis.proc_desc; err_log; tenv; _} as a
     L.d_strln "SIL INSTR:" ;
     Procdesc.Node.d_instrs ~highlight:(AnalysisState.get_instr ()) curr_node ;
     L.d_ln () ;
-    let attrs = Procdesc.get_attributes proc_desc in
-    BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn ;
+    BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Error exn ;
     State.mark_instr_fail exn
   in
   let exe_iter f pathset =
@@ -488,8 +487,7 @@ let remove_locals_formals_and_check {InterproceduralAnalysis.proc_desc; err_log;
       let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
       let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
       let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-      let attrs = Procdesc.get_attributes proc_desc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn
   in
   List.iter ~f:check_pvar pvars ; p'
 
@@ -796,9 +794,8 @@ let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; err_log; tenv} a
       forward_tabulate analysis_data proc_cfg summary_opt wl
     in
     let get_results (wl : Worklist.t) () =
-      let attrs = Procdesc.get_attributes proc_desc in
       State.process_execution_failures
-        (BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning) ;
+        (BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning) ;
       let results = collect_analysis_result analysis_data wl proc_cfg in
       let specs =
         try extract_specs analysis_data (ProcCfg.Exceptional.proc_desc proc_cfg) results
@@ -807,7 +804,8 @@ let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; err_log; tenv} a
             Exceptions.Internal_error
               (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint")
           in
-          BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn ;
+          BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Error
+            exn ;
           (* returning no specs *) []
       in
       (specs, BiabductionSummary.FOOTPRINT)
@@ -923,8 +921,7 @@ let report_custom_errors {InterproceduralAnalysis.proc_desc; err_log; tenv} summ
       let loc = Procdesc.get_loc proc_desc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
-      let attrs = Procdesc.get_attributes proc_desc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Error exn
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Error exn
   in
   List.iter ~f:report error_preconditions
 

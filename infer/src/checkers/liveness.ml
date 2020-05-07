@@ -256,8 +256,7 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
         (Typ.pp_full Pp.text) typ
     in
     let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
-    let attrs = Procdesc.get_attributes proc_desc in
-    Reporting.log_error attrs err_log ~loc ~ltr IssueType.dead_store message
+    Reporting.log_error proc_desc err_log ~loc ~ltr IssueType.dead_store message
   in
   let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store {e1= Lvar pvar; typ; e2= rhs_exp; loc}

@@ -344,8 +344,7 @@ let check_inherently_dangerous_function {InterproceduralAnalysis.proc_desc; err_
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname)
     in
-    let attrs = Procdesc.get_attributes proc_desc in
-    BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
+    BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn
 
 
 let reason_to_skip ~callee_desc : string option =
@@ -410,8 +409,7 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
           (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-      let attrs = Procdesc.get_attributes proc_desc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn ;
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
@@ -419,8 +417,7 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
           (AnalysisState.get_node_exn ()) (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
-      let attrs = Procdesc.get_attributes proc_desc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn ;
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | None, prop' ->
       (Prop.exp_normalize_prop tenv prop exp, prop')
@@ -478,8 +475,7 @@ let check_already_dereferenced {InterproceduralAnalysis.proc_desc; err_log; tenv
           (AnalysisState.get_node_exn ()) n (AnalysisState.get_loc_exn ())
       in
       let exn = Exceptions.Null_test_after_dereference (desc, __POS__) in
-      let attrs = Procdesc.get_attributes proc_desc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning exn
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn
   | None ->
       ()
 
@@ -1209,8 +1205,8 @@ let rec sym_exec
       ret_id_typ ret_typ actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-      let attrs = Procdesc.get_attributes current_pdesc in
-      BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Info exn ;
+      BiabductionReporting.log_issue_deprecated_using_state current_pdesc err_log Exceptions.Info
+        exn ;
       L.d_printfln "Skipping function '%a': %s" Procname.pp callee_pname reason ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
         { Builtin.instr
@@ -1261,9 +1257,8 @@ let rec sym_exec
               let exn =
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__)
               in
-              let attrs = Procdesc.get_attributes current_pdesc in
-              BiabductionReporting.log_issue_deprecated_using_state attrs err_log Exceptions.Warning
-                exn
+              BiabductionReporting.log_issue_deprecated_using_state current_pdesc err_log
+                Exceptions.Warning exn
           | _ ->
               ()
       in

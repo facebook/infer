@@ -164,21 +164,20 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
 let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let pname_loc = Procdesc.get_loc proc_desc in
-  let attrs = Procdesc.get_attributes proc_desc in
   match pulse_summary_opt with
   | None ->
       let impure_fun_desc =
         F.asprintf "Impure function %a with no pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      Reporting.log_error attrs err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
+      Reporting.log_error proc_desc err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
         IssueType.impure_function impure_fun_desc
   | Some [] ->
       let impure_fun_desc =
         F.asprintf "Impure function %a with empty pulse summary" Procname.pp proc_name
       in
       let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-      Reporting.log_error attrs err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
+      Reporting.log_error proc_desc err_log ~loc:pname_loc ~ltr:[impure_fun_ltr]
         IssueType.impure_function impure_fun_desc
   | Some pre_posts ->
       let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
@@ -208,5 +207,5 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt
           :: modified_ltr Formal modified_params
                (modified_ltr Global modified_globals skipped_functions)
         in
-        Reporting.log_error attrs err_log ~loc:pname_loc ~ltr IssueType.impure_function
+        Reporting.log_error proc_desc err_log ~loc:pname_loc ~ltr IssueType.impure_function
           impure_fun_desc

@@ -31,7 +31,7 @@ let format_method pname =
       Procname.to_string pname
 
 
-let report_warning ({ProcAttributes.proc_name; loc} as attrs) err_log class_name fld fld_typ =
+let report_warning proc_desc err_log class_name fld fld_typ =
   let pp_m = MarkupFormatter.pp_monospaced in
   let description =
     Format.asprintf
@@ -39,9 +39,12 @@ let report_warning ({ProcAttributes.proc_name; loc} as attrs) err_log class_name
        the back stack, a reference to this (probably dead) View will be retained. In general, it \
        is a good idea to initialize View's in %a, then nullify them in %a."
       pp_m (Typ.Name.name class_name) pp_m (Fieldname.get_field_name fld) pp_m (format_typ fld_typ)
-      pp_m (format_method proc_name) pp_m on_create_view pp_m on_destroy_view
+      pp_m
+      (format_method (Procdesc.get_proc_name proc_desc))
+      pp_m on_create_view pp_m on_destroy_view
   in
-  Reporting.log_warning attrs err_log ~loc IssueType.checkers_fragment_retain_view description
+  Reporting.log_warning proc_desc err_log ~loc:(Procdesc.get_loc proc_desc)
+    IssueType.checkers_fragment_retain_view description
 
 
 let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv; err_log}
@@ -74,9 +77,7 @@ let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv
               not
                 ( Annotations.ia_ends_with ia Annotations.auto_cleanup
                 || Fieldname.Set.mem fname fields_nullified )
-            then
-              let attrs = Procdesc.get_attributes proc_desc in
-              report_warning attrs err_log class_name fname fld_typ )
+            then report_warning proc_desc err_log class_name fname fld_typ )
           declared_view_fields
     | _ ->
         ()

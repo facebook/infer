@@ -7,7 +7,7 @@
 
 open! IStd
 
-let log_issue_deprecated_using_state proc_attributes err_log severity ?node ?loc ?ltr exn =
+let log_issue_deprecated_using_state proc_desc err_log severity ?node ?loc ?ltr exn =
   if !BiabductionConfig.footprint then
     let node =
       let node = match node with None -> AnalysisState.get_node_exn () | Some node -> node in
@@ -16,7 +16,7 @@ let log_issue_deprecated_using_state proc_attributes err_log severity ?node ?loc
     let session = AnalysisState.get_session () in
     let loc = match loc with None -> AnalysisState.get_loc_exn () | Some loc -> loc in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Reporting.log_issue_from_summary severity proc_attributes err_log ~node ~session ~loc ~ltr exn
+    Reporting.log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr exn
 
 
 let log_error_using_state proc_desc err_log exn =
@@ -30,5 +30,4 @@ let log_error_using_state proc_desc err_log exn =
       match AnalysisState.get_loc () with Some l -> l | None -> Procdesc.Node.get_loc node'
     in
     let ltr = State.get_loc_trace () in
-    let attrs = Procdesc.get_attributes proc_desc in
-    Reporting.log_issue_from_summary Exceptions.Error attrs err_log ~node ~session ~loc ~ltr exn
+    Reporting.log_issue_from_summary Exceptions.Error proc_desc err_log ~node ~session ~loc ~ltr exn

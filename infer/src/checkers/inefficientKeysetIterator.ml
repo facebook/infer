@@ -52,7 +52,7 @@ let find_first_arg_pvar node ~fun_name ~class_name_f =
   else None
 
 
-let report_matching_get attrs err_log tenv pvar loop_nodes : unit =
+let report_matching_get proc_desc err_log tenv pvar loop_nodes : unit =
   LoopNodes.iter
     (fun node ->
       let instrs = Procdesc.Node.get_instrs node in
@@ -75,7 +75,7 @@ let report_matching_get attrs err_log tenv pvar loop_nodes : unit =
                         in
                         let loc = Procdesc.Node.get_loc node in
                         let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-                        Reporting.log_error attrs err_log ~loc ~ltr
+                        Reporting.log_error proc_desc err_log ~loc ~ltr
                           IssueType.inefficient_keyset_iterator exp_desc ) ) )
     loop_nodes
 
@@ -106,7 +106,6 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
   let cfg = CFG.from_pdesc proc_desc in
   let _, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps cfg in
   let idom = Dominators.get_idoms proc_desc in
-  let attrs = Procdesc.get_attributes proc_desc in
   Procdesc.NodeMap.iter
     (fun loop_head loop_nodes ->
       if
@@ -118,5 +117,5 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
           ~class_name_f:(PatternMatch.implements_set tenv) ~f:(fun itr_node _ ->
             when_dominating_preds_satisfy idom itr_node ~fun_name:"keySet"
               ~class_name_f:(implements_map tenv) ~f:(fun _keySet_node get_pvar ->
-                report_matching_get attrs err_log tenv get_pvar loop_nodes ) ) )
+                report_matching_get proc_desc err_log tenv get_pvar loop_nodes ) ) )
     loop_head_to_loop_nodes

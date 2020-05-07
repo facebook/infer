@@ -236,7 +236,7 @@ let is_report_suppressed pname =
 
 
 module Check = struct
-  let report_threshold pname attrs err_log ~name ~location ~cost CostIssues.{expensive_issue}
+  let report_threshold pname proc_desc err_log ~name ~location ~cost CostIssues.{expensive_issue}
       ~threshold ~is_on_ui_thread =
     let report_issue_type =
       L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
@@ -261,16 +261,16 @@ module Check = struct
       in
       Errlog.make_trace_element 0 location cost_desc []
     in
-    Reporting.log_error attrs err_log ~loc:location
+    Reporting.log_error proc_desc err_log ~loc:location
       ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_unreachable pname attrs err_log loc ~name ~cost
+  let report_top_and_unreachable pname proc_desc err_log loc ~name ~cost
       {CostIssues.unreachable_issue; infinite_issue} =
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
-      Reporting.log_error attrs err_log ~loc
+      Reporting.log_error proc_desc err_log ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) issue message
     in
@@ -290,16 +290,12 @@ module Check = struct
         | ThresholdReports.Threshold _ | ThresholdReports.NoReport ->
             ()
         | ThresholdReports.ReportOn {location; cost} ->
-            report_threshold pname
-              (Procdesc.get_attributes proc_desc)
-              err_log ~name ~location ~cost kind_spec ~threshold:(Option.value_exn threshold)
-              ~is_on_ui_thread ) ;
+            report_threshold pname proc_desc err_log ~name ~location ~cost kind_spec
+              ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
         ~f:(fun _kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
           if top_and_unreachable then
-            report_top_and_unreachable pname
-              (Procdesc.get_attributes proc_desc)
-              err_log proc_loc ~name ~cost issue_spec ) )
+            report_top_and_unreachable pname proc_desc err_log proc_loc ~name ~cost issue_spec ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
