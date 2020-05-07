@@ -57,9 +57,6 @@ type opN =
   | Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
-type recN = Record  (** Recursive record (array / struct) constant *)
-[@@deriving compare, equal, hash, sexp]
-
 module rec Set : sig
   include Import.Set.S with type elt := T.t
 
@@ -86,10 +83,6 @@ and T : sig
     | Ap2 of op2 * t * t  (** Binary application *)
     | Ap3 of op3 * t * t * t  (** Ternary application *)
     | ApN of opN * t iarray  (** N-ary application *)
-    | RecN of recN * t iarray
-        (** Recursive n-ary application, may recursively refer to itself
-            (transitively) from its args. NOTE: represented by cyclic
-            values. *)
     | And of set  (** Conjunction, boolean or bitwise *)
     | Or of set  (** Disjunction, boolean or bitwise *)
     | Add of qset  (** Sum of terms with rational coefficients *)
@@ -102,6 +95,7 @@ and T : sig
     | Float of {data: string}  (** Floating-point constant *)
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
+    | RecRecord of int  (** Reference to ancestor recursive record *)
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -242,11 +236,7 @@ val eq_concat : t * t -> (t * t) array -> t
 val record : t iarray -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
-
-(* recursive n-ary application *)
-val rec_app :
-     (module Hashtbl.Key_plain with type t = 'id)
-  -> (id:'id -> recN -> t lazy_t iarray -> t) Staged.t
+val rec_record : int -> t
 
 (** Transform *)
 

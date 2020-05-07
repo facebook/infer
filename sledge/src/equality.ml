@@ -17,8 +17,8 @@ let classify e =
   | Add _ | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       Interpreted
   | Mul _ | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ | And _ | Or _ -> Uninterpreted
-  | RecN _ | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
-    ->
+  | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
+   |RecRecord _ ->
       Atomic
 
 let interpreted e = equal_kind (classify e) Interpreted

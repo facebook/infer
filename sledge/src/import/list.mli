@@ -22,6 +22,9 @@ val pp_diff :
   -> 'a pp
   -> ('a list * 'a list) pp
 
+val findi : 'a -> 'a t -> int option
+(** [findi x xs] is [Some i] when [nth xs i == x], otherwise [None]. *)
+
 val pop_exn : 'a list -> 'a * 'a list
 
 val find_map_remove :

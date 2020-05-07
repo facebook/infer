@@ -18,6 +18,15 @@ let rec pp ?pre ?suf sep pp_elt fs = function
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
       Option.iter suf ~f:(Format.fprintf fs)
 
+let findi x xs =
+  let rec findi_ i xs =
+    match xs with
+    | [] -> None
+    | x' :: _ when x == x' -> Some i
+    | _ :: xs -> findi_ (i + 1) xs
+  in
+  findi_ 0 xs
+
 let pop_exn = function
   | x :: xs -> (x, xs)
   | [] -> raise (Not_found_s (Atom __LOC__))

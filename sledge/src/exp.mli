@@ -68,11 +68,7 @@ type op2 =
 type op3 = Conditional  (** If-then-else *)
 [@@deriving compare, equal, hash, sexp]
 
-type opN =
-  | Record  (** Record (array / struct) constant *)
-  | Struct_rec
-      (** Struct constant that may recursively refer to itself
-          (transitively) from [elts]. NOTE: represented by cyclic values. *)
+type opN = Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
 type t = private {desc: desc; term: Term.t}
@@ -90,6 +86,7 @@ and desc = private
   | Ap2 of op2 * Typ.t * t * t
   | Ap3 of op3 * Typ.t * t * t * t
   | ApN of opN * Typ.t * t iarray
+  | RecRecord of int * Typ.t  (** Reference to ancestor recursive record *)
 [@@deriving compare, equal, hash, sexp]
 
 val pp : t pp
@@ -188,17 +185,7 @@ val splat : Typ.t -> t -> t
 val record : Typ.t -> t iarray -> t
 val select : Typ.t -> t -> int -> t
 val update : Typ.t -> rcd:t -> int -> elt:t -> t
-
-val struct_rec :
-     (module Hashtbl.Key_plain with type t = 'id)
-  -> (id:'id -> Typ.t -> t lazy_t iarray -> t) Staged.t
-(** [struct_rec Id id element_thunks] constructs a possibly-cyclic [Struct]
-    value. Cycles are detected using [Id]. The caller of [struct_rec Id]
-    must ensure that a single unstaging of [struct_rec Id] is used for each
-    complete cyclic value. Also, the caller must ensure that recursive calls
-    to [struct_rec Id] provide [id] values that uniquely identify at least
-    one point on each cycle. Failure to obey these requirements will lead to
-    stack overflow. *)
+val rec_record : int -> Typ.t -> t
 
 (** Traverse *)
 

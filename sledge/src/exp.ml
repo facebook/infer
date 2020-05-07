@@ -57,10 +57,8 @@ module T = struct
     | Conditional
   [@@deriving compare, equal, hash, sexp]
 
-  type opN =
-    (* array/struct constants *)
+  type opN = (* array/struct constants *)
     | Record
-    | Struct_rec  (** NOTE: may be cyclic *)
   [@@deriving compare, equal, hash, sexp]
 
   type t = {desc: desc; term: Term.t}
@@ -75,6 +73,7 @@ module T = struct
     | Ap2 of op2 * Typ.t * t * t
     | Ap3 of op3 * Typ.t * t * t * t
     | ApN of opN * Typ.t * t iarray
+    | RecRecord of int * Typ.t
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -83,24 +82,6 @@ module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 module Map = Map.Make (T)
 
 let term e = e.term
-
-let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
-  let rec fix_f seen e =
-    match e.desc with
-    | ApN (Struct_rec, _, _) ->
-        if List.mem ~equal:( == ) seen e then f bot e
-        else f (fix_f (e :: seen)) e
-    | _ -> f (fix_f seen) e
-  in
-  let rec fix_f_seen_nil e =
-    match e.desc with
-    | ApN (Struct_rec, _, _) -> f (fix_f [e]) e
-    | _ -> f fix_f_seen_nil e
-  in
-  fix_f_seen_nil e
-
-let fix_flip (f : ('z -> t -> 'a as 'f) -> 'f) (bot : 'f) (z : 'z) (e : t) =
-  fix (fun f' e z -> f (fun z e -> f' e z) z e) (fun e z -> bot z e) e z
 
 let pp_op2 fs op =
   let pf fmt = Format.fprintf fs fmt in
@@ -133,44 +114,41 @@ let pp_op2 fs op =
   | Update idx -> pf "[_|%i→_]" idx
 
 let rec pp fs exp =
-  let pp_ pp fs exp =
-    let pf fmt =
-      Format.pp_open_box fs 2 ;
-      Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
-    in
-    match exp.desc with
-    | Reg {name} -> (
-      match Var.of_term exp.term with
-      | Some v when Var.is_global v -> pf "%@%s" name
-      | _ -> pf "%%%s" name )
-    | Nondet {msg} -> pf "nondet \"%s\"" msg
-    | Label {name} -> pf "%s" name
-    | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
-    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
-    | Float {data} -> pf "%s" data
-    | Ap1 (Signed {bits}, dst, arg) ->
-        pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
-    | Ap1 (Unsigned {bits}, dst, arg) ->
-        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
-    | Ap1 (Convert {src}, dst, arg) ->
-        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
-    | Ap1 (Splat, _, byt) -> pf "%a^" pp byt
-    | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
-    | Ap2 (Update idx, _, rcd, elt) ->
-        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | Ap2 (Xor, Integer {bits= 1}, {desc= Integer {data}}, x)
-      when Z.is_true data ->
-        pf "¬%a" pp x
-    | Ap2 (Xor, Integer {bits= 1}, x, {desc= Integer {data}})
-      when Z.is_true data ->
-        pf "¬%a" pp x
-    | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
-    | Ap3 (Conditional, _, cnd, thn, els) ->
-        pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-    | ApN (Struct_rec, _, elts) -> pf "{|%a|}" (IArray.pp ",@ " pp) elts
+  let pf fmt =
+    Format.pp_open_box fs 2 ;
+    Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
   in
-  fix_flip pp_ (fun _ _ -> ()) fs exp
+  match exp.desc with
+  | Reg {name} -> (
+    match Var.of_term exp.term with
+    | Some v when Var.is_global v -> pf "%@%s" name
+    | _ -> pf "%%%s" name )
+  | Nondet {msg} -> pf "nondet \"%s\"" msg
+  | Label {name} -> pf "%s" name
+  | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
+  | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
+  | Float {data} -> pf "%s" data
+  | Ap1 (Signed {bits}, dst, arg) ->
+      pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
+  | Ap1 (Unsigned {bits}, dst, arg) ->
+      pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+  | Ap1 (Convert {src}, dst, arg) ->
+      pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
+  | Ap1 (Splat, _, byt) -> pf "%a^" pp byt
+  | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
+  | Ap2 (Update idx, _, rcd, elt) ->
+      pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+  | Ap2 (Xor, Integer {bits= 1}, {desc= Integer {data}}, x)
+    when Z.is_true data ->
+      pf "¬%a" pp x
+  | Ap2 (Xor, Integer {bits= 1}, x, {desc= Integer {data}})
+    when Z.is_true data ->
+      pf "¬%a" pp x
+  | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
+  | Ap3 (Conditional, _, cnd, thn, els) ->
+      pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
+  | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
+  | RecRecord (i, _) -> pf "rec_record %i" i
   [@@warning "-9"]
 
 and pp_record fs elts =
@@ -256,7 +234,7 @@ let rec invariant exp =
       assert (Typ.castable Typ.bool (typ_of cnd)) ;
       assert (Typ.castable typ (typ_of thn)) ;
       assert (Typ.castable typ (typ_of els))
-  | ApN ((Record | Struct_rec), typ, args) -> (
+  | ApN (Record, typ, args) -> (
     match typ with
     | Array {elt} ->
         assert (
@@ -268,6 +246,7 @@ let rec invariant exp =
           IArray.for_all2_exn elts args ~f:(fun typ arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
+  | RecRecord _ -> ()
   [@@warning "-9"]
 
 (** Type query *)
@@ -295,7 +274,8 @@ and typ_of exp =
       , _
       , _ )
    |Ap3 (Conditional, typ, _, _, _)
-   |ApN ((Record | Struct_rec), typ, _) ->
+   |ApN (Record, typ, _)
+   |RecRecord (_, typ) ->
       typ
   [@@warning "-9"]
 
@@ -472,35 +452,12 @@ let update typ ~rcd idx ~elt =
   ; term= Term.update ~rcd:rcd.term ~idx ~elt:elt.term }
   |> check invariant
 
-let struct_rec key =
-  let memo_id = Hashtbl.create key in
-  let rec_app = (Staged.unstage (Term.rec_app key)) Term.Record in
-  Staged.stage
-  @@ fun ~id typ elt_thks ->
-  match Hashtbl.find memo_id id with
-  | None ->
-      (* Add placeholder to prevent computing [elts] in calls to
-         [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
-      let elta = Array.create ~len:(IArray.length elt_thks) null in
-      let elts = IArray.of_array elta in
-      Hashtbl.set memo_id ~key:id ~data:elts ;
-      let term =
-        rec_app ~id (IArray.map ~f:(fun elt -> lazy elt.term) elts)
-      in
-      IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      {desc= ApN (Struct_rec, typ, elts); term} |> check invariant
-  | Some elts ->
-      (* Do not check invariant as invariant will be checked above after the
-         thunks are forced, before which invariant-checking may spuriously
-         fail. Note that it is important that the value constructed here
-         shares the array in the memo table, so that the update after
-         forcing the recursive thunks also updates this value. *)
-      {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id IArray.empty}
+let rec_record i typ = {desc= RecRecord (i, typ); term= Term.rec_record i}
 
 (** Traverse *)
 
 let fold_exps e ~init ~f =
-  let fold_exps_ fold_exps_ e z =
+  let rec fold_exps_ e z =
     let z =
       match e.desc with
       | Ap1 (_, _, x) -> fold_exps_ x z
@@ -512,7 +469,7 @@ let fold_exps e ~init ~f =
     in
     f z e
   in
-  fix fold_exps_ (fun _ z -> z) e init
+  fold_exps_ e init
 
 let fold_regs e ~init ~f =
   fold_exps e ~init ~f:(fun z x ->

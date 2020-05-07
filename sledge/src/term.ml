@@ -36,7 +36,6 @@ type op2 =
 
 type op3 = Conditional | Extract [@@deriving compare, equal, hash, sexp]
 type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
-type recN = Record [@@deriving compare, equal, hash, sexp]
 
 module rec Set : sig
   include Import.Set.S with type elt := T.t
@@ -77,7 +76,6 @@ and T : sig
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
-    | RecN of recN * t iarray  (** NOTE: cyclic *)
     | And of set
     | Or of set
     | Add of qset
@@ -87,6 +85,7 @@ and T : sig
     | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
+    | RecRecord of int
   [@@deriving compare, equal, hash, sexp]
 end = struct
   type set = Set.t [@@deriving compare, equal, hash, sexp]
@@ -98,7 +97,6 @@ end = struct
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t iarray
-    | RecN of recN * t iarray  (** NOTE: cyclic *)
     | And of set
     | Or of set
     | Add of qset
@@ -108,6 +106,7 @@ end = struct
     | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
+    | RecRecord of int
   [@@deriving compare, equal, hash, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -133,24 +132,8 @@ end
 include T
 module Map = struct include Map.Make (T) include Provide_of_sexp (T) end
 
-let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
-  let rec fix_f seen e =
-    match e with
-    | RecN _ ->
-        if List.mem ~equal:( == ) seen e then f bot e
-        else f (fix_f (e :: seen)) e
-    | _ -> f (fix_f seen) e
-  in
-  let rec fix_f_seen_nil e =
-    match e with RecN _ -> f (fix_f [e]) e | _ -> f fix_f_seen_nil e
-  in
-  fix_f_seen_nil e
-
-let fix_flip (f : ('z -> t -> 'a as 'f) -> 'f) (bot : 'f) (z : 'z) (e : t) =
-  fix (fun f' e z -> f (fun z e -> f' e z) z e) (fun e z -> bot z e) e z
-
 let rec ppx strength fs term =
-  let pp_ pp fs term =
+  let rec pp fs term =
     let pf fmt =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
@@ -212,12 +195,12 @@ let rec ppx strength fs term =
     | ApN (Concat, args) when IArray.is_empty args -> pf "@<2>⟨⟩"
     | ApN (Concat, args) -> pf "(%a)" (IArray.pp "@,^" pp) args
     | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
-    | RecN (Record, elts) -> pf "{|%a|}" (IArray.pp ",@ " pp) elts
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+    | RecRecord i -> pf "(rec_record %i)" i
   in
-  fix_flip pp_ (fun _ _ -> ()) fs term
+  pp fs term
   [@@warning "-9"]
 
 and pp_record strength fs elts =
@@ -325,8 +308,7 @@ let invariant e =
   | Mul _ -> assert_monomial e |> Fn.id
   | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_aggregate e
-  | ApN (Record, elts) | RecN (Record, elts) ->
-      assert (not (IArray.is_empty elts))
+  | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
   | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
   | Ap1 (Convert {src; dst}, _) ->
       assert (Typ.convertible src dst) ;
@@ -1023,28 +1005,7 @@ let simp_ashr x y =
 let simp_record elts = ApN (Record, elts)
 let simp_select idx rcd = Ap1 (Select idx, rcd)
 let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
-
-let rec_app key =
-  let memo_id = Hashtbl.create key in
-  let dummy = null in
-  Staged.stage
-  @@ fun ~id op elt_thks ->
-  match Hashtbl.find memo_id id with
-  | None ->
-      (* Add placeholder to prevent computing [elts] in calls to [rec_app]
-         from [elt_thks] for recursive occurrences of [id]. *)
-      let elta = Array.create ~len:(IArray.length elt_thks) dummy in
-      let elts = IArray.of_array elta in
-      Hashtbl.set memo_id ~key:id ~data:elts ;
-      IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      RecN (op, elts) |> check invariant
-  | Some elts ->
-      (* Do not check invariant as invariant will be checked above after the
-         thunks are forced, before which invariant-checking may spuriously
-         fail. Note that it is important that the value constructed here
-         shares the array in the memo table, so that the update after
-         forcing the recursive thunks also updates this value. *)
-      RecN (op, elts)
+let simp_rec_record i = RecRecord i
 
 (* dispatching for normalization and invariant checking *)
 
@@ -1124,6 +1085,7 @@ let concat xs = normN Concat (IArray.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
+let rec_record i = simp_rec_record i |> check invariant
 
 let eq_concat (siz, arr) ms =
   eq (memory ~siz ~arr)
@@ -1168,12 +1130,9 @@ let map e ~f =
   | Ap2 (op, x, y) -> map2 op ~f x y
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
   | ApN (op, xs) -> mapN op ~f xs
-  | RecN (_, xs) ->
-      assert (
-        xs == IArray.map_endo ~f xs
-        || fail "Term.map does not support updating subterms of RecN." () ) ;
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
       e
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> e
 
 let fold_map e ~init ~f =
   let s = ref init in
@@ -1185,53 +1144,13 @@ let fold_map e ~init ~f =
   let e' = map e ~f in
   (!s, e')
 
-let map_rec_pre e ~f =
-  let rec map_rec_pre_f memo e =
-    match f e with
-    | Some e' -> e'
-    | None -> (
-      match e with
-      | RecN (op, xs) -> (
-        match List.Assoc.find ~equal:( == ) memo e with
-        | None ->
-            let xs' = IArray.to_array xs in
-            let e' = RecN (op, IArray.of_array xs') in
-            let memo = List.Assoc.add ~equal:( == ) memo e e' in
-            let changed = ref false in
-            Array.map_inplace xs' ~f:(fun x ->
-                let x' = map_rec_pre_f memo x in
-                if x' != x then changed := true ;
-                x' ) ;
-            if !changed then e' else e
-        | Some e' -> e' )
-      | _ -> map ~f:(map_rec_pre_f memo) e )
-  in
-  map_rec_pre_f [] e
+let rec map_rec_pre e ~f =
+  match f e with Some e' -> e' | None -> map ~f:(map_rec_pre ~f) e
 
-let fold_map_rec_pre e ~init ~f =
-  let rec fold_map_rec_pre_f memo s e =
-    match f s e with
-    | Some (s, e') -> (s, e')
-    | None -> (
-      match e with
-      | RecN (op, xs) -> (
-        match List.Assoc.find ~equal:( == ) memo e with
-        | None ->
-            let xs' = IArray.to_array xs in
-            let e' = RecN (op, IArray.of_array xs') in
-            let memo = List.Assoc.add ~equal:( == ) memo e e' in
-            let changed = ref false in
-            let s =
-              Array.fold_map_inplace ~init:s xs' ~f:(fun s x ->
-                  let s, x' = fold_map_rec_pre_f memo s x in
-                  if x' != x then changed := true ;
-                  (s, x') )
-            in
-            if !changed then (s, e') else (s, e)
-        | Some e' -> (s, e') )
-      | _ -> fold_map ~f:(fold_map_rec_pre_f memo) ~init:s e )
-  in
-  fold_map_rec_pre_f [] init e
+let rec fold_map_rec_pre e ~init:s ~f =
+  match f s e with
+  | Some (s, e') -> (s, e')
+  | None -> fold_map ~f:(fun s e -> fold_map_rec_pre ~f ~init:s e) ~init:s e
 
 let rename sub e =
   map_rec_pre e ~f:(function
@@ -1245,75 +1164,80 @@ let iter e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x ; f y
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
-  | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f xs
+  | ApN (_, xs) -> IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> ()
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
+      ()
 
 let exists e ~f =
   match e with
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
-  | ApN (_, xs) | RecN (_, xs) -> IArray.exists ~f xs
+  | ApN (_, xs) -> IArray.exists ~f xs
   | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> false
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
+      false
 
 let for_all e ~f =
   match e with
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x && f y
   | Ap3 (_, x, y, z) -> f x && f y && f z
-  | ApN (_, xs) | RecN (_, xs) -> IArray.for_all ~f xs
+  | ApN (_, xs) -> IArray.for_all ~f xs
   | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
+      true
 
 let fold e ~init:s ~f =
   match e with
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) | RecN (_, xs) ->
-      IArray.fold ~f:(fun s x -> f x s) xs ~init:s
+  | ApN (_, xs) -> IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> s
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
+      s
 
-let iter_terms e ~f =
-  let iter_terms_ iter_terms_ e =
-    ( match e with
-    | Ap1 (_, x) -> iter_terms_ x
-    | Ap2 (_, x, y) -> iter_terms_ x ; iter_terms_ y
-    | Ap3 (_, x, y, z) -> iter_terms_ x ; iter_terms_ y ; iter_terms_ z
-    | ApN (_, xs) | RecN (_, xs) -> IArray.iter ~f:iter_terms_ xs
-    | And args | Or args -> Set.iter args ~f:iter_terms_
+let rec iter_terms e ~f =
+  ( match e with
+  | Ap1 (_, x) -> iter_terms ~f x
+  | Ap2 (_, x, y) -> iter_terms ~f x ; iter_terms ~f y
+  | Ap3 (_, x, y, z) -> iter_terms ~f x ; iter_terms ~f y ; iter_terms ~f z
+  | ApN (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
+  | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
+  | Add args | Mul args ->
+      Qset.iter args ~f:(fun arg _ -> iter_terms ~f arg)
+  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+   |RecRecord _ ->
+      () ) ;
+  f e
+
+let rec fold_terms e ~init:s ~f =
+  let fold_terms f e s = fold_terms e ~init:s ~f in
+  let s =
+    match e with
+    | Ap1 (_, x) -> fold_terms f x s
+    | Ap2 (_, x, y) -> fold_terms f y (fold_terms f x s)
+    | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
+    | ApN (_, xs) -> IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
+    | And args | Or args ->
+        Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
     | Add args | Mul args ->
-        Qset.iter args ~f:(fun arg _ -> iter_terms_ arg)
-    | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> () ) ;
-    f e
+        Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms f arg s)
+    | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
+     |RecRecord _ ->
+        s
   in
-  fix iter_terms_ (fun _ -> ()) e
-
-let fold_terms e ~init ~f =
-  let fold_terms_ fold_terms_ e s =
-    let s =
-      match e with
-      | Ap1 (_, x) -> fold_terms_ x s
-      | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
-      | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
-      | ApN (_, xs) | RecN (_, xs) ->
-          IArray.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
-      | And args | Or args ->
-          Set.fold args ~init:s ~f:(fun s x -> fold_terms_ x s)
-      | Add args | Mul args ->
-          Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
-      | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> s
-    in
-    f s e
-  in
-  fix fold_terms_ (fun _ s -> s) e init
+  f s e
 
 let iter_vars e ~f =
   iter_terms e ~f:(function Var _ as v -> f (v :> Var.t) | _ -> ())
@@ -1338,21 +1262,17 @@ let rec is_constant = function
   | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
   | a -> for_all ~f:is_constant a
 
-let height e =
-  let height_ height_ = function
-    | Var _ -> 0
-    | Ap1 (_, a) -> 1 + height_ a
-    | Ap2 (_, a, b) -> 1 + max (height_ a) (height_ b)
-    | Ap3 (_, a, b, c) -> 1 + max (height_ a) (max (height_ b) (height_ c))
-    | ApN (_, v) | RecN (_, v) ->
-        1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height_ a))
-    | And bs | Or bs ->
-        1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height_ a))
-    | Add qs | Mul qs ->
-        1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height_ a))
-    | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> 0
-  in
-  fix height_ (fun _ -> 0) e
+let rec height = function
+  | Var _ -> 0
+  | Ap1 (_, a) -> 1 + height a
+  | Ap2 (_, a, b) -> 1 + max (height a) (height b)
+  | Ap3 (_, a, b, c) -> 1 + max (height a) (max (height b) (height c))
+  | ApN (_, v) -> 1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
+  | And bs | Or bs ->
+      1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
+  | Add qs | Mul qs ->
+      1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height a))
+  | Label _ | Nondet _ | Float _ | Integer _ | Rational _ | RecRecord _ -> 0
 
 (** Solve *)
 
