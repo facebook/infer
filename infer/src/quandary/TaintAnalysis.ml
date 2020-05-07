@@ -13,25 +13,19 @@ module L = Logging
 module Make (TaintSpecification : TaintSpec.S) = struct
   module TraceDomain = TaintSpecification.Trace
   module TaintDomain = TaintSpecification.AccessTree
-
-  module Payload = SummaryPayload.Make (struct
-    type t = QuandarySummary.t
-
-    let field = Payloads.Fields.quandary
-  end)
-
   module Domain = TaintDomain
 
-  type extras = {formal_map: FormalMap.t; summary: Summary.t}
+  type analysis_data =
+    {analysis_data: QuandarySummary.t InterproceduralAnalysis.t; formal_map: FormalMap.t}
 
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
     module Domain = Domain
 
-    type analysis_data = extras ProcData.t
+    type nonrec analysis_data = analysis_data
 
     (* get the node associated with [access_path] in [access_tree] *)
-    let access_path_get_node access_path access_tree (proc_data : extras ProcData.t) =
+    let access_path_get_node access_path access_tree formal_map =
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
@@ -41,7 +35,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             Some (TaintDomain.make_normal_leaf trace)
           in
           let root, _ = AccessPath.Abs.extract access_path in
-          match FormalMap.get_formal_index root proc_data.extras.formal_map with
+          match FormalMap.get_formal_index root formal_map with
           | Some formal_index ->
               make_footprint_trace (AccessPath.Abs.to_footprint formal_index access_path)
           | None ->
@@ -49,35 +43,35 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     (* get the trace associated with [access_path] in [access_tree]. *)
-    let access_path_get_trace access_path access_tree proc_data =
-      match access_path_get_node access_path access_tree proc_data with
+    let access_path_get_trace access_path access_tree formal_map =
+      match access_path_get_node access_path access_tree formal_map with
       | Some (trace, _) ->
           trace
       | None ->
           TraceDomain.bottom
 
 
-    let exp_get_node_ ~abstracted raw_access_path access_tree proc_data =
+    let exp_get_node_ ~abstracted raw_access_path access_tree formal_map =
       let access_path =
         if abstracted then AccessPath.Abs.Abstracted raw_access_path
         else AccessPath.Abs.Exact raw_access_path
       in
-      access_path_get_node access_path access_tree proc_data
+      access_path_get_node access_path access_tree formal_map
 
 
     (* get the node associated with [exp] in [access_tree] *)
-    let rec hil_exp_get_node ?(abstracted = false) (exp : HilExp.t) access_tree proc_data =
+    let rec hil_exp_get_node ?(abstracted = false) (exp : HilExp.t) access_tree formal_map =
       match exp with
       | AccessExpression access_expr ->
           exp_get_node_ ~abstracted
             (HilExp.AccessExpression.to_access_path access_expr)
-            access_tree proc_data
+            access_tree formal_map
       | Cast (_, e) | Exception e | UnaryOperator (_, e, _) ->
-          hil_exp_get_node ~abstracted e access_tree proc_data
+          hil_exp_get_node ~abstracted e access_tree formal_map
       | BinaryOperator (_, e1, e2) -> (
         match
-          ( hil_exp_get_node ~abstracted e1 access_tree proc_data
-          , hil_exp_get_node ~abstracted e2 access_tree proc_data )
+          ( hil_exp_get_node ~abstracted e1 access_tree formal_map
+          , hil_exp_get_node ~abstracted e2 access_tree formal_map )
         with
         | Some node1, Some node2 ->
             Some (TaintDomain.node_join node1 node2)
@@ -93,13 +87,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.add_trace id_ap trace access_tree
 
 
-    let add_actual_source source index actuals access_tree proc_data =
+    let add_actual_source source index actuals access_tree formal_map =
       match HilExp.ignore_cast (List.nth_exn actuals index) with
       | HilExp.AccessExpression actual_ae_raw ->
           let actual_ap =
             AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path actual_ae_raw)
           in
-          let trace = access_path_get_trace actual_ap access_tree proc_data in
+          let trace = access_path_get_trace actual_ap access_tree formal_map in
           TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
       | _ ->
           access_tree
@@ -121,14 +115,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace ?(sink_indexes = IntSet.empty) trace cur_site (proc_data : extras ProcData.t) =
+    let report_trace {InterproceduralAnalysis.proc_desc; err_log; analyze_dependency}
+        ?(sink_indexes = IntSet.empty) trace cur_site =
       let get_summary pname =
-        if Procname.equal pname (Summary.get_proc_name proc_data.summary) then
+        if Procname.equal pname (Procdesc.get_proc_name proc_desc) then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.bottom
         else
-          match Payload.read ~caller_summary:proc_data.summary ~callee_pname:pname with
-          | Some summary ->
+          match analyze_dependency pname with
+          | Some (_, summary) ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
               TaintDomain.bottom
@@ -303,25 +298,25 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           get_short_trace_string initial_source initial_source_caller final_sink final_sink_caller
         in
         let ltr = source_trace @ List.rev sink_trace in
-        SummaryReporting.log_error proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr issue
-          trace_str
+        let attrs = Procdesc.get_attributes proc_desc in
+        Reporting.log_error attrs err_log ~loc:(CallSite.loc cur_site) ~ltr issue trace_str
       in
       List.iter ~f:report_one (TraceDomain.get_reports ~cur_site trace)
 
 
-    let add_sink sink actuals access_tree proc_data callee_site =
+    let add_sink {analysis_data; formal_map} sink actuals access_tree callee_site =
       (* add [sink] to the trace associated with the [formal_index]th actual *)
       let add_sink_to_actual sink_index access_tree_acc =
         match List.nth actuals sink_index with
         | Some exp -> (
-          match hil_exp_get_node ~abstracted:true exp access_tree_acc proc_data with
+          match hil_exp_get_node ~abstracted:true exp access_tree_acc formal_map with
           | Some (actual_trace, _) -> (
               let sink' =
                 let indexes = IntSet.singleton sink_index in
                 TraceDomain.Sink.make ~indexes (TraceDomain.Sink.kind sink) callee_site
               in
               let actual_trace' = TraceDomain.add_sink sink' actual_trace in
-              report_trace actual_trace' callee_site proc_data ;
+              report_trace analysis_data actual_trace' callee_site ;
               match HilExp.ignore_cast exp with
               | HilExp.AccessExpression actual_ae_raw
                 when not
@@ -345,8 +340,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       IntSet.fold add_sink_to_actual (TraceDomain.Sink.indexes sink) access_tree
 
 
-    let apply_summary ret_opt (actuals : HilExp.t list) summary caller_access_tree
-        (proc_data : extras ProcData.t) callee_site =
+    let apply_summary {analysis_data; formal_map} ret_opt (actuals : HilExp.t list) summary
+        caller_access_tree callee_site =
       let get_caller_ap_node_opt formal_ap access_tree =
         let apply_return ret_ap =
           match ret_opt with
@@ -370,7 +365,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let caller_node_opt =
               match projected_ap_opt with
               | Some projected_ap ->
-                  access_path_get_node projected_ap access_tree proc_data
+                  access_path_get_node projected_ap access_tree formal_map
               | None ->
                   None
             in
@@ -381,10 +376,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               let projected_ap =
                 project ~formal_ap ~actual_ap:(HilExp.AccessExpression.to_access_path actual_ae)
               in
-              let caller_node_opt = access_path_get_node projected_ap access_tree proc_data in
+              let caller_node_opt = access_path_get_node projected_ap access_tree formal_map in
               (Some projected_ap, Option.value ~default:TaintDomain.empty_node caller_node_opt)
           | Some exp ->
-              let caller_node_opt = hil_exp_get_node exp access_tree proc_data in
+              let caller_node_opt = hil_exp_get_node exp access_tree formal_map in
               (None, Option.value ~default:TaintDomain.empty_node caller_node_opt)
           | _ ->
               (None, TaintDomain.empty_node) )
@@ -407,7 +402,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree in
         let sink_indexes = TraceDomain.get_footprint_indexes callee_trace in
         let appended_trace = TraceDomain.append caller_trace' callee_trace callee_site in
-        report_trace appended_trace callee_site ~sink_indexes proc_data ;
+        report_trace analysis_data appended_trace callee_site ~sink_indexes ;
         appended_trace
       in
       let add_to_caller_tree access_tree_acc callee_ap callee_trace =
@@ -433,7 +428,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     (* not all sinks are function calls; we might want to treat an array or field access as a
        sink too. do this by pretending an access is a call to a dummy function and using the
        existing machinery for adding function call sinks *)
-    let add_sinks_for_access_path (proc_data : extras ProcData.t) access_expr loc astate =
+    let add_sinks_for_access_path ({analysis_data= {tenv}} as analysis_data) access_expr loc astate
+        =
       let rec add_sinks_for_access astate_acc = function
         | HilExp.AccessExpression.Base _ ->
             astate_acc
@@ -449,28 +445,25 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 ~f:(fun index_ae -> HilExp.AccessExpression index_ae)
                 (HilExp.get_access_exprs index)
             in
-            let sinks =
-              TraceDomain.Sink.get dummy_call_site dummy_actuals CallFlags.default
-                proc_data.ProcData.tenv
-            in
+            let sinks = TraceDomain.Sink.get dummy_call_site dummy_actuals CallFlags.default tenv in
             let astate_acc_result =
               List.fold sinks ~init:astate_acc ~f:(fun astate sink ->
-                  add_sink sink dummy_actuals astate proc_data dummy_call_site )
+                  add_sink analysis_data sink dummy_actuals astate dummy_call_site )
             in
             add_sinks_for_access astate_acc_result ae
       in
       add_sinks_for_access astate access_expr
 
 
-    let add_sources_for_access_path (proc_data : extras ProcData.t) access_expr loc astate =
+    let add_sources_for_access_path {analysis_data= {proc_desc; tenv}} access_expr loc astate =
       let var, _ = HilExp.AccessExpression.get_base access_expr in
       if Var.is_global var then
         let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
         let sources =
-          let caller_pname = Summary.get_proc_name proc_data.ProcData.summary in
+          let caller_pname = Procdesc.get_proc_name proc_desc in
           TraceDomain.Source.get ~caller_pname dummy_call_site
             [HilExp.AccessExpression access_expr]
-            proc_data.tenv
+            tenv
         in
         List.fold sources ~init:astate ~f:(fun astate {TraceDomain.Source.source} ->
             let access_path =
@@ -484,7 +477,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       else astate
 
 
-    let rec add_sources_sinks_for_exp (proc_data : extras ProcData.t) exp loc astate =
+    let rec add_sources_sinks_for_exp proc_data exp loc astate =
       match exp with
       | HilExp.Cast (_, e) ->
           add_sources_sinks_for_exp proc_data e loc astate
@@ -495,19 +488,20 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
 
 
-    let exec_write (proc_data : extras ProcData.t) lhs_access_expr rhs_exp astate =
+    let exec_write formal_map lhs_access_expr rhs_exp astate =
       let rhs_node =
-        Option.value (hil_exp_get_node rhs_exp astate proc_data) ~default:TaintDomain.empty_node
+        Option.value (hil_exp_get_node rhs_exp astate formal_map) ~default:TaintDomain.empty_node
       in
       let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
       TaintDomain.add_node (AccessPath.Abs.Exact lhs_access_path) rhs_node astate
 
 
-    let analyze_call (proc_data : extras ProcData.t) ~ret_ap ~callee_pname ~actuals ~call_flags
-        ~callee_loc astate =
+    let analyze_call
+        ({analysis_data= {proc_desc; tenv; analyze_dependency}; formal_map} as analysis_data)
+        ~ret_ap ~callee_pname ~actuals ~call_flags ~callee_loc astate =
       let astate =
         List.fold
-          ~f:(fun acc exp -> add_sources_sinks_for_exp proc_data exp callee_loc acc)
+          ~f:(fun acc exp -> add_sources_sinks_for_exp analysis_data exp callee_loc acc)
           actuals ~init:astate
       in
       let handle_model callee_pname access_tree model =
@@ -520,14 +514,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         in
         let should_taint_typ typ = is_variadic || TaintSpecification.is_taintable_type typ in
         let exp_join_traces trace_acc exp =
-          match hil_exp_get_node ~abstracted:true exp access_tree proc_data with
+          match hil_exp_get_node ~abstracted:true exp access_tree formal_map with
           | Some (trace, _) ->
               TraceDomain.join trace trace_acc
           | None ->
               trace_acc
         in
         let propagate_to_access_path access_path actuals access_tree =
-          let initial_trace = access_path_get_trace access_path access_tree proc_data in
+          let initial_trace = access_path_get_trace access_path access_tree formal_map in
           let trace_with_propagation = List.fold ~f:exp_join_traces ~init:initial_trace actuals in
           let sources = TraceDomain.sources trace_with_propagation in
           let filtered_footprint =
@@ -536,7 +530,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 if
                   is_mem
                   && Option.exists
-                       (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
+                       (AccessPath.get_typ (AccessPath.Abs.extract access_path) tenv)
                        ~f:should_taint_typ
                 then TraceDomain.Sources.Footprint.add_trace access_path true acc
                 else acc )
@@ -584,7 +578,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (* treat unknown calls to C++ operator= as assignment *)
           match List.map actuals ~f:HilExp.ignore_cast with
           | [AccessExpression lhs_access_expr; rhs_exp] ->
-              exec_write proc_data lhs_access_expr rhs_exp access_tree
+              exec_write formal_map lhs_access_expr rhs_exp access_tree
           | [AccessExpression lhs_access_expr; rhs_exp; HilExp.AccessExpression access_expr] -> (
               let dummy_ret_access_expr = access_expr in
               match dummy_ret_access_expr with
@@ -592,8 +586,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 ->
                   (* the frontend translates operator=(x, y) as operator=(x, y, dummy_ret) when
                      operator= returns a value type *)
-                  exec_write proc_data lhs_access_expr rhs_exp access_tree
-                  |> exec_write proc_data dummy_ret_access_expr rhs_exp
+                  exec_write formal_map lhs_access_expr rhs_exp access_tree
+                  |> exec_write formal_map dummy_ret_access_expr rhs_exp
               | _ ->
                   L.internal_error "Unexpected call to operator= at %a" Location.pp callee_loc ;
                   access_tree )
@@ -602,8 +596,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               access_tree )
         | _ ->
             let model =
-              TaintSpecification.handle_unknown_call callee_pname (snd ret_ap) actuals
-                proc_data.tenv
+              TaintSpecification.handle_unknown_call callee_pname (snd ret_ap) actuals tenv
             in
             handle_model callee_pname access_tree model
       in
@@ -629,14 +622,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let astate_with_sink =
         if List.is_empty actuals then astate
         else
-          let sinks = TraceDomain.Sink.get call_site actuals call_flags proc_data.ProcData.tenv in
+          let sinks = TraceDomain.Sink.get call_site actuals call_flags tenv in
           List.fold sinks ~init:astate ~f:(fun astate sink ->
-              add_sink sink actuals astate proc_data call_site )
+              add_sink analysis_data sink actuals astate call_site )
       in
       let astate_with_direct_sources =
         let sources =
-          let caller_pname = Summary.get_proc_name proc_data.ProcData.summary in
-          TraceDomain.Source.get ~caller_pname call_site actuals proc_data.tenv
+          let caller_pname = Procdesc.get_proc_name proc_desc in
+          TraceDomain.Source.get ~caller_pname call_site actuals tenv
         in
         List.fold sources ~init:astate_with_sink
           ~f:(fun astate {TraceDomain.Source.source; index} ->
@@ -645,33 +638,31 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 Option.value_map dummy_ret_opt ~default:astate ~f:(fun ret_base ->
                     add_return_source source ret_base astate )
             | Some index ->
-                add_actual_source source index actuals astate_with_sink proc_data )
+                add_actual_source source index actuals astate_with_sink formal_map )
       in
       let astate_with_summary =
-        match Payload.read ~caller_summary:proc_data.summary ~callee_pname with
+        match analyze_dependency callee_pname with
         | None ->
             handle_unknown_call callee_pname astate_with_direct_sources
-        | Some summary -> (
+        | Some (_, summary) -> (
             let ret_typ = snd ret_ap in
             let access_tree = TaintSpecification.of_summary_access_tree summary in
-            match
-              TaintSpecification.get_model callee_pname ret_typ actuals proc_data.tenv access_tree
-            with
+            match TaintSpecification.get_model callee_pname ret_typ actuals tenv access_tree with
             | Some model ->
                 handle_model callee_pname astate_with_direct_sources model
             | None ->
-                apply_summary dummy_ret_opt actuals access_tree astate_with_direct_sources proc_data
-                  call_site )
+                apply_summary analysis_data dummy_ret_opt actuals access_tree
+                  astate_with_direct_sources call_site )
       in
       let astate_with_sanitizer =
         match dummy_ret_opt with
         | None ->
             astate_with_summary
         | Some ret_base -> (
-          match TraceDomain.Sanitizer.get callee_pname proc_data.tenv with
+          match TraceDomain.Sanitizer.get callee_pname tenv with
           | Some sanitizer ->
               let ret_ap = AccessPath.Abs.Exact (ret_base, []) in
-              let ret_trace = access_path_get_trace ret_ap astate_with_summary proc_data in
+              let ret_trace = access_path_get_trace ret_ap astate_with_summary formal_map in
               let ret_trace' = TraceDomain.add_sanitizer sanitizer ret_trace in
               TaintDomain.add_trace ret_ap ret_trace' astate_with_summary
           | None ->
@@ -680,7 +671,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       astate_with_sanitizer
 
 
-    let exec_instr (astate : Domain.t) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
+    let exec_instr (astate : Domain.t) ({analysis_data= {proc_desc}; formal_map} as analysis_data) _
+        (instr : HilInstr.t) =
       match instr with
       | Assign (Base (Var.ProgramVar pvar, _), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
@@ -690,19 +682,18 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
       | Assign (Base (Var.ProgramVar pvar, _), rhs_exp, _)
         when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp
-             && Typ.equal_desc Tvoid
-                  (Procdesc.get_ret_type (Summary.get_proc_desc proc_data.summary)).desc ->
+             && Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_desc).desc ->
           (* similar to the case above; the Java frontend translates "return no exception" as
              `return null` in a void function *)
           astate
       | Assign (lhs_access_expr, rhs_exp, loc) ->
-          add_sources_sinks_for_exp proc_data rhs_exp loc astate
-          |> add_sinks_for_access_path proc_data lhs_access_expr loc
-          |> exec_write proc_data lhs_access_expr rhs_exp
+          add_sources_sinks_for_exp analysis_data rhs_exp loc astate
+          |> add_sinks_for_access_path analysis_data lhs_access_expr loc
+          |> exec_write formal_map lhs_access_expr rhs_exp
       | Assume (assume_exp, _, _, loc) ->
-          add_sources_sinks_for_exp proc_data assume_exp loc astate
+          add_sources_sinks_for_exp analysis_data assume_exp loc astate
       | Call (ret_ap, Direct callee_pname, actuals, call_flags, callee_loc) ->
-          analyze_call proc_data ~ret_ap ~callee_pname ~actuals ~call_flags ~callee_loc astate
+          analyze_call analysis_data ~ret_ap ~callee_pname ~actuals ~call_flags ~callee_loc astate
       | _ ->
           astate
 
@@ -764,8 +755,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       access_tree
 
 
-  let make_summary {ProcData.summary; extras= {formal_map}} access_tree =
-    let is_java = Procname.is_java (Summary.get_proc_name summary) in
+  let make_summary {analysis_data= {proc_desc}; formal_map} access_tree =
+    let is_java = Procname.is_java (Procdesc.get_proc_name proc_desc) in
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
       TaintDomain.fold
@@ -839,10 +830,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 
-  let checker {Callbacks.exe_env; summary} : Summary.t =
-    let proc_desc = Summary.get_proc_desc summary in
+  let checker ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
     let pname = Procdesc.get_proc_name proc_desc in
-    let tenv = Exe_env.get_tenv exe_env pname in
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
       List.fold
@@ -859,17 +848,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (TraceDomain.Source.get_tainted_formals pdesc tenv)
     in
     let initial = make_initial proc_desc in
-    let extras =
-      let formal_map = FormalMap.make proc_desc in
-      {formal_map; summary}
-    in
-    let proc_data = {ProcData.summary; tenv; extras} in
+    let formal_map = FormalMap.make proc_desc in
+    let proc_data = {analysis_data; formal_map} in
     match Analyzer.compute_post proc_data ~initial proc_desc with
     | Some access_tree ->
-        Payload.update_summary (make_summary proc_data access_tree) summary
+        Some (make_summary proc_data access_tree)
     | None ->
-        if not (List.is_empty (Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc))) then (
+        if not (List.is_empty (Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc))) then
           L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Procname.pp pname ;
-          summary )
-        else summary
+        None
 end

@@ -71,7 +71,7 @@ module MockSink = struct
   let equal = [%compare.equal: t]
 end
 
-module MockTrace = Trace.Make (struct
+module MockTrace = TaintTrace.Make (struct
   module Source = MockSource
   module Sink = MockSink
   module Sanitizer = Sanitizer.Dummy

@@ -11,7 +11,7 @@ val all_formals_untainted : Procdesc.t -> (Mangled.t * Typ.t * 'a option) list
 (** specify that all the formals of the procdesc are not tainted *)
 
 module type Kind = sig
-  include TraceElem.Kind
+  include TaintTraceElem.Kind
 
   val get :
     caller_pname:Procname.t -> Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) list
@@ -23,7 +23,7 @@ module type Kind = sig
 end
 
 module type S = sig
-  include TraceElem.S
+  include TaintTraceElem.S
 
   type spec =
     { source: t  (** type of the returned source *)

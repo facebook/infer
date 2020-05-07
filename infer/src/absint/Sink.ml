@@ -9,13 +9,13 @@ open! IStd
 module F = Format
 
 module type Kind = sig
-  include TraceElem.Kind
+  include TaintTraceElem.Kind
 
   val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
 end
 
 module type S = sig
-  include TraceElem.S
+  include TaintTraceElem.S
 
   val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t list
 

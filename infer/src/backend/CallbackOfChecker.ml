@@ -16,8 +16,8 @@ let () =
     ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
 
 
-let interprocedural ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload ~set_payload checker
-    {Callbacks.summary; exe_env} =
+let mk_interprocedural_t ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload exe_env summary
+    ?(tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary)) () =
   let analyze_dependency proc_name =
     let summary = Ondemand.analyze_proc_name ~caller_summary:summary proc_name in
     Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
@@ -31,25 +31,36 @@ let interprocedural ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload ~set_payloa
   let update_stats ?add_symops ?failure_kind () =
     stats := Summary.Stats.update ?add_symops ?failure_kind !stats
   in
-  let result =
-    checker
-      { InterproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
-      ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
-      ; err_log= Summary.get_err_log summary
-      ; exe_env
-      ; analyze_dependency
-      ; analyze_pdesc_dependency
-      ; update_stats }
-  in
-  {summary with payloads= set_payload summary.payloads result; stats= !stats}
+  ( { InterproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
+    ; tenv
+    ; err_log= Summary.get_err_log summary
+    ; exe_env
+    ; analyze_dependency
+    ; analyze_pdesc_dependency
+    ; update_stats }
+  , stats )
 
 
-let interprocedural_with_field payload_field checker =
-  interprocedural
+let mk_interprocedural_field_t payload_field exe_env summary =
+  mk_interprocedural_t
     ~f_analyze_dep:(fun pdesc payload_opt ->
       Option.map payload_opt ~f:(fun payload -> (pdesc, payload)) )
-    ~f_analyze_pdesc_dep:Fn.id ~get_payload:(Field.get payload_field)
-    ~set_payload:(Field.fset payload_field) checker
+    ~f_analyze_pdesc_dep:Fn.id ~get_payload:(Field.get payload_field) exe_env summary
+
+
+let interprocedural ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload ~set_payload checker
+    {Callbacks.summary; exe_env} =
+  let analysis_data, stats_ref =
+    mk_interprocedural_t ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload exe_env summary ()
+  in
+  let result = checker analysis_data in
+  {summary with payloads= set_payload summary.payloads result; stats= !stats_ref}
+
+
+let interprocedural_with_field payload_field checker {Callbacks.summary; exe_env} =
+  let analysis_data, stats_ref = mk_interprocedural_field_t payload_field exe_env summary () in
+  let result = checker analysis_data in
+  {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
 
 
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =

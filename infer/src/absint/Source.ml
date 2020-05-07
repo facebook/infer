@@ -14,7 +14,7 @@ let all_formals_untainted pdesc =
 
 
 module type Kind = sig
-  include TraceElem.Kind
+  include TaintTraceElem.Kind
 
   val get :
     caller_pname:Procname.t -> Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) list
@@ -23,7 +23,7 @@ module type Kind = sig
 end
 
 module type S = sig
-  include TraceElem.S
+  include TaintTraceElem.S
 
   type spec = {source: t; index: int option}
 

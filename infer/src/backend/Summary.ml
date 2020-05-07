@@ -215,14 +215,6 @@ module OnDisk = struct
     summary
 
 
-  let dummy =
-    let dummy_attributes =
-      ProcAttributes.default (SourceFile.invalid __FILE__) Procname.empty_block
-    in
-    let dummy_proc_desc = Procdesc.from_proc_attributes dummy_attributes in
-    reset dummy_proc_desc
-
-
   let reset_all ~filter () =
     let reset proc_name =
       let filename = specs_filename_of_procname proc_name in

@@ -567,7 +567,7 @@ module JavaSanitizer = struct
       (match kind with All -> "All" | StringConcatenation -> "StringConcatenation")
 end
 
-include Trace.Make (struct
+include TaintTrace.Make (struct
   module Source = JavaSource
   module Sink = JavaSink
   module Sanitizer = JavaSanitizer

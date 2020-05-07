@@ -8,14 +8,14 @@
 open! IStd
 
 module type Kind = sig
-  include TraceElem.Kind
+  include TaintTraceElem.Kind
 
   val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
   (** return Some kind if the given procname/actuals are a sink, None otherwise *)
 end
 
 module type S = sig
-  include TraceElem.S
+  include TaintTraceElem.S
 
   val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t list
   (** return Some sink if the given call site/actuals are a sink, None otherwise *)

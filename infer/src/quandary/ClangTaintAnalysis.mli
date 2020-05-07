@@ -7,4 +7,4 @@
 
 open! IStd
 
-val checker : Callbacks.proc_callback_t
+val checker : QuandarySummary.t InterproceduralAnalysis.t -> QuandarySummary.t option

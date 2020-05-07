@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 module type S = sig
-  include Trace.S
+  include TaintTrace.S
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list
 
@@ -29,7 +29,7 @@ module type S = sig
     -> Errlog.loc_trace_elem list
 end
 
-module MakeSink (TraceElem : TraceElem.S) = struct
+module MakeSink (TraceElem : TaintTraceElem.S) = struct
   include TraceElem
 
   let get _ _ _ _ = []
@@ -39,8 +39,8 @@ module MakeSink (TraceElem : TraceElem.S) = struct
   let with_indexes _ _ = assert false
 end
 
-module Make (TraceElem : TraceElem.S) = struct
-  include Trace.Make (struct
+module Make (TraceElem : TaintTraceElem.S) = struct
+  include TaintTrace.Make (struct
     module Source = Source.Dummy
     module Sanitizer = Sanitizer.Dummy
     module Sink = MakeSink (TraceElem)

@@ -16,7 +16,6 @@ let source_dirs =
     ; "concurrency"
     ; "integration"
     ; "labs"
-    ; "quandary"
     ; "test_determinator"
     ; "topl"
     ; "unit"
@@ -62,6 +61,8 @@ let infer_cflags =
   ; "-open"
   ; "Costlib"
   ; "-open"
+  ; "Quandary"
+  ; "-open"
   ; "Absint"
   ; "-open"
   ; "OpenSource"
@@ -103,7 +104,8 @@ let main_lib_stanza =
          ; "bo"
          ; "pulselib"
          ; "checkers"
-         ; "costlib" ] ))
+         ; "costlib"
+         ; "quandary" ] ))
     (String.concat " " infer_binaries)
 
 

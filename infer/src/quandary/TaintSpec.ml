@@ -18,7 +18,7 @@ type action =
   | Propagate_to_return  (** Propagate taint from all actuals to the return value *)
 
 module type S = sig
-  module Trace : Trace.S
+  module Trace : TaintTrace.S
 
   module AccessTree : module type of AccessTree.Make (Trace) (AccessTree.DefaultConfig)
 

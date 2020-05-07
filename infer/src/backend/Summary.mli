@@ -92,7 +92,4 @@ module OnDisk : sig
   (** Save summary for the procedure into the spec database *)
 
   val reset_all : filter:Filtering.procedures_filter -> unit -> unit
-
-  val dummy : t
-  (** dummy summary for testing *)
 end

@@ -152,8 +152,8 @@ let all_checkers =
   ; { name= "quandary"
     ; active= Config.(is_checker_enabled Quandary)
     ; callbacks=
-        [ (Procedure JavaTaintAnalysis.checker, Language.Java)
-        ; (Procedure ClangTaintAnalysis.checker, Language.Clang) ] }
+        [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Language.Java)
+        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Language.Clang) ] }
   ; { name= "pulse"
     ; active= Config.(is_checker_enabled Pulse || is_checker_enabled Impurity)
     ; callbacks=

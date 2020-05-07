@@ -447,7 +447,7 @@ module CppSanitizer = struct
         F.pp_print_string fmt "All"
 end
 
-include Trace.Make (struct
+include TaintTrace.Make (struct
   module Source = CppSource
   module Sink = CppSink
   module Sanitizer = CppSanitizer

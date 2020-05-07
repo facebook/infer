@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-module MockTrace = Trace.Make (struct
+module MockTrace = TaintTrace.Make (struct
   module MockTraceElem = struct
     include CallSite
 
@@ -154,9 +154,11 @@ let tests =
       , [assign_to_non_source "ret_id"; call_sink "ret_id"; assert_empty] ) ]
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
          (fun summary ->
-           { ProcData.summary
-           ; tenv= Tenv.create ()
-           ; extras= {formal_map= FormalMap.empty; summary= Summary.OnDisk.dummy} } )
+           { analysis_data=
+               CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary (Exe_env.mk ())
+                 summary ~tenv:(Tenv.create ()) ()
+               |> fst
+           ; formal_map= FormalMap.empty } )
          ~initial:(MockTaintAnalysis.Domain.bottom, Bindings.empty)
   in
   "taint_test_suite" >::: test_list

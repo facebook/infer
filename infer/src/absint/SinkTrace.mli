@@ -9,7 +9,7 @@ open! IStd
 
 (** Suffix of a normal trace: just sinks and passthroughs, but no sources *)
 module type S = sig
-  include Trace.S
+  include TaintTrace.S
 
   (** A path from some procedure via the given passthroughs to the given call stack, with
       passthroughs for each callee *)
@@ -33,8 +33,8 @@ module type S = sig
     -> Errlog.loc_trace_elem list
 end
 
-module MakeSink (TraceElem : TraceElem.S) :
-  Sink.S with module Kind = TraceElem.Kind and type t = TraceElem.t
+module MakeSink (TaintTraceElem : TaintTraceElem.S) :
+  Sink.S with module Kind = TaintTraceElem.Kind and type t = TaintTraceElem.t
 
-module Make (TraceElem : TraceElem.S) :
-  S with module Source = Source.Dummy and module Sink = MakeSink(TraceElem)
+module Make (TaintTraceElem : TaintTraceElem.S) :
+  S with module Source = Source.Dummy and module Sink = MakeSink(TaintTraceElem)

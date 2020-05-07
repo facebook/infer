@@ -116,7 +116,7 @@ end
 
 (** Expand a trace element (i.e., a source or sink) into a list of trace elements bottoming out in
     the "original" trace element. The list is always non-empty. *)
-module Expander (TraceElem : TraceElem.S) = struct
+module Expander (TraceElem : TaintTraceElem.S) = struct
   let expand elem0 ~elems_passthroughs_of_pname ~filter_passthroughs =
     let rec expand_ elem (elems_passthroughs_acc, seen_acc) =
       let caller_elem_site = TraceElem.call_site elem in
