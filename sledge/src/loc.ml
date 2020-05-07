@@ -11,7 +11,6 @@ type t = {dir: string; file: string; line: int; col: int}
 [@@deriving compare, equal, hash, sexp]
 
 let none = {dir= ""; file= ""; line= 0; col= 0}
-let is_none loc = compare loc none = 0
 
 let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
   {dir; file; line; col}

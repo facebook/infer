@@ -12,5 +12,4 @@ type t = {dir: string; file: string; line: int; col: int}
 
 val pp : t pp
 val none : t
-val is_none : t -> bool
 val mk : ?dir:string -> ?file:string -> ?col:int -> line:int -> t
