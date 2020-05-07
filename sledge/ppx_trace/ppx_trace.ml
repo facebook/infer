@@ -11,18 +11,13 @@
     "debug" mode or not. To enable "debug" mode, pass
     [--cookie 'ppx_trace_enabled="1"'] (or with [true] instead or [1]).
 
-    named "ppx_trace_enabled" declares a [--debug] command line option, to
-    be passed by the build system in debug but not optimized build modes.
-    Setting the [PPX_TRACE_ENABLED] environment variable to [1] or [true]
-    has the same effect as passing [--debug].
-
     It rewrites [\[%Trace.info f\]] to a call
     [\[Trace.info mod_name fun_name f\]] where [mod_name] and [fun_name] are
     the enclosing module and function names in the parsetree. This is only
     done in debug mode, otherwise [\[%Trace.info f\]] is rewritten to [()].
 
     Similarly, [\[%Trace.call\]] is rewritten to a call to [Trace.call] or
-    [()], and [\[%Trace.retn\]] to a call to [Trace.retn] or [Fn.id].
+    [()], and [\[%Trace.retn\]] to a call to [Trace.retn] or [Fun.id].
 
     For example, this enables writing
 
@@ -34,8 +29,8 @@
       [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
     ]}
 
-    to trace calls to [f] in debug mode while completely compiling out the
-    debug code in non-debug builds.
+    to trace calls to [func] in debug mode while completely compiling out
+    the debug code in non-debug builds.
 
     This mechanism can also be used e.g. to dynamically check assertions
     only in debug mode.

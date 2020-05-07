@@ -22,7 +22,7 @@ type pf = {pf: 'a. 'a printf}
 
 val pp_styled :
   [`Bold | `Cyan | `Magenta] -> ('a, unit) fmt -> Format.formatter -> 'a
-(** If config.colors is set to true, print in the specificed color *)
+(** If config.colors is set to true, print in the specified color *)
 
 val printf : string -> string -> 'a printf
 (** Like [Format.printf], if enabled, otherwise like [Format.iprintf]. *)
