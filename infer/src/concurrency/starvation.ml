@@ -578,7 +578,7 @@ let should_report pdesc =
       false
 
 
-let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
+let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
   let methods =
     Tenv.lookup tenv clazz
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
@@ -587,8 +587,8 @@ let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
     Ondemand.get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
            if should_report other_pdesc then
-             Payload.read ~caller_summary:current_summary ~callee_pname:mthd
-             |> Option.map ~f:(fun payload -> (mthd, payload))
+             analyze_ondemand mthd
+             |> Option.map ~f:(fun (_, payload) -> (mthd, payload))
              |> Option.fold ~init:acc ~f
            else acc )
   in
@@ -656,10 +656,9 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
   else report_map
 
 
-let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair ~analyze_ondemand tenv pdesc (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
-  let pdesc = Summary.get_proc_desc summary in
-  let pname = Summary.get_proc_name summary in
+  let pname = Procdesc.get_proc_name pdesc in
   let event = pair.elem.event in
   let should_report_starvation =
     CriticalPair.is_uithread pair && not (Procname.is_constructor pname)
@@ -714,7 +713,7 @@ let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
                 and retrieve all the summaries of the methods of that class;
                 then, report on the parallel composition of the current pair and any pair in these
                 summaries that can indeed run in parallel *)
-             fold_reportable_summaries (tenv, summary) other_class ~init:report_map
+             fold_reportable_summaries analyze_ondemand tenv other_class ~init:report_map
                ~f:(fun acc (other_pname, {critical_pairs}) ->
                  CriticalPairs.fold
                    (report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock
@@ -724,20 +723,19 @@ let report_on_pair tenv summary (pair : Domain.CriticalPair.t) report_map =
       report_map
 
 
-let reporting {Callbacks.procedures; exe_env} =
+let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
-    let report_on_summary tenv summary report_map (payload : Domain.summary) =
-      Domain.CriticalPairs.fold (report_on_pair tenv summary) payload.critical_pairs report_map
+    let report_on_proc tenv proc_desc report_map (payload : Domain.summary) =
+      Domain.CriticalPairs.fold
+        (report_on_pair ~analyze_ondemand:analyze_file_dependency tenv proc_desc)
+        payload.critical_pairs report_map
     in
     let report_procedure report_map procname =
-      Ondemand.analyze_proc_name_no_caller procname
-      |> Option.value_map ~default:report_map ~f:(fun summary ->
-             let proc_desc = Summary.get_proc_desc summary in
-             let tenv = Exe_env.get_tenv exe_env procname in
-             if should_report proc_desc then
-               Payload.read_toplevel_procedure procname
-               |> Option.fold ~init:report_map ~f:(report_on_summary tenv summary)
+      analyze_file_dependency procname
+      |> Option.value_map ~default:report_map ~f:(fun (proc_desc, summary) ->
+             let tenv = Exe_env.get_tenv file_exe_env procname in
+             if should_report proc_desc then report_on_proc tenv proc_desc report_map summary
              else report_map )
     in
     List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.issue_log_of

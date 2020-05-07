@@ -9,7 +9,7 @@ open! IStd
 
 val analyze_procedure : Callbacks.proc_callback_t
 
-val reporting : Callbacks.file_callback_t
+val reporting : StarvationDomain.summary InterproceduralAnalysis.file_t -> IssueLog.t
 
 module ReportMap : sig
   type t
@@ -22,7 +22,12 @@ module ReportMap : sig
 end
 
 val report_on_pair :
-  Tenv.t -> Summary.t -> StarvationDomain.CriticalPair.t -> ReportMap.t -> ReportMap.t
+     analyze_ondemand:(Procname.t -> (Procdesc.t * StarvationDomain.summary) option)
+  -> Tenv.t
+  -> Procdesc.t
+  -> StarvationDomain.CriticalPair.t
+  -> ReportMap.t
+  -> ReportMap.t
 
 val report_on_parallel_composition :
      should_report_starvation:bool

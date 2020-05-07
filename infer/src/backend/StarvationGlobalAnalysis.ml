@@ -61,7 +61,15 @@ let report exe_env work_set =
     |> Option.fold ~init ~f:(fun acc summary ->
            let pdesc = Summary.get_proc_desc summary in
            let tenv = Exe_env.get_tenv exe_env procname in
-           let acc = Starvation.report_on_pair tenv summary pair acc in
+           let acc =
+             Starvation.report_on_pair
+               ~analyze_ondemand:(fun pname ->
+                 Ondemand.analyze_proc_name ~caller_summary:summary pname
+                 |> Option.bind ~f:(fun summary ->
+                        Option.map summary.Summary.payloads.starvation ~f:(fun starvation ->
+                            (Summary.get_proc_desc summary, starvation) ) ) )
+               tenv pdesc pair acc
+           in
            match pair.elem.event with
            | LockAcquire lock ->
                let should_report_starvation =

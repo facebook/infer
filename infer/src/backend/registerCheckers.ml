@@ -97,10 +97,13 @@ let all_checkers =
   ; { name= "Starvation analysis"
     ; active= Config.is_checker_enabled Starvation
     ; callbacks=
-        [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; (File {callback= Starvation.reporting; issue_dir= StarvationIssues}, Language.Java)
-        ; (Procedure Starvation.analyze_procedure, Language.Clang)
-        ; (File {callback= Starvation.reporting; issue_dir= StarvationIssues}, Language.Clang) ] }
+        (let starvation_file_reporting =
+           file StarvationIssues Payloads.Fields.starvation Starvation.reporting
+         in
+         [ (Procedure Starvation.analyze_procedure, Language.Java)
+         ; (starvation_file_reporting, Language.Java)
+         ; (Procedure Starvation.analyze_procedure, Language.Clang)
+         ; (starvation_file_reporting, Language.Clang) ] ) }
   ; { name= "loop hoisting"
     ; active= Config.is_checker_enabled LoopHoisting
     ; callbacks=
