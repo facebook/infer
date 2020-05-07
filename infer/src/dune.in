@@ -12,7 +12,6 @@ let ( ^/ ) = Filename.concat
 let source_dirs =
   (if clang then ["al"; "clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
   @ [ (if java then "java" else "java_stubs")
-    ; "backend"
     ; "integration"
     ; "test_determinator"
     ; "unit"
@@ -80,7 +79,9 @@ let infer_cflags =
   ; "-open"
   ; "InferBase"
   ; "-open"
-  ; "InferCStubs" ]
+  ; "InferCStubs"
+  ; "-open"
+  ; "Backend" ]
   |> String.concat " "
 
 
@@ -111,7 +112,8 @@ let main_lib_stanza =
          ; "quandary"
          ; "TOPL"
          ; "concurrency"
-         ; "labs" ] ))
+         ; "labs"
+         ; "backend" ] ))
     (String.concat " " infer_binaries)
 
 

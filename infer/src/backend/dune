@@ -1,0 +1,18 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name backend)
+ (public_name infer.backend)
+ (flags
+  (:standard
+     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
+     -open InferBase -open InferIR -open Absint -open Biabduction -open Bo -open Nullsafe
+     -open Pulselib  -open Checkers -open Costlib -open Quandary -open TOPL
+     -open Concurrency -open Labs))
+ (libraries core InferStdlib InferGenerated InferBase InferIR absint biabduction nullsafe bo
+            checkers costlib quandary TOPL concurrency labs)
+ (preprocess (pps ppx_compare ppx_fields_conv))
+)
