@@ -80,23 +80,27 @@ let test_anonymous =
   |> assert_some
   |> assert_equal_to ~expected_package:(Some "some.package")
        ~expected_classname:"SomeClass$NestedClass$AgainNestedClass" ;
+  (* Some name inside of anonymous - this is still anonymous  *)
+  get_user_defined_class_if_anonymous_inner
+    (make ~package:(Some "some.package") ~classname:"SomeClass$1$SomeName")
+  |> assert_some
+  |> assert_equal_to ~expected_package:(Some "some.package") ~expected_classname:"SomeClass" ;
+  (* Some names inside anonymous classes - should still return the innermost user defined *)
+  get_user_defined_class_if_anonymous_inner
+    (make ~package:(Some "some.package") ~classname:"A$B$1$C$2")
+  |> assert_some
+  |> assert_equal_to ~expected_package:(Some "some.package") ~expected_classname:"A$B" ;
+  (* Pathological case - this is anonymous class on the outer level. Should return None because it is not inner. *)
+  get_user_defined_class_if_anonymous_inner (make ~package:(Some "some.package") ~classname:"23")
+  |> assert_none ;
+  (* Pathological case - this is anonymous class on the outer level. Should return None because it is not inner. *)
+  get_user_defined_class_if_anonymous_inner (make ~package:(Some "some.package") ~classname:"1$A")
+  |> assert_none ;
   (* If it is a lambda class, we expect this to be detected *)
   get_user_defined_class_if_anonymous_inner
     (make ~package:(Some "some.package") ~classname:"SomeClass$Lambda$_4_1")
   |> assert_some
   |> assert_equal_to ~expected_package:(Some "some.package") ~expected_classname:"SomeClass" ;
-  (* Lambda might be inside anonymous (or several ones in general case) *)
-  get_user_defined_class_if_anonymous_inner
-    (make ~package:(Some "some.package") ~classname:"SomeClass$1$7$Lambda$_4_1")
-  |> assert_some
-  |> assert_equal_to ~expected_package:(Some "some.package") ~expected_classname:"SomeClass" ;
-  (* The most general case: nested class, lambda, and anonymous mixed *)
-  get_user_defined_class_if_anonymous_inner
-    (make ~package:(Some "some.package")
-       ~classname:"SomeClass$NestedClass$7$1$Lambda$_4_1$2$Lambda$_7_18$19$16")
-  |> assert_some
-  |> assert_equal_to ~expected_package:(Some "some.package")
-       ~expected_classname:"SomeClass$NestedClass" ;
   (* If package was empty, everything should still work *)
   get_user_defined_class_if_anonymous_inner
     (make ~package:None ~classname:"SomeClass$NestedClass$AgainNestedClass$17$23$1")

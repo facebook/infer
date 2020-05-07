@@ -67,31 +67,6 @@ let get_outer_class_name {package; classname} =
   String.rsplit2 classname ~on:'$' |> Option.map ~f:(fun (outer, _) -> {package; classname= outer})
 
 
-(* Strips $<int> suffixes from the class name, and return how many were stripped *)
-let strip_anonymous_suffixes_if_present classname =
-  let rec strip_recursively classname nesting_level =
-    match String.rsplit2 classname ~on:'$' with
-    | Some (outer, suffix) when is_int suffix ->
-        (* Suffix is an integer - that was an anonymous class.
-           But it could be nested inside another anonymous class as well *)
-        strip_recursively outer (nesting_level + 1)
-    | _ ->
-        (* Suffix is not an integer or not present - not an anonymous class *)
-        (classname, nesting_level)
-  in
-  strip_recursively classname 0
-
-
-(* Strips everything after $Lambda$ (if it is a lambda-class),
-   and returns the result string together with if it was stripped *)
-let strip_lambda_if_present classname =
-  match String.substr_index classname ~pattern:"$Lambda$" with
-  | Some index ->
-      (String.prefix classname index, true)
-  | None ->
-      (classname, false)
-
-
 (*
  Anonymous classes have two forms:
  - classic anonymous classes: suffixes in form of $<int>.
@@ -101,10 +76,30 @@ let strip_lambda_if_present classname =
  In general case anonymous class name looks something like
  Class$NestedClass$1$17$5$Lambda$_1_2, and we need to return Class$NestedClass *)
 let get_user_defined_class_if_anonymous_inner {package; classname} =
-  let without_lambda, was_lambda_stripped = strip_lambda_if_present classname in
-  let outer_class_name, nesting_level = strip_anonymous_suffixes_if_present without_lambda in
-  let was_stripped = was_lambda_stripped || nesting_level > 0 in
-  if was_stripped then Some {package; classname= outer_class_name} else None
+  let is_anonymous_name = function
+    | "Lambda" ->
+        true
+    | name when is_int name ->
+        true
+    | _ ->
+        false
+  in
+  let pieces = String.split classname ~on:'$' in
+  let first_anonymous_name = List.findi pieces ~f:(fun _index name -> is_anonymous_name name) in
+  Option.bind first_anonymous_name ~f:(fun (index, _name) ->
+      (* Everything before this index did not have anonymous prefixes. Deem it user defined. *)
+      match List.take pieces index with
+      | [] ->
+          (* This is a weird situation - our class _starts_ with an anonymous name.
+             This should not happen normally, but we can not rule this out completely since there is no physical limitations on
+             the bytecode names.
+             In this case, we return [None] because formally this is not an anonymous _inner_ class, but anonymous outermost class instead.
+             TODO: redesign this API so this case is modelled directly
+          *)
+          None
+      | list ->
+          (* Assemble back all pieces together *)
+          Some {package; classname= String.concat ~sep:"$" list} )
 
 
 let is_anonymous_inner_class_name t = get_user_defined_class_if_anonymous_inner t |> is_some
