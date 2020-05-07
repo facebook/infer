@@ -450,12 +450,29 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
       in
+      let is_blacklist =
+        Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
+            Str.string_match regex (Procname.to_string callee_pname) 0 )
+      in
       (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      List.fold_result exec_states ~init:[] ~f:(fun posts callee_exec_state ->
+      IContainer.fold_result_until exec_states ~fold:List.fold ~init:[]
+        ~f:(fun posts callee_exec_state ->
           (* apply all pre/post specs *)
-          apply_callee callee_pname call_loc callee_exec_state ~formals ~actuals ~ret astate
-          >>| function
-          | None -> (* couldn't apply pre/post pair *) posts | Some post -> post :: posts )
+          match
+            apply_callee callee_pname call_loc callee_exec_state ~formals ~actuals ~ret astate
+          with
+          | Ok None ->
+              (* couldn't apply pre/post pair *)
+              Continue (Ok posts)
+          | Ok (Some post) when is_blacklist ->
+              L.d_printfln "Keep only one disjunct because %a is in blacklist" Procname.pp
+                callee_pname ;
+              Stop [post]
+          | Ok (Some post) ->
+              Continue (Ok (post :: posts))
+          | Error _ as x ->
+              Continue x )
+        ~finish:(fun x -> x)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;

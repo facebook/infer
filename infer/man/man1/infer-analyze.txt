@@ -232,6 +232,11 @@ OPTIONS
            Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
            --no-pulse)
 
+       --pulse-cut-to-one-path-procedures-pattern string
+           Regex of methods for which pulse will only explore one path. Can
+           be used on pathologically large procedures to prevent too-big
+           states from being produced.
+
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse
 

@@ -445,6 +445,8 @@ val project_root : string
 
 val pudge : bool
 
+val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
+
 val pulse_recency_limit : int
 
 val pulse_intraprocedural_only : bool

@@ -53,3 +53,11 @@ val fold_of_pervasives_map_fold :
 
 val iter_result :
   fold:('t, 'a, unit) Container.fold -> 't -> f:('a -> (unit, 'err) result) -> (unit, 'err) result
+
+val fold_result_until :
+     fold:('t, 'a, 'accum) Container.fold
+  -> init:'accum
+  -> f:('accum -> 'a -> (('accum, 'err) Result.t, 'final) Continue_or_stop.t)
+  -> finish:('accum -> 'final)
+  -> 't
+  -> ('final, 'err) Result.t

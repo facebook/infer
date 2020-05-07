@@ -79,3 +79,14 @@ let fold_of_pervasives_map_fold ~fold collection ~init ~f =
 
 let iter_result ~fold collection ~f =
   Container.fold_result ~fold ~init:() ~f:(fun () item -> f item) collection
+
+
+let fold_result_until ~fold ~init ~f ~finish collection =
+  with_return (fun {return} ->
+      Result.map ~f:finish
+        (Container.fold_result ~fold collection ~init ~f:(fun acc item ->
+             match (f acc item : _ Continue_or_stop.t) with
+             | Continue x ->
+                 x
+             | Stop x ->
+                 return (Result.Ok x) )) )

@@ -857,6 +857,11 @@ OPTIONS
            Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
            --no-pulse)           See also infer-analyze(1).
 
+       --pulse-cut-to-one-path-procedures-pattern string
+           Regex of methods for which pulse will only explore one path. Can
+           be used on pathologically large procedures to prevent too-big
+           states from being produced.           See also infer-analyze(1).
+
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).
@@ -1598,6 +1603,9 @@ INTERNAL OPTIONS
            Activates: Experimental flag to enable sledge arithmetic on path
            conditions. This is intended for Pulse development only and will
            be removed once the feature is stable. (Conversely: --no-pudge)
+
+       --pulse-cut-to-one-path-procedures-pattern-reset
+           Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for

@@ -1760,6 +1760,13 @@ and pudge =
      development only and will be removed once the feature is stable."
 
 
+and pulse_cut_to_one_path_procedures_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-cut-to-one-path-procedures-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
+     large procedures to prevent too-big states from being produced."
+
+
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
     "Maximum number of array elements and structure fields to keep track of for a given array \
@@ -2855,6 +2862,10 @@ and progress_bar =
 and project_root = !project_root
 
 and pudge = !pudge
+
+and pulse_cut_to_one_path_procedures_pattern =
+  Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
+
 
 and pulse_recency_limit = !pulse_recency_limit
 
