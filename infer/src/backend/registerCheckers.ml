@@ -144,7 +144,7 @@ let all_checkers =
     ; callbacks=
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
-            Procedure ResourceLeaks.checker
+            interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , Language.Java ) ] }
   ; { name= "RacerD"
     ; active= Config.is_checker_enabled RacerD

@@ -14,7 +14,6 @@ let source_dirs =
   @ [ (if java then "java" else "java_stubs")
     ; "backend"
     ; "integration"
-    ; "labs"
     ; "test_determinator"
     ; "unit"
     ; "unit" ^/ "nullsafe" ]
@@ -65,6 +64,8 @@ let infer_cflags =
   ; "-open"
   ; "Concurrency"
   ; "-open"
+  ; "Labs"
+  ; "-open"
   ; "Absint"
   ; "-open"
   ; "OpenSource"
@@ -109,7 +110,8 @@ let main_lib_stanza =
          ; "costlib"
          ; "quandary"
          ; "TOPL"
-         ; "concurrency" ] ))
+         ; "concurrency"
+         ; "labs" ] ))
     (String.concat " " infer_binaries)
 
 

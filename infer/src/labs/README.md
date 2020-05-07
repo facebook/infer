@@ -84,7 +84,7 @@ Finally, look again at the HTML debug output of infer on [Leaks.java](https://gi
 ```OCaml
   let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
   let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
-  Reporting.log_error summary ~loc:last_loc IssueType.resource_leak message
+  Reporting.log_error proc_desc err_log ~loc:last_loc IssueType.resource_leak message
 ```
 
 (d) Think about the concretization of the resource count. What does a resource count of zero mean? Is there a concrete state in the concretization of "Resource count zero" that leaks a resource? Write a simple test method `FN_leakBad` in [Leaks.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/Leaks.java) that will produce this concrete state (that is, a false negative test where the program leaks a resource, but the analyzer doesn't catch it).
@@ -116,11 +116,11 @@ include AbstractDomain.TopLifter (FiniteBounds)
 
 ## (4) Interprocedural analysis
 
-Augment the summary type with state to indicate whether the current procedure returns a resource. Allowing a resource to escape to the caller should not be considered a leak. Use this information in callers too by reading from the callee's summary:
+Augment the summary type with state to indicate whether the current procedure returns a resource. Allowing a resource to escape to the caller should not be considered a leak. Use this information in callers too by reading from the callee's summary. Use the `analyze_dependency` field of the `InterproceduralAnalysis.t` record passed to the analysis like so:
 
 ```OCaml
-  match Payload.read pdesc callee_procname with
-  | Some summary ->
+  match analyze_dependency callee_procname with
+  | Some (callee_proc_desc, callee_summary) ->
       (* interprocedural analysis produced a summary: use it *)
       ()
   | None ->

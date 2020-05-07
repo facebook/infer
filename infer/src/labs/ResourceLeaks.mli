@@ -7,4 +7,4 @@
 
 open! IStd
 
-val checker : Callbacks.proc_callback_t
+val checker : ResourceLeakDomain.t InterproceduralAnalysis.t -> ResourceLeakDomain.t option

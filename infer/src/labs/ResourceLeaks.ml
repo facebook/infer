@@ -9,18 +9,11 @@ open! IStd
 module F = Format
 module L = Logging
 
-(* Boilerplate to write/read our summaries alongside the summaries of other analyzers *)
-module Payload = SummaryPayload.Make (struct
-  type t = ResourceLeakDomain.t
-
-  let field = Payloads.Fields.lab_resource_leaks
-end)
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ResourceLeakDomain
 
-  type analysis_data = unit ProcData.t
+  type analysis_data = ResourceLeakDomain.t InterproceduralAnalysis.t
 
   let is_closeable_typename tenv typename =
     let is_closable_interface typename _ =
@@ -52,7 +45,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.summary= _; tenv= _} _
+  let exec_instr (astate : ResourceLeakDomain.t)
+      {InterproceduralAnalysis.proc_desc= _; tenv= _; analyze_dependency= _; _} _
       (instr : HilInstr.t) =
     match instr with
     | Call (_return_opt, Direct _callee_procname, _actuals, _, _loc) ->
@@ -82,19 +76,10 @@ module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 
 (** Report an error when we have acquired more resources than we have released *)
-let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
+let report_if_leak {InterproceduralAnalysis.proc_desc= _; err_log= _; _} _post = ()
 
-(* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker {Callbacks.summary; exe_env} : Summary.t =
-  let proc_name = Summary.get_proc_name summary in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
-  let proc_data = {ProcData.summary; tenv; extras= ()} in
-  match
-    Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial
-      (Summary.get_proc_desc summary)
-  with
-  | Some post ->
-      report_if_leak post summary proc_data ;
-      Payload.update_summary post summary
-  | None ->
-      L.(die InternalError) "Analyzer failed to compute post for %a" Procname.pp proc_name
+(** Main function into the checker--registered in RegisterCheckers *)
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  let result = Analyzer.compute_post analysis_data ~initial:ResourceLeakDomain.initial proc_desc in
+  Option.iter result ~f:(fun post -> report_if_leak analysis_data post) ;
+  result
