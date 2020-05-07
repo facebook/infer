@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
 module L = Logging
@@ -12,17 +13,14 @@ module Domain = StarvationDomain
 
 let pname_pp = MF.wrap_monospaced Procname.pp
 
-module Payload = SummaryPayload.Make (struct
-  type t = Domain.summary
-
-  let field = Payloads.Fields.starvation
-end)
+type analysis_data =
+  {interproc: StarvationDomain.summary InterproceduralAnalysis.t; formals: FormalMap.t}
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = FormalMap.t ProcData.t
+  type nonrec analysis_data = analysis_data
 
   let log_parse_error error pname actuals =
     L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Procname.pp pname
@@ -115,7 +113,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            {astate with attributes} )
 
 
-  let do_call ProcData.{tenv; summary; extras} lhs callee actuals loc (astate : Domain.t) =
+  let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
+      (astate : Domain.t) =
     let open Domain in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
@@ -146,7 +145,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (make_ret_attr (Looper ForUIThread))
       else None
     in
-    let get_callee_summary () = Payload.read ~caller_summary:summary ~callee_pname:callee in
+    let get_callee_summary () = analyze_dependency callee |> Option.map ~f:snd in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
         match actuals_acc_exps with
@@ -203,7 +202,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         ; get_mainLooper_summary
         ; get_callee_summary ]
       |> Option.map ~f:(fun summary ->
-             let subst = Lock.make_subst extras actuals in
+             let subst = Lock.make_subst formals actuals in
              let callsite = CallSite.make callee loc in
              Domain.integrate_summary ~tenv ~lhs ~subst callsite astate summary )
     in
@@ -212,12 +211,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> Option.value ~default:astate
 
 
-  let exec_instr (astate : Domain.t) ({ProcData.summary; tenv; extras} as procdata) _
+  let exec_instr (astate : Domain.t) ({interproc= {proc_desc; tenv}; formals} as analysis_data) _
       (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
-    let get_lock_path = Domain.Lock.make extras in
-    let procname = Summary.get_proc_name summary in
+    let get_lock_path = Domain.Lock.make formals in
+    let procname = Procdesc.get_proc_name proc_desc in
     let is_java = Procname.is_java procname in
     let do_lock locks loc astate =
       List.filter_map ~f:get_lock_path locks |> Domain.acquire ~tenv astate ~procname ~loc
@@ -264,7 +263,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
-          Domain.wait_on_monitor ~loc extras actuals astate
+          Domain.wait_on_monitor ~loc formals actuals astate
       | NoEffect when is_java && is_future_get tenv callee actuals ->
           Domain.future_get ~callee ~loc actuals astate
       | NoEffect when is_java -> (
@@ -274,11 +273,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Some sev ->
               Domain.blocking_call ~callee sev ~loc astate
           | None ->
-              do_call procdata ret_exp callee actuals loc astate )
+              do_call analysis_data ret_exp callee actuals loc astate )
       | NoEffect ->
           (* in C++/Obj C we only care about deadlocks, not starvation errors *)
           let ret_exp = HilExp.AccessExpression.base ret_base in
-          do_call procdata ret_exp callee actuals loc astate )
+          do_call analysis_data ret_exp callee actuals loc astate )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
@@ -291,15 +290,15 @@ let set_class_init_attributes procname (astate : Domain.t) =
   let open Domain in
   let attributes =
     ConcurrencyUtils.get_java_class_initializer_summary_of procname
-    |> Option.bind ~f:Payload.of_summary
     |> Option.value_map ~default:AttributeDomain.top ~f:(fun summary -> summary.attributes)
   in
   ({astate with attributes} : t)
 
 
 (** Compute the attributes of instance variables that all constructors agree on. *)
-let set_constructor_attributes tenv summary (astate : Domain.t) =
-  let procname = Summary.get_proc_name summary in
+let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc)
+    (astate : Domain.t) =
+  let procname = Procdesc.get_proc_name proc_desc in
   let open Domain in
   (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
   let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
@@ -317,8 +316,7 @@ let set_constructor_attributes tenv summary (astate : Domain.t) =
     AttributeDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
   in
   let attributes =
-    ConcurrencyUtils.get_java_constructor_summaries_of tenv summary
-    |> List.filter_map ~f:Payload.of_summary
+    ConcurrencyUtils.get_java_constructor_summaries_of interproc
     (* make instances of [this] local to the current procedure and select only the attributes *)
     |> List.map ~f:(fun (summary : Domain.summary) -> localize_attrs summary.attributes)
     (* join all the attribute maps together *)
@@ -328,8 +326,8 @@ let set_constructor_attributes tenv summary (astate : Domain.t) =
   {astate with attributes}
 
 
-let set_initial_attributes tenv summary astate =
-  let procname = Summary.get_proc_name summary in
+let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) astate =
+  let procname = Procdesc.get_proc_name proc_desc in
   if not Config.starvation_whole_program then astate
   else
     match procname with
@@ -340,23 +338,21 @@ let set_initial_attributes tenv summary astate =
       when Procname.Java.(is_constructor java_pname || is_static java_pname) ->
         (* analyzing a constructor or static method, so we need the attributes established by the
            class initializer *)
-        set_class_init_attributes summary astate
+        set_class_init_attributes interproc astate
     | Procname.Java _ ->
         (* we are analyzing an instance method, so we need constructor-established attributes
            which will include those by the class initializer *)
-        set_constructor_attributes tenv summary astate
+        set_constructor_attributes interproc astate
     | _ ->
         astate
 
 
-let analyze_procedure {Callbacks.exe_env; summary} =
-  let proc_desc = Summary.get_proc_desc summary in
+let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let procname = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env procname in
-  if StarvationModels.should_skip_analysis tenv procname [] then summary
+  if StarvationModels.should_skip_analysis tenv procname [] then None
   else
     let formals = FormalMap.make proc_desc in
-    let proc_data = {ProcData.summary; tenv; extras= formals} in
+    let proc_data = {interproc; formals} in
     let loc = Procdesc.get_loc proc_desc in
     let set_lock_state_for_synchronized_proc astate =
       if Procdesc.is_java_synchronized proc_desc then
@@ -381,13 +377,12 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let initial =
       Domain.bottom
       (* set the attributes of instance variables set up by all constructors or the class initializer *)
-      |> set_initial_attributes tenv summary
+      |> set_initial_attributes interproc
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
     Analyzer.compute_post proc_data ~initial proc_desc
     |> Option.map ~f:filter_blocks
     |> Option.map ~f:(Domain.summary_of_astate proc_desc)
-    |> Option.fold ~init:summary ~f:(fun acc payload -> Payload.update_summary payload acc)
 
 
 (** per-file report map, which takes care of deduplication *)

@@ -11,17 +11,14 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-module Payload = SummaryPayload.Make (struct
-  type t = RacerDDomain.summary
-
-  let field = Payloads.Fields.racerd
-end)
+type analysis_data =
+  {interproc: RacerDDomain.summary InterproceduralAnalysis.t; formals: FormalMap.t}
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RacerDDomain
 
-  type analysis_data = FormalMap.t ProcData.t
+  type nonrec analysis_data = analysis_data
 
   let rec get_access_exp = function
     | HilExp.AccessExpression access_expr ->
@@ -63,10 +60,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses base acc accesses )
 
 
-  let make_container_access proc_data ret_base callee_pname ~is_write receiver_ap callee_loc
-      (astate : Domain.t) =
+  let make_container_access {interproc= {tenv}; formals} ret_base callee_pname ~is_write receiver_ap
+      callee_loc (astate : Domain.t) =
     let open Domain in
-    let ProcData.{extras= formals; tenv} = proc_data in
     if
       AttributeMapDomain.is_synchronized astate.attribute_map receiver_ap
       || RacerDModels.is_synchronized_container callee_pname receiver_ap tenv
@@ -191,25 +187,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate with ownership}
 
 
-  let do_container_access ~is_write ret_base callee_pname actuals loc proc_data astate =
+  let do_container_access ~is_write ret_base callee_pname actuals loc analysis_data astate =
     match get_first_actual actuals with
     | Some receiver_expr ->
-        make_container_access proc_data ret_base callee_pname ~is_write receiver_expr loc astate
+        make_container_access analysis_data ret_base callee_pname ~is_write receiver_expr loc astate
     | None ->
         L.internal_error "Call to %a is marked as a container access, but has no receiver"
           Procname.pp callee_pname ;
         astate
 
 
-  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; summary; extras}
-      (astate : Domain.t) =
+  let do_proc_call ret_base callee_pname actuals call_flags loc
+      {interproc= {tenv; analyze_dependency}; formals} (astate : Domain.t) =
     let open Domain in
     let open RacerDModels in
     let open ConcurrencyModels in
     let ret_access_exp = AccessExpression.base ret_base in
     let astate =
       if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
-        Domain.add_unannotated_call_access extras callee_pname actuals loc astate
+        Domain.add_unannotated_call_access formals callee_pname actuals loc astate
       else astate
     in
     let astate =
@@ -258,11 +254,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             astate
         | NoEffect -> (
             let rebased_summary_opt =
-              Payload.read ~caller_summary:summary ~callee_pname
-              |> Option.map ~f:(fun summary ->
+              analyze_dependency callee_pname
+              |> Option.map ~f:(fun (callee_proc_desc, summary) ->
                      let rebased_accesses =
-                       Ondemand.get_proc_desc callee_pname
-                       |> Option.fold ~init:summary.accesses ~f:(expand_actuals extras actuals)
+                       expand_actuals formals actuals summary.accesses callee_proc_desc
                      in
                      {summary with accesses= rebased_accesses} )
             in
@@ -272,7 +267,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
                 in
                 let accesses =
-                  add_callee_accesses extras astate accesses locks threads actuals callee_pname loc
+                  add_callee_accesses formals astate accesses locks threads actuals callee_pname loc
                 in
                 let ownership =
                   OwnershipDomain.propagate_return ret_access_exp return_ownership actuals
@@ -306,11 +301,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate_callee with ownership; attribute_map}
 
 
-  let do_assignment lhs_access_exp rhs_exp loc {ProcData.tenv; extras} (astate : Domain.t) =
+  let do_assignment lhs_access_exp rhs_exp loc {interproc= {tenv}; formals} (astate : Domain.t) =
     let open Domain in
     let rhs_accesses =
-      add_access extras loc ~is_write_access:false astate.locks astate.threads astate.ownership tenv
-        astate.accesses rhs_exp
+      add_access formals loc ~is_write_access:false astate.locks astate.threads astate.ownership
+        tenv astate.accesses rhs_exp
     in
     let rhs_access_exprs = HilExp.get_access_exprs rhs_exp in
     let is_functional =
@@ -332,7 +327,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            report spurious read/write races *)
         rhs_accesses
       else
-        add_access extras loc ~is_write_access:true astate.locks astate.threads astate.ownership
+        add_access formals loc ~is_write_access:true astate.locks astate.threads astate.ownership
           tenv rhs_accesses (HilExp.AccessExpression lhs_access_exp)
     in
     let ownership = OwnershipDomain.propagate_assignment lhs_access_exp rhs_exp astate.ownership in
@@ -378,25 +373,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate' with accesses}
 
 
-  let exec_instr astate ({ProcData.summary; extras; tenv} as proc_data) _ instr =
+  let exec_instr astate ({interproc= {proc_desc; tenv}; formals} as analysis_data) _ instr =
     match (instr : HilInstr.t) with
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
-        let astate = add_reads extras actuals loc astate tenv in
+        let astate = add_reads formals actuals loc astate tenv in
         if RacerDModels.acquires_ownership callee_pname tenv then
           do_call_acquiring_ownership ret_base astate
         else if RacerDModels.is_container_write tenv callee_pname then
-          do_container_access ~is_write:true ret_base callee_pname actuals loc proc_data astate
+          do_container_access ~is_write:true ret_base callee_pname actuals loc analysis_data astate
         else if RacerDModels.is_container_read tenv callee_pname then
-          do_container_access ~is_write:false ret_base callee_pname actuals loc proc_data astate
-        else do_proc_call ret_base callee_pname actuals call_flags loc proc_data astate
+          do_container_access ~is_write:false ret_base callee_pname actuals loc analysis_data astate
+        else do_proc_call ret_base callee_pname actuals call_flags loc analysis_data astate
     | Call (_, Indirect _, _, _, _) ->
-        if Procname.is_java (Summary.get_proc_name summary) then
+        if Procname.is_java (Procdesc.get_proc_name proc_desc) then
           L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
         else astate
     | Assign (lhs_access_expr, rhs_exp, loc) ->
-        do_assignment lhs_access_expr rhs_exp loc proc_data astate
+        do_assignment lhs_access_expr rhs_exp loc analysis_data astate
     | Assume (assume_exp, _, _, loc) ->
-        do_assume extras assume_exp loc tenv astate
+        do_assume formals assume_exp loc tenv astate
     | Metadata _ ->
         astate
 
@@ -407,20 +402,20 @@ end
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
 (** Compute the attributes (of static variables) set up by the class initializer. *)
-let set_class_init_attributes summary (astate : RacerDDomain.t) =
+let set_class_init_attributes interproc (astate : RacerDDomain.t) =
   let open RacerDDomain in
   let attribute_map =
-    ConcurrencyUtils.get_java_class_initializer_summary_of summary
-    |> Option.bind ~f:Payload.of_summary
+    ConcurrencyUtils.get_java_class_initializer_summary_of interproc
     |> Option.value_map ~default:AttributeMapDomain.top ~f:(fun summary -> summary.attributes)
   in
   ({astate with attribute_map} : t)
 
 
 (** Compute the attributes of instance variables that all constructors agree on. *)
-let set_constructor_attributes tenv summary (astate : RacerDDomain.t) =
+let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc)
+    (astate : RacerDDomain.t) =
   let open RacerDDomain in
-  let procname = Summary.get_proc_name summary in
+  let procname = Procdesc.get_proc_name proc_desc in
   (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
   let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
   let make_local exp =
@@ -437,8 +432,7 @@ let set_constructor_attributes tenv summary (astate : RacerDDomain.t) =
     AttributeMapDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
   in
   let attribute_map =
-    ConcurrencyUtils.get_java_constructor_summaries_of tenv summary
-    |> List.filter_map ~f:Payload.of_summary
+    ConcurrencyUtils.get_java_constructor_summaries_of interproc
     (* make instances of [this] local to the current procedure and select only the attributes *)
     |> List.map ~f:(fun (summary : summary) -> localize_attrs summary.attributes)
     (* join all the attribute maps together *)
@@ -448,8 +442,8 @@ let set_constructor_attributes tenv summary (astate : RacerDDomain.t) =
   {astate with attribute_map}
 
 
-let set_initial_attributes tenv summary astate =
-  let procname = Summary.get_proc_name summary in
+let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) astate =
+  let procname = Procdesc.get_proc_name proc_desc in
   match procname with
   | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
       (* we are analyzing the class initializer, don't go through on-demand again *)
@@ -458,20 +452,18 @@ let set_initial_attributes tenv summary astate =
     ->
       (* analyzing a constructor or static method, so we need the attributes established by the
          class initializer *)
-      set_class_init_attributes summary astate
+      set_class_init_attributes interproc astate
   | Procname.Java _ ->
       (* we are analyzing an instance method, so we need constructor-established attributes
          which will include those by the class initializer *)
-      set_constructor_attributes tenv summary astate
+      set_constructor_attributes interproc astate
   | _ ->
       astate
 
 
-let analyze_procedure {Callbacks.exe_env; summary} =
+let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let open RacerDDomain in
-  let proc_desc = Summary.get_proc_desc summary in
-  let proc_name = Summary.get_proc_name summary in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let open ConcurrencyModels in
   let add_owned_formal acc base = OwnershipDomain.add base OwnershipAbstractValue.owned acc in
   let add_conditionally_owned_formal =
@@ -521,13 +513,12 @@ let analyze_procedure {Callbacks.exe_env; summary} =
                add_owned_formal acc base
              else add_conditionally_owned_formal acc base index )
     in
-    let initial = set_initial_attributes tenv summary {bottom with ownership; threads; locks} in
-    let formal_map = FormalMap.make proc_desc in
-    let proc_data = {ProcData.summary; tenv; extras= formal_map} in
-    Analyzer.compute_post proc_data ~initial proc_desc
-    |> Option.map ~f:(astate_to_summary proc_desc formal_map)
-    |> Option.value_map ~default:summary ~f:(fun post -> Payload.update_summary post summary)
-  else Payload.update_summary empty_summary summary
+    let initial = set_initial_attributes interproc {bottom with ownership; threads; locks} in
+    let formals = FormalMap.make proc_desc in
+    let analysis_data = {interproc; formals} in
+    Analyzer.compute_post analysis_data ~initial proc_desc
+    |> Option.map ~f:(astate_to_summary proc_desc formals)
+  else Some empty_summary
 
 
 type conflict = RacerDDomain.AccessSnapshot.t
@@ -1074,18 +1065,16 @@ let make_results_table exe_env summaries =
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
       accesses acc
   in
-  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (summary : Summary.t) ->
-      let procname = Summary.get_proc_name summary in
+  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (proc_desc, summary) ->
+      let procname = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env procname in
-      Payloads.racerd summary.payloads |> Option.fold ~init:acc ~f:(aggregate_post tenv procname) )
+      aggregate_post tenv procname acc summary )
 
 
 let class_has_concurrent_method class_summaries =
   let open RacerDDomain in
-  let method_has_concurrent_context (summary : Summary.t) =
-    Payloads.racerd summary.payloads
-    |> Option.exists ~f:(fun (payload : summary) ->
-           match (payload.threads : ThreadsDomain.t) with NoThread -> false | _ -> true )
+  let method_has_concurrent_context (_, summary) =
+    match (summary.threads : ThreadsDomain.t) with NoThread -> false | _ -> true
   in
   List.exists class_summaries ~f:method_has_concurrent_context
 
@@ -1102,32 +1091,33 @@ let should_report_on_class (classname : Typ.Name.t) class_summaries =
 
 let filter_reportable_classes class_map = Typ.Name.Map.filter should_report_on_class class_map
 
-(* aggregate all of the procedures in the file env by their declaring
-   class. this lets us analyze each class individually *)
-let aggregate_by_class exe_env procedures =
+(** aggregate all of the procedures in the file env by their declaring class. this lets us analyze
+    each class individually *)
+let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_dependency} =
   List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
       Procname.get_class_type_name procname
       |> Option.bind ~f:(fun classname ->
-             Ondemand.analyze_proc_name_no_caller procname
-             |> Option.filter ~f:(fun summary ->
-                    let pdesc = Summary.get_proc_desc summary in
-                    let tenv = Exe_env.get_tenv exe_env procname in
+             analyze_file_dependency procname
+             |> Option.filter ~f:(fun (pdesc, _) ->
+                    let tenv = Exe_env.get_tenv file_exe_env procname in
                     should_report_on_proc tenv pdesc )
-             |> Option.map ~f:(fun summary ->
+             |> Option.map ~f:(fun summary_proc_desc ->
                     Typ.Name.Map.update classname
                       (function
-                        | None -> Some [summary] | Some summaries -> Some (summary :: summaries) )
+                        | None ->
+                            Some [summary_proc_desc]
+                        | Some summaries ->
+                            Some (summary_proc_desc :: summaries) )
                       acc ) )
       |> Option.value ~default:acc )
   |> filter_reportable_classes
 
 
-(* Gathers results by analyzing all the methods in a file, then
-   post-processes the results to check an (approximation of) thread
-   safety *)
-let file_analysis ({procedures; exe_env} : Callbacks.file_callback_args) =
-  let class_map = aggregate_by_class exe_env procedures in
+(** Gathers results by analyzing all the methods in a file, then post-processes the results to check
+    an (approximation of) thread safety *)
+let file_analysis ({InterproceduralAnalysis.file_exe_env} as file_t) =
+  let class_map = aggregate_by_class file_t in
   Typ.Name.Map.fold
     (fun classname methods issue_log ->
-      make_results_table exe_env methods |> report_unsafe_accesses ~issue_log classname )
+      make_results_table file_exe_env methods |> report_unsafe_accesses ~issue_log classname )
     class_map IssueLog.empty

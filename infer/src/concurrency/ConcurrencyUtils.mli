@@ -6,6 +6,6 @@
  *)
 open! IStd
 
-val get_java_class_initializer_summary_of : Summary.t -> Summary.t option
+val get_java_class_initializer_summary_of : 'payload InterproceduralAnalysis.t -> 'payload option
 
-val get_java_constructor_summaries_of : Tenv.t -> Summary.t -> Summary.t list
+val get_java_constructor_summaries_of : 'payload InterproceduralAnalysis.t -> 'payload list

@@ -7,7 +7,8 @@
 
 open! IStd
 
-val analyze_procedure : Callbacks.proc_callback_t
+val analyze_procedure :
+  StarvationDomain.summary InterproceduralAnalysis.t -> StarvationDomain.summary option
 
 val reporting : StarvationDomain.summary InterproceduralAnalysis.file_t -> IssueLog.t
 

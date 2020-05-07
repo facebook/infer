@@ -97,12 +97,13 @@ let all_checkers =
   ; { name= "Starvation analysis"
     ; active= Config.is_checker_enabled Starvation
     ; callbacks=
-        (let starvation_file_reporting =
+        (let starvation = interprocedural Payloads.Fields.starvation Starvation.analyze_procedure in
+         let starvation_file_reporting =
            file StarvationIssues Payloads.Fields.starvation Starvation.reporting
          in
-         [ (Procedure Starvation.analyze_procedure, Language.Java)
+         [ (starvation, Language.Java)
          ; (starvation_file_reporting, Language.Java)
-         ; (Procedure Starvation.analyze_procedure, Language.Clang)
+         ; (starvation, Language.Clang)
          ; (starvation_file_reporting, Language.Clang) ] ) }
   ; { name= "loop hoisting"
     ; active= Config.is_checker_enabled LoopHoisting
@@ -148,10 +149,12 @@ let all_checkers =
   ; { name= "RacerD"
     ; active= Config.is_checker_enabled RacerD
     ; callbacks=
-        [ (Procedure RacerD.analyze_procedure, Language.Clang)
-        ; (Procedure RacerD.analyze_procedure, Language.Java)
-        ; (File {callback= RacerD.file_analysis; issue_dir= RacerDIssues}, Language.Clang)
-        ; (File {callback= RacerD.file_analysis; issue_dir= RacerDIssues}, Language.Java) ] }
+        (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
+         let racerd_file = file RacerDIssues Payloads.Fields.racerd RacerD.file_analysis in
+         [ (racerd_proc, Language.Clang)
+         ; (racerd_proc, Language.Java)
+         ; (racerd_file, Language.Clang)
+         ; (racerd_file, Language.Java) ] ) }
   ; { name= "quandary"
     ; active= Config.(is_checker_enabled Quandary)
     ; callbacks=

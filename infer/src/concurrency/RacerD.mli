@@ -7,6 +7,7 @@
 
 open! IStd
 
-val file_analysis : Callbacks.file_callback_t
+val file_analysis : RacerDDomain.summary InterproceduralAnalysis.file_t -> IssueLog.t
 
-val analyze_procedure : Callbacks.proc_callback_t
+val analyze_procedure :
+  RacerDDomain.summary InterproceduralAnalysis.t -> RacerDDomain.summary option
