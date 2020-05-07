@@ -59,7 +59,7 @@ let infer_cflags =
   ; "-open"
   ; "Quandary"
   ; "-open"
-  ; "TOPL"
+  ; "TOPLlib"
   ; "-open"
   ; "Concurrency"
   ; "-open"
@@ -110,7 +110,7 @@ let main_lib_stanza =
          ; "checkers"
          ; "costlib"
          ; "quandary"
-         ; "TOPL"
+         ; "TOPLlib"
          ; "concurrency"
          ; "labs"
          ; "backend" ] ))

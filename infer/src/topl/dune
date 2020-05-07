@@ -8,8 +8,8 @@
 (menhir (flags --unused-token INDENT --explain) (modules ToplParser))
 
 (library
- (name TOPL)
- (public_name infer.TOPL)
+ (name TOPLlib)
+ (public_name infer.TOPLlib)
  (flags
   (:standard -open Core -open InferIR -open InferStdlib -open IStd -open InferGenerated
     -open InferBase -open Absint -open Biabduction))
