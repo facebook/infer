@@ -20,7 +20,7 @@ module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 
 type analysis_data =
-  { analysis_data: BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t
+  { interproc: BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t
   ; get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_formals: BoUtils.get_formals
   ; oenv: OndemandEnv.t }
@@ -28,7 +28,7 @@ type analysis_data =
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 module Init = struct
-  let initial_state {analysis_data= {proc_desc; tenv}; get_summary; oenv} start_node =
+  let initial_state {interproc= {proc_desc; tenv}; get_summary; oenv} start_node =
     let try_decl_local =
       let pname = Procdesc.get_proc_name proc_desc in
       let model_env =
@@ -285,7 +285,7 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {analysis_data= {proc_desc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
+   fun mem {interproc= {proc_desc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
        node instr ->
     match instr with
     | Load {id} when Ident.is_none id ->
@@ -438,9 +438,9 @@ let extract_state = Analyzer.extract_state
 
 let compute_invariant_map :
     BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t -> invariant_map =
- fun ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependency} as analysis_data) ->
+ fun ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependency} as interproc) ->
   let cfg = CFG.from_pdesc proc_desc in
-  let extras =
+  let analysis_data =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let get_summary proc_name = analyze_dependency proc_name |> Option.map ~f:snd in
     let get_formals callee_pname =
@@ -448,10 +448,10 @@ let compute_invariant_map :
     in
     let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in
-    {analysis_data; get_summary; get_formals; oenv}
+    {interproc; get_summary; get_formals; oenv}
   in
-  let initial = Init.initial_state extras (CFG.start_node cfg) in
-  Analyzer.exec_pdesc ~do_narrowing:true ~initial extras proc_desc
+  let initial = Init.initial_state analysis_data (CFG.start_node cfg) in
+  Analyzer.exec_pdesc ~do_narrowing:true ~initial analysis_data proc_desc
 
 
 let cached_compute_invariant_map =

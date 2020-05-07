@@ -192,7 +192,7 @@ let report {InterproceduralAnalysis.proc_desc; tenv; err_log} astate =
 
 
 type analysis_data =
-  { analysis_data: LithoDomain.summary InterproceduralAnalysis.t
+  { interproc: LithoDomain.summary InterproceduralAnalysis.t
   ; get_proc_summary_and_formals: Procname.t -> (Domain.summary * (Pvar.t * Typ.t) list) option }
 
 module TransferFunctions = struct
@@ -208,7 +208,7 @@ module TransferFunctions = struct
           ~caller:astate ~callee:callee_summary )
 
 
-  let exec_instr astate {analysis_data= {proc_desc; tenv}; get_proc_summary_and_formals} _
+  let exec_instr astate {interproc= {proc_desc; tenv}; get_proc_summary_and_formals} _
       (instr : HilInstr.t) : Domain.t =
     let caller_pname = Procdesc.get_proc_name proc_desc in
     match instr with
@@ -281,13 +281,13 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
-let init_analysis_data ({InterproceduralAnalysis.analyze_dependency} as analysis_data) =
+let init_analysis_data ({InterproceduralAnalysis.analyze_dependency} as interproc) =
   let get_proc_summary_and_formals callee_pname =
     analyze_dependency callee_pname
     |> Option.map ~f:(fun (callee_pdesc, callee_summary) ->
            (callee_summary, Procdesc.get_pvar_formals callee_pdesc) )
   in
-  {analysis_data; get_proc_summary_and_formals}
+  {interproc; get_proc_summary_and_formals}
 
 
 let checker ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
