@@ -203,7 +203,9 @@ and weak_type = ExtraTrustClass of JavaClassName.t list | Other
 let check_problematic_class_annotation tenv user_defined_class =
   if JavaClassName.is_anonymous_inner_class_name user_defined_class then
     Logging.die InternalError
-      "check_problematic_class_annotation: should not be called for anonymous classes" ;
+      "check_problematic_class_annotation: should not be called for anonymous classes, but was \
+       called for %a"
+      JavaClassName.pp user_defined_class ;
   Option.value_map
     (JavaClassName.get_outer_class_name user_defined_class)
     ~f:(fun outer_class_name ->
