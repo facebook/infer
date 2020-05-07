@@ -579,7 +579,7 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
   in
   let f acc mthd =
-    Ondemand.get_proc_desc mthd
+    AnalysisCallbacks.get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
            if should_report other_pdesc then
              analyze_ondemand mthd

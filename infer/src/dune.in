@@ -13,7 +13,6 @@ let source_dirs =
   (if clang then ["al"; "clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
   @ [ (if java then "java" else "java_stubs")
     ; "backend"
-    ; "concurrency"
     ; "integration"
     ; "labs"
     ; "test_determinator"
@@ -64,6 +63,8 @@ let infer_cflags =
   ; "-open"
   ; "TOPL"
   ; "-open"
+  ; "Concurrency"
+  ; "-open"
   ; "Absint"
   ; "-open"
   ; "OpenSource"
@@ -107,7 +108,8 @@ let main_lib_stanza =
          ; "checkers"
          ; "costlib"
          ; "quandary"
-         ; "TOPL" ] ))
+         ; "TOPL"
+         ; "concurrency" ] ))
     (String.concat " " infer_binaries)
 
 
