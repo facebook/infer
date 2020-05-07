@@ -200,8 +200,6 @@ val struct_rec :
     one point on each cycle. Failure to obey these requirements will lead to
     stack overflow. *)
 
-val size_of : t -> t
-
 (** Traverse *)
 
 val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a

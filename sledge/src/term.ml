@@ -1124,7 +1124,6 @@ let concat xs = normN Concat (IArray.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
-let size_of t = integer (Z.of_int (Typ.size_of t))
 
 let eq_concat (siz, arr) ms =
   eq (memory ~siz ~arr)

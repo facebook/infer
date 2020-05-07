@@ -248,8 +248,6 @@ val rec_app :
      (module Hashtbl.Key_plain with type t = 'id)
   -> (id:'id -> recN -> t lazy_t iarray -> t) Staged.t
 
-val size_of : Typ.t -> t
-
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t

@@ -497,8 +497,6 @@ let struct_rec key =
          forcing the recursive thunks also updates this value. *)
       {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id IArray.empty}
 
-let size_of exp = integer Typ.siz (Z.of_int (Typ.size_of (typ exp)))
-
 (** Traverse *)
 
 let fold_exps e ~init ~f =
