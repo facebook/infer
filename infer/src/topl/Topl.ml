@@ -227,13 +227,10 @@ let conjoin_props env post pre =
     To compute (pre & post) the function [conjoin_props] from above is used, which returns a weaker
     formula: in particular, the spatial part of pre is dropped. To get around some limitations of
     the prover we also use [lookup_static_var]; if a call to this function fails, we don't warn. *)
-let add_errors exe_env summary =
-  let proc_desc = summary.Summary.proc_desc in
+let add_errors env proc_desc err_log biabduction_summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   if not (ToplUtils.is_synthesized proc_name) then
-    let env = Exe_env.get_tenv exe_env proc_name in
     let preposts : Prop.normal BiabductionSummary.spec list =
-      let biabduction_summary = summary.Summary.payloads.Payloads.biabduction in
       let check_phase x =
         if not BiabductionSummary.(equal_phase x.phase RE_EXECUTION) then
           L.die InternalError "Topl.add_errors should only be called after RE_EXECUTION"
@@ -269,7 +266,8 @@ let add_errors exe_env summary =
               let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
               let message = Printf.sprintf "property %s reaches error" property in
               tt "WARN@\n" ;
-              SummaryReporting.log_error summary IssueType.topl_error ~loc message )
+              let attrs = Procdesc.get_attributes proc_desc in
+              Reporting.log_error attrs err_log IssueType.topl_error ~loc message )
           in
           (* Don't warn if [lookup_static_var] fails. *)
           Option.iter ~f:handle_state_post_value (lookup_static_var env state_var post)
@@ -296,6 +294,9 @@ let cfg () =
   ToplMonitor.cfg ()
 
 
-let instrument_callback biabduction ({InterproceduralAnalysis.proc_desc; tenv; _} as callback) =
+let instrument_callback biabduction
+    ({InterproceduralAnalysis.proc_desc; tenv; err_log} as analysis_data) =
   if is_active () then instrument tenv proc_desc ;
-  biabduction callback
+  let biabduction_summary = biabduction analysis_data in
+  if is_active () then add_errors tenv proc_desc err_log biabduction_summary ;
+  biabduction_summary

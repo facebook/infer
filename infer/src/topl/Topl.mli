@@ -16,9 +16,6 @@ val get_proc_attr : Procname.t -> ProcAttributes.t option
 val get_proc_desc : Procname.t -> Procdesc.t option
 (** Returns a synthesized Procdesc.t, when it corresponds to instrumentation for a TOPL property. *)
 
-val add_errors : Exe_env.t -> Summary.t -> unit
-(** Adds error using {!Reporting}. *)
-
 val sourcefile : unit -> SourceFile.t
 (** The (fake) sourcefile in which synthesized code resides. This function has a side-effect,
     because that's how [SourceFile] works, so do NOT call when Topl is inactive. *)

@@ -17,7 +17,6 @@ let source_dirs =
     ; "integration"
     ; "labs"
     ; "test_determinator"
-    ; "topl"
     ; "unit"
     ; "unit" ^/ "nullsafe" ]
 
@@ -63,6 +62,8 @@ let infer_cflags =
   ; "-open"
   ; "Quandary"
   ; "-open"
+  ; "TOPL"
+  ; "-open"
   ; "Absint"
   ; "-open"
   ; "OpenSource"
@@ -105,7 +106,8 @@ let main_lib_stanza =
          ; "pulselib"
          ; "checkers"
          ; "costlib"
-         ; "quandary" ] ))
+         ; "quandary"
+         ; "TOPL" ] ))
     (String.concat " " infer_binaries)
 
 
@@ -144,10 +146,6 @@ let infertop_stanza =
     infer_cflags
 
 
-let topl_stanzas =
-  ["(ocamllex ToplLexer)"; "(menhir (flags --unused-token INDENT --explain) (modules ToplParser))"]
-
-
 let java_sources_lexer = if java then ["(ocamllex jSourceFileInfo)"] else []
 
 let flatten_sources_stanzas =
@@ -164,7 +162,7 @@ let flatten_sources_stanzas =
 (** The build stanzas to be passed to dune *)
 let stanzas =
   (env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: clang_lexer_stanzas)
-  @ java_sources_lexer @ topl_stanzas @ flatten_sources_stanzas
+  @ java_sources_lexer @ flatten_sources_stanzas
 
 
 ;;

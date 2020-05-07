@@ -157,9 +157,7 @@ let analyze callee_summary =
   in
   current_taskbar_status := Some (t0, status) ;
   !ProcessPoolState.update_status t0 status ;
-  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
-  if Topl.is_active () then Topl.add_errors exe_env summary ;
-  summary
+  Callbacks.iterate_procedure_callbacks exe_env callee_summary
 
 
 let run_proc_analysis ~caller_pdesc callee_pdesc =
@@ -192,7 +190,8 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     summary
   in
   let log_error_and_continue exn (summary : Summary.t) kind =
-    SummaryReporting.log_error_using_state summary exn ;
+    BiabductionReporting.log_error_using_state (Summary.get_proc_desc summary)
+      (Summary.get_err_log summary) exn ;
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payloads =
       let biabduction =

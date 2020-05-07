@@ -48,9 +48,6 @@ val get_proc_name : t -> Procname.t
 
 val get_proc_desc : t -> Procdesc.t
 
-val get_attributes : t -> ProcAttributes.t
-(** Get the attributes of the procedure. *)
-
 val get_err_log : t -> Errlog.t
 
 val get_loc : t -> Location.t
