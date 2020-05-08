@@ -55,7 +55,7 @@ USER_OPAM_SWITCH=no
 
 ORIG_ARGS="$*"
 
-while [[ $# > 0 ]]; do
+while [[ $# -gt 0 ]]; do
   opt_key="$1"
   case $opt_key in
     all)

@@ -27,6 +27,7 @@ before_install:
   - export PATH=${HOME}:${PATH}
   - export OPAMYES=1
   - export OPAMJOBS=2
+  - export INFER_OPAM_SWITCH="ocaml-variants.${OCAML_VERSION}+flambda"
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export OPAMEXTERNALSOLVER=$(which aspcud); fi
   - opam init --compiler=${OCAML_VERSION} --disable-sandboxing
   - eval $(opam env)
