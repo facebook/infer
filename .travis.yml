@@ -1,6 +1,6 @@
 language: c
 env:
-  - OCAML_VERSION=4.08.1
+  - OCAML_VERSION=4.09.1 OPAM_VERSION=2.0.7
 cache:
   directories:
     - ${HOME}/.opam
@@ -20,9 +20,9 @@ addons:
       - pkg-config
       - sqlite
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ARCH="darwin"; else ARCH="linux"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ARCH="macos"; else ARCH="linux"; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PATH="/usr/bin:${PATH}"; fi
-  - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-${ARCH}
+  - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/${OPAM_VERSION}/opam-${OPAM_VERSION}-x86_64-${ARCH}
   - chmod +x ${HOME}/opam
   - export PATH=${HOME}:${PATH}
   - export OPAMYES=1
