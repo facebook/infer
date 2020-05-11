@@ -326,7 +326,8 @@ module Symbol = struct
     | BoundEnd {unsigned= unsigned1}, BoundEnd {unsigned= unsigned2} ->
         let r = compare s1 s2 in
         if Int.equal r 0 && not (Bool.equal unsigned1 unsigned2) then (
-          L.internal_error "values are equal but their signs are different: %a <> %a" pp s1 pp s2 ;
+          L.d_printfln_escaped "values are equal but their signs are different: %a <> %a" pp s1 pp
+            s2 ;
           Bool.compare unsigned1 unsigned2 )
         else r
 
