@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR ./absint ./al ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./clang ./concurrency ./cost ./integration ./istd ./java ./labs ./nullsafe ./pulse ./quandary ./scripts ./test_determinator ./topl
-INCLUDE_FOLDERS = -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I clang -I concurrency -I cost -I integration -I istd -I java -I labs -I nullsafe -I pulse -I quandary -I scripts -I test_determinator -I topl
+LIBRARY_FOLDERS = . ./IR ./absint ./al ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./clang ./clang/unit ./concurrency ./cost ./integration ./istd ./java ./labs ./nullsafe ./nullsafe/unit ./pulse ./quandary ./scripts ./test_determinator ./topl ./unit
+INCLUDE_FOLDERS = -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I clang -I clang/unit -I concurrency -I cost -I integration -I istd -I java -I labs -I nullsafe -I nullsafe/unit -I pulse -I quandary -I scripts -I test_determinator -I topl -I unit
 
 ml_src_files:=$(shell \
 	cd $(INFER_BUILD_DIR); \
@@ -170,7 +170,7 @@ detect_dead_code:
 #	dune file for this directory
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get dune generated, and the generated code for the lexers and parsers in ../_build
-	$(MAKE) GENERATED_DUNES=deadcode/dune -C .. test
+	$(MAKE) -C .. test
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
 #	have changed. For both of these reasons, run another `make`.
@@ -192,6 +192,7 @@ detect_dead_code:
 detect_dead_src_file:
 	function is_in_blacklist { \
 	  if [ $$1 = infertop.ml ] \
+	  || [ $$1 = infertop.mli ] \
 	  || [ $$1 = deadcode/all_infer_in_one_file.ml ] \
 	  || [ $$1 = deadcode/all_infer_in_one_file.mli ] \
 	  || [[ $$1 =~ .*FrontendStubs.mli?$$ ]] \
@@ -236,6 +237,6 @@ detect_dead_src_file:
 
 .PHONY: clean
 clean:
-	$(REMOVE) .depend *.ml *.mli dune $(ALL_ML_FILES) $(ALL_MLI_FILES) $(ALL_ML_FILES_COPIED) \
+	$(REMOVE) .depend *.ml *.mli $(ALL_ML_FILES) $(ALL_MLI_FILES) $(ALL_ML_FILES_COPIED) \
 	  $(ALL_MLI_FILES_COPIED)
 

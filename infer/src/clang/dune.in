@@ -17,7 +17,7 @@ let clang =
   (:standard
      -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
      -open IBase -open IR -open Absint -open Checkers -open TestDeterminators))
- (libraries core IStdlib ATDGenerated IBase IR Absint Checkers TestDeterminators)
+ (libraries oUnit core IStdlib ATDGenerated IBase IR Absint Checkers TestDeterminators)
  (preprocess (pps ppx_compare))
 )|}
     (if clang then ":standard \\ ClangFrontendStubs" else "ClangFrontendStubs")

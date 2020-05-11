@@ -18,6 +18,10 @@ module ClangQuotes : sig
   val mk_arg_file : string -> style -> string list -> string
 end
 
+module ClangTests : sig
+  val tests : OUnit2.test list
+end
+
 module ClangWrapper : sig
   val exe : prog:string -> args:string list -> unit
 end

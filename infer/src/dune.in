@@ -7,13 +7,34 @@
  *)
 (* NOTE: prepend dune.common to this file! *)
 
-let ( ^/ ) = Filename.concat
+(*
+ * A known issue: At the moment of writing warning 14 (illegal backslash
+ * escape in string) does not manifest as an error, presumably due to
+ * peculiarities in communication between preprocessor and compiler.
+ * Still leave it for visibility and in hope that the issue will be
+ * fixed one day.
+ *)
+let fatal_warnings =
+  "+3+5+6+8+10+11+12+14+18+19+20+21+23+26+29+27+28+32+33+34+35+37+38+39+50+52+57+60"
 
-let source_dirs =
-  (if clang then ["unit" ^/ "clang"] else ["unit" ^/ "clang_stubs"]) @ ["unit"; "unit" ^/ "nullsafe"]
+
+let warnings = fatal_warnings ^ "-4-9-40-41-42-45-48"
+
+let ocamlc_flags =
+  [ "-g"
+  ; "-short-paths"
+  ; "-safe-string"
+  ; "-principal"
+  ; "-strict-formats"
+  ; "-strict-sequence"
+  ; "-bin-annot" ]
 
 
-let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
+let lenient_flags = ocamlc_flags @ ["-w"; warnings] |> String.concat " "
+
+let strict_flags =
+  ocamlc_flags @ ["-w"; warnings; "-warn-error"; fatal_warnings] |> String.concat " "
+
 
 let env_stanza =
   Format.sprintf
@@ -31,115 +52,40 @@ let env_stanza =
     lenient_flags lenient_flags strict_flags
 
 
-let infer_cflags =
-  ( [ "-open"
-    ; "Core"
-    ; "-open"
-    ; "Biabduction"
-    ; "-open"
-    ; "BO"
-    ; "-open"
-    ; "Nullsafe"
-    ; "-open"
-    ; "Pulselib"
-    ; "-open"
-    ; "Checkers"
-    ; "-open"
-    ; "Costlib"
-    ; "-open"
-    ; "Quandary"
-    ; "-open"
-    ; "TOPLlib"
-    ; "-open"
-    ; "Concurrency"
-    ; "-open"
-    ; "Labs"
-    ; "-open"
-    ; "Absint"
-    ; "-open"
-    ; "OpenSource"
-    ; "-open"
-    ; "IStdlib"
-    ; "-open"
-    ; "IStd"
-    ; "-open"
-    ; "ATDGenerated"
-    ; "-open"
-    ; "IR"
-    ; "-open"
-    ; "IBase"
-    ; "-open"
-    ; "CStubs"
-    ; "-open"
-    ; "Backend"
-    ; "-open"
-    ; "JavaFrontend"
-    ; "-open"
-    ; "ClangFrontend"
-    ; "-open"
-    ; "ASTLanguage"
-    ; "-open"
-    ; "TestDeterminators"
-    ; "-open"
-    ; "Integration" ]
-  @ (if java then [] else ["-open"; "JavaFrontendStubs"])
-  @ if clang then [] else ["-open"; "ClangFrontendStubs"] )
-  |> String.concat " "
-
-
-let main_lib_stanza =
-  Format.sprintf
-    {|
-(library
- (name InferModules)
- (public_name infer)
- (flags (:standard %s))
- (libraries %s)
- (modules :standard \ %s infertop)
- (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
-)
-|}
-    infer_cflags
-    (String.concat " "
-       (* we need JavaFrontend first to avoid clashes around base64 vs extlib *)
-       ( ("JavaFrontend" :: common_libraries)
-       @ [ "IR"
-         ; "CStubs"
-         ; "Absint"
-         ; "Biabduction"
-         ; "Nullsafe"
-         ; "BO"
-         ; "Pulselib"
-         ; "Checkers"
-         ; "Costlib"
-         ; "Quandary"
-         ; "TOPLlib"
-         ; "Concurrency"
-         ; "Labs"
-         ; "Backend"
-         ; "ClangFrontend"
-         ; "ASTLanguage"
-         ; "TestDeterminators"
-         ; "Integration" ] ))
-    (String.concat " " infer_binaries)
-
+(** Put this *first* in (libraries) specifications to prevent a clash between extlib's and base64's
+    versions of Base64. Only Javalib depends on extlib so do it conditionally to avoid introducing a
+    new dependency in the clang-only build. *)
+let extlib_if_java = if java then "extlib" else ""
 
 let infer_exe_stanza =
-  Format.sprintf
-    {|
-(executables
- (names %s)
+  Printf.sprintf
+    {|(executable
+ (name infer)
  (modes byte_complete exe)
- (flags (:standard -open InferModules %s))
- (libraries InferModules)
- (modules %s)
- (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
+ (modules Infer)
+ (flags (:standard -open Core -open IStdlib -open IStd -open IBase -open IR -open Backend -open Integration -open Biabduction -open TestDeterminators -open ClangFrontend -open ASTLanguage %s))
+ (libraries %s core IStdlib IBase IR Backend Integration Biabduction TestDeterminators ClangFrontend ASTLanguage)
+ (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
-)
-|}
-    (String.concat " " infer_binaries)
-    infer_cflags
-    (String.concat " " infer_binaries)
+)|}
+    (if clang then "" else "-open ClangFrontendStubs")
+    extlib_if_java
+
+
+let inferunit_stanza =
+  Printf.sprintf
+    {|(executable
+ (name inferunit)
+ (modes byte_complete exe)
+ (modules Inferunit)
+ (flags (:standard -open Core -open IStdlib -open IStd -open IBase -open Backend -open Integration -open UnitTests -open NullsafeUnitTests -open ClangFrontend %s))
+ (libraries %s oUnit core IStdlib IBase Backend Integration UnitTests NullsafeUnitTests %s)
+ (preprocess (pps ppx_compare))
+ (promote (until-clean) (into ../bin))
+)|}
+    (if clang then "-open ClangUnitTests" else "-open ClangFrontendStubs")
+    extlib_if_java
+    (if clang then "ClangUnitTests" else "")
 
 
 let infertop_stanza =
@@ -148,32 +94,34 @@ let infertop_stanza =
 (executable
  (name infertop)
  (modes byte_complete)
- (flags (:standard %s))
- (libraries utop InferModules)
- (link_flags (-linkall -warn-error -31))
  (modules Infertop)
- (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
+ (flags (:standard -open Core -open IStdlib -open IStd))
+ (libraries %s utop Absint ASTLanguage ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR IStdlib Labs Nullsafe Pulselib Quandary Integration TestDeterminators TOPLlib UnitTests)
+ (link_flags (-linkall -warn-error -31))
+ (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
 )
 |}
-    infer_cflags
+    extlib_if_java
 
 
-let flatten_sources_stanzas =
-  List.map
-    (fun source_dir ->
-      [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
-      ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
-           copy# actions *)
-        Printf.sprintf "(copy_files %s/*.mly)" source_dir ] )
-    source_dirs
-  |> List.concat
+let inferCreateTraceViewLinks_stanza =
+  {|(executable
+ (name InferCreateTraceViewLinks)
+ (modes byte_complete exe)
+ (modules InferCreateTraceViewLinks)
+ (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open IBase))
+ (libraries core async IStdlib ATDGenerated IBase)
+ (preprocess (pps ppx_compare))
+ (promote (until-clean) (into ../bin))
+)|}
 
 
 (** The build stanzas to be passed to dune *)
 let stanzas =
-  env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: flatten_sources_stanzas
+  [env_stanza; infer_exe_stanza; inferunit_stanza; infertop_stanza]
+  @ if facebook then [inferCreateTraceViewLinks_stanza] else []
 
 
 ;;
-String.concat "\n" stanzas |> Jbuild_plugin.V1.send
+Jbuild_plugin.V1.send (String.concat "\n" stanzas)

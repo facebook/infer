@@ -7,4 +7,4 @@
 
 open! IStd
 
-let tests = [OUnitTest.TestList []]
+(** module for running an OCaml toplevel that embeds infer modules *)

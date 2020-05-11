@@ -60,7 +60,6 @@ let setup () =
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first" ) ;
   db_start () ;
-  NullsafeInit.init () ;
   if CLOpt.is_originator then ResultsDir.RunState.add_run_to_sequence () ;
   ()
 

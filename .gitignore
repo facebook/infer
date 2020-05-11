@@ -167,7 +167,9 @@ infer/src/.project
 /infer/src/clang/dune
 /infer/src/integration/dune
 /infer/src/java/dune
+/infer/src/nullsafe/unit/dune
 /infer/src/opensource/dune
+/infer/src/unit/dune
 .merlin
 
 # generated when looking for dead code
@@ -176,7 +178,6 @@ infer/src/.project
 /infer/src/deadcode/all_ml_files_copied
 /infer/src/deadcode/all_mli_files
 /infer/src/deadcode/all_mli_files_copied
-/infer/src/deadcode/dune
 /infer/src/deadcode/*.ml
 /infer/src/deadcode/*.mli
 _opam

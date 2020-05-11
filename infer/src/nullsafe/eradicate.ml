@@ -9,6 +9,9 @@ open! IStd
 module L = Logging
 module F = Format
 
+(* make sure that this is initialized *)
+let () = NullsafeInit.init ()
+
 let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
     find_canonical_duplicate calls_this checks idenv annotated_signature linereader proc_loc :
     bool * TypeState.t option =

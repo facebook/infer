@@ -18,6 +18,10 @@ module ClangQuotes = struct
   let mk_arg_file _ _ _ = die ()
 end
 
+module ClangTests = struct
+  let tests = [OUnitTest.TestList []]
+end
+
 module ClangWrapper = struct
   let exe ~prog:_ ~args:_ = ()
 end
