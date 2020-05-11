@@ -1699,13 +1699,6 @@ and procedures_name =
     "Include procedures names in the output of $(b,--procedures)"
 
 
-and procedures_per_process =
-  CLOpt.mk_int ~long:"procedures-per-process" ~default:1000 ~meta:"int"
-    "Specify the number of procedures to analyze per process when using \
-     $(b,--per-procedure-parallelism).  If 0 is specified, each file is divided into $(b,--jobs) \
-     groups of procedures."
-
-
 and procedures_source_file =
   CLOpt.mk_bool ~long:"procedures-source-file" ~default:true
     ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
@@ -2838,8 +2831,6 @@ and procedures_definedness = !procedures_definedness
 and procedures_filter = !procedures_filter
 
 and procedures_name = !procedures_name
-
-and[@warning "-32"] procedures_per_process = !procedures_per_process
 
 and procedures_source_file = !procedures_source_file
 

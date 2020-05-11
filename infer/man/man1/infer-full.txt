@@ -1583,11 +1583,6 @@ INTERNAL OPTIONS
        --procedures-filter-reset
            Cancel the effect of --procedures-filter.
 
-       --procedures-per-process int
-           Specify the number of procedures to analyze per process when using
-           --per-procedure-parallelism. If 0 is specified, each file is
-           divided into --jobs groups of procedures.
-
        --process-clang-ast
            Activates: process the ast to emit some info about the file (Not
            available for Java) (Conversely: --no-process-clang-ast)
