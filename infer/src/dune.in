@@ -11,11 +11,7 @@ let ( ^/ ) = Filename.concat
 
 let source_dirs =
   (if clang then ["al"; "clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
-  @ [ (if java then "java" else "java_stubs")
-    ; "integration"
-    ; "test_determinator"
-    ; "unit"
-    ; "unit" ^/ "nullsafe" ]
+  @ ["integration"; "test_determinator"; "unit"; "unit" ^/ "nullsafe"]
 
 
 let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
@@ -42,46 +38,49 @@ let clang_lexer_stanzas =
 
 
 let infer_cflags =
-  [ "-open"
-  ; "Core"
-  ; "-open"
-  ; "Biabduction"
-  ; "-open"
-  ; "Bo"
-  ; "-open"
-  ; "Nullsafe"
-  ; "-open"
-  ; "Pulselib"
-  ; "-open"
-  ; "Checkers"
-  ; "-open"
-  ; "Costlib"
-  ; "-open"
-  ; "Quandary"
-  ; "-open"
-  ; "TOPLlib"
-  ; "-open"
-  ; "Concurrency"
-  ; "-open"
-  ; "Labs"
-  ; "-open"
-  ; "Absint"
-  ; "-open"
-  ; "OpenSource"
-  ; "-open"
-  ; "InferStdlib"
-  ; "-open"
-  ; "IStd"
-  ; "-open"
-  ; "InferGenerated"
-  ; "-open"
-  ; "InferIR"
-  ; "-open"
-  ; "InferBase"
-  ; "-open"
-  ; "InferCStubs"
-  ; "-open"
-  ; "Backend" ]
+  ( [ "-open"
+    ; "Core"
+    ; "-open"
+    ; "Biabduction"
+    ; "-open"
+    ; "Bo"
+    ; "-open"
+    ; "Nullsafe"
+    ; "-open"
+    ; "Pulselib"
+    ; "-open"
+    ; "Checkers"
+    ; "-open"
+    ; "Costlib"
+    ; "-open"
+    ; "Quandary"
+    ; "-open"
+    ; "TOPLlib"
+    ; "-open"
+    ; "Concurrency"
+    ; "-open"
+    ; "Labs"
+    ; "-open"
+    ; "Absint"
+    ; "-open"
+    ; "OpenSource"
+    ; "-open"
+    ; "InferStdlib"
+    ; "-open"
+    ; "IStd"
+    ; "-open"
+    ; "InferGenerated"
+    ; "-open"
+    ; "InferIR"
+    ; "-open"
+    ; "InferBase"
+    ; "-open"
+    ; "InferCStubs"
+    ; "-open"
+    ; "Backend"
+    ; "-open"
+    ; "JavaFrontend" ]
+  @ if java then [] else ["-open"; "JavaFrontendStubs"] )
   |> String.concat " "
 
 
@@ -99,7 +98,8 @@ let main_lib_stanza =
 |}
     infer_cflags
     (String.concat " "
-       ( common_libraries
+       (* we need JavaFrontend first to avoid clashes around base64 vs extlib *)
+       ( ("JavaFrontend" :: common_libraries)
        @ [ "InferIR"
          ; "InferCStubs"
          ; "absint"
@@ -123,7 +123,7 @@ let infer_exe_stanza =
 (executables
  (names %s)
  (modes byte_complete exe)
- (flags (:standard %s -open InferModules))
+ (flags (:standard -open InferModules %s))
  (libraries InferModules)
  (modules %s)
  (preprocess (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
@@ -152,8 +152,6 @@ let infertop_stanza =
     infer_cflags
 
 
-let java_sources_lexer = if java then ["(ocamllex jSourceFileInfo)"] else []
-
 let flatten_sources_stanzas =
   List.map
     (fun source_dir ->
@@ -168,7 +166,7 @@ let flatten_sources_stanzas =
 (** The build stanzas to be passed to dune *)
 let stanzas =
   (env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: clang_lexer_stanzas)
-  @ java_sources_lexer @ flatten_sources_stanzas
+  @ flatten_sources_stanzas
 
 
 ;;

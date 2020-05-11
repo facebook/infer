@@ -282,7 +282,7 @@ let execute___instanceof_cast ~instof
             |> Option.map ~f:(function
                  | Predicates.Hpointsto (_, _, texp1) -> (
                      let pos_type_opt, neg_type_opt =
-                       Prover.Subtyping_check.subtype_case_analysis tenv texp1 texp2
+                       SubtypingCheck.subtype_case_analysis tenv texp1 texp2
                      in
                      let mk_res type_opt res_e =
                        match type_opt with

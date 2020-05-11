@@ -97,14 +97,3 @@ val check_implication_for_footprint :
 
 val find_minimum_pure_cover : Tenv.t -> (atom list * 'a) list -> (atom list * 'a) list option
 (** Find minimum set of pi's in [cases] whose disjunction covers true *)
-
-(** {2 Subtype checking} *)
-
-module Subtyping_check : sig
-  val check_subtype : Tenv.t -> Typ.t -> Typ.t -> bool
-  (** check_subtype t1 t2 checks whether t1 is a subtype of t2, given the type environment tenv. *)
-
-  val subtype_case_analysis : Tenv.t -> Exp.t -> Exp.t -> Exp.t option * Exp.t option
-  (** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2], and returns
-      the updated types in the true and false case, if they are possible *)
-end

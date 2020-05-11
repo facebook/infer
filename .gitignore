@@ -163,6 +163,7 @@ infer/src/.project
 /infer/dune-workspace
 /infer/src/dune.common
 /infer/src/dune
+/infer/src/java/dune
 /infer/src/opensource/dune
 .merlin
 

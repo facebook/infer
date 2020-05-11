@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./concurrency ./cost ./istd ./labs ./nullsafe ./pulse ./quandary ./scripts ./topl
-INCLUDE_FOLDERS = -I absint -I IR -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I concurrency -I cost -I istd -I labs -I nullsafe -I pulse -I quandary -I scripts -I topl
+LIBRARY_FOLDERS = . ./IR ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./concurrency ./cost ./istd ./java ./labs ./nullsafe ./pulse ./quandary ./scripts ./topl
+INCLUDE_FOLDERS = -I absint -I IR -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I concurrency -I cost -I istd -I java -I labs -I nullsafe -I pulse -I quandary -I scripts -I topl
 
 ml_src_files:=$(shell \
 	cd $(INFER_BUILD_DIR); \
@@ -191,12 +191,13 @@ detect_dead_code:
 .PHONY: detect_dead_src_file
 detect_dead_src_file:
 	function is_in_blacklist { \
-	  if [ "$$1" = "infertop.ml" ] \
-	  || [ "$$1" = "deadcode/all_infer_in_one_file.ml" ] \
-	  || [ "$$1" = "deadcode/all_infer_in_one_file.mli" ] \
-	  || [[ "$$1" =~ ^"labs/" ]] \
-	  || [[ "$$1" =~ ^"llvm/" ]] \
-	  || [[ "$$1" =~ ^"opensource/" ]]; then \
+	  if [ $$1 = infertop.ml ] \
+	  || [ $$1 = deadcode/all_infer_in_one_file.ml ] \
+	  || [ $$1 = deadcode/all_infer_in_one_file.mli ] \
+	  || [[ $$1 =~ .*FrontendStubs.mli?$$ ]] \
+	  || [[ $$1 =~ ^labs/ ]] \
+	  || [[ $$1 =~ ^llvm/ ]] \
+	  || [[ $$1 =~ ^opensource/ ]]; then \
 	    exit 0; \
           else \
 	    exit 1; \

@@ -1792,114 +1792,12 @@ let expand_hpred_pointer =
     expand false calc_index_frame hpred
 
 
-module Subtyping_check = struct
-  (** check that t1 and t2 are the same primitive type *)
-  let check_subtype_basic_type t1 t2 =
-    match t2.Typ.desc with
-    | Typ.Tint Typ.IInt
-    | Typ.Tint Typ.IBool
-    | Typ.Tint Typ.IChar
-    | Typ.Tfloat Typ.FDouble
-    | Typ.Tfloat Typ.FFloat
-    | Typ.Tint Typ.ILong
-    | Typ.Tint Typ.IShort ->
-        Typ.equal t1 t2
-    | _ ->
-        false
-
-
-  (** check if t1 is a subtype of t2, in Java *)
-  let rec check_subtype_java tenv (t1 : Typ.t) (t2 : Typ.t) =
-    match (t1.Typ.desc, t2.Typ.desc) with
-    | Tstruct (JavaClass _ as cn1), Tstruct (JavaClass _ as cn2) ->
-        Subtype.is_known_subtype tenv cn1 cn2
-    | Tarray {elt= dom_type1}, Tarray {elt= dom_type2} ->
-        check_subtype_java tenv dom_type1 dom_type2
-    | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
-        check_subtype_java tenv dom_type1 dom_type2
-    | Tarray _, Tstruct (JavaClass _ as cn2) ->
-        Typ.Name.equal cn2 Typ.Name.Java.java_io_serializable
-        || Typ.Name.equal cn2 Typ.Name.Java.java_lang_cloneable
-        || Typ.Name.equal cn2 Typ.Name.Java.java_lang_object
-    | _ ->
-        check_subtype_basic_type t1 t2
-
-
-  (** check if t1 is a subtype of t2 *)
-  let check_subtype tenv t1 t2 =
-    if is_java_class tenv t1 then check_subtype_java tenv t1 t2
-    else
-      match (Typ.name t1, Typ.name t2) with
-      | Some cn1, Some cn2 ->
-          Subtype.is_known_subtype tenv cn1 cn2
-      | _ ->
-          false
-
-
-  let rec case_analysis_type tenv ((t1 : Typ.t), st1) ((t2 : Typ.t), st2) =
-    match (t1.desc, t2.desc) with
-    | Tstruct (JavaClass _ as cn1), Tstruct (JavaClass _ as cn2) ->
-        Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
-    | Tstruct (JavaClass _ as cn1), Tarray _
-      when ( Typ.Name.equal cn1 Typ.Name.Java.java_io_serializable
-           || Typ.Name.equal cn1 Typ.Name.Java.java_lang_cloneable
-           || Typ.Name.equal cn1 Typ.Name.Java.java_lang_object )
-           && not (Subtype.equal st1 Subtype.exact) ->
-        (Some st1, None)
-    | Tstruct cn1, Tstruct cn2
-    (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
-    (* that get through the type system, but not in C++ because of multiple inheritance, *)
-    (* and not in ObjC because of being weakly typed, *)
-    (* and the algorithm will only work correctly if this is the case *)
-      when Subtype.is_known_subtype tenv cn1 cn2 || Subtype.is_known_subtype tenv cn2 cn1 ->
-        Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
-    | Tarray {elt= dom_type1}, Tarray {elt= dom_type2} ->
-        case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
-    | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
-        case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
-    | _ when check_subtype_basic_type t1 t2 ->
-        (Some st1, None)
-    | _ ->
-        (* The case analysis did not succeed *)
-        (None, Some st1)
-
-
-  (** perform case analysis on [texp1 <: texp2], and return the updated types in the true and false
-      case, if they are possible *)
-  let subtype_case_analysis tenv texp1 texp2 =
-    match (texp1, texp2) with
-    | Exp.Sizeof sizeof1, Exp.Sizeof sizeof2 ->
-        let pos_opt, neg_opt =
-          case_analysis_type tenv (sizeof1.typ, sizeof1.subtype) (sizeof2.typ, sizeof2.subtype)
-        in
-        let pos_type_opt =
-          match pos_opt with
-          | None ->
-              None
-          | Some subtype ->
-              if check_subtype tenv sizeof1.typ sizeof2.typ then
-                Some (Exp.Sizeof {sizeof1 with subtype})
-              else Some (Exp.Sizeof {sizeof2 with subtype})
-        in
-        let neg_type_opt =
-          match neg_opt with
-          | None ->
-              None
-          | Some subtype ->
-              Some (Exp.Sizeof {sizeof1 with subtype})
-        in
-        (pos_type_opt, neg_type_opt)
-    | _ ->
-        (* don't know, consider both possibilities *)
-        (Some texp1, Some texp1)
-end
-
 let cast_exception tenv texp1 texp2 e1 subs =
   ( match (texp1, texp2) with
   | Exp.Sizeof {typ= t1}, Exp.Sizeof {typ= t2; subtype= st2} ->
       if
         Config.developer_mode
-        || (Subtype.is_cast st2 && not (Subtyping_check.check_subtype tenv t1 t2))
+        || (Subtype.is_cast st2 && not (SubtypingCheck.check_subtype tenv t1 t2))
       then ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
   | _ ->
       () ) ;
@@ -1935,7 +1833,7 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
         false
   in
   if types_subject_to_dynamic_cast then
-    let pos_type_opt, neg_type_opt = Subtyping_check.subtype_case_analysis tenv texp1 texp2 in
+    let pos_type_opt, neg_type_opt = SubtypingCheck.subtype_case_analysis tenv texp1 texp2 in
     let has_changed =
       match pos_type_opt with
       | Some texp1' ->
@@ -2008,9 +1906,9 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
       when not (is_allocated_lhs e1') -> (
       match type_rhs e2' with
       | Some sizeof_data2 -> (
-          if (not (Typ.equal t1 t2)) && Subtyping_check.check_subtype tenv t1 t2 then
+          if (not (Typ.equal t1 t2)) && SubtypingCheck.check_subtype tenv t1 t2 then
             let pos_type_opt, _ =
-              Subtyping_check.subtype_case_analysis tenv
+              SubtypingCheck.subtype_case_analysis tenv
                 (Exp.Sizeof {typ= t1; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes})
                 (Exp.Sizeof sizeof_data2)
             in

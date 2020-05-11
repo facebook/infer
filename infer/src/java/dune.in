@@ -1,0 +1,31 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+let lexer = "(ocamllex jSourceFileInfo)"
+
+let java =
+  Printf.sprintf
+    {|(library
+ (name JavaFrontend)
+ (public_name infer.JavaFrontend)
+ (modules %s)
+ (flags
+  (:standard
+     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
+     -open InferBase -open InferIR -open Absint))
+ (libraries %s core InferStdlib InferGenerated InferBase InferIR absint)
+ (preprocess (pps ppx_compare))
+)|}
+    (if java then ":standard \\ JavaFrontendStubs" else "JavaFrontendStubs")
+    (* do not add dependencies on javalib and sawja to the non-Java builds *)
+    (if java then "javalib sawja" else "")
+
+
+;;
+Jbuild_plugin.V1.send (String.concat " " [lexer; java])
