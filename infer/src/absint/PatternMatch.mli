@@ -170,5 +170,5 @@ module ObjectiveC : sig
 
   val is_modelled_as_alloc : Tenv.t -> string -> bool
 
-  val is_modelled_as_free : Tenv.t -> string -> bool
+  val is_modelled_as_release : Tenv.t -> string -> bool
 end

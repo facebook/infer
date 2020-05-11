@@ -455,7 +455,7 @@ val pulse_max_disjuncts : int
 
 val pulse_model_alloc_pattern : Str.regexp option
 
-val pulse_model_free_pattern : Str.regexp option
+val pulse_model_release_pattern : Str.regexp option
 
 val pulse_widen_threshold : int
 

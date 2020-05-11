@@ -866,8 +866,8 @@ OPTIONS
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).
 
-       --pulse-model-free-pattern string
-           Regex of methods that should be modelled as free in Pulse       
+       --pulse-model-release-pattern string
+           Regex of methods that should be modelled as release in Pulse       
     See also infer-analyze(1).
 
        --pulse-only

@@ -483,8 +483,8 @@ module ObjectiveC = struct
         false
 
 
-  let is_modelled_as_free _ procname =
-    match Config.pulse_model_free_pattern with
+  let is_modelled_as_release _ procname =
+    match Config.pulse_model_release_pattern with
     | Some regex ->
         Str.string_match regex procname 0
     | None ->

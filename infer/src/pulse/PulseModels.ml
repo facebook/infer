@@ -665,14 +665,16 @@ module ProcNameDispatcher = struct
         )
       ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
       ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
-      ; +PatternMatch.ObjectiveC.is_core_graphics_release <>$ capt_arg_payload $--> C.free
-      ; -"CFRelease" <>$ capt_arg_payload $--> C.free
-      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.free
-      ; -"CFBridgingRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; +match_builtin BuiltinDecl.__free_cf <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
       ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
-      ; +PatternMatch.ObjectiveC.is_modelled_as_free <>$ capt_arg_payload $--> C.free ]
+      ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+      ; +PatternMatch.ObjectiveC.is_core_graphics_release
+        <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; -"CFRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; +PatternMatch.ObjectiveC.is_modelled_as_release
+        <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; -"CFBridgingRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
+      ; +match_builtin BuiltinDecl.__free_cf <>$ capt_arg_payload $--> C.cf_bridging_release ]
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args

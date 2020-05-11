@@ -91,9 +91,16 @@
 
 NSLocale* wrap_bridge(CFLocaleRef x) { CFBridgingRelease(x); }
 
-NSLocale* call_bridge_interproc_leak_bad_FP() {
+NSLocale* call_bridge_interproc_leak_ok_FP() {
   CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
   NSLocale* locale = wrap_bridge(nameRef);
+}
+
+void wrap_cfrelease(CFLocaleRef x) { CFRelease(x); }
+
+void call_cfrelease_interproc_leak_ok_FP() {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  wrap_cfrelease(nameRef);
 }
 
 @end
