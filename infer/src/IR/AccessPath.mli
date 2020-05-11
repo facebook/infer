@@ -36,23 +36,9 @@ val of_id : Ident.t -> Typ.t -> t
 val of_var : Var.t -> Typ.t -> t
 (** create an access path from a var *)
 
-val of_exp :
-  include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t list
-(** extract the access paths that occur in [exp], resolving identifiers using [f_resolve_id]. don't
-    include index expressions in array accesses if [include_array_indexes] is false *)
-
-val of_lhs_exp :
-  include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t option
-(** convert [lhs_exp] to an access path, resolving identifiers using [f_resolve_id] *)
-
 val append : t -> access list -> t
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
-
-val is_prefix : t -> t -> bool
-(** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
-
-val equal : t -> t -> bool
 
 val equal_base : base -> base -> bool
 
@@ -88,9 +74,6 @@ module Abs : sig
 
   val is_exact : t -> bool
   (** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
-
-  val leq : lhs:t -> rhs:t -> bool
-  (** return true if \gamma(lhs) \subseteq \gamma(rhs) *)
 
   val pp : Format.formatter -> t -> unit
 end

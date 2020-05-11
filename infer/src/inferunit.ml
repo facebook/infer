@@ -27,7 +27,6 @@ let () =
     (* OUnit runs tests in parallel using fork(2) *)
     List.map ~f:mk_test_fork_proof
       ( [ AbstractInterpreterTests.tests
-        ; AccessPathTests.tests
         ; AccessTreeTests.tests
         ; AddressTakenTests.tests
         ; CStubsTests.tests

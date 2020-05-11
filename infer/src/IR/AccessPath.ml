@@ -113,80 +113,7 @@ module Raw = struct
     match var with Var.LogicalVar id -> of_id id typ | Var.ProgramVar pvar -> of_pvar pvar typ
 
 
-  let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id : Var.t -> t option) =
-    (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
-    let rec of_exp_ exp typ accesses acc =
-      match exp with
-      | Exp.Var id -> (
-        match f_resolve_id (Var.of_id id) with
-        | Some (base, base_accesses) ->
-            (base, base_accesses @ accesses) :: acc
-        | None ->
-            (base_of_id id typ, accesses) :: acc )
-      | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar -> (
-        match f_resolve_id (Var.of_pvar pvar) with
-        | Some (base, base_accesses) ->
-            (base, base_accesses @ accesses) :: acc
-        | None ->
-            (base_of_pvar pvar typ, accesses) :: acc )
-      | Exp.Lvar pvar ->
-          (base_of_pvar pvar typ, accesses) :: acc
-      | Exp.Lfield (root_exp, fld, root_exp_typ) ->
-          let field_access = FieldAccess fld in
-          of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
-      | Exp.Lindex (root_exp, index_exp) ->
-          let index_access_paths =
-            if include_array_indexes then of_exp_ index_exp typ [] [] else []
-          in
-          let array_access = ArrayAccess (typ, index_access_paths) in
-          let array_typ = Typ.mk_array typ in
-          of_exp_ root_exp array_typ (array_access :: accesses) acc
-      | Exp.Cast (cast_typ, cast_exp) ->
-          of_exp_ cast_exp cast_typ [] acc
-      | Exp.UnOp (_, unop_exp, _) ->
-          of_exp_ unop_exp typ [] acc
-      | Exp.Exn exn_exp ->
-          of_exp_ exn_exp typ [] acc
-      | Exp.BinOp (_, exp1, exp2) ->
-          of_exp_ exp1 typ [] acc |> of_exp_ exp2 typ []
-      | Exp.Const _ | Closure _ | Sizeof _ ->
-          (* trying to make access path from an invalid expression *)
-          acc
-    in
-    of_exp_ exp0 typ0 [] []
-
-
-  let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id : Var.t -> t option) =
-    match of_exp ~include_array_indexes lhs_exp typ ~f_resolve_id with
-    | [lhs_ap] ->
-        Some lhs_ap
-    | _ ->
-        None
-
-
   let append (base, old_accesses) new_accesses = (base, old_accesses @ new_accesses)
-
-  let rec chop_prefix_path ~prefix:path1 path2 =
-    if phys_equal path1 path2 then Some []
-    else
-      match (path1, path2) with
-      | [], remaining ->
-          Some remaining
-      | _, [] ->
-          None
-      | access1 :: prefix, access2 :: rest when equal_access access1 access2 ->
-          chop_prefix_path ~prefix rest
-      | _ ->
-          None
-
-
-  let chop_prefix ~prefix:((base1, path1) as ap1) ((base2, path2) as ap2) =
-    if phys_equal ap1 ap2 then Some []
-    else if equal_base base1 base2 then chop_prefix_path ~prefix:path1 path2
-    else None
-
-
-  let is_prefix ap1 ap2 = chop_prefix ~prefix:ap1 ap2 |> Option.is_some
 end
 
 module Abs = struct
@@ -219,16 +146,6 @@ module Abs = struct
 
 
   let is_exact = function Exact _ -> true | Abstracted _ -> false
-
-  let leq ~lhs ~rhs =
-    match (lhs, rhs) with
-    | Abstracted _, Exact _ ->
-        false
-    | Exact lhs_ap, Exact rhs_ap ->
-        Raw.equal lhs_ap rhs_ap
-    | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap ->
-        Raw.is_prefix rhs_ap lhs_ap
-
 
   let pp fmt = function
     | Exact access_path ->
