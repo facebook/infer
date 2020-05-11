@@ -158,6 +158,16 @@ class Strict {
     return SomeEnum.FAKE_VALUE; // should not be able to convert to nonnull
   }
 
+  private SomeEnum[] enumValuesIsNonnullable() {
+    // values() is a special enum method which is never nullable
+    return SomeEnum.values();
+  }
+
+  private SomeEnum enumValueOfIsNonnullable() {
+    // valueOf() is a special enum method which is never nullable
+    return SomeEnum.valueOf("this will throw but won't return null");
+  }
+
   private String nonStrictClass_convertingNonnullToNonnullIsBad() {
     // even that it is declared as nonnull, can not convert it to nonnull it without checking before
     return (new NonStrict()).getNonnull();
