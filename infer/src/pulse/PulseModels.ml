@@ -381,20 +381,21 @@ module GenericArrayBackedCollectionIterator = struct
     PulseOperations.eval_access location iterator internal_pointer_access astate
 
 
-  let constructor ~desc this init : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+  let construct location event ~init ~ref astate =
     let* astate, (arr_addr, arr_hist) = GenericArrayBackedCollection.eval location init astate in
     let* astate =
-      PulseOperations.write_field location ~ref:this GenericArrayBackedCollection.field
+      PulseOperations.write_field location ~ref GenericArrayBackedCollection.field
         ~obj:(arr_addr, event :: arr_hist)
         astate
     in
     let* astate, (p_addr, p_hist) = to_internal_pointer location init astate in
-    PulseOperations.write_field location ~ref:this internal_pointer
-      ~obj:(p_addr, event :: p_hist)
-      astate
-    >>| ExecutionDomain.continue >>| List.return
+    PulseOperations.write_field location ~ref internal_pointer ~obj:(p_addr, event :: p_hist) astate
+
+
+  let constructor ~desc this init : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    construct location event ~init ~ref:this astate >>| ExecutionDomain.continue >>| List.return
 
 
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
@@ -422,6 +423,61 @@ module GenericArrayBackedCollectionIterator = struct
       ~obj:(index_next, event :: current_index_hist)
       astate
     >>| ExecutionDomain.continue >>| List.return
+end
+
+module JavaIterator = struct
+  let constructor ~desc init : model =
+   fun _ ~callee_procname:_ location ~ret astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let ref = (AbstractValue.mk_fresh (), [event]) in
+    let+ astate = GenericArrayBackedCollectionIterator.construct location event ~init ~ref astate in
+    let astate = PulseOperations.write_id (fst ret) ref astate in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  (* {curr -> v_c} is modified to {curr -> v_fresh} and returns array[v_c] *)
+  let next ~desc iter _ ~callee_procname:_ location ~ret astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let new_index = AbstractValue.mk_fresh () in
+    let* astate, (curr_index, curr_index_hist) =
+      GenericArrayBackedCollectionIterator.to_internal_pointer location iter astate
+    in
+    let* astate, (curr_elem_val, curr_elem_hist) =
+      GenericArrayBackedCollection.element location iter curr_index astate
+    in
+    let+ astate =
+      PulseOperations.write_field location ~ref:iter
+        GenericArrayBackedCollectionIterator.internal_pointer
+        ~obj:(new_index, event :: curr_index_hist)
+        astate
+    in
+    let astate =
+      PulseOperations.write_id (fst ret) (curr_elem_val, event :: curr_elem_hist) astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  (* {curr -> v_c } is modified to {curr -> v_fresh} and writes to array[v_c] *)
+  let remove ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let new_index = AbstractValue.mk_fresh () in
+    let* astate, (curr_index, curr_index_hist) =
+      GenericArrayBackedCollectionIterator.to_internal_pointer location iter astate
+    in
+    let* astate =
+      PulseOperations.write_field location ~ref:iter
+        GenericArrayBackedCollectionIterator.internal_pointer
+        ~obj:(new_index, event :: curr_index_hist)
+        astate
+    in
+    let new_elem = AbstractValue.mk_fresh () in
+    let* astate, arr = GenericArrayBackedCollection.eval location iter astate in
+    let+ astate =
+      PulseOperations.write_arr_index location ~ref:arr ~index:curr_index
+        ~obj:(new_elem, event :: curr_index_hist)
+        astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
 end
 
 module StdVector = struct
@@ -638,7 +694,7 @@ module ProcNameDispatcher = struct
         &::+ (fun _ str -> StringSet.mem str pushback_modeled)
         <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
-        $+...$--> StdVector.push_back
+        $+...$--> JavaIterator.remove ~desc:"remove"
       ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
       ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
@@ -656,9 +712,10 @@ module ProcNameDispatcher = struct
         &:: "equals"
         &--> Misc.nondet ~fn_name:"Object.equals"
       ; +PatternMatch.implements_lang "Iterable"
-        &:: "iterator" <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-      ; ( +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
-        $!--> fun x -> StdVector.at ~desc:"Iterator.next" x (AbstractValue.mk_fresh (), []) )
+        &:: "iterator" <>$ capt_arg_payload
+        $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
+      ; +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
+        $!--> JavaIterator.next ~desc:"Iterator.next()"
       ; ( +PatternMatch.implements_enumeration
         &:: "nextElement" <>$ capt_arg_payload
         $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])

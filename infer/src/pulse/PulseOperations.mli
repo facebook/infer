@@ -64,6 +64,15 @@ val write_field :
   -> t access_result
 (** write the edge [ref --.field--> obj] *)
 
+val write_arr_index :
+     Location.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> index:AbstractValue.t
+  -> obj:AbstractValue.t * ValueHistory.t
+  -> t
+  -> t access_result
+(** write the edge [ref\[index\]--> obj] *)
+
 val write_deref :
      Location.t
   -> ref:AbstractValue.t * ValueHistory.t

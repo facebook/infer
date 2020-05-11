@@ -37,12 +37,17 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
+type java_iterator_function = Remove [@@deriving compare]
+
+let pp_java_iterator_function f = function Remove -> F.pp_print_string f "Iterator.remove"
+
 type t =
   | CFree
   | ConstantDereference of IntLit.t
   | CppDelete
   | GoneOutOfScope of Pvar.t * Typ.t
   | StdVector of std_vector_function
+  | JavaIterator of java_iterator_function
 [@@deriving compare]
 
 let issue_type_of_cause = function
@@ -56,7 +61,7 @@ let issue_type_of_cause = function
       IssueType.use_after_delete
   | GoneOutOfScope _ ->
       IssueType.use_after_lifetime
-  | StdVector _ ->
+  | JavaIterator _ | StdVector _ ->
       IssueType.vector_invalidation
 
 
@@ -79,6 +84,8 @@ let describe f cause =
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
+  | JavaIterator java_iterator_f ->
+      F.fprintf f "was potentially invalidated by `%a()`" pp_java_iterator_function java_iterator_f
 
 
 let pp f invalidation =
@@ -93,3 +100,5 @@ let pp f invalidation =
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
+  | JavaIterator _ ->
+      F.fprintf f "JavaIterator(%a)" describe invalidation
