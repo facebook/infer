@@ -10,3 +10,7 @@ open! IStd
 val run_clang : ClangCommand.t -> (In_channel.t -> 'a) -> 'a
 
 val capture : ClangCommand.t -> unit
+
+val al_callback_ref : (CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> unit) ref
+(** callback set by AL to avoid circular dependencies between clang/ and al/ without having to
+    expose the clang-only types involved all the way to integration/ *)

@@ -1087,9 +1087,6 @@ let explain_divide_by_zero tenv exp node loc =
       Localise.no_desc
 
 
-(** explain a frontend warning *)
-let explain_frontend_warning loc = Localise.desc_frontend_warning loc
-
 (** explain a condition which is always true or false *)
 let explain_condition_always_true_false tenv i cond node loc =
   let cond_str_opt =

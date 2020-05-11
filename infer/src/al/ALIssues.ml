@@ -485,7 +485,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
   let issue_log', errlog = IssueLog.get_or_add ~proc:procname !issue_log in
   issue_log := issue_log' ;
   let err_desc =
-    Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
+    Localise.desc_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in
   let exn = Exceptions.Frontend_warning (issue_desc.issue_type, err_desc, __POS__) in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in

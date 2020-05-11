@@ -10,8 +10,8 @@
 let ( ^/ ) = Filename.concat
 
 let source_dirs =
-  (if clang then ["al"; "clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
-  @ ["integration"; "test_determinator"; "unit"; "unit" ^/ "nullsafe"]
+  (if clang then ["unit" ^/ "clang"] else ["unit" ^/ "clang_stubs"])
+  @ ["integration"; "unit"; "unit" ^/ "nullsafe"]
 
 
 let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
@@ -30,11 +30,6 @@ let env_stanza =
   )
 |}
     lenient_flags lenient_flags strict_flags
-
-
-let clang_lexer_stanzas =
-  if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
-  else []
 
 
 let infer_cflags =
@@ -79,8 +74,15 @@ let infer_cflags =
     ; "-open"
     ; "Backend"
     ; "-open"
-    ; "JavaFrontend" ]
-  @ if java then [] else ["-open"; "JavaFrontendStubs"] )
+    ; "JavaFrontend"
+    ; "-open"
+    ; "ClangFrontend"
+    ; "-open"
+    ; "ASTLanguage"
+    ; "-open"
+    ; "TestDeterminators" ]
+  @ (if java then [] else ["-open"; "JavaFrontendStubs"])
+  @ if clang then [] else ["-open"; "ClangFrontendStubs"] )
   |> String.concat " "
 
 
@@ -113,7 +115,10 @@ let main_lib_stanza =
          ; "TOPLlib"
          ; "concurrency"
          ; "labs"
-         ; "backend" ] ))
+         ; "backend"
+         ; "ClangFrontend"
+         ; "ASTLanguage"
+         ; "TestDeterminators" ] ))
     (String.concat " " infer_binaries)
 
 
@@ -165,8 +170,7 @@ let flatten_sources_stanzas =
 
 (** The build stanzas to be passed to dune *)
 let stanzas =
-  (env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: clang_lexer_stanzas)
-  @ flatten_sources_stanzas
+  env_stanza :: main_lib_stanza :: infer_exe_stanza :: infertop_stanza :: flatten_sources_stanzas
 
 
 ;;

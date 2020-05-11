@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./concurrency ./cost ./istd ./java ./labs ./nullsafe ./pulse ./quandary ./scripts ./topl
-INCLUDE_FOLDERS = -I absint -I IR -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I concurrency -I cost -I istd -I java -I labs -I nullsafe -I pulse -I quandary -I scripts -I topl
+LIBRARY_FOLDERS = . ./IR ./absint ./al ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./clang ./concurrency ./cost ./istd ./java ./labs ./nullsafe ./pulse ./quandary ./scripts ./test_determinator ./topl
+INCLUDE_FOLDERS = -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I clang -I concurrency -I cost -I istd -I java -I labs -I nullsafe -I pulse -I quandary -I scripts -I test_determinator -I topl
 
 ml_src_files:=$(shell \
 	cd $(INFER_BUILD_DIR); \

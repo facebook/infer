@@ -85,9 +85,6 @@ val explain_stack_variable_address_escape :
   Location.t -> Pvar.t -> DecompiledExp.t option -> Localise.error_desc
 (** explain the escape of a stack variable address from its scope *)
 
-val explain_frontend_warning : string -> string option -> Location.t -> Localise.error_desc
-(** explain frontend warning *)
-
 val explain_unary_minus_applied_to_unsigned_expression :
   Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain unary minus applied to unsigned expression *)

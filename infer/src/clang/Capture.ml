@@ -7,6 +7,8 @@
 open! IStd
 module L = Logging
 
+let al_callback_ref = ref (fun _ _ -> ())
+
 (** enable debug mode (to get more data saved to disk for future inspections) *)
 let debug_mode = Config.debug_mode || Config.frontend_stats
 
@@ -81,7 +83,8 @@ let run_clang_frontend ast_source =
   ClangPointers.populate_all_tables ast_decl ;
   L.(debug Capture Medium)
     "Start %s the AST of %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
-  if Config.is_checker_enabled Linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
+  (* run callbacks *)
+  !al_callback_ref trans_unit_ctx ast_decl ;
   if Config.process_clang_ast then ProcessAST.process_ast trans_unit_ctx ast_decl ;
   if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
   L.(debug Capture Medium)
@@ -196,4 +199,5 @@ let capture clang_cmd =
        absolute paths. *)
     L.(debug Capture Medium)
       "Running non-cc command without capture: %a@\n" ClangCommand.pp clang_cmd ;
-    run_clang clang_cmd Utils.echo_in )
+    run_clang clang_cmd Utils.echo_in ;
+    () )

@@ -7,4 +7,5 @@
 
 open! IStd
 
-val validate_al_files : unit -> (unit, string) Result.t
+val register_frontend_checks : unit -> unit
+(** call this before running the clang frontend *)

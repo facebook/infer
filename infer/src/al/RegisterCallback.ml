@@ -7,4 +7,5 @@
 
 open! IStd
 
-val exe : prog:string -> args:string list -> unit
+let register_frontend_checks () =
+  if Config.is_checker_enabled Linters then Capture.al_callback_ref := AL.do_frontend_checks
