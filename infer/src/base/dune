@@ -4,10 +4,10 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name InferBase)
- (public_name infer.InferBase)
- (flags (:standard -open Core -open InferStdlib -open IStd -open InferGenerated -open OpenSource))
- (libraries cmdliner core mtime.clock.os parmap re sqlite3 zip InferGenerated
-   InferStdlib OpenSource)
+ (name IBase)
+ (public_name infer.IBase)
+ (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open OpenSource))
+ (libraries cmdliner core mtime.clock.os parmap re sqlite3 zip ATDGenerated
+   IStdlib OpenSource)
  (preprocess
   (pps ppx_compare ppx_enumerate)))

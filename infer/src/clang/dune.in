@@ -15,9 +15,9 @@ let clang =
  (modules %s)
  (flags
   (:standard
-     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
-     -open InferBase -open InferIR -open Absint -open Checkers -open TestDeterminators))
- (libraries core InferStdlib InferGenerated InferBase InferIR absint checkers TestDeterminators)
+     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
+     -open IBase -open IR -open Absint -open Checkers -open TestDeterminators))
+ (libraries core IStdlib ATDGenerated IBase IR Absint Checkers TestDeterminators)
  (preprocess (pps ppx_compare))
 )|}
     (if clang then ":standard \\ ClangFrontendStubs" else "ClangFrontendStubs")

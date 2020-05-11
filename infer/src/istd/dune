@@ -4,8 +4,8 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name InferStdlib)
- (public_name infer.InferStdlib)
+ (name IStdlib)
+ (public_name infer.IStdlib)
  (flags
   (:standard -open Core))
  (libraries ANSITerminal core str yojson)

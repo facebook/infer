@@ -8,8 +8,8 @@
  (public_name infer.TestDeterminators)
  (flags
   (:standard
-     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
-     -open InferBase -open InferIR -open InferCStubs))
- (libraries core InferStdlib InferGenerated InferBase InferIR InferCStubs)
+     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
+     -open IBase -open IR -open CStubs))
+ (libraries core IStdlib ATDGenerated IBase IR CStubs)
  (preprocess (pps ppx_compare))
 )

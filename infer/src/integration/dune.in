@@ -11,15 +11,15 @@ let library =
   Format.sprintf
     {|
 (library
- (name integration)
- (public_name infer.integration)
+ (name Integration)
+ (public_name infer.Integration)
  (flags
   (:standard
-     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
-     -open InferBase -open InferIR -open Bo -open Costlib -open Concurrency -open Backend
+     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
+     -open IBase -open IR -open BO -open Costlib -open Concurrency -open Backend
      -open TestDeterminators -open ClangFrontend -open ASTLanguage -open JavaFrontend %s %s))
- (libraries xmlm core InferStdlib InferGenerated InferBase InferIR bo costlib concurrency backend
-            TestDeterminators ClangFrontend ASTLanguage JavaFrontend)
+ (libraries xmlm core IStdlib ATDGenerated IBase IR BO Costlib Concurrency Backend
+     TestDeterminators ClangFrontend ASTLanguage JavaFrontend)
  (preprocess (pps ppx_compare))
 )
 |}

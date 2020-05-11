@@ -4,11 +4,11 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name bo)
- (public_name infer.bo)
+ (name BO)
+ (public_name infer.BO)
  (flags
-  (:standard -open Core -open OpenSource -open InferIR -open InferStdlib -open IStd -open InferGenerated
-    -open InferBase -open Absint -open Biabduction))
- (libraries base64 core InferStdlib InferGenerated InferBase InferIR absint biabduction)
+  (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd -open ATDGenerated
+    -open IBase -open Absint -open Biabduction))
+ (libraries base64 core IStdlib ATDGenerated IBase IR Absint Biabduction)
  (preprocess (pps ppx_compare))
 )

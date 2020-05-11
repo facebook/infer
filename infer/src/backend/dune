@@ -4,15 +4,15 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name backend)
- (public_name infer.backend)
+ (name Backend)
+ (public_name infer.Backend)
  (flags
   (:standard
-     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
-     -open InferBase -open InferIR -open Absint -open Biabduction -open Bo -open Nullsafe
+     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
+     -open IBase -open IR -open Absint -open Biabduction -open BO -open Nullsafe
      -open Pulselib  -open Checkers -open Costlib -open Quandary -open TOPLlib
      -open Concurrency -open Labs))
- (libraries core InferStdlib InferGenerated InferBase InferIR absint biabduction nullsafe bo
-            checkers costlib quandary TOPLlib concurrency labs)
+ (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction Nullsafe BO
+            Checkers Costlib Quandary TOPLlib Concurrency Labs)
  (preprocess (pps ppx_compare ppx_fields_conv))
 )

@@ -16,11 +16,29 @@
 #require "sqlite3";;
 #require "xmlm";;
 
-open InferStdlib;;
-open InferGenerated;;
-open InferBase;;
-open InferIR;;
-open InferModules;;
+open IStdlib;;
+open ATDGenerated;;
+open CStubs;;
+open IBase;;
+open IR;;
+open Absint;;
+open Biabduction;;
+open BO;;
+open Nullsafe;;
+open Pulselib;;
+open Checkers;;
+open Costlib;;
+open Quandary;;
+open TOPLlib;;
+open Concurrency;;
+open Labs;;
+open OpenSource;;
+open Backend;;
+open JavaFrontend;;
+open ClangFrontend;;
+open ASTLanguage;;
+open TestDeterminators;;
+open Integration;;
 
 (* Most of infer uses this, useful for copy/pasting. Can be (partially) countered by typing `open
 Caml.Pervasives`. *)

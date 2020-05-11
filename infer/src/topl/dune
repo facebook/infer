@@ -11,8 +11,8 @@
  (name TOPLlib)
  (public_name infer.TOPLlib)
  (flags
-  (:standard -open Core -open InferIR -open InferStdlib -open IStd -open InferGenerated
-    -open InferBase -open Absint -open Biabduction))
- (libraries core InferStdlib InferGenerated InferBase InferIR absint biabduction)
+  (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
+    -open IBase -open Absint -open Biabduction))
+ (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction)
  (preprocess (pps ppx_compare ppx_hash ppx_sexp_conv))
 )

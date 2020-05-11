@@ -4,11 +4,11 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name InferIR)
- (public_name infer.InferIR)
+ (name IR)
+ (public_name infer.IR)
  (flags
-  (:standard -open Core -open InferStdlib -open IStd -open InferGenerated
-    -open InferBase))
- (libraries core zarith InferStdlib InferGenerated InferBase)
+  (:standard -open Core -open IStdlib -open IStd -open ATDGenerated
+    -open IBase))
+ (libraries core zarith IStdlib ATDGenerated IBase)
  (preprocess
   (pps ppx_compare)))

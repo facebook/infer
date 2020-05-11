@@ -4,11 +4,11 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name biabduction)
- (public_name infer.biabduction)
+ (name Biabduction)
+ (public_name infer.Biabduction)
  (flags
-  (:standard -open Core -open InferIR -open InferStdlib -open IStd -open InferGenerated
-    -open InferBase -open Absint))
- (libraries core InferStdlib InferGenerated InferBase InferIR absint)
+  (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
+    -open IBase -open Absint))
+ (libraries core IStdlib ATDGenerated IBase IR Absint)
  (preprocess (pps ppx_compare))
 )

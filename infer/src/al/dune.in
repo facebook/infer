@@ -19,9 +19,9 @@ let al =
  (modules %s)
  (flags
   (:standard
-     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
-     -open InferBase -open InferIR -open Absint -open ClangFrontend))
- (libraries core InferStdlib InferGenerated InferBase InferIR absint ClangFrontend)
+     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
+     -open IBase -open IR -open Absint -open ClangFrontend))
+ (libraries core IStdlib ATDGenerated IBase IR Absint ClangFrontend)
  (preprocess (pps ppx_compare))
 )|}
     (if clang then ":standard" else "")

@@ -4,8 +4,8 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name InferGenerated)
- (public_name infer.InferGenerated)
+ (name ATDGenerated)
+ (public_name infer.ATDGenerated)
  (flags
   (:standard -w -27-32-34-35-39))
  (libraries atdgen core)

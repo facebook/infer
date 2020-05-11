@@ -19,5 +19,5 @@ Format.sprintf
  (preprocess (pps ppx_compare ppx_enumerate ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
 )
 |}
-  (String.concat " " ("absint" :: "InferIR" :: "InferCStubs" :: common_libraries))
+  (String.concat " " ("Absint" :: "IR" :: "CStubs" :: common_libraries))
 |> Jbuild_plugin.V1.send

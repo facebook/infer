@@ -4,11 +4,11 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name costlib)
- (public_name infer.costlib)
+ (name Costlib)
+ (public_name infer.Costlib)
  (flags
-  (:standard -open Core -open OpenSource -open InferIR -open InferStdlib -open IStd
-    -open InferGenerated -open InferBase -open Absint -open Bo -open Checkers))
- (libraries core sledge InferStdlib InferGenerated InferBase InferIR absint bo checkers)
+  (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd
+    -open ATDGenerated -open IBase -open Absint -open BO -open Checkers))
+ (libraries core sledge IStdlib ATDGenerated IBase IR Absint BO Checkers)
  (preprocess (pps ppx_compare))
 )

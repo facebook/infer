@@ -4,8 +4,8 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name InferCStubs)
- (public_name infer.InferCStubs)
+ (name CStubs)
+ (public_name infer.CStubs)
  (foreign_stubs
   (language c)
   (names fnv64_hash)))
