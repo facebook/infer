@@ -10,8 +10,7 @@
 let ( ^/ ) = Filename.concat
 
 let source_dirs =
-  (if clang then ["unit" ^/ "clang"] else ["unit" ^/ "clang_stubs"])
-  @ ["integration"; "unit"; "unit" ^/ "nullsafe"]
+  (if clang then ["unit" ^/ "clang"] else ["unit" ^/ "clang_stubs"]) @ ["unit"; "unit" ^/ "nullsafe"]
 
 
 let infer_binaries = ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
@@ -80,7 +79,9 @@ let infer_cflags =
     ; "-open"
     ; "ASTLanguage"
     ; "-open"
-    ; "TestDeterminators" ]
+    ; "TestDeterminators"
+    ; "-open"
+    ; "Integration" ]
   @ (if java then [] else ["-open"; "JavaFrontendStubs"])
   @ if clang then [] else ["-open"; "ClangFrontendStubs"] )
   |> String.concat " "
@@ -118,7 +119,8 @@ let main_lib_stanza =
          ; "backend"
          ; "ClangFrontend"
          ; "ASTLanguage"
-         ; "TestDeterminators" ] ))
+         ; "TestDeterminators"
+         ; "integration" ] ))
     (String.concat " " infer_binaries)
 
 

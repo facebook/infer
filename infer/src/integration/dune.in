@@ -1,0 +1,31 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+let library =
+  Format.sprintf
+    {|
+(library
+ (name integration)
+ (public_name infer.integration)
+ (flags
+  (:standard
+     -open Core -open InferStdlib -open IStd -open OpenSource -open InferGenerated
+     -open InferBase -open InferIR -open Bo -open Costlib -open Concurrency -open Backend
+     -open TestDeterminators -open ClangFrontend -open ASTLanguage -open JavaFrontend %s %s))
+ (libraries xmlm core InferStdlib InferGenerated InferBase InferIR bo costlib concurrency backend
+            TestDeterminators ClangFrontend ASTLanguage JavaFrontend)
+ (preprocess (pps ppx_compare))
+)
+|}
+    (if clang then "" else "-open ClangFrontendStubs")
+    (if java then "" else "-open JavaFrontendStubs")
+
+
+;;
+Jbuild_plugin.V1.send library

@@ -165,6 +165,7 @@ infer/src/.project
 /infer/src/dune
 /infer/src/al/dune
 /infer/src/clang/dune
+/infer/src/integration/dune
 /infer/src/java/dune
 /infer/src/opensource/dune
 .merlin
