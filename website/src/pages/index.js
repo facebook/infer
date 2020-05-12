@@ -56,7 +56,7 @@ const poweredByItems = [
   { url: "https://www.mycode.ai", name: "CodeAI" },
   { url: "http://jd.com", name: "JD.com" },
   { url: "https://www.marksandspencer.com", name: "Marks and Spencer" },
-  { url: "https://www.moneylover.me", name: "Money Lover" },
+  { url: "https://moneylover.me", name: "Money Lover" },
   { url: "https://www.netcetera.com", name: "Netcetera" },
   { url: "https://www.olacabs.com", name: "OLA" },
   { url: "https://www.sky.com", name: "Sky" },
