@@ -45,6 +45,7 @@ type t =
   | CFree
   | ConstantDereference of IntLit.t
   | CppDelete
+  | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
@@ -59,6 +60,8 @@ let issue_type_of_cause = function
       IssueType.constant_address_dereference
   | CppDelete ->
       IssueType.use_after_delete
+  | EndIterator ->
+      IssueType.vector_invalidation
   | GoneOutOfScope _ ->
       IssueType.use_after_lifetime
   | JavaIterator _ | StdVector _ ->
@@ -75,6 +78,8 @@ let describe f cause =
       F.fprintf f "is the constant %a" IntLit.pp i
   | CppDelete ->
       F.pp_print_string f "was invalidated by `delete`"
+  | EndIterator ->
+      F.pp_print_string f "is pointed to by the `end()` iterator"
   | GoneOutOfScope (pvar, typ) ->
       let pp_var f pvar =
         if Pvar.is_cpp_temporary pvar then
@@ -96,7 +101,7 @@ let pp f invalidation =
       F.fprintf f "ConstantDereference(%a)" describe invalidation
   | CppDelete ->
       F.fprintf f "CppDelete(%a)" describe invalidation
-  | GoneOutOfScope _ ->
+  | EndIterator | GoneOutOfScope _ ->
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation

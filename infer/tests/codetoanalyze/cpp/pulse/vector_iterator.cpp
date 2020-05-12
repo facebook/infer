@@ -64,3 +64,26 @@ void FN_iterator_empty_vector_read_bad() {
   auto iter = vec.begin();
   std::cout << *iter << '\n';
 }
+
+void iterator_end_read_bad() {
+  std::vector<int> vec = {1, 2};
+  auto iter = vec.end();
+  std::cout << *iter << '\n';
+}
+
+bool for_each_ok(std::vector<int>& vec, bool b) {
+  int res = 0;
+  for (const auto& elem : vec) {
+    res += 0;
+  }
+  return b;
+}
+
+void call_iterator_loop_ok(bool b) {
+  std::vector<int> vec;
+  bool finished = false;
+  while (!finished) {
+    if (!for_each_ok(vec, b))
+      return;
+  }
+}

@@ -15,6 +15,9 @@ type 'a access_result = ('a, Diagnostic.t * t) result
 
 val ok_continue : t -> (ExecutionDomain.t list, 'a) result
 
+val check_addr_access : Location.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
+(** Check that the [address] is not known to be invalid *)
+
 module Closures : sig
   val check_captured_addresses : Location.t -> AbstractValue.t -> t -> (t, Diagnostic.t * t) result
   (** assert the validity of the addresses captured by the lambda *)

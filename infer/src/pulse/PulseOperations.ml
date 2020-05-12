@@ -16,7 +16,6 @@ type 'a access_result = ('a, Diagnostic.t * t) result
 
 let ok_continue post = Ok [ExecutionDomain.ContinueProgram post]
 
-(** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid access_trace address astate

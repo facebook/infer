@@ -27,6 +27,7 @@ type t =
   | CFree
   | ConstantDereference of IntLit.t
   | CppDelete
+  | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
