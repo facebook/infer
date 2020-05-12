@@ -562,17 +562,18 @@ module StdVector = struct
 end
 
 module JavaCollection = struct
-  let set coll index new_elem : model =
+  (* modifies arr[index]-> old_elem to arr[index]-> new_elem and returns old_elem *)
+  let set coll (index, _) (new_elem, new_elem_hist) : model =
    fun _ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
-    let* astate, ((old_addr, old_hist) as old_elem) =
-      GenericArrayBackedCollection.element location coll (fst index) astate
+    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let* astate, (old_addr, old_hist) =
+      GenericArrayBackedCollection.element location coll index astate
     in
     let+ astate =
-      PulseOperations.write_deref location ~ref:new_elem
-        ~obj:(old_addr, ValueHistory.Assignment location :: old_hist)
+      PulseOperations.write_arr_index location ~ref:arr ~index
+        ~obj:(new_elem, event :: new_elem_hist)
         astate
-      >>= PulseOperations.invalidate_access location (StdVector Assign) old_elem Dereference
     in
     let astate = PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate in
     [ExecutionDomain.ContinueProgram astate]

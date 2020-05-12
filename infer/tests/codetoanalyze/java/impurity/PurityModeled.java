@@ -84,6 +84,11 @@ class PurityModeled {
     list.set(0, "e");
   }
 
+  void call_set_impure(ArrayList<String> list) {
+    list_set_impure(list);
+    list_set_impure(list);
+  }
+
   // Pulse can only widen a fixed number of times, hence it thinks
   // that the exit of the loop never reaches and results in empty
   // post.
