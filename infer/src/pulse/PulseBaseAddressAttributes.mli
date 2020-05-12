@@ -30,6 +30,8 @@ val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) resul
 
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+val is_end_iterator : AbstractValue.t -> t -> bool
+
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_must_be_valid : AbstractValue.t -> t -> Trace.t option

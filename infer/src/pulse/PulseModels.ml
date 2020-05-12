@@ -383,10 +383,14 @@ module GenericArrayBackedCollectionIterator = struct
 
   let to_internal_pointer_deref location iterator astate =
     let* astate, pointer = to_internal_pointer location iterator astate in
-    let* astate, index = PulseOperations.eval_access location pointer Dereference astate in
+    let+ astate, index = PulseOperations.eval_access location pointer Dereference astate in
+    (astate, pointer, index)
+
+
+  let to_elem_pointed_by_iterator location iterator index astate =
     (* We do not want to create internal array if iterator pointer has an invalid value *)
-    let+ astate = PulseOperations.check_addr_access location index astate in
-    (astate, pointer, fst index, snd pointer)
+    let* astate = PulseOperations.check_addr_access location index astate in
+    GenericArrayBackedCollection.element location iterator (fst index) astate
 
 
   let construct location event ~init ~ref astate =
@@ -408,26 +412,25 @@ module GenericArrayBackedCollectionIterator = struct
 
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, _, index, hist = to_internal_pointer_deref location iter astate in
-    let+ astate, (elem, _) = GenericArrayBackedCollection.element location iter index astate in
-    let astate = PulseOperations.write_id (fst ret) (elem, event :: hist) astate in
+    let* astate, pointer, index = to_internal_pointer_deref location iter astate in
+    let+ astate, (elem, _) = to_elem_pointed_by_iterator location iter index astate in
+    let astate = PulseOperations.write_id (fst ret) (elem, event :: snd pointer) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let operator_plus_plus ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
+  let operator_step step ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let index_next = AbstractValue.mk_fresh () in
-    let* astate, pointer, current_index_addr, hist =
-      to_internal_pointer_deref location iter astate
+    let index_new = AbstractValue.mk_fresh () in
+    let* astate, pointer, current_index = to_internal_pointer_deref location iter astate in
+    let* astate =
+      match (step, AddressAttributes.is_end_iterator (fst current_index) astate) with
+      | `MinusMinus, true ->
+          Ok astate
+      | _ ->
+          let* astate, _ = to_elem_pointed_by_iterator location iter current_index astate in
+          Ok astate
     in
-    let* astate, element =
-      GenericArrayBackedCollection.element location iter current_index_addr astate
-    in
-    (* Iterator is invalid if the value it points to is invalid *)
-    let* astate, _ =
-      PulseOperations.eval_access location (fst element, event :: hist) Dereference astate
-    in
-    PulseOperations.write_deref location ~ref:pointer ~obj:(index_next, event :: hist) astate
+    PulseOperations.write_deref location ~ref:pointer ~obj:(index_new, event :: snd pointer) astate
     >>| ExecutionDomain.continue >>| List.return
 end
 
@@ -682,14 +685,22 @@ module ProcNameDispatcher = struct
       ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
         $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
       ; -"std" &:: "__wrap_iter" &:: "operator++" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_plus_plus ~desc:"iterator operator++"
+        $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
+               ~desc:"iterator operator++"
+      ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
+               ~desc:"iterator operator--"
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
         $+ capt_arg_payload
         $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload
         $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_plus_plus ~desc:"iterator operator++"
+        $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
+               ~desc:"iterator operator++"
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
+        $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
+               ~desc:"iterator operator--"
       ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
         $+...$--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload

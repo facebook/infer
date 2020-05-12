@@ -94,6 +94,11 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
+let is_end_iterator address attrs =
+  let invalid_attrs = get_attribute Attributes.get_invalid address attrs in
+  match invalid_attrs with Some (EndIterator, _) -> true | _ -> false
+
+
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs
   |> Option.value_map ~default:false ~f:Attributes.is_std_vector_reserved

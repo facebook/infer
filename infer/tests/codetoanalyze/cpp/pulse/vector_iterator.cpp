@@ -71,6 +71,26 @@ void iterator_end_read_bad() {
   std::cout << *iter << '\n';
 }
 
+void iterator_end_prev_read_ok() {
+  std::vector<int> vec = {1, 2};
+  auto iter = vec.end();
+  std::cout << *(--iter) << '\n';
+}
+
+void iterator_prev_after_emplace_bad(std::vector<int>& vec) {
+  auto iter = vec.begin();
+  ++iter;
+  vec.emplace(iter, 4);
+  --iter;
+  std::cout << *iter << '\n';
+}
+
+void FN_iterator_begin_prev_read_bad() {
+  std::vector<int> vec = {1, 2};
+  auto iter = vec.begin();
+  std::cout << *(--iter) << '\n';
+}
+
 bool for_each_ok(std::vector<int>& vec, bool b) {
   int res = 0;
   for (const auto& elem : vec) {

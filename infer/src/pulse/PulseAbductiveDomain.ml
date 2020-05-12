@@ -225,6 +225,10 @@ module AddressAttributes = struct
     BaseAddressAttributes.is_std_vector_reserved addr (astate.post :> base_domain).attrs
 
 
+  let is_end_iterator addr astate =
+    BaseAddressAttributes.is_end_iterator addr (astate.post :> base_domain).attrs
+
+
   let abduce_and_add value attrs astate =
     Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
         let astate =
