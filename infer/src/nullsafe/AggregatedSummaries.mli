@@ -27,6 +27,8 @@ module ClassInfo : sig
 
   val get_recursive_summaries : t -> (JavaClassName.t * NullsafeSummary.t) list
   (** A flattened list of all summaries, user-level, nested, and anonymous, combined together *)
+
+  val pp : Format.formatter -> t -> unit
 end
 
 val aggregate : (JavaClassName.t * NullsafeSummary.t) list -> ClassInfo.t list

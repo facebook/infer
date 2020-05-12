@@ -47,7 +47,15 @@ let analyze_top_level_class tenv source_file issue_log top_level_class_info =
 
 
 let analyze_file ({InterproceduralAnalysis.file_exe_env; source_file} as analysis_data) =
+  Logging.debug Analysis Medium "Starting file level analysis of %a@\n" SourceFile.pp source_file ;
   let all_summaries = get_summaries analysis_data in
   let tenv = Exe_env.load_java_global_tenv file_exe_env in
   let top_level_classes = AggregatedSummaries.aggregate all_summaries in
-  List.fold top_level_classes ~init:IssueLog.empty ~f:(analyze_top_level_class tenv source_file)
+  List.iter top_level_classes ~f:(fun top_level_class ->
+      Logging.debug Analysis Medium "Hierarchy for a top level class:@\n%a@\n"
+        AggregatedSummaries.ClassInfo.pp top_level_class ) ;
+  let issue_log =
+    List.fold top_level_classes ~init:IssueLog.empty ~f:(analyze_top_level_class tenv source_file)
+  in
+  Logging.debug Analysis Medium "Finished file level analysis of %a@\n" SourceFile.pp source_file ;
+  issue_log

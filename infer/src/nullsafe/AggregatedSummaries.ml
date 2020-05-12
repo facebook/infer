@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module ClassInfo = struct
   type t =
@@ -59,6 +60,26 @@ module ClassInfo = struct
       List.map t.nested_classes_info ~f:get_recursive_summaries |> List.concat
     in
     this_summaries @ nested_summaries @ anonymous_summaries
+
+
+  let rec pp fmt class_info =
+    let pp_anonymous fmt (class_name, summaries) =
+      F.fprintf fmt "Class name: %a, Summaries: %d" JavaClassName.pp class_name
+        (List.length summaries)
+    in
+    let pp_list fmt items ~pp =
+      if List.is_empty items then F.fprintf fmt "<empty>"
+      else List.iter items ~f:(F.fprintf fmt "%a@\n" pp)
+    in
+    let pp_content fmt {summaries; nested_anonymous_classes; nested_classes_info} =
+      F.fprintf fmt
+        "Summaries: %d@\nNested anonymous classes:@\n  @[%a@]@\nNested classes:@\n  @[%a@]"
+        (List.length summaries) (pp_list ~pp:pp_anonymous)
+        (JavaClassName.Map.bindings nested_anonymous_classes)
+        (pp_list ~pp) nested_classes_info
+    in
+    F.fprintf fmt "Class name: %a@\n  @[%a@]" JavaClassName.pp class_info.class_name pp_content
+      class_info
 end
 
 (* If key (class_name) was not in the map yet, add it, otherwise modify the existing value.
