@@ -401,6 +401,17 @@ module Mem = struct
     {x with created= Created.add lhs (Created.lookup rhs created) created}
 
 
+  let assume_null path ({created; method_called} as x) =
+    match CreatedLocations.is_singleton_or_more (Created.lookup path created) with
+    | Singleton loc ->
+        let method_called =
+          MethodCalled.remove {created_location= loc; is_build_called= false} method_called
+        in
+        {x with method_called}
+    | Empty | More ->
+        x
+
+
   let call_create lhs typ_name location ({created} as x) =
     let created_location =
       CreatedLocation.ByCreateMethod {location; typ_name; latest_callsite= location}
@@ -520,6 +531,8 @@ let init tenv pname formals ret_path =
 let map_no_return_called f x = {x with no_return_called= f x.no_return_called}
 
 let assign ~lhs ~rhs = map_no_return_called (Mem.assign ~lhs ~rhs)
+
+let assume_null x = map_no_return_called (Mem.assume_null x)
 
 let call_create lhs typ_name location = map_no_return_called (Mem.call_create lhs typ_name location)
 

@@ -53,6 +53,9 @@ val init : Tenv.t -> Procname.t -> (Pvar.t * Typ.t) list -> LocalAccessPath.t ->
 
 val assign : lhs:LocalAccessPath.t -> rhs:LocalAccessPath.t -> t -> t
 
+val assume_null : LocalAccessPath.t -> t -> t
+(** Semantics of null assume statement, i.e., [assume(x==null)] *)
+
 val call_create : LocalAccessPath.t -> Typ.name -> Location.t -> t -> t
 (** Semantics of builder creation method *)
 

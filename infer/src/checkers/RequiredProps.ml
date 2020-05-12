@@ -206,6 +206,13 @@ module TransferFunctions = struct
           ~caller:astate ~callee:callee_summary )
 
 
+  let assume_null caller_pname x astate =
+    let access_path =
+      Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path x) caller_pname
+    in
+    Domain.assume_null access_path astate
+
+
   let exec_instr astate {interproc= {proc_desc; tenv}; get_proc_summary_and_formals} _
       (instr : HilInstr.t) : Domain.t =
     let caller_pname = Procdesc.get_proc_name proc_desc in
@@ -270,6 +277,18 @@ module TransferFunctions = struct
               astate
         in
         if HilExp.AccessExpression.is_return_var lhs_ae then Domain.call_return astate else astate
+    | Assume (BinaryOperator (Eq, AccessExpression x, null), _, _, _)
+      when HilExp.is_null_literal null ->
+        assume_null caller_pname x astate
+    | Assume (BinaryOperator (Eq, null, AccessExpression x), _, _, _)
+      when HilExp.is_null_literal null ->
+        assume_null caller_pname x astate
+    | Assume (UnaryOperator (LNot, BinaryOperator (Ne, AccessExpression x, null), _), _, _, _)
+      when HilExp.is_null_literal null ->
+        assume_null caller_pname x astate
+    | Assume (UnaryOperator (LNot, BinaryOperator (Ne, null, AccessExpression x), _), _, _, _)
+      when HilExp.is_null_literal null ->
+        assume_null caller_pname x astate
     | _ ->
         astate
 

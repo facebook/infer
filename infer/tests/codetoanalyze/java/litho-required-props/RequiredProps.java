@@ -521,4 +521,36 @@ public class RequiredProps {
     builder1.prop1(new Object()).prop3(new Object()).build();
     builder2.prop3(new Object()).build();
   }
+
+  public void nullableBuilderOk(boolean b) {
+    MyComponent.Builder builderOk =
+        mMyComponent.create().prop1(new Object()).prop2(new Object()).prop3(new Object());
+    MyComponent.Builder builder = null;
+    if (b) {
+      builder = mMyComponent.create().prop1(new Object()).prop2(new Object());
+    }
+    (builder == null ? builderOk : builder.prop3(new Object())).build();
+  }
+
+  public void nullableBuilderBad(boolean b) {
+    MyComponent.Builder builderOk =
+        mMyComponent.create().prop1(new Object()).prop2(new Object()).prop3(new Object());
+    MyComponent.Builder builder = null;
+    if (b) {
+      builder = mMyComponent.create().prop2(new Object());
+    }
+    (builder == null ? builderOk : builder.prop3(new Object())).build();
+  }
+
+  public void nullableBuilderAliasOk_FP(boolean b) {
+    MyComponent.Builder builder =
+        mMyComponent.create().prop1(new Object()).prop2(new Object()).prop3(new Object());
+    MyComponent.Builder alias = builder;
+    if (b) {
+      builder = null;
+    }
+    if (builder == null) {
+      alias.build();
+    }
+  }
 }
