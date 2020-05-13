@@ -34,7 +34,7 @@ depends: [
   "javalib" {>="3.2.1"}
   "mlgmpidl" {>="1.2.12"}
   "mtime"
-  "ocaml" {>="4.08.0"}
+  "ocaml" {>="4.09.0"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {>="2.0.5"}
