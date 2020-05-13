@@ -180,5 +180,6 @@ infer/src/.project
 /infer/src/deadcode/all_mli_files_copied
 /infer/src/deadcode/*.ml
 /infer/src/deadcode/*.mli
+/infer/src/deadcode/dune
 _opam
 _coverage

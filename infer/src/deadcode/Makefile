@@ -163,13 +163,17 @@ $(ml_src_files_without_mli:.ml=.cmx):
 flatten_infer: infer.cmx inferunit.cmx InferCreateTraceViewLinks.cmx scripts/checkCopyright.cmx
 	$(QUIET)echo "see results in $(ALL_INFER_IN_ONE_FILE_ML)"
 
+# copy dune.in to dune only when needed to avoid dune trying to build
+# all_infer_in_one_file as part of the rest of the build
+dune: dune.in
+	$(QUIET)$(INSTALL_DATA) $< $@
+
 .PHONY: detect_dead_code
-detect_dead_code:
-	$(MAKE) clean
+detect_dead_code: dune
 #	create a dummy implementation file to keep dune happy, as we are about to generate the
 #	dune file for this directory
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
-#	needed to get dune generated, and the generated code for the lexers and parsers in ../_build
+#	needed to get the generated code for the lexers and parsers in ../_build
 	$(MAKE) -C .. test
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
@@ -184,9 +188,7 @@ detect_dead_code:
 	$(MAKE) -j 1 detect_dead_src_file
 #	build and get dead code warnings
 	dune build --profile test all_infer_in_one_file.bc
-#	be paranoid about cleaning because we do not want to include infer_in_one_file into infer by
-#	accident and I don't know enough dune to be positive that it won't happen
-	$(MAKE) clean
+	$(REMOVE) dune
 
 .PHONY: detect_dead_src_file
 detect_dead_src_file:
@@ -238,5 +240,5 @@ detect_dead_src_file:
 .PHONY: clean
 clean:
 	$(REMOVE) .depend *.ml *.mli $(ALL_ML_FILES) $(ALL_MLI_FILES) $(ALL_ML_FILES_COPIED) \
-	  $(ALL_MLI_FILES_COPIED)
+	  $(ALL_MLI_FILES_COPIED) dune
 
