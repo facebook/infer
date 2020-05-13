@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Thu Jun  7 16:35:59 2018 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue May 12 16:45:49 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -24,6 +24,9 @@
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXPLORE BUGS">EXPLORE BUGS</a><br>
+<a href="#EXPLORE PROCEDURES">EXPLORE PROCEDURES</a><br>
+<a href="#EXPLORE SOURCE FILES">EXPLORE SOURCE FILES</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
@@ -46,21 +49,26 @@ explore the error traces in infer reports</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 explore</b> <i>[options]</i> <b><br>
-infer explore --procedures</b> <i>[options]</i></p>
+infer explore --procedures</b> <i>[options]</i> <b><br>
+infer explore --source-files</b> <i>[options]</i></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Show the list
-of bugs on the console and explore symbolic program traces
-emitted by infer to explain a report. Can also generate an
-HTML report from a JSON report.</p>
-
 <p style="margin-left:11%; margin-top: 1em">If
 <b>--procedures</b> is passed, print information about each
 procedure captured by infer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>--source-files</b> is passed, print information about
+captured source files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, show
+the list of bugs on the console and explore symbolic program
+traces emitted by infer to explain a report. Can also
+generate an HTML report from a JSON report.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -78,15 +86,26 @@ procedure captured by infer.</p>
 <p style="margin-left:17%;">Show this help in the specified
 format. <b>auto</b> sets the format to <b>plain</b> if the
 environment variable <b>TERM</b> is &quot;dumb&quot; or
-undefined, and to <b>pager</b> otherwise. (default:
-<i>auto</i>)</p>
+undefined, and to <b>pager</b> otherwise.</p>
 
 <p style="margin-left:11%;"><b>--help-full</b></p>
 
 <p style="margin-left:17%;">Show this manual with all
 internal options in the INTERNAL OPTIONS section</p>
 
-<p style="margin-left:11%;"><b>--html</b></p>
+<p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
+<i>dir</i></p>
+
+<p style="margin-left:17%;">Write results and internal
+files in the specified directory</p>
+
+<h2>EXPLORE BUGS
+<a name="EXPLORE BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--html</b></p>
 
 <p style="margin-left:17%;">Activates: Generate html
 report. (Conversely: <b>--no-html</b>)</p>
@@ -103,7 +122,24 @@ skipped. If omitted, all levels are shown.</p>
 <p style="margin-left:17%;">Activates: Show the list of
 reports and exit (Conversely: <b>--no-only-show</b>)</p>
 
-<p style="margin-left:11%;"><b>--procedures</b></p>
+<p style="margin-left:11%;"><b>--select</b> <i>N</i></p>
+
+<p style="margin-left:17%;">Select bug number <i>N</i>. If
+omitted, prompt for input.</p>
+
+<p style="margin-left:11%;"><b>--no-source-preview</b></p>
+
+<p style="margin-left:17%;">Deactivates: print code
+excerpts around trace elements (Conversely:
+<b>--source-preview</b>)</p>
+
+<h2>EXPLORE PROCEDURES
+<a name="EXPLORE PROCEDURES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--procedures</b></p>
 
 <p style="margin-left:17%;">Activates: Print functions and
 methods discovered by infer (Conversely:
@@ -133,10 +169,9 @@ Objective-C accessor (Conversely:
 print functions and methods (procedures) matching the
 specified <i>filter</i>. A procedure filter is of the form
 <i>path_pattern:procedure_name</i>. Patterns are interpreted
-by SQLite: use <b>_</b> to match any one character and
-<b>%</b> to match any sequence of characters. For instance,
-to keep only methods named &quot;foo&quot;, one can use the
-filter &quot;%:foo&quot;.</p>
+as OCaml Str regular expressions. For instance, to keep only
+methods named &quot;foo&quot;, one can use the filter
+&quot;.*:foo&quot;, or &quot;foo&quot; for short.</p>
 
 <p style="margin-left:11%;"><b>--procedures-name</b></p>
 
@@ -152,29 +187,24 @@ file in which the procedure definition or declaration was
 found in the output of <b>--procedures</b> (Conversely:
 <b>--procedures-source-file</b>)</p>
 
-<p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
-<i>dir</i></p>
+<h2>EXPLORE SOURCE FILES
+<a name="EXPLORE SOURCE FILES"></a>
+</h2>
 
-<p style="margin-left:17%;">Write results and internal
-files in the specified directory (default:
-<i>/home/jul/infer.fb/infer-out</i>)</p>
 
-<p style="margin-left:11%;"><b>--select</b> <i>N</i></p>
 
-<p style="margin-left:17%;">Select bug number <i>N</i>. If
-omitted, prompt for input.</p>
-
-<p style="margin-left:11%;"><b>--source-files</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--source-files</b></p>
 
 <p style="margin-left:17%;">Activates: Print source files
 discovered by infer (Conversely:
 <b>--no-source-files</b>)</p>
 
-<p style="margin-left:11%;"><b>--source-files-cfgs</b></p>
+<p style="margin-left:11%;"><b>--source-files-cfg</b></p>
 
-<p style="margin-left:17%;">Activates: Print the Cfgs of
-each source file in the output of <b>--source-files</b>
-(Conversely: <b>--no-source-files-cfgs</b>)</p>
+<p style="margin-left:17%;">Activates: Output a dotty file
+in infer-out/captured for each source file in the output of
+<b>--source-files</b> (Conversely:
+<b>--no-source-files-cfg</b>)</p>
 
 <p style="margin-left:11%;"><b>--source-files-filter</b>
 <i>filter</i></p>
@@ -182,10 +212,8 @@ each source file in the output of <b>--source-files</b>
 <p style="margin-left:17%;">With <b>--source-files</b>,
 only print source files matching the specified
 <i>filter</i>. The filter is a pattern that should match the
-file path. Patterns are interpreted by SQLite: use <b>_</b>
-to match any one character and <b>%</b> to match any
-sequence of characters. For instance, &quot;lib/%.c&quot;
-matches only C files in the lib directory.</p>
+file path. Patterns are interpreted as OCaml Str regular
+expressions.</p>
 
 
 <p style="margin-left:11%;"><b>--source-files-freshly-captured</b></p>
@@ -210,12 +238,6 @@ procedure of each source file in the output of
 environment of each source file in the output of
 <b>--source-files</b> (Conversely:
 <b>--no-source-files-type-environment</b>)</p>
-
-<p style="margin-left:11%;"><b>--no-source-preview</b></p>
-
-<p style="margin-left:17%;">Deactivates: print code
-excerpts around trace elements (Conversely:
-<b>--source-preview</b>)</p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>

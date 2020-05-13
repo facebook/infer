@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Thu Jun  7 16:35:59 2018 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue May 12 16:45:49 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -24,6 +24,7 @@
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
+<a href="#HOISTING OPTIONS">HOISTING OPTIONS</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
@@ -66,28 +67,31 @@ in the results directory.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--&lt;analyzer&gt;-blacklist-files-containing</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--censor-report</b>
 <i>+string</i></p>
 
-<p style="margin-left:17%;">blacklist files containing the
-specified string for the given analyzer (see
-<b>--analyzer</b> for valid values)</p>
-
-
-<p style="margin-left:11%;"><b>--&lt;analyzer&gt;-blacklist-path-regex</b>
-<i>+path_regex</i></p>
-
-<p style="margin-left:17%;">blacklist the analysis of files
-whose relative path matches the specified OCaml-style regex
-(to whitelist:
-<b>--&lt;analyzer&gt;-whitelist-path-regex</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--&lt;analyzer&gt;-suppress-errors</b>
-<i>+error_name</i></p>
-
-<p style="margin-left:17%;">do not report a type of
-errors</p>
+<p style="margin-left:17%;">Specify a filter for issues to
+be censored by adding a 'censored_reason' field in the json
+report. Infer will not report censored issues on the console
+output and in bugs.txt, but tools that post-process the json
+report can take them into account. If multiple filters are
+specified, they are applied in the order in which they are
+specified. Each filter is applied to each issue detected,
+and only issues which are accepted by all filters are
+reported. Each filter is of the form:
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+The first two components are OCaml Str regular expressions,
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
+inverted, and the filter becomes a &quot;blacklist&quot;
+instead of a &quot;whitelist&quot;. Each filter is
+interpreted as an implication: an issue matches if it does
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
+are tested by the regex are relative to the
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
 
@@ -115,22 +119,19 @@ enabled <br>
 --debug-level-analysis</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the analysis.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-capture</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the capture.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-linters</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 
 <p style="margin-left:11%;"><b>--differential-filter-files</b>
@@ -151,29 +152,192 @@ which types of issue should be reported once the checkers
 have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
-<p style="margin-left:11%;">By default, the following issue
-types are disabled: <br>
-ANALYSIS_STOPS, ARRAY_OUT_OF_BOUNDS_L1,
-ARRAY_OUT_OF_BOUNDS_L2, <br>
-ARRAY_OUT_OF_BOUNDS_L3, BUFFER_OVERRUN_L4,
-BUFFER_OVERRUN_L5, <br>
-BUFFER_OVERRUN_U5, CLASS_CAST_EXCEPTION,
-CONDITION_ALWAYS_FALSE, <br>
-CONDITION_ALWAYS_TRUE, DANGLING_POINTER_DEREFERENCE, <br>
-DIVIDE_BY_ZERO, <br>
-GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,
+<p style="margin-left:11%;">Available issue types are as
+follows: <br>
+ALLOCATION_COMPLEXITY_INCREASE (enabled by default), <br>
+ALLOCATION_COMPLEXITY_INCREASE_COLD_START (enabled by
+default), <br>
+ANALYSIS_STOPS (disabled by default), <br>
+ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
+ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
+ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
+Abduction_case_not_implemented (enabled by default), <br>
+Array_of_pointsto (enabled by default), <br>
+Assert_failure (enabled by default), <br>
+BUFFER_OVERRUN_L1 (enabled by default), <br>
+BUFFER_OVERRUN_L2 (enabled by default), <br>
+BUFFER_OVERRUN_L3 (enabled by default), <br>
+BUFFER_OVERRUN_L4 (disabled by default), <br>
+BUFFER_OVERRUN_L5 (disabled by default), <br>
+BUFFER_OVERRUN_R2 (enabled by default), <br>
+BUFFER_OVERRUN_S2 (enabled by default), <br>
+BUFFER_OVERRUN_U5 (disabled by default), <br>
+Bad_footprint (enabled by default), <br>
+CHECKERS_ALLOCATES_MEMORY (enabled by default), <br>
+CHECKERS_ANNOTATION_REACHABILITY_ERROR (enabled by default),
 <br>
-INFERBO_ALLOC_MAY_BE_BIG, INFERBO_ALLOC_MAY_BE_NEGATIVE,
+CHECKERS_CALLS_EXPENSIVE_METHOD (enabled by default), <br>
+CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by
+default), <br>
+CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default), <br>
+CHECKERS_IMMUTABLE_CAST (enabled by default), <br>
+CHECKERS_PRINTF_ARGS (enabled by default), <br>
+CLASS_CAST_EXCEPTION (disabled by default), <br>
+CLASS_LOAD (enabled by default), <br>
+COMPARING_FLOAT_FOR_EQUALITY (enabled by default), <br>
+COMPONENT_FACTORY_FUNCTION (enabled by default), <br>
+COMPONENT_FILE_CYCLOMATIC_COMPLEXITY (enabled by default),
 <br>
-INFINITE_EXECUTION_TIME_CALL, NULL_TEST_AFTER_DEREFERENCE,
+COMPONENT_FILE_LINE_COUNT (enabled by default), <br>
+COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS (enabled by
+default), <br>
+COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by
+default), <br>
+COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS (enabled by
+default), <br>
+CONDITION_ALWAYS_FALSE (disabled by default), <br>
+CONDITION_ALWAYS_TRUE (disabled by default), <br>
+CREATE_INTENT_FROM_URI (enabled by default), <br>
+CROSS_SITE_SCRIPTING (enabled by default), <br>
+Cannot_star (enabled by default), <br>
+Codequery (enabled by default), <br>
+DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
+DEADLOCK (enabled by default), <br>
+DEAD_STORE (enabled by default), <br>
+DEALLOCATE_STACK_VARIABLE (enabled by default), <br>
+DEALLOCATE_STATIC_MEMORY (enabled by default), <br>
+DEALLOCATION_MISMATCH (enabled by default), <br>
+DIVIDE_BY_ZERO (disabled by default), <br>
+DO_NOT_REPORT (enabled by default), <br>
+EMPTY_VECTOR_ACCESS (enabled by default), <br>
+ERADICATE_CONDITION_REDUNDANT (enabled by default), <br>
+ERADICATE_CONDITION_REDUNDANT_NONNULL (enabled by default),
 <br>
-RETURN_VALUE_IGNORED, STACK_VARIABLE_ADDRESS_ESCAPE, <br>
-UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION. <br>
-See also <b>--report-issue-type</b>. <br>
-(default: <i><br>
-
-ANALYSIS_STOPS,ARRAY_OUT_OF_BOUNDS_L1,ARRAY_OUT_OF_BOUNDS_L2,ARRAY_OUT_OF_BOUNDS_L3,BUFFER_OVERRUN_L4,BUFFER_OVERRUN_L5,BUFFER_OVERRUN_U5,CLASS_CAST_EXCEPTION,CONDITION_ALWAYS_FALSE,CONDITION_ALWAYS_TRUE,DANGLING_POINTER_DEREFERENCE,DIVIDE_BY_ZERO,GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,INFERBO_ALLOC_MAY_BE_BIG,INFERBO_ALLOC_MAY_BE_NEGATIVE,INFINITE_EXECUTION_TIME_CALL,NULL_TEST_AFTER_DEREFERENCE,RETURN_VALUE_IGNORED,STACK_VARIABLE_ADDRESS_ESCAPE,UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION</i>)
-<b><br>
+ERADICATE_FIELD_NOT_INITIALIZED (enabled by default), <br>
+ERADICATE_FIELD_NOT_MUTABLE (enabled by default), <br>
+ERADICATE_FIELD_NOT_NULLABLE (enabled by default), <br>
+ERADICATE_FIELD_OVER_ANNOTATED (enabled by default), <br>
+ERADICATE_FIELD_VALUE_ABSENT (enabled by default), <br>
+ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION
+(enabled <br>
+by default), <br>
+ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION (enabled
+by <br>
+default), <br>
+ERADICATE_NULLABLE_DEREFERENCE (enabled by default), <br>
+ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default), <br>
+ERADICATE_PARAMETER_VALUE_ABSENT (enabled by default), <br>
+ERADICATE_RETURN_NOT_NULLABLE (enabled by default), <br>
+ERADICATE_RETURN_OVER_ANNOTATED (enabled by default), <br>
+ERADICATE_RETURN_VALUE_NOT_PRESENT (enabled by default),
+<br>
+ERADICATE_VALUE_NOT_PRESENT (enabled by default), <br>
+EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
+<br>
+EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
+<br>
+default), <br>
+EXPENSIVE_ALLOCATION (disabled by default), <br>
+EXPENSIVE_ALLOCATION_COLD_START (disabled by default), <br>
+EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
+EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
+<br>
+EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
+EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
+Failure_exe (enabled by default), <br>
+GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
+<br>
+(disabled by default), <br>
+GRAPHQL_FIELD_ACCESS (enabled by default), <br>
+GUARDEDBY_VIOLATION (enabled by default), <br>
+INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
+INFERBO_ALLOC_IS_BIG (enabled by default), <br>
+INFERBO_ALLOC_IS_NEGATIVE (enabled by default), <br>
+INFERBO_ALLOC_IS_ZERO (enabled by default), <br>
+INFERBO_ALLOC_MAY_BE_BIG (enabled by default), <br>
+INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default), <br>
+INFINITE_ALLOCATION (disabled by default), <br>
+INFINITE_EXECUTION_TIME (disabled by default), <br>
+INHERENTLY_DANGEROUS_FUNCTION (enabled by default), <br>
+INSECURE_INTENT_HANDLING (enabled by default), <br>
+INTEGER_OVERFLOW_L1 (enabled by default), <br>
+INTEGER_OVERFLOW_L2 (enabled by default), <br>
+INTEGER_OVERFLOW_L5 (disabled by default), <br>
+INTEGER_OVERFLOW_R2 (enabled by default), <br>
+INTEGER_OVERFLOW_U5 (disabled by default), <br>
+INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
+INVARIANT_CALL (enabled by default), <br>
+IVAR_NOT_NULL_CHECKED (enabled by default), <br>
+Internal_error (enabled by default), <br>
+JAVASCRIPT_INJECTION (enabled by default), <br>
+LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
+LOGGING_PRIVATE_DATA (enabled by default), <br>
+Leak_after_array_abstraction (enabled by default), <br>
+Leak_in_footprint (enabled by default), <br>
+MEMORY_LEAK (enabled by default), <br>
+MISSING_REQUIRED_PROP (enabled by default), <br>
+MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by
+default), <br>
+Missing_fld (enabled by default), <br>
+NULLSAFE_FIELD_NOT_NULLABLE (enabled by default), <br>
+NULLSAFE_NULLABLE_DEREFERENCE (enabled by default), <br>
+NULL_DEREFERENCE (enabled by default), <br>
+NULL_TEST_AFTER_DEREFERENCE (disabled by default), <br>
+PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
+POINTER_SIZE_MISMATCH (enabled by default), <br>
+PRECONDITION_NOT_FOUND (enabled by default), <br>
+PRECONDITION_NOT_MET (enabled by default), <br>
+PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+<br>
+PURE_FUNCTION (enabled by default), <br>
+QUANDARY_TAINT_ERROR (enabled by default), <br>
+REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),
+<br>
+RESOURCE_LEAK (enabled by default), <br>
+RETAIN_CYCLE (enabled by default), <br>
+RETURN_EXPRESSION_REQUIRED (enabled by default), <br>
+RETURN_STATEMENT_MISSING (enabled by default), <br>
+RETURN_VALUE_IGNORED (disabled by default), <br>
+SHELL_INJECTION (enabled by default), <br>
+SHELL_INJECTION_RISK (enabled by default), <br>
+SKIP_FUNCTION (enabled by default), <br>
+SKIP_POINTER_DEREFERENCE (enabled by default), <br>
+SQL_INJECTION (enabled by default), <br>
+SQL_INJECTION_RISK (enabled by default), <br>
+STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default), <br>
+STARVATION (enabled by default), <br>
+STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
+<br>
+STRICT_MODE_VIOLATION (enabled by default), <br>
+Symexec_memory_error (enabled by default), <br>
+TAINTED_BUFFER_ACCESS (enabled by default), <br>
+TAINTED_MEMORY_ALLOCATION (enabled by default), <br>
+THREAD_SAFETY_VIOLATION (enabled by default), <br>
+TOPL_ERROR (enabled by default), <br>
+UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by <br>
+default), <br>
+UNINITIALIZED_VALUE (enabled by default), <br>
+UNREACHABLE_CODE (enabled by default), <br>
+UNSAFE_GUARDED_BY_ACCESS (enabled by default), <br>
+UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
+UNTRUSTED_DESERIALIZATION (enabled by default), <br>
+UNTRUSTED_DESERIALIZATION_RISK (enabled by default), <br>
+UNTRUSTED_ENVIRONMENT_CHANGE_RISK (enabled by default), <br>
+UNTRUSTED_FILE (enabled by default), <br>
+UNTRUSTED_FILE_RISK (enabled by default), <br>
+UNTRUSTED_HEAP_ALLOCATION (disabled by default), <br>
+UNTRUSTED_INTENT_CREATION (enabled by default), <br>
+UNTRUSTED_URL_RISK (enabled by default), <br>
+UNTRUSTED_VARIABLE_LENGTH_ARRAY (enabled by default), <br>
+USER_CONTROLLED_SQL_RISK (enabled by default), <br>
+USE_AFTER_DELETE (enabled by default), <br>
+USE_AFTER_FREE (enabled by default), <br>
+USE_AFTER_LIFETIME (enabled by default), <br>
+Unknown_proc (enabled by default), <br>
+VECTOR_INVALIDATION (enabled by default), <br>
+Wrong_argument_number (enabled by default), <br>
+ZERO_ALLOCATION (disabled by default), <br>
+ZERO_EXECUTION_TIME (disabled by default). <b><br>
 --enable-issue-type</b> <i>+issue_type</i></p>
 
 <p style="margin-left:17%;">Show reports coming from this
@@ -182,29 +346,6 @@ except the ones listed in <b>--disable-issue-type</b>. Note
 that enabling issue types does not make the corresponding
 checker run; see individual checker options to turn them on
 or off.</p>
-
-<p style="margin-left:11%;"><b>--filter-report</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">Specify a filter for issues to
-report. If multiple filters are specified, they are applied
-in the order in which they are specified. Each filter is
-applied to each issue detected, and only issues which are
-accepted by all filters are reported. Each filter is of the
-form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
-The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
-inverted, and the filter becomes a &quot;blacklist&quot;
-instead of a &quot;whitelist&quot;. Each filter is
-interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
-are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
-used to explain why the issue was filtered.</p>
 
 
 <p style="margin-left:11%;"><b>--no-filtering</b>,<b>-F</b></p>
@@ -230,8 +371,7 @@ files generated by the analysis).</p>
 <p style="margin-left:17%;">Show this help in the specified
 format. <b>auto</b> sets the format to <b>plain</b> if the
 environment variable <b>TERM</b> is &quot;dumb&quot; or
-undefined, and to <b>pager</b> otherwise. (default:
-<i>auto</i>)</p>
+undefined, and to <b>pager</b> otherwise.</p>
 
 <p style="margin-left:11%;"><b>--help-full</b></p>
 
@@ -239,18 +379,15 @@ undefined, and to <b>pager</b> otherwise. (default:
 internal options in the INTERNAL OPTIONS section</p>
 
 <p style="margin-left:11%;"><b>--issues-fields</b>
-<i>,-separated sequence of { bug_class | kind | bug_type |
+<i>,-separated sequence of { bug_type | bucket | qualifier
 <br>
-bucket | qualifier | severity | visibility | line | column |
-procedure <br>
-| procedure_id | procedure_start_line | file | bug_trace |
-key | hash | <br>
-line_offset | procedure_id_without_crc | <br>
+| severity | line | column | procedure |
+procedure_start_line | file | <br>
+bug_trace | key | hash | line_offset | <br>
 qualifier_contains_potential_exception_note }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
-<b>--issues-tests</b> (default: <i>file procedure
-line_offset bug_type bucket kind bug_trace</i>)</p>
+<b>--issues-tests</b></p>
 
 <p style="margin-left:11%;"><b>--issues-tests</b>
 <i>file</i></p>
@@ -274,7 +411,7 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <i>dir</i></p>
 
 <p style="margin-left:17%;">Specify the root directory of
-the project (default: <i>/home/jul/infer.fb</i>)</p>
+the project</p>
 
 <p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
 
@@ -283,18 +420,41 @@ on standard output (default: only print for the
 <b>report</b> command) (Conversely: <b>--no-quiet</b> |
 <b>-Q</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--report-blacklist-files-containing</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">blacklist files containing the
+specified string for the given analyzer (see
+<b>--analyzer</b> for valid values)</p>
+
+
+<p style="margin-left:11%;"><b>--report-blacklist-path-regex</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:17%;">blacklist the analysis of files
+whose relative path matches the specified OCaml-style regex
+(to whitelist:
+<b>--&lt;analyzer&gt;-whitelist-path-regex</b>)</p>
+
 <p style="margin-left:11%;"><b>--report-formatter</b> <i>{
 none | phabricator }</i></p>
 
 <p style="margin-left:17%;">Which formatter to use when
-emitting the report (default: <i>phabricator</i>)</p>
+emitting the report</p>
+
+
+<p style="margin-left:11%;"><b>--report-suppress-errors</b>
+<i>+error_name</i></p>
+
+<p style="margin-left:17%;">do not report a type of
+errors</p>
 
 <p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
 <i>dir</i></p>
 
 <p style="margin-left:17%;">Write results and internal
-files in the specified directory (default:
-<i>/home/jul/infer.fb/infer-out</i>)</p>
+files in the specified directory</p>
 
 
 <p style="margin-left:11%;"><b>--skip-analysis-in-path-skips-compilation</b></p>
@@ -303,6 +463,19 @@ files in the specified directory (default:
 --skip-analysis-in-path should be compiled or not
 (Conversely:
 <b>--no-skip-analysis-in-path-skips-compilation</b>)</p>
+
+<h2>HOISTING OPTIONS
+<a name="HOISTING OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--no-hoisting-report-only-expensive</b></p>
+
+<p style="margin-left:17%;">Deactivates: [Hoisting] Report
+loop-invariant calls only when the function is expensive,
+i.e. at least linear (Conversely:
+<b>--hoisting-report-only-expensive</b>)</p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
