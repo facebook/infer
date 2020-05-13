@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Thu Jun  7 16:35:59 2018 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue May 12 16:45:49 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -75,7 +75,19 @@ follow the same format as normal infer reports.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--debug</b>,<b>-g</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--costs-current</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Costs report of the latest
+revision</p>
+
+<p style="margin-left:11%;"><b>--costs-previous</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Costs report of the base
+revision to use for comparison</p>
+
+<p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
 
 <p style="margin-left:17%;">Activates: Debug mode (also
 sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
@@ -101,22 +113,19 @@ enabled <br>
 --debug-level-analysis</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the analysis.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-capture</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the capture.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-linters</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--file-renamings</b>
 <i>path</i></p>
@@ -134,8 +143,7 @@ renamings to use while computing differential reports</p>
 <p style="margin-left:17%;">Show this help in the specified
 format. <b>auto</b> sets the format to <b>plain</b> if the
 environment variable <b>TERM</b> is &quot;dumb&quot; or
-undefined, and to <b>pager</b> otherwise. (default:
-<i>auto</i>)</p>
+undefined, and to <b>pager</b> otherwise.</p>
 
 <p style="margin-left:11%;"><b>--help-full</b></p>
 

@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Thu Jun  7 16:35:58 2018 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue May 12 16:45:48 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -118,22 +118,19 @@ enabled <br>
 --debug-level-analysis</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the analysis.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-capture</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the capture.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--debug-level-linters</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 
 <p style="margin-left:11%;"><b>--force-delete-results-dir</b></p>
@@ -148,12 +145,12 @@ infer results directory. (Conversely:
 
 <p style="margin-left:17%;">Proceed as if the first
 argument after <b>--</b> was <i>command</i>. Possible
-values: <i>analyze</i>, <i>ant</i>, <i>buck</i>,
-<i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
-<i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
-<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
-<i>ndk-build</i>, <i>python</i>, <i>xcodebuild</i>.</p>
+values: <i>ant</i>, <i>buck</i>, <i>gradle</i>,
+<i>gradlew</i>, <i>java</i>, <i>javac</i>, <i>cc</i>,
+<i>clang</i>, <i>gcc</i>, <i>clang++</i>, <i>c++</i>,
+<i>g++</i>, <i>make</i>, <i>configure</i>, <i>cmake</i>,
+<i>waf</i>, <i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>,
+<i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
 
@@ -165,8 +162,7 @@ values: <i>analyze</i>, <i>ant</i>, <i>buck</i>,
 <p style="margin-left:17%;">Show this help in the specified
 format. <b>auto</b> sets the format to <b>plain</b> if the
 environment variable <b>TERM</b> is &quot;dumb&quot; or
-undefined, and to <b>pager</b> otherwise. (default:
-<i>auto</i>)</p>
+undefined, and to <b>pager</b> otherwise.</p>
 
 <p style="margin-left:11%;"><b>--help-full</b></p>
 
@@ -186,25 +182,37 @@ make only)</p>
 <p style="margin-left:17%;">Activates: Also log messages to
 stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 
+<p style="margin-left:11%;"><b>--progress-bar-style</b>
+<i>{ auto | plain | multiline }</i></p>
+
+<p style="margin-left:17%;">Style of the progress bar.
+<b>auto</b> selects <b>multiline</b> if connected to a tty,
+otherwise <b>plain</b>.</p>
+
 
 <p style="margin-left:11%;"><b>--project-root</b>,<b>-C</b>
 <i>dir</i></p>
 
 <p style="margin-left:17%;">Specify the root directory of
-the project (default: <i>/home/jul/infer.fb</i>)</p>
+the project</p>
 
 <p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
 <i>dir</i></p>
 
 <p style="margin-left:17%;">Write results and internal
-files in the specified directory (default:
-<i>/home/jul/infer.fb/infer-out</i>)</p>
+files in the specified directory</p>
 
 <p style="margin-left:11%;"><b>--skip-analysis-in-path</b>
 <i>+path_prefix_OCaml_regex</i></p>
 
 <p style="margin-left:17%;">Ignore files whose path matches
 the given prefix (can be specified multiple times)</p>
+
+<p style="margin-left:11%;"><b>--sqlite-lock-timeout</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Timeout for SQLite results
+database operations, in milliseconds.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -242,6 +250,13 @@ compilation database, with or without dependencies.</p>
 the <b>--buck-compilation-database deps</b> option. By
 default, all recursive dependencies are captured.</p>
 
+
+<p style="margin-left:11%;"><b>--buck-targets-blacklist</b>
+<i>+regex</i></p>
+
+<p style="margin-left:17%;">Skip capture of buck targets
+matched by the specified regular expression.</p>
+
 <h2>BUCK FLAVORS OPTIONS
 <a name="BUCK FLAVORS OPTIONS"></a>
 </h2>
@@ -256,10 +271,18 @@ append to targets discovered by the
 <b>--buck-compilation-database</b> option.</p>
 
 <p style="margin-left:11%;"><b>--buck-blacklist</b>
+<i>+regex</i></p>
+
+<p style="margin-left:17%;">Skip capture of files matched
+by the specified regular expression (only the &quot;flavors
+(C++)&quot; Buck integration is supported, not Java).</p>
+
+<p style="margin-left:11%;"><b>--capture-blacklist</b>
 <i>regex</i></p>
 
-<p style="margin-left:17%;">Skip analysis of files matched
-by the specified regular expression</p>
+<p style="margin-left:17%;">Skip capture of files matched
+by the specified OCaml regular expression (only supported by
+the javac integration for now).</p>
 
 <p style="margin-left:11%;"><b>--flavors</b></p>
 
@@ -274,6 +297,13 @@ using Buck flavors (clang only), eg <i>&rsquo;infer
 <p style="margin-left:17%;">Pass values as command-line
 arguments to invocations of <i>&rsquo;buck
 build&rsquo;</i></p>
+
+<p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Pass values as command-line
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+don't inline any args starting with '@'</p>
 
 <p style="margin-left:11%;"><b>--xcode-developer-dir</b>
 <i>XCODE_DEVELOPER_DIR</i></p>
@@ -303,8 +333,7 @@ buck-out</p>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values. (default:
-<i>0</i>)</p>
+See <b>--debug-level</b> for accepted values.</p>
 
 
 <p style="margin-left:11%;"><b>--no-default-linters</b></p>
@@ -393,6 +422,19 @@ AL files, then emit possible errors in JSON format to stdout
 <p style="margin-left:17%;">Specify a file containing the
 AST of the program, in biniou format</p>
 
+
+<p style="margin-left:11%;"><b>--clang-blacklisted-flags</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Clang flags to filter out</p>
+
+
+<p style="margin-left:11%;"><b>--clang-blacklisted-flags-with-arg</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Clang flags (taking args) to
+filter out</p>
+
 <p style="margin-left:11%;"><b>--compilation-database</b>
 <i>+path</i></p>
 
@@ -419,14 +461,6 @@ component kit file cyclomatic complexity (Conversely:
 <p style="margin-left:17%;">Deactivates: Analyze C++
 methods (Conversely: <b>--cxx</b>)</p>
 
-<p style="margin-left:11%;"><b>--cxx-infer-headers</b></p>
-
-<p style="margin-left:17%;">Activates: Include C++ header
-models during compilation. Infer swaps some C++ headers for
-its own in order to get a better model of, eg, the standard
-library. This can sometimes cause compilation failures.
-(Conversely: <b>--no-cxx-infer-headers</b>)</p>
-
 
 <p style="margin-left:11%;"><b>--dump-duplicate-symbols</b></p>
 
@@ -452,6 +486,12 @@ header files (Conversely: <b>--no-headers</b>)</p>
 
 <p style="margin-left:17%;">Ignore headers whose path
 matches the given prefix</p>
+
+<p style="margin-left:11%;"><b>--Xclang</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Pass values as command-line
+arguments to invocations of clang</p>
 
 <p style="margin-left:11%;"><b>--xcpretty</b></p>
 
@@ -492,6 +532,12 @@ generated class files</p>
 
 <p style="margin-left:17%;">Specify the Java compiler jar
 used to generate the bytecode</p>
+
+<p style="margin-left:11%;"><b>--java-version</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">The version of Java being used.
+Set it to your Java version if mvn is failing.</p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
