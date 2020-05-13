@@ -220,44 +220,60 @@ let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~r
   changed
 
 
-let com_style_of_lang =
-  [ (".ac", comment_style_m4)
-  ; (".al", comment_style_al)
-  ; (".atd", comment_style_ocaml)
-  ; (".c", comment_style_c)
-  ; (".cpp", comment_style_c)
-  ; (".h", comment_style_c)
-  ; (".inc", comment_style_c)
-  ; (".java", comment_style_c)
-  ; (".ll", comment_style_llvm)
-  ; (".m", comment_style_c)
-  ; (".m4", comment_style_m4)
-  ; (".make", comment_style_make)
-  ; (".mk", comment_style_make)
-  ; (".ml", comment_style_ocaml)
-  ; (".mli", comment_style_ocaml)
-  ; (".mll", comment_style_ocaml)
-  ; (".mly", comment_style_c)
-  ; (".mm", comment_style_c)
-  ; (".php", comment_style_php)
-  ; (".py", comment_style_python)
-  ; (".re", comment_style_c)
-  ; (".rei", comment_style_c)
-  ; (".sh", comment_style_shell)
-  ; ("dune", comment_style_lisp)
-  ; ("dune.in", comment_style_ocaml)
-  ; ("dune.common", comment_style_lisp)
-  ; ("dune.common.in", comment_style_ocaml)
-  ; ("dune-common", comment_style_lisp)
-  ; ("dune-common.in", comment_style_ocaml)
-  ; ("dune-project", comment_style_lisp)
-  ; ("dune-workspace", comment_style_lisp)
-  ; ("dune-workspace.in", comment_style_lisp)
-  ; ("Makefile", comment_style_make) ]
+type inferred_comment_style =
+  | Resolved of comment_style
+  | Dune  (** dune files can have either an OCaml or a lisp-style syntax *)
 
+let com_style_of_lang =
+  [ (".ac", Resolved comment_style_m4)
+  ; (".al", Resolved comment_style_al)
+  ; (".atd", Resolved comment_style_ocaml)
+  ; (".c", Resolved comment_style_c)
+  ; (".cpp", Resolved comment_style_c)
+  ; (".h", Resolved comment_style_c)
+  ; (".inc", Resolved comment_style_c)
+  ; (".java", Resolved comment_style_c)
+  ; (".ll", Resolved comment_style_llvm)
+  ; (".m", Resolved comment_style_c)
+  ; (".m4", Resolved comment_style_m4)
+  ; (".make", Resolved comment_style_make)
+  ; (".mk", Resolved comment_style_make)
+  ; (".ml", Resolved comment_style_ocaml)
+  ; (".mli", Resolved comment_style_ocaml)
+  ; (".mll", Resolved comment_style_ocaml)
+  ; (".mly", Resolved comment_style_c)
+  ; (".mm", Resolved comment_style_c)
+  ; (".php", Resolved comment_style_php)
+  ; (".py", Resolved comment_style_python)
+  ; (".re", Resolved comment_style_c)
+  ; (".rei", Resolved comment_style_c)
+  ; (".sh", Resolved comment_style_shell)
+  ; ("dune", Dune)
+  ; ("dune.in", Dune)
+  ; ("dune.common", Dune)
+  ; ("dune.common.in", Dune)
+  ; ("dune-project", Resolved comment_style_lisp)
+  ; ("dune-workspace", Resolved comment_style_lisp)
+  ; ("dune-workspace.in", Resolved comment_style_lisp)
+  ; ("Makefile", Resolved comment_style_make) ]
+
+
+let tuareg_magic_style_line = "(* -*- tuareg -*- *)"
 
 let comment_style_of_filename fname =
   List.Assoc.find com_style_of_lang ~equal:Filename.check_suffix fname
+  |> Option.map ~f:(function
+       | Resolved comment_type ->
+           comment_type
+       | Dune ->
+           (* a dune file is in OCaml syntax if and only if its first line is a tuareg style line *)
+           let first_line =
+             In_channel.with_file fname ~f:(fun ic -> In_channel.input_line ic)
+             |> Option.map ~f:String.strip
+           in
+           if Option.exists first_line ~f:(fun line -> String.equal line tuareg_magic_style_line)
+           then comment_style_ocaml
+           else comment_style_lisp )
 
 
 let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false) com_style =
