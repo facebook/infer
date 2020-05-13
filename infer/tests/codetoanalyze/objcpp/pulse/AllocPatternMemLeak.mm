@@ -16,6 +16,12 @@ typedef struct ABFDataRef {
 ABFDataRef* ABFDataCreate(size_t size);
 void ABFRelease(ABFDataRef*);
 
+ABFData* ABFBridgingRelease(ABFDataRef*);
+
+namespace abf {
+ABFData* BridgingRelease(ABFDataRef*);
+}
+
 @interface A : NSObject
 @end
 
@@ -32,6 +38,14 @@ void ABFRelease(ABFDataRef*);
 
 - (void)bridge_no_leak_good {
   ABFData* someData = (__bridge_transfer ABFData*)ABFDataCreate(4);
+}
+
+- (void)custom_bridge_no_leak_good {
+  ABFData* someData = ABFBridgingRelease(ABFDataCreate(4));
+}
+
+- (void)custom_bridge_namesapce_no_leak_good {
+  ABFData* someData = abf::BridgingRelease(ABFDataCreate(4));
 }
 
 @end

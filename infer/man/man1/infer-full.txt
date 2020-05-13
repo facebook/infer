@@ -870,6 +870,11 @@ OPTIONS
            Regex of methods that should be modelled as release in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-transfer-ownership +string
+           Methods that should be modelled as transfering memory ownership in
+           Pulse. Accepted formats are method or namespace::method       
+    See also infer-analyze(1).
+
        --pulse-only
            Activates: Enable --pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
@@ -1615,6 +1620,9 @@ INTERNAL OPTIONS
 
        --pulse-model-release-pattern-reset
            Cancel the effect of --pulse-model-release-pattern.
+
+       --pulse-model-transfer-ownership-reset
+           Set --pulse-model-transfer-ownership to the empty list.
 
        --pulse-recency-limit int
            Maximum number of array elements and structure fields to keep

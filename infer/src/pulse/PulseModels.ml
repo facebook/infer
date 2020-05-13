@@ -108,8 +108,9 @@ module C = struct
     PulseOperations.allocate callee_procname location ret_value astate
     |> PulseArithmetic.and_positive ret_addr
     |> PulseOperations.ok_continue
+end
 
-
+module ObjCCoreFoundation = struct
   let cf_bridging_release access : model =
    fun _ ~callee_procname:_ _ ~ret:(ret_id, _) astate ->
     let astate = PulseOperations.write_id ret_id access astate in
@@ -622,160 +623,179 @@ module ProcNameDispatcher = struct
       StringSet.of_list
         ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
     in
+    let transfer_ownership_matchers =
+      let transfer_ownership_namespace_matchers =
+        List.map
+          ~f:(fun (namespace, m) ->
+            -namespace &:: m $ capt_arg_payload $+...$--> ObjCCoreFoundation.cf_bridging_release )
+          Config.pulse_model_transfer_ownership_namespace
+      in
+      let transfer_ownership_name_matchers =
+        List.map
+          ~f:(fun m -> -m $ capt_arg_payload $+...$--> ObjCCoreFoundation.cf_bridging_release)
+          Config.pulse_model_transfer_ownership
+      in
+      transfer_ownership_namespace_matchers @ transfer_ownership_name_matchers
+    in
     make_dispatcher
-      [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
-      ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
-      ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
-      ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
-      ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
-      ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-      ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
-      ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
-      ; +match_builtin BuiltinDecl.__infer_initializer_list
-        <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-      ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
-      ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
-      ; (* consider that all fbstrings are small strings to avoid false positives due to manual
-           ref-counting *)
-        -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
-      ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
-      ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
-      ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
-      ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
-      ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
-        $--> StdBasicString.destructor
-      ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload $++$--> StdFunction.operator_call
-      ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
-        $--> Misc.shallow_copy "std::function::operator="
-      ; +PatternMatch.implements_lang "Object" &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-      ; ( +PatternMatch.implements_lang "System"
-        &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
-        $+...$--> fun src dest -> Misc.shallow_copy "System.arraycopy" dest src )
-      ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdAtomicInteger.constructor
-      ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload $--> StdAtomicInteger.fetch_add
-      ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload $--> StdAtomicInteger.fetch_sub
-      ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload $--> StdAtomicInteger.exchange
-      ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
-        $--> StdAtomicInteger.load
-      ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload $--> StdAtomicInteger.store
-      ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
-        $--> StdAtomicInteger.operator_plus_plus_pre
-      ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdAtomicInteger.operator_plus_plus_post
-      ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
-        $--> StdAtomicInteger.operator_minus_minus_pre
-      ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdAtomicInteger.operator_minus_minus_post
-      ; -"std" &:: "__atomic_base"
-        &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-        <>$ capt_arg_payload $+? capt_arg_payload $--> StdAtomicInteger.operator_t
-      ; -"std" &:: "integral_constant" < any_typ &+ capt_int
-        >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-        <>--> Misc.return_int
-      ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
-        $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
-        $+...$--> StdVector.init_list_constructor
-      ; -"std" &:: "__wrap_iter" &:: "__wrap_iter" <>$ capt_arg_payload $+ capt_arg_payload
-        $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
-      ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
-      ; -"std" &:: "__wrap_iter" &:: "operator++" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
-               ~desc:"iterator operator++"
-      ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
-               ~desc:"iterator operator--"
-      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
-        $+ capt_arg_payload
-        $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
-      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
-      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
-               ~desc:"iterator operator++"
-      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
-        $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
-               ~desc:"iterator operator--"
-      ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
-        $+...$--> StdVector.invalidate_references Assign
-      ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.at ~desc:"std::vector::at()"
-      ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.vector_begin
-      ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.vector_end
-      ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
-        $--> StdVector.invalidate_references Clear
-      ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
-        $+...$--> StdVector.invalidate_references Emplace
-      ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-        $+...$--> StdVector.invalidate_references EmplaceBack
-      ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
-        $+...$--> StdVector.invalidate_references Insert
-      ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.at ~desc:"std::vector::at()"
-      ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
-        $--> StdVector.invalidate_references ShrinkToFit
-      ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_collection
-        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
-        <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_queue
-        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
-        <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_lang "StringBuilder"
-        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
-        <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_lang "StringBuilder"
-        &:: "setLength" <>$ capt_arg_payload
-        $+...$--> StdVector.invalidate_references ShrinkToFit
-      ; +PatternMatch.implements_lang "String"
-        &::+ (fun _ str -> StringSet.mem str pushback_modeled)
-        <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
-        $+...$--> JavaIterator.remove ~desc:"remove"
-      ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
-      ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-      ; +PatternMatch.implements_collection
-        &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> StdVector.at ~desc:"Collection.get()"
-      ; +PatternMatch.implements_list &:: "set" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload $--> JavaCollection.set
-      ; +PatternMatch.implements_iterator &:: "hasNext"
-        &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
-      ; +PatternMatch.implements_enumeration
-        &:: "hasMoreElements"
-        &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-      ; +PatternMatch.implements_lang "Object"
-        &:: "equals"
-        &--> Misc.nondet ~fn_name:"Object.equals"
-      ; +PatternMatch.implements_lang "Iterable"
-        &:: "iterator" <>$ capt_arg_payload
-        $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
-      ; +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
-        $!--> JavaIterator.next ~desc:"Iterator.next()"
-      ; ( +PatternMatch.implements_enumeration
-        &:: "nextElement" <>$ capt_arg_payload
-        $!--> fun x -> StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), [])
-        )
-      ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
-      ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
-      ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
-      ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
-      ; +PatternMatch.ObjectiveC.is_core_graphics_release
-        <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; -"CFRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; +PatternMatch.ObjectiveC.is_modelled_as_release
-        <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; -"CFAutorelease" <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; -"CFBridgingRelease" <>$ capt_arg_payload $--> C.cf_bridging_release
-      ; +match_builtin BuiltinDecl.__free_cf <>$ capt_arg_payload $--> C.cf_bridging_release ]
+      ( transfer_ownership_matchers
+      @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
+        ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
+        ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
+        ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
+        ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
+        ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
+        ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
+        ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
+        ; +match_builtin BuiltinDecl.__infer_initializer_list
+          <>$ capt_arg_payload $+...$--> Misc.id_first_arg
+        ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
+        ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
+        ; (* consider that all fbstrings are small strings to avoid false positives due to manual
+             ref-counting *)
+          -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
+        ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
+        ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
+        ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+        ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
+        ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
+          $--> StdBasicString.destructor
+        ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload
+          $++$--> StdFunction.operator_call
+        ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
+          $--> Misc.shallow_copy "std::function::operator="
+        ; +PatternMatch.implements_lang "Object"
+          &:: "clone" $ capt_arg_payload $--> JavaObject.clone
+        ; ( +PatternMatch.implements_lang "System"
+          &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
+          $+...$--> fun src dest -> Misc.shallow_copy "System.arraycopy" dest src )
+        ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdAtomicInteger.constructor
+        ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> StdAtomicInteger.fetch_add
+        ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> StdAtomicInteger.fetch_sub
+        ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> StdAtomicInteger.exchange
+        ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
+          $--> StdAtomicInteger.load
+        ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> StdAtomicInteger.store
+        ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
+          $--> StdAtomicInteger.operator_plus_plus_pre
+        ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdAtomicInteger.operator_plus_plus_post
+        ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
+          $--> StdAtomicInteger.operator_minus_minus_pre
+        ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdAtomicInteger.operator_minus_minus_post
+        ; -"std" &:: "__atomic_base"
+          &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+          <>$ capt_arg_payload $+? capt_arg_payload $--> StdAtomicInteger.operator_t
+        ; -"std" &:: "integral_constant" < any_typ &+ capt_int
+          >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+          <>--> Misc.return_int
+        ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
+          $+...$--> StdVector.init_list_constructor
+        ; -"std" &:: "__wrap_iter" &:: "__wrap_iter" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
+        ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
+        ; -"std" &:: "__wrap_iter" &:: "operator++" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
+                 ~desc:"iterator operator++"
+        ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
+                 ~desc:"iterator operator--"
+        ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
+          $+ capt_arg_payload
+          $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
+        ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_star ~desc:"iterator operator*"
+        ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_step `PlusPlus
+                 ~desc:"iterator operator++"
+        ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
+          $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
+                 ~desc:"iterator operator--"
+        ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
+          $+...$--> StdVector.invalidate_references Assign
+        ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdVector.at ~desc:"std::vector::at()"
+        ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdVector.vector_begin
+        ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdVector.vector_end
+        ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
+          $--> StdVector.invalidate_references Clear
+        ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
+          $+...$--> StdVector.invalidate_references Emplace
+        ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
+          $+...$--> StdVector.invalidate_references EmplaceBack
+        ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
+          $+...$--> StdVector.invalidate_references Insert
+        ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdVector.at ~desc:"std::vector::at()"
+        ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
+          $--> StdVector.invalidate_references ShrinkToFit
+        ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_collection
+          &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+          <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_queue
+          &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+          <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_lang "StringBuilder"
+          &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+          <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_lang "StringBuilder"
+          &:: "setLength" <>$ capt_arg_payload
+          $+...$--> StdVector.invalidate_references ShrinkToFit
+        ; +PatternMatch.implements_lang "String"
+          &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+          <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
+          $+...$--> JavaIterator.remove ~desc:"remove"
+        ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload
+          $+...$--> StdVector.push_back
+        ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
+        ; +PatternMatch.implements_collection
+          &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> StdVector.at ~desc:"Collection.get()"
+        ; +PatternMatch.implements_list &:: "set" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> JavaCollection.set
+        ; +PatternMatch.implements_iterator &:: "hasNext"
+          &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
+        ; +PatternMatch.implements_enumeration
+          &:: "hasMoreElements"
+          &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
+        ; +PatternMatch.implements_lang "Object"
+          &:: "equals"
+          &--> Misc.nondet ~fn_name:"Object.equals"
+        ; +PatternMatch.implements_lang "Iterable"
+          &:: "iterator" <>$ capt_arg_payload
+          $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
+        ; +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
+          $!--> JavaIterator.next ~desc:"Iterator.next()"
+        ; ( +PatternMatch.implements_enumeration
+          &:: "nextElement" <>$ capt_arg_payload
+          $!--> fun x ->
+          StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
+        ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
+        ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
+        ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
+        ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+        ; +PatternMatch.ObjectiveC.is_core_graphics_release
+          <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; +PatternMatch.ObjectiveC.is_modelled_as_release
+          <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; +match_builtin BuiltinDecl.__free_cf
+          <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release ] )
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args

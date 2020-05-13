@@ -1788,6 +1788,13 @@ and pulse_model_release_pattern =
     "Regex of methods that should be modelled as release in Pulse"
 
 
+and pulse_model_transfer_ownership =
+  CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
+     are method or namespace::method"
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -2867,6 +2874,27 @@ and pulse_max_disjuncts = !pulse_max_disjuncts
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
+
+and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
+  let models =
+    let re = Str.regexp "::" in
+    List.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
+  in
+  let aux el =
+    match el with
+    | _, [namespace; m] ->
+        `Fst (namespace, m)
+    | _, [m] ->
+        `Snd m
+    | option, splits ->
+        L.die UserError
+          "Wrong use of option pulse-model-transfer-ownership %s: expected at most one namespace \
+           but found %d"
+          option
+          (List.length splits - 1)
+  in
+  List.partition_map ~f:aux models
+
 
 and pulse_widen_threshold = !pulse_widen_threshold
 
