@@ -117,6 +117,16 @@
           "id": "version-0.17.0/internal-API"
         }
       ]
+    },
+    {
+      "type": "category",
+      "label": "Versions",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/versions"
+        }
+      ]
     }
   ]
 }

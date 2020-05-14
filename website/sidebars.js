@@ -32,5 +32,6 @@ module.exports = {
       "linters-bug-types",
     ],
     Contribute: ["absint-framework", "adding-checkers", "internal-API"],
+    Versions: ["versions"],
   },
 };
