@@ -858,32 +858,22 @@ ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 endif
 
 .PHONY: doc-publish
-doc-publish: doc $(INFER_GROFF_MANUALS)
-ifeq ($(GHPAGES),no)
-	$(QUIET)echo "$(TERM_ERROR)Please set GHPAGES to a checkout of the gh-pages branch of the GitHub repo of infer$(TERM_RESET)" >&2
-	$(QUIET)exit 1
-endif
-#	sanity check to avoid cryptic error messages and potentially annoying side-effects
-	$(QUIET)if ! [ -d "$(GHPAGES)"/static/man ]; then \
-	  echo "$(TERM_ERROR)ERROR: GHPAGES doesn't seem to point to a checkout of the gh-pages branch of the GitHub repo of infer:$(TERM_RESET)" >&2; \
-	  echo "$(TERM_ERROR)ERROR:   '$(GHPAGES)/static/man' not found or not a directory.$(TERM_RESET)" >&2; \
-	  echo "$(TERM_ERROR)ERROR: Please fix this and try again.$(TERM_RESET)" >&2; \
-	  exit 1; \
-	fi
+doc-publish: $(INFER_GROFF_MANUALS)
+	$(QUIET)$(MKDIR_P) "$(WEBSITE_DIR)"/static/man/next "$(WEBSITE_DIR)"/static/odoc/next
 	$(QUIET)$(call silent_on_success,Copying man pages,\
-	$(REMOVE_DIR) "$(GHPAGES)"/static/man/*; \
+	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
-	  groff -Thtml "$$man" > "$(GHPAGES)"/static/man/$$(basename "$$man").html; \
+	  groff -Thtml "$$man" > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
 	done)
-ifeq ($(IS_FACEBOOK_TREE),no)
-	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
-	version=$$($(INFER_BIN) --version | head -1 | cut -d ' ' -f 3 | cut -c 2-); \
-	rsync -a --delete $(SRC_DIR)/_build/default/_doc/_html/ "$(GHPAGES)"/static/odoc/"$$version"; \
-	$(REMOVE) "$(GHPAGES)"/static/odoc/latest; \
-	$(LN_S) "$$version" "$(GHPAGES)"/static/odoc/latest)
-else
-	$(QUIET)echo "Not an open-source tree, skipping the API docs generation"
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(QUIET)$(call silent_on_success,Cleaning up FB-only files,\
+	$(MAKE) -C $(SRC_DIR) clean; \
+	$(MAKE) -C facebook clean)
 endif
+	$(QUIET)$(call silent_on_success,Building OCaml modules documentation,\
+	$(MAKE) IS_FACEBOOK_TREE=no doc)
+	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
+	rsync -a --delete $(BUILD_DIR)/default/_doc/_html/ "$(WEBSITE_DIR)"/static/odoc/next/)
 
 # print list of targets
 .PHONY: show-targets
