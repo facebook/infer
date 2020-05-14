@@ -1,0 +1,122 @@
+{
+  "version-0.17.0/docs": [
+    {
+      "type": "category",
+      "label": "Quick Start",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/getting-started"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/hello-world"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "User Guide",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/infer-workflow"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/analyzing-apps-or-projects"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/steps-for-ci"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/checkers"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/eradicate"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/linters"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/racerd"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/experimental-checkers"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/advanced-features"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/adding-models"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/man-pages"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Foundations",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/about-Infer"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/separation-logic-and-bi-abduction"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/limitations"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Bug Types Reference",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/checkers-bug-types"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/eradicate-warnings"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/linters-bug-types"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contribute",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.17.0/absint-framework"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/adding-checkers"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.17.0/internal-API"
+        }
+      ]
+    }
+  ]
+}
