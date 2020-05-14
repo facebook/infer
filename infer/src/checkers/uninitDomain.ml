@@ -62,12 +62,15 @@ module MaybeUninitVars = struct
       | _ ->
           maybe_uninit_vars
     in
-    match base with
-    | _, {Typ.desc= Tptr ({Typ.desc= Tvoid}, _)} ->
-        Option.value_map ~default:maybe_uninit_vars ~f:remove_all_fields_inner
-          (find_access_expr_typ tenv (HilExp.AccessExpression.base base) locals)
-    | _, typ ->
-        remove_all_fields_inner typ
+    let typ_of_arg_in_locals =
+      match base with
+      | _, {Typ.desc= Tptr _} ->
+          find_access_expr_typ tenv (HilExp.AccessExpression.base base) locals
+      | _ ->
+          None
+    in
+    let typ_to_remove = Option.value ~default:(snd base) typ_of_arg_in_locals in
+    remove_all_fields_inner typ_to_remove
 
 
   let remove_dereference_access base maybe_uninit_vars =

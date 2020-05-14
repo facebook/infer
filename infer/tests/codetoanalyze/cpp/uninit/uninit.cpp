@@ -276,6 +276,15 @@ int* pointer_param_void_star_ok() {
   return a.ptr;
 }
 
+void another_f(char* p);
+
+int* pointer_param_char_star_ok() {
+  A a;
+  int* res;
+  another_f((char*)&a);
+  return a.ptr;
+}
+
 short union_ok() {
   union {
     int* a;
