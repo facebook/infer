@@ -22,7 +22,7 @@ void compare_global_const_enum_Bad() {
     arr[10] = 1;
 }
 
-void compare_global_const_enum_Good_FP() {
+void compare_global_const_enum_Good() {
   char arr[10];
   if (global_const > 10)
     arr[10] = 1;

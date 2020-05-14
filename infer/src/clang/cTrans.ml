@@ -867,47 +867,47 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     decl_ref_trans ~context:DeclRefExpr trans_state stmt_info decl_ref
 
 
-  (** evaluates an enum constant *)
-  and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
-    match CAst_utils.get_decl enum_constant_pointer with
-    | Some (Clang_ast_t.EnumConstantDecl (_, _, _, enum_constant_decl_info)) -> (
-      match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
-      | Some stmt ->
-          expression_trans context stmt
-      | None -> (
-        match prev_enum_constant_opt with
-        | Some prev_constant_pointer ->
-            let previous_exp = get_enum_constant_expr context prev_constant_pointer in
-            CArithmetic_trans.sil_const_plus_one previous_exp
-        | None ->
-            zero ) )
-    | _ ->
-        zero
-
-
-  (** get the sil value of the enum constant from the map or by evaluating it *)
-  and get_enum_constant_expr context enum_constant_pointer =
-    let zero = Exp.Const (Const.Cint IntLit.zero) in
-    try
-      let prev_enum_constant_opt, sil_exp_opt =
-        CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
-      in
-      match sil_exp_opt with
-      | Some exp ->
-          exp
-      | None ->
-          let exp = enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero in
-          CAst_utils.update_enum_map_exn enum_constant_pointer exp ;
-          exp
-    with Not_found_s _ | Caml.Not_found -> zero
-
-
   and enum_constant_trans trans_state decl_ref =
-    let context = trans_state.context in
-    let _, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
-    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-    let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
-    mk_trans_result (const_exp, typ) empty_control
+    let typ =
+      let {CContext.tenv} = trans_state.context in
+      let _, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
+      CType_decl.qual_type_to_sil_type tenv qual_type
+    in
+    let zero () = mk_trans_result (Exp.Const (Const.Cint IntLit.zero), typ) empty_control in
+    (* translate enum declaration statements *)
+    let rec trans_enum_decl ~prev_decl_pointer_opt decl_pointer =
+      match CAst_utils.get_decl decl_pointer with
+      | Some (Clang_ast_t.EnumConstantDecl (_, _, _, enum_constant_decl_info)) -> (
+        match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
+        | Some stmt ->
+            instruction trans_state stmt
+        | None -> (
+          match prev_decl_pointer_opt with
+          | Some prev_decl_pointer ->
+              let ({return= exp, typ} as trans_result) = trans_with_cache prev_decl_pointer in
+              {trans_result with return= (CArithmetic_trans.sil_const_plus_one exp, typ)}
+          | None ->
+              zero () ) )
+      | _ ->
+          zero ()
+    (* try looking up from cache before calling [trans_enum_decl] *)
+    and trans_with_cache decl_pointer =
+      try
+        let prev_decl_pointer_opt, cached_exp = CAst_utils.get_enum_constant_exp_exn decl_pointer in
+        match cached_exp with
+        | Some exp ->
+            mk_trans_result (exp, typ) empty_control
+        | None ->
+            let trans_result = trans_enum_decl ~prev_decl_pointer_opt decl_pointer in
+            ( match fst trans_result.return with
+            | Exp.Const _ as exp ->
+                CAst_utils.update_enum_map_exn decl_pointer exp
+            | _ ->
+                () ) ;
+            trans_result
+      with Not_found_s _ | Caml.Not_found -> zero ()
+    in
+    trans_with_cache decl_ref.Clang_ast_t.dr_decl_pointer
 
 
   and arraySubscriptExpr_trans trans_state expr_info stmt_list =
@@ -3896,12 +3896,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and instructions trans_state stmt_list =
     let stmt_trans_fun = List.map ~f:get_clang_stmt_trans stmt_list in
     exec_trans_instrs trans_state stmt_trans_fun
-
-
-  and expression_trans context stmt =
-    let trans_state = CTrans_utils.default_trans_state context in
-    let res_trans_stmt = instruction trans_state stmt in
-    fst res_trans_stmt.return
 
 
   let instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper =
