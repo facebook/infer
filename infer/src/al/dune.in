@@ -23,7 +23,9 @@ let al =
      -open IBase -open IR -open Absint -open ClangFrontend))
  (libraries core IStdlib ATDGenerated IBase IR Absint ClangFrontend)
  (preprocess (pps ppx_compare))
-)|}
+)
+
+(documentation (package infer) (mld_files ASTLanguage))|}
     (if clang then ":standard" else "")
 
 

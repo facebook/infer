@@ -1,0 +1,5 @@
+{0 Library IStdlib}
+
+Additions to the standard library that are not specific to infer.
+
+The entry point of this library is the module {!module-IStdlib}.

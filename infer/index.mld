@@ -1,7 +1,0 @@
-{1 Infer Libraries}
-
-- {{:infer.html}infer}: most of the modules: capture, analysis, integrations, ...
-- {{:IR.html}IR}: the intermediate language used by the analysis
-- {{:base.html}base}: configuration and utilities
-- {{:atd.html}atd}: auto-generated datatypes
-- {{:istd.html}}: additions to the Core standard library

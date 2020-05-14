@@ -1,0 +1,6 @@
+{0 Library IBase}
+
+Utility modules that are somewhat specific to infer, usually because
+they depend on {!Config}.
+
+The entry point of this library is the module {!module-IBase}.

@@ -1,6 +1,0 @@
-{1 Library InferStdLib}
-Utility modules not specific to infer. In particular, nothing here
-should depend on Config.ml.
-
-The entry point of this library is the module:
-{!module-InferStdlib}.

@@ -1,0 +1,11 @@
+{0 Library IR: Intermediate Representation}
+
+The Intermediate Representation, called [SIL], is a format used by the back-end for analysis. It is produced by the front-ends.
+
+The entry point of this library is the module {!module-IR}.
+
+The main entry point is the intermediate language in {!module-IR.Sil}.
+
+The control flow graph module is {!module-IR.Cfg}.
+
+The type environment module is {!module-IR.Tenv}.

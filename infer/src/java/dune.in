@@ -27,5 +27,7 @@ let java =
     (if java then "javalib sawja" else "")
 
 
+let documentation = "(documentation (package infer) (mld_files JavaFrontend))"
+
 ;;
-Jbuild_plugin.V1.send (String.concat " " [lexer; java])
+Jbuild_plugin.V1.send (String.concat "\n" [lexer; java; documentation])

@@ -16,3 +16,5 @@
             Checkers Costlib Quandary TOPLlib Concurrency Labs)
  (preprocess (pps ppx_compare ppx_fields_conv))
 )
+
+(documentation (package infer) (mld_files Backend))

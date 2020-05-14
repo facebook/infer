@@ -1,0 +1,25 @@
+{0 Clang Frontend}
+
+Translates code that {{:https://clang.llvm.org/}[Clang]} understands into Infer's intermediate representation language {!module-IR.Sil}.
+
+All modules: {!module-ClangFrontend}
+
+{1 Capturing source files}
+
+Start at {!module-ClangFrontend.Capture} for how Infer uses Clang to parse source files, using our Clang plugin. For more information on our clang plugin itself, refer to the relevant documentation in [facebook-clang-plugins]:
+
+- {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ATD_GUIDELINES.md} [facebook-clang-plugins/libtooling/ATD_GUIDELINES.md]}
+- {{:https://github.com/facebook/facebook-clang-plugins/blob/master/clang-ocaml/README.md} [facebook-clang-plugins/clang-ocaml/README.md]} 
+
+{1 Quick guide to changing the AST format}
+
++ Create a simple example ([example.cpp]) source file with construct that needs to be exported. The smaller the better.
++ Export the extra information by changing the code in {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ASTExporter.h} [libtooling/ASTExporter.h]}. For more information, refer to the {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ATD_GUIDELINES.md} [ATD_GUIDELINES]}.
++ Compile Infer with the new version of [facebook-clang-plugins]. Running [make] from top level of Infer repository will do that. Sometimes there may be compilation errors due to [.atd] file changes --they need to be fixed.
++ Use newly-exported information in the frontend as you please.
+
+{1 Tips & Tricks}
+
+- To view the AST in a human readable version, Infer can generate [.bdump] files: [infer -g -- clang -c example.cpp && sh example.cpp.ast.sh]. Then open [example.cpp.ast.bdump].
+- To inspect the AST visually: [clang -c example.cpp -Xclang -ast-dump]. It doesn't include all the information that Infer sees, but it's often a good place to start.
+- If running [bdump] is failing (it happens on huge sources sometimes), there is a way to view it in "Yojson" format. To do that, replace all occurrences of [BiniouASTExporter] with [YojsonASTExporter] in the [.ast.sh] debug script.

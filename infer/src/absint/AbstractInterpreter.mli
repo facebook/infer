@@ -31,7 +31,7 @@ module type S = sig
     -> initial:TransferFunctions.Domain.t
     -> Procdesc.t
     -> TransferFunctions.Domain.t option
-  (** compute and return the postcondition for the given {Procdesc.t} starting from [initial].
+  (** compute and return the postcondition for the given {!Procdesc.t} starting from [initial].
       [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
   val exec_cfg :

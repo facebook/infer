@@ -11,3 +11,5 @@
  (libraries ANSITerminal core str yojson)
  (preprocess
   (pps ppx_compare)))
+
+(documentation (package infer) (mld_files IStdlib))

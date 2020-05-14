@@ -7,6 +7,8 @@
 
 open! IStd
 
+(** {1 Abstract domains and domain combinators} *)
+
 module Types : sig
   type 'astate bottom_lifted = Bottom | NonBottom of 'astate
 
@@ -16,8 +18,6 @@ module Types : sig
 end
 
 open! Types
-
-(** Abstract domains and domain combinators *)
 
 module type NoJoin = sig
   include PrettyPrintable.PrintableType

@@ -11,3 +11,5 @@
    IStdlib OpenSource)
  (preprocess
   (pps ppx_compare ppx_enumerate)))
+
+(documentation (package infer) (mld_files IBase))

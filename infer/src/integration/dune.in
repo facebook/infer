@@ -22,7 +22,8 @@ let library =
      TestDeterminators ClangFrontend ASTLanguage JavaFrontend)
  (preprocess (pps ppx_compare))
 )
-|}
+
+(documentation (package infer) (mld_files Integration))|}
     (if clang then "" else "-open ClangFrontendStubs")
     (if java then "" else "-open JavaFrontendStubs")
 

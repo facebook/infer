@@ -6,9 +6,6 @@
  *)
 
 open! IStd
-(** Given a clang command, normalize it via `clang -###` if needed to get a clear view of what work
-    is being done and which source files are being compiled, if any, then replace compilation
-    commands by our own clang with our plugin attached for each source file. *)
 
 module L = Logging
 

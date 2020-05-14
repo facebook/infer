@@ -1,0 +1,6 @@
+{0 Test Determinators}
+
+Call graph analyses that can be used to determine which tests to run
+in a given project as a result of a code change.
+
+All modules: {!module-TestDeterminators}

@@ -1,0 +1,7 @@
+{0 Abstract Interpretation Framework}
+
+{!module-Absint} is Infer's abstract interpretation framework, the recommended way to write analyses in Infer.
+
+Important modules:
+- {!module-Absint.AbstractInterpreter}
+- {!module-Absint.AbstractDomain}

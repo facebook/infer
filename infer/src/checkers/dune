@@ -12,3 +12,5 @@
  (libraries base64 core ocamlgraph IStdlib ATDGenerated IBase IR Absint Biabduction BO Pulselib)
  (preprocess (pps ppx_compare))
 )
+
+(documentation (package infer) (mld_files Checkers))

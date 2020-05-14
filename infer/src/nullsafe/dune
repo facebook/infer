@@ -12,3 +12,5 @@
  (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction)
  (preprocess (pps ppx_compare ppx_sexp_conv))
 )
+
+(documentation (package infer) (mld_files Nullsafe))

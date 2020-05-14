@@ -1,0 +1,8 @@
+{0 Nullsafe [@Nullable] Checker}
+
+Nullsafe (also called Eradicate) is a type checker for [@Nullable]
+annotations in Java. The goal is to eradicate null pointer
+exceptions. See the online docs at
+{:http://fbinfer.com/docs/eradicate}.
+
+All modules: {!module-Nullsafe}.

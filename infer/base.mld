@@ -1,6 +1,0 @@
-{1 Library InferBase}
-Utility modules that are somewhat specific to infer, usually because
-they depend on Config.ml.
-
-The entry point of this library is the module:
-{!module-InferBase}.
