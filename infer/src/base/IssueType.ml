@@ -24,7 +24,6 @@ module Unsafe : sig
 
   val register_from_cost_string :
        ?enabled:bool
-    -> ?is_on_cold_start:bool
     -> ?is_on_ui_thread:bool
     -> kind:CostKind.t
     -> (string -> string, Format.formatter, unit, string) format4
@@ -88,14 +87,10 @@ end = struct
 
 
   (** cost issues are already registered below.*)
-  let register_from_cost_string ?(enabled = true) ?(is_on_cold_start = false)
-      ?(is_on_ui_thread = false) ~(kind : CostKind.t) s =
+  let register_from_cost_string ?(enabled = true) ?(is_on_ui_thread = false) ~(kind : CostKind.t) s
+      =
     let issue_type_base = Format.asprintf s (CostKind.to_issue_string kind) in
-    let issue_type =
-      if is_on_ui_thread then issue_type_base ^ "_UI_THREAD"
-      else if is_on_cold_start then issue_type_base ^ "_COLD_START"
-      else issue_type_base
-    in
+    let issue_type = if is_on_ui_thread then issue_type_base ^ "_UI_THREAD" else issue_type_base in
     register_from_string ~enabled issue_type
 
 
@@ -325,8 +320,8 @@ let eradicate_meta_class_can_be_nullsafe =
       (* Should be enabled for special integrations *) ~enabled:false
 
 
-let expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread =
-  register_from_cost_string ~enabled:false ~kind ~is_on_cold_start ~is_on_ui_thread "EXPENSIVE_%s"
+let expensive_cost_call ~kind ~is_on_ui_thread =
+  register_from_cost_string ~enabled:false ~kind ~is_on_ui_thread "EXPENSIVE_%s"
 
 
 let exposed_insecure_intent_handling = register_from_string "EXPOSED_INSECURE_INTENT_HANDLING"
@@ -480,8 +475,8 @@ let symexec_memory_error =
 
 let thread_safety_violation = register_from_string "THREAD_SAFETY_VIOLATION"
 
-let complexity_increase ~kind ~is_on_cold_start ~is_on_ui_thread =
-  register_from_cost_string ~kind ~is_on_cold_start ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
+let complexity_increase ~kind ~is_on_ui_thread =
+  register_from_cost_string ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
 let topl_error = register_from_string "TOPL_ERROR"
@@ -541,10 +536,9 @@ let unreachable_cost_call ~kind =
 (* register enabled cost issues *)
 let () =
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
-      List.iter [true; false] ~f:(fun is_on_cold_start ->
-          List.iter [true; false] ~f:(fun is_on_ui_thread ->
-              let _ = unreachable_cost_call ~kind in
-              let _ = expensive_cost_call ~kind ~is_on_cold_start ~is_on_ui_thread in
-              let _ = infinite_cost_call ~kind in
-              let _ = complexity_increase ~kind ~is_on_cold_start ~is_on_ui_thread in
-              () ) ) )
+      List.iter [true; false] ~f:(fun is_on_ui_thread ->
+          let _ = unreachable_cost_call ~kind in
+          let _ = expensive_cost_call ~kind ~is_on_ui_thread in
+          let _ = infinite_cost_call ~kind in
+          let _ = complexity_increase ~kind ~is_on_ui_thread in
+          () ) )

@@ -151,13 +151,10 @@ OPTIONS
              ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE (enabled by
            default),
              EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
-             EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
-           default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
              EXPENSIVE_EXECUTION_TIME (disabled by default),
-             EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
              EXPENSIVE_EXECUTION_TIME_UI_THREAD (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),

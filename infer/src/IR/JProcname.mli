@@ -41,5 +41,3 @@ end
 
 val create_procname :
   classname:string -> methodname:string -> signature:string -> use_signature:bool -> Procname.t
-
-val make_void_signature_procname : classname:string -> methodname:string -> Procname.t

@@ -409,8 +409,6 @@ val only_cheap_debug : bool
 
 val only_footprint : bool
 
-val perf_profiler_data_file : string option
-
 val print_active_checkers : bool
 
 val print_builtins : bool

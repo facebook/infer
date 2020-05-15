@@ -201,7 +201,7 @@ OPTIONS
            (Conversely: --no-loop-hoisting-only)
 
        --perf-profiler-data-file file
-           Specify the file containing perf profiler data to read
+           DEPRECATED: Specify the file containing perf profiler data to read
 
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis

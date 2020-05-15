@@ -56,19 +56,6 @@
  (deps    java_method_decl.atd)
  (action  (run atdgen -t %{deps})))
 
-; ATD for perf_profiler
-(rule
- (targets perf_profiler_j.ml
-          perf_profiler_j.mli)
- (deps    perf_profiler.atd)
- (action  (run atdgen -j -j-std %{deps})))
-
-(rule
- (targets perf_profiler_t.ml
-          perf_profiler_t.mli)
- (deps    perf_profiler.atd)
- (action  (run atdgen -t %{deps})))
-
 ; ATD for java_profiler_samples
 (rule
  (targets java_profiler_samples_j.ml

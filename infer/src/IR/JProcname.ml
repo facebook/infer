@@ -274,8 +274,3 @@ let create_procname ~classname ~methodname:method_name ~signature ~use_signature
   in
   Procname.make_java ~class_name ~return_type ~method_name ~parameters
     ~kind:Procname.Java.Non_Static ()
-
-
-let make_void_signature_procname ~classname ~methodname =
-  let signature = JNI.void_method_with_no_arguments in
-  create_procname ~signature ~classname ~methodname ~use_signature:true

@@ -40,7 +40,6 @@ let () =
         ; LivenessTests.tests
         ; LRUHashtblTests.tests
         ; MaximumSharingTests.tests
-        ; PerfProfilerATDParserTest.tests
         ; ProcCfgTests.tests
         ; RestartSchedulerTests.tests
         ; SchedulerTests.tests

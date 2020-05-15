@@ -103,7 +103,7 @@ val codequery : t
 
 val comparing_floats_for_equality : t
 
-val complexity_increase : kind:CostKind.t -> is_on_cold_start:bool -> is_on_ui_thread:bool -> t
+val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
 val component_factory_function : t
 
@@ -180,7 +180,7 @@ val eradicate_meta_class_needs_improvement : t
 
 val eradicate_meta_class_is_nullsafe : t
 
-val expensive_cost_call : kind:CostKind.t -> is_on_cold_start:bool -> is_on_ui_thread:bool -> t
+val expensive_cost_call : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
 val exposed_insecure_intent_handling : t
 

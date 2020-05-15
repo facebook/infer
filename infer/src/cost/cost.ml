@@ -240,8 +240,7 @@ module Check = struct
       ~threshold ~is_on_ui_thread =
     let report_issue_type =
       L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
-      let is_on_cold_start = ExternalPerfData.in_profiler_data_map pname in
-      expensive_issue ~is_on_cold_start ~is_on_ui_thread
+      expensive_issue ~is_on_ui_thread
     in
     let bigO_str =
       Format.asprintf ", %a"

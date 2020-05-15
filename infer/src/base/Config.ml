@@ -1451,10 +1451,10 @@ and _log_skipped =
      machine-readable format"
 
 
-and perf_profiler_data_file =
+and[@warning "-32"] perf_profiler_data_file =
   CLOpt.mk_path_opt ~long:"perf-profiler-data-file"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"file" "Specify the file containing perf profiler data to read"
+    ~meta:"file" "DEPRECATED: Specify the file containing perf profiler data to read"
 
 
 and linter =
@@ -2774,8 +2774,6 @@ and liveness_dangerous_classes = !liveness_dangerous_classes
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
-
-and perf_profiler_data_file = !perf_profiler_data_file
 
 and max_nesting = !max_nesting
 

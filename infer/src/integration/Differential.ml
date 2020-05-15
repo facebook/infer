@@ -212,23 +212,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
-  let class_name =
-    match Str.split (Str.regexp_string ("." ^ method_name)) cost_info.Jsonbug_t.procedure_id with
-    | [class_name; _] ->
-        class_name
-    | _ ->
-        ""
-  in
-  let procname =
-    JProcname.make_void_signature_procname ~classname:class_name ~methodname:method_name
-  in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostItem.is_top curr_item then infinite_issue
     else if CostItem.is_unreachable curr_item then unreachable_issue
-    else
-      let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
-      complexity_increase_issue ~is_on_cold_start ~is_on_ui_thread
+    else complexity_increase_issue ~is_on_ui_thread
   in
   if (not Config.filtering) || issue_type.IssueType.enabled then
     let qualifier =
@@ -246,20 +234,6 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
             "Please make sure this is an expected change. You can inspect the trace to understand \
              the complexity increase:"
       in
-      let cold_start_or_ui_msg =
-        let common_msg = "It is very important to avoid potential regressions in this phase." in
-        if is_on_ui_thread then
-          Format.asprintf "%a %s" MarkupFormatter.pp_bold
-            "This function is called on the UI Thread!" common_msg
-        else
-          Option.value_map (ExternalPerfData.get_avg_inclusive_time_opt procname) ~default:""
-            ~f:(fun avg_inclusive_time ->
-              let pp_avg_inclusive_time f =
-                Format.fprintf f "(avg inclusive CPU time was %.1f ms)" avg_inclusive_time
-              in
-              Format.asprintf "%a %t %s" MarkupFormatter.pp_bold
-                "This function is called during cold start!" pp_avg_inclusive_time common_msg )
-      in
       let msg f =
         (* Java Only *)
         if String.equal method_name Procname.Java.constructor_method_name then
@@ -269,7 +243,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         else
           Format.fprintf f "%a" (MarkupFormatter.wrap_monospaced Format.pp_print_string) method_name
       in
-      Format.asprintf "%s of %t has %a from %a to %a. %s %a"
+      Format.asprintf "%s of %t has %a from %a to %a. %a"
         (CostKind.to_complexity_string kind)
         msg
         (MarkupFormatter.wrap_bold pp_delta)
@@ -277,7 +251,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
         prev_item
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
-        curr_item cold_start_or_ui_msg pp_extra_msg ()
+        curr_item pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
