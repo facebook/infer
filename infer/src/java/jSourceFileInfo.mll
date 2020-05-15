@@ -401,4 +401,8 @@ and skip_comments action = parse
             (SourceFile.to_abs_path file);
           In_channel.close cin
     )
+
+  let debug_on_file _path =
+    (* TODO: do something here *)
+    ()
 }

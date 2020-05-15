@@ -1396,6 +1396,12 @@ and iterations =
      symbolic operations and a multiple of seconds of elapsed time"
 
 
+and java_debug_source_file_info =
+  CLOpt.mk_path_opt ~long:"java-debug-source-file-info" ~meta:"path"
+    "For debugging only: Call the Java declarations source file parser on the given file and do \
+     not run anything else."
+
+
 and java_jar_compiler =
   CLOpt.mk_path_opt ~long:"java-jar-compiler"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -2736,6 +2742,8 @@ and issues_tests = !issues_tests
 and issues_tests_fields = !issues_tests_fields
 
 and iterations = !iterations
+
+and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
 

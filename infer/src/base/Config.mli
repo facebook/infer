@@ -344,6 +344,8 @@ val issues_tests_fields : IssuesTestField.t list
 
 val iterations : int
 
+val java_debug_source_file_info : string option
+
 val java_jar_compiler : string option
 
 val java_version : int option

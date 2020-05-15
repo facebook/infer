@@ -63,12 +63,13 @@ let infer_exe_stanza =
  (name infer)
  (modes byte_complete exe)
  (modules Infer)
- (flags (:standard -open Core -open IStdlib -open IStd -open IBase -open IR -open Backend -open Integration -open Biabduction -open TestDeterminators -open ClangFrontend -open ASTLanguage %s))
+ (flags (:standard -open Core -open IStdlib -open IStd -open IBase -open IR -open Backend -open Integration -open Biabduction -open TestDeterminators -open ClangFrontend -open ASTLanguage %s -open JavaFrontend %s))
  (libraries %s core IStdlib IBase IR Backend Integration Biabduction TestDeterminators ClangFrontend ASTLanguage)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
 )|}
     (if clang then "" else "-open ClangFrontendStubs")
+    (if java then "" else "-open JavaFrontendStubs")
     extlib_if_java
 
 

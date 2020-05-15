@@ -136,87 +136,87 @@ let () =
   if Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
-  ( if Config.test_determinator && not Config.process_clang_ast then
-    TestDeterminator.compute_and_emit_test_to_run ()
-  else
-    match Config.command with
-    | Analyze ->
-        run Driver.Analyze
-    | Capture | Compile | Run ->
-        run (Lazy.force Driver.mode_from_command_line)
-    | Report -> (
-      match Config.issues_tests with
-      | None ->
-          if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
-      | Some out_path ->
-          IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path
-            Config.issues_tests_fields )
-    | ReportDiff ->
-        (* at least one report must be passed in input to compute differential *)
-        ( match Config.(report_current, report_previous, costs_current, costs_previous) with
-        | None, None, None, None ->
-            L.(die UserError)
-              "Expected at least one argument among '--report-current', '--report-previous', \
-               '--costs-current', and '--costs-previous'"
-        | _ ->
-            () ) ;
-        ReportDiff.reportdiff ~current_report:Config.report_current
-          ~previous_report:Config.report_previous ~current_costs:Config.costs_current
-          ~previous_costs:Config.costs_previous
-    | Explore -> (
-      match (Config.procedures, Config.source_files) with
-      | true, false ->
-          let filter = Lazy.force Filtering.procedures_filter in
-          if Config.procedures_summary then
-            let pp_summary fmt proc_name =
-              match Summary.OnDisk.get proc_name with
-              | None ->
-                  Format.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
-              | Some summary ->
-                  Summary.pp_text fmt summary
-            in
-            Option.iter (Procedures.select_proc_names_interactive ~filter) ~f:(fun proc_names ->
-                L.result "%a" (fun fmt () -> List.iter proc_names ~f:(pp_summary fmt)) () )
-          else
-            L.result "%a"
-              Config.(
-                Procedures.pp_all ~filter ~proc_name:procedures_name
-                  ~attr_kind:procedures_definedness ~source_file:procedures_source_file
-                  ~proc_attributes:procedures_attributes)
-              ()
-      | false, true ->
-          let filter = Lazy.force Filtering.source_files_filter in
+  ( match Config.command with
+  | _ when Config.test_determinator && not Config.process_clang_ast ->
+      TestDeterminator.compute_and_emit_test_to_run ()
+  | _ when Option.is_some Config.java_debug_source_file_info ->
+      JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
+  | Analyze ->
+      run Driver.Analyze
+  | Capture | Compile | Run ->
+      run (Lazy.force Driver.mode_from_command_line)
+  | Report -> (
+    match Config.issues_tests with
+    | None ->
+        if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
+    | Some out_path ->
+        IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path
+          Config.issues_tests_fields )
+  | ReportDiff ->
+      (* at least one report must be passed in input to compute differential *)
+      ( match Config.(report_current, report_previous, costs_current, costs_previous) with
+      | None, None, None, None ->
+          L.die UserError
+            "Expected at least one argument among '--report-current', '--report-previous', \
+             '--costs-current', and '--costs-previous'"
+      | _ ->
+          () ) ;
+      ReportDiff.reportdiff ~current_report:Config.report_current
+        ~previous_report:Config.report_previous ~current_costs:Config.costs_current
+        ~previous_costs:Config.costs_previous
+  | Explore -> (
+    match (Config.procedures, Config.source_files) with
+    | true, false ->
+        let filter = Lazy.force Filtering.procedures_filter in
+        if Config.procedures_summary then
+          let pp_summary fmt proc_name =
+            match Summary.OnDisk.get proc_name with
+            | None ->
+                Format.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
+            | Some summary ->
+                Summary.pp_text fmt summary
+          in
+          Option.iter (Procedures.select_proc_names_interactive ~filter) ~f:(fun proc_names ->
+              L.result "%a" (fun fmt () -> List.iter proc_names ~f:(pp_summary fmt)) () )
+        else
           L.result "%a"
-            (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
-               ~procedure_names:Config.source_files_procedure_names
-               ~freshly_captured:Config.source_files_freshly_captured)
-            () ;
-          if Config.source_files_cfg then (
-            let source_files = SourceFiles.get_all ~filter () in
-            List.iter source_files ~f:(fun source_file ->
-                (* create directory in captured/ *)
-                DB.Results_dir.init ~debug:true source_file ;
-                (* collect the CFGs for all the procedures in [source_file] *)
-                let proc_names = SourceFiles.proc_names_of_source source_file in
-                let cfgs = Procname.Hash.create (List.length proc_names) in
-                List.iter proc_names ~f:(fun proc_name ->
-                    Procdesc.load proc_name
-                    |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
-                (* emit the dot file in captured/... *)
-                DotCfg.emit_frontend_cfg source_file cfgs ) ;
-            L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
-              Config.dotty_frontend_output )
-      | false, false ->
-          (* explore bug traces *)
-          if Config.html then
-            TraceBugs.gen_html_report ~report_json:(ResultsDir.get_path ReportJson)
-              ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
-              ~report_html_dir:(ResultsDir.get_path ReportHtml)
-          else
-            TraceBugs.explore ~selector_limit:None ~report_json:(ResultsDir.get_path ReportJson)
-              ~report_txt:(ResultsDir.get_path ReportText) ~selected:Config.select
-              ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
-      | true, true ->
-          L.user_error "Options --procedures and --source-files cannot be used together.@\n" ) ) ;
+            Config.(
+              Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
+                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
+            ()
+    | false, true ->
+        let filter = Lazy.force Filtering.source_files_filter in
+        L.result "%a"
+          (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
+             ~procedure_names:Config.source_files_procedure_names
+             ~freshly_captured:Config.source_files_freshly_captured)
+          () ;
+        if Config.source_files_cfg then (
+          let source_files = SourceFiles.get_all ~filter () in
+          List.iter source_files ~f:(fun source_file ->
+              (* create directory in captured/ *)
+              DB.Results_dir.init ~debug:true source_file ;
+              (* collect the CFGs for all the procedures in [source_file] *)
+              let proc_names = SourceFiles.proc_names_of_source source_file in
+              let cfgs = Procname.Hash.create (List.length proc_names) in
+              List.iter proc_names ~f:(fun proc_name ->
+                  Procdesc.load proc_name
+                  |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
+              (* emit the dot file in captured/... *)
+              DotCfg.emit_frontend_cfg source_file cfgs ) ;
+          L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
+            Config.dotty_frontend_output )
+    | false, false ->
+        (* explore bug traces *)
+        if Config.html then
+          TraceBugs.gen_html_report ~report_json:(ResultsDir.get_path ReportJson)
+            ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
+            ~report_html_dir:(ResultsDir.get_path ReportHtml)
+        else
+          TraceBugs.explore ~selector_limit:None ~report_json:(ResultsDir.get_path ReportJson)
+            ~report_txt:(ResultsDir.get_path ReportText) ~selected:Config.select
+            ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
+    | true, true ->
+        L.user_error "Options --procedures and --source-files cannot be used together.@\n" ) ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0

@@ -1431,6 +1431,13 @@ INTERNAL OPTIONS
            expressed as a multiple of symbolic operations and a multiple of
            seconds of elapsed time
 
+       --java-debug-source-file-info path
+           For debugging only: Call the Java declarations source file parser
+           on the given file and do not run anything else.
+
+       --java-debug-source-file-info-reset
+           Cancel the effect of --java-debug-source-file-info.
+
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
 
