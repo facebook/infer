@@ -110,42 +110,6 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 
-let buck_capture build_cmd =
-  let prog_build_cmd_opt =
-    let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
-    match Config.buck_mode with
-    | Some ClangFlavors ->
-        (* let children infer processes know that they are inside Buck *)
-        let infer_args_with_buck =
-          String.concat
-            ~sep:(String.of_char CLOpt.env_var_sep)
-            (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
-        in
-        Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-        let {Buck.command; rev_not_targets; targets} =
-          Buck.add_flavors_to_buck_arguments ClangFlavors ~filter_kind:`Auto ~extra_flavors:[]
-            buck_args
-        in
-        if List.is_empty targets then None
-        else
-          let all_args = List.rev_append rev_not_targets targets in
-          let updated_buck_cmd =
-            command
-            :: List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
-          in
-          Logging.(debug Capture Quiet)
-            "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
-          Some (prog, updated_buck_cmd)
-    | _ ->
-        Some (prog, build_cmd)
-  in
-  Option.iter prog_build_cmd_opt ~f:(fun (prog, buck_build_cmd) ->
-      L.progress "Capturing in buck mode...@." ;
-      if Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode then
-        ResultsDir.RunState.set_merge_capture true ;
-      Buck.clang_flavor_capture ~prog ~buck_build_cmd )
-
-
 let capture ~changed_files = function
   | Analyze ->
       ()
@@ -153,7 +117,8 @@ let capture ~changed_files = function
       L.progress "Capturing in ant mode...@." ;
       Ant.capture ~prog ~args
   | BuckClangFlavor {build_cmd} ->
-      buck_capture build_cmd
+      L.progress "Capturing in buck mode...@." ;
+      BuckFlavors.capture build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       L.progress "Capturing using Buck's compilation database...@." ;
       let json_cdb =

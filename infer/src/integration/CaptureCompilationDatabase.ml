@@ -70,7 +70,7 @@ let run_compilation_database compilation_database should_capture_file =
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck db_deps ~prog ~args =
   match
-    Buck.add_flavors_to_buck_arguments (ClangCompilationDB db_deps) ~filter_kind:`Yes
+    BuckFlavors.add_flavors_to_buck_arguments (ClangCompilationDB db_deps) ~filter_kind:`Yes
       ~extra_flavors:Config.append_buck_flavors args
   with
   | {targets} when List.is_empty targets ->
