@@ -80,11 +80,10 @@ let all_checkers =
      before them. *)
   [ { name= "Self captured in block checker"
     ; active= Config.is_checker_enabled SelfInBlock
-    ; callbacks= [(intraprocedural SelfInBlock.checker, Language.Clang)] }
+    ; callbacks= [(intraprocedural SelfInBlock.checker, Clang)] }
   ; { name= "Class loading analysis"
     ; active= Config.is_checker_enabled ClassLoads
-    ; callbacks=
-        [(interprocedural Payloads.Fields.class_loads ClassLoads.analyze_procedure, Language.Java)]
+    ; callbacks= [(interprocedural Payloads.Fields.class_loads ClassLoads.analyze_procedure, Java)]
     }
   ; { name= "purity"
     ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
@@ -93,7 +92,7 @@ let all_checkers =
            interprocedural2 Payloads.Fields.purity Payloads.Fields.buffer_overrun_analysis
              Purity.checker
          in
-         [(purity, Language.Java); (purity, Language.Clang)] ) }
+         [(purity, Java); (purity, Clang)] ) }
   ; { name= "Starvation analysis"
     ; active= Config.is_checker_enabled Starvation
     ; callbacks=
@@ -101,10 +100,10 @@ let all_checkers =
          let starvation_file_reporting =
            file StarvationIssues Payloads.Fields.starvation Starvation.reporting
          in
-         [ (starvation, Language.Java)
-         ; (starvation_file_reporting, Language.Java)
-         ; (starvation, Language.Clang)
-         ; (starvation_file_reporting, Language.Clang) ] ) }
+         [ (starvation, Java)
+         ; (starvation_file_reporting, Java)
+         ; (starvation, Clang)
+         ; (starvation_file_reporting, Clang) ] ) }
   ; { name= "loop hoisting"
     ; active= Config.is_checker_enabled LoopHoisting
     ; callbacks=
@@ -115,7 +114,7 @@ let all_checkers =
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Payloads.Fields.cost
              Hoisting.checker
          in
-         [(hoisting, Language.Clang); (hoisting, Language.Java)] ) }
+         [(hoisting, Clang); (hoisting, Java)] ) }
   ; { name= "cost analysis"
     ; active=
         Config.(
@@ -126,17 +125,16 @@ let all_checkers =
            interprocedural3 ~set_payload:(Field.fset Payloads.Fields.cost) Payloads.Fields.cost
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Cost.checker
          in
-         [(checker, Language.Clang); (checker, Language.Java)] ) }
+         [(checker, Clang); (checker, Java)] ) }
   ; { name= "uninitialized variables"
     ; active= Config.is_checker_enabled Uninit
-    ; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Language.Clang)] }
+    ; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)] }
   ; { name= "SIOF"
     ; active= Config.is_checker_enabled SIOF
-    ; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Language.Clang)] }
+    ; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)] }
   ; { name= "litho-required-props"
     ; active= Config.is_checker_enabled LithoRequiredProps
-    ; callbacks=
-        [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Language.Java)]
+    ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)]
     }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     { name= "resource leak"
@@ -145,60 +143,53 @@ let all_checkers =
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
-          , Language.Java ) ] }
+          , Java ) ] }
   ; { name= "RacerD"
     ; active= Config.is_checker_enabled RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
          let racerd_file = file RacerDIssues Payloads.Fields.racerd RacerD.file_analysis in
-         [ (racerd_proc, Language.Clang)
-         ; (racerd_proc, Language.Java)
-         ; (racerd_file, Language.Clang)
-         ; (racerd_file, Language.Java) ] ) }
+         [(racerd_proc, Clang); (racerd_proc, Java); (racerd_file, Clang); (racerd_file, Java)] ) }
   ; { name= "quandary"
     ; active= Config.(is_checker_enabled Quandary)
     ; callbacks=
-        [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Language.Java)
-        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Language.Clang) ] }
+        [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Java)
+        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
   ; { name= "pulse"
     ; active= Config.(is_checker_enabled Pulse || is_checker_enabled Impurity)
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
-         (pulse, Language.Clang)
-         :: (if Config.is_checker_enabled Impurity then [(pulse, Language.Java)] else []) ) }
+         [(pulse, Clang); (pulse, Java)] ) }
   ; { name= "impurity"
     ; active= Config.is_checker_enabled Impurity
     ; callbacks=
         (let impurity =
            intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
          in
-         [(impurity, Language.Java); (impurity, Language.Clang)] ) }
+         [(impurity, Java); (impurity, Clang)] ) }
   ; { name= "printf args"
     ; active= Config.is_checker_enabled PrintfArgs
-    ; callbacks= [(intraprocedural PrintfArgs.checker, Language.Java)] }
+    ; callbacks= [(intraprocedural PrintfArgs.checker, Java)] }
   ; { name= "liveness"
     ; active= Config.is_checker_enabled Liveness
-    ; callbacks= [(intraprocedural Liveness.checker, Language.Clang)] }
+    ; callbacks= [(intraprocedural Liveness.checker, Clang)] }
   ; { name= "inefficient keyset iterator"
     ; active= Config.is_checker_enabled InefficientKeysetIterator
-    ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Language.Java)] }
+    ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)] }
   ; { name= "immutable cast"
     ; active= Config.is_checker_enabled ImmutableCast
     ; callbacks=
-        [ ( intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze
-          , Language.Java ) ] }
+        [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)] }
   ; { name= "fragment retains view"
     ; active= Config.is_checker_enabled FragmentRetainsView
-    ; callbacks=
-        [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Language.Java)]
+    ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)]
     }
   ; { name= "eradicate"
     ; active= Config.is_checker_enabled Eradicate
     ; callbacks=
-        [ ( intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure
-          , Language.Java )
-        ; ( file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file
-          , Language.Java ) ] }
+        [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
+        ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ]
+    }
   ; { name= "buffer overrun checker"
     ; active= Config.(is_checker_enabled BufferOverrun)
     ; callbacks=
@@ -206,7 +197,7 @@ let all_checkers =
            interprocedural2 Payloads.Fields.buffer_overrun_checker
              Payloads.Fields.buffer_overrun_analysis BufferOverrunChecker.checker
          in
-         [(bo_checker, Language.Clang); (bo_checker, Language.Java)] ) }
+         [(bo_checker, Clang); (bo_checker, Java)] ) }
   ; { name= "buffer overrun analysis"
     ; active=
         Config.(
@@ -217,7 +208,7 @@ let all_checkers =
            interprocedural Payloads.Fields.buffer_overrun_analysis
              BufferOverrunAnalysis.analyze_procedure
          in
-         [(bo_analysis, Language.Clang); (bo_analysis, Language.Java)] ) }
+         [(bo_analysis, Clang); (bo_analysis, Java)] ) }
   ; { name= "biabduction"
     ; active= Config.is_checker_enabled Biabduction
     ; callbacks=
@@ -225,14 +216,14 @@ let all_checkers =
            dynamic_dispatch Payloads.Fields.biabduction
              (Topl.instrument_callback Interproc.analyze_procedure)
          in
-         [(biabduction, Language.Clang); (biabduction, Language.Java)] ) }
+         [(biabduction, Clang); (biabduction, Java)] ) }
   ; { name= "annotation reachability"
     ; active= Config.is_checker_enabled AnnotationReachability
     ; callbacks=
         (let annot_reach =
            interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
          in
-         [(annot_reach, Language.Java); (annot_reach, Language.Clang)] ) } ]
+         [(annot_reach, Java); (annot_reach, Clang)] ) } ]
 
 
 let get_active_checkers () =

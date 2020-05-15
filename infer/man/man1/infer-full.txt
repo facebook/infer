@@ -854,8 +854,8 @@ OPTIONS
            infer-run(1).
 
        --pulse
-           Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
-           --no-pulse)           See also infer-analyze(1).
+           Activates: [EXPERIMENTAL] memory and lifetime analysis
+           (Conversely: --no-pulse)           See also infer-analyze(1).
 
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can

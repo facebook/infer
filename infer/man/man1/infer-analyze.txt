@@ -229,8 +229,8 @@ OPTIONS
            Specify the root directory of the project
 
        --pulse
-           Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
-           --no-pulse)
+           Activates: [EXPERIMENTAL] memory and lifetime analysis
+           (Conversely: --no-pulse)
 
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can

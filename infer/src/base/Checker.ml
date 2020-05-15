@@ -187,7 +187,7 @@ let config checker =
       ; cli_deprecated_flags= [] }
   | Pulse ->
       { support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] C++ lifetime analysis"
+      ; short_documentation= "[EXPERIMENTAL] memory and lifetime analysis"
       ; show_in_help= true
       ; cli_flag= "pulse"
       ; enabled_by_default= false
