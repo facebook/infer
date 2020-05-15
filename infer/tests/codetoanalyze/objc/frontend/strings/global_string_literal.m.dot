@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_2" [label="2: Exit __infer_globals_initializer_lastName \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:NSString*); [line 10, column 1]\n  n$0=_fun_NSString::stringWithUTF8String:(\"Rodriguez\":char* const ) [line 10, column 22]\n  *&#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:NSString*=n$0 [line 10, column 1]\n " shape="box"]
+"__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:NSString*); [line 10, column 1]\n  n$0=_fun_NSString.stringWithUTF8String:(\"Rodriguez\":char* const ) [line 10, column 22]\n  *&#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:NSString*=n$0 [line 10, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" -> "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_2" ;

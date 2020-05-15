@@ -11,23 +11,23 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject::release(n$0:PropertyA*) virtual [line 43, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject.release(n$0:PropertyA*) virtual [line 43, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA::setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA.setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:PropertyA*); [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA::init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:PropertyA*); [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA.init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" [label="1: Start PropertyA::copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n  " color=yellow style=filled]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" [label="1: Start PropertyA.copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n  " color=yellow style=filled]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA::copy \n  " color=yellow style=filled]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA.copy \n  " color=yellow style=filled]
 	
 
 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n  *&return:PropertyA*=n$1 [line 35, column 3]\n " shape="box"]
@@ -58,16 +58,16 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(other:PropertyA*); [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA::init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(other:PropertyA*); [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA.init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" ;
-"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA::init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" -> "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" ;
-"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" [label="2: Exit PropertyA::init \n  " color=yellow style=filled]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" [label="2: Exit PropertyA.init \n  " color=yellow style=filled]
 	
 
 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" [label="3:  Return Stmt \n   n$0=*&self:PropertyA* [line 25, column 10]\n  *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]

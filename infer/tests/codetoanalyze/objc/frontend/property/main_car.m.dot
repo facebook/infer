@@ -11,15 +11,15 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Call _fun_NSLog \n   n$0=_fun_NSString::stringWithUTF8String:(\"%d\":char* const ) [line 13, column 9]\n  n$1=*&honda:Car* [line 13, column 16]\n  n$2=_fun_Car::running(n$1:Car*) [line 13, column 22]\n  n$3=_fun_NSLog(n$0:objc_object*,n$2:int) [line 13, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Call _fun_NSLog \n   n$0=_fun_NSString.stringWithUTF8String:(\"%d\":char* const ) [line 13, column 9]\n  n$1=*&honda:Car* [line 13, column 16]\n  n$2=_fun_Car.running(n$1:Car*) [line 13, column 22]\n  n$3=_fun_NSLog(n$0:objc_object*,n$2:int) [line 13, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  Message Call: setRunning: \n   n$4=*&honda:Car* [line 12, column 3]\n  n$5=_fun_Car::setRunning:(n$4:Car*,1:_Bool) [line 12, column 9]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  Message Call: setRunning: \n   n$4=*&honda:Car* [line 12, column 3]\n  n$5=_fun_Car.setRunning:(n$4:Car*,1:_Bool) [line 12, column 9]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(honda:Car*); [line 11, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Car):unsigned long) [line 11, column 17]\n  n$7=_fun_NSObject::init(n$6:Car*) virtual [line 11, column 16]\n  *&honda:Car*=n$7 [line 11, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(honda:Car*); [line 11, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Car):unsigned long) [line 11, column 17]\n  n$7=_fun_NSObject.init(n$6:Car*) virtual [line 11, column 16]\n  *&honda:Car*=n$7 [line 11, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

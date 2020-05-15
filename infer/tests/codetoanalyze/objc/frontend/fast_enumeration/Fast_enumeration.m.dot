@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A::fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_2" [label="2: Exit A::fast_loop: \n  " color=yellow style=filled]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_2" [label="2: Exit A.fast_loop: \n  " color=yellow style=filled]
 	
 
 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_3" [label="3:  Return Stmt \n   n$0=*&size:int [line 24, column 10]\n  *&return:int=n$0 [line 24, column 3]\n " shape="box"]
@@ -28,15 +28,15 @@ digraph cfg {
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_7" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_3" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&items:NSArray* [line 21, column 25]\n  n$3=_fun_NSArray::nextObject(n$2:NSArray*) virtual [line 21, column 3]\n  *&item:NSArray*=n$3 [line 21, column 3]\n " shape="box"]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&items:NSArray* [line 21, column 25]\n  n$3=_fun_NSArray.nextObject(n$2:NSArray*) virtual [line 21, column 3]\n  *&item:NSArray*=n$3 [line 21, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:NSArray* [line 22, column 14]\n  n$5=_fun_NSArray::count(n$4:NSArray*) [line 22, column 13]\n  n$6=*&size:int [line 22, column 5]\n  *&size:int=(n$6 + n$5) [line 22, column 5]\n " shape="box"]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:NSArray* [line 22, column 14]\n  n$5=_fun_NSArray.count(n$4:NSArray*) [line 22, column 13]\n  n$6=*&size:int [line 22, column 5]\n  *&size:int=(n$6 + n$5) [line 22, column 5]\n " shape="box"]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&items:NSArray* [line 21, column 25]\n  n$9=_fun_NSArray::nextObject(n$8:NSArray*) virtual [line 21, column 3]\n  *&item:NSArray*=n$9 [line 21, column 3]\n " shape="box"]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&items:NSArray* [line 21, column 25]\n  n$9=_fun_NSArray.nextObject(n$8:NSArray*) virtual [line 21, column 3]\n  *&item:NSArray*=n$9 [line 21, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" ;
@@ -44,11 +44,11 @@ digraph cfg {
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A::fast_loop_no_crash\nFormals:  self:A*\nLocals:  obj:objc_object* \n  " color=yellow style=filled]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A.fast_loop_no_crash\nFormals:  self:A*\nLocals:  obj:objc_object* \n  " color=yellow style=filled]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" [label="2: Exit A::fast_loop_no_crash \n  " color=yellow style=filled]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" [label="2: Exit A.fast_loop_no_crash \n  " color=yellow style=filled]
 	
 
 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" [label="3: + \n  " ]
@@ -68,15 +68,15 @@ digraph cfg {
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" [label="7:  BinaryOperatorStmt: Assign \n   n$19=*&self:A* [line 38, column 15]\n  n$20=*n$19.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$21=_fun_NSEnumerator::nextObject(n$20:NSEnumerator*) virtual [line 38, column 3]\n  *&obj:objc_object*=n$21 [line 38, column 3]\n " shape="box"]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" [label="7:  BinaryOperatorStmt: Assign \n   n$19=*&self:A* [line 38, column 15]\n  n$20=*n$19.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$21=_fun_NSEnumerator.nextObject(n$20:NSEnumerator*) virtual [line 38, column 3]\n  *&obj:objc_object*=n$21 [line 38, column 3]\n " shape="box"]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" [label="8:  Message Call: copy \n   n$22=*&obj:objc_object* [line 39, column 6]\n  n$23=_fun_NSObject::copy(n$22:objc_object*) virtual [line 39, column 5]\n " shape="box"]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" [label="8:  Message Call: copy \n   n$22=*&obj:objc_object* [line 39, column 6]\n  n$23=_fun_NSObject.copy(n$22:objc_object*) virtual [line 39, column 5]\n " shape="box"]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" [label="9:  BinaryOperatorStmt: Assign \n   n$25=*&self:A* [line 38, column 15]\n  n$26=*n$25.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$27=_fun_NSEnumerator::nextObject(n$26:NSEnumerator*) virtual [line 38, column 3]\n  *&obj:objc_object*=n$27 [line 38, column 3]\n " shape="box"]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" [label="9:  BinaryOperatorStmt: Assign \n   n$25=*&self:A* [line 38, column 15]\n  n$26=*n$25.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$27=_fun_NSEnumerator.nextObject(n$26:NSEnumerator*) virtual [line 38, column 3]\n  *&obj:objc_object*=n$27 [line 38, column 3]\n " shape="box"]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
@@ -84,11 +84,11 @@ digraph cfg {
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" [label="1: Start A::while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" [label="1: Start A.while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_2" [label="2: Exit A::while_loop: \n  " color=yellow style=filled]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_2" [label="2: Exit A.while_loop: \n  " color=yellow style=filled]
 	
 
 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_3" [label="3:  Return Stmt \n   n$10=*&size:int [line 33, column 10]\n  *&return:int=n$10 [line 33, column 3]\n " shape="box"]
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" [label="5:  BinaryOperatorStmt: Assign \n   n$11=*&items:NSArray* [line 30, column 19]\n  n$12=_fun_NSArray::objectAtIndex:(n$11:NSArray*,(unsigned long)3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$12 [line 30, column 11]\n  n$13=*&item:NSArray* [line 30, column 11]\n " shape="box"]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" [label="5:  BinaryOperatorStmt: Assign \n   n$11=*&items:NSArray* [line 30, column 19]\n  n$12=_fun_NSArray.objectAtIndex:(n$11:NSArray*,(unsigned long)3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$12 [line 30, column 11]\n  n$13=*&item:NSArray* [line 30, column 11]\n " shape="box"]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" ;
@@ -112,7 +112,7 @@ digraph cfg {
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_7" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_3" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" [label="8:  BinaryOperatorStmt: AddAssign \n   n$14=*&item:NSArray* [line 31, column 14]\n  n$15=_fun_NSArray::count(n$14:NSArray*) [line 31, column 13]\n  n$16=*&size:int [line 31, column 5]\n  *&size:int=(n$16 + n$15) [line 31, column 5]\n " shape="box"]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" [label="8:  BinaryOperatorStmt: AddAssign \n   n$14=*&item:NSArray* [line 31, column 14]\n  n$15=_fun_NSArray.count(n$14:NSArray*) [line 31, column 13]\n  n$16=*&size:int [line 31, column 5]\n  *&size:int=(n$16 + n$15) [line 31, column 5]\n " shape="box"]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" ;

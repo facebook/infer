@@ -7,11 +7,11 @@ digraph cfg {
 "get_array.bca6b16c85e5b8ba530f380271b2ec79_2" [label="2: Exit get_array \n  " color=yellow style=filled]
 	
 
-"get_array.bca6b16c85e5b8ba530f380271b2ec79_3" [label="3:  Return Stmt \n   n$1=_fun_NSString::stringWithUTF8String:(\"cat\":char* const ) [line 12, column 13]\n  n$0=_fun_NSString::stringWithUTF8String:(\"dog\":char* const ) [line 12, column 21]\n  n$2=_fun_NSArray::arrayWithObjects:count:(n$1:objc_object*,n$0:objc_object*,null:objc_object*) [line 12, column 10]\n  *&return:NSArray*=n$2 [line 12, column 3]\n " shape="box"]
+"get_array.bca6b16c85e5b8ba530f380271b2ec79_3" [label="3:  Return Stmt \n   n$1=_fun_NSString.stringWithUTF8String:(\"cat\":char* const ) [line 12, column 13]\n  n$0=_fun_NSString.stringWithUTF8String:(\"dog\":char* const ) [line 12, column 21]\n  n$2=_fun_NSArray.arrayWithObjects:count:(n$1:objc_object*,n$0:objc_object*,null:objc_object*) [line 12, column 10]\n  *&return:NSArray*=n$2 [line 12, column 3]\n " shape="box"]
 	
 
 	 "get_array.bca6b16c85e5b8ba530f380271b2ec79_3" -> "get_array.bca6b16c85e5b8ba530f380271b2ec79_2" ;
-"get_array.bca6b16c85e5b8ba530f380271b2ec79_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(animals:NSArray*); [line 11, column 3]\n  n$4=_fun_NSString::stringWithUTF8String:(\"cat\":char* const ) [line 11, column 48]\n  n$3=_fun_NSString::stringWithUTF8String:(\"dog\":char* const ) [line 11, column 56]\n  n$5=_fun_NSArray::arrayWithObjects:(n$4:objc_object*,n$3:NSString*,null:void*) [line 11, column 22]\n  *&animals:NSArray*=n$5 [line 11, column 3]\n " shape="box"]
+"get_array.bca6b16c85e5b8ba530f380271b2ec79_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(animals:NSArray*); [line 11, column 3]\n  n$4=_fun_NSString.stringWithUTF8String:(\"cat\":char* const ) [line 11, column 48]\n  n$3=_fun_NSString.stringWithUTF8String:(\"dog\":char* const ) [line 11, column 56]\n  n$5=_fun_NSArray.arrayWithObjects:(n$4:objc_object*,n$3:NSString*,null:void*) [line 11, column 22]\n  *&animals:NSArray*=n$5 [line 11, column 3]\n " shape="box"]
 	
 
 	 "get_array.bca6b16c85e5b8ba530f380271b2ec79_4" -> "get_array.bca6b16c85e5b8ba530f380271b2ec79_3" ;

@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_1" [label="1: Start MyClass::aMethod\nFormals:  self:MyClass*\nLocals:  j:int i:int \n  " color=yellow style=filled]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_1" [label="1: Start MyClass.aMethod\nFormals:  self:MyClass*\nLocals:  j:int i:int \n  " color=yellow style=filled]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_1" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_15" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_2" [label="2: Exit MyClass::aMethod \n  " color=yellow style=filled]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_2" [label="2: Exit MyClass.aMethod \n  " color=yellow style=filled]
 	
 
 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_3" [label="3: + \n  " ]

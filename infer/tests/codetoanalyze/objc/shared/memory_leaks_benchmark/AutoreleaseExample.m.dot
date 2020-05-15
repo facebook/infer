@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 38, column 6]\n  n$3=_fun_NSObject::retain(n$2:Auto*) virtual [line 38, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 38, column 6]\n  n$3=_fun_NSObject.retain(n$2:Auto*) virtual [line 38, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
@@ -85,15 +85,15 @@ digraph cfg {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 61, column 4]\n  n$2=_fun_NSObject::release(n$1:NSAutoreleasePool*) virtual [line 61, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 61, column 4]\n  n$2=_fun_NSObject.release(n$1:NSAutoreleasePool*) virtual [line 61, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(string:NSString*); [line 59, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 59, column 23]\n  n$4=_fun_NSObject::autorelease(n$3:NSString*) virtual [line 59, column 22]\n  *&string:NSString*=n$4 [line 59, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(string:NSString*); [line 59, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 59, column 23]\n  n$4=_fun_NSObject.autorelease(n$3:NSString*) virtual [line 59, column 22]\n  *&string:NSString*=n$4 [line 59, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(pool:NSAutoreleasePool*); [line 58, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 58, column 30]\n  n$6=_fun_NSObject::init(n$5:NSAutoreleasePool*) virtual [line 58, column 29]\n  *&pool:NSAutoreleasePool*=n$6 [line 58, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(pool:NSAutoreleasePool*); [line 58, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 58, column 30]\n  n$6=_fun_NSObject.init(n$5:NSAutoreleasePool*) virtual [line 58, column 29]\n  *&pool:NSAutoreleasePool*=n$6 [line 58, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
@@ -104,22 +104,22 @@ digraph cfg {
 "createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:Auto*) virtual [line 29, column 10]\n  *&return:Auto*=n$1 [line 29, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:Auto*) virtual [line 29, column 10]\n  *&return:Auto*=n$1 [line 29, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
-"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject::init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject.init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto::autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto.autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto::autorelease_main \n  " color=yellow style=filled]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto.autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject::autorelease(n$0:NSString*) virtual [line 22, column 10]\n  *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:NSString*) virtual [line 22, column 10]\n  *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;

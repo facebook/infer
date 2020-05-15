@@ -1,1 +1,1 @@
-main.mm, SomeClass::new, 13, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, no_bucket, ADVICE, []
+main.mm, SomeClass.new, 13, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, no_bucket, ADVICE, []

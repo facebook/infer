@@ -313,13 +313,14 @@ module ObjC_Cpp = struct
 
 
   let pp verbosity fmt osig =
+    let sep = if is_objc_method osig then "." else "::" in
     match verbosity with
     | Simple ->
         F.pp_print_string fmt osig.method_name
     | Non_verbose ->
-        F.fprintf fmt "%s::%s" (Typ.Name.name osig.class_name) osig.method_name
+        F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep osig.method_name
     | Verbose ->
-        F.fprintf fmt "%s::%s%a%a" (Typ.Name.name osig.class_name) osig.method_name
+        F.fprintf fmt "%s%s%s%a%a" (Typ.Name.name osig.class_name) sep osig.method_name
           Parameter.pp_parameters osig.parameters pp_verbose_kind osig.kind
 
 
@@ -640,12 +641,12 @@ let hashable_name proc_name =
           Str.global_replace java_inner_class_prefix_regex "$_" name
       | exception Caml.Not_found ->
           name )
-  | ObjC_Cpp m when ObjC_Cpp.is_objc_method m ->
+  | ObjC_Cpp osig when ObjC_Cpp.is_objc_method osig ->
       (* In Objective C, the list of parameters is part of the method name. To prevent the bug
          hash to change when a parameter is introduced or removed, only the part of the name
          before the first colon is used for the bug hash *)
       let name = F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name in
-      List.hd_exn (String.split_on_chars name ~on:[':'])
+      List.hd_exn (String.split name ~on:':')
   | _ ->
       (* Other cases for C and C++ method names *)
       F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name

@@ -1,17 +1,17 @@
 /* @generated */
 digraph cfg {
-"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" [label="1: Start MySubclass::myNumber\nFormals:  self:MySubclass*\nLocals:  subclassNumber:int \n  " color=yellow style=filled]
+"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" [label="1: Start MySubclass.myNumber\nFormals:  self:MySubclass*\nLocals:  subclassNumber:int \n  " color=yellow style=filled]
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" ;
-"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_2" [label="2: Exit MySubclass::myNumber \n  " color=yellow style=filled]
+"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_2" [label="2: Exit MySubclass.myNumber \n  " color=yellow style=filled]
 	
 
 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_3" [label="3:  Return Stmt \n   n$0=*&subclassNumber:int [line 16, column 10]\n  *&return:int=n$0 [line 16, column 3]\n " shape="box"]
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_3" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_2" ;
-"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(subclassNumber:int); [line 15, column 3]\n  n$1=*&self:MySubclass* [line 15, column 24]\n  n$2=_fun_MyClass::myNumber(n$1:MySubclass*) [line 15, column 24]\n  *&subclassNumber:int=(n$2 + 1) [line 15, column 3]\n " shape="box"]
+"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(subclassNumber:int); [line 15, column 3]\n  n$1=*&self:MySubclass* [line 15, column 24]\n  n$2=_fun_MyClass.myNumber(n$1:MySubclass*) [line 15, column 24]\n  *&subclassNumber:int=(n$2 + 1) [line 15, column 3]\n " shape="box"]
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_3" ;

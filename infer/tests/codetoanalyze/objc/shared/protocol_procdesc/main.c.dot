@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_2" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:Bicycle* [line 14, column 4]\n  n$1=_fun_StreetVehicle::signalStop(n$0:Bicycle*) virtual [line 14, column 3]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:Bicycle* [line 14, column 4]\n  n$1=_fun_StreetVehicle.signalStop(n$0:Bicycle*) virtual [line 14, column 3]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" ;

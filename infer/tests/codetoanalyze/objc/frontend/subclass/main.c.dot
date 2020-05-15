@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:A*); [line 11, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 11, column 11]\n  n$1=_fun_NSObject::init(n$0:A*) virtual [line 11, column 10]\n  *&a:A*=n$1 [line 11, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:A*); [line 11, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 11, column 11]\n  n$1=_fun_NSObject.init(n$0:A*) virtual [line 11, column 10]\n  *&a:A*=n$1 [line 11, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;

@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" [label="1: Start PropertyImplSetter::setMaximumFileSize:\nFormals:  self:PropertyImplSetter* newMaximumFileSize:int\nLocals:  \n  " color=yellow style=filled]
+"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" [label="1: Start PropertyImplSetter.setMaximumFileSize:\nFormals:  self:PropertyImplSetter* newMaximumFileSize:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" -> "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_3" ;
-"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_2" [label="2: Exit PropertyImplSetter::setMaximumFileSize: \n  " color=yellow style=filled]
+"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_2" [label="2: Exit PropertyImplSetter.setMaximumFileSize: \n  " color=yellow style=filled]
 	
 
 "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:PropertyImplSetter* [line 13, column 3]\n  *n$0._maximumFileSize:int=0 [line 13, column 3]\n " shape="box"]

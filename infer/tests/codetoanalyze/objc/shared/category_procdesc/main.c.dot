@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" [label="5:  Message Call: performDaysWork \n   n$1=*&person:EOCPerson* [line 13, column 4]\n  n$2=_fun_EOCPerson::performDaysWork(n$1:EOCPerson*) virtual [line 13, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" [label="5:  Message Call: performDaysWork \n   n$1=*&person:EOCPerson* [line 13, column 4]\n  n$2=_fun_EOCPerson.performDaysWork(n$1:EOCPerson*) virtual [line 13, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(person:EOCPerson*); [line 12, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$4=_fun_NSObject::init(n$3:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$4 [line 12, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(person:EOCPerson*); [line 12, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$4=_fun_NSObject.init(n$3:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$4 [line 12, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" ;

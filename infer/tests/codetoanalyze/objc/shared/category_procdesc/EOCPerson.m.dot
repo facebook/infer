@@ -1,24 +1,24 @@
 /* @generated */
 digraph cfg {
-"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_1" [label="1: Start EOCPerson::performDaysWork\nFormals:  self:EOCPerson*\nLocals:  \n  " color=yellow style=filled]
+"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_1" [label="1: Start EOCPerson.performDaysWork\nFormals:  self:EOCPerson*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_1" -> "performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_3" ;
-"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_2" [label="2: Exit EOCPerson::performDaysWork \n  " color=yellow style=filled]
+"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_2" [label="2: Exit EOCPerson.performDaysWork \n  " color=yellow style=filled]
 	
 
-"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString::stringWithUTF8String:(\"Performing days at work\":char* const ) [line 13, column 9]\n  n$1=_fun_NSLog(n$0:objc_object*) [line 13, column 3]\n " shape="box"]
+"performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString.stringWithUTF8String:(\"Performing days at work\":char* const ) [line 13, column 9]\n  n$1=_fun_NSLog(n$0:objc_object*) [line 13, column 3]\n " shape="box"]
 	
 
 	 "performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_3" -> "performDaysWork#EOCPerson#instance.68f45cebac26de5310062b9c47f6dc36_2" ;
-"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_1" [label="1: Start EOCPerson::takeVacationFromWork\nFormals:  self:EOCPerson*\nLocals:  \n  " color=yellow style=filled]
+"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_1" [label="1: Start EOCPerson.takeVacationFromWork\nFormals:  self:EOCPerson*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_1" -> "takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_3" ;
-"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_2" [label="2: Exit EOCPerson::takeVacationFromWork \n  " color=yellow style=filled]
+"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_2" [label="2: Exit EOCPerson.takeVacationFromWork \n  " color=yellow style=filled]
 	
 
-"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString::stringWithUTF8String:(\"BTaking vacations\":char* const ) [line 17, column 9]\n  n$3=_fun_NSLog(n$2:objc_object*) [line 17, column 3]\n " shape="box"]
+"takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString.stringWithUTF8String:(\"BTaking vacations\":char* const ) [line 17, column 9]\n  n$3=_fun_NSLog(n$2:objc_object*) [line 17, column 3]\n " shape="box"]
 	
 
 	 "takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_3" -> "takeVacationFromWork#EOCPerson#instance.a4a2043283853257ef9e4402128b75f9_2" ;
