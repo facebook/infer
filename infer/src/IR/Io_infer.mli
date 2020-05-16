@@ -67,4 +67,3 @@ module Html : sig
     -> unit
   (** Print an html link given node id and session *)
 end
-
