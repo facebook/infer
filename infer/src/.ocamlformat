@@ -3,4 +3,4 @@ break-before-in = fit-or-vertical
 let-binding-spacing = sparse
 margin = 100
 parse-docstrings = true
-version = 0.12-21-gdd929ea
+version = 0.14.1-13-g000da99
