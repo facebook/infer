@@ -224,18 +224,18 @@ val is_java_autogen_method : t -> bool
 
 val is_objc_method : t -> bool
 
-module Hash : Caml.Hashtbl.S with type key = t
 (** Hash tables with proc names as keys. *)
+module Hash : Caml.Hashtbl.S with type key = t
 
 module LRUHash : LRUHashtbl.S with type key = t
 
 module HashQueue : Hash_queue.S with type key = t
 
-module Map : PrettyPrintable.PPMap with type key = t
 (** Maps from proc names. *)
+module Map : PrettyPrintable.PPMap with type key = t
 
-module Set : PrettyPrintable.PPSet with type elt = t
 (** Sets of proc names. *)
+module Set : PrettyPrintable.PPSet with type elt = t
 
 module SQLite : sig
   val serialize : t -> Sqlite3.Data.t

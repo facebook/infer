@@ -592,7 +592,7 @@ let normalize_path_in_args_being_parsed ?(f = Fn.id) ~is_anon_arg str =
        [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
     let root = Unix.getcwd () in
     let abs_path = Utils.filename_to_absolute ~root str in
-    !args_to_parse.((!arg_being_parsed + if is_anon_arg then 0 else 1)) <- f abs_path ;
+    !args_to_parse.(!arg_being_parsed + if is_anon_arg then 0 else 1) <- f abs_path ;
     abs_path )
   else str
 

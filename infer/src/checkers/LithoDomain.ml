@@ -138,8 +138,8 @@ module Created = struct
 end
 
 module MethodCalls = struct
-  module IsChecked = AbstractDomain.BooleanOr
   (** if the method calls are checked and reported *)
+  module IsChecked = AbstractDomain.BooleanOr
 
   module S = AbstractDomain.InvertedSet (MethodCallPrefix)
 

@@ -9,11 +9,11 @@ open! IStd
 
 type t [@@deriving compare]
 
-module Map : Caml.Map.S with type key = t
 (** Maps from source_file *)
+module Map : Caml.Map.S with type key = t
 
-module Set : Caml.Set.S with type elt = t
 (** Set of source files *)
+module Set : Caml.Set.S with type elt = t
 
 module Hash : Caml.Hashtbl.S with type key = t
 

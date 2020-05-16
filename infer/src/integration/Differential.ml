@@ -124,8 +124,7 @@ module CostsSummary = struct
     let json_degrees =
       DegreeMap.bindings paired_counts.degrees
       |> List.map ~f:(fun (key, {current; previous}) ->
-             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)]
-         )
+             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)] )
     in
     let create_assoc current previous =
       `Assoc [("current", `Int current); ("previous", `Int previous)]

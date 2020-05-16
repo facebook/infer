@@ -161,8 +161,8 @@ val equal_hpred : ?inst:bool -> hpred -> hpred -> bool
 (** Equality function for hpred. The inst:: parameter specifies whether instumentations should also
     be considered (false by default). *)
 
-module HpredSet : Caml.Set.S with type elt = hpred
 (** Sets of heap predicates *)
+module HpredSet : Caml.Set.S with type elt = hpred
 
 (** {2 Compaction} *)
 

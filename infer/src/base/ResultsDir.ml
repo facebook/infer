@@ -134,8 +134,7 @@ let create_results_dir () =
              L.progress "Deleting results dir because --force-delete-results-dir was passed@." ;
              remove_results_dir () )
            else
-             L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir
-       ) ;
+             L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   Unix.mkdir_p Config.results_dir ;
   Unix.mkdir_p (get_path Temporary) ;
   Unix.mkdir_p (get_path Specs) ;

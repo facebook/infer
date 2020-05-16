@@ -63,13 +63,13 @@ end
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
   S with module TransferFunctions = TransferFunctions
 
-module MakeRPO : Make
 (** create an intraprocedural abstract interpreter from transfer functions using the reverse
     post-order scheduler *)
+module MakeRPO : Make
 
-module MakeWTO : Make
 (** create an intraprocedural abstract interpreter from transfer functions using Bourdoncle's
     strongly connected component weak topological order *)
+module MakeWTO : Make
 
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a
     disjunction between these states. The transfer functions are executed on each state in the

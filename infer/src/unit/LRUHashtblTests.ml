@@ -54,5 +54,4 @@ let tests =
   "LRUHashtble"
   >::: List.map inputs ~f:(fun (name, input, expected) ->
            name
-           >:: fun _ -> assert_equal (input () |> LRUHash.bindings |> List.sort ~compare) expected
-       )
+           >:: fun _ -> assert_equal (input () |> LRUHash.bindings |> List.sort ~compare) expected )

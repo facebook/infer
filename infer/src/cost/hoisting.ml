@@ -25,8 +25,8 @@ end
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module HoistCalls = AbstractDomain.FiniteSet (Call)
 
-module LoopHeadToHoistInstrs = Procdesc.NodeMap
 (** Map loop_header -> instrs that can be hoisted out of the loop *)
+module LoopHeadToHoistInstrs = Procdesc.NodeMap
 
 (* A loop-invariant function call C(args) at node N can be hoisted out of the loop if
  *

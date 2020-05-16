@@ -305,8 +305,8 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       (fun symbol polynomial acc ->
         Option.bind acc ~f:(fun acc ->
             Option.bind (S.int_ub symbol) ~f:(fun s_ub ->
-                Option.map (int_ub polynomial) ~f:(fun p_ub -> NonNegativeInt.((s_ub * p_ub) + acc))
-            ) ) )
+                Option.map (int_ub polynomial) ~f:(fun p_ub -> NonNegativeInt.((s_ub * p_ub) + acc)) ) )
+        )
       terms (Some const)
 
 
@@ -315,7 +315,8 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
    fun ~lhs ~rhs ->
     phys_equal lhs rhs
     || (NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:leq lhs.terms rhs.terms)
-    || Option.exists (int_ub lhs) ~f:(fun lhs_ub -> NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs))
+    || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
+           NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
 
 
   let rec xcompare ~lhs ~rhs =

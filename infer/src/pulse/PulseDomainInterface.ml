@@ -8,15 +8,15 @@
 open! IStd
 module ExecutionDomain = PulseExecutionDomain
 
-module AbductiveDomain = PulseAbductiveDomain
 (** if you do any mutations of the state in pulse you probably want this module *)
+module AbductiveDomain = PulseAbductiveDomain
 
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
 module AddressAttributes = AbductiveDomain.AddressAttributes
 
-module BaseDomain = PulseBaseDomain
 (** use only if you know what you are doing or you risk break bi-abduction *)
+module BaseDomain = PulseBaseDomain
 
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory

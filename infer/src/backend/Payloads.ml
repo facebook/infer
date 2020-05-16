@@ -55,8 +55,7 @@ let fields =
 
 let pp pe f payloads =
   List.iter fields ~f:(fun (F {field; name; pp}) ->
-      Field.get field payloads |> Option.iter ~f:(fun x -> F.fprintf f "%s: %a@\n" name (pp pe) x)
-  )
+      Field.get field payloads |> Option.iter ~f:(fun x -> F.fprintf f "%s: %a@\n" name (pp pe) x) )
 
 
 let empty =

@@ -6,8 +6,8 @@
  *)
 open! IStd
 
-exception ProcnameAlreadyLocked of Procname.t
 (** for the Restart scheduler: raise when a worker tries to analyze a procedure already being
     analyzed by another process *)
+exception ProcnameAlreadyLocked of Procname.t
 
 type target = Procname of Procname.t | File of SourceFile.t

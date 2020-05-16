@@ -20,11 +20,11 @@ val get_field_name : t -> string
 
 val is_java : t -> bool
 
-module Set : Caml.Set.S with type elt = t
 (** Set for fieldnames *)
+module Set : Caml.Set.S with type elt = t
 
-module Map : Caml.Map.S with type key = t
 (** Map for fieldnames *)
+module Map : Caml.Map.S with type key = t
 
 val is_java_outer_instance : t -> bool
 (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer

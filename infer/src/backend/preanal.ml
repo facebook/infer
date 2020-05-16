@@ -156,8 +156,8 @@ module Liveness = struct
       instructions for each pvar in to_nullify afer we finish the analysis. Nullify instructions
       speed up the analysis by enabling it to GC state that will no longer be read. *)
   module NullifyTransferFunctions = struct
-    module Domain = AbstractDomain.Pair (VarDomain) (VarDomain)
     (** (reaching non-nullified vars) * (vars to nullify) *)
+    module Domain = AbstractDomain.Pair (VarDomain) (VarDomain)
 
     module CFG = ProcCfg.Exceptional
 

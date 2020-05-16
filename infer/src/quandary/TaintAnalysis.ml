@@ -471,8 +471,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let trace, subtree =
               Option.value ~default:TaintDomain.empty_node (TaintDomain.get_node access_path astate)
             in
-            TaintDomain.add_node access_path (TraceDomain.add_source source trace, subtree) astate
-        )
+            TaintDomain.add_node access_path (TraceDomain.add_source source trace, subtree) astate )
       else astate
 
 

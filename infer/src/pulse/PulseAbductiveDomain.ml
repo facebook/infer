@@ -78,8 +78,9 @@ module PostDomain : BaseDomainSig = struct
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
-module PreDomain : BaseDomainSig = PostDomain
+
 (** represents the inferred pre-condition at each program point, biabduction style *)
+module PreDomain : BaseDomainSig = PostDomain
 
 (** biabduction-style pre/post state + skipped calls *)
 type t =

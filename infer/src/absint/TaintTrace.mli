@@ -23,20 +23,20 @@ end
 module type S = sig
   include Spec
 
-  include AbstractDomain.WithBottom
   (** bottom = this trace has no source or sink data *)
+  include AbstractDomain.WithBottom
 
   module Sources : sig
-    module Known : module type of AbstractDomain.FiniteSet (Source)
     (** Set of sources returned by callees of the current function *)
+    module Known : module type of AbstractDomain.FiniteSet (Source)
 
     module FootprintConfig : AccessTree.Config
 
-    module Footprint : module type of AccessTree.PathSet (FootprintConfig)
     (** Set of access paths representing the sources that may flow in from the caller *)
+    module Footprint : module type of AccessTree.PathSet (FootprintConfig)
 
-    module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
     (** Set of sanitizers that have been applied to these sources *)
+    module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
 
     type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 

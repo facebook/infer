@@ -17,8 +17,8 @@ type failure_kind =
   | FKrecursion_timeout of int  (** max recursion level exceeded *)
   | FKcrash of string  (** uncaught exception or failed assertion *)
 
-exception Analysis_failure_exe of failure_kind
 (** failure that prevented analysis from finishing *)
+exception Analysis_failure_exe of failure_kind
 
 let exn_not_failure = function Analysis_failure_exe _ -> false | _ -> true
 

@@ -7,8 +7,8 @@
 
 open! IStd
 
-include BUILTINS.S with type t = Builtin.registered
 (** Models for the builtin functions supported *)
+include BUILTINS.S with type t = Builtin.registered
 
 val init : unit -> unit
 (** Clients of Builtin module should call this before Builtin module is used. WARNING: builtins are

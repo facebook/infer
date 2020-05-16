@@ -7,13 +7,13 @@
 
 open! IStd
 
-exception ALParserInvariantViolationException of string
 (** Raised when the parser encounters a violation of a certain invariant *)
+exception ALParserInvariantViolationException of string
 
 type exc_info
 
-exception ALFileException of exc_info
 (** Raised when any exception from the lexer/parser of AL is caught, to include source-location info *)
+exception ALFileException of exc_info
 
 val create_exc_info : string -> Lexing.lexbuf -> exc_info
 

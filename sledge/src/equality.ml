@@ -347,8 +347,7 @@ let classes r =
   Subst.fold r.rep ~init:Term.Map.empty ~f:(fun ~key ~data cls ->
       match classify key with
       | Interpreted | Atomic -> add key data cls
-      | Uninterpreted -> add (Term.map ~f:(Subst.apply r.rep) key) data cls
-  )
+      | Uninterpreted -> add (Term.map ~f:(Subst.apply r.rep) key) data cls )
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in
@@ -1004,8 +1003,7 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
                       Some trm
                   | _ -> rep_ito_us )
             in
-            Term.memory ~siz:(Term.agg_size_exn e) ~arr:rep_ito_us :: suffix
-        ) )
+            Term.memory ~siz:(Term.agg_size_exn e) ~arr:rep_ito_us :: suffix ) )
     |> List.min_elt ~compare:[%compare: Term.t list]
   with
   | Some extracts ->
@@ -1130,8 +1128,7 @@ let wrap tmr f call =
         report ~name ~elapsed ~aggregate ~count ;
         if Float.(elapsed > !dump_threshold) then (
           dump_threshold := 2. *. !dump_threshold ;
-          Format.eprintf "@\n%a@\n@." Sexp.pp_hum (sexp_of_call (call ())) )
-    ) ;
+          Format.eprintf "@\n%a@\n@." Sexp.pp_hum (sexp_of_call (call ())) ) ) ;
     r
   in
   if not [%debug] then f ()

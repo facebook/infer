@@ -9,8 +9,8 @@ module L = Logging
 
 (** Module for Type Environments. *)
 
-module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 (** Hash tables on type names. *)
+module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 
 module TypenameHashNormalizer = MaximumSharing.ForHashtbl (TypenameHash)
 

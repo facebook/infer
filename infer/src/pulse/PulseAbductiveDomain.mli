@@ -41,15 +41,15 @@ module type BaseDomainSig = sig
   val pp : F.formatter -> t -> unit
 end
 
-module PostDomain : BaseDomainSig
 (** The post abstract state at each program point, or current state. *)
+module PostDomain : BaseDomainSig
 
-module PreDomain : BaseDomainSig
 (** The inferred pre-condition at each program point, biabduction style.
 
     NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted
     lattice of [Domain], but since we never actually join states or check implication the two
     collapse into one. * *)
+module PreDomain : BaseDomainSig
 
 (** biabduction-style pre/post state + skipped calls *)
 type t = private

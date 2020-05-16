@@ -74,6 +74,6 @@ end
 
 module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
 
-module Bourdoncle_SCC : Make
 (** Implementation of Bourdoncle's "Hierarchical decomposition of a directed graph into strongly
     connected components and subcomponents". See [Bou] Figure 4, page 10. *)
+module Bourdoncle_SCC : Make

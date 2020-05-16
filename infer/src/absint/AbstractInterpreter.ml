@@ -402,8 +402,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   (* shadowed for HTML debug *)
   let compute_pre cfg node inv_map =
     AnalysisCallbacks.html_debug_new_node_session (Node.underlying_node node) ~kind:`ComputePre
-      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map
-    )
+      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map)
 
 
   (** compute and return an invariant map for [pdesc] *)

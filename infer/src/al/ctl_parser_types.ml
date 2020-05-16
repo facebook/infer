@@ -231,13 +231,11 @@ let rec is_node_successor_of ~is_successor:succ_node node =
   | Stmt _ ->
       let node_succ_stmts = get_successor_stmts node in
       List.exists node_succ_stmts ~f:(fun (s : Clang_ast_t.stmt) ->
-          ast_node_equal (Stmt s) succ_node || is_node_successor_of ~is_successor:succ_node (Stmt s)
-      )
+          ast_node_equal (Stmt s) succ_node || is_node_successor_of ~is_successor:succ_node (Stmt s) )
   | Decl _ ->
       let node_succ_decls = get_successor_decls node in
       List.exists node_succ_decls ~f:(fun (d : Clang_ast_t.decl) ->
-          ast_node_equal (Decl d) succ_node || is_node_successor_of ~is_successor:succ_node (Decl d)
-      )
+          ast_node_equal (Decl d) succ_node || is_node_successor_of ~is_successor:succ_node (Decl d) )
 
 
 let get_direct_successor_nodes an =

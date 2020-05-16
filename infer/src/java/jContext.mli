@@ -14,9 +14,9 @@ open Sawja_pack
     instruction. *)
 type jump_kind = Next | Jump of int | Exit
 
-module NodeTbl : Caml.Hashtbl.S with type key = Procdesc.Node.t
 (** Hastable for storing nodes that correspond to if-instructions. These are used when adding the
     edges in the contrl flow graph. *)
+module NodeTbl : Caml.Hashtbl.S with type key = Procdesc.Node.t
 
 (** data structure for saving the three structures tht contain the intermediate representation of a
     file: the type environment, the control graph and the control flow graph *)

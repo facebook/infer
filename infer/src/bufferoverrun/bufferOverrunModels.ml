@@ -627,7 +627,8 @@ module StdVector = struct
 
 
   let set_size {location} locs new_size mem =
-    Dom.Mem.transform_mem locs mem ~f:(fun v -> Dom.Val.set_array_length location ~length:new_size v)
+    Dom.Mem.transform_mem locs mem ~f:(fun v ->
+        Dom.Val.set_array_length location ~length:new_size v )
 
 
   let empty elt_typ vec_arg =

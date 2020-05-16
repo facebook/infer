@@ -750,8 +750,8 @@ let rec simplify_ us rev_xss q =
       (starN
          ( {q with us= Var.Set.union q.us q.xs; xs= emp.xs; djns= []}
          :: List.map q.djns ~f:(fun djn ->
-                orN (List.map djn ~f:(fun sjn -> simplify_ us rev_xss sjn))
-            ) ))
+                orN (List.map djn ~f:(fun sjn -> simplify_ us rev_xss sjn)) )
+         ))
   in
   (* try to solve equations in cong for variables in xss *)
   let subst = Equality.solve_for_vars (us :: List.rev rev_xss) q.cong in

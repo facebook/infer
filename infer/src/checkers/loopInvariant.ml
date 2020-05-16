@@ -14,8 +14,8 @@ module VarSet = AbstractDomain.FiniteSet (Var)
 
 let debug fmt = L.(debug Analysis Medium) fmt
 
-module LoopHeadToLoopNodes = Procdesc.NodeMap
 (** Map loop header node -> all nodes in the loop *)
+module LoopHeadToLoopNodes = Procdesc.NodeMap
 
 let is_defined_outside loop_nodes reaching_defs var =
   ReachingDefs.ReachingDefsMap.find_opt var reaching_defs
@@ -260,8 +260,8 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_pure_by_default ~g
   find_fixpoint InvariantVars.empty
 
 
-module LoopHeadToInvVars = Procdesc.NodeMap
 (** Map loop head -> invariant vars in loop *)
+module LoopHeadToInvVars = Procdesc.NodeMap
 
 type invariant_map = VarSet.t LoopHeadToInvVars.t
 

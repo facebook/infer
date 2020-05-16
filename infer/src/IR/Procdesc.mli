@@ -176,17 +176,17 @@ module Node : sig
   val compute_key : t -> NodeKey.t
 end
 
-module IdMap : PrettyPrintable.PPMap with type key = Node.id
 (** Map with node id keys. *)
+module IdMap : PrettyPrintable.PPMap with type key = Node.id
 
-module NodeHash : Caml.Hashtbl.S with type key = Node.t
 (** Hash table with nodes as keys. *)
+module NodeHash : Caml.Hashtbl.S with type key = Node.t
 
-module NodeMap : Caml.Map.S with type key = Node.t
 (** Map over nodes. *)
+module NodeMap : Caml.Map.S with type key = Node.t
 
-module NodeSet : Caml.Set.S with type elt = Node.t
 (** Set of nodes. *)
+module NodeSet : Caml.Set.S with type elt = Node.t
 
 (** procedure descriptions *)
 
@@ -310,8 +310,8 @@ val is_captured_var : t -> Var.t -> bool
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 
-module SQLite : SqliteUtils.Data with type t = t option
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)
+module SQLite : SqliteUtils.Data with type t = t option
 
 val load : Procname.t -> t option

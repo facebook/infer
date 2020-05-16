@@ -3217,8 +3217,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args =
       type_info_objc :: (field_exp, void_typ)
-      :: Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result -> [trans_result.return]
-         )
+      :: Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result ->
+             [trans_result.return] )
     in
     let call_instr = Sil.Call ((ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_control = {empty_control with instrs= [call_instr]} in

@@ -97,9 +97,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "resource leaks lab"
 end
 
-module CFG = ProcCfg.Normal
 (** 5(a) Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
     ignore them *)
+module CFG = ProcCfg.Normal
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))

@@ -662,8 +662,8 @@ let acquire ?tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks 
           let event = Event.make_acquire lock in
           add_critical_pair ?tenv lock_state event astate.thread ~loc acc )
   ; lock_state=
-      List.fold locks ~init:lock_state ~f:(fun acc lock -> LockState.acquire ~procname ~loc lock acc)
-  }
+      List.fold locks ~init:lock_state ~f:(fun acc lock ->
+          LockState.acquire ~procname ~loc lock acc ) }
 
 
 let make_call_with_event new_event ~loc astate =

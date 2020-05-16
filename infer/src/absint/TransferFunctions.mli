@@ -13,8 +13,8 @@ open! IStd
 module type S = sig
   module CFG : ProcCfg.S
 
-  module Domain : AbstractDomain.S
   (** abstract domain whose state we propagate *)
+  module Domain : AbstractDomain.S
 
   (** read-only extra state (results of previous analyses, globals, etc.) *)
   type analysis_data

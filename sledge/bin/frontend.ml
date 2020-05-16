@@ -967,7 +967,7 @@ let xlate_instr :
             (* operator delete(void* ptr, std::align_val_t) *) ]
          |[ "_ZdlPvmSt11align_val_t"
             (* operator delete(void* ptr, unsigned long, std::align_val_t) *)
-           ]
+          ]
          |["free" (* void free(void* ptr) *)] ->
             let ptr = xlate_value x (Llvm.operand instr 0) in
             emit_inst (Llair.Inst.free ~ptr ~loc)

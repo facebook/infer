@@ -294,8 +294,8 @@ let eval_unop unop_addr unop addr ({satisfiable; bo_itvs; citvs; pudge} as phi) 
 let prune_bo_with_bop ~negated v_opt arith bop arith' phi =
   match
     Option.both v_opt (if negated then Binop.negate bop else Some bop)
-    |> Option.map ~f:(fun (v, positive_bop) -> (v, Itv.ItvPure.prune_binop positive_bop arith arith')
-       )
+    |> Option.map ~f:(fun (v, positive_bop) ->
+           (v, Itv.ItvPure.prune_binop positive_bop arith arith') )
   with
   | None ->
       phi

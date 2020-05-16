@@ -8,8 +8,8 @@
 open! IStd
 module F = Format
 
-module D = UninitDomain.Domain
 (** Forward analysis to compute uninitialized variables at each program point *)
+module D = UninitDomain.Domain
 
 module MaybeUninitVars = UninitDomain.MaybeUninitVars
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)

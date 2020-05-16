@@ -420,17 +420,17 @@ end
 
 (* =============== END of module Node =============== *)
 
-module NodeMap = Caml.Map.Make (Node)
 (** Map over nodes *)
+module NodeMap = Caml.Map.Make (Node)
 
-module NodeHash = Hashtbl.Make (Node)
 (** Hash table with nodes as keys. *)
+module NodeHash = Hashtbl.Make (Node)
 
-module NodeSet = Node.NodeSet
 (** Set of nodes. *)
+module NodeSet = Node.NodeSet
 
-module IdMap = Node.IdMap
 (** Map with node id keys. *)
+module IdMap = Node.IdMap
 
 (** procedure description *)
 type t =

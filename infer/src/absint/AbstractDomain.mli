@@ -38,8 +38,8 @@ include (* ocaml ignores the warning suppression at toplevel, hence the [include
   sig
   [@@@warning "-60"]
 
-  module Empty : S with type t = unit
   (** a trivial domain *)
+  module Empty : S with type t = unit
 end
 
 (** A domain with an explicit bottom value *)
@@ -253,13 +253,13 @@ include sig
   end
 end
 
-module BooleanAnd : S with type t = bool
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
     true in both conditional branches. *)
+module BooleanAnd : S with type t = bool
 
-module BooleanOr : WithBottom with type t = bool
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
+module BooleanOr : WithBottom with type t = bool
 
 module type MaxCount = sig
   val max : int
@@ -271,8 +271,8 @@ end
 module CountDomain (MaxCount : MaxCount) : sig
   include WithBottom with type t = private int
 
-  include WithTop with type t := t
   (** top is maximum value *)
+  include WithTop with type t := t
 
   val increment : t -> t
   (** bump the count by one if it is less than the max *)
@@ -287,11 +287,11 @@ end
 (** Domain keeping a non-negative count with a bounded maximum value. [join] is minimum and [top] is
     zero. *)
 module DownwardIntDomain (MaxCount : MaxCount) : sig
-  include WithTop with type t = private int
   (** top is zero *)
+  include WithTop with type t = private int
 
-  include WithBottom with type t := t
   (** bottom is the provided maximum *)
+  include WithBottom with type t := t
 
   val increment : t -> t
   (** bump the count by one if this won't cross the maximum *)

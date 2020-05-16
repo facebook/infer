@@ -20,8 +20,7 @@ let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid access_trace address astate
   |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-         (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate)
-     )
+         (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate) )
 
 
 module Closures = struct
@@ -46,8 +45,7 @@ module Closures = struct
 
   let mk_capture_edges captured =
     List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges captured_addr_trace ->
-        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id)) captured_addr_trace edges
-    )
+        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id)) captured_addr_trace edges )
 
 
   let check_captured_addresses action lambda_addr (astate : t) =

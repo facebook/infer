@@ -8,8 +8,8 @@
 open! IStd
 open AbstractDomain.Types
 
-module ItvThresholds : AbstractDomain.FiniteSetS with type elt = Z.t
 (** Set of integers for threshold widening *)
+module ItvThresholds : AbstractDomain.FiniteSetS with type elt = Z.t
 
 (** Domain for recording which operations are used for evaluating interval values *)
 module ItvUpdatedBy : sig

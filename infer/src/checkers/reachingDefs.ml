@@ -8,16 +8,16 @@ open! IStd
 module F = Format
 module NodeCFG = ProcCfg.Normal
 
-module Defs = AbstractDomain.FiniteSet (Procdesc.Node)
 (** The node in which the reaching definition x := e is defined.
 
     A definition x :=e, declared at node N, reaches the current node if there is a path from node N
     to the current node such that x is not modified along the path **)
+module Defs = AbstractDomain.FiniteSet (Procdesc.Node)
 
 (* even though we only add singletons (defs), the set is needed for joins *)
 
-module ReachingDefsMap = AbstractDomain.Map (Var) (Defs)
 (** Map var -> its reaching definition *)
+module ReachingDefsMap = AbstractDomain.Map (Var) (Defs)
 
 (* forward transfer function for reaching definitions *)
 module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct

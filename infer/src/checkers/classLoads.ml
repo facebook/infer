@@ -87,7 +87,8 @@ let exec_call analysis_data callee args loc astate =
       load_type analysis_data loc typ astate
   | _ ->
       (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
-      List.fold args ~init:astate ~f:(fun acc (exp, _) -> add_loads_of_exp analysis_data loc exp acc)
+      List.fold args ~init:astate ~f:(fun acc (exp, _) ->
+          add_loads_of_exp analysis_data loc exp acc )
       |> do_call analysis_data callee loc
 
 
