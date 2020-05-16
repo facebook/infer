@@ -148,10 +148,12 @@ module Results_dir = struct
     let rec create = function
       | [] ->
           let fname = path_to_filename pk [] in
-          Utils.create_dir fname ; fname
+          Utils.create_dir fname ;
+          fname
       | name :: names ->
           let new_path = Filename.concat (create names) name in
-          Utils.create_dir new_path ; new_path
+          Utils.create_dir new_path ;
+          new_path
     in
     let filename, dir_path =
       match List.rev path with

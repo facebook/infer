@@ -19,7 +19,10 @@ let register callback_ref ~f ~description =
         (Unix.getpid ()) description Exn.pp exn
   in
   let g = !callback_ref in
-  callback_ref := fun () -> f_no_exn () ; g ()
+  callback_ref :=
+    fun () ->
+      f_no_exn () ;
+      g ()
 
 
 let register_early ~f ~description = register early_callback ~f ~description
@@ -30,7 +33,10 @@ let early () = !early_callback ()
 
 let late () = !late_callback ()
 
-let run () = early () ; late ()
+let run () =
+  early () ;
+  late ()
+
 
 (* Run the epilogues when we get SIGINT (Control-C). *)
 let () =

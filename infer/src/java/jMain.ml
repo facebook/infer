@@ -44,7 +44,8 @@ let capture_libs program tenv =
         let fake_source_file = SourceFile.from_abs_path (JFrontend.path_of_cached_classname cn) in
         init_global_state fake_source_file ;
         let cfg = JFrontend.compute_class_icfg fake_source_file program tenv node in
-        store_icfg fake_source_file cfg ; JFrontend.cache_classname cn
+        store_icfg fake_source_file cfg ;
+        JFrontend.cache_classname cn
   in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
 

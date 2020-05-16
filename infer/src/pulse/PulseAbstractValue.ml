@@ -17,7 +17,8 @@ let next_fresh = ref initial_next_fresh
 
 let mk_fresh () =
   let l = !next_fresh in
-  incr next_fresh ; l
+  incr next_fresh ;
+  l
 
 
 let pp f l = F.fprintf f "v%d" l

@@ -9,7 +9,10 @@ open! IStd
 
 type ('a, 'b) doer = 'a -> 'b option
 
-let fork_protect ~f x = BackendStats.reset () ; ForkUtils.protect ~f x
+let fork_protect ~f x =
+  BackendStats.reset () ;
+  ForkUtils.protect ~f x
+
 
 let with_new_db_connection ~f () =
   ResultsDatabase.new_database_connection () ;
@@ -59,4 +62,5 @@ let run_sequentially ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
       TaskBar.refresh task_bar ;
       run_tasks () )
   in
-  run_tasks () ; TaskBar.finish task_bar
+  run_tasks () ;
+  TaskBar.finish task_bar

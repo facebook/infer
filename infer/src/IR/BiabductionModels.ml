@@ -11,7 +11,8 @@ let scan_models () =
   let rec next_entry index dir =
     match Unix.readdir_opt dir with
     | None ->
-        Unix.closedir dir ; index
+        Unix.closedir dir ;
+        index
     | Some entry -> (
       match String.chop_suffix entry ~suffix:Config.specs_files_suffix with
       | Some file_proc_name ->

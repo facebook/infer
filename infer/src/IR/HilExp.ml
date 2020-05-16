@@ -147,7 +147,8 @@ let pp_array_offset_opt pp_offset fmt = function
 
 let rec pp_access_expr fmt = function
   | Base (pvar, typ) ->
-      Var.pp fmt pvar ; may_pp_typ fmt typ
+      Var.pp fmt pvar ;
+      may_pp_typ fmt typ
   | FieldOffset (Dereference ae, fld) ->
       F.fprintf fmt "%a->%a" pp_access_expr ae Fieldname.pp fld
   | FieldOffset (ae, fld) ->

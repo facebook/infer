@@ -69,7 +69,11 @@ let check_bad_index {InterproceduralAnalysis.proc_desc; err_log; tenv} pname p l
 (** Perform bounds checking *)
 let bounds_check analysis_data pname prop len e =
   if Config.trace_rearrange then (
-    L.d_str "Bounds check index:" ; Exp.d_exp e ; L.d_str " len: " ; Exp.d_exp len ; L.d_ln () ) ;
+    L.d_str "Bounds check index:" ;
+    Exp.d_exp e ;
+    L.d_str " len: " ;
+    Exp.d_exp len ;
+    L.d_ln () ) ;
   check_bad_index analysis_data pname prop len e
 
 
@@ -86,7 +90,10 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
     Predicates.d_offset_list off ;
     L.d_ln () ;
     L.d_ln () ) ;
-  let new_id () = incr max_stamp ; Ident.create kind !max_stamp in
+  let new_id () =
+    incr max_stamp ;
+    Ident.create kind !max_stamp
+  in
   let res =
     let fail t off pos =
       L.d_str "create_struct_values type:" ;
@@ -190,7 +197,10 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
     function. *)
 let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part kind max_stamp se
     (typ : Typ.t) (off : Predicates.offset list) inst =
-  let new_id () = incr max_stamp ; Ident.create kind !max_stamp in
+  let new_id () =
+    incr max_stamp ;
+    Ident.create kind !max_stamp
+  in
   match (off, se, typ.desc) with
   | [], Predicates.Eexp _, _ | [], Predicates.Estruct _, _ ->
       [([], se, typ)]
@@ -1007,7 +1017,9 @@ let check_type_size {InterproceduralAnalysis.proc_desc; err_log; tenv} pname pro
         BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning
           exn
   | None ->
-      L.d_str "texp: " ; Exp.d_texp_full texp ; L.d_ln ()
+      L.d_str "texp: " ;
+      Exp.d_texp_full texp ;
+      L.d_ln ()
 
 
 (** Exposes lexp |->- from iter. In case that it is not possible to * expose lexp |->-, this

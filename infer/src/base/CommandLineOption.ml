@@ -1001,7 +1001,8 @@ let parse_args ~usage initial_action ?initial_command args =
            anymore *)
         assert false
   in
-  parse_loop () ; curr_usage
+  parse_loop () ;
+  curr_usage
 
 
 let keep_args_file = ref false

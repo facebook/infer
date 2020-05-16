@@ -656,7 +656,8 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
   let expression =
     match expr_str_opt with
     | Some s ->
-        Tags.update tags Tags.value s ; "expression " ^ s
+        Tags.update tags Tags.value s ;
+        "expression " ^ s
     | None ->
         "an expression"
   in

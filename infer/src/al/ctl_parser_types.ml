@@ -423,7 +423,8 @@ let builtin_equal (bi : Clang_ast_t.builtin_type_kind) (abi : builtin_kind) =
   | Some assoc_abi when equal_builtin_kind assoc_abi abi ->
       true
   | _ ->
-      display_equality_warning () ; false
+      display_equality_warning () ;
+      false
 
 
 let typename_to_string pointer =
@@ -446,7 +447,8 @@ let rec pointer_type_equal p ap =
   | PointerType (_, qt), BuiltIn _ ->
       check_type_ptr qt.qt_type_ptr ap
   | _, _ ->
-      display_equality_warning () ; false
+      display_equality_warning () ;
+      false
 
 
 and objc_object_type_equal c_type abs_ctype =
@@ -562,7 +564,8 @@ and c_type_equal c_type abs_ctype =
   | AttributedType (ti, _), TypeName _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
   | _, _ ->
-      display_equality_warning () ; false
+      display_equality_warning () ;
+      false
 
 
 (* to be extended with more types *)

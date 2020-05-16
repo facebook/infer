@@ -19,7 +19,8 @@ let has_trace {Jsonbug_t.bug_trace; _} = not (List.is_empty bug_trace)
 let with_file_fmt file ~f =
   Utils.with_file_out file ~f:(fun outc ->
       let fmt = F.formatter_of_out_channel outc in
-      f fmt ; F.pp_print_flush fmt () )
+      f fmt ;
+      F.pp_print_flush fmt () )
 
 
 let pp_trace_item ~show_source_context fmt

@@ -57,7 +57,10 @@ module StructuredSil = struct
 
   let label_counter = ref 0
 
-  let fresh_label () = incr label_counter ; !label_counter
+  let fresh_label () =
+    incr label_counter ;
+    !label_counter
+
 
   let invariant inv_str = Invariant (inv_str, fresh_label ())
 

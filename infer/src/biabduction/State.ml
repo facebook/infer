@@ -85,7 +85,10 @@ let instrs_normalize instrs =
   in
   let subst =
     let count = ref Int.min_value in
-    let gensym id = incr count ; Ident.set_stamp id !count in
+    let gensym id =
+      incr count ;
+      Ident.set_stamp id !count
+    in
     Predicates.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
   let subst_and_add acc instr = Predicates.instr_sub subst instr :: acc in

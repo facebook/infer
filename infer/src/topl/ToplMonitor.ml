@@ -32,7 +32,9 @@ let formals_of_procname proc_name =
   let params = Procname.get_parameters proc_name in
   let new_arg_name =
     let n = ref (-1) in
-    fun () -> incr n ; ToplName.arg !n
+    fun () ->
+      incr n ;
+      ToplName.arg !n
   in
   let f t =
     let name = Mangled.from_string (new_arg_name ()) in

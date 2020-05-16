@@ -29,13 +29,17 @@ module Raw = struct
     if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
 
 
-  let pp_base fmt (pvar, typ) = Var.pp fmt pvar ; may_pp_typ fmt typ
+  let pp_base fmt (pvar, typ) =
+    Var.pp fmt pvar ;
+    may_pp_typ fmt typ
+
 
   let rec pp_access fmt = function
     | FieldAccess field_name ->
         F.pp_print_string fmt (Fieldname.get_field_name field_name)
     | ArrayAccess (typ, []) ->
-        F.pp_print_string fmt "[_]" ; may_pp_typ fmt typ
+        F.pp_print_string fmt "[_]" ;
+        may_pp_typ fmt typ
     | ArrayAccess (typ, index_aps) ->
         F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps ;
         may_pp_typ fmt typ

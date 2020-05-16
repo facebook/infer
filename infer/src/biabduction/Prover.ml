@@ -1044,7 +1044,12 @@ exception MISSING_EXC of string
 type check = Bounds_check | Class_cast_check of Exp.t * Exp.t * Exp.t
 
 let d_typings typings =
-  let d_elem (exp, texp) = Exp.d_exp exp ; L.d_str ": " ; Exp.d_texp_full texp ; L.d_str " " in
+  let d_elem (exp, texp) =
+    Exp.d_exp exp ;
+    L.d_str ": " ;
+    Exp.d_texp_full texp ;
+    L.d_str " "
+  in
   List.iter ~f:d_elem typings
 
 
@@ -1187,9 +1192,16 @@ end = struct
     Prop.d_sub sub ;
     L.d_decrease_indent () ;
     if (not (List.is_empty !missing_pi)) && not (List.is_empty !missing_sigma) then (
-      L.d_ln () ; Prop.d_pi !missing_pi ; L.d_strln "*" ; Prop.d_sigma !missing_sigma )
-    else if not (List.is_empty !missing_pi) then (L.d_ln () ; Prop.d_pi !missing_pi)
-    else if not (List.is_empty !missing_sigma) then (L.d_ln () ; Prop.d_sigma !missing_sigma) ;
+      L.d_ln () ;
+      Prop.d_pi !missing_pi ;
+      L.d_strln "*" ;
+      Prop.d_sigma !missing_sigma )
+    else if not (List.is_empty !missing_pi) then (
+      L.d_ln () ;
+      Prop.d_pi !missing_pi )
+    else if not (List.is_empty !missing_sigma) then (
+      L.d_ln () ;
+      Prop.d_sigma !missing_sigma ) ;
     if not (List.is_empty !missing_fld) then (
       L.d_ln () ;
       L.d_strln "MISSING FLD:" ;
@@ -1212,7 +1224,11 @@ end = struct
       || (not (List.is_empty !missing_fld))
       || (not (List.is_empty !missing_typ))
       || not (Predicates.is_sub_empty sub)
-    then ( L.d_ln () ; L.d_str "[" ; d_missing_ sub ; L.d_str "]" )
+    then (
+      L.d_ln () ;
+      L.d_str "[" ;
+      d_missing_ sub ;
+      L.d_str "]" )
 
 
   let d_frame_fld () =
@@ -1261,15 +1277,24 @@ end = struct
       | EXC_FALSE ->
           ()
       | EXC_FALSE_HPRED hpred ->
-          L.d_str " on " ; Predicates.d_hpred hpred
+          L.d_str " on " ;
+          Predicates.d_hpred hpred
       | EXC_FALSE_EXPS (e1, e2) ->
-          L.d_str " on " ; Exp.d_exp e1 ; L.d_str "," ; Exp.d_exp e2
+          L.d_str " on " ;
+          Exp.d_exp e1 ;
+          L.d_str "," ;
+          Exp.d_exp e2
       | EXC_FALSE_SEXPS (se1, se2) ->
-          L.d_str " on " ; Predicates.d_sexp se1 ; L.d_str "," ; Predicates.d_sexp se2
+          L.d_str " on " ;
+          Predicates.d_sexp se1 ;
+          L.d_str "," ;
+          Predicates.d_sexp se2
       | EXC_FALSE_ATOM a ->
-          L.d_str " on " ; Predicates.d_atom a
+          L.d_str " on " ;
+          Predicates.d_atom a
       | EXC_FALSE_SIGMA sigma ->
-          L.d_str " on " ; Prop.d_sigma sigma
+          L.d_str " on " ;
+          Prop.d_sigma sigma
     in
     L.d_ln () ;
     L.d_strln "$$$$$$$ Implication" ;
@@ -1995,7 +2020,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                       (Prop.prop_iter_to_prop tenv iter1'')
                       sigma2 hpred2 )
               in
-              L.d_decrease_indent () ; res
+              L.d_decrease_indent () ;
+              res
           | Predicates.Hdllseg (Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
             when Exp.equal (Predicates.exp_sub (fst subs) iF1) e2 ->
               (* Unroll dllseg forward *)
@@ -2012,7 +2038,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                       (Prop.prop_iter_to_prop tenv iter1'')
                       sigma2 hpred2 )
               in
-              L.d_decrease_indent () ; res
+              L.d_decrease_indent () ;
+              res
           | Predicates.Hdllseg (Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
             when Exp.equal (Predicates.exp_sub (fst subs) iB1) e2 ->
               (* Unroll dllseg backward *)
@@ -2029,7 +2056,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                       (Prop.prop_iter_to_prop tenv iter1'')
                       sigma2 hpred2 )
               in
-              L.d_decrease_indent () ; res
+              L.d_decrease_indent () ;
+              res
           | _ ->
               assert false ) ) )
   | Predicates.Hlseg (k, para2, e2_, f2_, elist2_) -> (
@@ -2063,7 +2091,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                     sigma_imply tenv calc_index_frame false subs prop1 para_inst2 )
               in
               (* calc_missing is false as we're checking an instantiation of the original list *)
-              L.d_decrease_indent () ; res
+              L.d_decrease_indent () ;
+              res
           | Some iter1' -> (
               let elist2 = List.map ~f:(fun e -> Predicates.exp_sub (snd subs) e) elist2_ in
               (* force instantiation of existentials *)
@@ -2093,7 +2122,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                           let _, para_inst3 = Predicates.hpara_instantiate para2 e2_ f2_ elist2 in
                           sigma_imply tenv calc_index_frame calc_missing subs prop1 para_inst3 )
                   in
-                  L.d_decrease_indent () ; res
+                  L.d_decrease_indent () ;
+                  res
               | Predicates.Hdllseg _ ->
                   assert false ) ) )
   | Predicates.Hdllseg (Lseg_PE, _, _, _, _, _, _) ->
@@ -2142,7 +2172,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                   sigma_imply tenv calc_index_frame false subs prop1 para_inst2 )
             in
             (* calc_missing is false as we're checking an instantiation of the original list *)
-            L.d_decrease_indent () ; res
+            L.d_decrease_indent () ;
+            res
         | Some iter1' ->
             (* Only consider implications between identical listsegs for now *)
             let elist2 = List.map ~f:(fun e -> Predicates.exp_sub (snd subs) e) elist2 in
@@ -2254,7 +2285,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
                 decrease_indent_when_exception (fun () ->
                     hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2' )
               in
-              L.d_decrease_indent () ; res
+              L.d_decrease_indent () ;
+              res
             with IMPL_EXC _ when calc_missing -> (
               match is_constant_string_class subs hpred2' with
               | Some (s, is_string) ->
@@ -2287,7 +2319,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             decrease_indent_when_exception (fun () ->
                 sigma_imply tenv calc_index_frame calc_missing subs' prop1' sigma2' )
           in
-          L.d_decrease_indent () ; res
+          L.d_decrease_indent () ;
+          res
         in
         match hpred2 with
         | Predicates.Hpointsto (e2_, se2, t) ->
@@ -2433,7 +2466,9 @@ let check_implication_base {InterproceduralAnalysis.proc_desc; err_log; tenv} ch
     L.d_decrease_indent () ;
     L.d_ln () ;
     if not (List.is_empty pi2_bcheck) then (
-      L.d_str "pi2 bounds checks: " ; Prop.d_pi pi2_bcheck ; L.d_ln () ) ;
+      L.d_str "pi2 bounds checks: " ;
+      Prop.d_pi pi2_bcheck ;
+      L.d_ln () ) ;
     L.d_strln "returns" ;
     L.d_strln "sub1:" ;
     L.d_increase_indent () ;

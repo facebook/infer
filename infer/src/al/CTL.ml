@@ -999,4 +999,5 @@ and eval_formula ?keep_witness f an lcxt : Ctl_parser_types.ast_node option =
     | InObjCClass (f1, f2) ->
         eval_InObjCClass an lcxt f1 f2
   in
-  debug_eval_end res ; res
+  debug_eval_end res ;
+  res

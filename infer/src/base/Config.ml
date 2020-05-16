@@ -399,7 +399,8 @@ let implicit_sdk_root =
     | None ->
         let maybe_root = locate_sdk_root () in
         let putenv x = Unix.putenv ~key:infer_sdkroot_env_var ~data:x in
-        Option.iter ~f:putenv maybe_root ; maybe_root )
+        Option.iter ~f:putenv maybe_root ;
+        maybe_root )
 
 
 let startup_action =
@@ -1067,7 +1068,9 @@ and ( biabduction_models_mode
       [only_cheap_debug]
   and (_ : int option ref) =
     CLOpt.mk_int_opt ~long:"debug-level" ~in_help:all_generic_manuals ~meta:"level"
-      ~f:(fun level -> set_debug_level level ; level)
+      ~f:(fun level ->
+        set_debug_level level ;
+        level )
       {|Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):
   - 0: only basic debugging enabled
   - 1: verbose debugging enabled
@@ -1167,7 +1170,8 @@ and () =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue = IssueType.register_from_string issue_id in
-          IssueType.set_enabled issue b ; issue_id )
+          IssueType.set_enabled issue b ;
+          issue_id )
         ?default ~meta:"issue_type"
         ~default_to_string:(fun _ -> "")
         ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2370,7 +2374,8 @@ let post_parsing_initialization command_opt =
   ( match !version with
   | `Full when !buck ->
       (* Buck reads stderr in some versions, stdout in others *)
-      print_endline version_string ; prerr_endline version_string
+      print_endline version_string ;
+      prerr_endline version_string
   | `Javac when !buck ->
       (* print buck key *)
       let infer_version =
@@ -3131,7 +3136,10 @@ let is_in_custom_symbols list_name symbol =
       false
 
 
-let execution_id = Random.self_init () ; Random.int64 Int64.max_value
+let execution_id =
+  Random.self_init () ;
+  Random.int64 Int64.max_value
+
 
 let toplevel_results_dir =
   if CLOpt.is_originator then (

@@ -258,7 +258,8 @@ let patterns_of_json_with_key (json_key, json) =
       | Ok pattern ->
           pattern :: accu
       | Error msg ->
-          warn_user msg ; accu )
+          warn_user msg ;
+          accu )
     | `List l ->
         List.fold ~f:translate ~init:accu l
     | json ->

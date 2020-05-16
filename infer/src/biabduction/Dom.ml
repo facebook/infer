@@ -29,10 +29,13 @@ let equal_sigma sigma1 sigma2 =
     | [], [] ->
         ()
     | [], _ :: _ | _ :: _, [] ->
-        L.d_strln "failure reason 1" ; raise Predicates.JoinFail
+        L.d_strln "failure reason 1" ;
+        raise Predicates.JoinFail
     | hpred1 :: sigma1_rest', hpred2 :: sigma2_rest' ->
         if Predicates.equal_hpred hpred1 hpred2 then f sigma1_rest' sigma2_rest'
-        else (L.d_strln "failure reason 2" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 2" ;
+          raise Predicates.JoinFail )
   in
   let sigma1_sorted = List.sort ~compare:Predicates.compare_hpred sigma1 in
   let sigma2_sorted = List.sort ~compare:Predicates.compare_hpred sigma2 in
@@ -91,7 +94,10 @@ end = struct
   let lookup' tbl e default =
     match e with
     | Exp.Var _ -> (
-      try Hashtbl.find tbl e with Caml.Not_found -> Hashtbl.replace tbl e default ; default )
+      try Hashtbl.find tbl e
+      with Caml.Not_found ->
+        Hashtbl.replace tbl e default ;
+        default )
     | _ ->
         assert false
 
@@ -107,7 +113,8 @@ end = struct
         if Exp.equal e e' then e
         else
           let root = find' tbl e' in
-          Hashtbl.replace tbl e root ; root
+          Hashtbl.replace tbl e root ;
+          root
     | _ ->
         assert false
 
@@ -119,7 +126,9 @@ end = struct
     let new_c = lookup_const' const_tbl new_r in
     let old_c = lookup_const' const_tbl old_r in
     let res_c = Exp.Set.union new_c old_c in
-    if Exp.Set.cardinal res_c > 1 then (L.d_strln "failure reason 3" ; raise Predicates.JoinFail) ;
+    if Exp.Set.cardinal res_c > 1 then (
+      L.d_strln "failure reason 3" ;
+      raise Predicates.JoinFail ) ;
     Hashtbl.replace tbl old_r new_r ;
     Hashtbl.replace const_tbl new_r res_c
 
@@ -127,7 +136,9 @@ end = struct
   let replace_const' tbl const_tbl e c =
     let r = find' tbl e in
     let set = Exp.Set.add c (lookup_const' const_tbl r) in
-    if Exp.Set.cardinal set > 1 then (L.d_strln "failure reason 4" ; raise Predicates.JoinFail) ;
+    if Exp.Set.cardinal set > 1 then (
+      L.d_strln "failure reason 4" ;
+      raise Predicates.JoinFail ) ;
     Hashtbl.replace const_tbl r set
 
 
@@ -145,15 +156,22 @@ end = struct
       | false, true ->
           replace_const' tbl const_tbl e' e
       | _ ->
-          L.d_strln "failure reason 5" ; raise Predicates.JoinFail )
+          L.d_strln "failure reason 5" ;
+          raise Predicates.JoinFail )
     | Exp.Var id, Exp.Const _ | Exp.Var id, Exp.Lvar _ ->
         if can_rename id then replace_const' tbl const_tbl e e'
-        else (L.d_strln "failure reason 6" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 6" ;
+          raise Predicates.JoinFail )
     | Exp.Const _, Exp.Var id' | Exp.Lvar _, Exp.Var id' ->
         if can_rename id' then replace_const' tbl const_tbl e' e
-        else (L.d_strln "failure reason 7" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 7" ;
+          raise Predicates.JoinFail )
     | _ ->
-        if not (Exp.equal e e') then (L.d_strln "failure reason 8" ; raise Predicates.JoinFail)
+        if not (Exp.equal e e') then (
+          L.d_strln "failure reason 8" ;
+          raise Predicates.JoinFail )
         else ()
 
 
@@ -228,9 +246,15 @@ end = struct
 end
 
 module CheckJoinPre : InfoLossCheckerSig = struct
-  let init sigma1 sigma2 = NonInj.init () ; Dangling.init sigma1 sigma2
+  let init sigma1 sigma2 =
+    NonInj.init () ;
+    Dangling.init sigma1 sigma2
 
-  let final () = NonInj.final () ; Dangling.final ()
+
+  let final () =
+    NonInj.final () ;
+    Dangling.final ()
+
 
   let fail_case side e es =
     let side_op = opposite side in
@@ -607,7 +631,8 @@ end = struct
       | _ ->
           ()
     in
-    List.iter ~f !tbl ; List.rev !res
+    List.iter ~f !tbl ;
+    List.rev !res
 
 
   (* Return the triple whose side is [e], if it exists unique *)
@@ -620,12 +645,14 @@ end = struct
             if todo then Todo.push t ;
             id
         | _ ->
-            L.d_strln "failure reason 9" ; raise Predicates.JoinFail )
+            L.d_strln "failure reason 9" ;
+            raise Predicates.JoinFail )
     | Exp.Var _ | Exp.Const _ | Exp.Lvar _ ->
         if todo then Todo.push (e, e, e) ;
         e
     | _ ->
-        L.d_strln "failure reason 10" ; raise Predicates.JoinFail
+        L.d_strln "failure reason 10" ;
+        raise Predicates.JoinFail
 
 
   let lookup side e = lookup' false side e
@@ -657,7 +684,8 @@ end = struct
           false
     in
     if find_duplicates sub_list_side_sorted then (
-      L.d_strln "failure reason 11" ; raise Predicates.JoinFail )
+      L.d_strln "failure reason 11" ;
+      raise Predicates.JoinFail )
     else Predicates.subst_of_list sub_list_side
 
 
@@ -752,7 +780,10 @@ end = struct
 
   let get_other_atoms tenv side atom_in =
     let build_other_atoms construct side e =
-      if Config.trace_join then (L.d_str "build_other_atoms: " ; Exp.d_exp e ; L.d_ln ()) ;
+      if Config.trace_join then (
+        L.d_str "build_other_atoms: " ;
+        Exp.d_exp e ;
+        L.d_ln () ) ;
       let others1 = get_others_direct_or_induced side e in
       let others2 = match others1 with None -> get_others_deep side e | Some _ -> others1 in
       match others2 with
@@ -829,7 +860,9 @@ end = struct
             && not (Exp.free_vars e2 |> Sequence.exists ~f:can_rename)
           then
             if Exp.equal e1 e2 then e1
-            else (L.d_strln "failure reason 13" ; raise Predicates.JoinFail)
+            else (
+              L.d_strln "failure reason 13" ;
+              raise Predicates.JoinFail )
           else
             match default_op with
             | ExtDefault e ->
@@ -842,7 +875,9 @@ end = struct
                 Exp.Var (Ident.create_fresh kind)
         in
         let entry = (e1, e2, e) in
-        push entry ; Todo.push entry ; e
+        push entry ;
+        Todo.push entry ;
+        e
 end
 
 (** {2 Functions for constructing fresh sil data types} *)
@@ -917,12 +952,15 @@ let ident_partial_join (id1 : Ident.t) (id2 : Ident.t) =
   match (Ident.is_normal id1, Ident.is_normal id2) with
   | true, true ->
       if Ident.equal id1 id2 then Exp.Var id1
-      else (L.d_strln "failure reason 14" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 14" ;
+        raise Predicates.JoinFail )
   | true, _ | _, true ->
       Rename.extend (Exp.Var id1) (Exp.Var id2) Rename.ExtFresh
   | _ ->
       if not (ident_same_kind_primed_footprint id1 id2) then (
-        L.d_strln "failure reason 15" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 15" ;
+        raise Predicates.JoinFail )
       else
         let e1 = Exp.Var id1 in
         let e2 = Exp.Var id2 in
@@ -933,7 +971,9 @@ let ident_partial_meet (id1 : Ident.t) (id2 : Ident.t) =
   match (Ident.is_normal id1, Ident.is_normal id2) with
   | true, true ->
       if Ident.equal id1 id2 then Exp.Var id1
-      else (L.d_strln "failure reason 16" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 16" ;
+        raise Predicates.JoinFail )
   | true, _ ->
       let e1, e2 = (Exp.Var id1, Exp.Var id2) in
       Rename.extend e1 e2 (Rename.ExtDefault e1)
@@ -946,7 +986,9 @@ let ident_partial_meet (id1 : Ident.t) (id2 : Ident.t) =
       else if Ident.is_footprint id1 && Ident.equal id1 id2 then
         let e = Exp.Var id1 in
         Rename.extend e e (Rename.ExtDefault e)
-      else (L.d_strln "failure reason 17" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 17" ;
+        raise Predicates.JoinFail )
 
 
 (** {2 Join and Meet for Exps} *)
@@ -959,10 +1001,13 @@ let const_partial_join c1 c2 =
   let is_int = function Const.Cint _ -> true | _ -> false in
   if Const.equal c1 c2 then Exp.Const c1
   else if Const.kind_equal c1 c2 && not (is_int c1) then (
-    L.d_strln "failure reason 18" ; raise Predicates.JoinFail )
+    L.d_strln "failure reason 18" ;
+    raise Predicates.JoinFail )
   else if !BiabductionConfig.abs_val >= 2 then
     FreshVarExp.get_fresh_exp (Exp.Const c1) (Exp.Const c2)
-  else (L.d_strln "failure reason 19" ; raise Predicates.JoinFail)
+  else (
+    L.d_strln "failure reason 19" ;
+    raise Predicates.JoinFail )
 
 
 let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
@@ -971,12 +1016,16 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
   | Exp.Var id1, Exp.Var id2 ->
       ident_partial_join id1 id2
   | Exp.Var id, Exp.Const _ | Exp.Const _, Exp.Var id ->
-      if Ident.is_normal id then (L.d_strln "failure reason 20" ; raise Predicates.JoinFail)
+      if Ident.is_normal id then (
+        L.d_strln "failure reason 20" ;
+        raise Predicates.JoinFail )
       else Rename.extend e1 e2 Rename.ExtFresh
   | Exp.Const c1, Exp.Const c2 ->
       const_partial_join c1 c2
   | Exp.Var id, Exp.Lvar _ | Exp.Lvar _, Exp.Var id ->
-      if Ident.is_normal id then (L.d_strln "failure reason 21" ; raise Predicates.JoinFail)
+      if Ident.is_normal id then (
+        L.d_strln "failure reason 21" ;
+        raise Predicates.JoinFail )
       else Rename.extend e1 e2 Rename.ExtFresh
   | Exp.BinOp (Binop.PlusA _, Exp.Var id1, Exp.Const _), Exp.Var id2
   | Exp.Var id1, Exp.BinOp (Binop.PlusA _, Exp.Var id2, Exp.Const _)
@@ -993,13 +1042,16 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
       let e_res = Rename.extend (Exp.int c1') (Exp.Var id2) Rename.ExtFresh in
       Exp.BinOp (Binop.PlusA None, e_res, Exp.int c2)
   | Exp.Cast (t1, e1), Exp.Cast (t2, e2) ->
-      if not (Typ.equal t1 t2) then (L.d_strln "failure reason 22" ; raise Predicates.JoinFail)
+      if not (Typ.equal t1 t2) then (
+        L.d_strln "failure reason 22" ;
+        raise Predicates.JoinFail )
       else
         let e1'' = exp_partial_join e1 e2 in
         Exp.Cast (t1, e1'')
   | Exp.UnOp (unop1, e1, topt1), Exp.UnOp (unop2, e2, _) ->
       if not (Unop.equal unop1 unop2) then (
-        L.d_strln "failure reason 23" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 23" ;
+        raise Predicates.JoinFail )
       else Exp.UnOp (unop1, exp_partial_join e1 e2, topt1) (* should be topt1 = topt2 *)
   | Exp.BinOp (Binop.PlusPI, e1, e1'), Exp.BinOp (Binop.PlusPI, e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
@@ -1013,18 +1065,21 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
       Exp.BinOp (Binop.PlusPI, e1'', e2'')
   | Exp.BinOp (binop1, e1, e1'), Exp.BinOp (binop2, e2, e2') ->
       if not (Binop.equal binop1 binop2) then (
-        L.d_strln "failure reason 24" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 24" ;
+        raise Predicates.JoinFail )
       else
         let e1'' = exp_partial_join e1 e2 in
         let e2'' = exp_partial_join e1' e2' in
         Exp.BinOp (binop1, e1'', e2'')
   | Exp.Lvar pvar1, Exp.Lvar pvar2 ->
       if not (Pvar.equal pvar1 pvar2) then (
-        L.d_strln "failure reason 25" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 25" ;
+        raise Predicates.JoinFail )
       else e1
   | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
       if not (Fieldname.equal f1 f2) then (
-        L.d_strln "failure reason 26" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 26" ;
+        raise Predicates.JoinFail )
       else Exp.Lfield (exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
@@ -1100,48 +1155,66 @@ let rec exp_partial_meet (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
       ident_partial_meet id1 id2
   | Exp.Var id, Exp.Const _ ->
       if not (Ident.is_normal id) then Rename.extend e1 e2 (Rename.ExtDefault e2)
-      else (L.d_strln "failure reason 27" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 27" ;
+        raise Predicates.JoinFail )
   | Exp.Const _, Exp.Var id ->
       if not (Ident.is_normal id) then Rename.extend e1 e2 (Rename.ExtDefault e1)
-      else (L.d_strln "failure reason 28" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 28" ;
+        raise Predicates.JoinFail )
   | Exp.Const c1, Exp.Const c2 ->
-      if Const.equal c1 c2 then e1 else (L.d_strln "failure reason 29" ; raise Predicates.JoinFail)
+      if Const.equal c1 c2 then e1
+      else (
+        L.d_strln "failure reason 29" ;
+        raise Predicates.JoinFail )
   | Exp.Cast (t1, e1), Exp.Cast (t2, e2) ->
-      if not (Typ.equal t1 t2) then (L.d_strln "failure reason 30" ; raise Predicates.JoinFail)
+      if not (Typ.equal t1 t2) then (
+        L.d_strln "failure reason 30" ;
+        raise Predicates.JoinFail )
       else
         let e1'' = exp_partial_meet e1 e2 in
         Exp.Cast (t1, e1'')
   | Exp.UnOp (unop1, e1, topt1), Exp.UnOp (unop2, e2, _) ->
       if not (Unop.equal unop1 unop2) then (
-        L.d_strln "failure reason 31" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 31" ;
+        raise Predicates.JoinFail )
       else Exp.UnOp (unop1, exp_partial_meet e1 e2, topt1) (* should be topt1 = topt2 *)
   | Exp.BinOp (binop1, e1, e1'), Exp.BinOp (binop2, e2, e2') ->
       if not (Binop.equal binop1 binop2) then (
-        L.d_strln "failure reason 32" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 32" ;
+        raise Predicates.JoinFail )
       else
         let e1'' = exp_partial_meet e1 e2 in
         let e2'' = exp_partial_meet e1' e2' in
         Exp.BinOp (binop1, e1'', e2'')
   | Exp.Var id, Exp.Lvar _ ->
       if not (Ident.is_normal id) then Rename.extend e1 e2 (Rename.ExtDefault e2)
-      else (L.d_strln "failure reason 33" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 33" ;
+        raise Predicates.JoinFail )
   | Exp.Lvar _, Exp.Var id ->
       if not (Ident.is_normal id) then Rename.extend e1 e2 (Rename.ExtDefault e1)
-      else (L.d_strln "failure reason 34" ; raise Predicates.JoinFail)
+      else (
+        L.d_strln "failure reason 34" ;
+        raise Predicates.JoinFail )
   | Exp.Lvar pvar1, Exp.Lvar pvar2 ->
       if not (Pvar.equal pvar1 pvar2) then (
-        L.d_strln "failure reason 35" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 35" ;
+        raise Predicates.JoinFail )
       else e1
   | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
       if not (Fieldname.equal f1 f2) then (
-        L.d_strln "failure reason 36" ; raise Predicates.JoinFail )
+        L.d_strln "failure reason 36" ;
+        raise Predicates.JoinFail )
       else Exp.Lfield (exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
       let e1'' = exp_partial_meet e1 e2 in
       let e2'' = exp_partial_meet e1' e2' in
       Exp.Lindex (e1'', e2'')
   | _ ->
-      L.d_strln "failure reason 37" ; raise Predicates.JoinFail
+      L.d_strln "failure reason 37" ;
+      raise Predicates.JoinFail
 
 
 let exp_list_partial_join = List.map2_exn ~f:exp_partial_join
@@ -1159,7 +1232,8 @@ let rec strexp_partial_join mode (strexp1 : Predicates.strexp) (strexp2 : Predic
     | [], _ | _, [] -> (
       match mode with
       | JoinState.Pre ->
-          L.d_strln "failure reason 42" ; raise Predicates.JoinFail
+          L.d_strln "failure reason 42" ;
+          raise Predicates.JoinFail
       | JoinState.Post ->
           Predicates.Estruct (List.rev acc, inst) )
     | (fld1, se1) :: fld_se_list1', (fld2, se2) :: fld_se_list2' -> (
@@ -1171,7 +1245,8 @@ let rec strexp_partial_join mode (strexp1 : Predicates.strexp) (strexp2 : Predic
         else
           match mode with
           | JoinState.Pre ->
-              L.d_strln "failure reason 43" ; raise Predicates.JoinFail
+              L.d_strln "failure reason 43" ;
+              raise Predicates.JoinFail
           | JoinState.Post ->
               if comparison < 0 then f_fld_se_list inst mode acc fld_se_list1' fld_se_list2
               else if comparison > 0 then f_fld_se_list inst mode acc fld_se_list1 fld_se_list2'
@@ -1185,7 +1260,8 @@ let rec strexp_partial_join mode (strexp1 : Predicates.strexp) (strexp2 : Predic
     | [], _ | _, [] -> (
       match mode with
       | JoinState.Pre ->
-          L.d_strln "failure reason 44" ; raise Predicates.JoinFail
+          L.d_strln "failure reason 44" ;
+          raise Predicates.JoinFail
       | JoinState.Post ->
           Predicates.Earray (len, List.rev idx_se_list_acc, inst) )
     | (idx1, se1) :: idx_se_list1', (idx2, se2) :: idx_se_list2' ->
@@ -1264,7 +1340,8 @@ let rec strexp_partial_meet (strexp1 : Predicates.strexp) (strexp2 : Predicates.
       let inst = Predicates.inst_partial_meet inst1 inst2 in
       f_idx_se_list inst len1 [] idx_se_list1 idx_se_list2
   | _ ->
-      L.d_strln "failure reason 52" ; raise Predicates.JoinFail
+      L.d_strln "failure reason 52" ;
+      raise Predicates.JoinFail
 
 
 (** {2 Join and Meet for kind, hpara, hpara_dll} *)
@@ -1281,28 +1358,36 @@ let hpara_partial_join tenv (hpara1 : Predicates.hpara) (hpara2 : Predicates.hpa
     Predicates.hpara =
   if Match.hpara_match_with_impl tenv true hpara2 hpara1 then hpara1
   else if Match.hpara_match_with_impl tenv true hpara1 hpara2 then hpara2
-  else (L.d_strln "failure reason 53" ; raise Predicates.JoinFail)
+  else (
+    L.d_strln "failure reason 53" ;
+    raise Predicates.JoinFail )
 
 
 let hpara_partial_meet tenv (hpara1 : Predicates.hpara) (hpara2 : Predicates.hpara) :
     Predicates.hpara =
   if Match.hpara_match_with_impl tenv true hpara2 hpara1 then hpara2
   else if Match.hpara_match_with_impl tenv true hpara1 hpara2 then hpara1
-  else (L.d_strln "failure reason 54" ; raise Predicates.JoinFail)
+  else (
+    L.d_strln "failure reason 54" ;
+    raise Predicates.JoinFail )
 
 
 let hpara_dll_partial_join tenv (hpara1 : Predicates.hpara_dll) (hpara2 : Predicates.hpara_dll) :
     Predicates.hpara_dll =
   if Match.hpara_dll_match_with_impl tenv true hpara2 hpara1 then hpara1
   else if Match.hpara_dll_match_with_impl tenv true hpara1 hpara2 then hpara2
-  else (L.d_strln "failure reason 55" ; raise Predicates.JoinFail)
+  else (
+    L.d_strln "failure reason 55" ;
+    raise Predicates.JoinFail )
 
 
 let hpara_dll_partial_meet tenv (hpara1 : Predicates.hpara_dll) (hpara2 : Predicates.hpara_dll) :
     Predicates.hpara_dll =
   if Match.hpara_dll_match_with_impl tenv true hpara2 hpara1 then hpara2
   else if Match.hpara_dll_match_with_impl tenv true hpara1 hpara2 then hpara1
-  else (L.d_strln "failure reason 56" ; raise Predicates.JoinFail)
+  else (
+    L.d_strln "failure reason 56" ;
+    raise Predicates.JoinFail )
 
 
 (** {2 Join and Meet for hpred} *)
@@ -1327,7 +1412,9 @@ let hpred_partial_join tenv mode (todo : Exp.t * Exp.t * Exp.t) (hpred1 : Predic
       let iF', iB' =
         if fwd1 && fwd2 then (e, exp_partial_join iB1 iB2)
         else if (not fwd1) && not fwd2 then (exp_partial_join iF1 iF2, e)
-        else (L.d_strln "failure reason 57" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 57" ;
+          raise Predicates.JoinFail )
       in
       let oF' = exp_partial_join oF1 oF2 in
       let oB' = exp_partial_join oB1 oB2 in
@@ -1344,7 +1431,8 @@ let hpred_partial_meet tenv (todo : Exp.t * Exp.t * Exp.t) (hpred1 : Predicates.
   | Hpointsto (_, se1, te1), Hpointsto (_, se2, te2) when Exp.equal te1 te2 ->
       Prop.mk_ptsto tenv e (strexp_partial_meet se1 se2) te1
   | Hpointsto _, _ | _, Hpointsto _ ->
-      L.d_strln "failure reason 58" ; raise Predicates.JoinFail
+      L.d_strln "failure reason 58" ;
+      raise Predicates.JoinFail
   | Hlseg (k1, hpara1, _, next1, shared1), Hlseg (k2, hpara2, _, next2, shared2) ->
       let hpara' = hpara_partial_meet tenv hpara1 hpara2 in
       let next' = exp_partial_meet next1 next2 in
@@ -1358,7 +1446,9 @@ let hpred_partial_meet tenv (todo : Exp.t * Exp.t * Exp.t) (hpred1 : Predicates.
       let iF', iB' =
         if fwd1 && fwd2 then (e, exp_partial_meet iB1 iB2)
         else if (not fwd1) && not fwd2 then (exp_partial_meet iF1 iF2, e)
-        else (L.d_strln "failure reason 59" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 59" ;
+          raise Predicates.JoinFail )
       in
       let oF' = exp_partial_meet oF1 oF2 in
       let oB' = exp_partial_meet oB1 oB2 in
@@ -1426,7 +1516,8 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
   let lookup_and_expand side e e' =
     match (Rename.get_others side e, side) with
     | None, _ ->
-        L.d_strln "failure reason 60" ; raise Predicates.JoinFail
+        L.d_strln "failure reason 60" ;
+        raise Predicates.JoinFail
     | Some (e_res, e_op), Lhs ->
         (e_res, exp_partial_join e' e_op)
     | Some (e_res, e_op), Rhs ->
@@ -1487,7 +1578,9 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
      'todo' describes the start point. *)
   let cut_sigma side todo (target : Prop.sigma) (other : Prop.sigma) =
     let list_is_empty l =
-      if not (List.is_empty l) then (L.d_strln "failure reason 61" ; raise Predicates.JoinFail)
+      if not (List.is_empty l) then (
+        L.d_strln "failure reason 61" ;
+        raise Predicates.JoinFail )
     in
     let x = Todo.take () in
     Todo.push todo ;
@@ -1504,7 +1597,8 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
           sigma_renaming_check_rhs target res ;
           other'
     in
-    Todo.set x ; res
+    Todo.set x ;
+    res
   in
   let cut_lseg side todo lseg sigma =
     match (lseg : Predicates.hpred) with
@@ -1551,15 +1645,20 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
         if (not Config.nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
           let sigma_acc' = join_list_and_non Lhs e lseg e1 e2 :: sigma_acc in
           sigma_partial_join' tenv mode sigma_acc' sigma1 sigma2
-        else (L.d_strln "failure reason 62" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 62" ;
+          raise Predicates.JoinFail )
     | None, Some (Predicates.Hlseg (k, _, _, _, _) as lseg)
     | None, Some (Predicates.Hdllseg (k, _, _, _, _, _, _) as lseg) ->
         if (not Config.nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
           let sigma_acc' = join_list_and_non Rhs e lseg e2 e1 :: sigma_acc in
           sigma_partial_join' tenv mode sigma_acc' sigma1 sigma2
-        else (L.d_strln "failure reason 63" ; raise Predicates.JoinFail)
+        else (
+          L.d_strln "failure reason 63" ;
+          raise Predicates.JoinFail )
     | None, _ | _, None ->
-        L.d_strln "failure reason 64" ; raise Predicates.JoinFail
+        L.d_strln "failure reason 64" ;
+        raise Predicates.JoinFail
     | Some hpred1, Some hpred2 when same_pred hpred1 hpred2 ->
         let hpred_res1 = hpred_partial_join tenv mode todo_curr hpred1 hpred2 in
         sigma_partial_join' tenv mode (hpred_res1 :: sigma_acc) sigma1 sigma2
@@ -1622,7 +1721,9 @@ let sigma_partial_join tenv mode (sigma1 : Prop.sigma) (sigma2 : Prop.sigma) :
   SymOp.try_finally
     ~f:(fun () ->
       if Rename.check lost_little then (s1, s2, s3)
-      else (L.d_strln "failed Rename.check" ; raise Predicates.JoinFail) )
+      else (
+        L.d_strln "failed Rename.check" ;
+        raise Predicates.JoinFail ) )
     ~finally:CheckJoin.final
 
 
@@ -1663,7 +1764,8 @@ let rec sigma_partial_meet' tenv (sigma_acc : Prop.sigma) (sigma1_in : Prop.sigm
         let hpred' = hpred_partial_meet tenv todo_curr hpred1 hpred2 in
         sigma_partial_meet' tenv (hpred' :: sigma_acc) sigma1 sigma2
     | Some _, Some _ ->
-        L.d_strln "failure reason 65" ; raise Predicates.JoinFail
+        L.d_strln "failure reason 65" ;
+        raise Predicates.JoinFail
   with Todo.Empty -> (
     match (sigma1_in, sigma2_in) with
     | [], [] ->
@@ -1799,20 +1901,33 @@ let pi_partial_join tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.exposed Pr
         a' :: atom_list
   in
   if Config.trace_join then (
-    L.d_str "pi1: " ; Prop.d_pi pi1 ; L.d_ln () ; L.d_str "pi2: " ; Prop.d_pi pi2 ; L.d_ln () ) ;
+    L.d_str "pi1: " ;
+    Prop.d_pi pi1 ;
+    L.d_ln () ;
+    L.d_str "pi2: " ;
+    Prop.d_pi pi2 ;
+    L.d_ln () ) ;
   let atom_list1 =
     let p2 = Prop.normalize tenv ep2 in
     List.fold ~f:(handle_atom_with_widening Lhs p2 pi2) ~init:[] pi1
   in
-  if Config.trace_join then (L.d_str "atom_list1: " ; Prop.d_pi atom_list1 ; L.d_ln ()) ;
+  if Config.trace_join then (
+    L.d_str "atom_list1: " ;
+    Prop.d_pi atom_list1 ;
+    L.d_ln () ) ;
   let atom_list2 =
     let p1 = Prop.normalize tenv ep1 in
     List.fold ~f:(handle_atom_with_widening Rhs p1 pi1) ~init:[] pi2
   in
-  if Config.trace_join then (L.d_str "atom_list2: " ; Prop.d_pi atom_list2 ; L.d_ln ()) ;
+  if Config.trace_join then (
+    L.d_str "atom_list2: " ;
+    Prop.d_pi atom_list2 ;
+    L.d_ln () ) ;
   let atom_list_combined = IList.inter ~cmp:Predicates.compare_atom atom_list1 atom_list2 in
   if Config.trace_join then (
-    L.d_str "atom_list_combined: " ; Prop.d_pi atom_list_combined ; L.d_ln () ) ;
+    L.d_str "atom_list_combined: " ;
+    Prop.d_pi atom_list_combined ;
+    L.d_ln () ) ;
   atom_list_combined
 
 
@@ -1862,7 +1977,9 @@ let eprop_partial_meet tenv (ep1 : 'a Prop.t) (ep2 : 'b Prop.t) : 'c Prop.t =
     let f e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
     Predicates.equal_subst sub1 sub2 && List.for_all ~f range1
   in
-  if not (sub_check ()) then (L.d_strln "sub_check() failed" ; raise Predicates.JoinFail)
+  if not (sub_check ()) then (
+    L.d_strln "sub_check() failed" ;
+    raise Predicates.JoinFail )
   else
     let todos = List.map ~f:(fun x -> (x, x, x)) es in
     List.iter ~f:Todo.push todos ;
@@ -1882,7 +1999,10 @@ let prop_partial_meet tenv p1 p2 =
   try
     SymOp.try_finally
       ~f:(fun () -> Some (eprop_partial_meet tenv p1 p2))
-      ~finally:(fun () -> Rename.final () ; FreshVarExp.final () ; Todo.final ())
+      ~finally:(fun () ->
+        Rename.final () ;
+        FreshVarExp.final () ;
+        Todo.final () )
   with Predicates.JoinFail -> None
 
 
@@ -1946,7 +2066,8 @@ let eprop_partial_join' tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.expose
       in
       p_sub_sigma_pi
   | _ ->
-      L.d_strln "leftovers not empty" ; raise Predicates.JoinFail
+      L.d_strln "leftovers not empty" ;
+      raise Predicates.JoinFail
 
 
 let footprint_partial_join' tenv (p1 : Prop.normal Prop.t) (p2 : Prop.normal Prop.t) :
@@ -1966,7 +2087,9 @@ let footprint_partial_join' tenv (p1 : Prop.normal Prop.t) (p2 : Prop.normal Pro
       let f a =
         Predicates.hpred_free_vars a |> Sequence.exists ~f:(fun a -> not (Ident.is_footprint a))
       in
-      if List.exists ~f sigma_fp0 then (L.d_strln "failure reason 66" ; raise Predicates.JoinFail) ;
+      if List.exists ~f sigma_fp0 then (
+        L.d_strln "failure reason 66" ;
+        raise Predicates.JoinFail ) ;
       sigma_fp0
     in
     let ep1' = Prop.set p1 ~pi_fp ~sigma_fp in
@@ -1996,7 +2119,10 @@ let prop_partial_join ({InterproceduralAnalysis.tenv; _} as analysis_data) mode 
             let res = eprop_partial_join' tenv mode (Prop.expose p1') (Prop.expose p2') in
             if !BiabductionConfig.footprint then JoinState.set_footprint false ;
             Some res )
-          ~finally:(fun () -> Rename.final () ; FreshVarExp.final () ; Todo.final ())
+          ~finally:(fun () ->
+            Rename.final () ;
+            FreshVarExp.final () ;
+            Todo.final () )
       with Predicates.JoinFail -> None )
   | Some _ ->
       res_by_implication_only
@@ -2009,7 +2135,10 @@ let eprop_partial_join tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.exposed
   Todo.init () ;
   SymOp.try_finally
     ~f:(fun () -> eprop_partial_join' tenv mode ep1 ep2)
-    ~finally:(fun () -> Rename.final () ; FreshVarExp.final () ; Todo.final ())
+    ~finally:(fun () ->
+      Rename.final () ;
+      FreshVarExp.final () ;
+      Todo.final () )
 
 
 (** {2 Join and Meet for Propset} *)

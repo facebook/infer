@@ -75,7 +75,8 @@ let log_message ~label ~message = log_one (LogEntry.mk_string ~label ~message)
 let execute_with_time_logging label f =
   let ret_val, duration_ms = Utils.timeit ~f in
   let entry = LogEntry.mk_time ~label ~duration_ms in
-  log_one entry ; ret_val
+  log_one entry ;
+  ret_val
 
 
 let flush_log_events () =

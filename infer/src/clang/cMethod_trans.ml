@@ -126,7 +126,8 @@ let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
   | previous_procdesc ->
       let is_defined_previous = Procdesc.is_defined previous_procdesc in
       if (defined || set_objc_accessor_attr) && not is_defined_previous then (
-        Procname.Hash.remove cfg procname ; true )
+        Procname.Hash.remove cfg procname ;
+        true )
       else false
   | exception Caml.Not_found ->
       true
@@ -264,7 +265,8 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
       Procdesc.set_exit_node procdesc exit_node )
   in
   if should_create_procdesc cfg proc_name ~defined ~set_objc_accessor_attr then (
-    create_new_procdesc () ; true )
+    create_new_procdesc () ;
+    true )
   else false
 
 

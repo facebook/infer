@@ -308,7 +308,8 @@ let collect_results (pool : (_, 'final, _) t) =
 let wait_all pool =
   (* tell each alive worker to go home *)
   Array.iter pool.slots ~f:(fun {down_pipe} ->
-      marshal_to_pipe down_pipe GoHome ; Out_channel.close down_pipe ) ;
+      marshal_to_pipe down_pipe GoHome ;
+      Out_channel.close down_pipe ) ;
   let results = collect_results pool in
   (* wait(2) workers one by one; the order doesn't matter since we want to wait for all of them
      eventually anyway. *)
@@ -458,10 +459,12 @@ let run pool =
       let buffer = Bytes.create buffer_size in
       (* wait for all children to run out of tasks *)
       while not (pool.tasks.is_empty () && all_children_idle pool) do
-        process_updates pool buffer ; TaskBar.refresh pool.task_bar
+        process_updates pool buffer ;
+        TaskBar.refresh pool.task_bar
       done ;
       let results = wait_all pool in
-      TaskBar.finish pool.task_bar ; results )
+      TaskBar.finish pool.task_bar ;
+      results )
 
 
 let run pool =

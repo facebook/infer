@@ -35,7 +35,8 @@ let add_or_replace_check_changed tenv check_attribute_change prop atom =
       let atom_map = function
         | (Predicates.Apred (att, exp :: _) | Anpred (att, exp :: _))
           when Exp.equal nexp exp && attributes_in_same_category att att0 ->
-            check_attribute_change att att0 ; atom
+            check_attribute_change att att0 ;
+            atom
         | atom' ->
             atom'
       in
@@ -57,7 +58,8 @@ let add_or_replace tenv prop atom =
 let get_all (prop : 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
-  List.iter ~f:do_atom prop.pi ; List.rev !res
+  List.iter ~f:do_atom prop.pi ;
+  List.rev !res
 
 
 (** Get the attribute associated to the expression, if any *)
@@ -258,7 +260,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
     | Exp.Lfield (e, _, _) ->
         walk e
     | Exp.Lindex (e1, e2) ->
-        walk e1 ; walk e2
+        walk e1 ;
+        walk e2
     | Exp.Sizeof {dynamic_length= None} ->
         ()
     | Exp.Sizeof {dynamic_length= Some len} ->

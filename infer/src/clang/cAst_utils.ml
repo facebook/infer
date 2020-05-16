@@ -336,7 +336,8 @@ let generate_key_stmt stmt =
     let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
     List.iter ~f:add_stmt stmts
   in
-  add_stmt stmt ; Buffer.contents buffer
+  add_stmt stmt ;
+  Buffer.contents buffer
 
 
 (* Generates a key for a declaration based on its name and the declaration tag. *)

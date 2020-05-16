@@ -206,7 +206,9 @@ let d_pi_sigma pi sigma =
   let d_separator () =
     if (not (List.is_empty pi)) && not (List.is_empty sigma) then L.d_strln " *"
   in
-  d_pi pi ; d_separator () ; d_sigma sigma
+  d_pi pi ;
+  d_separator () ;
+  d_sigma sigma
 
 
 let pi_of_subst sub =
@@ -539,7 +541,8 @@ let sigma_get_unsigned_exps sigma =
     | _ ->
         ()
   in
-  List.iter ~f:do_hpred sigma ; !uexps
+  List.iter ~f:do_hpred sigma ;
+  !uexps
 
 
 (** Collapse consecutive indices that should be added. For instance, this function reduces
@@ -1952,7 +1955,8 @@ let sigma_dfs_sort tenv sigma =
   in
   init () ;
   let sigma' = handle_sigma [] sigma in
-  final () ; sigma'
+  final () ;
+  sigma'
 
 
 let dfs_sort tenv p : sorted t =

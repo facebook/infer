@@ -560,7 +560,8 @@ let discover_para_candidates tenv p =
         get_edges_sigma sigma_rest
     | Predicates.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
-        get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
+        get_edges_strexp rec_flds root se ;
+        get_edges_sigma sigma_rest
   in
   let rec find_all_consecutive_edges found edges_seen = function
     | [] ->
@@ -610,7 +611,8 @@ let discover_para_dll_candidates tenv p =
         get_edges_sigma sigma_rest
     | Predicates.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
-        get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
+        get_edges_strexp rec_flds root se ;
+        get_edges_sigma sigma_rest
   in
   let rec find_all_consecutive_edges found edges_seen = function
     | [] ->
@@ -859,7 +861,8 @@ let abs_rules_apply_lists tenv (p_in : Prop.normal Prop.t) : Prop.normal Prop.t 
   let p1 = abs_rules_apply_rsets tenv old_rsets p_in in
   let p2 = discover_then_abstract p1 in
   let new_rules = old_rsets @ !new_rsets in
-  set_current_rules new_rules ; p2
+  set_current_rules new_rules ;
+  p2
 
 
 let abs_rules_apply tenv (p_in : Prop.normal Prop.t) : Prop.normal Prop.t =
@@ -1065,7 +1068,8 @@ let check_junk {InterproceduralAnalysis.proc_desc; err_log; tenv} prop =
                     | _ ->
                         () ) )
               in
-              List.iter ~f:do_entry entries ; !res
+              List.iter ~f:do_entry entries ;
+              !res
             in
             L.d_decrease_indent () ;
             let is_undefined =

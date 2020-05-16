@@ -74,8 +74,12 @@ module SymLinear = struct
     let c = (c :> Z.t) in
     let c =
       if is_beginning then c
-      else if Z.gt c Z.zero then (F.pp_print_string f " + " ; c)
-      else (F.pp_print_string f " - " ; Z.neg c)
+      else if Z.gt c Z.zero then (
+        F.pp_print_string f " + " ;
+        c )
+      else (
+        F.pp_print_string f " - " ;
+        Z.neg c )
     in
     if Z.(equal c one) then (Symb.Symbol.pp_mark ~markup) f s
     else if Z.(equal c minus_one) then F.fprintf f "-%a" (Symb.Symbol.pp_mark ~markup) s
@@ -86,7 +90,11 @@ module SymLinear = struct
    fun ~markup ~is_beginning f x ->
     if M.is_empty x then if is_beginning then F.pp_print_string f "0" else ()
     else
-      ( M.fold (fun s c is_beginning -> pp1 ~markup ~is_beginning f s c ; false) x is_beginning
+      ( M.fold
+          (fun s c is_beginning ->
+            pp1 ~markup ~is_beginning f s c ;
+            false )
+          x is_beginning
         : bool )
       |> ignore
 

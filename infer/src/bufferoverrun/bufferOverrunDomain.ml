@@ -1431,7 +1431,10 @@ end
 module AliasRet = struct
   include AliasTargets
 
-  let pp : F.formatter -> t -> unit = fun fmt x -> F.pp_print_string fmt "ret=" ; pp fmt x
+  let pp : F.formatter -> t -> unit =
+   fun fmt x ->
+    F.pp_print_string fmt "ret=" ;
+    pp fmt x
 end
 
 module Alias = struct

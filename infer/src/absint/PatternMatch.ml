@@ -318,7 +318,8 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
     Instrs.iter ~f:(do_instruction node) instrs
   in
   let nodes = Procdesc.get_nodes pdesc in
-  List.iter ~f:do_node nodes ; List.rev !res
+  List.iter ~f:do_node nodes ;
+  List.rev !res
 
 
 let has_same_signature proc_name =
@@ -370,7 +371,12 @@ let override_exists ?(check_current_type = true) f tenv proc_name =
 (* Only java supported at the moment *)
 
 let override_iter f tenv proc_name =
-  ignore (override_exists (fun pname -> f pname ; false) tenv proc_name)
+  ignore
+    (override_exists
+       (fun pname ->
+         f pname ;
+         false )
+       tenv proc_name)
 
 
 let lookup_attributes tenv proc_name =

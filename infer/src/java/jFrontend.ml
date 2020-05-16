@@ -67,7 +67,8 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
     | JTrans.Instr node ->
         connect node pc
     | JTrans.Prune (node_true, node_false) ->
-        connect node_true pc ; connect node_false pc
+        connect node_true pc ;
+        connect node_false pc
     | JTrans.Loop (join_node, node_true, node_false) ->
         Procdesc.node_set_succs context.procdesc join_node ~normal:[node_true; node_false] ~exn:[] ;
         connect node_true pc ;

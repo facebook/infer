@@ -210,4 +210,5 @@ let pp_dotty fmt cycle =
 let write_dotty_to_file fname cycle =
   let chan = Out_channel.create fname in
   let fmt = Format.formatter_of_out_channel chan in
-  pp_dotty fmt cycle ; Out_channel.close chan
+  pp_dotty fmt cycle ;
+  Out_channel.close chan

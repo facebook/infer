@@ -15,7 +15,8 @@ let register pname = builtin_decls := Procname.Set.add pname !builtin_decls
 
 let create_procname name =
   let pname = Procname.from_string_c_fun name in
-  register pname ; pname
+  register pname ;
+  pname
 
 
 let create_objc_class_method class_name method_name parameters =
@@ -25,7 +26,8 @@ let create_objc_class_method class_name method_name parameters =
     Procname.ObjC_Cpp
       (Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate parameters)
   in
-  register pname ; pname
+  register pname ;
+  pname
 
 
 let is_declared pname = Procname.Set.mem pname !builtin_decls

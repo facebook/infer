@@ -52,9 +52,11 @@ let evaluate_static_guard label_o (e_fun, arg_ts) =
           let name = Procname.hashable_name n in
           let re = Str.regexp label.ToplAst.procedure_name in
           let result = Str.string_match re name 0 in
-          tt "  check name='%s'@\n" name ; result
+          tt "  check name='%s'@\n" name ;
+          result
       | _ ->
-          tt "  check name-unknown@\n" ; false
+          tt "  check name-unknown@\n" ;
+          false
     in
     let pattern_len = Option.map ~f:List.length label.ToplAst.arguments in
     let match_args () =
@@ -65,8 +67,16 @@ let evaluate_static_guard label_o (e_fun, arg_ts) =
     in
     tt "match name-pattern='%s' arg-len-pattern=%a@\n" label.ToplAst.procedure_name
       (Pp.option Int.pp) pattern_len ;
-    let log f = f () || (tt "  match result FALSE@\n" ; false) in
-    log match_args && log match_name && (tt "  match result TRUE@\n" ; true)
+    let log f =
+      f ()
+      ||
+      ( tt "  match result FALSE@\n" ;
+        false )
+    in
+    log match_args && log match_name
+    &&
+    ( tt "  match result TRUE@\n" ;
+      true )
   in
   Option.value_map ~default:true ~f:evaluate_nonany label_o
 
@@ -130,7 +140,11 @@ let add_types tenv =
     let record_predicate =
       ToplAst.(
         function
-        | Binop (_, v1, v2) -> record_value v1 ; record_value v2 | Value v -> record_value v)
+        | Binop (_, v1, v2) ->
+            record_value v1 ;
+            record_value v2
+        | Value v ->
+            record_value v)
     in
     let record_assignment (reg, _) = record reg in
     let record_label label =
@@ -163,7 +177,9 @@ let instrument tenv procdesc =
     let f _node = instrument_instruction in
     tt "instrument@\n" ;
     let _updated = Procdesc.replace_instrs_by procdesc ~f in
-    tt "add types@\n" ; add_types tenv ; tt "done@\n" )
+    tt "add types@\n" ;
+    add_types tenv ;
+    tt "done@\n" )
 
 
 (** [lookup_static_var var prop] expects [var] to have the form [Exp.Lfield (obj, fieldname)], and

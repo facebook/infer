@@ -276,6 +276,7 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
           | Exceptions.Info | Exceptions.Advice | Exceptions.Like ->
               L.d_info
         in
-        d warn_str ; L.d_ln () )
+        d warn_str ;
+        L.d_ln () )
     in
     if should_print_now then print_now ()

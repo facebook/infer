@@ -66,7 +66,8 @@ let read_file fname =
       cleanup () ;
       Ok (List.rev !res)
   | Sys_error error ->
-      cleanup () ; Error error
+      cleanup () ;
+      Error error
 
 
 (** type for files used for printing *)
@@ -223,7 +224,11 @@ let create_file_lock () =
 
 
 let with_file_lock ~file_lock:{file; oc; fd} ~f =
-  let finally () = Core.Unix.close fd ; Out_channel.close oc ; Core.Unix.remove file in
+  let finally () =
+    Core.Unix.close fd ;
+    Out_channel.close oc ;
+    Core.Unix.remove file
+  in
   try_finally_swallow_timeout ~f ~finally
 
 
@@ -256,7 +261,10 @@ let echo_in chan_in = with_channel_in ~f:print_endline chan_in
 let with_process_in command read =
   let chan = Unix.open_process_in command in
   let f () = read chan in
-  let finally () = consume_in chan ; Unix.close_process_in chan in
+  let finally () =
+    consume_in chan ;
+    Unix.close_process_in chan
+  in
   do_finally_swallow_timeout ~f ~finally
 
 
@@ -310,7 +318,10 @@ let realpath ?(warn_on_error = true) path =
 let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
-  let restore_stderr src = Unix.dup2 ~src ~dst:Unix.stderr ; Unix.close src in
+  let restore_stderr src =
+    Unix.dup2 ~src ~dst:Unix.stderr ;
+    Unix.close src
+  in
   let orig_stderr = Unix.dup Unix.stderr in
   Unix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr ;
   let f () = f2 x1 x2 in
@@ -343,7 +354,8 @@ let rec rmtree name =
             then rmtree (name ^/ entry) ;
             rmdir dir
         | None ->
-            Unix.closedir dir ; Unix.rmdir name
+            Unix.closedir dir ;
+            Unix.rmdir name
       in
       rmdir dir
   | _ ->
@@ -505,4 +517,5 @@ let zip_fold_filenames ~init ~f ~zip_filename =
   let file_in = Zip.open_in zip_filename in
   let collect acc (entry : Zip.entry) = f acc entry.filename in
   let result = List.fold ~f:collect ~init (Zip.entries file_in) in
-  Zip.close_in file_in ; result
+  Zip.close_in file_in ;
+  result

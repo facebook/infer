@@ -45,7 +45,8 @@ let select_proc_names_interactive ~filter =
           | Some n when 0 <= n && n < Array.length proc_names_array ->
               Some [proc_names_array.(n)]
           | _ ->
-              print_endline "Invalid input" ; ask_user_input ()
+              print_endline "Invalid input" ;
+              ask_user_input ()
       in
       ask_user_input ()
 

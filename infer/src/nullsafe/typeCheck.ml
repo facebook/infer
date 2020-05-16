@@ -1213,7 +1213,8 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
         | _ ->
             typestate
       in
-      check_field_assign () ; typestate2
+      check_field_assign () ;
+      typestate2
   (* Java `new` operators *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
     when Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array ->

@@ -183,7 +183,8 @@ module Make
             | None ->
                 None
             | Some _ as value_opt ->
-                incr count_old ; value_opt )
+                incr count_old ;
+                value_opt )
         map1.old map2.old
     in
     {count_new= !count_new; old; new_}

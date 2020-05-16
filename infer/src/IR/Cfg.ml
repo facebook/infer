@@ -27,7 +27,8 @@ let iter_over_sorted_procs cfg ~f =
 let get_all_defined_proc_names cfg =
   let procs = ref [] in
   let f pname pdesc = if Procdesc.is_defined pdesc then procs := pname :: !procs in
-  Procname.Hash.iter f cfg ; !procs
+  Procname.Hash.iter f cfg ;
+  !procs
 
 
 (** Create a new procdesc *)

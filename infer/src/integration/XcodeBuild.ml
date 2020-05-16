@@ -44,7 +44,8 @@ let capture ~prog ~args =
   Utils.with_channel_in stderr_chan ~f:(L.progress "XCODEBUILD: %s@.") ;
   match Unix.waitpid pid with
   | Ok () ->
-      In_channel.close stdout_chan ; In_channel.close stderr_chan
+      In_channel.close stdout_chan ;
+      In_channel.close stderr_chan
   | Error _ as err ->
       L.die ExternalError "*** capture failed to execute: %s"
         (Unix.Exit_or_signal.to_string_hum err)

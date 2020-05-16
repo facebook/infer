@@ -14,10 +14,15 @@ module L = Logging
 module CLOpt = CommandLineOption
 
 let clear_caches_except_lrus () =
-  Summary.OnDisk.clear_cache () ; Procname.SQLite.clear_cache () ; BufferOverrunUtils.clear_cache ()
+  Summary.OnDisk.clear_cache () ;
+  Procname.SQLite.clear_cache () ;
+  BufferOverrunUtils.clear_cache ()
 
 
-let clear_caches () = Ondemand.LocalCache.clear () ; clear_caches_except_lrus ()
+let clear_caches () =
+  Ondemand.LocalCache.clear () ;
+  clear_caches_except_lrus ()
+
 
 let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
   let analyze_source_file exe_env source_file =
@@ -173,7 +178,9 @@ let invalidate_changed_procedures changed_files =
       CallGraph.to_dotty reverse_callgraph "reverse_analysis_callgraph.dot" ;
     let invalidated_nodes =
       CallGraph.fold_flagged reverse_callgraph
-        ~f:(fun node acc -> SpecsFiles.delete node.pname ; acc + 1)
+        ~f:(fun node acc ->
+          SpecsFiles.delete node.pname ;
+          acc + 1 )
         0
     in
     L.progress

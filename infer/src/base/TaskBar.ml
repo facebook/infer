@@ -144,7 +144,8 @@ let create ~jobs =
         ; tasks_done= 0
         ; tasks_total= 0 }
       in
-      ANSITerminal.erase Below ; MultiLine task_bar
+      ANSITerminal.erase Below ;
+      MultiLine task_bar
 
 
 let update_status_multiline task_bar ~slot:job t0 status =

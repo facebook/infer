@@ -169,7 +169,10 @@ module SymbolPath = struct
     if paren then F.fprintf fmt ")"
 
 
-  and pp_star ~paren fmt p = pp_partial_paren ~paren fmt p ; F.pp_print_string fmt ".*"
+  and pp_star ~paren fmt p =
+    pp_partial_paren ~paren fmt p ;
+    F.pp_print_string fmt ".*"
+
 
   let pp_partial = pp_partial_paren ~paren:false
 

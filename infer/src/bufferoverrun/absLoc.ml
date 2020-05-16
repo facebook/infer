@@ -242,7 +242,10 @@ module Loc = struct
         BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
 
 
-  and pp_star ~paren fmt l = pp_paren ~paren fmt l ; F.pp_print_string fmt ".*"
+  and pp_star ~paren fmt l =
+    pp_paren ~paren fmt l ;
+    F.pp_print_string fmt ".*"
+
 
   let pp = pp_paren ~paren:false
 

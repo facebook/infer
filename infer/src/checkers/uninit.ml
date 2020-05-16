@@ -328,7 +328,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             () ) ;
         {astate with maybe_uninit_vars}
     | Assume (expr, _, _, loc) ->
-        check_hil_expr expr ~loc ; astate
+        check_hil_expr expr ~loc ;
+        astate
     | Metadata _ ->
         astate
 

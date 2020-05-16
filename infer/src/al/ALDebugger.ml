@@ -194,7 +194,8 @@ module EvaluationTracker = struct
         stop_and_explain_step () ;
         {t with debugger_active= true}
     | true, _, _ ->
-        stop_and_explain_step () ; t
+        stop_and_explain_step () ;
+        t
     | _ ->
         t
 
@@ -244,7 +245,8 @@ module EvaluationTracker = struct
           | Tree (node, children), ntd ->
               (Tree (node, evaluated_tree :: children), ntd)
         in
-        Stack.push t'.eval_stack parent ; t'.forest
+        Stack.push t'.eval_stack parent ;
+        t'.forest
     in
     {t' with forest= forest'}
 
@@ -257,7 +259,8 @@ module EvaluationTracker = struct
       let open Ctl_parser_types in
       let buffer_content buf =
         let result = Buffer.contents buf in
-        Buffer.reset buf ; result
+        Buffer.reset buf ;
+        result
       in
       let dotty_of_tree cluster_id tree =
         let get_root tree = match tree with Tree (root, _) -> root in

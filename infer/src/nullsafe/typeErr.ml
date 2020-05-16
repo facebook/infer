@@ -52,7 +52,8 @@ module InstrRef : InstrRefT = struct
 
   let gen instr_ref_gen =
     let node, ir = instr_ref_gen in
-    incr ir ; (node, !ir)
+    incr ir ;
+    (node, !ir)
 end
 
 (* InstrRef *)
@@ -357,7 +358,8 @@ let report_forall_issues_and_reset analysis_data ~nullsafe_mode =
     | None, _ ->
         ()
   in
-  H.iter iter err_tbl ; reset ()
+  H.iter iter err_tbl ;
+  reset ()
 
 
 let get_errors () =

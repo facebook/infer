@@ -138,7 +138,8 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
       let init_set = S.singleton start_node in
       let init_statemap =
         let m = H.create 1 in
-        H.replace m start_node state ; m
+        H.replace m start_node state ;
+        m
       in
       { worklist= init_set
       ; pre_states= init_statemap

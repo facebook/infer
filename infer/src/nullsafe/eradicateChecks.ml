@@ -75,7 +75,8 @@ let check_condition_for_redundancy
       if Location.equal loc (Procdesc.Node.get_loc n) then
         Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs n)
     in
-    Procdesc.iter_nodes do_node pdesc ; !throwable_found
+    Procdesc.iter_nodes do_node pdesc ;
+    !throwable_found
   in
   let from_try_with_resources () : bool =
     (* heuristic to check if the condition is the translation of try-with-resources *)

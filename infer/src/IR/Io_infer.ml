@@ -56,7 +56,8 @@ h1 { font-size:14pt }
 <body>
 |}
     in
-    F.pp_print_string fmt s ; (fd, fmt)
+    F.pp_print_string fmt s ;
+    (fd, fmt)
 
 
   (** Get the full html filename from a path *)

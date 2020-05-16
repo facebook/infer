@@ -101,7 +101,8 @@ let make properties =
     let vcount = Array.length states in
     let a = Array.create ~len:vcount [] in
     let f i t = a.(t.source) <- i :: a.(t.source) in
-    Array.iteri ~f transitions ; a
+    Array.iteri ~f transitions ;
+    a
   in
   let max_args =
     let llen l = Option.value_map ~default:0 ~f:List.length l.ToplAst.arguments in
@@ -125,7 +126,8 @@ let make properties =
       in
       List.iter ~f:set_nondet nondet
     in
-    List.iter ~f properties ; a
+    List.iter ~f properties ;
+    a
   in
   let skips : bool array =
     (* TODO(rgrigore): Rename "anys"? *)

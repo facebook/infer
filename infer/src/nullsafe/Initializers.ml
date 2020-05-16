@@ -44,7 +44,8 @@ let final_typestates initializers_current_class tenv typecheck_proc =
       in
       List.iter ~f:do_called private_called
     in
-    List.iter ~f:do_proc initializers ; !res
+    List.iter ~f:do_proc initializers ;
+    !res
   in
   (* Get the initializers recursively called by computing a fixpoint.
      Start from the initializers of the current class and the current procedure. *)
@@ -64,7 +65,9 @@ let final_typestates initializers_current_class tenv typecheck_proc =
       mark_seen initializers_new' ;
       if not (List.is_empty initializers_new') then fixpoint initializers_new'
     in
-    mark_seen initializers_base_case ; fixpoint initializers_base_case ; !res
+    mark_seen initializers_base_case ;
+    fixpoint initializers_base_case ;
+    !res
   in
   (* Get the final typestates of all the initializers. *)
   let final_typestates = ref [] in

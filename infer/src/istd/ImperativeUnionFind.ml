@@ -83,7 +83,8 @@ module Make (Set : Set) = struct
           set
       | None ->
           let set = Set.create (r :> Set.elt) in
-          H.replace t r set ; set
+          H.replace t r set ;
+          set
 
 
     let fold = H.fold
@@ -146,7 +147,8 @@ module Make (Set : Set) = struct
     t.nb_iterators <- t.nb_iterators + 1 ;
     match IContainer.filter ~fold:Sets.fold ~filter:(is_still_a_repr t) t.sets ~init ~f with
     | result ->
-        after_fold t ; result
+        after_fold t ;
+        result
     | exception e ->
         (* Ensures [nb_iterators] is correct *)
         IExn.reraise_after ~f:(fun () -> after_fold t) e

@@ -102,7 +102,8 @@ let formals_from_signature program tenv cn ms kind =
   let method_name = JBasics.ms_name ms in
   let get_arg_name () =
     let arg = method_name ^ "_arg_" ^ string_of_int !counter in
-    incr counter ; Mangled.from_string arg
+    incr counter ;
+    Mangled.from_string arg
   in
   let collect l vt =
     let arg_name = get_arg_name () in

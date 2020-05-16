@@ -179,7 +179,8 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     if Config.debug_mode then
       DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc ;
     let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
-    add_active callee_pname ; initial_callee_summary
+    add_active callee_pname ;
+    initial_callee_summary
   in
   let postprocess summary =
     decr nesting ;
@@ -223,7 +224,9 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
         | TaskSchedulerTypes.ProcnameAlreadyLocked _ ->
-            clear_actives () ; restore_global_state old_state ; true
+            clear_actives () ;
+            restore_global_state old_state ;
+            true
         | _ ->
             if not !logged_error then (
               let source_file = attributes.ProcAttributes.translation_unit in

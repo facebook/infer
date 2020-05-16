@@ -203,7 +203,8 @@ module Variables = struct
 
   and visit_stmt_list stmt_list scope_map =
     List.fold stmt_list ~init:scope_map ~f:(fun scope_map stmt ->
-        L.debug Capture Verbose "@;" ; visit_stmt stmt scope_map )
+        L.debug Capture Verbose "@;" ;
+        visit_stmt stmt scope_map )
 
 
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}

@@ -29,7 +29,9 @@ let read_file fname =
       lines := line :: !lines
     done ;
     assert false (* execution never reaches here *)
-  with End_of_file -> In_channel.close cin ; Array.of_list_rev !lines
+  with End_of_file ->
+    In_channel.close cin ;
+    Array.of_list_rev !lines
 
 
 let file_data (hash : t) fname =
@@ -37,7 +39,8 @@ let file_data (hash : t) fname =
   with Caml.Not_found -> (
     try
       let lines_arr = read_file (SourceFile.to_abs_path fname) in
-      Hashtbl.add hash fname lines_arr ; Some lines_arr
+      Hashtbl.add hash fname lines_arr ;
+      Some lines_arr
     with exn when SymOp.exn_not_failure exn -> None )
 
 

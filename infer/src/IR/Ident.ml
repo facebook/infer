@@ -140,7 +140,9 @@ module NameGenerator = struct
         let stamp = NameHash.find !name_map name in
         NameHash.replace !name_map name (stamp + 1) ;
         stamp + 1
-      with Caml.Not_found -> NameHash.add !name_map name 0 ; 0
+      with Caml.Not_found ->
+        NameHash.add !name_map name 0 ;
+        0
     in
     {kind; name; stamp}
 
@@ -261,4 +263,5 @@ let counts_of_sequence seq =
   let h = Hash.create (Sequence.length seq) in
   let get id = Option.value (Hash.find_opt h id) ~default:0 in
   let bump id = Hash.replace h id (1 + get id) in
-  Sequence.iter ~f:bump seq ; get
+  Sequence.iter ~f:bump seq ;
+  get

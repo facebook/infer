@@ -222,7 +222,8 @@ end = struct
               () ) ;
           iterate (hpred :: sigma_seen) sigma_rest
     in
-    iterate [] sigma ; !found
+    iterate [] sigma ;
+    !found
 
 
   (** Get the matched strexp *)
@@ -508,16 +509,26 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
   if Config.trace_absarray && not footprint_part then L.d_strln "strexp_do_abstract (nonfootprint)" ;
   let prune_and_blur d_keys keep blur path keep_keys blur_keys =
     let p2, changed2 =
-      if Config.trace_absarray then (L.d_str "keep " ; d_keys keep_keys ; L.d_ln ()) ;
+      if Config.trace_absarray then (
+        L.d_str "keep " ;
+        d_keys keep_keys ;
+        L.d_ln () ) ;
       keep p path keep_keys
     in
     let p3, changed3 =
       if List.is_empty blur_keys then (p2, false)
       else (
-        if Config.trace_absarray then (L.d_str "blur " ; d_keys blur_keys ; L.d_ln ()) ;
+        if Config.trace_absarray then (
+          L.d_str "blur " ;
+          d_keys blur_keys ;
+          L.d_ln () ) ;
         blur p2 path blur_keys )
     in
-    if Config.trace_absarray then (L.d_strln "Returns" ; Prop.d_prop p3 ; L.d_ln () ; L.d_ln ()) ;
+    if Config.trace_absarray then (
+      L.d_strln "Returns" ;
+      Prop.d_prop p3 ;
+      L.d_ln () ;
+      L.d_ln () ) ;
     (p3, changed2 || changed3)
   in
   let prune_and_blur_indices =
@@ -548,7 +559,10 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
     let keep_ksel = List.filter ~f:should_keep ksel in
     let keep_keys = List.map ~f:fst keep_ksel in
     let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
-    if Config.trace_absarray then (L.d_str "keep " ; d_keys keep_keys' ; L.d_ln ()) ;
+    if Config.trace_absarray then (
+      L.d_str "keep " ;
+      d_keys keep_keys' ;
+      L.d_ln () ) ;
     abstract keep_keys' []
   in
   let do_array_reexecution esel =
@@ -625,7 +639,8 @@ let check_after_array_abstraction tenv prop =
   in
   let check_sigma sigma = List.iter ~f:check_hpred sigma in
   (* check_footprint_pure prop; *)
-  check_sigma prop.Prop.sigma ; check_sigma prop.Prop.sigma_fp
+  check_sigma prop.Prop.sigma ;
+  check_sigma prop.Prop.sigma_fp
 
 
 (** Apply array abstraction and check the result *)

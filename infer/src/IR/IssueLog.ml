@@ -55,7 +55,8 @@ let load entry =
              (fun _ issues1 issues2 ->
                match (issues1, issues2) with
                | Some issues1, Some issues2 ->
-                   Errlog.update issues1 issues2 ; Some issues1
+                   Errlog.update issues1 issues2 ;
+                   Some issues1
                | Some issues1, None ->
                    Some issues1
                | None, Some issues2 ->

@@ -162,7 +162,8 @@ end = struct
       with Caml.Not_found ->
         Hashtbl.add err_per_line err_data.loc.Location.line (String.Set.singleton err_str)
     in
-    Errlog.iter add_err err_log ; err_per_line
+    Errlog.iter add_err err_log ;
+    err_per_line
 
 
   (** Create error message for html file *)
@@ -287,7 +288,8 @@ end = struct
     fun node ->
       let file = (Procdesc.Node.get_loc node).Location.file in
       if not (Hashtbl.mem written_files file) then (
-        write_all_html_files file ; Hashtbl.add written_files file () )
+        write_all_html_files file ;
+        Hashtbl.add written_files file () )
 end
 
 (* =============== Printing functions =============== *)

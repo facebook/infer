@@ -212,7 +212,12 @@ end = struct
         actuals
     in
     let guard_action ~f ~error =
-      match actuals with [guard] -> f guard | _ -> log_parse_error error ; NoEffect
+      match actuals with
+      | [guard] ->
+          f guard
+      | _ ->
+          log_parse_error error ;
+          NoEffect
     in
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
     if is_std_lock pname then Lock actuals

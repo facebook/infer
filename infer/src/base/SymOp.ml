@@ -25,7 +25,8 @@ let exn_not_failure = function Analysis_failure_exe _ -> false | _ -> true
 let try_finally ~f ~finally =
   match f () with
   | r ->
-      finally () ; r
+      finally () ;
+      r
   | exception (Analysis_failure_exe _ as f_exn) ->
       IExn.reraise_after f_exn ~f:(fun () ->
           try finally () with _ -> (* swallow in favor of the original exception *) () )
@@ -112,7 +113,8 @@ let unset_wallclock_alarm () = !gs.last_wallclock <- None
 let check_wallclock_alarm () =
   match (!gs.last_wallclock, !wallclock_timeout_handler) with
   | Some alarm_time, Some handler when Float.(Unix.gettimeofday () >= alarm_time) ->
-      unset_wallclock_alarm () ; handler ()
+      unset_wallclock_alarm () ;
+      handler ()
   | _ ->
       ()
 

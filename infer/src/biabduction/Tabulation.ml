@@ -806,7 +806,9 @@ let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; _} as analy
   Prop.d_sigma split.frame_fld ;
   L.d_ln () ;
   if not (List.is_empty split.frame_typ) then (
-    L.d_strln "Frame typ:" ; Prover.d_typings split.frame_typ ; L.d_ln () ) ;
+    L.d_strln "Frame typ:" ;
+    Prover.d_typings split.frame_typ ;
+    L.d_ln () ) ;
   L.d_strln "Missing fld:" ;
   Prop.d_sigma split.missing_fld ;
   L.d_ln () ;
@@ -926,7 +928,8 @@ let mk_actual_precondition tenv prop actual_params formal_params =
               ^ string_of_int (List.length formal_params)
               ^ ")"
             in
-            L.d_warning str ; L.d_ln () ) ;
+            L.d_warning str ;
+            L.d_ln () ) ;
           []
       | _ :: _, [] ->
           raise (Exceptions.Wrong_argument_number __POS__)
@@ -1249,7 +1252,11 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
   let deref_errors =
     List.filter ~f:(function Dereference_error _ -> true | _ -> false) invalid_res
   in
-  let print_pi pi = L.d_str "pi: " ; Prop.d_pi pi ; L.d_ln () in
+  let print_pi pi =
+    L.d_str "pi: " ;
+    Prop.d_pi pi ;
+    L.d_ln ()
+  in
   let call_desc kind_opt = Localise.desc_precondition_not_met kind_opt callee_pname loc in
   let res_with_path_idents =
     if !BiabductionConfig.footprint then
@@ -1325,7 +1332,8 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
               in
               State.add_diverging_states (Paths.PathSet.from_renamed_list incons_res)
           in
-          save_diverging_states () ; vr.vr_cons_res
+          save_diverging_states () ;
+          vr.vr_cons_res
         in
         List.map
           ~f:(fun (p, path) -> (prop_pure_to_footprint tenv p, path))

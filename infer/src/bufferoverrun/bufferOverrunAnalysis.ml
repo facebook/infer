@@ -463,7 +463,8 @@ let cached_compute_invariant_map =
         inv_map
     | None ->
         let inv_map = compute_invariant_map analysis_data in
-        cache_set pname inv_map ; inv_map
+        cache_set pname inv_map ;
+        inv_map
 
 
 let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =

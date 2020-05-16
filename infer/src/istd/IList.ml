@@ -195,7 +195,14 @@ let pp_print_list ~max ?(pp_sep = Format.pp_print_cut) pp_v ppf =
           pp_v ppf v ;
           aux (n + 1) rest )
   in
-  function [] -> () | [v] -> pp_v ppf v | v :: rest -> pp_v ppf v ; aux 1 rest
+  function
+  | [] ->
+      ()
+  | [v] ->
+      pp_v ppf v
+  | v :: rest ->
+      pp_v ppf v ;
+      aux 1 rest
 
 
 let fold2_result ~init ~f l1 l2 =

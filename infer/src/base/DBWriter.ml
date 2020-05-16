@@ -288,7 +288,11 @@ module Server = struct
        the number of workers, though even that is a guess. *)
     Unix.listen socket ~backlog:Config.jobs ;
     L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
-    let shutdown () = in_results_dir ~f:(fun () -> Unix.close socket ; Unix.remove socket_name) in
+    let shutdown () =
+      in_results_dir ~f:(fun () ->
+          Unix.close socket ;
+          Unix.remove socket_name )
+    in
     Utils.try_finally_swallow_timeout ~f:(fun () -> server_loop socket) ~finally:shutdown
 
 
@@ -311,7 +315,8 @@ module Server = struct
   let start () =
     match Unix.fork () with
     | `In_the_child ->
-        ForkUtils.protect ~f:server () ; L.exit 0
+        ForkUtils.protect ~f:server () ;
+        L.exit 0
     | `In_the_parent _child_pid ->
         (* wait for socket to appear, try 5 times, with a 0.1 sec timeout each time ;
            choice of numbers is completely arbitrary *)

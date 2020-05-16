@@ -396,7 +396,9 @@ let forward_tabulate ({InterproceduralAnalysis.proc_desc; err_log; tenv; _} as a
     in
     ( match pre_opt with
     | Some pre ->
-        L.d_strln "Precondition:" ; Prop.d_prop pre ; L.d_ln ()
+        L.d_strln "Precondition:" ;
+        Prop.d_prop pre ;
+        L.d_ln ()
     | None ->
         () ) ;
     L.d_strln "SIL INSTR:" ;
@@ -408,7 +410,11 @@ let forward_tabulate ({InterproceduralAnalysis.proc_desc; err_log; tenv; _} as a
   let exe_iter f pathset =
     let ps_size = Paths.PathSet.size pathset in
     let cnt = ref 0 in
-    let exe prop path = State.set_path path None ; incr cnt ; f prop path !cnt ps_size in
+    let exe prop path =
+      State.set_path path None ;
+      incr cnt ;
+      f prop path !cnt ps_size
+    in
     Paths.PathSet.iter exe pathset
   in
   let print_node_preamble curr_node pathset_todo =
@@ -489,7 +495,8 @@ let remove_locals_formals_and_check {InterproceduralAnalysis.proc_desc; err_log;
       let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
       BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Exceptions.Warning exn
   in
-  List.iter ~f:check_pvar pvars ; p'
+  List.iter ~f:check_pvar pvars ;
+  p'
 
 
 (** Collect the analysis results for the exit node. *)
@@ -739,7 +746,8 @@ let execute_filter_prop ({InterproceduralAnalysis.tenv; _} as analysis_data) pro
             precondition
         in
         let spec = BiabductionSummary.{pre; posts; visited} in
-        L.d_decrease_indent () ; Some spec )
+        L.d_decrease_indent () ;
+        Some spec )
   with RE_EXE_ERROR ->
     AnalysisCallbacks.html_debug_new_node_session ~pp_name init_node ~f:(fun () ->
         L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Procname.pp pname ;

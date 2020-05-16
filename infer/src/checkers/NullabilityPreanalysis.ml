@@ -41,7 +41,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr astate id_table _ instr =
     match instr with
     | Sil.Load {id; e= exp} ->
-        Ident.Hash.add id_table id exp ; astate
+        Ident.Hash.add id_table id exp ;
+        astate
     | Sil.Store {e1= Exp.Lfield (Exp.Var lhs_id, name, typ); typ= exp_typ; e2= rhs} -> (
       match exp_typ.Typ.desc with
       (* block field of a ObjC class *)

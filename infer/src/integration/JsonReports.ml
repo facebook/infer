@@ -303,7 +303,8 @@ let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname 
 
 (** Process a summary *)
 let process_summary ~costs_outf summary issues_acc =
-  write_costs summary costs_outf ; collect_issues summary issues_acc
+  write_costs summary costs_outf ;
+  collect_issues summary issues_acc
 
 
 let process_all_summaries_and_issues ~issues_outf ~costs_outf =

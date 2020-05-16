@@ -324,7 +324,8 @@ and prune_inter tenv ~positive condition1 condition2 prop =
   let res = ref Propset.empty in
   let pset1 = prune tenv ~positive condition1 prop in
   let do_p p = res := Propset.union (prune tenv ~positive condition2 p) !res in
-  Propset.iter do_p pset1 ; !res
+  Propset.iter do_p pset1 ;
+  !res
 
 
 and prune_union tenv ~positive condition1 condition2 prop =

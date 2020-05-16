@@ -83,7 +83,8 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
             Node.IdMap.add node_id BasicCost.zero bound_map )
   in
   let bound_map = NodeCFG.fold_nodes node_cfg ~f:compute_node_upper_bound ~init:Node.IdMap.empty in
-  print_upper_bound_map bound_map ; bound_map
+  print_upper_bound_map bound_map ;
+  bound_map
 
 
 let lookup_upperbound bound_map nid =

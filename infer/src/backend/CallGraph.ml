@@ -52,7 +52,10 @@ module NodeMap = Caml.Hashtbl.Make (Int)
     [trim_id_map] makes the image equal to the domain of [node_map]. *)
 type t = {id_map: int IdMap.t; node_map: Node.t NodeMap.t}
 
-let reset {id_map; node_map} = IdMap.reset id_map ; NodeMap.reset node_map
+let reset {id_map; node_map} =
+  IdMap.reset id_map ;
+  NodeMap.reset node_map
+
 
 let create initial_capacity =
   {id_map= IdMap.create initial_capacity; node_map= NodeMap.create initial_capacity}
@@ -80,7 +83,8 @@ let get_or_set_id ({id_map} as graph) procname =
   match id_of_procname graph procname with
   | None ->
       let id = IdMap.length id_map in
-      IdMap.replace id_map procname id ; id
+      IdMap.replace id_map procname id ;
+      id
   | Some id ->
       id
 
@@ -98,7 +102,8 @@ let get_or_init_node node_map id pname =
       node
   | None ->
       let new_node = Node.make id pname [] in
-      NodeMap.add node_map id new_node ; new_node
+      NodeMap.add node_map id new_node ;
+      new_node
 
 
 let add_edge ({node_map} as graph) ~pname ~successor_pname =
@@ -135,7 +140,8 @@ let pp_dot fmt {node_map} =
 let to_dotty g filename =
   let outc = Filename.concat Config.results_dir filename |> Out_channel.create in
   let fmt = F.formatter_of_out_channel outc in
-  pp_dot fmt g ; Out_channel.close outc
+  pp_dot fmt g ;
+  Out_channel.close outc
 
 
 let iter_unflagged_leaves ~f g =

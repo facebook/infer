@@ -80,7 +80,8 @@ let pp_custom_of_report fmt report fields =
           Option.iter nullsafe_extra ~f:(fun nullsafe_extra ->
               F.fprintf fmt "%s%a" (comma_separator index) pp_nullsafe_extra nullsafe_extra )
     in
-    List.iteri ~f:pp_field fields ; F.fprintf fmt "@."
+    List.iteri ~f:pp_field fields ;
+    F.fprintf fmt "@."
   in
   List.iter ~f:(pp_custom_of_issue fmt) report
 

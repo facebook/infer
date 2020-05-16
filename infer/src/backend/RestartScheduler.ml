@@ -24,7 +24,8 @@ let of_list (lst : work_with_dependency list) : ('a, Procname.t) ProcessPool.Tas
   let work_if_dependency_allows w =
     match w.need_to_finish with
     | Some pname when ProcLocker.is_locked pname ->
-        Queue.enqueue content w ; None
+        Queue.enqueue content w ;
+        None
     | None | Some _ ->
         Some w.work
   in
@@ -107,7 +108,8 @@ let unlock pname =
               caller.callees_useful <-
                 ExecutionDuration.add_duration_since caller.callees_useful start
           | None ->
-              add_to_useful_time start ; add_to_total_time start ) ;
+              add_to_useful_time start ;
+              add_to_total_time start ) ;
           ProcLocker.unlock pname )
 
 

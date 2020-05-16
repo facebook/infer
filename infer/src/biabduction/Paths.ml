@@ -172,13 +172,19 @@ end = struct
       | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
       | Pnode (_, _, _, path, stats, _) | Pcall (path, _, ExecSkipped _, stats) ->
-          if not (stats_is_dummy stats) then (reset_stats path ; set_dummy_stats stats)
+          if not (stats_is_dummy stats) then (
+            reset_stats path ;
+            set_dummy_stats stats )
       | Pjoin (path1, path2, stats) ->
           if not (stats_is_dummy stats) then (
-            reset_stats path1 ; reset_stats path2 ; set_dummy_stats stats )
+            reset_stats path1 ;
+            reset_stats path2 ;
+            set_dummy_stats stats )
       | Pcall (path1, _, ExecCompleted path2, stats) ->
           if not (stats_is_dummy stats) then (
-            reset_stats path1 ; reset_stats path2 ; set_dummy_stats stats )
+            reset_stats path1 ;
+            reset_stats path2 ;
+            set_dummy_stats stats )
 
 
     (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are
@@ -218,7 +224,8 @@ end = struct
             let stats2 =
               match do_calls with
               | true ->
-                  compute_stats do_calls f path2 ; get_stats path2
+                  compute_stats do_calls f path2 ;
+                  get_stats path2
               | false ->
                   {max_length= 0; linear_num= 0.0}
             in
@@ -228,13 +235,17 @@ end = struct
                   (* already found in call, no need to search before the call *)
                 else f
               in
-              compute_stats do_calls f' path1 ; get_stats path1
+              compute_stats do_calls f' path1 ;
+              get_stats path1
             in
             stats.max_length <- stats1.max_length + stats2.max_length ;
             stats.linear_num <- stats1.linear_num )
       | Pcall (path, _, ExecSkipped _, stats) ->
           if stats_is_dummy stats then (
-            let stats1 = compute_stats do_calls f path ; get_stats path in
+            let stats1 =
+              compute_stats do_calls f path ;
+              get_stats path
+            in
             stats.max_length <- stats1.max_length ;
             stats.linear_num <- stats1.linear_num )
   end
@@ -295,7 +306,8 @@ end = struct
           doit (level + 1) session p2 next_exn_opt
       | Pcall (p, _, ExecSkipped _, _) ->
           let next_exn_opt = None in
-          doit level session p next_exn_opt ; f level path session prev_exn_opt
+          doit level session p next_exn_opt ;
+          f level path session prev_exn_opt
     in
     Invariant.compute_stats true filter path ;
     doit 0 0 path None ;
@@ -407,7 +419,10 @@ end = struct
             add_delayed p
         | Pjoin (p1, p2, _) | Pcall (p1, _, ExecCompleted p2, _) ->
             (* delay paths occurring in a join *)
-            add_delayed p1 ; add_delayed p2 ; add_path p1 ; add_path p2
+            add_delayed p1 ;
+            add_delayed p2 ;
+            add_path p1 ;
+            add_path p2
     in
     let rec doit n fmt path =
       try
@@ -430,9 +445,12 @@ end = struct
     let print_delayed () =
       if not (PathMap.is_empty !delayed) then (
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
-        F.fprintf fmt "where@\n" ; PathMap.iter f !delayed )
+        F.fprintf fmt "where@\n" ;
+        PathMap.iter f !delayed )
     in
-    add_delayed path ; doit 0 fmt path ; print_delayed ()
+    add_delayed path ;
+    doit 0 fmt path ;
+    print_delayed ()
 
 
   let create_loc_trace path pos_opt : Errlog.loc_trace =
@@ -606,7 +624,8 @@ end = struct
   let elements ps =
     let plist = ref [] in
     let f prop path = plist := (prop, path) :: !plist in
-    PropMap.iter f ps ; !plist
+    PropMap.iter f ps ;
+    !plist
 
 
   let to_proplist ps = List.map ~f:fst (elements ps)
@@ -656,7 +675,8 @@ end = struct
         then res := PropMap.remove p !res
       with Caml.Not_found -> res := PropMap.remove p !res
     in
-    PropMap.iter rem ps2 ; !res
+    PropMap.iter rem ps2 ;
+    !res
 
 
   let is_empty = PropMap.is_empty
@@ -670,7 +690,8 @@ end = struct
     let do_elem prop path =
       match f prop with None -> () | Some prop' -> res := add_renamed_prop prop' path !res
     in
-    iter do_elem ps ; !res
+    iter do_elem ps ;
+    !res
 
 
   let map f ps = map_option (fun p -> Some (f p)) ps

@@ -56,7 +56,9 @@ let setup () =
       if
         CLOpt.is_originator && (not Config.continue_capture)
         && not (Driver.is_analyze_mode driver_mode)
-      then ( db_start () ; SourceFiles.mark_all_stale () )
+      then (
+        db_start () ;
+        SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first" ) ;
   db_start () ;
@@ -109,7 +111,9 @@ let log_environment_info () =
   | Some available_memory ->
       L.environment_info "Available memory at startup: %d MB@\n" available_memory ;
       ScubaLogging.log_count ~label:"startup_mem_avail_MB" ~value:available_memory ) ;
-  print_active_checkers () ; print_scheduler () ; print_cores_used ()
+  print_active_checkers () ;
+  print_scheduler () ;
+  print_cores_used ()
 
 
 let () =
@@ -121,7 +125,8 @@ let () =
     | Ok () ->
         L.exit 0
     | Error e ->
-        print_endline e ; L.exit 3 ) ;
+        print_endline e ;
+        L.exit 3 ) ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then

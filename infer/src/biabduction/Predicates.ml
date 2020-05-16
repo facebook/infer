@@ -1115,7 +1115,10 @@ let create_sharing_env () = {exph= Exp.Hash.create 3; hpredh= HpredInstHash.crea
 
 (** Return a canonical representation of the exp *)
 let exp_compact sh e =
-  try Exp.Hash.find sh.exph e with Caml.Not_found -> Exp.Hash.add sh.exph e e ; e
+  try Exp.Hash.find sh.exph e
+  with Caml.Not_found ->
+    Exp.Hash.add sh.exph e e ;
+    e
 
 
 let rec sexp_compact sh se =

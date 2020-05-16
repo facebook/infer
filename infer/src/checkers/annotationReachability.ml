@@ -242,7 +242,8 @@ module CxxAnnotationSpecs = struct
   let debug_pred ~spec_name ~desc pred pname =
     L.d_printf "%s: Checking if `%a` is a %s... " spec_name Procname.pp pname desc ;
     let r = pred pname in
-    L.d_printf "%b %s.@." r desc ; r
+    L.d_printf "%b %s.@." r desc ;
+    r
 
 
   let at_least_one_nonempty ~src symbols symbol_regexps paths =
