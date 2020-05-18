@@ -113,31 +113,11 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
     if NullsafeMode.equal top_level_class_mode Default then
       match mode_to_promote_to with
       | Some mode_to_promote_to ->
-          (* This class is not @Nullsafe yet, but can become such! *)
-          let trust_none_mode =
-            "`@Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({}))`"
-          in
-          let trust_all_mode = "`@Nullsafe(Nullsafe.Mode.LOCAL)`" in
-          let promo_recommendation =
-            match mode_to_promote_to with
-            | NullsafeMode.Local NullsafeMode.Trust.All ->
-                trust_all_mode
-            | NullsafeMode.Local (NullsafeMode.Trust.Only trust_list)
-              when NullsafeMode.Trust.is_trust_none trust_list ->
-                trust_none_mode
-            | NullsafeMode.Strict
-            (* We don't recommend "strict" for now as it is harder to keep a class in strict mode than it "trust none" mode.
-               Trust none is almost as safe alternative, but adding a dependency will require just updating trust list,
-               without need to strictify it first. *) ->
-                trust_none_mode
-            | NullsafeMode.Default | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
-                Logging.die InternalError "Unexpected promotion mode"
-          in
           let message =
             Format.sprintf
-              "Congrats! `%s` is free of nullability issues. Mark it %s to prevent regressions."
+              "Congrats! `%s` is free of nullability issues. Mark it \
+               `@Nullsafe(Nullsafe.Mode.LOCAL)` to prevent regressions."
               (JavaClassName.classname top_level_class_name)
-              promo_recommendation
           in
           (IssueType.eradicate_meta_class_can_be_nullsafe, message, Exceptions.Advice)
       | None ->
