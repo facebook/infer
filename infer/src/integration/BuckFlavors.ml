@@ -73,8 +73,8 @@ let run_buck_build prog buck_build_args =
   *)
   let process_buck_line acc line =
     L.debug Capture Verbose "BUCK OUT: %s@." line ;
-    match String.split ~on:' ' line with
-    | [_; target_path] ->
+    match String.lsplit2 ~on:' ' line with
+    | Some (_, target_path) ->
         let filename =
           ResultsDirEntryName.get_path
             ~results_dir:(Config.project_root ^/ target_path)
