@@ -125,25 +125,19 @@ struct
           |> not )
 
 
-    (** Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
-        states in [lhs]. *)
-    let join_up_to_imply lhs rhs =
-      let rev_rhs_not_in_lhs = rev_filter_not_over_approximated rhs ~not_in:lhs in
-      (* cheeky: this is only used in pulse, whose (<=) is actually a symmetric relation so there's
-         no need to filter out elements of [lhs] *)
-      List.rev_append rev_rhs_not_in_lhs lhs
-
-
     let join : t -> t -> t =
-     fun lhs rhs ->
-      if phys_equal lhs rhs then lhs
-      else
-        match DConfig.join_policy with
-        | `NeverJoin ->
-            List.rev_append rhs lhs
-        | `UnderApproximateAfter n ->
-            let lhs_length = List.length lhs in
-            if lhs_length >= n then lhs else List.rev_append rhs lhs
+      let rec list_rev_append l1 l2 n =
+        match l1 with hd :: tl when n > 0 -> list_rev_append tl (hd :: l2) (n - 1) | _ -> l2
+      in
+      fun lhs rhs ->
+        if phys_equal lhs rhs then lhs
+        else
+          match DConfig.join_policy with
+          | `NeverJoin ->
+              List.rev_append rhs lhs
+          | `UnderApproximateAfter n ->
+              let lhs_length = List.length lhs in
+              if lhs_length >= n then lhs else list_rev_append rhs lhs (n - lhs_length)
 
 
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on
@@ -161,6 +155,15 @@ struct
 
 
     let leq ~lhs ~rhs = phys_equal lhs rhs || is_trivial_subset lhs ~of_:rhs
+
+    (** Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
+        states in [lhs]. *)
+    let join_up_to_imply lhs rhs =
+      let rev_rhs_not_in_lhs = rev_filter_not_over_approximated rhs ~not_in:lhs in
+      (* cheeky: this is only used in pulse, whose (<=) is actually a symmetric relation so there's
+         no need to filter out elements of [lhs] *)
+      join lhs rev_rhs_not_in_lhs
+
 
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
