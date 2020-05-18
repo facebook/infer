@@ -253,6 +253,16 @@ module Node = struct
       true )
 
 
+  (** Map and replace the instructions to be executed using a context *)
+  let replace_instrs_using_context node ~f ~update_context ~context_at_node =
+    let f node context instr = (update_context context instr, f node context instr) in
+    let instrs' = Instrs.map_and_fold node.instrs ~f:(f node) ~init:context_at_node in
+    if phys_equal instrs' node.instrs then false
+    else (
+      node.instrs <- instrs' ;
+      true )
+
+
   (** Like [replace_instrs], but 1 instr gets replaced by 0, 1, or more instructions. *)
   let replace_instrs_by node ~f =
     let instrs' = Instrs.concat_map node.instrs ~f:(f node) in
@@ -555,6 +565,14 @@ let update_nodes pdesc ~(update : Node.t -> bool) : bool =
 
 let replace_instrs pdesc ~f =
   let update node = Node.replace_instrs ~f node in
+  update_nodes pdesc ~update
+
+
+let replace_instrs_using_context pdesc ~f ~update_context ~context_at_node =
+  let update node =
+    Node.replace_instrs_using_context ~f ~update_context ~context_at_node:(context_at_node node)
+      node
+  in
   update_nodes pdesc ~update
 
 

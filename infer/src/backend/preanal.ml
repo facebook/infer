@@ -379,5 +379,6 @@ let do_preanalysis exe_env pdesc =
     FunctionPointerSubstitution.process pdesc ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
+  if Procname.is_java proc_name then Devirtualizer.process summary tenv ;
   NoReturn.process tenv pdesc ;
   ()
