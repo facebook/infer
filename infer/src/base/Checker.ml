@@ -10,7 +10,8 @@ open! IStd
 type t =
   | AnnotationReachability
   | Biabduction
-  | BufferOverrun
+  | BufferOverrunAnalysis
+  | BufferOverrunChecker
   | ClassLoads
   | Cost
   | Eradicate
@@ -38,13 +39,15 @@ type t =
 
 type support = NoSupport | Support | ExperimentalSupport | ToySupport
 
+type cli_flags = {long: string; deprecated: string list; show_in_help: bool}
+
 type config =
-  { support: Language.t -> support
+  { name: string
+  ; support: Language.t -> support
   ; short_documentation: string
-  ; cli_flag: string
-  ; show_in_help: bool
+  ; cli_flags: cli_flags option
   ; enabled_by_default: bool
-  ; cli_deprecated_flags: string list }
+  ; activates: t list }
 
 (* support for languages should be consistent with the corresponding
    callbacks registered. Or maybe with the issues reported in link
@@ -63,197 +66,210 @@ let config checker =
   in
   match checker with
   | AnnotationReachability ->
-      { support= supports_clang_and_java
+      { name= "annotation reachability"
+      ; support= supports_clang_and_java
       ; short_documentation=
           "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
            @PerformanceCritical and @Expensive, this checker will warn whenever some method \
            annotated with @PerformanceCritical calls, directly or indirectly, another method \
            annotated with @Expensive"
-      ; show_in_help= true
-      ; cli_flag= "annotation-reachability"
+      ; cli_flags= Some {long= "annotation-reachability"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Biabduction ->
-      { support= supports_clang_and_java
+      { name= "biabduction"
+      ; support= supports_clang_and_java
       ; short_documentation=
           "the separation logic based bi-abduction analysis using the checkers framework"
-      ; show_in_help= true
-      ; cli_flag= "biabduction"
+      ; cli_flags= Some {long= "biabduction"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
-  | BufferOverrun ->
-      { support= supports_clang_and_java
+      ; activates= [] }
+  | BufferOverrunAnalysis ->
+      { name= "buffer overrun analysis"
+      ; support= supports_clang_and_java
+      ; short_documentation=
+          "internal part of the buffer overrun analysis that computes values at each program \
+           point, automatically triggered when analyses that depend on these are run"
+      ; cli_flags= None
+      ; enabled_by_default= false
+      ; activates= [] }
+  | BufferOverrunChecker ->
+      { name= "buffer overrun checker"
+      ; support= supports_clang_and_java
       ; short_documentation= "the buffer overrun analysis"
-      ; show_in_help= true
-      ; cli_flag= "bufferoverrun"
+      ; cli_flags= Some {long= "bufferoverrun"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [BufferOverrunAnalysis] }
   | ClassLoads ->
-      { support= supports_java
+      { name= "Class loading analysis"
+      ; support= supports_java
       ; short_documentation= "Java class loading analysis"
-      ; show_in_help= true
-      ; cli_flag= "class-loads"
+      ; cli_flags= Some {long= "class-loads"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Cost ->
-      { support= supports_clang_and_java
+      { name= "cost analysis"
+      ; support= supports_clang_and_java
       ; short_documentation= "checker for performance cost analysis"
-      ; show_in_help= true
-      ; cli_flag= "cost"
+      ; cli_flags= Some {long= "cost"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [BufferOverrunAnalysis] }
   | Eradicate ->
-      { support= supports_java
+      { name= "eradicate"
+      ; support= supports_java
       ; short_documentation= "the eradicate @Nullable checker for Java annotations"
-      ; show_in_help= true
-      ; cli_flag= "eradicate"
+      ; cli_flags= Some {long= "eradicate"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | FragmentRetainsView ->
-      { support= supports_java
+      { name= "fragment retains view"
+      ; support= supports_java
       ; short_documentation=
           "detects when Android fragments are not explicitly nullified before becoming unreabable"
-      ; show_in_help= true
-      ; cli_flag= "fragment-retains-view"
+      ; cli_flags= Some {long= "fragment-retains-view"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | ImmutableCast ->
-      { support= supports_java
+      { name= "immutable cast"
+      ; support= supports_java
       ; short_documentation=
           "the detection of object cast from immutable type to mutable type. For instance, it will \
            detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
-      ; show_in_help= true
-      ; cli_flag= "immutable-cast"
+      ; cli_flags= Some {long= "immutable-cast"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Impurity ->
-      { support= supports_clang_and_java_experimental
+      { name= "impurity"
+      ; support= supports_clang_and_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Impurity analysis"
-      ; show_in_help= true
-      ; cli_flag= "impurity"
+      ; cli_flags= Some {long= "impurity"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [Pulse] }
   | InefficientKeysetIterator ->
-      { support= supports_java
+      { name= "inefficient keyset iterator"
+      ; support= supports_java
       ; short_documentation=
           "Check for inefficient uses of keySet iterator that access both the key and the value."
-      ; show_in_help= true
-      ; cli_flag= "inefficient-keyset-iterator"
+      ; cli_flags= Some {long= "inefficient-keyset-iterator"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Linters ->
-      { support= supports_clang
+      { name= "AST Language (AL) linters"
+      ; support= supports_clang
       ; short_documentation= "syntactic linters"
-      ; show_in_help= true
-      ; cli_flag= "linters"
+      ; cli_flags= Some {long= "linters"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | LithoRequiredProps ->
-      { support= supports_java_experimental
+      { name= "litho-required-props"
+      ; support= supports_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Required Prop check for Litho"
-      ; show_in_help= true
-      ; cli_flag= "litho-required-props"
+      ; cli_flags= Some {long= "litho-required-props"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Liveness ->
-      { support= supports_clang
+      { name= "liveness"
+      ; support= supports_clang
       ; short_documentation= "the detection of dead stores and unused variables"
-      ; show_in_help= true
-      ; cli_flag= "liveness"
+      ; cli_flags= Some {long= "liveness"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | LoopHoisting ->
-      { support= supports_clang_and_java
+      { name= "loop hoisting"
+      ; support= supports_clang_and_java
       ; short_documentation= "checker for loop-hoisting"
-      ; show_in_help= true
-      ; cli_flag= "loop-hoisting"
+      ; cli_flags= Some {long= "loop-hoisting"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [BufferOverrunAnalysis; Purity] }
   | NullsafeDeprecated ->
-      { support= (fun _ -> NoSupport)
+      { name= "nullsafe"
+      ; support= (fun _ -> NoSupport)
       ; short_documentation= "[RESERVED] Reserved for nullsafe typechecker, use --eradicate for now"
-      ; show_in_help= false
-      ; cli_flag= "nullsafe"
+      ; cli_flags=
+          Some
+            { long= "nullsafe"
+            ; deprecated= ["-check-nullable"; "-suggest-nullable"]
+            ; show_in_help= false }
       ; enabled_by_default= false
-      ; cli_deprecated_flags= ["-check-nullable"; "-suggest-nullable"] }
+      ; activates= [] }
   | PrintfArgs ->
-      { support= supports_java
+      { name= "printf args"
+      ; support= supports_java
       ; short_documentation=
           "the detection of mismatch between the Java printf format strings and the argument types \
            For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
            \"world\")`"
-      ; show_in_help= true
-      ; cli_flag= "printf-args"
+      ; cli_flags= Some {long= "printf-args"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Pulse ->
-      { support= supports_clang_and_java_experimental
+      { name= "pulse"
+      ; support= supports_clang_and_java_experimental
       ; short_documentation= "[EXPERIMENTAL] memory and lifetime analysis"
-      ; show_in_help= true
-      ; cli_flag= "pulse"
+      ; cli_flags= Some {long= "pulse"; deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= ["-ownership"] }
+      ; activates= [] }
   | Purity ->
-      { support= supports_clang_and_java_experimental
+      { name= "purity"
+      ; support= supports_clang_and_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Purity analysis"
-      ; show_in_help= true
-      ; cli_flag= "purity"
+      ; cli_flags= Some {long= "purity"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [BufferOverrunAnalysis] }
   | Quandary ->
-      { support= supports_clang_and_java
+      { name= "quandary"
+      ; support= supports_clang_and_java
       ; short_documentation= "the quandary taint analysis"
-      ; show_in_help= true
-      ; cli_flag= "quandary"
+      ; cli_flags= Some {long= "quandary"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | RacerD ->
-      { support= supports_clang_and_java
+      { name= "RacerD"
+      ; support= supports_clang_and_java
       ; short_documentation= "the RacerD thread safety analysis"
-      ; show_in_help= true
-      ; cli_flag= "racerd"
+      ; cli_flags= Some {long= "racerd"; deprecated= ["-threadsafety"]; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= ["-threadsafety"] }
+      ; activates= [] }
   | ResourceLeakLabExercise ->
-      { support= (fun _ -> ToySupport)
+      { name= "resource leak lab exercise"
+      ; support= (fun _ -> ToySupport)
       ; short_documentation= ""
-      ; show_in_help= false
-      ; cli_flag= "resource-leak"
+      ; cli_flags= Some {long= "resource-leak"; deprecated= []; show_in_help= false}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | SIOF ->
-      { support= supports_clang
+      { name= "SIOF"
+      ; support= supports_clang
       ; short_documentation= "the Static Initialization Order Fiasco analysis (C++ only)"
-      ; show_in_help= true
-      ; cli_flag= "siof"
+      ; cli_flags= Some {long= "siof"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | SelfInBlock ->
-      { support= supports_clang
+      { name= "Self captured in block checker"
+      ; support= supports_clang
       ; short_documentation=
           "checker to flag incorrect uses of when Objective-C blocks capture self"
-      ; show_in_help= true
-      ; cli_flag= "self_in_block"
+      ; cli_flags= Some {long= "self_in_block"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | Starvation ->
-      { support= supports_clang_and_java
+      { name= "Starvation analysis"
+      ; support= supports_clang_and_java
       ; short_documentation= "starvation analysis"
-      ; show_in_help= true
-      ; cli_flag= "starvation"
+      ; cli_flags= Some {long= "starvation"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }
   | TOPL ->
-      { support= supports_clang_and_java_experimental
+      { name= "TOPL"
+      ; support= supports_clang_and_java_experimental
       ; short_documentation= "TOPL"
-      ; show_in_help= true
-      ; cli_flag= "topl"
+      ; cli_flags= Some {long= "topl"; deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; cli_deprecated_flags= [] }
+      ; activates= [Biabduction] }
   | Uninit ->
-      { support= supports_clang
+      { name= "uninitialized variables"
+      ; support= supports_clang
       ; short_documentation= "checker for use of uninitialized values"
-      ; show_in_help= true
-      ; cli_flag= "uninit"
+      ; cli_flags= Some {long= "uninit"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; cli_deprecated_flags= [] }
+      ; activates= [] }

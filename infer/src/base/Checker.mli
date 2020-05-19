@@ -10,7 +10,8 @@ open! IStd
 type t =
   | AnnotationReachability
   | Biabduction
-  | BufferOverrun
+  | BufferOverrunAnalysis
+  | BufferOverrunChecker
   | ClassLoads
   | Cost
   | Eradicate
@@ -45,15 +46,21 @@ type support =
       (** the checker is for teaching purposes only (like experimental but with no plans to improve
           it) *)
 
+type cli_flags =
+  { long: string
+        (** The flag to enable this option on the command line, without the leading "--" (like the
+            [~long] argument of {!CommandLineOption} functions). *)
+  ; deprecated: string list
+        (** More command-line flags, similar to [~deprecated] arguments in {!CommandLineOption}. *)
+  ; show_in_help: bool }
+
 type config =
-  { support: Language.t -> support
+  { name: string
+  ; support: Language.t -> support
   ; short_documentation: string
-  ; cli_flag: string
-        (** the flag to enable this option on the command line, without the leading "--" (like the
-            [~long] argument of [CommandLineOption] functions) *)
-  ; show_in_help: bool
+  ; cli_flags: cli_flags option
+        (** If [None] then the checker cannot be enabled/disabled from the command line. *)
   ; enabled_by_default: bool
-  ; cli_deprecated_flags: string list
-        (** more command-line flags, similar to [~deprecated] arguments *) }
+  ; activates: t list  (** TODO doc *) }
 
 val config : t -> config

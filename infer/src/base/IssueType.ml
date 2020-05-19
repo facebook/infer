@@ -137,23 +137,29 @@ let assert_failure = register_from_string ~id:"Assert_failure" [Biabduction]
 
 let bad_footprint = register_from_string ~id:"Bad_footprint" [Biabduction]
 
-let buffer_overrun_l1 = register_from_string ~id:"BUFFER_OVERRUN_L1" [BufferOverrun]
+let buffer_overrun_l1 = register_from_string ~id:"BUFFER_OVERRUN_L1" [BufferOverrunChecker]
 
-let buffer_overrun_l2 = register_from_string ~id:"BUFFER_OVERRUN_L2" [BufferOverrun]
+let buffer_overrun_l2 = register_from_string ~id:"BUFFER_OVERRUN_L2" [BufferOverrunChecker]
 
-let buffer_overrun_l3 = register_from_string ~id:"BUFFER_OVERRUN_L3" [BufferOverrun]
+let buffer_overrun_l3 = register_from_string ~id:"BUFFER_OVERRUN_L3" [BufferOverrunChecker]
 
-let buffer_overrun_l4 = register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L4" [BufferOverrun]
+let buffer_overrun_l4 =
+  register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L4" [BufferOverrunChecker]
 
-let buffer_overrun_l5 = register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L5" [BufferOverrun]
 
-let buffer_overrun_r2 = register_from_string ~id:"BUFFER_OVERRUN_R2" [BufferOverrun]
+let buffer_overrun_l5 =
+  register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L5" [BufferOverrunChecker]
 
-let buffer_overrun_s2 = register_from_string ~id:"BUFFER_OVERRUN_S2" [BufferOverrun]
 
-let buffer_overrun_t1 = register_from_string ~id:"BUFFER_OVERRUN_T1" [BufferOverrun]
+let buffer_overrun_r2 = register_from_string ~id:"BUFFER_OVERRUN_R2" [BufferOverrunChecker]
 
-let buffer_overrun_u5 = register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_U5" [BufferOverrun]
+let buffer_overrun_s2 = register_from_string ~id:"BUFFER_OVERRUN_S2" [BufferOverrunChecker]
+
+let buffer_overrun_t1 = register_from_string ~id:"BUFFER_OVERRUN_T1" [BufferOverrunChecker]
+
+let buffer_overrun_u5 =
+  register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_U5" [BufferOverrunChecker]
+
 
 let cannot_star = register_from_string ~id:"Cannot_star" [Biabduction]
 
@@ -219,11 +225,12 @@ let component_with_unconventional_superclass =
 
 
 let condition_always_false =
-  register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" [Biabduction; BufferOverrun]
+  register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_FALSE"
+    [Biabduction; BufferOverrunChecker]
 
 
 let condition_always_true =
-  register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" [Biabduction; BufferOverrun]
+  register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" [Biabduction; BufferOverrunChecker]
 
 
 let constant_address_dereference =
@@ -379,20 +386,24 @@ let inefficient_keyset_iterator =
   register_from_string ~id:"INEFFICIENT_KEYSET_ITERATOR" [InefficientKeysetIterator]
 
 
-let inferbo_alloc_is_big = register_from_string ~id:"INFERBO_ALLOC_IS_BIG" [BufferOverrun]
+let inferbo_alloc_is_big = register_from_string ~id:"INFERBO_ALLOC_IS_BIG" [BufferOverrunChecker]
 
-let inferbo_alloc_is_negative = register_from_string ~id:"INFERBO_ALLOC_IS_NEGATIVE" [BufferOverrun]
+let inferbo_alloc_is_negative =
+  register_from_string ~id:"INFERBO_ALLOC_IS_NEGATIVE" [BufferOverrunChecker]
 
-let inferbo_alloc_is_zero = register_from_string ~id:"INFERBO_ALLOC_IS_ZERO" [BufferOverrun]
 
-let inferbo_alloc_may_be_big = register_from_string ~id:"INFERBO_ALLOC_MAY_BE_BIG" [BufferOverrun]
+let inferbo_alloc_is_zero = register_from_string ~id:"INFERBO_ALLOC_IS_ZERO" [BufferOverrunChecker]
+
+let inferbo_alloc_may_be_big =
+  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_BIG" [BufferOverrunChecker]
+
 
 let inferbo_alloc_may_be_negative =
-  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" [BufferOverrun]
+  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" [BufferOverrunChecker]
 
 
 let inferbo_alloc_may_be_tainted =
-  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_TAINTED" [BufferOverrun]
+  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_TAINTED" [BufferOverrunChecker]
 
 
 let infinite_cost_call ~kind = register_from_cost_string ~enabled:false "INFINITE_%s" ~kind
@@ -403,18 +414,18 @@ let inherently_dangerous_function =
 
 let insecure_intent_handling = register_from_string ~id:"INSECURE_INTENT_HANDLING" [Quandary]
 
-let integer_overflow_l1 = register_from_string ~id:"INTEGER_OVERFLOW_L1" [BufferOverrun]
+let integer_overflow_l1 = register_from_string ~id:"INTEGER_OVERFLOW_L1" [BufferOverrunChecker]
 
-let integer_overflow_l2 = register_from_string ~id:"INTEGER_OVERFLOW_L2" [BufferOverrun]
+let integer_overflow_l2 = register_from_string ~id:"INTEGER_OVERFLOW_L2" [BufferOverrunChecker]
 
 let integer_overflow_l5 =
-  register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_L5" [BufferOverrun]
+  register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_L5" [BufferOverrunChecker]
 
 
-let integer_overflow_r2 = register_from_string ~id:"INTEGER_OVERFLOW_R2" [BufferOverrun]
+let integer_overflow_r2 = register_from_string ~id:"INTEGER_OVERFLOW_R2" [BufferOverrunChecker]
 
 let integer_overflow_u5 =
-  register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_U5" [BufferOverrun]
+  register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_U5" [BufferOverrunChecker]
 
 
 let interface_not_thread_safe = register_from_string ~id:"INTERFACE_NOT_THREAD_SAFE" [RacerD]
@@ -544,7 +555,7 @@ let unary_minus_applied_to_unsigned_expression =
 
 let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" [Uninit]
 
-let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" [BufferOverrun]
+let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" [BufferOverrunChecker]
 
 let use_after_delete = register_from_string ~id:"USE_AFTER_DELETE" [Pulse]
 

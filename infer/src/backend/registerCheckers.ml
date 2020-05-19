@@ -71,30 +71,23 @@ let intraprocedural_with_field_dependency payload_field checker =
   Procedure (CallbackOfChecker.intraprocedural_with_field_dependency payload_field checker)
 
 
-type callback = callback_fun * Language.t
-
-type checker = {name: string; active: bool; callbacks: callback list}
+type checker = {checker: Checker.t; callbacks: (callback_fun * Language.t) list}
 
 let all_checkers =
   (* The order of the list is important for those checkers that depend on other checkers having run
      before them. *)
-  [ { name= "Self captured in block checker"
-    ; active= Config.is_checker_enabled SelfInBlock
-    ; callbacks= [(intraprocedural SelfInBlock.checker, Clang)] }
-  ; { name= "Class loading analysis"
-    ; active= Config.is_checker_enabled ClassLoads
+  [ {checker= SelfInBlock; callbacks= [(intraprocedural SelfInBlock.checker, Clang)]}
+  ; { checker= ClassLoads
     ; callbacks= [(interprocedural Payloads.Fields.class_loads ClassLoads.analyze_procedure, Java)]
     }
-  ; { name= "purity"
-    ; active= Config.(is_checker_enabled Purity || is_checker_enabled LoopHoisting)
+  ; { checker= Purity
     ; callbacks=
         (let purity =
            interprocedural2 Payloads.Fields.purity Payloads.Fields.buffer_overrun_analysis
              Purity.checker
          in
          [(purity, Java); (purity, Clang)] ) }
-  ; { name= "Starvation analysis"
-    ; active= Config.is_checker_enabled Starvation
+  ; { checker= Starvation
     ; callbacks=
         (let starvation = interprocedural Payloads.Fields.starvation Starvation.analyze_procedure in
          let starvation_file_reporting =
@@ -104,8 +97,7 @@ let all_checkers =
          ; (starvation_file_reporting, Java)
          ; (starvation, Clang)
          ; (starvation_file_reporting, Clang) ] ) }
-  ; { name= "loop hoisting"
-    ; active= Config.is_checker_enabled LoopHoisting
+  ; { checker= LoopHoisting
     ; callbacks=
         (let hoisting =
            interprocedural3
@@ -115,102 +107,74 @@ let all_checkers =
              Hoisting.checker
          in
          [(hoisting, Clang); (hoisting, Java)] ) }
-  ; { name= "cost analysis"
-    ; active=
-        Config.(
-          is_checker_enabled Cost
-          || (is_checker_enabled LoopHoisting && hoisting_report_only_expensive))
+  ; { checker= Cost
     ; callbacks=
         (let checker =
            interprocedural3 ~set_payload:(Field.fset Payloads.Fields.cost) Payloads.Fields.cost
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Cost.checker
          in
          [(checker, Clang); (checker, Java)] ) }
-  ; { name= "uninitialized variables"
-    ; active= Config.is_checker_enabled Uninit
-    ; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)] }
-  ; { name= "SIOF"
-    ; active= Config.is_checker_enabled SIOF
-    ; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)] }
-  ; { name= "litho-required-props"
-    ; active= Config.is_checker_enabled LithoRequiredProps
+  ; {checker= Uninit; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)]}
+  ; {checker= SIOF; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)]}
+  ; { checker= LithoRequiredProps
     ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)]
     }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
-    { name= "resource leak"
-    ; active= Config.is_checker_enabled ResourceLeakLabExercise
+    { checker= ResourceLeakLabExercise
     ; callbacks=
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , Java ) ] }
-  ; { name= "RacerD"
-    ; active= Config.is_checker_enabled RacerD
+  ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
          let racerd_file = file RacerDIssues Payloads.Fields.racerd RacerD.file_analysis in
          [(racerd_proc, Clang); (racerd_proc, Java); (racerd_file, Clang); (racerd_file, Java)] ) }
-  ; { name= "quandary"
-    ; active= Config.(is_checker_enabled Quandary)
+  ; { checker= Quandary
     ; callbacks=
         [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Java)
         ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
-  ; { name= "pulse"
-    ; active= Config.(is_checker_enabled Pulse || is_checker_enabled Impurity)
+  ; { checker= Pulse
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
          [(pulse, Clang); (pulse, Java)] ) }
-  ; { name= "impurity"
-    ; active= Config.is_checker_enabled Impurity
+  ; { checker= Impurity
     ; callbacks=
         (let impurity =
            intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
          in
          [(impurity, Java); (impurity, Clang)] ) }
-  ; { name= "printf args"
-    ; active= Config.is_checker_enabled PrintfArgs
-    ; callbacks= [(intraprocedural PrintfArgs.checker, Java)] }
-  ; { name= "liveness"
-    ; active= Config.is_checker_enabled Liveness
-    ; callbacks= [(intraprocedural Liveness.checker, Clang)] }
-  ; { name= "inefficient keyset iterator"
-    ; active= Config.is_checker_enabled InefficientKeysetIterator
+  ; {checker= PrintfArgs; callbacks= [(intraprocedural PrintfArgs.checker, Java)]}
+  ; {checker= Liveness; callbacks= [(intraprocedural Liveness.checker, Clang)]}
+  ; { checker= InefficientKeysetIterator
     ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)] }
-  ; { name= "immutable cast"
-    ; active= Config.is_checker_enabled ImmutableCast
+  ; { checker= ImmutableCast
     ; callbacks=
         [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)] }
-  ; { name= "fragment retains view"
-    ; active= Config.is_checker_enabled FragmentRetainsView
+  ; { checker= FragmentRetainsView
     ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)]
     }
-  ; { name= "eradicate"
-    ; active= Config.is_checker_enabled Eradicate
+  ; { checker= Eradicate
     ; callbacks=
         [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
         ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ]
     }
-  ; { name= "buffer overrun checker"
-    ; active= Config.(is_checker_enabled BufferOverrun)
+  ; { checker= BufferOverrunChecker
     ; callbacks=
         (let bo_checker =
            interprocedural2 Payloads.Fields.buffer_overrun_checker
              Payloads.Fields.buffer_overrun_analysis BufferOverrunChecker.checker
          in
          [(bo_checker, Clang); (bo_checker, Java)] ) }
-  ; { name= "buffer overrun analysis"
-    ; active=
-        Config.(
-          is_checker_enabled BufferOverrun || is_checker_enabled Cost
-          || is_checker_enabled LoopHoisting || is_checker_enabled Purity)
+  ; { checker= BufferOverrunAnalysis
     ; callbacks=
         (let bo_analysis =
            interprocedural Payloads.Fields.buffer_overrun_analysis
              BufferOverrunAnalysis.analyze_procedure
          in
          [(bo_analysis, Clang); (bo_analysis, Java)] ) }
-  ; { name= "biabduction"
-    ; active= Config.(is_checker_enabled Biabduction || is_checker_enabled TOPL)
+  ; { checker= Biabduction
     ; callbacks=
         (let biabduction =
            dynamic_dispatch Payloads.Fields.biabduction
@@ -219,8 +183,7 @@ let all_checkers =
              else Interproc.analyze_procedure )
          in
          [(biabduction, Clang); (biabduction, Java)] ) }
-  ; { name= "annotation reachability"
-    ; active= Config.is_checker_enabled AnnotationReachability
+  ; { checker= AnnotationReachability
     ; callbacks=
         (let annot_reach =
            interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
@@ -229,12 +192,13 @@ let all_checkers =
 
 
 let get_active_checkers () =
-  let filter_checker {active} = active in
+  let filter_checker {checker} = Config.is_checker_enabled checker in
   List.filter ~f:filter_checker all_checkers
 
 
 let register checkers =
-  let register_one {name; callbacks} =
+  let register_one {checker; callbacks} =
+    let name = (Checker.config checker).name in
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb ->
@@ -252,12 +216,12 @@ let register checkers =
 
 module LanguageSet = Caml.Set.Make (Language)
 
-let pp_checker fmt {name; callbacks} =
+let pp_checker fmt {checker; callbacks} =
   let langs_of_callbacks =
     List.fold_left callbacks ~init:LanguageSet.empty ~f:(fun langs (_, lang) ->
         LanguageSet.add lang langs )
     |> LanguageSet.elements
   in
-  F.fprintf fmt "%s (%a)" name
+  F.fprintf fmt "%s (%a)" (Checker.config checker).name
     (Pp.seq ~sep:", " (Pp.of_string ~f:Language.to_string))
     langs_of_callbacks

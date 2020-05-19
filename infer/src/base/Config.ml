@@ -531,34 +531,41 @@ and analyzer =
      instance, to enable only the biabduction analysis, run with $(b,--biabduction-only)."
 
 
-and _checkers =
+(* checkers *)
+and () =
   let open Checker in
   let in_analyze_help = InferCommand.[(Analyze, manual_generic)] in
   let mk_checker ?f checker =
     let config = Checker.config checker in
-    let in_help = if config.show_in_help then in_analyze_help else [] in
     let var =
-      CLOpt.mk_bool ?f ~long:config.cli_flag ~in_help ~default:config.enabled_by_default
-        ~deprecated:config.cli_deprecated_flags config.short_documentation
+      match config.cli_flags with
+      | None ->
+          (* HACK: return a constant ref if the checker cannot be enabled/disabled from the command line *)
+          ref config.enabled_by_default
+      | Some {long; deprecated; show_in_help} ->
+          let in_help = if show_in_help then in_analyze_help else [] in
+          CLOpt.mk_bool ?f ~long ~in_help ~default:config.enabled_by_default ~deprecated
+            config.short_documentation
     in
     all_checkers := (checker, config, var) :: !all_checkers
   in
   List.iter Checker.all ~f:mk_checker ;
   let mk_only (_checker, config, var) =
-    let (_ : bool ref) =
-      CLOpt.mk_bool_group ~long:(config.cli_flag ^ "-only")
-        ~in_help:InferCommand.[(Analyze, manual_generic)]
-        ~f:(fun b ->
-          disable_all_checkers () ;
-          var := b ;
-          b )
-        ( if config.show_in_help then
-          Printf.sprintf "Enable $(b,--%s) and disable all other checkers" config.cli_flag
-        else "" )
-        [] (* do all the work in ~f *) []
-      (* do all the work in ~f *)
-    in
-    ()
+    Option.iter config.cli_flags ~f:(fun {long; show_in_help} ->
+        let (_ : bool ref) =
+          CLOpt.mk_bool_group ~long:(long ^ "-only")
+            ~in_help:InferCommand.[(Analyze, manual_generic)]
+            ~f:(fun b ->
+              disable_all_checkers () ;
+              var := b ;
+              b )
+            ( if show_in_help then
+              Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long
+            else "" )
+            [] (* do all the work in ~f *) []
+          (* do all the work in ~f *)
+        in
+        () )
   in
   List.iter ~f:mk_only !all_checkers ;
   let _default_checkers : bool ref =
@@ -568,8 +575,11 @@ and _checkers =
       ( "Default checkers: "
       ^ ( List.rev_filter_map
             ~f:(fun (_, config, _) ->
-              if config.enabled_by_default then Some (Printf.sprintf "$(b,--%s)" config.cli_flag)
-              else None )
+              match config.cli_flags with
+              | Some {long} when config.enabled_by_default ->
+                  Some (Printf.sprintf "$(b,--%s)" long)
+              | _ ->
+                  None )
             !all_checkers
         |> String.concat ~sep:", " ) )
       ~f:(fun b ->
@@ -3101,10 +3111,47 @@ and xcpretty = !xcpretty
 
 (** Configuration values derived from command-line options *)
 
-let is_checker_enabled c =
-  List.find_map_exn checkers ~f:(fun (checker, enabled) ->
-      if Checker.equal checker c then Some enabled else None )
+let mem_checkers enabled_checkers (c : Checker.t) = List.mem ~equal:Checker.equal enabled_checkers c
 
+let enabled_checkers =
+  (* invariant: [newly_enabled_checkers] is *included* in [enabled_checkers] and [enabled_checkers]
+     has at most one occurrence of each checker.
+
+     NOTE: the complexity of this is quadratic in the number of checkers but this is fine as we
+     don't have hundreds of checkers (yet). Also we have few dependencies and shallow dependency
+     chains so we don't even get close to the worst case. *)
+  let rec fixpoint newly_enabled_checkers enabled_checkers =
+    let newly_enabled_checkers, enabled_checkers' =
+      List.fold newly_enabled_checkers ~init:([], enabled_checkers)
+        ~f:(fun (newly_enabled_checkers, enabled_checkers) checker ->
+          let to_enable =
+            (Checker.config checker).activates
+            |> List.filter ~f:(fun checker_dep -> not (mem_checkers enabled_checkers checker_dep))
+          in
+          match to_enable with
+          | [] ->
+              (newly_enabled_checkers, enabled_checkers)
+          | _ :: _ ->
+              (to_enable @ newly_enabled_checkers, to_enable @ enabled_checkers) )
+    in
+    if List.is_empty newly_enabled_checkers then enabled_checkers
+    else fixpoint newly_enabled_checkers enabled_checkers'
+  in
+  let enabled_checkers =
+    let enabled0 =
+      List.filter_map checkers ~f:(fun (checker, active) -> if active then Some checker else None)
+    in
+    fixpoint enabled0 enabled0
+  in
+  if
+    hoisting_report_only_expensive
+    && mem_checkers enabled_checkers LoopHoisting
+    && not (mem_checkers enabled_checkers Cost)
+  then fixpoint [Checker.Cost] (Checker.Cost :: enabled_checkers)
+  else enabled_checkers
+
+
+let is_checker_enabled c = mem_checkers enabled_checkers c
 
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
@@ -3123,7 +3170,7 @@ let clang_frontend_action_string =
    a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the
    JVM semantics and creates procedure descriptions during symbolic execution using the type
    information found in the abstract state *)
-let dynamic_dispatch = is_checker_enabled Biabduction || is_checker_enabled TOPL
+let dynamic_dispatch = is_checker_enabled Biabduction
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
