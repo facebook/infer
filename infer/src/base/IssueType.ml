@@ -196,12 +196,6 @@ let class_cast_exception =
 
 let class_load = register_from_string ~id:"CLASS_LOAD" [ClassLoads]
 
-let codequery = register_from_string ~id:"Codequery" [Biabduction]
-
-let comparing_floats_for_equality =
-  register_from_string ~id:"COMPARING_FLOAT_FOR_EQUALITY" [Biabduction]
-
-
 let component_factory_function = register_from_string ~id:"COMPONENT_FACTORY_FUNCTION" [Linters]
 
 let component_file_cyclomatic_complexity =
@@ -499,14 +493,6 @@ let resource_leak = register_from_string ~id:"RESOURCE_LEAK" [Biabduction; Resou
 
 let retain_cycle = register_from_string ~enabled:true ~id:"RETAIN_CYCLE" [Biabduction]
 
-let return_expression_required = register_from_string ~id:"RETURN_EXPRESSION_REQUIRED" [Biabduction]
-
-let return_statement_missing = register_from_string ~id:"RETURN_STATEMENT_MISSING" [Biabduction]
-
-let return_value_ignored =
-  register_from_string ~enabled:false ~id:"RETURN_VALUE_IGNORED" [Biabduction]
-
-
 let skip_function = register_from_string ~enabled:false ~id:"SKIP_FUNCTION" [Biabduction]
 
 let skip_pointer_dereference =
@@ -557,8 +543,6 @@ let unary_minus_applied_to_unsigned_expression =
 
 
 let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" [Uninit]
-
-let unknown_proc = register_from_string ~id:"Unknown_proc" ~hum:"Unknown Procedure" [Biabduction]
 
 let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" [BufferOverrun]
 

@@ -49,10 +49,6 @@ exception Cannot_star of L.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
 
-exception Codequery of Localise.error_desc
-
-exception Comparing_floats_for_equality of Localise.error_desc * L.ocaml_pos
-
 exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_pos
 
 exception Custom_error of string * Localise.error_desc
@@ -84,8 +80,6 @@ exception Inherently_dangerous_function of Localise.error_desc
 
 exception Internal_error of Localise.error_desc
 
-exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
-
 exception Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
 
 exception Missing_fld of Fieldname.t * L.ocaml_pos
@@ -108,12 +102,6 @@ exception Retain_cycle of Localise.error_desc * L.ocaml_pos
 
 exception Registered_observer_being_deallocated of Localise.error_desc * L.ocaml_pos
 
-exception Return_expression_required of Localise.error_desc * L.ocaml_pos
-
-exception Return_statement_missing of Localise.error_desc * L.ocaml_pos
-
-exception Return_value_ignored of Localise.error_desc * L.ocaml_pos
-
 exception Skip_function of Localise.error_desc
 
 exception Skip_pointer_dereference of Localise.error_desc * L.ocaml_pos
@@ -123,8 +111,6 @@ exception Stack_variable_address_escape of Localise.error_desc * L.ocaml_pos
 exception Symexec_memory_error of L.ocaml_pos
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ocaml_pos
-
-exception Unknown_proc
 
 exception Wrong_argument_number of L.ocaml_pos
 
@@ -218,20 +204,6 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= None
       ; category= Prover }
-  | Codequery desc ->
-      { name= IssueType.codequery
-      ; description= desc
-      ; ocaml_pos= None
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
-  | Comparing_floats_for_equality (desc, ocaml_pos) ->
-      { name= IssueType.comparing_floats_for_equality
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
   | Condition_always_true_false (desc, b, ocaml_pos) ->
       let name = if b then IssueType.condition_always_true else IssueType.condition_always_false in
       { name
@@ -360,14 +332,6 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= None
       ; category= Nocat }
-  | Java_runtime_exception (exn_name, _, desc) ->
-      let exn_str = Typ.Name.name exn_name in
-      { name= IssueType.register_from_string ~id:exn_str [Biabduction]
-      ; description= desc
-      ; ocaml_pos= None
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
   | Leak (fp_part, (exn_vis, error_desc), done_array_abstraction, resource, ocaml_pos) ->
       if done_array_abstraction then
         { name= IssueType.leak_after_array_abstraction
@@ -452,33 +416,12 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= Some Error
       ; category= Nocat }
-  | Return_expression_required (desc, ocaml_pos) ->
-      { name= IssueType.return_expression_required
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
   | Stack_variable_address_escape (desc, ocaml_pos) ->
       { name= IssueType.stack_variable_address_escape
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
       ; severity= Some Error
-      ; category= Nocat }
-  | Return_statement_missing (desc, ocaml_pos) ->
-      { name= IssueType.return_statement_missing
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
-  | Return_value_ignored (desc, ocaml_pos) ->
-      { name= IssueType.return_value_ignored
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
       ; category= Nocat }
   | SymOp.Analysis_failure_exe _ ->
       { name= IssueType.failure_exe
@@ -514,13 +457,6 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
-  | Unknown_proc ->
-      { name= IssueType.unknown_proc
-      ; description= Localise.no_desc
-      ; ocaml_pos= None
-      ; visibility= Exn_developer
       ; severity= None
       ; category= Nocat }
   | Wrong_argument_number ocaml_pos ->

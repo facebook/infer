@@ -49,10 +49,6 @@ exception Cannot_star of Logging.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
 
-exception Codequery of Localise.error_desc
-
-exception Comparing_floats_for_equality of Localise.error_desc * Logging.ocaml_pos
-
 exception Condition_always_true_false of Localise.error_desc * bool * Logging.ocaml_pos
 
 exception Custom_error of string * Localise.error_desc
@@ -85,8 +81,6 @@ exception Inherently_dangerous_function of Localise.error_desc
 
 exception Internal_error of Localise.error_desc
 
-exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
-
 exception
   Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * Logging.ocaml_pos
 
@@ -110,12 +104,6 @@ exception Retain_cycle of Localise.error_desc * Logging.ocaml_pos
 
 exception Registered_observer_being_deallocated of Localise.error_desc * Logging.ocaml_pos
 
-exception Return_expression_required of Localise.error_desc * Logging.ocaml_pos
-
-exception Return_statement_missing of Localise.error_desc * Logging.ocaml_pos
-
-exception Return_value_ignored of Localise.error_desc * Logging.ocaml_pos
-
 exception Skip_function of Localise.error_desc
 
 exception Skip_pointer_dereference of Localise.error_desc * Logging.ocaml_pos
@@ -125,8 +113,6 @@ exception Stack_variable_address_escape of Localise.error_desc * Logging.ocaml_p
 exception Symexec_memory_error of Logging.ocaml_pos
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ocaml_pos
-
-exception Unknown_proc
 
 exception Wrong_argument_number of Logging.ocaml_pos
 

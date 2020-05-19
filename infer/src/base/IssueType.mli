@@ -111,10 +111,6 @@ val class_cast_exception : t
 
 val class_load : t
 
-val codequery : t
-
-val comparing_floats_for_equality : t
-
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
 val component_factory_function : t
@@ -294,12 +290,6 @@ val resource_leak : t
 
 val retain_cycle : t
 
-val return_expression_required : t
-
-val return_statement_missing : t
-
-val return_value_ignored : t
-
 val skip_function : t
 
 val skip_pointer_dereference : t
@@ -331,8 +321,6 @@ val topl_error : t
 val unary_minus_applied_to_unsigned_expression : t
 
 val uninitialized_value : t
-
-val unknown_proc : t
 
 val unreachable_code_after : t
 
