@@ -187,7 +187,7 @@ module Make
                 value_opt )
         map1.old map2.old
     in
-    {count_new= !count_new; old; new_}
+    {count_new= !count_new; old= M.union (fun _k _v1 _v2 -> assert false) old_from_new_ old; new_}
 
 
   (** standard-looking implementation of [union] based on [merge] *)
