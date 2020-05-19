@@ -3116,7 +3116,7 @@ let clang_frontend_action_string =
    a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the
    JVM semantics and creates procedure descriptions during symbolic execution using the type
    information found in the abstract state *)
-let dynamic_dispatch = is_checker_enabled Biabduction
+let dynamic_dispatch = is_checker_enabled Biabduction || is_checker_enabled TOPL
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =

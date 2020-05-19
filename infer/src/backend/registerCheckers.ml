@@ -210,11 +210,13 @@ let all_checkers =
          in
          [(bo_analysis, Clang); (bo_analysis, Java)] ) }
   ; { name= "biabduction"
-    ; active= Config.is_checker_enabled Biabduction
+    ; active= Config.(is_checker_enabled Biabduction || is_checker_enabled TOPL)
     ; callbacks=
         (let biabduction =
            dynamic_dispatch Payloads.Fields.biabduction
-             (Topl.instrument_callback Interproc.analyze_procedure)
+             ( if Config.is_checker_enabled TOPL then
+               Topl.instrument_callback Interproc.analyze_procedure
+             else Interproc.analyze_procedure )
          in
          [(biabduction, Clang); (biabduction, Java)] ) }
   ; { name= "annotation reachability"

@@ -1079,6 +1079,13 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
+       --topl
+           Activates: TOPL (Conversely: --no-topl)           See also infer-analyze(1).
+
+       --topl-only
+           Activates: Enable --topl and disable all other checkers
+           (Conversely: --no-topl-only)           See also infer-analyze(1).
+
        --no-uninit
            Deactivates: checker for use of uninitialized values (Conversely:
            --uninit)           See also infer-analyze(1).

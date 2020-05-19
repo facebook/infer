@@ -32,6 +32,7 @@ type t =
   | SIOF
   | SelfInBlock
   | Starvation
+  | TOPL
   | Uninit
 [@@deriving equal, enumerate]
 
@@ -241,6 +242,13 @@ let config checker =
       ; show_in_help= true
       ; cli_flag= "starvation"
       ; enabled_by_default= true
+      ; cli_deprecated_flags= [] }
+  | TOPL ->
+      { support= supports_clang_and_java_experimental
+      ; short_documentation= "TOPL"
+      ; show_in_help= true
+      ; cli_flag= "topl"
+      ; enabled_by_default= false
       ; cli_deprecated_flags= [] }
   | Uninit ->
       { support= supports_clang
