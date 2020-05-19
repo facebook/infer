@@ -138,7 +138,7 @@ let all_checkers =
     }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     { name= "resource leak"
-    ; active= Config.is_checker_enabled ResourceLeak
+    ; active= Config.is_checker_enabled ResourceLeakLabExercise
     ; callbacks=
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)

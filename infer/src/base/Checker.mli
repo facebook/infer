@@ -28,7 +28,7 @@ type t =
   | Purity
   | Quandary
   | RacerD
-  | ResourceLeak
+  | ResourceLeakLabExercise
   | SIOF
   | SelfInBlock
   | Starvation

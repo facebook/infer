@@ -28,7 +28,7 @@ type t =
   | Purity
   | Quandary
   | RacerD
-  | ResourceLeak
+  | ResourceLeakLabExercise
   | SIOF
   | SelfInBlock
   | Starvation
@@ -214,7 +214,7 @@ let config checker =
       ; cli_flag= "racerd"
       ; enabled_by_default= true
       ; cli_deprecated_flags= ["-threadsafety"] }
-  | ResourceLeak ->
+  | ResourceLeakLabExercise ->
       { support= (fun _ -> ToySupport)
       ; short_documentation= ""
       ; show_in_help= false

@@ -262,8 +262,8 @@ let create_parsed_linters linters_def_file checkers : linter list =
           (Config.get_linter_doc_url ~linter_id:checker.id)
           issue_desc.issue_type.doc_url
       in
-      IssueType.register_from_string checker.id ?hum:issue_desc.issue_type.name ?doc_url
-        ~linters_def_file
+      IssueType.register_from_string ~id:checker.id ?hum:issue_desc.issue_type.name ?doc_url
+        ~linters_def_file [Linters]
     in
     let issue_desc = {issue_desc with issue_type} in
     L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;

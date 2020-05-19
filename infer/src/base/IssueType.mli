@@ -10,6 +10,7 @@ open! IStd
 (** type of string used for localisation *)
 type t = private
   { unique_id: string
+  ; checkers: Checker.t list
   ; mutable enabled: bool
   ; mutable hum: string
   ; mutable doc_url: string option
@@ -25,12 +26,23 @@ val pp : Format.formatter -> t -> unit
 (** pretty print a localised string *)
 
 val register_from_string :
-  ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
+     ?enabled:bool
+  -> ?hum:string
+  -> ?doc_url:string
+  -> ?linters_def_file:string
+  -> id:string
+  -> Checker.t list
+  -> t
 (** Create a new issue and register it in the list of all issues. NOTE: if the issue with the same
     string id is already registered, overrides `hum`, `doc_url`, and `linters_def_file`, but DOES
     NOT override `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues from
     the config, when we don't know all params yet. Thus, the human-readable description can be
     updated when we encounter the definition of the issue type, eg in AL. *)
+
+val checker_can_report : Checker.t -> t -> bool
+  [@@warning "-32"]
+(** Whether the issue was registered as coming from the given checker. Important to call this before
+    reporting to keep documentation accurate. *)
 
 val set_enabled : t -> bool -> unit
 
