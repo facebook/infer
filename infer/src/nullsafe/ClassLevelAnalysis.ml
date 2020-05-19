@@ -112,7 +112,7 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
   let issue_type, description, severity =
     if NullsafeMode.equal top_level_class_mode Default then
       match mode_to_promote_to with
-      | Some mode_to_promote_to ->
+      | Some _ ->
           let message =
             Format.sprintf
               "Congrats! `%s` is free of nullability issues. Mark it \
