@@ -23,41 +23,11 @@ let add_flavors_to_buck_arguments buck_mode ~filter_kind ~extra_flavors original
   {command; rev_not_targets; targets}
 
 
-let capture_buck_args =
-  let clang_path =
-    List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
-  in
-  List.append
-    [ "--show-output"
-    ; "--config"
-    ; "client.id=infer.clang"
-    ; "--config"
-    ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
-    ; "--config"
-    ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
-    ; "--config"
-    ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
-    ; "--config"
-    ; "*//cxx.pch_enabled=false"
-    ; "--config"
-    ; (* Infer doesn't support C++ modules yet (T35656509) *)
-      "*//cxx.modules_default=false"
-    ; "--config"
-    ; "*//cxx.modules=false" ]
-    ( ( match Config.xcode_developer_dir with
-      | Some d ->
-          ["--config"; Printf.sprintf "apple.xcode_developer_dir=%s" d]
-      | None ->
-          [] )
-    @ (if Config.keep_going then ["--keep-going"] else [])
-    @ ["-j"; Int.to_string Config.jobs]
-    @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
-    @ List.rev_append Config.buck_build_args
-        ( if not (List.is_empty Config.buck_blacklist) then
-          [ "--config"
-          ; Printf.sprintf "*//infer.blacklist_regex=(%s)"
-              (String.concat ~sep:")|(" Config.buck_blacklist) ]
-        else [] ) )
+let capture_buck_args () =
+  ["--show-output"; "-j"; Int.to_string Config.jobs]
+  @ (if Config.keep_going then ["--keep-going"] else [])
+  @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
+  @ Buck.config ClangFlavors @ List.rev Config.buck_build_args
 
 
 let run_buck_build prog buck_build_args =
@@ -121,7 +91,7 @@ let merge_deps_files depsfiles =
 let clang_flavor_capture ~prog ~buck_build_cmd =
   if Config.keep_going && not Config.continue_capture then
     Process.create_process_and_wait ~prog ~args:["clean"] ;
-  let depsfiles = run_buck_build prog (buck_build_cmd @ capture_buck_args) in
+  let depsfiles = run_buck_build prog (buck_build_cmd @ capture_buck_args ()) in
   let deplines = merge_deps_files depsfiles in
   let infer_out_depsfile = ResultsDir.get_path BuckDependencies in
   Utils.with_file_out infer_out_depsfile ~f:(fun out_chan ->

@@ -29,13 +29,18 @@ val wrap_buck_call :
     quick identification; [cmd] is a list of strings making up the shell command to execute; the
     return value is the standard output of the command split on newlines. *)
 
-val buck_config : BuckMode.t -> string list
+val config : BuckMode.t -> string list
+(** return list of string parameters of the form
+    ["--config" :: param_a :: "--config" :: param_b :: ...] describing the buck config flags for the
+    given Buck mode. *)
 
 val parse_command_and_targets :
      BuckMode.t
   -> filter_kind:[< `Yes | `No | `Auto]
   -> string list
   -> string * string list * string list
+(** parses given buck command, using the buck configuration returned by [config] above and returns a
+    triple [(buck_command, non_target_params, target_params)] *)
 
 val store_args_in_file : string list -> string list
 (** Given a list of arguments, stores them in a file if needed and returns the new command line *)

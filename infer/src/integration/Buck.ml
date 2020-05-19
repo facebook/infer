@@ -209,11 +209,37 @@ let infer_enabled_label = "infer_enabled"
 (** for genrule_master_mode, this is the target name suffix for the capture genrules *)
 let genrule_suffix = "_infer"
 
-let buck_config buck_mode =
-  if BuckMode.is_java_genrule_master buck_mode then
-    ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
-    |> List.fold ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
-  else []
+let config buck_mode =
+  let clang_path =
+    List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
+  in
+  let args =
+    match (buck_mode : BuckMode.t) with
+    | JavaGenruleMaster ->
+        ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
+    | ClangFlavors ->
+        [ "client.id=infer.clang"
+        ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
+        ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
+        ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
+        ; "*//cxx.pch_enabled=false"
+        ; (* Infer doesn't support C++ modules yet (T35656509) *)
+          "*//cxx.modules_default=false"
+        ; "*//cxx.modules=false" ]
+        @ ( match Config.xcode_developer_dir with
+          | Some d ->
+              [Printf.sprintf "apple.xcode_developer_dir=%s" d]
+          | None ->
+              [] )
+        @
+        if List.is_empty Config.buck_blacklist then []
+        else
+          [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
+              (String.concat ~sep:")|(" Config.buck_blacklist) ]
+    | ClangCompilationDB _ ->
+        []
+  in
+  List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
 
 
 let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
@@ -229,7 +255,7 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
   |> ( if BuckMode.is_java_genrule_master buck_mode then
        Query.label_filter ~label:infer_enabled_label
      else Fn.id )
-  |> Query.exec ~buck_config:(buck_config buck_mode)
+  |> Query.exec ~buck_config:(config buck_mode)
   |>
   if BuckMode.is_java_genrule_master buck_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix)
   else Fn.id

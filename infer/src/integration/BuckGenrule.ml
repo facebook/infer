@@ -121,7 +121,7 @@ let capture build_cmd =
   in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    (prog :: command :: "--build-report" :: build_report_file :: Buck.buck_config JavaGenruleMaster)
+    (prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaGenruleMaster)
     @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
   in
   L.(debug Capture Quiet)
