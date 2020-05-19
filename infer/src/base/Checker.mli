@@ -64,3 +64,6 @@ type config =
   ; activates: t list  (** TODO doc *) }
 
 val config : t -> config
+
+val get_name : t -> string
+(** [get_name c] is [(config c).name] *)

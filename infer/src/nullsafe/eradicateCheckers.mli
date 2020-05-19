@@ -11,6 +11,7 @@ open! IStd
 
 val report_error :
      IntraproceduralAnalysis.t
+  -> Checker.t
   -> IssueType.t
   -> Location.t
   -> ?field_name:Fieldname.t option

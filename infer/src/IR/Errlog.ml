@@ -200,8 +200,16 @@ let update errlog_old errlog_new =
 
 
 let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access ~extras
-    exn =
+    checker exn =
   let error = Exceptions.recognize_exception exn in
+  if not (IssueType.checker_can_report checker error.name) then
+    L.die InternalError
+      "Issue type \"%s\" cannot be reported by the checker \"%s\". The only checkers that are \
+       expected to produce this error type are [%a]. If this is incorrect please either update the \
+       issue in IssueType or create a new issue type for \"%s\"."
+      error.name.unique_id (Checker.get_name checker) (Pp.seq F.pp_print_string)
+      (List.map ~f:Checker.get_name error.name.checkers)
+      (Checker.get_name checker) ;
   let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)

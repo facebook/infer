@@ -231,8 +231,8 @@ let report_siof {InterproceduralAnalysis.proc_desc; err_log; analyze_dependency;
             GlobalVar.pp (SiofTrace.Sink.kind final_sink)
     in
     let ltr = SiofTrace.trace_of_error loc gname trace in
-    Reporting.log_error proc_desc err_log ~loc ~ltr IssueType.static_initialization_order_fiasco
-      description
+    Reporting.log_error proc_desc err_log ~loc ~ltr SIOF
+      IssueType.static_initialization_order_fiasco description
   in
   let reportable_paths = SiofTrace.get_reportable_sink_paths trace ~trace_of_pname in
   (* FIXME(T54950303) replace use of filtering with deduplicate *)

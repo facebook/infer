@@ -467,7 +467,8 @@ end = struct
   let issue_log_of loc_map =
     let log_report ~issue_log loc {problem; pname; ltr; message} =
       let issue_type = issue_type_of_problem problem in
-      Reporting.log_issue_external ~issue_log pname Exceptions.Error ~loc ~ltr issue_type message
+      Reporting.log_issue_external ~issue_log pname Exceptions.Error ~loc ~ltr Starvation issue_type
+        message
     in
     let mk_deduped_report ({message} as report) =
       { report with

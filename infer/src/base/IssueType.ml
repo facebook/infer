@@ -497,7 +497,7 @@ let pure_function = register_from_string ~id:"PURE_FUNCTION" [Purity]
 let quandary_taint_error = register_from_string ~id:"QUANDARY_TAINT_ERROR" [Quandary]
 
 let registered_observer_being_deallocated =
-  register_from_string ~id:"REGISTERED_OBSERVER_BEING_DEALLOCATED" [Biabduction]
+  register_from_string ~id:"REGISTERED_OBSERVER_BEING_DEALLOCATED" [Biabduction; Linters]
 
 
 let resource_leak = register_from_string ~id:"RESOURCE_LEAK" [Biabduction; ResourceLeakLabExercise]

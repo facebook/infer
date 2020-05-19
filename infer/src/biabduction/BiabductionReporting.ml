@@ -16,7 +16,8 @@ let log_issue_deprecated_using_state proc_desc err_log severity ?node ?loc ?ltr 
     let session = AnalysisState.get_session () in
     let loc = match loc with None -> AnalysisState.get_loc_exn () | Some loc -> loc in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Reporting.log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr exn
+    Reporting.log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr Biabduction
+      exn
 
 
 let log_error_using_state proc_desc err_log exn =
@@ -30,4 +31,5 @@ let log_error_using_state proc_desc err_log exn =
       match AnalysisState.get_loc () with Some l -> l | None -> Procdesc.Node.get_loc node'
     in
     let ltr = State.get_loc_trace () in
-    Reporting.log_issue_from_summary Exceptions.Error proc_desc err_log ~node ~session ~loc ~ltr exn
+    Reporting.log_issue_from_summary Exceptions.Error proc_desc err_log ~node ~session ~loc ~ltr
+      Biabduction exn

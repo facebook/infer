@@ -273,3 +273,6 @@ let config checker =
       ; cli_flags= Some {long= "uninit"; deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
+
+
+let get_name c = (config c).name

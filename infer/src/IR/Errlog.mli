@@ -74,8 +74,6 @@ val iter : iter_fun -> t -> unit
 
 val fold : (err_key -> err_data -> 'a -> 'a) -> t -> 'a -> 'a
 
-val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit [@@warning "-32"]
-
 val pp_loc_trace : Format.formatter -> loc_trace -> unit
 
 val pp_errors : Format.formatter -> t -> unit
@@ -101,5 +99,6 @@ val log_issue :
   -> doc_url:string option
   -> access:string option
   -> extras:Jsonbug_t.extra option
+  -> Checker.t
   -> exn
   -> unit

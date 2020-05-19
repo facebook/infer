@@ -96,7 +96,7 @@ let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as 
     F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
       loop_head_loc
   in
-  Reporting.log_error proc_desc err_log ~loc ~ltr issue message
+  Reporting.log_error proc_desc err_log ~loc ~ltr LoopHoisting issue message
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals

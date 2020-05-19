@@ -262,7 +262,7 @@ module Check = struct
     in
     Reporting.log_error proc_desc err_log ~loc:location
       ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
-      ~extras:(compute_errlog_extras cost) report_issue_type message
+      ~extras:(compute_errlog_extras cost) Cost report_issue_type message
 
 
   let report_top_and_unreachable pname proc_desc err_log loc ~name ~cost
@@ -271,7 +271,7 @@ module Check = struct
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
       Reporting.log_error proc_desc err_log ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
-        ~extras:(compute_errlog_extras cost) issue message
+        ~extras:(compute_errlog_extras cost) Cost issue message
     in
     if BasicCost.is_top cost then report infinite_issue "cannot be computed"
     else if BasicCost.is_unreachable cost then

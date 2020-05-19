@@ -13,8 +13,8 @@ let log_issue ?proc_name ~issue_log ~loc ~severity ~nullsafe_extra issue_type er
   in
   let proc_name = Option.value proc_name ~default:Procname.Linters_dummy_method in
   let trace = [Errlog.make_trace_element 0 loc error_message []] in
-  Reporting.log_issue_external proc_name severity ~issue_log ~loc ~extras ~ltr:trace issue_type
-    error_message
+  Reporting.log_issue_external proc_name severity ~issue_log ~loc ~extras ~ltr:trace Eradicate
+    issue_type error_message
 
 
 (* If the issue is related to violation of nullability type system rules *)

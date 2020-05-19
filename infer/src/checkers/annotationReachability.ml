@@ -85,7 +85,7 @@ let report_allocation_stack {InterproceduralAnalysis.proc_desc; err_log} src_ann
       MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
       ("new " ^ constr_str)
   in
-  Reporting.log_error proc_desc err_log ~loc:fst_call_loc ~ltr:final_trace
+  Reporting.log_error proc_desc err_log ~loc:fst_call_loc ~ltr:final_trace AnnotationReachability
     IssueType.checkers_allocates_memory description
 
 
@@ -109,7 +109,8 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as ana
         IssueType.checkers_calls_expensive_method
       else IssueType.checkers_annotation_reachability_error
     in
-    Reporting.log_error proc_desc err_log ~loc ~ltr:final_trace issue_type description
+    Reporting.log_error proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
+      description
 
 
 let report_call_stack end_of_stack lookup_next_calls report call_site sink_map =
@@ -333,7 +334,8 @@ module CxxAnnotationSpecs = struct
         IssueType.register_from_string ~id:spec_name ~doc_url ~linters_def_file
           [AnnotationReachability]
       in
-      Reporting.log_error proc_desc err_log ~loc ~ltr:final_trace issue_type description
+      Reporting.log_error proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
+        description
     in
     let snk_annot = annotation_of_str snk_name in
     let report ({InterproceduralAnalysis.proc_desc} as analysis_data) annot_map =
@@ -411,8 +413,8 @@ module ExpensiveAnnotationSpec = struct
           (Procname.to_string overridden_pname)
           MF.pp_monospaced ("@" ^ Annotations.expensive)
       in
-      Reporting.log_error proc_desc err_log ~loc IssueType.checkers_expensive_overrides_unexpensive
-        description
+      Reporting.log_error proc_desc err_log ~loc AnnotationReachability
+        IssueType.checkers_expensive_overrides_unexpensive description
 
 
   let spec =

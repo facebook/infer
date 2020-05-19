@@ -665,7 +665,7 @@ let report_thread_safety_violation ~make_description ~report_kind
   let error_message = F.sprintf "%s%s" description explanation in
   let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
   let access = IssueAuxData.encode end_locs in
-  log_issue pname ~issue_log ~loc ~ltr ~access issue_type error_message
+  log_issue pname ~issue_log ~loc ~ltr ~access RacerD issue_type error_message
 
 
 let report_unannotated_interface_violation reported_pname reported_access issue_log =
