@@ -13,9 +13,13 @@ type clang_compilation_db_deps = NoDependencies | DepsUpToDepth of int | DepsAll
 
 val pp_clang_compilation_db_deps : F.formatter -> clang_compilation_db_deps -> unit
 
-type t = ClangFlavors | ClangCompilationDB of clang_compilation_db_deps | JavaGenruleMaster
+type t =
+  | CombinedGenrule
+  | ClangFlavors
+  | ClangCompilationDB of clang_compilation_db_deps
+  | JavaGenruleMaster
 
-val is_java_genrule_master : t -> bool
+val is_java_genrule_master_or_combined : t -> bool
 
 val is_clang_compilation_db : t -> bool
 

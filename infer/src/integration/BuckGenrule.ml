@@ -42,7 +42,7 @@ module L = Logging
 ]
 *)
 
-(** Read the build report json file buck produced, and parse into a sorted list of pairs
+(** Read the build report json file buck produced, and parse into a list of pairs
     [(target, output-path)]. NB contrary to what buck documentation says, the output path is always
     present even when the target is locally cached. *)
 let read_and_parse_report build_report =
@@ -78,9 +78,56 @@ let read_and_parse_report build_report =
     | _ ->
         None
   in
-  Yojson.Basic.from_file build_report
-  |> get_json_field "results" |> Option.bind ~f:parse_results
-  |> Option.map ~f:(List.stable_sort ~compare:[%compare: string * string])
+  Yojson.Basic.from_file build_report |> get_json_field "results" |> Option.bind ~f:parse_results
+
+
+(** Function for processing paths in a buck build report and generating an [infer-deps.txt] file.
+    Given a pair [(buck_target, output_path)],
+
+    - if [output_path] contains a capture DB, then generate the appropriate deps line;
+    - if [output_path] contains an [infer-deps.txt] file, expand and inline it;
+    - if [output_path] is a dummy target used in the combined genrule integration for clang targets,
+      read its contents, parse them as an output directory path and apply the above two tests to
+      that *)
+let expand_target acc (target, target_path) =
+  let expand_dir acc (target, target_path) =
+    (* invariant: [target_path] is absolute *)
+    let db_file = ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB in
+    match Sys.file_exists db_file with
+    | `Yes ->
+        (* there is a capture DB at this path, so terminate expansion and generate deps line *)
+        let line = Printf.sprintf "%s\t-\t%s" target target_path in
+        line :: acc
+    | `No | `Unknown -> (
+        (* no capture DB was found, so look for, and inline, an [infer-deps.txt] file *)
+        let infer_deps = ResultsDirEntryName.get_path ~results_dir:target_path BuckDependencies in
+        match Sys.file_exists infer_deps with
+        | `Yes ->
+            Utils.with_file_in infer_deps
+              ~f:(In_channel.fold_lines ~init:acc ~f:(fun acc line -> line :: acc))
+        | `No | `Unknown ->
+            L.internal_error "No capture DB or infer-deps file in %s@." target_path ;
+            acc )
+  in
+  let target_path =
+    if Filename.is_absolute target_path then target_path else Config.project_root ^/ target_path
+  in
+  match Sys.is_directory target_path with
+  | `Yes ->
+      (* output path is directory, so should contain either a capture DB or an [infer-deps.txt] file *)
+      expand_dir acc (target, target_path)
+  | `No | `Unknown -> (
+    (* output path is not a directory, so assume it's an intermediate genrule output containing the
+       output path of the underlying capture target *)
+    match Utils.read_file target_path with
+    | Ok [new_target_path] ->
+        expand_dir acc (target, new_target_path)
+    | Ok _ ->
+        L.internal_error "Couldn't parse intermediate deps file %s@." target_path ;
+        acc
+    | Error error ->
+        L.internal_error "Error %s@\nCouldn't read intermediate deps file %s@." error target_path ;
+        acc )
 
 
 let infer_deps_of_build_report build_report =
@@ -88,12 +135,13 @@ let infer_deps_of_build_report build_report =
   | None ->
       L.die InternalError "Couldn't parse buck build report: %s@." build_report
   | Some target_path_list ->
-      let out_line out_channel (target, target_output_path) =
-        Printf.fprintf out_channel "%s\t-\t%s\n" target (Config.project_root ^/ target_output_path)
+      let infer_deps_lines =
+        List.fold target_path_list ~init:[] ~f:expand_target
+        |> List.dedup_and_sort ~compare:String.compare
       in
       let infer_deps = ResultsDir.get_path BuckDependencies in
       Utils.with_file_out infer_deps ~f:(fun out_channel ->
-          List.iter target_path_list ~f:(out_line out_channel) )
+          Out_channel.output_lines out_channel infer_deps_lines )
 
 
 let run_buck_capture cmd =
@@ -106,12 +154,12 @@ let run_buck_capture cmd =
   Buck.wrap_buck_call ~extend_env ~label:"build" cmd |> ignore
 
 
-let capture build_cmd =
+let capture buck_mode build_cmd =
   let prog, buck_cmd = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
   L.progress "Querying buck for genrule capture targets...@." ;
   let time0 = Mtime_clock.counter () in
   let command, args, targets =
-    Buck.parse_command_and_targets JavaGenruleMaster ~filter_kind:`Yes buck_cmd
+    Buck.parse_command_and_targets buck_mode ~filter_kind:`Yes buck_cmd
   in
   L.progress "Found %d genrule capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
@@ -121,7 +169,7 @@ let capture build_cmd =
   in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    (prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaGenruleMaster)
+    (prog :: command :: "--build-report" :: build_report_file :: Buck.config buck_mode)
     @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
   in
   L.(debug Capture Quiet)

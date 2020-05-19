@@ -1,0 +1,6 @@
+cxx_library(
+  name = 'hello',
+  srcs = [
+    'hello.c', 'hello2.c',
+  ],
+)

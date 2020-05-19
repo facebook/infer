@@ -18,6 +18,7 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
+  | BuckCombinedGenrule of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckGenruleMaster of {build_cmd: string list}
@@ -39,6 +40,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | BuckCombinedGenrule {build_cmd} ->
+      F.fprintf fmt "BuckCombinedGenrule driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a@\ndeps = %a" prog
         Pp.cli_args args BuckMode.pp_clang_compilation_db_deps deps
@@ -119,6 +122,9 @@ let capture ~changed_files = function
   | BuckClangFlavor {build_cmd} ->
       L.progress "Capturing in buck mode...@." ;
       BuckFlavors.capture build_cmd
+  | BuckCombinedGenrule {build_cmd} ->
+      L.progress "Capturing in buck combined genrule mode...@." ;
+      BuckGenrule.capture CombinedGenrule build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       L.progress "Capturing using Buck's compilation database...@." ;
       let json_cdb =
@@ -130,7 +136,7 @@ let capture ~changed_files = function
       JMain.from_arguments prog
   | BuckGenruleMaster {build_cmd} ->
       L.progress "Capturing for BuckGenruleMaster integration...@." ;
-      BuckGenrule.capture build_cmd
+      BuckGenrule.capture JavaGenruleMaster build_cmd
   | Clang {compiler; prog; args} ->
       if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
@@ -246,7 +252,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
            && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | Analyze | BuckGenruleMaster _ ->
+    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
@@ -285,6 +291,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
     match required_analyzer with
     | `Clang ->
         Version.clang_enabled
+    | `ClangJava ->
+        Version.clang_enabled && Version.java_enabled
     | `Java ->
         Version.java_enabled
     | `Xcode ->
@@ -295,6 +303,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
       match required_analyzer with
       | `Clang ->
           "clang"
+      | `ClangJava ->
+          "clang & java"
       | `Java ->
           "java"
       | `Xcode ->
@@ -326,6 +336,8 @@ let assert_supported_build_system build_system =
         match Config.buck_mode with
         | None ->
             error_no_buck_mode_specified ()
+        | Some CombinedGenrule ->
+            (`ClangJava, "buck combined genrule")
         | Some ClangFlavors ->
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
@@ -357,6 +369,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Ant {prog; args}
       | BBuck, None ->
           error_no_buck_mode_specified ()
+      | BBuck, Some CombinedGenrule ->
+          BuckCombinedGenrule {build_cmd}
       | BBuck, Some (ClangCompilationDB deps) ->
           BuckCompilationDB {deps; prog; args= List.append args (List.rev Config.buck_build_args)}
       | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->

@@ -126,6 +126,10 @@ BUCK OPTIONS
            Activates: Buck integration for clang-based targets
            (C/C++/Objective-C/Objective-C++). (Conversely: --no-buck-clang)
 
+       --buck-combined
+           Activates: Buck integration for clang-based and Java targets.
+           (Conversely: --no-buck-combined)
+
        --buck-compilation-database { no-deps | deps }
            Buck integration using the compilation database, with or without
            dependencies. Only includes clang targets, as per Buck's

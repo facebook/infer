@@ -143,6 +143,10 @@ OPTIONS
            (C/C++/Objective-C/Objective-C++). (Conversely: --no-buck-clang)       
     See also infer-capture(1).
 
+       --buck-combined
+           Activates: Buck integration for clang-based and Java targets.
+           (Conversely: --no-buck-combined)           See also infer-capture(1).
+
        --buck-compilation-database { no-deps | deps }
            Buck integration using the compilation database, with or without
            dependencies. Only includes clang targets, as per Buck's

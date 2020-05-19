@@ -1,0 +1,3 @@
+clang/hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
+clang/hello2.c, test2, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test2()]
+java/NullDeref.java, NullDeref.callToStringWithNullBad():java.lang.String, 1, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure callToStringWithNullBad(),start of procedure myToString(...),Skipping toString(): unknown method]
