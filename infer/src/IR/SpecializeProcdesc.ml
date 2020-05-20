@@ -225,11 +225,10 @@ let with_block_args_instrs resolved_pdesc substitutions =
       (call_instr :: instrs, id_map)
     in
     match instr with
-    | Sil.Load {id; e= Exp.Lvar block_param}
+    | Sil.Load {id; e= Exp.Lvar block_param as origin_exp; root_typ; typ; loc}
       when Mangled.Map.mem (Pvar.get_name block_param) substitutions ->
         let id_map = Ident.Map.add id (Pvar.get_name block_param) id_map in
-        (* we don't need the load the block param instruction anymore *)
-        (instrs, id_map)
+        (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc} :: instrs, id_map)
     | Sil.Load {id; e= origin_exp; root_typ; typ; loc} ->
         (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc} :: instrs, id_map)
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= Exp.Var id; loc}
