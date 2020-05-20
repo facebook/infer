@@ -130,13 +130,15 @@ let tasks_generator_builder_for sources =
 let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
     let target_files =
-      List.rev_map source_files_to_analyze ~f:(fun sf -> TaskSchedulerTypes.File sf)
+      List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
     Tasks.run_sequentially ~f:analyze_target target_files ;
     BackendStats.get () )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
-    let build_tasks_generator () = tasks_generator_builder_for source_files_to_analyze in
+    let build_tasks_generator () =
+      tasks_generator_builder_for (Lazy.force source_files_to_analyze)
+    in
     (* Prepare tasks one file at a time while executing in parallel *)
     RestartScheduler.setup () ;
     let runner =
@@ -203,7 +205,7 @@ let main ~changed_files =
       Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
       L.progress "Done@." )
     else if not Config.incremental_analysis then DB.Results_dir.clean_specs_dir () ;
-  let source_files = get_source_files_to_analyze ~changed_files in
+  let source_files = lazy (get_source_files_to_analyze ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let stats = analyze source_files in
