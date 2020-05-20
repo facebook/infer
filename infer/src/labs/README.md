@@ -35,6 +35,12 @@ Clone the Infer repository at https://github.com/facebook/infer and read the ins
 
 See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/master/CONTRIBUTING.md#hacking-on-the-code) to set your editor and for tips and tricks on how to hack on Infer more efficiently. One of the most useful things to install in your editor to navigate OCaml source code efficiently is [Merlin](https://github.com/ocaml/merlin/wiki).
 
+For Java, ensure that you have the following jar files in your `$CLASSPATH`:
+
+- infer/lib/java/android/android-23.jar
+- infer/dependencies/java/sun-tools/tools.jar
+
+
 ## (1) Warm up: running, testing, and debugging Infer
 
 (a) Change to the test directory (`cd infer/tests/codetoanalyze/java/lab`) and run infer in its default configuration:
