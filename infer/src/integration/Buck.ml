@@ -203,8 +203,6 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
 
 let max_command_line_length = 50
 
-let die_if_empty f = function [] -> f L.(die UserError) | l -> l
-
 (** for genrule_master_mode, this is the label expected on the capture genrules *)
 let infer_enabled_label = "infer_enabled"
 
@@ -253,7 +251,7 @@ let config =
     List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
 
 
-let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
+let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> ( match buck_mode with
      | ClangFlavors | ClangCompilationDB NoDependencies ->
@@ -262,7 +260,7 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
          Query.deps None
      | ClangCompilationDB (DepsUpToDepth depth) ->
          Query.deps (Some depth) )
-  |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode) else Fn.id)
+  |> Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode)
   |> ( if BuckMode.is_java_genrule_master_or_combined buck_mode then
        Query.label_filter ~label:infer_enabled_label
      else Fn.id )
@@ -271,16 +269,6 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) ~filter_kind targets =
   if BuckMode.is_java_genrule_master_or_combined buck_mode then
     List.rev_map ~f:(fun s -> s ^ genrule_suffix)
   else Fn.id
-
-
-let resolve_alias_targets aliases =
-  (* we could use buck query to resolve aliases but buck targets --resolve-alias is faster *)
-  let cmd = "buck" :: "targets" :: "--resolve-alias" :: aliases in
-  let on_result_lines =
-    die_if_empty (fun die ->
-        die "*** No alias found for: '%a'." (Pp.seq ~sep:"', '" F.pp_print_string) aliases )
-  in
-  wrap_buck_call ~label:"targets" cmd |> on_result_lines
 
 
 type parsed_args =
@@ -357,18 +345,13 @@ let parse_command_and_targets (buck_mode : BuckMode.t) ~filter_kind original_buc
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
     match (filter_kind, buck_mode, parsed_args) with
-    | ( (`No | `Auto)
+    | ( `Auto
       , (ClangFlavors | JavaGenruleMaster | CombinedGenrule)
       , {pattern_targets= []; alias_targets= []; normal_targets} ) ->
         normal_targets
-    | ( `No
-      , (ClangFlavors | JavaGenruleMaster | CombinedGenrule)
-      , {pattern_targets= []; alias_targets; normal_targets} ) ->
-        alias_targets |> resolve_alias_targets |> List.rev_append normal_targets
-    | (`Yes | `No | `Auto), _, {pattern_targets; alias_targets; normal_targets} ->
-        let filter_kind = match filter_kind with `No -> false | `Yes | `Auto -> true in
+    | (`Yes | `Auto), _, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-        |> resolve_pattern_targets buck_mode ~filter_kind
+        |> resolve_pattern_targets buck_mode
   in
   let targets =
     Option.value_map ~default:targets
