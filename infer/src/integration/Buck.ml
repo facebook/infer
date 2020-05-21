@@ -312,7 +312,7 @@ let inline_argument_files buck_args =
   List.concat_map ~f:expand_buck_arg buck_args
 
 
-let parse_command_and_targets (buck_mode : BuckMode.t) ~filter_kind original_buck_args =
+let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_blacklist_regexp =
@@ -344,12 +344,11 @@ let parse_command_and_targets (buck_mode : BuckMode.t) ~filter_kind original_buc
   in
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
-    match (filter_kind, buck_mode, parsed_args) with
-    | ( `Auto
-      , (ClangFlavors | JavaGenruleMaster | CombinedGenrule)
-      , {pattern_targets= []; alias_targets= []; normal_targets} ) ->
+    match (buck_mode, parsed_args) with
+    | ClangFlavors, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | (`Yes | `Auto), _, {pattern_targets; alias_targets; normal_targets} ->
+    | ( (ClangFlavors | CombinedGenrule | JavaGenruleMaster | ClangCompilationDB _)
+      , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode
   in

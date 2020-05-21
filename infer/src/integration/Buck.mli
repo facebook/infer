@@ -34,8 +34,7 @@ val config : BuckMode.t -> string list
     ["--config" :: param_a :: "--config" :: param_b :: ...] describing the buck config flags for the
     given Buck mode. *)
 
-val parse_command_and_targets :
-  BuckMode.t -> filter_kind:[< `Yes | `Auto] -> string list -> string * string list * string list
+val parse_command_and_targets : BuckMode.t -> string list -> string * string list * string list
 (** parses given buck command, using the buck configuration returned by [config] above and returns a
     triple [(buck_command, non_target_params, target_params)] *)
 

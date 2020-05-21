@@ -11,9 +11,9 @@ module F = Format
 
 type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
 
-let add_flavors_to_buck_arguments buck_mode ~filter_kind ~extra_flavors original_buck_args =
+let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
   let command, rev_not_targets, targets =
-    Buck.parse_command_and_targets buck_mode ~filter_kind original_buck_args
+    Buck.parse_command_and_targets buck_mode original_buck_args
   in
   let targets =
     List.rev_map targets ~f:(fun t ->
@@ -109,7 +109,7 @@ let capture build_cmd =
   in
   Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
   let {command; rev_not_targets; targets} =
-    add_flavors_to_buck_arguments ClangFlavors ~filter_kind:`Auto ~extra_flavors:[] buck_args
+    add_flavors_to_buck_arguments ClangFlavors ~extra_flavors:[] buck_args
   in
   if List.is_empty targets then ()
   else

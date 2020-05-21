@@ -158,9 +158,7 @@ let capture buck_mode build_cmd =
   let prog, buck_cmd = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
   L.progress "Querying buck for genrule capture targets...@." ;
   let time0 = Mtime_clock.counter () in
-  let command, args, targets =
-    Buck.parse_command_and_targets buck_mode ~filter_kind:`Yes buck_cmd
-  in
+  let command, args, targets = Buck.parse_command_and_targets buck_mode buck_cmd in
   L.progress "Found %d genrule capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
   let all_args = List.rev_append args targets in
