@@ -162,6 +162,9 @@ module Node : sig
 
   val get_wto_index : t -> int
 
+  val is_dangling : t -> bool
+  (** Returns true if the node is dangling, i.e. no successors and predecessors *)
+
   val hash : t -> int
   (** Hash function for nodes *)
 

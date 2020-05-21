@@ -49,7 +49,8 @@ module LoopHeadToGuardNodes = Procdesc.NodeMap
 
 type loop_control_maps =
   { exit_map: LoopHeads.t ExitNodeToLoopHeads.t
-  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t }
+  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t
+  ; nodes: Procdesc.Node.t list Lazy.t }
 
 (* forward transfer function for control dependencies *)
 module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
@@ -75,7 +76,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
         None
 
 
-  let get_vars_in_exp exp prune_node loop_head =
+  let get_vars_in_exp nodes exp prune_node loop_head =
     let program_control_vars =
       Exp.program_vars exp
       |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc pvar ->
@@ -88,15 +89,32 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
            with
            | Some deps ->
                ControlDepSet.union deps acc
-           | None ->
-               L.internal_error
-                 "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp id
-                 Exp.pp exp ;
-               acc )
+           | None -> (
+               (* the variables in the prone node do not appear in
+                  predecessor nodes. This could happen if the variable
+                  is defined in a dangling node due to a frontend
+                  issue (when reading from a global variable). In that
+                  case, we find that node among all the nodes of the
+                  cfg and pick up the control variables. *)
+               let all_nodes = force nodes in
+               match
+                 List.find_map all_nodes ~f:(fun node ->
+                     if Procdesc.Node.is_dangling node then
+                       let instrs = Procdesc.Node.get_instrs node in
+                       Instrs.find_map instrs ~f:(find_vars_in_decl id loop_head prune_node)
+                     else None )
+               with
+               | Some deps ->
+                   ControlDepSet.union deps acc
+               | None ->
+                   L.internal_error
+                     "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp
+                     id Exp.pp exp ;
+                   acc ) )
 
 
   (* extract vars from the prune instructions in the node *)
-  let get_control_vars loop_nodes loop_head =
+  let get_control_vars nodes loop_nodes loop_head =
     GuardNodes.fold
       (fun prune_node acc ->
         let instrs = Procdesc.Node.get_instrs prune_node in
@@ -104,7 +122,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
           ~f:(fun astate instr ->
             match instr with
             | Sil.Prune (exp, _, _, _) ->
-                Domain.union (get_vars_in_exp exp prune_node loop_head) astate
+                Domain.union (get_vars_in_exp nodes exp prune_node loop_head) astate
             | _ ->
                 (* prune nodes include other instructions like REMOVE_TEMPS or loads *)
                 astate )
@@ -117,12 +135,12 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
      along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate {exit_map; loop_head_to_guard_nodes} (node : CFG.Node.t) _ =
+  let exec_instr astate {exit_map; nodes; loop_head_to_guard_nodes} (node : CFG.Node.t) _ =
     let node = CFG.Node.underlying_node node in
     let astate' =
       match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with
       | Some loop_nodes ->
-          Domain.union astate (get_control_vars loop_nodes node)
+          Domain.union astate (get_control_vars nodes loop_nodes node)
       | _ ->
           astate
     in
@@ -137,7 +155,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
                   L.(debug Analysis Medium)
                     "@\n>>>Exit node %a, Loop head %a, guard nodes=%a  @\n\n" Procdesc.Node.pp node
                     Procdesc.Node.pp loop_head GuardNodes.pp guard_nodes ;
-                  get_control_vars guard_nodes loop_head |> Domain.diff astate_acc
+                  get_control_vars nodes guard_nodes loop_head |> Domain.diff astate_acc
               | _ ->
                   (* Every loop head must have a guard node *)
                   assert false )

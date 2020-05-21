@@ -120,7 +120,8 @@ let get_loop_head_to_source_nodes cfg =
     set (i.e. target of the back edges) loop_head_to_guard_map : loop_head -> guard_nodes and
     guard_nodes contains the nodes that may affect the looping behavior, i.e. occur in the guard of
     the loop conditional. *)
-let get_control_maps loop_head_to_source_nodes_map =
+let get_control_maps pdesc loop_head_to_source_nodes_map =
+  let nodes = lazy (Procdesc.get_nodes pdesc) in
   Procdesc.NodeMap.fold
     (fun loop_head source_list
          (Control.{exit_map; loop_head_to_guard_nodes}, loop_head_to_loop_nodes) ->
@@ -166,15 +167,16 @@ let get_control_maps loop_head_to_source_nodes_map =
           loop_head_to_loop_nodes
       in
       let open Control in
-      ( {exit_map= exit_map'; loop_head_to_guard_nodes= loop_head_to_guard_nodes'}
+      ( {exit_map= exit_map'; loop_head_to_guard_nodes= loop_head_to_guard_nodes'; nodes}
       , loop_head_to_loop_nodes' ) )
     loop_head_to_source_nodes_map
     ( Control.
         { exit_map= Control.ExitNodeToLoopHeads.empty
-        ; loop_head_to_guard_nodes= Control.LoopHeadToGuardNodes.empty }
+        ; loop_head_to_guard_nodes= Control.LoopHeadToGuardNodes.empty
+        ; nodes }
     , LoopInvariant.LoopHeadToLoopNodes.empty )
 
 
 let get_loop_control_maps cfg =
   let loop_head_to_source_nodes_map = get_loop_head_to_source_nodes cfg in
-  get_control_maps loop_head_to_source_nodes_map
+  get_control_maps cfg loop_head_to_source_nodes_map

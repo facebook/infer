@@ -191,6 +191,8 @@ module Node = struct
   (** Get the predecessors of the node *)
   let get_preds node = node.preds
 
+  let is_dangling node = List.is_empty (get_preds node) && List.is_empty (get_succs node)
+
   (** Get siblings *)
   let get_siblings node =
     get_preds node
