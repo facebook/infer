@@ -30,13 +30,10 @@ module type BaseDomainSig = sig
   val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
 
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
-  (**filter both heap and attrs *)
+  (** filter both heap and attrs *)
 
-  val partition_addr :
-       f:(AbstractValue.t -> bool)
-    -> t
-    -> (BaseMemory.t * BaseAddressAttributes.t) * (BaseMemory.t * BaseAddressAttributes.t)
-  (**partition both heap and attrs *)
+  val filter_addr_with_discarded_attrs : f:(AbstractValue.t -> bool) -> t -> t * Attributes.t list
+  (** filter both heap and attrs with returning discarded attrs together *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -143,7 +140,7 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t * AbstractValue.Set.t * BaseAddressAttributes.t
+val discard_unreachable : t -> t * AbstractValue.Set.t * Attributes.t list
 (** [discard_unreachable astate] garbage collects unreachable addresses in the state to make it
     smaller, and retuns the new state, the live addresses, and the attributes of discarded addresses *)
 

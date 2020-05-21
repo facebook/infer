@@ -54,7 +54,11 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
-let partition = Graph.partition
+let filter_with_discarded_attrs f x =
+  fold
+    (fun k v ((x, discarded) as acc) -> if f k v then acc else (Graph.remove k x, v :: discarded))
+    x (x, [])
+
 
 let pp = Graph.pp
 

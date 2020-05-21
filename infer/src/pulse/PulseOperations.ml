@@ -316,7 +316,7 @@ let mark_address_of_stack_variable history variable location address astate =
 
 
 let check_memory_leak_unreachable unreachable_attrs location astate =
-  let check_memory_leak _ attributes result =
+  let check_memory_leak result attributes =
     let allocated_not_freed_opt =
       Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
         ~f:(fun acc attr ->
@@ -335,7 +335,7 @@ let check_memory_leak_unreachable unreachable_attrs location astate =
     | _ ->
         result
   in
-  BaseAddressAttributes.fold check_memory_leak unreachable_attrs (Ok ())
+  List.fold unreachable_attrs ~init:(Ok ()) ~f:check_memory_leak
 
 
 let remove_vars vars location astate =

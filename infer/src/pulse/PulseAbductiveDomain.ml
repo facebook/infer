@@ -26,13 +26,10 @@ module type BaseDomainSig = sig
   val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
 
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
-  (**filter both heap and attrs *)
+  (** filter both heap and attrs *)
 
-  val partition_addr :
-       f:(AbstractValue.t -> bool)
-    -> t
-    -> (BaseMemory.t * BaseAddressAttributes.t) * (BaseMemory.t * BaseAddressAttributes.t)
-  (**partition both heap and attrs *)
+  val filter_addr_with_discarded_attrs : f:(AbstractValue.t -> bool) -> t -> t * Attributes.t list
+  (** filter both heap and attrs with returning discarded attrs together *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -63,12 +60,12 @@ module BaseDomainCommon = struct
     update ~heap:heap' ~attrs:attrs' foot
 
 
-  let partition_addr ~f foot =
-    let heap_yes, heap_no = BaseMemory.partition (fun address _ -> f address) foot.heap in
-    let attrs_yes, attrs_no =
-      BaseAddressAttributes.partition (fun address _ -> f address) foot.attrs
+  let filter_addr_with_discarded_attrs ~f foot =
+    let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
+    let attrs', discarded_attributes =
+      BaseAddressAttributes.filter_with_discarded_attrs (fun address _ -> f address) foot.attrs
     in
-    ((heap_yes, attrs_yes), (heap_no, attrs_no))
+    (update ~heap:heap' ~attrs:attrs' foot, discarded_attributes)
 end
 
 (** represents the post abstract state at each program point *)
@@ -339,10 +336,11 @@ let discard_unreachable ({pre; post} as astate) =
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let live_addresses = AbstractValue.Set.union pre_addresses post_addresses in
-  let (heap_new, attrs_new), (_, attrs_unreachable) =
-    PostDomain.partition_addr ~f:(fun address -> AbstractValue.Set.mem address live_addresses) post
+  let post_new, attrs_unreachable =
+    PostDomain.filter_addr_with_discarded_attrs
+      ~f:(fun address -> AbstractValue.Set.mem address live_addresses)
+      post
   in
-  let post_new = PostDomain.update ~heap:heap_new ~attrs:attrs_new post in
   (* note: we don't call {!PulsePathCondition.simplify} *)
   let astate =
     if phys_equal pre_new pre && phys_equal post_new post then astate
