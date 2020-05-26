@@ -76,7 +76,14 @@ module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 
 (** Report an error when we have acquired more resources than we have released *)
-let report_if_leak {InterproceduralAnalysis.proc_desc= _; err_log= _; _} _post = ()
+let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} post =
+  let change_me = false in
+  if change_me then
+    let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
+    let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
+    Reporting.log_error proc_desc err_log ~loc:last_loc ResourceLeakLabExercise
+      IssueType.lab_resource_leak message
+
 
 (** Main function into the checker--registered in RegisterCheckers *)
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =

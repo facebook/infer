@@ -85,13 +85,7 @@ You don't need to change `join` or `widen` yet, this will be done later. You als
 
 Finally, look again at the HTML debug output of infer on [Leaks.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/Leaks.java). You should see the resource count be incremented and decremented appropriately.
 
-(c) Now let's report leaks! Write and expose a function `ResourceLeakDomain.has_leak`, true when an abstract state shows a leak. Then change `ResourceLeaks.report_if_leak` to report when `ResourceLeakDomain.has_leak post` is true. You can use this code to report:
-
-```OCaml
-  let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
-  let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
-  Reporting.log_error proc_desc err_log ~loc:last_loc IssueType.resource_leak message
-```
+(c) Now let's report leaks! Write and expose a function `ResourceLeakDomain.has_leak`, true when an abstract state shows a leak. Then change `ResourceLeaks.report_if_leak` to report when `ResourceLeakDomain.has_leak post` is true.
 
 (d) Think about the concretization of the resource count. What does a resource count of zero mean? Is there a concrete state in the concretization of "Resource count zero" that leaks a resource? Write a simple test method `FN_leakBad` in [Leaks.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/Leaks.java) that will produce this concrete state (that is, a false negative test where the program leaks a resource, but the analyzer doesn't catch it).
 

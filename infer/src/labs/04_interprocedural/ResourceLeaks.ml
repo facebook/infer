@@ -102,7 +102,7 @@ let report_if_leak post summary (proc_data : unit ProcData.t) =
   if ResourceLeakDomain.has_leak post then
     let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
     let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
-    Reporting.log_error summary ~loc:last_loc IssueType.resource_leak message
+    Reporting.log_error summary ~loc:last_loc IssueType.lab_resource_leak message
 
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)

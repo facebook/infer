@@ -205,7 +205,9 @@ let recognize_exception exn =
       ; severity= None
       ; category= Prover }
   | Condition_always_true_false (desc, b, ocaml_pos) ->
-      let name = if b then IssueType.condition_always_true else IssueType.condition_always_false in
+      let name =
+        if b then IssueType.biabd_condition_always_true else IssueType.biabd_condition_always_false
+      in
       { name
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
@@ -213,7 +215,7 @@ let recognize_exception exn =
       ; severity= None
       ; category= Nocat }
   | Custom_error (error_msg, desc) ->
-      { name= IssueType.register_from_string ~id:error_msg [Biabduction]
+      { name= IssueType.register_from_string ~id:error_msg Biabduction
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
@@ -410,14 +412,14 @@ let recognize_exception exn =
       ; severity= None
       ; category= Prover }
   | Registered_observer_being_deallocated (desc, ocaml_pos) ->
-      { name= IssueType.registered_observer_being_deallocated
+      { name= IssueType.biabd_registered_observer_being_deallocated
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
       ; severity= Some Error
       ; category= Nocat }
   | Stack_variable_address_escape (desc, ocaml_pos) ->
-      { name= IssueType.stack_variable_address_escape
+      { name= IssueType.biabd_stack_variable_address_escape
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user

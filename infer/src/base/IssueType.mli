@@ -7,10 +7,9 @@
 
 open! IStd
 
-(** type of string used for localisation *)
 type t = private
   { unique_id: string
-  ; checkers: Checker.t list
+  ; checker: Checker.t
   ; mutable enabled: bool
   ; mutable hum: string
   ; mutable doc_url: string option
@@ -31,7 +30,7 @@ val register_from_string :
   -> ?doc_url:string
   -> ?linters_def_file:string
   -> id:string
-  -> Checker.t list
+  -> Checker.t
   -> t
 (** Create a new issue and register it in the list of all issues. NOTE: if the issue with the same
     string id is already registered, overrides `hum`, `doc_url`, and `linters_def_file`, but DOES
@@ -61,6 +60,14 @@ val array_out_of_bounds_l3 : t
 val assert_failure : t
 
 val bad_footprint : t
+
+val biabd_condition_always_false : t
+
+val biabd_condition_always_true : t
+
+val biabd_registered_observer_being_deallocated : t
+
+val biabd_stack_variable_address_escape : t
 
 val biabd_use_after_free : t
 
@@ -238,6 +245,8 @@ val invariant_call : t
 
 val javascript_injection : t
 
+val lab_resource_leak : t
+
 val leak_after_array_abstraction : t
 
 val leak_in_footprint : t
@@ -283,8 +292,6 @@ val pulse_memory_leak : t
 val pure_function : t
 
 val quandary_taint_error : t
-
-val registered_observer_being_deallocated : t
 
 val resource_leak : t
 
