@@ -61,7 +61,7 @@ end = struct
 
     let to_rank {unique_id} = unique_id
 
-    let pp fmt t = F.pp_print_string fmt t.unique_id
+    let pp fmt t = F.pp_print_string fmt t.hum
   end
 
   include T
@@ -147,19 +147,27 @@ let assert_failure = register_from_string ~id:"Assert_failure" Biabduction
 let bad_footprint = register_from_string ~id:"Bad_footprint" Biabduction
 
 let biabd_condition_always_false =
-  register_from_string ~enabled:false ~id:"BIABD_CONDITION_ALWAYS_FALSE" Biabduction
+  register_from_string ~enabled:false ~hum:"Condition Always False"
+    ~id:"BIABD_CONDITION_ALWAYS_FALSE" Biabduction
 
 
 let biabd_condition_always_true =
-  register_from_string ~enabled:false ~id:"BIABD_CONDITION_ALWAYS_TRUE" Biabduction
+  register_from_string ~enabled:false ~hum:"Condition Always True" ~id:"BIABD_CONDITION_ALWAYS_TRUE"
+    Biabduction
 
 
 let biabd_registered_observer_being_deallocated =
-  register_from_string ~id:"BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED" Biabduction
+  register_from_string ~hum:"Registered Observer Being Deallocated"
+    ~id:"BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED" Biabduction
 
 
 let biabd_stack_variable_address_escape =
-  register_from_string ~enabled:false ~id:"BIABD_STACK_VARIABLE_ADDRESS_ESCAPE" Biabduction
+  register_from_string ~enabled:false ~hum:"Stack Variable Address Escape"
+    ~id:"BIABD_STACK_VARIABLE_ADDRESS_ESCAPE" Biabduction
+
+
+let biabd_use_after_free =
+  register_from_string ~hum:"Use After Free" ~id:"BIABD_USE_AFTER_FREE" Biabduction
 
 
 let buffer_overrun_l1 = register_from_string ~id:"BUFFER_OVERRUN_L1" BufferOverrunChecker
@@ -520,7 +528,9 @@ let pulse_memory_leak = register_from_string ~enabled:false ~id:"PULSE_MEMORY_LE
 
 let pure_function = register_from_string ~id:"PURE_FUNCTION" Purity
 
-let quandary_taint_error = register_from_string ~id:"QUANDARY_TAINT_ERROR" Quandary
+let quandary_taint_error =
+  register_from_string ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Quandary
+
 
 let resource_leak = register_from_string ~id:"RESOURCE_LEAK" Biabduction
 
@@ -579,8 +589,6 @@ let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" BufferO
 let use_after_delete = register_from_string ~id:"USE_AFTER_DELETE" Pulse
 
 let use_after_free = register_from_string ~id:"USE_AFTER_FREE" Pulse
-
-let biabd_use_after_free = register_from_string ~id:"BIABD_USE_AFTER_FREE" Biabduction
 
 let use_after_lifetime = register_from_string ~id:"USE_AFTER_LIFETIME" Pulse
 

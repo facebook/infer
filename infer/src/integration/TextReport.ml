@@ -21,44 +21,54 @@ let pp_n_spaces n fmt =
 
 
 module ReportSummary = struct
-  type t = {mutable n_issues: int; issue_type_counts: int IssueHash.t}
+  type t = {mutable n_issues: int; issue_type_counts: (int * string) IssueHash.t}
 
   let mk_empty () = {n_issues= 0; issue_type_counts= IssueHash.create 64}
 
   let pp fmt {n_issues= _; issue_type_counts} =
+    let string_of_issue ~issue_type ~issue_type_hum =
+      Printf.sprintf "%s(%s)" issue_type_hum issue_type
+    in
+    (* to document the format of the output to the user *)
+    let header_issue = string_of_issue ~issue_type:"ISSUED_TYPE_ID" ~issue_type_hum:"Issue Type" in
     let max_issue_length, issue_counts =
       IssueHash.to_seq issue_type_counts
       |> Seq.fold_left
-           (fun (max_issue_length, issue_counts) ((issue_type, _) as issue_with_count) ->
-             let l = String.length issue_type in
-             (Int.max max_issue_length l, issue_with_count :: issue_counts) )
-           (0, [])
+           (fun (max_issue_length, issue_counts) ((issue_type, (_, issue_type_hum)) as binding) ->
+             let l = String.length (string_of_issue ~issue_type ~issue_type_hum) in
+             (Int.max max_issue_length l, binding :: issue_counts) )
+           (String.length header_issue, [])
     in
-    List.sort issue_counts ~compare:(fun (issue_type1, count1) (issue_type2, count2) ->
+    pp_n_spaces (max_issue_length - String.length header_issue) fmt ;
+    F.fprintf fmt "  %s: #@\n" header_issue ;
+    List.sort issue_counts ~compare:(fun (issue_type1, (count1, _)) (issue_type2, (count2, _)) ->
         (* reverse lexicographic order on (count * issue_type) *)
         if Int.equal count2 count1 then String.compare issue_type2 issue_type1
         else Int.compare count2 count1 )
-    |> List.iter ~f:(fun (bug_type, count) ->
-           pp_n_spaces (max_issue_length - String.length bug_type) fmt ;
-           F.fprintf fmt "  %s: %d@\n" bug_type count )
+    |> List.iter ~f:(fun (issue_type, (count, issue_type_hum)) ->
+           let issue_string = string_of_issue ~issue_type ~issue_type_hum in
+           pp_n_spaces (max_issue_length - String.length issue_string) fmt ;
+           F.fprintf fmt "  %s: %d@\n" issue_string count )
 
 
   let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =
     let bug_count =
-      IssueHash.find_opt summary.issue_type_counts jsonbug.bug_type |> Option.value ~default:0
+      IssueHash.find_opt summary.issue_type_counts jsonbug.bug_type
+      |> Option.value_map ~default:0 ~f:fst
     in
-    IssueHash.replace summary.issue_type_counts jsonbug.bug_type (bug_count + 1) ;
+    IssueHash.replace summary.issue_type_counts jsonbug.bug_type
+      (bug_count + 1, jsonbug.bug_type_hum) ;
     summary.n_issues <- summary.n_issues + 1 ;
     (* chain for convenience/pretending it's a functional data structure *)
     summary
 end
 
-let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type; qualifier; _} =
-  F.fprintf fmt "%s:%d: %s: %s@\n  %s" file line (String.lowercase severity) bug_type qualifier
+let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; _} =
+  F.fprintf fmt "%s:%d: %s: %s@\n  %s" file line (String.lowercase severity) bug_type_hum qualifier
 
 
-let pp_jsonbug_with_number fmt (i, {Jsonbug_t.file; severity; line; bug_type; qualifier; _}) =
-  F.fprintf fmt "#%d@\n%s:%d: %s: %s@\n  %s" i file line (String.lowercase severity) bug_type
+let pp_jsonbug_with_number fmt (i, {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; _}) =
+  F.fprintf fmt "#%d@\n%s:%d: %s: %s@\n  %s" i file line (String.lowercase severity) bug_type_hum
     qualifier
 
 
