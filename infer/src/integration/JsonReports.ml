@@ -157,19 +157,19 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     in
     if SourceFile.is_invalid source_file then
       L.(die InternalError)
-        "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.err_name
+        "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.issue_type
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
     let should_report_source_file =
       (not (SourceFile.is_biabduction_model source_file))
       || Config.debug_mode || Config.debug_exceptions
     in
     if
-      error_filter source_file err_key.err_name
+      error_filter source_file err_key.issue_type
       && should_report_source_file
-      && should_report err_key.err_name err_key.err_desc err_data.err_class
+      && should_report err_key.issue_type err_key.err_desc err_data.err_class
     then
       let severity = Exceptions.severity_string err_key.severity in
-      let bug_type = err_key.err_name.IssueType.unique_id in
+      let bug_type = err_key.issue_type.unique_id in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
       in
@@ -182,7 +182,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       in
       let qualifier =
         let base_qualifier = error_desc_to_plain_string err_key.err_desc in
-        if IssueType.(equal resource_leak) err_key.err_name then
+        if IssueType.(equal resource_leak) err_key.issue_type then
           match Errlog.compute_local_exception_line err_data.loc_trace with
           | None ->
               base_qualifier
@@ -209,11 +209,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
         ; dotty= error_desc_to_dotty_string err_key.err_desc
         ; infer_source_loc= json_ml_loc
-        ; bug_type_hum= err_key.err_name.IssueType.hum
+        ; bug_type_hum= err_key.issue_type.hum
         ; linters_def_file= err_data.linters_def_file
         ; doc_url= err_data.doc_url
         ; traceview_id= None
-        ; censored_reason= censored_reason err_key.err_name source_file
+        ; censored_reason= censored_reason err_key.issue_type source_file
         ; access= err_data.access
         ; extras= err_data.extras }
       in

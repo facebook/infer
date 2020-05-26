@@ -244,7 +244,7 @@ let process_execution_failures (log_issue : log_issue) =
     match (fs.node_ok, fs.first_failure) with
     | 0, Some (loc, node, _, loc_trace, exn) when not Config.debug_exceptions ->
         let error = Exceptions.recognize_exception exn in
-        let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
+        let desc' = Localise.verbatim_desc ("exception: " ^ error.issue_type.unique_id) in
         let exn' = Exceptions.Analysis_stops (desc', error.ocaml_pos) in
         log_issue ~loc ~node ~ltr:loc_trace exn'
     | _ ->

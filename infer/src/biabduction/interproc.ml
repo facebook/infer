@@ -1080,7 +1080,7 @@ let perform_transition ({InterproceduralAnalysis.tenv; _} as analysis_data) proc
             BiabductionConfig.allow_leak := allow_leak ;
             L.debug Analysis Medium "Error in collect_preconditions for %a@." Procname.pp proc_name ;
             let error = Exceptions.recognize_exception exn in
-            let err_str = "exception raised " ^ error.name.IssueType.unique_id in
+            let err_str = "exception raised " ^ error.issue_type.unique_id in
             L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;
             [] )
     in

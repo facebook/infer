@@ -137,7 +137,7 @@ val pp_err :
 (** pretty print an error *)
 
 type t =
-  { name: IssueType.t
+  { issue_type: IssueType.t
   ; description: Localise.error_desc
   ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *)
   ; visibility: visibility

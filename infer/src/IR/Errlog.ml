@@ -72,7 +72,8 @@ type node =
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
   | BackendNode of {node: Procdesc.Node.t}
 
-type err_key = {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
+type err_key =
+  {severity: Exceptions.severity; issue_type: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -106,11 +107,11 @@ module ErrLogHash = struct
     type t = err_key
 
     (* NOTE: changing the hash function can change the order in which issues are reported. *)
-    let hash key = Hashtbl.hash (key.severity, key.err_name, Localise.error_desc_hash key.err_desc)
+    let hash key = Hashtbl.hash (key.severity, key.issue_type, Localise.error_desc_hash key.err_desc)
 
     let equal key1 key2 =
-      [%compare.equal: Exceptions.severity * IssueType.t] (key1.severity, key1.err_name)
-        (key2.severity, key2.err_name)
+      [%compare.equal: Exceptions.severity * IssueType.t] (key1.severity, key1.issue_type)
+        (key2.severity, key2.issue_type)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
   end
 
@@ -144,7 +145,7 @@ let fold (f : err_key -> err_data -> 'a -> 'a) t acc =
 let pp_errors fmt (errlog : t) =
   let f key _ =
     if Exceptions.equal_severity key.severity Exceptions.Error then
-      F.fprintf fmt "%a@ " IssueType.pp key.err_name
+      F.fprintf fmt "%a@ " IssueType.pp key.issue_type
   in
   ErrLogHash.iter f errlog
 
@@ -153,7 +154,7 @@ let pp_errors fmt (errlog : t) =
 let pp_warnings fmt (errlog : t) =
   let f key _ =
     if Exceptions.equal_severity key.severity Exceptions.Warning then
-      F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
+      F.fprintf fmt "%a %a@ " IssueType.pp key.issue_type Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
 
@@ -169,7 +170,7 @@ let pp_html source path_to_root fmt (errlog : t) =
   in
   let pp_err_log ek key err_datas =
     if Exceptions.equal_severity key.severity ek then
-      F.fprintf fmt "<br>%a %a %a" IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
+      F.fprintf fmt "<br>%a %a %a" IssueType.pp key.issue_type Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
   let pp severity =
@@ -202,13 +203,13 @@ let update errlog_old errlog_new =
 let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access ~extras
     checker exn =
   let error = Exceptions.recognize_exception exn in
-  if not (IssueType.checker_can_report checker error.name) then
+  if not (IssueType.checker_can_report checker error.issue_type) then
     L.die InternalError
       "Issue type \"%s\" cannot be reported by the checker \"%s\". The only checker that is \
        allowed to report this issue type is \"%s\". If this is incorrect please either update the \
        issue in IssueType or create a new issue type for \"%s\"."
-      error.name.unique_id (Checker.get_name checker)
-      (Checker.get_name error.name.checker)
+      error.issue_type.unique_id (Checker.get_name checker)
+      (Checker.get_name error.issue_type.checker)
       (Checker.get_name checker) ;
   let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
@@ -258,19 +259,19 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
         ; access
         ; extras }
       in
-      let err_key = {severity; err_name= error.name; err_desc= error.description} in
+      let err_key = {severity; issue_type= error.issue_type; err_desc= error.description} in
       add_issue err_log err_key (ErrDataSet.singleton err_data)
     in
     let should_print_now = match exn with Exceptions.Internal_error _ -> true | _ -> added in
     let print_now () =
       L.(debug Analysis Medium)
         "@\n%a@\n@?"
-        (Exceptions.pp_err loc severity error.name error.description error.ocaml_pos)
+        (Exceptions.pp_err loc severity error.issue_type error.description error.ocaml_pos)
         () ;
       if not (Exceptions.equal_severity severity Exceptions.Error) then (
         let warn_str =
           let pp fmt =
-            Format.fprintf fmt "%s %a" error.name.IssueType.unique_id Localise.pp_error_desc
+            Format.fprintf fmt "%s %a" error.issue_type.unique_id Localise.pp_error_desc
               error.description
           in
           F.asprintf "%t" pp

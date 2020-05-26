@@ -11,7 +11,7 @@ type log_t =
   ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> Checker.t -> IssueType.t -> string -> unit
 
 let log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access ~extras checker exn =
-  let issue_type = (Exceptions.recognize_exception exn).name in
+  let issue_type = (Exceptions.recognize_exception exn).issue_type in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let doc_url = issue_type.doc_url in
     let linters_def_file = issue_type.linters_def_file in

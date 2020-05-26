@@ -1496,7 +1496,7 @@ and instrs ?(mask_errors = false) analysis_data instrs ppl =
             ""
       in
       L.d_warning
-        (F.sprintf "Generated Instruction Failed with: %s%s" error.name.IssueType.unique_id loc) ;
+        (F.sprintf "Generated Instruction Failed with: %s%s" error.issue_type.unique_id loc) ;
       L.d_ln () ;
       [(p, path)]
   in
