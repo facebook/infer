@@ -59,8 +59,8 @@ let loc_trace_to_jsonbug_record trace_list ekind =
       record_list
 
 
-let should_report issue_type error_desc eclass =
-  if (not Config.filtering) || Exceptions.equal_err_class eclass Exceptions.Linters then true
+let should_report issue_type error_desc =
+  if not Config.filtering then true
   else
     let issue_type_is_null_deref =
       let null_deref_issue_types =
@@ -166,7 +166,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     if
       error_filter source_file err_key.issue_type
       && should_report_source_file
-      && should_report err_key.issue_type err_key.err_desc err_data.err_class
+      && should_report err_key.issue_type err_key.err_desc
     then
       let severity = Exceptions.severity_string err_key.severity in
       let bug_type = err_key.issue_type.unique_id in

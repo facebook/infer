@@ -19,11 +19,6 @@ type visibility =
 
 let equal_visibility = [%compare.equal: visibility]
 
-(** class of error/warning *)
-type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
-
-let equal_err_class = [%compare.equal: err_class]
-
 (** severity of the report *)
 type severity = Like | Info | Advice | Warning | Error [@@deriving compare]
 
@@ -119,8 +114,7 @@ type t =
   ; description: Localise.error_desc
   ; ocaml_pos: L.ocaml_pos option  (** location in the infer source code *)
   ; visibility: visibility
-  ; severity: severity option
-  ; category: err_class }
+  ; severity: severity option }
 
 let recognize_exception exn =
   match exn with
@@ -129,80 +123,69 @@ let recognize_exception exn =
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Analysis_stops (desc, ocaml_pos_opt) ->
       let visibility = if Config.analysis_stops then Exn_user else Exn_developer in
       { issue_type= IssueType.analysis_stops
       ; description= desc
       ; ocaml_pos= ocaml_pos_opt
       ; visibility
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Array_of_pointsto ocaml_pos ->
       { issue_type= IssueType.array_of_pointsto
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Array_out_of_bounds_l1 (desc, ocaml_pos) ->
       { issue_type= IssueType.array_out_of_bounds_l1
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= Some Error
-      ; category= Checker }
+      ; severity= Some Error }
   | Array_out_of_bounds_l2 (desc, ocaml_pos) ->
       { issue_type= IssueType.array_out_of_bounds_l2
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Array_out_of_bounds_l3 (desc, ocaml_pos) ->
       { issue_type= IssueType.array_out_of_bounds_l3
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Assert_failure (f, l, c) ->
       let ocaml_pos = (f, l, c, c) in
       { issue_type= IssueType.assert_failure
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Bad_footprint ocaml_pos ->
       { issue_type= IssueType.bad_footprint
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Biabd_use_after_free (desc, ocaml_pos) ->
       { issue_type= IssueType.biabd_use_after_free
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Cannot_star ocaml_pos ->
       { issue_type= IssueType.cannot_star
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Class_cast_exception (desc, ocaml_pos) ->
       { issue_type= IssueType.class_cast_exception
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Condition_always_true_false (desc, b, ocaml_pos) ->
       let issue_type =
         if b then IssueType.biabd_condition_always_true else IssueType.biabd_condition_always_false
@@ -211,143 +194,115 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Custom_error (error_msg, desc) ->
       { issue_type= IssueType.register_from_string ~id:error_msg Biabduction
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Checker }
+      ; severity= None }
   | Dummy_exception desc ->
       { issue_type= IssueType.analysis_stops
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= Some Info
-      ; category= Checker }
+      ; severity= Some Info }
   | Dangling_pointer_dereference (user_visible, desc, ocaml_pos) ->
       let visibility = if user_visible then Exn_user else Exn_developer in
       { issue_type= IssueType.dangling_pointer_dereference
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Deallocate_stack_variable desc ->
       { issue_type= IssueType.deallocate_stack_variable
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Deallocate_static_memory desc ->
       { issue_type= IssueType.deallocate_static_memory
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Deallocation_mismatch (desc, ocaml_pos) ->
       { issue_type= IssueType.deallocation_mismatch
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Divide_by_zero (desc, ocaml_pos) ->
       { issue_type= IssueType.divide_by_zero
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Checker }
+      ; severity= Some Error }
   | Eradicate (kind, desc) ->
-      { issue_type= kind
-      ; description= desc
-      ; ocaml_pos= None
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      {issue_type= kind; description= desc; ocaml_pos= None; visibility= Exn_user; severity= None}
   | Empty_vector_access (desc, ocaml_pos) ->
       { issue_type= IssueType.empty_vector_access
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Prover }
+      ; severity= Some Error }
   | Field_not_null_checked (desc, ocaml_pos) ->
       { issue_type= IssueType.field_not_null_checked
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Warning
-      ; category= Nocat }
+      ; severity= Some Warning }
   | Frontend_warning (issue_type, desc, ocaml_pos) ->
       { issue_type
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Linters }
+      ; severity= None }
   | Checkers (kind, desc) ->
-      { issue_type= kind
-      ; description= desc
-      ; ocaml_pos= None
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      {issue_type= kind; description= desc; ocaml_pos= None; visibility= Exn_user; severity= None}
   | Null_dereference (desc, ocaml_pos) ->
       { issue_type= IssueType.null_dereference
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Null_test_after_dereference (desc, ocaml_pos) ->
       { issue_type= IssueType.null_test_after_dereference
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Pointer_size_mismatch (desc, ocaml_pos) ->
       { issue_type= IssueType.pointer_size_mismatch
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Checker }
+      ; severity= Some Error }
   | Inherently_dangerous_function desc ->
       { issue_type= IssueType.inherently_dangerous_function
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Internal_error desc ->
       { issue_type= IssueType.internal_error
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Leak (fp_part, (exn_vis, error_desc), done_array_abstraction, resource, ocaml_pos) ->
       if done_array_abstraction then
         { issue_type= IssueType.leak_after_array_abstraction
         ; description= error_desc
         ; ocaml_pos= Some ocaml_pos
         ; visibility= Exn_developer
-        ; severity= None
-        ; category= Prover }
+        ; severity= None }
       else if fp_part then
         { issue_type= IssueType.leak_in_footprint
         ; description= error_desc
         ; ocaml_pos= Some ocaml_pos
         ; visibility= Exn_developer
-        ; severity= None
-        ; category= Prover }
+        ; severity= None }
       else
         let issue_type =
           match resource with
@@ -364,117 +319,101 @@ let recognize_exception exn =
         ; description= error_desc
         ; ocaml_pos= Some ocaml_pos
         ; visibility= exn_vis
-        ; severity= None
-        ; category= Prover }
+        ; severity= None }
   | Missing_fld (fld, ocaml_pos) ->
       let desc = Localise.verbatim_desc (Fieldname.to_full_string fld) in
       { issue_type= IssueType.missing_fld
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Premature_nil_termination (desc, ocaml_pos) ->
       { issue_type= IssueType.premature_nil_termination
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Parameter_not_null_checked (desc, ocaml_pos) ->
       { issue_type= IssueType.parameter_not_null_checked
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Warning
-      ; category= Nocat }
+      ; severity= Some Warning }
   | Precondition_not_found (desc, ocaml_pos) ->
       { issue_type= IssueType.precondition_not_found
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Precondition_not_met (desc, ocaml_pos) ->
       { issue_type= IssueType.precondition_not_met
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= Some Warning
-      ; category= Nocat }
+      ; severity= Some Warning }
       (* always a warning *)
   | Retain_cycle (desc, ocaml_pos) ->
       { issue_type= IssueType.retain_cycle
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
+      ; severity= None }
   | Registered_observer_being_deallocated (desc, ocaml_pos) ->
       { issue_type= IssueType.biabd_registered_observer_being_deallocated
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Nocat }
+      ; severity= Some Error }
   | Stack_variable_address_escape (desc, ocaml_pos) ->
       { issue_type= IssueType.biabd_stack_variable_address_escape
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Nocat }
+      ; severity= Some Error }
   | SymOp.Analysis_failure_exe _ ->
       { issue_type= IssueType.failure_exe
       ; description= Localise.no_desc
       ; ocaml_pos= None
       ; visibility= Exn_system
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Skip_function desc ->
       { issue_type= IssueType.skip_function
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Skip_pointer_dereference (desc, ocaml_pos) ->
       { issue_type= IssueType.skip_pointer_dereference
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Info
-      ; category= Nocat }
+      ; severity= Some Info }
       (* always an info *)
   | Symexec_memory_error ocaml_pos ->
       { issue_type= IssueType.symexec_memory_error
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Unary_minus_applied_to_unsigned_expression (desc, ocaml_pos) ->
       { issue_type= IssueType.unary_minus_applied_to_unsigned_expression
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | Wrong_argument_number ocaml_pos ->
       { issue_type= IssueType.wrong_argument_number
       ; description= Localise.no_desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
   | exn ->
       { issue_type= IssueType.failure_exe
       ; description=
           Localise.verbatim_desc (F.asprintf "%a: %s" Exn.pp exn (Caml.Printexc.get_backtrace ()))
       ; ocaml_pos= None
       ; visibility= Exn_system
-      ; severity= None
-      ; category= Nocat }
+      ; severity= None }
 
 
 (** print a description of the exception to the html output *)

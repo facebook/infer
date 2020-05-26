@@ -84,7 +84,6 @@ type err_data =
   ; loc: Location.t
   ; loc_in_ml_source: L.ocaml_pos option
   ; loc_trace: loc_trace
-  ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
   ; doc_url: string option
@@ -252,7 +251,6 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
         ; loc
         ; loc_in_ml_source= error.ocaml_pos
         ; loc_trace= ltr
-        ; err_class= error.category
         ; visibility= error.visibility
         ; linters_def_file
         ; doc_url

@@ -24,11 +24,6 @@ type severity = Like | Info | Advice | Warning | Error [@@deriving compare]
 
 val equal_severity : severity -> severity -> bool
 
-(** class of error *)
-type err_class = Checker | Prover | Nocat | Linters
-
-val equal_err_class : err_class -> err_class -> bool
-
 exception Abduction_case_not_implemented of Logging.ocaml_pos
 
 exception Analysis_stops of Localise.error_desc * Logging.ocaml_pos option
@@ -141,7 +136,6 @@ type t =
   ; description: Localise.error_desc
   ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *)
   ; visibility: visibility
-  ; severity: severity option
-  ; category: err_class }
+  ; severity: severity option }
 
 val recognize_exception : exn -> t

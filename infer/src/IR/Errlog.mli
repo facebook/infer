@@ -52,7 +52,6 @@ type err_data = private
   ; loc: Location.t
   ; loc_in_ml_source: Logging.ocaml_pos option
   ; loc_trace: loc_trace
-  ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
   ; doc_url: string option  (** url to documentation of the issue type *)
