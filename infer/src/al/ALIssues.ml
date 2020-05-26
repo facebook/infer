@@ -12,7 +12,7 @@ module MF = MarkupFormatter
 
 type linter =
   { condition: CTLTypes.t
-  ; issue_desc: CIssue.issue_desc
+  ; issue_desc: CIssue.t
   ; whitelist_paths: ALVar.t list
   ; blacklist_paths: ALVar.t list }
 
@@ -200,25 +200,31 @@ let string_to_issue_mode m =
       L.die InternalError "Mode %s does not exist. Please specify ON/OFF" s
 
 
-type parsed_issue_type =
-  { name: string option
+(** building a {!CIssue.t} piece by piece *)
+type issue_in_construction =
+  { issue_type_doc_url: string option
+  ; issue_type_name: string option
         (** issue name, if no name is given name will be a readable version of id, by removing
             underscores and capitalizing first letters of words *)
-  ; doc_url: string option }
+  ; description: string
+  ; mode: CIssue.mode
+  ; loc: Location.t
+  ; severity: Exceptions.severity
+  ; suggestion: string option }
 
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
-  let open CIssue in
   let open CTL in
   L.(debug Linters Medium) "@\nConverting checkers in (condition, issue) pairs@\n" ;
   let do_one_checker checker : linter =
-    let dummy_issue =
-      { issue_type= {name= None; doc_url= None}
+    let dummy_issue : issue_in_construction =
+      { issue_type_doc_url= None
+      ; issue_type_name= None
       ; description= ""
       ; suggestion= None
       ; loc= Location.dummy
-      ; severity= Exceptions.Warning
-      ; mode= CIssue.On }
+      ; severity= Warning
+      ; mode= On }
     in
     let issue_desc, condition, whitelist_paths, blacklist_paths =
       let process_linter_definitions (issue, cond, wl_paths, bl_paths) description =
@@ -234,15 +240,9 @@ let create_parsed_linters linters_def_file checkers : linter list =
         | CDesc (av, m) when ALVar.is_mode_keyword av ->
             ({issue with mode= string_to_issue_mode m}, cond, wl_paths, bl_paths)
         | CDesc (av, doc) when ALVar.is_doc_url_keyword av ->
-            ( {issue with issue_type= {issue.issue_type with doc_url= Some doc}}
-            , cond
-            , wl_paths
-            , bl_paths )
+            ({issue with issue_type_doc_url= Some doc}, cond, wl_paths, bl_paths)
         | CDesc (av, name) when ALVar.is_name_keyword av ->
-            ( {issue with issue_type= {issue.issue_type with name= Some name}}
-            , cond
-            , wl_paths
-            , bl_paths )
+            ({issue with issue_type_name= Some name}, cond, wl_paths, bl_paths)
         | CPath (`WhitelistPath, paths) ->
             (issue, cond, paths, bl_paths)
         | CPath (`BlacklistPath, paths) ->
@@ -260,13 +260,20 @@ let create_parsed_linters linters_def_file checkers : linter list =
       let doc_url =
         Option.first_some
           (Config.get_linter_doc_url ~linter_id:checker.id)
-          issue_desc.issue_type.doc_url
+          issue_desc.issue_type_doc_url
       in
-      IssueType.register_from_string ~id:checker.id ?hum:issue_desc.issue_type.name ?doc_url
+      IssueType.register_from_string ~id:checker.id ?hum:issue_desc.issue_type_name ?doc_url
         ~linters_def_file Linters
     in
-    let issue_desc = {issue_desc with issue_type} in
-    L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;
+    let issue_desc =
+      { CIssue.issue_type
+      ; description= issue_desc.description
+      ; mode= issue_desc.mode
+      ; loc= issue_desc.loc
+      ; severity= issue_desc.severity
+      ; suggestion= issue_desc.suggestion }
+    in
+    L.debug Linters Medium "@\nIssue_desc = %a@\n" CIssue.pp issue_desc ;
     {condition; issue_desc; whitelist_paths; blacklist_paths}
   in
   List.map ~f:do_one_checker checkers
@@ -473,8 +480,7 @@ let expand_checkers macro_map path_map checkers =
 let issue_log = ref IssueLog.empty
 
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
-    (issue_desc : CIssue.issue_desc) =
+let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node) (issue_desc : CIssue.t) =
   let procname =
     match method_decl_opt with
     | Some method_decl ->
@@ -501,8 +507,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
     ~node_key
 
 
-let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc) loc
-    =
+let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.t) loc =
   let process_message message =
     remove_new_lines_and_whitespace (expand_message_string context message current_node)
   in

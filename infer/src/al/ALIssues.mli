@@ -11,7 +11,7 @@ val issue_log : IssueLog.t ref
 
 type linter =
   { condition: CTLTypes.t
-  ; issue_desc: CIssue.issue_desc
+  ; issue_desc: CIssue.t
   ; whitelist_paths: ALVar.t list
   ; blacklist_paths: ALVar.t list }
 
