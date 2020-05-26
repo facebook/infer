@@ -20,9 +20,7 @@ type model =
   -> ExecutionDomain.t list PulseOperations.access_result
 
 module Misc = struct
-  let shallow_copy model_desc dest_pointer_hist src_pointer_hist : model =
-   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+  let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
     let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
     let* astate, obj_copy = PulseOperations.shallow_copy location obj astate in
     let+ astate =
@@ -30,7 +28,13 @@ module Misc = struct
         ~obj:(fst obj_copy, event :: snd obj_copy)
         astate
     in
-    let astate = PulseOperations.havoc_id ret_id [event] astate in
+    PulseOperations.havoc_id ret_id [event] astate
+
+
+  let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+    let+ astate = shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
@@ -345,6 +349,21 @@ module StdFunction = struct
         PulseOperations.call
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
+
+
+  let operator_equal dest src : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "std::function::operator="; location; in_call= []} in
+    let+ astate =
+      if PulseArithmetic.is_known_zero astate (fst src) then
+        let empty_target = AbstractValue.mk_fresh () in
+        let+ astate =
+          PulseOperations.write_deref location ~ref:dest ~obj:(empty_target, [event]) astate
+        in
+        PulseOperations.havoc_id ret_id [event] astate
+      else Misc.shallow_copy location event ret_id dest src astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
 end
 
 module GenericArrayBackedCollection = struct
@@ -663,12 +682,12 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload
           $++$--> StdFunction.operator_call
         ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
-          $--> Misc.shallow_copy "std::function::operator="
+          $--> StdFunction.operator_equal
         ; +PatternMatch.implements_lang "Object"
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
         ; ( +PatternMatch.implements_lang "System"
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
-          $+...$--> fun src dest -> Misc.shallow_copy "System.arraycopy" dest src )
+          $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdAtomicInteger.constructor
         ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload

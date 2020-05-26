@@ -165,3 +165,8 @@ void call_lambda_bad() {
   delete s;
   f(s);
 }
+
+void function_assign_null_ok() {
+  std::function<int()> f = [] { return 1; };
+  f = nullptr;
+}
