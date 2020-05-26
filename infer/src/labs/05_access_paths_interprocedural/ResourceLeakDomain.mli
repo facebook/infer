@@ -22,9 +22,11 @@ val has_leak : FormalMap.t -> t -> bool
 type summary
 
 module Summary : sig
-  val apply : summary:summary -> return:AccessPath.base -> actuals:HilExp.t list -> t -> t
+  val apply : callee:summary -> return:AccessPath.base -> actuals:HilExp.t list -> t -> t
 
   val make : FormalMap.t -> t -> summary
 
   val pp : Format.formatter -> summary -> unit
+
+  type t = summary
 end

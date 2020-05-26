@@ -40,6 +40,9 @@ val append : t -> access list -> t
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
 
+(* used in infer/src/labs/ *)
+val replace_prefix : prefix:t -> replace_with:t -> t -> t option [@@warning "-32"]
+
 val equal_base : base -> base -> bool
 
 val pp : Format.formatter -> t -> unit
@@ -47,6 +50,9 @@ val pp : Format.formatter -> t -> unit
 val pp_base : Format.formatter -> base -> unit
 
 val pp_access : Format.formatter -> access -> unit
+
+(* used in infer/src/labs/ *)
+val pp_access_list : Format.formatter -> access list -> unit [@@warning "-32"]
 
 module Abs : sig
   type raw = t

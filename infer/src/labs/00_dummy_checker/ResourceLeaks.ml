@@ -9,18 +9,11 @@ open! IStd
 module F = Format
 module L = Logging
 
-(* Boilerplate to write/read our summaries alongside the summaries of other analyzers *)
-module Payload = SummaryPayload.Make (struct
-  type t = ResourceLeakDomain.t
-
-  let field = Payloads.Fields.lab_resource_leaks
-end)
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ResourceLeakDomain
 
-  type extras = unit
+  type analysis_data = ResourceLeakDomain.t InterproceduralAnalysis.t
 
   let is_closeable_typename tenv typename =
     let is_closable_interface typename _ =
@@ -52,8 +45,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.pdesc= _; tenv= _} _ (instr : HilInstr.t)
-      =
+  let exec_instr (astate : ResourceLeakDomain.t)
+      {InterproceduralAnalysis.proc_desc= _; tenv= _; analyze_dependency= _; _} _
+      (instr : HilInstr.t) =
     match instr with
     | Call (_return_opt, Direct _callee_procname, _actuals, _, _loc) ->
         (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
@@ -67,7 +61,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
-    | ExitScope _ ->
+    | Metadata _ ->
         astate
 
 
@@ -82,16 +76,17 @@ module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 
 (** Report an error when we have acquired more resources than we have released *)
-let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
+let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} post =
+  let change_me = false in
+  if change_me then
+    let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
+    let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
+    Reporting.log_error proc_desc err_log ~loc:last_loc ResourceLeakLabExercise
+      IssueType.lab_resource_leak message
 
-(* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
-  let proc_data = ProcData.make proc_desc tenv () in
-  match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial with
-  | Some post ->
-      report_if_leak post summary proc_data ;
-      Payload.update_summary post summary
-  | None ->
-      L.(die InternalError)
-        "Analyzer failed to compute post for %a" Procname.pp
-        (Procdesc.get_proc_name proc_data.pdesc)
+
+(** Main function into the checker--registered in RegisterCheckers *)
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  let result = Analyzer.compute_post analysis_data ~initial:ResourceLeakDomain.initial proc_desc in
+  Option.iter result ~f:(fun post -> report_if_leak analysis_data post) ;
+  result

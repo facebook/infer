@@ -4,6 +4,8 @@ This is a lab exercise designed to take the participant through the basics of us
 
 The files to work on are [ResourceLeaks.ml](./ResourceLeaks.ml) and [ResourceLeakDomain.ml](./ResourceLeakDomain.ml), and their corresponding .mli files.
 
+The solutions to the exercises can also be found in this directory, each in their own directory. For example, the solution for Section 2 of this lab can be found in [02_domain_join/](./02_domain_join/).
+
 ## (0) Quick Start
 
 ### (a) With Docker...

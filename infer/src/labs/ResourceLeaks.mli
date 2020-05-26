@@ -7,4 +7,5 @@
 
 open! IStd
 
-val checker : ResourceLeakDomain.t InterproceduralAnalysis.t -> ResourceLeakDomain.t option
+val checker :
+  ResourceLeakDomain.summary InterproceduralAnalysis.t -> ResourceLeakDomain.summary option

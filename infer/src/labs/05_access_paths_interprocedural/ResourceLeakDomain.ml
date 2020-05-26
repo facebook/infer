@@ -63,7 +63,9 @@ let release_resource access_path held =
 
 let assign lhs_access_path rhs_access_path held =
   let one_binding access_path count held =
-    match AccessPath.replace_prefix ~prefix:rhs_access_path lhs_access_path access_path with
+    match
+      AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:access_path lhs_access_path
+    with
     | Some base_access_path ->
         ResourcesHeld.add base_access_path count held
     | None ->
@@ -141,7 +143,7 @@ module Summary = struct
       held ResourcesFromFormals.empty
 
 
-  let apply ~summary ~return ~actuals held =
+  let apply ~callee:summary ~return ~actuals held =
     let apply_one (base, accesses) callee_count held =
       let access_path_opt =
         match (base : InterfaceAccessPath.base) with
