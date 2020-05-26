@@ -28,6 +28,12 @@ module type PrintableOrderedType = sig
   include PrintableType with type t := t
 end
 
+module type PrintableEquatableOrderedType = sig
+  include Caml.Set.OrderedType
+
+  include PrintableEquatableType with type t := t
+end
+
 module type PPSet = sig
   include Caml.Set.S
 
@@ -209,11 +215,15 @@ module type PrintableRankedType = sig
 
   val equal : t -> t -> bool
 
-  val to_rank : t -> int
+  type rank
+
+  val to_rank : t -> rank
 end
 
 module type PPUniqRankSet = sig
   type t
+
+  type rank
 
   type elt
 
@@ -223,7 +233,7 @@ module type PPUniqRankSet = sig
 
   val equal : t -> t -> bool
 
-  val find_rank : t -> int -> elt option
+  val find_rank : t -> rank -> elt option
 
   val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
 
@@ -239,6 +249,8 @@ module type PPUniqRankSet = sig
 
   val singleton : elt -> t
 
+  val elements : t -> elt list
+
   val remove : elt -> t -> t
 
   val union_prefer_left : t -> t -> t
@@ -246,10 +258,15 @@ module type PPUniqRankSet = sig
   val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 
-module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t = struct
-  module Map = MakePPMonoMap (Int) (Val)
+module MakePPUniqRankSet
+    (Rank : PrintableEquatableOrderedType)
+    (Val : PrintableRankedType with type rank = Rank.t) :
+  PPUniqRankSet with type elt = Val.t and type rank = Rank.t = struct
+  module Map = MakePPMonoMap (Rank) (Val)
 
   type t = Map.t
+
+  type rank = Rank.t
 
   type elt = Val.t
 
@@ -278,7 +295,7 @@ module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type e
     Map.mapi
       (fun rank value ->
         let value' = f value in
-        assert (Int.equal rank (Val.to_rank value')) ;
+        assert (Rank.equal rank (Val.to_rank value')) ;
         value' )
       m
 
@@ -294,9 +311,10 @@ module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type e
     (!accum, m')
 
 
+  let elements map = Map.bindings map |> List.map ~f:snd
+
   let pp ?(print_rank = false) fmt map =
-    if print_rank then Map.pp fmt map
-    else pp_collection ~pp_item:Val.pp fmt (Map.bindings map |> List.map ~f:snd)
+    if print_rank then Map.pp fmt map else pp_collection ~pp_item:Val.pp fmt (elements map)
 
 
   let remove value map = Map.remove (Val.to_rank value) map

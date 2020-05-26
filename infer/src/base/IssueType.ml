@@ -4,7 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
+module F = Format
 
 (* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
@@ -20,6 +22,8 @@ module Unsafe : sig
 
   val equal : t -> t -> bool
 
+  val pp : F.formatter -> t -> unit
+
   val register_from_string :
        ?enabled:bool
     -> ?hum:string
@@ -33,7 +37,7 @@ module Unsafe : sig
        ?enabled:bool
     -> ?is_on_ui_thread:bool
     -> kind:CostKind.t
-    -> (string -> string, Format.formatter, unit, string) format4
+    -> (string -> string, F.formatter, unit, string) format4
     -> t
 
   val all_issues : unit -> t list
@@ -52,10 +56,16 @@ end = struct
     let compare {unique_id= id1} {unique_id= id2} = String.compare id1 id2
 
     let equal = [%compare.equal: t]
+
+    type rank = string
+
+    let to_rank {unique_id} = unique_id
+
+    let pp fmt t = F.pp_print_string fmt t.unique_id
   end
 
   include T
-  module IssueSet = Caml.Set.Make (T)
+  module IssueSet = PrettyPrintable.MakePPUniqRankSet (String) (T)
 
   (** keep track of the list of all declared issue types *)
   let all_issues = ref IssueSet.empty
@@ -80,25 +90,25 @@ end = struct
         of the issue type, eg in AL. *)
   let register_from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file ~id:unique_id
       checker =
-    let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
-    let issue = {unique_id; checker; enabled; hum; doc_url; linters_def_file} in
-    try
-      let old = IssueSet.find issue !all_issues in
-      (* update human-readable string in case it was supplied this time, but keep the previous
-         value of enabled (see doc comment) *)
-      if Option.is_some hum0 then old.hum <- hum ;
-      if Option.is_some doc_url then old.doc_url <- doc_url ;
-      if Option.is_some linters_def_file then old.linters_def_file <- linters_def_file ;
-      old
-    with Caml.Not_found ->
-      all_issues := IssueSet.add issue !all_issues ;
-      issue
+    match IssueSet.find_rank !all_issues unique_id with
+    | Some issue ->
+        (* update human-readable string in case it was supplied this time, but keep the previous
+           value of enabled (see doc comment) *)
+        Option.iter hum0 ~f:(fun hum -> issue.hum <- hum) ;
+        if Option.is_some doc_url then issue.doc_url <- doc_url ;
+        if Option.is_some linters_def_file then issue.linters_def_file <- linters_def_file ;
+        issue
+    | None ->
+        let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
+        let issue = {unique_id; checker; enabled; hum; doc_url; linters_def_file} in
+        all_issues := IssueSet.add !all_issues issue ;
+        issue
 
 
   (** cost issues are already registered below.*)
   let register_from_cost_string ?(enabled = true) ?(is_on_ui_thread = false) ~(kind : CostKind.t) s
       =
-    let issue_type_base = Format.asprintf s (CostKind.to_issue_string kind) in
+    let issue_type_base = F.asprintf s (CostKind.to_issue_string kind) in
     let issue_type = if is_on_ui_thread then issue_type_base ^ "_UI_THREAD" else issue_type_base in
     register_from_string ~enabled ~id:issue_type Cost
 
@@ -107,9 +117,6 @@ end = struct
 end
 
 include Unsafe
-
-(** pretty print a localised string *)
-let pp fmt t = Format.pp_print_string fmt t.unique_id
 
 let checker_can_report reporting_checker {checker= allowed_checker} =
   Checker.equal reporting_checker allowed_checker
@@ -627,8 +634,8 @@ let unreachable_cost_call ~kind =
 let () =
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
-          let _ = unreachable_cost_call ~kind in
-          let _ = expensive_cost_call ~kind ~is_on_ui_thread in
-          let _ = infinite_cost_call ~kind in
-          let _ = complexity_increase ~kind ~is_on_ui_thread in
+          ignore (unreachable_cost_call ~kind) ;
+          ignore (expensive_cost_call ~kind ~is_on_ui_thread) ;
+          ignore (infinite_cost_call ~kind) ;
+          ignore (complexity_increase ~kind ~is_on_ui_thread) ;
           () ) )

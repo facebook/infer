@@ -30,6 +30,12 @@ module type PrintableOrderedType = sig
   include PrintableType with type t := t
 end
 
+module type PrintableEquatableOrderedType = sig
+  include Caml.Set.OrderedType
+
+  include PrintableEquatableType with type t := t
+end
+
 module type PPSet = sig
   include Caml.Set.S
 
@@ -159,12 +165,16 @@ module type PrintableRankedType = sig
 
   val equal : t -> t -> bool
 
-  val to_rank : t -> int
+  type rank
+
+  val to_rank : t -> rank
 end
 
 (** set where at most one element of a given rank can be present *)
 module type PPUniqRankSet = sig
   type t
+
+  type rank
 
   type elt
 
@@ -174,7 +184,7 @@ module type PPUniqRankSet = sig
 
   val equal : t -> t -> bool
 
-  val find_rank : t -> int -> elt option
+  val find_rank : t -> rank -> elt option
 
   val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
 
@@ -190,6 +200,8 @@ module type PPUniqRankSet = sig
 
   val singleton : elt -> t
 
+  val elements : t -> elt list
+
   val remove : elt -> t -> t
 
   val union_prefer_left : t -> t -> t
@@ -199,4 +211,7 @@ module type PPUniqRankSet = sig
   val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 
-module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t
+module MakePPUniqRankSet
+    (Rank : PrintableEquatableOrderedType)
+    (Val : PrintableRankedType with type rank = Rank.t) :
+  PPUniqRankSet with type elt = Val.t and type rank = Rank.t

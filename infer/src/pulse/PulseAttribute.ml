@@ -37,6 +37,8 @@ module Attribute = struct
 
   let equal = [%compare.equal: t]
 
+  type rank = int
+
   let to_rank = Variants.to_rank
 
   let dummy_trace = Trace.Immediate {location= Location.dummy; history= []}
@@ -91,7 +93,7 @@ module Attribute = struct
 end
 
 module Attributes = struct
-  module Set = PrettyPrintable.MakePPUniqRankSet (Attribute)
+  module Set = PrettyPrintable.MakePPUniqRankSet (Int) (Attribute)
 
   let get_invalid attrs =
     Set.find_rank attrs Attribute.invalid_rank
