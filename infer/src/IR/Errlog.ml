@@ -222,16 +222,10 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
     | _ ->
         false
   in
-  let report_developer_exn exn =
-    match exn with Exceptions.Dummy_exception _ -> false | _ -> true
-  in
-  let exn_developer =
-    Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
-    && report_developer_exn exn
-  in
   let should_report =
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
-    || (Config.developer_mode && exn_developer)
+    || Config.developer_mode
+       && Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
   in
   if should_report && (not hide_java_loc_zero) && not hide_memory_error then
     let added =

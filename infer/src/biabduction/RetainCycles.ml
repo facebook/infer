@@ -248,4 +248,4 @@ let report_cycle {InterproceduralAnalysis.proc_desc; tenv; err_log} prop =
         BiabductionReporting.log_error_using_state proc_desc err_log exn )
       cycles ;
     (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
-    raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )
+    raise (Exceptions.Analysis_stops (Localise.verbatim_desc "retain cycle found", Some __POS__)) )

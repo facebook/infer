@@ -48,8 +48,6 @@ exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_po
 
 exception Custom_error of string * Localise.error_desc
 
-exception Dummy_exception of Localise.error_desc
-
 exception
   Dangling_pointer_dereference of bool (* is it user visible? *) * Localise.error_desc * L.ocaml_pos
 
@@ -206,12 +204,6 @@ let recognize_exception exn =
       ; ocaml_pos= None
       ; visibility= Exn_user
       ; severity= None }
-  | Dummy_exception desc ->
-      { issue_type= IssueType.biabduction_analysis_stops
-      ; description= desc
-      ; ocaml_pos= None
-      ; visibility= Exn_developer
-      ; severity= Some Info }
   | Dangling_pointer_dereference (user_visible, desc, ocaml_pos) ->
       let issue_type, visibility =
         if user_visible then (IssueType.dangling_pointer_dereference, Exn_user)

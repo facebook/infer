@@ -48,8 +48,6 @@ exception Condition_always_true_false of Localise.error_desc * bool * Logging.oc
 
 exception Custom_error of string * Localise.error_desc
 
-exception Dummy_exception of Localise.error_desc
-
 exception
   Dangling_pointer_dereference of
     bool (* is it user visible? *) * Localise.error_desc * Logging.ocaml_pos

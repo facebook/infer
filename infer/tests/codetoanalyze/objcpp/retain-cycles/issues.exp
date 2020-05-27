@@ -1,1 +1,2 @@
+codetoanalyze/objcpp/retain-cycles/ObjCPPStruct.mm, A.aFnBad, 2, BIABDUCTION_ANALYSIS_STOPS, no_bucket, ERROR, [start of procedure aFnBad,start of procedure WeakHolder,return from a call to WeakHolder::WeakHolder]
 codetoanalyze/objcpp/retain-cycles/ObjCPPStruct.mm, A.aFnBad, 2, RETAIN_CYCLE, no_bucket, ERROR, [start of procedure aFnBad,start of procedure WeakHolder,return from a call to WeakHolder::WeakHolder]
