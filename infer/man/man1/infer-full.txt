@@ -351,13 +351,13 @@ OPTIONS
            disabling issue types does not make the corresponding checker not
            run.           Available issue types are as follows:
              
-           ANALYSIS_STOPS (disabled by default),
-             ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
+           ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABD_CONDITION_ALWAYS_FALSE (disabled by default),
              BIABD_CONDITION_ALWAYS_TRUE (disabled by default),
              BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by
@@ -1153,10 +1153,6 @@ INTERNAL OPTIONS
        --allow-leak
            Activates: Forget leaked memory during abstraction (Conversely:
            --no-allow-leak)
-
-       --analysis-stops
-           Activates: Issue a warning when the analysis stops (Conversely:
-           --no-analysis-stops)
 
        --append-buck-flavors-reset
            Set --append-buck-flavors to the empty list.

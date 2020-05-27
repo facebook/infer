@@ -160,8 +160,6 @@ val abs_val : int
 
 val allow_leak : bool
 
-val analysis_stops : bool
-
 val annotation_reachability_cxx : Yojson.Basic.t
 
 val annotation_reachability_cxx_sources : Yojson.Basic.t

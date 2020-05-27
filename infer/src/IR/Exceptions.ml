@@ -131,11 +131,10 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= None }
   | Analysis_stops (desc, ocaml_pos_opt) ->
-      let visibility = if Config.analysis_stops then Exn_user else Exn_developer in
-      { issue_type= IssueType.analysis_stops
+      { issue_type= IssueType.biabduction_analysis_stops
       ; description= desc
       ; ocaml_pos= ocaml_pos_opt
-      ; visibility
+      ; visibility= Exn_developer
       ; severity= None }
   | Array_of_pointsto ocaml_pos ->
       { issue_type= IssueType.array_of_pointsto
@@ -208,7 +207,7 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= None }
   | Dummy_exception desc ->
-      { issue_type= IssueType.analysis_stops
+      { issue_type= IssueType.biabduction_analysis_stops
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer

@@ -519,11 +519,6 @@ and allow_leak =
   CLOpt.mk_bool ~deprecated:["leak"] ~long:"allow-leak" "Forget leaked memory during abstraction"
 
 
-and analysis_stops =
-  CLOpt.mk_bool ~deprecated:["analysis_stops"] ~long:"analysis-stops"
-    "Issue a warning when the analysis stops"
-
-
 and analyzer =
   CLOpt.mk_symbol ~deprecated:["analyzer"; "-analyzer"; "a"] ~long:"" ~default:Checkers
     ~eq:equal_analyzer ~symbols:string_to_analyzer
@@ -2563,8 +2558,6 @@ and abs_struct = !abs_struct
 and abs_val = !abs_val
 
 and allow_leak = !allow_leak
-
-and analysis_stops = !analysis_stops
 
 and annotation_reachability_cxx = !annotation_reachability_cxx
 

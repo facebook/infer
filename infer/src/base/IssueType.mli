@@ -50,8 +50,6 @@ val set_enabled : t -> bool -> unit
 
 val abduction_case_not_implemented : t
 
-val analysis_stops : t
-
 val array_of_pointsto : t
 
 val array_out_of_bounds_l1 : t
@@ -63,6 +61,8 @@ val array_out_of_bounds_l3 : t
 val assert_failure : t
 
 val bad_footprint : t
+
+val biabduction_analysis_stops : t
 
 val biabd_condition_always_false : t
 

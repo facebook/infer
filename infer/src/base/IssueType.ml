@@ -142,8 +142,6 @@ let abduction_case_not_implemented =
   register_from_string ~id:"Abduction_case_not_implemented" Biabduction
 
 
-let analysis_stops = register_from_string ~enabled:false ~id:"ANALYSIS_STOPS" Biabduction
-
 let array_of_pointsto = register_from_string ~id:"Array_of_pointsto" Biabduction
 
 let array_out_of_bounds_l1 =
@@ -161,6 +159,10 @@ let array_out_of_bounds_l3 =
 let assert_failure = register_from_string ~id:"Assert_failure" Biabduction
 
 let bad_footprint = register_from_string ~id:"Bad_footprint" Biabduction
+
+let biabduction_analysis_stops =
+  register_from_string ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Biabduction
+
 
 let biabd_condition_always_false =
   register_from_string ~enabled:false ~hum:"Condition Always False"
