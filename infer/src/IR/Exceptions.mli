@@ -77,7 +77,12 @@ exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 
 exception
-  Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * Logging.ocaml_pos
+  Leak of
+    bool
+    * (bool (* is it user visible? *) * Localise.error_desc)
+    * bool
+    * PredSymb.resource
+    * Logging.ocaml_pos
 
 exception Missing_fld of Fieldname.t * Logging.ocaml_pos
 

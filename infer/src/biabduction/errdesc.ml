@@ -524,20 +524,21 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           L.d_ln () ) ;
         value_str_from_pvars_vpath [] vpath
   in
-  let exn_cat, bucket =
+  let is_user_visible, bucket =
     (* decide whether Exn_user or Exn_developer *)
     match resource_opt with
     | Some _ ->
         (* we know it has been allocated *)
-        (Exceptions.Exn_user, bucket)
+        (true, bucket)
     | None ->
         if leak_from_list_abstraction hpred prop && Option.is_some value_str then
           (* we don't know it's been allocated,
              but it's coming from list abstraction and we have a name *)
-          (Exceptions.Exn_user, bucket)
-        else (Exceptions.Exn_developer, Some Mleak_buckets.ml_bucket_unknown_origin)
+          (true, bucket)
+        else (false, Some Mleak_buckets.ml_bucket_unknown_origin)
   in
-  (exn_cat, Localise.desc_leak hpred_typ_opt value_str resource_opt res_action_opt loc bucket)
+  ( is_user_visible
+  , Localise.desc_leak hpred_typ_opt value_str resource_opt res_action_opt loc bucket )
 
 
 (** find the dexp, if any, where the given value is stored also return the type of the value if

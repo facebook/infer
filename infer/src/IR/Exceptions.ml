@@ -75,7 +75,13 @@ exception Inherently_dangerous_function of Localise.error_desc
 
 exception Internal_error of Localise.error_desc
 
-exception Leak of bool * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
+exception
+  Leak of
+    bool
+    * (bool (* is it user visible? *) * Localise.error_desc)
+    * bool
+    * PredSymb.resource
+    * L.ocaml_pos
 
 exception Missing_fld of Fieldname.t * L.ocaml_pos
 
@@ -208,12 +214,11 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= Some Info }
   | Dangling_pointer_dereference (user_visible, desc, ocaml_pos) ->
-      let visibility = if user_visible then Exn_user else Exn_developer in
-      { issue_type= IssueType.dangling_pointer_dereference
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility
-      ; severity= None }
+      let issue_type, visibility =
+        if user_visible then (IssueType.dangling_pointer_dereference, Exn_user)
+        else (IssueType.dangling_pointer_dereference_maybe, Exn_developer)
+      in
+      {issue_type; description= desc; ocaml_pos= Some ocaml_pos; visibility; severity= None}
   | Deallocate_stack_variable desc ->
       { issue_type= IssueType.deallocate_stack_variable
       ; description= desc
@@ -290,7 +295,7 @@ let recognize_exception exn =
       ; ocaml_pos= None
       ; visibility= Exn_developer
       ; severity= None }
-  | Leak (fp_part, (exn_vis, error_desc), done_array_abstraction, resource, ocaml_pos) ->
+  | Leak (fp_part, (user_visible, error_desc), done_array_abstraction, resource, ocaml_pos) ->
       if done_array_abstraction then
         { issue_type= IssueType.leak_after_array_abstraction
         ; description= error_desc
@@ -299,6 +304,12 @@ let recognize_exception exn =
         ; severity= None }
       else if fp_part then
         { issue_type= IssueType.leak_in_footprint
+        ; description= error_desc
+        ; ocaml_pos= Some ocaml_pos
+        ; visibility= Exn_developer
+        ; severity= None }
+      else if not user_visible then
+        { issue_type= IssueType.leak_unknown_origin
         ; description= error_desc
         ; ocaml_pos= Some ocaml_pos
         ; visibility= Exn_developer
@@ -318,7 +329,7 @@ let recognize_exception exn =
         { issue_type
         ; description= error_desc
         ; ocaml_pos= Some ocaml_pos
-        ; visibility= exn_vis
+        ; visibility= Exn_user
         ; severity= None }
   | Missing_fld (fld, ocaml_pos) ->
       let desc = Localise.verbatim_desc (Fieldname.to_full_string fld) in

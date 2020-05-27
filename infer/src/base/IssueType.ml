@@ -293,6 +293,10 @@ let dangling_pointer_dereference =
   register_from_string ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Biabduction
 
 
+let dangling_pointer_dereference_maybe =
+  register_from_string ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE_MAYBE" Biabduction
+
+
 let dead_store = register_from_string ~id:"DEAD_STORE" Liveness
 
 let deadlock = register_from_string ~id:"DEADLOCK" Starvation
@@ -491,6 +495,8 @@ let leak_after_array_abstraction =
 
 
 let leak_in_footprint = register_from_string ~id:"Leak_in_footprint" Biabduction
+
+let leak_unknown_origin = register_from_string ~enabled:false ~id:"Leak_unknown_origin" Biabduction
 
 let lock_consistency_violation = register_from_string ~id:"LOCK_CONSISTENCY_VIOLATION" RacerD
 

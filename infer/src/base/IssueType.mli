@@ -147,6 +147,8 @@ val cross_site_scripting : t
 
 val dangling_pointer_dereference : t
 
+val dangling_pointer_dereference_maybe : t
+
 val dead_store : t
 
 val deadlock : t
@@ -253,6 +255,8 @@ val lab_resource_leak : t
 val leak_after_array_abstraction : t
 
 val leak_in_footprint : t
+
+val leak_unknown_origin : t
 
 val lockless_violation : t
 

@@ -95,7 +95,7 @@ val explain_leak :
   -> 'a Prop.t
   -> PredSymb.t option
   -> string option
-  -> Exceptions.visibility * Localise.error_desc
+  -> bool (* should the leak be reported to the user? *) * Localise.error_desc
 (** Produce a description of a leak by looking at the current state. If the current instruction is a
     variable nullify, blame the variable. If it is an abstraction, blame any variable nullify at the
     current node. If there is an alloc attribute, print the function call and line number. *)
