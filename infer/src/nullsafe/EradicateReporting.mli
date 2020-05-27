@@ -7,16 +7,12 @@
 
 open! IStd
 
-(** Module for Eradicate-based user-defined checkers. *)
-
 val report_error :
      IntraproceduralAnalysis.t
   -> Checker.t
   -> IssueType.t
   -> Location.t
   -> ?field_name:Fieldname.t option
-  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
   -> severity:Exceptions.severity
   -> string
   -> unit
-(** Report an error. *)

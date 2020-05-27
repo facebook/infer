@@ -334,10 +334,8 @@ let report_now_if_reportable analysis_data err_instance ~nullsafe_mode loc =
          Logging.debug Analysis Medium "About to report: %s" err_description ;
          let field_name = get_field_name_for_error_suppressing err_instance in
          let error_location = Option.value updated_location ~default:loc in
-         EradicateCheckers.report_error analysis_data Eradicate infer_issue_type error_location
-           ~field_name
-           ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
-           ~severity err_description )
+         EradicateReporting.report_error analysis_data Eradicate infer_issue_type error_location
+           ~field_name ~severity err_description )
 
 
 (** Register issue (unless exactly the same issue was already registered). If needed, report this

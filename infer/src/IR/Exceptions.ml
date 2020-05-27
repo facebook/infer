@@ -42,6 +42,8 @@ exception Biabd_use_after_free of Localise.error_desc * L.ocaml_pos
 
 exception Cannot_star of L.ocaml_pos
 
+exception Checkers of IssueType.t * Localise.error_desc
+
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
 
 exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_pos
@@ -61,13 +63,9 @@ exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
 
-exception Eradicate of IssueType.t * Localise.error_desc
-
 exception Field_not_null_checked of Localise.error_desc * L.ocaml_pos
 
 exception Frontend_warning of IssueType.t * Localise.error_desc * L.ocaml_pos
-
-exception Checkers of IssueType.t * Localise.error_desc
 
 exception Inherently_dangerous_function of Localise.error_desc
 
@@ -234,8 +232,6 @@ let recognize_exception exn =
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
       ; severity= Some Error }
-  | Eradicate (kind, desc) ->
-      {issue_type= kind; description= desc; ocaml_pos= None; visibility= Exn_user; severity= None}
   | Empty_vector_access (desc, ocaml_pos) ->
       { issue_type= IssueType.empty_vector_access
       ; description= desc

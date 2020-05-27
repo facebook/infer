@@ -42,6 +42,8 @@ exception Biabd_use_after_free of Localise.error_desc * Logging.ocaml_pos
 
 exception Cannot_star of Logging.ocaml_pos
 
+exception Checkers of IssueType.t * Localise.error_desc
+
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
 
 exception Condition_always_true_false of Localise.error_desc * bool * Logging.ocaml_pos
@@ -63,10 +65,6 @@ exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * Logging.ocaml_pos
-
-exception Eradicate of IssueType.t * Localise.error_desc
-
-exception Checkers of IssueType.t * Localise.error_desc
 
 exception Frontend_warning of IssueType.t * Localise.error_desc * Logging.ocaml_pos
 
