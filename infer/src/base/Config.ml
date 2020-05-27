@@ -649,6 +649,22 @@ and array_level =
 |}
 
 
+and biabduction_models_mode =
+  CLOpt.mk_bool ~long:"biabduction-models-mode" "Analysis of the biabduction models"
+
+
+and bo_field_depth_limit =
+  CLOpt.mk_int_opt ~long:"bo-field-depth-limit"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Limit of field depth of abstract location in buffer-overrun checker"
+
+
+and bo_service_handler_request =
+  CLOpt.mk_bool ~long:"bo-service-handler-request"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "[EXPERIMENTAL] Use taint flow of service handler requests in buffer overflow checking."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -956,10 +972,7 @@ and custom_symbols =
     "Specify named lists of symbols available to rules"
 
 
-and ( biabduction_models_mode
-    , bo_debug
-    , bo_field_depth_limit
-    , bo_service_handler_request
+and ( bo_debug
     , deduplicate
     , developer_mode
     , debug
@@ -980,27 +993,15 @@ and ( biabduction_models_mode
     , reports_include_ml_loc
     , trace_error
     , write_html
-    , write_html_whitelist_regex
     , write_dotty ) =
   let all_generic_manuals =
     List.filter_map InferCommand.all_commands ~f:(fun cmd ->
         if InferCommand.equal Explore cmd then None else Some (cmd, manual_generic) )
   in
-  let biabduction_models_mode =
-    CLOpt.mk_bool_group ~long:"biabduction-models-mode" "Mode for analyzing the biabduction models"
-      [] []
-  and bo_debug =
+  let bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
-  and bo_field_depth_limit =
-    CLOpt.mk_int_opt ~long:"bo-field-depth-limit"
-      ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
-      "Limit of field depth of abstract location in buffer-overrun checker"
-  and bo_service_handler_request =
-    CLOpt.mk_bool ~long:"bo-service-handler-request"
-      ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
-      "[EXPERIMENTAL] Use taint flow of service handler requests in buffer overflow checking."
   and deduplicate =
     CLOpt.mk_bool ~long:"deduplicate" ~default:true
       ~in_help:
@@ -1045,9 +1046,6 @@ and ( biabduction_models_mode
     CLOpt.mk_bool ~long:"trace-error" "Detailed tracing information during error explanation"
   and write_html =
     CLOpt.mk_bool ~long:"write-html" "Produce hmtl debug output in the results directory"
-  and write_html_whitelist_regex =
-    CLOpt.mk_string_list ~long:"write-html-whitelist-regex"
-      "whitelist files that will have its html debug output printed"
   and write_dotty =
     CLOpt.mk_bool ~long:"write-dotty" "Produce dotty files for specs in the results directory"
   in
@@ -1123,10 +1121,7 @@ and ( biabduction_models_mode
         debug )
       [debug; developer_mode] [default_linters; keep_going]
   in
-  ( biabduction_models_mode
-  , bo_debug
-  , bo_field_depth_limit
-  , bo_service_handler_request
+  ( bo_debug
   , deduplicate
   , developer_mode
   , debug
@@ -1147,7 +1142,6 @@ and ( biabduction_models_mode
   , reports_include_ml_loc
   , trace_error
   , write_html
-  , write_html_whitelist_regex
   , write_dotty )
 
 
@@ -2310,6 +2304,11 @@ and worklist_mode =
   CLOpt.mk_set var 2 ~long:"visits-bias" ~deprecated:["visits_bias"]
     "nodes visited fewer times are analyzed first" ;
   var
+
+
+and write_html_whitelist_regex =
+  CLOpt.mk_string_list ~long:"write-html-whitelist-regex"
+    "Whitelist files that will have their html debug output printed when $(b,--html) is true."
 
 
 and xcode_developer_dir =

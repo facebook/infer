@@ -1173,7 +1173,7 @@ INTERNAL OPTIONS
            ../source/File.java
 
        --biabduction-models-mode
-           Activates: Mode for analyzing the biabduction models (Conversely:
+           Activates: Analysis of the biabduction models (Conversely:
            --no-biabduction-models-mode)
 
        --bo-field-depth-limit-reset
@@ -1862,7 +1862,8 @@ INTERNAL OPTIONS
            (Conversely: --no-write-html)
 
        --write-html-whitelist-regex +string
-           whitelist files that will have its html debug output printed
+           Whitelist files that will have their html debug output printed
+           when --html is true.
 
        --write-html-whitelist-regex-reset
            Set --write-html-whitelist-regex to the empty list.
