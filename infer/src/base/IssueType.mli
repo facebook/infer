@@ -24,6 +24,9 @@ val all_issues : unit -> t list
 val pp : Format.formatter -> t -> unit
 (** pretty print a localised string *)
 
+val find_from_string : id:string -> t option
+(** return the issue type if it was previously registered *)
+
 val register_from_string :
      ?enabled:bool
   -> ?hum:string

@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Die
 
 (* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
@@ -23,6 +24,8 @@ module Unsafe : sig
   val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
+
+  val find_from_string : id:string -> t option
 
   val register_from_string :
        ?enabled:bool
@@ -77,6 +80,8 @@ end = struct
 
   let set_enabled issue b = issue.enabled <- b
 
+  let find_from_string ~id:unique_id = IssueSet.find_rank !all_issues unique_id
+
   (** Avoid creating new issue types. The idea is that there are three types of issue types:
 
       + Statically pre-defined issue types, namely the ones in this module
@@ -90,10 +95,21 @@ end = struct
         of the issue type, eg in AL. *)
   let register_from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file ~id:unique_id
       checker =
-    match IssueSet.find_rank !all_issues unique_id with
-    | Some issue ->
-        (* update human-readable string in case it was supplied this time, but keep the previous
-           value of enabled (see doc comment) *)
+    match find_from_string ~id:unique_id with
+    | ((Some
+         ( { unique_id= _ (* we know it has to be the same *)
+           ; checker= checker_old
+           ; enabled= _ (* not touching this one since [Config] will have set it *)
+           ; hum= _ (* mutable field to update *)
+           ; doc_url= _ (* mutable field to update *)
+           ; linters_def_file= _ (* mutable field to update *) } as issue ))[@warning "+9"]) ->
+        (* update fields that were supplied this time around, but keep the previous values of others
+           and assert that the immutable fields are the same (see doc comment) *)
+        if not (Checker.equal checker checker_old) then
+          L.die InternalError
+            "Checker definition for issue \"%s\" doesn't match: found new checker \"%s\" but \
+             checker \"%s\" was already registered for this issue type"
+            unique_id (Checker.get_name checker) (Checker.get_name checker_old) ;
         Option.iter hum0 ~f:(fun hum -> issue.hum <- hum) ;
         if Option.is_some doc_url then issue.doc_url <- doc_url ;
         if Option.is_some linters_def_file then issue.linters_def_file <- linters_def_file ;
