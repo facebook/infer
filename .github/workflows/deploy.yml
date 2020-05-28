@@ -15,14 +15,14 @@ jobs:
 
     env:
       working-directory: website
-      node-version: 12.x
+      node-version: 14.x
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.0.0
+        uses: actions/checkout@v2
 
       - name: Use Node.js ${{ env.node-version }}
-        uses: actions/setup-node@v1.4.0
+        uses: actions/setup-node@v1
         with:
           node-version: ${{ env.node-version }}
 
@@ -31,7 +31,7 @@ jobs:
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - name: Restore yarn cache
-        uses: actions/cache@v1.1.2
+        uses: actions/cache@v2
         with:
           path: ${{ steps.yarn.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('website/yarn.lock') }}
