@@ -1,4 +1,4 @@
-Please make sure your issue is not addressed in the [FAQ](http://fbinfer.com/support.html#troubleshooting).
+Please make sure your issue is not addressed in the [FAQ](https://fbinfer.com/docs/support#troubleshooting).
 
 Please include the following information:
 - [ ] The version of infer from `infer --version`.
