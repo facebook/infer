@@ -55,5 +55,5 @@ val runs_on_ui_thread : Tenv.t -> Procname.t -> bool
 (** is method not transitively annotated [@WorkerThread] and is modeled or annotated [@UIThread] or
     equivalent? *)
 
-val is_modeled_ui_method : Tenv.t -> Procname.t -> bool
+val is_android_lifecycle_method : Tenv.t -> Procname.t -> bool
 (** is method a known Android UI thread callback (eg [Activity.onCreate]) *)

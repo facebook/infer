@@ -29,7 +29,7 @@ let iter_summary ~f exe_env (summary : Summary.t) =
   |> Option.iter ~f:(fun ({scheduled_work; critical_pairs} : summary) ->
          let pname = Summary.get_proc_name summary in
          let tenv = Exe_env.get_tenv exe_env pname in
-         if ConcurrencyModels.is_modeled_ui_method tenv pname then f pname critical_pairs ;
+         if ConcurrencyModels.is_android_lifecycle_method tenv pname then f pname critical_pairs ;
          ScheduledWorkDomain.iter
            (fun work -> get_summary_of_scheduled_work work |> Option.iter ~f:(f pname))
            scheduled_work )

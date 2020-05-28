@@ -23,6 +23,7 @@ class MyServiceConnection implements ServiceConnection {
 
   // implemented/overrides so no Bad suffixes
 
+  // following two methods are FNs due to a separate issue with default interface methods
   void onBindingDied(ComponentName name) {
     bad();
   }
