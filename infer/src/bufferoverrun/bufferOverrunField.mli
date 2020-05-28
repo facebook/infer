@@ -6,6 +6,8 @@
  *)
 open! IStd
 
+(** {2 Inferbo-specific constant field names} *)
+
 val pp :
      pp_lhs:(Format.formatter -> 'a -> unit)
   -> sep:string
@@ -32,3 +34,40 @@ val is_cpp_vector_elem : Fieldname.t -> bool
 
 val is_java_collection_internal_array : Fieldname.t -> bool
 (** Check if the field is for Java collection's elements *)
+
+(** {2 Field domain constructor} *)
+
+type field_typ = Typ.t option
+
+type 'prim t =
+  | Prim of 'prim
+  | Field of {prefix: 'prim t; fn: Fieldname.t; typ: field_typ}
+  | StarField of {prefix: 'prim t; last_field: Fieldname.t}
+      (** Represents a path starting with [prefix] and ending with the field [last_field], the
+          middle can be anything. Invariants:
+
+          - There is at most one StarField
+          - StarField excluded, there are no duplicate fieldnames
+          - StarField can only be followed by Deref elements *)
+[@@deriving compare]
+
+val mk_append_field :
+     prim_append_field:
+       (   ?typ:Typ.t
+        -> 'prim t
+        -> Fieldname.t
+        -> (depth:int -> 'prim t -> 'prim t)
+        -> int
+        -> 'prim
+        -> 'prim t)
+  -> prim_append_star_field:('prim t -> Fieldname.t -> ('prim t -> 'prim t) -> 'prim -> 'prim t)
+  -> ?typ:Typ.t
+  -> 'prim t
+  -> Fieldname.t
+  -> 'prim t
+
+val mk_append_star_field :
+     prim_append_star_field:('prim t -> Fieldname.t -> ('prim t -> 'prim t) -> 'prim -> 'prim t)
+  -> 'prim t
+  -> Fieldname.t
+  -> 'prim t

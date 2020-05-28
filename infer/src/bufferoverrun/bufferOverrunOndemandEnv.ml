@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module BoField = BufferOverrunField
 module SPath = Symb.SymbolPath
 module FormalTyps = Caml.Map.Make (Pvar)
 
@@ -25,9 +26,9 @@ let mk pdesc =
   in
   fun tenv integer_type_widths ->
     let rec typ_of_param_path = function
-      | SPath.Pvar x ->
+      | BoField.Prim (SPath.Pvar x) ->
           FormalTyps.find_opt x formal_typs
-      | SPath.Deref (_, x) -> (
+      | BoField.Prim (SPath.Deref (_, x)) -> (
         match typ_of_param_path x with
         | None ->
             None
@@ -55,18 +56,18 @@ let mk pdesc =
                 L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
           | _ ->
               L.(die InternalError) "Untyped expression is given." ) )
-      | SPath.Field {typ= Some _ as some_typ} ->
+      | BoField.Field {typ= Some _ as some_typ} ->
           some_typ
-      | SPath.Field {fn; prefix= x} -> (
-        match BufferOverrunField.get_type fn with
+      | BoField.Field {fn; prefix= x} -> (
+        match BoField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
             Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:Typ.void fn)
         | some_typ ->
             some_typ )
-      | SPath.StarField {last_field} ->
-          BufferOverrunField.get_type last_field
-      | SPath.Callsite {ret_typ} ->
+      | BoField.StarField {last_field} ->
+          BoField.get_type last_field
+      | BoField.Prim (SPath.Callsite {ret_typ}) ->
           Some ret_typ
     in
     let is_last_field fn (fields : Struct.field list) =
@@ -74,9 +75,9 @@ let mk pdesc =
           Fieldname.equal fn last_fn )
     in
     let rec may_last_field = function
-      | SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _ ->
+      | BoField.Prim (SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _) ->
           true
-      | SPath.Field {fn; prefix= x} | SPath.StarField {last_field= fn; prefix= x} ->
+      | BoField.(Field {fn; prefix= x} | StarField {last_field= fn; prefix= x}) ->
           may_last_field x
           && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
                  match parent_typ.Typ.desc with

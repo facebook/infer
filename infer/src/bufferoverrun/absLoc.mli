@@ -43,17 +43,9 @@ module Allocsite : sig
 end
 
 module Loc : sig
-  type field_typ
+  type prim = private Var of Var.t | Allocsite of Allocsite.t [@@deriving compare]
 
-  type t = private
-    | Var of Var.t  (** abstract location of variable *)
-    | Allocsite of Allocsite.t  (** abstract location of allocsites *)
-    | Field of {prefix: t; fn: Fieldname.t; typ: field_typ}
-        (** field appended abstract locations, i.e., [prefix.fn] *)
-    | StarField of {prefix: t; last_field: Fieldname.t}
-        (** field appended abstract locations, but some of intermediate fields are abstracted, i.e.,
-            [prefix.*.fn] *)
-  [@@deriving equal]
+  type t = prim BufferOverrunField.t [@@deriving compare, equal]
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
@@ -104,7 +96,7 @@ module Loc : sig
 
   val represents_multiple_values : t -> bool
 
-  val append_field : ?typ:Typ.typ -> t -> fn:Fieldname.t -> t
+  val append_field : ?typ:Typ.typ -> t -> Fieldname.t -> t
   (** It appends field. [typ] is the type of [fn]. *)
 end
 

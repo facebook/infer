@@ -103,7 +103,9 @@ module Exec = struct
   let init_c_array_fields {pname; node_hash; tenv; integer_type_widths} path typ locs ?dyn_length
       mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
-      let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in
+      let field_path =
+        Option.map path ~f:(fun path -> Symb.SymbolPath.append_field path field_name)
+      in
       let field_loc = PowLoc.append_field locs ~fn:field_name in
       let mem =
         match field_typ.Typ.desc with

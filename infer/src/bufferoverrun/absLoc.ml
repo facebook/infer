@@ -9,6 +9,7 @@
 
 open! IStd
 module F = Format
+module BoField = BufferOverrunField
 
 module Allocsite = struct
   type t =
@@ -125,121 +126,86 @@ module Allocsite = struct
 end
 
 module Loc = struct
-  type field_typ = Typ.t option
+  type prim = Var of Var.t | Allocsite of Allocsite.t [@@deriving compare]
 
-  let compare_field_typ _ _ = 0
+  type t = prim BoField.t [@@deriving compare]
 
-  include (* Enforce invariants on Field and StarField, see Symb.mli *) (
-    struct
-      type t =
-        | Var of Var.t
-        | Allocsite of Allocsite.t
-        | Field of {prefix: t; fn: Fieldname.t; typ: field_typ}
-        | StarField of {prefix: t; last_field: Fieldname.t}
-      [@@deriving compare]
+  let of_var v = BoField.Prim (Var v)
 
-      let of_var v = Var v
+  let of_allocsite a = BoField.Prim (Allocsite a)
 
-      let of_allocsite a = Allocsite a
-
-      let append_star_field l0 ~fn =
-        let rec aux l =
-          match l with
-          | Allocsite a when Allocsite.is_unknown a ->
-              l
-          | Var _ | Allocsite _ ->
-              StarField {prefix= l0; last_field= fn}
-          | StarField {last_field} when Fieldname.equal fn last_field ->
-              l
-          | StarField {prefix} ->
-              StarField {prefix; last_field= fn}
-          | Field {prefix= l} ->
-              aux l
-        in
-        aux l0
+  let prim_append_field ?typ l0 fn _aux _depth = function
+    | Allocsite a as l when Allocsite.is_unknown a ->
+        BoField.Prim l
+    | Var _ | Allocsite _ ->
+        BoField.Field {prefix= l0; fn; typ}
 
 
-      let append_field ?typ l0 ~fn =
-        let rec aux ~depth l =
-          if Symb.SymbolPath.is_field_depth_beyond_limit depth then append_star_field l0 ~fn
-          else
-            match l with
-            | Allocsite a when Allocsite.is_unknown a ->
-                l
-            | Var _ | Allocsite _ ->
-                Field {prefix= l0; fn; typ}
-            | StarField {last_field} as l when Fieldname.equal fn last_field ->
-                l
-            | StarField {prefix} ->
-                StarField {prefix; last_field= fn}
-            | Field {fn= fn'} when Fieldname.equal fn fn' ->
-                StarField {prefix= l0; last_field= fn}
-            | Field {prefix= l} ->
-                aux ~depth:(depth + 1) l
-        in
-        aux ~depth:0 l0
-    end :
-      sig
-        type t = private
-          | Var of Var.t
-          | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Fieldname.t; typ: field_typ}
-          | StarField of {prefix: t; last_field: Fieldname.t}
-        [@@deriving compare]
+  let prim_append_star_field l0 fn _aux = function
+    | Allocsite a as l when Allocsite.is_unknown a ->
+        BoField.Prim l
+    | Var _ | Allocsite _ ->
+        BoField.StarField {prefix= l0; last_field= fn}
 
-        val of_var : Var.t -> t
 
-        val of_allocsite : Allocsite.t -> t
+  let append_field = BoField.mk_append_field ~prim_append_field ~prim_append_star_field
 
-        val append_field : ?typ:Typ.t -> t -> fn:Fieldname.t -> t
-
-        val append_star_field : t -> fn:Fieldname.t -> t
-      end )
+  let append_star_field = BoField.mk_append_star_field ~prim_append_star_field
 
   let equal = [%compare.equal: t]
 
   let eq l1 l2 =
-    match (l1, l2) with Allocsite as1, Allocsite as2 -> Allocsite.eq as1 as2 | _ -> Boolean.Top
+    match (l1, l2) with
+    | BoField.Prim (Allocsite as1), BoField.Prim (Allocsite as2) ->
+        Allocsite.eq as1 as2
+    | _ ->
+        Boolean.Top
 
 
   let unknown = of_allocsite Allocsite.unknown
 
   let rec is_unknown = function
-    | Var _ ->
+    | BoField.Prim (Var _) ->
         false
-    | Allocsite a ->
+    | BoField.Prim (Allocsite a) ->
         Allocsite.is_unknown a
-    | Field {prefix= x} | StarField {prefix= x} ->
+    | BoField.(Field {prefix= x} | StarField {prefix= x}) ->
         is_unknown x
 
 
   let rec pp_paren ~paren fmt =
     let module SP = Symb.SymbolPath in
     function
-    | Var v ->
+    | BoField.Prim (Var v) ->
         Var.pp F.str_formatter v ;
         let s = F.flush_str_formatter () in
         if Char.equal s.[0] '&' then
           F.pp_print_string fmt (String.sub s ~pos:1 ~len:(String.length s - 1))
         else F.pp_print_string fmt s
-    | Allocsite a ->
+    | BoField.Prim (Allocsite a) ->
         Allocsite.pp_paren ~paren fmt a
-    | Field
+    | BoField.Field
         { prefix=
-            Allocsite
-              (Allocsite.Symbol (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))
+            Prim
+              (Allocsite
+                (Allocsite.Symbol
+                  (BoField.Prim (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))))
         ; fn= f }
-    | Field
+    | BoField.Field
         { prefix=
-            Allocsite
-              (Allocsite.Known
-                {path= Some (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))})
+            Prim
+              (Allocsite
+                (Allocsite.Known
+                  { path=
+                      Some
+                        (BoField.Prim
+                          (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))) }))
         ; fn= f } ->
-        BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true) ~sep:"->" fmt p f
-    | Field {prefix= l; fn= f} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~sep:"." fmt l f
-    | StarField {prefix; last_field} ->
-        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
+        BoField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true) ~sep:"->" fmt p f
+    | BoField.Field {prefix= l; fn= f} ->
+        BoField.pp ~pp_lhs:(pp_paren ~paren:true) ~sep:"." fmt l f
+    | BoField.StarField {prefix; last_field} ->
+        BoField.pp ~pp_lhs:(pp_star ~paren:true) ~sep:"." fmt prefix last_field
 
 
   and pp_star ~paren fmt l =
@@ -249,34 +215,39 @@ module Loc = struct
 
   let pp = pp_paren ~paren:false
 
-  let is_var = function Var _ -> true | _ -> false
+  let is_var = function BoField.Prim (Var _) -> true | _ -> false
 
   let is_c_strlen = function
-    | Field {fn} ->
-        Fieldname.equal fn (BufferOverrunField.c_strlen ())
+    | BoField.Field {fn} ->
+        Fieldname.equal fn (BoField.c_strlen ())
     | _ ->
         false
 
 
   let is_java_collection_internal_array = function
-    | Field {fn} ->
-        Fieldname.equal fn BufferOverrunField.java_collection_internal_array
+    | BoField.Field {fn} ->
+        Fieldname.equal fn BoField.java_collection_internal_array
     | _ ->
         false
 
 
-  let is_frontend_tmp = function Var x -> not (Var.appears_in_source_code x) | _ -> false
+  let is_frontend_tmp = function
+    | BoField.Prim (Var x) ->
+        not (Var.appears_in_source_code x)
+    | _ ->
+        false
+
 
   let rec is_pretty = function
-    | Var _ ->
+    | BoField.Prim (Var _) ->
         true
-    | Allocsite a ->
+    | BoField.Prim (Allocsite a) ->
         Allocsite.is_pretty a
-    | Field {prefix= loc} | StarField {prefix= loc} ->
+    | BoField.Field {prefix= loc} | StarField {prefix= loc} ->
         is_pretty loc
 
 
-  let of_c_strlen loc = append_field loc ~fn:(BufferOverrunField.c_strlen ())
+  let of_c_strlen loc = append_field loc (BoField.c_strlen ())
 
   let of_pvar pvar = of_var (Var.of_pvar pvar)
 
@@ -284,42 +255,51 @@ module Loc = struct
 
   let rec of_path path =
     match path with
-    | Symb.SymbolPath.Pvar pvar ->
+    | BoField.Prim (Symb.SymbolPath.Pvar pvar) ->
         of_pvar pvar
-    | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Callsite _ ->
+    | BoField.Prim (Symb.SymbolPath.Deref _ | Symb.SymbolPath.Callsite _) ->
         of_allocsite (Allocsite.make_symbol path)
-    | Symb.SymbolPath.Field {fn; prefix= path} ->
-        append_field (of_path path) ~fn
-    | Symb.SymbolPath.StarField {last_field= fn; prefix} ->
-        append_star_field (of_path prefix) ~fn
+    | BoField.Field {fn; prefix= path} ->
+        append_field (of_path path) fn
+    | BoField.StarField {last_field= fn; prefix} ->
+        append_star_field (of_path prefix) fn
 
 
   let is_return = function
-    | Var (Var.ProgramVar x) ->
+    | BoField.Prim (Var (Var.ProgramVar x)) ->
         Mangled.equal (Pvar.get_name x) Ident.name_return
     | _ ->
         false
 
 
   let is_field_of ~loc ~field_loc =
-    match field_loc with Field {prefix= l} | StarField {prefix= l} -> equal loc l | _ -> false
+    match field_loc with
+    | BoField.(Field {prefix= l} | StarField {prefix= l}) ->
+        equal loc l
+    | _ ->
+        false
 
 
-  let get_literal_string = function Allocsite a -> Allocsite.get_literal_string a | _ -> None
+  let get_literal_string = function
+    | BoField.Prim (Allocsite a) ->
+        Allocsite.get_literal_string a
+    | _ ->
+        None
+
 
   let get_literal_string_strlen = function
-    | Field {prefix= l; fn} when Fieldname.equal (BufferOverrunField.c_strlen ()) fn ->
+    | BoField.Field {prefix= l; fn} when Fieldname.equal (BoField.c_strlen ()) fn ->
         get_literal_string l
     | _ ->
         None
 
 
   let rec is_global = function
-    | Var (Var.ProgramVar pvar) ->
+    | BoField.Prim (Var (Var.ProgramVar pvar)) ->
         Pvar.is_global pvar
-    | Var (Var.LogicalVar _) | Allocsite _ ->
+    | BoField.Prim (Var (Var.LogicalVar _) | Allocsite _) ->
         false
-    | Field {prefix= loc} | StarField {prefix= loc} ->
+    | BoField.(Field {prefix= loc} | StarField {prefix= loc}) ->
         is_global loc
 
 
@@ -328,63 +308,64 @@ module Loc = struct
       if Pvar.is_constant_array pvar then Pvar.get_initializer_pname pvar else None
     in
     function
-    | Var (Var.ProgramVar pvar) ->
+    | BoField.Prim (Var (Var.ProgramVar pvar)) ->
         initializer_of_pvar pvar
-    | Var (Var.LogicalVar _) ->
+    | BoField.Prim (Var (Var.LogicalVar _)) ->
         None
-    | Allocsite allocsite ->
+    | BoField.Prim (Allocsite allocsite) ->
         Allocsite.get_path allocsite
         |> Option.bind ~f:Symb.SymbolPath.get_pvar
         |> Option.bind ~f:initializer_of_pvar
-    | Field {prefix= loc} | StarField {prefix= loc} ->
+    | BoField.(Field {prefix= loc} | StarField {prefix= loc}) ->
         get_global_array_initializer loc
 
 
   let rec get_path = function
-    | Var (LogicalVar _) ->
+    | BoField.Prim (Var (LogicalVar _)) ->
         None
-    | Var (ProgramVar pvar) ->
+    | BoField.Prim (Var (ProgramVar pvar)) ->
         Some (Symb.SymbolPath.of_pvar pvar)
-    | Allocsite allocsite ->
+    | BoField.Prim (Allocsite allocsite) ->
         Allocsite.get_path allocsite
-    | Field {prefix= l; fn; typ} ->
-        Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field ?typ p fn)
-    | StarField {prefix; last_field} ->
-        get_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
+    | BoField.Field {prefix= l; fn; typ} ->
+        Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.append_field ?typ p fn)
+    | BoField.StarField {prefix; last_field} ->
+        get_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.append_star_field p last_field)
 
 
   let rec get_param_path = function
-    | Var _ ->
+    | BoField.Prim (Var _) ->
         None
-    | Allocsite allocsite ->
+    | BoField.Prim (Allocsite allocsite) ->
         Allocsite.get_param_path allocsite
-    | Field {prefix= l; fn} ->
-        Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
-    | StarField {prefix; last_field} ->
-        get_param_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
+    | BoField.Field {prefix= l; fn} ->
+        Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.append_field p fn)
+    | BoField.StarField {prefix; last_field} ->
+        get_param_path prefix
+        |> Option.map ~f:(fun p -> Symb.SymbolPath.append_star_field p last_field)
 
 
   let rec represents_multiple_values = function
-    | Var _ ->
+    | BoField.Prim (Var _) ->
         false
-    | Allocsite allocsite ->
+    | BoField.Prim (Allocsite allocsite) ->
         Allocsite.represents_multiple_values allocsite
-    | Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
+    | BoField.Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
         false
-    | Field {prefix= l} ->
+    | BoField.Field {prefix= l} ->
         represents_multiple_values l
-    | StarField _ ->
+    | BoField.StarField _ ->
         true
 
 
   let rec exists_pvar ~f = function
-    | Var (LogicalVar _) ->
+    | BoField.Prim (Var (LogicalVar _)) ->
         false
-    | Var (ProgramVar pvar) ->
+    | BoField.Prim (Var (ProgramVar pvar)) ->
         f pvar
-    | Allocsite allocsite ->
+    | BoField.Prim (Allocsite allocsite) ->
         Allocsite.exists_pvar ~f allocsite
-    | Field {prefix= l} | StarField {prefix= l} ->
+    | BoField.(Field {prefix= l} | StarField {prefix= l}) ->
         exists_pvar ~f l
 
 
@@ -394,9 +375,9 @@ module Loc = struct
 
   let cast typ x =
     match x with
-    | Field {prefix= l; fn} ->
-        append_field l ~fn ~typ
-    | StarField _ | Var _ | Allocsite _ ->
+    | BoField.Field {prefix= l; fn} ->
+        append_field l fn ~typ
+    | BoField.(StarField _ | Prim (Var _ | Allocsite _)) ->
         x
 end
 
@@ -546,7 +527,7 @@ module PowLoc = struct
     | Unknown ->
         Unknown
     | Known ploc ->
-        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l ~fn)) ploc LocSet.empty)
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_field l fn)) ploc LocSet.empty)
 
 
   let append_star_field ploc ~fn =
@@ -557,7 +538,7 @@ module PowLoc = struct
     | Unknown ->
         Unknown
     | Known ploc ->
-        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l ~fn)) ploc LocSet.empty)
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l fn)) ploc LocSet.empty)
 
 
   let lift_cmp cmp_loc ploc1 ploc2 =

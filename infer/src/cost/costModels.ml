@@ -54,7 +54,7 @@ module IntHashMap = struct
     | Singleton this_loc -> (
       match (AbsLoc.Loc.get_path this_loc, Typ.strip_ptr typ |> Typ.name) with
       | Some path, Some typ_name ->
-          let path = Symb.SymbolPath.field path (Fieldname.make typ_name "size") in
+          let path = Symb.SymbolPath.append_field path (Fieldname.make typ_name "size") in
           let itv = Itv.of_normal_path ~unsigned:true path in
           CostUtils.of_itv ~itv ~degree_kind:Linear ~of_function:"IntHashMap.keys" location
       | _, _ ->

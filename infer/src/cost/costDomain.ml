@@ -13,7 +13,7 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 5
+  let version = 6
 end
 
 (** Module to simulate a record

@@ -11,6 +11,7 @@ open! IStd
 open AbsLoc
 open! AbstractDomain.Types
 open BufferOverrunDomain
+module BoField = BufferOverrunField
 module L = Logging
 module TraceSet = BufferOverrunTrace.Set
 
@@ -376,7 +377,7 @@ let is_cost_mode = function EvalCost -> true | _ -> false
 
 let eval_sympath_modeled_partial ~mode ~is_expensive p =
   match (mode, p) with
-  | (EvalNormal | EvalCost), Symb.SymbolPath.Callsite _ ->
+  | (EvalNormal | EvalCost), BoField.Prim (Symb.SymbolPath.Callsite _) ->
       Itv.of_modeled_path ~is_expensive p |> Val.of_itv
   | _, _ ->
       (* We only have modeled modeled function calls created in costModels. *)
@@ -385,12 +386,12 @@ let eval_sympath_modeled_partial ~mode ~is_expensive p =
 
 let rec eval_sympath_partial ~mode params p mem =
   match p with
-  | Symb.SymbolPath.Pvar x -> (
+  | BoField.Prim (Symb.SymbolPath.Pvar x) -> (
     try ParamBindings.find x params
     with Caml.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
-  | Symb.SymbolPath.Callsite {ret_typ; cs; obj_path} -> (
+  | BoField.Prim (Symb.SymbolPath.Callsite {ret_typ; cs; obj_path}) -> (
     match mode with
     | EvalNormal | EvalCost ->
         L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Procname.pp
@@ -404,7 +405,7 @@ let rec eval_sympath_partial ~mode params p mem =
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )
-  | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ | Symb.SymbolPath.StarField _ ->
+  | BoField.(Prim (Symb.SymbolPath.Deref _) | Field _ | StarField _) ->
       let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 
@@ -412,16 +413,16 @@ let rec eval_sympath_partial ~mode params p mem =
 and eval_locpath ~mode params p mem =
   let res =
     match p with
-    | Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _ ->
+    | BoField.Prim (Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _) ->
         let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
-    | Symb.SymbolPath.Deref (_, p) ->
+    | BoField.Prim (Symb.SymbolPath.Deref (_, p)) ->
         let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
-    | Symb.SymbolPath.Field {fn; prefix= p} ->
+    | BoField.Field {fn; prefix= p} ->
         let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs
-    | Symb.SymbolPath.StarField {last_field= fn; prefix} ->
+    | BoField.StarField {last_field= fn; prefix} ->
         let locs = eval_locpath ~mode params prefix mem in
         PowLoc.append_star_field ~fn locs
   in

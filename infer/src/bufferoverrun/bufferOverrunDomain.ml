@@ -10,6 +10,7 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
+module BoField = BufferOverrunField
 module F = Format
 module L = Logging
 module OndemandEnv = BufferOverrunOndemandEnv
@@ -1874,7 +1875,7 @@ module LatestPrune = struct
       match PowLoc.is_singleton_or_more (PowLoc.subst_loc (Loc.of_pvar x) eval_locpath) with
       | Empty ->
           Error `SubstBottom
-      | Singleton (Loc.Var (Var.ProgramVar x')) ->
+      | Singleton (BoField.Prim (Loc.Var (Var.ProgramVar x'))) ->
           Ok x'
       | Singleton _ | More ->
           Error `SubstFail
@@ -2235,7 +2236,7 @@ module MemReach = struct
             Some v1
           in
           let apply_simple_alias1 ((m_acc, prunes_acc) as acc) = function
-            | Loc.Var (Var.ProgramVar y), i when Pvar.equal x y && IntLit.iszero i ->
+            | BoField.Prim (Loc.Var (Var.ProgramVar y)), i when Pvar.equal x y && IntLit.iszero i ->
                 (apply_prunes prunes m_acc, PrunePairs.union pruned_val_meet prunes_acc prunes)
             | _ ->
                 acc
@@ -2259,7 +2260,7 @@ module MemReach = struct
         let tgts = Alias.find_ret m.alias in
         let replace_latest_prune l tgt acc =
           match (l, tgt) with
-          | Loc.Var (ProgramVar pvar), AliasTarget.Simple {i} when IntLit.iszero i ->
+          | BoField.Prim (Loc.Var (ProgramVar pvar)), AliasTarget.Simple {i} when IntLit.iszero i ->
               {acc with latest_prune= LatestPrune.replace ~from:pvar ~to_:return m.latest_prune}
           | _ ->
               acc
@@ -2606,7 +2607,11 @@ module Mem = struct
 
   let get_c_strlen locs m =
     let get_c_strlen' loc acc =
-      match loc with Loc.Allocsite _ -> Val.join acc (find (Loc.of_c_strlen loc) m) | _ -> acc
+      match loc with
+      | BoField.Prim (Loc.Allocsite _) ->
+          Val.join acc (find (Loc.of_c_strlen loc) m)
+      | _ ->
+          acc
     in
     PowLoc.fold get_c_strlen' locs Val.bot
 

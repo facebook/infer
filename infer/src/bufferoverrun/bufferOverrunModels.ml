@@ -9,6 +9,7 @@ open! IStd
 open AbsLoc
 open! AbstractDomain.Types
 module L = Logging
+module BoField = BufferOverrunField
 module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
@@ -525,7 +526,7 @@ module ArrObjCommon = struct
   let size_exec exp ~fn ({integer_type_widths} as model_env) ~ret:(id, _) mem =
     let locs = Sem.eval integer_type_widths exp mem |> Dom.Val.get_all_locs in
     match PowLoc.is_singleton_or_more locs with
-    | Singleton (Loc.Allocsite (Allocsite.LiteralString s)) ->
+    | Singleton (BoField.Prim (Loc.Allocsite (Allocsite.LiteralString s))) ->
         model_by_value (Dom.Val.of_int (String.length s)) id mem
     | _ ->
         let arr_locs = deref_of model_env exp ~fn mem in
@@ -568,7 +569,7 @@ end
 
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
-    Loc.append_field loc ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+    Loc.append_field loc (BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
 
 
   let append_fields locs ~vec_typ ~elt_typ =
@@ -828,7 +829,7 @@ module Collection = struct
     in
     let coll_loc = Loc.of_allocsite coll_allocsite in
     let internal_array_loc =
-      Loc.append_field coll_loc ~fn:BufferOverrunField.java_collection_internal_array
+      Loc.append_field coll_loc BufferOverrunField.java_collection_internal_array
     in
     mem
     |> Dom.Mem.add_heap internal_array_loc internal_array
@@ -1102,7 +1103,7 @@ module JavaString = struct
           ~represents_multiple_values:true
       in
       Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem
-      |> Dom.Mem.add_heap (Loc.append_field arr_loc ~fn)
+      |> Dom.Mem.add_heap (Loc.append_field arr_loc fn)
            (Dom.Val.of_java_array_alloc elem_alloc ~length ~traces)
       |> Dom.Mem.add_heap (Loc.of_allocsite elem_alloc) elem
     in
@@ -1224,7 +1225,7 @@ module JavaString = struct
     in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
     Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem
-    |> Dom.Mem.add_heap (Loc.append_field arr_loc ~fn)
+    |> Dom.Mem.add_heap (Loc.append_field arr_loc fn)
          (Dom.Val.of_java_array_alloc elem_alloc ~length:length_itv ~traces)
 
 

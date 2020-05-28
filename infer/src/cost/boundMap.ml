@@ -23,9 +23,9 @@ let print_upper_bound_map bound_map =
 
 
 let filter_loc vars_to_keep = function
-  | AbsLoc.Loc.Var (Var.LogicalVar _) ->
+  | BufferOverrunField.Prim (AbsLoc.Loc.Var (Var.LogicalVar _)) ->
       None
-  | AbsLoc.Loc.Var var ->
+  | BufferOverrunField.Prim (AbsLoc.Loc.Var var) ->
       Control.ControlMap.find_opt var vars_to_keep
   | _ ->
       None

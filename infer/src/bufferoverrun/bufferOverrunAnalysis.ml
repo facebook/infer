@@ -196,7 +196,7 @@ module TransferFunctions = struct
                 Loc.of_var (Var.of_pvar (Pvar.mk_global class_mangled))
               in
               let fn = Fieldname.make typename "$VALUES" in
-              Loc.append_field class_var ~fn
+              Loc.append_field class_var fn
             in
             let v = Dom.Mem.find loc clinit_mem in
             let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
@@ -229,7 +229,7 @@ module TransferFunctions = struct
         ~f:(fun (clinit_pname, pvar, fn, field_typ) ->
           let copy_from_class_init () =
             Option.value_map (get_summary clinit_pname) ~default:mem ~f:(fun clinit_mem ->
-                let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) ~fn in
+                let field_loc = Loc.append_field ~typ:field_typ (Loc.of_pvar pvar) fn in
                 copy_reachable_locs_from field_loc ~from_mem:clinit_mem ~to_mem:mem )
           in
           match field_typ.Typ.desc with
