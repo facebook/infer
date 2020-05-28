@@ -18,8 +18,8 @@ let java =
  (flags
   (:standard
      -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
-     -open IBase -open IR -open Absint))
- (libraries %s core IStdlib ATDGenerated IBase IR Absint)
+     -open IBase -open IR -open Absint -open Biabduction -open Backend))
+ (libraries %s core IStdlib ATDGenerated IBase IR Absint Biabduction Backend)
  (preprocess (pps ppx_compare))
 )|}
     (if java then ":standard \\ JavaFrontendStubs" else "JavaFrontendStubs")

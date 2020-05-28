@@ -16,9 +16,9 @@ let library =
  (flags
   (:standard
      -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
-     -open IBase -open IR -open BO -open Costlib -open Concurrency -open Backend
+     -open IBase -open IR -open Absint -open BO -open Costlib -open Concurrency -open Backend
      -open TestDeterminators -open ClangFrontend -open ASTLanguage -open JavaFrontend %s %s))
- (libraries xmlm core IStdlib ATDGenerated IBase IR BO Costlib Concurrency Backend
+ (libraries xmlm core IStdlib ATDGenerated IBase IR Absint BO Costlib Concurrency Backend
      TestDeterminators ClangFrontend ASTLanguage JavaFrontend)
  (preprocess (pps ppx_compare))
 )
