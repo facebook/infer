@@ -6,12 +6,6 @@ on:
 
 jobs:
   build:
-    env:
-      OCAML_VERSION: 4.09.1
-      OPAMYES: 1
-      OPAMJOBS: 2
-      OPAMVERBOSE: 1
-      INFER_OPAM_SWITCH: "ocaml-variants.${OCAML_VERSION}+flambda"
     strategy:
       fail-fast: false
       matrix:
@@ -26,6 +20,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: true
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
@@ -42,6 +38,7 @@ jobs:
         run: brew install pkg-config automake
         if: runner.os == 'macOS'
 
+      # ensure infer isn't installed in this switch, then deal with dependencies
       - run: opam remove infer || true
 
       - run: opam update --upgrade
@@ -49,10 +46,7 @@ jobs:
       - run: opam pin add --no-action infer .
 
       - run: opam depext --update infer;
-        if: runner.os != 'macOS'
 
       - run: opam install --deps-only infer
 
       - run: opam install infer
-
-      - run: opam remove infer || true
