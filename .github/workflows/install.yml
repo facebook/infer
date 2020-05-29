@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${HOME}/.opam
-          key: ${{ runner.os }}-${{ hashFiles('.opam') }}
+          key: ${{ runner.os }}-${{ hashFiles('opam.locked') }}
 
       - name: Install Required Brew Packages for MacOS
         run: brew install pkg-config automake
