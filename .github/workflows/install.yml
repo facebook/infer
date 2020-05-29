@@ -39,7 +39,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('.opam') }}
 
       - name: Install Required Brew Packages for MacOS
-        run: brew install pkg-config
+        run: brew install pkg-config automake
         if: runner.os == 'macOS'
 
       - run: opam remove infer || true
