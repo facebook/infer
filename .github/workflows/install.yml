@@ -38,6 +38,10 @@ jobs:
           path: ${HOME}/.opam
           key: ${{ runner.os }}-${{ hashFiles('.opam') }}
 
+      - name: Install Required Brew Packages for MacOS
+        run: brew install pkg-config
+        if: runner.os == 'macOS'
+
       - run: opam remove infer || true
 
       - run: opam update --upgrade
