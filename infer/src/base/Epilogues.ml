@@ -38,16 +38,11 @@ let run () =
   late ()
 
 
-(* Run the epilogues when we get SIGINT (Control-C). *)
-let () =
-  let run_epilogues_on_signal s =
-    F.eprintf "*** %s: Caught %s, time to die@."
-      (Filename.basename Sys.executable_name)
-      (Signal.to_string s) ;
-    run ()
-  in
-  Signal.Expert.handle Signal.int run_epilogues_on_signal
+(** Raised when we are interrupted by SIGINT *)
+exception Sigint
 
+(* Raise a specific exception when we get SIGINT (Control-C). *)
+let () = Caml.Sys.(set_signal sigint (Signal_handle (fun _ -> raise Sigint)))
 
 let reset () =
   (early_callback := fun () -> ()) ;

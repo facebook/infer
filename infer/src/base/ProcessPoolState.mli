@@ -17,3 +17,5 @@ val update_status : (Mtime.t -> string -> unit) ref
 val get_pid : unit -> Pid.t
 
 val reset_pid : unit -> unit
+
+val has_running_children : bool ref

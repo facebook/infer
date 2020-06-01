@@ -189,6 +189,7 @@ let killall pool ~slot status =
       try Unix.wait (`Pid pid) |> ignore
       with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
+  ProcessPoolState.has_running_children := false ;
   L.die InternalError "Subprocess %d: %s" slot status
 
 
@@ -322,6 +323,7 @@ let wait_all pool =
             (* Collect all children errors and die only at the end to avoid creating zombies. *)
             (slot, status) :: errors )
   in
+  ProcessPoolState.has_running_children := false ;
   ( if not (List.is_empty errors) then
     let pp_error f (slot, status) =
       F.fprintf f "Error in infer subprocess %d: %s@." slot
@@ -444,6 +446,12 @@ let create :
         let child_pipe = List.nth_exn children_pipes slot in
         fork_child ~file_lock ~child_prelude ~slot child_pipe ~f ~epilogue:child_epilogue )
   in
+  ProcessPoolState.has_running_children := true ;
+  Epilogues.register ~description:"Wait children processes exit" ~f:(fun () ->
+      if !ProcessPoolState.has_running_children then (
+        Array.iter slots ~f:(fun {pid} ->
+            ignore (Unix.wait (`Pid pid) : Pid.t * Unix.Exit_or_signal.t) ) ;
+        ProcessPoolState.has_running_children := false ) ) ;
   (* we have forked the child processes and are now in the parent *)
   let children_updates = List.map children_pipes ~f:(fun (pipe_child_r, _) -> pipe_child_r) in
   let children_states = Array.create ~len:jobs Initializing in
