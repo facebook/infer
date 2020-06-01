@@ -151,12 +151,24 @@ let () =
   | Capture | Compile | Run ->
       run (Lazy.force Driver.mode_from_command_line)
   | Report -> (
-    match Config.issues_tests with
-    | None ->
-        if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
-    | Some out_path ->
+      let write_from_json out_path =
         IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path
-          Config.issues_tests_fields )
+          Config.issues_tests_fields
+      in
+      let write_from_cost_json out_path =
+        CostIssuesTest.write_from_json ~json_path:Config.from_json_costs_report ~out_path
+          CostIssuesTestField.[File; Procedure; Cost; IsOnUIThread]
+      in
+      match (Config.issues_tests, Config.cost_issues_tests) with
+      | None, None ->
+          if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
+      | Some out_path, Some cost_out_path ->
+          write_from_json out_path ;
+          write_from_cost_json cost_out_path
+      | None, Some cost_out_path ->
+          write_from_cost_json cost_out_path
+      | Some out_path, None ->
+          write_from_json out_path )
   | ReportDiff ->
       (* at least one report must be passed in input to compute differential *)
       ( match Config.(report_current, report_previous, costs_current, costs_previous) with

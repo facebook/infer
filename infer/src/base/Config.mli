@@ -240,6 +240,8 @@ val continue_capture : bool
 
 val costs_current : string option
 
+val cost_issues_tests : string option
+
 val costs_previous : string option
 
 val cxx : bool
@@ -299,6 +301,8 @@ val force_delete_results_dir : bool
 val force_integration : build_system option
 
 val from_json_report : string
+
+val from_json_costs_report : string
 
 val frontend_stats : bool
 

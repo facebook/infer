@@ -9,10 +9,12 @@ CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR) \
                 --use-cost-threshold
 INFERPRINT_OPTIONS = --issues-tests
+INFERPRINT_COST_OPTIONS = --cost-issues-tests
 
 SOURCES = $(wildcard *.m)
 
 include $(TESTS_DIR)/clang.make
 include $(TESTS_DIR)/objc.make
+include $(TESTS_DIR)/cost.make
 
 infer-out/report.json: $(MAKEFILE_LIST)

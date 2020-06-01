@@ -1,0 +1,358 @@
+codetoanalyze/java/performance/A.java, A.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B$BArray.<init>(B), 6,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B$BArray.error():void, 11,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B$BArray.ok():void, 5,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B.error():void, 21,  OnUIThread:false
+codetoanalyze/java/performance/A.java, B.ok():void, 6,  OnUIThread:false
+codetoanalyze/java/performance/AndroidXCollectionTest.java, AndroidXCollectionTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/AndroidXCollectionTest.java, AndroidXCollectionTest.call_iterate_over_sparsearraycompat_const():void, 24,  OnUIThread:false
+codetoanalyze/java/performance/AndroidXCollectionTest.java, AndroidXCollectionTest.iterate_over_sparsearraycompat_linear(androidx.collection.SparseArrayCompat):void, 8 + 5 ⋅ sa.length,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.<clinit>():void, 9,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.array_access_good():void, 70,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.array_access_overrun_bad():void, 70,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.array_access_weird_ok(long[],int):void, 5 + 13 ⋅ length,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.binary_search_log(java.lang.String[]):int, 5 + log(arr.length),  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.bsearch_log(int):void, 6 + log(i),  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types(int):void, 19 + 6 ⋅ x + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types_linear_FP(int,int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.copyOf_constant(java.lang.String[]):void, 16,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.copyOf_linear(java.lang.String[]):void, 17 + 9 ⋅ arr.length + arr.length,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.fill_big_constant():void, 307,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.fill_linear(java.lang.String[]):void, 2 + arr.length,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.gen_and_iter_types(int):java.lang.String[], 10 + 5 ⋅ length,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.init_array_linear():void, 2568,  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.sort_array_nlogn(int):void, 5 + size × log(size),  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.toArray_linear(java.util.ArrayList):void, 6 + 6 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.use_static_final_array_field_constant():void, 18,  OnUIThread:false
+codetoanalyze/java/performance/ArrayCost.java, ArrayCost.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/ArrayCost.java, ArrayCost.ArrayCost(int[]):void, 8 + 5 ⋅ mag.length,  OnUIThread:false
+codetoanalyze/java/performance/ArrayCost.java, ArrayCost.isPowOfTwo_FP(int):boolean, 895,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest$Elt.<init>(ArrayListTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest$Elt.get_boolean():boolean, 4,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.<init>(), 15,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.array_get_elem_constant():void, 81,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add3_overrun_bad():void, 27,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_addAll_bad():void, 39,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_loop():void, 174,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_loop_ok():void, 187,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_nested_loop_constant():void, 1774,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_empty_ok():void, 9,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_empty_overrun_bad():void, 9,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_empty_underrun_bad():void, 9,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_get_ok():void, 56,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_get_overrun_bad():void, 13,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_get_underrun_bad():void, 7,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_remove_bad():void, 22,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_remove_in_loop_Good():void, 214,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_remove_ok():void, 22,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_remove_overrun_bad():void, 13,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_set_ok():void, 68,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_set_overrun_bad():void, 16,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_set_underrun_bad():void, 10,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.boolean_control_var_linear():void, 7 + 19 ⋅ this.arr.length + 4 ⋅ (this.arr.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.call_init_with_put_linear(java.util.ArrayList):void, 22 + 8 ⋅ a.length + 13 ⋅ a.length + 3 ⋅ (a.length + 1) + 3 ⋅ (a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.call_sortArrayList(java.util.ArrayList):void, 4 + list.length × log(list.length),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.constructor_add_all(java.util.ArrayList,java.util.ArrayList):void, 13 + 5 ⋅ (l.length + list.length) + 3 ⋅ (l.length + list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.constructor_add_all_sym(java.util.ArrayList,java.util.ArrayList):void, 13 + 5 ⋅ (l.length + list.length) + 3 ⋅ (l.length + list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.constructor_linear(java.util.ArrayList):void, 9 + 5 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.constructor_modify(java.util.ArrayList):void, 21 + 5 ⋅ (list.length + 4) + 3 ⋅ (list.length + 5),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.empty_list_constant(int):void, 12,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.id(java.util.ArrayList):void, 10,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.init_with_put_linear(java.util.ArrayList):java.util.HashMap, 11 + 13 ⋅ a.length + 3 ⋅ (a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_over_arraylist(java.util.ArrayList):void, 8 + 5 ⋅ list.length,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_over_arraylist_shortcut_FP(java.util.ArrayList):boolean, 10 + 11 ⋅ list.length + 2 ⋅ list.length × (11-max(10, list.elements)) + 3 ⋅ (list.length + 1) × (11-max(10, list.elements)),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_over_arraylist_with_inner(java.util.ArrayList):void, 9 + 11 ⋅ list1.length + 3 ⋅ (list1.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_over_local_arraylist(java.util.ArrayList):void, 10 + 5 ⋅ list.length,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_while_has_next(java.util.ArrayList):void, 6 + 10 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.iterate_with_iterator(java.util.ArrayList):void, 6 + 8 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.json_array_constructor_linear(java.util.ArrayList):void, 9 + 5 ⋅ arr.length + 3 ⋅ (arr.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.linear(int,java.util.ArrayList):void, 7 + 9 ⋅ (-i + a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.max_linear(java.util.ArrayList):Person, 12 + people.length,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.remove_string_from_list(java.lang.String):boolean, 13 + 12 ⋅ this.list.length + 3 ⋅ (this.list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.sortArrayList(java.util.ArrayList):void, 2 + list.length × log(list.length),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.sort_comparator_nlogn(java.util.ArrayList):void, 8 + people.length × log(people.length),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.substitute_array_block_linear(java.util.ArrayList,java.util.ArrayList):void, 33 + 5 ⋅ (b.length + a.length),  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, LexicographicComparator.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, LexicographicComparator.compare(Person,Person):int, 9,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, LexicographicComparator.compare(java.lang.Object,java.lang.Object):int, 18,  OnUIThread:false
+codetoanalyze/java/performance/ArrayListTest.java, Person.<init>(java.lang.String,int), 9,  OnUIThread:false
+codetoanalyze/java/performance/Break.java, codetoanalyze.java.performance.Break.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Break.java, codetoanalyze.java.performance.Break.break_constant(int):int, 13 + 7 ⋅ p,  OnUIThread:false
+codetoanalyze/java/performance/Break.java, codetoanalyze.java.performance.Break.break_loop(int,int):int, 8 + 7 ⋅ p,  OnUIThread:false
+codetoanalyze/java/performance/Break.java, codetoanalyze.java.performance.Break.break_outer_loop_MaybeInfinite(int,int):void, 8 + 4 ⋅ maxI + 3 ⋅ maxI × (min(12, maxJ)) + 5 ⋅ maxI × (12-max(0, maxJ)) + 5 ⋅ (min(11, maxI)) × (min(11, maxJ)),  OnUIThread:false
+codetoanalyze/java/performance/CantHandle.java, CantHandle.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/CantHandle.java, CantHandle.quadratic(int):void, 6 + 6 ⋅ x²,  OnUIThread:false
+codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_FP(int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_variant_FP(int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest$Dummy.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.<clinit>():void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.<init>(java.lang.String,int,int), 8,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.valueOf(java.lang.String):CollectionTest$MyEnumType, 7,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.values():CollectionTest$MyEnumType[], 7,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.ensure_call(CollectionTest$MyCollection):void, 11 + 5 ⋅ list.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.iterate_over_call_quad(int,CollectionTest$MyCollection):void, 6 + 18 ⋅ list.length + 5 ⋅ list.length × list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.iterate_over_mycollection(CollectionTest$MyCollection):void, 8 + 5 ⋅ list.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.iterate_over_mycollection_quad(java.util.concurrent.ConcurrentLinkedQueue):void, 6 + 18 ⋅ mSubscribers.length + 5 ⋅ mSubscribers.length × mSubscribers.elements.*.length.ub + 3 ⋅ (mSubscribers.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.iterate_over_some_java_collection(java.util.concurrent.ConcurrentLinkedQueue):void, 6 + 8 ⋅ mSubscribers.length + 3 ⋅ (mSubscribers.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.loop_over_call(int,CollectionTest$MyCollection):void, 5 + 15 ⋅ size + 5 ⋅ size × list.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.nested_iterator_qubic(int,CollectionTest$MyCollection,CollectionTest$MyCollection):void, 6 + 13 ⋅ list1.length + 5 ⋅ list1.length × list1.length × list2.length + 5 ⋅ list1.length × list1.length × list2.length + 28 ⋅ list1.length × list2.length + 3 ⋅ list1.length × (list2.length + 1) + 3 ⋅ (list1.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.sparse_array_linear(android.util.SparseArray):void, 5 + 5 ⋅ arr.length + 3 ⋅ (arr.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.sparse_array_new_constant():void, 24,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.binary_search_log(java.util.List):int, 5 + log(list.length),  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.copy_linear(java.util.List,java.util.List):void, 3 + list_to.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.emptyList_constant():void, 10,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.emptySet_zero():void, 11,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.fill_linear(java.util.List,java.lang.String):void, 3 + list.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.globalEmptyList_constant():void, 8,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.reverse_constant(java.lang.String):void, 6,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.reverse_linear(java.util.List):void, 2 + list.length,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.shuffle_linear(java.util.List,java.util.Random):void, 7 + 5 ⋅ list.length + list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.singletonList_constant(java.lang.String):void, 23,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.singletonMap_constant():void, 32,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.singletonSet_constant():void, 22,  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.unmodifiable_linear(java.util.List):void, 8 + 5 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.unmodifiable_map(java.util.Map):void, 12 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.unmodifiable_set(java.util.Set):void, 9 + 8 ⋅ set.length + 3 ⋅ (set.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Compound_loop.java, codetoanalyze.java.performance.Compound_loop.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Compound_loop.java, codetoanalyze.java.performance.Compound_loop.compound_while(int):int, 9 + 5 ⋅ m + 2 ⋅ (1+max(0, m)),  OnUIThread:false
+codetoanalyze/java/performance/Compound_loop.java, codetoanalyze.java.performance.Compound_loop.nested_while_and_or(int):int, 22,  OnUIThread:false
+codetoanalyze/java/performance/Compound_loop.java, codetoanalyze.java.performance.Compound_loop.while_and_or(int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Continue.java, codetoanalyze.java.performance.Continue.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Continue.java, codetoanalyze.java.performance.Continue.continue_outer_loop():int, 7963052,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.CloneTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.CloneTest.clone_test_constant():void, 74,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.alias2_OK():void, 8,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.alias_OK():void, 6,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.band_constant(int):void, 1280,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.bar_OK():int, 19,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.call_inputstream_read_linear(java.io.InputStream):void, 27308,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.call_mult_symbold_quadratic(int):void, 14 + 5 ⋅ n + 6 ⋅ n²,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.cond_OK(int):int, 28,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.foo_OK():int, 6,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.get_global():int, 3,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_boolean_symbols_constant1(boolean):void, 21,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_boolean_symbols_constant2(boolean):void, 21,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_boolean_symbols_linear(boolean,int):void, 7 + 6 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_character_symbols_constant(char):void, 21,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_double_symbols_constant(double):void, 21,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.ignore_float_symbols_constant(float):void, 21,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop0_bad():int, 1205,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop1_bad():int, 1307,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop2(int):int, 6 + 13 ⋅ k,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop3(int):int, 241,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop_on_unknown_global_linear():void, 5 + 5 ⋅ codetoanalyze.java.performance.Cost_test.global + 5 ⋅ (1+max(0, codetoanalyze.java.performance.Cost_test.global)),  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.main_bad():int, 271,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.mult_symbols_quadratic(int,int):void, 6 + 6 ⋅ x × y,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.rand():boolean, 9,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.unitCostFunction():void, 1,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.foo(int,int):int, 4,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.if_bad(int):void, 615,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.if_bad_loop():int, 203,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.loop_despite_inferbo(int):int, 1308,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.loop_no_dep1(int):int, 609,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.loop_no_dep2(int):int, 614,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.nested_loop():int, 2547,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.real_while():int, 218,  OnUIThread:false
+codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.two_loops():int, 549,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, EnumTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, EnumTest.enum_name_constant(MyEnum):void, 198,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, MyEnum.<clinit>():void, 29,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, MyEnum.<init>(java.lang.String,int), 5,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, MyEnum.valueOf(java.lang.String):MyEnum, 7,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, MyEnum.values():MyEnum[], 7,  OnUIThread:false
+codetoanalyze/java/performance/EvilCfg.java, EvilCfg.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/EvilCfg.java, EvilCfg.foo(int,int,boolean):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/FieldAccess.java, codetoanalyze.java.performance.FieldAccess$Test.<init>(codetoanalyze.java.performance.FieldAccess), 6,  OnUIThread:false
+codetoanalyze/java/performance/FieldAccess.java, codetoanalyze.java.performance.FieldAccess.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/FieldAccess.java, codetoanalyze.java.performance.FieldAccess.iterate_upto_field_size(codetoanalyze.java.performance.FieldAccess$Test):void, 6 + 6 ⋅ test.a,  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assert_get_list_constant():void, 81,  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assert_get_map_constant():void, 102,  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assert_not_null_explanation_linear(java.lang.Integer):void, 5 + 5 ⋅ x + 7 ⋅ (1+max(0, x)),  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assert_not_null_linear(java.lang.Integer):void, 5 + 5 ⋅ x + 7 ⋅ (1+max(0, x)),  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assume_not_null_explanation_linear(java.lang.Integer):void, 5 + 5 ⋅ x + 7 ⋅ (1+max(0, x)),  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.assume_not_null_linear(java.lang.Integer):void, 5 + 5 ⋅ x + 7 ⋅ (1+max(0, x)),  OnUIThread:false
+codetoanalyze/java/performance/InferAnnotationTest.java, InferAnnotationTest.nullsafe_fixme_linear(java.lang.Integer):void, 5 + 5 ⋅ x + 7 ⋅ (1+max(0, x)),  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$AbsImpl.<init>(InheritanceTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$Impl1.<init>(InheritanceTest), 12,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$Impl1.foo(int):void, 5 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$Impl2.<init>(InheritanceTest), 12,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$Impl2.foo(int):void, 1,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$UniqueImpl.<init>(InheritanceTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$UniqueImpl.foo(int):void, 5 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$UniqueImpl4.<init>(InheritanceTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest$UniqueImpl4.top_cost(InheritanceTest$MyInterface3):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest.call_interface_method2_linear(InheritanceTest$MyInterface2,int):void, 8 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest.call_interface_method_linear(InheritanceTest$MyInterface,int):void, 8 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/InheritanceTest.java, InheritanceTest.ignore_top_costed_sub_method_constant(InheritanceTest$MyInterface3,InheritanceTest$MyInterface4):void, 4,  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.control_var_band_add_constant(int,int):void, 186,  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.control_var_band_constant(int,int):void, 186,  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.intValue_linear(java.lang.Integer):void, 5 + 5 ⋅ mKBytesToSend + 3 ⋅ (1+max(0, mKBytesToSend)),  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.static_Integer_top():void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/IntTest.java, IntTest.valueOf_linear(int):void, 8 + 5 ⋅ p + 3 ⋅ (1+max(0, p)),  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.do_while_invariant(int,int):void, 5 + 3 ⋅ (k - 1) + 4 ⋅ (max(1, k)),  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.formal_not_invariant_FP(int,int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.list_size_invariant(java.util.List):void, 5 + 5 ⋅ items.length + 3 ⋅ (items.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.local_not_invariant_FP(int):void, 7 + 12 ⋅ (size + 5) + 7 ⋅ (size + 5) × (5+min(1, size)) + 4 ⋅ (5+min(0, size)),  OnUIThread:false
+codetoanalyze/java/performance/Invariant.java, Invariant.x_is_invariant_ok(int):void, 12 + 6 ⋅ (size + 20),  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.<clinit>():void, 83,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.<init>(java.lang.String,int), 5,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.valueOf(java.lang.String):IteratorTest$Color, 7,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.values():IteratorTest$Color[], 7,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest.appendTo(java.util.Iterator):void, 3 + 10 ⋅ parts.length + 3 ⋅ (parts.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest.enum_iter():void, 43,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest.linearIterable(java.lang.Iterable):void, 9 + 10 ⋅ elements.length + 3 ⋅ (elements.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/JsonArray.java, libraries.marauder.analytics.utils.json.JsonArray.<init>(), 9,  OnUIThread:false
+codetoanalyze/java/performance/JsonArray.java, libraries.marauder.analytics.utils.json.JsonArray.addStringEntry(java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.<init>(), 9,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,boolean):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,double):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,java.lang.Object):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,libraries.marauder.analytics.utils.json.JsonType):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addEntry(java.lang.String,long):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.addKeyToMap(java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonString.java, libraries.marauder.analytics.utils.json.JsonString.<init>(boolean), 14,  OnUIThread:false
+codetoanalyze/java/performance/JsonString.java, libraries.marauder.analytics.utils.json.JsonString.<init>(double), 14,  OnUIThread:false
+codetoanalyze/java/performance/JsonString.java, libraries.marauder.analytics.utils.json.JsonString.<init>(java.lang.String), ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonString.java, libraries.marauder.analytics.utils.json.JsonString.<init>(long), 14,  OnUIThread:false
+codetoanalyze/java/performance/JsonString.java, libraries.marauder.analytics.utils.json.JsonString.toString():java.lang.String, 4,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.escape(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.isValidInputType(java.lang.Object):boolean, 21,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(boolean):java.lang.String, 6,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(double):java.lang.String, 6,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.Object):java.lang.String, 45,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.String):java.lang.StringBuilder, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.StringBuilder,boolean):void, 13,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.StringBuilder,double):void, 13,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.StringBuilder,java.lang.Object):void, 52,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(java.lang.StringBuilder,long):void, 13,  OnUIThread:false
+codetoanalyze/java/performance/JsonUtils.java, libraries.marauder.analytics.utils.json.JsonUtils.serialize(long):java.lang.String, 6,  OnUIThread:false
+codetoanalyze/java/performance/LambdaTest.java, LambdaTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/LambdaTest.java, LambdaTest.call_lambda(int):void, 21 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest$MyOwnObj.<init>(ListTest), 8,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest$MyOwnObj.my_put():void, 5,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.asList_linear(java.lang.String[]):void, 9 + 8 ⋅ array.length + 3 ⋅ (array.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.call_iterate_elements_linear(java.util.List,java.util.List):void, 26 + 5 ⋅ (l2.length + l1.length) + 3 ⋅ (l2.length + l1.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.indexOfImpl_linear(java.util.List,java.lang.Object):int, 14 + 11 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iter_multiple_list1_linear(java.util.List,java.util.List):void, 19 + 12 ⋅ (l2.length + l1.length) + 3 ⋅ (l2.length + l1.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iter_multiple_list2_linear(java.util.List,java.util.List):void, 16 + 8 ⋅ (l2.length + l1.length) + 3 ⋅ (l2.length + l1.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iter_multiple_list3_linear(java.util.List,java.util.List,java.util.List):void, 20 + 8 ⋅ (l2.length + l1.length + a.length) + 3 ⋅ (l2.length + l1.length + a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iter_my_own_obj(java.util.List):void, 22 + 14 ⋅ a.length + 6 ⋅ a.length + 3 ⋅ (a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iter_relation_with_var(java.util.List):void, 11 + 10 ⋅ a.length + 5 ⋅ a.length + 3 ⋅ (a.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.iterate_elements_linear(java.util.List):void, 6 + 5 ⋅ l.length + 3 ⋅ (l.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.sort_comparator_nlogn(java.util.List):void, 8 + people.length × log(people.length),  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.sublist(java.util.List):void, 13 + 8 ⋅ (filesList.length - 1) + 3 ⋅ filesList.length,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.sublist_constant(java.util.List):void, 34,  OnUIThread:false
+codetoanalyze/java/performance/ListTest.java, ListTest.two_lists(java.util.List,java.util.List):java.util.List, 13,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops$C.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops$MyLinkedList.<init>(codetoanalyze.java.performance.Loops), 6,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops$MyLinkedList.getNext():codetoanalyze.java.performance.Loops$MyLinkedList, 4,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.charsequence_length_linear(java.lang.CharSequence):void, 5 + 5 ⋅ seq.length + 3 ⋅ (seq.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.do_while_independent_of_p(int):int, 253,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.dumb0(long[],int):void, 5 + 25 ⋅ (length - 1),  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.dumbSort(long[],long[],int):void, 5 + 59 ⋅ (length - 1) × (length - 1) + 8 ⋅ length,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.length_of_linked_list_linear_FP(codetoanalyze.java.performance.Loops$MyLinkedList):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.linear(int):void, 5 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.modeled_range_linear(java.nio.channels.FileChannel,java.nio.ByteBuffer):void, 6 + 14 ⋅ FileChannel.read(...).modeled,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.nested_do_while_FP(int):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.similar(codetoanalyze.java.performance.Loops$C[],codetoanalyze.java.performance.Loops$C[]):boolean, 47 + 26 ⋅ x.length,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.string_concat_linear(java.lang.String,java.lang.String):void, 11 + 5 ⋅ (p.length + s.length) + 3 ⋅ (p.length + s.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.string_length_linear(java.lang.String):void, 5 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.unboundedSymbol():void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.zeropad_linear_FN(java.lang.String,java.lang.String):void, 18,  OnUIThread:false
+codetoanalyze/java/performance/MapTest.java, MapTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/MapTest.java, MapTest.entrySet_linear(java.util.Map):void, 9 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/MapTest.java, MapTest.keySet_linear(java.util.Map):void, 9 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/MapTest.java, MapTest.putAll_linear(java.util.Map):void, 15 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/MapTest.java, MapTest.values_linear(java.util.Map):void, 15 + 8 ⋅ (map.length + 1) + 3 ⋅ (map.length + 2),  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.call_max2_constant():void, 191,  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.call_with_max_linear(int):void, 11 + 5 ⋅ (max(1, x)),  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.call_with_min_constant():void, 25,  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.linear(int):void, 5 + 5 ⋅ p,  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.max2_symbolic(int,int):void, 9 + 9 ⋅ (max(x, y)),  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.max_symbolic(int[]):void, 5 + 5 ⋅ arr.length + 4 ⋅ (arr.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/MathTest.java, codetoanalyze.java.performance.MathTest.min_constant(int[]):void, 5 + 5 ⋅ (min(3, arr.length)) + 4 ⋅ (1+min(3, arr.length)),  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest$get_five.<init>(PreconditionTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest.checkArgument_constant(java.util.ArrayList):void, 16 + 5 ⋅ (min(2, list.length)) + 3 ⋅ (1+min(2, list.length)),  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest.checkNotNull_linear(java.util.ArrayList,java.lang.Object):void, 13 + 8 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest.checkState_constant(java.util.ArrayList):void, 16 + 5 ⋅ (min(2, list.length)) + 3 ⋅ (1+min(2, list.length)),  OnUIThread:false
+codetoanalyze/java/performance/PreconditionTest.java, PreconditionTest.constant_array(int[]):void, 20 + 17 ⋅ (min(5, a.length)),  OnUIThread:false
+codetoanalyze/java/performance/StringBuilderTest.java, StringBuilderTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/StringBuilderTest.java, StringBuilderTest.append_linear(java.lang.String):void, 25 + 5 ⋅ (s.length + 2) + 3 ⋅ (s.length + 3),  OnUIThread:false
+codetoanalyze/java/performance/StringBuilderTest.java, StringBuilderTest.new_capacity_constant():void, 24,  OnUIThread:false
+codetoanalyze/java/performance/StringBuilderTest.java, StringBuilderTest.new_constant():void, 64,  OnUIThread:false
+codetoanalyze/java/performance/StringBuilderTest.java, StringBuilderTest.new_linear(java.lang.String):void, 12 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.byte_array_constructor_linear(byte[]):void, 9 + 5 ⋅ data.length + 3 ⋅ (data.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.call_split_constant():void, 39,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.call_string_constant():void, 17,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.call_string_constructor_constant():void, 18,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.class_get_canonical_name_constant(java.lang.Integer):void, 252,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.index_substring_linear():java.lang.String, 17 + this.mId.length,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.indexof_constant(java.lang.String):int, 8,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.indexof_from_linear(java.lang.String,int):int, 6 + (-j + m.length),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.indexof_linear(java.lang.String):int, 5 + m.length,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.indexof_quadratic(java.lang.String,java.lang.String):int, 6 + m.length × n.length,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.last_index_of_linear(java.lang.String):void, 8 + 5 ⋅ (s.length - 1),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.last_index_of_linear_FP(java.lang.String):void, 8 + 6 ⋅ (s.length - 1) × (s.length + 1) + 4 ⋅ (1+min(1, s.length))²,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.replace_linear(java.lang.String):void, 8 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.split_linear(java.lang.String):void, 9 + 6 ⋅ (-1+max(2, s.length)),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.split_with_limit_linear(java.lang.String,int):void, 10 + 6 ⋅ (max(1, limit)),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.startsWith_constant():java.lang.String, 18,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_constant():void, 45,  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_linear(java.lang.String):void, 9 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.substring_linear(java.lang.String,int,int):void, 13 + 8 ⋅ (-x + y),  OnUIThread:false
+codetoanalyze/java/performance/StringTest.java, StringTest.substring_no_end_linear(java.lang.String,int):void, 12 + 8 ⋅ (-x + s.length),  OnUIThread:false
+codetoanalyze/java/performance/Switch.java, codetoanalyze.java.performance.Switch.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/Switch.java, codetoanalyze.java.performance.Switch.test_switch():int, 798,  OnUIThread:false
+codetoanalyze/java/performance/Switch.java, codetoanalyze.java.performance.Switch.vanilla_switch(int):void, 50,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.AllMethodsOnUiThread.<init>(), 3,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.AllMethodsOnUiThread.bar_UIThread_linear():int, 9 + 10 ⋅ (max(0, this.f)),  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.AllMethodsOnUiThread.foo_UIThread_constant():void, 3,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.ExtendsClassOnUiThread.<init>(), 5,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.ExtendsClassOnUiThread.bar_UIThread_linear():int, 14 + 10 ⋅ (max(0, this.f)),  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.ExtendsClassOnUiThread.foo_UIThread_constant():void, 3,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.<init>(codetoanalyze.java.checkers.UIAnnotationTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.constant():void, 1,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.loop_UIThread_linear(int):void, 5 + 5 ⋅ x,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.loop_linear(int):void, 5 + 5 ⋅ x,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.onBindMethod_linear(int):void, 8 + 5 ⋅ x,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$Annotations.onClick_linear(int):void, 5 + 5 ⋅ x,  OnUIThread:true
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$WeirdAnnotation.<init>(codetoanalyze.java.checkers.UIAnnotationTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest$WeirdAnnotation.foo_linear():void, 6 + 6 ⋅ this.f,  OnUIThread:false
+codetoanalyze/java/performance/UIAnnotationTest.java, codetoanalyze.java.checkers.UIAnnotationTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest$AbstractC.<init>(UnknownCallsTest), 6,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_concrete_func_linear_FP(UnknownCallsTest$AbstractC):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_loop_over_charArray_FP(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_may_throw_exception_constant():void, 220,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_throw_exception_linear():void, 5 + 5 ⋅ UnknownCallsTest.throw_exception().ub + 8 ⋅ (1+max(0, UnknownCallsTest.throw_exception().ub)),  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.jsonArray_constant():void, 22,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.jsonArray_linear(org.json.JSONArray):void, 8 + 5 ⋅ jsonArray.length,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.loop_over_charArray_FP(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.may_throw_exception():int, 13,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_max_cost(java.io.InputStream,byte[],int,int,java.util.ArrayList):int, 25 + 5 ⋅ (byteCount + 1),  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_sum_cost(java.io.InputStream,byte[],int,int,java.util.ArrayList):int, 20 + 6 ⋅ 2⋅byteCount,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.throw_exception():int, 6,  OnUIThread:false
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.unmodeled_impure_linear(java.util.ArrayList):void, 5 + 13 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.<init>(), 3,  OnUIThread:false
+codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.double_prune_unreachable_FN(double):void, 13,  OnUIThread:false
+codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.infeasible_path_unreachable():void, ⊥,  OnUIThread:false
+codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.unit_cost():void, 1,  OnUIThread:false

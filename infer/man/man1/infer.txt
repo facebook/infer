@@ -264,6 +264,10 @@ OPTIONS
            Activates: checker for performance cost analysis (Conversely:
            --no-cost)           See also infer-analyze(1).
 
+       --cost-issues-tests file
+           Write a list of cost issues in a format suitable for cost tests to
+           file           See also infer-report(1).
+
        --cost-only
            Activates: Enable --cost and disable all other checkers
            (Conversely: --no-cost-only)           See also infer-analyze(1).
@@ -582,6 +586,10 @@ OPTIONS
            Activates: Enable --fragment-retains-view and disable all other
            checkers (Conversely: --no-fragment-retains-view-only)       
     See also infer-analyze(1).
+
+       --from-json-costs-report costs-report.json
+           Load costs analysis results from a costs-report file.       
+    See also infer-report(1).
 
        --from-json-report report.json
            Load analysis results from a report file (default is to load the

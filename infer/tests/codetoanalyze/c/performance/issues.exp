@@ -1,4 +1,4 @@
-codetoanalyze/c/performance/break.c, break_constant, 0, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 7 + 5 ⋅ p + 2 ⋅ (1+max(0, p)), O(p), degree = 1,{1+max(0, p)},call to break_loop,Loop at line 10, column 3,{p},call to break_loop,Loop at line 10, column 3]
+codetoanalyze/c/performance/break.c, break_constant_FP, 0, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 7 + 5 ⋅ p + 2 ⋅ (1+max(0, p)), O(p), degree = 1,{1+max(0, p)},call to break_loop,Loop at line 10, column 3,{p},call to break_loop,Loop at line 10, column 3]
 codetoanalyze/c/performance/break.c, break_loop, 1, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 2 + 5 ⋅ p + 2 ⋅ (1+max(0, p)), O(p), degree = 1,{1+max(0, p)},Loop at line 10, column 3,{p},Loop at line 10, column 3]
 codetoanalyze/c/performance/break.c, break_loop_with_t, 1, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 2 + 5 ⋅ p + 2 ⋅ (1+max(0, p)), O(p), degree = 1,{1+max(0, p)},Loop at line 22, column 3,{p},Loop at line 22, column 3]
 codetoanalyze/c/performance/compound_loop_guard.c, compound_while, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

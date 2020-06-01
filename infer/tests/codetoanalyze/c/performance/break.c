@@ -33,4 +33,4 @@ int break_loop_with_t(int p, int t) {
 /* calling break_loop with a negative t should give constant
    cost. Currently, this doesn't work since we can't do case analysis
    on the domain. */
-int break_constant(int p) { return break_loop(p, -1); }
+int break_constant_FP(int p) { return break_loop(p, -1); }

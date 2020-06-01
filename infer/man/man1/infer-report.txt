@@ -35,6 +35,10 @@ OPTIONS
            `<reason_string>` is a non-empty string used to explain why the
            issue was filtered.
 
+       --cost-issues-tests file
+           Write a list of cost issues in a format suitable for cost tests to
+           file
+
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
@@ -260,6 +264,9 @@ OPTIONS
        --no-filtering,-F
            Deactivates: Do not show the experimental and blacklisted issue
            types (Conversely: --filtering | -f)
+
+       --from-json-costs-report costs-report.json
+           Load costs analysis results from a costs-report file.
 
        --from-json-report report.json
            Load analysis results from a report file (default is to load the
