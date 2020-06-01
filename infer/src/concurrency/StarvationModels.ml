@@ -252,24 +252,35 @@ let schedules_work =
   fun tenv pname -> matcher tenv pname []
 
 
-let schedules_work_on_ui_thread =
+let schedules_first_arg_on_ui_thread =
   let open MethodMatcher in
   let matcher =
-    [ { default with
-        classname= "java.lang.Object"
-      ; methods=
-          [ "postOnUiThread"
-          ; "postOnUiThreadDelayed"
-          ; "postToUiThread"
-          ; "runOnUiThread"
-          ; "runOnUiThreadAsync"
-          ; "runOnUiThreadAsyncWithDelay" ] } ]
-    |> of_records
+    { default with
+      classname= "java.lang.Object"
+    ; methods=
+        [ "postOnUiThread"
+        ; "postOnUiThreadDelayed"
+        ; "postToUiThread"
+        ; "runOnUiThread"
+        ; "runOnUiThreadAsync"
+        ; "runOnUiThreadAsyncWithDelay" ] }
+    |> of_record
   in
   fun tenv pname -> matcher tenv pname []
 
 
-let schedules_work_on_bg_thread =
+let schedules_second_arg_on_ui_thread =
+  let open MethodMatcher in
+  let matcher =
+    { default with
+      classname= "android.view.View"
+    ; methods= ["post"; "postDelayed"; "postOnAnimation"] }
+    |> of_record
+  in
+  fun tenv pname -> matcher tenv pname []
+
+
+let schedules_first_arg_on_bg_thread =
   let open MethodMatcher in
   let matcher =
     [ {default with classname= "java.lang.Object"; methods= ["scheduleGuaranteedDelayed"]}

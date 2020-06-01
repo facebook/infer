@@ -95,9 +95,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             |> Option.value ~default:StarvationModels.ForUnknownThread
           in
           Some (runnable, thread)
-      | Some runnable :: _ when StarvationModels.schedules_work_on_ui_thread tenv callee ->
+      | Some runnable :: _ when StarvationModels.schedules_first_arg_on_ui_thread tenv callee ->
           Some (runnable, StarvationModels.ForUIThread)
-      | Some runnable :: _ when StarvationModels.schedules_work_on_bg_thread tenv callee ->
+      | _ :: Some runnable :: _ when StarvationModels.schedules_second_arg_on_ui_thread tenv callee
+        ->
+          Some (runnable, StarvationModels.ForUIThread)
+      | Some runnable :: _ when StarvationModels.schedules_first_arg_on_bg_thread tenv callee ->
           Some (runnable, StarvationModels.ForNonUIThread)
       | _ ->
           None

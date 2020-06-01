@@ -52,11 +52,17 @@ val get_returned_executor :
   Tenv.t -> Procname.t -> HilExp.t list -> scheduler_thread_constraint option
 (** does the function return an executor and of which thread? *)
 
-val schedules_work_on_ui_thread : Tenv.t -> Procname.t -> bool
-(** method call known to directly schedule work on UI thread *)
+val schedules_first_arg_on_ui_thread : Tenv.t -> Procname.t -> bool
+(** method call known to directly schedule the runnable object provided as first procedure argument
+    on the UI thread *)
 
-val schedules_work_on_bg_thread : Tenv.t -> Procname.t -> bool
-(** method call known to directly schedule work on BG thread *)
+val schedules_second_arg_on_ui_thread : Tenv.t -> Procname.t -> bool
+(** method call known to directly schedule the runnable object provided as second procedure argument
+    on a background thread *)
+
+val schedules_first_arg_on_bg_thread : Tenv.t -> Procname.t -> bool
+(** method call known to directly the runnable object provided as first procedure argument on a
+    background thread *)
 
 val is_getMainLooper : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
