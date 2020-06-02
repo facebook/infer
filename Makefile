@@ -486,7 +486,12 @@ COST_TESTS += \
   c_performance \
   java_hoistingExpensive \
   java_performance \
+  java_performance-exclusive \
   objc_performance \
+
+ifeq ($(IS_FACEBOOK_TREE),yes)
+   COST_TESTS += java_fb-performance
+endif
 
 .PHONY: cost_tests
 cost_tests: $(COST_TESTS:%=direct_%_test)
