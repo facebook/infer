@@ -630,6 +630,45 @@ module JavaCollection = struct
     in
     let astate = PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate in
     [ExecutionDomain.ContinueProgram astate]
+
+
+  (* writes to arr[index]-> new_elem   *)
+  let add_at coll (index, _) (new_elem, new_elem_hist) : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
+    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let+ astate =
+      PulseOperations.write_arr_index location ~ref:arr ~index
+        ~obj:(new_elem, event :: new_elem_hist)
+        astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  (* writes to arr[index]-> new_elem where index is a fresh address *)
+  let add coll new_elem : model =
+    let index = AbstractValue.mk_fresh () in
+    add_at coll (index, []) new_elem
+
+
+  (* writes to arr[index]-> fresh_elem   *)
+  let remove_at coll (index, _) : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
+    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let fresh_elem = AbstractValue.mk_fresh () in
+    let+ astate =
+      PulseOperations.write_arr_index location ~ref:arr ~index
+        ~obj:(fresh_elem, event :: snd arr)
+        astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  (* writes to arr[index]-> fresh_elem where index is fresh *)
+  let remove coll : model =
+    let index = AbstractValue.mk_fresh () in
+    remove_at coll (index, [])
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -759,6 +798,14 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +PatternMatch.implements_collection
+          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
+        ; +PatternMatch.implements_list &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ capt_arg_payload $--> JavaCollection.add_at
+        ; +PatternMatch.implements_collection
+          &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
+        ; +PatternMatch.implements_list &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload
+          $+ any_arg $--> JavaCollection.remove_at
         ; +PatternMatch.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back

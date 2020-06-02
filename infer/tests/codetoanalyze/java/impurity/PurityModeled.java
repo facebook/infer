@@ -159,6 +159,12 @@ class PurityModeled {
     }
   }
 
+  String add_impure(ArrayList<Integer> list) {
+    Integer el = list.get(0);
+    list.add(4);
+    return el.toString();
+  }
+
   void append_impure(StringBuilder strBuilder) {
     strBuilder.append("JavaGuru");
   }
@@ -210,9 +216,9 @@ class PurityModeled {
     }
   }
 
-  void vector_invalidation_impure(ArrayList<Integer> list) {
+  void remove_all_directly_impure(ArrayList<Integer> list) {
     for (Integer el : list) {
-      list.remove(el); // bad, must remove via iterator
+      list.remove(el); // bad, must remove via iterator.
     }
   }
 
