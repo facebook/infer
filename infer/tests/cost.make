@@ -23,4 +23,4 @@ cost-replace: cost-issues.exp.test$(TEST_SUFFIX)
 clean: cost-clean
 
 cost-clean:
-	rm cost-issues.exp.test$(TEST_SUFFIX)
+	$(REMOVE) cost-issues.exp.test$(TEST_SUFFIX)

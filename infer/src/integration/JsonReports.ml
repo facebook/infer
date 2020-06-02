@@ -259,7 +259,9 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; hum= hum cost }
         in
         let cost_item =
-          let file = SourceFile.to_rel_path loc.Location.file in
+          let file =
+            SourceFile.to_string ~force_relative:Config.report_force_relative_path loc.Location.file
+          in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_name= Procname.get_method proc_name
