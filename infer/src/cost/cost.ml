@@ -18,6 +18,7 @@ module Node = ProcCfg.DefaultNode
 type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
+  ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_node_nb_exec: Node.id -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
@@ -53,7 +54,13 @@ module InstrBasicCost = struct
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) when Config.inclusive_cost
       ->
-        let {inferbo_invariant_map; integer_type_widths; get_summary; get_formals} = extras in
+        let { inferbo_invariant_map
+            ; integer_type_widths
+            ; inferbo_get_summary
+            ; get_summary
+            ; get_formals } =
+          extras
+        in
         let operation_cost =
           match
             BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
@@ -71,7 +78,7 @@ module InstrBasicCost = struct
                   let node_hash = InstrCFG.Node.hash instr_node in
                   let model_env =
                     BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash loc tenv
-                      integer_type_widths
+                      integer_type_widths inferbo_get_summary
                   in
                   CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
@@ -326,9 +333,14 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
 
 
 let compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
-    inferbo_invariant_map get_node_nb_exec =
+    inferbo_invariant_map inferbo_get_summary get_node_nb_exec =
   let extras =
-    {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_summary; get_formals}
+    { inferbo_invariant_map
+    ; integer_type_widths
+    ; inferbo_get_summary
+    ; get_node_nb_exec
+    ; get_summary
+    ; get_formals }
   in
   WorstCaseCost.compute tenv extras instr_cfg_wto
 
@@ -367,20 +379,26 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
+    let open IOption.Let_syntax in
+    let get_summary_common callee_pname =
+      let+ _, summaries = analyze_dependency callee_pname in
+      summaries
+    in
     let get_summary callee_pname =
-      match analyze_dependency callee_pname with
-      | Some (_, (payload, _, _)) ->
-          payload
-      | None ->
-          None
+      let* cost_summary, _inferbo_summary, _ = get_summary_common callee_pname in
+      cost_summary
+    in
+    let inferbo_get_summary callee_pname =
+      let* _cost_summary, inferbo_summary, _ = get_summary_common callee_pname in
+      inferbo_summary
     in
     let get_formals callee_pname =
-      AnalysisCallbacks.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
+      AnalysisCallbacks.get_proc_desc callee_pname >>| Procdesc.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
     compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
-      inferbo_invariant_map get_node_nb_exec
+      inferbo_invariant_map inferbo_get_summary get_node_nb_exec
   in
   let () =
     let exit_cost_record = astate.WorstCaseCost.costs in

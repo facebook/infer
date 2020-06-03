@@ -1056,30 +1056,63 @@ module Collection = struct
 end
 
 module JavaClass = struct
+  let decl_array {pname; node_hash; location} ~ret:(ret_id, _) length mem =
+    let loc =
+      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+        ~represents_multiple_values:true
+      |> Loc.of_allocsite
+    in
+    let arr_v =
+      let allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+          ~represents_multiple_values:true
+      in
+      let traces = Trace.(Set.singleton location ArrayDeclaration) in
+      Dom.Val.of_java_array_alloc allocsite ~length ~traces
+    in
+    Dom.Mem.add_heap loc arr_v mem |> model_by_value (Dom.Val.of_loc loc) ret_id
+
+
   let get_fields class_name_exp =
-    let exec {pname; node_hash; location; tenv} ~ret:(ret_id, _) mem =
+    let exec ({tenv} as model_env) ~ret mem =
       match class_name_exp with
       | Exp.Const (Const.Cclass name) -> (
           let typ_name = Typ.Name.Java.from_string (Ident.name_to_string name) in
           match Tenv.lookup tenv typ_name with
           | Some {fields} ->
-              let loc =
-                Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-                  ~represents_multiple_values:true
-                |> Loc.of_allocsite
-              in
-              let arr_v =
-                let allocsite =
-                  Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-                    ~represents_multiple_values:true
-                in
-                let length = List.length fields |> Itv.of_int in
-                let traces = Trace.(Set.singleton location ArrayDeclaration) in
-                Dom.Val.of_java_array_alloc allocsite ~length ~traces
-              in
-              Dom.Mem.add_heap loc arr_v mem |> model_by_value (Dom.Val.of_loc loc) ret_id
+              decl_array model_env ~ret (List.length fields |> Itv.of_int) mem
           | None ->
               Logging.d_printfln_escaped "Could not find class from tenv" ;
+              mem )
+      | _ ->
+          Logging.d_printfln_escaped "Parameter is not a class name constant" ;
+          mem
+    in
+    {exec; check= no_check}
+
+
+  let get_enum_constants class_name_exp =
+    let exec ({get_summary} as model_env) ~ret mem =
+      match class_name_exp with
+      | Exp.Const (Const.Cclass name) -> (
+          let enum_values_pname =
+            let class_name_str = Ident.name_to_string name in
+            Procname.make_java
+              ~class_name:(Typ.Name.Java.from_string class_name_str)
+              ~return_type:(Some (JavaSplitName.make (class_name_str ^ "[]")))
+              ~method_name:"values" ~parameters:[] ~kind:Procname.Java.Static ()
+          in
+          match get_summary enum_values_pname with
+          | Some enum_values_mem ->
+              let length =
+                let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar enum_values_pname) in
+                let ret_v = Dom.Mem.find ret_loc enum_values_mem in
+                Dom.Mem.find_set (Dom.Val.get_all_locs ret_v) enum_values_mem
+                |> Dom.Val.array_sizeof
+              in
+              decl_array model_env ~ret length mem
+          | None ->
+              Logging.d_printfln_escaped "Summary of Enum.values not found" ;
               mem )
       | _ ->
           Logging.d_printfln_escaped "Parameter is not a class name constant" ;
@@ -1563,6 +1596,8 @@ module Call = struct
         &:: "substring" <>$ any_arg $+ capt_exp $+ capt_exp $--> JavaString.substring
       ; +PatternMatch.implements_lang "Class"
         &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string
+      ; +PatternMatch.implements_lang "Class"
+        &:: "getEnumConstants" <>$ capt_exp $--> JavaClass.get_enum_constants
       ; +PatternMatch.implements_lang "Class" &:: "getFields" <>$ capt_exp $--> JavaClass.get_fields
       ; +PatternMatch.implements_lang "Enum" &:: "name" &::.*--> JavaString.inferbo_constant_string
       ; +PatternMatch.implements_lang "Integer"

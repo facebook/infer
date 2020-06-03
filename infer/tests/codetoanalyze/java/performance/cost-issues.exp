@@ -162,6 +162,7 @@ codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performan
 codetoanalyze/java/performance/Cost_test_deps.java, codetoanalyze.java.performance.Cost_test_deps.two_loops():int, 549,  OnUIThread:false
 codetoanalyze/java/performance/EnumTest.java, EnumTest.<init>(), 3,  OnUIThread:false
 codetoanalyze/java/performance/EnumTest.java, EnumTest.enum_name_constant(MyEnum):void, 198,  OnUIThread:false
+codetoanalyze/java/performance/EnumTest.java, EnumTest.iterate_enum_constants():void, 31,  OnUIThread:false
 codetoanalyze/java/performance/EnumTest.java, MyEnum.<clinit>():void, 29,  OnUIThread:false
 codetoanalyze/java/performance/EnumTest.java, MyEnum.<init>(java.lang.String,int), 5,  OnUIThread:false
 codetoanalyze/java/performance/EnumTest.java, MyEnum.valueOf(java.lang.String):MyEnum, 7,  OnUIThread:false

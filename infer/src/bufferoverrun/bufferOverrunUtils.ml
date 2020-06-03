@@ -8,6 +8,7 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
+module BoSummary = BufferOverrunAnalysisSummary
 module L = Logging
 module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
@@ -22,10 +23,11 @@ module ModelEnv = struct
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
-    ; integer_type_widths: Typ.IntegerWidths.t }
+    ; integer_type_widths: Typ.IntegerWidths.t
+    ; get_summary: BoSummary.get_summary }
 
-  let mk_model_env pname ~node_hash location tenv integer_type_widths =
-    {pname; node_hash; location; tenv; integer_type_widths}
+  let mk_model_env pname ~node_hash location tenv integer_type_widths get_summary =
+    {pname; node_hash; location; tenv; integer_type_widths; get_summary}
 end
 
 module Exec = struct

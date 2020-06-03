@@ -100,7 +100,7 @@ let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as 
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-    inferbo_invariant_map Call.{pname; node; ret; params} =
+    inferbo_invariant_map inferbo_get_summary Call.{pname; node; ret; params} =
   let last_node = InstrCFG.last_of_underlying_node node in
   let inferbo_mem =
     let instr_node_id = InstrCFG.Node.id last_node in
@@ -126,7 +126,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
                let model_env =
                  let node_hash = InstrCFG.Node.hash last_node in
                  BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
-                   integer_type_widths
+                   integer_type_widths inferbo_get_summary
                in
                model model_env ~ret inferbo_mem )
   in
@@ -169,16 +169,22 @@ let checker
         BufferOverrunAnalysis.cached_compute_invariant_map
           (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
       in
+      let open IOption.Let_syntax in
       let get_callee_cost_summary_and_formals callee_pname =
-        analyze_dependency callee_pname
-        |> Option.bind ~f:(function
-             | callee_pdesc, (_inferbo, _purity, Some callee_costs_summary) ->
-                 Some (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
-             | _, (_, _, None) ->
-                 None )
+        let* callee_pdesc, (_inferbo, _purity, callee_costs_summary) =
+          analyze_dependency callee_pname
+        in
+        let+ callee_costs_summary = callee_costs_summary in
+        (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
+      in
+      let inferbo_get_summary callee_pname =
+        let* _callee_pdesc, (inferbo, _purity, _callee_costs_summary) =
+          analyze_dependency callee_pname
+        in
+        inferbo
       in
       get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-        inferbo_invariant_map
+        inferbo_invariant_map inferbo_get_summary
     else fun _ -> None
   in
   let get_callee_purity callee_pname =

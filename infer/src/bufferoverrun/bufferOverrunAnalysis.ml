@@ -35,7 +35,7 @@ module Init = struct
         let node_hash = CFG.Node.hash start_node in
         let location = CFG.Node.loc start_node in
         let integer_type_widths = oenv.OndemandEnv.integer_type_widths in
-        BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+        BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths get_summary
       in
       fun (mem, inst_num) {ProcAttributes.name; typ} ->
         let loc = Loc.of_pvar (Pvar.mk name pname) in
@@ -305,6 +305,7 @@ module TransferFunctions = struct
           let pname = Procdesc.get_proc_name proc_desc in
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+            get_summary
         in
         match modeled_load_of_empty_collection_opt exp model_env (id, typ) mem with
         | Some mem' ->
@@ -326,6 +327,7 @@ module TransferFunctions = struct
         let node_hash = CFG.Node.hash node in
         let model_env =
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+            get_summary
         in
         let tgt_locs = Sem.eval_locs tgt_exp mem in
         let tgt_deref =
@@ -343,6 +345,7 @@ module TransferFunctions = struct
           let pname = Procdesc.get_proc_name proc_desc in
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+            get_summary
         in
         let do_alloc = not (Sem.is_stack_exp exp1 mem) in
         BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
@@ -385,7 +388,7 @@ module TransferFunctions = struct
             let model_env =
               let node_hash = CFG.Node.hash node in
               BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
-                integer_type_widths
+                integer_type_widths get_summary
             in
             exec model_env ~ret mem
         | None -> (
@@ -412,6 +415,7 @@ module TransferFunctions = struct
           let pname = Procdesc.get_proc_name proc_desc in
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+            get_summary
         in
         let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
         mem
@@ -442,9 +446,10 @@ let compute_invariant_map :
   let cfg = CFG.from_pdesc proc_desc in
   let analysis_data =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let get_summary proc_name = analyze_dependency proc_name |> Option.map ~f:snd in
+    let open IOption.Let_syntax in
+    let get_summary proc_name = analyze_dependency proc_name >>| snd in
     let get_formals callee_pname =
-      AnalysisCallbacks.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
+      AnalysisCallbacks.get_proc_desc callee_pname >>| Procdesc.get_pvar_formals
     in
     let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in
