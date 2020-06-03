@@ -211,7 +211,9 @@ codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.values():It
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest.<init>(), 3,  OnUIThread:false
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest.appendTo(java.util.Iterator):void, 3 + 10 ⋅ parts.length + 3 ⋅ (parts.length + 1),  OnUIThread:false
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest.enum_iter():void, 43,  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest.fields_iter():void, 28,  OnUIThread:false
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest.linearIterable(java.lang.Iterable):void, 9 + 10 ⋅ elements.length + 3 ⋅ (elements.length + 1),  OnUIThread:false
+codetoanalyze/java/performance/IteratorTest.java, MyClassWithFields.<init>(), 3,  OnUIThread:false
 codetoanalyze/java/performance/JsonArray.java, libraries.marauder.analytics.utils.json.JsonArray.<init>(), 9,  OnUIThread:false
 codetoanalyze/java/performance/JsonArray.java, libraries.marauder.analytics.utils.json.JsonArray.addStringEntry(java.lang.String):void, ⊤,  OnUIThread:false
 codetoanalyze/java/performance/JsonMap.java, libraries.marauder.analytics.utils.json.JsonMap.<init>(), 9,  OnUIThread:false

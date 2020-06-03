@@ -4,7 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+import java.lang.reflect.Field;
 import java.util.Iterator;
+
+class MyClassWithFields {
+  int x;
+  int y;
+}
 
 public class IteratorTest {
 
@@ -31,5 +38,9 @@ public class IteratorTest {
 
   public void enum_iter() {
     for (Color c : Color.values()) {}
+  }
+
+  public void fields_iter() {
+    for (Field f : MyClassWithFields.class.getFields()) {}
   }
 }

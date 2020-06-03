@@ -1055,6 +1055,39 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+module JavaClass = struct
+  let get_fields class_name_exp =
+    let exec {pname; node_hash; location; tenv} ~ret:(ret_id, _) mem =
+      match class_name_exp with
+      | Exp.Const (Const.Cclass name) -> (
+          let typ_name = Typ.Name.Java.from_string (Ident.name_to_string name) in
+          match Tenv.lookup tenv typ_name with
+          | Some {fields} ->
+              let loc =
+                Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+                  ~represents_multiple_values:true
+                |> Loc.of_allocsite
+              in
+              let arr_v =
+                let allocsite =
+                  Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+                    ~represents_multiple_values:true
+                in
+                let length = List.length fields |> Itv.of_int in
+                let traces = Trace.(Set.singleton location ArrayDeclaration) in
+                Dom.Val.of_java_array_alloc allocsite ~length ~traces
+              in
+              Dom.Mem.add_heap loc arr_v mem |> model_by_value (Dom.Val.of_loc loc) ret_id
+          | None ->
+              Logging.d_printfln_escaped "Could not find class from tenv" ;
+              mem )
+      | _ ->
+          Logging.d_printfln_escaped "Parameter is not a class name constant" ;
+          mem
+    in
+    {exec; check= no_check}
+end
+
 module JavaString = struct
   let fn = BufferOverrunField.java_collection_internal_array
 
@@ -1530,6 +1563,7 @@ module Call = struct
         &:: "substring" <>$ any_arg $+ capt_exp $+ capt_exp $--> JavaString.substring
       ; +PatternMatch.implements_lang "Class"
         &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string
+      ; +PatternMatch.implements_lang "Class" &:: "getFields" <>$ capt_exp $--> JavaClass.get_fields
       ; +PatternMatch.implements_lang "Enum" &:: "name" &::.*--> JavaString.inferbo_constant_string
       ; +PatternMatch.implements_lang "Integer"
         &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
