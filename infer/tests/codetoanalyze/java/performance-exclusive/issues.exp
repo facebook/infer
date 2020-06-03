@@ -1,2 +1,0 @@
-codetoanalyze/java/performance-exclusive/ExclusiveTest.java, ExclusiveTest.call_linear_exclusive_linear(int):void, 1, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 2 + 7 ⋅ x, O(x), degree = 1,{x},Loop at line 18]
-codetoanalyze/java/performance-exclusive/ExclusiveTest.java, ExclusiveTest.linear(int):void, 1, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 2 + 5 ⋅ x, O(x), degree = 1,{x},Loop at line 10]

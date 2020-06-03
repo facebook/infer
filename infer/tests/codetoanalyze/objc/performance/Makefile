@@ -6,8 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR) \
-                --use-cost-threshold
+INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 INFERPRINT_COST_OPTIONS = --cost-issues-tests
 
