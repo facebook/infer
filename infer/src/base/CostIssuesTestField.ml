@@ -7,4 +7,6 @@
 
 open! IStd
 
-type t = IsOnUIThread | Procedure | File | Cost [@@deriving equal]
+type t = IsOnUIThread | Procedure | File | Cost | Trace [@@deriving equal]
+
+let all_fields = [File; Procedure; Cost; IsOnUIThread; Trace]

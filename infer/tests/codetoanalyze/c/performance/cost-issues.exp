@@ -1,79 +1,79 @@
-codetoanalyze/c/performance/break.c, break_constant_FP, 8 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/break.c, break_loop, 5 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/break.c, break_loop_with_t, 7 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, compound_while, 7 + 3 ⋅ m + 4 ⋅ (1+max(0, m)),  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, nested_while_and_or, 20,  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, simplified_simulated_while_with_and, 605,  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, simulated_nested_loop_with_and, 3529,  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, simulated_while_shortcut, 9,  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, simulated_while_with_and, 6 + 3 ⋅ p + 4 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/compound_loop_guard.c, while_and_or, ⊤,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, alias2_OK, 7,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, alias_OK, 6,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, always, 9,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, bar_OK, 19,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, call_infinite, ⊤,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, call_while_upto20_10_good, 56,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, call_while_upto20_minus100_bad, 606,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, call_while_upto20_unsigned_good, 6 + 4 ⋅ (-x + 20) + (21-min(20, x)),  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, cond_OK, 27,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, div_const, 3,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, foo_OK, 6,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, ignore_character_symbols_constant_FP, 5 + 4 ⋅ (122-min(97, c)),  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, infinite, ⊤,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, infinite_FN, 19,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, iter_div_const_constant, 109,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, loop0_bad, 1105,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, loop1_bad, 1207,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, loop2_bad, 4 + 10 ⋅ k + 2 ⋅ (1+max(0, k)),  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, loop3_bad, 187,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, main_bad, 241,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, unit_cost_function, 1,  OnUIThread:false
-codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 4 + 4 ⋅ (-m + 20) + (21-min(20, m)),  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, foo, 4,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, if_bad, 75,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 203,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 1208,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep1, 609,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep2, 614,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, nested_loop, 2547,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, real_while, 218,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop, 2529,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop_cond_in_goto, 3534,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop_more_expensive, 2534,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, simulated_while, 218,  OnUIThread:false
-codetoanalyze/c/performance/cost_test_deps.c, two_loops, 549,  OnUIThread:false
-codetoanalyze/c/performance/exit.c, call_exit_unreachable_unreachable, ⊥,  OnUIThread:false
-codetoanalyze/c/performance/exit.c, call_unreachable_constant, 1,  OnUIThread:false
-codetoanalyze/c/performance/exit.c, compute_exit_unreachable_unreachable, ⊥,  OnUIThread:false
-codetoanalyze/c/performance/exit.c, exit_unreachable_unreachable, ⊥,  OnUIThread:false
-codetoanalyze/c/performance/exit.c, inline_exit_unreachable_FP, 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/exit.c, linear, 3 + 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, do_2K_times_Bad, 14006,  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, do_2_times_Good, 20,  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, do_half_m2_times, 3 + 5 ⋅ (m - 1) × m + 7 ⋅ m + 2 ⋅ m × (max(1, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, do_m2_times, 3 + 7 ⋅ m + 5 ⋅ m × m + 2 ⋅ m × (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, do_n_times, 3 + 5 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false
-codetoanalyze/c/performance/instantiate.c, no_op, 2,  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, do_k_times, 5 + 3 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, do_k_times_array, 5 + 6 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, do_n_m_times_nested, 7 + 5 ⋅ n + 3 ⋅ n × m + 2 ⋅ n × (1+max(0, m)) + 2 ⋅ (1+max(0, n)),  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, two_loops_nested_invariant, 6 + 23 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, while_infinite_FN, 2,  OnUIThread:false
-codetoanalyze/c/performance/invariant.c, while_unique_def_FN, 15,  OnUIThread:false
-codetoanalyze/c/performance/jump_inside_loop.c, jump_inside_loop, 2008,  OnUIThread:false
-codetoanalyze/c/performance/jump_inside_loop.c, loop_always, 28,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, __infer_globals_initializer_array1, 4,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, __infer_globals_initializer_array2, 2,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, do_while_independent_of_p, 228,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, if_in_loop, 324,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, if_out_loop, 515,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, larger_state_FN, 1005,  OnUIThread:false
-codetoanalyze/c/performance/loops.c, loop_use_global_vars, 4 + 4 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false
-codetoanalyze/c/performance/loops.c, ptr_cmp, 5 + 5 ⋅ size + 2 ⋅ (2+max(-1, size)),  OnUIThread:false
-codetoanalyze/c/performance/purity.c, loop, 7007,  OnUIThread:false
-codetoanalyze/c/performance/switch_continue.c, test_switch, 601,  OnUIThread:false
-codetoanalyze/c/performance/switch_continue.c, unroll_loop, 16 + (n - 1) + 11 ⋅ (max(1, n)),  OnUIThread:false
-codetoanalyze/c/performance/two_loops_symbolic.c, nop, 2,  OnUIThread:false
-codetoanalyze/c/performance/two_loops_symbolic.c, two_loops_symb, 8 + 5 ⋅ m + 5 ⋅ m + 2 ⋅ (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false
-codetoanalyze/c/performance/two_loops_symbolic.c, two_loops_symb_diff, 8 + 5 ⋅ k + 5 ⋅ m + 2 ⋅ (1+max(0, k)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false
+codetoanalyze/c/performance/break.c, break_constant_FP, 8 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},call to break_loop,Loop at line 10, column 3,{p},call to break_loop,Loop at line 10, column 3]
+codetoanalyze/c/performance/break.c, break_loop, 5 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 10, column 3,{p},Loop at line 10, column 3]
+codetoanalyze/c/performance/break.c, break_loop_with_t, 7 + 5 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 22, column 3,{p},Loop at line 22, column 3]
+codetoanalyze/c/performance/compound_loop_guard.c, compound_while, 7 + 3 ⋅ m + 4 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop at line 13, column 3,{m},Loop at line 13, column 3]
+codetoanalyze/c/performance/compound_loop_guard.c, nested_while_and_or, 20,  OnUIThread:false, []
+codetoanalyze/c/performance/compound_loop_guard.c, simplified_simulated_while_with_and, 605,  OnUIThread:false, []
+codetoanalyze/c/performance/compound_loop_guard.c, simulated_nested_loop_with_and, 3529,  OnUIThread:false, []
+codetoanalyze/c/performance/compound_loop_guard.c, simulated_while_shortcut, 9,  OnUIThread:false, []
+codetoanalyze/c/performance/compound_loop_guard.c, simulated_while_with_and, 6 + 3 ⋅ p + 4 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 43, column 3,{p},Loop at line 43, column 3]
+codetoanalyze/c/performance/compound_loop_guard.c, while_and_or, ⊤,  OnUIThread:false, [Unbounded loop,Loop at line 63, column 3]
+codetoanalyze/c/performance/cost_test.c, alias2_OK, 7,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, alias_OK, 6,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, always, 9,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, bar_OK, 19,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, call_infinite, ⊤,  OnUIThread:false, [Call to infinite,Unbounded loop,Loop at line 146, column 3]
+codetoanalyze/c/performance/cost_test.c, call_while_upto20_10_good, 56,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, call_while_upto20_minus100_bad, 606,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, call_while_upto20_unsigned_good, 6 + 4 ⋅ (-x + 20) + (21-min(20, x)),  OnUIThread:false, [{21-min(20, x)},call to while_upto20_bad,Loop at line 119, column 3,{-x + 20},call to while_upto20_bad,Loop at line 119, column 3]
+codetoanalyze/c/performance/cost_test.c, cond_OK, 27,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, div_const, 3,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, foo_OK, 6,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, ignore_character_symbols_constant_FP, 5 + 4 ⋅ (122-min(97, c)),  OnUIThread:false, [{122-min(97, c)},Loop at line 155, column 3]
+codetoanalyze/c/performance/cost_test.c, infinite, ⊤,  OnUIThread:false, [Unbounded loop,Loop at line 146, column 3]
+codetoanalyze/c/performance/cost_test.c, infinite_FN, 19,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, iter_div_const_constant, 109,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, loop0_bad, 1105,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, loop1_bad, 1207,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, loop2_bad, 4 + 10 ⋅ k + 2 ⋅ (1+max(0, k)),  OnUIThread:false, [{1+max(0, k)},Loop at line 87, column 3,{k},Loop at line 87, column 3]
+codetoanalyze/c/performance/cost_test.c, loop3_bad, 187,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, main_bad, 241,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, unit_cost_function, 1,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 4 + 4 ⋅ (-m + 20) + (21-min(20, m)),  OnUIThread:false, [{21-min(20, m)},Loop at line 119, column 3,{-m + 20},Loop at line 119, column 3]
+codetoanalyze/c/performance/cost_test_deps.c, foo, 4,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, if_bad, 75,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 203,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 1208,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep1, 609,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep2, 614,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, nested_loop, 2547,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, real_while, 218,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop, 2529,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop_cond_in_goto, 3534,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop_more_expensive, 2534,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, simulated_while, 218,  OnUIThread:false, []
+codetoanalyze/c/performance/cost_test_deps.c, two_loops, 549,  OnUIThread:false, []
+codetoanalyze/c/performance/exit.c, call_exit_unreachable_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
+codetoanalyze/c/performance/exit.c, call_unreachable_constant, 1,  OnUIThread:false, []
+codetoanalyze/c/performance/exit.c, compute_exit_unreachable_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
+codetoanalyze/c/performance/exit.c, exit_unreachable_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
+codetoanalyze/c/performance/exit.c, inline_exit_unreachable_FP, 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 30, column 3,{p},Loop at line 30, column 3]
+codetoanalyze/c/performance/exit.c, linear, 3 + 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 18, column 3,{p},Loop at line 18, column 3]
+codetoanalyze/c/performance/instantiate.c, do_2K_times_Bad, 14006,  OnUIThread:false, []
+codetoanalyze/c/performance/instantiate.c, do_2_times_Good, 20,  OnUIThread:false, []
+codetoanalyze/c/performance/instantiate.c, do_half_m2_times, 3 + 5 ⋅ (m - 1) × m + 7 ⋅ m + 2 ⋅ m × (max(1, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop at line 31, column 3,{max(1, m)},call to do_n_times,Loop at line 12, column 3,{m},Loop at line 31, column 3,{m},Loop at line 31, column 3,{m - 1},call to do_n_times,Loop at line 12, column 3]
+codetoanalyze/c/performance/instantiate.c, do_m2_times, 3 + 7 ⋅ m + 5 ⋅ m × m + 2 ⋅ m × (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop at line 24, column 3,{1+max(0, m)},call to do_n_times,Loop at line 12, column 3,{m},call to do_n_times,Loop at line 12, column 3,{m},Loop at line 24, column 3]
+codetoanalyze/c/performance/instantiate.c, do_n_times, 3 + 5 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop at line 12, column 3,{n},Loop at line 12, column 3]
+codetoanalyze/c/performance/instantiate.c, no_op, 2,  OnUIThread:false, []
+codetoanalyze/c/performance/invariant.c, do_k_times, 5 + 3 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop at line 23, column 3,{n},Loop at line 23, column 3]
+codetoanalyze/c/performance/invariant.c, do_k_times_array, 5 + 6 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop at line 31, column 3,{n},Loop at line 31, column 3]
+codetoanalyze/c/performance/invariant.c, do_n_m_times_nested, 7 + 5 ⋅ n + 3 ⋅ n × m + 2 ⋅ n × (1+max(0, m)) + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop at line 40, column 3,{1+max(0, m)},Loop at line 41, column 5,{m},Loop at line 41, column 5,{n},Loop at line 40, column 3]
+codetoanalyze/c/performance/invariant.c, two_loops_nested_invariant, 6 + 23 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop at line 50, column 3,{p},Loop at line 50, column 3]
+codetoanalyze/c/performance/invariant.c, while_infinite_FN, 2,  OnUIThread:false, []
+codetoanalyze/c/performance/invariant.c, while_unique_def_FN, 15,  OnUIThread:false, []
+codetoanalyze/c/performance/jump_inside_loop.c, jump_inside_loop, 2008,  OnUIThread:false, []
+codetoanalyze/c/performance/jump_inside_loop.c, loop_always, 28,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, __infer_globals_initializer_array1, 4,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, __infer_globals_initializer_array2, 2,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, do_while_independent_of_p, 228,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, if_in_loop, 324,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, if_out_loop, 515,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, larger_state_FN, 1005,  OnUIThread:false, []
+codetoanalyze/c/performance/loops.c, loop_use_global_vars, 4 + 4 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Loop at line 69, column 3,{x},Loop at line 69, column 3]
+codetoanalyze/c/performance/loops.c, ptr_cmp, 5 + 5 ⋅ size + 2 ⋅ (2+max(-1, size)),  OnUIThread:false, [{2+max(-1, size)},Loop at line 76, column 3,{size},Loop at line 76, column 3]
+codetoanalyze/c/performance/purity.c, loop, 7007,  OnUIThread:false, []
+codetoanalyze/c/performance/switch_continue.c, test_switch, 601,  OnUIThread:false, []
+codetoanalyze/c/performance/switch_continue.c, unroll_loop, 16 + (n - 1) + 11 ⋅ (max(1, n)),  OnUIThread:false, [{max(1, n)},Loop at line 43, column 11,{n - 1},Loop at line 43, column 11]
+codetoanalyze/c/performance/two_loops_symbolic.c, nop, 2,  OnUIThread:false, []
+codetoanalyze/c/performance/two_loops_symbolic.c, two_loops_symb, 8 + 5 ⋅ m + 5 ⋅ m + 2 ⋅ (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop at line 16, column 3,{1+max(0, m)},Loop at line 13, column 3,{m},Loop at line 16, column 3,{m},Loop at line 13, column 3]
+codetoanalyze/c/performance/two_loops_symbolic.c, two_loops_symb_diff, 8 + 5 ⋅ k + 5 ⋅ m + 2 ⋅ (1+max(0, k)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop at line 25, column 3,{1+max(0, k)},Loop at line 28, column 3,{m},Loop at line 25, column 3,{k},Loop at line 28, column 3]

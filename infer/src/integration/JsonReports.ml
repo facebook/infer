@@ -256,7 +256,11 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
-          ; hum= hum cost }
+          ; hum= hum cost
+          ; trace=
+              loc_trace_to_jsonbug_record
+                (CostDomain.BasicCost.polynomial_traces cost)
+                Exceptions.Advice }
         in
         let cost_item =
           let file =

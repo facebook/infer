@@ -79,6 +79,7 @@ type cost_info = {
   polynomial : string;
   ?degree : int option;
   hum : hum_info;
+  trace : json_trace_item list;
 }
 
 

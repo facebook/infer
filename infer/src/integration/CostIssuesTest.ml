@@ -22,6 +22,8 @@ let pp_custom_of_cost_report fmt report cost_fields =
           F.fprintf fmt "%s%s" (comma_separator index) cost_item.exec_cost.hum.hum_polynomial
       | IsOnUIThread ->
           F.fprintf fmt "%s OnUIThread:%b" (comma_separator index) cost_item.is_on_ui_thread
+      | Trace ->
+          IssuesTest.pp_trace fmt cost_item.exec_cost.trace (comma_separator index)
     in
     List.iteri ~f:pp_cost_field cost_fields ;
     F.fprintf fmt "@."

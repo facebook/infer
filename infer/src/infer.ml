@@ -157,7 +157,7 @@ let () =
       in
       let write_from_cost_json out_path =
         CostIssuesTest.write_from_json ~json_path:Config.from_json_costs_report ~out_path
-          CostIssuesTestField.[File; Procedure; Cost; IsOnUIThread]
+          CostIssuesTestField.all_fields
       in
       match (Config.issues_tests, Config.cost_issues_tests) with
       | None, None ->

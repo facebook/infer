@@ -1,9 +1,9 @@
-codetoanalyze/objc/performance/araii.m, Araii.dealloc, 4,  OnUIThread:false
-codetoanalyze/objc/performance/araii.m, Araii.initWithBuffer, 15,  OnUIThread:false
-codetoanalyze/objc/performance/araii.m, memory_leak_raii_main, 18,  OnUIThread:false
-codetoanalyze/objc/performance/cf.m, array_count_linear, 6 + 3 ⋅ arr.length + 2 ⋅ (arr.length + 1),  OnUIThread:false
-codetoanalyze/objc/performance/cf.m, cf_array_create_copy_linear, 1010,  OnUIThread:false
-codetoanalyze/objc/performance/cf.m, cf_array_create_linear, 11 + 3 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false
-codetoanalyze/objc/performance/cf.m, dict_count_linear, 6 + 3 ⋅ dict.length + 2 ⋅ (dict.length + 1),  OnUIThread:false
-codetoanalyze/objc/performance/control.m, __infer_globals_initializer_gvar, 2,  OnUIThread:false
-codetoanalyze/objc/performance/control.m, wrong_cvar_FP, ⊤,  OnUIThread:false
+codetoanalyze/objc/performance/araii.m, Araii.dealloc, 4,  OnUIThread:false, []
+codetoanalyze/objc/performance/araii.m, Araii.initWithBuffer, 15,  OnUIThread:false, []
+codetoanalyze/objc/performance/araii.m, memory_leak_raii_main, 18,  OnUIThread:false, []
+codetoanalyze/objc/performance/cf.m, array_count_linear, 6 + 3 ⋅ arr.length + 2 ⋅ (arr.length + 1),  OnUIThread:false, [{arr.length + 1},Loop at line 18, column 3,{arr.length},Loop at line 18, column 3]
+codetoanalyze/objc/performance/cf.m, cf_array_create_copy_linear, 1010,  OnUIThread:false, []
+codetoanalyze/objc/performance/cf.m, cf_array_create_linear, 11 + 3 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Loop at line 41, column 3,{x},Loop at line 41, column 3]
+codetoanalyze/objc/performance/cf.m, dict_count_linear, 6 + 3 ⋅ dict.length + 2 ⋅ (dict.length + 1),  OnUIThread:false, [{dict.length + 1},Loop at line 24, column 3,{dict.length},Loop at line 24, column 3]
+codetoanalyze/objc/performance/control.m, __infer_globals_initializer_gvar, 2,  OnUIThread:false, []
+codetoanalyze/objc/performance/control.m, wrong_cvar_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop at line 20, column 3]

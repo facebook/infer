@@ -8,3 +8,5 @@
 open! IStd
 
 val write_from_json : json_path:string -> out_path:string -> IssuesTestField.t list -> unit
+
+val pp_trace : Format.formatter -> Jsonbug_t.json_trace_item list -> string -> unit
