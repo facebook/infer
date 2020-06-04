@@ -22,5 +22,3 @@ val to_issue_string : t -> string
 val to_json_cost_info : Jsonbug_t.cost_item -> t -> Jsonbug_t.cost_info
 
 val enabled_cost_kinds : kind_spec list
-
-val to_threshold : t -> int option

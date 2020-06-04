@@ -200,8 +200,6 @@ val eradicate_meta_class_needs_improvement : t
 
 val eradicate_meta_class_is_nullsafe : t
 
-val expensive_cost_call : kind:CostKind.t -> is_on_ui_thread:bool -> t
-
 val exposed_insecure_intent_handling : t
 
 val failure_exe : t

@@ -49,10 +49,6 @@ let to_json_cost_info c = function
       assert false
 
 
-(* We use this threshold to give error if the cost is above it.
-   Currently it's set randomly to 200 for OperationCost and 3 for AllocationCost. *)
-let to_threshold = function OperationCost -> Some 200 | AllocationCost -> Some 3 | IOCost -> None
-
 type kind_spec = {kind: t; (* for non-diff analysis *) top_and_unreachable: bool}
 
 let enabled_cost_kinds = [{kind= OperationCost; top_and_unreachable= true}]

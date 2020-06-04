@@ -138,8 +138,6 @@ val trace_absarray : bool
 
 val unsafe_unret : string
 
-val use_cost_threshold : bool
-
 val incremental_analysis : bool
 
 val weak : string

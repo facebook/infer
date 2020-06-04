@@ -436,8 +436,6 @@ OPTIONS
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
-             EXPENSIVE_EXECUTION_TIME (disabled by default),
-             EXPENSIVE_EXECUTION_TIME_UI_THREAD (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
@@ -1856,10 +1854,6 @@ INTERNAL OPTIONS
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural
            mode (Conversely: --no-uninit-interproc)
-
-       --use-cost-threshold
-           Activates: Emit costs issues by comparing costs with a set
-           threshold (Conversely: --no-use-cost-threshold)
 
        --version-vcs
            Print version control system commit and exit

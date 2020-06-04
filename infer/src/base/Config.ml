@@ -2280,11 +2280,6 @@ and unsafe_malloc =
     "Assume that malloc(3) never returns null."
 
 
-and use_cost_threshold =
-  CLOpt.mk_bool ~long:"use-cost-threshold" ~default:false
-    "Emit costs issues by comparing costs with a set threshold"
-
-
 and incremental_analysis =
   CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
     "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
@@ -3110,8 +3105,6 @@ and type_size = !type_size
 and uninit_interproc = !uninit_interproc
 
 and unsafe_malloc = !unsafe_malloc
-
-and use_cost_threshold = !use_cost_threshold
 
 and incremental_analysis = !incremental_analysis
 

@@ -412,10 +412,6 @@ let eradicate_meta_class_can_be_nullsafe =
       (* Should be enabled for special integrations *) ~enabled:false Eradicate
 
 
-let expensive_cost_call ~kind ~is_on_ui_thread =
-  register_from_cost_string ~enabled:false ~kind ~is_on_ui_thread "EXPENSIVE_%s"
-
-
 let exposed_insecure_intent_handling =
   register_from_string ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Quandary
 
@@ -667,7 +663,6 @@ let () =
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
           ignore (unreachable_cost_call ~kind) ;
-          ignore (expensive_cost_call ~kind ~is_on_ui_thread) ;
           ignore (infinite_cost_call ~kind) ;
           ignore (complexity_increase ~kind ~is_on_ui_thread) ;
           () ) )

@@ -19,7 +19,7 @@ end
 val compute_costs : debug:debug -> BasicCost.t Node.IdMap.t -> Equalities.t -> unit
 (** repeatedly improve the costs given the constraints *)
 
-val get_node_nb_exec : Equalities.t -> Node.id -> BasicCost.t
+val get_node_nb_exec : Equalities.t -> Node.t -> BasicCost.t
 (** compute the number of times a node is executed by taking into account the program structural
     (e.g. control-flow) constraints *)
 

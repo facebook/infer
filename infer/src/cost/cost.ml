@@ -19,7 +19,7 @@ type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
   ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
-  ; get_node_nb_exec: Node.id -> BasicCost.t
+  ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
 
@@ -153,87 +153,26 @@ let compute_errlog_extras cost =
   ; nullsafe_extra= None }
 
 
-module ThresholdReports = struct
-  type threshold_or_report =
-    | Threshold of BasicCost.t
-    | ReportOn of {location: Location.t; cost: BasicCost.t}
-    | NoReport
-
-  type t = threshold_or_report CostIssues.CostKindMap.t
-
-  let none : t = CostIssues.CostKindMap.empty
-
-  let config =
-    CostIssues.CostKindMap.fold
-      (fun kind kind_spec acc ->
-        match kind_spec with
-        | CostIssues.{threshold= Some threshold} ->
-            CostIssues.CostKindMap.add kind (Threshold (BasicCost.of_int_exn threshold)) acc
-        | _ ->
-            acc )
-      CostIssues.enabled_cost_map none
-end
-
-(** Calculate the final Worst Case Cost predicted for each cost field and each WTO component. It is
-    the dot product of the symbolic cost of the node and how many times it is executed. *)
+(** Calculate the final Worst Case Cost of the cfg. It is the dot product of the symbolic cost of
+    the node and how many times it is executed. *)
 module WorstCaseCost = struct
-  type astate = {costs: CostDomain.t; reports: ThresholdReports.t}
-
   (** We don't report when the cost is Top as it corresponds to subsequent 'don't know's. Instead,
       we report Top cost only at the top level per function. *)
-  let exec_node tenv {costs; reports} extras instr_node =
+  let exec_node tenv extras instr_node =
     let {get_node_nb_exec} = extras in
-    let node_cost =
-      let instr_cost_record = InstrBasicCost.get_instr_node_cost_record tenv extras instr_node in
-      let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
-      let nb_exec = get_node_nb_exec node_id in
-      if BasicCost.is_top nb_exec then
-        Logging.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
-          node_id ;
-      CostDomain.mult_by instr_cost_record ~nb_exec
-    in
-    let costs = CostDomain.plus costs node_cost in
-    let reports =
-      CostIssues.CostKindMap.merge
-        (fun _kind threshold_or_report_opt cost_opt ->
-          match (threshold_or_report_opt, cost_opt) with
-          | Some ThresholdReports.NoReport, _ ->
-              threshold_or_report_opt
-          | Some ThresholdReports.(Threshold _ | ReportOn _), Some cost when BasicCost.is_top cost
-            ->
-              Some ThresholdReports.NoReport
-          | Some (ThresholdReports.Threshold threshold), Some cost
-            when not (BasicCost.leq ~lhs:cost ~rhs:threshold) ->
-              Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
-          | Some (ThresholdReports.ReportOn {cost= prev}), Some cost
-            when BasicCost.compare_by_degree prev cost < 0 ->
-              Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
-          | _ ->
-              threshold_or_report_opt )
-        reports costs
-    in
-    {costs; reports}
+    let instr_cost_record = InstrBasicCost.get_instr_node_cost_record tenv extras instr_node in
+    let node = InstrCFG.Node.underlying_node instr_node in
+    let nb_exec = get_node_nb_exec node in
+    if BasicCost.is_top nb_exec then
+      Logging.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
+        (Node.id node) ;
+    CostDomain.mult_by instr_cost_record ~nb_exec
 
 
-  let rec exec_partition tenv astate extras
-      (partition : InstrCFG.Node.t WeakTopologicalOrder.Partition.t) =
-    match partition with
-    | Empty ->
-        astate
-    | Node {node; next} ->
-        let astate = exec_node tenv astate extras node in
-        exec_partition tenv astate extras next
-    | Component {head; rest; next} ->
-        let {costs; reports} = astate in
-        let {costs} = exec_partition tenv {costs; reports= ThresholdReports.none} extras rest in
-        (* Execute head after the loop body to always report at loop head *)
-        let astate = exec_node tenv {costs; reports} extras head in
-        exec_partition tenv astate extras next
-
-
-  let compute tenv extras instr_cfg_wto =
-    let initial = {costs= CostDomain.zero_record; reports= ThresholdReports.config} in
-    exec_partition tenv initial extras instr_cfg_wto
+  let compute tenv extras cfg =
+    let init = CostDomain.zero_record in
+    InstrCFG.fold_nodes cfg ~init ~f:(fun acc pair ->
+        exec_node tenv extras pair |> CostDomain.plus acc )
 end
 
 let is_report_suppressed pname =
@@ -243,35 +182,6 @@ let is_report_suppressed pname =
 
 
 module Check = struct
-  let report_threshold pname proc_desc err_log ~name ~location ~cost CostIssues.{expensive_issue}
-      ~threshold ~is_on_ui_thread =
-    let report_issue_type =
-      L.(debug Analysis Medium) "@\n\n++++++ Checking error type for %a **** @\n" Procname.pp pname ;
-      expensive_issue ~is_on_ui_thread
-    in
-    let bigO_str =
-      Format.asprintf ", %a"
-        (BasicCost.pp_degree ~only_bigO:true)
-        (BasicCost.get_degree_with_term cost)
-    in
-    let degree_str = BasicCost.degree_str cost in
-    let message =
-      F.asprintf
-        "%s from the beginning of the function up to this program point is likely above the \
-         acceptable threshold of %d (estimated cost %a%s)"
-        name threshold BasicCost.pp_hum cost degree_str
-    in
-    let cost_trace_elem =
-      let cost_desc =
-        F.asprintf "with estimated cost %a%s%s" BasicCost.pp_hum cost bigO_str degree_str
-      in
-      Errlog.make_trace_element 0 location cost_desc []
-    in
-    Reporting.log_error proc_desc err_log ~loc:location
-      ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
-      ~extras:(compute_errlog_extras cost) Cost report_issue_type message
-
-
   let report_top_and_unreachable pname proc_desc err_log loc ~name ~cost
       {CostIssues.unreachable_issue; infinite_issue} =
     let report issue suffix =
@@ -286,27 +196,19 @@ module Check = struct
         "cannot be computed since the program's exit state is never reachable"
 
 
-  let check_and_report {InterproceduralAnalysis.proc_desc; err_log} ~is_on_ui_thread
-      {WorstCaseCost.costs; reports} =
+  let check_and_report {InterproceduralAnalysis.proc_desc; err_log} cost =
     let pname = Procdesc.get_proc_name proc_desc in
     let proc_loc = Procdesc.get_loc proc_desc in
-    if not (is_report_suppressed pname) then (
-      CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
-        ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
-        | ThresholdReports.Threshold _ | ThresholdReports.NoReport ->
-            ()
-        | ThresholdReports.ReportOn {location; cost} ->
-            report_threshold pname proc_desc err_log ~name ~location ~cost kind_spec
-              ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
-      CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
+    if not (is_report_suppressed pname) then
+      CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map cost
         ~f:(fun _kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
           if top_and_unreachable then
-            report_top_and_unreachable pname proc_desc err_log proc_loc ~name ~cost issue_spec ) )
+            report_top_and_unreachable pname proc_desc err_log proc_loc ~name ~cost issue_spec )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
 
-type get_node_nb_exec = Node.id -> BasicCost.t
+type get_node_nb_exec = Node.t -> BasicCost.t
 
 let compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_invmap :
     bound_map =
@@ -332,22 +234,7 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
       ConstraintSolver.get_node_nb_exec equalities )
 
 
-let compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
-    inferbo_invariant_map inferbo_get_summary get_node_nb_exec =
-  let extras =
-    { inferbo_invariant_map
-    ; integer_type_widths
-    ; inferbo_get_summary
-    ; get_node_nb_exec
-    ; get_summary
-    ; get_formals }
-  in
-  WorstCaseCost.compute tenv extras instr_cfg_wto
-
-
-let get_cost_summary ~is_on_ui_thread astate =
-  {CostDomain.post= astate.WorstCaseCost.costs; is_on_ui_thread}
-
+let get_cost_summary ~is_on_ui_thread astate = {CostDomain.post= astate; is_on_ui_thread}
 
 let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -396,16 +283,21 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       AnalysisCallbacks.get_proc_desc callee_pname >>| Procdesc.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
-    let instr_cfg_wto = InstrCFG.wto instr_cfg in
-    compute_worst_case_cost tenv integer_type_widths get_summary get_formals instr_cfg_wto
-      inferbo_invariant_map inferbo_get_summary get_node_nb_exec
+    let extras =
+      { inferbo_invariant_map
+      ; inferbo_get_summary
+      ; integer_type_widths
+      ; get_node_nb_exec
+      ; get_summary
+      ; get_formals }
+    in
+    WorstCaseCost.compute tenv extras instr_cfg
   in
   let () =
-    let exit_cost_record = astate.WorstCaseCost.costs in
     L.(debug Analysis Verbose)
       "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Procname.pp proc_name
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-      CostDomain.VariantCostMap.pp exit_cost_record
+      CostDomain.VariantCostMap.pp astate
   in
-  Check.check_and_report analysis_data ~is_on_ui_thread astate ;
+  Check.check_and_report analysis_data astate ;
   Some (get_cost_summary ~is_on_ui_thread astate)

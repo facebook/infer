@@ -181,9 +181,14 @@ let compute_costs ~debug bound_map equalities =
   debug.f "[ConstraintSolver][CImpr] %a@\n" Equalities.pp_costs equalities
 
 
-let get_node_nb_exec equalities node_id =
-  let set =
-    node_id |> ControlFlowCost.make_node |> Equalities.find equalities
+let get_node_nb_exec equalities node =
+  let nb_exec_opt =
+    Node.id node |> ControlFlowCost.make_node |> Equalities.find equalities
     |> Equalities.find_set equalities
   in
-  Option.value_exn set |> ControlFlowCost.Set.cost
+  match nb_exec_opt with
+  | Some nb_exec ->
+      ControlFlowCost.Set.cost nb_exec
+  | None ->
+      (* a dangling node with no incoming or outgoing edges is unreachable *)
+      BasicCost.of_unreachable (Node.loc node)
