@@ -1,0 +1,52 @@
+name: Install
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-version:
+          - 4.09.1
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      - name: Restore opam cache
+        uses: actions/cache@v2
+        with:
+          path: ${HOME}/.opam
+          key: ${{ runner.os }}-${{ hashFiles('opam.locked') }}
+
+      - name: Install Required Brew Packages for MacOS
+        run: brew install pkg-config automake
+        if: runner.os == 'macOS'
+
+      # ensure infer isn't installed in this switch, then deal with dependencies
+      - run: opam remove infer || true
+
+      - run: opam update --upgrade
+
+      - run: opam pin add --no-action infer .
+
+      - run: opam depext --update infer;
+
+      - run: opam install --deps-only infer
+
+      - run: opam install infer
