@@ -32,8 +32,10 @@ module type BaseDomainSig = sig
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
   (** filter both heap and attrs *)
 
-  val filter_addr_with_discarded_attrs : f:(AbstractValue.t -> bool) -> t -> t * Attributes.t list
-  (** filter both heap and attrs with returning discarded attrs together *)
+  val filter_addr_with_discarded_addrs :
+    f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
+  (** compute new state containing only reachable addresses in its heap and attributes, as well as
+      the list of discarded unreachable addresses *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -82,6 +84,8 @@ module Stack : sig
   val mem : Var.t -> t -> bool
 
   val exists : (Var.t -> BaseStack.value -> bool) -> t -> bool
+
+  val keys : t -> Var.t list
 end
 
 (** memory operations like {!BaseMemory} but that also take care of propagating facts to the
@@ -142,9 +146,9 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t * AbstractValue.Set.t * Attributes.t list
-(** [discard_unreachable astate] garbage collects unreachable addresses in the state to make it
-    smaller, and retuns the new state, the live addresses, and the attributes of discarded addresses *)
+val discard_unreachable : t -> t * AbstractValue.Set.t * AbstractValue.t list
+(** garbage collect unreachable addresses in the state to make it smaller and return the new state,
+    the live addresses, and the discarded addresses that used to have attributes attached *)
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 

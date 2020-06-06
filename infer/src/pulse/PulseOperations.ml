@@ -317,7 +317,7 @@ let mark_address_of_stack_variable history variable location address astate =
   AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
 
 
-let check_memory_leak_unreachable unreachable_attrs location astate =
+let check_memory_leak_unreachable unreachable_addrs location astate =
   let check_memory_leak result attributes =
     let allocated_not_freed_opt =
       Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
@@ -337,12 +337,40 @@ let check_memory_leak_unreachable unreachable_attrs location astate =
     | _ ->
         result
   in
-  List.fold unreachable_attrs ~init:(Ok ()) ~f:check_memory_leak
+  List.fold unreachable_addrs ~init:(Ok ()) ~f:(fun res addr ->
+      match AbductiveDomain.AddressAttributes.find_opt addr astate with
+      | Some unreachable_attrs ->
+          check_memory_leak res unreachable_attrs
+      | None ->
+          res )
 
 
-let remove_vars vars location astate =
+let get_dynamic_type_unreachable_values vars astate =
+  (* For each unreachable address we find a root variable for it; if there is
+     more than one, it doesn't matter which *)
+  let find_var_opt astate addr =
+    Stack.fold
+      (fun var (var_addr, _) var_opt ->
+        if AbstractValue.equal addr var_addr then Some var else var_opt )
+      astate None
+  in
+  let astate' = Stack.remove_vars vars astate in
+  let _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
+  let res =
+    List.fold unreachable_addrs ~init:[] ~f:(fun res addr ->
+        (let open IOption.Let_syntax in
+        let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
+        let* typ = Attributes.get_dynamic_type attrs in
+        let+ var = find_var_opt astate addr in
+        (var, addr, typ) :: res)
+        |> Option.value ~default:res )
+  in
+  List.map ~f:(fun (var, _, typ) -> (var, typ)) res
+
+
+let remove_vars vars location orig_astate =
   let astate =
-    List.fold vars ~init:astate ~f:(fun astate var ->
+    List.fold vars ~init:orig_astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =
@@ -359,8 +387,8 @@ let remove_vars vars location astate =
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then Ok astate
   else
-    let astate, _, unreachable_attrs = AbductiveDomain.discard_unreachable astate' in
-    let+ () = check_memory_leak_unreachable unreachable_attrs location astate in
+    let astate, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
+    let+ () = check_memory_leak_unreachable unreachable_addrs location orig_astate in
     astate
 
 

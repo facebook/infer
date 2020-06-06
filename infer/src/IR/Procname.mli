@@ -262,6 +262,10 @@ val make_java :
   -> t
 (** Create a Java procedure name. *)
 
+val make_objc_dealloc : Typ.Name.t -> t
+(** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname
+    is given by the class name, since it is always an instance method with the name "dealloc" *)
+
 val empty_block : t
 (** Empty block name. *)
 

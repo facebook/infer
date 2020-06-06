@@ -14,8 +14,8 @@ val empty : t
 
 val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
 
-val filter_with_discarded_attrs :
-  (AbstractValue.t -> Attributes.t -> bool) -> t -> t * Attributes.t list
+val filter_with_discarded_addrs :
+  (AbstractValue.t -> Attributes.t -> bool) -> t -> t * AbstractValue.t list
 
 val find_opt : AbstractValue.t -> t -> Attributes.t option
 

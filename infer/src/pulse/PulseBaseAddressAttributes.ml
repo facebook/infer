@@ -54,9 +54,9 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
-let filter_with_discarded_attrs f x =
+let filter_with_discarded_addrs f x =
   fold
-    (fun k v ((x, discarded) as acc) -> if f k v then acc else (Graph.remove k x, v :: discarded))
+    (fun k v ((x, discarded) as acc) -> if f k v then acc else (Graph.remove k x, k :: discarded))
     x (x, [])
 
 

@@ -142,12 +142,71 @@ module PulseTransferFunctions = struct
         exec_state_res
 
 
+  (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and
+     type needed to execute a call to dealloc for the given variables for which the dynamic type
+     is an Objective-C class. *)
+  let get_dealloc_from_dynamic_types dynamic_types_unreachable =
+    let get_dealloc (var, name) =
+      let cls_typ = Typ.mk (Typ.Tstruct name) in
+      match Var.get_ident var with
+      | Some id when Typ.is_objc_class cls_typ ->
+          let ret_id = Ident.create_fresh Ident.knormal in
+          let dealloc = Procname.make_objc_dealloc name in
+          let typ = Typ.mk_ptr cls_typ in
+          Some (ret_id, id, typ, dealloc)
+      | _ ->
+          None
+    in
+    List.filter_map ~f:get_dealloc dynamic_types_unreachable
+
+
+  (* In the case of variables that point to Objective-C classes for which we have a dynamic type, we
+     add and execute calls to dealloc. The main advantage of adding this calls
+     is that some memory could be freed in dealloc, and we would be reporting a leak on it if we
+     didn't call it. *)
+  let execute_injected_dealloc_calls analysis_data vars astate location =
+    let used_ids = Stack.keys astate |> List.filter_map ~f:(fun var -> Var.get_ident var) in
+    Ident.update_name_generator used_ids ;
+    let call_dealloc (astate_list : Domain.t list) (ret_id, id, typ, dealloc) =
+      let ret = (ret_id, Typ.void) in
+      let call_flags = CallFlags.default in
+      let call_exp = Exp.Const (Cfun dealloc) in
+      let actuals = [(Exp.Var id, typ)] in
+      let call_instr = Sil.Call (ret, call_exp, actuals, location, call_flags) in
+      L.d_printfln ~color:Pp.Orange "@\nExecuting injected instr:%a@\n@."
+        (Sil.pp_instr Pp.text ~print_types:true)
+        call_instr ;
+      List.fold
+        ~f:(fun astates (astate : Domain.t) ->
+          let astate =
+            match astate with
+            | AbortProgram _ | ExitProgram _ ->
+                [astate]
+            | ContinueProgram astate ->
+                dispatch_call analysis_data ret call_exp actuals location call_flags astate
+                |> check_error_transform analysis_data ~f:Fn.id
+          in
+          List.rev_append astate astates )
+        ~init:[] astate_list
+    in
+    let dynamic_types_unreachable =
+      PulseOperations.get_dynamic_type_unreachable_values vars astate
+    in
+    let dealloc_data = get_dealloc_from_dynamic_types dynamic_types_unreachable in
+    let ret_vars = List.map ~f:(fun (ret_id, _, _, _) -> Var.of_id ret_id) dealloc_data in
+    L.d_printfln ~color:Pp.Orange
+      "Executing injected call to dealloc for vars (%a) that are exiting the scope@."
+      (Pp.seq ~sep:"," Var.pp) vars ;
+    let astates = List.fold ~f:call_dealloc dealloc_data ~init:[Domain.ContinueProgram astate] in
+    (astates, ret_vars)
+
+
   let exec_instr (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
     | AbortProgram _ ->
         (* We can also continue the analysis with the error state here
-           but there might be a risk we would get nonsense. *)
+                 but there might be a risk we would get nonsense. *)
         [astate]
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
@@ -192,8 +251,36 @@ module PulseTransferFunctions = struct
           dispatch_call analysis_data ret call_exp actuals loc call_flags astate
           |> check_error_transform analysis_data ~f:(fun id -> id)
       | Metadata (ExitScope (vars, location)) ->
-          let astate = PulseOperations.remove_vars vars location astate in
-          check_error_continue analysis_data astate
+          let remove_vars vars astates =
+            List.fold
+              ~f:(fun astates (astate : Domain.t) ->
+                match astate with
+                | AbortProgram _ | ExitProgram _ ->
+                    [astate]
+                | ContinueProgram astate ->
+                    let astate =
+                      PulseOperations.remove_vars vars location astate
+                      |> check_error_continue analysis_data
+                    in
+                    List.rev_append astate astates )
+              ~init:[] astates
+          in
+          if Procname.is_java (Procdesc.get_proc_name proc_desc) then
+            remove_vars vars [Domain.ContinueProgram astate]
+          else
+            (* Here we add and execute calls to dealloc for Objective-C objects
+               before removing the variables *)
+            let astates, ret_vars =
+              execute_injected_dealloc_calls analysis_data vars astate location
+            in
+            (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
+               (in particular if no ObjC objects are involved), but otherwise
+               assume [ret_vars] is potentially larger than [vars] and so
+               append [vars] to [ret_vars]. *)
+            let vars_to_remove =
+              if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
+            in
+            remove_vars vars_to_remove astates
       | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
           [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
       | Metadata (Abstract _ | Nullify _ | Skip) ->

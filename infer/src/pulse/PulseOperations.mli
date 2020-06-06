@@ -114,6 +114,10 @@ val shallow_copy :
   -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
+val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.Name.t) list
+(** Given a list of variables, computes the unreachable values if the variables were removed from
+    the stack, then return the dynamic types of those values if they are available *)
+
 val remove_vars : Var.t list -> Location.t -> t -> t access_result
 
 val check_address_escape :

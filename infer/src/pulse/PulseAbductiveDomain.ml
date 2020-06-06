@@ -28,8 +28,10 @@ module type BaseDomainSig = sig
   val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
   (** filter both heap and attrs *)
 
-  val filter_addr_with_discarded_attrs : f:(AbstractValue.t -> bool) -> t -> t * Attributes.t list
-  (** filter both heap and attrs with returning discarded attrs together *)
+  val filter_addr_with_discarded_addrs :
+    f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
+  (** compute new state containing only reachable addresses in its heap and attributes, as well as
+      the list of discarded unreachable addresses *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -60,12 +62,12 @@ module BaseDomainCommon = struct
     update ~heap:heap' ~attrs:attrs' foot
 
 
-  let filter_addr_with_discarded_attrs ~f foot =
+  let filter_addr_with_discarded_addrs ~f foot =
     let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
-    let attrs', discarded_attributes =
-      BaseAddressAttributes.filter_with_discarded_attrs (fun address _ -> f address) foot.attrs
+    let attrs', discarded_addresses =
+      BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
-    (update ~heap:heap' ~attrs:attrs' foot, discarded_attributes)
+    (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
 end
 
 (** represents the post abstract state at each program point *)
@@ -166,6 +168,9 @@ module Stack = struct
   let mem var astate = BaseStack.mem var (astate.post :> base_domain).stack
 
   let exists f astate = BaseStack.exists f (astate.post :> base_domain).stack
+
+  let keys astate =
+    BaseStack.fold (fun key _ keys -> key :: keys) (astate.post :> base_domain).stack []
 end
 
 module AddressAttributes = struct
@@ -340,8 +345,8 @@ let discard_unreachable ({pre; post} as astate) =
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let live_addresses = AbstractValue.Set.union pre_addresses post_addresses in
-  let post_new, attrs_unreachable =
-    PostDomain.filter_addr_with_discarded_attrs
+  let post_new, discard_addresses =
+    PostDomain.filter_addr_with_discarded_addrs
       ~f:(fun address -> AbstractValue.Set.mem address live_addresses)
       post
   in
@@ -350,7 +355,7 @@ let discard_unreachable ({pre; post} as astate) =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
   in
-  (astate, live_addresses, attrs_unreachable)
+  (astate, live_addresses, discard_addresses)
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)

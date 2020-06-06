@@ -257,6 +257,8 @@ module ObjC_Cpp = struct
     {class_name; method_name; kind; template_args; parameters}
 
 
+  let make_dealloc name = make name "dealloc" ObjCInstanceMethod Typ.NoTemplate []
+
   let get_class_name objc_cpp = Typ.Name.name objc_cpp.class_name
 
   let get_class_type_name objc_cpp = objc_cpp.class_name
@@ -729,6 +731,8 @@ let describe f pn =
 let make_java ~class_name ~return_type ~method_name ~parameters ~kind () =
   Java (Java.make ~class_name ~return_type ~method_name ~parameters ~kind ())
 
+
+let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 
 module Hashable = struct
   type nonrec t = t
