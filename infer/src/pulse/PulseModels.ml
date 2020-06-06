@@ -121,6 +121,24 @@ module ObjCCoreFoundation = struct
     PulseOperations.remove_allocation_attr (fst access) astate |> PulseOperations.ok_continue
 end
 
+module ObjC = struct
+  let alloc_not_null arg : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let dynamic_type =
+      match arg with
+      | Exp.Sizeof {typ= {desc= Tstruct name}} ->
+          name
+      | _ ->
+          Logging.die InternalError "Expected arg should be a sizeof expression"
+    in
+    let ret_addr = AbstractValue.mk_fresh () in
+    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model "alloc"; location}]) in
+    let astate = PulseOperations.write_id ret_id ret_value astate in
+    PulseOperations.add_dynamic_type dynamic_type ret_addr astate
+    |> PulseArithmetic.and_positive ret_addr
+    |> PulseOperations.ok_continue
+end
+
 module Cplusplus = struct
   let delete deleted_access : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
@@ -861,7 +879,8 @@ module ProcNameDispatcher = struct
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__free_cf
-          <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release ] )
+          <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
+        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null ] )
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args

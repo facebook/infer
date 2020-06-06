@@ -203,6 +203,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate procname address location)
 
 
+  let add_dynamic_type typ address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
+
+
   let remove_allocation_attr address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.remove_allocation_attr address)
 

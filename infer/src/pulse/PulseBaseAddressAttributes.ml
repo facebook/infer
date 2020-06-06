@@ -70,6 +70,8 @@ let allocate procname (address, history) location memory =
   add_one address (Attribute.Allocated (procname, Immediate {location; history})) memory
 
 
+let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
+
 let check_valid address attrs =
   L.d_printfln "Checking validity of %a" AbstractValue.pp address ;
   match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_invalid with

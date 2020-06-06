@@ -221,6 +221,8 @@ let allocate procname location addr_trace astate =
   AddressAttributes.allocate procname addr_trace location astate
 
 
+let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
+
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
 
 let invalidate location cause addr_trace astate =

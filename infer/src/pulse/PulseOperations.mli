@@ -90,6 +90,8 @@ val invalidate :
 
 val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
+val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
+
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
 val invalidate_access :

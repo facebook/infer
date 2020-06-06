@@ -29,6 +29,7 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
     | Closure of Procname.t
+    | DynamicType of Typ.Name.t
     | Invalid of Invalidation.t * Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
@@ -64,6 +65,8 @@ module Attribute = struct
 
   let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
 
+  let dynamic_type_rank = Variants.to_rank (DynamicType (Typ.Name.Objc.from_string ""))
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -80,6 +83,8 @@ module Attribute = struct
           trace
     | Closure pname ->
         Procname.pp f pname
+    | DynamicType typ ->
+        F.fprintf f "DynamicType %a" Typ.Name.pp typ
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -146,6 +151,13 @@ module Attributes = struct
            (procname, trace) )
 
 
+  let get_dynamic_type attrs =
+    Set.find_rank attrs Attribute.dynamic_type_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.DynamicType typ) = attr in
+           typ )
+
+
   include Set
 end
 
@@ -158,6 +170,7 @@ let is_suitable_for_pre = function
   | AddressOfStackVariable _
   | Allocated _
   | Closure _
+  | DynamicType _
   | Invalid _
   | StdVectorReserve
   | WrittenTo _ ->
@@ -173,5 +186,9 @@ let map_trace ~f = function
       MustBeValid (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
-  | (AddressOfCppTemporary _ | AddressOfStackVariable _ | Closure _ | StdVectorReserve) as attr ->
+  | ( AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Closure _
+    | DynamicType _
+    | StdVectorReserve ) as attr ->
       attr
