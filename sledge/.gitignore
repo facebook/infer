@@ -1,8 +1,10 @@
 .llvm_build
 .llvm_install
 /llvm/
-/test/*/*.bc
-/test/*/*.bc.err
-/test/*/*.bc.out
+/test/**/*.bc
+/test/**/*.bc.err
+/test/**/*.bc.out
+/test/**/*.ll.err
+/test/**/*.ll.out
 /test/report.current
 _build
