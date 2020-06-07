@@ -128,7 +128,7 @@ analyze-report-full:
 # list tests with zero or multiple RESULT lines
 report-invalid-results:
 	@find -L * -name '*.out' -exec grep -H -c "RESULT:" {} \; \
-	 | grep -v ":1$"
+	 | grep -v ":1$$"
 
 # report warnings
 warnings:
