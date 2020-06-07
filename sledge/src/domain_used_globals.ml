@@ -51,11 +51,26 @@ let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
   let name = Reg.name intrinsic in
   if
     List.exists
-      [ "malloc"; "aligned_alloc"; "calloc"; "posix_memalign"; "realloc"
-      ; "mallocx"; "rallocx"; "xallocx"; "sallocx"; "dallocx"; "sdallocx"
-      ; "nallocx"; "malloc_usable_size"; "mallctl"; "mallctlnametomib"
-      ; "mallctlbymib"; "malloc_stats_print"; "strlen"
-      ; "__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv" ]
+      [ "malloc"
+      ; "aligned_alloc"
+      ; "calloc"
+      ; "posix_memalign"
+      ; "realloc"
+      ; "mallocx"
+      ; "rallocx"
+      ; "xallocx"
+      ; "sallocx"
+      ; "dallocx"
+      ; "sdallocx"
+      ; "nallocx"
+      ; "malloc_usable_size"
+      ; "mallctl"
+      ; "mallctlnametomib"
+      ; "mallctlbymib"
+      ; "malloc_stats_print"
+      ; "strlen"
+      ; "__cxa_allocate_exception"
+      ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
   then
     List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)

@@ -46,7 +46,10 @@ let map_seg ~f h =
   let siz = f h.siz in
   let arr = f h.arr in
   if
-    loc == h.loc && bas == h.bas && len == h.len && siz == h.siz
+    loc == h.loc
+    && bas == h.bas
+    && len == h.len
+    && siz == h.siz
     && arr == h.arr
   then h
   else {loc; bas; len; siz; arr}
@@ -315,7 +318,9 @@ let rec invariant q =
         List.iter djn ~f:(fun sjn ->
             assert (Var.Set.is_subset sjn.us ~of_:(Var.Set.union us xs)) ;
             invariant sjn ) )
-  with exc -> [%Trace.info "%a" pp q] ; raise exc
+  with exc ->
+    [%Trace.info "%a" pp q] ;
+    raise exc
 
 (** Quantification and Vocabulary *)
 
@@ -437,7 +442,9 @@ let and_cong cong q =
   | [[]] -> q
   | _ -> and_cong_ cong (extend_us (Equality.fv cong) q) )
   |>
-  [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
+  [%Trace.retn fun {pf} q ->
+    pf "%a" pp q ;
+    invariant q]
 
 let star q1 q2 =
   [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
@@ -532,7 +539,9 @@ let rec pure (e : Term.t) =
       if Equality.is_false cong then false_ us
       else exists_fresh xs {emp with us; cong; pure= [e]} )
   |>
-  [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
+  [%Trace.retn fun {pf} q ->
+    pf "%a" pp q ;
+    invariant q]
 
 let and_ e q = star (pure e) q
 
@@ -543,7 +552,9 @@ let and_subst subst q =
     ~f:(fun ~key ~data -> and_ (Term.eq key data))
     subst ~init:q
   |>
-  [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
+  [%Trace.retn fun {pf} q ->
+    pf "%a" pp q ;
+    invariant q]
 
 let subst sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
@@ -646,14 +657,18 @@ let rec norm_ s q =
   let xs, cong = Equality.apply_subst (Var.Set.union q.us q.xs) s q.cong in
   exists_fresh xs {q with cong}
   |>
-  [%Trace.retn fun {pf} q' -> pf "%a" pp_raw q' ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp_raw q' ;
+    invariant q']
 
 let norm s q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Equality.Subst.pp s pp_raw q]
   ;
   (if Equality.Subst.is_empty s then q else norm_ s q)
   |>
-  [%Trace.retn fun {pf} q' -> pf "%a" pp_raw q' ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp_raw q' ;
+    invariant q']
 
 (** rename existentially quantified variables to avoid shadowing, and reduce
     quantifier scopes by sinking them as low as possible into disjunctions *)
@@ -676,7 +691,9 @@ let rec freshen_nested_xs q =
   (* rename xs to miss all xs in subformulas *)
   freshen_xs {q with xs; djns} ~wrt:(Var.Set.union q.us xs_below)
   |>
-  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q']
 
 let rec propagate_equality_ ancestor_vs ancestor_cong q =
   [%Trace.call fun {pf} ->
@@ -706,7 +723,9 @@ let rec propagate_equality_ ancestor_vs ancestor_cong q =
          assert (is_false cong_djn || Var.Set.is_subset new_xs ~of_:djn_xs) ;
          star (exists djn_xs cong_djn) q' ))
   |>
-  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q']
 
 let propagate_equality ancestor_vs ancestor_cong q =
   [%Trace.call fun {pf} ->
@@ -714,7 +733,9 @@ let propagate_equality ancestor_vs ancestor_cong q =
   ;
   propagate_equality_ ancestor_vs ancestor_cong q
   |>
-  [%Trace.retn fun {pf} q' -> pf "%a" pp q' ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q']
 
 let pp_vss fs vss =
   Format.fprintf fs "[@[%a@]]"
@@ -784,4 +805,6 @@ let simplify q =
   let q = simplify_ q.us [] q in
   q
   |>
-  [%Trace.retn fun {pf} q' -> pf "@\n" ; invariant q']
+  [%Trace.retn fun {pf} q' ->
+    pf "@\n" ;
+    invariant q']

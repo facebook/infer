@@ -554,7 +554,8 @@ let set_derived_metadata functions =
             | None ->
                 (* conservatively assume all virtual calls are recursive *)
                 call.recursive <- true ) ;
-            jump return ; Option.iter ~f:jump throw
+            jump return ;
+            Option.iter ~f:jump throw
         | Return _ | Throw _ | Unreachable -> () ) ;
         BlockQ.enqueue_back_exn tips_to_roots src ()
     in

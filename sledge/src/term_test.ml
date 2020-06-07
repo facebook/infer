@@ -79,7 +79,9 @@ let%test_module _ =
 
     let%expect_test _ =
       pp
-        ( !1 + (!2 * z) + (!3 * y)
+        ( !1
+        + (!2 * z)
+        + (!3 * y)
         + (!4 * z * z)
         + (!5 * y * y)
         + (!6 * z * y)

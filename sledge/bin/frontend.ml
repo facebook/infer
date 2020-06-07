@@ -21,7 +21,10 @@ Reg.demangle :=
   let cxa_demangle =
     (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
     Foreign.foreign "__cxa_demangle"
-      ( string @-> ptr char @-> ptr size_t @-> ptr int
+      ( string
+      @-> ptr char
+      @-> ptr size_t
+      @-> ptr int
       @-> returning string_opt )
   in
   let null_ptr_char = from_voidp char null in

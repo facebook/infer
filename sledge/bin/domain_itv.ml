@@ -33,7 +33,8 @@ let sexp_of_t (itv : t) =
   let sexps =
     Array.fold (bindings itv) ~init:[] ~f:(fun acc (v, {inf; sup}) ->
         Sexp.List
-          [ Sexp.Atom (Var.to_string v); Sexp.Atom (Scalar.to_string inf)
+          [ Sexp.Atom (Var.to_string v)
+          ; Sexp.Atom (Scalar.to_string inf)
           ; Sexp.Atom (Scalar.to_string sup) ]
         :: acc )
   in
@@ -239,11 +240,26 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
   let name = Reg.name i in
   if
     List.exists
-      [ "malloc"; "aligned_alloc"; "calloc"; "posix_memalign"; "realloc"
-      ; "mallocx"; "rallocx"; "xallocx"; "sallocx"; "dallocx"; "sdallocx"
-      ; "nallocx"; "malloc_usable_size"; "mallctl"; "mallctlnametomib"
-      ; "mallctlbymib"; "malloc_stats_print"; "strlen"
-      ; "__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv" ]
+      [ "malloc"
+      ; "aligned_alloc"
+      ; "calloc"
+      ; "posix_memalign"
+      ; "realloc"
+      ; "mallocx"
+      ; "rallocx"
+      ; "xallocx"
+      ; "sallocx"
+      ; "dallocx"
+      ; "sdallocx"
+      ; "nallocx"
+      ; "malloc_usable_size"
+      ; "mallctl"
+      ; "mallctlnametomib"
+      ; "mallctlbymib"
+      ; "malloc_stats_print"
+      ; "strlen"
+      ; "__cxa_allocate_exception"
+      ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
   then Option.map ~f:(Option.some << exec_kill pre) aret
   else None

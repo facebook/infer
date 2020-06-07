@@ -144,7 +144,8 @@ end = struct
     let is_var_in xs e =
       Option.exists ~f:(Var.Set.mem xs) (Var.of_term e)
     in
-    ( is_var_in xs e || is_var_in xs f
+    ( is_var_in xs e
+    || is_var_in xs f
     || (uninterpreted e && Term.exists ~f:(is_var_in xs) e)
     || (uninterpreted f && Term.exists ~f:(is_var_in xs) f) )
     $> fun b ->
@@ -1035,7 +1036,8 @@ let solve_classes r (classes, subst, us) xs =
     else (classes, subst, us_xs)
   in
   (classes, subst, Var.Set.union us xs)
-  |> solve_classes_ |> solve_for_xs r us xs
+  |> solve_classes_
+  |> solve_for_xs r us xs
   |>
   [%Trace.retn fun {pf} (classes', subst', _) ->
     pf "subst: @[%a@]@ classes: @[%a@]" Subst.pp_diff (subst, subst')

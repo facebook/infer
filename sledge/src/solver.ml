@@ -82,7 +82,9 @@ end = struct
       assert (Var.Set.equal (Var.Set.union us xs) sub.us) ;
       assert (Var.Set.disjoint us xs) ;
       assert (Var.Set.is_subset zs ~of_:(Var.Set.union us xs))
-    with exc -> [%Trace.info "%a" pp g] ; raise exc
+    with exc ->
+      [%Trace.info "%a" pp g] ;
+      raise exc
 
   let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
     let xs = Option.value xs ~default:g.xs in
@@ -651,7 +653,11 @@ let rec excise ({min; xs; sub; zs; pgs} as goal) =
   else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
-    goal |> with_ ~pgs:false |> excise_exists |> excise_pure >>= excise_heap
+    goal
+    |> with_ ~pgs:false
+    |> excise_exists
+    |> excise_pure
+    >>= excise_heap
     >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
 

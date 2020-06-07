@@ -1,5 +1,8 @@
 profile = compact
 break-before-in = fit-or-vertical
+break-collection-expressions = fit-or-vertical
+break-infix = fit-or-vertical
+break-sequences = true
 margin = 76
 parse-docstrings = true
 wrap-comments = true

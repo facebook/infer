@@ -60,7 +60,8 @@ let%test_module _ =
     let%test _ = is_false f1
 
     let%expect_test _ =
-      pp f1 ; [%expect {| {sat= false; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
+      pp f1 ;
+      [%expect {| {sat= false; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = is_false (and_eq !1 !1 f1)
 
@@ -103,9 +104,13 @@ let%test_module _ =
     let r0 = true_
 
     let%expect_test _ =
-      pp r0 ; [%expect {| {sat= true; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
+      pp r0 ;
+      [%expect {| {sat= true; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%expect_test _ = pp_classes r0 ; [%expect {||}]
+    let%expect_test _ =
+      pp_classes r0 ;
+      [%expect {||}]
+
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
 
@@ -364,11 +369,15 @@ let%test_module _ =
 
     let r11 = of_eqs [(!16, z - x); (x + !8 - z, z - !16 + !8 - z)]
 
-    let%expect_test _ = pp_classes r11 ; [%expect {| (%z_7 + -16) = %x_5 |}]
+    let%expect_test _ =
+      pp_classes r11 ;
+      [%expect {| (%z_7 + -16) = %x_5 |}]
 
     let r12 = of_eqs [(!16, z - x); (x + !8 - z, z + !16 + !8 - z)]
 
-    let%expect_test _ = pp_classes r12 ; [%expect {| (%z_7 + -16) = %x_5 |}]
+    let%expect_test _ =
+      pp_classes r12 ;
+      [%expect {| (%z_7 + -16) = %x_5 |}]
 
     let r13 = of_eqs [(Term.eq x !2, y); (Term.dq x !2, z); (y, z)]
 

@@ -246,7 +246,9 @@ module Make (Dom : Domain_intf.Dom) = struct
         | _ ->
             [%Trace.info "done: %a" Edge.pp edge] ;
             run ~f (pq, ws, bnd) )
-      | None -> [%Trace.info "queue empty"] ; ()
+      | None ->
+          [%Trace.info "queue empty"] ;
+          ()
   end
 
   let exec_jump stk state block Llair.{dst; retreating} =

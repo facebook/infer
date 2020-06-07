@@ -1162,8 +1162,13 @@ let rename sub e =
 let iter e ~f =
   match e with
   | Ap1 (_, x) -> f x
-  | Ap2 (_, x, y) -> f x ; f y
-  | Ap3 (_, x, y, z) -> f x ; f y ; f z
+  | Ap2 (_, x, y) ->
+      f x ;
+      f y
+  | Ap3 (_, x, y, z) ->
+      f x ;
+      f y ;
+      f z
   | ApN (_, xs) -> IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
@@ -1210,8 +1215,13 @@ let fold e ~init:s ~f =
 let rec iter_terms e ~f =
   ( match e with
   | Ap1 (_, x) -> iter_terms ~f x
-  | Ap2 (_, x, y) -> iter_terms ~f x ; iter_terms ~f y
-  | Ap3 (_, x, y, z) -> iter_terms ~f x ; iter_terms ~f y ; iter_terms ~f z
+  | Ap2 (_, x, y) ->
+      iter_terms ~f x ;
+      iter_terms ~f y
+  | Ap3 (_, x, y, z) ->
+      iter_terms ~f x ;
+      iter_terms ~f y ;
+      iter_terms ~f z
   | ApN (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
   | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
   | Add args | Mul args ->

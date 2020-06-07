@@ -38,11 +38,15 @@ let checkf cnd fmt =
   else Format.ikfprintf (fun _ () -> true) Format.str_formatter fmt
 
 let check f x =
-  assert (f x ; true) ;
+  assert (
+    f x ;
+    true ) ;
   x
 
 let violates f x =
-  assert (f x ; true) ;
+  assert (
+    f x ;
+    true ) ;
   assert false
 
 (** Extensions *)
@@ -59,8 +63,10 @@ module Invariant = struct
             Error.to_exn
               (Error.create_s
                  (Sexp.List
-                    [ Atom "invariant failed"; sexp_of_exn exn
-                    ; Source_code_position.sexp_of_t here; sexp_of_t t ]))
+                    [ Atom "invariant failed"
+                    ; sexp_of_exn exn
+                    ; Source_code_position.sexp_of_t here
+                    ; sexp_of_t t ]))
           in
           Printexc.raise_with_backtrace exn bt ) ;
       true )
@@ -85,7 +91,8 @@ module Array = struct
       s := s' ;
       x'
     in
-    map_inplace a ~f ; !s
+    map_inplace a ~f ;
+    !s
 end
 
 module IArray = IArray
