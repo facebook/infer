@@ -24,7 +24,7 @@ from @Scale2016.
 
 **If you feel like coding instead of reading, a great way to get started with
 Infer.AI is to go through the lab exercise
-[here](https://github.com/facebook/infer/blob/master/infer/src/labs/lab.md).**
+[here](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md).**
 
 ## By example: intraprocedural analysis
 
