@@ -1,19 +1,22 @@
+exec/arithmetic.bc:	RESULT: Success: Invalid Accesses: 1
 exec/arithmetic_loop.bc:	RESULT: Success: Invalid Accesses: 0
 exec/global_vars.bc:	RESULT: Success: Invalid Accesses: 0
 exec/globals.bc:	RESULT: Success: Invalid Accesses: 0
+exec/jemalloc.bc:	RESULT: Success: Invalid Accesses: 1
 exec/nonreducible_call_graph.bc:	RESULT: Success: Invalid Accesses: 0
 exec/recursion.bc:	RESULT: Success: Invalid Accesses: 0
 exec/tmp_uaf.bc:	RESULT: Success: Invalid Accesses: 1
 exec/wrap_malloc.bc:	RESULT: Success: Invalid Accesses: 0
 frontend/address_of_label.bc:	RESULT: Success: Invalid Accesses: 1
 frontend/cond_alloca.bc:	RESULT: Success: Invalid Accesses: 0
-frontend/destructor_bases.bc:	RESULT: Success: Invalid Accesses: 1
 frontend/exceptions.bc:	RESULT: Success: Invalid Accesses: 0
-frontend/rethrow.bc:	RESULT: Success: Invalid Accesses: 3
+frontend/nested_struct.bc:	RESULT: Success: Invalid Accesses: 1
 frontend/struct.bc:	RESULT: Success: Invalid Accesses: 1
-frontend/virtual.bc:	RESULT: Success: Invalid Accesses: 0
+mc.ll:	RESULT: TIMEOUT
 frontend/vector.bc:	RESULT: Unimplemented: vector operations:   %5 = fmul <4 x double> <double 2.000000e+00, double 2.000000e+00, double 2.000000e+00, double 2.000000e+00>, %4, !dbg !587
-exec/arithmetic.bc:	RESULT: Unknown error: ("invariant failed" "Assert_failure src/symbheap/equality.ml:97:6"
+frontend/destructor_bases.bc:	RESULT: Unknown error: ("Assert_failure src/equality.ml:312:6"
+frontend/rethrow.bc:	RESULT: Unknown error: ("Assert_failure src/equality.ml:312:6"
+frontend/virtual.bc:	RESULT: Unknown error: ("Assert_failure src/equality.ml:312:6"
 llvm/Bitcode/upgrade-linker-options.ll:	RESULT: Invalid input: 'Linker Options' named metadata no longer supported
 llvm/Verifier/allocsize.ll:	RESULT: Invalid input: 'allocsize' element size argument is out of bounds
 llvm/Verifier/comdat.ll:	RESULT: Invalid input: 'common' global may not be in a Comdat!
@@ -587,6 +590,7 @@ llvm/Analysis/BasicAA/call-attrs.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/cas.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/constant-over-index.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/dag.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Analysis/BasicAA/empty.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/fallback-mayalias.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/featuretest.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/BasicAA/full-store-partial-alias.ll:	RESULT: Success: Invalid Accesses: 0
@@ -669,6 +673,7 @@ llvm/Analysis/CFLAliasAnalysis/Steensgaard/branch-alias.ll:	RESULT: Success: Inv
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/const-expr-gep.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/const-exprs.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/constant-over-index.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Analysis/CFLAliasAnalysis/Steensgaard/empty.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/full-store-partial-alias.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/gep-index-no-alias.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/CFLAliasAnalysis/Steensgaard/interproc-arg-deref-escape.ll:	RESULT: Success: Invalid Accesses: 0
@@ -1030,6 +1035,7 @@ llvm/Analysis/ScalarEvolution/2010-09-03-RequiredTransitive.ll:	RESULT: Success:
 llvm/Analysis/ScalarEvolution/2011-03-09-ExactNoMaxBECount.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/ScalarEvolution/2011-04-26-FoldAddRec.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/ScalarEvolution/2011-10-04-ConstEvolve.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Analysis/ScalarEvolution/2012-03-26-LoadConstant.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/ScalarEvolution/2012-05-18-LoopPredRecurse.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/ScalarEvolution/2012-05-29-MulAddRec.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Analysis/ScalarEvolution/SolveQuadraticEquation.ll:	RESULT: Success: Invalid Accesses: 0
@@ -1213,6 +1219,7 @@ llvm/Assembler/2003-05-12-MinIntProblem.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-05-15-AssemblerProblem.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-05-15-SwitchBug.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-05-21-ConstantShiftExpr.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Assembler/2003-05-21-EmptyStructTest.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-08-20-ConstantExprGEP-Fold.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-08-21-ConstantExprCast-Fold.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/2003-11-05-ConstantExprShift.ll:	RESULT: Success: Invalid Accesses: 0
@@ -1258,6 +1265,7 @@ llvm/Assembler/DIGlobalVariableExpression.ll:	RESULT: Success: Invalid Accesses:
 llvm/Assembler/DIMacroFile.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/MultipleReturnValueType.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/addrspacecast-alias.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Assembler/aggregate-constant-values.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/aggregate-return-single-value.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/alias-use-list-order.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Assembler/align-inst.ll:	RESULT: Success: Invalid Accesses: 0
@@ -3630,6 +3638,7 @@ llvm/CodeGen/ARM/compare-call.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/constant-islands.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/constantfp.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/constantpool-promote-duplicate.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/ARM/constantpool-promote.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/constants.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/copy-cpsr.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/ARM/copy-paired-reg.ll:	RESULT: Success: Invalid Accesses: 0
@@ -4521,6 +4530,7 @@ llvm/CodeGen/Generic/pr12507.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/pr24662.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/pr2625.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/pr3288.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/Generic/pr33094.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/print-add.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/print-after.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Generic/print-arith-fp.ll:	RESULT: Success: Invalid Accesses: 0
@@ -5033,6 +5043,7 @@ llvm/CodeGen/Hexagon/no-falign-function-for-size.ll:	RESULT: Success: Invalid Ac
 llvm/CodeGen/Hexagon/no-packets-gather.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/no-packets.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/noFalignAfterCallAtO2.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/Hexagon/no_struct_element.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/noreturn-noepilog.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/noreturn-notail.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/not-op.ll:	RESULT: Success: Invalid Accesses: 0
@@ -5235,6 +5246,7 @@ llvm/CodeGen/Hexagon/swp-loop-carried-unknown.ll:	RESULT: Success: Invalid Acces
 llvm/CodeGen/Hexagon/swp-loop-carried.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/swp-loopval.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/swp-lots-deps.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/Hexagon/swp-matmul-bitext.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/swp-max-stage3.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/swp-max.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/Hexagon/swp-maxstart.ll:	RESULT: Success: Invalid Accesses: 0
@@ -6317,6 +6329,7 @@ llvm/CodeGen/PowerPC/2009-05-28-LegalizeBRCC.ll:	RESULT: Success: Invalid Access
 llvm/CodeGen/PowerPC/2009-07-16-InlineAsm-M-Operand.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/PowerPC/2009-11-15-ProcImpDefsBug.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/PowerPC/2009-11-25-ImpDefBug.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/PowerPC/2010-02-04-EmptyGlobal.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/PowerPC/2010-02-12-saveCR.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/PowerPC/2010-04-01-MachineCSEBug.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/PowerPC/2010-05-03-retaddr1.ll:	RESULT: Success: Invalid Accesses: 0
@@ -7295,6 +7308,7 @@ llvm/CodeGen/SPARC/varargs-v8.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SPARC/varargs.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SPARC/vector-call.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SPARC/vector-extract-elt.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/SPARC/zerostructcall.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SystemZ/DAGCombine_trunc_extract.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SystemZ/DAGCombiner_illegal_BUILD_VECTOR.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/SystemZ/DAGCombiner_isAlias.ll:	RESULT: Success: Invalid Accesses: 0
@@ -9620,6 +9634,7 @@ llvm/CodeGen/X86/global-access-pie.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/global-fill.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/global-sections-comdat.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/global-sections-tls.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/X86/global-sections.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/gnu-seh-nolpads.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/gpr-to-mask.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/gs-fold.ll:	RESULT: Success: Invalid Accesses: 0
@@ -10649,6 +10664,7 @@ llvm/CodeGen/X86/stackpointer.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/stdarg.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/stdcall-notailcall.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/stdcall.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/CodeGen/X86/store-empty-member.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/store-fp-constant.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/store-global-address.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/CodeGen/X86/store-narrow.ll:	RESULT: Success: Invalid Accesses: 0
@@ -11547,6 +11563,7 @@ llvm/DebugInfo/X86/bitfields-dwarf4.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/bitfields.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/block-capture.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/byvalstruct.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/DebugInfo/X86/c-type-units.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/clang-module.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/clone-module-2.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/clone-module.ll:	RESULT: Success: Invalid Accesses: 0
@@ -11577,6 +11594,7 @@ llvm/DebugInfo/X86/dbg-value-const-byref.ll:	RESULT: Success: Invalid Accesses: 
 llvm/DebugInfo/X86/dbg-value-frame-index.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/dbg-value-g-gmlt.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/dbg-value-inlined-parameter.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/DebugInfo/X86/dbg-value-isel.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/dbg-value-location.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/dbg-value-range.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/dbg-value-regmask-clobber.ll:	RESULT: Success: Invalid Accesses: 0
@@ -11622,6 +11640,7 @@ llvm/DebugInfo/X86/dwarf-pubnames-split.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/earlydup-crash.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/elf-names.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/empty-and-one-elem-array.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/DebugInfo/X86/empty-array.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/empty.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/empty_macinfo.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/DebugInfo/X86/ending-run.ll:	RESULT: Success: Invalid Accesses: 0
@@ -12139,9 +12158,11 @@ llvm/Instrumentation/DataFlowSanitizer/custom_fun_varargs_attributes.ll:	RESULT:
 llvm/Instrumentation/DataFlowSanitizer/debug-nonzero-labels.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/debug.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/external_mask.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Instrumentation/DataFlowSanitizer/load.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/memset.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/prefix-rename.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/shadow-args-zext.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Instrumentation/DataFlowSanitizer/store.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/uninstrumented_local_functions.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/union-large.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Instrumentation/DataFlowSanitizer/union.ll:	RESULT: Success: Invalid Accesses: 0
@@ -12735,6 +12756,7 @@ llvm/MC/Mips/multi-64bit-func.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/Mips/sext_64_32.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/Mips/sym-offset.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/WebAssembly/blockaddress.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/MC/WebAssembly/bss.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/WebAssembly/comdat.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/WebAssembly/compile-twice.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/MC/WebAssembly/custom-code-section.ll:	RESULT: Success: Invalid Accesses: 0
@@ -13618,6 +13640,7 @@ llvm/Transforms/GlobalOpt/cleanup-pointer-root-users.ll:	RESULT: Success: Invali
 llvm/Transforms/GlobalOpt/coldcc_stress_test.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/GlobalOpt/compiler-used.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/GlobalOpt/constantexpr-dangle.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Transforms/GlobalOpt/constantfold-initializers.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/GlobalOpt/crash-2.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/GlobalOpt/ctor-list-opt-constexpr.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/GlobalOpt/ctor-list-opt-inbounds.ll:	RESULT: Success: Invalid Accesses: 0
@@ -14787,6 +14810,7 @@ llvm/Transforms/InstSimplify/icmp-ranges.ll:	RESULT: Success: Invalid Accesses: 
 llvm/Transforms/InstSimplify/implies.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/InstSimplify/known-never-nan.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/InstSimplify/load-relative.ll:	RESULT: Success: Invalid Accesses: 0
+llvm/Transforms/InstSimplify/load.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/InstSimplify/log-exp-intrinsic.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/InstSimplify/logic-of-fcmps.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/Transforms/InstSimplify/maxmin.ll:	RESULT: Success: Invalid Accesses: 0
@@ -17020,27 +17044,6 @@ llvm/tools/llvm-xray/X86/extract-instrmap.ll:	RESULT: Success: Invalid Accesses:
 llvm/tools/lto/hide-linkonce-odr.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/tools/lto/opt-level.ll:	RESULT: Success: Invalid Accesses: 0
 llvm/tools/lto/print-stats.ll:	RESULT: Success: Invalid Accesses: 0
-llvm/Analysis/BasicAA/empty.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Analysis/CFLAliasAnalysis/Steensgaard/empty.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Analysis/ScalarEvolution/2012-03-26-LoadConstant.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Assembler/2003-05-21-EmptyStructTest.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Assembler/aggregate-constant-values.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/ARM/constantpool-promote.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/Generic/pr33094.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/Hexagon/no_struct_element.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/Hexagon/swp-matmul-bitext.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/PowerPC/2010-02-04-EmptyGlobal.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/SPARC/zerostructcall.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/X86/global-sections.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/CodeGen/X86/store-empty-member.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/DebugInfo/X86/c-type-units.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/DebugInfo/X86/dbg-value-isel.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/DebugInfo/X86/empty-array.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Instrumentation/DataFlowSanitizer/load.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Instrumentation/DataFlowSanitizer/store.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/MC/WebAssembly/bss.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Transforms/GlobalOpt/constantfold-initializers.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
-llvm/Transforms/InstSimplify/load.ll:	RESULT: Unimplemented: ConstantAggregateZero of size 0
 llvm/Transforms/InstCombine/invoke.ll:	RESULT: Unimplemented: call null: i8* ()* null
 llvm/Transforms/SimplifyCFG/invoke.ll:	RESULT: Unimplemented: call null: i8* ()* null
 llvm/Instrumentation/MemorySanitizer/unsized_type.ll:	RESULT: Unimplemented: coroutines:
@@ -18733,6 +18736,6 @@ llvm/Transforms/SimplifyCFG/wineh-unreachable.ll:	RESULT: Unimplemented: windows
 llvm/Transforms/SpeculateAroundPHIs/basic-x86.ll:	RESULT: Unimplemented: windows exception handling:   %cp = cleanuppad within none []
 llvm/Transforms/TailCallElim/deopt-bundle.ll:	RESULT: Unimplemented: windows exception handling:   %cs1 = catchswitch within none [label %catch] unwind to caller
 llvm/Transforms/Util/lowerinvoke-funclet.ll:	RESULT: Unimplemented: windows exception handling:   %0 = catchswitch within none [label %catch] unwind to caller
-llvm/CodeGen/X86/dag-optnone.ll:	RESULT: Unknown error: ("invariant failed" "Assert_failure src/llair/exp.ml:219:11"
+llvm/CodeGen/X86/dag-optnone.ll:	RESULT: Unknown error: ("invariant failed" "Assert_failure src/exp.ml:193:11" src/exp.ml:175:22
 llvm/Transforms/SimplifyCFG/indirectbr.ll:	RESULT: segmentation violation
 llvm/Verifier/recursive-struct-param.ll:	RESULT: segmentation violation
