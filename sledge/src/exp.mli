@@ -194,6 +194,5 @@ val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
 (** Query *)
 
 val term : t -> Term.t
-val typ : t -> Typ.t
 val is_true : t -> bool
 val is_false : t -> bool

@@ -671,19 +671,18 @@ and xlate_global stk : x -> Llvm.llvalue -> Global.t =
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
       ;
       let g = xlate_name x ~global:() llg in
-      let llt = Llvm.type_of llg in
-      let typ = xlate_type x llt in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
-      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g typ loc) ;
+      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
       let init =
         match Llvm.classify_value llg with
         | GlobalVariable ->
-            Option.map ~f:(xlate_value stk x) (Llvm.global_initializer llg)
+            Option.map (Llvm.global_initializer llg) ~f:(fun llv ->
+                (xlate_value stk x llv, size_of x (Llvm.type_of llv)) )
         | _ -> None
       in
-      Global.mk ?init g typ loc
+      Global.mk ?init g loc
       |>
       [%Trace.retn fun {pf} -> pf "%a" Global.pp_defn] )
 
@@ -1335,7 +1334,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
       [] llf
   in
   let freturn =
-    match name.typ with
+    match Reg.typ name.reg with
     | Pointer {elt= Function {return= Some typ; _}} ->
         Some (Reg.program typ "freturn")
     | _ -> None

@@ -279,7 +279,6 @@ and typ_of exp =
       typ
   [@@warning "-9"]
 
-let typ = typ_of
 let pp_exp = pp
 
 (** Registers are the expressions constructed by [Reg] *)

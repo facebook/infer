@@ -214,7 +214,7 @@ let rec dummy_block =
 
 and dummy_func =
   let dummy_reg = Reg.program ~global:() Typ.ptr "dummy" in
-  { name= Global.mk dummy_reg Typ.ptr Loc.none
+  { name= Global.mk dummy_reg Loc.none
   ; formals= []
   ; freturn= None
   ; fthrow= dummy_reg
@@ -436,7 +436,7 @@ module Func = struct
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
-      ( match name.typ with
+      ( match Reg.typ name.reg with
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
@@ -457,7 +457,7 @@ module Func = struct
     Invariant.invariant [%here] func [%sexp_of: t]
     @@ fun () ->
     assert (func == func.entry.parent) ;
-    match func.name.typ with
+    match Reg.typ func.name.reg with
     | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
