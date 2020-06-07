@@ -72,7 +72,7 @@ Now, suppose we have two resources <Math code="\\( r\_1 \\)" /> and
 <Math code="\\( r\_2 \\)" />, described by
 <Math code="\\(r\_1 \mapsto open * r\_2 \mapsto open\\)" /> and we close the
 first of them. We think operationally in terms of updating the memory in place,
-leaving \\(r_2 \mapsto open\\) alone, as described by this triple:
+leaving <Math code="\\(r\_2 \mapsto open\\)" /> alone, as described by this triple:
 
 ---
 
