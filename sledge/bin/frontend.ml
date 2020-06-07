@@ -470,11 +470,6 @@ and xlate_opcode stk : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
   ;
   let xlate_rand i = xlate_value stk x (Llvm.operand llv i) in
   let typ = lazy (xlate_type x (Llvm.type_of llv)) in
-  let check_vector =
-    lazy
-      ( if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
-        todo "vector operations: %a" pp_llvalue llv () )
-  in
   let convert opcode =
     let dst = Lazy.force typ in
     let rand = Llvm.operand llv 0 in
@@ -491,7 +486,8 @@ and xlate_opcode stk : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | _ -> fail "convert: %a" pp_llvalue llv ()
   in
   let binary (mk : ?typ:_ -> _) =
-    Lazy.force check_vector ;
+    if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
+      todo "vector operations: %a" pp_llvalue llv () ;
     let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
     mk ~typ (xlate_rand 0) (xlate_rand 1)
   in
