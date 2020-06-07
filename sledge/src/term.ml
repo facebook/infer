@@ -1296,9 +1296,9 @@ let solve_for_mono rejected_sum coeff mono sum =
 (* solve [0 = rejected + sum] *)
 let rec solve_sum rejected_sum sum =
   let* mono, coeff, sum = Qset.pop_min_elt sum in
-  solve_for_mono rejected_sum coeff mono sum
-  |> Option.or_else ~f:(fun () ->
-         solve_sum (Qset.add rejected_sum mono coeff) sum )
+  match solve_for_mono rejected_sum coeff mono sum with
+  | Some _ as soln -> soln
+  | None -> solve_sum (Qset.add rejected_sum mono coeff) sum
 
 (* solve [0 = e] *)
 let solve_zero_eq ?for_ e =
