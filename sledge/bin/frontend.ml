@@ -847,8 +847,8 @@ let rec xlate_func_name x llv =
 
 let ignored_callees = Hash_set.create (module String)
 
-let exp_size_of exp =
-  Exp.integer Typ.siz (Z.of_int (Typ.size_of (Exp.typ exp)))
+let xlate_size_of x llv =
+  Exp.integer Typ.siz (Z.of_int (size_of x (Llvm.type_of llv)))
 
 let xlate_instr :
        pop_thunk
@@ -888,12 +888,13 @@ let xlate_instr :
   match opcode with
   | Load ->
       let reg = xlate_name x instr in
-      let len = exp_size_of (Exp.reg reg) in
+      let len = xlate_size_of x instr in
       let ptr = xlate_value x (Llvm.operand instr 0) in
       emit_inst (Llair.Inst.load ~reg ~ptr ~len ~loc)
   | Store ->
-      let exp = xlate_value x (Llvm.operand instr 0) in
-      let len = exp_size_of exp in
+      let rand0 = Llvm.operand instr 0 in
+      let exp = xlate_value x rand0 in
+      let len = xlate_size_of x rand0 in
       let ptr = xlate_value x (Llvm.operand instr 1) in
       emit_inst (Llair.Inst.store ~ptr ~exp ~len ~loc)
   | Alloca ->
@@ -905,7 +906,7 @@ let xlate_instr :
           (xlate_value x rand)
       in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let len = exp_size_of (Exp.reg reg) in
+      let len = xlate_size_of x instr in
       emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
@@ -956,7 +957,7 @@ let xlate_instr :
             (* operator new(unsigned long, std::align_val_t) *) ] ->
             let reg = xlate_name x instr in
             let num = xlate_value x (Llvm.operand instr 0) in
-            let len = exp_size_of (Exp.reg reg) in
+            let len = xlate_size_of x instr in
             emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
         | ["_ZdlPv" (* operator delete(void* ptr) *)]
          |[ "_ZdlPvSt11align_val_t"
@@ -1072,7 +1073,7 @@ let xlate_instr :
         when num_actuals > 0 ->
           let reg = xlate_name x instr in
           let num = xlate_value x (Llvm.operand instr 0) in
-          let len = exp_size_of (Exp.reg reg) in
+          let len = xlate_size_of x instr in
           let dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term
             ~prefix:[Llair.Inst.alloc ~reg ~num ~len ~loc]
