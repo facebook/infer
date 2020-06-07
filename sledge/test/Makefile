@@ -136,7 +136,7 @@ warnings:
 
 # run tests and check against expected results
 test:
-	-@$(MAKE) --silent --keep-going clean analyze translate 2>/dev/null
+	-@$(MAKE) --silent --keep-going clean analyze translate
 	@$(MAKE) --silent _analyze-report-raw > report.current
 	@$(MAKE) --silent _translate-report-raw >> report.current
 	@$(DIFF) report.expected report.current
