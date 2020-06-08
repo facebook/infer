@@ -60,14 +60,18 @@ let pp_with_base pp_base fmt (base, accesses) =
     | FieldAccess field_name :: Dereference :: rest, _ ->
         let op = match !Language.curr_language with Clang -> "->" | Java -> "." in
         F.fprintf fmt "%a%s%a" pp_rev_accesses rest op Fieldname.pp field_name
-    | FieldAccess field_name :: rest, Clang ->
+    | FieldAccess field_name :: rest, _ ->
+        (* Java is allowed here only because the frontend is broken and generates
+           [FieldAccess] without a [Dereference] for static fields *)
         F.fprintf fmt "%a.%a" pp_rev_accesses rest Fieldname.pp field_name
     | Dereference :: rest, Clang ->
         F.fprintf fmt "*(%a)" pp_rev_accesses rest
     | TakeAddress :: rest, Clang ->
         F.fprintf fmt "&(%a)" pp_rev_accesses rest
     | access :: rest, Java ->
-        L.internal_error "Asked to print %a in Java mode@" (HilExp.Access.pp (fun _ _ -> ())) access ;
+        L.internal_error "Asked to print %a in Java mode@\n"
+          (HilExp.Access.pp (fun _ _ -> ()))
+          access ;
         pp_rev_accesses fmt rest
   in
   pp_rev_accesses fmt (List.rev accesses)
