@@ -233,7 +233,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
                Until it is made non-precise, it is recommended to not turn this warning on.
                But even when it is on, this should not be more than advice.
             *)
-            Exceptions.Advice ) )
+            IssueType.Advice ) )
   | Over_annotation {over_annotated_violation; violation_type} ->
       Some
         ( lazy
@@ -245,7 +245,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
                 IssueType.eradicate_return_over_annotated )
           , None
           , (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
-            Exceptions.Advice ) )
+            IssueType.Advice ) )
   | Field_not_initialized {field_name} ->
       Some
         ( lazy

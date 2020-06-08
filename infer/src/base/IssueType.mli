@@ -7,9 +7,23 @@
 
 open! IStd
 
+(** visibility of the issue type *)
+type visibility =
+  | User  (** always add to error log *)
+  | Developer  (** only add to error log in some debug modes *)
+  | Silent  (** never add to error log *)
+[@@deriving compare, equal]
+
+(** severity of the report *)
+type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
+
+val string_of_severity : severity -> string
+
 type t = private
   { unique_id: string
   ; checker: Checker.t
+  ; visibility: visibility
+  ; mutable default_severity: severity
   ; mutable enabled: bool
   ; mutable hum: string
   ; mutable doc_url: string option
@@ -33,6 +47,8 @@ val register_from_string :
   -> ?doc_url:string
   -> ?linters_def_file:string
   -> id:string
+  -> ?visibility:visibility
+  -> severity
   -> Checker.t
   -> t
 (** Create a new issue and register it in the list of all issues. NOTE: if the issue with the same
@@ -42,7 +58,6 @@ val register_from_string :
     updated when we encounter the definition of the issue type, eg in AL. *)
 
 val checker_can_report : Checker.t -> t -> bool
-  [@@warning "-32"]
 (** Whether the issue was registered as coming from the given checker. Important to call this before
     reporting to keep documentation accurate. *)
 

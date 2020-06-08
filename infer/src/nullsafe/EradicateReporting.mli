@@ -13,6 +13,6 @@ val report_error :
   -> IssueType.t
   -> Location.t
   -> ?field_name:Fieldname.t option
-  -> severity:Exceptions.severity
+  -> severity:IssueType.severity
   -> string
   -> unit

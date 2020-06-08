@@ -177,15 +177,15 @@ let remove_new_lines_and_whitespace message =
 
 let string_to_severity = function
   | "WARNING" ->
-      Exceptions.Warning
+      IssueType.Warning
   | "ERROR" ->
-      Exceptions.Error
+      IssueType.Error
   | "INFO" ->
-      Exceptions.Info
+      IssueType.Info
   | "ADVICE" ->
-      Exceptions.Advice
+      IssueType.Advice
   | "LIKE" ->
-      Exceptions.Like
+      IssueType.Like
   | s ->
       L.die InternalError "Severity %s does not exist" s
 
@@ -209,7 +209,7 @@ type issue_in_construction =
   ; description: string
   ; mode: CIssue.mode
   ; loc: Location.t
-  ; severity: Exceptions.severity
+  ; severity: IssueType.severity
   ; suggestion: string option }
 
 (** Convert a parsed checker in list of linters *)
@@ -263,7 +263,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
           issue_desc.issue_type_doc_url
       in
       IssueType.register_from_string ~id:checker.id ?hum:issue_desc.issue_type_name ?doc_url
-        ~linters_def_file Linters
+        ~linters_def_file issue_desc.severity Linters
     in
     let issue_desc =
       { CIssue.issue_type

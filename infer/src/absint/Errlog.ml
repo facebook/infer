@@ -72,8 +72,7 @@ type node =
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
   | BackendNode of {node: Procdesc.Node.t}
 
-type err_key =
-  {severity: Exceptions.severity; issue_type: IssueType.t; err_desc: Localise.error_desc}
+type err_key = {severity: IssueType.severity; issue_type: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -84,7 +83,7 @@ type err_data =
   ; loc: Location.t
   ; loc_in_ml_source: L.ocaml_pos option
   ; loc_trace: loc_trace
-  ; visibility: Exceptions.visibility
+  ; visibility: IssueType.visibility
   ; linters_def_file: string option
   ; doc_url: string option
   ; access: string option
@@ -109,7 +108,7 @@ module ErrLogHash = struct
     let hash key = Hashtbl.hash (key.severity, key.issue_type, Localise.error_desc_hash key.err_desc)
 
     let equal key1 key2 =
-      [%compare.equal: Exceptions.severity * IssueType.t] (key1.severity, key1.issue_type)
+      [%compare.equal: IssueType.severity * IssueType.t] (key1.severity, key1.issue_type)
         (key2.severity, key2.issue_type)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
   end
@@ -143,7 +142,7 @@ let fold (f : err_key -> err_data -> 'a -> 'a) t acc =
 (** Print errors from error log *)
 let pp_errors fmt (errlog : t) =
   let f key _ =
-    if Exceptions.equal_severity key.severity Exceptions.Error then
+    if IssueType.equal_severity key.severity Error then
       F.fprintf fmt "%a@ " IssueType.pp key.issue_type
   in
   ErrLogHash.iter f errlog
@@ -152,7 +151,7 @@ let pp_errors fmt (errlog : t) =
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog : t) =
   let f key _ =
-    if Exceptions.equal_severity key.severity Exceptions.Warning then
+    if IssueType.equal_severity key.severity Warning then
       F.fprintf fmt "%a %a@ " IssueType.pp key.issue_type Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
@@ -168,16 +167,16 @@ let pp_html source path_to_root fmt (errlog : t) =
     ErrDataSet.iter (pp_nodeid_session_loc fmt) err_datas
   in
   let pp_err_log ek key err_datas =
-    if Exceptions.equal_severity key.severity ek then
+    if IssueType.equal_severity key.severity ek then
       F.fprintf fmt "<br>%a %a %a" IssueType.pp key.issue_type Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
   let pp severity =
     F.fprintf fmt "%a%s DURING FOOTPRINT@\n" Io_infer.Html.pp_hline ()
-      (Exceptions.severity_string severity) ;
+      (IssueType.string_of_severity severity) ;
     ErrLogHash.iter (pp_err_log severity) errlog
   in
-  List.iter Exceptions.[Advice; Error; Info; Like; Warning] ~f:pp
+  List.iter IssueType.all_of_severity ~f:pp
 
 
 (** Add an error description to the error log unless there is one already at the same node +
@@ -223,9 +222,8 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
         false
   in
   let should_report =
-    Exceptions.equal_visibility error.visibility Exceptions.Exn_user
-    || Config.developer_mode
-       && Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
+    IssueType.equal_visibility error.issue_type.visibility User
+    || (Config.developer_mode && IssueType.equal_visibility error.issue_type.visibility Developer)
   in
   if should_report && (not hide_java_loc_zero) && not hide_memory_error then
     let added =
@@ -245,7 +243,7 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
         ; loc
         ; loc_in_ml_source= error.ocaml_pos
         ; loc_trace= ltr
-        ; visibility= error.visibility
+        ; visibility= error.issue_type.visibility
         ; linters_def_file
         ; doc_url
         ; access
@@ -260,7 +258,7 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
         "@\n%a@\n@?"
         (Exceptions.pp_err loc severity error.issue_type error.description error.ocaml_pos)
         () ;
-      if not (Exceptions.equal_severity severity Exceptions.Error) then (
+      if not (IssueType.equal_severity severity Error) then (
         let warn_str =
           let pp fmt =
             Format.fprintf fmt "%s %a" error.issue_type.unique_id Localise.pp_error_desc
@@ -269,12 +267,12 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
           F.asprintf "%t" pp
         in
         let d =
-          match severity with
-          | Exceptions.Error ->
+          match (severity : IssueType.severity) with
+          | Error ->
               L.d_error
-          | Exceptions.Warning ->
+          | Warning ->
               L.d_warning
-          | Exceptions.Info | Exceptions.Advice | Exceptions.Like ->
+          | Info | Advice | Like ->
               L.d_info
         in
         d warn_str ;

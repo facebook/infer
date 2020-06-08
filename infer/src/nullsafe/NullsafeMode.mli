@@ -45,7 +45,7 @@ val is_in_trust_list : t -> JavaClassName.t -> bool
 val is_stricter_than : stricter:t -> weaker:t -> bool
 (** Check whether [stricter] is (strongly) stricter than [weaker] *)
 
-val severity : t -> Exceptions.severity
+val severity : t -> IssueType.severity
 (** Provides a default choice of issue severity for a particular mode. Rule is: severity should be
     ERROR if and only if it is enforced. *)
 

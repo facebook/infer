@@ -13,7 +13,7 @@ val log_error_using_state : Procdesc.t -> Errlog.t -> exn -> unit
 val log_issue_deprecated_using_state :
      Procdesc.t
   -> Errlog.t
-  -> Exceptions.severity
+  -> IssueType.severity
   -> ?node:Procdesc.Node.t
   -> ?loc:Location.t
   -> ?ltr:Errlog.loc_trace

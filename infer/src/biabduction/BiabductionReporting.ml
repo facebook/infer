@@ -31,5 +31,5 @@ let log_error_using_state proc_desc err_log exn =
       match AnalysisState.get_loc () with Some l -> l | None -> Procdesc.Node.get_loc node'
     in
     let ltr = State.get_loc_trace () in
-    Reporting.log_issue_from_summary Exceptions.Error proc_desc err_log ~node ~session ~loc ~ltr
-      Biabduction exn
+    Reporting.log_issue_from_summary Error proc_desc err_log ~node ~session ~loc ~ltr Biabduction
+      exn

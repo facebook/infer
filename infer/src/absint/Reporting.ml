@@ -64,13 +64,13 @@ let log_issue_from_summary_simplified severity attrs err_log ~loc ?(ltr = []) ?e
 
 
 let log_error attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified Exceptions.Error attrs err_log ~loc ?ltr ?extras checker
-    issue_type error_message
+  log_issue_from_summary_simplified Error attrs err_log ~loc ?ltr ?extras checker issue_type
+    error_message
 
 
 let log_warning attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified Exceptions.Warning attrs err_log ~loc ?ltr ?extras checker
-    issue_type error_message
+  log_issue_from_summary_simplified Warning attrs err_log ~loc ?ltr ?extras checker issue_type
+    error_message
 
 
 let log_issue_external procname ~issue_log severity ~loc ~ltr ?access ?extras checker issue_type

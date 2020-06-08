@@ -24,13 +24,13 @@ type t =
   ; description: string  (** Description in the error message *)
   ; mode: mode
   ; loc: Location.t  (** location in the code *)
-  ; severity: Exceptions.severity
+  ; severity: IssueType.severity
   ; suggestion: string option  (** an optional suggestion or correction *) }
 
 let pp fmt issue =
   Format.fprintf fmt "{@\n   Id = %s@\n" issue.issue_type.IssueType.unique_id ;
   Format.fprintf fmt "{  Name = %s@\n" issue.issue_type.IssueType.hum ;
-  Format.fprintf fmt "   Severity = %s@\n" (Exceptions.severity_string issue.severity) ;
+  Format.fprintf fmt "   Severity = %s@\n" (IssueType.string_of_severity issue.severity) ;
   Format.fprintf fmt "   Mode = %s@\n" (string_of_mode issue.mode) ;
   Format.fprintf fmt "   Description = %s@\n" issue.description ;
   Format.fprintf fmt "   Suggestion = %s@\n" (Option.value ~default:"" issue.suggestion) ;

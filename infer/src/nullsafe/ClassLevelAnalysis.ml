@@ -47,7 +47,7 @@ let get_reportable_typing_rules_violations_for_mode ~nullsafe_mode issues =
 type meta_issue =
   { issue_type: IssueType.t
   ; description: string
-  ; severity: Exceptions.severity
+  ; severity: IssueType.severity
   ; meta_issue_info: Jsonbug_t.nullsafe_meta_issue_info }
 
 let mode_to_json mode =
@@ -119,7 +119,7 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
                `@Nullsafe(Nullsafe.Mode.LOCAL)` to prevent regressions."
               (JavaClassName.classname top_level_class_name)
           in
-          (IssueType.eradicate_meta_class_can_be_nullsafe, message, Exceptions.Advice)
+          (IssueType.eradicate_meta_class_can_be_nullsafe, message, IssueType.Advice)
       | None ->
           (* This class can not be made @Nullsafe without extra work *)
           let issue_count_to_make_nullsafe =
@@ -131,7 +131,7 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
           , Format.asprintf "`%s` needs %d issues to be fixed in order to be marked @Nullsafe."
               (JavaClassName.classname top_level_class_name)
               issue_count_to_make_nullsafe
-          , Exceptions.Info )
+          , IssueType.Info )
     else if currently_reportable_issue_count > 0 then
       (* This class is @Nullsafe, but broken. This should not happen often if there is enforcement for
          @Nullsafe mode error in the target codebase. *)
@@ -140,12 +140,12 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
           "@Nullsafe classes should have exactly zero nullability issues. `%s` has %d."
           (JavaClassName.classname top_level_class_name)
           currently_reportable_issue_count
-      , Exceptions.Info )
+      , IssueType.Info )
     else
       ( IssueType.eradicate_meta_class_is_nullsafe
       , Format.asprintf "Class %a is free of nullability issues." JavaClassName.pp
           top_level_class_name
-      , Exceptions.Info )
+      , IssueType.Info )
   in
   {issue_type; description; severity; meta_issue_info}
 
@@ -218,7 +218,7 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
            annotation can be removed."
           (JavaClassName.classname class_name)
       in
-      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Advice
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Advice
         IssueType.eradicate_redundant_nested_class_annotation description
   | Error (NullsafeMode.NestedModeIsWeaker (ExtraTrustClass wrongly_trusted_classes)) ->
       (* The list can not be empty *)
@@ -229,7 +229,7 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
            trust list. Remove `%s` from trust list."
           (JavaClassName.classname example_of_wrongly_trusted_class)
       in
-      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Warning
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Warning
         IssueType.eradicate_bad_nested_class_annotation description
   | Error (NullsafeMode.NestedModeIsWeaker Other) ->
       let description =
@@ -238,7 +238,7 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
            class. This annotation will be ignored."
           (JavaClassName.classname class_name)
       in
-      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Exceptions.Warning
+      log_issue ~issue_log ~loc ~nullsafe_extra ~severity:Warning
         IssueType.eradicate_bad_nested_class_annotation description
 
 

@@ -41,7 +41,7 @@ type node =
   | BackendNode of {node: Procdesc.Node.t}
 
 type err_key = private
-  {severity: Exceptions.severity; issue_type: IssueType.t; err_desc: Localise.error_desc}
+  {severity: IssueType.severity; issue_type: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -52,7 +52,7 @@ type err_data = private
   ; loc: Location.t
   ; loc_in_ml_source: Logging.ocaml_pos option
   ; loc_trace: loc_trace
-  ; visibility: Exceptions.visibility
+  ; visibility: IssueType.visibility
   ; linters_def_file: string option
   ; doc_url: string option  (** url to documentation of the issue type *)
   ; access: string option
@@ -88,7 +88,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-     Exceptions.severity
+     IssueType.severity
   -> t
   -> loc:Location.t
   -> node:node

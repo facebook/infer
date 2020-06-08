@@ -9,10 +9,10 @@ open! IStd
 open OUnit2
 
 let order_tests _ =
-  assert_equal (-1) (Exceptions.compare_severity Exceptions.Like Exceptions.Info) ;
-  assert_equal (-1) (Exceptions.compare_severity Exceptions.Info Exceptions.Advice) ;
-  assert_equal (-1) (Exceptions.compare_severity Exceptions.Advice Exceptions.Warning) ;
-  assert_equal (-1) (Exceptions.compare_severity Exceptions.Warning Exceptions.Error)
+  assert_equal (-1) (IssueType.compare_severity Like Info) ;
+  assert_equal (-1) (IssueType.compare_severity Info Advice) ;
+  assert_equal (-1) (IssueType.compare_severity Advice Warning) ;
+  assert_equal (-1) (IssueType.compare_severity Warning Error)
 
 
 let tests = "severity_test_suite" >::: ["severity_order_tests" >:: order_tests]

@@ -10,20 +10,6 @@ open! IStd
 
 (** Functions for logging and printing exceptions *)
 
-(** visibility of the exception *)
-type visibility =
-  | Exn_user  (** always add to error log *)
-  | Exn_developer  (** only add to error log in developer mode *)
-  | Exn_system  (** never add to error log *)
-[@@deriving compare]
-
-val equal_visibility : visibility -> visibility -> bool
-
-(** severity of the report *)
-type severity = Like | Info | Advice | Warning | Error [@@deriving compare]
-
-val equal_severity : severity -> severity -> bool
-
 exception Abduction_case_not_implemented of Logging.ocaml_pos
 
 exception Analysis_stops of Localise.error_desc * Logging.ocaml_pos option
@@ -48,7 +34,7 @@ exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
 
 exception Condition_always_true_false of Localise.error_desc * bool * Logging.ocaml_pos
 
-exception Custom_error of string * Localise.error_desc
+exception Custom_error of string * IssueType.severity * Localise.error_desc
 
 exception
   Dangling_pointer_dereference of
@@ -112,9 +98,6 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Lo
 
 exception Wrong_argument_number of Logging.ocaml_pos
 
-val severity_string : severity -> string
-(** string describing an error kind *)
-
 val handle_exception : exn -> bool
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 
@@ -123,7 +106,7 @@ val print_exception_html : string -> exn -> unit
 
 val pp_err :
      Location.t
-  -> severity
+  -> IssueType.severity
   -> IssueType.t
   -> Localise.error_desc
   -> Logging.ocaml_pos option
@@ -136,7 +119,6 @@ type t =
   { issue_type: IssueType.t
   ; description: Localise.error_desc
   ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *)
-  ; visibility: visibility
-  ; severity: severity option }
+  ; severity: IssueType.severity option }
 
 val recognize_exception : exn -> t

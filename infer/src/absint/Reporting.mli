@@ -13,7 +13,7 @@ type log_t =
   ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> Checker.t -> IssueType.t -> string -> unit
 
 val log_issue_from_summary :
-     Exceptions.severity
+     IssueType.severity
   -> Procdesc.t
   -> Errlog.t
   -> node:Errlog.node
@@ -26,7 +26,7 @@ val log_issue_from_summary :
   -> unit
 
 val log_frontend_issue :
-     Exceptions.severity
+     IssueType.severity
   -> Errlog.t
   -> loc:Location.t
   -> node_key:Procdesc.NodeKey.t
@@ -44,7 +44,7 @@ val log_warning : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
 val log_issue_external :
      Procname.t
   -> issue_log:IssueLog.t
-  -> Exceptions.severity
+  -> IssueType.severity
   -> loc:Location.t
   -> ltr:Errlog.loc_trace
   -> ?access:string

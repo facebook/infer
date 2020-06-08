@@ -149,8 +149,8 @@ let mutable_local_vars_advice context an =
           else
             Some
               { CIssue.issue_type= IssueType.mutable_local_variable_in_component_file
-              ; severity= Exceptions.Advice
-              ; mode= CIssue.On
+              ; severity= Advice
+              ; mode= On
               ; description=
                   "Local variable "
                   ^ MF.monospaced_to_string named_decl_info.ni_name
@@ -181,8 +181,8 @@ let component_factory_function_advice context an =
         if is_component_if objc_interface then
           Some
             { CIssue.issue_type= IssueType.component_factory_function
-            ; severity= Exceptions.Advice
-            ; mode= CIssue.Off
+            ; severity= Advice
+            ; mode= Off
             ; description= "Break out composite components"
             ; suggestion=
                 Some
@@ -236,8 +236,8 @@ let component_with_unconventional_superclass_advice context an =
           if condition then
             Some
               { CIssue.issue_type= IssueType.component_with_unconventional_superclass
-              ; severity= Exceptions.Advice
-              ; mode= CIssue.On
+              ; severity= Advice
+              ; mode= On
               ; description= "Never Subclass Components"
               ; suggestion= Some "Instead, create a new subclass of CKCompositeComponent."
               ; loc= ALUtils.location_from_decl context if_decl }
@@ -290,8 +290,8 @@ let component_with_multiple_factory_methods_advice context an =
         List.map
           ~f:(fun meth_decl ->
             { CIssue.issue_type= IssueType.component_with_multiple_factory_methods
-            ; severity= Exceptions.Advice
-            ; mode= CIssue.On
+            ; severity= Advice
+            ; mode= On
             ; description= "Avoid Overrides"
             ; suggestion=
                 Some
@@ -367,8 +367,8 @@ let rec component_initializer_with_side_effects_advice_ (context : CLintersConte
         | Some "dispatch_after" | Some "dispatch_async" | Some "dispatch_sync" ->
             Some
               { CIssue.issue_type= IssueType.component_initializer_with_side_effects
-              ; severity= Exceptions.Advice
-              ; mode= CIssue.On
+              ; severity= Advice
+              ; mode= On
               ; description= "No Side-effects"
               ; suggestion=
                   Some "Your +new method should not modify any global variables or global state."
@@ -403,8 +403,8 @@ let component_file_line_count_info (context : CLintersContext.context) dec =
       List.map
         ~f:(fun i ->
           { CIssue.issue_type= IssueType.component_file_line_count
-          ; severity= Exceptions.Info
-          ; mode= CIssue.Off
+          ; severity= Info
+          ; mode= Off
           ; description= "Line count analytics"
           ; suggestion= None
           ; loc= {Location.line= i; Location.col= 0; Location.file= source_file} } )
@@ -452,8 +452,8 @@ let component_file_cyclomatic_complexity_info (context : CLintersContext.context
   | Some loc ->
       Some
         { CIssue.issue_type= IssueType.component_file_cyclomatic_complexity
-        ; severity= Exceptions.Info
-        ; mode= CIssue.Off
+        ; severity= Info
+        ; mode= Off
         ; description= "Cyclomatic Complexity Incremental Marker"
         ; suggestion= None
         ; loc }

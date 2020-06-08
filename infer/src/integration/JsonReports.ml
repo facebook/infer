@@ -45,7 +45,7 @@ let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Procnam
 
 let loc_trace_to_jsonbug_record trace_list ekind =
   match ekind with
-  | Exceptions.Info ->
+  | IssueType.Info ->
       []
   | _ ->
       let trace_item_to_record trace_item =
@@ -168,7 +168,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       && should_report_source_file
       && should_report err_key.issue_type err_key.err_desc
     then
-      let severity = Exceptions.severity_string err_key.severity in
+      let severity = IssueType.string_of_severity err_key.severity in
       let bug_type = err_key.issue_type.unique_id in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
@@ -257,10 +257,8 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
           ; hum= hum cost
-          ; trace=
-              loc_trace_to_jsonbug_record
-                (CostDomain.BasicCost.polynomial_traces cost)
-                Exceptions.Advice }
+          ; trace= loc_trace_to_jsonbug_record (CostDomain.BasicCost.polynomial_traces cost) Advice
+          }
         in
         let cost_item =
           let file =

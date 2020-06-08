@@ -16,7 +16,7 @@ type t =
   ; description: string  (** Description in the error message *)
   ; mode: mode
   ; loc: Location.t  (** location in the code *)
-  ; severity: Exceptions.severity
+  ; severity: IssueType.severity
   ; suggestion: string option  (** an optional suggestion or correction *) }
 
 val pp : Format.formatter -> t -> unit

@@ -247,7 +247,7 @@ let severity = function
       (* Explicit @Nullsafe modes suppose that enforcement is made on CI side to not allow violations in the codebase.
          Hence it should be an error.
       *)
-      Exceptions.Error
+      IssueType.Error
   | Default ->
       (* Enforcement is not supposed to be setup in default modes. *)
-      Exceptions.Warning
+      IssueType.Warning

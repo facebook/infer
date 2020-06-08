@@ -401,8 +401,7 @@ let check_path_errors_in_post {InterproceduralAnalysis.proc_desc= caller_pdesc; 
           in
           State.set_path new_path path_pos_opt ;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          BiabductionReporting.log_issue_deprecated_using_state caller_pdesc err_log
-            Exceptions.Warning exn )
+          BiabductionReporting.log_issue_deprecated_using_state caller_pdesc err_log Warning exn )
     | _ ->
         ()
   in
@@ -1133,8 +1132,7 @@ let exe_spec
           missing_sigma_objc_class callee_summary ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
-        BiabductionReporting.log_issue_deprecated_using_state caller_pdesc err_log
-          Exceptions.Warning exn
+        BiabductionReporting.log_issue_deprecated_using_state caller_pdesc err_log Warning exn
       in
       let do_split () =
         process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld

@@ -275,11 +275,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
       in
       ("", curr_cost_trace) :: polynomial_traces |> Errlog.concat_traces
     in
-    let severity = Exceptions.Advice in
+    let severity = IssueType.Advice in
     Some
       { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
       ; qualifier
-      ; severity= Exceptions.severity_string severity
+      ; severity= IssueType.string_of_severity severity
       ; line
       ; column
       ; procedure= cost_info.Jsonbug_t.procedure_id

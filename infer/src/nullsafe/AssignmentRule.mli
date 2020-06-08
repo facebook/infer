@@ -37,7 +37,7 @@ module ReportableViolation : sig
     ; param_position: int
     ; function_procname: Procname.t }
 
-  val get_severity : t -> Exceptions.severity
+  val get_severity : t -> IssueType.severity
   (** Severity of the violation to be reported *)
 
   val get_description :
