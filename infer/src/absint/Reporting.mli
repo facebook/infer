@@ -29,11 +29,8 @@ val log_frontend_issue :
   Errlog.t -> loc:Location.t -> node_key:Procdesc.NodeKey.t -> ltr:Errlog.loc_trace -> exn -> unit
 (** Report a frontend issue of a given kind in the given error log. *)
 
-val log_error : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
-(** Add an error to the given error log. *)
-
-val log_warning : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
-(** Add a warning to the given error log. *)
+val log_issue : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
+(** Add an issue to the given error log. *)
 
 val log_issue_external :
      Procname.t

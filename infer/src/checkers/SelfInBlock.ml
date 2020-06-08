@@ -240,7 +240,7 @@ module TransferFunctions = struct
             (Pvar.pp Pp.text) pvar var_use Location.pp loc
         in
         let ltr = make_trace_unchecked_strongself domain in
-        Reporting.log_error proc_desc err_log ~ltr ~loc SelfInBlock
+        Reporting.log_issue proc_desc err_log ~ltr ~loc SelfInBlock
           IssueType.strong_self_not_checked message ;
         let strongVars =
           StrongEqualToWeakCapturedVars.add pvar
@@ -437,7 +437,7 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
       Location.pp self.loc
   in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_error proc_desc err_log ~ltr ~loc:self.loc SelfInBlock IssueType.mixed_self_weakself
+  Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc SelfInBlock IssueType.mixed_self_weakself
     message
 
 
@@ -455,7 +455,7 @@ let report_weakself_in_no_escape_block_issues proc_desc err_log domain (weakSelf
         (Procname.to_simplified_string procname)
     in
     let ltr = make_trace_use_self_weakself domain in
-    Reporting.log_error proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
       IssueType.weak_self_in_noescape_block message ;
     reported_weak_self_in_noescape_block )
   else reported_weak_self_in_noescape_block
@@ -473,7 +473,7 @@ let report_weakself_multiple_issue proc_desc err_log domain (weakSelf1 : DomainD
       (Pvar.pp Pp.text) weakSelf1.pvar (Pvar.pp Pp.text) weakSelf1.pvar
   in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_error proc_desc err_log ~ltr ~loc:weakSelf1.loc SelfInBlock
+  Reporting.log_issue proc_desc err_log ~ltr ~loc:weakSelf1.loc SelfInBlock
     IssueType.multiple_weakself message
 
 
@@ -495,7 +495,7 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
         (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
     in
     let ltr = make_trace_captured_strong_self domain in
-    Reporting.log_error proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
       IssueType.captured_strong_self message ;
     report_captured_strongself )
   else report_captured_strongself

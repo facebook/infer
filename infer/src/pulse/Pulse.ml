@@ -14,7 +14,7 @@ open PulseDomainInterface
 
 let report {InterproceduralAnalysis.proc_desc; err_log} diagnostic =
   let open Diagnostic in
-  Reporting.log_error proc_desc err_log ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
+  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
     Pulse (get_issue_type diagnostic) (get_message diagnostic)
 
 

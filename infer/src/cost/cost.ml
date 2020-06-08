@@ -186,7 +186,7 @@ module Check = struct
       {CostIssues.unreachable_issue; infinite_issue} =
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
-      Reporting.log_error proc_desc err_log ~loc
+      Reporting.log_issue proc_desc err_log ~loc
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) Cost issue message
     in

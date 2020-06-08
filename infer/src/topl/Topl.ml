@@ -282,7 +282,7 @@ let add_errors env proc_desc err_log biabduction_summary =
               let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
               let message = Printf.sprintf "property %s reaches error" property in
               tt "WARN@\n" ;
-              Reporting.log_error proc_desc err_log TOPL IssueType.topl_error ~loc message )
+              Reporting.log_issue proc_desc err_log TOPL IssueType.topl_error ~loc message )
           in
           (* Don't warn if [lookup_static_var] fails. *)
           Option.iter ~f:handle_state_post_value (lookup_static_var env state_var post)

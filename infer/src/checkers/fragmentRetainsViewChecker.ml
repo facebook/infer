@@ -43,7 +43,7 @@ let report_warning proc_desc err_log class_name fld fld_typ =
       (format_method (Procdesc.get_proc_name proc_desc))
       pp_m on_create_view pp_m on_destroy_view
   in
-  Reporting.log_warning proc_desc err_log ~loc:(Procdesc.get_loc proc_desc) FragmentRetainsView
+  Reporting.log_issue proc_desc err_log ~loc:(Procdesc.get_loc proc_desc) FragmentRetainsView
     IssueType.checkers_fragment_retain_view description
 
 

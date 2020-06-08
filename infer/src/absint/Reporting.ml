@@ -65,14 +65,8 @@ let log_issue_from_summary_simplified ?severity_override attrs err_log ~loc ?(lt
     ~ltr ?extras checker exn
 
 
-let log_error attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified ~severity_override:Error attrs err_log ~loc ?ltr ?extras checker
-    issue_type error_message
-
-
-let log_warning attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified ~severity_override:Warning attrs err_log ~loc ?ltr ?extras
-    checker issue_type error_message
+let log_issue attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
+  log_issue_from_summary_simplified attrs err_log ~loc ?ltr ?extras checker issue_type error_message
 
 
 let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access ?extras checker

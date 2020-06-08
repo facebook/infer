@@ -81,7 +81,7 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} post =
   if change_me then
     let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
     let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
-    Reporting.log_error proc_desc err_log ~loc:last_loc ResourceLeakLabExercise
+    Reporting.log_issue proc_desc err_log ~loc:last_loc ResourceLeakLabExercise
       IssueType.lab_resource_leak message
 
 

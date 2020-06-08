@@ -37,7 +37,7 @@ module UnusedBranch = struct
       if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
     in
     let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-    Reporting.log_warning proc_desc err_log ~loc:location ~ltr BufferOverrunChecker issue_type desc
+    Reporting.log_issue proc_desc err_log ~loc:location ~ltr BufferOverrunChecker issue_type desc
 end
 
 module UnusedBranches = struct
@@ -54,7 +54,7 @@ module UnreachableStatement = struct
 
   let report {InterproceduralAnalysis.proc_desc; err_log} {location} =
     let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-    Reporting.log_error proc_desc err_log ~loc:location ~ltr BufferOverrunChecker
+    Reporting.log_issue proc_desc err_log ~loc:location ~ltr BufferOverrunChecker
       IssueType.unreachable_code_after "Unreachable code after statement"
 end
 
@@ -417,7 +417,7 @@ let report_errors ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data
       Trace.Issue.make_err_trace ~description (PO.ConditionTrace.get_val_traces trace)
       |> Errlog.concat_traces
     in
-    Reporting.log_error proc_desc err_log ~loc:location ~ltr:trace BufferOverrunChecker issue_type
+    Reporting.log_issue proc_desc err_log ~loc:location ~ltr:trace BufferOverrunChecker issue_type
       (description ~markup:true)
   in
   PO.ConditionSet.report_errors ~report cond_set

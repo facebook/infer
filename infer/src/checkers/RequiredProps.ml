@@ -82,7 +82,7 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
            in
            Errlog.make_trace_element 0 location call_msg [] )
   in
-  Reporting.log_error proc_desc err_log ~loc:create_loc ~ltr LithoRequiredProps
+  Reporting.log_issue proc_desc err_log ~loc:create_loc ~ltr LithoRequiredProps
     IssueType.missing_required_prop message
 
 
