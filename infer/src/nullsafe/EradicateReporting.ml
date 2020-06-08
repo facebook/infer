@@ -13,10 +13,12 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker kind
   if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"
   else
     let localized_description = Localise.verbatim_desc description in
-    let exn = Exceptions.Checkers (kind, localized_description) in
+    let issue_to_report =
+      {IssueToReport.issue_type= kind; description= localized_description; ocaml_pos= None}
+    in
     let trace = [Errlog.make_trace_element 0 loc description []] in
     let node = AnalysisState.get_node_exn () in
     let session = AnalysisState.get_session () in
     Reporting.log_issue_from_summary ~severity_override:severity proc_desc err_log
       ~node:(BackendNode {node})
-      ~session ~loc ~ltr:trace checker exn
+      ~session ~loc ~ltr:trace checker issue_to_report

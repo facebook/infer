@@ -10,6 +10,8 @@ open! IStd
 module L = Logging
 module F = Format
 
+(** {1 Biabduction uses exceptions to store issues in summaries} *)
+
 exception Abduction_case_not_implemented of L.ocaml_pos
 
 exception Analysis_stops of Localise.error_desc * L.ocaml_pos option
@@ -27,8 +29,6 @@ exception Bad_footprint of L.ocaml_pos
 exception Biabd_use_after_free of Localise.error_desc * L.ocaml_pos
 
 exception Cannot_star of L.ocaml_pos
-
-exception Checkers of IssueType.t * Localise.error_desc
 
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
 
@@ -50,8 +50,6 @@ exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
 
 exception Field_not_null_checked of Localise.error_desc * L.ocaml_pos
-
-exception Frontend_warning of IssueType.t * Localise.error_desc * L.ocaml_pos
 
 exception Inherently_dangerous_function of Localise.error_desc
 
@@ -97,12 +95,7 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.
 
 exception Wrong_argument_number of L.ocaml_pos
 
-type t =
-  { issue_type: IssueType.t
-  ; description: Localise.error_desc
-  ; ocaml_pos: L.ocaml_pos option  (** location in the infer source code *) }
-
-let recognize_exception exn =
+let recognize_exception exn : IssueToReport.t =
   match exn with
   | Abduction_case_not_implemented ocaml_pos ->
       { issue_type= IssueType.abduction_case_not_implemented
@@ -160,10 +153,6 @@ let recognize_exception exn =
       {issue_type= IssueType.empty_vector_access; description= desc; ocaml_pos= Some ocaml_pos}
   | Field_not_null_checked (desc, ocaml_pos) ->
       {issue_type= IssueType.field_not_null_checked; description= desc; ocaml_pos= Some ocaml_pos}
-  | Frontend_warning (issue_type, desc, ocaml_pos) ->
-      {issue_type; description= desc; ocaml_pos= Some ocaml_pos}
-  | Checkers (kind, desc) ->
-      {issue_type= kind; description= desc; ocaml_pos= None}
   | Null_dereference (desc, ocaml_pos) ->
       {issue_type= IssueType.null_dereference; description= desc; ocaml_pos= Some ocaml_pos}
   | Null_test_after_dereference (desc, ocaml_pos) ->
@@ -177,18 +166,11 @@ let recognize_exception exn =
   | Internal_error desc ->
       {issue_type= IssueType.internal_error; description= desc; ocaml_pos= None}
   | Leak (fp_part, (user_visible, error_desc), done_array_abstraction, resource, ocaml_pos) ->
-      if done_array_abstraction then
-        { issue_type= IssueType.leak_after_array_abstraction
-        ; description= error_desc
-        ; ocaml_pos= Some ocaml_pos }
-      else if fp_part then
-        {issue_type= IssueType.leak_in_footprint; description= error_desc; ocaml_pos= Some ocaml_pos}
-      else if not user_visible then
-        { issue_type= IssueType.leak_unknown_origin
-        ; description= error_desc
-        ; ocaml_pos= Some ocaml_pos }
-      else
-        let issue_type =
+      let issue_type =
+        if done_array_abstraction then IssueType.leak_after_array_abstraction
+        else if fp_part then IssueType.leak_in_footprint
+        else if not user_visible then IssueType.leak_unknown_origin
+        else
           match resource with
           | PredSymb.Rmemory _ ->
               IssueType.memory_leak
@@ -198,8 +180,8 @@ let recognize_exception exn =
               IssueType.resource_leak
           | PredSymb.Rignore ->
               IssueType.memory_leak
-        in
-        {issue_type; description= error_desc; ocaml_pos= Some ocaml_pos}
+      in
+      {issue_type; description= error_desc; ocaml_pos= Some ocaml_pos}
   | Missing_fld (fld, ocaml_pos) ->
       let desc = Localise.verbatim_desc (Fieldname.to_full_string fld) in
       {issue_type= IssueType.missing_fld; description= desc; ocaml_pos= Some ocaml_pos}
@@ -260,17 +242,6 @@ let print_exception_html s exn =
   in
   L.d_printfln ~color:Red "%s%s %a%s" s error.issue_type.unique_id Localise.pp_error_desc
     error.description ocaml_pos_string
-
-
-(** pretty print an error *)
-let pp_err ?severity_override loc issue_type desc ocaml_pos_opt fmt () =
-  let severity = Option.value severity_override ~default:issue_type.IssueType.default_severity in
-  let kind =
-    IssueType.string_of_severity
-      (if IssueType.equal_severity severity Info then Warning else severity)
-  in
-  F.fprintf fmt "%a:%d: %s: %a %a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
-    IssueType.pp issue_type Localise.pp_error_desc desc L.pp_ocaml_pos_opt ocaml_pos_opt
 
 
 (** Return true if the exception is not serious and should be handled in timeout mode *)

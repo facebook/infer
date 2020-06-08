@@ -99,5 +99,5 @@ val log_issue :
   -> access:string option
   -> extras:Jsonbug_t.extra option
   -> Checker.t
-  -> exn
+  -> IssueToReport.t
   -> unit

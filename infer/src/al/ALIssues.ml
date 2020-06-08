@@ -493,7 +493,9 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node) (issue
   let err_desc =
     Localise.desc_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in
-  let exn = Exceptions.Frontend_warning (issue_desc.issue_type, err_desc, __POS__) in
+  let issue_to_report =
+    {IssueToReport.issue_type= issue_desc.issue_type; description= err_desc; ocaml_pos= None}
+  in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
   let key_str =
     match node with
@@ -503,7 +505,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node) (issue
         CAst_utils.generate_key_stmt st
   in
   let node_key = Procdesc.NodeKey.of_frontend_node_key key_str in
-  Reporting.log_frontend_issue errlog exn ~loc:issue_desc.loc ~ltr:trace ~node_key
+  Reporting.log_frontend_issue errlog issue_to_report ~loc:issue_desc.loc ~ltr:trace ~node_key
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.t) loc =

@@ -199,8 +199,7 @@ let update errlog_old errlog_new =
 
 
 let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access
-    ~extras checker exn =
-  let error = Exceptions.recognize_exception exn in
+    ~extras checker (error : IssueToReport.t) =
   if not (IssueType.checker_can_report checker error.issue_type) then
     L.die InternalError
       "Issue type \"%s\" cannot be reported by the checker \"%s\". The only checker that is \
@@ -252,10 +251,9 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
       let err_key = {severity; issue_type= error.issue_type; err_desc= error.description} in
       add_issue err_log err_key (ErrDataSet.singleton err_data)
     in
-    let should_print_now = match exn with Exceptions.Internal_error _ -> true | _ -> added in
-    let print_now () =
+    if added then (
       L.debug Analysis Medium "@\n%a@\n@?"
-        (Exceptions.pp_err ~severity_override:severity loc error.issue_type error.description
+        (IssueToReport.pp_err ~severity_override:severity loc error.issue_type error.description
            error.ocaml_pos)
         () ;
       if not (IssueType.equal_severity severity Error) then (
@@ -276,6 +274,4 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
               L.d_info
         in
         d warn_str ;
-        L.d_ln () )
-    in
-    if should_print_now then print_now ()
+        L.d_ln () ) )

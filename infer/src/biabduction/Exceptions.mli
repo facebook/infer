@@ -8,7 +8,7 @@
 
 open! IStd
 
-(** Functions for logging and printing exceptions *)
+(** {1 Biabduction uses exceptions to store issues in summaries} *)
 
 exception Abduction_case_not_implemented of Logging.ocaml_pos
 
@@ -27,8 +27,6 @@ exception Bad_footprint of Logging.ocaml_pos
 exception Biabd_use_after_free of Localise.error_desc * Logging.ocaml_pos
 
 exception Cannot_star of Logging.ocaml_pos
-
-exception Checkers of IssueType.t * Localise.error_desc
 
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
 
@@ -51,8 +49,6 @@ exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * Logging.ocaml_pos
-
-exception Frontend_warning of IssueType.t * Localise.error_desc * Logging.ocaml_pos
 
 exception Inherently_dangerous_function of Localise.error_desc
 
@@ -104,20 +100,4 @@ val handle_exception : exn -> bool
 val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
-val pp_err :
-     ?severity_override:IssueType.severity
-  -> Location.t
-  -> IssueType.t
-  -> Localise.error_desc
-  -> Logging.ocaml_pos option
-  -> Format.formatter
-  -> unit
-  -> unit
-(** pretty print an error *)
-
-type t =
-  { issue_type: IssueType.t
-  ; description: Localise.error_desc
-  ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *) }
-
-val recognize_exception : exn -> t
+val recognize_exception : exn -> IssueToReport.t

@@ -22,11 +22,16 @@ val log_issue_from_summary :
   -> ltr:Errlog.loc_trace
   -> ?extras:Jsonbug_t.extra
   -> Checker.t
-  -> exn
+  -> IssueToReport.t
   -> unit
 
 val log_frontend_issue :
-  Errlog.t -> loc:Location.t -> node_key:Procdesc.NodeKey.t -> ltr:Errlog.loc_trace -> exn -> unit
+     Errlog.t
+  -> loc:Location.t
+  -> node_key:Procdesc.NodeKey.t
+  -> ltr:Errlog.loc_trace
+  -> IssueToReport.t
+  -> unit
 (** Report a frontend issue of a given kind in the given error log. *)
 
 val log_issue : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
