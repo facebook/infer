@@ -55,7 +55,7 @@ let check_bad_index {InterproceduralAnalysis.proc_desc; err_log; tenv} pname p l
         Exceptions.Array_out_of_bounds_l1
           (Errdesc.explain_array_access pname tenv deref_str p loc, __POS__)
       in
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Warning exn
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
     else if len_is_constant then
       let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
       let desc = Errdesc.explain_array_access pname tenv deref_str p loc in
@@ -63,7 +63,7 @@ let check_bad_index {InterproceduralAnalysis.proc_desc; err_log; tenv} pname p l
         if index_has_bounds () then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
         else Exceptions.Array_out_of_bounds_l3 (desc, __POS__)
       in
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Warning exn
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
 
 
 (** Perform bounds checking *)
@@ -1014,7 +1014,7 @@ let check_type_size {InterproceduralAnalysis.proc_desc; err_log; tenv} pname pro
           Exceptions.Pointer_size_mismatch
             (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
         in
-        BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Warning exn
+        BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
   | None ->
       L.d_str "texp: " ;
       Exp.d_texp_full texp ;

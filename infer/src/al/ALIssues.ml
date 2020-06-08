@@ -503,8 +503,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node) (issue
         CAst_utils.generate_key_stmt st
   in
   let node_key = Procdesc.NodeKey.of_frontend_node_key key_str in
-  Reporting.log_frontend_issue issue_desc.severity errlog exn ~loc:issue_desc.loc ~ltr:trace
-    ~node_key
+  Reporting.log_frontend_issue errlog exn ~loc:issue_desc.loc ~ltr:trace ~node_key
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.t) loc =

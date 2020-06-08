@@ -105,8 +105,8 @@ val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
 val pp_err :
-     Location.t
-  -> IssueType.severity
+     ?severity_override:IssueType.severity
+  -> Location.t
   -> IssueType.t
   -> Localise.error_desc
   -> Logging.ocaml_pos option
@@ -118,7 +118,6 @@ val pp_err :
 type t =
   { issue_type: IssueType.t
   ; description: Localise.error_desc
-  ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *)
-  ; severity: IssueType.severity option }
+  ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *) }
 
 val recognize_exception : exn -> t

@@ -88,7 +88,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-     IssueType.severity
+     ?severity_override:IssueType.severity
   -> t
   -> loc:Location.t
   -> node:node

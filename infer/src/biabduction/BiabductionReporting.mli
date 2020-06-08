@@ -7,13 +7,12 @@
 
 open! IStd
 
-val log_error_using_state : Procdesc.t -> Errlog.t -> exn -> unit
-(** Add an error to the given summary using biabduction state. *)
+val log_issue_using_state : Procdesc.t -> Errlog.t -> exn -> unit
+(** Add an issue to the given summary using biabduction state. *)
 
 val log_issue_deprecated_using_state :
      Procdesc.t
   -> Errlog.t
-  -> IssueType.severity
   -> ?node:Procdesc.Node.t
   -> ?loc:Location.t
   -> ?ltr:Errlog.loc_trace

@@ -17,6 +17,6 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker kind
     let trace = [Errlog.make_trace_element 0 loc description []] in
     let node = AnalysisState.get_node_exn () in
     let session = AnalysisState.get_session () in
-    Reporting.log_issue_from_summary severity proc_desc err_log
+    Reporting.log_issue_from_summary ~severity_override:severity proc_desc err_log
       ~node:(BackendNode {node})
       ~session ~loc ~ltr:trace checker exn

@@ -198,8 +198,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access ~extras
-    checker exn =
+let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access
+    ~extras checker exn =
   let error = Exceptions.recognize_exception exn in
   if not (IssueType.checker_can_report checker error.issue_type) then
     L.die InternalError
@@ -209,7 +209,7 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
       error.issue_type.unique_id (Checker.get_name checker)
       (Checker.get_name error.issue_type.checker)
       (Checker.get_name checker) ;
-  let severity = Option.value error.severity ~default:severity in
+  let severity = Option.value severity_override ~default:error.issue_type.default_severity in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
     (not Config.developer_mode) && Language.curr_language_is Java && Int.equal loc.Location.line 0
@@ -254,9 +254,9 @@ let log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_u
     in
     let should_print_now = match exn with Exceptions.Internal_error _ -> true | _ -> added in
     let print_now () =
-      L.(debug Analysis Medium)
-        "@\n%a@\n@?"
-        (Exceptions.pp_err loc severity error.issue_type error.description error.ocaml_pos)
+      L.debug Analysis Medium "@\n%a@\n@?"
+        (Exceptions.pp_err ~severity_override:severity loc error.issue_type error.description
+           error.ocaml_pos)
         () ;
       if not (IssueType.equal_severity severity Error) then (
         let warn_str =

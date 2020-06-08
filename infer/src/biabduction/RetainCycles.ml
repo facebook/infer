@@ -245,7 +245,7 @@ let report_cycle {InterproceduralAnalysis.proc_desc; tenv; err_log} prop =
     RetainCyclesType.Set.iter
       (fun cycle ->
         let exn = exn_retain_cycle tenv cycle in
-        BiabductionReporting.log_error_using_state proc_desc err_log exn )
+        BiabductionReporting.log_issue_using_state proc_desc err_log exn )
       cycles ;
     (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
     raise (Exceptions.Analysis_stops (Localise.verbatim_desc "retain cycle found", Some __POS__)) )

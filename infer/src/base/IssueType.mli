@@ -24,6 +24,7 @@ type t = private
   ; checker: Checker.t
   ; visibility: visibility
   ; mutable default_severity: severity
+        (** used for documentation but can be overriden at report time *)
   ; mutable enabled: bool
   ; mutable hum: string
   ; mutable doc_url: string option

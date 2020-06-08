@@ -2507,7 +2507,7 @@ let check_implication_base {InterproceduralAnalysis.proc_desc; err_log; tenv} ch
       L.d_printfln "WARNING: footprint failed to find MISSING because: %s" s ;
       None
   | Exceptions.Abduction_case_not_implemented _ as exn ->
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log Error exn ;
+      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn ;
       None
 
 

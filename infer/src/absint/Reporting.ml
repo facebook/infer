@@ -10,22 +10,23 @@ open! IStd
 type log_t =
   ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> Checker.t -> IssueType.t -> string -> unit
 
-let log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access ~extras checker exn =
+let log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras
+    checker exn =
   let issue_type = (Exceptions.recognize_exception exn).issue_type in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let doc_url = issue_type.doc_url in
     let linters_def_file = issue_type.linters_def_file in
-    Errlog.log_issue severity err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url ~access
-      ~extras checker exn
+    Errlog.log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url
+      ~access ~extras checker exn
 
 
-let log_frontend_issue severity errlog ~loc ~node_key ~ltr exn =
+let log_frontend_issue errlog ~loc ~node_key ~ltr exn =
   let node = Errlog.FrontendNode {node_key} in
-  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None Linters
-    exn
+  log_issue_from_errlog errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None Linters exn
 
 
-let log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr ?extras checker exn =
+let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~loc ~ltr ?extras
+    checker exn =
   let procname = Procdesc.get_proc_name proc_desc in
   let is_java_generated_method =
     match procname with
@@ -49,36 +50,38 @@ let log_issue_from_summary severity proc_desc err_log ~node ~session ~loc ~ltr ?
   if should_suppress_lint || is_java_generated_method || is_java_external_package then
     Logging.debug Analysis Medium "Reporting is suppressed!@\n" (* Skip the reporting *)
   else
-    log_issue_from_errlog severity err_log ~loc ~node ~session ~ltr ~access:None ~extras checker exn
+    log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~access:None ~extras
+      checker exn
 
 
 let checker_exception issue_type error_message =
   Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message)
 
 
-let log_issue_from_summary_simplified severity attrs err_log ~loc ?(ltr = []) ?extras checker
-    issue_type error_message =
+let log_issue_from_summary_simplified ?severity_override attrs err_log ~loc ?(ltr = []) ?extras
+    checker issue_type error_message =
   let exn = checker_exception issue_type error_message in
-  log_issue_from_summary severity attrs err_log ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr
-    ?extras checker exn
+  log_issue_from_summary ?severity_override attrs err_log ~node:Errlog.UnknownNode ~session:0 ~loc
+    ~ltr ?extras checker exn
 
 
 let log_error attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified Error attrs err_log ~loc ?ltr ?extras checker issue_type
-    error_message
+  log_issue_from_summary_simplified ~severity_override:Error attrs err_log ~loc ?ltr ?extras checker
+    issue_type error_message
 
 
 let log_warning attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified Warning attrs err_log ~loc ?ltr ?extras checker issue_type
-    error_message
+  log_issue_from_summary_simplified ~severity_override:Warning attrs err_log ~loc ?ltr ?extras
+    checker issue_type error_message
 
 
-let log_issue_external procname ~issue_log severity ~loc ~ltr ?access ?extras checker issue_type
-    error_message =
+let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access ?extras checker
+    issue_type error_message =
   let exn = checker_exception issue_type error_message in
   let issue_log, errlog = IssueLog.get_or_add issue_log ~proc:procname in
   let node = Errlog.UnknownNode in
-  log_issue_from_errlog severity errlog ~loc ~node ~session:0 ~ltr ~access ~extras checker exn ;
+  log_issue_from_errlog ?severity_override errlog ~loc ~node ~session:0 ~ltr ~access ~extras checker
+    exn ;
   issue_log
 
 
