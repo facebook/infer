@@ -68,3 +68,12 @@ opam_switch_create_if_needed () {
 }
 
 opam_require_version_2
+
+# removes packages that cannot be found by ocamlfind
+opam_remove_broken_package () {
+    local pkg="$1"
+    if ! ocamlfind query "${pkg}"; then
+        echo "ocamlfind cannot find ${pkg} package. Removing the package..."
+        opam remove "${pkg}" || true
+    fi
+}
