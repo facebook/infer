@@ -61,7 +61,7 @@ class CollectionsTest {
     for (Integer el : Collections.unmodifiableSet(set)) {}
   }
 
-  void emptySet_zero() {
+  void emptySet_constant() {
     Set<String> set = Collections.emptySet();
     for (String s : set) {}
   }

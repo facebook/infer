@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 class EvilCfg {
-  public void foo(int i, int j, boolean b) {
+  public void foo_FP(int i, int j, boolean b) {
     int k, l, m, n;
 
     k = b ? i : j;

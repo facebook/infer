@@ -20,22 +20,22 @@ public class ArrayListTest {
     for (int i = 0, size = local_list.size(); i < size; ++i) {}
   }
 
-  public void arraylist_empty_underrun_bad() {
+  public void arraylist_empty_underrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(-1, 42);
   }
 
-  public void arraylist_empty_ok() {
+  public void arraylist_empty_ok_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0, 42);
   }
 
-  public void arraylist_empty_overrun_bad() {
+  public void arraylist_empty_overrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(1, 42);
   }
 
-  public void arraylist_add3_overrun_bad() {
+  public void arraylist_add3_overrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(42);
     list.add(1337);
@@ -43,7 +43,7 @@ public class ArrayListTest {
     list.add(4, 666);
   }
 
-  public void arraylist_add_in_loop() {
+  public void arraylist_add_in_loop_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     for (int i = 0; i < 10; ++i) {
       list.add(i);
@@ -51,7 +51,7 @@ public class ArrayListTest {
     for (int i = 0, size = list.size(); i < size; ++i) {}
   }
 
-  public void arraylist_add_in_nested_loop_constant() {
+  public void arraylist_add_in_nested_loop_constant_constant() {
     for (int j = 0; j < 10; j++) {
       ArrayList<Integer> list = new ArrayList<Integer>();
       for (int i = 0; i < 10; ++i) {
@@ -61,7 +61,7 @@ public class ArrayListTest {
     }
   }
 
-  public void arraylist_add_in_loop_ok() {
+  public void arraylist_add_then_loop_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.add(1);
@@ -83,7 +83,7 @@ public class ArrayListTest {
     for (int i = 0, size = list.size(); i < size; ++i) {}
   }
 
-  public void arraylist_addAll_bad() {
+  public void arraylist_addAll_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(2);
     list.add(3);
@@ -96,18 +96,18 @@ public class ArrayListTest {
     list2.addAll(5, list);
   }
 
-  public void arraylist_get_underrun_bad() {
+  public void arraylist_get_underrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.get(0);
   }
 
-  public void arraylist_get_overrun_bad() {
+  public void arraylist_get_overrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.get(2);
   }
 
-  public void arraylist_get_ok() {
+  public void arraylist_get_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.add(1);
@@ -118,7 +118,7 @@ public class ArrayListTest {
     }
   }
 
-  public void arraylist_set_ok() {
+  public void arraylist_set_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.add(1);
@@ -128,24 +128,24 @@ public class ArrayListTest {
     }
   }
 
-  public void arraylist_set_underrun_bad() {
+  public void arraylist_set_underrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.set(0, 10);
   }
 
-  public void arraylist_set_overrun_bad() {
+  public void arraylist_set_overrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.set(1, 10);
   }
 
-  public void arraylist_remove_overrun_bad() {
+  public void arraylist_remove_overrun_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.remove(1);
   }
 
-  public void arraylist_remove_ok() {
+  public void arraylist_remove_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
     list.add(1);
@@ -153,15 +153,7 @@ public class ArrayListTest {
     list.get(0);
   }
 
-  public void arraylist_remove_bad() {
-    ArrayList<Integer> list = new ArrayList<Integer>();
-    list.add(0);
-    list.add(1);
-    list.remove(0);
-    list.get(1);
-  }
-
-  public void arraylist_remove_in_loop_Good() {
+  public void arraylist_remove_in_loop_constant() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     for (int i = 0; i < 10; ++i) {
       list.add(i);
@@ -191,10 +183,10 @@ public class ArrayListTest {
     }
   }
 
-  // Control vars include element which is some intValue and list length.  The result of intValue
-  // depends on the list element.  O(list.length x (-list.elements + 11))
+  // Control vars include the list length and the element which is some intValue.
+  // O(list.length x (-list.elements + 11))
   // Simplified version of real code https://fburl.com/a3gge1b7
-  public boolean iterate_over_arraylist_shortcut_FP(ArrayList<Integer> list) {
+  public boolean iterate_over_arraylist_shortcut_linear_FP(ArrayList<Integer> list) {
     for (Integer element : list) {
       if (element > 10) {
         return false;

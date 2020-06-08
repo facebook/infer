@@ -23,9 +23,7 @@ class Invariant {
 
   // x shouldn't be invariant since it can have two different values
   // depending on whether the inner conditional is executed or not.
-  // Currently, we are getting a quadratic, rather than a linear,
-  // because the value of x at the true branch of the if statement is
-  // precisely analyzed to [0,4+min(1,size.ub)], rather than [0,5].
+  // Currently, we are getting T.
   void formal_not_invariant_FP(int size, int x) {
     int i = 0;
     while (i < size + x) {
@@ -38,8 +36,7 @@ class Invariant {
 
   // x shouldn't be invariant since it can have two different values
   // depending on whether the inner conditional is executed or not
-  // Currently, we are getting T because of a problem in InferBo, see
-  // T32798161
+  // Currently, we are getting quadratic bound we can't simplify (5+min(1, size))
   void local_not_invariant_FP(int size) {
     int i = 0;
     int x = 5;
@@ -60,8 +57,6 @@ class Invariant {
     } while (i < m);
   }
 
-  // before, we were getting items.size()^2 since all functions were
-  // assumed to be impure
   void list_size_invariant(List<?> items) {
     for (int i = 0; i < items.size(); i++) {}
   }

@@ -215,6 +215,11 @@ public class Cost_test {
     for (int i = 0; i < n; i++) {}
     mult_symbols_quadratic(n, n);
   }
+
+  // Expected: x^2, got x^2
+  void quadratic(int x) {
+    for (int i = 0; i < x * x; i++) {}
+  }
 }
 
 class CloneTest {

@@ -26,8 +26,5 @@ class CantHandle {
       i++;
     }
   }
-  // Expected: x^2, got x^2
-  void quadratic(int x) {
-    for (int i = 0; i < x * x; i++) {}
-  }
+
 }
