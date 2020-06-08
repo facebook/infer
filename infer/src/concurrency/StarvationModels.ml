@@ -399,3 +399,17 @@ let is_assume_true =
     ; { default with
         classname= "com.google.common.base.Preconditions"
       ; methods= ["checkArgument"; "checkState"] } ]
+
+
+let is_java_main_method (pname : Procname.t) =
+  let check_main_args args =
+    match args with [arg] -> JavaSplitName.(equal java_lang_string_array arg) | _ -> false
+  in
+  match pname with
+  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | WithBlockParameters _ ->
+      false
+  | Java java_pname ->
+      Procname.Java.is_static java_pname
+      && String.equal "main" (Procname.get_method pname)
+      && Typ.equal Typ.void (Procname.Java.get_return_typ java_pname)
+      && check_main_args (Procname.Java.get_parameters java_pname)

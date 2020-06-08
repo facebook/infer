@@ -28,6 +28,9 @@ val java_lang_object_array : t
 val java_lang_string : t
 (** [java.lang.String] type *)
 
+val java_lang_string_array : t
+(** [java.lang.String\[\]] type *)
+
 val void : t
 (** Java [void] type *)
 

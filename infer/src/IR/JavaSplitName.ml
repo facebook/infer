@@ -32,6 +32,8 @@ let java_lang_object_array = make ~package:"java.lang" "Object[]"
 
 let java_lang_string = make ~package:"java.lang" "String"
 
+let java_lang_string_array = make ~package:"java.lang" "String[]"
+
 let void = make "void"
 
 let pp_type_verbosity ~verbose fmt = function

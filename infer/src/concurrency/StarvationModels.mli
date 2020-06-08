@@ -76,3 +76,6 @@ val is_future_is_done : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 val is_assume_true : Tenv.t -> Procname.t -> HilExp.t list -> bool
 (** is the callee equivalent to assuming its first argument true *)
+
+val is_java_main_method : Procname.t -> bool
+(** does the method look like a Java [main] *)
