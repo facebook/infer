@@ -18,16 +18,24 @@ public class Compound_loop {
     return j;
   }
 
-  /* p should be in control vars */
-  private static void while_and_or(int p) {
+  /* p is an invariant control var. If p is 1, it runs forever */
+  private static void while_and_or_top(int p) {
     int i = 0;
     while (p == 1 || (i < 30 && i >= 0)) {
       i++;
     }
   }
 
+  /* p is an invariant control var */
+  private static void while_and_and_constant(int p) {
+    int i = 0;
+    while (p == 1 && (i < 30 && i >= 0)) {
+      i++;
+    }
+  }
+
   // should be constant cost
-  int nested_while_and_or(int p) {
+  int nested_while_and_or_constant(int p) {
     int i = 0;
     int j = 3 * i;
     while (p == 1 || (i < 30 && i >= 0)) {

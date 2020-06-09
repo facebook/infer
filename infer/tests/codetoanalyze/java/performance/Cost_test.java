@@ -11,8 +11,7 @@ import java.io.InputStream;
 
 public class Cost_test {
 
-  // Cost: 5
-  private static int foo_OK() {
+  private static int foo_constant() {
     int i, j;
     i = 17;
     j = 31;
@@ -20,34 +19,31 @@ public class Cost_test {
     return i + j + 3 + 7;
   }
 
-  // Cost: 17
-  private static int bar_OK() {
+  private static int bar_constant() {
 
     int j = 0;
 
     j++;
     j++;
     j++;
-    j = foo_OK();
+    j = foo_constant();
     j++;
 
     return j;
   }
 
-  // Cost: 25
-  private static int cond_OK(int i) {
+  private static int cond_constant(int i) {
     int x;
 
     if (i < 0) {
-      x = bar_OK();
+      x = bar_constant();
     } else {
       x = 1;
     }
     return x;
   }
 
-  // Cost: 5
-  private static void alias_OK() {
+  private static void alias_constant() {
 
     int i = 0, j;
 
@@ -55,8 +51,7 @@ public class Cost_test {
     i = ++i;
   }
 
-  // Cost: 7
-  private static void alias2_OK() {
+  private static void alias2_constant() {
 
     int i = 0, j, z;
 
@@ -67,60 +62,52 @@ public class Cost_test {
     i = z;
   }
 
-  // Cost: 1101
-  private static int loop0_bad() {
+  private static int loop0_constant() {
 
     for (int i = 0; i < 100; i++) {
-      alias2_OK();
+      alias2_constant();
     }
     return 0;
   }
 
-  // Cost: 1203
-  private static int loop1_bad() {
+  private static int loop1_constant() {
 
     int k = 100;
     for (int i = 0; i < k; i++) {
-      alias2_OK();
+      alias2_constant();
     }
     return 0;
   }
 
-  // Expected: Linear bound
-  private static int loop2(int k) {
+  private static int loop2_linear(int k) {
 
     for (int i = 0; i < k; i++) {
-      alias2_OK();
+      alias2_constant();
     }
     return 0;
   }
 
-  // Expected: constant
-  private static int loop3(int k) {
+  private static int loop3_constant(int k) {
 
     for (int i = k; i < k + 18; i++) {
-      alias2_OK();
+      alias2_constant();
     }
     return 0;
   }
 
-  // Cost: 218
-  // Shows that calling many times non expensive function can
-  // result in an expensive computation
-  private static int main_bad() {
+  private static int main_constant() {
 
     int k1, k2, k3, k4;
 
-    cond_OK(2);
-    k1 = bar_OK() + foo_OK() + cond_OK(15) * 2;
-    k2 = bar_OK() + foo_OK() + cond_OK(17) * 3;
-    k3 = bar_OK() + foo_OK() + cond_OK(11) * 3;
-    k4 = bar_OK() + foo_OK() + cond_OK(19) * 3;
+    cond_constant(2);
+    k1 = bar_constant() + foo_constant() + cond_constant(15) * 2;
+    k2 = bar_constant() + foo_constant() + cond_constant(17) * 3;
+    k3 = bar_constant() + foo_constant() + cond_constant(11) * 3;
+    k4 = bar_constant() + foo_constant() + cond_constant(19) * 3;
     return 0;
   }
 
-  // Cost: 1
-  private static void unitCostFunction() {}
+  private static void unitCostFunction_constant() {}
 
   boolean rand() {
     if (Math.random() > 0.5) {
@@ -130,15 +117,14 @@ public class Cost_test {
     }
   }
 
-  // Cost: Linear to n, not b
+  // Cost: Linear in n
   void ignore_boolean_symbols_linear(boolean b, int n) {
     for (int i = 0; b && i < n; i++) {
       b = true;
     }
   }
 
-  // Cost should not include the symbol of b.
-  void ignore_boolean_symbols_constant1(boolean b) {
+  void ignore_boolean_symbols1_constant(boolean b) {
     for (; b; ) {
       if (rand()) {
         b = true;
@@ -146,8 +132,7 @@ public class Cost_test {
     }
   }
 
-  // Cost should not include the symbol of b.
-  void ignore_boolean_symbols_constant2(boolean b) {
+  void ignore_boolean_symbols2_constant(boolean b) {
     for (; b; ) {
       if (rand()) {
         b = false;
@@ -155,7 +140,6 @@ public class Cost_test {
     }
   }
 
-  // Cost should not include the symbol of f.
   void ignore_float_symbols_constant(float f) {
     for (; f < (float) 1.0; ) {
       if (rand()) {
@@ -164,7 +148,6 @@ public class Cost_test {
     }
   }
 
-  // Cost should not include the symbol of d.
   void ignore_double_symbols_constant(double d) {
     for (; d < (double) 1.0; ) {
       if (rand()) {
@@ -173,7 +156,6 @@ public class Cost_test {
     }
   }
 
-  // Cost should not include the symbol of c.
   void ignore_character_symbols_constant(char c) {
     for (; c < 'z'; ) {
       if (rand()) {
@@ -182,7 +164,7 @@ public class Cost_test {
     }
   }
 
-  void call_inputstream_read_linear(InputStream is) throws IOException {
+  void call_inputstream_read_constant(InputStream is) throws IOException {
     int total = 0;
     int r;
     byte[] buf = new byte[20];
@@ -211,12 +193,11 @@ public class Cost_test {
     for (int i = 0; i < x * y; i++) {}
   }
 
-  void call_mult_symbold_quadratic(int n) {
+  void call_mult_symbols_quadratic(int n) {
     for (int i = 0; i < n; i++) {}
     mult_symbols_quadratic(n, n);
   }
 
-  // Expected: x^2, got x^2
   void quadratic(int x) {
     for (int i = 0; i < x * x; i++) {}
   }

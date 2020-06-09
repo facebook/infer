@@ -82,6 +82,10 @@ public class Array {
     for (int i = 0; i < r.length; i++) {}
   }
 
+  // Inferbo abstracts allocated memory locations to allocation sites
+  // (program points) and only keeps one location. This is a FP
+  // because our domain cannot express joining of two symbolic values
+  // and gives Top instead.
   void call_gen_and_iter_types_linear_FP(int x, int y) {
     String[] r1 = gen_and_iter_types(x);
     String[] r2 = gen_and_iter_types(y);

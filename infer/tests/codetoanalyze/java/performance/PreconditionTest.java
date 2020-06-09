@@ -20,13 +20,13 @@ class PreconditionTest {
     for (int i = 0; i < list.size(); i++) {}
   }
 
-  public class get_five {
+  public class Constant {
     public static final int FIVE = 5;
   }
 
   // should be constant
   static void constant_array(int[] a) {
-    Preconditions.checkArgument(a.length == get_five.FIVE);
+    Preconditions.checkArgument(a.length == Constant.FIVE);
     for (int i : a) {
       Preconditions.checkArgument(i >= 0);
     }

@@ -12,7 +12,7 @@ import java.nio.channels.FileChannel;
 
 public class Loops {
 
-  static int do_while_independent_of_p(int p) {
+  static int do_while_independent_of_p_constant(int p) {
     int a = 0;
     do {
       if (p == 15) {
@@ -24,8 +24,8 @@ public class Loops {
     return 0;
   }
 
-  /* can't handle nested loops yet, but control vars of both loops must
-  be {a, b} */
+  /* can't handle this type of nested loops properly, but control vars
+  of both loops must be {a, b} */
   static void nested_do_while_FP(int p) {
     int a = 10;
     int b = 0;
@@ -40,7 +40,7 @@ public class Loops {
     } while (a < 20);
   }
 
-  static void dumb0(long[] a, int length) {
+  static void dumb_linear(long[] a, int length) {
     for (int i = 1; i < length; i++) {
       if (a[i] < a[i - 1]) {
         a[i - 1] = 0;
@@ -50,7 +50,7 @@ public class Loops {
     }
   }
 
-  static void dumbSort(long[] a, long[] b, int length) {
+  static void dumbSort_quadratic(long[] a, long[] b, int length) {
     for (int i = length - 1; i >= 0; --i) {
       for (int j = 0; j < i; ++j) {
         if (a[j] * b[j + 1] > a[j + 1] * b[j]) {
@@ -70,7 +70,7 @@ public class Loops {
     public float[] f;
   }
 
-  static boolean similar(C[] x, C[] y) {
+  static boolean similar_linear(C[] x, C[] y) {
     if (x == null || y == null || x.length != y.length) {
       return false;
     }
@@ -82,16 +82,16 @@ public class Loops {
     return true;
   }
 
-  static void linear(int x) {
+  static void loop_linear(int x) {
     for (int i = 0; i < x; i++) {}
   }
 
-  static void unboundedSymbol() {
+  static void unboundedSymbol_FP() {
     int infinite = 9;
     for (int i = 0; i < 999; i++) {
       infinite *= infinite;
     }
-    linear(infinite);
+    loop_linear(infinite);
   }
 
   void string_length_linear(String s) {
@@ -142,6 +142,6 @@ public class Loops {
       n++;
       p = p.getNext();
     }
-    linear(n);
+    loop_linear(n);
   }
 }

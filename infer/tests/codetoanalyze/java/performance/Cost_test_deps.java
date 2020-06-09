@@ -10,7 +10,7 @@ package codetoanalyze.java.performance;
 public class Cost_test_deps {
 
   // Loop's execution count doesn't depend on values of p,t,k
-  private static int loop_no_dep1(int k) {
+  private static int loop_no_dep1_constant(int k) {
     int p = 0;
     int t = 2 + k;
     for (int i = 0; i < 100; i++) {
@@ -19,21 +19,21 @@ public class Cost_test_deps {
     return p;
   }
 
-  private static int foo(int i, int j) {
+  private static int foo_constant(int i, int j) {
     return i + j;
   }
 
   // Loop's execution count doesn't depend on values of p,t,k
-  private static int loop_no_dep2(int k) {
+  private static int loop_no_dep2_constant(int k) {
     int p = 0;
-    int t = foo(p, k);
+    int t = foo_constant(p, k);
     for (int i = 0; i < 100; i++) {
       p++;
     }
     return p;
   }
 
-  private static void if_bad(int j) {
+  private static void if_constant(int j) {
     int p = 10;
     if (p < 10 + j) {
       p++;
@@ -45,7 +45,7 @@ public class Cost_test_deps {
     }
   }
 
-  private static int if_bad_loop() {
+  private static int if_loop_constant() {
     int p = 10;
     for (int j = 0; j < 5; j++) {
       if (j < 2) {
@@ -60,7 +60,7 @@ public class Cost_test_deps {
     return p;
   }
 
-  private static int two_loops() {
+  private static int two_loops_constant() {
     int p = 10;
     int k = 3;
     int t = 2 + k;
@@ -73,7 +73,7 @@ public class Cost_test_deps {
     return p;
   }
 
-  private static int loop_despite_inferbo(int p) {
+  private static int loop_despite_inferbo_constant(int p) {
 
     int k = 100;
     for (int i = 0; i < k; i++) {
@@ -85,8 +85,7 @@ public class Cost_test_deps {
     return p;
   }
 
-  /* Expected: 5 * 100 */
-  private static int nested_loop() {
+  private static int nested_loop_constant() {
     int k = 0;
     for (int i = 0; i < 5; i++) {
       A:
@@ -98,7 +97,7 @@ public class Cost_test_deps {
     return k;
   }
 
-  private static int real_while() {
+  private static int real_while_constant() {
     int i = 0;
     int j = 3 * i;
     while (i < 30) {

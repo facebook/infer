@@ -67,6 +67,8 @@ class UnknownCallsTest {
     throw new IllegalStateException();
   }
 
+  // specifically for exceptions, we generate a symbolic value to
+  // prevent poisoning the callees with Tops.
   void call_throw_exception_linear() {
     for (int i = 0; i < throw_exception(); i++) {}
   }
