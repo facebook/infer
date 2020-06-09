@@ -19,4 +19,4 @@ $(OBJECTS): $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing ant integration,\
-	  $(INFER_BIN) --project-root $(TESTS_DIR) -- $(ANT))
+	  $(ANT) clean && $(INFER_BIN) --project-root $(TESTS_DIR) -- $(ANT))
