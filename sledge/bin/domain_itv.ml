@@ -49,17 +49,18 @@ let pp fs =
 let report_fmt_thunk = Fn.flip pp
 let init _gs = Abstract1.top (Lazy.force man) (Environment.make [||] [||])
 let apron_var_of_name = (fun nm -> "%" ^ nm) >> Apron.Var.of_string
-let apron_var_of_reg = Reg.name >> apron_var_of_name
+let apron_var_of_reg = Llair.Reg.name >> apron_var_of_name
 
-let rec apron_typ_of_llair_typ : Typ.t -> Texpr1.typ option = function
-  | Pointer {elt= _} -> apron_typ_of_llair_typ Typ.siz
+let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
+  | Pointer {elt= _} -> apron_typ_of_llair_typ Llair.Typ.siz
   | Integer {bits= _} -> Some Texpr1.Int
   | Float {bits= 32; enc= `IEEE} -> Some Texpr1.Single
   | Float {bits= 64; enc= `IEEE} -> Some Texpr1.Double
   | Float {bits= 80; enc= `Extended} -> Some Texpr1.Extended
   | Float {bits= 128; enc= `IEEE} -> Some Texpr1.Quad
   | t ->
-      warn "No corresponding apron type for llair type %a " Typ.pp t () ;
+      warn "No corresponding apron type for llair type %a " Llair.Typ.pp t
+        () ;
       None
 
 let apron_of_q = Q.to_float >> fun fp -> Texpr1.Cst (Coeff.s_of_float fp)
@@ -168,20 +169,21 @@ and mk_bool_binop typ q op te1 te2 =
   else Texpr1.Cst (Coeff.i_of_int (-1) 0)
 
 let assign reg exp q =
-  [%Trace.call fun {pf} -> pf "{%a}@\n%a := %a" pp q Reg.pp reg Exp.pp exp]
+  [%Trace.call fun {pf} ->
+    pf "{%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
   ;
   let lval = apron_var_of_reg reg in
   ( match
       Option.bind
         ~f:(apron_texpr_of_llair_term (Term.of_exp exp) q)
-        (apron_typ_of_llair_typ (Reg.typ reg))
+        (apron_typ_of_llair_typ (Llair.Reg.typ reg))
     with
   | Some e ->
       let env = Abstract1.env q in
       let new_env =
         match
           ( Environment.mem_var env lval
-          , apron_typ_of_llair_typ (Reg.typ reg) )
+          , apron_typ_of_llair_typ (Llair.Reg.typ reg) )
         with
         | true, _ -> env
         | false, Some Texpr1.Int -> Environment.add env [|lval|] [||]
@@ -214,18 +216,19 @@ let exec_kill q r =
 (** perform a series [move_vec] of reg:=exp moves at state [q] *)
 let exec_move q move_vec =
   let defs, uses =
-    IArray.fold move_vec ~init:(Reg.Set.empty, Reg.Set.empty)
+    IArray.fold move_vec ~init:(Llair.Reg.Set.empty, Llair.Reg.Set.empty)
       ~f:(fun (defs, uses) (r, e) ->
-        (Reg.Set.add defs r, Exp.fold_regs e ~init:uses ~f:Reg.Set.add) )
+        ( Llair.Reg.Set.add defs r
+        , Llair.Exp.fold_regs e ~init:uses ~f:Llair.Reg.Set.add ) )
   in
-  assert (Reg.Set.disjoint defs uses) ;
+  assert (Llair.Reg.Set.disjoint defs uses) ;
   IArray.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
 
 let exec_inst q i =
   match (i : Llair.inst) with
   | Move {reg_exps; loc= _} -> Some (exec_move q reg_exps)
   | Store {ptr; exp; len= _; loc= _} -> (
-    match Reg.of_exp ptr with
+    match Llair.Reg.of_exp ptr with
     | Some reg -> Some (assign reg exp q)
     | None -> Some q )
   | Load {reg; ptr; len= _; loc= _} -> Some (assign reg ptr q)
@@ -237,7 +240,7 @@ let exec_inst q i =
 
 (** Treat any intrinsic function as havoc on the return register [aret] *)
 let exec_intrinsic ~skip_throw:_ pre aret i _ =
-  let name = Reg.name i in
+  let name = Llair.Reg.name i in
   if
     List.exists
       [ "malloc"
@@ -264,14 +267,15 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
   then Option.map ~f:(Option.some << exec_kill pre) aret
   else None
 
-type from_call = {areturn: Reg.t option; caller_q: t} [@@deriving sexp_of]
+type from_call = {areturn: Llair.Reg.t option; caller_q: t}
+[@@deriving sexp_of]
 
 let recursion_beyond_bound = `prune
 
 (** existentially quantify locals *)
 let post locals _ (q : t) =
   let locals =
-    Reg.Set.fold locals ~init:[] ~f:(fun a r ->
+    Llair.Reg.Set.fold locals ~init:[] ~f:(fun a r ->
         let v = apron_var_of_reg r in
         if Environment.mem_var q.env v then v :: a else a )
     |> Array.of_list
@@ -283,7 +287,7 @@ let retn _ freturn {areturn; caller_q} callee_q =
   match (areturn, freturn) with
   | Some aret, Some fret ->
       let env_fret_only =
-        match apron_typ_of_llair_typ (Reg.typ fret) with
+        match apron_typ_of_llair_typ (Llair.Reg.typ fret) with
         | None -> Environment.make [||] [||]
         | Some Texpr1.Int -> Environment.make [|apron_var_of_reg fret|] [||]
         | _ -> Environment.make [||] [|apron_var_of_reg fret|]
@@ -312,14 +316,16 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
   if summaries then
     todo "Summaries not yet implemented for interval analysis" ()
   else
-    let mangle r = Reg.program (Reg.typ r) ("__tmp__" ^ Reg.name r) in
+    let mangle r =
+      Llair.Reg.program (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
+    in
     let args = List.zip_exn formals actuals in
     let q' =
       List.fold args ~init:q ~f:(fun q (f, a) -> assign (mangle f) a q)
     in
     let callee_env =
       List.fold formals ~init:([], []) ~f:(fun (is, fs) f ->
-          match apron_typ_of_llair_typ (Reg.typ f) with
+          match apron_typ_of_llair_typ (Llair.Reg.typ f) with
           | None -> (is, fs)
           | Some Texpr1.Int -> (apron_var_of_reg (mangle f) :: is, fs)
           | _ -> (is, apron_var_of_reg (mangle f) :: fs) )
@@ -338,8 +344,8 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
 let dnf q = [q]
 
 let resolve_callee lookup ptr q =
-  match Reg.of_exp ptr with
-  | Some callee -> (lookup (Reg.name callee), q)
+  match Llair.Reg.of_exp ptr with
+  | Some callee -> (lookup (Llair.Reg.name callee), q)
   | None -> ([], q)
 
 type summary = t

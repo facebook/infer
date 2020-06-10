@@ -7,11 +7,11 @@
 
 (** Used-globals abstract domain *)
 
-include Domain_intf.Dom with type summary = Reg.Set.t
+include Domain_intf.Dom with type summary = Llair.Reg.Set.t
 
 type r =
-  | Per_function of Reg.Set.t Reg.Map.t
+  | Per_function of Llair.Reg.Set.t Llair.Reg.Map.t
       (** per-function used-globals map *)
-  | Declared of Reg.Set.t  (** program-wide set *)
+  | Declared of Llair.Reg.Set.t  (** program-wide set *)
 
-val by_function : r -> Reg.t -> summary
+val by_function : r -> Llair.Reg.t -> summary

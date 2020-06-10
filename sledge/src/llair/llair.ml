@@ -9,6 +9,12 @@
 
 [@@@warning "+9"]
 
+module Loc = Loc
+module Typ = Typ
+module Reg = Reg
+module Exp = Exp
+module Global = Global
+
 type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}

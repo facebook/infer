@@ -317,7 +317,7 @@ let calloc_spec us reg num len =
   let post = Sh.or_ (null_eq (Term.var reg)) (Sh.seg seg) in
   {xs; foot; sub; ms; post}
 
-let size_of_ptr = Term.integer (Z.of_int (Typ.size_of Typ.ptr))
+let size_of_ptr = Term.integer (Z.of_int Llair.Typ.(size_of ptr))
 
 (* { p-[_;_)->⟨W,_⟩ }
  *   posix_memalign r p s
@@ -490,7 +490,7 @@ let nallocx_spec us reg siz =
   {xs; foot; sub; ms; post}
 
 let size_of_int_mul =
-  Term.mul (Term.integer (Z.of_int (Typ.size_of Typ.siz)))
+  Term.mul (Term.integer (Z.of_int Llair.Typ.(size_of siz)))
 
 (* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
  *   mallctl r i w n

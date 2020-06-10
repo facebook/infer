@@ -41,49 +41,51 @@ let%test_module _ =
     let%test "unsigned boolean overflow" =
       is_true
         (Term.of_exp
-           (Exp.uge
-              (Exp.integer Typ.bool Z.minus_one)
-              (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)))
+           Llair.(
+             Exp.uge
+               (Exp.integer Typ.bool Z.minus_one)
+               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)))
 
     let pp_exp e =
-      Format.printf "@\nexp= %a; term= %a@." Exp.pp e Term.pp
+      Format.printf "@\nexp= %a; term= %a@." Llair.Exp.pp e Term.pp
         (Term.of_exp e)
 
-    let ( !! ) i = Exp.integer Typ.siz (Z.of_int i)
+    let ( !! ) i = Llair.(Exp.integer Typ.siz (Z.of_int i))
 
     let%expect_test _ =
-      pp_exp (Exp.signed 1 !!1 ~to_:Typ.bool) ;
+      pp_exp Llair.(Exp.signed 1 !!1 ~to_:Typ.bool) ;
       [%expect {| exp= ((i1)(s1) 1); term= -1 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.unsigned 1 !!(-1) ~to_:Typ.byt) ;
+      pp_exp Llair.(Exp.unsigned 1 !!(-1) ~to_:Typ.byt) ;
       [%expect {| exp= ((i8)(u1) -1); term= 1 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.signed 8 !!(-1) ~to_:Typ.int) ;
+      pp_exp Llair.(Exp.signed 8 !!(-1) ~to_:Typ.int) ;
       [%expect {| exp= ((i32)(s8) -1); term= -1 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.unsigned 8 !!(-1) ~to_:Typ.int) ;
+      pp_exp Llair.(Exp.unsigned 8 !!(-1) ~to_:Typ.int) ;
       [%expect {| exp= ((i32)(u8) -1); term= 255 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.signed 8 !!255 ~to_:Typ.byt) ;
+      pp_exp Llair.(Exp.signed 8 !!255 ~to_:Typ.byt) ;
       [%expect {| exp= ((i8)(s8) 255); term= -1 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.signed 7 !!255 ~to_:Typ.byt) ;
+      pp_exp Llair.(Exp.signed 7 !!255 ~to_:Typ.byt) ;
       [%expect {| exp= ((i8)(s7) 255); term= -1 |}]
 
     let%expect_test _ =
-      pp_exp (Exp.unsigned 7 !!255 ~to_:Typ.byt) ;
+      pp_exp Llair.(Exp.unsigned 7 !!255 ~to_:Typ.byt) ;
       [%expect {| exp= ((i8)(u7) 255); term= 127 |}]
 
     let%expect_test _ =
       pp_exp
-        (Exp.uge
-           (Exp.integer Typ.bool Z.minus_one)
-           (Exp.signed 1 !!1 ~to_:Typ.bool)) ;
+        Llair.(
+          Exp.uge
+            (Exp.integer Typ.bool Z.minus_one)
+            (Exp.signed 1 !!1 ~to_:Typ.bool)) ;
       [%expect {| exp= (-1 u≥ ((i1)(s1) 1)); term= -1 |}]
 
     let%expect_test _ =

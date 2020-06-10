@@ -11,14 +11,14 @@ let unknown_call call =
   [%Trace.kprintf
     Stop.on_unknown_call
       "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
-      (fun fs call -> Loc.pp fs (Llair.Term.loc call))
+      (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
       call
       (fun fs (call : Llair.Term.t) ->
         match call with
         | Call {callee} -> (
-          match Reg.of_exp callee with
-          | Some reg -> Reg.pp_demangled fs reg
-          | None -> Exp.pp fs callee )
+          match Llair.Reg.of_exp callee with
+          | Some reg -> Llair.Reg.pp_demangled fs reg
+          | None -> Llair.Exp.pp fs callee )
         | _ -> () )
       call Llair.Term.pp call]
 
@@ -28,7 +28,7 @@ let invalid_access_count () = !count
 let invalid_access fmt_thunk pp access loc =
   Int.incr count ;
   let rep fs =
-    Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Loc.pp
+    Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Llair.Loc.pp
       (loc access) pp access
   in
   Format.printf "@\n@[<v 2>%t@]@." rep ;

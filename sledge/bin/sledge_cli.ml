@@ -77,14 +77,15 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
         ; skip_throw= false
         ; function_summaries= true
         ; entry_points= Config.find_list "entry-points"
-        ; globals= Declared Reg.Set.empty }
+        ; globals= Declared Llair.Reg.Set.empty }
         pgm
     in
-    Per_function (Reg.Map.map summary_table ~f:Reg.Set.union_list)
+    Per_function
+      (Llair.Reg.Map.map summary_table ~f:Llair.Reg.Set.union_list)
   else
     Declared
-      (IArray.fold pgm.globals ~init:Reg.Set.empty ~f:(fun acc g ->
-           Reg.Set.add acc g.reg ))
+      (IArray.fold pgm.globals ~init:Llair.Reg.Set.empty ~f:(fun acc g ->
+           Llair.Reg.Set.add acc g.reg ))
 
 let analyze =
   let%map_open bound =

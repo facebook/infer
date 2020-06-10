@@ -11,41 +11,41 @@ module type Dom = sig
 
   val pp : t pp
   val report_fmt_thunk : t -> Formatter.t -> unit
-  val init : Global.t iarray -> t
+  val init : Llair.Global.t iarray -> t
   val join : t -> t -> t option
   val is_false : t -> bool
   val dnf : t -> t list
-  val exec_assume : t -> Exp.t -> t option
-  val exec_kill : t -> Reg.t -> t
-  val exec_move : t -> (Reg.t * Exp.t) iarray -> t
+  val exec_assume : t -> Llair.Exp.t -> t option
+  val exec_kill : t -> Llair.Reg.t -> t
+  val exec_move : t -> (Llair.Reg.t * Llair.Exp.t) iarray -> t
   val exec_inst : t -> Llair.inst -> t option
 
   val exec_intrinsic :
        skip_throw:bool
     -> t
-    -> Reg.t option
-    -> Reg.t
-    -> Exp.t list
+    -> Llair.Reg.t option
+    -> Llair.Reg.t
+    -> Llair.Exp.t list
     -> t option option
 
   type from_call [@@deriving sexp_of]
 
   val call :
        summaries:bool
-    -> globals:Reg.Set.t
-    -> actuals:Exp.t list
-    -> areturn:Reg.t option
-    -> formals:Reg.t list
-    -> freturn:Reg.t option
-    -> locals:Reg.Set.t
+    -> globals:Llair.Reg.Set.t
+    -> actuals:Llair.Exp.t list
+    -> areturn:Llair.Reg.t option
+    -> formals:Llair.Reg.t list
+    -> freturn:Llair.Reg.t option
+    -> locals:Llair.Reg.Set.t
     -> t
     -> t * from_call
 
-  val post : Reg.Set.t -> from_call -> t -> t
-  val retn : Reg.t list -> Reg.t option -> from_call -> t -> t
+  val post : Llair.Reg.Set.t -> from_call -> t -> t
+  val retn : Llair.Reg.t list -> Llair.Reg.t option -> from_call -> t -> t
 
   val resolve_callee :
-    (string -> Llair.func list) -> Exp.t -> t -> Llair.func list * t
+    (string -> Llair.func list) -> Llair.Exp.t -> t -> Llair.func list * t
 
   val recursion_beyond_bound : [`skip | `prune]
 
@@ -54,7 +54,7 @@ module type Dom = sig
   val pp_summary : summary pp
 
   val create_summary :
-    locals:Reg.Set.t -> formals:Reg.Set.t -> t -> summary * t
+    locals:Llair.Reg.Set.t -> formals:Llair.Reg.Set.t -> t -> summary * t
 
   val apply_summary : t -> summary -> t option
 end

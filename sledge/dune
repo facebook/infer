@@ -38,7 +38,6 @@
  (library
   (name llair)
   (public_name sledge.llair)
-  (wrapped false)
   (libraries nonstdlib)
   (flags
    (:standard -open NS))

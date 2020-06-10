@@ -12,7 +12,7 @@
 type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}
-  | Convert of {src: Typ.t; dst: Typ.t}
+  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
   | Splat
   | Select of int
 [@@deriving compare, equal, hash, sexp]
@@ -155,7 +155,7 @@ let rec ppx strength fs term =
     | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
     | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
     | Ap1 (Convert {src; dst}, arg) ->
-        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
+        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
     | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
@@ -310,10 +310,11 @@ let invariant e =
   | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
   | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
   | Ap1 (Convert {src; dst}, _) ->
-      assert (Typ.convertible src dst) ;
+      assert (Llair.Typ.convertible src dst) ;
       assert (
-        not (Typ.equivalent src dst) (* avoid redundant representations *)
-      )
+        not
+          (Llair.Typ.equivalent src dst)
+          (* avoid redundant representations *) )
   | Rational {data} ->
       assert (Q.is_real data) ;
       assert (not (Z.equal Z.one (Q.den data)))
@@ -940,7 +941,8 @@ let signed bits term = norm1 (Signed {bits}) term
 let unsigned bits term = norm1 (Unsigned {bits}) term
 
 let convert src ~to_:dst arg =
-  if Typ.equivalent src dst then arg else norm1 (Convert {src; dst}) arg
+  if Llair.Typ.equivalent src dst then arg
+  else norm1 (Convert {src; dst}) arg
 
 let eq = norm2 Eq
 let dq = norm2 Dq
@@ -982,11 +984,11 @@ let eq_concat (siz, arr) ms =
 let rec binary mk x y = mk (of_exp x) (of_exp y)
 
 and ubinary mk typ x y =
-  let unsigned typ = unsigned (Typ.bit_size_of typ) in
+  let unsigned typ = unsigned (Llair.Typ.bit_size_of typ) in
   mk (unsigned typ (of_exp x)) (unsigned typ (of_exp y))
 
 and of_exp e =
-  match (e : Exp.t) with
+  match (e : Llair.Exp.t) with
   | Reg {name; global; typ= _} -> Var {name; id= (if global then -1 else 0)}
   | Nondet {msg; typ= _} -> nondet msg
   | Label {parent; name} -> label ~parent ~name
@@ -1050,9 +1052,9 @@ module Var = struct
     | _ -> None
 
   let of_reg r =
-    match of_term (of_exp (r : Reg.t :> Exp.t)) with
+    match of_term (of_exp (r : Llair.Reg.t :> Llair.Exp.t)) with
     | Some v -> v
-    | _ -> violates Reg.invariant r
+    | _ -> violates Llair.Reg.invariant r
 
   let fresh name ~wrt =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
@@ -1073,7 +1075,8 @@ module Var = struct
       if not (is_empty xs) then
         Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
 
-    let of_regs = Reg.Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
+    let of_regs =
+      Llair.Reg.Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
   end
 
   (** Variable renaming substitutions *)

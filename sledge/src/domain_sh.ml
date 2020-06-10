@@ -18,7 +18,7 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
   IArray.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Global.reg; init= Some (arr, siz)} ->
+    | {Llair.Global.reg; init= Some (arr, siz)} ->
         let loc = Term.var (Var.of_reg reg) in
         let len = Term.integer (Z.of_int siz) in
         let arr = Term.of_exp arr in
@@ -129,7 +129,7 @@ let localize_entry globals actuals formals freturn locals subst pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
   let freturn_locals =
-    Var.Set.of_regs (Reg.Set.add_option freturn locals)
+    Var.Set.of_regs (Llair.Reg.Set.add_option freturn locals)
   in
   let function_summary_pre =
     garbage_collect entry
@@ -159,14 +159,17 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
        globals: {@[%a@]}@ q: %a@]"
-      (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Reg.pp)
-      (List.rev formals) Reg.Set.pp locals Reg.Set.pp globals pp q]
+      (List.pp ",@ " Llair.Exp.pp)
+      (List.rev actuals)
+      (List.pp ",@ " Llair.Reg.pp)
+      (List.rev formals) Llair.Reg.Set.pp locals Llair.Reg.Set.pp globals pp
+      q]
   ;
   let actuals = List.map ~f:Term.of_exp actuals in
   let areturn = Option.map ~f:Var.of_reg areturn in
   let formals = List.map ~f:Var.of_reg formals in
   let freturn_locals =
-    Var.Set.of_regs (Reg.Set.add_option freturn locals)
+    Var.Set.of_regs (Llair.Reg.Set.add_option freturn locals)
   in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current value will be overwritten and so does
@@ -200,7 +203,7 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals _ q =
   [%Trace.call fun {pf} ->
-    pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Reg.Set.pp locals Sh.pp q]
+    pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
   ;
   Sh.exists (Var.Set.of_regs locals) q |> simplify
   |>
@@ -212,8 +215,9 @@ let post locals _ q =
 let retn formals freturn {areturn; subst; frame} q =
   [%Trace.call fun {pf} ->
     pf "@[<v>formals: {@[%a@]}%a%a@ subst: %a@ q: %a@ frame: %a@]"
-      (List.pp ", " Reg.pp) formals
-      (Option.pp "@ freturn: %a" Reg.pp)
+      (List.pp ", " Llair.Reg.pp)
+      formals
+      (Option.pp "@ freturn: %a" Llair.Reg.pp)
       freturn
       (Option.pp "@ areturn: %a" Var.pp)
       areturn Var.Subst.pp (Var.Subst.invert subst) pp q pp frame]
@@ -247,8 +251,8 @@ let retn formals freturn {areturn; subst; frame} q =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let resolve_callee lookup ptr q =
-  match Reg.of_exp ptr with
-  | Some callee -> (lookup (Reg.name callee), q)
+  match Llair.Reg.of_exp ptr with
+  | Some callee -> (lookup (Llair.Reg.name callee), q)
   | None -> ([], q)
 
 let recursion_beyond_bound = `prune
@@ -261,8 +265,8 @@ let pp_summary fs {xs; foot; post} =
 
 let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
-    pf "formals %a@ entry: %a@ current: %a" Reg.Set.pp formals pp entry pp
-      post]
+    pf "formals %a@ entry: %a@ current: %a" Llair.Reg.Set.pp formals pp
+      entry pp post]
   ;
   let locals = Var.Set.of_regs locals in
   let formals = Var.Set.of_regs formals in

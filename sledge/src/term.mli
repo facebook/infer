@@ -19,7 +19,7 @@ type op1 =
       (** [Ap1 (Unsigned {bits= n}, arg)] is [arg] interpreted as an [n]-bit
           unsigned integer. That is, it unsigned-binary--decodes the low [n]
           bits of the infinite two's-complement encoding of [arg]. *)
-  | Convert of {src: Typ.t; dst: Typ.t}
+  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
       (** [Ap1 (Convert {src; dst}, arg)] is [arg] converted from type [src]
           to type [dst], possibly with loss of information. The [src] and
           [dst] types must be [Typ.convertible] and must not both be
@@ -118,7 +118,7 @@ module Var : sig
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
-    val of_regs : Reg.Set.t -> t
+    val of_regs : Llair.Reg.Set.t -> t
   end
 
   val pp : t pp
@@ -129,7 +129,7 @@ module Var : sig
   val id : t -> int
   val of_ : term -> t
   val of_term : term -> t option
-  val of_reg : Reg.t -> t
+  val of_reg : Llair.Reg.t -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t
@@ -189,7 +189,7 @@ val float : string -> t
 (* type conversions *)
 val signed : int -> t -> t
 val unsigned : int -> t -> t
-val convert : Typ.t -> to_:Typ.t -> t -> t
+val convert : Llair.Typ.t -> to_:Llair.Typ.t -> t -> t
 
 (* comparisons *)
 val eq : t -> t -> t
@@ -239,7 +239,7 @@ val update : rcd:t -> idx:int -> elt:t -> t
 val rec_record : int -> t
 
 (* convert *)
-val of_exp : Exp.t -> t
+val of_exp : Llair.Exp.t -> t
 
 (** Transform *)
 

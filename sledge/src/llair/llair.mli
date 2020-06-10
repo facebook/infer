@@ -8,6 +8,12 @@
 (** LLAIR (Low-Level Analysis Internal Representation) is an IR tailored for
     static analysis using a low-level model of memory. *)
 
+module Loc = Loc
+module Typ = Typ
+module Reg = Reg
+module Exp = Exp
+module Global = Global
+
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}

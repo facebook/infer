@@ -12,8 +12,8 @@ module type State_domain_sig = sig
   include Domain_intf.Dom
 
   val create_summary :
-       locals:Reg.Set.t
-    -> formals:Reg.Set.t
+       locals:Llair.Reg.Set.t
+    -> formals:Llair.Reg.Set.t
     -> entry:t
     -> current:t
     -> summary * t

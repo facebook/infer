@@ -18,5 +18,5 @@ module Make (Dom : Domain_intf.Dom) : sig
   val exec_pgm : exec_opts -> Llair.program -> unit
 
   val compute_summaries :
-    exec_opts -> Llair.program -> Dom.summary list Reg.Map.t
+    exec_opts -> Llair.program -> Dom.summary list Llair.Reg.Map.t
 end

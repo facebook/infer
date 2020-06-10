@@ -7,6 +7,8 @@
 
 (** Translate LLVM to LLAIR *)
 
+open Llair
+
 let pp_lltype fs t = Format.pp_print_string fs (Llvm.string_of_lltype t)
 
 (* WARNING: SLOW on instructions and functions *)
@@ -722,7 +724,7 @@ let pop_stack_frame_of_function :
     func ;
   let pop retn_loc =
     List.map entry_regs ~f:(fun reg ->
-        Llair.Inst.free ~ptr:(Exp.reg reg) ~loc:retn_loc )
+        Inst.free ~ptr:(Exp.reg reg) ~loc:retn_loc )
   in
   pop
 
@@ -792,27 +794,25 @@ let xlate_jump :
     | At_end blk -> fail "xlate_jump: %a" pp_llblock blk ()
   in
   let dst_lbl = label_of_block dst in
-  let jmp = Llair.Jump.mk dst_lbl in
+  let jmp = Jump.mk dst_lbl in
   match xlate_jump_ reg_exps (Llvm.instr_begin dst) with
   | [] -> (jmp, blocks)
   | reg_exps ->
-      let mov =
-        Llair.Inst.move ~reg_exps:(IArray.of_list_rev reg_exps) ~loc
-      in
+      let mov = Inst.move ~reg_exps:(IArray.of_list_rev reg_exps) ~loc in
       let lbl = find_name instr ^ ".jmp." ^ dst_lbl in
       let blk =
-        Llair.Block.mk ~lbl
+        Block.mk ~lbl
           ~cmnd:(IArray.of_array [|mov|])
-          ~term:(Llair.Term.goto ~dst:jmp ~loc)
+          ~term:(Term.goto ~dst:jmp ~loc)
       in
       let blocks =
         match List.find blocks ~f:(fun b -> String.equal lbl b.lbl) with
         | None -> blk :: blocks
         | Some blk0 ->
-            assert (Llair.Block.equal blk0 blk) ;
+            assert (Block.equal blk0 blk) ;
             blocks
       in
-      (Llair.Jump.mk lbl, blocks)
+      (Jump.mk lbl, blocks)
 
 (** An LLVM instruction is translated to a sequence of LLAIR instructions
     and a terminator, plus some additional blocks to which it may refer
@@ -821,20 +821,18 @@ let xlate_jump :
 type code = Llair.inst list * Llair.term * Llair.block list
 
 let pp_code fs (insts, term, blocks) =
-  Format.fprintf fs "@[<hv>@,@[%a%t@]%t@[<hv>%a@]@]"
-    (List.pp "@ " Llair.Inst.pp)
+  Format.fprintf fs "@[<hv>@,@[%a%t@]%t@[<hv>%a@]@]" (List.pp "@ " Inst.pp)
     insts
     (fun fs ->
       match term with
-      | Llair.Unreachable -> ()
+      | Unreachable -> ()
       | _ ->
           Format.fprintf fs "%t%a"
             (fun fs ->
               if List.is_empty insts then () else Format.fprintf fs "@ " )
-            Llair.Term.pp term )
+            Term.pp term )
     (fun fs -> if List.is_empty blocks then () else Format.fprintf fs "@\n")
-    (List.pp "@ " Llair.Block.pp)
-    blocks
+    (List.pp "@ " Block.pp) blocks
 
 let rec xlate_func_name x llv =
   match Llvm.classify_value llv with
@@ -864,7 +862,7 @@ let xlate_instr :
   let continue insts_term_to_code =
     [%Trace.retn
       fun {pf} () ->
-        pf "%a" pp_code (insts_term_to_code ([], Llair.Term.unreachable))]
+        pf "%a" pp_code (insts_term_to_code ([], Term.unreachable))]
       () ;
     continue insts_term_to_code
   in
@@ -884,7 +882,7 @@ let xlate_instr :
       let reg = xlate_name x instr in
       let exp = xlate instr in
       let reg_exps = IArray.of_array [|(reg, exp)|] in
-      emit_inst (Llair.Inst.move ~reg_exps ~loc)
+      emit_inst (Inst.move ~reg_exps ~loc)
   in
   let opcode = Llvm.instr_opcode instr in
   match opcode with
@@ -892,13 +890,13 @@ let xlate_instr :
       let reg = xlate_name x instr in
       let len = xlate_size_of x instr in
       let ptr = xlate_value x (Llvm.operand instr 0) in
-      emit_inst (Llair.Inst.load ~reg ~ptr ~len ~loc)
+      emit_inst (Inst.load ~reg ~ptr ~len ~loc)
   | Store ->
       let rand0 = Llvm.operand instr 0 in
       let exp = xlate_value x rand0 in
       let len = xlate_size_of x rand0 in
       let ptr = xlate_value x (Llvm.operand instr 1) in
-      emit_inst (Llair.Inst.store ~ptr ~exp ~len ~loc)
+      emit_inst (Inst.store ~ptr ~exp ~len ~loc)
   | Alloca ->
       let reg = xlate_name x instr in
       let rand = Llvm.operand instr 0 in
@@ -909,7 +907,7 @@ let xlate_instr :
       in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
       let len = xlate_size_of x instr in
-      emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
+      emit_inst (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of maybe_llfunc in
@@ -934,7 +932,7 @@ let xlate_instr :
         | Ok () -> warn "ignoring uninterpreted %s %s" msg fname ()
         | Error _ -> () ) ;
         let reg = xlate_name_opt x instr in
-        emit_inst (Llair.Inst.nondet ~reg ~msg:fname ~loc)
+        emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
       (* intrinsics *)
       match xlate_intrinsic_exp fname with
@@ -943,7 +941,7 @@ let xlate_instr :
         match String.split fname ~on:'.' with
         | ["__llair_throw"] ->
             let exc = xlate_value x (Llvm.operand instr 0) in
-            emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
+            emit_term ~prefix:(pop loc) (Term.throw ~exc ~loc)
         | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
             let reg = xlate_name x instr in
             let num_operand = Llvm.operand instr 0 in
@@ -953,14 +951,14 @@ let xlate_instr :
                 (xlate_value x num_operand)
             in
             let len = Exp.integer Typ.siz (Z.of_int 1) in
-            emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
+            emit_inst (Inst.alloc ~reg ~num ~len ~loc)
         | ["_Znwm" (* operator new(size_t num) *)]
          |[ "_ZnwmSt11align_val_t"
             (* operator new(unsigned long, std::align_val_t) *) ] ->
             let reg = xlate_name x instr in
             let num = xlate_value x (Llvm.operand instr 0) in
             let len = xlate_size_of x instr in
-            emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
+            emit_inst (Inst.alloc ~reg ~num ~len ~loc)
         | ["_ZdlPv" (* operator delete(void* ptr) *)]
          |[ "_ZdlPvSt11align_val_t"
             (* operator delete(void* ptr, std::align_val_t) *) ]
@@ -969,23 +967,23 @@ let xlate_instr :
           ]
          |["free" (* void free(void* ptr) *)] ->
             let ptr = xlate_value x (Llvm.operand instr 0) in
-            emit_inst (Llair.Inst.free ~ptr ~loc)
+            emit_inst (Inst.free ~ptr ~loc)
         | "llvm" :: "memset" :: _ ->
             let dst = xlate_value x (Llvm.operand instr 0) in
             let byt = xlate_value x (Llvm.operand instr 1) in
             let len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst (Llair.Inst.memset ~dst ~byt ~len ~loc)
+            emit_inst (Inst.memset ~dst ~byt ~len ~loc)
         | "llvm" :: "memcpy" :: _ ->
             let dst = xlate_value x (Llvm.operand instr 0) in
             let src = xlate_value x (Llvm.operand instr 1) in
             let len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst (Llair.Inst.memcpy ~dst ~src ~len ~loc)
+            emit_inst (Inst.memcpy ~dst ~src ~len ~loc)
         | "llvm" :: "memmove" :: _ ->
             let dst = xlate_value x (Llvm.operand instr 0) in
             let src = xlate_value x (Llvm.operand instr 1) in
             let len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst (Llair.Inst.memmov ~dst ~src ~len ~loc)
-        | ["abort"] | ["llvm"; "trap"] -> emit_inst (Llair.Inst.abort ~loc)
+            emit_inst (Inst.memmov ~dst ~src ~len ~loc)
+        | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
         (* dropped / handled elsewhere *)
         | ["llvm"; "dbg"; ("declare" | "value")]
          |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
@@ -1033,13 +1031,13 @@ let xlate_instr :
                     xlate_value x (Llvm.operand instr i) )
               in
               let areturn = xlate_name_opt x instr in
-              let return = Llair.Jump.mk lbl in
-              Llair.Term.call ~callee ~typ ~actuals ~areturn ~return
-                ~throw:None ~loc
+              let return = Jump.mk lbl in
+              Term.call ~callee ~typ ~actuals ~areturn ~return ~throw:None
+                ~loc
             in
             continue (fun (insts, term) ->
                 let cmnd = IArray.of_list insts in
-                ([], call, [Llair.Block.mk ~lbl ~cmnd ~term]) ) ) )
+                ([], call, [Block.mk ~lbl ~cmnd ~term]) ) ) )
   | Invoke -> (
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
       let lltyp = Llvm.type_of llfunc in
@@ -1063,12 +1061,11 @@ let xlate_instr :
       match String.split fname ~on:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
           let dst, blocks = xlate_jump x instr return_blk loc [] in
-          emit_term (Llair.Term.goto ~dst ~loc) ~blocks
+          emit_term (Term.goto ~dst ~loc) ~blocks
       | ["__llair_throw"] ->
           let dst, blocks = xlate_jump x instr unwind_blk loc [] in
-          emit_term (Llair.Term.goto ~dst ~loc) ~blocks
-      | ["abort"] ->
-          emit_term ~prefix:[Llair.Inst.abort ~loc] Llair.Term.unreachable
+          emit_term (Term.goto ~dst ~loc) ~blocks
+      | ["abort"] -> emit_term ~prefix:[Inst.abort ~loc] Term.unreachable
       | ["_Znwm" (* operator new(size_t num) *)]
        |[ "_ZnwmSt11align_val_t"
           (* operator new(unsigned long num, std::align_val_t) *) ]
@@ -1078,9 +1075,8 @@ let xlate_instr :
           let len = xlate_size_of x instr in
           let dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term
-            ~prefix:[Llair.Inst.alloc ~reg ~num ~len ~loc]
-            (Llair.Term.goto ~dst ~loc)
-            ~blocks
+            ~prefix:[Inst.alloc ~reg ~num ~len ~loc]
+            (Term.goto ~dst ~loc) ~blocks
       (* unimplemented *)
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
@@ -1097,26 +1093,24 @@ let xlate_instr :
           let throw, blocks = xlate_jump x instr unwind_blk loc blocks in
           let throw = Some throw in
           emit_term
-            (Llair.Term.call ~callee ~typ ~actuals ~areturn ~return ~throw
-               ~loc)
+            (Term.call ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
             ~blocks )
   | Ret ->
       let exp =
         if Llvm.num_operands instr = 0 then None
         else Some (xlate_value x (Llvm.operand instr 0))
       in
-      emit_term ~prefix:(pop loc) (Llair.Term.return ~exp ~loc)
+      emit_term ~prefix:(pop loc) (Term.return ~exp ~loc)
   | Br -> (
     match Option.value_exn (Llvm.get_branch instr) with
     | `Unconditional blk ->
         let dst, blocks = xlate_jump x instr blk loc [] in
-        emit_term (Llair.Term.goto ~dst ~loc) ~blocks
+        emit_term (Term.goto ~dst ~loc) ~blocks
     | `Conditional (cnd, thn, els) ->
         let key = xlate_value x cnd in
         let thn, blocks = xlate_jump x instr thn loc [] in
         let els, blocks = xlate_jump x instr els loc blocks in
-        emit_term (Llair.Term.branch ~key ~nzero:thn ~zero:els ~loc) ~blocks
-    )
+        emit_term (Term.branch ~key ~nzero:thn ~zero:els ~loc) ~blocks )
   | Switch ->
       let key = xlate_value x (Llvm.operand instr 0) in
       let cases, blocks =
@@ -1138,7 +1132,7 @@ let xlate_instr :
       let tbl = IArray.of_list cases in
       let blk = Llvm.block_of_value (Llvm.operand instr 1) in
       let els, blocks = xlate_jump x instr blk loc blocks in
-      emit_term (Llair.Term.switch ~key ~tbl ~els ~loc) ~blocks
+      emit_term (Term.switch ~key ~tbl ~els ~loc) ~blocks
   | IndirectBr ->
       let ptr = xlate_value x (Llvm.operand instr 0) in
       let num_dests = Llvm.num_operands instr - 1 in
@@ -1155,7 +1149,7 @@ let xlate_instr :
         dests 1 []
       in
       let tbl = IArray.of_list lldests in
-      emit_term (Llair.Term.iswitch ~ptr ~tbl ~loc) ~blocks
+      emit_term (Term.iswitch ~ptr ~tbl ~loc) ~blocks
   | LandingPad ->
       (* Translate the landingpad clauses to code to load the type_info from
          the thrown exception, and test the type_info against the clauses,
@@ -1179,7 +1173,7 @@ let xlate_instr :
             ~fld ~lltyp:typ
         in
         let len = Exp.integer Typ.siz (Z.of_int (size_of x typ)) in
-        Llair.Inst.load ~reg:ti ~ptr ~len ~loc
+        Inst.load ~reg:ti ~ptr ~len ~loc
       in
       let ti = Exp.reg ti in
       let typeid = xlate_llvm_eh_typeid_for x tip ti in
@@ -1188,19 +1182,19 @@ let xlate_instr :
       let jump_unwind i sel rev_blocks =
         let exp = Exp.record exc_typ (IArray.of_array [|exc; sel|]) in
         let mov =
-          Llair.Inst.move ~reg_exps:(IArray.of_array [|(reg, exp)|]) ~loc
+          Inst.move ~reg_exps:(IArray.of_array [|(reg, exp)|]) ~loc
         in
         let lbl_i = lbl ^ "." ^ Int.to_string i in
         let blk =
-          Llair.Block.mk ~lbl:lbl_i
+          Block.mk ~lbl:lbl_i
             ~cmnd:(IArray.of_array [|mov|])
-            ~term:(Llair.Term.goto ~dst:(Llair.Jump.mk lbl) ~loc)
+            ~term:(Term.goto ~dst:(Jump.mk lbl) ~loc)
         in
-        (Llair.Jump.mk lbl_i, blk :: rev_blocks)
+        (Jump.mk lbl_i, blk :: rev_blocks)
       in
       let goto_unwind i sel blocks =
         let dst, blocks = jump_unwind i sel blocks in
-        (Llair.Term.goto ~dst ~loc, blocks)
+        (Term.goto ~dst ~loc, blocks)
       in
       let term_unwind, rev_blocks =
         if Llvm.is_cleanup instr then
@@ -1208,9 +1202,9 @@ let xlate_instr :
         else
           let num_clauses = Llvm.num_operands instr in
           let lbl i = name ^ "." ^ Int.to_string i in
-          let jump i = Llair.Jump.mk (lbl i) in
+          let jump i = Jump.mk (lbl i) in
           let block i term =
-            Llair.Block.mk ~lbl:(lbl i) ~cmnd:IArray.empty ~term
+            Block.mk ~lbl:(lbl i) ~cmnd:IArray.empty ~term
           in
           let match_filter i rev_blocks =
             jump_unwind i
@@ -1222,7 +1216,7 @@ let xlate_instr :
             let num_tis = Llvm.num_operands clause in
             if num_tis = 0 then
               let dst, rev_blocks = match_filter i rev_blocks in
-              (Llair.Term.goto ~dst ~loc, rev_blocks)
+              (Term.goto ~dst ~loc, rev_blocks)
             else
               match Llvm.classify_type (Llvm.type_of clause) with
               | Array (* filter *) -> (
@@ -1237,7 +1231,7 @@ let xlate_instr :
                     in
                     let key = xlate_filter 0 in
                     let nzero, rev_blocks = match_filter i rev_blocks in
-                    ( Llair.Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
+                    ( Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
                     , rev_blocks )
                 | _ -> fail "xlate_instr: %a" pp_llvalue instr () )
               | _ (* catch *) ->
@@ -1249,14 +1243,14 @@ let xlate_instr :
                       (Exp.eq ~typ clause ti)
                   in
                   let nzero, rev_blocks = jump_unwind i typeid rev_blocks in
-                  ( Llair.Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
+                  ( Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
                   , rev_blocks )
           in
           let rec rev_blocks i z =
             if i < num_clauses then
               let term, z = xlate_clause i z in
               rev_blocks (i + 1) (block i term :: z)
-            else block i Llair.Term.unreachable :: z
+            else block i Term.unreachable :: z
           in
           xlate_clause 0 (rev_blocks 1 [])
       in
@@ -1264,14 +1258,14 @@ let xlate_instr :
           ( [load_ti]
           , term_unwind
           , List.rev_append rev_blocks
-              [Llair.Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term] ) )
+              [Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term] ) )
   | Resume ->
       let llrcd = Llvm.operand instr 0 in
       let typ = xlate_type x (Llvm.type_of llrcd) in
       let rcd = xlate_value x llrcd in
       let exc = Exp.select typ rcd 0 in
-      emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
-  | Unreachable -> emit_term Llair.Term.unreachable
+      emit_term ~prefix:(pop loc) (Term.throw ~exc ~loc)
+  | Unreachable -> emit_term Term.unreachable
   | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast | Add | FAdd
    |Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem | FRem
@@ -1282,7 +1276,7 @@ let xlate_instr :
   | VAArg ->
       let reg = xlate_name_opt x instr in
       warn "variadic function argument: %a" Loc.pp loc () ;
-      emit_inst (Llair.Inst.nondet ~reg ~msg:"vaarg" ~loc)
+      emit_inst (Inst.nondet ~reg ~msg:"vaarg" ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
   | Fence | AtomicCmpXchg | AtomicRMW ->
@@ -1318,9 +1312,9 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
   let lbl = label_of_block blk in
   let pos = skip_phis blk in
   let insts, term, blocks = xlate_instrs pop x pos in
-  Llair.Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term :: blocks
+  Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term :: blocks
   |>
-  [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).Llair.lbl]
+  [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).lbl]
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
@@ -1352,7 +1346,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
       in
       let entry =
         let {Llair.lbl; cmnd; term} = entry_block in
-        Llair.Block.mk ~lbl ~cmnd ~term
+        Block.mk ~lbl ~cmnd ~term
       in
       let cfg =
         let rec trav_blocks rev_cfg prev =
@@ -1365,12 +1359,12 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Llair.Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg
+      Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg
   | At_end _ ->
       report_undefined llf name ;
-      Llair.Func.mk_undefined ~name ~formals ~freturn ~fthrow )
+      Func.mk_undefined ~name ~formals ~freturn ~fthrow )
   |>
-  [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
+  [%Trace.retn fun {pf} -> pf "@\n%a" Func.pp]
 
 let transform ~internalize : Llvm.llmodule -> unit =
  fun llmodule ->

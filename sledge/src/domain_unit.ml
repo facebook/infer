@@ -32,8 +32,8 @@ let retn _ _ _ _ = ()
 let dnf () = [()]
 
 let resolve_callee lookup ptr _ =
-  match Reg.of_exp ptr with
-  | Some callee -> (lookup (Reg.name callee), ())
+  match Llair.Reg.of_exp ptr with
+  | Some callee -> (lookup (Llair.Reg.name callee), ())
   | None -> ([], ())
 
 type summary = unit
