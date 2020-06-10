@@ -128,3 +128,5 @@ module Z : sig
   val is_true : t -> bool
   val is_false : t -> bool
 end
+
+module Timer = Timer

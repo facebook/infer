@@ -351,4 +351,4 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       None
 
 
-let () = Sledge.Timer.enabled := Config.sledge_timers
+let () = NS.Timer.enabled := Config.sledge_timers

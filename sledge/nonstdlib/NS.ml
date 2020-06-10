@@ -148,3 +148,5 @@ module Z = struct
 
   include Z
 end
+
+module Timer = Timer

@@ -7,6 +7,8 @@
 
 (** Timers for runtime statistics *)
 
+open NS0
+
 type t =
   { mutable ustart: float
   ; mutable sstart: float
