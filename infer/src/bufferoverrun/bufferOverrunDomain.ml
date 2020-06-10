@@ -676,8 +676,7 @@ module Val = struct
     match typ.Typ.desc with
     | Tint (IBool | IChar | ISChar | IUChar | IUShort) ->
         let v = itv_val ~non_int:is_java ~taint in
-        if Language.curr_language_is Java then set_itv_updated_by_unknown v
-        else set_itv_updated_by_addition v
+        if is_java then set_itv_updated_by_unknown v else set_itv_updated_by_addition v
     | Tfloat _ | Tfun | TVar _ ->
         itv_val ~non_int:true ~taint |> set_itv_updated_by_unknown
     | Tint _ | Tvoid ->
