@@ -15,6 +15,8 @@ type exec_opts =
   ; globals: Domain_used_globals.r }
 
 module Make (Dom : Domain_intf.Dom) : sig
-  val exec_pgm : exec_opts -> Llair.t -> unit
-  val compute_summaries : exec_opts -> Llair.t -> Dom.summary list Reg.Map.t
+  val exec_pgm : exec_opts -> Llair.program -> unit
+
+  val compute_summaries :
+    exec_opts -> Llair.program -> Dom.summary list Reg.Map.t
 end

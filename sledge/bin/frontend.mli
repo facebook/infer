@@ -10,6 +10,10 @@
 exception Invalid_llvm of string
 
 val translate :
-  models:bool -> fuzzer:bool -> internalize:bool -> string list -> Llair.t
+     models:bool
+  -> fuzzer:bool
+  -> internalize:bool
+  -> string list
+  -> Llair.program
 (** Translate the compilation units in the named (llvm or bitcode) files to
     LLAIR. Attempts to raise [Invalid_llvm] when the input is invalid LLVM. *)

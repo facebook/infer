@@ -385,7 +385,12 @@ module Make (Dom : Domain_intf.Dom) = struct
     exec_jump stk state block return
 
   let exec_term :
-      exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =
+         exec_opts
+      -> Llair.program
+      -> Stack.t
+      -> Dom.t
+      -> Llair.block
+      -> Work.x =
    fun opts pgm stk state block ->
     [%Trace.info
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
@@ -456,7 +461,12 @@ module Make (Dom : Domain_intf.Dom) = struct
     Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
 
   let exec_block :
-      exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =
+         exec_opts
+      -> Llair.program
+      -> Stack.t
+      -> Dom.t
+      -> Llair.block
+      -> Work.x =
    fun opts pgm stk state block ->
     [%Trace.info "exec block %%%s" block.lbl] ;
     match IArray.fold_result ~f:exec_inst ~init:state block.cmnd with
@@ -465,7 +475,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         Report.invalid_access_inst (Dom.report_fmt_thunk state) inst ;
         Work.skip
 
-  let harness : exec_opts -> Llair.t -> (int -> Work.t) option =
+  let harness : exec_opts -> Llair.program -> (int -> Work.t) option =
    fun opts pgm ->
     List.find_map ~f:(Llair.Func.find pgm.functions) opts.entry_points
     |> function
@@ -481,7 +491,7 @@ module Make (Dom : Domain_intf.Dom) = struct
              entry)
     | _ -> None
 
-  let exec_pgm : exec_opts -> Llair.t -> unit =
+  let exec_pgm : exec_opts -> Llair.program -> unit =
    fun opts pgm ->
     match harness opts pgm with
     | Some work -> Work.run ~f:(exec_block opts pgm) (work opts.bound)

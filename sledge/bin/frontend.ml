@@ -1453,7 +1453,7 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
+let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
  fun inputs ->
   [%Trace.call fun {pf} ->
     pf "%a" (List.pp "@ " Format.pp_print_string) inputs]
@@ -1504,7 +1504,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
       [] llmodule
   in
   cleanup llmodule llcontext ;
-  Llair.mk ~globals ~functions
+  Llair.Program.mk ~globals ~functions
   |>
   [%Trace.retn fun {pf} _ ->
     pf "number of globals %d, number of functions %d" (List.length globals)

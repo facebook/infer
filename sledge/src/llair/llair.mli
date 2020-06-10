@@ -95,15 +95,9 @@ and func = private
 
 type functions
 
-type t = private
+type program = private
   { globals: Global.t iarray  (** Global variable definitions. *)
   ; functions: functions  (** (Global) function definitions. *) }
-
-val pp : t pp
-
-include Invariant.S with type t := t
-
-val mk : globals:Global.t list -> functions:func list -> t
 
 module Inst : sig
   type t = inst
@@ -200,4 +194,14 @@ module Func : sig
 
   val is_undefined : func -> bool
   (** Holds of functions that are declared but not defined. *)
+end
+
+module Program : sig
+  type t = program
+
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
+  val mk : globals:Global.t list -> functions:func list -> t
 end

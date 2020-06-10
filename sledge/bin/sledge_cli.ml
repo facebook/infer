@@ -66,7 +66,7 @@ let marshal program file =
 
 let unmarshal file () =
   In_channel.with_file
-    ~f:(fun ic -> (Marshal.from_channel ic : Llair.t))
+    ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
 let used_globals pgm preanalyze : Domain_used_globals.r =
@@ -221,11 +221,11 @@ let disassemble_cmd =
     fun () ->
       let program = unmarshal input () in
       match llair_txt_output with
-      | None -> Format.printf "%a@." Llair.pp program
+      | None -> Format.printf "%a@." Llair.Program.pp program
       | Some file ->
           Out_channel.with_file file ~f:(fun oc ->
               let fs = Format.formatter_of_out_channel oc in
-              Format.fprintf fs "%a@." Llair.pp program )
+              Format.fprintf fs "%a@." Llair.Program.pp program )
   in
   command ~summary ~readme param
 

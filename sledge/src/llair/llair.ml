@@ -116,7 +116,7 @@ let equal_block x y = Int.equal x.sort_index y.sort_index
 
 type functions = func String.Map.t [@@deriving sexp_of]
 
-type t = {globals: Global.t iarray; functions: functions}
+type program = {globals: Global.t iarray; functions: functions}
 [@@deriving sexp_of]
 
 let pp_inst fs inst =
@@ -576,22 +576,26 @@ let set_derived_metadata functions =
   set_sort_indices tips_to_roots ;
   functions
 
-let invariant pgm =
-  let@ () = Invariant.invariant [%here] pgm [%sexp_of: t] in
-  assert (
-    not
-      (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->
-           Reg.compare g1.Global.reg g2.Global.reg )) )
+module Program = struct
+  type t = program
 
-let mk ~globals ~functions =
-  { globals= IArray.of_list_rev globals
-  ; functions= set_derived_metadata functions }
-  |> check invariant
+  let invariant pgm =
+    let@ () = Invariant.invariant [%here] pgm [%sexp_of: program] in
+    assert (
+      not
+        (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->
+             Reg.compare g1.Global.reg g2.Global.reg )) )
 
-let pp fs {globals; functions} =
-  Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
-    (IArray.pp "@\n@\n" Global.pp_defn)
-    globals
-    (List.pp "@\n@\n" Func.pp)
-    ( String.Map.data functions
-    |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )
+  let mk ~globals ~functions =
+    { globals= IArray.of_list_rev globals
+    ; functions= set_derived_metadata functions }
+    |> check invariant
+
+  let pp fs {globals; functions} =
+    Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
+      (IArray.pp "@\n@\n" Global.pp_defn)
+      globals
+      (List.pp "@\n@\n" Func.pp)
+      ( String.Map.data functions
+      |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )
+end
