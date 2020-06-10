@@ -18,13 +18,78 @@
   (env-vars
    (PPX_TRACE_ENABLED 1))
   (inline_tests disabled))
- (_
+ (_ ; release, dev, default,...
   (flags
    (-w -a -noassert -unboxed-types))
   (ocamlopt_flags (-O3))
   (env-vars
    (PPX_TRACE_ENABLED 0))
   (inline_tests disabled)))
+
+(library
+ (name ppx_sledge)
+ (kind ppx_rewriter)
+ (libraries ppx_compare ppx_expect ppx_hash ppx_here ppx_inline_test ppx_let
+   ppx_sexp_conv ppx_sexp_value)
+ (preprocess no_preprocessing))
+
+(subdir
+ src/import
+ (library
+  (name import)
+  (public_name sledge.import)
+  (libraries core core_kernel.fheap zarith trace)
+  (flags (:standard))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
+ src
+ (library
+  (name sledge)
+  (public_name sledge)
+  (libraries import)
+  (flags
+   (:standard -open Import))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
+ model
+ (rule
+  (targets cxxabi.bc)
+  (deps cxxabi.cpp Makefile llair_intrinsics.h)
+  (action
+   (run make ROOT=../../.. cxxabi.bc)))
+ (rule
+  (targets lib_fuzzer_main.bc)
+  (deps lib_fuzzer_main.c Makefile)
+  (action
+   (run make ROOT=../../.. lib_fuzzer_main.bc)))
+ (rule
+  (targets model.ml)
+  (deps cxxabi.bc lib_fuzzer_main.bc)
+  (action
+   (run ocaml-crunch -m plain -e bc -o model.ml .)))
+ (library
+  (name model)
+  (public_name sledge.model)))
+
+(subdir
+ bin
+ (executable
+  (name sledge_cli)
+  (public_name sledge)
+  (package sledge)
+  (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
+    llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
+    llvm.linker shexp.process yojson trace import sledge model)
+  (flags
+   (:standard -w -58 -open Import -open Sledge -open Model))
+  (preprocess
+   (pps ppx_sledge ppx_trace))))
 
 (dirs :standard \ llvm test)
 

@@ -6,19 +6,18 @@ bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue
 dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 build: [
-  ["dune" "build" "_build/opt/bin/sledge.exe" "-j" jobs]
-  ["dune" "install" "--context=opt" "sledge"]
+  [make "release"]
 ]
 depends: [
   "ocaml"
   "apron"
-  "base" {>= "v0.12.0"}
-  "core"
+  "base"
+  "core" {>= "v0.14"}
   "crunch" {build}
   "ctypes"
   "ctypes-foreign"
-  "dune" {>= "2.0" build}
-  "dune-build-info"
+  "dune" {build & >= "2.5"}
+  "dune-build-info" {build}
   "llvm" {= "8.0.0"}
   "ppx_compare"
   "ppx_hash"

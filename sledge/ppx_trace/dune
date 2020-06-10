@@ -3,8 +3,17 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
+(subdir
+ trace
+ (library
+  (name trace)
+  (public_name ppx_trace.trace)))
+
 (library
- (name ppx_trace)
- (kind ppx_rewriter)
+ (public_name ppx_trace)
+ (kind
+  (ppx_rewriter
+   (cookies
+    (ppx_trace_enabled %{env:PPX_TRACE_ENABLED=0}))))
  (preprocess no_preprocessing)
  (libraries ppxlib))

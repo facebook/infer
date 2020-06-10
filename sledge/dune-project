@@ -1,1 +1,7 @@
-(lang dune 2.0)
+(lang dune 2.5)
+
+(package
+ (name ppx_trace))
+
+(package
+ (name sledge))
