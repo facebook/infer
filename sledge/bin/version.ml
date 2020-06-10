@@ -34,7 +34,9 @@ let build_info =
         max n (String.length name) )
   in
   String.concat ~sep:"\n"
-    ( "statically linked libraries:"
+    ( "ocaml:"
+      :: Sys.ocaml_version
+      :: "statically linked libraries:"
       :: List.map libs ~f:(fun (name, v) ->
              Printf.sprintf "- %-*s %s" max_length name v )
     @ ["version:"] )
