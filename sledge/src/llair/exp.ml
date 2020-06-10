@@ -63,7 +63,6 @@ module T = struct
 
   type t =
     | Reg of {name: string; global: bool; typ: Typ.t}
-    | Nondet of {msg: string; typ: Typ.t}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string; typ: Typ.t}
@@ -117,7 +116,6 @@ let rec pp fs exp =
   match exp with
   | Reg {name; global= true} -> pf "%@%s" name
   | Reg {name; global= false} -> pf "%%%s" name
-  | Nondet {msg} -> pf "nondet \"%s\"" msg
   | Label {name} -> pf "%s" name
   | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
   | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
@@ -166,7 +164,7 @@ let valid_idx idx elts = 0 <= idx && idx < IArray.length elts
 let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
-  | Reg {typ} | Nondet {typ} -> assert (Typ.is_sized typ)
+  | Reg {typ} -> assert (Typ.is_sized typ)
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->
@@ -244,7 +242,7 @@ let rec invariant exp =
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Nondet {typ} | Integer {typ} | Float {typ} -> typ
+  | Reg {typ} | Integer {typ} | Float {typ} -> typ
   | Label _ -> Typ.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
@@ -304,6 +302,7 @@ module Reg = struct
   let name = function Reg x -> x.name | r -> violates invariant r
   let typ = function Reg x -> x.typ | r -> violates invariant r
   let is_global = function Reg x -> x.global | r -> violates invariant r
+  let of_ = function Reg _ as r -> r | _ -> invalid_arg "Reg.of_"
 
   let of_exp = function
     | Reg _ as e -> Some (e |> check invariant)
@@ -321,7 +320,6 @@ let reg x = x
 
 (* constants *)
 
-let nondet typ msg = Nondet {msg; typ} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer typ data = Integer {data; typ} |> check invariant
 let null = integer Typ.ptr Z.zero

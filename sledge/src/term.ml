@@ -81,7 +81,6 @@ and T : sig
     | Add of qset
     | Mul of qset
     | Label of {parent: string; name: string}
-    | Nondet of {msg: string}
     | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
@@ -102,7 +101,6 @@ end = struct
     | Add of qset
     | Mul of qset
     | Label of {parent: string; name: string}
-    | Nondet of {msg: string}
     | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
@@ -150,7 +148,6 @@ let rec ppx strength fs term =
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Rational {data} -> Trace.pp_styled `Magenta "%a" fs Q.pp data
     | Float {data} -> pf "%s" data
-    | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
     | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
@@ -344,7 +341,6 @@ let bool b = integer (Z.of_bool b)
 let true_ = bool true
 let false_ = bool false
 let float data = Float {data} |> check invariant
-let nondet msg = Nondet {msg} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
 
 (* type conversions *)
@@ -990,7 +986,6 @@ and ubinary mk typ x y =
 and of_exp e =
   match (e : Llair.Exp.t) with
   | Reg {name; global; typ= _} -> Var {name; id= (if global then -1 else 0)}
-  | Nondet {msg; typ= _} -> nondet msg
   | Label {parent; name} -> label ~parent ~name
   | Integer {data; typ= _} -> integer data
   | Float {data; typ= _} -> float data
@@ -1184,9 +1179,7 @@ let map e ~f =
   | Ap2 (op, x, y) -> map2 op ~f x y
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
   | ApN (op, xs) -> mapN op ~f xs
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
-      e
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> e
 
 let fold_map e ~init ~f =
   let s = ref init in
@@ -1226,9 +1219,7 @@ let iter e ~f =
   | ApN (_, xs) -> IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
-      ()
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
 
 let exists e ~f =
   match e with
@@ -1238,8 +1229,7 @@ let exists e ~f =
   | ApN (_, xs) -> IArray.exists ~f xs
   | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ ->
       false
 
 let for_all e ~f =
@@ -1250,9 +1240,7 @@ let for_all e ~f =
   | ApN (_, xs) -> IArray.for_all ~f xs
   | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
-      true
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> true
 
 let fold e ~init:s ~f =
   match e with
@@ -1262,9 +1250,7 @@ let fold e ~init:s ~f =
   | ApN (_, xs) -> IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
-      s
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> s
 
 let rec iter_terms e ~f =
   ( match e with
@@ -1280,9 +1266,8 @@ let rec iter_terms e ~f =
   | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
   | Add args | Mul args ->
       Qset.iter args ~f:(fun arg _ -> iter_terms ~f arg)
-  | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-   |RecRecord _ ->
-      () ) ;
+  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
+  ) ;
   f e
 
 let rec fold_terms e ~init:s ~f =
@@ -1297,9 +1282,7 @@ let rec fold_terms e ~init:s ~f =
         Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
     | Add args | Mul args ->
         Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms f arg s)
-    | Var _ | Label _ | Nondet _ | Float _ | Integer _ | Rational _
-     |RecRecord _ ->
-        s
+    | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> s
   in
   f s e
 
@@ -1323,7 +1306,7 @@ let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
 let rec is_constant = function
   | Var _ -> false
-  | Label _ | Nondet _ | Float _ | Integer _ | Rational _ -> true
+  | Label _ | Float _ | Integer _ | Rational _ -> true
   | a -> for_all ~f:is_constant a
 
 let rec height = function
@@ -1336,7 +1319,7 @@ let rec height = function
       1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
   | Add qs | Mul qs ->
       1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height a))
-  | Label _ | Nondet _ | Float _ | Integer _ | Rational _ | RecRecord _ -> 0
+  | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> 0
 
 (** Solve *)
 

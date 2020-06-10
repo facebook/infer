@@ -73,9 +73,6 @@ type opN = Record  (** Record (array / struct) constant *)
 
 type t = private
   | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
-  | Nondet of {msg: string; typ: Typ.t}
-      (** Anonymous register with arbitrary value, representing
-          non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
@@ -112,6 +109,7 @@ module Reg : sig
 
   include Invariant.S with type t := t
 
+  val of_ : exp -> t
   val of_exp : exp -> t option
   val program : ?global:unit -> Typ.t -> string -> t
   val name : t -> string
@@ -125,7 +123,6 @@ end
 val reg : Reg.t -> t
 
 (* constants *)
-val nondet : Typ.t -> string -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t

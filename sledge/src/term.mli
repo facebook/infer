@@ -89,9 +89,6 @@ and T : sig
     | Mul of qset  (** Product of terms with rational exponents *)
     | Label of {parent: string; name: string}
         (** Address of named code block within parent function *)
-    | Nondet of {msg: string}
-        (** Anonymous local variable with arbitrary value, representing
-            non-deterministic approximation of value described by [msg] *)
     | Float of {data: string}  (** Floating-point constant *)
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
@@ -173,7 +170,6 @@ val invariant : t -> unit
 val var : Var.t -> t
 
 (* constants *)
-val nondet : string -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t

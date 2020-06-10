@@ -17,8 +17,7 @@ let classify e =
   | Add _ | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       Interpreted
   | Mul _ | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ | And _ | Or _ -> Uninterpreted
-  | Var _ | Integer _ | Rational _ | Float _ | Nondet _ | Label _
-   |RecRecord _ ->
+  | Var _ | Integer _ | Rational _ | Float _ | Label _ | RecRecord _ ->
       Atomic
 
 let interpreted e = equal_kind (classify e) Interpreted
@@ -101,7 +100,7 @@ end = struct
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data s =
     match (key : Term.t) with
-    | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> s
+    | Integer _ | Rational _ | Float _ | Label _ -> s
     | _ ->
         if Term.equal key data then s
         else compose s (Term.Map.singleton key data)
@@ -134,7 +133,7 @@ end = struct
         else
           let s = Term.Map.remove s key in
           match (key : Term.t) with
-          | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> s
+          | Integer _ | Rational _ | Float _ | Label _ -> s
           | _ -> Term.Map.add_exn ~key:key' ~data:data' s )
 
   (** Holds only if [true ⊢ ∃xs. e=f]. Clients assume
@@ -475,7 +474,7 @@ let rec canon r a =
 
 let rec extend_ a r =
   match (a : Term.t) with
-  | Integer _ | Rational _ | Float _ | Nondet _ | Label _ -> r
+  | Integer _ | Rational _ | Float _ | Label _ -> r
   | _ -> (
       if interpreted a then Term.fold ~f:extend_ a ~init:r
       else
