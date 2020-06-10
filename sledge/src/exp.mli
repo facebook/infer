@@ -71,9 +71,7 @@ type op3 = Conditional  (** If-then-else *)
 type opN = Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
-type t = private {desc: desc; term: Term.t}
-
-and desc = private
+type t = private
   | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
   | Nondet of {msg: string; typ: Typ.t}
       (** Anonymous register with arbitrary value, representing

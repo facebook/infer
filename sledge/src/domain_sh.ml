@@ -21,7 +21,7 @@ let init globals =
     | {Global.reg; init= Some (arr, siz)} ->
         let loc = Term.var (Reg.var reg) in
         let len = Term.integer (Z.of_int siz) in
-        let arr = arr.term in
+        let arr = Exp.term arr in
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )
 

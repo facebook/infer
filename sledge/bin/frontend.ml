@@ -560,7 +560,7 @@ and xlate_opcode stk : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
         Typ.array ~elt ~len ~bits ~byts
       in
       let idx i =
-        match (xlate_rand i).desc with
+        match xlate_rand i with
         | Integer {data} -> Z.to_int data
         | _ -> todo "vector operations: %a" pp_llvalue llv ()
       in

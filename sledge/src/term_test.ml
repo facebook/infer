@@ -40,10 +40,10 @@ let%test_module _ =
 
     let%test "unsigned boolean overflow" =
       is_true
-        (Exp.uge
-           (Exp.integer Typ.bool Z.minus_one)
-           (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool))
-          .term
+        (Exp.term
+           (Exp.uge
+              (Exp.integer Typ.bool Z.minus_one)
+              (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)))
 
     let%expect_test _ =
       pp (!42 + !13) ;
