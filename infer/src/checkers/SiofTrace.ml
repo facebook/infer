@@ -42,11 +42,7 @@ module TraceElem = struct
 
 
   module Set = PrettyPrintable.MakePPSet (struct
-    (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
-    (* type nonrec t = t [@@deriving compare]; *)
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
 
     let pp = pp
   end)
