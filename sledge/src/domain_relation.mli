@@ -19,4 +19,4 @@ module type State_domain_sig = sig
     -> summary * t
 end
 
-module Make (State_domain : State_domain_sig) : Domain_intf.Dom
+module Make (_ : State_domain_sig) : Domain_intf.Dom
