@@ -74,7 +74,7 @@ type opN = Record  (** Record (array / struct) constant *)
 type t = private {desc: desc; term: Term.t}
 
 and desc = private
-  | Reg of {name: string; typ: Typ.t}  (** Virtual register *)
+  | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
   | Nondet of {msg: string; typ: Typ.t}
       (** Anonymous register with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)

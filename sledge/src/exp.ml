@@ -64,7 +64,7 @@ module T = struct
   type t = {desc: desc; term: Term.t}
 
   and desc =
-    | Reg of {name: string; typ: Typ.t}
+    | Reg of {name: string; global: bool; typ: Typ.t}
     | Nondet of {msg: string; typ: Typ.t}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
@@ -325,7 +325,8 @@ module Reg = struct
     match e.desc with Reg _ -> Some (e |> check invariant) | _ -> None
 
   let program ?global typ name =
-    {desc= Reg {name; typ}; term= Term.var (Var.program ?global name)}
+    { desc= Reg {name; global= Option.is_some global; typ}
+    ; term= Term.var (Var.program ?global name) }
     |> check invariant
 end
 
