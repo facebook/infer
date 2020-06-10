@@ -6,7 +6,7 @@
  */
 
 /* while loop that contains && in the guard. It gives the correct bound.
- * Expected: Theta(m)  */
+ * Expected: O(m)  */
 int compound_while(int m) {
   int i = 0;
   int j = 3 * i;
@@ -16,8 +16,7 @@ int compound_while(int m) {
   return j;
 }
 
-/* this should give Theta(100) once we have extract_post in the range */
-int simplified_simulated_while_with_and(int p) {
+int simplified_simulated_while_with_and_constant(int p) {
   int k = 0;
   int j = 0;
 B:
@@ -29,7 +28,7 @@ B:
 }
 
 /* simulated goto that contains && */
-int simulated_while_with_and(int p) {
+int simulated_while_with_and_linear(int p) {
   int i = 0;
   int k = 0;
 LOOP_COND:
@@ -46,7 +45,7 @@ RETURN:
 }
 
 /* shortcut in the conditional, hence we won't loop, and get constant cost */
-int simulated_while_shortcut(int p) {
+int simulated_while_shortcut_constant(int p) {
   int k = 0;
   int j = 0;
 B:
@@ -57,7 +56,7 @@ B:
   return k;
 }
 
-/* p should be in control vars */
+/* p should be in control vars. If p is 1, can run forever */
 void while_and_or(int p) {
   int i = 0;
   while (p == 1 || (i < 30 && i >= 0)) {
@@ -66,7 +65,7 @@ void while_and_or(int p) {
 }
 
 // should be constant cost
-int nested_while_and_or(int p) {
+int nested_while_and_or_constant(int p) {
   int i = 0;
   int j = 3 * i;
   while (p == 1 || (i < 30 && i >= 0)) {
@@ -80,8 +79,7 @@ int nested_while_and_or(int p) {
 }
 
 /* j and i will be control variables for B  */
-/* Expected: 5 + 100 */
-int simulated_nested_loop_with_and(int p) {
+int simulated_nested_loop_with_and_constant(int p) {
   int k = 0;
   int t = 5;
   int j = 0;

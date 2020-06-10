@@ -12,27 +12,27 @@
    back-edge to the Loop label, and we are able to detect two
    exit-edges correctly.
  */
-int loop_always(int p) {
+int loop_always_linear(int p, int k) {
   int i = 0;
   if (p > 0) {
     goto Loop;
   }
 
-  while (i < 5) {
+  while (i < k) {
   Loop:
     i++;
   }
   return 1;
 }
 
-int jump_inside_loop(int p) {
+int jump_inside_loop_constant_linear(int p, int k) {
   int i = 0;
   if (p > 0) {
     goto Loop;
   } else {
     return p;
   }
-  while (i < 500) {
+  while (i < k) {
   Loop:
     i++;
   }

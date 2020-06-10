@@ -17,23 +17,7 @@ int while_unique_def_FN(int p) {
   return 0;
 }
 
-/* Theta(n) */
-void do_k_times(int n) {
-  int k = n;
-  for (int i = 0; i < k; i++) {
-  }
-}
-
-/* Theta(n) */
-void do_k_times_array(int n) {
-  int k = n;
-  int a[10];
-  for (int i = 0; i < k; i++) {
-    a[k] = 4 + k;
-  }
-}
-
-/* Expected Theta(n * m) */
+/* Expected O(n * m) */
 void do_n_m_times_nested(int n, int m) {
   int k = n;
   int p = m;
@@ -43,7 +27,7 @@ void do_n_m_times_nested(int n, int m) {
   }
 }
 
-/* Expected ~ 3 * p. Also inner loop will have t as invariant */
+/* Expected:O(p). Also inner loop will have t as invariant */
 void two_loops_nested_invariant(int p) {
   int t = 0;
   int m = p;

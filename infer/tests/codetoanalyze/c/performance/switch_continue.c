@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-int test_switch() {
+int test_switch_FN() {
   int value = 0;
   // infinite loop
   while (value < 100) {

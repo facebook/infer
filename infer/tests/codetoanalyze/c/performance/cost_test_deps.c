@@ -37,7 +37,7 @@ int loop_no_dep2(int k) {
 // This example works now because even though j in [-oo.+oo],
 // since control vars={k} (notice that we will remove {p,j} in the else branch),
 // we ignore j and find the right bound for the inner loop
-int if_bad(int j) {
+int if_bad_constant(int j) {
   int p = 10;
   if (p < 10 + j) {
     p++;
@@ -54,7 +54,7 @@ int if_bad(int j) {
 // loop that depends on them. E.g.: below we still depend on {j} but in the
 // conditional prune statement, we will remove the temp. var that map to inner
 // {j}, not the outer {j}
-int if_bad_loop() {
+int if_bad_loop_constant() {
   int p = 10;
   for (int j = 0; j < 5; j++) {
     if (j < 2) {
@@ -87,7 +87,7 @@ int two_loops() {
 
 // We don't get a false dependency to m (hence p) since
 // for if statements, we don't add prune variables as dependency
-int loop_despite_inferbo(int p) {
+int loop_despite_inferbo_constant(int p) {
 
   int k = 100;
   for (int i = 0; i < k; i++) {
@@ -99,8 +99,7 @@ int loop_despite_inferbo(int p) {
   return p;
 }
 
-/* Expected: 5 * 100 */
-int nested_loop() {
+int nested_loop_constant() {
   int k = 0;
   for (int i = 0; i < 5; i++) {
   A:
@@ -114,7 +113,7 @@ int nested_loop() {
 
 // Unlike the above program, B will be inside the inner loop, hence executed
 // around 105 times
-int simulated_nested_loop(int p) {
+int simulated_nested_loop_constant(int p) {
   int k = 0;
   int t = 5;
   int j = 0;
@@ -129,7 +128,7 @@ int simulated_nested_loop(int p) {
 }
 
 // B will be inside the inner loop and executed ~500 times
-int simulated_nested_loop_more_expensive(int p) {
+int simulated_nested_loop_more_expensive_constant(int p) {
   int k = 0;
   int t = 5;
   int j = 0;
@@ -146,7 +145,7 @@ int simulated_nested_loop_more_expensive(int p) {
   return k;
 }
 
-int real_while() {
+int real_while_constant() {
   int i = 0;
   int j = 3 * i;
   while (i < 30) {
@@ -160,7 +159,7 @@ int real_while() {
 
 /* The following program is the version of real_while() with gotos */
 
-int simulated_while() {
+int simulated_while_constant() {
   int i = 0;
   int j = 3 * i;
 LOOP_COND:
@@ -179,7 +178,7 @@ RETURN:
 
 /* Conditional inside goto loop  */
 /* Expected: 5 * 100 */
-int simulated_nested_loop_cond_in_goto(int p) {
+int simulated_nested_loop_cond_in_goto_constant(int p) {
   int k = 0;
   int t = 5;
   int j = 0;

@@ -6,7 +6,7 @@
  */
 void nop() { int k = 0; }
 
-// Expected: Theta(m)
+// Expected: O(m)
 int two_loops_symb(int m) {
   int p = 10;
 
@@ -19,7 +19,7 @@ int two_loops_symb(int m) {
   return p;
 }
 
-// Expected: Theta(m + k)
+// Expected: O(m + k)
 int two_loops_symb_diff(int m, int k) {
   int p = 10;
   for (int i = 0; i < m; i++) {

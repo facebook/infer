@@ -7,27 +7,24 @@
 
 void no_op() { int x = 0; }
 
-// Expected: Theta(n)
+// Expected: O(n)
 void do_n_times(int n) {
   for (int i = 0; i < n; i++) {
     no_op();
   }
 }
 
-void do_2_times_Good() { do_n_times(2); }
+void do_2_times_constant() { do_n_times(2); }
 
-// Expected: ~2000
-void do_2K_times_Bad() { do_n_times(2000); }
-
-// Expected: Theta(m^2)
-void do_m2_times(int m) {
+// Expected: O(m^2)
+void do_m2_times_quadratic(int m) {
   for (int i = 0; i < m; i++) {
     do_n_times(m);
   }
 }
 
-// Expected: Theta(m^2)
-void do_half_m2_times(int m) {
+// Expected: O(m^2)
+void do_half_m2_times_quadratic(int m) {
   for (int i = 0; i < m; i++) {
     do_n_times(i);
   }
