@@ -173,7 +173,7 @@ let assign reg exp q =
   let lval = apron_var_of_reg reg in
   ( match
       Option.bind
-        ~f:(apron_texpr_of_llair_term (Exp.term exp) q)
+        ~f:(apron_texpr_of_llair_term (Term.of_exp exp) q)
         (apron_typ_of_llair_typ (Reg.typ reg))
     with
   | Some e ->
@@ -196,7 +196,7 @@ let assign reg exp q =
 
 (** block if [e] is known to be false; skip otherwise *)
 let exec_assume q e =
-  match apron_texpr_of_llair_term (Exp.term e) q Texpr1.Int with
+  match apron_texpr_of_llair_term (Term.of_exp e) q Texpr1.Int with
   | Some e ->
       let cond =
         Abstract1.bound_texpr (Lazy.force man) q (Texpr1.of_expr q.env e)

@@ -320,116 +320,6 @@ let invariant e =
   | _ -> ()
   [@@warning "-9"]
 
-(** Variables are the terms constructed by [Var] *)
-module Var = struct
-  include T
-
-  let pp = pp
-
-  type strength = t -> [`Universal | `Existential | `Anonymous] option
-
-  module Map = Map
-
-  module Set = struct
-    include Set
-
-    let pp vs = Set.pp pp_t vs
-    let ppx strength vs = Set.pp (ppx strength) vs
-
-    let pp_xs fs xs =
-      if not (is_empty xs) then
-        Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
-  end
-
-  let invariant x =
-    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
-    match x with Var _ -> invariant x | _ -> assert false
-
-  let id = function Var v -> v.id | x -> violates invariant x
-  let name = function Var v -> v.name | x -> violates invariant x
-  let is_global = function Var v -> v.id = -1 | x -> violates invariant x
-  let of_ = function Var _ as v -> v | _ -> invalid_arg "Var.of_"
-
-  let of_term = function
-    | Var _ as v -> Some (v |> check invariant)
-    | _ -> None
-
-  let program ?global name =
-    Var {name; id= (if Option.is_some global then -1 else 0)}
-
-  let fresh name ~wrt =
-    let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
-    let x' = Var {name; id= max + 1} in
-    (x', Set.add wrt x')
-
-  let identified ~name ~id = Var {name; id}
-
-  (** Variable renaming substitutions *)
-  module Subst = struct
-    type t = T.t Map.t [@@deriving compare, equal, sexp_of]
-
-    let t_of_sexp = Map.t_of_sexp T.t_of_sexp
-
-    let invariant s =
-      let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
-      let domain, range =
-        Map.fold s ~init:(Set.empty, Set.empty)
-          ~f:(fun ~key ~data (domain, range) ->
-            assert (not (Set.mem range data)) ;
-            (Set.add domain key, Set.add range data) )
-      in
-      assert (Set.disjoint domain range)
-
-    let pp = Map.pp pp_t pp_t
-    let empty = Map.empty
-    let is_empty = Map.is_empty
-
-    let freshen vs ~wrt =
-      let xs = Set.inter wrt vs in
-      ( if Set.is_empty xs then empty
-      else
-        let wrt = Set.union wrt vs in
-        Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
-            let x', wrt = fresh (name x) ~wrt in
-            let sub = Map.add_exn sub ~key:x ~data:x' in
-            (sub, wrt) )
-        |> fst )
-      |> check invariant
-
-    let fold sub ~init ~f =
-      Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
-
-    let invert sub =
-      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
-          Map.add_exn sub' ~key:data ~data:key )
-      |> check invariant
-
-    let restrict sub vs =
-      Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
-
-    let domain sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
-          Set.add domain key )
-
-    let range sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
-          Set.add range data )
-
-    let apply sub v = Map.find sub v |> Option.value ~default:v
-
-    let apply_set sub vs =
-      Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
-          let vs' = Set.remove vs key in
-          if vs' == vs then vs
-          else (
-            assert (not (Set.equal vs' vs)) ;
-            Set.add vs' data ) )
-      |> check (fun vs' ->
-             assert (Set.disjoint (domain sub) vs') ;
-             assert (Set.is_subset (range sub) ~of_:vs') )
-  end
-end
-
 (** Construct *)
 
 (* variables *)
@@ -1088,6 +978,169 @@ let rec_record i = simp_rec_record i |> check invariant
 let eq_concat (siz, arr) ms =
   eq (memory ~siz ~arr)
     (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms))
+
+let rec binary mk x y = mk (of_exp x) (of_exp y)
+
+and ubinary mk typ x y =
+  let unsigned typ = unsigned (Typ.bit_size_of typ) in
+  mk (unsigned typ (of_exp x)) (unsigned typ (of_exp y))
+
+and of_exp e =
+  match (e : Exp.t) with
+  | Reg {name; global; typ= _} -> Var {name; id= (if global then -1 else 0)}
+  | Nondet {msg; typ= _} -> nondet msg
+  | Label {parent; name} -> label ~parent ~name
+  | Integer {data; typ= _} -> integer data
+  | Float {data; typ= _} -> float data
+  | Ap1 (Signed {bits}, _, x) -> signed bits (of_exp x)
+  | Ap1 (Unsigned {bits}, _, x) -> unsigned bits (of_exp x)
+  | Ap1 (Convert {src}, dst, exp) -> convert src ~to_:dst (of_exp exp)
+  | Ap2 (Eq, _, x, y) -> binary eq x y
+  | Ap2 (Dq, _, x, y) -> binary dq x y
+  | Ap2 (Gt, _, x, y) -> binary lt y x
+  | Ap2 (Ge, _, x, y) -> binary le y x
+  | Ap2 (Lt, _, x, y) -> binary lt x y
+  | Ap2 (Le, _, x, y) -> binary le x y
+  | Ap2 (Ugt, typ, x, y) -> ubinary lt typ y x
+  | Ap2 (Uge, typ, x, y) -> ubinary le typ y x
+  | Ap2 (Ult, typ, x, y) -> ubinary lt typ x y
+  | Ap2 (Ule, typ, x, y) -> ubinary le typ x y
+  | Ap2 (Ord, _, x, y) -> binary ord x y
+  | Ap2 (Uno, _, x, y) -> binary uno x y
+  | Ap2 (Add, _, x, y) -> binary add x y
+  | Ap2 (Sub, _, x, y) -> binary sub x y
+  | Ap2 (Mul, _, x, y) -> binary mul x y
+  | Ap2 (Div, _, x, y) -> binary div x y
+  | Ap2 (Rem, _, x, y) -> binary rem x y
+  | Ap2 (Udiv, typ, x, y) -> ubinary div typ x y
+  | Ap2 (Urem, typ, x, y) -> ubinary rem typ x y
+  | Ap2 (And, _, x, y) -> binary and_ x y
+  | Ap2 (Or, _, x, y) -> binary or_ x y
+  | Ap2 (Xor, _, x, y) -> binary xor x y
+  | Ap2 (Shl, _, x, y) -> binary shl x y
+  | Ap2 (Lshr, _, x, y) -> binary lshr x y
+  | Ap2 (Ashr, _, x, y) -> binary ashr x y
+  | Ap3 (Conditional, _, cnd, thn, els) ->
+      conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
+  | Ap1 (Splat, _, byt) -> splat (of_exp byt)
+  | ApN (Record, _, elts) -> record (IArray.map ~f:of_exp elts)
+  | Ap1 (Select idx, _, rcd) -> select ~rcd:(of_exp rcd) ~idx
+  | Ap2 (Update idx, _, rcd, elt) ->
+      update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
+  | RecRecord (i, _) -> rec_record i
+
+(** Variables are the terms constructed by [Var] *)
+module Var = struct
+  include T
+
+  let pp = pp
+
+  type strength = t -> [`Universal | `Existential | `Anonymous] option
+
+  let invariant x =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Var _ -> invariant x | _ -> assert false
+
+  let id = function Var v -> v.id | x -> violates invariant x
+  let name = function Var v -> v.name | x -> violates invariant x
+  let of_ = function Var _ as v -> v | _ -> invalid_arg "Var.of_"
+
+  let of_term = function
+    | Var _ as v -> Some (v |> check invariant)
+    | _ -> None
+
+  let of_reg r =
+    match of_term (of_exp (r : Reg.t :> Exp.t)) with
+    | Some v -> v
+    | _ -> violates Reg.invariant r
+
+  let fresh name ~wrt =
+    let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
+    let x' = Var {name; id= max + 1} in
+    (x', Set.add wrt x')
+
+  let identified ~name ~id = Var {name; id}
+
+  module Map = Map
+
+  module Set = struct
+    include Set
+
+    let pp vs = Set.pp pp_t vs
+    let ppx strength vs = Set.pp (ppx strength) vs
+
+    let pp_xs fs xs =
+      if not (is_empty xs) then
+        Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
+
+    let of_regs = Reg.Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
+  end
+
+  (** Variable renaming substitutions *)
+  module Subst = struct
+    type t = T.t Map.t [@@deriving compare, equal, sexp_of]
+
+    let t_of_sexp = Map.t_of_sexp T.t_of_sexp
+
+    let invariant s =
+      let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
+      let domain, range =
+        Map.fold s ~init:(Set.empty, Set.empty)
+          ~f:(fun ~key ~data (domain, range) ->
+            assert (not (Set.mem range data)) ;
+            (Set.add domain key, Set.add range data) )
+      in
+      assert (Set.disjoint domain range)
+
+    let pp = Map.pp pp_t pp_t
+    let empty = Map.empty
+    let is_empty = Map.is_empty
+
+    let freshen vs ~wrt =
+      let xs = Set.inter wrt vs in
+      ( if Set.is_empty xs then empty
+      else
+        let wrt = Set.union wrt vs in
+        Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
+            let x', wrt = fresh (name x) ~wrt in
+            let sub = Map.add_exn sub ~key:x ~data:x' in
+            (sub, wrt) )
+        |> fst )
+      |> check invariant
+
+    let fold sub ~init ~f =
+      Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
+
+    let invert sub =
+      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
+          Map.add_exn sub' ~key:data ~data:key )
+      |> check invariant
+
+    let restrict sub vs =
+      Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
+
+    let domain sub =
+      Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
+          Set.add domain key )
+
+    let range sub =
+      Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
+          Set.add range data )
+
+    let apply sub v = Map.find sub v |> Option.value ~default:v
+
+    let apply_set sub vs =
+      Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
+          let vs' = Set.remove vs key in
+          if vs' == vs then vs
+          else (
+            assert (not (Set.equal vs' vs)) ;
+            Set.add vs' data ) )
+      |> check (fun vs' ->
+             assert (Set.disjoint (domain sub) vs') ;
+             assert (Set.is_subset (range sub) ~of_:vs') )
+  end
+end
 
 (** Transform *)
 

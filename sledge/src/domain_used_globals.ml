@@ -23,9 +23,7 @@ let is_false _ = false
 let post _ _ state = state
 let retn _ _ from_call post = Reg.Set.union from_call post
 let dnf t = [t]
-
-let add_if_global gs v =
-  if Var.is_global (Reg.var v) then Reg.Set.add gs v else gs
+let add_if_global gs v = if Reg.is_global v then Reg.Set.add gs v else gs
 
 let used_globals ?(init = empty) exp =
   Exp.fold_regs exp ~init ~f:add_if_global

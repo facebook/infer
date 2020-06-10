@@ -102,7 +102,6 @@ module Reg : sig
     val sexp_of_t : t -> Sexp.t
     val t_of_sexp : Sexp.t -> t
     val pp : t pp
-    val vars : t -> Var.Set.t
   end
 
   module Map : Map.S with type key := t
@@ -115,9 +114,9 @@ module Reg : sig
 
   val of_exp : exp -> t option
   val program : ?global:unit -> Typ.t -> string -> t
-  val var : t -> Var.t
   val name : t -> string
   val typ : t -> Typ.t
+  val is_global : t -> bool
 end
 
 (** Construct *)
@@ -191,6 +190,5 @@ val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
 
 (** Query *)
 
-val term : t -> Term.t
 val is_true : t -> bool
 val is_false : t -> bool

@@ -40,7 +40,7 @@ let%test_module _ =
 
     let%test "unsigned boolean overflow" =
       is_true
-        (Exp.term
+        (Term.of_exp
            (Exp.uge
               (Exp.integer Typ.bool Z.minus_one)
               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)))

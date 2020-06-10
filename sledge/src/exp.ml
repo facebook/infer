@@ -79,58 +79,6 @@ include T
 module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
 module Map = Map.Make (T)
 
-let unsigned typ = Term.unsigned (Typ.bit_size_of typ)
-
-let rec term = function
-  | Reg {name; global; typ= _} ->
-      Term.var (Var.program ?global:(Option.some_if global ()) name)
-  | Nondet {msg; typ= _} -> Term.nondet msg
-  | Label {parent; name} -> Term.label ~parent ~name
-  | Integer {data; typ= _} -> Term.integer data
-  | Float {data; typ= _} -> Term.float data
-  | Ap1 (Signed {bits}, _, x) -> Term.signed bits (term x)
-  | Ap1 (Unsigned {bits}, _, x) -> Term.unsigned bits (term x)
-  | Ap1 (Convert {src}, dst, exp) -> Term.convert src ~to_:dst (term exp)
-  | Ap2 (Eq, _, x, y) -> Term.eq (term x) (term y)
-  | Ap2 (Dq, _, x, y) -> Term.dq (term x) (term y)
-  | Ap2 (Gt, _, x, y) -> Term.lt (term y) (term x)
-  | Ap2 (Ge, _, x, y) -> Term.le (term y) (term x)
-  | Ap2 (Lt, _, x, y) -> Term.lt (term x) (term y)
-  | Ap2 (Le, _, x, y) -> Term.le (term x) (term y)
-  | Ap2 (Ugt, typ, x, y) ->
-      Term.lt (unsigned typ (term y)) (unsigned typ (term x))
-  | Ap2 (Uge, typ, x, y) ->
-      Term.le (unsigned typ (term y)) (unsigned typ (term x))
-  | Ap2 (Ult, typ, x, y) ->
-      Term.lt (unsigned typ (term x)) (unsigned typ (term y))
-  | Ap2 (Ule, typ, x, y) ->
-      Term.le (unsigned typ (term x)) (unsigned typ (term y))
-  | Ap2 (Ord, _, x, y) -> Term.ord (term x) (term y)
-  | Ap2 (Uno, _, x, y) -> Term.uno (term x) (term y)
-  | Ap2 (Add, _, x, y) -> Term.add (term x) (term y)
-  | Ap2 (Sub, _, x, y) -> Term.sub (term x) (term y)
-  | Ap2 (Mul, _, x, y) -> Term.mul (term x) (term y)
-  | Ap2 (Div, _, x, y) -> Term.div (term x) (term y)
-  | Ap2 (Rem, _, x, y) -> Term.rem (term x) (term y)
-  | Ap2 (Udiv, typ, x, y) ->
-      Term.div (unsigned typ (term x)) (unsigned typ (term y))
-  | Ap2 (Urem, typ, x, y) ->
-      Term.rem (unsigned typ (term x)) (unsigned typ (term y))
-  | Ap2 (And, _, x, y) -> Term.and_ (term x) (term y)
-  | Ap2 (Or, _, x, y) -> Term.or_ (term x) (term y)
-  | Ap2 (Xor, _, x, y) -> Term.xor (term x) (term y)
-  | Ap2 (Shl, _, x, y) -> Term.shl (term x) (term y)
-  | Ap2 (Lshr, _, x, y) -> Term.lshr (term x) (term y)
-  | Ap2 (Ashr, _, x, y) -> Term.ashr (term x) (term y)
-  | Ap3 (Conditional, _, cnd, thn, els) ->
-      Term.conditional ~cnd:(term cnd) ~thn:(term thn) ~els:(term els)
-  | Ap1 (Splat, _, byt) -> Term.splat (term byt)
-  | ApN (Record, _, elts) -> Term.record (IArray.map ~f:term elts)
-  | Ap1 (Select idx, _, rcd) -> Term.select ~rcd:(term rcd) ~idx
-  | Ap2 (Update idx, _, rcd, elt) ->
-      Term.update ~rcd:(term rcd) ~idx ~elt:(term elt)
-  | RecRecord (i, _) -> Term.rec_record i
-
 let pp_op2 fs op =
   let pf fmt = Format.fprintf fs fmt in
   match op with
@@ -167,10 +115,8 @@ let rec pp fs exp =
     Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
   in
   match exp with
-  | Reg {name} -> (
-    match Var.of_term (term exp) with
-    | Some v when Var.is_global v -> pf "%@%s" name
-    | _ -> pf "%%%s" name )
+  | Reg {name; global= true} -> pf "%@%s" name
+  | Reg {name; global= false} -> pf "%%%s" name
   | Nondet {msg} -> pf "nondet \"%s\"" msg
   | Label {name} -> pf "%s" name
   | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
@@ -332,18 +278,10 @@ module Reg = struct
 
   let pp = pp
 
-  let var r =
-    match Var.of_term (term r) with
-    | Some v -> v
-    | _ -> violates invariant r
-
   module Set = struct
     include Set
 
     let pp = Set.pp pp_exp
-
-    let vars =
-      Set.fold ~init:Var.Set.empty ~f:(fun s r -> Var.Set.add s (var r))
   end
 
   module Map = Map
@@ -364,7 +302,8 @@ module Reg = struct
     match x with Reg _ -> invariant x | _ -> assert false
 
   let name = function Reg x -> x.name | r -> violates invariant r
-  let typ r = match r with Reg x -> x.typ | _ -> violates invariant r
+  let typ = function Reg x -> x.typ | r -> violates invariant r
+  let is_global = function Reg x -> x.global | r -> violates invariant r
 
   let of_exp = function
     | Reg _ as e -> Some (e |> check invariant)

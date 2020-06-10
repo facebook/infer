@@ -14,7 +14,7 @@ let%test_module _ =
     open Exp
 
     let pp e =
-      Format.printf "@\n{desc= %a; term= %a}@." pp e Term.pp (Exp.term e)
+      Format.printf "@\n{desc= %a; term= %a}@." pp e Term.pp (Term.of_exp e)
 
     let ( ! ) i = integer Typ.siz (Z.of_int i)
 

@@ -118,6 +118,7 @@ module Var : sig
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
+    val of_regs : Reg.Set.t -> t
   end
 
   val pp : t pp
@@ -126,10 +127,9 @@ module Var : sig
 
   val name : t -> string
   val id : t -> int
-  val is_global : t -> bool
   val of_ : term -> t
   val of_term : term -> t option
-  val program : ?global:unit -> string -> t
+  val of_reg : Reg.t -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t
@@ -237,6 +237,9 @@ val record : t iarray -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 val rec_record : int -> t
+
+(* convert *)
+val of_exp : Exp.t -> t
 
 (** Transform *)
 
