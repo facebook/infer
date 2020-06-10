@@ -1430,6 +1430,29 @@ let check_datalayout llcontext lldatalayout =
     (Llvm_target.DataLayout.intptr_type llcontext lldatalayout)
     Typ.ptr
 
+(* The Llvm.dispose_ functions free memory allocated off the OCaml heap. The
+   OCaml heap can later grow into that memory once it is freed. There are
+   naked pointers into the LLVM-allocated memory from various values
+   returned from Llvm functions. If the GC scans a block with such a naked
+   pointer after the heap has grown into the memory previously allocated by
+   Llvm, the GC will follow the pointer expecting a well-formed OCaml value,
+   and likely segfault. Therefore it is necessary to ensure that all the
+   values containing naked pointers are dead (which is the reason for
+   clearing the hashtbls) and then collected (which is the reason for the
+   Gc.full_major) before freeing the memory with Llvm.dispose_module and
+   Llvm.dispose_context. *)
+let cleanup llmodule llcontext =
+  Hashtbl.clear sym_tbl ;
+  Hashtbl.clear scope_tbl ;
+  Hashtbl.clear anon_struct_name ;
+  Hashtbl.clear memo_type ;
+  Hashtbl.clear memo_global ;
+  Hashtbl.clear memo_value ;
+  Hash_set.clear ignored_callees ;
+  Gc.full_major () ;
+  Llvm.dispose_module llmodule ;
+  Llvm.dispose_context llcontext
+
 let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
  fun inputs ->
   [%Trace.call fun {pf} ->
@@ -1480,14 +1503,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
         else xlate_function x llf :: functions )
       [] llmodule
   in
-  Hashtbl.clear sym_tbl ;
-  Hashtbl.clear scope_tbl ;
-  Hashtbl.clear anon_struct_name ;
-  Hashtbl.clear memo_type ;
-  Hashtbl.clear memo_global ;
-  Hashtbl.clear memo_value ;
-  Hash_set.clear ignored_callees ;
-  Llvm.dispose_module llmodule ;
+  cleanup llmodule llcontext ;
   Llair.mk ~globals ~functions
   |>
   [%Trace.retn fun {pf} _ ->
