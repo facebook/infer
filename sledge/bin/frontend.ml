@@ -331,6 +331,10 @@ let pp_prefix_exp fs (insts, exp) =
     (fun fs -> if List.is_empty insts then () else Format.fprintf fs "@ ")
     Exp.pp exp
 
+(* per-function count of 'undef' values, used to translate each occurrence
+   of 'undef' to a distinct register *)
+let undef_count = ref 0
+
 let memo_value : (bool * Llvm.llvalue, Inst.t list * Exp.t) Hashtbl.t =
   Hashtbl.Poly.create ()
 
@@ -456,7 +460,11 @@ and xlate_value ?(inline = false) stk :
         ([], Exp.label ~parent ~name)
     | UndefValue ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        ([], Exp.nondet typ (Llvm.string_of_llvalue llv))
+        let name = sprintf "undef_%i" !undef_count in
+        let loc = Loc.none in
+        let reg = Reg.program typ name in
+        let msg = Llvm.string_of_llvalue llv in
+        ([Inst.nondet ~reg:(Some reg) ~msg ~loc], Exp.reg reg)
     | Instruction
         ( ( Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP
           | FPTrunc | FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast
@@ -714,7 +722,11 @@ and xlate_global stk : x -> Llvm.llvalue -> Global.t =
         | GlobalVariable ->
             Option.map (Llvm.global_initializer llg) ~f:(fun llv ->
                 let pre, init = xlate_value stk x llv in
-                if not (List.is_empty pre) then
+                (* Nondet insts to set up globals can be dropped to simply
+                   leave the undef regs unconstrained. Other insts to set up
+                   globals are currently not supported *)
+                let is_nondet = function Nondet _ -> true | _ -> false in
+                if not (List.for_all ~f:is_nondet pre) then
                   todo "global initializer instructions" () ;
                 (init, size_of x (Llvm.type_of llv)) )
         | _ -> None
@@ -1387,6 +1399,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
  fun x llf ->
   [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
   ;
+  undef_count := 0 ;
   let name = xlate_global x llf in
   let formals =
     Llvm.fold_left_params
