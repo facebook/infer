@@ -263,7 +263,9 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   let bound_map =
     compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_inv_map
   in
-  let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread tenv proc_name in
+  let is_on_ui_thread =
+    (not (Procname.is_objc_method proc_name)) && ConcurrencyModels.runs_on_ui_thread tenv proc_name
+  in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let open IOption.Let_syntax in
