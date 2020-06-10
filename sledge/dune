@@ -34,11 +34,24 @@
  (preprocess no_preprocessing))
 
 (subdir
+ src/llair
+ (library
+  (name llair)
+  (public_name sledge.llair)
+  (wrapped false)
+  (libraries nonstdlib)
+  (flags
+   (:standard -open NS))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
  src
  (library
   (name sledge)
   (public_name sledge)
-  (libraries nonstdlib)
+  (libraries nonstdlib llair)
   (flags
    (:standard -open NS))
   (preprocess
