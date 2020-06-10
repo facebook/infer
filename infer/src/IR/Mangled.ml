@@ -49,13 +49,9 @@ let rename ~f {plain; mangled} =
 
 
 module Set = Caml.Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Map = Caml.Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)

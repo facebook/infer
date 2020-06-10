@@ -26,9 +26,7 @@ let pp f l = F.fprintf f "v%d" l
 let of_id v = v
 
 module PPKey = struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let pp = pp
 end

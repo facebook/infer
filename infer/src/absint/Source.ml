@@ -65,9 +65,7 @@ module Make (Kind : Kind) = struct
   let with_callsite t callee_site = {t with site= callee_site}
 
   module Set = PrettyPrintable.MakePPSet (struct
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
 
     let pp = pp
   end)
@@ -93,9 +91,7 @@ module Dummy = struct
 
 
   module Kind = struct
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
 
     let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -103,9 +99,7 @@ module Dummy = struct
   end
 
   module Set = PrettyPrintable.MakePPSet (struct
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
 
     let pp = pp
   end)

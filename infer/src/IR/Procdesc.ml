@@ -176,9 +176,7 @@ module Node = struct
   end)
 
   module IdMap = PrettyPrintable.MakePPMap (struct
-    type t = id
-
-    let compare = compare_id
+    type t = id [@@deriving compare]
 
     let pp = pp_id
   end)

@@ -245,10 +245,7 @@ module JNI = struct
       | FullyQualifiedClass of (string * string)
       | Array of t
       | Method of (t list * t)
-
-    let compare = compare
-
-    let equal = equal
+    [@@deriving compare, equal]
 
     let parse_str = parse_str
 

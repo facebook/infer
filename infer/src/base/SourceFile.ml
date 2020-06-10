@@ -24,9 +24,7 @@ type t =
 let equal = [%compare.equal: t]
 
 module OrderedSourceFile = struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end
 
 module Map = Caml.Map.Make (OrderedSourceFile)

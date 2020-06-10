@@ -735,11 +735,7 @@ let make_java ~class_name ~return_type ~method_name ~parameters ~kind () =
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 
 module Hashable = struct
-  type nonrec t = t
-
-  let equal = equal
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare, equal]
 
   let hash = hash
 
@@ -751,17 +747,13 @@ module LRUHash = LRUHashtbl.Make (Hashable)
 module HashQueue = Hash_queue.Make (Hashable)
 
 module Map = PrettyPrintable.MakePPMap (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let pp = pp
 end)
 
 module Set = PrettyPrintable.MakePPSet (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let pp = pp
 end)
@@ -801,9 +793,7 @@ let to_filename pname =
 
 module SQLite = struct
   module T = struct
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
 
     let hash = hash
 

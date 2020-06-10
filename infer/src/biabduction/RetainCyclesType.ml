@@ -50,9 +50,7 @@ let compare (rc1 : t) (rc2 : t) =
 
 
 module Set = Caml.Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 let is_inst_rearrange node =

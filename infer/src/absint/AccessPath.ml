@@ -188,9 +188,7 @@ end
 include Raw
 
 module BaseMap = PrettyPrintable.MakePPMap (struct
-  type t = base
-
-  let compare = compare_base
+  type t = base [@@deriving compare]
 
   let pp = pp_base
 end)

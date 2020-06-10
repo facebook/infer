@@ -18,9 +18,7 @@ let site t = t.site
 let pp fmt s = CallSite.pp fmt s.site
 
 module Set = PrettyPrintable.MakePPSet (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let pp = pp
 end)

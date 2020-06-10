@@ -391,9 +391,7 @@ end = struct
 
 
   module PathMap = Caml.Map.Make (struct
-    type nonrec t = t
-
-    let compare = compare
+    type nonrec t = t [@@deriving compare]
   end)
 
   let pp fmt path =

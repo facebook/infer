@@ -74,21 +74,15 @@ let equal i1 i2 =
 
 (** {2 Set for identifiers} *)
 module Set = Caml.Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Map = Caml.Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Hash = Hashtbl.Make (struct
-  type nonrec t = t
-
-  let equal = equal
+  type nonrec t = t [@@deriving equal]
 
   let hash (id : t) = Hashtbl.hash id
 end)
@@ -240,9 +234,7 @@ let to_string id = F.asprintf "%a" pp id
 let pp_name f name = F.pp_print_string f (name_to_string name)
 
 module HashQueue = Hash_queue.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let hash = Hashtbl.hash
 

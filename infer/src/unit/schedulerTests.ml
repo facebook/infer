@@ -31,9 +31,7 @@ module MockNode = struct
   let pp_id fmt i = F.pp_print_int fmt i
 
   module OrderedId = struct
-    type t = id
-
-    let compare = compare_id
+    type t = id [@@deriving compare]
 
     let pp = pp_id
   end

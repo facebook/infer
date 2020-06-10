@@ -53,21 +53,15 @@ let equal = [%compare.equal: t]
 let hash = Hashtbl.hash
 
 module Set = Caml.Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Map = Caml.Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Hash = Hashtbl.Make (struct
-  type nonrec t = t
-
-  let equal = equal
+  type nonrec t = t [@@deriving equal]
 
   let hash = hash
 end)

@@ -13,15 +13,11 @@ module L = Logging
 type t = {classname: string; package: string option} [@@deriving compare, equal]
 
 module Map = Caml.Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 module Set = Caml.Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end)
 
 let make ~package ~classname =

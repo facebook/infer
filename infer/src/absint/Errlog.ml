@@ -94,9 +94,7 @@ let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_da
 
 module ErrDataSet = (* set err_data with no repeated loc *)
 Caml.Set.Make (struct
-  type t = err_data
-
-  let compare = compare_err_data
+  type t = err_data [@@deriving compare]
 end)
 
 (** Hash table to implement error logs *)

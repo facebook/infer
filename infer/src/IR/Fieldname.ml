@@ -19,9 +19,7 @@ let get_field_name {field_name} = field_name
 let is_java {class_name} = Typ.Name.Java.is_class class_name
 
 module T = struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 end
 
 module Set = Caml.Set.Make (T)

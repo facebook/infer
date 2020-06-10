@@ -48,9 +48,7 @@ let pp_range f (loc_start, loc_end) =
 
 
 module Map = PrettyPrintable.MakePPMap (struct
-  type nonrec t = t
-
-  let compare = compare
+  type nonrec t = t [@@deriving compare]
 
   let pp = pp
 end)

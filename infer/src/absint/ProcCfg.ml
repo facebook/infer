@@ -60,9 +60,7 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
   let pp_id = Procdesc.Node.pp_id
 
   module OrderedId = struct
-    type t = id
-
-    let compare = compare_id
+    type t = id [@@deriving compare]
 
     let pp = pp_id
   end
@@ -98,9 +96,7 @@ end = struct
   let pp_id fmt (id, index) = F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id index
 
   module OrderedId = struct
-    type t = id
-
-    let compare = compare_id
+    type t = id [@@deriving compare]
 
     let pp = pp_id
   end
