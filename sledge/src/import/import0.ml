@@ -14,7 +14,9 @@ include (
            and module Option := Core.Option
            and module List := Core.List
            and module Map := Core.Map
+           and module Map_intf := Core.Map_intf
            and module Set := Core.Set
+           and module Set_intf := Core.Set_intf
            and module String := Core.String
            and type -'a return := 'a Core.return
     end )

@@ -2924,9 +2924,9 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let aux el =
     match el with
     | _, [namespace; m] ->
-        `Fst (namespace, m)
+        First (namespace, m)
     | _, [m] ->
-        `Snd m
+        Second m
     | option, splits ->
         L.die UserError
           "Wrong use of option pulse-model-transfer-ownership %s: expected at most one namespace \

@@ -70,7 +70,7 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
   match Unix.fork () with
   | `In_the_child ->
       (* redirect producer's stdout to pipe_out *)
-      Unix.dup2 ~src:pipe_out ~dst:Unix.stdout ;
+      Unix.dup2 ~src:pipe_out ~dst:Unix.stdout () ;
       (* close producer's copy of pipe ends *)
       Unix.close pipe_out ;
       Unix.close pipe_in ;
@@ -80,7 +80,7 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
     match Unix.fork () with
     | `In_the_child ->
         (* redirect consumer's stdin to pipe_in *)
-        Unix.dup2 ~src:pipe_in ~dst:Unix.stdin ;
+        Unix.dup2 ~src:pipe_in ~dst:Unix.stdin () ;
         (* close consumer's copy of pipe ends *)
         Unix.close pipe_out ;
         Unix.close pipe_in ;

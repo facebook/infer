@@ -319,11 +319,11 @@ let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
-    Unix.dup2 ~src ~dst:Unix.stderr ;
+    Unix.dup2 ~src ~dst:Unix.stderr () ;
     Unix.close src
   in
   let orig_stderr = Unix.dup Unix.stderr in
-  Unix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr ;
+  Unix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr () ;
   let f () = f2 x1 x2 in
   let finally () = restore_stderr orig_stderr in
   protect ~f ~finally

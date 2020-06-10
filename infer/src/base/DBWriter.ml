@@ -281,7 +281,7 @@ module Server = struct
   let server () =
     L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
     if socket_exists () then L.die InternalError "Sqlite write daemon: socket already exists@." ;
-    let socket = Unix.socket ~domain:socket_domain ~kind:Unix.SOCK_STREAM ~protocol:0 in
+    let socket = Unix.socket ~domain:socket_domain ~kind:Unix.SOCK_STREAM ~protocol:0 () in
     in_results_dir ~f:(fun () -> Unix.bind socket ~addr:socket_addr) ;
     (* [backlog] is (supposedly) the length of the queue for pending connections ;
        there are no rules about the implied behaviour though.  Here use optimistically

@@ -21,11 +21,11 @@ install: [
 ]
 depends: [
   "ANSITerminal" {>="0.7"}
-  "async" {>="v0.13.0" & < "v0.14"}
+  "async" {>= "v0.14.0" & < "v0.15"}
   "atdgen" {>="2.0.0"}
   "base64" {>="3.0.0"}
   "cmdliner" {>="1.0.0"}
-  "core" {>="v0.13.0" & < "v0.14"}
+  "core" {>= "v0.14.0" & < "v0.15"}
   "conf-autoconf" {build}
   "conf-sqlite3" {build}
   "conf-zlib" {build}
@@ -39,10 +39,10 @@ depends: [
   "ocamlgraph"
   "ounit" {>="2.0.5"}
   "parmap" {>="1.0-rc8"}
-  "ppx_compare" {>= "v0.13.0" & < "v0.14"}
+  "ppx_compare" {>= "v0.14.0" & < "v0.15"}
   "ppx_deriving" {>="4.1"}
-  "ppx_enumerate" {>="v0.13.0" & < "v0.14"}
-  "ppx_fields_conv" {>="v0.13.0" & < "v0.14"}
+  "ppx_enumerate" {>= "v0.14.0" & < "v0.15"}
+  "ppx_fields_conv" {>= "v0.14.0" & < "v0.15"}
   "sawja" {>="1.5.8"}
   "sqlite3"
   "utop" {with-test}
