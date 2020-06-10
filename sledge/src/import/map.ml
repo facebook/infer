@@ -52,16 +52,14 @@ end) : S with type key = Key.t = struct
     Container.fold_until ~fold ~init ~f ~finish m
 
   let root_key_exn m =
-    with_return
-    @@ fun {return} ->
+    let@ {return} = with_return in
     binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data:_ ->
         return key )
     |> ignore ;
     raise (Not_found_s (Atom __LOC__))
 
   let choose_exn m =
-    with_return
-    @@ fun {return} ->
+    let@ {return} = with_return in
     binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data ->
         return (key, data) )
     |> ignore ;

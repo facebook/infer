@@ -293,8 +293,7 @@ let invariant_pure = function
 let invariant_seg _ = ()
 
 let rec invariant q =
-  Invariant.invariant [%here] q [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] q [%sexp_of: t] in
   let {us; xs; cong; pure; heap; djns} = q in
   try
     assert (

@@ -87,8 +87,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       | Empty -> ()
 
     let invariant s =
-      Invariant.invariant [%here] s [%sexp_of: t]
-      @@ fun () ->
+      let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
       match s with
       | Return _ | Throw (_, Return _) | Empty -> ()
       | Throw _ -> fail "malformed stack: %a" print_abbrev s ()

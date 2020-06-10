@@ -11,6 +11,10 @@ include module type of Import0
 
 (** Function combinators *)
 
+val ( let@ ) : ('a -> 'b) -> 'a -> 'b
+(** [let@ x = e in b] is equivalent to [e @@ fun x -> b], that is,
+    [e (fun x -> b)] *)
+
 val ( >> ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
 (** Composition of functions: [(f >> g) x] is exactly equivalent to
     [g (f (x))]. Left associative. *)

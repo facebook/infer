@@ -299,8 +299,7 @@ let rec assert_aggregate = function
   | _ -> assert false
 
 let invariant e =
-  Invariant.invariant [%here] e [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
   match e with
   | And _ -> assert_conjunction e |> Fn.id
   | Or _ -> assert_disjunction e |> Fn.id
@@ -343,8 +342,8 @@ module Var = struct
   end
 
   let invariant x =
-    Invariant.invariant [%here] x [%sexp_of: t]
-    @@ fun () -> match x with Var _ -> invariant x | _ -> assert false
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Var _ -> invariant x | _ -> assert false
 
   let id = function Var v -> v.id | x -> violates invariant x
   let name = function Var v -> v.name | x -> violates invariant x
@@ -372,8 +371,7 @@ module Var = struct
     let t_of_sexp = Map.t_of_sexp T.t_of_sexp
 
     let invariant s =
-      Invariant.invariant [%here] s [%sexp_of: t]
-      @@ fun () ->
+      let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
       let domain, range =
         Map.fold s ~init:(Set.empty, Set.empty)
           ~f:(fun ~key ~data (domain, range) ->

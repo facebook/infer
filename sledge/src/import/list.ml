@@ -42,8 +42,7 @@ let find_map_remove xs ~f =
   find_map_remove_ [] xs
 
 let fold_option xs ~init ~f =
-  with_return
-  @@ fun {return} ->
+  let@ {return} = with_return in
   Some
     (fold xs ~init ~f:(fun acc elt ->
          match f acc elt with Some res -> res | None -> return None ))

@@ -300,8 +300,7 @@ module Term = struct
   let pp = pp_term
 
   let invariant ?parent term =
-    Invariant.invariant [%here] term [%sexp_of: t]
-    @@ fun () ->
+    let@ () = Invariant.invariant [%here] term [%sexp_of: t] in
     match term with
     | Switch _ | Iswitch _ -> assert true
     | Call {typ; actuals; areturn; _} -> (
@@ -454,9 +453,8 @@ module Func = struct
             cfg )
 
   let invariant func =
-    Invariant.invariant [%here] func [%sexp_of: t]
-    @@ fun () ->
     assert (func == func.entry.parent) ;
+    let@ () = Invariant.invariant [%here] func [%sexp_of: t] in
     match Reg.typ func.name.reg with
     | Pointer {elt= Function {return; _}; _} ->
         assert (
@@ -579,8 +577,7 @@ let set_derived_metadata functions =
   functions
 
 let invariant pgm =
-  Invariant.invariant [%here] pgm [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] pgm [%sexp_of: t] in
   assert (
     not
       (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->

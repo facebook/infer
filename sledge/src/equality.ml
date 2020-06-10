@@ -411,8 +411,7 @@ let congruent r a b = semi_congruent r (Term.map ~f:(Subst.norm r.rep) a) b
 (** Invariant *)
 
 let pre_invariant r =
-  Invariant.invariant [%here] r [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
   Subst.iteri r.rep ~f:(fun ~key:trm ~data:_ ->
       (* no interpreted terms in carrier *)
       assert (non_interpreted trm || fail "non-interp %a" Term.pp trm ()) ;
@@ -425,8 +424,7 @@ let pre_invariant r =
                  subtrm Term.pp trm pp r () ) ) )
 
 let invariant r =
-  Invariant.invariant [%here] r [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
   pre_invariant r ;
   assert (
     (not r.sat)
@@ -449,13 +447,12 @@ let false_ = {true_ with sat= false}
 
 (** [lookup r a] is [b'] if [a ~ b = b'] for some equation [b = b'] in rep *)
 let lookup r a =
-  [%Trace.call fun {pf} -> pf "%a" Term.pp a]
+  ([%Trace.call fun {pf} -> pf "%a" Term.pp a]
   ;
-  ( with_return
-  @@ fun {return} ->
+  let@ {return} = with_return in
   Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
       if semi_congruent r a b then return b' ) ;
-  a )
+  a)
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
@@ -507,8 +504,7 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  with_return
-  @@ fun {return} ->
+  let@ {return} = with_return in
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
       let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
       Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->

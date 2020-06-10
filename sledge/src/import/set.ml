@@ -48,8 +48,7 @@ end) : S with type elt = Elt.t = struct
         | l2, None, r2 -> disjoint l1 l2 && disjoint r1 r2 )
 
   let choose_exn s =
-    with_return
-    @@ fun {return} ->
+    let@ {return} = with_return in
     binary_search_segmented s `Last_on_left ~segment_of:return |> ignore ;
     raise (Not_found_s (Atom __LOC__))
 

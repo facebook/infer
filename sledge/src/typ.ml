@@ -65,8 +65,7 @@ let is_sized = function
   | Opaque _ -> (* optimistically assume linking will make it sized *) true
 
 let invariant t =
-  Invariant.invariant [%here] t [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] t [%sexp_of: t] in
   match t with
   | Function {return; args} ->
       assert (Option.for_all ~f:is_sized return) ;

@@ -73,8 +73,7 @@ end = struct
       sub
 
   let invariant g =
-    Invariant.invariant [%here] g [%sexp_of: t]
-    @@ fun () ->
+    let@ () = Invariant.invariant [%here] g [%sexp_of: t] in
     try
       let {us; com; min; xs; sub; zs; pgs= _} = g in
       assert (Var.Set.equal us com.us) ;

@@ -172,8 +172,7 @@ and pp_record fs elts =
 let valid_idx idx elts = 0 <= idx && idx < IArray.length elts
 
 let rec invariant exp =
-  Invariant.invariant [%here] exp [%sexp_of: t]
-  @@ fun () ->
+  let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp.desc with
   | Reg {typ} | Nondet {typ} -> assert (Typ.is_sized typ)
   | Integer {data; typ} -> (
@@ -314,8 +313,7 @@ module Reg = struct
     [@@warning "-9"]
 
   let invariant x =
-    Invariant.invariant [%here] x [%sexp_of: t]
-    @@ fun () ->
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
     match x.desc with Reg _ -> invariant x | _ -> assert false
 
   let name r =

@@ -39,6 +39,8 @@ let ( <$ ) f x =
   f x ;
   x
 
+let ( let@ ) x f = x @@ f
+
 (** Pretty-printer for argument type. *)
 type 'a pp = Format.formatter -> 'a -> unit
 
