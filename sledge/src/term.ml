@@ -38,13 +38,13 @@ type op3 = Conditional | Extract [@@deriving compare, equal, hash, sexp]
 type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
 
 module rec Set : sig
-  include Import.Set.S with type elt := T.t
+  include NS.Set.S with type elt := T.t
 
   val hash : t -> int
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end = struct
-  include Import.Set.Make (T)
+  include NS.Set.Make (T)
 
   let hash_fold_t = hash_fold_t T.hash_fold_t
   let hash = Hash.of_fold hash_fold_t
@@ -53,13 +53,13 @@ end = struct
 end
 
 and Qset : sig
-  include Import.Qset.S with type elt := T.t
+  include NS.Qset.S with type elt := T.t
 
   val hash : t -> int
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end = struct
-  include Import.Qset.Make (T)
+  include NS.Qset.Make (T)
 
   let hash_fold_t = hash_fold_t T.hash_fold_t
   let hash = Hash.of_fold hash_fold_t

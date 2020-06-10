@@ -58,14 +58,14 @@ type opN =
 [@@deriving compare, equal, hash, sexp]
 
 module rec Set : sig
-  include Import.Set.S with type elt := T.t
+  include NS.Set.S with type elt := T.t
 
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end
 
 and Qset : sig
-  include Import.Qset.S with type elt := T.t
+  include NS.Qset.S with type elt := T.t
 
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
@@ -110,7 +110,7 @@ module Var : sig
   module Map : Map.S with type key := t
 
   module Set : sig
-    include Import.Set.S with type elt := t
+    include NS.Set.S with type elt := t
 
     val hash_fold_t : t Hash.folder
     val sexp_of_t : t -> Sexp.t

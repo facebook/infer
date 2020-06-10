@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Global namespace opened in each source file by the build system *)
+(** Global namespace intended to be opened in each source file *)
 
-include module type of Import0
+include module type of NS0
 
 (** Function combinators *)
 

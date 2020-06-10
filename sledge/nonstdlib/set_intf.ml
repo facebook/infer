@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Import0
+open NS0
 
 module type S = sig
   type elt

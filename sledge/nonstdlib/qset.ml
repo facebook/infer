@@ -7,7 +7,7 @@
 
 (** Qset - Set with (signed) rational multiplicity for each element *)
 
-open Import0
+open NS0
 include Qset_intf
 
 module Make (Elt : sig

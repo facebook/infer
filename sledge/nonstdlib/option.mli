@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Import0
+open! NS0
 include module type of Core.Option
 
 val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Import0
+open! NS0
 include Core.Option
 
 let pp fmt pp_elt fs = function

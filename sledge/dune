@@ -34,24 +34,13 @@
  (preprocess no_preprocessing))
 
 (subdir
- src/import
- (library
-  (name import)
-  (public_name sledge.import)
-  (libraries core core_kernel.fheap zarith trace)
-  (flags (:standard))
-  (preprocess
-   (pps ppx_sledge ppx_trace))
-  (inline_tests)))
-
-(subdir
  src
  (library
   (name sledge)
   (public_name sledge)
-  (libraries import)
+  (libraries nonstdlib)
   (flags
-   (:standard -open Import))
+   (:standard -open NS))
   (preprocess
    (pps ppx_sledge ppx_trace))
   (inline_tests)))
@@ -85,9 +74,9 @@
   (package sledge)
   (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
     llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
-    llvm.linker shexp.process yojson trace import sledge model)
+    llvm.linker shexp.process yojson trace nonstdlib sledge model)
   (flags
-   (:standard -w -58 -open Import -open Sledge -open Model))
+   (:standard -w -58 -open NS -open Sledge -open Model))
   (preprocess
    (pps ppx_sledge ppx_trace))))
 

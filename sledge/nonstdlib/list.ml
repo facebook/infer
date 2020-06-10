@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Import0
+open NS0
 include Core.List
 
 let rec pp ?pre ?suf sep pp_elt fs = function

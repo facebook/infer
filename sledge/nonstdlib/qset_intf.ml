@@ -7,7 +7,7 @@
 
 (** Qset - Set with (signed) rational multiplicity for each element *)
 
-open Import0
+open NS0
 
 module type S = sig
   type elt

@@ -1,6 +1,9 @@
 (lang dune 2.5)
 
 (package
+ (name nonstdlib))
+
+(package
  (name ppx_trace))
 
 (package

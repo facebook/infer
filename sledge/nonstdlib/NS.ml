@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Global namespace opened in each source file by the build system *)
+(** Global namespace intended to be opened in each source file *)
 
-include Import0
+include NS0
 
 (** Failures *)
 

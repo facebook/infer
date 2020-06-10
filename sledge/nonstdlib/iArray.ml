@@ -7,7 +7,7 @@
 
 (** IArray - Immutable view of an array *)
 
-open Import0
+open NS0
 
 include (
   Array.Permissioned :

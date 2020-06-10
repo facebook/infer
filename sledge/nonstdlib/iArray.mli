@@ -13,7 +13,7 @@
     structure, it only attempts to make it inconvenient to unintentionally
     mutate. *)
 
-open Import0
+open NS0
 
 include
   module type of Array.Permissioned
