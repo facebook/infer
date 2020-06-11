@@ -198,7 +198,7 @@ let get_active_checkers () =
 
 let register checkers =
   let register_one {checker; callbacks} =
-    let name = (Checker.config checker).name in
+    let name = Checker.get_id checker in
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb ->
@@ -222,6 +222,6 @@ let pp_checker fmt {checker; callbacks} =
         LanguageSet.add lang langs )
     |> LanguageSet.elements
   in
-  F.fprintf fmt "%s (%a)" (Checker.config checker).name
+  F.fprintf fmt "%s (%a)" (Checker.get_id checker)
     (Pp.seq ~sep:", " (Pp.of_string ~f:Language.to_string))
     langs_of_callbacks

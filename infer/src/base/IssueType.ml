@@ -139,8 +139,8 @@ end = struct
             (String.capitalize what) unique_id what new_ what old
         in
         if not (Checker.equal checker checker_old) then
-          die_of_mismatch ~what:"checker" ~old:(Checker.get_name checker_old)
-            ~new_:(Checker.get_name checker) ;
+          die_of_mismatch ~what:"checker" ~old:(Checker.get_id checker_old)
+            ~new_:(Checker.get_id checker) ;
         if not (equal_visibility visibility visibility_old) then
           die_of_mismatch ~what:"visibility"
             ~old:(string_of_visibility visibility_old)

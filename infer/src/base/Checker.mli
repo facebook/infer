@@ -55,15 +55,15 @@ type cli_flags =
   ; show_in_help: bool }
 
 type config =
-  { name: string
+  { id: string
   ; support: Language.t -> support
   ; short_documentation: string
   ; cli_flags: cli_flags option
         (** If [None] then the checker cannot be enabled/disabled from the command line. *)
   ; enabled_by_default: bool
-  ; activates: t list  (** TODO doc *) }
+  ; activates: t list  (** list of checkers that get enabled when this checker is enabled *) }
 
 val config : t -> config
 
-val get_name : t -> string
-(** [get_name c] is [(config c).name] *)
+val get_id : t -> string
+(** [get_id c] is [(config c).id] *)

@@ -203,9 +203,9 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
       "Issue type \"%s\" cannot be reported by the checker \"%s\". The only checker that is \
        allowed to report this issue type is \"%s\". If this is incorrect please either update the \
        issue in IssueType or create a new issue type for \"%s\"."
-      error.issue_type.unique_id (Checker.get_name checker)
-      (Checker.get_name error.issue_type.checker)
-      (Checker.get_name checker) ;
+      error.issue_type.unique_id (Checker.get_id checker)
+      (Checker.get_id error.issue_type.checker)
+      (Checker.get_id checker) ;
   let severity = Option.value severity_override ~default:error.issue_type.default_severity in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
