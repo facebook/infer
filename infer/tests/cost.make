@@ -3,7 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-cost-issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
+# We add issues.exp.test to recipe in order to avoid "infer report"s run parallel
+cost-issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN) issues.exp.test$(TEST_SUFFIX)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
 	   $(INFERPRINT_COST_OPTIONS) $@
 
