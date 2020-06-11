@@ -25,6 +25,7 @@ type t = private
   { unique_id: string
   ; checker: Checker.t
   ; visibility: visibility
+  ; user_documentation: string option
   ; mutable default_severity: severity
         (** used for documentation but can be overriden at report time *)
   ; mutable enabled: bool
@@ -51,6 +52,7 @@ val register_from_string :
   -> ?linters_def_file:string
   -> id:string
   -> ?visibility:visibility
+  -> ?user_documentation:string
   -> severity
   -> Checker.t
   -> t

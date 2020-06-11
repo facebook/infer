@@ -35,6 +35,7 @@ module Unsafe : sig
     { unique_id: string
     ; checker: Checker.t
     ; visibility: visibility
+    ; user_documentation: string option
     ; mutable default_severity: severity
     ; mutable enabled: bool
     ; mutable hum: string
@@ -55,6 +56,7 @@ module Unsafe : sig
     -> ?linters_def_file:string
     -> id:string
     -> ?visibility:visibility
+    -> ?user_documentation:string
     -> severity
     -> Checker.t
     -> t
@@ -75,6 +77,7 @@ end = struct
       { unique_id: string
       ; checker: Checker.t
       ; visibility: visibility
+      ; user_documentation: string option
       ; mutable default_severity: severity
       ; mutable enabled: bool
       ; mutable hum: string
@@ -119,12 +122,13 @@ end = struct
         definitely. The [hum]an-readable description can be updated when we encounter the definition
         of the issue type, eg in AL. *)
   let register_from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file ~id:unique_id
-      ?(visibility = User) default_severity checker =
+      ?(visibility = User) ?user_documentation default_severity checker =
     match find_from_string ~id:unique_id with
     | ((Some
          ( { unique_id= _ (* we know it has to be the same *)
            ; checker= checker_old
            ; visibility= visibility_old
+           ; user_documentation= _ (* new one must be [None] for dynamic issue types *)
            ; default_severity= _ (* mutable field to update *)
            ; enabled= _ (* not touching this one since [Config] will have set it *)
            ; hum= _ (* mutable field to update *)
@@ -145,6 +149,12 @@ end = struct
           die_of_mismatch ~what:"visibility"
             ~old:(string_of_visibility visibility_old)
             ~new_:(string_of_visibility visibility) ;
+        ( match user_documentation with
+        | None ->
+            ()
+        | Some user_documentation ->
+            L.die InternalError "Unexpected user documentation for issue type %s:@\n@\n%s@\n"
+              unique_id user_documentation ) ;
         issue.default_severity <- default_severity ;
         Option.iter hum0 ~f:(fun hum -> issue.hum <- hum) ;
         if Option.is_some doc_url then issue.doc_url <- doc_url ;
@@ -153,7 +163,15 @@ end = struct
     | None ->
         let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
         let issue =
-          {unique_id; visibility; default_severity; checker; enabled; hum; doc_url; linters_def_file}
+          { unique_id
+          ; visibility
+          ; user_documentation
+          ; default_severity
+          ; checker
+          ; enabled
+          ; hum
+          ; doc_url
+          ; linters_def_file }
         in
         all_issues := IssueSet.add !all_issues issue ;
         issue
@@ -610,7 +628,10 @@ let mutable_local_variable_in_component_file =
   register_from_string ~id:"MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE" Advice Linters
 
 
-let null_dereference = register_from_string ~id:"NULL_DEREFERENCE" Error Biabduction
+let null_dereference =
+  register_from_string ~id:"NULL_DEREFERENCE" Error Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/NULL_DEREFERENCE.md"]
+
 
 let null_test_after_dereference =
   register_from_string ~enabled:false ~id:"NULL_TEST_AFTER_DEREFERENCE" Warning Biabduction
@@ -672,6 +693,7 @@ let starvation = register_from_string ~id:"STARVATION" ~hum:"UI Thread Starvatio
 
 let static_initialization_order_fiasco =
   register_from_string ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
+    ~user_documentation:[%blob "../../documentation/issues/STATIC_INITIALIZATION_ORDER_FIASCO.md"]
 
 
 let strict_mode_violation =

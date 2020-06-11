@@ -87,6 +87,7 @@ depends: [
   "ppx_base" {= "v0.14.0"}
   "ppx_bench" {= "v0.14.0"}
   "ppx_bin_prot" {= "v0.14.0"}
+  "ppx_blob" {= "0.7.0"}
   "ppx_cold" {= "v0.14.0"}
   "ppx_compare" {= "v0.14.0"}
   "ppx_custom_printf" {= "v0.14.0"}

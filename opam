@@ -39,6 +39,7 @@ depends: [
   "ocamlgraph"
   "ounit" {>="2.0.5"}
   "parmap" {>="1.0-rc8"}
+  "ppx_blob"
   "ppx_compare" {>= "v0.14.0" & < "v0.15"}
   "ppx_deriving" {>="4.1"}
   "ppx_enumerate" {>= "v0.14.0" & < "v0.15"}

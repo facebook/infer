@@ -23,6 +23,9 @@ let list_issue_types () =
        ~f:(fun ({ IssueType.unique_id
                 ; checker
                 ; visibility
+                ; user_documentation=
+                    _
+                    (* do not show this as this can be a big multi-line string and not tool-friendly *)
                 ; default_severity
                 ; enabled
                 ; hum
@@ -40,6 +43,27 @@ let list_issue_types () =
 
 let show_checkers _ = assert false
 
-let show_issue_types _ = assert false
+let show_issue_type (issue_type : IssueType.t) =
+  L.result "%s (unique ID: %s)@\n" issue_type.hum issue_type.unique_id ;
+  L.result "Reported by %s@\n" (Checker.get_id issue_type.checker) ;
+  match issue_type.user_documentation with
+  | None ->
+      L.result "No documentation@\n"
+  | Some documentation ->
+      L.result "Documentation:@\n  @[" ;
+      let first_line = ref true in
+      String.split_lines documentation
+      |> List.iter ~f:(fun line ->
+             if not !first_line then L.result "@\n" ;
+             first_line := false ;
+             L.result "%s" line ) ;
+      L.result "@]@\n"
+
+
+let show_issue_types issue_types =
+  L.result "@[" ;
+  List.iter ~f:show_issue_type issue_types ;
+  L.result "@]%!"
+
 
 let write_website ~website_root:_ = assert false
