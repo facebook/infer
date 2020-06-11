@@ -169,8 +169,9 @@ let () =
       then (
         if Config.list_checkers then Help.list_checkers () ;
         if Config.list_issue_types then Help.list_issue_types () ;
-        Help.show_checkers Config.help_checker ;
-        Help.show_issue_types Config.help_issue_type ;
+        if not (List.is_empty Config.help_checker) then Help.show_checkers Config.help_checker ;
+        if not (List.is_empty Config.help_issue_type) then
+          Help.show_issue_types Config.help_issue_type ;
         Option.iter Config.write_website ~f:(fun website_root -> Help.write_website ~website_root) ;
         () )
       else

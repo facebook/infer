@@ -14,6 +14,8 @@ type visibility =
   | Silent  (** never add to error log *)
 [@@deriving compare, equal]
 
+val string_of_visibility : visibility -> string
+
 (** severity of the report *)
 type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
