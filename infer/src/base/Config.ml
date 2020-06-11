@@ -487,7 +487,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Explore | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -1001,8 +1001,12 @@ and ( bo_debug
     , write_html
     , write_dotty ) =
   let all_generic_manuals =
-    List.filter_map InferCommand.all_commands ~f:(fun cmd ->
-        if InferCommand.equal Explore cmd then None else Some (cmd, manual_generic) )
+    List.filter_map InferCommand.all_commands ~f:(fun (command : InferCommand.t) ->
+        match command with
+        | Explore | Help ->
+            None
+        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
+            Some (command, manual_generic) )
   in
   let bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
@@ -1356,6 +1360,13 @@ and help =
   var
 
 
+and help_checker =
+  CLOpt.mk_string_list ~long:"help-checker" ~meta:"checker-id"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Show information about a checker, for example $(i,biabduction). To see the list of all \
+     checkers, see $(b,--list-checkers)."
+
+
 and help_format =
   CLOpt.mk_symbol ~long:"help-format"
     ~symbols:[("auto", `Auto); ("groff", `Groff); ("pager", `Pager); ("plain", `Plain)]
@@ -1363,6 +1374,13 @@ and help_format =
     ~in_help:(List.map InferCommand.all_commands ~f:(fun command -> (command, manual_generic)))
     "Show this help in the specified format. $(b,auto) sets the format to $(b,plain) if the \
      environment variable $(b,TERM) is \"dumb\" or undefined, and to $(b,pager) otherwise."
+
+
+and help_issue_type =
+  CLOpt.mk_string_list ~long:"help-issue-type" ~meta:"UNIQUE_ID"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Show information about an issue type, for example $(i,NULL_DEREFERENCE). To see the list of \
+     all issue types, see $(b,--list-issue-types)."
 
 
 and html =
@@ -1529,6 +1547,18 @@ and linters_validate_syntax_only =
   CLOpt.mk_bool ~long:"linters-validate-syntax-only"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
     ~default:false "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
+
+
+and list_checkers =
+  CLOpt.mk_bool ~long:"list-checkers"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Show the list of all available checkers."
+
+
+and list_issue_types =
+  CLOpt.mk_bool ~long:"list-issue-types"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Show the list of all issue types that infer might report."
 
 
 and load_average =
@@ -2318,6 +2348,14 @@ and write_html_whitelist_regex =
     "Whitelist files that will have their html debug output printed when $(b,--html) is true."
 
 
+and write_website =
+  CLOpt.mk_path_opt ~long:"write-website" ~meta:"path_to_website_dir"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Use to write website files documenting issue types and checkers under \
+     $(i,path_to_website_dir/). Meant to be used within the Infer directory to generate its \
+     website at $(i,fbinfer.com) at $(i,website/)."
+
+
 and xcode_developer_dir =
   CLOpt.mk_path_opt ~long:"xcode-developer-dir"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -2758,6 +2796,31 @@ and genrule_mode = !genrule_mode
 
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
+and help_checker =
+  List.map !help_checker ~f:(fun checker_string ->
+      match Checker.from_id checker_string with
+      | Some checker ->
+          checker
+      | None ->
+          L.die UserError
+            "Wrong argument for --help-checker: '%s' is not a known checker identifier.@\n\
+             @\n\
+             See --list-checkers for the list of all checkers." checker_string )
+
+
+and help_issue_type =
+  List.map !help_issue_type ~f:(fun id ->
+      match IssueType.find_from_string ~id with
+      | Some issue_type ->
+          issue_type
+      | None ->
+          L.die UserError
+            "Wrong argument for --help-issue-type: '%s' is not a known issue type identifier, or \
+             is defined in a linters file.@\n\
+             @\n\
+             See --list-issue-types for the list of all known issue types." id )
+
+
 and html = !html
 
 and hoisting_report_only_expensive = !hoisting_report_only_expensive
@@ -2803,6 +2866,10 @@ and linters_developer_mode = !linters_developer_mode
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
 
 and linters_validate_syntax_only = !linters_validate_syntax_only
+
+and list_checkers = !list_checkers
+
+and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
 
@@ -3115,6 +3182,8 @@ and write_dotty = !write_dotty
 and write_html = !write_html
 
 and write_html_whitelist_regex = !write_html_whitelist_regex
+
+and write_website = !write_website
 
 and xcode_developer_dir = !xcode_developer_dir
 

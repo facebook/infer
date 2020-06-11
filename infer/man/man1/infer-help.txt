@@ -1,0 +1,77 @@
+NAME
+       infer-help - Show and generate documentation.
+
+SYNOPSIS
+       infer help
+       infer help --help-checker checker1 ... --help-checker checkerN
+       infer help --help-issue-type ISSUE_TYPE1 ... --help-issue-type ISSUE_TYPEN
+       infer help --list-checkers
+       infer help --list-issue-types
+       infer help --write-website website_root
+
+
+DESCRIPTION
+       Without arguments, show the Infer manual as with infer --help
+
+       For each -help-checker or --help-issue-type option passed, display
+       information about the given checker or issue type.
+
+       If --list-checkers is passed, list all available checkers.
+
+       If --list-issue-types is passed, list all issue types.
+
+       Use --write-website to build some of the documentation for the
+       fbinfer.com website. (Used in scripts, not meant to be used except
+       when publishing content to fbinfer.com)
+
+
+
+OPTIONS
+       --help
+           Show this manual
+
+       --help-checker +checker-id
+           Show information about a checker, for example biabduction. To see
+           the list of all checkers, see --list-checkers.
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise.
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --help-issue-type +UNIQUE_ID
+           Show information about an issue type, for example
+           NULL_DEREFERENCE. To see the list of all issue types, see
+           --list-issue-types.
+
+       --list-checkers
+           Activates: Show the list of all available checkers. (Conversely:
+           --no-list-checkers)
+
+       --list-issue-types
+           Activates: Show the list of all issue types that infer might
+           report. (Conversely: --no-list-issue-types)
+
+       --write-website path_to_website_dir
+           Use to write website files documenting issue types and checkers
+           under path_to_website_dir/. Meant to be used within the Infer
+           directory to generate its website at fbinfer.com at website/.
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+
+

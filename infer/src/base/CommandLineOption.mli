@@ -172,7 +172,7 @@ val mk_command_doc :
   -> ?notes:Cmdliner.Manpage.block list
   -> ?bugs:Cmdliner.Manpage.block list
   -> ?examples:Cmdliner.Manpage.block list
-  -> see_also:Cmdliner.Manpage.block list
+  -> ?see_also:Cmdliner.Manpage.block list
   -> string
   -> command_doc
 (** [mk_command_doc ~title ~section ~version ~short_description ~synopsis ~description ~see_also

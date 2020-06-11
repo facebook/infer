@@ -60,10 +60,20 @@ let setup () =
         db_start () ;
         SourceFiles.mark_all_stale () )
   | Explore ->
-      ResultsDir.assert_results_dir "please run an infer analysis first" ) ;
-  db_start () ;
-  if CLOpt.is_originator then ResultsDir.RunState.add_run_to_sequence () ;
-  ()
+      ResultsDir.assert_results_dir "please run an infer analysis first"
+  | Help ->
+      () ) ;
+  let has_result_dir =
+    match Config.command with
+    | Analyze | Capture | Compile | Explore | Report | ReportDiff | Run ->
+        true
+    | Help ->
+        false
+  in
+  if has_result_dir then (
+    db_start () ;
+    if CLOpt.is_originator then ResultsDir.RunState.add_run_to_sequence () ) ;
+  has_result_dir
 
 
 let print_active_checkers () =
@@ -136,9 +146,9 @@ let () =
   | None ->
       () ) ;
   if Config.print_builtins then Builtin.print_and_exit () ;
-  setup () ;
-  log_environment_info () ;
-  if Config.debug_mode && CLOpt.is_originator then (
+  let has_results_dir = setup () in
+  if has_results_dir then log_environment_info () ;
+  if has_results_dir && Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
   ( match Config.command with
@@ -150,6 +160,23 @@ let () =
       run Driver.Analyze
   | Capture | Compile | Run ->
       run (Lazy.force Driver.mode_from_command_line)
+  | Help ->
+      if
+        Config.(
+          list_checkers || list_issue_types || Option.is_some write_website
+          || (not (List.is_empty help_checker))
+          || not (List.is_empty help_issue_type))
+      then (
+        if Config.list_checkers then Help.list_checkers () ;
+        if Config.list_issue_types then Help.list_issue_types () ;
+        Help.show_checkers Config.help_checker ;
+        Help.show_issue_types Config.help_issue_type ;
+        Option.iter Config.write_website ~f:(fun website_root -> Help.write_website ~website_root) ;
+        () )
+      else
+        L.result
+          "To see Infer's manual, run `infer --help`.@\n\
+           To see help about the \"help\" command itself, run `infer help --help`.@\n"
   | Report -> (
       let write_from_json out_path =
         IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path

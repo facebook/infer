@@ -4,8 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module CLOpt = CommandLineOption
+module L = Die
 
 type data = {name: string; command_doc: CLOpt.command_doc}
 
@@ -18,12 +20,14 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
     ~synopsis =
   let section = 1 in
   let see_also =
-    let exe_names =
-      List.map see_also_commands ~f:(fun cmd ->
-          let exe = InferCommand.to_exe_name cmd in
-          Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section )
-    in
-    [`P (String.concat ~sep:", " exe_names)]
+    if List.is_empty see_also_commands then None
+    else
+      let exe_names =
+        List.map see_also_commands ~f:(fun cmd ->
+            let exe = InferCommand.to_exe_name cmd in
+            Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section )
+      in
+      Some [`P (String.concat ~sep:", " exe_names)]
   in
   let environment =
     Option.value environment_opt
@@ -43,7 +47,7 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
                 Cmdliner.Manpage.s_files section ) ]
   in
   CLOpt.mk_command_doc ~section ~version:Version.versionString
-    ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files ~see_also
+    ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files ?see_also
 
 
 let analyze =
@@ -131,6 +135,29 @@ $(b,infer) $(b,explore) $(b,--source-files) $(i,[options])|}
     ~see_also:InferCommand.[Report; Run]
 
 
+let help =
+  mk_command_doc ~title:"Infer Help" ~short_description:"Show and generate documentation."
+    ~synopsis:
+      {|$(b,infer) $(b,help)
+$(b,infer) $(b,help) $(b,--help-checker) $(i,checker1) $(i,...) $(b,--help-checker) $(i,checkerN)
+$(b,infer) $(b,help) $(b,--help-issue-type) $(i,ISSUE_TYPE1) $(i,...) $(b,--help-issue-type) $(i,ISSUE_TYPEN)
+$(b,infer) $(b,help) $(b,--list-checkers)
+$(b,infer) $(b,help) $(b,--list-issue-types)
+$(b,infer) $(b,help) $(b,--write-website) $(i,website_root)|}
+    ~description:
+      [ `P "Without arguments, show the Infer manual as with $(b,infer) $(b,--help)"
+      ; `P
+          "For each $(b,-help-checker) or $(b,--help-issue-type) option passed, display \
+           information about the given checker or issue type."
+      ; `P "If $(b,--list-checkers) is passed, list all available checkers."
+      ; `P "If $(b,--list-issue-types) is passed, list all issue types."
+      ; `P
+          "Use $(b,--write-website) to build some of the documentation for the $(i,fbinfer.com) \
+           website. (Used in scripts, not meant to be used except when publishing content to \
+           $(i,fbinfer.com))" ]
+    ~see_also:[]
+
+
 let infer =
   mk_command_doc ~title:"Infer Static Analyzer"
     ~short_description:"static analysis for Java and C/C++/Objective-C/Objective-C++"
@@ -138,6 +165,8 @@ let infer =
       {|$(b,infer) $(b,analyze) $(i,[options])
 $(b,infer) $(b,capture) $(i,[options])
 $(b,infer) $(b,compile) $(i,[options])
+$(b,infer) $(b,help) $(i,[options])
+$(b,infer) $(b,explore) $(i,[options])
 $(b,infer) $(b,report) $(i,[options])
 $(b,infer) $(b,reportdiff) $(i,[options])
 $(b,infer) $(b,run) $(i,[options])
@@ -298,9 +327,16 @@ let command_to_data =
   ; mk Capture capture
   ; mk Compile compile
   ; mk Explore explore
+  ; mk Help help
   ; mk Report report
   ; mk ReportDiff reportdiff
   ; mk Run run ]
 
 
-let data_of_command command = List.Assoc.find_exn ~equal:InferCommand.equal command_to_data command
+let data_of_command command =
+  match List.Assoc.find ~equal:InferCommand.equal command_to_data command with
+  | Some data ->
+      data
+  | None ->
+      L.die InternalError "No data found for command '%s'. Please add an entry in %s!"
+        (InferCommand.to_string command) __FILE__

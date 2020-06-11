@@ -314,6 +314,10 @@ val genrule_mode : bool
 
 val get_linter_doc_url : linter_id:string -> string option
 
+val help_checker : Checker.t list
+
+val help_issue_type : IssueType.t list
+
 val hoisting_report_only_expensive : bool
 
 val html : bool
@@ -371,6 +375,10 @@ val linters_developer_mode : bool
 val linters_ignore_clang_failures : bool
 
 val linters_validate_syntax_only : bool
+
+val list_checkers : bool
+
+val list_issue_types : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
@@ -610,6 +618,8 @@ val write_dotty : bool
 val write_html : bool
 
 val write_html_whitelist_regex : string list
+
+val write_website : string option
 
 val xcode_developer_dir : string option
 

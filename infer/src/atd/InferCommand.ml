@@ -6,8 +6,9 @@
  *)
 open Core
 
-(* NOTE: All variants must be also added to `all_commands` below *)
-type t = Analyze | Capture | Compile | Explore | Report | ReportDiff | Run [@@deriving compare]
+(* NOTE: All variants must be also added to [command_to_string] below *)
+type t = Analyze | Capture | Compile | Explore | Help | Report | ReportDiff | Run
+[@@deriving compare]
 
 let equal = [%compare.equal: t]
 
@@ -16,6 +17,7 @@ let command_to_string =
   ; (Capture, "capture")
   ; (Compile, "compile")
   ; (Explore, "explore")
+  ; (Help, "help")
   ; (Report, "report")
   ; (ReportDiff, "reportdiff")
   ; (Run, "run") ]

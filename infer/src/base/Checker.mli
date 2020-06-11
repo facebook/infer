@@ -67,3 +67,5 @@ val config : t -> config
 
 val get_id : t -> string
 (** [get_id c] is [(config c).id] *)
+
+val from_id : string -> t option

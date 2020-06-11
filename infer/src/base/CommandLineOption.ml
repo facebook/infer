@@ -737,7 +737,7 @@ let normalize_desc_list speclist =
 
 
 let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~description ?options
-    ?exit_status ?environment ?files ?notes ?bugs ?examples ~see_also command_str =
+    ?exit_status ?environment ?files ?notes ?bugs ?examples ?see_also command_str =
   let add_if section blocks =
     match blocks with None -> `Blocks [] | Some bs -> `Blocks (`S section :: bs)
   in
@@ -758,8 +758,7 @@ let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~
     ; add_if manpage_s_notes notes
     ; add_if Cmdliner.Manpage.s_bugs bugs
     ; add_if Cmdliner.Manpage.s_examples examples
-    ; `S Cmdliner.Manpage.s_see_also
-    ; `Blocks see_also ]
+    ; add_if Cmdliner.Manpage.s_see_also see_also ]
   in
   let command_doc =
     { title= (command_str, section, date, version, title)

@@ -236,7 +236,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
         (false, false)
-    | (Capture | Compile | Explore | Report | ReportDiff), _ ->
+    | (Capture | Compile | Explore | Help | Report | ReportDiff), _ ->
         (false, false)
     | (Analyze | Run), _ ->
         (true, true)

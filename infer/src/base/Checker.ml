@@ -289,3 +289,5 @@ let config c =
 
 
 let get_id c = (config c).id
+
+let from_id id = List.find all ~f:(fun checker -> String.equal (get_id checker) id)
