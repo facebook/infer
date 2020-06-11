@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed May 13 17:23:54 2020 -->
+<!-- CreationDate: Thu Jun 11 11:55:07 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -93,6 +93,12 @@ are tested by the regex are relative to the
 &rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
+<p style="margin-left:11%;"><b>--cost-issues-tests</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Write a list of cost issues in
+a format suitable for cost tests to <i>file</i></p>
+
 <p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
 
 <p style="margin-left:17%;">Activates: Debug mode (also
@@ -160,13 +166,21 @@ does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
 follows: <br>
-ANALYSIS_STOPS (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
+ASSIGN_POINTER_WARNING (enabled by default), <br>
 Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
+BAD_POINTER_COMPARISON (enabled by default), <br>
+BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
+BIABD_CONDITION_ALWAYS_FALSE (disabled by default), <br>
+BIABD_CONDITION_ALWAYS_TRUE (disabled by default), <br>
+BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by <br>
+default), <br>
+BIABD_STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default),
+<br>
 BIABD_USE_AFTER_FREE (enabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
 BUFFER_OVERRUN_L2 (enabled by default), <br>
@@ -190,7 +204,6 @@ CHECKERS_IMMUTABLE_CAST (enabled by default), <br>
 CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
 CLASS_LOAD (enabled by default), <br>
-COMPARING_FLOAT_FOR_EQUALITY (enabled by default), <br>
 COMPONENT_FACTORY_FUNCTION (enabled by default), <br>
 COMPONENT_FILE_CYCLOMATIC_COMPLEXITY (enabled by default),
 <br>
@@ -206,14 +219,20 @@ CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
+CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
+<br>
 Cannot_star (enabled by default), <br>
-Codequery (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
+DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
+<br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
 DEALLOCATE_STACK_VARIABLE (enabled by default), <br>
 DEALLOCATE_STATIC_MEMORY (enabled by default), <br>
 DEALLOCATION_MISMATCH (enabled by default), <br>
+DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
+DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by
+default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
@@ -248,18 +267,10 @@ ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE (enabled by <br>
 default), <br>
 EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
 <br>
-EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
-<br>
-default), <br>
 EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
 <br>
 default), <br>
 EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
-<br>
-EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
-EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
-<br>
-EXPENSIVE_EXECUTION_TIME_UI_THREAD (disabled by default),
 <br>
 EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
 EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
@@ -289,11 +300,13 @@ INVARIANT_CALL (disabled by default), <br>
 IVAR_NOT_NULL_CHECKED (enabled by default), <br>
 Internal_error (enabled by default), <br>
 JAVASCRIPT_INJECTION (enabled by default), <br>
+LAB_RESOURCE_LEAK (enabled by default), <br>
 LOCKLESS_VIOLATION (enabled by default), <br>
 LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
 LOGGING_PRIVATE_DATA (enabled by default), <br>
 Leak_after_array_abstraction (enabled by default), <br>
 Leak_in_footprint (enabled by default), <br>
+Leak_unknown_origin (disabled by default), <br>
 MEMORY_LEAK (enabled by default), <br>
 MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
@@ -306,6 +319,7 @@ NULL_DEREFERENCE (enabled by default), <br>
 NULL_TEST_AFTER_DEREFERENCE (disabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
 POINTER_SIZE_MISMATCH (enabled by default), <br>
+POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
 PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
@@ -317,26 +331,26 @@ REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),
 <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (enabled by default), <br>
-RETURN_EXPRESSION_REQUIRED (enabled by default), <br>
-RETURN_STATEMENT_MISSING (enabled by default), <br>
-RETURN_VALUE_IGNORED (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
 SKIP_POINTER_DEREFERENCE (disabled by default), <br>
 SQL_INJECTION (enabled by default), <br>
 SQL_INJECTION_RISK (enabled by default), <br>
-STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default), <br>
+STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
 STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
 STRICT_MODE_VIOLATION (enabled by default), <br>
+STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by <br>
 default), <br>
+UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK (enabled by default),
+<br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -353,7 +367,6 @@ USER_CONTROLLED_SQL_RISK (enabled by default), <br>
 USE_AFTER_DELETE (enabled by default), <br>
 USE_AFTER_FREE (enabled by default), <br>
 USE_AFTER_LIFETIME (enabled by default), <br>
-Unknown_proc (enabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
 Wrong_argument_number (enabled by default). <b><br>
@@ -372,6 +385,13 @@ or off.</p>
 <p style="margin-left:17%;">Deactivates: Do not show the
 experimental and blacklisted issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--from-json-costs-report</b>
+<i>costs-report.json</i></p>
+
+<p style="margin-left:17%;">Load costs analysis results
+from a costs-report file.</p>
 
 <p style="margin-left:11%;"><b>--from-json-report</b>
 <i>report.json</i></p>

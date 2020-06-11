@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed May 13 17:23:54 2020 -->
+<!-- CreationDate: Thu Jun 11 11:55:07 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -72,45 +72,48 @@ report.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability</b></p>
 
-<p style="margin-left:17%;">Activates: the annotation
-reachability checker. Given a pair of source and sink
-annotation, e.g. @PerformanceCritical and @Expensive, this
-checker will warn whenever some method annotated with
-@PerformanceCritical calls, directly or indirectly, another
-method annotated with @Expensive (Conversely:
+<p style="margin-left:17%;">Activates: checker
+annotation-reachability: Given a pair of source and sink
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
+some method annotated with
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
+indirectly, another method annotated with
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--annotation-reachability-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--annotation-reachability</b> and disable all other
-checkers (Conversely:
-<b>--no-annotation-reachability-only</b>)</p>
+annotation-reachability and disable all other checkers
+(Conversely: <b>--no-annotation-reachability-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-biabduction</b></p>
 
-<p style="margin-left:17%;">Deactivates: the separation
-logic based bi-abduction analysis using the checkers
-framework (Conversely: <b>--biabduction</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+biabduction: This analysis deals with a range of issues,
+many linked to memory safety. (Conversely:
+<b>--biabduction</b>)</p>
 
 <p style="margin-left:11%;"><b>--biabduction-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--biabduction</b> and disable all other checkers
-(Conversely: <b>--no-biabduction-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable biabduction
+and disable all other checkers (Conversely:
+<b>--no-biabduction-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--bufferoverrun</b></p>
 
-<p style="margin-left:17%;">Activates: the buffer overrun
-analysis (Conversely: <b>--no-bufferoverrun</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+bufferoverrun: InferBO is a detector for out-of-bounds array
+accesses. (Conversely: <b>--no-bufferoverrun</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--bufferoverrun-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--bufferoverrun</b> and disable all other checkers
-(Conversely: <b>--no-bufferoverrun-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable bufferoverrun
+and disable all other checkers (Conversely:
+<b>--no-bufferoverrun-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--changed-files-index</b>
 <i>file</i></p>
@@ -122,14 +125,15 @@ root or be absolute</p>
 
 <p style="margin-left:11%;"><b>--class-loads</b></p>
 
-<p style="margin-left:17%;">Activates: Java class loading
-analysis (Conversely: <b>--no-class-loads</b>)</p>
+<p style="margin-left:17%;">Activates: checker class-loads:
+Compute set of Java classes loaded. (Conversely:
+<b>--no-class-loads</b>)</p>
 
 <p style="margin-left:11%;"><b>--class-loads-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--class-loads</b> and disable all other checkers
-(Conversely: <b>--no-class-loads-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable class-loads
+and disable all other checkers (Conversely:
+<b>--no-class-loads-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--continue-analysis</b></p>
 
@@ -142,13 +146,16 @@ given the same before. Not compatible with
 
 <p style="margin-left:11%;"><b>--cost</b></p>
 
-<p style="margin-left:17%;">Activates: checker for
-performance cost analysis (Conversely: <b>--no-cost</b>)</p>
+<p style="margin-left:17%;">Activates: checker cost:
+Computes the time complexity of functions and methods. Can
+be used to detect changes in runtime complexity with
+&rsquo;infer reportdiff&rsquo;. (Conversely:
+<b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable <b>--cost</b>
-and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable cost and
+disable all other checkers (Conversely:
 <b>--no-cost-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--custom-symbols</b>
@@ -210,36 +217,35 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <b>--biabduction</b>, <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
 <b>--liveness</b>, <b>--racerd</b>, <b>--siof</b>,
-<b>--self_in_block</b>, <b>--starvation</b>, <b>--uninit</b>
+<b>--self-in-block</b>, <b>--starvation</b>, <b>--uninit</b>
 (Conversely: <b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
-<p style="margin-left:17%;">Activates: the eradicate
-@Nullable checker for Java annotations (Conversely:
-<b>--no-eradicate</b>)</p>
+<p style="margin-left:17%;">Activates: checker eradicate:
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
+annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--eradicate</b> and disable all other checkers
-(Conversely: <b>--no-eradicate-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable eradicate and
+disable all other checkers (Conversely:
+<b>--no-eradicate-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--no-fragment-retains-view</b></p>
 
-<p style="margin-left:17%;">Deactivates: detects when
-Android fragments are not explicitly nullified before
-becoming unreabable (Conversely:
-<b>--fragment-retains-view</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+fragment-retains-view: Detects when Android fragments are
+not explicitly nullified before becoming unreachable.
+(Conversely: <b>--fragment-retains-view</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--fragment-retains-view-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--fragment-retains-view</b> and disable all other
-checkers (Conversely:
-<b>--no-fragment-retains-view-only</b>)</p>
+fragment-retains-view and disable all other checkers
+(Conversely: <b>--no-fragment-retains-view-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
 
@@ -260,44 +266,49 @@ internal options in the INTERNAL OPTIONS section</p>
 
 <p style="margin-left:11%;"><b>--immutable-cast</b></p>
 
-<p style="margin-left:17%;">Activates: the detection of
-object cast from immutable type to mutable type. For
-instance, it will detect cast from ImmutableList to List,
-ImmutableMap to Map, and ImmutableSet to Set. (Conversely:
-<b>--no-immutable-cast</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+immutable-cast: Detection of object cast from immutable
+types to mutable types. For instance, it will detect casts
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+(Conversely: <b>--no-immutable-cast</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--immutable-cast-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--immutable-cast</b> and disable all other checkers
-(Conversely: <b>--no-immutable-cast-only</b>)</p>
+immutable-cast and disable all other checkers (Conversely:
+<b>--no-immutable-cast-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--impurity</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Impurity analysis (Conversely: <b>--no-impurity</b>)</p>
+<p style="margin-left:17%;">Activates: checker impurity:
+Detects functions with potential side-effects. Same as
+&quot;purity&quot;, but implemented on top of Pulse.
+(Conversely: <b>--no-impurity</b>)</p>
 
 <p style="margin-left:11%;"><b>--impurity-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--impurity</b> and disable all other checkers
-(Conversely: <b>--no-impurity-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable impurity and
+disable all other checkers (Conversely:
+<b>--no-impurity-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--no-inefficient-keyset-iterator</b></p>
 
-<p style="margin-left:17%;">Deactivates: Check for
-inefficient uses of keySet iterator that access both the key
-and the value. (Conversely:
-<b>--inefficient-keyset-iterator</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+inefficient-keyset-iterator: Check for inefficient uses of
+iterators that iterate on keys then lookup their values,
+instead of iterating on key-value pairs directly.
+(Conversely: <b>--inefficient-keyset-iterator</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--inefficient-keyset-iterator-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--inefficient-keyset-iterator</b> and disable all other
-checkers (Conversely:
+inefficient-keyset-iterator and disable all other checkers
+(Conversely:
 <b>--no-inefficient-keyset-iterator-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--jobs</b>,<b>-j</b>
@@ -314,59 +325,64 @@ analysis encounters a failure (Conversely:
 
 <p style="margin-left:11%;"><b>--no-linters</b></p>
 
-<p style="margin-left:17%;">Deactivates: syntactic linters
+<p style="margin-left:17%;">Deactivates: checker linters:
+Declarative linting framework over the Clang AST.
 (Conversely: <b>--linters</b>)</p>
 
 <p style="margin-left:11%;"><b>--linters-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--linters</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable linters and
+disable all other checkers (Conversely:
 <b>--no-linters-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--litho-required-props</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Required Prop check for Litho (Conversely:
+<p style="margin-left:17%;">Activates: checker
+litho-required-props: Checks that all non-option
+&rsquo;@Prop&rsquo;s have been specified when constructing
+Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--litho-required-props-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--litho-required-props</b> and disable all other checkers
+litho-required-props and disable all other checkers
 (Conversely: <b>--no-litho-required-props-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-liveness</b></p>
 
-<p style="margin-left:17%;">Deactivates: the detection of
-dead stores and unused variables (Conversely:
+<p style="margin-left:17%;">Deactivates: checker liveness:
+Detection of dead stores and unused variables. (Conversely:
 <b>--liveness</b>)</p>
 
 <p style="margin-left:11%;"><b>--liveness-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--liveness</b> and disable all other checkers
-(Conversely: <b>--no-liveness-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable liveness and
+disable all other checkers (Conversely:
+<b>--no-liveness-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--loop-hoisting</b></p>
 
-<p style="margin-left:17%;">Activates: checker for
-loop-hoisting (Conversely: <b>--no-loop-hoisting</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+loop-hoisting: Detect opportunities to hoist function calls
+that are invariant outside of loop bodies for efficiency.
+(Conversely: <b>--no-loop-hoisting</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--loop-hoisting-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--loop-hoisting</b> and disable all other checkers
-(Conversely: <b>--no-loop-hoisting-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable loop-hoisting
+and disable all other checkers (Conversely:
+<b>--no-loop-hoisting-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--perf-profiler-data-file</b>
 <i>file</i></p>
 
-<p style="margin-left:17%;">Specify the file containing
-perf profiler data to read</p>
+<p style="margin-left:17%;">DEPRECATED: Specify the file
+containing perf profiler data to read</p>
 
 
 <p style="margin-left:11%;"><b>--print-active-checkers</b></p>
@@ -382,18 +398,19 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
-<p style="margin-left:17%;">Activates: the detection of
-mismatch between the Java printf format strings and the
-argument types For, example, this checker will warn about
-the type error in &rsquo;printf(&quot;Hello %d&quot;,
+<p style="margin-left:17%;">Activates: checker printf-args:
+Detect mismatches between the Java &rsquo;printf&rsquo;
+format strings and the argument types For example, this
+checker will warn about the type error in
+&rsquo;printf(&quot;Hello %d&quot;,
 &quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--printf-args</b> and disable all other checkers
-(Conversely: <b>--no-printf-args-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable printf-args
+and disable all other checkers (Conversely:
+<b>--no-printf-args-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--progress-bar-style</b>
 <i>{ auto | plain | multiline }</i></p>
@@ -411,8 +428,9 @@ the project</p>
 
 <p style="margin-left:11%;"><b>--pulse</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL] C++
-lifetime analysis (Conversely: <b>--no-pulse</b>)</p>
+<p style="margin-left:17%;">Activates: checker pulse:
+Memory and lifetime analysis. (Conversely:
+<b>--no-pulse</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-cut-to-one-path-procedures-pattern</b>
@@ -447,31 +465,37 @@ are method or namespace::method</p>
 
 <p style="margin-left:11%;"><b>--pulse-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--pulse</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable pulse and
+disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--purity</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Purity analysis (Conversely: <b>--no-purity</b>)</p>
+<p style="margin-left:17%;">Activates: checker purity:
+Detects pure (side-effect-free) functions. A different
+implementation of &quot;impurity&quot;. (Conversely:
+<b>--no-purity</b>)</p>
 
 <p style="margin-left:11%;"><b>--purity-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--purity</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable purity and
+disable all other checkers (Conversely:
 <b>--no-purity-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--quandary</b></p>
 
-<p style="margin-left:17%;">Activates: the quandary taint
-analysis (Conversely: <b>--no-quandary</b>)</p>
+<p style="margin-left:17%;">Activates: checker quandary:
+The Quandary taint analysis detects flows of values between
+sources and sinks, except if the value went through a
+&quot;sanitizer&quot;. In addition to some defaults, users
+can specify their own sources, sinks, and sanitizers
+functions. (Conversely: <b>--no-quandary</b>)</p>
 
 <p style="margin-left:11%;"><b>--quandary-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--quandary</b> and disable all other checkers
-(Conversely: <b>--no-quandary-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable quandary and
+disable all other checkers (Conversely:
+<b>--no-quandary-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
 
@@ -481,13 +505,13 @@ anything on standard output. (Conversely: <b>--no-quiet</b>
 
 <p style="margin-left:11%;"><b>--no-racerd</b></p>
 
-<p style="margin-left:17%;">Deactivates: the RacerD thread
-safety analysis (Conversely: <b>--racerd</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker racerd:
+Thread safety analysis. (Conversely: <b>--racerd</b>)</p>
 
 <p style="margin-left:11%;"><b>--racerd-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--racerd</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable racerd and
+disable all other checkers (Conversely:
 <b>--no-racerd-only</b>)</p>
 
 
@@ -517,29 +541,31 @@ absolute path to a relative path to the root directory
 <p style="margin-left:17%;">Write results and internal
 files in the specified directory</p>
 
-<p style="margin-left:11%;"><b>--no-self_in_block</b></p>
+<p style="margin-left:11%;"><b>--no-self-in-block</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker to flag
-incorrect uses of when Objective-C blocks capture self
-(Conversely: <b>--self_in_block</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+self-in-block: An Objective-C-specific analysis to detect
+when a block captures &rsquo;self&rsquo;. (Conversely:
+<b>--self-in-block</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--self_in_block-only</b></p>
+<p style="margin-left:11%;"><b>--self-in-block-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--self_in_block</b> and disable all other checkers
-(Conversely: <b>--no-self_in_block-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable self-in-block
+and disable all other checkers (Conversely:
+<b>--no-self-in-block-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-siof</b></p>
 
-<p style="margin-left:17%;">Deactivates: the Static
-Initialization Order Fiasco analysis (C++ only) (Conversely:
-<b>--siof</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker siof:
+Catches Static Initialization Order Fiascos in C++, that can
+lead to subtle, compiler-version-dependent errors.
+(Conversely: <b>--siof</b>)</p>
 
 <p style="margin-left:11%;"><b>--siof-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable <b>--siof</b>
-and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable siof and
+disable all other checkers (Conversely:
 <b>--no-siof-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--sqlite-cache-size</b>
@@ -563,24 +589,40 @@ be a power of two between 512 and 65536.</p>
 
 <p style="margin-left:11%;"><b>--no-starvation</b></p>
 
-<p style="margin-left:17%;">Deactivates: starvation
-analysis (Conversely: <b>--starvation</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+starvation: Detect various kinds of situations when no
+progress is being made because of concurrency errors.
+(Conversely: <b>--starvation</b>)</p>
 
 <p style="margin-left:11%;"><b>--starvation-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--starvation</b> and disable all other checkers
-(Conversely: <b>--no-starvation-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable starvation
+and disable all other checkers (Conversely:
+<b>--no-starvation-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--topl</b></p>
+
+<p style="margin-left:17%;">Activates: checker topl:
+Detects errors based on user-provided state machines
+describing multi-object monitors. (Conversely:
+<b>--no-topl</b>)</p>
+
+<p style="margin-left:11%;"><b>--topl-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable topl and
+disable all other checkers (Conversely:
+<b>--no-topl-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-uninit</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker for use of
-uninitialized values (Conversely: <b>--uninit</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker uninit:
+Warns when values are used before having been initialized.
+(Conversely: <b>--uninit</b>)</p>
 
 <p style="margin-left:11%;"><b>--uninit-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--uninit</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable uninit and
+disable all other checkers (Conversely:
 <b>--no-uninit-only</b>)</p>
 
 <h2>BUCK OPTIONS

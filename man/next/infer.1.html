@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed May 13 17:23:55 2020 -->
+<!-- CreationDate: Thu Jun 11 11:55:08 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -48,6 +48,8 @@ analysis for Java and C/C++/Objective-C/Objective-C++</p>
 analyze</b> <i>[options]</i> <b><br>
 infer capture</b> <i>[options]</i> <b><br>
 infer compile</b> <i>[options]</i> <b><br>
+infer help</b> <i>[options]</i> <b><br>
+infer explore</b> <i>[options]</i> <b><br>
 infer report</b> <i>[options]</i> <b><br>
 infer reportdiff</b> <i>[options]</i> <b><br>
 infer run</b> <i>[options]</i> <b><br>
@@ -118,12 +120,14 @@ supported options (see also <b>--help-full</b> for options
 reserved for internal use). <b><br>
 --annotation-reachability</b></p>
 
-<p style="margin-left:17%;">Activates: the annotation
-reachability checker. Given a pair of source and sink
-annotation, e.g. @PerformanceCritical and @Expensive, this
-checker will warn whenever some method annotated with
-@PerformanceCritical calls, directly or indirectly, another
-method annotated with @Expensive (Conversely:
+<p style="margin-left:17%;">Activates: checker
+annotation-reachability: Given a pair of source and sink
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
+some method annotated with
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
+indirectly, another method annotated with
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -189,9 +193,8 @@ spec</p>
 --annotation-reachability-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--annotation-reachability</b> and disable all other
-checkers (Conversely:
-<b>--no-annotation-reachability-only</b>)</p>
+annotation-reachability and disable all other checkers
+(Conversely: <b>--no-annotation-reachability-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -205,17 +208,18 @@ append to targets discovered by the
 <b>infer-capture</b>(1). <b><br>
 --no-biabduction</b></p>
 
-<p style="margin-left:17%;">Deactivates: the separation
-logic based bi-abduction analysis using the checkers
-framework (Conversely: <b>--biabduction</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+biabduction: This analysis deals with a range of issues,
+many linked to memory safety. (Conversely:
+<b>--biabduction</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --biabduction-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--biabduction</b> and disable all other checkers
-(Conversely: <b>--no-biabduction-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable biabduction
+and disable all other checkers (Conversely:
+<b>--no-biabduction-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -267,6 +271,14 @@ clang-based targets (C/C++/Objective-C/Objective-C++).
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--buck-combined</b></p>
+
+<p style="margin-left:17%;">Activates: Buck integration for
+clang-based and Java targets. (Conversely:
+<b>--no-buck-combined</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --buck-compilation-database</b> <i>{ no-deps | deps
 }</i></p>
 
@@ -312,16 +324,17 @@ matched by the specified regular expression. Only valid for
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
 --bufferoverrun</b></p>
 
-<p style="margin-left:17%;">Activates: the buffer overrun
-analysis (Conversely: <b>--no-bufferoverrun</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+bufferoverrun: InferBO is a detector for out-of-bounds array
+accesses. (Conversely: <b>--no-bufferoverrun</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --bufferoverrun-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--bufferoverrun</b> and disable all other checkers
-(Conversely: <b>--no-bufferoverrun-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable bufferoverrun
+and disable all other checkers (Conversely:
+<b>--no-bufferoverrun-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -400,16 +413,17 @@ each analysis has to model.</p>
 <b>infer-analyze</b>(1) and <b>infer-capture</b>(1). <b><br>
 --class-loads</b></p>
 
-<p style="margin-left:17%;">Activates: Java class loading
-analysis (Conversely: <b>--no-class-loads</b>)</p>
+<p style="margin-left:17%;">Activates: checker class-loads:
+Compute set of Java classes loaded. (Conversely:
+<b>--no-class-loads</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --class-loads-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--class-loads</b> and disable all other checkers
-(Conversely: <b>--no-class-loads-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable class-loads
+and disable all other checkers (Conversely:
+<b>--no-class-loads-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -460,15 +474,25 @@ given the same before. Not compatible with
 <b>infer-analyze</b>(1). <b><br>
 --cost</b></p>
 
-<p style="margin-left:17%;">Activates: checker for
-performance cost analysis (Conversely: <b>--no-cost</b>)</p>
+<p style="margin-left:17%;">Activates: checker cost:
+Computes the time complexity of functions and methods. Can
+be used to detect changes in runtime complexity with
+&rsquo;infer reportdiff&rsquo;. (Conversely:
+<b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--cost-issues-tests</b> <i>file</i></p>
+
+<p style="margin-left:17%;">Write a list of cost issues in
+a format suitable for cost tests to <i>file</i></p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --cost-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable <b>--cost</b>
-and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable cost and
+disable all other checkers (Conversely:
 <b>--no-cost-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -585,7 +609,7 @@ infer-reportdiff</b>(1). <b><br>
 <b>--biabduction</b>, <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
 <b>--liveness</b>, <b>--racerd</b>, <b>--siof</b>,
-<b>--self_in_block</b>, <b>--starvation</b>, <b>--uninit</b>
+<b>--self-in-block</b>, <b>--starvation</b>, <b>--uninit</b>
 (Conversely: <b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -627,13 +651,21 @@ does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
 follows: <br>
-ANALYSIS_STOPS (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
+ASSIGN_POINTER_WARNING (enabled by default), <br>
 Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
+BAD_POINTER_COMPARISON (enabled by default), <br>
+BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
+BIABD_CONDITION_ALWAYS_FALSE (disabled by default), <br>
+BIABD_CONDITION_ALWAYS_TRUE (disabled by default), <br>
+BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by <br>
+default), <br>
+BIABD_STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default),
+<br>
 BIABD_USE_AFTER_FREE (enabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
 BUFFER_OVERRUN_L2 (enabled by default), <br>
@@ -657,7 +689,6 @@ CHECKERS_IMMUTABLE_CAST (enabled by default), <br>
 CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
 CLASS_LOAD (enabled by default), <br>
-COMPARING_FLOAT_FOR_EQUALITY (enabled by default), <br>
 COMPONENT_FACTORY_FUNCTION (enabled by default), <br>
 COMPONENT_FILE_CYCLOMATIC_COMPLEXITY (enabled by default),
 <br>
@@ -673,14 +704,20 @@ CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
+CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
+<br>
 Cannot_star (enabled by default), <br>
-Codequery (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
+DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
+<br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
 DEALLOCATE_STACK_VARIABLE (enabled by default), <br>
 DEALLOCATE_STATIC_MEMORY (enabled by default), <br>
 DEALLOCATION_MISMATCH (enabled by default), <br>
+DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
+DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by
+default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
@@ -715,18 +752,10 @@ ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE (enabled by <br>
 default), <br>
 EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
 <br>
-EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
-<br>
-default), <br>
 EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
 <br>
 default), <br>
 EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
-<br>
-EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
-EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
-<br>
-EXPENSIVE_EXECUTION_TIME_UI_THREAD (disabled by default),
 <br>
 EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
 EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
@@ -756,11 +785,13 @@ INVARIANT_CALL (disabled by default), <br>
 IVAR_NOT_NULL_CHECKED (enabled by default), <br>
 Internal_error (enabled by default), <br>
 JAVASCRIPT_INJECTION (enabled by default), <br>
+LAB_RESOURCE_LEAK (enabled by default), <br>
 LOCKLESS_VIOLATION (enabled by default), <br>
 LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
 LOGGING_PRIVATE_DATA (enabled by default), <br>
 Leak_after_array_abstraction (enabled by default), <br>
 Leak_in_footprint (enabled by default), <br>
+Leak_unknown_origin (disabled by default), <br>
 MEMORY_LEAK (enabled by default), <br>
 MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
@@ -773,6 +804,7 @@ NULL_DEREFERENCE (enabled by default), <br>
 NULL_TEST_AFTER_DEREFERENCE (disabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
 POINTER_SIZE_MISMATCH (enabled by default), <br>
+POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
 PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
@@ -784,26 +816,26 @@ REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),
 <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (enabled by default), <br>
-RETURN_EXPRESSION_REQUIRED (enabled by default), <br>
-RETURN_STATEMENT_MISSING (enabled by default), <br>
-RETURN_VALUE_IGNORED (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
 SKIP_POINTER_DEREFERENCE (disabled by default), <br>
 SQL_INJECTION (enabled by default), <br>
 SQL_INJECTION_RISK (enabled by default), <br>
-STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default), <br>
+STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
 STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
 STRICT_MODE_VIOLATION (enabled by default), <br>
+STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by <br>
 default), <br>
+UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK (enabled by default),
+<br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -820,7 +852,6 @@ USER_CONTROLLED_SQL_RISK (enabled by default), <br>
 USE_AFTER_DELETE (enabled by default), <br>
 USE_AFTER_FREE (enabled by default), <br>
 USE_AFTER_LIFETIME (enabled by default), <br>
-Unknown_proc (enabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
 Wrong_argument_number (enabled by default). <br>
@@ -846,17 +877,17 @@ or off.</p>
 <b>infer-report</b>(1). <b><br>
 --eradicate</b></p>
 
-<p style="margin-left:17%;">Activates: the eradicate
-@Nullable checker for Java annotations (Conversely:
-<b>--no-eradicate</b>)</p>
+<p style="margin-left:17%;">Activates: checker eradicate:
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
+annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --eradicate-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--eradicate</b> and disable all other checkers
-(Conversely: <b>--no-eradicate-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable eradicate and
+disable all other checkers (Conversely:
+<b>--no-eradicate-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -917,22 +948,28 @@ values: <i>ant</i>, <i>buck</i>, <i>gradle</i>,
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
 --no-fragment-retains-view</b></p>
 
-<p style="margin-left:17%;">Deactivates: detects when
-Android fragments are not explicitly nullified before
-becoming unreabable (Conversely:
-<b>--fragment-retains-view</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+fragment-retains-view: Detects when Android fragments are
+not explicitly nullified before becoming unreachable.
+(Conversely: <b>--fragment-retains-view</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --fragment-retains-view-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--fragment-retains-view</b> and disable all other
-checkers (Conversely:
-<b>--no-fragment-retains-view-only</b>)</p>
+fragment-retains-view and disable all other checkers
+(Conversely: <b>--no-fragment-retains-view-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--from-json-costs-report</b> <i>costs-report.json</i></p>
+
+<p style="margin-left:17%;">Load costs analysis results
+from a costs-report file.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --from-json-report</b> <i>report.json</i></p>
 
 <p style="margin-left:17%;">Load analysis results from a
@@ -971,9 +1008,17 @@ header files (Conversely: <b>--no-headers</b>)</p>
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
 <b>infer-compile</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-report</b>(1),
-<b>infer-reportdiff</b>(1), and <b><br>
-infer-run</b>(1). <b><br>
+infer-explore</b>(1), <b>infer-help</b>(1),
+<b>infer-report</b>(1), <b><br>
+infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+--help-checker</b> <i>+checker-id</i></p>
+
+<p style="margin-left:17%;">Show information about a
+checker, for example <i>biabduction</i>. To see the list of
+all checkers, see <b>--list-checkers</b>.</p>
+
+<p style="margin-left:11%;">See also <b>infer-help</b>(1).
+<b><br>
 --help-format</b> <i>{ auto | groff | pager | plain
 }</i></p>
 
@@ -985,9 +1030,9 @@ undefined, and to <b>pager</b> otherwise.</p>
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
 <b>infer-compile</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-report</b>(1),
-<b>infer-reportdiff</b>(1), and <b><br>
-infer-run</b>(1). <b><br>
+infer-explore</b>(1), <b>infer-help</b>(1),
+<b>infer-report</b>(1), <b><br>
+infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 --help-full</b></p>
 
 <p style="margin-left:17%;">Show this manual with all
@@ -996,9 +1041,17 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
 <b>infer-compile</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-report</b>(1),
-<b>infer-reportdiff</b>(1), and <b><br>
-infer-run</b>(1). <b><br>
+infer-explore</b>(1), <b>infer-help</b>(1),
+<b>infer-report</b>(1), <b><br>
+infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+--help-issue-type</b> <i>+UNIQUE_ID</i></p>
+
+<p style="margin-left:17%;">Show information about an issue
+type, for example <i>NULL_DEREFERENCE</i>. To see the list
+of all issue types, see <b>--list-issue-types</b>.</p>
+
+<p style="margin-left:11%;">See also <b>infer-help</b>(1).
+<b><br>
 --no-hoisting-report-only-expensive</b></p>
 
 <p style="margin-left:17%;">Deactivates: [Hoisting] Report
@@ -1017,51 +1070,56 @@ report. (Conversely: <b>--no-html</b>)</p>
 <b>infer-explore</b>(1). <b><br>
 --immutable-cast</b></p>
 
-<p style="margin-left:17%;">Activates: the detection of
-object cast from immutable type to mutable type. For
-instance, it will detect cast from ImmutableList to List,
-ImmutableMap to Map, and ImmutableSet to Set. (Conversely:
-<b>--no-immutable-cast</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+immutable-cast: Detection of object cast from immutable
+types to mutable types. For instance, it will detect casts
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+(Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --immutable-cast-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--immutable-cast</b> and disable all other checkers
-(Conversely: <b>--no-immutable-cast-only</b>)</p>
+immutable-cast and disable all other checkers (Conversely:
+<b>--no-immutable-cast-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --impurity</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Impurity analysis (Conversely: <b>--no-impurity</b>)</p>
+<p style="margin-left:17%;">Activates: checker impurity:
+Detects functions with potential side-effects. Same as
+&quot;purity&quot;, but implemented on top of Pulse.
+(Conversely: <b>--no-impurity</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --impurity-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--impurity</b> and disable all other checkers
-(Conversely: <b>--no-impurity-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable impurity and
+disable all other checkers (Conversely:
+<b>--no-impurity-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --no-inefficient-keyset-iterator</b></p>
 
-<p style="margin-left:17%;">Deactivates: Check for
-inefficient uses of keySet iterator that access both the key
-and the value. (Conversely:
-<b>--inefficient-keyset-iterator</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+inefficient-keyset-iterator: Check for inefficient uses of
+iterators that iterate on keys then lookup their values,
+instead of iterating on key-value pairs directly.
+(Conversely: <b>--inefficient-keyset-iterator</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --inefficient-keyset-iterator-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--inefficient-keyset-iterator</b> and disable all other
-checkers (Conversely:
+inefficient-keyset-iterator and disable all other checkers
+(Conversely:
 <b>--no-inefficient-keyset-iterator-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1141,7 +1199,8 @@ only run this one linter. (Useful together with
 <b>infer-capture</b>(1). <b><br>
 --no-linters</b></p>
 
-<p style="margin-left:17%;">Deactivates: syntactic linters
+<p style="margin-left:17%;">Deactivates: checker linters:
+Declarative linting framework over the Clang AST.
 (Conversely: <b>--linters</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1192,8 +1251,8 @@ files even if some compilation fails. (Conversely:
 <b>infer-capture</b>(1). <b><br>
 --linters-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--linters</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable linters and
+disable all other checkers (Conversely:
 <b>--no-linters-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1206,10 +1265,28 @@ AL files, then emit possible errors in JSON format to stdout
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--list-checkers</b></p>
+
+<p style="margin-left:17%;">Activates: Show the list of all
+available checkers. (Conversely:
+<b>--no-list-checkers</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-help</b>(1).
+<b><br>
+--list-issue-types</b></p>
+
+<p style="margin-left:17%;">Activates: Show the list of all
+issue types that infer might report. (Conversely:
+<b>--no-list-issue-types</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-help</b>(1).
+<b><br>
 --litho-required-props</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Required Prop check for Litho (Conversely:
+<p style="margin-left:17%;">Activates: checker
+litho-required-props: Checks that all non-option
+&rsquo;@Prop&rsquo;s have been specified when constructing
+Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1217,15 +1294,15 @@ Required Prop check for Litho (Conversely:
 --litho-required-props-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-<b>--litho-required-props</b> and disable all other checkers
+litho-required-props and disable all other checkers
 (Conversely: <b>--no-litho-required-props-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --no-liveness</b></p>
 
-<p style="margin-left:17%;">Deactivates: the detection of
-dead stores and unused variables (Conversely:
+<p style="margin-left:17%;">Deactivates: checker liveness:
+Detection of dead stores and unused variables. (Conversely:
 <b>--liveness</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1244,9 +1321,9 @@ program.</p>
 <b>infer-analyze</b>(1). <b><br>
 --liveness-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--liveness</b> and disable all other checkers
-(Conversely: <b>--no-liveness-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable liveness and
+disable all other checkers (Conversely:
+<b>--no-liveness-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1260,16 +1337,18 @@ make only)</p>
 <b>infer-capture</b>(1). <b><br>
 --loop-hoisting</b></p>
 
-<p style="margin-left:17%;">Activates: checker for
-loop-hoisting (Conversely: <b>--no-loop-hoisting</b>)</p>
+<p style="margin-left:17%;">Activates: checker
+loop-hoisting: Detect opportunities to hoist function calls
+that are invariant outside of loop bodies for efficiency.
+(Conversely: <b>--no-loop-hoisting</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --loop-hoisting-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--loop-hoisting</b> and disable all other checkers
-(Conversely: <b>--no-loop-hoisting-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable loop-hoisting
+and disable all other checkers (Conversely:
+<b>--no-loop-hoisting-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1300,8 +1379,8 @@ to be checked in C++:</p>
 See also <b>infer-analyze</b>(1). <b><br>
 --perf-profiler-data-file</b> <i>file</i></p>
 
-<p style="margin-left:17%;">Specify the file containing
-perf profiler data to read</p>
+<p style="margin-left:17%;">DEPRECATED: Specify the file
+containing perf profiler data to read</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1324,10 +1403,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
-<p style="margin-left:17%;">Activates: the detection of
-mismatch between the Java printf format strings and the
-argument types For, example, this checker will warn about
-the type error in &rsquo;printf(&quot;Hello %d&quot;,
+<p style="margin-left:17%;">Activates: checker printf-args:
+Detect mismatches between the Java &rsquo;printf&rsquo;
+format strings and the argument types For example, this
+checker will warn about the type error in
+&rsquo;printf(&quot;Hello %d&quot;,
 &quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
@@ -1335,9 +1415,9 @@ the type error in &rsquo;printf(&quot;Hello %d&quot;,
 <b>infer-analyze</b>(1). <b><br>
 --printf-args-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--printf-args</b> and disable all other checkers
-(Conversely: <b>--no-printf-args-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable printf-args
+and disable all other checkers (Conversely:
+<b>--no-printf-args-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1432,8 +1512,9 @@ the project</p>
 infer-run</b>(1). <b><br>
 --pulse</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL] C++
-lifetime analysis (Conversely: <b>--no-pulse</b>)</p>
+<p style="margin-left:17%;">Activates: checker pulse:
+Memory and lifetime analysis. (Conversely:
+<b>--no-pulse</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1471,31 +1552,37 @@ are method or namespace::method</p>
 <b>infer-analyze</b>(1). <b><br>
 --pulse-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--pulse</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable pulse and
+disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --purity</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Purity analysis (Conversely: <b>--no-purity</b>)</p>
+<p style="margin-left:17%;">Activates: checker purity:
+Detects pure (side-effect-free) functions. A different
+implementation of &quot;impurity&quot;. (Conversely:
+<b>--no-purity</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --purity-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--purity</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable purity and
+disable all other checkers (Conversely:
 <b>--no-purity-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --quandary</b></p>
 
-<p style="margin-left:17%;">Activates: the quandary taint
-analysis (Conversely: <b>--no-quandary</b>)</p>
+<p style="margin-left:17%;">Activates: checker quandary:
+The Quandary taint analysis detects flows of values between
+sources and sinks, except if the value went through a
+&quot;sanitizer&quot;. In addition to some defaults, users
+can specify their own sources, sinks, and sanitizers
+functions. (Conversely: <b>--no-quandary</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1508,9 +1595,9 @@ Quandary</p>
 <b>infer-analyze</b>(1). <b><br>
 --quandary-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--quandary</b> and disable all other checkers
-(Conversely: <b>--no-quandary-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable quandary and
+disable all other checkers (Conversely:
+<b>--no-quandary-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1545,8 +1632,8 @@ anything on standard output. (Conversely: <b>--no-quiet</b>
 <b>infer-analyze</b>(1) and <b>infer-report</b>(1). <b><br>
 --no-racerd</b></p>
 
-<p style="margin-left:17%;">Deactivates: the RacerD thread
-safety analysis (Conversely: <b>--racerd</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker racerd:
+Thread safety analysis. (Conversely: <b>--racerd</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1560,8 +1647,8 @@ annotations with RacerD (Conversely:
 <b>infer-analyze</b>(1). <b><br>
 --racerd-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--racerd</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable racerd and
+disable all other checkers (Conversely:
 <b>--no-racerd-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1675,27 +1762,29 @@ omitted, prompt for input.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-explore</b>(1). <b><br>
---no-self_in_block</b></p>
+--no-self-in-block</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker to flag
-incorrect uses of when Objective-C blocks capture self
-(Conversely: <b>--self_in_block</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+self-in-block: An Objective-C-specific analysis to detect
+when a block captures &rsquo;self&rsquo;. (Conversely:
+<b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---self_in_block-only</b></p>
+--self-in-block-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--self_in_block</b> and disable all other checkers
-(Conversely: <b>--no-self_in_block-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable self-in-block
+and disable all other checkers (Conversely:
+<b>--no-self-in-block-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --no-siof</b></p>
 
-<p style="margin-left:17%;">Deactivates: the Static
-Initialization Order Fiasco analysis (C++ only) (Conversely:
-<b>--siof</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker siof:
+Catches Static Initialization Order Fiascos in C++, that can
+lead to subtle, compiler-version-dependent errors.
+(Conversely: <b>--siof</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1712,8 +1801,8 @@ recent libstdc++ then it is safe to turn this option on.
 <b>infer-analyze</b>(1). <b><br>
 --siof-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable <b>--siof</b>
-and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable siof and
+disable all other checkers (Conversely:
 <b>--no-siof-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1849,16 +1938,18 @@ be a power of two between 512 and 65536.</p>
 <b>infer-run</b>(1). <b><br>
 --no-starvation</b></p>
 
-<p style="margin-left:17%;">Deactivates: starvation
-analysis (Conversely: <b>--starvation</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker
+starvation: Detect various kinds of situations when no
+progress is being made because of concurrency errors.
+(Conversely: <b>--starvation</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --starvation-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--starvation</b> and disable all other checkers
-(Conversely: <b>--no-starvation-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable starvation
+and disable all other checkers (Conversely:
+<b>--no-starvation-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1869,17 +1960,35 @@ should be considered aliases of @ThreadSafe</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--topl</b></p>
+
+<p style="margin-left:17%;">Activates: checker topl:
+Detects errors based on user-provided state machines
+describing multi-object monitors. (Conversely:
+<b>--no-topl</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--topl-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable topl and
+disable all other checkers (Conversely:
+<b>--no-topl-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --no-uninit</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker for use of
-uninitialized values (Conversely: <b>--uninit</b>)</p>
+<p style="margin-left:17%;">Deactivates: checker uninit:
+Warns when values are used before having been initialized.
+(Conversely: <b>--uninit</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 --uninit-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable
-<b>--uninit</b> and disable all other checkers (Conversely:
+<p style="margin-left:17%;">Activates: Enable uninit and
+disable all other checkers (Conversely:
 <b>--no-uninit-only</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1905,6 +2014,16 @@ exit</p>
 json format and exit</p>
 
 <p style="margin-left:11%;">See also <b>infer-run</b>(1).
+<b><br>
+--write-website</b> <i>path_to_website_dir</i></p>
+
+<p style="margin-left:17%;">Use to write website files
+documenting issue types and checkers under
+<i>path_to_website_dir/</i>. Meant to be used within the
+Infer directory to generate its website at
+<i>fbinfer.com</i> at <i>website/</i>.</p>
+
+<p style="margin-left:11%;">See also <b>infer-help</b>(1).
 <b><br>
 --Xbuck</b> <i>+string</i></p>
 
@@ -2035,8 +2154,9 @@ then its parent, etc., stopping at the first
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer-analyze</b>(1),
 <b>infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-explore</b>(1), <b>infer-report</b>(1),
-<b>infer-reportdiff</b>(1), <b>infer-run</b>(1)</p>
+<b>infer-explore</b>(1), <b>infer-help</b>(1),
+<b>infer-report</b>(1), <b>infer-reportdiff</b>(1),
+<b>infer-run</b>(1)</p>
 <hr>
 </body>
 </html>
