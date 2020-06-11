@@ -211,7 +211,7 @@ class B extends A {
 A consistent use of @Nullable on the return type across subtyping should prevent
 runtime issue like in:
 
-````java
+```java
 class Main {
 
   int foo(A a) {
@@ -269,4 +269,3 @@ public class Main {
   }
 }
 ```
-````

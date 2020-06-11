@@ -221,7 +221,17 @@ let assert_failure =
   register_from_string ~visibility:Developer ~id:"Assert_failure" Error Biabduction
 
 
+let _assign_pointer_warning =
+  register_from_string ~id:"ASSIGN_POINTER_WARNING" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/ASSIGN_POINTER_WARNING.md"]
+
+
 let bad_footprint = register_from_string ~visibility:Developer ~id:"Bad_footprint" Error Biabduction
+
+let _bad_pointer_comparison =
+  register_from_string ~id:"BAD_POINTER_COMPARISON" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
+
 
 let biabduction_analysis_stops =
   register_from_string ~visibility:Developer ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Warning
@@ -280,6 +290,7 @@ let cannot_star = register_from_string ~visibility:Developer ~id:"Cannot_star" E
 
 let captured_strong_self =
   register_from_string ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error SelfInBlock
+    ~user_documentation:[%blob "../../documentation/issues/CAPTURED_STRONG_SELF.md"]
 
 
 let checkers_allocates_memory =
@@ -305,10 +316,12 @@ let checkers_expensive_overrides_unexpensive =
 let checkers_fragment_retain_view =
   register_from_string ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View" Warning
     FragmentRetainsView
+    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
 
 let checkers_immutable_cast =
   register_from_string ~id:"CHECKERS_IMMUTABLE_CAST" Warning ImmutableCast
+    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_IMMUTABLE_CAST.md"]
 
 
 let checkers_printf_args = register_from_string ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
@@ -322,6 +335,7 @@ let class_load = register_from_string ~id:"CLASS_LOAD" Warning ClassLoads
 
 let component_factory_function =
   register_from_string ~id:"COMPONENT_FACTORY_FUNCTION" Advice Linters
+    ~user_documentation:[%blob "../../documentation/issues/COMPONENT_FACTORY_FUNCTION.md"]
 
 
 let component_file_cyclomatic_complexity =
@@ -334,14 +348,20 @@ let component_file_line_count =
 
 let component_initializer_with_side_effects =
   register_from_string ~id:"COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS" Advice Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS.md"]
 
 
 let component_with_multiple_factory_methods =
   register_from_string ~id:"COMPONENT_WITH_MULTIPLE_FACTORY_METHODS" Advice Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/COMPONENT_WITH_MULTIPLE_FACTORY_METHODS.md"]
 
 
 let component_with_unconventional_superclass =
   register_from_string ~id:"COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS" Advice Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS.md"]
 
 
 let condition_always_false =
@@ -360,6 +380,11 @@ let create_intent_from_uri = register_from_string ~id:"CREATE_INTENT_FROM_URI" E
 
 let cross_site_scripting = register_from_string ~id:"CROSS_SITE_SCRIPTING" Error Quandary
 
+let _cxx_reference_captured_in_objc_block =
+  register_from_string ~id:"CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK.md"]
+
+
 let dangling_pointer_dereference =
   register_from_string ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error Biabduction
 
@@ -369,9 +394,15 @@ let dangling_pointer_dereference_maybe =
     Warning Biabduction
 
 
-let dead_store = register_from_string ~id:"DEAD_STORE" Error Liveness
+let dead_store =
+  register_from_string ~id:"DEAD_STORE" Error Liveness
+    ~user_documentation:[%blob "../../documentation/issues/DEAD_STORE.md"]
 
-let deadlock = register_from_string ~id:"DEADLOCK" Error Starvation
+
+let deadlock =
+  register_from_string ~id:"DEADLOCK" Error Starvation
+    ~user_documentation:[%blob "../../documentation/issues/DEADLOCK.md"]
+
 
 let deallocate_stack_variable =
   register_from_string ~id:"DEALLOCATE_STACK_VARIABLE" Error Biabduction
@@ -381,11 +412,25 @@ let deallocate_static_memory = register_from_string ~id:"DEALLOCATE_STATIC_MEMOR
 
 let deallocation_mismatch = register_from_string ~id:"DEALLOCATION_MISMATCH" Error Biabduction
 
+let _direct_atomic_property_access =
+  register_from_string ~id:"DIRECT_ATOMIC_PROPERTY_ACCESS" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]
+
+
+let _discouraged_weak_property_custom_setter =
+  register_from_string ~id:"DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER" Warning Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER.md"]
+
+
 let divide_by_zero = register_from_string ~enabled:false ~id:"DIVIDE_BY_ZERO" Error Biabduction
 
 let do_not_report = register_from_string ~id:"DO_NOT_REPORT" Error Quandary
 
-let empty_vector_access = register_from_string ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
+let empty_vector_access =
+  register_from_string ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/EMPTY_VECTOR_ACCESS.md"]
+
 
 (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with
    null, this can have a lot of reasons to be actually nullable.
@@ -395,6 +440,7 @@ let empty_vector_access = register_from_string ~id:"EMPTY_VECTOR_ACCESS" Error B
 let eradicate_condition_redundant =
   register_from_string ~id:"ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant" Advice
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]
 
 
 (* TODO(T54070503) remove condition redundant nonnull *)
@@ -406,11 +452,13 @@ let _ =
 let eradicate_field_not_initialized =
   register_from_string ~id:"ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized" Warning
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_FIELD_NOT_INITIALIZED.md"]
 
 
 let eradicate_field_not_nullable =
   register_from_string ~id:"ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable" Warning
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_FIELD_NOT_NULLABLE.md"]
 
 
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
@@ -422,11 +470,15 @@ let eradicate_field_over_annotated =
 let eradicate_inconsistent_subclass_parameter_annotation =
   register_from_string ~id:"ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
     ~hum:"Inconsistent Subclass Parameter Annotation" Warning Eradicate
+    ~user_documentation:
+      [%blob "../../documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION.md"]
 
 
 let eradicate_inconsistent_subclass_return_annotation =
   register_from_string ~id:"ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
     ~hum:"Inconsistent Subclass Return Annotation" Warning Eradicate
+    ~user_documentation:
+      [%blob "../../documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION.md"]
 
 
 let eradicate_redundant_nested_class_annotation =
@@ -447,17 +499,20 @@ let eradicate_nullable_dereference =
 let eradicate_parameter_not_nullable =
   register_from_string ~id:"ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable" Warning
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_PARAMETER_NOT_NULLABLE.md"]
 
 
 let eradicate_return_not_nullable =
   register_from_string ~id:"ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable" Warning
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_RETURN_NOT_NULLABLE.md"]
 
 
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
 let eradicate_return_over_annotated =
   register_from_string ~id:"ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated" Advice
     Eradicate
+    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_RETURN_OVER_ANNOTATED.md"]
 
 
 let eradicate_unchecked_usage_in_nullsafe =
@@ -504,12 +559,18 @@ let exposed_insecure_intent_handling =
 
 let failure_exe = register_from_string ~visibility:Silent ~id:"Failure_exe" Info Biabduction
 
-let field_not_null_checked = register_from_string ~id:"IVAR_NOT_NULL_CHECKED" Warning Biabduction
+let field_not_null_checked =
+  register_from_string ~id:"IVAR_NOT_NULL_CHECKED" Warning Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/IVAR_NOT_NULL_CHECKED.md"]
+
 
 (* from AL default linters *)
 let _global_variable_initialized_with_function_or_method_call =
   register_from_string ~enabled:false ~id:"GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
     Warning Linters
+    ~user_documentation:
+      [%blob
+        "../../documentation/issues/GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL.md"]
 
 
 let guardedby_violation_racerd =
@@ -568,7 +629,10 @@ let integer_overflow_u5 =
   register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_U5" Error BufferOverrunChecker
 
 
-let interface_not_thread_safe = register_from_string Warning ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
+let interface_not_thread_safe =
+  register_from_string Warning ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
+
 
 let internal_error =
   register_from_string ~visibility:Developer ~id:"Internal_error" Error Biabduction
@@ -595,6 +659,7 @@ let leak_unknown_origin =
 
 let lock_consistency_violation =
   register_from_string Warning ~id:"LOCK_CONSISTENCY_VIOLATION" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
 let lockless_violation = register_from_string ~id:"LOCKLESS_VIOLATION" Error Starvation
@@ -605,7 +670,10 @@ let expensive_loop_invariant_call =
   register_from_string ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
 
 
-let memory_leak = register_from_string ~id:"MEMORY_LEAK" Error Biabduction
+let memory_leak =
+  register_from_string ~id:"MEMORY_LEAK" Error Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
+
 
 let missing_fld =
   register_from_string ~visibility:Developer ~id:"Missing_fld" ~hum:"Missing Field" Error
@@ -618,14 +686,18 @@ let missing_required_prop =
 
 let mixed_self_weakself =
   register_from_string ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error SelfInBlock
+    ~user_documentation:[%blob "../../documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
 let multiple_weakself =
   register_from_string ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error SelfInBlock
+    ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
 let mutable_local_variable_in_component_file =
   register_from_string ~id:"MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE" Advice Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
 
 
 let null_dereference =
@@ -641,9 +713,15 @@ let nullptr_dereference = register_from_string ~enabled:false ~id:"NULLPTR_DEREF
 
 let parameter_not_null_checked =
   register_from_string ~id:"PARAMETER_NOT_NULL_CHECKED" Warning Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/PARAMETER_NOT_NULL_CHECKED.md"]
 
 
 let pointer_size_mismatch = register_from_string ~id:"POINTER_SIZE_MISMATCH" Error Biabduction
+
+let _pointer_to_const_objc_class =
+  register_from_string ~id:"POINTER_TO_CONST_OBJC_CLASS" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]
+
 
 let precondition_not_found =
   register_from_string ~visibility:Developer ~id:"PRECONDITION_NOT_FOUND" Error Biabduction
@@ -655,6 +733,7 @@ let precondition_not_met =
 
 let premature_nil_termination =
   register_from_string ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
 let pulse_memory_leak = register_from_string ~enabled:false ~id:"PULSE_MEMORY_LEAK" Error Pulse
@@ -665,9 +744,21 @@ let quandary_taint_error =
   register_from_string ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
 
 
-let resource_leak = register_from_string ~id:"RESOURCE_LEAK" Error Biabduction
+let _registered_observer_being_deallocated =
+  register_from_string ~id:"REGISTERED_OBSERVER_BEING_DEALLOCATED" Warning Linters
+    ~user_documentation:
+      [%blob "../../documentation/issues/REGISTERED_OBSERVER_BEING_DEALLOCATED.md"]
 
-let retain_cycle = register_from_string ~enabled:true ~id:"RETAIN_CYCLE" Error Biabduction
+
+let resource_leak =
+  register_from_string ~id:"RESOURCE_LEAK" Error Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/RESOURCE_LEAK.md"]
+
+
+let retain_cycle =
+  register_from_string ~enabled:true ~id:"RETAIN_CYCLE" Error Biabduction
+    ~user_documentation:[%blob "../../documentation/issues/RETAIN_CYCLE.md"]
+
 
 let skip_function =
   register_from_string ~visibility:Developer ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
@@ -689,7 +780,10 @@ let stack_variable_address_escape =
   register_from_string ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
 
 
-let starvation = register_from_string ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
+let starvation =
+  register_from_string ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
+    ~user_documentation:[%blob "../../documentation/issues/STARVATION.md"]
+
 
 let static_initialization_order_fiasco =
   register_from_string ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
@@ -698,10 +792,17 @@ let static_initialization_order_fiasco =
 
 let strict_mode_violation =
   register_from_string ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error Starvation
+    ~user_documentation:[%blob "../../documentation/issues/STRICT_MODE_VIOLATION.md"]
+
+
+let _strong_delegate_warning =
+  register_from_string ~id:"STRONG_DELEGATE_WARNING" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/STRONG_DELEGATE_WARNING.md"]
 
 
 let strong_self_not_checked =
   register_from_string ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error SelfInBlock
+    ~user_documentation:[%blob "../../documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
 
 
 let symexec_memory_error =
@@ -709,7 +810,10 @@ let symexec_memory_error =
     ~hum:"Symbolic Execution Memory Error" Error Biabduction
 
 
-let thread_safety_violation = register_from_string Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
+let thread_safety_violation =
+  register_from_string Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
+
 
 let complexity_increase ~kind ~is_on_ui_thread =
   register_from_cost_string ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
@@ -720,6 +824,11 @@ let topl_error = register_from_string ~id:"TOPL_ERROR" Error TOPL
 let unary_minus_applied_to_unsigned_expression =
   register_from_string ~enabled:false ~id:"UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION" Warning
     Biabduction
+
+
+let _unavailable_api_in_supported_ios_sdk =
+  register_from_string ~id:"UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK" Warning Linters
+    ~user_documentation:[%blob "../../documentation/issues/UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK.md"]
 
 
 let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" Error Uninit
@@ -768,6 +877,7 @@ let vector_invalidation = register_from_string ~id:"VECTOR_INVALIDATION" Error P
 
 let weak_self_in_noescape_block =
   register_from_string ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock
+    ~user_documentation:[%blob "../../documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
 
 
 let wrong_argument_number =
