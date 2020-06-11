@@ -590,7 +590,7 @@ config_tests: test_build ocaml_unit_test validate-skel mod_dep
 	$(MAKE) endtoend_test checkCopyright
 	$(MAKE) manuals
 
-ifneq ($(filter endtoend_test,${MAKECMDGOALS}),)
+ifneq ($(filter endtoend_test,$(MAKECMDGOALS)),)
 checkCopyright: src_build
 toplevel_test: checkCopyright
 endif
@@ -854,7 +854,7 @@ doc: src_build_common
 	$(QUIET)$(call silent_on_success,Generating infer documentation,\
 	$(MAKE_SOURCE) doc)
 # do not call the browser if we are publishing the docs
-ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
+ifneq ($(NO_BROWSE_DOC),yes)
 	$(QUIET)$(call silent_on_success,Opening in browser,\
 	browse $(INFER_DIR)/_build/default/_doc/_html/index.html)
 	$(QUIET)echo "Tip: you can generate the doc for all the opam dependencies of infer like this:"
@@ -864,22 +864,28 @@ ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 endif
 
 .PHONY: doc-publish
-doc-publish: $(INFER_GROFF_MANUALS)
+doc-publish:
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(QUIET)$(call silent_on_success,Cleaning up FB-only files,\
+	$(MAKE) -C $(SRC_DIR) clean; \
+	$(MAKE) -C facebook clean)
+endif
+	$(QUIET)$(call silent_on_success,Building infer and manuals,\
+	$(MAKE) $(INFER_GROFF_MANUALS))
 	$(QUIET)$(MKDIR_P) "$(WEBSITE_DIR)"/static/man/next "$(WEBSITE_DIR)"/static/odoc/next
 	$(QUIET)$(call silent_on_success,Copying man pages,\
 	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
 	  groff -Thtml "$$man" > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
 	done)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(call silent_on_success,Cleaning up FB-only files,\
-	$(MAKE) -C $(SRC_DIR) clean; \
-	$(MAKE) -C facebook clean)
-endif
 	$(QUIET)$(call silent_on_success,Building OCaml modules documentation,\
-	$(MAKE) IS_FACEBOOK_TREE=no doc)
+	$(MAKE) IS_FACEBOOK_TREE=no NO_BROWSE_DOC=yes doc)
 	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
 	rsync -a --delete $(BUILD_DIR)/default/_doc/_html/ "$(WEBSITE_DIR)"/static/odoc/next/)
+	$(QUIET)$(call silent_on_success,Building infer,\
+	$(MAKE) src_build)
+	$(QUIET)$(call silent_on_success,Calling 'infer help --write-website',\
+	$(INFER_BIN) help --write-website "$(WEBSITE_DIR)")
 
 # print list of targets
 .PHONY: show-targets

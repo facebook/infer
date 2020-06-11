@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+const checkers = require("./checkers");
+
 module.exports = {
   docs: {
     "Quick Start": ["getting-started", "hello-world"],
@@ -26,11 +28,7 @@ module.exports = {
       "separation-logic-and-bi-abduction",
       "limitations",
     ],
-    "Bug Types Reference": [
-      "checkers-bug-types",
-      "eradicate-warnings",
-      "linters-bug-types",
-    ],
+    "Analyses and Issue Types": checkers.doc_entries,
     Contribute: ["absint-framework", "adding-checkers", "internal-API"],
     Versions: ["versions"],
   },

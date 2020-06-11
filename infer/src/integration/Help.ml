@@ -6,9 +6,77 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 let list_checkers () = assert false
+
+let mk_markdown_docs_path ~website_root ~basename = website_root ^/ "docs" ^/ basename ^ ".md"
+
+let escape_double_quotes s = String.substr_replace_all s ~pattern:"\"" ~with_:"\\\""
+
+let all_issues_basename = "all-issue-types"
+
+let basename_checker_prefix = "checker-"
+
+let basename_of_checker {Checker.id} = basename_checker_prefix ^ id
+
+let get_checker_web_documentation (checker : Checker.config) =
+  match checker.kind with
+  | UserFacing {title; markdown_body} ->
+      Some (title, markdown_body, None)
+  | UserFacingDeprecated {title; markdown_body; deprecation_message} ->
+      Some (title, markdown_body, Some deprecation_message)
+  | Internal | Exercise ->
+      None
+
+
+let markdown_one_issue f (issue_type : IssueType.t) =
+  F.fprintf f "## %s@\n@\n" issue_type.unique_id ;
+  let checker_config = Checker.config issue_type.checker in
+  if Option.is_none (get_checker_web_documentation checker_config) then
+    L.die InternalError
+      "Checker %s can report user-facing issue %s but is not of type UserFacing in \
+       src/base/Checker.ml. Please fix!"
+      checker_config.id issue_type.unique_id ;
+  F.fprintf f "Reported as \"%s\" by [%s](%s.md).@\n@\n" issue_type.hum checker_config.id
+    (basename_of_checker checker_config) ;
+  match issue_type.user_documentation with
+  | None ->
+      ()
+  | Some documentation ->
+      F.pp_print_string f documentation
+
+
+let all_issues_header =
+  {|---
+title: List of all issue types
+---
+
+Here is an overview of the issue types currently reported by Infer. Currently outdated and being worked on!
+
+|}
+
+
+(* TODO: instead of just taking issues that have documentation, enforce that (some, eg enabled
+       by default) issue types always have documentation *)
+let all_issues =
+  lazy
+    ( IssueType.all_issues ()
+    |> List.filter ~f:(fun {IssueType.user_documentation} -> Option.is_some user_documentation)
+    |> List.sort ~compare:(fun {IssueType.unique_id= id1} {IssueType.unique_id= id2} ->
+           String.compare id1 id2 ) )
+
+
+let all_issues_website ~website_root =
+  let issues_to_document = Lazy.force all_issues in
+  Utils.with_file_out (mk_markdown_docs_path ~website_root ~basename:all_issues_basename)
+    ~f:(fun out_channel ->
+      let f = F.formatter_of_out_channel out_channel in
+      F.fprintf f "%s@\n%a@\n%!" all_issues_header
+        (Pp.seq ~sep:"\n" markdown_one_issue)
+        issues_to_document )
+
 
 let list_issue_types () =
   L.progress
@@ -66,4 +134,118 @@ let show_issue_types issue_types =
   L.result "@]%!"
 
 
-let write_website ~website_root:_ = assert false
+let mk_checkers_json checkers_base_filenames =
+  `Assoc
+    [ ( "README"
+      , `String
+          (Printf.sprintf
+             "This is a %cgenerated file, run `make doc-publish` from the root of the infer \
+              repository to generate it"
+             (* avoid tooling thinking this source file itself is generated because of the string _at_generated appearing in it *)
+             '@') )
+    ; ( "doc_entries"
+      , `List
+          ( `String all_issues_basename
+          :: List.map checkers_base_filenames ~f:(fun filename -> `String filename) ) ) ]
+
+
+(** Writes an index of all the checkers documentation pages. Must correspond to all the pages
+    written in docs/! *)
+let write_checkers_json ~path =
+  let json =
+    List.filter_map Checker.all ~f:(fun checker ->
+        let config = Checker.config checker in
+        if Option.is_some (get_checker_web_documentation config) then
+          Some (basename_of_checker config)
+        else None )
+    |> mk_checkers_json
+  in
+  Utils.with_file_out path ~f:(fun out_channel ->
+      Yojson.pretty_to_channel ~std:true out_channel json )
+
+
+let pp_checker_webpage_header f ~title ~short_documentation =
+  F.fprintf f {|---
+title: "%s"
+description: "%s"
+---
+
+%s
+
+|} (escape_double_quotes title)
+    (escape_double_quotes short_documentation)
+    short_documentation
+
+
+let pp_checker_deprecation_message f message =
+  F.fprintf f "**\\*\\*\\*DEPRECATED\\*\\*\\*** %s@\n@\n" message
+
+
+let pp_checker_cli_flags f checker_config =
+  F.fprintf f "Activate with `--%s`.@\n@\n" checker_config.Checker.id
+
+
+let string_of_support (support : Checker.support) =
+  match support with NoSupport -> "No" | ExperimentalSupport -> "Experimental" | Support -> "Yes"
+
+
+let pp_checker_language_support f support =
+  F.fprintf f "Supported languages:@\n" ;
+  List.iter Language.all ~f:(fun language ->
+      F.fprintf f "- %s: %s@\n" (Language.to_string language) (string_of_support (support language)) ) ;
+  F.pp_print_newline f ()
+
+
+let pp_checker_issue_types f checker =
+  F.fprintf f "@\n@\n## List of Issue Types@\n@\n" ;
+  F.fprintf f "The following issue types are reported by this checker:@\n" ;
+  let checker_issues =
+    List.filter (Lazy.force all_issues) ~f:(fun {IssueType.checker= issue_checker} ->
+        Checker.equal issue_checker checker )
+  in
+  let pp_issue f {IssueType.unique_id} =
+    F.fprintf f "- [%s](%s.md#%s)@\n" unique_id all_issues_basename (String.lowercase unique_id)
+  in
+  List.iter checker_issues ~f:(pp_issue f)
+
+
+let write_checker_webpage ~website_root (checker : Checker.t) =
+  let checker_config = Checker.config checker in
+  match get_checker_web_documentation checker_config with
+  | None ->
+      ()
+  | Some (title, markdown_body, deprecated_opt) ->
+      Utils.with_file_out
+        (mk_markdown_docs_path ~website_root ~basename:(basename_of_checker checker_config))
+        ~f:(fun out_channel ->
+          let f = F.formatter_of_out_channel out_channel in
+          pp_checker_webpage_header f ~title ~short_documentation:checker_config.short_documentation ;
+          Option.iter deprecated_opt ~f:(pp_checker_deprecation_message f) ;
+          Option.iter checker_config.cli_flags ~f:(fun _ -> pp_checker_cli_flags f checker_config) ;
+          pp_checker_language_support f checker_config.support ;
+          F.pp_print_string f markdown_body ;
+          pp_checker_issue_types f checker ;
+          () )
+
+
+(** delete all files that look like they were generated by a previous invocation of
+    [--write-website] to avoid keeping documentation for deleted checkers around *)
+let delete_checkers_website ~website_root =
+  Utils.directory_iter
+    (fun path ->
+      if String.is_prefix ~prefix:basename_checker_prefix (Filename.basename path) then (
+        L.progress "deleting '%s'@\n" path ;
+        Unix.unlink path ) )
+    (website_root ^/ "docs")
+
+
+let all_checkers_website ~website_root =
+  delete_checkers_website ~website_root ;
+  List.iter Checker.all ~f:(fun checker -> write_checker_webpage ~website_root checker)
+
+
+let write_website ~website_root =
+  write_checkers_json ~path:(website_root ^/ "checkers.json") ;
+  all_checkers_website ~website_root ;
+  all_issues_website ~website_root ;
+  ()
