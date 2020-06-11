@@ -9,8 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 
-let list_checkers () = assert false
-
 let mk_markdown_docs_path ~website_root ~basename = website_root ^/ "docs" ^/ basename ^ ".md"
 
 let escape_double_quotes s = String.substr_replace_all s ~pattern:"\"" ~with_:"\\\""
@@ -46,6 +44,46 @@ let markdown_one_issue f (issue_type : IssueType.t) =
       ()
   | Some documentation ->
       F.pp_print_string f documentation
+
+
+let pp_checker_name f checker = F.pp_print_string f (Checker.get_id checker)
+
+let string_of_checker_kind (kind : Checker.kind) =
+  match kind with
+  | Exercise ->
+      "Exercise"
+  | Internal ->
+      "Internal"
+  | UserFacing _ ->
+      "UserFacing"
+  | UserFacingDeprecated _ ->
+      "UserFacingDeprecated"
+
+
+let string_of_support (support : Checker.support) =
+  match support with NoSupport -> "No" | ExperimentalSupport -> "Experimental" | Support -> "Yes"
+
+
+let list_checkers () =
+  L.progress
+    "@[Format:@\nChecker ID:kind:clang support:Java support:enabled by default:activates@\n@\n@]%!" ;
+  L.result "@[<v>" ;
+  Checker.all
+  |> List.iter ~f:(fun checker ->
+         let ({ Checker.id
+              ; kind
+              ; support
+              ; short_documentation= _ (* only list in [show_checkers] *)
+              ; cli_flags= _ (* only list in [show_checkers] *)
+              ; enabled_by_default
+              ; activates }[@warning "+9"]) =
+           Checker.config checker
+         in
+         L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
+           (string_of_support (support Clang))
+           (string_of_support (support Java))
+           enabled_by_default (Pp.seq ~sep:"," pp_checker_name) activates ) ;
+  L.result "@]%!"
 
 
 let all_issues_header =
@@ -109,7 +147,37 @@ let list_issue_types () =
   L.result "@]%!"
 
 
-let show_checkers _ = assert false
+let pp_checker f checker =
+  let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}[@warning
+                                                                                                   "+9"])
+      =
+    Checker.config checker
+  in
+  F.fprintf f
+    "@[<v>id=%s@\nkind=%s@\nsupport={clang:%s; Java:%s}@\nenabled_by_default=%b@\n@\n%s@\n" id
+    (string_of_checker_kind kind)
+    (string_of_support (support Clang))
+    (string_of_support (support Java))
+    enabled_by_default short_documentation ;
+  ( match cli_flags with
+  | None ->
+      F.fprintf f
+        "Cannot be activated from the command line (only used indirectly by other checkers)."
+  | Some _ ->
+      F.fprintf f "@\nActivated with --%s@\n" id ) ;
+  if not (List.is_empty activates) then
+    F.fprintf f
+      "@\n\
+       Depends on the following checker%s, that will automatically be activated together with %s: \
+       %a@\n"
+      (if List.length activates > 1 then "s" else "")
+      id
+      (Pp.seq ~sep:", " pp_checker_name)
+      activates ;
+  ()
+
+
+let show_checkers checkers = L.result "%a" (Pp.seq ~sep:"\n" pp_checker) checkers
 
 let show_issue_type (issue_type : IssueType.t) =
   L.result "%s (unique ID: %s)@\n" issue_type.hum issue_type.unique_id ;
@@ -183,10 +251,6 @@ let pp_checker_deprecation_message f message =
 
 let pp_checker_cli_flags f checker_config =
   F.fprintf f "Activate with `--%s`.@\n@\n" checker_config.Checker.id
-
-
-let string_of_support (support : Checker.support) =
-  match support with NoSupport -> "No" | ExperimentalSupport -> "Experimental" | Support -> "Yes"
 
 
 let pp_checker_language_support f support =
