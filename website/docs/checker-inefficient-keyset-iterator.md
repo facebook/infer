@@ -1,0 +1,13 @@
+---
+title: "Inefficient keySet Iterator"
+description: "Check for inefficient uses of iterators that iterate on keys then lookup their values, instead of iterating on key-value pairs directly."
+---
+
+Check for inefficient uses of iterators that iterate on keys then lookup their values, instead of iterating on key-value pairs directly.
+
+Activate with `--inefficient-keyset-iterator`.
+
+Supported languages:
+- C/C++/ObjC: No
+- Java: Yes
+
