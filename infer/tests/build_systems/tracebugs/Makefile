@@ -8,7 +8,7 @@ TESTS_DIR = ../..
 include $(TESTS_DIR)/base.make
 
 SOURCES = ../codetoanalyze/hello.c
-OBJECTS = $(SOURCES:.c=.o)
+OBJECTS = hello.o
 
 default: print
 
@@ -36,7 +36,11 @@ test3: infer-out/report.json
 
 
 .PHONY: print
-print: test1 test2 test3
+print:
+# the tests cannot be run in parallel safely, run them sequentially
+	$(MAKE) test1
+	$(MAKE) test2
+	$(MAKE) test3
 
 .PHONY: test
 test: print
