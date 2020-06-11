@@ -38,12 +38,20 @@ type t =
   | Uninit
 [@@deriving equal, enumerate]
 
-type support = NoSupport | Support | ExperimentalSupport | ToySupport
+type support = NoSupport | ExperimentalSupport | Support
 
-type cli_flags = {long: string; deprecated: string list; show_in_help: bool}
+(** see .mli for how to fill these *)
+type kind =
+  | UserFacing of {title: string; markdown_body: string}
+  | UserFacingDeprecated of {title: string; markdown_body: string; deprecation_message: string}
+  | Internal
+  | Exercise
+
+type cli_flags = {deprecated: string list; show_in_help: bool}
 
 type config =
   { id: string
+  ; kind: kind
   ; support: Language.t -> support
   ; short_documentation: string
   ; cli_flags: cli_flags option
@@ -62,223 +70,304 @@ let config_unsafe checker =
   let supports_java (language : Language.t) =
     match language with Clang -> NoSupport | Java -> Support
   in
-  let supports_java_experimental (language : Language.t) =
-    match language with Clang -> NoSupport | Java -> ExperimentalSupport
-  in
   match checker with
   | AnnotationReachability ->
       { id= "annotation-reachability"
+      ; kind= UserFacing {title= "Annotation Reachability"; markdown_body= ""}
       ; support= supports_clang_and_java
       ; short_documentation=
-          "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
-           @PerformanceCritical and @Expensive, this checker will warn whenever some method \
-           annotated with @PerformanceCritical calls, directly or indirectly, another method \
-           annotated with @Expensive"
-      ; cli_flags= Some {long= "annotation-reachability"; deprecated= []; show_in_help= true}
+          "Given a pair of source and sink annotation, e.g. `@PerformanceCritical` and \
+           `@Expensive`, this checker will warn whenever some method annotated with \
+           `@PerformanceCritical` calls, directly or indirectly, another method annotated with \
+           `@Expensive`"
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Biabduction ->
       { id= "biabduction"
+      ; kind=
+          UserFacing
+            { title= "Biabduction"
+            ; markdown_body=
+                "Read more about its foundations in the [Separation Logic and Biabduction \
+                 page](separation-logic-and-bi-abduction)." }
       ; support= supports_clang_and_java
       ; short_documentation=
-          "the separation logic based bi-abduction analysis using the checkers framework"
-      ; cli_flags= Some {long= "biabduction"; deprecated= []; show_in_help= true}
+          "This analysis deals with a range of issues, many linked to memory safety."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | BufferOverrunAnalysis ->
-      { id= "buffer-overrun-analysis"
+      { id= "bufferoverrun-analysis"
+      ; kind= Internal
       ; support= supports_clang_and_java
       ; short_documentation=
-          "internal part of the buffer overrun analysis that computes values at each program \
-           point, automatically triggered when analyses that depend on these are run"
+          "Internal part of the buffer overrun analysis that computes values at each program \
+           point, automatically triggered when analyses that depend on these are run."
       ; cli_flags= None
       ; enabled_by_default= false
       ; activates= [] }
   | BufferOverrunChecker ->
-      { id= "buffer-overrun-checker"
+      { id= "bufferoverrun"
+      ; kind=
+          UserFacing
+            { title= "Buffer Overrun Analysis (InferBO)"
+            ; markdown_body=
+                "You can read about its origins in this [blog \
+                 post](https://research.fb.com/inferbo-infer-based-buffer-overrun-analyzer/)." }
       ; support= supports_clang_and_java
-      ; short_documentation= "the buffer overrun analysis"
-      ; cli_flags= Some {long= "bufferoverrun"; deprecated= []; show_in_help= true}
+      ; short_documentation= "InferBO is a detector for out-of-bounds array accesses."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
   | ClassLoads ->
-      { id= "class-loading-analysis"
+      { id= "class-loads"
+      ; kind=
+          UserFacingDeprecated
+            { title= "Class loading analysis"
+            ; markdown_body= ""
+            ; deprecation_message= "Unmaintained prototype." }
       ; support= supports_java
-      ; short_documentation= "Java class loading analysis"
-      ; cli_flags= Some {long= "class-loads"; deprecated= []; show_in_help= true}
+      ; short_documentation= "Compute set of Java classes loaded."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Cost ->
-      { id= "cost-analysis"
+      { id= "cost"
+      ; kind= UserFacing {title= "Cost: Runtime Complexity Analysis"; markdown_body= ""}
       ; support= supports_clang_and_java
-      ; short_documentation= "checker for performance cost analysis"
-      ; cli_flags= Some {long= "cost"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Computes the time complexity of functions and methods. Can be used to detect changes in \
+           runtime complexity with `infer reportdiff`."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
   | Eradicate ->
       { id= "eradicate"
+      ; kind=
+          UserFacing
+            {title= "Eradicate"; markdown_body= [%blob "../../documentation/checkers/Eradicate.md"]}
       ; support= supports_java
-      ; short_documentation= "the eradicate @Nullable checker for Java annotations"
-      ; cli_flags= Some {long= "eradicate"; deprecated= []; show_in_help= true}
+      ; short_documentation= "The eradicate `@Nullable` checker for Java annotations."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | FragmentRetainsView ->
       { id= "fragment-retains-view"
+      ; kind=
+          UserFacingDeprecated
+            { title= "Fragment Retains View"
+            ; markdown_body= ""
+            ; deprecation_message= "Unmaintained due to poor precision." }
       ; support= supports_java
       ; short_documentation=
-          "detects when Android fragments are not explicitly nullified before becoming unreabable"
-      ; cli_flags= Some {long= "fragment-retains-view"; deprecated= []; show_in_help= true}
+          "Detects when Android fragments are not explicitly nullified before becoming unreachable."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | ImmutableCast ->
       { id= "immutable-cast"
+      ; kind=
+          UserFacingDeprecated
+            { title= "Immutable Cast"
+            ; markdown_body=
+                "Casts flagged by this checker are unsafe because calling mutation operations on \
+                 the cast objects will fail at runtime."
+            ; deprecation_message= "Unmaintained due to poor actionability of the reports." }
       ; support= supports_java
       ; short_documentation=
-          "the detection of object cast from immutable type to mutable type. For instance, it will \
-           detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
-      ; cli_flags= Some {long= "immutable-cast"; deprecated= []; show_in_help= true}
+          "Detection of object cast from immutable types to mutable types. For instance, it will \
+           detect casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and \
+           `ImmutableSet` to `Set`."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Impurity ->
       { id= "impurity"
+      ; kind= Internal
       ; support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] Impurity analysis"
-      ; cli_flags= Some {long= "impurity"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Detects functions with potential side-effects. Same as \"purity\", but implemented on \
+           top of Pulse."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Pulse] }
   | InefficientKeysetIterator ->
       { id= "inefficient-keyset-iterator"
+      ; kind= UserFacing {title= "Inefficient keySet Iterator"; markdown_body= ""}
       ; support= supports_java
       ; short_documentation=
-          "Check for inefficient uses of keySet iterator that access both the key and the value."
-      ; cli_flags= Some {long= "inefficient-keyset-iterator"; deprecated= []; show_in_help= true}
+          "Check for inefficient uses of iterators that iterate on keys then lookup their values, \
+           instead of iterating on key-value pairs directly."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | Linters ->
-      { id= "al-linters"
+      { id= "linters"
+      ; kind=
+          UserFacingDeprecated
+            { title= "AST Language (AL)"
+            ; markdown_body= [%blob "../../documentation/checkers/ASTLanguage.md"]
+            ; deprecation_message= "On end-of-life support, may be removed in the future." }
       ; support= supports_clang
-      ; short_documentation= "syntactic linters"
-      ; cli_flags= Some {long= "linters"; deprecated= []; show_in_help= true}
+      ; short_documentation= "Declarative linting framework over the Clang AST."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | LithoRequiredProps ->
       { id= "litho-required-props"
-      ; support= supports_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] Required Prop check for Litho"
-      ; cli_flags= Some {long= "litho-required-props"; deprecated= []; show_in_help= true}
+      ; kind= UserFacing {title= "Litho \"Required Props\""; markdown_body= ""}
+      ; support= supports_java
+      ; short_documentation=
+          "Checks that all non-option `@Prop`s have been specified when constructing Litho \
+           components."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Liveness ->
       { id= "liveness"
+      ; kind= UserFacing {title= "Liveness"; markdown_body= ""}
       ; support= supports_clang
-      ; short_documentation= "the detection of dead stores and unused variables"
-      ; cli_flags= Some {long= "liveness"; deprecated= []; show_in_help= true}
+      ; short_documentation= "Detection of dead stores and unused variables."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | LoopHoisting ->
       { id= "loop-hoisting"
+      ; kind= UserFacing {title= "Loop Hoisting"; markdown_body= ""}
       ; support= supports_clang_and_java
-      ; short_documentation= "checker for loop-hoisting"
-      ; cli_flags= Some {long= "loop-hoisting"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Detect opportunities to hoist function calls that are invariant outside of loop bodies \
+           for efficiency."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis; Purity] }
   | NullsafeDeprecated ->
       { id= "nullsafe"
+      ; kind= Internal
       ; support= (fun _ -> NoSupport)
-      ; short_documentation= "[RESERVED] Reserved for nullsafe typechecker, use --eradicate for now"
-      ; cli_flags=
-          Some
-            { long= "nullsafe"
-            ; deprecated= ["-check-nullable"; "-suggest-nullable"]
-            ; show_in_help= false }
+      ; short_documentation=
+          "[RESERVED] Reserved for nullsafe typechecker, use `--eradicate` for now."
+      ; cli_flags= Some {deprecated= ["-check-nullable"; "-suggest-nullable"]; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }
   | PrintfArgs ->
       { id= "printf-args"
+      ; kind=
+          UserFacingDeprecated
+            { title= "`printf()` Argument Types"
+            ; markdown_body= ""
+            ; deprecation_message= "Unmaintained." }
       ; support= supports_java
       ; short_documentation=
-          "the detection of mismatch between the Java printf format strings and the argument types \
-           For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
+          "Detect mismatches between the Java `printf` format strings and the argument types For \
+           example, this checker will warn about the type error in `printf(\"Hello %d\", \
            \"world\")`"
-      ; cli_flags= Some {long= "printf-args"; deprecated= []; show_in_help= true}
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Pulse ->
       { id= "pulse"
+      ; kind= UserFacing {title= "Pulse"; markdown_body= ""}
       ; support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] memory and lifetime analysis"
-      ; cli_flags= Some {long= "pulse"; deprecated= ["-ownership"]; show_in_help= true}
+      ; short_documentation= "Memory and lifetime analysis."
+      ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Purity ->
       { id= "purity"
+      ; kind= Internal
       ; support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] Purity analysis"
-      ; cli_flags= Some {long= "purity"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Detects pure (side-effect-free) functions. A different implementation of \"impurity\"."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
   | Quandary ->
       { id= "quandary"
+      ; kind=
+          UserFacing
+            {title= "Quandary"; markdown_body= [%blob "../../documentation/checkers/Quandary.md"]}
       ; support= supports_clang_and_java
-      ; short_documentation= "the quandary taint analysis"
-      ; cli_flags= Some {long= "quandary"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "The Quandary taint analysis detects flows of values between sources and sinks, except \
+           if the value went through a \"sanitizer\". In addition to some defaults, users can \
+           specify their own sources, sinks, and sanitizers functions."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | RacerD ->
-      { id= "RacerD"
+      { id= "racerd"
+      ; kind=
+          UserFacing
+            {title= "RacerD"; markdown_body= [%blob "../../documentation/checkers/RacerD.md"]}
       ; support= supports_clang_and_java
-      ; short_documentation= "the RacerD thread safety analysis"
-      ; cli_flags= Some {long= "racerd"; deprecated= ["-threadsafety"]; show_in_help= true}
+      ; short_documentation= "Thread safety analysis."
+      ; cli_flags= Some {deprecated= ["-threadsafety"]; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | ResourceLeakLabExercise ->
       { id= "resource-leak-lab"
-      ; support= (fun _ -> ToySupport)
+      ; kind= Exercise
+      ; support= (fun _ -> Support)
       ; short_documentation= ""
-      ; cli_flags= Some {long= "resource-leak"; deprecated= []; show_in_help= false}
+      ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }
   | SIOF ->
-      { id= "SIOF"
+      { id= "siof"
+      ; kind= UserFacing {title= "Static Initialization Order Fiasco"; markdown_body= ""}
       ; support= supports_clang
-      ; short_documentation= "the Static Initialization Order Fiasco analysis (C++ only)"
-      ; cli_flags= Some {long= "siof"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Catches Static Initialization Order Fiascos in C++, that can lead to subtle, \
+           compiler-version-dependent errors."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | SelfInBlock ->
       { id= "self-in-block"
+      ; kind= UserFacing {title= "Self in Block"; markdown_body= ""}
       ; support= supports_clang
       ; short_documentation=
-          "checker to flag incorrect uses of when Objective-C blocks capture self"
-      ; cli_flags= Some {long= "self_in_block"; deprecated= []; show_in_help= true}
+          "An Objective-C-specific analysis to detect when a block captures `self`."
+      ; cli_flags= Some {deprecated= ["-self_in_block"]; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | Starvation ->
       { id= "starvation"
+      ; kind=
+          UserFacing
+            { title= "Starvation"
+            ; markdown_body= [%blob "../../documentation/checkers/Starvation.md"] }
       ; support= supports_clang_and_java
-      ; short_documentation= "starvation analysis"
-      ; cli_flags= Some {long= "starvation"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Detect various kinds of situations when no progress is being made because of \
+           concurrency errors."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | TOPL ->
-      { id= "TOPL"
+      { id= "topl"
+      ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
       ; support= supports_clang_and_java_experimental
-      ; short_documentation= "TOPL"
-      ; cli_flags= Some {long= "topl"; deprecated= []; show_in_help= true}
+      ; short_documentation=
+          "Detects errors based on user-provided state machines describing multi-object monitors."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Biabduction] }
   | Uninit ->
       { id= "uninit"
+      ; kind= UserFacing {title= "Uninitialized Variable"; markdown_body= ""}
       ; support= supports_clang
-      ; short_documentation= "checker for use of uninitialized values"
-      ; cli_flags= Some {long= "uninit"; deprecated= []; show_in_help= true}
+      ; short_documentation= "Warns when values are used before having been initialized."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
 
 
 let config c =
   let config = config_unsafe c in
-  let is_illegal_id_char c = match c with 'a' .. 'z' | 'A' .. 'Z' | '-' -> false | _ -> true in
+  let is_illegal_id_char c = match c with 'a' .. 'z' | '-' -> false | _ -> true in
   String.find config.id ~f:is_illegal_id_char
   |> Option.iter ~f:(fun c ->
          L.die InternalError

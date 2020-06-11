@@ -57,11 +57,11 @@ OPTIONS
        options (see also --help-full for options reserved for internal use).
 
        --annotation-reachability
-           Activates: the annotation reachability checker. Given a pair of
-           source and sink annotation, e.g. @PerformanceCritical and
-           @Expensive, this checker will warn whenever some method annotated
-           with @PerformanceCritical calls, directly or indirectly, another
-           method annotated with @Expensive (Conversely:
+           Activates: checker annotation-reachability: Given a pair of source
+           and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`,
+           this checker will warn whenever some method annotated with
+           `@PerformanceCritical` calls, directly or indirectly, another
+           method annotated with `@Expensive` (Conversely:
            --no-annotation-reachability)           See also infer-analyze(1).
 
        --annotation-reachability-custom-pairs json
@@ -103,7 +103,7 @@ OPTIONS
            given sources spec           See also infer-analyze(1).
 
        --annotation-reachability-only
-           Activates: Enable --annotation-reachability and disable all other
+           Activates: Enable annotation-reachability and disable all other
            checkers (Conversely: --no-annotation-reachability-only)       
     See also infer-analyze(1).
 
@@ -112,12 +112,12 @@ OPTIONS
            --buck-compilation-database option.           See also infer-capture(1).
 
        --no-biabduction
-           Deactivates: the separation logic based bi-abduction analysis
-           using the checkers framework (Conversely: --biabduction)       
-    See also infer-analyze(1).
+           Deactivates: checker biabduction: This analysis deals with a range
+           of issues, many linked to memory safety. (Conversely:
+           --biabduction)           See also infer-analyze(1).
 
        --biabduction-only
-           Activates: Enable --biabduction and disable all other checkers
+           Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)           See also infer-analyze(1).
 
        --bo-debug int
@@ -175,11 +175,12 @@ OPTIONS
     See also infer-capture(1) and infer-run(1).
 
        --bufferoverrun
-           Activates: the buffer overrun analysis (Conversely:
-           --no-bufferoverrun)           See also infer-analyze(1).
+           Activates: checker bufferoverrun: InferBO is a detector for
+           out-of-bounds array accesses. (Conversely: --no-bufferoverrun)       
+    See also infer-analyze(1).
 
        --bufferoverrun-only
-           Activates: Enable --bufferoverrun and disable all other checkers
+           Activates: Enable bufferoverrun and disable all other checkers
            (Conversely: --no-bufferoverrun-only)           See also infer-analyze(1).
 
        --capture-blacklist regex
@@ -228,11 +229,11 @@ OPTIONS
            function that each analysis has to model.           See also infer-analyze(1) and infer-capture(1).
 
        --class-loads
-           Activates: Java class loading analysis (Conversely:
-           --no-class-loads)           See also infer-analyze(1).
+           Activates: checker class-loads: Compute set of Java classes
+           loaded. (Conversely: --no-class-loads)           See also infer-analyze(1).
 
        --class-loads-only
-           Activates: Enable --class-loads and disable all other checkers
+           Activates: Enable class-loads and disable all other checkers
            (Conversely: --no-class-loads-only)           See also infer-analyze(1).
 
        --compilation-database +path
@@ -263,16 +264,17 @@ OPTIONS
     See also infer-analyze(1).
 
        --cost
-           Activates: checker for performance cost analysis (Conversely:
-           --no-cost)           See also infer-analyze(1).
+           Activates: checker cost: Computes the time complexity of functions
+           and methods. Can be used to detect changes in runtime complexity
+           with `infer reportdiff`. (Conversely: --no-cost)           See also infer-analyze(1).
 
        --cost-issues-tests file
            Write a list of cost issues in a format suitable for cost tests to
            file           See also infer-report(1).
 
        --cost-only
-           Activates: Enable --cost and disable all other checkers
-           (Conversely: --no-cost-only)           See also infer-analyze(1).
+           Activates: Enable cost and disable all other checkers (Conversely:
+           --no-cost-only)           See also infer-analyze(1).
 
        --costs-current path
            Costs report of the latest revision           See also infer-reportdiff(1).
@@ -332,7 +334,7 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --siof, --self_in_block, --starvation,
+           --liveness, --racerd, --siof, --self-in-block, --starvation,
            --uninit (Conversely: --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
@@ -551,11 +553,11 @@ OPTIONS
            off.           See also infer-report(1).
 
        --eradicate
-           Activates: the eradicate @Nullable checker for Java annotations
-           (Conversely: --no-eradicate)           See also infer-analyze(1).
+           Activates: checker eradicate: The eradicate `@Nullable` checker
+           for Java annotations. (Conversely: --no-eradicate)           See also infer-analyze(1).
 
        --eradicate-only
-           Activates: Enable --eradicate and disable all other checkers
+           Activates: Enable eradicate and disable all other checkers
            (Conversely: --no-eradicate-only)           See also infer-analyze(1).
 
        --external-java-packages +prefix
@@ -587,12 +589,12 @@ OPTIONS
            ndk-build, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
-           Deactivates: detects when Android fragments are not explicitly
-           nullified before becoming unreabable (Conversely:
-           --fragment-retains-view)           See also infer-analyze(1).
+           Deactivates: checker fragment-retains-view: Detects when Android
+           fragments are not explicitly nullified before becoming
+           unreachable. (Conversely: --fragment-retains-view)           See also infer-analyze(1).
 
        --fragment-retains-view-only
-           Activates: Enable --fragment-retains-view and disable all other
+           Activates: Enable fragment-retains-view and disable all other
            checkers (Conversely: --no-fragment-retains-view-only)       
     See also infer-analyze(1).
 
@@ -654,30 +656,33 @@ OPTIONS
     See also infer-explore(1).
 
        --immutable-cast
-           Activates: the detection of object cast from immutable type to
-           mutable type. For instance, it will detect cast from ImmutableList
-           to List, ImmutableMap to Map, and ImmutableSet to Set.
-           (Conversely: --no-immutable-cast)           See also infer-analyze(1).
+           Activates: checker immutable-cast: Detection of object cast from
+           immutable types to mutable types. For instance, it will detect
+           casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and
+           `ImmutableSet` to `Set`. (Conversely: --no-immutable-cast)       
+    See also infer-analyze(1).
 
        --immutable-cast-only
-           Activates: Enable --immutable-cast and disable all other checkers
+           Activates: Enable immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)           See also infer-analyze(1).
 
        --impurity
-           Activates: [EXPERIMENTAL] Impurity analysis (Conversely:
-           --no-impurity)           See also infer-analyze(1).
+           Activates: checker impurity: Detects functions with potential
+           side-effects. Same as "purity", but implemented on top of Pulse.
+           (Conversely: --no-impurity)           See also infer-analyze(1).
 
        --impurity-only
-           Activates: Enable --impurity and disable all other checkers
+           Activates: Enable impurity and disable all other checkers
            (Conversely: --no-impurity-only)           See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
-           Deactivates: Check for inefficient uses of keySet iterator that
-           access both the key and the value. (Conversely:
-           --inefficient-keyset-iterator)           See also infer-analyze(1).
+           Deactivates: checker inefficient-keyset-iterator: Check for
+           inefficient uses of iterators that iterate on keys then lookup
+           their values, instead of iterating on key-value pairs directly.
+           (Conversely: --inefficient-keyset-iterator)           See also infer-analyze(1).
 
        --inefficient-keyset-iterator-only
-           Activates: Enable --inefficient-keyset-iterator and disable all
+           Activates: Enable inefficient-keyset-iterator and disable all
            other checkers (Conversely: --no-inefficient-keyset-iterator-only)       
     See also infer-analyze(1).
 
@@ -720,8 +725,8 @@ OPTIONS
            together with --linters-developer-mode)           See also infer-capture(1).
 
        --no-linters
-           Deactivates: syntactic linters (Conversely: --linters)       
-    See also infer-analyze(1).
+           Deactivates: checker linters: Declarative linting framework over
+           the Clang AST. (Conversely: --linters)           See also infer-analyze(1).
 
        --linters-def-file +file
            Specify the file containing linters definition (e.g. 'linters.al')       
@@ -749,7 +754,7 @@ OPTIONS
            (Conversely: --no-linters-ignore-clang-failures)           See also infer-capture(1).
 
        --linters-only
-           Activates: Enable --linters and disable all other checkers
+           Activates: Enable linters and disable all other checkers
            (Conversely: --no-linters-only)           See also infer-analyze(1).
 
        --linters-validate-syntax-only
@@ -766,17 +771,19 @@ OPTIONS
            report. (Conversely: --no-list-issue-types)           See also infer-help(1).
 
        --litho-required-props
-           Activates: [EXPERIMENTAL] Required Prop check for Litho
-           (Conversely: --no-litho-required-props)           See also infer-analyze(1).
+           Activates: checker litho-required-props: Checks that all
+           non-option `@Prop`s have been specified when constructing Litho
+           components. (Conversely: --no-litho-required-props)       
+    See also infer-analyze(1).
 
        --litho-required-props-only
-           Activates: Enable --litho-required-props and disable all other
+           Activates: Enable litho-required-props and disable all other
            checkers (Conversely: --no-litho-required-props-only)       
     See also infer-analyze(1).
 
        --no-liveness
-           Deactivates: the detection of dead stores and unused variables
-           (Conversely: --liveness)           See also infer-analyze(1).
+           Deactivates: checker liveness: Detection of dead stores and unused
+           variables. (Conversely: --liveness)           See also infer-analyze(1).
 
        --liveness-dangerous-classes json
            Specify classes where the destructor should be ignored when
@@ -786,7 +793,7 @@ OPTIONS
            not read explicitly by the program.           See also infer-analyze(1).
 
        --liveness-only
-           Activates: Enable --liveness and disable all other checkers
+           Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)           See also infer-analyze(1).
 
        --load-average,-l float
@@ -794,11 +801,12 @@ OPTIONS
            that specified (Buck and make only)           See also infer-capture(1).
 
        --loop-hoisting
-           Activates: checker for loop-hoisting (Conversely:
-           --no-loop-hoisting)           See also infer-analyze(1).
+           Activates: checker loop-hoisting: Detect opportunities to hoist
+           function calls that are invariant outside of loop bodies for
+           efficiency. (Conversely: --no-loop-hoisting)           See also infer-analyze(1).
 
        --loop-hoisting-only
-           Activates: Enable --loop-hoisting and disable all other checkers
+           Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)           See also infer-analyze(1).
 
        --max-nesting int
@@ -831,13 +839,13 @@ OPTIONS
            infer-run(1).
 
        --printf-args
-           Activates: the detection of mismatch between the Java printf
-           format strings and the argument types For, example, this checker
-           will warn about the type error in `printf("Hello %d", "world")`
-           (Conversely: --no-printf-args)           See also infer-analyze(1).
+           Activates: checker printf-args: Detect mismatches between the Java
+           `printf` format strings and the argument types For example, this
+           checker will warn about the type error in `printf("Hello %d",
+           "world")` (Conversely: --no-printf-args)           See also infer-analyze(1).
 
        --printf-args-only
-           Activates: Enable --printf-args and disable all other checkers
+           Activates: Enable printf-args and disable all other checkers
            (Conversely: --no-printf-args-only)           See also infer-analyze(1).
 
        --procedures
@@ -890,7 +898,7 @@ OPTIONS
            infer-run(1).
 
        --pulse
-           Activates: [EXPERIMENTAL] memory and lifetime analysis
+           Activates: checker pulse: Memory and lifetime analysis.
            (Conversely: --no-pulse)           See also infer-analyze(1).
 
        --pulse-cut-to-one-path-procedures-pattern string
@@ -912,26 +920,30 @@ OPTIONS
     See also infer-analyze(1).
 
        --pulse-only
-           Activates: Enable --pulse and disable all other checkers
+           Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
 
        --purity
-           Activates: [EXPERIMENTAL] Purity analysis (Conversely:
+           Activates: checker purity: Detects pure (side-effect-free)
+           functions. A different implementation of "impurity". (Conversely:
            --no-purity)           See also infer-analyze(1).
 
        --purity-only
-           Activates: Enable --purity and disable all other checkers
+           Activates: Enable purity and disable all other checkers
            (Conversely: --no-purity-only)           See also infer-analyze(1).
 
        --quandary
-           Activates: the quandary taint analysis (Conversely: --no-quandary)       
-    See also infer-analyze(1).
+           Activates: checker quandary: The Quandary taint analysis detects
+           flows of values between sources and sinks, except if the value
+           went through a "sanitizer". In addition to some defaults, users
+           can specify their own sources, sinks, and sanitizers functions.
+           (Conversely: --no-quandary)           See also infer-analyze(1).
 
        --quandary-endpoints json
            Specify endpoint classes for Quandary           See also infer-analyze(1).
 
        --quandary-only
-           Activates: Enable --quandary and disable all other checkers
+           Activates: Enable quandary and disable all other checkers
            (Conversely: --no-quandary-only)           See also infer-analyze(1).
 
        --quandary-sanitizers json
@@ -948,7 +960,7 @@ OPTIONS
            --no-quiet | -Q)           See also infer-analyze(1) and infer-report(1).
 
        --no-racerd
-           Deactivates: the RacerD thread safety analysis (Conversely:
+           Deactivates: checker racerd: Thread safety analysis. (Conversely:
            --racerd)           See also infer-analyze(1).
 
        --racerd-guardedby
@@ -956,7 +968,7 @@ OPTIONS
            --no-racerd-guardedby)           See also infer-analyze(1).
 
        --racerd-only
-           Activates: Enable --racerd and disable all other checkers
+           Activates: Enable racerd and disable all other checkers
            (Conversely: --no-racerd-only)           See also infer-analyze(1).
 
        --no-racerd-unknown-returns-owned
@@ -1015,17 +1027,20 @@ OPTIONS
        --select N
            Select bug number N. If omitted, prompt for input.           See also infer-explore(1).
 
-       --no-self_in_block
-           Deactivates: checker to flag incorrect uses of when Objective-C
-           blocks capture self (Conversely: --self_in_block)           See also infer-analyze(1).
+       --no-self-in-block
+           Deactivates: checker self-in-block: An Objective-C-specific
+           analysis to detect when a block captures `self`. (Conversely:
+           --self-in-block)           See also infer-analyze(1).
 
-       --self_in_block-only
-           Activates: Enable --self_in_block and disable all other checkers
-           (Conversely: --no-self_in_block-only)           See also infer-analyze(1).
+       --self-in-block-only
+           Activates: Enable self-in-block and disable all other checkers
+           (Conversely: --no-self-in-block-only)           See also infer-analyze(1).
 
        --no-siof
-           Deactivates: the Static Initialization Order Fiasco analysis (C++
-           only) (Conversely: --siof)           See also infer-analyze(1).
+           Deactivates: checker siof: Catches Static Initialization Order
+           Fiascos in C++, that can lead to subtle,
+           compiler-version-dependent errors. (Conversely: --siof)       
+    See also infer-analyze(1).
 
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are
@@ -1035,8 +1050,8 @@ OPTIONS
            option on. (Conversely: --no-siof-check-iostreams)           See also infer-analyze(1).
 
        --siof-only
-           Activates: Enable --siof and disable all other checkers
-           (Conversely: --no-siof-only)           See also infer-analyze(1).
+           Activates: Enable siof and disable all other checkers (Conversely:
+           --no-siof-only)           See also infer-analyze(1).
 
        --siof-safe-methods +string
            Methods that are SIOF-safe; "foo::bar" will match "foo::bar()",
@@ -1107,11 +1122,12 @@ OPTIONS
            65536.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
        --no-starvation
-           Deactivates: starvation analysis (Conversely: --starvation)       
-    See also infer-analyze(1).
+           Deactivates: checker starvation: Detect various kinds of
+           situations when no progress is being made because of concurrency
+           errors. (Conversely: --starvation)           See also infer-analyze(1).
 
        --starvation-only
-           Activates: Enable --starvation and disable all other checkers
+           Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)           See also infer-analyze(1).
 
        --threadsafe-aliases json
@@ -1119,18 +1135,20 @@ OPTIONS
            @ThreadSafe           See also infer-analyze(1).
 
        --topl
-           Activates: TOPL (Conversely: --no-topl)           See also infer-analyze(1).
+           Activates: checker topl: Detects errors based on user-provided
+           state machines describing multi-object monitors. (Conversely:
+           --no-topl)           See also infer-analyze(1).
 
        --topl-only
-           Activates: Enable --topl and disable all other checkers
-           (Conversely: --no-topl-only)           See also infer-analyze(1).
+           Activates: Enable topl and disable all other checkers (Conversely:
+           --no-topl-only)           See also infer-analyze(1).
 
        --no-uninit
-           Deactivates: checker for use of uninitialized values (Conversely:
-           --uninit)           See also infer-analyze(1).
+           Deactivates: checker uninit: Warns when values are used before
+           having been initialized. (Conversely: --uninit)           See also infer-analyze(1).
 
        --uninit-only
-           Activates: Enable --uninit and disable all other checkers
+           Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)           See also infer-analyze(1).
 
        --unsafe-malloc
@@ -1570,8 +1588,9 @@ INTERNAL OPTIONS
            Cancel the effect of --nullable-annotation-name.
 
        --nullsafe
-           Activates: [RESERVED] Reserved for nullsafe typechecker, use
-           --eradicate for now (Conversely: --no-nullsafe)
+           Activates: checker nullsafe: [RESERVED] Reserved for nullsafe
+           typechecker, use `--eradicate` for now. (Conversely:
+           --no-nullsafe)
 
        --nullsafe-disable-field-not-initialized-in-nonstrict-classes
            Activates: Nullsafe: In this mode field not initialized issues
@@ -1733,6 +1752,10 @@ INTERNAL OPTIONS
        --reset-linters-def-folder
            Reset the list of folders containing linters definitions to be
            empty (see linters-def-folder).
+
+       --resource-leak-lab
+           Activates: checker resource-leak-lab: (Conversely:
+           --no-resource-leak-lab)
 
        --scheduler { file | restart | callgraph }
            Specify the scheduler used for the analysis phase

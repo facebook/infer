@@ -537,25 +537,25 @@ and () =
       | None ->
           (* HACK: return a constant ref if the checker cannot be enabled/disabled from the command line *)
           ref config.enabled_by_default
-      | Some {long; deprecated; show_in_help} ->
+      | Some {deprecated; show_in_help} ->
           let in_help = if show_in_help then in_analyze_help else [] in
-          CLOpt.mk_bool ?f ~long ~in_help ~default:config.enabled_by_default ~deprecated
-            config.short_documentation
+          CLOpt.mk_bool ?f ~long:config.id ~in_help ~default:config.enabled_by_default ~deprecated
+            (Printf.sprintf "checker %s: %s" config.id config.short_documentation)
     in
     all_checkers := (checker, config, var) :: !all_checkers
   in
   List.iter Checker.all ~f:mk_checker ;
   let mk_only (_checker, config, var) =
-    Option.iter config.cli_flags ~f:(fun {long; show_in_help} ->
+    Option.iter config.cli_flags ~f:(fun {show_in_help} ->
         let (_ : bool ref) =
-          CLOpt.mk_bool_group ~long:(long ^ "-only")
+          CLOpt.mk_bool_group ~long:(config.id ^ "-only")
             ~in_help:InferCommand.[(Analyze, manual_generic)]
             ~f:(fun b ->
               disable_all_checkers () ;
               var := b ;
               b )
             ( if show_in_help then
-              Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long
+              Printf.sprintf "Enable %s and disable all other checkers" config.id
             else "" )
             [] (* do all the work in ~f *) []
           (* do all the work in ~f *)
@@ -571,8 +571,8 @@ and () =
       ^ ( List.rev_filter_map
             ~f:(fun (_, config, _) ->
               match config.cli_flags with
-              | Some {long} when config.enabled_by_default ->
-                  Some (Printf.sprintf "$(b,--%s)" long)
+              | Some _ when config.enabled_by_default ->
+                  Some (Printf.sprintf "$(b,--%s)" config.id)
               | _ ->
                   None )
             !all_checkers
