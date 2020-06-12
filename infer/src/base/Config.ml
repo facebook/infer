@@ -1705,6 +1705,12 @@ and patterns_skip_translation =
       "Matcher or list of matchers for names of files that should not be analyzed at all." )
 
 
+and pmd_xml =
+  CLOpt.mk_bool ~long:"pmd-xml"
+    ~in_help:InferCommand.[(Run, manual_generic)]
+    "Output issues in (PMD) XML format in infer-out/report.xml"
+
+
 and print_active_checkers =
   CLOpt.mk_bool ~long:"print-active-checkers"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2926,6 +2932,8 @@ and patterns_never_returning_null = match patterns_never_returning_null with k, 
 and patterns_skip_implementation = match patterns_skip_implementation with k, r -> (k, !r)
 
 and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
+
+and pmd_xml = !pmd_xml
 
 and print_active_checkers = !print_active_checkers
 

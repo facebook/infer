@@ -417,6 +417,8 @@ val only_cheap_debug : bool
 
 val only_footprint : bool
 
+val pmd_xml : bool
+
 val print_active_checkers : bool
 
 val print_builtins : bool

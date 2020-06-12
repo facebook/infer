@@ -198,7 +198,9 @@ let report ?(suppress_console = false) () =
     TextReport.create_from_json
       ~quiet:(Config.quiet || suppress_console)
       ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
-      ~report_json:issues_json ) ;
+      ~report_json:issues_json ;
+    if Config.pmd_xml then
+      XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   ()

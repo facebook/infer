@@ -19,6 +19,10 @@ let basename_checker_prefix = "checker-"
 
 let basename_of_checker {Checker.id} = basename_checker_prefix ^ id
 
+let url_fragment_of_issue_type unique_id =
+  Printf.sprintf "%s#%s" all_issues_basename (String.lowercase unique_id)
+
+
 let get_checker_web_documentation (checker : Checker.config) =
   match checker.kind with
   | UserFacing {title; markdown_body} ->
@@ -268,7 +272,7 @@ let pp_checker_issue_types f checker =
         Checker.equal issue_checker checker )
   in
   let pp_issue f {IssueType.unique_id} =
-    F.fprintf f "- [%s](%s.md#%s)@\n" unique_id all_issues_basename (String.lowercase unique_id)
+    F.fprintf f "- [%s](%s)@\n" unique_id (url_fragment_of_issue_type unique_id)
   in
   List.iter checker_issues ~f:(pp_issue f)
 

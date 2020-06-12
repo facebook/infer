@@ -29,6 +29,7 @@ type id =
   | ReportHtml
   | ReportJson
   | ReportText
+  | ReportXML
   | RetainCycles
   | RunState
   | Specs
@@ -144,6 +145,11 @@ let of_id = function
       ; before_caching_capture= Delete }
   | ReportText ->
       { rel_path= "report.txt"
+      ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete }
+  | ReportXML ->
+      { rel_path= "report.xml"
       ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }

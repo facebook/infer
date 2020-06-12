@@ -41,6 +41,7 @@ BUILD_SYSTEMS_TESTS += \
   linters \
   project_root_rel \
   reactive \
+  results_xml \
   run_hidden_linters \
   tracebugs \
   utf8_in_procname \
