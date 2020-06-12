@@ -57,4 +57,15 @@ digraph cfg {
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" [label="1: Start ArcMethodsA.dealloc\nFormals:  self:ArcMethodsA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" ;
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_2" [label="2: Exit ArcMethodsA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_2" ;
 }

@@ -19,6 +19,17 @@ digraph cfg {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;
+"dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_1" [label="1: Start RRA.dealloc\nFormals:  self:RRA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_1" -> "dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_3" ;
+"dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_2" [label="2: Exit RRA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_3" -> "dealloc#RRA#instance.6190142b5c653a968806a98372f1f984_2" ;
 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA.init\nFormals:  self:RRA*\nLocals:  \n  " color=yellow style=filled]
 	
 

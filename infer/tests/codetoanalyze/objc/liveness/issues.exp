@@ -1,1 +1,1 @@
-codetoanalyze/objc/liveness/NestedClassCalls.m, A.nestedBad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/objc/liveness/NestedClassCalls.m, NestedClass.nestedBad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]

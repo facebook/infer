@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_1" [label="1: Start ExceptionExample.dealloc\nFormals:  self:ExceptionExample*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_1" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" ;
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_2" [label="2: Exit ExceptionExample.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_2" ;
 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample.test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 

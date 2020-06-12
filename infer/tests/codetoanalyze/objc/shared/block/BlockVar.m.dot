@@ -206,4 +206,15 @@ digraph cfg {
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" ;
+"dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_1" [label="1: Start BlockVar.dealloc\nFormals:  self:BlockVar*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_1" -> "dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_3" ;
+"dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_2" [label="2: Exit BlockVar.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_3" -> "dealloc#BlockVar#instance.2dd2255ffab933047f591c2d917b519f_2" ;
 }

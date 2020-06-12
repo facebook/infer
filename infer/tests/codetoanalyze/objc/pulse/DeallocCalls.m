@@ -71,7 +71,9 @@ void memory_leak_raii_leak_bad() {
   BufferContainer2* b = [[BufferContainer2 alloc] init];
 }
 
-/* a goes out of scope, this causes a->b->_container to be leaked. This is a FP
-because dealloc is called, and it should call dealloc of b which would free
-_container. This behaviour is still to be implemented. */
-void memory_leak_raii_no_leak_ok_FP() { Araii* a = [[Araii alloc] init]; }
+/* a goes out of scope, this causes a->_container->_buffer to be leaked.
+However, dealloc of Arrai is called which triggers dealloc of BufferContainer1
+to be called and _buffer is freed there, so no leak. */
+void memory_leak_raii_no_leak_in_object_tree_ok() {
+  Araii* a = [[Araii alloc] init];
+}

@@ -6,7 +6,7 @@
  */
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface UninitBlocks : NSObject
 @end
 
 typedef void (^MyBlock)();
@@ -17,7 +17,7 @@ typedef void (^MyBlock)();
 
 @end
 
-@implementation A
+@implementation UninitBlocks
 
 + (int)ok1 {
   __block int a;

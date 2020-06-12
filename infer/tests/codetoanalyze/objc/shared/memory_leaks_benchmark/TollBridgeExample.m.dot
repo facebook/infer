@@ -86,4 +86,15 @@ digraph cfg {
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" ;
+"dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_1" [label="1: Start TollBridgeExample.dealloc\nFormals:  self:TollBridgeExample*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_1" -> "dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_3" ;
+"dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_2" [label="2: Exit TollBridgeExample.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_3" -> "dealloc#TollBridgeExample#instance.c883387ebf7fc6e9cfedaafab66aec43_2" ;
 }

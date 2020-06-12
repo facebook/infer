@@ -439,6 +439,12 @@ let is_objc_method procname =
   match procname with ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | _ -> false
 
 
+let is_objc_dealloc procname =
+  is_objc_method procname
+  &&
+  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_objc_dealloc method_name | _ -> false
+
+
 let block_name_of_procname procname =
   match procname with
   | Block block ->

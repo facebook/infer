@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 43, column 1]\n  n$1=*n$0.reverseObjectEnumerator:NSEnumerator* [line 43, column 1]\n  n$2=_fun_NSEnumerator.dealloc(n$1:NSEnumerator*) [line 43, column 1]\n " shape="box"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 

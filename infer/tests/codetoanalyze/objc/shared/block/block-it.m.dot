@@ -152,4 +152,15 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" ;
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" [label="1: Start MyBlock.dealloc\nFormals:  self:MyBlock*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" ;
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" [label="2: Exit MyBlock.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" ;
 }

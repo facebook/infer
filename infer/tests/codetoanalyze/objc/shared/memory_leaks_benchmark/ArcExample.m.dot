@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_1" [label="1: Start ArcA.dealloc\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_1" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" ;
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_2" [label="2: Exit ArcA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" [label="3:  Call dealloc \n   n$0=*&self:ArcA* [line 31, column 1]\n  n$1=*n$0._son:ArcA* [line 31, column 1]\n  n$2=_fun_ArcA.dealloc(n$1:ArcA*) [line 31, column 1]\n " shape="box"]
+	
+
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_2" ;
 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA.getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 

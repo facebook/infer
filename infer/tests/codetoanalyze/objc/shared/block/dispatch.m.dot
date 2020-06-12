@@ -213,6 +213,17 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" ;
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" [label="1: Start DispatchA.dealloc\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" ;
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_2" [label="2: Exit DispatchA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_2" ;
 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA.init\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 

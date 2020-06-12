@@ -6,30 +6,31 @@
  */
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface NestedClass : NSObject
 @property int val;
 @end
 
 bool myrand();
 
-@implementation A
+@implementation NestedClass
 - (instancetype)myDoO:(id)o {
   return self;
 }
 + (instancetype)initWithVal:(int)v {
-  A* a = [A alloc];
+  NestedClass* a = [NestedClass alloc];
   a.val = v;
   return a;
 }
 + (instancetype)nestedGood {
   const BOOL isB = myrand();
-  return [[[A initWithVal:isB ? 0 : 1] myDoO:[NSObject class]]
+  return [[[NestedClass initWithVal:isB ? 0 : 1] myDoO:[NSObject class]]
       myDoO:[NSObject class]];
 }
 
 + (instancetype)nestedBad {
   const BOOL isB = myrand();
-  return [[[A initWithVal:42] myDoO:[NSObject class]] myDoO:[NSObject class]];
+  return [[[NestedClass initWithVal:42] myDoO:[NSObject class]]
+      myDoO:[NSObject class]];
 }
 
 @end

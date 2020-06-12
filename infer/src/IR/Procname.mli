@@ -278,6 +278,9 @@ val get_method : t -> string
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
 
+val is_objc_dealloc : t -> bool
+(** Return whether the dealloc method of an Objective-C class. *)
+
 val is_c_method : t -> bool
 (** Return true this is an Objective-C/C++ method name. *)
 

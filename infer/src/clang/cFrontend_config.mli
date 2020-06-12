@@ -22,6 +22,8 @@ type decl_trans_context = [`DeclTraversal | `Translation]
 
 val alloc : string
 
+val dealloc : string
+
 val assert_fail : string
 
 val assert_rtn : string

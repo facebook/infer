@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_3" -> "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_2" ;
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" ;
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" ;
 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B.f\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 

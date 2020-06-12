@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" [label="1: Start NonnullA.dealloc\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" ;
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" [label="2: Exit NonnullA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" ;
 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" [label="1: Start NonnullA.getA\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -22,6 +33,17 @@ digraph cfg {
 	
 
 	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_2" ;
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" [label="1: Start NonnullC.dealloc\nFormals:  self:NonnullC*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" ;
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" [label="2: Exit NonnullC.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" [label="3:  Call dealloc \n   n$0=*&self:NonnullC* [line 42, column 1]\n  n$1=*n$0._name:NSString* [line 42, column 1]\n  n$2=_fun_NSString.dealloc(n$1:NSString*) [line 42, column 1]\n " shape="box"]
+	
+
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC.initWithCoder:and:(<> <> <_Nonnull>) \n  " color=yellow style=filled]
 	
 

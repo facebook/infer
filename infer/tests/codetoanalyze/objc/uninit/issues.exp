@@ -2,4 +2,4 @@ codetoanalyze/objc/uninit/arrays.m, array_length_undef_bad, 2, UNINITIALIZED_VAL
 codetoanalyze/objc/uninit/arrays.m, bad1, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/objc/uninit/arrays.m, bad2, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/objc/uninit/uninit.m, FP_switch_ok, 11, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-codetoanalyze/objc/uninit/uninit_blocks.m, A.bad1, 5, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/objc/uninit/uninit_blocks.m, UninitBlocks.bad1, 5, UNINITIALIZED_VALUE, no_bucket, ERROR, []

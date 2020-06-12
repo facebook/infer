@@ -44,6 +44,17 @@ digraph cfg {
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" [label="1: Start MyClass.dealloc\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" [label="2: Exit MyClass.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" ;
 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass.getX\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 

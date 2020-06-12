@@ -204,6 +204,17 @@ digraph cfg {
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" ;
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_1" [label="1: Start DispatchEx.dealloc\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_1" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" ;
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_2" [label="2: Exit DispatchEx.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_2" ;
 "init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_1" [label="1: Start DispatchEx.init\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
 	
 

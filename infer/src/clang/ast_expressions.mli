@@ -14,6 +14,8 @@ val create_pointer_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
 val create_reference_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
+val create_void_type : qual_type
+
 val create_char_star_type : ?quals:Typ.type_quals -> unit -> qual_type
 
 val make_next_object_exp :

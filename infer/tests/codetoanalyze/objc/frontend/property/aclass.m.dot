@@ -1,3 +1,14 @@
 /* @generated */
 digraph cfg {
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" [label="1: Start AClass.dealloc\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" ;
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
 }

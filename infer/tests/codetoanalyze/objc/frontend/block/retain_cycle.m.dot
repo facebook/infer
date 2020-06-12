@@ -60,6 +60,28 @@ digraph cfg {
 	
 
 	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 50, column 1]\n  n$1=*n$0._data:D* [line 50, column 1]\n  n$2=_fun_D.dealloc(n$1:D*) [line 50, column 1]\n  n$3=*&self:A* [line 50, column 1]\n  n$4=*n$3._b:B* [line 50, column 1]\n  n$5=_fun_B.dealloc(n$4:B*) [line 50, column 1]\n " shape="box"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" ;
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" [label="3:  Call dealloc \n   n$6=*&self:B* [line 31, column 1]\n  n$7=*n$6._d:D* [line 31, column 1]\n  n$8=_fun_D.dealloc(n$7:D*) [line 31, column 1]\n " shape="box"]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" ;
 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_1" [label="1: Start B.sHandler:\nFormals:  self:B* h:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_1" [label="1: Start Available_expr.dealloc\nFormals:  self:Available_expr*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_1" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" ;
+"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_2" [label="2: Exit Available_expr.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_2" ;
 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" [label="1: Start Available_expr.test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n  " color=yellow style=filled]
 	
 

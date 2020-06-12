@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" [label="1: Start PropertyImplSetter.dealloc\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" ;
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" [label="2: Exit PropertyImplSetter.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" ;
 "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" [label="1: Start PropertyImplSetter.setMaximumFileSize:\nFormals:  self:PropertyImplSetter* newMaximumFileSize:int\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -6,13 +6,13 @@
  */
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface NonnullAnnot : NSObject
 
-@property A* child;
+@property NonnullAnnot* child;
 
 @end
 
-@implementation A {
+@implementation NonnullAnnot {
   int x;
 }
 
@@ -20,13 +20,13 @@
   return self;
 }
 
-- (int)test1:(A*)a {
-  A* aa = [a child];
+- (int)test1:(NonnullAnnot*)a {
+  NonnullAnnot* aa = [a child];
   return aa->x;
 }
 
-- (int)test2:(nonnull A*)a {
-  A* aa = [a child];
+- (int)test2:(nonnull NonnullAnnot*)a {
+  NonnullAnnot* aa = [a child];
   return aa->x;
 }
 

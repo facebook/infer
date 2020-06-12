@@ -76,4 +76,15 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" ;
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" [label="1: Start My_manager.dealloc\nFormals:  self:My_manager*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" ;
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" [label="2: Exit My_manager.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" ;
 }

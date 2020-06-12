@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_1" [label="1: Start Boxing.dealloc\nFormals:  self:Boxing*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_1" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" ;
+"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_2" [label="2: Exit Boxing.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_2" ;
 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing.getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 

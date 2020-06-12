@@ -9,12 +9,12 @@
 
 int g;
 
-@interface My_manager : NSObject
+@interface Block_no_args : NSObject
 - (int)m;
 
 @end
 
-@implementation My_manager
+@implementation Block_no_args
 
 - (int)m {
   g = 7;

@@ -239,6 +239,56 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     List.iter ~f:(process_one_method_decl trans_unit_ctx tenv cfg curr_class) decl_list
 
 
+  (* Here we add an empty dealloc method to every ObjC class if it doesn't have one. Then the implicit
+     implementation of such method will be added in CAddImplicitDeallocImpl.process *)
+  let create_and_process_dealloc_objc_impl trans_unit_ctx tenv cfg curr_class objc_class_decl_info
+      decl_list =
+    let open Clang_ast_t in
+    let found_dealloc =
+      List.exists
+        ~f:(fun decl ->
+          match decl with
+          | ObjCMethodDecl (_, name_info, mdi) ->
+              String.equal name_info.ni_name "dealloc" && mdi.Clang_ast_t.omdi_is_instance_method
+          | _ ->
+              false )
+        decl_list
+    in
+    if not found_dealloc then
+      let name_info =
+        {ni_name= CFrontend_config.dealloc; ni_qual_name= [CFrontend_config.dealloc]}
+      in
+      let decl_info =
+        { di_pointer= CAst_utils.get_fresh_pointer ()
+        ; di_parent_pointer= Some objc_class_decl_info.Clang_ast_t.di_pointer
+        ; di_source_range= objc_class_decl_info.Clang_ast_t.di_source_range
+        ; di_owning_module= objc_class_decl_info.Clang_ast_t.di_owning_module
+        ; di_is_hidden= true
+        ; di_is_implicit= true
+        ; di_is_used= true
+        ; di_is_this_declaration_referenced= false
+        ; di_is_invalid_decl= false
+        ; di_attributes= []
+        ; di_full_comment= None
+        ; di_access= `None }
+      in
+      let obj_c_method_decl_info =
+        { omdi_is_instance_method= true
+        ; omdi_result_type= Ast_expressions.create_void_type
+        ; omdi_is_property_accessor= false
+        ; omdi_property_decl= None
+        ; omdi_parameters= []
+        ; omdi_implicit_parameters= []
+        ; omdi_is_variadic= false
+        ; omdi_is_overriding= true
+        ; omdi_is_optional= false
+        ; omdi_body= Some (Clang_ast_t.CompoundStmt (CAst_utils.dummy_stmt_info (), []))
+        ; omdi_mangled_name= CFrontend_config.dealloc }
+      in
+      let method_decl = ObjCMethodDecl (decl_info, name_info, obj_c_method_decl_info) in
+      process_method_decl trans_unit_ctx tenv cfg curr_class method_decl
+
+
   (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return whether
       method should be translated based on method and class whitelists *)
   let is_whitelisted_cpp_method =
@@ -332,13 +382,15 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type
                CType_decl.CProcname.from_decl tenv dec) ;
           process_methods trans_unit_ctx tenv cfg curr_class decl_list
-      | ObjCImplementationDecl (_, _, decl_list, _, _) ->
+      | ObjCImplementationDecl (objc_class_decl_info, _, decl_list, _, _) ->
           let curr_class = CContext.ContextClsDeclPtr dec_ptr in
           let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
           ignore
             (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type
                CType_decl.CProcname.from_decl tenv dec) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list
+          process_methods trans_unit_ctx tenv cfg curr_class decl_list ;
+          create_and_process_dealloc_objc_impl trans_unit_ctx tenv cfg curr_class
+            objc_class_decl_info decl_list
       | CXXMethodDecl (decl_info, _, _, _, _)
       | CXXConstructorDecl (decl_info, _, _, _, _)
       | CXXConversionDecl (decl_info, _, _, _, _)

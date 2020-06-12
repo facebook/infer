@@ -1,70 +1,81 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_1" [label="1: Start objc_blockMy_manager.m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n  " color=yellow style=filled]
+"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" [label="1: Start objc_blockBlock_no_args.m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n  " color=yellow style=filled]
 	
 
-	 "objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_1" -> "objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_3" ;
-"objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_2" [label="2: Exit objc_blockMy_manager.m_1 \n  " color=yellow style=filled]
+	 "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" -> "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" ;
+"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_2" [label="2: Exit objc_blockBlock_no_args.m_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
+"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
 	
 
-	 "objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_3" -> "objc_blockMy_manager.m_1.d933a5f9ad39365b735134c5f5009061_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager.m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n  " color=yellow style=filled]
+	 "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" -> "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_2" ;
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_1" [label="1: Start Block_no_args.dealloc\nFormals:  self:Block_no_args*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" [label="2: Exit My_manager.m \n  " color=yellow style=filled]
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_1" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" ;
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_2" [label="2: Exit Block_no_args.dealloc \n  " color=yellow style=filled]
 	
 
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" [label="3: + \n  " ]
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_2" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" [label="1: Start Block_no_args.m\nFormals:  self:Block_no_args*\nLocals:  p:int* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 28, column 7]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" [label="2: Exit Block_no_args.m \n  " color=yellow style=filled]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" ;
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_3" [label="3: + \n  " ]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_3" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 28, column 7]\n " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" ;
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.m_1,(n$7 &z:int)) [line 23, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 20, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
 	
 
-	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" ;
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,(n$7 &z:int)) [line 23, column 3]\n " shape="box"]
+	
+
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n " shape="box"]
+	
+
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 20, column 3]\n " shape="box"]
+	
+
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" ;
 }

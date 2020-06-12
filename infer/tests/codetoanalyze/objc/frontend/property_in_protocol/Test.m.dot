@@ -1,3 +1,14 @@
 /* @generated */
 digraph cfg {
+"dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_1" [label="1: Start Test.dealloc\nFormals:  self:Test*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_1" -> "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_3" ;
+"dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_2" [label="2: Exit Test.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_3" -> "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_2" ;
 }

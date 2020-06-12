@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_1" [label="1: Start Bla.dealloc\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_1" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" ;
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_2" [label="2: Exit Bla.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_2" ;
 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla.fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -6,14 +6,14 @@
  */
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject
+@interface Functions : NSObject
 @property(strong) void (^block)(void);
 @end
 
-@implementation A
+@implementation Functions
 
 + (instancetype)autoUpdating {
-  static A* a;
+  static Functions* a;
   dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     a = [self alloc];
@@ -25,7 +25,7 @@
 
 static void dispatch_once2(dispatch_once_t* predicate, dispatch_block_t block);
 + (instancetype)autoUpdating2 {
-  static A* a;
+  static Functions* a;
   dispatch_once_t onceToken;
   dispatch_once2(&onceToken, ^{
     a = [self alloc];
@@ -38,8 +38,8 @@ static void dispatch_once2(dispatch_once_t* predicate, dispatch_block_t block);
 @end
 
 int main() {
-  A* a = [A autoUpdating];
-  A* a2 = [A autoUpdating2];
+  Functions* a = [Functions autoUpdating];
+  Functions* a2 = [Functions autoUpdating2];
   a.block();
   a2.block(); // NPE here since dispatch_once2 is skipped
 }

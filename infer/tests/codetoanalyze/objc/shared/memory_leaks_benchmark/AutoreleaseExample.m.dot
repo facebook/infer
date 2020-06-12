@@ -127,4 +127,15 @@ digraph cfg {
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;
+"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_1" [label="1: Start Auto.dealloc\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_1" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" ;
+"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" [label="2: Exit Auto.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" [label="3:  Call dealloc \n   n$0=*&self:Auto* [line 25, column 1]\n  n$1=*n$0._son:Auto* [line 25, column 1]\n  n$2=_fun_Auto.dealloc(n$1:Auto*) [line 25, column 1]\n " shape="box"]
+	
+
+	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" ;
 }

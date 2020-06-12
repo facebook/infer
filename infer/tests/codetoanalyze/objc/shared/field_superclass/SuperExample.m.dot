@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_1" [label="1: Start ASuper.dealloc\nFormals:  self:ASuper*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_1" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" ;
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_2" [label="2: Exit ASuper.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_2" ;
 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper.init\nFormals:  self:ASuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -30,6 +41,17 @@ digraph cfg {
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" ;
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_1" [label="1: Start BSuper.dealloc\nFormals:  self:BSuper*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_1" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" ;
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_2" [label="2: Exit BSuper.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_2" ;
 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" [label="1: Start BSuper.init\nFormals:  self:BSuper*\nLocals:  \n  " color=yellow style=filled]
 	
 

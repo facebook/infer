@@ -33,4 +33,15 @@ digraph cfg {
 	
 
 	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;
+"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_1" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" ;
+"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_2" ;
 }

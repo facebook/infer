@@ -6,10 +6,10 @@
  */
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject
+@interface AssertExample : NSObject
 @end
 
-@implementation A
+@implementation AssertExample
 
 + (void)foo {
   if (!(1)) {

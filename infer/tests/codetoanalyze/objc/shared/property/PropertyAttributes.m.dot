@@ -63,6 +63,17 @@ digraph cfg {
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" ;
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_1" [label="1: Start PropertyA.dealloc\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_1" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" ;
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_2" [label="2: Exit PropertyA.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" [label="3:  Call dealloc \n   n$0=*&self:PropertyA* [line 38, column 1]\n  n$1=*n$0._last_name:PropertyA* [line 38, column 1]\n  n$2=_fun_PropertyA.dealloc(n$1:PropertyA*) [line 38, column 1]\n  n$3=*&self:PropertyA* [line 38, column 1]\n  n$4=*n$3._name:PropertyA* [line 38, column 1]\n  n$5=_fun_PropertyA.dealloc(n$4:PropertyA*) [line 38, column 1]\n  n$6=*&self:PropertyA* [line 38, column 1]\n  n$7=*n$6._child:PropertyA* [line 38, column 1]\n  n$8=_fun_PropertyA.dealloc(n$7:PropertyA*) [line 38, column 1]\n " shape="box"]
+	
+
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_2" ;
 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 

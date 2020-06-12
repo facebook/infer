@@ -203,6 +203,17 @@ digraph cfg {
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" ;
+"dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_1" [label="1: Start MemoryLeakExample.dealloc\nFormals:  self:MemoryLeakExample*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_1" -> "dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_3" ;
+"dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_2" [label="2: Exit MemoryLeakExample.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_3" [label="3:  Call dealloc \n   n$0=*&self:MemoryLeakExample* [line 111, column 1]\n  n$1=*n$0._attachmentContainerView:UIView* [line 111, column 1]\n  n$2=_fun_UIView.dealloc(n$1:UIView*) [line 111, column 1]\n  n$3=*&self:MemoryLeakExample* [line 111, column 1]\n  n$4=*n$3._backgroundCoveringView:UIView* [line 111, column 1]\n  n$5=_fun_UIView.dealloc(n$4:UIView*) [line 111, column 1]\n " shape="box"]
+	
+
+	 "dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_3" -> "dealloc#MemoryLeakExample#instance.f11793396cace30d3e6f98c00cf65308_2" ;
 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_1" [label="1: Start MemoryLeakExample.layoutSubviews\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * attachmentContainerView:UIView* \n  " color=yellow style=filled]
 	
 

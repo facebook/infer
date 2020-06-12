@@ -1,74 +1,85 @@
 /* @generated */
 digraph cfg {
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A.init\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" [label="1: Start NonnullAnnot.dealloc\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" ;
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A.init \n  " color=yellow style=filled]
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" ;
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_2" [label="2: Exit NonnullAnnot.dealloc \n  " color=yellow style=filled]
 	
 
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Return Stmt \n   n$0=*&self:A* [line 20, column 10]\n  *&return:objc_object*=n$0 [line 20, column 3]\n " shape="box"]
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" [label="3:  Call dealloc \n   n$0=*&self:NonnullAnnot* [line 43, column 1]\n  n$1=*n$0._child:NonnullAnnot* [line 43, column 1]\n  n$2=_fun_NonnullAnnot.dealloc(n$1:NonnullAnnot*) [line 43, column 1]\n " shape="box"]
 	
 
-	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" [label="1: Start A.test1:\nFormals:  self:A* a:A*\nLocals:  aa:A* \n  " color=yellow style=filled]
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_2" ;
+"init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_1" [label="1: Start NonnullAnnot.init\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" [label="2: Exit A.test1: \n  " color=yellow style=filled]
+	 "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_1" -> "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_3" ;
+"init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_2" [label="2: Exit NonnullAnnot.init \n  " color=yellow style=filled]
 	
 
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" [label="3:  Return Stmt \n   n$1=*&aa:A* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n " shape="box"]
+"init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_3" [label="3:  Return Stmt \n   n$0=*&self:NonnullAnnot* [line 20, column 10]\n  *&return:objc_object*=n$0 [line 20, column 3]\n " shape="box"]
 	
 
-	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 24, column 3]\n  n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A.child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n " shape="box"]
+	 "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_3" -> "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_2" ;
+"test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_1" [label="1: Start NonnullAnnot.test1:\nFormals:  self:NonnullAnnot* a:NonnullAnnot*\nLocals:  aa:NonnullAnnot* \n  " color=yellow style=filled]
 	
 
-	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" [label="1: Start A.test2:\nFormals:  self:A* a:A*\nLocals:  aa:A*\nAnnotation: <> A.test2:(<> <_Nonnull>) \n  " color=yellow style=filled]
+	 "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_1" -> "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_4" ;
+"test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_2" [label="2: Exit NonnullAnnot.test1: \n  " color=yellow style=filled]
 	
 
-	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" [label="2: Exit A.test2: \n  " color=yellow style=filled]
+"test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_3" [label="3:  Return Stmt \n   n$1=*&aa:NonnullAnnot* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n " shape="box"]
 	
 
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" [label="3:  Return Stmt \n   n$5=*&aa:A* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n " shape="box"]
+	 "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_3" -> "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_2" ;
+"test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:NonnullAnnot*); [line 24, column 3]\n  n$3=*&a:NonnullAnnot* [line 24, column 23]\n  n$4=_fun_NonnullAnnot.child(n$3:NonnullAnnot*) [line 24, column 22]\n  *&aa:NonnullAnnot*=n$4 [line 24, column 3]\n " shape="box"]
 	
 
-	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:A*); [line 29, column 3]\n  n$7=*&a:A* [line 29, column 12]\n  n$8=_fun_A.child(n$7:A*) [line 29, column 11]\n  *&aa:A*=n$8 [line 29, column 3]\n " shape="box"]
+	 "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_4" -> "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_3" ;
+"test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_1" [label="1: Start NonnullAnnot.test2:\nFormals:  self:NonnullAnnot* a:NonnullAnnot*\nLocals:  aa:NonnullAnnot*\nAnnotation: <> NonnullAnnot.test2:(<> <_Nonnull>) \n  " color=yellow style=filled]
 	
 
-	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" [label="1: Start A.test3:\nFormals:  self:A* successBlock:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
+	 "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_1" -> "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_4" ;
+"test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_2" [label="2: Exit NonnullAnnot.test2: \n  " color=yellow style=filled]
 	
 
-	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" [label="2: Exit A.test3: \n  " color=yellow style=filled]
+"test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_3" [label="3:  Return Stmt \n   n$5=*&aa:NonnullAnnot* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n " shape="box"]
 	
 
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" [label="3:  Return Stmt \n   *&return:int=0 [line 35, column 3]\n " shape="box"]
+	 "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_3" -> "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_2" ;
+"test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(aa:NonnullAnnot*); [line 29, column 3]\n  n$7=*&a:NonnullAnnot* [line 29, column 23]\n  n$8=_fun_NonnullAnnot.child(n$7:NonnullAnnot*) [line 29, column 22]\n  *&aa:NonnullAnnot*=n$8 [line 29, column 3]\n " shape="box"]
 	
 
-	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 34, column 3]\n  n$10=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=n$9(n$10:NSString*) objc_block [line 34, column 3]\n " shape="box"]
+	 "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_4" -> "test2:#NonnullAnnot(class NonnullAnnot)#instance.7992ca7f61dca07dd40b2e7d7603a016_3" ;
+"test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_1" [label="1: Start NonnullAnnot.test3:\nFormals:  self:NonnullAnnot* successBlock:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A.test4:\nFormals:  self:A* successBlock:_fn_(*)\nLocals: \nAnnotation: <> A.test4:(<> <_Nonnull>) \n  " color=yellow style=filled]
+	 "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_1" -> "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_4" ;
+"test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_2" [label="2: Exit NonnullAnnot.test3: \n  " color=yellow style=filled]
 	
 
-	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" [label="2: Exit A.test4: \n  " color=yellow style=filled]
+"test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_3" [label="3:  Return Stmt \n   *&return:int=0 [line 35, column 3]\n " shape="box"]
 	
 
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n " shape="box"]
+	 "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_3" -> "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_2" ;
+"test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 34, column 3]\n  n$10=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=n$9(n$10:NSString*) objc_block [line 34, column 3]\n " shape="box"]
 	
 
-	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 39, column 3]\n  n$13=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=n$12(n$13:NSString*) objc_block [line 39, column 3]\n " shape="box"]
+	 "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_4" -> "test3:#NonnullAnnot#instance.4ab04a3232d4ec4327b6040285f16196_3" ;
+"test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_1" [label="1: Start NonnullAnnot.test4:\nFormals:  self:NonnullAnnot* successBlock:_fn_(*)\nLocals: \nAnnotation: <> NonnullAnnot.test4:(<> <_Nonnull>) \n  " color=yellow style=filled]
 	
 
-	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;
+	 "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_1" -> "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_4" ;
+"test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_2" [label="2: Exit NonnullAnnot.test4: \n  " color=yellow style=filled]
+	
+
+"test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n " shape="box"]
+	
+
+	 "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_3" -> "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_2" ;
+"test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 39, column 3]\n  n$13=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=n$12(n$13:NSString*) objc_block [line 39, column 3]\n " shape="box"]
+	
+
+	 "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_4" -> "test4:#NonnullAnnot#instance.679c6b135de319b66e5e0bd6ab2f0b43_3" ;
 }

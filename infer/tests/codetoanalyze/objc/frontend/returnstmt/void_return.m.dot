@@ -61,4 +61,15 @@ digraph cfg {
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_15" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_14" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" [label="1: Start MyClass.dealloc\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" [label="2: Exit MyClass.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" ;
 }

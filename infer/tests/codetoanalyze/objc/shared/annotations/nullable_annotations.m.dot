@@ -19,6 +19,17 @@ digraph cfg {
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" ;
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_1" [label="1: Start User.dealloc\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_1" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" ;
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" [label="2: Exit User.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" [label="3:  Call dealloc \n   n$0=*&self:User* [line 59, column 1]\n  n$1=*n$0._name:NSString* [line 59, column 1]\n  n$2=_fun_NSString.dealloc(n$1:NSString*) [line 59, column 1]\n " shape="box"]
+	
+
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" ;
 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User.initWithName:\nFormals:  self:User* name:NSString*\nLocals: \nAnnotation: <_Nullable> User.initWithName:(<> <_Nullable>) \n  " color=yellow style=filled]
 	
 

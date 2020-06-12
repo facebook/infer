@@ -207,6 +207,17 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" -> "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_2" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A.init\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -269,6 +280,17 @@ digraph cfg {
 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" [label="2: Exit B.b_m \n  " color=yellow style=filled]
 	
 
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" ;
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
+	
+
+"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" [label="3:  Call dealloc \n  " shape="box"]
+	
+
+	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" ;
 "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" [label="1: Start B.isC:\nFormals:  self:B* aClass:objc_class*\nLocals:  \n  " color=yellow style=filled]
 	
 
