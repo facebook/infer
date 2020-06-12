@@ -18,7 +18,7 @@
 
 <link rel="preload" href="/styles.e8791e86.js" as="script">
 
-<link rel="preload" href="/runtime~main.076e7dc7.js" as="script">
+<link rel="preload" href="/runtime~main.2d707707.js" as="script">
 
 <link rel="preload" href="/main.abec7f1e.js" as="script">
 
@@ -34,7 +34,7 @@
 
 <link rel="preload" href="/17896441.143f426e.js" as="script">
 
-<link rel="preload" href="/1906a68b.99944959.js" as="script">
+<link rel="preload" href="/1906a68b.d54ae8eb.js" as="script">
 
 </head>
 <body>
@@ -58,7 +58,7 @@ different parts of memory. In other words, <img src="https://math.now.sh?from=%5
 together with mutation to computer memory; reasoning about program commands
 tends to work by updating <img src="https://math.now.sh?from=%5C%5C(*%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle">-conjuncts in-place, mimicking
 the operational in-place update of RAM.</p><p>Separation logic uses Hoare triples of the form</p><img src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20pre%20%5Crbrace%20prog%20%5Clbrace%20post%20%5Crbrace%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> where<img src="https://math.now.sh?from=%5C%5C(pre%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> is the precondition, <img src="https://math.now.sh?from=%5C%5C(prog%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> a program part, and <img src="https://math.now.sh?from=%5C%5C(post%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> the postcondition. Triples are abstract specifications of the behavior of the program. For example, we could take<hr><img src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r%20%5Cmapsto%20open%5Crbrace%20%5C%2C%20closeResource(r)%5C%2C%20%5Clbrace%20r%20%5Cmapsto%20closed%5Crbrace%20%20%5C%3B%5C%3B%5C%3B%20(spec)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"><hr><p>as a specification for a method which closes a resource given to it as a
-parameter.</p><p>Now, suppose we have two resources <img src="https://math.now.sh?from=%5C%5C(%20r%5C_1%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> and</p><img src="https://math.now.sh?from=%5C%5C(%20r%5C_2%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle">, described by<img src="https://math.now.sh?from=%5C%5C(r%5C_1%20%5Cmapsto%20open%20*%20r%5C_2%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> and we close the first of them. We think operationally in terms of updating the memory in place, leaving \\(r_2 \mapsto open\\) alone, as described by this triple:<hr><img src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r%5C_1%20%5Cmapsto%20open%20*%20r%5C_2%20%5Cmapsto%20open%5Crbrace%20%20closeResource(r%5C_1)%20%5Clbrace%20r%5C_1%20%5Cmapsto%20closed%20*%20r%5C_2%20%5Cmapsto%20open%20%5Crbrace%20%5C%3B%5C%3B%5C%3B%20(use)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"><hr><p>What we have here is the that specification (spec) described how</p><img src="https://math.now.sh?from=%5C%5C(closeResource()%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> works by mentioning only one piece of state, what is sometimes called a small specification, and in (use) we use that specification to update a larger precondition in place.<p>This is an instance of a general pattern. There is a rule that lets you go from
+parameter.</p><p>Now, suppose we have two resources <img src="https://math.now.sh?from=%5C%5C(%20r%5C_1%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> and</p><img src="https://math.now.sh?from=%5C%5C(%20r%5C_2%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle">, described by<img src="https://math.now.sh?from=%5C%5C(r%5C_1%20%5Cmapsto%20open%20*%20r%5C_2%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> and we close the first of them. We think operationally in terms of updating the memory in place, leaving <img src="https://math.now.sh?from=%5C%5C(r%5C_2%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> alone, as described by this triple:<hr><img src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r%5C_1%20%5Cmapsto%20open%20*%20r%5C_2%20%5Cmapsto%20open%5Crbrace%20%20closeResource(r%5C_1)%20%5Clbrace%20r%5C_1%20%5Cmapsto%20closed%20*%20r%5C_2%20%5Cmapsto%20open%20%5Crbrace%20%5C%3B%5C%3B%5C%3B%20(use)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"><hr><p>What we have here is the that specification (spec) described how</p><img src="https://math.now.sh?from=%5C%5C(closeResource()%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> works by mentioning only one piece of state, what is sometimes called a small specification, and in (use) we use that specification to update a larger precondition in place.<p>This is an instance of a general pattern. There is a rule that lets you go from
 smaller to bigger specifications</p><hr><img src="https://math.now.sh?from=%5C%5C(%20%5Cfrac%7B%5Clbrace%20pre%20%5Crbrace%20prog%20%5Clbrace%20post%20%5Crbrace%7D%7B%5Clbrace%20pre%20*%20frame%20%5Crbrace%20prog%20%5Clbrace%20post%20*%20frame%20%5Crbrace%7D%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"><hr><p>Our passage from (spec) to (use) is obtained by taking</p><ul><li><img src="https://math.now.sh?from=%5C%5C(pre%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> to be <img src="https://math.now.sh?from=%5C%5C(r%5C_1%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"></li><li><img src="https://math.now.sh?from=%5C%5C(post%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> to be <img src="https://math.now.sh?from=%5C%5C(r%5C_1%20%5Cmapsto%20closed%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle">, and</li><li><img src="https://math.now.sh?from=%5C%5C(frame%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> to be <img src="https://math.now.sh?from=%5C%5C(r%5C_2%20%5Cmapsto%20open%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"></li></ul><p>This rule is called the <em>frame rule</em> of separation logic. It is named after the
 frame problem, a classic problem in artificial intelligence. Generally, the</p><img src="https://math.now.sh?from=%5C%5C(frame%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle"> describes state that remains unchanged; the terminology comes from the analogy of a background scene in an animation as unchanging while the objects and characters within the scene change.<p>The frame rule is the key to the principle of local reasoning in separation
 logic: reasoning and specifications should concentrate on the resources that a
@@ -115,7 +115,7 @@ information on how it is used inside Facebook.</p><ul><li><a href="http://link.s
 
 <script src="/styles.e8791e86.js"></script>
 
-<script src="/runtime~main.076e7dc7.js"></script>
+<script src="/runtime~main.2d707707.js"></script>
 
 <script src="/main.abec7f1e.js"></script>
 
@@ -131,7 +131,7 @@ information on how it is used inside Facebook.</p><ul><li><a href="http://link.s
 
 <script src="/17896441.143f426e.js"></script>
 
-<script src="/1906a68b.99944959.js"></script>
+<script src="/1906a68b.d54ae8eb.js"></script>
 
 
 </body>
