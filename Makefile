@@ -723,11 +723,11 @@ install-with-libs: install
 ifneq ($(LDD),no)
 ifneq ($(PATCHELF),no)
 #	this sort of assumes Linux
-#	figure out where libgmp and libmpfr are using ldd
+#	figure out where libgmp, libmpfr, and libsqlite3 are using ldd
 	set -x; \
 	for lib in $$($(LDD) $(INFER_BIN) \
 	              | cut -d ' ' -f 3 \
-	              | grep -e 'lib\(gmp\|mpfr\)'); do \
+	              | grep -e 'lib\(gmp\|mpfr\|sqlite\)'); do \
 	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
 	done
 #	update rpath of executables
@@ -745,12 +745,12 @@ else # ldd not found
 ifneq ($(OTOOL),no)
 ifneq ($(INSTALL_NAME_TOOL),no)
 #	this sort of assumes osx
-#	figure out where libgmp and libmpfr are using otool
+#	figure out where libgmp, libmpfr, and libsqlite3 are using otool
 	set -e; \
 	set -x; \
 	for lib in $$($(OTOOL) -L $(INFER_BIN) \
 	              | cut -d ' ' -f 1 | tr -d '\t' \
-	              | grep -e 'lib\(gmp\|mpfr\)'); do \
+	              | grep -e 'lib\(gmp\|mpfr\|sqlite\)'); do \
 	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
 	done
 	set -x; \
