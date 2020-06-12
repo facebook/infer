@@ -715,6 +715,63 @@ else
 endif
 endif
 
+# install dynamic libraries
+# use this if you want to distribute infer binaries
+install-with-libs: install
+	test -d      '$(DESTDIR)$(libdir)'/infer/infer/libso || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/infer/libso
+ifneq ($(LDD),no)
+ifneq ($(PATCHELF),no)
+#	this sort of assumes Linux
+#	figure out where libgmp and libmpfr are using ldd
+	set -x; \
+	for lib in $$($(LDD) $(INFER_BIN) \
+	              | cut -d ' ' -f 3 \
+	              | grep -e 'lib\(gmp\|mpfr\)'); do \
+	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
+	done
+#	update rpath of executables
+	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.so*; do \
+	  $(PATCHELF) --set-rpath '$$ORIGIN' --force-rpath "$$sofile"; \
+	done
+	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif
+else # ldd found but not patchelf
+	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
+endif
+else # ldd not found
+ifneq ($(OTOOL),no)
+ifneq ($(INSTALL_NAME_TOOL),no)
+#	this sort of assumes osx
+#	figure out where libgmp and libmpfr are using otool
+	set -e; \
+	set -x; \
+	for lib in $$($(OTOOL) -L $(INFER_BIN) \
+	              | cut -d ' ' -f 1 | tr -d '\t' \
+	              | grep -e 'lib\(gmp\|mpfr\)'); do \
+	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
+	done
+	set -x; \
+	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.dylib; do \
+	  $(INSTALL_NAME_TOOL) -add_rpath "@executable_path" "$$sofile" 2> /dev/null || true; \
+	  scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso "$$sofile"; \
+	done
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer 2> /dev/null || true
+	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks 2> /dev/null || true
+	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif
+else # install_name_tool not found
+	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
+endif
+else # otool not found
+	echo "ERROR: need ldd + patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
+endif
+endif # ldd
+
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
 .PHONY: ocaml_clean
 ocaml_clean:

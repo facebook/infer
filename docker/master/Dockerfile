@@ -54,7 +54,7 @@ RUN cd /infer && \
 
 # Generate a release
 RUN cd /infer && \
-    make install \
+    make install-with-libs \
     BUILD_MODE=opt \
     DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
