@@ -72,6 +72,9 @@ module.exports = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc. Built with Docusaurus.`,
     },
+    prism: {
+      additionalLanguages: ['java'],
+    },
   },
   presets: [
     [
