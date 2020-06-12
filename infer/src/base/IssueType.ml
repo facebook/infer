@@ -575,6 +575,7 @@ let _global_variable_initialized_with_function_or_method_call =
 
 let guardedby_violation_racerd =
   register_from_string Warning ~id:"GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
 let impure_function = register_from_string ~id:"IMPURE_FUNCTION" Error Impurity
