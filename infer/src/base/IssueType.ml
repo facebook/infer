@@ -671,8 +671,8 @@ let expensive_loop_invariant_call =
 
 
 let memory_leak =
-  register_from_string ~id:"MEMORY_LEAK" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
+  register_from_string ~enabled:false ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak" Error
+    Biabduction
 
 
 let missing_fld =
@@ -736,7 +736,10 @@ let premature_nil_termination =
     ~user_documentation:[%blob "../../documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
-let pulse_memory_leak = register_from_string ~enabled:false ~id:"PULSE_MEMORY_LEAK" Error Pulse
+let pulse_memory_leak =
+  register_from_string ~id:"MEMORY_LEAK" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
+
 
 let pure_function = register_from_string ~id:"PURE_FUNCTION" Error Purity
 
