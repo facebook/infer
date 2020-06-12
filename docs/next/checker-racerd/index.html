@@ -16,25 +16,25 @@
 <link rel="stylesheet" href="/styles.20899050.css">
 
 
-<link rel="preload" href="/styles.e8791e86.js" as="script">
+<link rel="preload" href="/styles.9d4acbca.js" as="script">
 
-<link rel="preload" href="/runtime~main.2d707707.js" as="script">
+<link rel="preload" href="/runtime~main.dc33c9dc.js" as="script">
 
-<link rel="preload" href="/main.abec7f1e.js" as="script">
+<link rel="preload" href="/main.b230dfab.js" as="script">
 
-<link rel="preload" href="/1.3d0db337.js" as="script">
+<link rel="preload" href="/1.0ad40966.js" as="script">
 
-<link rel="preload" href="/2.fb5ad4be.js" as="script">
+<link rel="preload" href="/2.3e8a2571.js" as="script">
 
-<link rel="preload" href="/3.bfc51fa9.js" as="script">
+<link rel="preload" href="/3.24bbbf0d.js" as="script">
 
-<link rel="preload" href="/1be78505.b3cf3500.js" as="script">
+<link rel="preload" href="/1be78505.83811e2f.js" as="script">
 
-<link rel="preload" href="/c6c6e257.32df317b.js" as="script">
+<link rel="preload" href="/c6c6e257.e2ae4e3a.js" as="script">
 
-<link rel="preload" href="/17896441.143f426e.js" as="script">
+<link rel="preload" href="/17896441.39dba5f3.js" as="script">
 
-<link rel="preload" href="/fa38ac94.145ed76a.js" as="script">
+<link rel="preload" href="/fa38ac94.b3c412e0.js" as="script">
 
 </head>
 <body>
@@ -251,25 +251,25 @@ practices, <a href="http://jcip.net/">Java Concurrency in Practice</a> is an exc
 resource.</p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_ZqCz" id="list-of-issue-types"></a><a aria-hidden="true" tabindex="-1" class="hash-link" href="#list-of-issue-types" title="Direct link to heading">#</a>List of Issue Types</h2><p>The following issue types are reported by this checker:</p><ul><li><a href="/docs/next/all-issue-types#interface_not_thread_safe">INTERFACE_NOT_THREAD_SAFE</a></li><li><a href="/docs/next/all-issue-types#lock_consistency_violation">LOCK_CONSISTENCY_VIOLATION</a></li><li><a href="/docs/next/all-issue-types#thread_safety_violation">THREAD_SAFETY_VIOLATION</a></li></ul></div></article><div class="margin-vert--lg"><nav class="pagination-nav"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/docs/next/checker-quandary"><div class="pagination-nav__link--sublabel">Previous</div><div class="pagination-nav__link--label">« Quandary</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/next/checker-siof"><div class="pagination-nav__link--sublabel">Next</div><div class="pagination-nav__link--label">Static Initialization Order Fiasco »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"><ul class="contents contents__left-border"><li><a href="#background" class="contents__link">Background</a></li><li><a href="#triggering-the-analysis" class="contents__link">Triggering the analysis</a></li><li><a href="#warnings" class="contents__link">Warnings</a><ul><li><a href="#unprotected-write" class="contents__link">Unprotected write</a></li><li><a href="#readwrite-race" class="contents__link">Read/Write Race</a></li><li><a href="#interface-not-thread-safe" class="contents__link">Interface not thread-safe</a></li></ul></li><li><a href="#annotations-to-help-racerd-understand-your-code" class="contents__link">Annotations to help RacerD understand your code</a><ul><li><a href="#threadconfined" class="contents__link"><code>@ThreadConfined</code></a></li><li><a href="#functional" class="contents__link"><code>@Functional</code></a></li><li><a href="#returnsownership" class="contents__link"><code>@ReturnsOwnership</code></a></li><li><a href="#visiblefortesting" class="contents__link"><code>@VisibleForTesting</code></a></li></ul></li><li><a href="#interprocedural-reasoning" class="contents__link"><a name="interprocedural"></a> Interprocedural Reasoning</a></li><li><a href="#context-and-selected-related-work" class="contents__link"><a name="context"></a> Context and Selected Related Work</a></li><li><a href="#limitations" class="contents__link">Limitations</a></li><li><a href="#list-of-issue-types" class="contents__link">List of Issue Types</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/checkers-bug-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://github.com/facebook/infer">GitHub</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://twitter.com/fbinfer">Twitter</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/inferstaticanalyzer">Facebook</a></li></ul></div></div><div class="text--center"><div>Copyright © 2020 Facebook, Inc. Built with Docusaurus.</div></div></div></footer>
 </div>
 
-<script src="/styles.e8791e86.js"></script>
+<script src="/styles.9d4acbca.js"></script>
 
-<script src="/runtime~main.2d707707.js"></script>
+<script src="/runtime~main.dc33c9dc.js"></script>
 
-<script src="/main.abec7f1e.js"></script>
+<script src="/main.b230dfab.js"></script>
 
-<script src="/1.3d0db337.js"></script>
+<script src="/1.0ad40966.js"></script>
 
-<script src="/2.fb5ad4be.js"></script>
+<script src="/2.3e8a2571.js"></script>
 
-<script src="/3.bfc51fa9.js"></script>
+<script src="/3.24bbbf0d.js"></script>
 
-<script src="/1be78505.b3cf3500.js"></script>
+<script src="/1be78505.83811e2f.js"></script>
 
-<script src="/c6c6e257.32df317b.js"></script>
+<script src="/c6c6e257.e2ae4e3a.js"></script>
 
-<script src="/17896441.143f426e.js"></script>
+<script src="/17896441.39dba5f3.js"></script>
 
-<script src="/fa38ac94.145ed76a.js"></script>
+<script src="/fa38ac94.b3c412e0.js"></script>
 
 
 </body>

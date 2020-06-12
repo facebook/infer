@@ -16,25 +16,25 @@
 <link rel="stylesheet" href="/styles.20899050.css">
 
 
-<link rel="preload" href="/styles.e8791e86.js" as="script">
+<link rel="preload" href="/styles.9d4acbca.js" as="script">
 
-<link rel="preload" href="/runtime~main.2d707707.js" as="script">
+<link rel="preload" href="/runtime~main.dc33c9dc.js" as="script">
 
-<link rel="preload" href="/main.abec7f1e.js" as="script">
+<link rel="preload" href="/main.b230dfab.js" as="script">
 
-<link rel="preload" href="/1.3d0db337.js" as="script">
+<link rel="preload" href="/1.0ad40966.js" as="script">
 
-<link rel="preload" href="/2.fb5ad4be.js" as="script">
+<link rel="preload" href="/2.3e8a2571.js" as="script">
 
-<link rel="preload" href="/3.bfc51fa9.js" as="script">
+<link rel="preload" href="/3.24bbbf0d.js" as="script">
 
-<link rel="preload" href="/1be78505.b3cf3500.js" as="script">
+<link rel="preload" href="/1be78505.83811e2f.js" as="script">
 
-<link rel="preload" href="/c6c6e257.32df317b.js" as="script">
+<link rel="preload" href="/c6c6e257.e2ae4e3a.js" as="script">
 
-<link rel="preload" href="/17896441.143f426e.js" as="script">
+<link rel="preload" href="/17896441.39dba5f3.js" as="script">
 
-<link rel="preload" href="/dfa84fef.78417f43.js" as="script">
+<link rel="preload" href="/dfa84fef.0dc73220.js" as="script">
 
 </head>
 <body>
@@ -222,25 +222,25 @@ adding the option <code>--linters</code> to the analysis command as in this exam
 developing new linters in Infer. Read about them in the <a href="man-pages"><code>infer capture</code> manual</a>.</p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_ZqCz" id="list-of-issue-types"></a><a aria-hidden="true" tabindex="-1" class="hash-link" href="#list-of-issue-types" title="Direct link to heading">#</a>List of Issue Types</h2><p>The following issue types are reported by this checker:</p><ul><li><a href="/docs/next/all-issue-types#assign_pointer_warning">ASSIGN_POINTER_WARNING</a></li><li><a href="/docs/next/all-issue-types#bad_pointer_comparison">BAD_POINTER_COMPARISON</a></li><li><a href="/docs/next/all-issue-types#component_factory_function">COMPONENT_FACTORY_FUNCTION</a></li><li><a href="/docs/next/all-issue-types#component_initializer_with_side_effects">COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS</a></li><li><a href="/docs/next/all-issue-types#component_with_multiple_factory_methods">COMPONENT_WITH_MULTIPLE_FACTORY_METHODS</a></li><li><a href="/docs/next/all-issue-types#component_with_unconventional_superclass">COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS</a></li><li><a href="/docs/next/all-issue-types#cxx_reference_captured_in_objc_block">CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK</a></li><li><a href="/docs/next/all-issue-types#direct_atomic_property_access">DIRECT_ATOMIC_PROPERTY_ACCESS</a></li><li><a href="/docs/next/all-issue-types#discouraged_weak_property_custom_setter">DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER</a></li><li><a href="/docs/next/all-issue-types#global_variable_initialized_with_function_or_method_call">GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL</a></li><li><a href="/docs/next/all-issue-types#mutable_local_variable_in_component_file">MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE</a></li><li><a href="/docs/next/all-issue-types#pointer_to_const_objc_class">POINTER_TO_CONST_OBJC_CLASS</a></li><li><a href="/docs/next/all-issue-types#registered_observer_being_deallocated">REGISTERED_OBSERVER_BEING_DEALLOCATED</a></li><li><a href="/docs/next/all-issue-types#strong_delegate_warning">STRONG_DELEGATE_WARNING</a></li><li><a href="/docs/next/all-issue-types#unavailable_api_in_supported_ios_sdk">UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK</a></li></ul></div></article><div class="margin-vert--lg"><nav class="pagination-nav"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/docs/next/checker-inefficient-keyset-iterator"><div class="pagination-nav__link--sublabel">Previous</div><div class="pagination-nav__link--label">« Inefficient keySet Iterator</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/next/checker-litho-required-props"><div class="pagination-nav__link--sublabel">Next</div><div class="pagination-nav__link--label">Litho &quot;Required Props&quot; »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"><ul class="contents contents__left-border"><li><a href="#al-a-declarative-language-for-writing-linters-in-infer" class="contents__link">AL: A declarative language for writing linters in Infer</a></li><li><a href="#getting-the-clang-ast" class="contents__link">Getting the clang AST</a></li><li><a href="#using-al-to-write-linters" class="contents__link">Using AL to write linters</a></li><li><a href="#defining-paths" class="contents__link">Defining Paths</a></li><li><a href="#defining-macros" class="contents__link">Defining Macros</a></li><li><a href="#al-predicates" class="contents__link">AL Predicates</a></li><li><a href="#al-formulas" class="contents__link">AL Formulas</a></li><li><a href="#example-checks" class="contents__link">Example checks</a></li><li><a href="#ast-info-in-messages" class="contents__link">AST info in messages</a></li><li><a href="#testing-your-rule" class="contents__link">Testing your rule</a></li><li><a href="#debugging" class="contents__link">Debugging</a></li><li><a href="#demo" class="contents__link">Demo</a></li><li><a href="#command-line-options-for-linters" class="contents__link">Command line options for linters</a></li><li><a href="#list-of-issue-types" class="contents__link">List of Issue Types</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/checkers-bug-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://github.com/facebook/infer">GitHub</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://twitter.com/fbinfer">Twitter</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/inferstaticanalyzer">Facebook</a></li></ul></div></div><div class="text--center"><div>Copyright © 2020 Facebook, Inc. Built with Docusaurus.</div></div></div></footer>
 </div>
 
-<script src="/styles.e8791e86.js"></script>
+<script src="/styles.9d4acbca.js"></script>
 
-<script src="/runtime~main.2d707707.js"></script>
+<script src="/runtime~main.dc33c9dc.js"></script>
 
-<script src="/main.abec7f1e.js"></script>
+<script src="/main.b230dfab.js"></script>
 
-<script src="/1.3d0db337.js"></script>
+<script src="/1.0ad40966.js"></script>
 
-<script src="/2.fb5ad4be.js"></script>
+<script src="/2.3e8a2571.js"></script>
 
-<script src="/3.bfc51fa9.js"></script>
+<script src="/3.24bbbf0d.js"></script>
 
-<script src="/1be78505.b3cf3500.js"></script>
+<script src="/1be78505.83811e2f.js"></script>
 
-<script src="/c6c6e257.32df317b.js"></script>
+<script src="/c6c6e257.e2ae4e3a.js"></script>
 
-<script src="/17896441.143f426e.js"></script>
+<script src="/17896441.39dba5f3.js"></script>
 
-<script src="/dfa84fef.78417f43.js"></script>
+<script src="/dfa84fef.0dc73220.js"></script>
 
 
 </body>
