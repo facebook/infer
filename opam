@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "infer"
-version: "0.17.0"
+version: "1.0.0"
 synopsis: "A static analyzer for Java, C, C++, and Objective-C"
 maintainer: "the infer team"
 authors: "Facebook"
