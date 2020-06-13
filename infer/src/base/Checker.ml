@@ -13,7 +13,6 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
-  | ClassLoads
   | Cost
   | Eradicate
   | FragmentRetainsView
@@ -120,18 +119,6 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
-  | ClassLoads ->
-      { id= "class-loads"
-      ; kind=
-          UserFacingDeprecated
-            { title= "Class loading analysis"
-            ; markdown_body= ""
-            ; deprecation_message= "Unmaintained prototype." }
-      ; support= supports_java
-      ; short_documentation= "Compute set of Java classes loaded."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [] }
   | Cost ->
       { id= "cost"
       ; kind= UserFacing {title= "Cost: Runtime Complexity Analysis"; markdown_body= ""}

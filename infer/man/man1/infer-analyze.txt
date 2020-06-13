@@ -47,14 +47,6 @@ OPTIONS
            reactive analysis should start. Source files should be specified
            relative to project root or be absolute
 
-       --class-loads
-           Activates: checker class-loads: Compute set of Java classes
-           loaded. (Conversely: --no-class-loads)
-
-       --class-loads-only
-           Activates: Enable class-loads and disable all other checkers
-           (Conversely: --no-class-loads-only)
-
        --continue-analysis
            Activates: Continue the analysis after more targets are captured
            by --continue. The other analysis options should be given the same

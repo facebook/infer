@@ -226,8 +226,6 @@ val clang_idirafter_to_override_regex : Str.regexp option
 
 val clang_libcxx_include_to_override_regex : string option
 
-val class_loads_roots : String.Set.t
-
 val command : InferCommand.t
 
 val compute_analytics : bool

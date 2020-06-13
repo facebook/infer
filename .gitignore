@@ -50,8 +50,6 @@ duplicates.txt
 /infer/tests/build_systems/incremental_analysis_cost_change/src
 /infer/tests/build_systems/incremental_analysis_add_procedure/src
 /infer/tests/build_systems/java_test_determinator/*.test
-/infer/tests/codetoanalyze/java/classloads/*.loads
-/infer/tests/codetoanalyze/java/classloads/loads.exp
 /_release
 /infer-source
 

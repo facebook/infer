@@ -228,14 +228,6 @@ OPTIONS
            arrays) is not done element by element but using a builtin
            function that each analysis has to model.           See also infer-analyze(1) and infer-capture(1).
 
-       --class-loads
-           Activates: checker class-loads: Compute set of Java classes
-           loaded. (Conversely: --no-class-loads)           See also infer-analyze(1).
-
-       --class-loads-only
-           Activates: Enable class-loads and disable all other checkers
-           (Conversely: --no-class-loads-only)           See also infer-analyze(1).
-
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
            times)           See also infer-capture(1).
@@ -394,7 +386,6 @@ OPTIONS
              CHECKERS_IMMUTABLE_CAST (enabled by default),
              CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
-             CLASS_LOAD (enabled by default),
              COMPONENT_FACTORY_FUNCTION (enabled by default),
              COMPONENT_FILE_CYCLOMATIC_COMPLEXITY (enabled by default),
              COMPONENT_FILE_LINE_COUNT (disabled by default),
@@ -1329,12 +1320,6 @@ INTERNAL OPTIONS
 
        --clang-libcxx-include-to-override-regex-reset
            Cancel the effect of --clang-libcxx-include-to-override-regex.
-
-       --class-loads-roots +string
-           Report class loads of this list of Java methods
-
-       --class-loads-roots-reset
-           Set --class-loads-roots to the empty list.
 
        --classpath string
            Specify the Java classpath

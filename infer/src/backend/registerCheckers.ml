@@ -77,9 +77,6 @@ let all_checkers =
   (* The order of the list is important for those checkers that depend on other checkers having run
      before them. *)
   [ {checker= SelfInBlock; callbacks= [(intraprocedural SelfInBlock.checker, Clang)]}
-  ; { checker= ClassLoads
-    ; callbacks= [(interprocedural Payloads.Fields.class_loads ClassLoads.analyze_procedure, Java)]
-    }
   ; { checker= Purity
     ; callbacks=
         (let purity =

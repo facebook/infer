@@ -331,8 +331,6 @@ let class_cast_exception =
     Biabduction
 
 
-let class_load = register_from_string ~id:"CLASS_LOAD" Warning ClassLoads
-
 let component_factory_function =
   register_from_string ~id:"COMPONENT_FACTORY_FUNCTION" Advice Linters
     ~user_documentation:[%blob "../../documentation/issues/COMPONENT_FACTORY_FUNCTION.md"]

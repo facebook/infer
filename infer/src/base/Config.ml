@@ -889,10 +889,6 @@ and clang_libcxx_include_to_override_regex =
      $(b,-I /path/to/infer/facebook-clang-plugins/clang/install/include/c++/v1)."
 
 
-and class_loads_roots =
-  CLOpt.mk_string_list ~long:"class-loads-roots" "Report class loads of this list of Java methods"
-
-
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
 
 and compilation_database =
@@ -2707,8 +2703,6 @@ and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
-
-and class_loads_roots = String.Set.of_list !class_loads_roots
 
 and compute_analytics = !compute_analytics
 

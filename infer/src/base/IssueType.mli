@@ -139,8 +139,6 @@ val checkers_printf_args : t
 
 val class_cast_exception : t
 
-val class_load : t
-
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
 val component_factory_function : t

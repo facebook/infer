@@ -12,7 +12,6 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
-  | ClassLoads
   | Cost
   | Eradicate
   | FragmentRetainsView
