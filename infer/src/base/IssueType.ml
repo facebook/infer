@@ -661,7 +661,10 @@ let lock_consistency_violation =
     ~user_documentation:[%blob "../../documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
-let lockless_violation = register_from_string ~id:"LOCKLESS_VIOLATION" Error Starvation
+let lockless_violation =
+  register_from_string ~id:"LOCKLESS_VIOLATION" Error Starvation
+    ~user_documentation:[%blob "../../documentation/issues/LOCKLESS_VIOLATION.md"]
+
 
 let logging_private_data = register_from_string ~id:"LOGGING_PRIVATE_DATA" Error Quandary
 
