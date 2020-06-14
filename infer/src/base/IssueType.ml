@@ -324,7 +324,10 @@ let checkers_immutable_cast =
     ~user_documentation:[%blob "../../documentation/issues/CHECKERS_IMMUTABLE_CAST.md"]
 
 
-let checkers_printf_args = register_from_string ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
+let checkers_printf_args =
+  register_from_string ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
+    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_PRINTF_ARGS.md"]
+
 
 let class_cast_exception =
   register_from_string ~visibility:Developer ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error
