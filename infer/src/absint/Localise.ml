@@ -434,23 +434,6 @@ let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_nu
 
 let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_checked
 
-let desc_allocation_mismatch alloc dealloc =
-  let tags = Tags.create () in
-  let using (primitive_pname, called_pname, loc) =
-    let by_call =
-      if Procname.equal primitive_pname called_pname then ""
-      else " by call to " ^ MF.monospaced_to_string (Procname.to_simplified_string called_pname)
-    in
-    "using "
-    ^ MF.monospaced_to_string (Procname.to_simplified_string primitive_pname)
-    ^ by_call ^ " "
-    ^ at_line (Tags.create ()) (* ignore the tag *) loc
-  in
-  let description =
-    Format.sprintf "%s %s is deallocated %s" mem_dyn_allocated (using alloc) (using dealloc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
 
 let desc_condition_always_true_false i cond_str_opt loc =
   let tags = Tags.create () in

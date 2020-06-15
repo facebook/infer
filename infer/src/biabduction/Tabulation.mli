@@ -13,10 +13,6 @@ open! IStd
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
 (** Remove constant string or class from a prop *)
 
-val check_attr_dealloc_mismatch : PredSymb.t -> PredSymb.t -> unit
-(** Check if the attribute change is a mismatch between a kind of allocation and a different kind of
-    deallocation *)
-
 val find_dereference_without_null_check_in_sexp :
   Predicates.strexp -> (int * PredSymb.path_pos) option
 (** Check whether a sexp contains a dereference without null check, and return the line number and

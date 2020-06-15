@@ -103,9 +103,6 @@ val is_parameter_not_null_checked_desc : error_desc -> bool
 
 val is_field_not_null_checked_desc : error_desc -> bool
 
-val desc_allocation_mismatch :
-  Procname.t * Procname.t * Location.t -> Procname.t * Procname.t * Location.t -> error_desc
-
 val desc_class_cast_exception :
   Procname.t option -> string -> string -> string option -> Location.t -> error_desc
 

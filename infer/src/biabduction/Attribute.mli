@@ -27,11 +27,7 @@ val add_or_replace : Tenv.t -> Prop.normal Prop.t -> Predicates.atom -> Prop.nor
 (** Replace an attribute associated to the expression *)
 
 val add_or_replace_check_changed :
-     Tenv.t
-  -> (PredSymb.t -> PredSymb.t -> unit)
-  -> Prop.normal Prop.t
-  -> Predicates.atom
-  -> Prop.normal Prop.t
+  Tenv.t -> Prop.normal Prop.t -> Predicates.atom -> Prop.normal Prop.t
 (** Replace an attribute associated to the expression, and call the given function with new and old
     attributes if they changed. *)
 

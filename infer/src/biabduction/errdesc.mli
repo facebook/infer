@@ -23,9 +23,6 @@ val find_ident_assignment : Procdesc.Node.t -> Ident.t -> (Procdesc.Node.t * Exp
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 (** describe rvalue [e] as a dexp *)
 
-val explain_allocation_mismatch : PredSymb.res_action -> PredSymb.res_action -> Localise.error_desc
-(** Produce a description of a mismatch between an allocation function and a deallocation function *)
-
 val explain_array_access :
   Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
 (** Produce a description of the array access performed in the current instruction, if any. *)

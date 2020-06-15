@@ -671,19 +671,6 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop : 'a Prop.t) pi_new sig
       Some (Prop.normalize tenv (Prop.set prop ~pi:pi' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp''))
 
 
-(** Check if the attribute change is a mismatch between a kind of allocation and a different kind of
-    deallocation *)
-let check_attr_dealloc_mismatch att_old att_new =
-  match (att_old, att_new) with
-  | ( PredSymb.Aresource ({ra_kind= Racquire; ra_res= Rmemory mk_old} as ra_old)
-    , PredSymb.Aresource ({ra_kind= Rrelease; ra_res= Rmemory mk_new} as ra_new) )
-    when PredSymb.compare_mem_kind mk_old mk_new <> 0 ->
-      let desc = Errdesc.explain_allocation_mismatch ra_old ra_new in
-      raise (Exceptions.Deallocation_mismatch (desc, __POS__))
-  | _ ->
-      ()
-
-
 (** [prop_copy_footprint p1 p2] copies the footprint and pure part of [p1] into [p2] *)
 let prop_copy_footprint_pure tenv p1 p2 =
   let p2' = Prop.set p2 ~pi_fp:p1.Prop.pi_fp ~sigma_fp:p1.Prop.sigma_fp in
@@ -693,9 +680,7 @@ let prop_copy_footprint_pure tenv p1 p2 =
   let replace_attr prop atom =
     (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
-    if Attribute.is_pred atom then
-      Attribute.add_or_replace_check_changed tenv check_attr_dealloc_mismatch prop atom
-    else prop
+    if Attribute.is_pred atom then Attribute.add_or_replace_check_changed tenv prop atom else prop
   in
   List.fold ~f:replace_attr ~init:(Prop.normalize tenv res_noattr) pi2_attr
 

@@ -171,8 +171,6 @@ val deallocate_stack_variable : t
 
 val deallocate_static_memory : t
 
-val deallocation_mismatch : t
-
 val divide_by_zero : t
 
 val do_not_report : t

@@ -358,26 +358,6 @@ let exp_lv_dexp tenv = exp_lv_dexp_ tenv Exp.Set.empty
 
 let exp_rv_dexp tenv = exp_rv_dexp_ tenv Exp.Set.empty
 
-(** Produce a description of a mismatch between an allocation function and a deallocation function *)
-let explain_allocation_mismatch ra_alloc ra_dealloc =
-  let get_primitive_called is_alloc ra =
-    (* primitive alloc/dealloc function ultimately used, and function actually called  *)
-    (* e.g. malloc and my_malloc *)
-    let primitive =
-      match ra.PredSymb.ra_res with
-      | PredSymb.Rmemory mk_alloc ->
-          (if is_alloc then PredSymb.mem_alloc_pname else PredSymb.mem_dealloc_pname) mk_alloc
-      | _ ->
-          ra_alloc.PredSymb.ra_pname
-    in
-    let called = ra.PredSymb.ra_pname in
-    (primitive, called, ra.PredSymb.ra_loc)
-  in
-  Localise.desc_allocation_mismatch
-    (get_primitive_called true ra_alloc)
-    (get_primitive_called false ra_dealloc)
-
-
 (** check whether the type of leaked [hpred] appears as a predicate in an inductive predicate in
     [prop] *)
 let leak_from_list_abstraction hpred prop =

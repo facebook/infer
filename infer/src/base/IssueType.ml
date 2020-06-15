@@ -431,8 +431,6 @@ let deallocate_stack_variable =
 
 let deallocate_static_memory = register_from_string ~id:"DEALLOCATE_STATIC_MEMORY" Error Biabduction
 
-let deallocation_mismatch = register_from_string ~id:"DEALLOCATION_MISMATCH" Error Biabduction
-
 let _direct_atomic_property_access =
   register_from_string ~id:"DIRECT_ATOMIC_PROPERTY_ACCESS" Warning Linters
     ~user_documentation:[%blob "../../documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]

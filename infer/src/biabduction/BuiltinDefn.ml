@@ -447,8 +447,7 @@ let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
         in
         (* mark value as freed *)
         let p_res =
-          Attribute.add_or_replace_check_changed tenv Tabulation.check_attr_dealloc_mismatch prop
-            (Apred (Aresource ra, [lexp]))
+          Attribute.add_or_replace_check_changed tenv prop (Apred (Aresource ra, [lexp]))
         in
         p_res :: acc
       else prop :: acc

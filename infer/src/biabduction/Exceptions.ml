@@ -43,8 +43,6 @@ exception Deallocate_stack_variable of Localise.error_desc
 
 exception Deallocate_static_memory of Localise.error_desc
 
-exception Deallocation_mismatch of Localise.error_desc * L.ocaml_pos
-
 exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
@@ -143,8 +141,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.deallocate_stack_variable; description= desc; ocaml_pos= None}
   | Deallocate_static_memory desc ->
       {issue_type= IssueType.deallocate_static_memory; description= desc; ocaml_pos= None}
-  | Deallocation_mismatch (desc, ocaml_pos) ->
-      {issue_type= IssueType.deallocation_mismatch; description= desc; ocaml_pos= Some ocaml_pos}
   | Divide_by_zero (desc, ocaml_pos) ->
       {issue_type= IssueType.divide_by_zero; description= desc; ocaml_pos= Some ocaml_pos}
   | Empty_vector_access (desc, ocaml_pos) ->

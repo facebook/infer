@@ -132,7 +132,6 @@ OPTIONS
              DEAD_STORE (enabled by default),
              DEALLOCATE_STACK_VARIABLE (enabled by default),
              DEALLOCATE_STATIC_MEMORY (enabled by default),
-             DEALLOCATION_MISMATCH (enabled by default),
              DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
              DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
