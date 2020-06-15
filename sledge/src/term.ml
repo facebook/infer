@@ -1072,6 +1072,7 @@ module Var = struct
   (** Variable renaming substitutions *)
   module Subst = struct
     type t = T.t Map.t [@@deriving compare, equal, sexp_of]
+    type x = {sub: t; dom: Set.t; rng: Set.t}
 
     let t_of_sexp = Map.t_of_sexp T.t_of_sexp
 
@@ -1080,6 +1081,7 @@ module Var = struct
       let domain, range =
         Map.fold s ~init:(Set.empty, Set.empty)
           ~f:(fun ~key ~data (domain, range) ->
+            (* substs are injective *)
             assert (not (Set.mem range data)) ;
             (Set.add domain key, Set.add range data) )
       in
@@ -1090,27 +1092,24 @@ module Var = struct
     let is_empty = Map.is_empty
 
     let freshen vs ~wrt =
-      let xs = Set.inter wrt vs in
-      ( if Set.is_empty xs then empty
+      let dom = Set.inter wrt vs in
+      ( if Set.is_empty dom then
+        ({sub= empty; dom= Set.empty; rng= Set.empty}, wrt)
       else
         let wrt = Set.union wrt vs in
-        Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
-            let x', wrt = fresh (name x) ~wrt in
-            let sub = Map.add_exn sub ~key:x ~data:x' in
-            (sub, wrt) )
-        |> fst )
-      |> check invariant
+        let sub, rng, wrt =
+          Set.fold dom ~init:(empty, Set.empty, wrt)
+            ~f:(fun (sub, rng, wrt) x ->
+              let x', wrt = fresh (name x) ~wrt in
+              let sub = Map.add_exn sub ~key:x ~data:x' in
+              let rng = Set.add rng x' in
+              (sub, rng, wrt) )
+        in
+        ({sub; dom; rng}, wrt) )
+      |> check (fun ({sub; _}, _) -> invariant sub)
 
     let fold sub ~init ~f =
       Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
-
-    let invert sub =
-      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
-          Map.add_exn sub' ~key:data ~data:key )
-      |> check invariant
-
-    let restrict sub vs =
-      Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
 
     let domain sub =
       Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
@@ -1120,18 +1119,28 @@ module Var = struct
       Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
           Set.add range data )
 
-    let apply sub v = Map.find sub v |> Option.value ~default:v
+    let invert sub =
+      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
+          Map.add_exn sub' ~key:data ~data:key )
+      |> check invariant
 
-    let apply_set sub vs =
-      Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
-          let vs' = Set.remove vs key in
-          if vs' == vs then vs
+    let restrict sub vs =
+      Map.fold sub ~init:{sub; dom= Set.empty; rng= Set.empty}
+        ~f:(fun ~key ~data z ->
+          if Set.mem vs key then
+            {z with dom= Set.add z.dom key; rng= Set.add z.rng data}
           else (
-            assert (not (Set.equal vs' vs)) ;
-            Set.add vs' data ) )
-      |> check (fun vs' ->
-             assert (Set.disjoint (domain sub) vs') ;
-             assert (Set.is_subset (range sub) ~of_:vs') )
+            assert (
+              (* all substs are injective, so the current mapping is the
+                 only one that can cause [data] to be in [rng] *)
+              (not (Set.mem (range (Map.remove sub key)) data))
+              || violates invariant sub ) ;
+            {z with sub= Map.remove z.sub key} ) )
+      |> check (fun {sub; dom; rng} ->
+             assert (Set.equal dom (domain sub)) ;
+             assert (Set.equal rng (range sub)) )
+
+    let apply sub v = Map.find sub v |> Option.value ~default:v
   end
 end
 

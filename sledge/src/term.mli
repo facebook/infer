@@ -139,16 +139,17 @@ module Var : sig
   module Subst : sig
     type var := t
     type t [@@deriving compare, equal, sexp]
+    type x = {sub: t; dom: Set.t; rng: Set.t}
 
     val pp : t pp
     val empty : t
-    val freshen : Set.t -> wrt:Set.t -> t
+    val freshen : Set.t -> wrt:Set.t -> x * Set.t
     val invert : t -> t
-    val restrict : t -> Set.t -> t
+    val restrict : t -> Set.t -> x
     val is_empty : t -> bool
     val domain : t -> Set.t
     val range : t -> Set.t
-    val apply_set : t -> Set.t -> Set.t
+    val apply : t -> var -> var
     val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
   end
 end

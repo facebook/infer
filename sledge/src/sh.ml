@@ -332,16 +332,27 @@ let rec apply_subst sub q =
   |> check (fun q' ->
          assert (Var.Set.disjoint (fv q') (Var.Subst.domain sub)) )
 
+and rename_ Var.Subst.{sub; dom; rng} q =
+  [%Trace.call fun {pf} ->
+    pf "@[%a@]@ %a" Var.Subst.pp sub pp q ;
+    assert (Var.Set.is_subset dom ~of_:q.us)]
+  ;
+  ( if Var.Subst.is_empty sub then q
+  else
+    let us = Var.Set.union (Var.Set.diff q.us dom) rng in
+    assert (not (Var.Set.equal us q.us)) ;
+    let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Set.union dom us)) in
+    {q' with us} )
+  |>
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q' ;
+    assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
+
 and rename sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
-  let sub = Var.Subst.restrict sub q.us in
-  ( if Var.Subst.is_empty sub then q
-  else
-    let us = Var.Subst.apply_set sub q.us in
-    assert (not (Var.Set.equal us q.us)) ;
-    let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Set.union q.us us)) in
-    {q' with us} )
+  rename_ (Var.Subst.restrict sub q.us) q
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -354,10 +365,10 @@ and freshen_xs q ~wrt =
     pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q ;
     assert (Var.Set.is_subset q.us ~of_:wrt)]
   ;
-  let sub = Var.Subst.freshen q.xs ~wrt in
+  let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
   ( if Var.Subst.is_empty sub then q
   else
-    let xs = Var.Subst.apply_set sub q.xs in
+    let xs = Var.Set.union (Var.Set.diff q.xs dom) rng in
     let q' = apply_subst sub q in
     if xs == q.xs && q' == q then q else {q' with xs} )
   |>
@@ -374,9 +385,9 @@ let extend_us us q =
   (if us == q.us && q' == q then q else {q' with us}) |> check invariant
 
 let freshen ~wrt q =
-  let sub = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
-  let q' = extend_us wrt (rename sub q) in
-  (if q' == q then (q, sub) else (q', sub))
+  let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
+  let q' = extend_us wrt (rename_ xsub q) in
+  (if q' == q then (q, xsub.sub) else (q', xsub.sub))
   |> check (fun (q', _) ->
          invariant q' ;
          assert (Var.Set.is_subset wrt ~of_:q'.us) ;

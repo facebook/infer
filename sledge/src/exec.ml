@@ -44,9 +44,8 @@ let eq_concat (siz, seq) ms =
    fresh. *)
 let assign ~ws ~rs ~us =
   let ovs = Var.Set.inter ws rs in
-  let sub = Var.Subst.freshen ovs ~wrt:us in
-  let us = Var.Set.union us (Var.Subst.range sub) in
-  let ms = Var.Set.diff ws (Var.Subst.domain sub) in
+  let {Var.Subst.sub; dom; rng= _}, us = Var.Subst.freshen ovs ~wrt:us in
+  let ms = Var.Set.diff ws dom in
   (sub, ms, us)
 
 (*
