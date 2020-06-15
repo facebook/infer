@@ -339,6 +339,8 @@ type t =
             'rep(resentative)' of [a] *) }
 [@@deriving compare, equal, sexp]
 
+type classes = Term.t list Term.Map.t
+
 let classes r =
   let add key data cls =
     if Term.equal key data then cls
@@ -382,14 +384,14 @@ let ppx_cls x = List.pp "@ = " (Term.ppx x)
 let pp_cls = ppx_cls (fun _ -> None)
 let pp_diff_cls = List.pp_diff ~compare:Term.compare "@ = " Term.pp
 
-let ppx_clss x fs cs =
+let ppx_classes x fs clss =
   List.pp "@ @<2>∧ "
-    (fun fs (key, data) ->
-      Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) key (ppx_cls x)
-        (List.sort ~compare:Term.compare data) )
-    fs (Term.Map.to_alist cs)
+    (fun fs (rep, cls) ->
+      Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
+        (List.sort ~compare:Term.compare cls) )
+    fs (Term.Map.to_alist clss)
 
-let pp_clss fs cs = ppx_clss (fun _ -> None) fs cs
+let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
 
 let pp_diff_clss =
   Term.Map.pp_diff ~data_equal:(List.equal Term.equal) Term.pp pp_cls
@@ -566,9 +568,6 @@ let entails_eq r d e =
   |>
   [%Trace.retn fun {pf} -> pf "%b"]
 
-let entails r s =
-  Subst.for_alli s.rep ~f:(fun ~key:e ~data:e' -> entails_eq r e e')
-
 let normalize = canon
 
 let class_of r e =
@@ -710,25 +709,12 @@ let fold_vars r ~init ~f =
   fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
 let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
-let pp_classes fs r = pp_clss fs (classes r)
-let ppx_classes x fs r = ppx_clss x fs (classes r)
 
-let ppx_classes_diff x fs (r, s) =
-  let clss = classes s in
-  let clss =
-    Term.Map.filter_mapi clss ~f:(fun ~key:rep ~data:cls ->
-        match
-          List.filter cls ~f:(fun exp -> not (entails_eq r rep exp))
-        with
-        | [] -> None
-        | cls -> Some cls )
-  in
-  List.pp "@ @<2>∧ "
-    (fun fs (rep, cls) ->
-      Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep
-        (List.pp "@ = " (Term.ppx x))
-        (List.dedup_and_sort ~compare:Term.compare cls) )
-    fs (Term.Map.to_alist clss)
+let diff_classes r s =
+  Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
+      match List.filter cls ~f:(fun exp -> not (entails_eq s rep exp)) with
+      | [] -> None
+      | cls -> Some cls )
 
 (** Existential Witnessing and Elimination *)
 

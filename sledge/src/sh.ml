@@ -216,9 +216,10 @@ let rec pp_ ?var_strength vs parent_xs parent_cong fs
     if not (Var.Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;
   if not (Var.Set.is_empty xs_d_vs) then
     Format.fprintf fs "@<2>∃ @[%a@] .@ " (Var.Set.ppx x) xs_d_vs ;
-  let first = Equality.entails parent_cong cong in
+  let clss = Equality.diff_classes cong parent_cong in
+  let first = Term.Map.is_empty clss in
   if not first then Format.fprintf fs "  " ;
-  Equality.ppx_classes_diff x fs (parent_cong, cong) ;
+  Equality.ppx_classes x fs clss ;
   let pure =
     if Option.is_none var_strength then [pure]
     else

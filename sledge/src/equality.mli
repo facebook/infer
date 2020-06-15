@@ -14,11 +14,19 @@
     fresh, and the output set is the variables that have been generated. *)
 
 type t [@@deriving compare, equal, sexp]
+type classes = Term.t list Term.Map.t
+
+val classes : t -> classes
+(** [classes r] maps each equivalence class representative to the other
+    terms [r] proves equal to it. *)
+
+val diff_classes : t -> t -> classes
+(** [diff_classes r s] is the equality classes of [r] omitting equalities in
+    [s]. *)
 
 val pp : t pp
 val pp_classes : t pp
-val ppx_classes : Var.strength -> t pp
-val ppx_classes_diff : Var.strength -> (t * t) pp
+val ppx_classes : Var.strength -> classes pp
 
 include Invariant.S with type t := t
 
@@ -55,9 +63,6 @@ val is_false : t -> bool
 val entails_eq : t -> Term.t -> Term.t -> bool
 (** Test if an equation is entailed by a relation. *)
 
-val entails : t -> t -> bool
-(** Test if one relation entails another. *)
-
 val class_of : t -> Term.t -> Term.t list
 (** Equivalence class of [e]: all the terms [f] in the relation such that
     [e = f] is implied by the relation. *)
@@ -73,9 +78,6 @@ val difference : t -> Term.t -> Term.t -> Z.t option
     offset. *)
 
 val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
-
-val classes : t -> Term.t list Term.Map.t
-(** The equalities that make up the relation. *)
 
 (** Solution Substitutions *)
 module Subst : sig
