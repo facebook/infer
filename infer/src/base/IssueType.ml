@@ -414,9 +414,17 @@ let constant_address_dereference =
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
-let create_intent_from_uri = register_from_string ~id:"CREATE_INTENT_FROM_URI" Error Quandary
+let create_intent_from_uri =
+  register_from_string ~id:"CREATE_INTENT_FROM_URI" Error Quandary
+    ~user_documentation:
+      "Create an intent/start a component using a (possibly user-controlled) URI. may or may not \
+       be an issue depending on where the URI comes from."
 
-let cross_site_scripting = register_from_string ~id:"CROSS_SITE_SCRIPTING" Error Quandary
+
+let cross_site_scripting =
+  register_from_string ~id:"CROSS_SITE_SCRIPTING" Error Quandary
+    ~user_documentation:"Untrusted data flows into HTML; XSS risk."
+
 
 let _cxx_reference_captured_in_objc_block =
   register_from_string ~id:"CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK" Warning Linters
@@ -591,6 +599,7 @@ let eradicate_meta_class_can_be_nullsafe =
 
 let exposed_insecure_intent_handling =
   register_from_string ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary
+    ~user_documentation:"Undocumented."
 
 
 let failure_exe = register_from_string ~visibility:Silent ~id:"Failure_exe" Info Biabduction
@@ -658,7 +667,10 @@ let inherently_dangerous_function =
   register_from_string ~visibility:Developer ~id:"INHERENTLY_DANGEROUS_FUNCTION" Warning Biabduction
 
 
-let insecure_intent_handling = register_from_string ~id:"INSECURE_INTENT_HANDLING" Error Quandary
+let insecure_intent_handling =
+  register_from_string ~id:"INSECURE_INTENT_HANDLING" Error Quandary
+    ~user_documentation:"Undocumented."
+
 
 let integer_overflow_l1 =
   register_from_string ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
@@ -696,7 +708,10 @@ let internal_error =
 
 let invariant_call = register_from_string ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
 
-let javascript_injection = register_from_string ~id:"JAVASCRIPT_INJECTION" Error Quandary
+let javascript_injection =
+  register_from_string ~id:"JAVASCRIPT_INJECTION" Error Quandary
+    ~user_documentation:"Untrusted data flows into JavaScript."
+
 
 let lab_resource_leak = register_from_string ~id:"LAB_RESOURCE_LEAK" Error ResourceLeakLabExercise
 
@@ -723,7 +738,9 @@ let lockless_violation =
     ~user_documentation:[%blob "../../documentation/issues/LOCKLESS_VIOLATION.md"]
 
 
-let logging_private_data = register_from_string ~id:"LOGGING_PRIVATE_DATA" Error Quandary
+let logging_private_data =
+  register_from_string ~id:"LOGGING_PRIVATE_DATA" Error Quandary ~user_documentation:"Undocumented."
+
 
 let expensive_loop_invariant_call =
   register_from_string ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
@@ -807,6 +824,7 @@ let pure_function = register_from_string ~id:"PURE_FUNCTION" Error Purity
 
 let quandary_taint_error =
   register_from_string ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
+    ~user_documentation:"Generic taint error when nothing else fits."
 
 
 let _registered_observer_being_deallocated =
@@ -833,13 +851,25 @@ let skip_pointer_dereference =
   register_from_string ~enabled:false ~id:"SKIP_POINTER_DEREFERENCE" Info Biabduction
 
 
-let shell_injection = register_from_string ~id:"SHELL_INJECTION" Error Quandary
+let shell_injection =
+  register_from_string ~id:"SHELL_INJECTION" Error Quandary
+    ~user_documentation:"Environment variable or file data flowing to shell."
 
-let shell_injection_risk = register_from_string ~id:"SHELL_INJECTION_RISK" Error Quandary
 
-let sql_injection = register_from_string ~id:"SQL_INJECTION" Error Quandary
+let shell_injection_risk =
+  register_from_string ~id:"SHELL_INJECTION_RISK" Error Quandary
+    ~user_documentation:"Code injection if the caller of the endpoint doesn't sanitize on its end."
 
-let sql_injection_risk = register_from_string ~id:"SQL_INJECTION_RISK" Error Quandary
+
+let sql_injection =
+  register_from_string ~id:"SQL_INJECTION" Error Quandary
+    ~user_documentation:"Untrusted and unescaped data flows to SQL."
+
+
+let sql_injection_risk =
+  register_from_string ~id:"SQL_INJECTION_RISK" Error Quandary
+    ~user_documentation:"Untrusted and unescaped data flows to SQL."
+
 
 let stack_variable_address_escape =
   register_from_string ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
@@ -919,36 +949,64 @@ let use_after_lifetime =
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
-let user_controlled_sql_risk = register_from_string ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
+let user_controlled_sql_risk =
+  register_from_string ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
+    ~user_documentation:"Untrusted data flows to SQL (no injection risk)."
+
 
 let untrusted_buffer_access =
   register_from_string ~enabled:false ~id:"UNTRUSTED_BUFFER_ACCESS" Error Quandary
+    ~user_documentation:"Untrusted data of any kind flowing to buffer."
 
 
-let untrusted_deserialization = register_from_string ~id:"UNTRUSTED_DESERIALIZATION" Error Quandary
+let untrusted_deserialization =
+  register_from_string ~id:"UNTRUSTED_DESERIALIZATION" Error Quandary
+    ~user_documentation:"User-controlled deserialization."
+
 
 let untrusted_deserialization_risk =
   register_from_string ~id:"UNTRUSTED_DESERIALIZATION_RISK" Error Quandary
+    ~user_documentation:"User-controlled deserialization"
 
 
 let untrusted_environment_change_risk =
   register_from_string ~id:"UNTRUSTED_ENVIRONMENT_CHANGE_RISK" Error Quandary
+    ~user_documentation:"User-controlled environment mutation."
 
 
-let untrusted_file = register_from_string ~id:"UNTRUSTED_FILE" Error Quandary
+let untrusted_file =
+  register_from_string ~id:"UNTRUSTED_FILE" Error Quandary
+    ~user_documentation:
+      "User-controlled file creation; may be vulnerable to path traversal and more."
 
-let untrusted_file_risk = register_from_string ~id:"UNTRUSTED_FILE_RISK" Error Quandary
+
+let untrusted_file_risk =
+  register_from_string ~id:"UNTRUSTED_FILE_RISK" Error Quandary
+    ~user_documentation:
+      "User-controlled file creation; may be vulnerable to path traversal and more."
+
 
 let untrusted_heap_allocation =
   register_from_string ~enabled:false ~id:"UNTRUSTED_HEAP_ALLOCATION" Error Quandary
+    ~user_documentation:
+      "Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS."
 
 
-let untrusted_intent_creation = register_from_string ~id:"UNTRUSTED_INTENT_CREATION" Error Quandary
+let untrusted_intent_creation =
+  register_from_string ~id:"UNTRUSTED_INTENT_CREATION" Error Quandary
+    ~user_documentation:"Creating an Intent from user-controlled data."
 
-let untrusted_url_risk = register_from_string ~id:"UNTRUSTED_URL_RISK" Error Quandary
+
+let untrusted_url_risk =
+  register_from_string ~id:"UNTRUSTED_URL_RISK" Error Quandary
+    ~user_documentation:"Untrusted flag, environment variable, or file data flowing to URL."
+
 
 let untrusted_variable_length_array =
   register_from_string ~id:"UNTRUSTED_VARIABLE_LENGTH_ARRAY" Error Quandary
+    ~user_documentation:
+      "Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack \
+       buffer that's too large will cause a stack overflow."
 
 
 let vector_invalidation = register_from_string ~id:"VECTOR_INVALIDATION" Error Pulse

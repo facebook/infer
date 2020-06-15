@@ -482,19 +482,13 @@ include TaintTrace.Make (struct
     | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQLInjection
       ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
-          (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
           Some IssueType.sql_injection_risk
-        else
-          (* no injection risk, but still user-controlled *)
-          Some IssueType.user_controlled_sql_risk
+        else Some IssueType.user_controlled_sql_risk
     | (Endpoint _ | UserControlledEndpoint _), (SQLRead | SQLWrite) ->
-        (* no injection risk, but still user-controlled *)
         Some IssueType.user_controlled_sql_risk
     | (Endpoint _ | UserControlledEndpoint _), EnvironmentChange ->
-        (* user-controlled environment mutation *)
         Some IssueType.untrusted_environment_change_risk
     | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
-        (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection_risk
@@ -505,10 +499,8 @@ include TaintTrace.Make (struct
         | ReadFile
         | Other )
       , BufferAccess ) ->
-        (* untrusted data of any kind flowing to buffer *)
         Some IssueType.untrusted_buffer_access
     | (EnvironmentVariable | ReadFile | Other), ShellExec ->
-        (* environment var, or file data flowing to shell *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection
@@ -518,7 +510,6 @@ include TaintTrace.Make (struct
           (is_injection_possible Sanitizer.EscapeSQL sanitizers)
           IssueType.sql_injection
     | Other, URL ->
-        (* untrusted flag, environment var, or file data flowing to URL *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
@@ -529,7 +520,6 @@ include TaintTrace.Make (struct
         | ReadFile
         | Other )
       , HeapAllocation ) ->
-        (* untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS. *)
         Some IssueType.untrusted_heap_allocation
     | ( ( CommandLineFlag _
         | Endpoint _
@@ -538,8 +528,6 @@ include TaintTrace.Make (struct
         | ReadFile
         | Other )
       , StackAllocation ) ->
-        (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
-           buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array
     | ( (CommandLineFlag _ | EnvironmentVariable | ReadFile)
       , (CreateFile | EnvironmentChange | SQLRead | SQLWrite | URL) ) ->
