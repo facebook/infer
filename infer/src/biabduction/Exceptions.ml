@@ -195,10 +195,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.precondition_not_met; description= desc; ocaml_pos= Some ocaml_pos}
   | Retain_cycle (desc, ocaml_pos) ->
       {issue_type= IssueType.retain_cycle; description= desc; ocaml_pos= Some ocaml_pos}
-  | Registered_observer_being_deallocated (desc, ocaml_pos) ->
-      { issue_type= IssueType.biabd_registered_observer_being_deallocated
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos }
   | SymOp.Analysis_failure_exe _ ->
       {issue_type= IssueType.failure_exe; description= Localise.no_desc; ocaml_pos= None}
   | Skip_function desc ->

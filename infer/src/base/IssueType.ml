@@ -248,11 +248,6 @@ let biabd_condition_always_true =
     Warning Biabduction
 
 
-let biabd_registered_observer_being_deallocated =
-  register_from_string ~hum:"Registered Observer Being Deallocated"
-    ~id:"BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED" Error Biabduction
-
-
 let biabd_use_after_free =
   register_from_string ~hum:"Use After Free" ~id:"BIABD_USE_AFTER_FREE" Error Biabduction
 

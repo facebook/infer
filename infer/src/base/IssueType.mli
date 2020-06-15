@@ -88,8 +88,6 @@ val biabd_condition_always_false : t
 
 val biabd_condition_always_true : t
 
-val biabd_registered_observer_being_deallocated : t
-
 val biabd_use_after_free : t
 
 val buffer_overrun_l1 : t
