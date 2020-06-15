@@ -521,22 +521,14 @@ let orN = function
   | [q] -> q
   | q :: qs -> List.fold ~f:or_ ~init:q qs
 
-let rec pure (e : Term.t) =
+let pure (e : Term.t) =
   [%Trace.call fun {pf} -> pf "%a" Term.pp e]
   ;
-  ( match e with
-  | Or es ->
-      let e0, e1N = Term.Set.pop_exn es in
-      Term.Set.fold e1N ~init:(pure e0) ~f:(fun q e -> or_ q (pure e))
-  | Ap3 (Conditional, cnd, thn, els) ->
-      or_
-        (star (pure cnd) (pure thn))
-        (star (pure (Term.not_ cnd)) (pure els))
-  | _ ->
-      let us = Term.fv e in
-      let xs, cong = Equality.(and_term us e true_) in
+  List.fold (Term.disjuncts e) ~init:(false_ Var.Set.empty) ~f:(fun q b ->
+      let us = Term.fv b in
+      let xs, cong = Equality.(and_term us b true_) in
       if Equality.is_false cong then false_ us
-      else exists_fresh xs {emp with us; cong; pure= [e]} )
+      else or_ q (exists_fresh xs {emp with us; cong; pure= [b]}) )
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;

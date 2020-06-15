@@ -1199,6 +1199,21 @@ let rec fold_map_rec_pre e ~init:s ~f =
   | Some (s, e') -> (s, e')
   | None -> fold_map ~f:(fun s e -> fold_map_rec_pre ~f ~init:s e) ~init:s e
 
+let disjuncts e =
+  let rec disjuncts_ e =
+    match e with
+    | Or es ->
+        let e0, e1N = Set.pop_exn es in
+        Set.fold e1N ~init:(disjuncts_ e0) ~f:(fun cs e ->
+            Set.union cs (disjuncts_ e) )
+    | Ap3 (Conditional, cnd, thn, els) ->
+        Set.add
+          (Set.of_ (and_ (orN (disjuncts_ cnd)) (orN (disjuncts_ thn))))
+          (and_ (orN (disjuncts_ (not_ cnd))) (orN (disjuncts_ els)))
+    | _ -> Set.of_ e
+  in
+  Set.elements (disjuncts_ e)
+
 let rename sub e =
   map_rec_pre e ~f:(function
     | Var _ as v -> Some (Var.Subst.apply sub v)

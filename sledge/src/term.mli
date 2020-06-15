@@ -253,6 +253,7 @@ val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
 val fold_map_rec_pre :
   t -> init:'a -> f:('a -> t -> ('a * t) option) -> 'a * t
 
+val disjuncts : t -> t list
 val rename : Var.Subst.t -> t -> t
 
 (** Traverse *)
