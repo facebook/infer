@@ -150,12 +150,12 @@ let pp_block x fs segs =
     | {loc; bas; len; _} :: _ -> (
         Term.equal loc bas
         &&
-        match len with
-        | Integer {data} -> (
+        match Term.d_int len with
+        | Some data -> (
           match
             List.fold segs ~init:(Some Z.zero) ~f:(fun len seg ->
-                match (len, seg.siz) with
-                | Some len, Integer {data} -> Some (Z.add len data)
+                match (len, Term.d_int seg.siz) with
+                | Some len, Some data -> Some (Z.add len data)
                 | _ -> None )
           with
           | Some blk_len -> Z.equal data blk_len
@@ -286,8 +286,9 @@ let fv ?ignore_cong q =
   in
   fv_union Var.Set.empty q
 
-let invariant_pure = function
-  | Term.Integer {data} -> assert (not (Z.is_false data))
+let invariant_pure b =
+  match Term.d_int b with
+  | Some data -> assert (not (Z.is_false data))
   | _ -> assert true
 
 let invariant_seg _ = ()

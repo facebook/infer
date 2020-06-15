@@ -1140,6 +1140,10 @@ module Var = struct
   end
 end
 
+(** Destruct *)
+
+let d_int = function Integer {data} -> Some data | _ -> None
+
 (** Transform *)
 
 let map e ~f =

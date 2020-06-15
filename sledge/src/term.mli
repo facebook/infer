@@ -237,6 +237,10 @@ val rec_record : int -> t
 (* convert *)
 val of_exp : Llair.Exp.t -> t
 
+(** Destruct *)
+
+val d_int : t -> Z.t option
+
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
