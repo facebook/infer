@@ -124,7 +124,7 @@ let and_eqs sub formals actuals q =
   in
   List.fold2_exn ~f:and_eq formals actuals ~init:q
 
-let localize_entry globals actuals formals freturn locals subst pre entry =
+let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
   let freturn_locals =
@@ -143,11 +143,11 @@ let localize_entry globals actuals formals freturn locals subst pre entry =
       fail "Solver couldn't infer frame of a garbage-collected pre" ()
   in
   let q'' =
-    Sh.extend_us freturn_locals (and_eqs subst formals actuals foot)
+    Sh.extend_us freturn_locals (and_eqs shadow formals actuals foot)
   in
   (q'', frame)
 
-type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
+type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
 [@@deriving compare, equal, sexp]
 
 (** Express formula in terms of formals instead of actuals, and enter scope
@@ -175,12 +175,13 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
      not need to be saved in the freshening renaming *)
   let q = Sh.exists modifs q in
   (* save current values of shadowed formals and locals with a renaming *)
-  let q', subst =
+  let q', shadow =
     Sh.freshen q ~wrt:(Var.Set.add_list formals freturn_locals)
   in
-  assert (Var.Set.disjoint modifs (Var.Subst.domain subst)) ;
+  let unshadow = Var.Subst.invert shadow in
+  assert (Var.Set.disjoint modifs (Var.Subst.domain shadow)) ;
   (* pass arguments by conjoining equations between formals and actuals *)
-  let entry = and_eqs subst formals actuals q' in
+  let entry = and_eqs shadow formals actuals q' in
   (* note: locals and formals are in scope *)
   assert (
     Var.Set.is_subset
@@ -188,16 +189,16 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       ~of_:entry.us ) ;
   (* simplify *)
   let entry = simplify entry in
-  ( if not summaries then (entry, {areturn; subst; frame= Sh.emp})
+  ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
   else
     let q'', frame =
-      localize_entry globals actuals formals freturn locals subst q' entry
+      localize_entry globals actuals formals freturn locals shadow q' entry
     in
-    (q'', {areturn; subst; frame}) )
+    (q'', {areturn; unshadow; frame}) )
   |>
-  [%Trace.retn fun {pf} (entry, {subst; frame}) ->
-    pf "@[<v>subst: %a@ frame: %a@ entry: %a@]" Var.Subst.pp subst pp frame
-      pp entry]
+  [%Trace.retn fun {pf} (entry, {unshadow; frame}) ->
+    pf "@[<v>unshadow: %a@ frame: %a@ entry: %a@]" Var.Subst.pp unshadow pp
+      frame pp entry]
 
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals _ q =
@@ -211,20 +212,19 @@ let post locals _ q =
 (** Express in terms of actuals instead of formals: existentially quantify
     formals, and apply inverse of fresh variables for formals renaming to
     restore the shadowed variables. *)
-let retn formals freturn {areturn; subst; frame} q =
+let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.call fun {pf} ->
-    pf "@[<v>formals: {@[%a@]}%a%a@ subst: %a@ q: %a@ frame: %a@]"
+    pf "@[<v>formals: {@[%a@]}%a%a@ shadows: %a@ q: %a@ frame: %a@]"
       (List.pp ", " Llair.Reg.pp)
       formals
       (Option.pp "@ freturn: %a" Llair.Reg.pp)
       freturn
       (Option.pp "@ areturn: %a" Var.pp)
-      areturn Var.Subst.pp (Var.Subst.invert subst) pp q pp frame]
+      areturn Var.Subst.pp unshadow pp q pp frame]
   ;
   let formals = List.map ~f:Var.of_reg formals in
   let freturn = Option.map ~f:Var.of_reg freturn in
-  let inv_subst = Var.Subst.invert subst in
-  let q, inv_subst =
+  let q, shadows =
     match areturn with
     | Some areturn -> (
         (* reenter scope of areturn just before exiting scope of formals *)
@@ -232,16 +232,16 @@ let retn formals freturn {areturn; subst; frame} q =
         (* pass return value *)
         match freturn with
         | Some freturn ->
-            (Exec.move q (IArray.of_ (areturn, Term.var freturn)), inv_subst)
-        | None -> (Exec.kill q areturn, inv_subst) )
-    | None -> (q, inv_subst)
+            (Exec.move q (IArray.of_ (areturn, Term.var freturn)), unshadow)
+        | None -> (Exec.kill q areturn, unshadow) )
+    | None -> (q, unshadow)
   in
   (* exit scope of formals *)
   let q =
     Sh.exists (Var.Set.add_list formals (Var.Set.of_option freturn)) q
   in
   (* reinstate shadowed values of locals *)
-  let q = Sh.rename inv_subst q in
+  let q = Sh.rename shadows q in
   (* reconjoin frame *)
   Sh.star frame q
   (* simplify *)
