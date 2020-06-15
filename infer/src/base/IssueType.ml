@@ -370,6 +370,7 @@ let condition_always_true =
 
 let constant_address_dereference =
   register_from_string ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
+    ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
 let create_intent_from_uri = register_from_string ~id:"CREATE_INTENT_FROM_URI" Error Quandary
@@ -709,7 +710,10 @@ let null_test_after_dereference =
   register_from_string ~enabled:false ~id:"NULL_TEST_AFTER_DEREFERENCE" Warning Biabduction
 
 
-let nullptr_dereference = register_from_string ~enabled:false ~id:"NULLPTR_DEREFERENCE" Error Pulse
+let nullptr_dereference =
+  register_from_string ~enabled:false ~id:"NULLPTR_DEREFERENCE" Error Pulse
+    ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
+
 
 let parameter_not_null_checked =
   register_from_string ~id:"PARAMETER_NOT_NULL_CHECKED" Warning Biabduction
@@ -781,6 +785,7 @@ let sql_injection_risk = register_from_string ~id:"SQL_INJECTION_RISK" Error Qua
 
 let stack_variable_address_escape =
   register_from_string ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
 let starvation =
@@ -838,11 +843,20 @@ let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" Error U
 
 let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
-let use_after_delete = register_from_string ~id:"USE_AFTER_DELETE" Error Pulse
+let use_after_delete =
+  register_from_string ~id:"USE_AFTER_DELETE" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
 
-let use_after_free = register_from_string ~id:"USE_AFTER_FREE" Error Pulse
 
-let use_after_lifetime = register_from_string ~id:"USE_AFTER_LIFETIME" Error Pulse
+let use_after_free =
+  register_from_string ~id:"USE_AFTER_FREE" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
+
+
+let use_after_lifetime =
+  register_from_string ~id:"USE_AFTER_LIFETIME" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
+
 
 let user_controlled_sql_risk = register_from_string ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
 
