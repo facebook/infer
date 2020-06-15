@@ -927,7 +927,10 @@ let _unavailable_api_in_supported_ios_sdk =
     ~user_documentation:[%blob "../../documentation/issues/UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK.md"]
 
 
-let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" Error Uninit
+let uninitialized_value =
+  register_from_string ~id:"UNINITIALIZED_VALUE" Error Uninit
+    ~user_documentation:[%blob "../../documentation/issues/UNINITIALIZED_VALUE.md"]
+
 
 let unreachable_code_after =
   register_from_string ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
