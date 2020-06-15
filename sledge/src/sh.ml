@@ -565,7 +565,7 @@ let subst sub q =
 
 let seg pt =
   let us = fv_seg pt in
-  if Term.equal Term.null pt.loc then false_ us
+  if Term.equal Term.zero pt.loc then false_ us
   else {emp with us; heap= [pt]} |> check invariant
 
 (** Update *)
@@ -590,7 +590,7 @@ let is_false = function
       List.exists pure ~f:(fun b ->
           Term.is_false (Equality.normalize cong b) )
       || List.exists heap ~f:(fun seg ->
-             Equality.entails_eq cong seg.loc Term.null )
+             Equality.entails_eq cong seg.loc Term.zero )
 
 let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   let heap = emp.heap in

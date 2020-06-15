@@ -282,9 +282,9 @@ let%test_module _ =
       [%expect {| ((%y_1 < 2) && (3 ≤ %z_2)) |}]
 
     let%expect_test _ =
-      pp (eq z null) ;
-      pp (eq null z) ;
-      pp (dq (eq null z) false_) ;
+      pp (eq z zero) ;
+      pp (eq zero z) ;
+      pp (dq (eq zero z) false_) ;
       [%expect
         {|
         (%z_2 = 0)

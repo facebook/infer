@@ -171,7 +171,6 @@ val var : Var.t -> t
 
 (* constants *)
 val label : parent:string -> name:string -> t
-val null : t
 val bool : bool -> t
 val true_ : t
 val false_ : t

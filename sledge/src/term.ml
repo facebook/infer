@@ -333,7 +333,6 @@ let rational data =
   else Rational {data} )
   |> check invariant
 
-let null = integer Z.zero
 let zero = integer Z.zero
 let one = integer Z.one
 let minus_one = integer Z.minus_one

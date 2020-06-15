@@ -31,7 +31,7 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
   let arr, us, xs = freshen arr "a" us xs in
   {us; xs; seg= {loc; bas; len; siz; arr}}
 
-let null_eq ptr = Sh.pure (Term.eq Term.null ptr)
+let null_eq ptr = Sh.pure (Term.eq Term.zero ptr)
 
 (* Overwritten variables renaming and remaining modified variables. [ws] are
    the written variables; [rs] are the variables read or in the
@@ -374,7 +374,7 @@ let realloc_spec us reg ptr siz =
   let a2, _, xs = fresh_var "a" us xs in
   let post =
     Sh.or_
-      (Sh.and_ Term.(eq loc null) (Sh.rename sub foot))
+      (Sh.and_ Term.(eq loc zero) (Sh.rename sub foot))
       (Sh.and_
          Term.(
            conditional ~cnd:(le len siz)
@@ -406,7 +406,7 @@ let rallocx_spec us reg ptr siz =
   let a2, _, xs = fresh_var "a" us xs in
   let post =
     Sh.or_
-      (Sh.and_ Term.(eq loc null) (Sh.rename sub pheap))
+      (Sh.and_ Term.(eq loc zero) (Sh.rename sub pheap))
       (Sh.and_
          Term.(
            conditional ~cnd:(le len siz)
@@ -501,7 +501,7 @@ let mallctl_read_spec us r i w n =
   let a, _, xs = fresh_var "a" us xs in
   let foot =
     Sh.and_
-      Term.(eq w null)
+      Term.(eq w zero)
       (Sh.and_ Term.(eq n zero) (Sh.star (Sh.seg iseg) (Sh.seg rseg)))
   in
   let rseg' = {rseg with arr= a} in
@@ -523,7 +523,7 @@ let mallctlbymib_read_spec us p l r i w n =
   let a, _, xs = fresh_var "a" us xs in
   let foot =
     Sh.and_
-      Term.(eq w null)
+      Term.(eq w zero)
       (Sh.and_ Term.(eq n zero) (Sh.star const (Sh.seg rseg)))
   in
   let rseg' = {rseg with arr= a} in
@@ -537,7 +537,7 @@ let mallctlbymib_read_spec us p l r i w n =
 let mallctl_write_spec us r i w n =
   let {us= _; xs; seg} = fresh_seg ~loc:w ~siz:n us in
   let post = Sh.seg seg in
-  let foot = Sh.and_ Term.(eq r null) (Sh.and_ Term.(eq i zero) post) in
+  let foot = Sh.and_ Term.(eq r zero) (Sh.and_ Term.(eq i zero) post) in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
@@ -550,7 +550,7 @@ let mallctlbymib_write_spec us p l r i w n =
   let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wl us in
   let {us= _; xs; seg= wseg} = fresh_seg ~loc:w ~siz:n ~xs us in
   let post = Sh.star (Sh.seg pseg) (Sh.seg wseg) in
-  let foot = Sh.and_ Term.(eq r null) (Sh.and_ Term.(eq i zero) post) in
+  let foot = Sh.and_ Term.(eq r zero) (Sh.and_ Term.(eq i zero) post) in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let mallctl_specs us r i w n =
