@@ -65,8 +65,9 @@ end = struct
 
   let assign ~ws ~rs {wrt; xs} =
     let ovs = Var.Set.inter ws rs in
-    let Var.Subst.{sub; dom; rng= _}, wrt = Var.Subst.freshen ovs ~wrt in
+    let Var.Subst.{sub; dom; rng}, wrt = Var.Subst.freshen ovs ~wrt in
     let ms = Var.Set.diff ws dom in
+    let xs = Var.Set.union xs rng in
     return (sub, ms) {wrt; xs}
 end
 
@@ -637,7 +638,7 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   (Var.Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
   && (Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
 
-(* execute a command with given spec from pre *)
+(* execute a command with given spec with ghost vars from pre *)
 let exec_spec_ (pre0 : Sh.t) (xs, {foot; sub; ms; post}) =
   ([%Trace.call fun {pf} ->
      pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
@@ -651,11 +652,21 @@ let exec_spec_ (pre0 : Sh.t) (xs, {foot; sub; ms; post}) =
          if not (Var.Set.is_empty ms) then
            Format.fprintf fs "%a := " Var.Set.pp ms )
        ms Sh.pp post ;
+     (* xs contains all vars in spec not in pre0.us *)
      assert (
-       let vs = Var.Set.diff (Var.Set.diff foot.us xs) pre0.us in
+       let vs = Var.Set.(diff (diff foot.us xs) pre0.us) in
        Var.Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.diff (Var.Set.diff post.us xs) pre0.us in
+       let vs = Var.Set.(diff (diff ms xs) pre0.us) in
+       Var.Set.is_empty vs || fail "unbound modif: {%a}" Var.Set.pp vs () ) ;
+     assert (
+       let vs = Var.Set.(diff (diff (Var.Subst.domain sub) xs) pre0.us) in
+       Var.Set.is_empty vs || fail "unbound write: {%a}" Var.Set.pp vs () ) ;
+     assert (
+       let vs = Var.Set.(diff (diff (Var.Subst.range sub) xs) pre0.us) in
+       Var.Set.is_empty vs || fail "unbound ghost: {%a}" Var.Set.pp vs () ) ;
+     assert (
+       let vs = Var.Set.(diff (diff post.us xs) pre0.us) in
        Var.Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let foot = Sh.extend_us xs foot in
