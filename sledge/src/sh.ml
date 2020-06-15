@@ -381,17 +381,21 @@ and freshen_xs q ~wrt =
 
 let extend_us us q =
   let us = Var.Set.union us q.us in
-  let q' = freshen_xs q ~wrt:us in
-  (if us == q.us && q' == q then q else {q' with us}) |> check invariant
+  (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
+  |> check invariant
 
-let freshen ~wrt q =
+let freshen q ~wrt =
+  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  ;
   let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
   let q' = extend_us wrt (rename_ xsub q) in
-  (if q' == q then (q, xsub.sub) else (q', xsub.sub))
-  |> check (fun (q', _) ->
-         invariant q' ;
-         assert (Var.Set.is_subset wrt ~of_:q'.us) ;
-         assert (Var.Set.disjoint wrt (fv q')) )
+  (q', xsub.sub)
+  |>
+  [%Trace.retn fun {pf} (q', _) ->
+    pf "%a" pp q' ;
+    invariant q' ;
+    assert (Var.Set.is_subset wrt ~of_:q'.us) ;
+    assert (Var.Set.disjoint wrt (fv q'))]
 
 let bind_exists q ~wrt =
   [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
