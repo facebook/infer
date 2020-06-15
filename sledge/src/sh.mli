@@ -16,7 +16,7 @@ type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
   ; cong: Equality.t  (** congruence induced by rest of formula *)
-  ; pure: Term.t list  (** conjunction of pure boolean constraints *)
+  ; pure: Term.t  (** pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
 
@@ -69,7 +69,7 @@ val and_subst : Equality.Subst.t -> t -> t
 
 (** Update *)
 
-val with_pure : Term.t list -> t -> t
+val with_pure : Term.t -> t -> t
 (** [with_pure pure q] is [{q with pure}], which assumes that [q.pure] and
     [pure] are defined in the same vocabulary. Note that [cong] is not
     weakened, so if [pure] and [q.pure] do not induce the same congruence,

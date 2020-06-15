@@ -154,7 +154,7 @@ let excise_exists goal =
     let solutions_for_xs =
       let xs =
         Var.Set.diff goal.xs
-          (Sh.fv ~ignore_cong:() (Sh.with_pure [] goal.sub))
+          (Sh.fv ~ignore_cong:() (Sh.with_pure Term.true_ goal.sub))
       in
       Equality.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
     in
@@ -179,21 +179,11 @@ let excise_exists goal =
           let min = Sh.and_subst witnesses goal.min in
           goal |> with_ ~us ~min ~xs ~pgs:true )
 
-let excise_term ({min} as goal) pure term =
-  let term' = Equality.normalize min.cong term in
-  if Term.is_false term' then None
-  else if Term.is_true term' then (
-    excise (fun {pf} -> pf "excise_pure %a" Term.pp term) ;
-    Some (goal |> with_ ~pgs:true, pure) )
-  else Some (goal, term' :: pure)
-
-let excise_pure ({sub} as goal) =
+let excise_pure ({min; sub} as goal) =
   trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
-  let+ goal, pure =
-    List.fold_option sub.pure ~init:(goal, []) ~f:(fun (goal, pure) term ->
-        excise_term goal pure term )
-  in
-  goal |> with_ ~sub:(Sh.with_pure pure sub)
+  let pure' = Equality.normalize min.cong sub.pure in
+  if Term.is_false pure' then None
+  else Some (goal |> with_ ~sub:(Sh.with_pure pure' sub))
 
 (*   [k; o)
  * ⊢ [l; n)

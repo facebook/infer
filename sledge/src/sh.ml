@@ -16,7 +16,7 @@ type starjunction =
   { us: Var.Set.t
   ; xs: Var.Set.t
   ; cong: Equality.t
-  ; pure: Term.t list
+  ; pure: Term.t
   ; heap: seg list
   ; djns: disjunction list }
 [@@deriving compare, equal, sexp]
@@ -31,7 +31,7 @@ let emp =
   { us= Var.Set.empty
   ; xs= Var.Set.empty
   ; cong= Equality.true_
-  ; pure= []
+  ; pure= Term.true_
   ; heap= []
   ; djns= [] }
 
@@ -55,22 +55,15 @@ let map_seg ~f h =
   else {loc; bas; len; siz; seq}
 
 let map ~f_sjn ~f_cong ~f_trm ({us; xs= _; cong; pure; heap; djns} as q) =
-  let exception Unsat in
-  try
+  let pure = f_trm pure in
+  if Term.is_false pure then false_ us
+  else
     let cong = f_cong cong in
-    let pure =
-      List.filter_map_endo pure ~f:(fun e ->
-          let e' = f_trm e in
-          if Term.is_false e' then raise Unsat
-          else if Term.is_true e' then None
-          else Some e' )
-    in
     let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
     let djns = List.map_endo djns ~f:(List.map_endo ~f:f_sjn) in
     if cong == q.cong && pure == q.pure && heap == q.heap && djns == q.djns
     then q
     else {q with cong; pure; heap; djns}
-  with Unsat -> false_ us
 
 let fold_terms_seg {loc; bas; len; siz; seq} ~init ~f =
   let f b s = f s b in
@@ -83,7 +76,7 @@ let fold_vars_stem ?ignore_cong {us= _; xs= _; cong; pure; heap; djns= _}
     ~init ~f =
   List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
   |> fun init ->
-  List.fold ~init pure ~f:(fun init -> Term.fold_vars ~f ~init)
+  Term.fold_vars ~f ~init pure
   |> fun init ->
   if Option.is_some ignore_cong then init
   else
@@ -227,17 +220,14 @@ let rec pp_ ?var_strength vs parent_xs parent_cong fs
   if not first then Format.fprintf fs "  " ;
   Equality.ppx_classes_diff x fs (parent_cong, cong) ;
   let pure =
-    if Option.is_none var_strength then pure
+    if Option.is_none var_strength then [pure]
     else
-      List.filter_map pure ~f:(fun e ->
-          let e' = Equality.normalize cong e in
-          if Term.is_true e' then None else Some e' )
+      let pure' = Equality.normalize cong pure in
+      if Term.is_true pure' then [] else [pure']
   in
   List.pp
     ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
-    "@ @<2>∧ " (Term.ppx x) fs
-    (List.dedup_and_sort ~compare:Term.compare pure)
-    ~suf:"@]" ;
+    "@ @<2>∧ " (Term.ppx x) fs pure ~suf:"@]" ;
   let first = first && List.is_empty pure in
   if List.is_empty heap then
     Format.fprintf fs
@@ -308,10 +298,10 @@ let rec invariant q =
     ( match djns with
     | [[]] ->
         assert (Equality.is_true cong) ;
-        assert (List.is_empty pure) ;
+        assert (Term.is_true pure) ;
         assert (List.is_empty heap)
     | _ -> assert (not (Equality.is_false cong)) ) ;
-    List.iter pure ~f:invariant_pure ;
+    invariant_pure pure ;
     List.iter heap ~f:invariant_seg ;
     List.iter djns ~f:(fun djn ->
         List.iter djn ~f:(fun sjn ->
@@ -466,12 +456,12 @@ let star q1 q2 =
   ( match (q1, q2) with
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
       false_ (Var.Set.union q1.us q2.us)
-  | {us= _; xs= _; cong; pure= []; heap= []; djns= []}, _
-    when Equality.is_true cong ->
+  | {us= _; xs= _; cong; pure; heap= []; djns= []}, _
+    when Equality.is_true cong && Term.is_true pure ->
       let us = Var.Set.union q1.us q2.us in
       if us == q2.us then q2 else {q2 with us}
-  | _, {us= _; xs= _; cong; pure= []; heap= []; djns= []}
-    when Equality.is_true cong ->
+  | _, {us= _; xs= _; cong; pure; heap= []; djns= []}
+    when Equality.is_true cong && Term.is_true pure ->
       let us = Var.Set.union q1.us q2.us in
       if us == q1.us then q1 else {q1 with us}
   | _ ->
@@ -490,7 +480,7 @@ let star q1 q2 =
           { us
           ; xs= Var.Set.union xs1 xs2
           ; cong
-          ; pure= List.append p1 p2
+          ; pure= Term.and_ p1 p2
           ; heap= List.append h1 h2
           ; djns= List.append d1 d2 } )
   |>
@@ -511,18 +501,18 @@ let or_ q1 q2 =
   | {djns= [[]]; _}, _ -> extend_us q1.us q2
   | _, {djns= [[]]; _} -> extend_us q2.us q1
   | ( ({djns= []; _} as q)
-    , ({us= _; xs; cong= _; pure= []; heap= []; djns= [djn]} as d) )
-    when Var.Set.is_empty xs ->
+    , ({us= _; xs; cong= _; pure; heap= []; djns= [djn]} as d) )
+    when Var.Set.is_empty xs && Term.is_true pure ->
       {d with us= Var.Set.union q.us d.us; djns= [q :: djn]}
-  | ( ({us= _; xs; cong= _; pure= []; heap= []; djns= [djn]} as d)
+  | ( ({us= _; xs; cong= _; pure; heap= []; djns= [djn]} as d)
     , ({djns= []; _} as q) )
-    when Var.Set.is_empty xs ->
+    when Var.Set.is_empty xs && Term.is_true pure ->
       {d with us= Var.Set.union q.us d.us; djns= [q :: djn]}
   | _ ->
       { us= Var.Set.union q1.us q2.us
       ; xs= Var.Set.empty
       ; cong= Equality.true_
-      ; pure= []
+      ; pure= Term.true_
       ; heap= []
       ; djns= [[q1; q2]] } )
   |>
@@ -543,7 +533,7 @@ let pure (e : Term.t) =
       let us = Term.fv b in
       let xs, cong = Equality.(and_term us b true_) in
       if Equality.is_false cong then false_ us
-      else or_ q (exists_fresh xs {emp with us; cong; pure= [b]}) )
+      else or_ q (exists_fresh xs {emp with us; cong; pure= b}) )
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;
@@ -596,14 +586,13 @@ let filter_heap ~f q =
 (** Query *)
 
 let is_emp = function
-  | {us= _; xs= _; cong= _; pure= []; heap= []; djns= []} -> true
+  | {us= _; xs= _; cong= _; pure; heap= []; djns= []} -> Term.is_true pure
   | _ -> false
 
 let is_false = function
   | {djns= [[]]; _} -> true
   | {cong; pure; heap; _} ->
-      List.exists pure ~f:(fun b ->
-          Term.is_false (Equality.normalize cong b) )
+      Term.is_false (Equality.normalize cong pure)
       || List.exists heap ~f:(fun seg ->
              Equality.entails_eq cong seg.loc Term.zero )
 
