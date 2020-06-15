@@ -12,6 +12,7 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
+  | ConfigChecksBetweenMarkers
   | Cost
   | Eradicate
   | FragmentRetainsView

@@ -242,6 +242,16 @@ OPTIONS
            line count and component kit file cyclomatic complexity
            (Conversely: --no-compute-analytics)           See also infer-capture(1) and infer-run(1).
 
+       --config-checks-between-markers
+           Activates: checker config-checks-between-markers: [EXPERIMENTAL]
+           Collects config checks between marker start and end. (Conversely:
+           --no-config-checks-between-markers)           See also infer-analyze(1).
+
+       --config-checks-between-markers-only
+           Activates: Enable config-checks-between-markers and disable all
+           other checkers (Conversely:
+           --no-config-checks-between-markers-only)           See also infer-analyze(1).
+
        --continue
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was

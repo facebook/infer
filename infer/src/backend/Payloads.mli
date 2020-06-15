@@ -17,6 +17,7 @@ include sig
     ; biabduction: BiabductionSummary.t option
     ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
     ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
+    ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
     ; cost: CostDomain.summary option
     ; lab_resource_leaks: ResourceLeakDomain.summary option
     ; litho_required_props: LithoDomain.summary option

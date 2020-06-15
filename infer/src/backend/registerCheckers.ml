@@ -185,7 +185,14 @@ let all_checkers =
         (let annot_reach =
            interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
          in
-         [(annot_reach, Java); (annot_reach, Clang)] ) } ]
+         [(annot_reach, Java); (annot_reach, Clang)] ) }
+  ; { checker= ConfigChecksBetweenMarkers
+    ; callbacks=
+        (let checker =
+           interprocedural Payloads.Fields.config_checks_between_markers
+             ConfigChecksBetweenMarkers.checker
+         in
+         [(checker, Java)] ) } ]
 
 
 let get_active_checkers () =

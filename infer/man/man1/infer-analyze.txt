@@ -47,6 +47,16 @@ OPTIONS
            reactive analysis should start. Source files should be specified
            relative to project root or be absolute
 
+       --config-checks-between-markers
+           Activates: checker config-checks-between-markers: [EXPERIMENTAL]
+           Collects config checks between marker start and end. (Conversely:
+           --no-config-checks-between-markers)
+
+       --config-checks-between-markers-only
+           Activates: Enable config-checks-between-markers and disable all
+           other checkers (Conversely:
+           --no-config-checks-between-markers-only)
+
        --continue-analysis
            Activates: Continue the analysis after more targets are captured
            by --continue. The other analysis options should be given the same

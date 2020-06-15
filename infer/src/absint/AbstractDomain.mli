@@ -77,6 +77,10 @@ end
 module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 
 module TopLiftedUtils : sig
+  val leq : leq:(lhs:'a -> rhs:'a -> bool) -> lhs:'a top_lifted -> rhs:'a top_lifted -> bool
+
+  val pp : pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a top_lifted -> unit
+
   val pp_top : Format.formatter -> unit
 end
 
