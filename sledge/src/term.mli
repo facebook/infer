@@ -241,6 +241,10 @@ val of_exp : Llair.Exp.t -> t
 
 val d_int : t -> Z.t option
 
+(** Access *)
+
+val const_of : t -> Q.t option
+
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t

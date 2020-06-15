@@ -1144,6 +1144,10 @@ end
 
 let d_int = function Integer {data} -> Some data | _ -> None
 
+(** Access *)
+
+let const_of = function Add poly -> Some (Qset.count poly one) | _ -> None
+
 (** Transform *)
 
 let map e ~f =

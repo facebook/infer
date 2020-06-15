@@ -177,11 +177,10 @@ let pp_block x fs segs =
   | [] -> ()
 
 let pp_heap x ?pre cong fs heap =
-  let bas_off = function
-    | Term.Add poly as sum ->
-        let const = Term.Qset.count poly Term.one in
-        (Term.sub sum (Term.rational const), const)
-    | e -> (e, Q.zero)
+  let bas_off e =
+    match Term.const_of e with
+    | Some const -> (Term.sub e (Term.rational const), const)
+    | None -> (e, Q.zero)
   in
   let compare s1 s2 =
     [%compare: Term.t * (Term.t * Q.t)]
