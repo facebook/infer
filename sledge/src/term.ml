@@ -973,10 +973,6 @@ let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 let rec_record i = simp_rec_record i |> check invariant
 
-let eq_concat (siz, arr) ms =
-  eq (memory ~siz ~arr)
-    (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms))
-
 let rec binary mk x y = mk (of_exp x) (of_exp y)
 
 and ubinary mk typ x y =

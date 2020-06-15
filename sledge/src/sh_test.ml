@@ -41,6 +41,11 @@ let%test_module _ =
     let x = Term.var x_
     let y = Term.var y_
 
+    let eq_concat (siz, arr) ms =
+      Term.(
+        eq (memory ~siz ~arr)
+          (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms)))
+
     let of_eqs l =
       List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
 
@@ -147,12 +152,12 @@ let%test_module _ =
         exists
           ~$[a_; c_; d_; e_]
           (star
-             (pure (Term.eq_concat (!16, e) [|(!8, a); (!8, d)|]))
+             (pure (eq_concat (!16, e) [|(!8, a); (!8, d)|]))
              (or_
                 (pure (Term.dq x !0))
                 (exists
                    (Var.Set.of_list [b_])
-                   (pure (Term.eq_concat (!8, a) [|(!4, c); (!4, b)|])))))
+                   (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])))))
       in
       pp_raw q ;
       let q' = simplify q in

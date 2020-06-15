@@ -33,6 +33,11 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
 
 let null_eq ptr = Sh.pure (Term.eq Term.zero ptr)
 
+let eq_concat (siz, arr) ms =
+  Term.(
+    eq (memory ~siz ~arr)
+      (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms)))
+
 (* Overwritten variables renaming and remaining modified variables. [ws] are
    the written variables; [rs] are the variables read or in the
    precondition; [us] are the variables to which ghosts must be chosen
@@ -167,7 +172,7 @@ let memmov_foot us dst src len =
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
   let arr_dst_mid_src, us, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
-    Term.eq_concat (siz_dst_mid_src, arr_dst_mid_src) mem_dst_mid_src
+    eq_concat (siz_dst_mid_src, arr_dst_mid_src) mem_dst_mid_src
   in
   let seg =
     Sh.seg
@@ -192,7 +197,7 @@ let memmov_dn_spec us dst src len =
   let siz_mid_src_src, us, xs = fresh_var "m" us xs in
   let arr_mid_src_src, _, xs = fresh_var "a" us xs in
   let eq_mem_mid_src_src =
-    Term.eq_concat (siz_mid_src_src, arr_mid_src_src) mem_mid_src_src
+    eq_concat (siz_mid_src_src, arr_mid_src_src) mem_mid_src_src
   in
   let post =
     Sh.and_ eq_mem_mid_src_src
@@ -217,7 +222,7 @@ let memmov_up_spec us dst src len =
   let siz_src_src_mid, us, xs = fresh_var "m" us xs in
   let arr_src_src_mid, _, xs = fresh_var "a" us xs in
   let eq_mem_src_src_mid =
-    Term.eq_concat (siz_src_src_mid, arr_src_src_mid) mem_src_src_mid
+    eq_concat (siz_src_src_mid, arr_src_src_mid) mem_src_src_mid
   in
   let post =
     Sh.and_ eq_mem_src_src_mid

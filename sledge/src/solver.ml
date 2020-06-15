@@ -132,6 +132,11 @@ end
 
 open Goal
 
+let eq_concat (siz, arr) ms =
+  Term.(
+    eq (memory ~siz ~arr)
+      (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms)))
+
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
   let vs = Var.Set.add vs v in
@@ -244,7 +249,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
   let com = Sh.star (Sh.seg {msg with siz= n; arr= a0}) com in
   let min =
     Sh.and_
-      (Term.eq_concat (o, a) [|(n, a0); (o_n, a1)|])
+      (eq_concat (o, a) [|(n, a0); (o_n, a1)|])
       (Sh.star
          (Sh.seg {loc= Term.add k n; bas= b; len= m; siz= o_n; arr= a1})
          (Sh.rem_seg msg min))
@@ -285,7 +290,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
          (Sh.and_
-            (Term.eq_concat (n, a') [|(o, a); (n_o, a1')|])
+            (eq_concat (n, a') [|(o, a); (n_o, a1')|])
             (Sh.star
                (Sh.seg
                   {loc= Term.add l o; bas= b'; len= m'; siz= n_o; arr= a1'})
@@ -322,7 +327,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   in
   let min =
     Sh.and_
-      (Term.eq_concat (o, a) [|(l_k, a0); (n, a1)|])
+      (eq_concat (o, a) [|(l_k, a0); (n, a1)|])
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.rem_seg msg min))
@@ -367,7 +372,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   in
   let min =
     Sh.and_
-      (Term.eq_concat (o, a) [|(l_k, a0); (n, a1); (ko_ln, a2)|])
+      (eq_concat (o, a) [|(l_k, a0); (n, a1); (ko_ln, a2)|])
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.star
@@ -415,7 +420,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   in
   let min =
     Sh.and_
-      (Term.eq_concat (o, a) [|(l_k, a0); (ko_l, a1)|])
+      (eq_concat (o, a) [|(l_k, a0); (ko_l, a1)|])
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.rem_seg msg min))
@@ -424,7 +429,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
          (Sh.and_
-            (Term.eq_concat (n, a') [|(ko_l, a1); (ln_ko, a2')|])
+            (eq_concat (n, a') [|(ko_l, a1); (ln_ko, a2')|])
             (Sh.star
                (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; arr= a2'})
                (Sh.rem_seg ssg sub))))
@@ -460,7 +465,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
          (Sh.and_
-            (Term.eq_concat (n, a') [|(k_l, a0'); (o, a)|])
+            (eq_concat (n, a') [|(k_l, a0'); (o, a)|])
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.rem_seg ssg sub))))
@@ -500,7 +505,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
          (Sh.and_
-            (Term.eq_concat (n, a') [|(k_l, a0'); (o, a); (ln_ko, a2')|])
+            (eq_concat (n, a') [|(k_l, a0'); (o, a); (ln_ko, a2')|])
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.star
@@ -542,7 +547,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   in
   let min =
     Sh.and_
-      (Term.eq_concat (o, a) [|(ln_k, a1); (ko_ln, a2)|])
+      (eq_concat (o, a) [|(ln_k, a1); (ko_ln, a2)|])
       (Sh.star
          (Sh.seg {loc= ln; bas= b; len= m; siz= ko_ln; arr= a2})
          (Sh.rem_seg msg min))
@@ -551,7 +556,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     Sh.and_ (Term.eq b b')
       (Sh.and_ (Term.eq m m')
          (Sh.and_
-            (Term.eq_concat (n, a') [|(k_l, a0'); (ln_k, a1)|])
+            (eq_concat (n, a') [|(k_l, a0'); (ln_k, a1)|])
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
                (Sh.rem_seg ssg sub))))
