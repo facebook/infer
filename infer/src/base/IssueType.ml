@@ -252,28 +252,49 @@ let biabd_use_after_free =
   register_from_string ~hum:"Use After Free" ~id:"BIABD_USE_AFTER_FREE" Error Biabduction
 
 
-let buffer_overrun_l1 = register_from_string ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
+let buffer_overrun_l1 =
+  register_from_string ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
+    ~user_documentation:[%blob "../../documentation/issues/BUFFER_OVERRUN.md"]
 
-let buffer_overrun_l2 = register_from_string ~id:"BUFFER_OVERRUN_L2" Error BufferOverrunChecker
 
-let buffer_overrun_l3 = register_from_string ~id:"BUFFER_OVERRUN_L3" Error BufferOverrunChecker
+let buffer_overrun_l2 =
+  register_from_string ~id:"BUFFER_OVERRUN_L2" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
+
+
+let buffer_overrun_l3 =
+  register_from_string ~id:"BUFFER_OVERRUN_L3" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
+
 
 let buffer_overrun_l4 =
   register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L4" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_l5 =
   register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_L5" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
-let buffer_overrun_r2 = register_from_string ~id:"BUFFER_OVERRUN_R2" Error BufferOverrunChecker
+let buffer_overrun_r2 =
+  register_from_string ~id:"BUFFER_OVERRUN_R2" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
-let buffer_overrun_s2 = register_from_string ~id:"BUFFER_OVERRUN_S2" Error BufferOverrunChecker
 
-let buffer_overrun_t1 = register_from_string ~id:"BUFFER_OVERRUN_T1" Error BufferOverrunChecker
+let buffer_overrun_s2 =
+  register_from_string ~id:"BUFFER_OVERRUN_S2" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
+
+
+let buffer_overrun_t1 =
+  register_from_string ~id:"BUFFER_OVERRUN_T1" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
+
 
 let buffer_overrun_u5 =
   register_from_string ~enabled:false ~id:"BUFFER_OVERRUN_U5" Error BufferOverrunChecker
+    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let cannot_star = register_from_string ~visibility:Developer ~id:"Cannot_star" Error Biabduction
@@ -357,10 +378,12 @@ let component_with_unconventional_superclass =
 
 let condition_always_false =
   register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
+    ~user_documentation:"A condition expression is **always** evaluated to false."
 
 
 let condition_always_true =
   register_from_string ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
+    ~user_documentation:"A condition expression is **always** evaluated to true."
 
 
 let constant_address_dereference =
@@ -578,26 +601,34 @@ let inefficient_keyset_iterator =
 
 let inferbo_alloc_is_big =
   register_from_string ~id:"INFERBO_ALLOC_IS_BIG" Error BufferOverrunChecker
+    ~user_documentation:"`malloc` is passed a large constant value."
 
 
 let inferbo_alloc_is_negative =
   register_from_string ~id:"INFERBO_ALLOC_IS_NEGATIVE" Error BufferOverrunChecker
+    ~user_documentation:"`malloc` is called with a negative size."
 
 
 let inferbo_alloc_is_zero =
   register_from_string ~id:"INFERBO_ALLOC_IS_ZERO" Error BufferOverrunChecker
+    ~user_documentation:"`malloc` is called with a zero size."
 
 
 let inferbo_alloc_may_be_big =
   register_from_string ~id:"INFERBO_ALLOC_MAY_BE_BIG" Error BufferOverrunChecker
+    ~user_documentation:"`malloc` *may* be called with a large value."
 
 
 let inferbo_alloc_may_be_negative =
   register_from_string ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" Error BufferOverrunChecker
+    ~user_documentation:"`malloc` *may* be called with a negative value."
 
 
 let inferbo_alloc_may_be_tainted =
   register_from_string ~id:"INFERBO_ALLOC_MAY_BE_TAINTED" Error BufferOverrunChecker
+    ~user_documentation:
+      "`malloc` *may* be called with a tainted value from external sources.  This is experimental \
+       and will be removed sooner or later."
 
 
 let infinite_cost_call ~kind = register_from_cost_string ~enabled:false "INFINITE_%s" ~kind
@@ -608,18 +639,29 @@ let inherently_dangerous_function =
 
 let insecure_intent_handling = register_from_string ~id:"INSECURE_INTENT_HANDLING" Error Quandary
 
-let integer_overflow_l1 = register_from_string ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
+let integer_overflow_l1 =
+  register_from_string ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
+    ~user_documentation:[%blob "../../documentation/issues/INTEGER_OVERFLOW.md"]
 
-let integer_overflow_l2 = register_from_string ~id:"INTEGER_OVERFLOW_L2" Error BufferOverrunChecker
+
+let integer_overflow_l2 =
+  register_from_string ~id:"INTEGER_OVERFLOW_L2" Error BufferOverrunChecker
+    ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
+
 
 let integer_overflow_l5 =
   register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_L5" Error BufferOverrunChecker
+    ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 
-let integer_overflow_r2 = register_from_string ~id:"INTEGER_OVERFLOW_R2" Error BufferOverrunChecker
+let integer_overflow_r2 =
+  register_from_string ~id:"INTEGER_OVERFLOW_R2" Error BufferOverrunChecker
+    ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
+
 
 let integer_overflow_u5 =
   register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_U5" Error BufferOverrunChecker
+    ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 
 let interface_not_thread_safe =
@@ -836,7 +878,10 @@ let _unavailable_api_in_supported_ios_sdk =
 
 let uninitialized_value = register_from_string ~id:"UNINITIALIZED_VALUE" Error Uninit
 
-let unreachable_code_after = register_from_string ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
+let unreachable_code_after =
+  register_from_string ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
+    ~user_documentation:"A program point is unreachable."
+
 
 let use_after_delete =
   register_from_string ~id:"USE_AFTER_DELETE" Error Pulse
