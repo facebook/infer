@@ -43,13 +43,13 @@ type op2 =
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
-  | Memory  (** Size-tagged byte-array *)
+  | Sized  (** Size-tagged sequence *)
   | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
 type op3 =
   | Conditional  (** If-then-else *)
-  | Extract  (** Extract a slice of an aggregate value *)
+  | Extract  (** Extract a slice of an sequence value *)
 [@@deriving compare, equal, hash, sexp]
 
 type opN =
@@ -217,14 +217,14 @@ val ashr : t -> t -> t
 (* if-then-else *)
 val conditional : cnd:t -> thn:t -> els:t -> t
 
-(* aggregate sizes *)
-val agg_size_exn : t -> t
-val agg_size : t -> t option
+(* sequence sizes *)
+val seq_size_exn : t -> t
+val seq_size : t -> t option
 
-(* aggregates (memory contents) *)
+(* sequences *)
 val splat : t -> t
-val memory : siz:t -> arr:t -> t
-val extract : agg:t -> off:t -> len:t -> t
+val sized : seq:t -> siz:t -> t
+val extract : seq:t -> off:t -> len:t -> t
 val concat : t array -> t
 
 (* records (struct / array values) *)

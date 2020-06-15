@@ -30,7 +30,7 @@ type op2 =
   | Shl
   | Lshr
   | Ashr
-  | Memory
+  | Sized
   | Update of int
 [@@deriving compare, equal, hash, sexp]
 
@@ -186,9 +186,9 @@ let rec ppx strength fs term =
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | Ap3 (Extract, agg, off, len) -> pf "%a[%a,%a)" pp agg pp off pp len
+    | Ap3 (Extract, seq, off, len) -> pf "%a[%a,%a)" pp seq pp off pp len
     | Ap1 (Splat, byt) -> pf "%a^" pp byt
-    | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
+    | Ap2 (Sized, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
     | ApN (Concat, args) when IArray.is_empty args -> pf "@<2>⟨⟩"
     | ApN (Concat, args) -> pf "(%a)" (IArray.pp "@,^" pp) args
     | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
@@ -285,14 +285,14 @@ let assert_polynomial poly =
       Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fn.id)
   | _ -> assert false
 
-(* aggregate args of Extract and Concat must be aggregate terms, in
+(* sequence args of Extract and Concat must be sequence terms, in
    particular, not variables *)
-let rec assert_aggregate = function
-  | Ap2 (Memory, _, _) -> ()
-  | Ap3 (Extract, a, _, _) -> assert_aggregate a
+let rec assert_sequence = function
+  | Ap2 (Sized, _, _) -> ()
+  | Ap3 (Extract, a, _, _) -> assert_sequence a
   | ApN (Concat, a0N) ->
       assert (IArray.length a0N <> 1) ;
-      IArray.iter ~f:assert_aggregate a0N
+      IArray.iter ~f:assert_sequence a0N
   | _ -> assert false
 
 let invariant e =
@@ -302,8 +302,8 @@ let invariant e =
   | Or _ -> assert_disjunction e |> Fn.id
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
-  | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
-      assert_aggregate e
+  | Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
+      assert_sequence e
   | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
   | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
   | Ap1 (Convert {src; dst}, _) ->
@@ -595,27 +595,27 @@ let rec simp_or2 x y =
 
 let simp_or xs = Set.fold xs ~init:false_ ~f:simp_or2
 
-(* aggregate sizes *)
+(* sequence sizes *)
 
-let rec agg_size_exn = function
-  | Ap2 (Memory, n, _) | Ap3 (Extract, _, _, n) -> n
+let rec seq_size_exn = function
+  | Ap2 (Sized, n, _) | Ap3 (Extract, _, _, n) -> n
   | ApN (Concat, a0U) ->
       IArray.fold a0U ~init:zero ~f:(fun a0I aJ ->
-          simp_add2 a0I (agg_size_exn aJ) )
-  | _ -> invalid_arg "agg_size_exn"
+          simp_add2 a0I (seq_size_exn aJ) )
+  | _ -> invalid_arg "seq_size_exn"
 
-let agg_size e = try Some (agg_size_exn e) with Invalid_argument _ -> None
+let seq_size e = try Some (seq_size_exn e) with Invalid_argument _ -> None
 
-(* memory *)
+(* sequences *)
 
-let empty_agg = ApN (Concat, IArray.of_array [||])
+let empty_seq = ApN (Concat, IArray.of_array [||])
 let simp_splat byt = Ap1 (Splat, byt)
 
-let simp_memory siz arr =
+let simp_sized siz arr =
   (* ⟨n,α⟩ ==> α when n ≡ |α| *)
-  match agg_size arr with
+  match seq_size arr with
   | Some n when equal siz n -> arr
-  | _ -> Ap2 (Memory, siz, arr)
+  | _ -> Ap2 (Sized, siz, arr)
 
 type pcmp = Lt | Eq | Gt | Unknown
 
@@ -630,22 +630,22 @@ let partial_compare x y : pcmp =
 let partial_ge x y =
   match partial_compare x y with Gt | Eq -> true | Lt | Unknown -> false
 
-let rec simp_extract agg off len =
-  [%Trace.call fun {pf} -> pf "%a" pp (Ap3 (Extract, agg, off, len))]
+let rec simp_extract seq off len =
+  [%Trace.call fun {pf} -> pf "%a" pp (Ap3 (Extract, seq, off, len))]
   ;
   (* _[_,0) ==> ⟨⟩ *)
-  ( if equal len zero then empty_agg
+  ( if equal len zero then empty_seq
   else
     let o_l = simp_add2 off len in
-    match agg with
+    match seq with
     (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
     | Ap3 (Extract, a, m, k) when partial_ge k o_l ->
         simp_extract a (simp_add2 m off) len
     (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
-    | Ap2 (Memory, n, (Ap1 (Splat, _) as e)) when partial_ge n o_l ->
-        simp_memory len e
+    | Ap2 (Sized, n, (Ap1 (Splat, _) as e)) when partial_ge n o_l ->
+        simp_sized len e
     (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
-    | Ap2 (Memory, n, _) when equal off zero && equal n len -> agg
+    | Ap2 (Sized, n, _) when equal off zero && equal n len -> seq
     (* For (α₀^α₁)[o,l) there are 3 cases:
      *
      * ⟨...⟩^⟨...⟩
@@ -671,7 +671,7 @@ let rec simp_extract agg off len =
       | Integer {data= l} ->
           IArray.fold_map_until na1N ~init:(l, off)
             ~f:(fun (l, oI) naI ->
-              let nI = agg_size_exn naI in
+              let nI = seq_size_exn naI in
               if Z.equal Z.zero l then
                 Continue ((l, oI), simp_extract naI oI zero)
               else
@@ -682,11 +682,11 @@ let rec simp_extract agg off len =
                     let lI = Z.(max zero (min l (neg data))) in
                     let l = Z.(l - lI) in
                     Continue ((l, oJ), simp_extract naI oI (integer lI))
-                | _ -> Stop (Ap3 (Extract, agg, off, len)) )
+                | _ -> Stop (Ap3 (Extract, seq, off, len)) )
             ~finish:(fun (_, e1N) -> simp_concat e1N)
-      | _ -> Ap3 (Extract, agg, off, len) )
+      | _ -> Ap3 (Extract, seq, off, len) )
     (* α[o,l) *)
-    | _ -> Ap3 (Extract, agg, off, len) )
+    | _ -> Ap3 (Extract, seq, off, len) )
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
@@ -710,16 +710,16 @@ and simp_concat xs =
   let simp_adjacent e f =
     match (e, f) with
     (* ⟨n,a⟩[o,k)^⟨n,a⟩[o+k,l) ==> ⟨n,a⟩[o,k+l) when n ≥ o+k+l *)
-    | ( Ap3 (Extract, (Ap2 (Memory, n, _) as na), o, k)
+    | ( Ap3 (Extract, (Ap2 (Sized, n, _) as na), o, k)
       , Ap3 (Extract, na', o_k, l) )
       when equal na na'
            && equal o_k (simp_add2 o k)
            && partial_ge n (simp_add2 o_k l) ->
         Some (simp_extract na o (simp_add2 k l))
     (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
-    | Ap2 (Memory, m, (Ap1 (Splat, _) as a)), Ap2 (Memory, n, a')
+    | Ap2 (Sized, m, (Ap1 (Splat, _) as a)), Ap2 (Sized, n, a')
       when equal a a' ->
-        Some (simp_memory (simp_add2 m n) a)
+        Some (simp_sized (simp_add2 m n) a)
     | _ -> None
   in
   let xs = flatten xs in
@@ -791,17 +791,16 @@ let rec simp_eq x y =
           let a = IArray.sub ~pos ~len:(m - length_common) a in
           let b = IArray.sub ~pos ~len:(n - length_common) b in
           simp_eq (simp_concat a) (simp_concat b)
-    | ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
-      , (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
+    | ( (Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _))
+      , (Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) ) ->
         Ap2 (Eq, x, y)
     (* x = α ==> ⟨x,|α|⟩ = α *)
     | ( x
-      , ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
-        a ) )
-     |( ( (Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as
-        a )
+      , ((Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as a)
+      )
+     |( ((Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _)) as a)
       , x ) ->
-        simp_eq (Ap2 (Memory, agg_size_exn a, x)) a
+        simp_eq (Ap2 (Sized, seq_size_exn a, x)) a
     | x, y -> Ap2 (Eq, x, y) )
 
 and simp_dq x y =
@@ -904,7 +903,7 @@ let norm1 op x =
 
 let norm2 op x y =
   ( match op with
-  | Memory -> simp_memory x y
+  | Sized -> simp_sized x y
   | Eq -> simp_eq x y
   | Dq -> simp_dq x y
   | Lt -> simp_lt x y
@@ -965,8 +964,8 @@ let lshr = norm2 Lshr
 let ashr = norm2 Ashr
 let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let splat byt = norm1 Splat byt
-let memory ~siz ~arr = norm2 Memory siz arr
-let extract ~agg ~off ~len = norm3 Extract agg off len
+let sized ~seq ~siz = norm2 Sized siz seq
+let extract ~seq ~off ~len = norm3 Extract seq off len
 let concat xs = normN Concat (IArray.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd

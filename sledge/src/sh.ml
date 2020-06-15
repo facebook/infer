@@ -9,7 +9,7 @@
 
 [@@@warning "+9"]
 
-type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; arr: Term.t}
+type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
 [@@deriving compare, equal, sexp]
 
 type starjunction =
@@ -44,15 +44,15 @@ let map_seg ~f h =
   let bas = f h.bas in
   let len = f h.len in
   let siz = f h.siz in
-  let arr = f h.arr in
+  let seq = f h.seq in
   if
     loc == h.loc
     && bas == h.bas
     && len == h.len
     && siz == h.siz
-    && arr == h.arr
+    && seq == h.seq
   then h
-  else {loc; bas; len; siz; arr}
+  else {loc; bas; len; siz; seq}
 
 let map ~f_sjn ~f_cong ~f_trm ({us; xs= _; cong; pure; heap; djns} as q) =
   let exception Unsat in
@@ -72,9 +72,9 @@ let map ~f_sjn ~f_cong ~f_trm ({us; xs= _; cong; pure; heap; djns} as q) =
     else {q with cong; pure; heap; djns}
   with Unsat -> false_ us
 
-let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
+let fold_terms_seg {loc; bas; len; siz; seq} ~init ~f =
   let f b s = f s b in
-  f loc (f bas (f len (f siz (f arr init))))
+  f loc (f bas (f len (f siz (f seq init))))
 
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
@@ -130,15 +130,15 @@ let var_strength ?(xs = Var.Set.empty) q =
   in
   var_strength_ xs m q
 
-let pp_memory x fs (siz, arr) = Term.ppx x fs (Term.memory ~siz ~arr)
+let pp_chunk x fs (siz, seq) = Term.ppx x fs (Term.sized ~siz ~seq)
 
-let pp_seg x fs {loc; bas; len; siz; arr} =
+let pp_seg x fs {loc; bas; len; siz; seq} =
   let term_pp = Term.ppx x in
   Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" term_pp loc
     (fun fs (bas, len) ->
       if (not (Term.equal loc bas)) || not (Term.equal len siz) then
         Format.fprintf fs " %a, %a " term_pp bas term_pp len )
-    (bas, len) (pp_memory x) (siz, arr)
+    (bas, len) (pp_chunk x) (siz, seq)
 
 let pp_seg_norm cong fs seg =
   let x _ = None in
@@ -164,8 +164,8 @@ let pp_block x fs segs =
     | [] -> false
   in
   let term_pp = Term.ppx x in
-  let pp_mems =
-    List.pp "@,^" (fun fs seg -> pp_memory x fs (seg.siz, seg.arr))
+  let pp_chunks =
+    List.pp "@,^" (fun fs seg -> pp_chunk x fs (seg.siz, seg.seq))
   in
   match segs with
   | {loc; bas; len; _} :: _ ->
@@ -173,7 +173,7 @@ let pp_block x fs segs =
         (fun fs ->
           if not (is_full_alloc segs) then
             Format.fprintf fs " %a, %a " term_pp bas term_pp len )
-        pp_mems segs
+        pp_chunks segs
   | [] -> ()
 
 let pp_heap x ?pre cong fs heap =

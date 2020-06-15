@@ -389,7 +389,7 @@ let conditional ?typ ~cnd ~thn ~els =
   let typ = match typ with Some typ -> typ | None -> typ_of thn in
   Ap3 (Conditional, typ, cnd, thn, els) |> check invariant
 
-(* memory *)
+(* sequences *)
 
 let splat typ byt = Ap1 (Splat, typ, byt) |> check invariant
 

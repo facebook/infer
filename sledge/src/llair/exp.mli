@@ -172,7 +172,7 @@ val ashr : ?typ:Typ.t -> t -> t -> t
 (* if-then-else *)
 val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
 
-(* memory *)
+(* sequences *)
 val splat : Typ.t -> t -> t
 
 (* records (struct / array values) *)

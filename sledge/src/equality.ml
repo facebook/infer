@@ -14,7 +14,7 @@ type kind = Interpreted | Atomic | Uninterpreted
 
 let classify e =
   match (e : Term.t) with
-  | Add _ | Ap2 (Memory, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
+  | Add _ | Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       Interpreted
   | Mul _ | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ | And _ | Or _ -> Uninterpreted
   | Var _ | Integer _ | Rational _ | Float _ | Label _ | RecRecord _ ->
@@ -178,13 +178,13 @@ end
 (** Theory Solver *)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
-    Memory < Extract < Concat < others, then using height of aggregate
+    Sized < Extract < Concat < others, then using height of sequence
     nesting, and then using Term.compare *)
 let prefer e f =
   let rank e =
     match (e : Term.t) with
     | Var _ -> 0
-    | Ap2 (Memory, _, _) -> 1
+    | Ap2 (Sized, _, _) -> 1
     | Ap3 (Extract, _, _, _) -> 2
     | ApN (Concat, _) -> 3
     | _ -> 4
@@ -229,16 +229,16 @@ let solve_poly ?f p q s =
 (* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
    = |α| and c fresh *)
 let rec solve_extract ?f a o l b s =
-  let n = Term.agg_size_exn a in
+  let n = Term.seq_size_exn a in
   let c, s = fresh "c" s in
-  let n_c = Term.memory ~siz:n ~arr:c in
+  let n_c = Term.sized ~siz:n ~seq:c in
   let o_l = Term.add o l in
   let n_o_l = Term.sub n o_l in
-  let c0 = Term.extract ~agg:n_c ~off:Term.zero ~len:o in
-  let c1 = Term.extract ~agg:n_c ~off:o_l ~len:n_o_l in
+  let c0 = Term.extract ~seq:n_c ~off:Term.zero ~len:o in
+  let c1 = Term.extract ~seq:n_c ~off:o_l ~len:n_o_l in
   let b, s =
-    match Term.agg_size b with
-    | None -> (Term.memory ~siz:l ~arr:b, Some s)
+    match Term.seq_size b with
+    | None -> (Term.sized ~siz:l ~seq:b, Some s)
     | Some m -> (b, solve_ ?f l m s)
   in
   s >>= solve_ ?f a (Term.concat [|c0; b; c1|])
@@ -248,9 +248,9 @@ let rec solve_extract ?f a o l b s =
 and solve_concat ?f a0V b m s =
   IArray.fold_until a0V ~init:(s, Term.zero)
     ~f:(fun (s, oI) aJ ->
-      let nJ = Term.agg_size_exn aJ in
+      let nJ = Term.seq_size_exn aJ in
       let oJ = Term.add oI nJ in
-      match solve_ ?f aJ (Term.extract ~agg:b ~off:oI ~len:nJ) s with
+      match solve_ ?f aJ (Term.extract ~seq:b ~off:oI ~len:nJ) s with
       | Some s -> Continue (s, oJ)
       | None -> Stop None )
     ~finish:(fun (s, n0V) -> solve_ ?f n0V m s)
@@ -266,18 +266,18 @@ and solve_ ?f d e s =
   (* i = j ==> false when i ≠ j *)
   | Some (Integer _, Integer _) | Some (Rational _, Rational _) -> None
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
-  | Some (Ap2 (Memory, n, a), b) when Term.equal n Term.zero ->
+  | Some (Ap2 (Sized, n, a), b) when Term.equal n Term.zero ->
       s |> solve_ ?f a (Term.concat [||]) >>= solve_ ?f b (Term.concat [||])
-  | Some (b, Ap2 (Memory, n, a)) when Term.equal n Term.zero ->
+  | Some (b, Ap2 (Sized, n, a)) when Term.equal n Term.zero ->
       s |> solve_ ?f a (Term.concat [||]) >>= solve_ ?f b (Term.concat [||])
   (* v = ⟨n,a⟩ ==> v = a *)
-  | Some ((Var _ as v), Ap2 (Memory, _, a)) -> s |> solve_ ?f v a
+  | Some ((Var _ as v), Ap2 (Sized, _, a)) -> s |> solve_ ?f v a
   (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
-  | Some (Ap2 (Memory, n, a), Ap2 (Memory, m, b)) ->
+  | Some (Ap2 (Sized, n, a), Ap2 (Sized, m, b)) ->
       s |> solve_ ?f n m >>= solve_ ?f a b
   (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
-  | Some (Ap2 (Memory, n, a), b) ->
-      ( match Term.agg_size b with
+  | Some (Ap2 (Sized, n, a), b) ->
+      ( match Term.seq_size b with
       | None -> Some s
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
@@ -287,19 +287,19 @@ and solve_ ?f d e s =
         compose1 ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        compose1 ?f ~var:e ~rep:(Term.memory ~siz:l ~arr:v) s
+        compose1 ?f ~var:e ~rep:(Term.sized ~siz:l ~seq:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
       if not (Var.Set.mem (Term.fv c) (Var.of_ v)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         compose1 ?f ~var:v ~rep:c s
       else
         (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
-        let m = Term.agg_size_exn c in
-        solve_concat ?f a0V (Term.memory ~siz:m ~arr:v) m s
+        let m = Term.seq_size_exn c in
+        solve_concat ?f a0V (Term.sized ~siz:m ~seq:v) m s
   | Some ((Ap3 (Extract, _, _, l) as e), ApN (Concat, a0V)) ->
       solve_concat ?f a0V e l s
   | Some (ApN (Concat, a0V), (ApN (Concat, _) as c)) ->
-      solve_concat ?f a0V c (Term.agg_size_exn c) s
+      solve_concat ?f a0V c (Term.seq_size_exn c) s
   | Some (Ap3 (Extract, a, o, l), e) -> solve_extract ?f a o l e s
   (* p = q ==> p-q = 0 *)
   | Some
@@ -772,7 +772,7 @@ let solve_poly_eq us p' q' subst =
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
-let solve_memory_eq us e' f' subst =
+let solve_seq_eq us e' f' subst =
   [%Trace.call fun {pf} -> pf "%a = %a" Term.pp e' Term.pp f']
   ;
   let f x u =
@@ -781,9 +781,9 @@ let solve_memory_eq us e' f' subst =
   in
   let solve_concat ms n a =
     let a, n =
-      match Term.agg_size a with
+      match Term.seq_size a with
       | Some n -> (a, n)
-      | None -> (Term.memory ~siz:n ~arr:a, n)
+      | None -> (Term.sized ~siz:n ~seq:a, n)
     in
     let+ _, xs, s = solve_concat ~f ms a n (us, Var.Set.empty, subst) in
     assert (Var.Set.is_empty xs) ;
@@ -791,12 +791,12 @@ let solve_memory_eq us e' f' subst =
   in
   ( match ((e' : Term.t), (f' : Term.t)) with
   | (ApN (Concat, ms) as c), a when f c a ->
-      solve_concat ms (Term.agg_size_exn c) a
+      solve_concat ms (Term.seq_size_exn c) a
   | a, (ApN (Concat, ms) as c) when f c a ->
-      solve_concat ms (Term.agg_size_exn c) a
-  | (Ap2 (Memory, _, (Var _ as v)) as m), u when f m u ->
+      solve_concat ms (Term.seq_size_exn c) a
+  | (Ap2 (Sized, _, (Var _ as v)) as m), u when f m u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
-  | u, (Ap2 (Memory, _, (Var _ as v)) as m) when f m u ->
+  | u, (Ap2 (Sized, _, (Var _ as v)) as m) when f m u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
   | _ -> None )
   |>
@@ -810,7 +810,7 @@ let solve_interp_eq us e' (cls, subst) =
   ;
   List.find_map cls ~f:(fun f ->
       let f' = Subst.norm subst f in
-      match solve_memory_eq us e' f' subst with
+      match solve_seq_eq us e' f' subst with
       | Some subst -> Some subst
       | None -> solve_poly_eq us e' f' subst )
   |>
@@ -853,7 +853,7 @@ type cls_solve_state =
 
 let dom_trm e =
   match (e : Term.t) with
-  | Ap2 (Memory, _, (Var _ as v)) -> Some v
+  | Ap2 (Sized, _, (Var _ as v)) -> Some v
   | _ when non_interpreted e -> Some e
   | _ -> None
 
@@ -960,7 +960,7 @@ let solve_concat_extracts_eq r x =
   ;
   let uses =
     fold_uses_of r x ~init:[] ~f:(fun uses -> function
-      | Ap2 (Memory, _, _) as m ->
+      | Ap2 (Sized, _, _) as m ->
           fold_uses_of r m ~init:uses ~f:(fun uses -> function
             | Ap3 (Extract, _, _, _) as e -> e :: uses | _ -> uses )
       | _ -> uses )
@@ -975,7 +975,7 @@ let solve_concat_extracts_eq r x =
     List.fold (find_extracts_at_off off) ~init:full_rev_extracts
       ~f:(fun full_rev_extracts e ->
         match e with
-        | Ap3 (Extract, Ap2 (Memory, n, _), o, l) ->
+        | Ap3 (Extract, Ap2 (Sized, n, _), o, l) ->
             let o_l = Term.add o l in
             if entails_eq r n o_l then
               (e :: rev_prefix) :: full_rev_extracts
@@ -999,7 +999,7 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
                       Some trm
                   | _ -> rep_ito_us )
             in
-            Term.memory ~siz:(Term.agg_size_exn e) ~arr:rep_ito_us :: suffix ) )
+            Term.sized ~siz:(Term.seq_size_exn e) ~seq:rep_ito_us :: suffix ) )
     |> List.min_elt ~compare:[%compare: Term.t list]
   with
   | Some extracts ->

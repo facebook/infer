@@ -41,10 +41,10 @@ let%test_module _ =
     let x = Term.var x_
     let y = Term.var y_
 
-    let eq_concat (siz, arr) ms =
+    let eq_concat (siz, seq) ms =
       Term.(
-        eq (memory ~siz ~arr)
-          (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms)))
+        eq (sized ~siz ~seq)
+          (concat (Array.map ~f:(fun (siz, seq) -> sized ~siz ~seq) ms)))
 
     let of_eqs l =
       List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l

@@ -19,7 +19,7 @@ let fresh_var nam us xs =
   let var, us = Var.fresh nam ~wrt:us in
   (Term.var var, us, Var.Set.add xs var)
 
-let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
+let fresh_seg ~loc ?bas ?len ?siz ?seq ?(xs = Var.Set.empty) us =
   let freshen term nam us xs =
     match term with
     | Some term -> (term, us, xs)
@@ -28,15 +28,15 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
   let bas, us, xs = freshen bas "b" us xs in
   let len, us, xs = freshen len "m" us xs in
   let siz, us, xs = freshen siz "n" us xs in
-  let arr, us, xs = freshen arr "a" us xs in
-  {us; xs; seg= {loc; bas; len; siz; arr}}
+  let seq, us, xs = freshen seq "a" us xs in
+  {us; xs; seg= {loc; bas; len; siz; seq}}
 
 let null_eq ptr = Sh.pure (Term.eq Term.zero ptr)
 
-let eq_concat (siz, arr) ms =
+let eq_concat (siz, seq) ms =
   Term.(
-    eq (memory ~siz ~arr)
-      (concat (Array.map ~f:(fun (siz, arr) -> memory ~siz ~arr) ms)))
+    eq (sized ~siz ~seq)
+      (concat (Array.map ~f:(fun (siz, seq) -> sized ~siz ~seq) ms)))
 
 (* Overwritten variables renaming and remaining modified variables. [ws] are
    the written variables; [rs] are the variables read or in the
@@ -82,7 +82,7 @@ let load_spec us reg ptr len =
   let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let post =
     Sh.and_
-      (Term.eq (Term.var reg) (Term.rename sub seg.arr))
+      (Term.eq (Term.var reg) (Term.rename sub seg.seq))
       (Sh.rename sub foot)
   in
   {xs; foot; sub; ms; post}
@@ -94,7 +94,7 @@ let load_spec us reg ptr len =
 let store_spec us ptr exp len =
   let {us= _; xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
   let foot = Sh.seg seg in
-  let post = Sh.seg {seg with arr= exp} in
+  let post = Sh.seg {seg with seq= exp} in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d-[b;m)->⟨l,α⟩ }
@@ -104,7 +104,7 @@ let store_spec us ptr exp len =
 let memset_spec us dst byt len =
   let {us= _; xs; seg} = fresh_seg ~loc:dst ~siz:len us in
   let foot = Sh.seg seg in
-  let post = Sh.seg {seg with arr= Term.splat byt} in
+  let post = Sh.seg {seg with seq= Term.splat byt} in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d=s * l=0 * d-[b;m)->⟨l,α⟩ }
@@ -129,7 +129,7 @@ let memcpy_dj_spec us dst src len =
   let dst_heap = Sh.seg dst_seg in
   let {us= _; xs; seg= src_seg} = fresh_seg ~loc:src ~siz:len ~xs us in
   let src_heap = Sh.seg src_seg in
-  let dst_seg' = {dst_seg with arr= src_seg.arr} in
+  let dst_seg' = {dst_seg with seq= src_seg.seq} in
   let dst_heap' = Sh.seg dst_seg' in
   let foot = Sh.star dst_heap src_heap in
   let post = Sh.star dst_heap' src_heap in
@@ -160,23 +160,23 @@ let memmov_foot us dst src len =
   let xs = Var.Set.empty in
   let bas, us, xs = fresh_var "b" us xs in
   let siz, us, xs = fresh_var "m" us xs in
-  let arr_dst, us, xs = fresh_var "a" us xs in
-  let arr_mid, us, xs = fresh_var "a" us xs in
-  let arr_src, us, xs = fresh_var "a" us xs in
+  let seq_dst, us, xs = fresh_var "a" us xs in
+  let seq_mid, us, xs = fresh_var "a" us xs in
+  let seq_src, us, xs = fresh_var "a" us xs in
   let src_dst = Term.sub src dst in
-  let mem_dst = (src_dst, arr_dst) in
+  let mem_dst = (src_dst, seq_dst) in
   let siz_mid = Term.sub len src_dst in
-  let mem_mid = (siz_mid, arr_mid) in
-  let mem_src = (src_dst, arr_src) in
+  let mem_mid = (siz_mid, seq_mid) in
+  let mem_src = (src_dst, seq_src) in
   let mem_dst_mid_src = [|mem_dst; mem_mid; mem_src|] in
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
-  let arr_dst_mid_src, us, xs = fresh_var "a" us xs in
+  let seq_dst_mid_src, us, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
-    eq_concat (siz_dst_mid_src, arr_dst_mid_src) mem_dst_mid_src
+    eq_concat (siz_dst_mid_src, seq_dst_mid_src) mem_dst_mid_src
   in
   let seg =
     Sh.seg
-      {loc= dst; bas; len= siz; siz= siz_dst_mid_src; arr= arr_dst_mid_src}
+      {loc= dst; bas; len= siz; siz= siz_dst_mid_src; seq= seq_dst_mid_src}
   in
   let foot =
     Sh.and_ eq_mem_dst_mid_src
@@ -195,9 +195,9 @@ let memmov_dn_spec us dst src len =
   in
   let mem_mid_src_src = [|mem_mid; mem_src; mem_src|] in
   let siz_mid_src_src, us, xs = fresh_var "m" us xs in
-  let arr_mid_src_src, _, xs = fresh_var "a" us xs in
+  let seq_mid_src_src, _, xs = fresh_var "a" us xs in
   let eq_mem_mid_src_src =
-    eq_concat (siz_mid_src_src, arr_mid_src_src) mem_mid_src_src
+    eq_concat (siz_mid_src_src, seq_mid_src_src) mem_mid_src_src
   in
   let post =
     Sh.and_ eq_mem_mid_src_src
@@ -206,7 +206,7 @@ let memmov_dn_spec us dst src len =
          ; bas
          ; len= siz
          ; siz= siz_mid_src_src
-         ; arr= arr_mid_src_src })
+         ; seq= seq_mid_src_src })
   in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -220,9 +220,9 @@ let memmov_up_spec us dst src len =
   in
   let mem_src_src_mid = [|mem_src; mem_src; mem_mid|] in
   let siz_src_src_mid, us, xs = fresh_var "m" us xs in
-  let arr_src_src_mid, _, xs = fresh_var "a" us xs in
+  let seq_src_src_mid, _, xs = fresh_var "a" us xs in
   let eq_mem_src_src_mid =
-    eq_concat (siz_src_src_mid, arr_src_src_mid) mem_src_src_mid
+    eq_concat (siz_src_src_mid, seq_src_src_mid) mem_src_src_mid
   in
   let post =
     Sh.and_ eq_mem_src_src_mid
@@ -231,7 +231,7 @@ let memmov_up_spec us dst src len =
          ; bas
          ; len= siz
          ; siz= siz_src_src_mid
-         ; arr= arr_src_src_mid })
+         ; seq= seq_src_src_mid })
   in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -317,8 +317,8 @@ let calloc_spec us reg num len =
   let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
-  let arr = Term.splat Term.zero in
-  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~arr us in
+  let seq = Term.splat Term.zero in
+  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~seq us in
   let post = Sh.or_ (null_eq (Term.var reg)) (Sh.seg seg) in
   {xs; foot; sub; ms; post}
 
@@ -339,7 +339,7 @@ let posix_memalign_spec us reg ptr siz =
       ~us
   in
   let q, us, xs = fresh_var "q" us xs in
-  let pseg' = {pseg with arr= q} in
+  let pseg' = {pseg with seq= q} in
   let {us= _; xs; seg= qseg} =
     fresh_seg ~loc:q ~bas:q ~len:siz ~siz ~xs us
   in
@@ -374,8 +374,8 @@ let realloc_spec us reg ptr siz =
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
-  let a0 = pseg.arr in
-  let a1 = rseg.arr in
+  let a0 = pseg.seq in
+  let a1 = rseg.seq in
   let a2, _, xs = fresh_var "a" us xs in
   let post =
     Sh.or_
@@ -406,8 +406,8 @@ let rallocx_spec us reg ptr siz =
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
-  let a0 = pseg.arr in
-  let a1 = rseg.arr in
+  let a0 = pseg.seq in
+  let a1 = rseg.seq in
   let a2, _, xs = fresh_var "a" us xs in
   let post =
     Sh.or_
@@ -442,8 +442,8 @@ let xallocx_spec us reg ptr siz ext =
   let {us; xs; seg= seg'} =
     fresh_seg ~loc:ptr ~bas:ptr ~len:reg ~siz:reg ~xs us
   in
-  let a0 = seg.arr in
-  let a1 = seg'.arr in
+  let a0 = seg.seq in
+  let a1 = seg'.seq in
   let a2, _, xs = fresh_var "a" us xs in
   let post =
     Sh.and_
@@ -502,14 +502,14 @@ let size_of_int_mul = Term.mulq (Q.of_int Llair.Typ.(size_of siz))
  *)
 let mallctl_read_spec us r i w n =
   let {us; xs; seg= iseg} = fresh_seg ~loc:i us in
-  let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:iseg.arr ~xs us in
+  let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:iseg.seq ~xs us in
   let a, _, xs = fresh_var "a" us xs in
   let foot =
     Sh.and_
       Term.(eq w zero)
       (Sh.and_ Term.(eq n zero) (Sh.star (Sh.seg iseg) (Sh.seg rseg)))
   in
-  let rseg' = {rseg with arr= a} in
+  let rseg' = {rseg with seq= a} in
   let post = Sh.star (Sh.seg rseg') (Sh.seg iseg) in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -522,7 +522,7 @@ let mallctlbymib_read_spec us p l r i w n =
   let wl = size_of_int_mul l in
   let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wl us in
   let {us; xs; seg= iseg} = fresh_seg ~loc:i ~xs us in
-  let m = iseg.arr in
+  let m = iseg.seq in
   let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:m ~xs us in
   let const = Sh.star (Sh.seg pseg) (Sh.seg iseg) in
   let a, _, xs = fresh_var "a" us xs in
@@ -531,7 +531,7 @@ let mallctlbymib_read_spec us p l r i w n =
       Term.(eq w zero)
       (Sh.and_ Term.(eq n zero) (Sh.star const (Sh.seg rseg)))
   in
-  let rseg' = {rseg with arr= a} in
+  let rseg' = {rseg with seq= a} in
   let post = Sh.star (Sh.seg rseg') const in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -577,12 +577,12 @@ let mallctlbymib_specs us p j r i w n =
  *)
 let mallctlnametomib_spec us p o =
   let {us; xs; seg= oseg} = fresh_seg ~loc:o us in
-  let n = oseg.arr in
+  let n = oseg.seq in
   let wn = size_of_int_mul n in
   let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wn ~xs us in
   let a, _, xs = fresh_var "a" us xs in
   let foot = Sh.star (Sh.seg oseg) (Sh.seg pseg) in
-  let pseg' = {pseg with arr= a} in
+  let pseg' = {pseg with seq= a} in
   let post = Sh.star (Sh.seg pseg') (Sh.seg oseg) in
   {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 

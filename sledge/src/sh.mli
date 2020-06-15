@@ -7,11 +7,10 @@
 
 (** Symbolic Heap Formulas *)
 
-(** Segment of memory starting at [loc] containing a byte-array [arr] of
+(** Segment of memory starting at [loc] containing [seq] (a byte-array) of
     size [siz], contained in an enclosing allocation-block starting at [bas]
-    of length [len]. Byte-array expressions are either [Var]iables or
-    [Splat] vectors. *)
-type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; arr: Term.t}
+    of length [len]. *)
+type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
 
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)

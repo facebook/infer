@@ -18,11 +18,11 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
   IArray.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Llair.Global.reg; init= Some (arr, siz)} ->
+    | {Llair.Global.reg; init= Some (seq, siz)} ->
         let loc = Term.var (Var.of_reg reg) in
         let len = Term.integer (Z.of_int siz) in
-        let arr = Term.of_exp arr in
-        Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
+        let seq = Term.of_exp seq in
+        Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
     | _ -> q )
 
 let join p q =
@@ -105,7 +105,7 @@ let garbage_collect (q : t) ~wrt =
       let new_set =
         List.fold ~init:current q.heap ~f:(fun current seg ->
             if term_eq_class_has_only_vars_in current q.cong seg.loc then
-              List.fold (Equality.class_of q.cong seg.arr) ~init:current
+              List.fold (Equality.class_of q.cong seg.seq) ~init:current
                 ~f:(fun c e -> Var.Set.union c (Term.fv e))
             else current )
       in
@@ -335,9 +335,9 @@ let%test_module _ =
     let b = Term.var b_
     let n = Term.var n_
     let endV = Term.var end_
-    let seg_main = Sh.seg {loc= main; bas= b; len= n; siz= n; arr= a}
-    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; arr= endV}
-    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; arr= main}
+    let seg_main = Sh.seg {loc= main; bas= b; len= n; siz= n; seq= a}
+    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= endV}
+    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= main}
 
     let%expect_test _ =
       pp (garbage_collect seg_main ~wrt:(Var.Set.of_list [])) ;
