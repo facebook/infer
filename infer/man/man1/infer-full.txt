@@ -901,6 +901,9 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.           See also infer-analyze(1).
 
+       --pulse-model-abort +string
+           Methods that should be modelled as abort in Pulse           See also infer-analyze(1).
+
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).
@@ -1686,6 +1689,9 @@ INTERNAL OPTIONS
 
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
+
+       --pulse-model-abort-reset
+           Set --pulse-model-abort to the empty list.
 
        --pulse-model-alloc-pattern-reset
            Cancel the effect of --pulse-model-alloc-pattern.

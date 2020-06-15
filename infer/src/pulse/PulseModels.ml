@@ -713,8 +713,19 @@ module ProcNameDispatcher = struct
       in
       transfer_ownership_namespace_matchers @ transfer_ownership_name_matchers
     in
+    let abort_matchers =
+      let cpp_separator_regex = Str.regexp_string "::" in
+      List.filter_map
+        ~f:(fun m ->
+          match Str.split cpp_separator_regex m with
+          | [] ->
+              None
+          | first :: rest ->
+              Some (List.fold rest ~f:( &:: ) ~init:(-first) &--> Misc.early_exit) )
+        Config.pulse_model_abort
+    in
     make_dispatcher
-      ( transfer_ownership_matchers
+      ( transfer_ownership_matchers @ abort_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete

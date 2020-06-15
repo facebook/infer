@@ -461,6 +461,8 @@ val pulse_intraprocedural_only : bool
 
 val pulse_max_disjuncts : int
 
+val pulse_model_abort : string list
+
 val pulse_model_alloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option

@@ -236,6 +236,9 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.
 
+       --pulse-model-abort +string
+           Methods that should be modelled as abort in Pulse
+
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse
 

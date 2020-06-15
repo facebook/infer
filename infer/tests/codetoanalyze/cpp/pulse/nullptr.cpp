@@ -6,6 +6,8 @@
  */
 
 #include <type_traits>
+#include <atomic>
+#include <cstdlib>
 
 void assign_zero_ok() {
   int x[2];
@@ -90,3 +92,33 @@ void std_false_type_deref_bad() {
     *x = 42;
   }
 }
+
+std::atomic<bool> global_var{true};
+
+namespace ns1 {
+namespace ns2 {
+void fun_abort(bool b) {
+  bool abort = true;
+  if (b) {
+    abort = global_var.load();
+  } else {
+    abort = true;
+  }
+  if (abort) {
+    std::abort();
+  }
+}
+} // namespace ns2
+} // namespace ns1
+
+X* getX(bool b) {
+  if (b) {
+    return new X();
+  } else {
+    ns1::ns2::fun_abort(true);
+  }
+
+  return nullptr;
+}
+
+void call_modeled_abort_ok() { getX(false)->foo(); }

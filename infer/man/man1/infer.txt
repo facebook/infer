@@ -901,6 +901,9 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.           See also infer-analyze(1).
 
+       --pulse-model-abort +string
+           Methods that should be modelled as abort in Pulse           See also infer-analyze(1).
+
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).

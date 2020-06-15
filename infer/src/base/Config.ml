@@ -1841,6 +1841,12 @@ and pulse_max_disjuncts =
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
+and pulse_model_abort =
+  CLOpt.mk_string_list ~long:"pulse-model-abort"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Methods that should be modelled as abort in Pulse"
+
+
 and pulse_model_alloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2980,6 +2986,8 @@ and pulse_recency_limit = !pulse_recency_limit
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pulse_model_abort = !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
