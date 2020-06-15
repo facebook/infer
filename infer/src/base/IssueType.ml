@@ -253,11 +253,6 @@ let biabd_registered_observer_being_deallocated =
     ~id:"BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED" Error Biabduction
 
 
-let biabd_stack_variable_address_escape =
-  register_from_string ~enabled:false ~hum:"Stack Variable Address Escape"
-    ~id:"BIABD_STACK_VARIABLE_ADDRESS_ESCAPE" Error Biabduction
-
-
 let biabd_use_after_free =
   register_from_string ~hum:"Use After Free" ~id:"BIABD_USE_AFTER_FREE" Error Biabduction
 

@@ -146,8 +146,6 @@ val desc_retain_cycle : string -> Location.t -> string option -> error_desc
 
 val desc_registered_observer_being_deallocated : Pvar.t -> Location.t -> error_desc
 
-val desc_stack_variable_address_escape : Pvar.t -> string option -> Location.t -> error_desc
-
 val desc_skip_function : Procname.t -> error_desc
 
 val desc_inherently_dangerous_function : Procname.t -> error_desc

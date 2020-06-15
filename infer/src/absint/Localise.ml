@@ -20,9 +20,6 @@ module Tags = struct
 
   let call_line = "call_line"
 
-  (** expression where a value escapes to *)
-  let escape_to = "escape_to"
-
   let line = "line"
 
   (** string describing a C value, e.g. "x.date" *)
@@ -680,28 +677,6 @@ let desc_inherently_dangerous_function proc_name =
   let tags = Tags.create () in
   Tags.update tags Tags.value proc_name_str ;
   {no_desc with descriptions= [MF.monospaced_to_string proc_name_str]; tags= !tags}
-
-
-let desc_stack_variable_address_escape pvar addr_dexp_str loc =
-  let expr_str = Pvar.to_string pvar in
-  let tags = Tags.create () in
-  Tags.update tags Tags.value expr_str ;
-  let escape_to_str =
-    match addr_dexp_str with
-    | Some s ->
-        Tags.update tags Tags.escape_to s ;
-        "to " ^ s ^ " "
-    | None ->
-        ""
-  in
-  let variable_str =
-    if Pvar.is_frontend_tmp pvar then "temporary"
-    else Format.asprintf "stack variable %a" MF.pp_monospaced expr_str
-  in
-  let description =
-    Format.asprintf "Address of %s escapes %s%s" variable_str escape_to_str (at_line tags loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
 
 
 let desc_uninitialized_dangling_pointer_deref deref expr_str loc =

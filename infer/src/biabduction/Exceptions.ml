@@ -87,8 +87,6 @@ exception Skip_function of Localise.error_desc
 
 exception Skip_pointer_dereference of Localise.error_desc * L.ocaml_pos
 
-exception Stack_variable_address_escape of Localise.error_desc * L.ocaml_pos
-
 exception Symexec_memory_error of L.ocaml_pos
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ocaml_pos
@@ -199,10 +197,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.retain_cycle; description= desc; ocaml_pos= Some ocaml_pos}
   | Registered_observer_being_deallocated (desc, ocaml_pos) ->
       { issue_type= IssueType.biabd_registered_observer_being_deallocated
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos }
-  | Stack_variable_address_escape (desc, ocaml_pos) ->
-      { issue_type= IssueType.biabd_stack_variable_address_escape
       ; description= desc
       ; ocaml_pos= Some ocaml_pos }
   | SymOp.Analysis_failure_exe _ ->

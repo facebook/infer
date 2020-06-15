@@ -1135,21 +1135,6 @@ let explain_condition_always_true_false tenv i cond node loc =
   Localise.desc_condition_always_true_false i cond_str_opt loc
 
 
-(** explain the escape of a stack variable address from its scope *)
-let explain_stack_variable_address_escape loc pvar addr_dexp_opt =
-  let addr_dexp_str =
-    match addr_dexp_opt with
-    | Some (DExp.Dpvar pv)
-      when Pvar.is_local pv && Mangled.equal (Pvar.get_name pv) Ident.name_return ->
-        Some "the caller via a return"
-    | Some dexp ->
-        Some (DExp.to_string dexp)
-    | None ->
-        None
-  in
-  Localise.desc_stack_variable_address_escape pvar addr_dexp_str loc
-
-
 (** explain unary minus applied to unsigned expression *)
 let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =
   let exp_str_opt =

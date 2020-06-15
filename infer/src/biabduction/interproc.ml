@@ -483,19 +483,9 @@ let forward_tabulate ({InterproceduralAnalysis.proc_desc; err_log; tenv; _} as a
 
 
 (** Remove locals and formals, and check if the address of a stack variable is left in the result *)
-let remove_locals_formals_and_check {InterproceduralAnalysis.proc_desc; err_log; tenv; _} proc_cfg p
-    =
+let remove_locals_formals_and_check {InterproceduralAnalysis.tenv; _} proc_cfg p =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
-  let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
-  let check_pvar pvar =
-    if not (Pvar.is_frontend_tmp pvar) then
-      let loc = ProcCfg.Exceptional.Node.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
-      let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
-      let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
-      let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
-  in
-  List.iter ~f:check_pvar pvars ;
+  let _pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   p'
 
 

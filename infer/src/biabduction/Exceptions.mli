@@ -86,8 +86,6 @@ exception Skip_function of Localise.error_desc
 
 exception Skip_pointer_dereference of Localise.error_desc * Logging.ocaml_pos
 
-exception Stack_variable_address_escape of Localise.error_desc * Logging.ocaml_pos
-
 exception Symexec_memory_error of Logging.ocaml_pos
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ocaml_pos

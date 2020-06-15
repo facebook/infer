@@ -365,7 +365,6 @@ OPTIONS
              BIABD_CONDITION_ALWAYS_TRUE (disabled by default),
              BIABD_REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by
            default),
-             BIABD_STACK_VARIABLE_ADDRESS_ESCAPE (disabled by default),
              BIABD_USE_AFTER_FREE (enabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),
              BUFFER_OVERRUN_L2 (enabled by default),
