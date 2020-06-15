@@ -8,6 +8,7 @@
 (** Global namespace intended to be opened in each source file *)
 
 include module type of NS0
+module Monad = Monad
 
 (** Function combinators *)
 

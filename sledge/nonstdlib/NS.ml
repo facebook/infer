@@ -8,6 +8,7 @@
 (** Global namespace intended to be opened in each source file *)
 
 include NS0
+module Monad = Monad
 
 (** Failures *)
 
@@ -148,5 +149,7 @@ module Z = struct
 
   include Z
 end
+
+(** Utilities *)
 
 module Timer = Timer

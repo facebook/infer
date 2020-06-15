@@ -11,6 +11,7 @@ include (
       include
         module type of Core
           with module Printexc := Core.Printexc
+           and module Monad := Core.Monad
            and module Option := Core.Option
            and module List := Core.List
            and module Map := Core.Map
