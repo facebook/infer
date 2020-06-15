@@ -24,8 +24,6 @@ exception Array_out_of_bounds_l3 of Localise.error_desc * Logging.ocaml_pos
 
 exception Bad_footprint of Logging.ocaml_pos
 
-exception Biabd_use_after_free of Localise.error_desc * Logging.ocaml_pos
-
 exception Cannot_star of Logging.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos

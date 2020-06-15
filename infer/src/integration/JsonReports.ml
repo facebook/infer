@@ -69,8 +69,7 @@ let should_report issue_type error_desc =
         ; null_dereference
         ; parameter_not_null_checked
         ; premature_nil_termination
-        ; empty_vector_access
-        ; biabd_use_after_free ]
+        ; empty_vector_access ]
       in
       List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
     in

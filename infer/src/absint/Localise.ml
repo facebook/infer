@@ -226,29 +226,6 @@ let deref_str_undef (proc_name, loc) =
       ^ " and is dereferenced or freed" }
 
 
-(** dereference strings for a freed pointer dereference *)
-let deref_str_freed ra =
-  let tags = Tags.create () in
-  let freed_or_closed_by_call =
-    let freed_or_closed =
-      match ra.PredSymb.ra_res with
-      | PredSymb.Rmemory _ ->
-          "freed"
-      | PredSymb.Rfile ->
-          "closed"
-      | PredSymb.Rignore ->
-          "freed"
-      | PredSymb.Rlock ->
-          "locked"
-    in
-    freed_or_closed ^ " " ^ by_call_to_ra tags ra
-  in
-  { tags
-  ; value_pre= Some (pointer_or_object ())
-  ; value_post= None
-  ; problem_str= "was " ^ freed_or_closed_by_call ^ " and is dereferenced or freed" }
-
-
 (** dereference strings for a dangling pointer dereference *)
 let deref_str_dangling dangling_kind_opt =
   let dangling_kind_prefix =
@@ -433,7 +410,6 @@ let has_tag (desc : error_desc) tag =
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
 let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_checked
-
 
 let desc_condition_always_true_false i cond_str_opt loc =
   let tags = Tags.create () in

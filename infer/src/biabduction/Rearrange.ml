@@ -1293,10 +1293,6 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
       raise (Exceptions.Dangling_pointer_dereference (true, err_desc, __POS__))
   | Some (Apred (Aundef _, _)) ->
       ()
-  | Some (Apred (Aresource ({ra_kind= Rrelease} as ra), _)) ->
-      let deref_str = Localise.deref_str_freed ra in
-      let err_desc = Errdesc.explain_dereference pname tenv ~use_buckets:true deref_str prop loc in
-      raise (Exceptions.Biabd_use_after_free (err_desc, __POS__))
   | _ ->
       if Prover.check_equal tenv Prop.prop_emp (Exp.root_of_lexp root) Exp.minus_one then
         let deref_str = Localise.deref_str_dangling None in

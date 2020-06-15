@@ -23,7 +23,6 @@ type splitting =
   ; missing_typ: (Exp.t * Exp.t) list }
 
 type deref_error =
-  | Deref_freed of PredSymb.res_action  (** dereference a freed pointer *)
   | Deref_minusone  (** dereference -1 *)
   | Deref_null of PredSymb.path_pos  (** dereference null *)
   | Deref_undef of Procname.t * Location.t * PredSymb.path_pos
@@ -335,15 +334,11 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
     else if Exp.equal e_sub Exp.minus_one then
       Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else
-      match Attribute.get_resource tenv actual_pre e_sub with
-      | Some (Apred (Aresource ({ra_kind= Rrelease} as ra), _)) ->
-          Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
-      | _ -> (
-        match Attribute.get_undef tenv actual_pre e_sub with
-        | Some (Apred (Aundef (s, _, loc, pos), _)) ->
-            Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
-        | _ ->
-            None )
+      match Attribute.get_undef tenv actual_pre e_sub with
+      | Some (Apred (Aundef (s, _, loc, pos), _)) ->
+          Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
+      | _ ->
+          None
   in
   let check_hpred = function
     | Predicates.Hpointsto (lexp, se, _) ->
@@ -1276,9 +1271,6 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
                 else if Localise.is_empty_vector_access_desc desc then
                   raise (Exceptions.Empty_vector_access (desc, __POS__))
                 else raise (Exceptions.Null_dereference (desc, __POS__))
-            | Dereference_error (Deref_freed _, desc, path_opt) ->
-                extend_path path_opt None ;
-                raise (Exceptions.Biabd_use_after_free (desc, __POS__))
             | Dereference_error (Deref_undef (_, _, pos), desc, path_opt) ->
                 extend_path path_opt (Some pos) ;
                 raise (Exceptions.Skip_pointer_dereference (desc, __POS__))

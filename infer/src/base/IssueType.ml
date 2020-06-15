@@ -269,10 +269,6 @@ let biabd_condition_always_true =
     Warning Biabduction
 
 
-let biabd_use_after_free =
-  register_from_string ~hum:"Use After Free" ~id:"BIABD_USE_AFTER_FREE" Error Biabduction
-
-
 let buffer_overrun_l1 =
   register_from_string ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "../../documentation/issues/BUFFER_OVERRUN.md"]

@@ -26,8 +26,6 @@ exception Array_of_pointsto of L.ocaml_pos
 
 exception Bad_footprint of L.ocaml_pos
 
-exception Biabd_use_after_free of Localise.error_desc * L.ocaml_pos
-
 exception Cannot_star of L.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
@@ -116,8 +114,6 @@ let recognize_exception exn : IssueToReport.t =
       ; ocaml_pos= Some ocaml_pos }
   | Bad_footprint ocaml_pos ->
       {issue_type= IssueType.bad_footprint; description= Localise.no_desc; ocaml_pos= Some ocaml_pos}
-  | Biabd_use_after_free (desc, ocaml_pos) ->
-      {issue_type= IssueType.biabd_use_after_free; description= desc; ocaml_pos= Some ocaml_pos}
   | Cannot_star ocaml_pos ->
       {issue_type= IssueType.cannot_star; description= Localise.no_desc; ocaml_pos= Some ocaml_pos}
   | Class_cast_exception (desc, ocaml_pos) ->

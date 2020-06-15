@@ -72,9 +72,6 @@ val deref_str_nullable : Procname.t option -> string -> deref_str
 val deref_str_undef : Procname.t * Location.t -> deref_str
 (** dereference strings for an undefined value coming from the given procedure *)
 
-val deref_str_freed : PredSymb.res_action -> deref_str
-(** dereference strings for a freed pointer dereference *)
-
 val deref_str_dangling : PredSymb.dangling_kind option -> deref_str
 (** dereference strings for a dangling pointer dereference *)
 
