@@ -15,9 +15,7 @@ module YBU = Yojson.Basic.Util
 let use_signature = false
 
 module MethodRangeMap = struct
-  let split_class_method_name qualified_method_name =
-    String.rsplit2_exn qualified_method_name ~on:'.'
-
+  let split_class_method_name qualified_method_name = String.rsplit2 qualified_method_name ~on:'.'
 
   let create_java_method_range_map code_graph_file_opt =
     match code_graph_file_opt with
@@ -44,14 +42,13 @@ module MethodRangeMap = struct
               ; file= SourceFile.create ~warn_on_error:false decl.source_file }
             in
             let range = (start_location, end_location) in
-            let classname, methodname = split_class_method_name decl.method_name in
-            match decl.signature with
-            | Some signature ->
+            match (split_class_method_name decl.method_name, decl.signature) with
+            | Some (classname, methodname), Some signature ->
                 let key =
                   JProcname.create_procname ~use_signature ~classname ~methodname ~signature
                 in
                 Procname.Map.add key (range, ()) acc
-            | None ->
+            | _ ->
                 acc )
     | _ ->
         L.die UserError "Missing method declaration info argument"
@@ -69,8 +66,11 @@ module DiffLines = struct
       match Utils.read_file changed_lines_file with
       | Ok cl_list ->
           List.fold cl_list ~init:String.Map.empty ~f:(fun acc cl_item ->
-              let fname, cl = String.rsplit2_exn ~on:':' cl_item in
-              String.Map.set acc ~key:fname ~data:(FileDiff.parse_unix_diff cl) )
+              match String.rsplit2 ~on:':' cl_item with
+              | None ->
+                  acc
+              | Some (fname, cl) ->
+                  String.Map.set acc ~key:fname ~data:(FileDiff.parse_unix_diff cl) )
       | Error _ ->
           L.die UserError "Could not read file %s" changed_lines_file )
     | None ->
