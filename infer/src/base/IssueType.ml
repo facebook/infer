@@ -307,21 +307,27 @@ let captured_strong_self =
 let checkers_allocates_memory =
   register_from_string ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error
     AnnotationReachability
+    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_ALLOCATES_MEMORY.md"]
 
 
 let checkers_annotation_reachability_error =
   register_from_string ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
     ~hum:"Annotation Reachability Error" Error AnnotationReachability
+    ~user_documentation:
+      [%blob "../../documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
 
 
 let checkers_calls_expensive_method =
   register_from_string ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called" Error
     AnnotationReachability
+    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_CALLS_EXPENSIVE_METHOD.md"]
 
 
 let checkers_expensive_overrides_unexpensive =
   register_from_string ~id:"CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
     ~hum:"Expensive Overrides Unannotated" Error AnnotationReachability
+    ~user_documentation:
+      [%blob "../../documentation/issues/CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED.md"]
 
 
 let checkers_fragment_retain_view =
