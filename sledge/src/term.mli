@@ -199,6 +199,7 @@ val uno : t -> t -> t
 val neg : t -> t
 val add : t -> t -> t
 val sub : t -> t -> t
+val mulq : Q.t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val rem : t -> t -> t

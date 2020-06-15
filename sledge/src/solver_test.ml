@@ -31,7 +31,7 @@ let%test_module _ =
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add
     let ( - ) = Term.sub
-    let ( * ) = Term.mul
+    let ( * ) i e = Term.mulq (Q.of_int i) e
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let a2_, wrt = Var.fresh "a" ~wrt
@@ -220,13 +220,9 @@ let%test_module _ =
 
     let seg_split_symbolically =
       Sh.star
-        (Sh.seg {loc= l; bas= l; len= !16; siz= !8 * n; arr= a2})
+        (Sh.seg {loc= l; bas= l; len= !16; siz= 8 * n; arr= a2})
         (Sh.seg
-           { loc= l + (!8 * n)
-           ; bas= l
-           ; len= !16
-           ; siz= !16 - (!8 * n)
-           ; arr= a3 })
+           {loc= l + (8 * n); bas= l; len= !16; siz= !16 - (8 * n); arr= a3})
 
     let%expect_test _ =
       check_frame

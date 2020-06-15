@@ -68,8 +68,7 @@ let exec_inst pre inst =
       Exec.memmov pre ~dst:(Term.of_exp dst) ~src:(Term.of_exp src)
         ~len:(Term.of_exp len)
   | Alloc {reg; num; len; _} ->
-      Exec.alloc pre ~reg:(Var.of_reg reg) ~num:(Term.of_exp num)
-        ~len:(Term.of_exp len)
+      Exec.alloc pre ~reg:(Var.of_reg reg) ~num:(Term.of_exp num) ~len
   | Free {ptr; _} -> Exec.free pre ~ptr:(Term.of_exp ptr)
   | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:Var.of_reg reg))
   | Abort _ -> Exec.abort pre )

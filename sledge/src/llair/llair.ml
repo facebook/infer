@@ -22,7 +22,7 @@ type inst =
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-  | Alloc of {reg: Reg.t; num: Exp.t; len: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
   | Abort of {loc: Loc.t}
@@ -148,8 +148,8 @@ let pp_inst fs inst =
       pf "@[<2>memmov %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
         Loc.pp loc
   | Alloc {reg; num; len; loc} ->
-      pf "@[<2>%a@ := alloc [%a x %a];@]\t%a" Reg.pp reg Exp.pp num Exp.pp
-        len Loc.pp loc
+      pf "@[<2>%a@ := alloc [%a x %i];@]\t%a" Reg.pp reg Exp.pp num len
+        Loc.pp loc
   | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
   | Nondet {reg; msg; loc} ->
       pf "@[<2>%anondet \"%s\";@]\t%a"
@@ -281,7 +281,7 @@ module Inst = struct
     | Memset {dst; byt; len; loc= _} -> f (f (f init dst) byt) len
     | Memcpy {dst; src; len; loc= _} | Memmov {dst; src; len; loc= _} ->
         f (f (f init dst) src) len
-    | Alloc {reg= _; num; len; loc= _} -> f (f init num) len
+    | Alloc {reg= _; num; len= _; loc= _} -> f init num
     | Free {ptr; loc= _} -> f init ptr
     | Nondet {reg= _; msg= _; loc= _} -> init
     | Abort {loc= _} -> init

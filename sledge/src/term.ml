@@ -951,6 +951,7 @@ let add e f = simp_add2 e f |> check invariant
 let addN args = simp_add args |> check invariant
 let sub e f = simp_sub e f |> check invariant
 let mul e f = simp_mul2 e f |> check invariant
+let mulq q e = mul (rational q) e
 let mulN args = simp_mul args |> check invariant
 let div = norm2 Div
 let rem = norm2 Rem

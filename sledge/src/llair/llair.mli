@@ -31,7 +31,7 @@ type inst = private
           if ranges overlap. *)
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
       (** Copy [len] bytes starting from address [src] to [dst]. *)
-  | Alloc of {reg: Reg.t; num: Exp.t; len: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
   | Free of {ptr: Exp.t; loc: Loc.t}
@@ -115,7 +115,7 @@ module Inst : sig
   val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val alloc : reg:Reg.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
   val abort : loc:Loc.t -> inst

@@ -242,7 +242,7 @@ let memmov_specs us dst src len =
  *)
 let alloc_spec us reg num len =
   let foot = Sh.emp in
-  let siz = Term.mul num len in
+  let siz = Term.mulq (Q.of_int len) num in
   let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
@@ -489,8 +489,7 @@ let nallocx_spec us reg siz =
   let post = Sh.or_ (null_eq loc) (Sh.pure (Term.eq loc siz)) in
   {xs; foot; sub; ms; post}
 
-let size_of_int_mul =
-  Term.mul (Term.integer (Z.of_int Llair.Typ.(size_of siz)))
+let size_of_int_mul = Term.mulq (Q.of_int Llair.Typ.(size_of siz))
 
 (* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
  *   mallctl r i w n

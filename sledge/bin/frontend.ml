@@ -955,7 +955,7 @@ let xlate_instr :
       let prefix, arg = xlate_value x rand in
       let num = convert_to_siz (xlate_type x (Llvm.type_of rand)) arg in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let len = xlate_size_of x instr in
+      let len = size_of x (Llvm.type_of instr) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
@@ -998,14 +998,14 @@ let xlate_instr :
             let num =
               convert_to_siz (xlate_type x (Llvm.type_of num_operand)) arg
             in
-            let len = Exp.integer Typ.siz (Z.of_int 1) in
+            let len = 1 in
             emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
         | ["_Znwm" (* operator new(size_t num) *)]
          |[ "_ZnwmSt11align_val_t"
             (* operator new(unsigned long, std::align_val_t) *) ] ->
             let reg = xlate_name x instr in
             let prefix, num = xlate_value x (Llvm.operand instr 0) in
-            let len = xlate_size_of x instr in
+            let len = size_of x (Llvm.type_of instr) in
             emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
         | ["_ZdlPv" (* operator delete(void* ptr) *)]
          |[ "_ZdlPvSt11align_val_t"
@@ -1126,7 +1126,7 @@ let xlate_instr :
         when num_actuals > 0 ->
           let reg = xlate_name x instr in
           let pre_0, num = xlate_value x (Llvm.operand instr 0) in
-          let len = xlate_size_of x instr in
+          let len = size_of x (Llvm.type_of instr) in
           let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term
             ~prefix:(pre_0 @ (Inst.alloc ~reg ~num ~len ~loc :: prefix))

@@ -24,7 +24,7 @@ let%test_module _ =
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add
     let ( - ) = Term.sub
-    let ( * ) = Term.mul
+    let ( * ) i e = Term.mulq (Q.of_int i) e
     let f = Term.unsigned 8
     let g = Term.rem
     let wrt = Var.Set.empty
@@ -310,7 +310,7 @@ let%test_module _ =
     let%test _ =
       entails_eq (of_eqs [(g w x, g y w); (x, z)]) (g w x) (g w z)
 
-    let r8 = of_eqs [(x + !42, (!3 * y) + (!13 * z)); (!13 * z, x)]
+    let r8 = of_eqs [(x + !42, (3 * y) + (13 * z)); (13 * z, x)]
 
     let%expect_test _ =
       pp_classes r8 ;
