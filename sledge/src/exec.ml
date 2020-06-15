@@ -74,6 +74,13 @@ end
 (** generic command: [{foot ∧ sub} ms := - {post}] *)
 type spec = {foot: Sh.t; sub: Var.Subst.t; ms: Var.Set.t; post: Sh.t}
 
+let gen_spec us specm =
+  let xs, spec = Fresh.gen ~wrt:us specm in
+  let us = Var.Set.union xs (Var.Set.union spec.foot.us spec.post.us) in
+  let foot = Sh.extend_us us spec.foot in
+  let post = Sh.extend_us us spec.post in
+  (xs, {spec with foot; post})
+
 (*
  * Instruction small axioms
  *)
@@ -638,12 +645,13 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   (Var.Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
   && (Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
 
-(* execute a command with given spec with ghost vars from pre *)
-let exec_spec_ (pre0 : Sh.t) (xs, {foot; sub; ms; post}) =
+(* execute a command with given explicitly-quantified spec from
+   explicitly-quantified pre *)
+let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
   ([%Trace.call fun {pf} ->
-     pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
+     pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre
        (Sh.pp_us ~pre:"@<2>∀ " ())
-       xs Sh.pp foot
+       gs Sh.pp foot
        (fun fs sub ->
          if not (Var.Subst.is_empty sub) then
            Format.fprintf fs "∧ %a" Var.Subst.pp sub )
@@ -652,47 +660,50 @@ let exec_spec_ (pre0 : Sh.t) (xs, {foot; sub; ms; post}) =
          if not (Var.Set.is_empty ms) then
            Format.fprintf fs "%a := " Var.Set.pp ms )
        ms Sh.pp post ;
-     (* xs contains all vars in spec not in pre0.us *)
+     (* gs contains all vars in spec not in pre.us *)
      assert (
-       let vs = Var.Set.(diff (diff foot.us xs) pre0.us) in
+       let vs = Var.Set.(diff (diff foot.us gs) pre.us) in
        Var.Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff ms xs) pre0.us) in
+       let vs = Var.Set.(diff (diff ms gs) pre.us) in
        Var.Set.is_empty vs || fail "unbound modif: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff (Var.Subst.domain sub) xs) pre0.us) in
+       let vs = Var.Set.(diff (diff (Var.Subst.domain sub) gs) pre.us) in
        Var.Set.is_empty vs || fail "unbound write: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff (Var.Subst.range sub) xs) pre0.us) in
+       let vs = Var.Set.(diff (diff (Var.Subst.range sub) gs) pre.us) in
        Var.Set.is_empty vs || fail "unbound ghost: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff post.us xs) pre0.us) in
+       let vs = Var.Set.(diff (diff post.us gs) pre.us) in
        Var.Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
-  let foot = Sh.extend_us xs foot in
-  let zs, pre = Sh.bind_exists pre0 ~wrt:xs in
-  let+ frame = Solver.infer_frame pre xs foot in
-  Sh.exists (Var.Set.union zs xs)
+  let+ frame = Solver.infer_frame pre gs foot in
+  Sh.exists (Var.Set.union xs gs)
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   |>
   [%Trace.retn fun {pf} r ->
     pf "%a" (Option.pp "%a" Sh.pp) r ;
-    assert (Option.for_all ~f:(check_preserve_us pre0) r)]
+    assert (Option.for_all ~f:(check_preserve_us (Sh.exists xs pre)) r)]
 
-let exec_spec (pre : Sh.t) spec =
-  exec_spec_ pre (Fresh.gen ~wrt:pre.us spec)
+(* execute a command with given spec from pre *)
+let exec_spec pre specm =
+  let xs, pre = Sh.bind_exists pre ~wrt:Var.Set.empty in
+  exec_spec_ (xs, pre) (gen_spec pre.us specm)
 
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
-let rec exec_specs (pre : Sh.t) = function
-  | specm :: specs ->
-      let xs, spec = Fresh.gen ~wrt:pre.us specm in
-      let foot = Sh.extend_us xs spec.foot in
-      let pre_pure = Sh.star (Sh.exists xs (Sh.pure_approx foot)) pre in
-      let* post = exec_spec_ pre_pure (xs, spec) in
-      let+ posts = exec_specs pre specs in
-      Sh.or_ post posts
-  | [] -> Some (Sh.false_ pre.us)
+let exec_specs pre =
+  let xs, pre = Sh.bind_exists pre ~wrt:Var.Set.empty in
+  let rec exec_specs_ (xs, pre) = function
+    | specm :: specs ->
+        let gs, spec = gen_spec pre.Sh.us specm in
+        let pre_pure = Sh.(star (exists gs (pure_approx spec.foot)) pre) in
+        let* post = exec_spec_ (xs, pre_pure) (gs, spec) in
+        let+ posts = exec_specs_ (xs, pre) specs in
+        Sh.or_ post posts
+    | [] -> Some (Sh.false_ pre.us)
+  in
+  exec_specs_ (xs, pre)
 
 let exec_specs pre specs =
   [%Trace.call fun _ -> ()]
