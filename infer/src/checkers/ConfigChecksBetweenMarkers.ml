@@ -67,11 +67,18 @@ module Trace = struct
 
 
   (** [Trace] is additional information, thus which should not affect analysis operation *)
-  let leq ~lhs:_ ~rhs:_ = true
-
   let join x _y = x
 
   let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let make_desc = function
+    | MarkerStart marker ->
+        F.asprintf "Marker %a start" IntLit.pp marker
+    | ConfigCheck gk_switch ->
+        F.asprintf "Config %a is checked" ConfigName.pp gk_switch
+
+
+  let call_desc callee = F.asprintf "Function %a is called" Procname.pp callee
 
   let marker_start marker = MarkerStart marker
 
@@ -82,23 +89,41 @@ module Trace = struct
   let add_call callee location ~from ~callee_trace = Call {callee; location; from; callee_trace}
 
   let singleton kind location = add_elem kind location Empty
+
+  let make_err_trace x =
+    let rec make_err_trace ~depth x acc ~cont =
+      match x with
+      | Empty ->
+          cont acc
+      | Elem {kind; location; from} ->
+          let acc = Errlog.make_trace_element depth location (make_desc kind) [] :: acc in
+          make_err_trace ~depth from acc ~cont
+      | Call {callee; location; from; callee_trace} ->
+          make_err_trace ~depth:(depth + 1) callee_trace acc ~cont:(fun acc ->
+              let acc = Errlog.make_trace_element depth location (call_desc callee) [] :: acc in
+              make_err_trace ~depth from acc ~cont )
+    in
+    make_err_trace ~depth:0 x [] ~cont:Fn.id
 end
 
-module TraceWithNothing = struct
-  type t = {trace: Trace.t}
+module Reported = AbstractDomain.BooleanOr
 
-  let pp f {trace} = Trace.pp f trace
+module TraceWithReported = struct
+  type t = {trace: Trace.t; reported: Reported.t}
 
-  let leq ~lhs ~rhs = Trace.leq ~lhs:lhs.trace ~rhs:rhs.trace
+  let pp f {trace; reported} =
+    F.fprintf f "@[@[trace:@ %a@]@\n@[reported:@ %a@]@]" Trace.pp trace Reported.pp reported
 
-  let join x y = {trace= Trace.join x.trace y.trace}
 
-  let widen ~prev ~next ~num_iters =
-    {trace= Trace.widen ~prev:prev.trace ~next:next.trace ~num_iters}
+  let leq ~lhs ~rhs = Reported.leq ~lhs:lhs.reported ~rhs:rhs.reported
+
+  let join x y = if leq ~lhs:x ~rhs:y then y else x
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
 module MarkerSet = struct
-  include AbstractDomain.Map (IntLit) (TraceWithNothing)
+  include AbstractDomain.Map (IntLit) (TraceWithReported)
 
   let pp f x =
     if is_empty x then F.pp_print_string f "{ }"
@@ -114,28 +139,45 @@ module MarkerSet = struct
 
 
   let add_trace new_trace location x =
-    map (fun {trace} -> {trace= Trace.add_elem new_trace location trace}) x
+    map
+      (fun ({trace} as trace_with_reported) ->
+        {trace_with_reported with trace= Trace.add_elem new_trace location trace} )
+      x
 
 
   let join_on_call callee_pname ?config_check_trace location ~callee ~caller =
     merge
       (fun _marker callee_trace caller_trace ->
-        let add_call {TraceWithNothing.trace= callee_trace} =
-          let from =
-            Option.value_map caller_trace ~default:Trace.Empty ~f:(fun {TraceWithNothing.trace} ->
-                trace )
+        let add_call {TraceWithReported.trace= callee_trace; reported= callee_reported} =
+          let from, caller_reported =
+            Option.value_map caller_trace ~default:(Trace.Empty, false)
+              ~f:(fun {TraceWithReported.trace; reported} -> (trace, reported))
           in
           let trace = Trace.add_call callee_pname location ~from ~callee_trace in
-          Some {TraceWithNothing.trace}
+          Some {TraceWithReported.trace; reported= Reported.join callee_reported caller_reported}
         in
         match (callee_trace, config_check_trace) with
         | None, None ->
             caller_trace
         | None, Some config_check_trace ->
-            add_call {TraceWithNothing.trace= config_check_trace}
+            add_call {TraceWithReported.trace= config_check_trace; reported= false}
         | Some callee_trace, _ ->
             add_call callee_trace )
       callee caller
+
+
+  let report {InterproceduralAnalysis.proc_desc; err_log} config location markers =
+    let report_on_marker marker ({TraceWithReported.trace; reported} as trace_reported) =
+      if reported then trace_reported
+      else
+        let desc =
+          F.asprintf "Config %a is checked inside marker %a" ConfigName.pp config IntLit.pp marker
+        in
+        Reporting.log_issue proc_desc err_log ~loc:location ~ltr:(Trace.make_err_trace trace)
+          ConfigChecksBetweenMarkers IssueType.config_checks_between_markers desc ;
+        {TraceWithReported.trace; reported= true}
+    in
+    mapi report_on_marker markers
 end
 
 module InvMarkerSet = AbstractDomain.InvertedSet (IntLit)
@@ -174,8 +216,8 @@ module Context = struct
 
   let call_marker_start marker location {started_markers; ended_markers} =
     let trace = Trace.singleton (Trace.marker_start marker) location in
-    let trace_dom = {TraceWithNothing.trace} in
-    { started_markers= MarkerSet.add marker trace_dom started_markers
+    let trace_with_reported = {TraceWithReported.trace; reported= false} in
+    { started_markers= MarkerSet.add marker trace_with_reported started_markers
     ; ended_markers= InvMarkerSet.remove marker ended_markers }
 
 
@@ -276,11 +318,16 @@ module Dom = struct
     {astate with context= Context.call_marker_end marker context}
 
 
-  let call_config_check id location ({mem; context; config_checks} as astate) =
+  let call_config_check analysis_data id location ({mem; context; config_checks} as astate) =
     match Mem.find_opt id mem with
     | Some (NonTop config) ->
         let trace_elem = Trace.config_check config in
         let context = Context.call_config_check trace_elem location context in
+        let context =
+          { context with
+            started_markers= MarkerSet.report analysis_data config location context.started_markers
+          }
+        in
         let context_with_trace =
           {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
         in
@@ -290,7 +337,7 @@ module Dom = struct
         astate
 
 
-  let instantiate_callee ~callee
+  let instantiate_callee analysis_data ~callee
       ~callee_summary:{Summary.context= callee_context; config_checks= callee_config_checks}
       location ({context= caller_context; config_checks= caller_config_checks} as astate) =
     let context =
@@ -302,6 +349,11 @@ module Dom = struct
           let context =
             Context.instantiate_callee ~callee_pname:callee ~config_check_trace location
               ~callee_context ~caller_context
+          in
+          let context =
+            { context with
+              started_markers=
+                MarkerSet.report analysis_data config location context.started_markers }
           in
           let trace =
             Trace.add_call callee location ~from:Trace.Empty ~callee_trace:config_check_trace
@@ -315,15 +367,14 @@ module Dom = struct
   let to_summary {context; config_checks} = {Summary.context; config_checks}
 end
 
-type analysis_data = {tenv: Tenv.t; get_summary: Procname.t -> Summary.t option}
-
 module TransferFunctions = struct
   module CFG = ProcCfg.NormalOneInstrPerNode
   module Domain = Dom
 
-  type nonrec analysis_data = analysis_data
+  type analysis_data = Summary.t InterproceduralAnalysis.t
 
-  let exec_instr astate {tenv; get_summary} _node instr =
+  let exec_instr astate ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node
+      instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lfield (Lvar config_class, config_name, _)}
       when FbGKInteraction.is_config_class config_class ->
@@ -336,10 +387,10 @@ module TransferFunctions = struct
         Dom.call_marker_end marker astate
     | Call (_, Const (Cfun callee), _ :: (Var id, _) :: _, location, _)
       when FbGKInteraction.is_config_check tenv callee ->
-        Dom.call_config_check id location astate
+        Dom.call_config_check analysis_data id location astate
     | Call (_, Const (Cfun callee), _, location, _) ->
-        Option.value_map (get_summary callee) ~default:astate ~f:(fun callee_summary ->
-            Dom.instantiate_callee ~callee ~callee_summary location astate )
+        Option.value_map (analyze_dependency callee) ~default:astate ~f:(fun (_, callee_summary) ->
+            Dom.instantiate_callee analysis_data ~callee ~callee_summary location astate )
     | _ ->
         astate
 
@@ -350,7 +401,5 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let checker {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency} =
-  let open IOption.Let_syntax in
-  let get_summary pname = analyze_dependency pname >>| snd in
-  Analyzer.compute_post {tenv; get_summary} ~initial:Dom.init proc_desc >>| Dom.to_summary
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:Dom.to_summary

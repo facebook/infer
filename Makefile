@@ -175,7 +175,9 @@ DIRECT_TESTS += \
   java_topl \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-DIRECT_TESTS += java_fb-performance
+DIRECT_TESTS += \
+  java_fb-gk-interaction \
+  java_fb-performance
 endif
 
 ifneq ($(ANT),no)

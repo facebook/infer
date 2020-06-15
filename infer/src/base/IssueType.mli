@@ -152,6 +152,8 @@ val condition_always_false : t
 
 val condition_always_true : t
 
+val config_checks_between_markers : t
+
 val constant_address_dereference : t
 
 val create_intent_from_uri : t

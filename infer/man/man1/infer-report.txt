@@ -120,6 +120,7 @@ OPTIONS
              COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS (enabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
+             CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),
