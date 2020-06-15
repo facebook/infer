@@ -1051,7 +1051,7 @@ and ( bo_debug
   and trace_error =
     CLOpt.mk_bool ~long:"trace-error" "Detailed tracing information during error explanation"
   and write_html =
-    CLOpt.mk_bool ~long:"write-html" "Produce hmtl debug output in the results directory"
+    CLOpt.mk_bool ~long:"write-html" "Produce html debug output in the results directory"
   and write_dotty =
     CLOpt.mk_bool ~long:"write-dotty" "Produce dotty files for specs in the results directory"
   in

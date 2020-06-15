@@ -1930,7 +1930,7 @@ INTERNAL OPTIONS
            (Conversely: --no-write-dotty)
 
        --write-html
-           Activates: Produce hmtl debug output in the results directory
+           Activates: Produce html debug output in the results directory
            (Conversely: --no-write-html)
 
        --write-html-whitelist-regex +string
