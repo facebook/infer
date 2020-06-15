@@ -47,6 +47,7 @@ val find_from_string : id:string -> t option
 
 val register_from_string :
      ?enabled:bool
+  -> ?is_cost_issue:bool
   -> ?hum:string
   -> ?doc_url:string
   -> ?linters_def_file:string

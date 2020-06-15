@@ -121,7 +121,10 @@ let config_unsafe checker =
       ; activates= [BufferOverrunAnalysis] }
   | Cost ->
       { id= "cost"
-      ; kind= UserFacing {title= "Cost: Runtime Complexity Analysis"; markdown_body= ""}
+      ; kind=
+          UserFacing
+            { title= "Cost: Runtime Complexity Analysis"
+            ; markdown_body= [%blob "../../documentation/checkers/Cost.md"] }
       ; support= supports_clang_and_java
       ; short_documentation=
           "Computes the time complexity of functions and methods. Can be used to detect changes in \

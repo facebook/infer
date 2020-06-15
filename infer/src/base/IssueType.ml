@@ -51,6 +51,7 @@ module Unsafe : sig
 
   val register_from_string :
        ?enabled:bool
+    -> ?is_cost_issue:bool
     -> ?hum:string
     -> ?doc_url:string
     -> ?linters_def_file:string
@@ -121,8 +122,9 @@ end = struct
         but issues of type 2. have not yet been defined. Thus, we record only there [enabled] status
         definitely. The [hum]an-readable description can be updated when we encounter the definition
         of the issue type, eg in AL. *)
-  let register_from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file ~id:unique_id
-      ?(visibility = User) ?user_documentation default_severity checker =
+  let register_from_string ?(enabled = true) ?(is_cost_issue = false) ?hum:hum0 ?doc_url
+      ?linters_def_file ~id:unique_id ?(visibility = User) ?user_documentation default_severity
+      checker =
     match find_from_string ~id:unique_id with
     | ((Some
          ( { unique_id= _ (* we know it has to be the same *)
@@ -150,11 +152,11 @@ end = struct
             ~old:(string_of_visibility visibility_old)
             ~new_:(string_of_visibility visibility) ;
         ( match user_documentation with
-        | None ->
-            ()
-        | Some user_documentation ->
+        | Some user_documentation when not is_cost_issue ->
             L.die InternalError "Unexpected user documentation for issue type %s:@\n@\n%s@\n"
-              unique_id user_documentation ) ;
+              unique_id user_documentation
+        | _ ->
+            () ) ;
         issue.default_severity <- default_severity ;
         Option.iter hum0 ~f:(fun hum -> issue.hum <- hum) ;
         if Option.is_some doc_url then issue.doc_url <- doc_url ;
@@ -177,12 +179,31 @@ end = struct
         issue
 
 
+  let cost_issue_doc_list =
+    [ ( "EXECUTION_TIME_COMPLEXITY_INCREASE"
+      , [%blob "../../documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE.md"] )
+    ; ( "EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD"
+      , [%blob "../../documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD.md"] )
+    ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
+      , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
+    ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
+    ]
+
+
   (** cost issues are already registered below.*)
   let register_from_cost_string ?(enabled = true) ?(is_on_ui_thread = false) ~(kind : CostKind.t) s
       =
     let issue_type_base = F.asprintf s (CostKind.to_issue_string kind) in
     let issue_type = if is_on_ui_thread then issue_type_base ^ "_UI_THREAD" else issue_type_base in
-    register_from_string ~enabled ~id:issue_type Error Cost
+    let user_documentation =
+      match List.find cost_issue_doc_list ~f:(fun (s, _doc) -> String.equal s issue_type) with
+      | Some (_, doc) ->
+          doc
+      | None ->
+          L.die InternalError
+            "Unexpected cost issue %s: either the issue is not enabled or unknown." issue_type
+    in
+    register_from_string ~is_cost_issue:true ~enabled ~id:issue_type Error Cost ~user_documentation
 
 
   let all_issues () = IssueSet.elements !all_issues
