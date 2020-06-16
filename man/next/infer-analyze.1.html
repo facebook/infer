@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Thu Jun 11 11:55:07 2020 -->
+<!-- CreationDate: Tue Jun 16 10:14:13 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -123,17 +123,21 @@ list of source files from which reactive analysis should
 start. Source files should be specified relative to project
 root or be absolute</p>
 
-<p style="margin-left:11%;"><b>--class-loads</b></p>
 
-<p style="margin-left:17%;">Activates: checker class-loads:
-Compute set of Java classes loaded. (Conversely:
-<b>--no-class-loads</b>)</p>
+<p style="margin-left:11%;"><b>--config-checks-between-markers</b></p>
 
-<p style="margin-left:11%;"><b>--class-loads-only</b></p>
+<p style="margin-left:17%;">Activates: checker
+config-checks-between-markers: [EXPERIMENTAL] Collects
+config checks between marker start and end. (Conversely:
+<b>--no-config-checks-between-markers</b>)</p>
 
-<p style="margin-left:17%;">Activates: Enable class-loads
-and disable all other checkers (Conversely:
-<b>--no-class-loads-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--config-checks-between-markers-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+config-checks-between-markers and disable all other checkers
+(Conversely:
+<b>--no-config-checks-between-markers-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--continue-analysis</b></p>
 
@@ -440,6 +444,12 @@ Memory and lifetime analysis. (Conversely:
 pulse will only explore one path. Can be used on
 pathologically large procedures to prevent too-big states
 from being produced.</p>
+
+<p style="margin-left:11%;"><b>--pulse-model-abort</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that should be modelled
+as abort in Pulse</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-model-alloc-pattern</b>
