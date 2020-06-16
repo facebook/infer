@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
+          - macOS-latest
           - ubuntu-latest
         ocaml-version:
           - 4.09.1
@@ -35,8 +35,36 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('opam.locked') }}
 
       - name: Install Required Brew Packages for MacOS
-        run: brew install pkg-config automake
+        run: brew install pkg-config automake jq
         if: runner.os == 'macOS'
+
+      - name: Fetch clang Release
+        run: |
+          REPO="facebook/facebook-clang-plugins"
+          URL="https://api.github.com/repos/$REPO"
+
+          CLANGFILE="clang-install-${{ matrix.os }}.tar.gz"
+
+          RELEASE_INFO="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL/releases/latest")"
+          if ! ASSET_ID="$(jq ".assets | map(select(.name == \"$CLANGFILE\"))[0].id" <<< "$RELEASE_INFO")"; then
+              echo "$RELEASE_INFO"
+              exit 1
+          fi
+
+          if [[ -z "$ASSET_ID" || "$ASSET_ID" == "null" ]]; then
+              echo "Could not find asset ID" >&2
+              exit 1
+          fi
+
+          curl -J -L "$URL/releases/assets/$ASSET_ID" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/octet-stream" \
+              -o "$CLANGFILE"
+
+      - run: tar -xzf clang-install-${{ matrix.os }}.tar.gz -C facebook-clang-plugins/clang/
+
+      # let the build run with c analyzers enabled
+      - run: sed -i -e '/"--disable-c-analyzers"/d' opam opam.locked
 
       # ensure infer isn't installed in this switch, then deal with dependencies
       - run: opam remove infer || true
