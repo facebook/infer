@@ -16,25 +16,25 @@
 <link rel="stylesheet" href="/styles.20899050.css">
 
 
-<link rel="preload" href="/styles.9d4acbca.js" as="script">
+<link rel="preload" href="/styles.b6b1b97e.js" as="script">
 
-<link rel="preload" href="/runtime~main.dc33c9dc.js" as="script">
+<link rel="preload" href="/runtime~main.7b681b86.js" as="script">
 
-<link rel="preload" href="/main.b230dfab.js" as="script">
+<link rel="preload" href="/main.4d4c3a61.js" as="script">
 
-<link rel="preload" href="/1.0ad40966.js" as="script">
+<link rel="preload" href="/1.c4b0cebe.js" as="script">
 
-<link rel="preload" href="/2.3e8a2571.js" as="script">
+<link rel="preload" href="/2.da2847aa.js" as="script">
 
-<link rel="preload" href="/3.24bbbf0d.js" as="script">
+<link rel="preload" href="/3.bc66cdaa.js" as="script">
 
-<link rel="preload" href="/1be78505.83811e2f.js" as="script">
+<link rel="preload" href="/1be78505.3c41609e.js" as="script">
 
-<link rel="preload" href="/c6c6e257.e2ae4e3a.js" as="script">
+<link rel="preload" href="/c6c6e257.b915433e.js" as="script">
 
-<link rel="preload" href="/17896441.39dba5f3.js" as="script">
+<link rel="preload" href="/17896441.bf016b0b.js" as="script">
 
-<link rel="preload" href="/c6aa6fbc.eed391cb.js" as="script">
+<link rel="preload" href="/c6aa6fbc.8ff99750.js" as="script">
 
 </head>
 <body>
@@ -280,25 +280,25 @@ leaving the current scope. In those cases, there is no need to use <code>weakSel
 avoid the block to capture <code>self</code>. This issue type flags this case.</p></div></article><div class="margin-vert--lg"><nav class="pagination-nav"><div class="pagination-nav__item"></div><div class="pagination-nav__item pagination-nav__item--next"></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"><ul class="contents contents__left-border"><li><a href="#captured-strong-self" class="contents__link">Captured Strong Self</a></li><li><a href="#checkers-immutable-cast" class="contents__link">Checkers immutable cast</a></li><li><a href="#deadlock" class="contents__link">Deadlock</a></li><li><a href="#dead-store" class="contents__link">Dead store</a></li><li><a href="#empty-vector-access" class="contents__link">Empty vector access</a></li><li><a href="#field-should-be-nullable" class="contents__link">Field should be nullable</a></li><li><a href="#fragment-retains-view" class="contents__link">Fragment retains view</a></li><li><a href="#interface-not-thread-safe" class="contents__link">Interface not thread-safe</a></li><li><a href="#ivar-not-null-checked" class="contents__link">Ivar not null checked</a></li><li><a href="#lock-consistency-violation" class="contents__link">Lock Consistency Violation</a><ul><li><a href="#fixing-lock-consistency-violation-reports" class="contents__link">Fixing Lock Consistency Violation reports</a></li></ul></li><li><a href="#mixed-self-weakself" class="contents__link">Mixed self weakSelf</a></li><li><a href="#multiple-weakself" class="contents__link">Multiple weakSelf</a></li><li><a href="#memory-leak" class="contents__link">Memory leak</a><ul><li><a href="#memory-leak-in-c" class="contents__link">Memory leak in C</a></li><li><a href="#memory-leak-in-objective-c" class="contents__link">Memory leak in Objective-C</a></li></ul></li><li><a href="#null-dereference" class="contents__link">Null Dereference</a><ul><li><a href="#null-dereference-in-c" class="contents__link">Null dereference in C</a></li><li><a href="#null-dereference-in-objective-c" class="contents__link">Null dereference in Objective-C</a></li><li><a href="#null-dereference-in-java" class="contents__link">Null dereference in Java</a></li></ul></li><li><a href="#parameter-not-null-checked" class="contents__link">Parameter not null checked</a></li><li><a href="#premature-nil-termination-argument" class="contents__link">Premature nil termination argument</a></li><li><a href="#resource-leak" class="contents__link">Resource leak</a><ul><li><a href="#resource-leak-in-c" class="contents__link">Resource leak in C</a></li><li><a href="#resource-leak-in-java" class="contents__link">Resource leak in Java</a></li><li><a href="#basics-and-standard-idiom" class="contents__link">Basics and Standard Idiom</a></li><li><a href="#nested_allocations" class="contents__link">Nested_Allocations</a></li><li><a href="#allocation-of-jsonparser-and-cursor-resources" class="contents__link">Allocation of JSonParser and Cursor resources</a></li><li><a href="#escaping-resources-and-exceptions" class="contents__link">Escaping resources and exceptions</a></li><li><a href="#java-7s-try-with-resources" class="contents__link">Java 7&#39;s try-with-resources</a></li></ul></li><li><a href="#retain-cycle" class="contents__link">Retain cycle</a></li><li><a href="#static-initialization-order-fiasco" class="contents__link">Static initialization order fiasco</a></li><li><a href="#thread-safety-violation" class="contents__link">Thread-safety violation</a><ul><li><a href="#thread-safety-what-is-a-data-race" class="contents__link">Thread-safety: What is a data race</a></li><li><a href="#thread-safety-potential-fixes" class="contents__link">Thread-safety: Potential fixes</a></li><li><a href="#thread-safety-conditions-checked-before-reporting" class="contents__link">Thread-safety: Conditions checked before reporting</a></li><li><a href="#thread-safety-thread-annotations-recognized-by-racerd" class="contents__link">Thread-safety: Thread annotations recognized by RacerD</a></li><li><a href="#thread-safety-other-annotations-and-what-they-do" class="contents__link">Thread-safety: Other annotations and what they do</a></li></ul></li><li><a href="#ui-thread-starvation" class="contents__link">UI Thread Starvation</a></li><li><a href="#strict-mode-violation" class="contents__link">Strict mode violation</a></li><li><a href="#strongself-not-checked" class="contents__link">StrongSelf Not Checked</a></li><li><a href="#unsafe-guardedby-access" class="contents__link">Unsafe GuardedBy Access</a></li><li><a href="#weakself-in-noescape-block" class="contents__link">weakSelf In NOESCAPE Block</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/checkers-bug-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://github.com/facebook/infer">GitHub</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://twitter.com/fbinfer">Twitter</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/inferstaticanalyzer">Facebook</a></li></ul></div></div><div class="text--center"><div>Copyright © 2020 Facebook, Inc. Built with Docusaurus.</div></div></div></footer>
 </div>
 
-<script src="/styles.9d4acbca.js"></script>
+<script src="/styles.b6b1b97e.js"></script>
 
-<script src="/runtime~main.dc33c9dc.js"></script>
+<script src="/runtime~main.7b681b86.js"></script>
 
-<script src="/main.b230dfab.js"></script>
+<script src="/main.4d4c3a61.js"></script>
 
-<script src="/1.0ad40966.js"></script>
+<script src="/1.c4b0cebe.js"></script>
 
-<script src="/2.3e8a2571.js"></script>
+<script src="/2.da2847aa.js"></script>
 
-<script src="/3.24bbbf0d.js"></script>
+<script src="/3.bc66cdaa.js"></script>
 
-<script src="/1be78505.83811e2f.js"></script>
+<script src="/1be78505.3c41609e.js"></script>
 
-<script src="/c6c6e257.e2ae4e3a.js"></script>
+<script src="/c6c6e257.b915433e.js"></script>
 
-<script src="/17896441.39dba5f3.js"></script>
+<script src="/17896441.bf016b0b.js"></script>
 
-<script src="/c6aa6fbc.eed391cb.js"></script>
+<script src="/c6aa6fbc.8ff99750.js"></script>
 
 
 </body>
