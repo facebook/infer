@@ -505,6 +505,7 @@ resource.
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [INTERFACE_NOT_THREAD_SAFE](all-issue-types.md#interface_not_thread_safe)
-- [LOCK_CONSISTENCY_VIOLATION](all-issue-types.md#lock_consistency_violation)
-- [THREAD_SAFETY_VIOLATION](all-issue-types.md#thread_safety_violation)
+- [GUARDEDBY_VIOLATION](all-issue-types#guardedby_violation)
+- [INTERFACE_NOT_THREAD_SAFE](all-issue-types#interface_not_thread_safe)
+- [LOCK_CONSISTENCY_VIOLATION](all-issue-types#lock_consistency_violation)
+- [THREAD_SAFETY_VIOLATION](all-issue-types#thread_safety_violation)

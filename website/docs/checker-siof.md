@@ -16,4 +16,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [STATIC_INITIALIZATION_ORDER_FIASCO](all-issue-types.md#static_initialization_order_fiasco)
+- [STATIC_INITIALIZATION_ORDER_FIASCO](all-issue-types#static_initialization_order_fiasco)

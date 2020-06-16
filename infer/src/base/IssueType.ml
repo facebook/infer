@@ -409,10 +409,10 @@ let condition_always_true =
     ~user_documentation:"A condition expression is **always** evaluated to true."
 
 
+(* ~user_documentation:"A config checking is done between a marker's start and end" *)
 let config_checks_between_markers =
   register_from_string ~enabled:false ~id:"CONFIG_CHECKS_BETWEEN_MARKERS" Advice
     ConfigChecksBetweenMarkers
-    ~user_documentation:"A config checking is done between a marker's start and end"
 
 
 let constant_address_dereference =

@@ -11,3 +11,9 @@ Supported languages:
 - C/C++/ObjC: Yes
 - Java: No
 
+
+
+## List of Issue Types
+
+The following issue types are reported by this checker:
+- [UNINITIALIZED_VALUE](all-issue-types#uninitialized_value)

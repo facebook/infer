@@ -33,6 +33,95 @@ integer pointed to by `n` is nonzero (e.g., she may have meant to call an
 accessor like `[n intValue]` instead). Infer will ask the programmer explicitly
 compare `n` to `nil` or call an accessor to clarify her intention.
 
+## BUFFER_OVERRUN_L1
+
+Reported as "Buffer Overrun L1" by [bufferoverrun](checker-bufferoverrun.md).
+
+Buffer overrun reports fall into several "buckets" corresponding to the expected precision of the
+report.  The higher the number, the more likely it is to be a false positive.
+
+*   `L1`: The most faithful report, when it *must* be unsafe.  For example, array size: `[5,5]`,
+    offset: `[3,3]`.
+
+*   `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example, array size:`[5,5]`,
+    offset: `[0,5]`.  Note that the offset may be a safe value in the real execution, i.e. 0, 1, 2,
+    3, 4.
+
+*   `L5`: The least faithful report, when there is an interval top.  For example, array size:
+    `[5,5]`, offset: `[-oo,+oo]`.
+
+*   `L4`: More faithful report than `L5`, when there is an infinity value.  For example, array size:
+    `[5,5]`, offset: `[0, +oo]`.
+
+*   `L3`: The reports that are not included in the above cases.
+
+Other than them, there are some specific-purpose buffer overrun reports as follows.
+
+*   `R2`: An array access is unsafe by *risky* array values from `strndup`.  For example, suppose
+    there is a `strndup` call as follows.
+
+    ```c
+    char* s1 = (char*)malloc(sizeof(char) * size);
+    for (int i = 0; i < size; i++) {
+      s1[i] = 'a';
+    }
+    s1[5] = '\0';
+    char* s2 = strndup(s1, size - 1);
+    s2[size - 1] = 'a';
+    ```
+
+    Even if the second parameter of `strndup` is `size - 1`, the length of `s2` can be shorter than
+    `size` if there is the null character in the middle of `s1`.
+
+*   `S2`: An array access is unsafe by symbolic values.  For example, array size: `[n,n]`, offset
+    `[n,+oo]`.
+
+*   `T1`: An array access is unsafe by tainted external values.  This is experimental and will be
+    removed sooner or later.
+
+*   `U5`: An array access is unsafe by unknown values, which are usually from unknown function
+    calls.
+
+## BUFFER_OVERRUN_L2
+
+Reported as "Buffer Overrun L2" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_L3
+
+Reported as "Buffer Overrun L3" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_L4
+
+Reported as "Buffer Overrun L4" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_L5
+
+Reported as "Buffer Overrun L5" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_R2
+
+Reported as "Buffer Overrun R2" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_S2
+
+Reported as "Buffer Overrun S2" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_T1
+
+Reported as "Buffer Overrun T1" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+## BUFFER_OVERRUN_U5
+
+Reported as "Buffer Overrun U5" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## CAPTURED_STRONG_SELF
 
 Reported as "Captured strongSelf" by [self-in-block](checker-self-in-block.md).
@@ -45,6 +134,68 @@ This will happen in one of two cases generally:
    first block. The retain cycle is avoided there because `strongSelf` is a
    local variable to the block. If `strongSelf` is used in the inside block,
    then it's not a local variable anymore, but a captured variable.
+
+## CHECKERS_ALLOCATES_MEMORY
+
+Reported as "Allocates Memory" by [annotation-reachability](checker-annotation-reachability.md).
+
+A method annotated with `@NoAllocation` transitively calls `new`.
+
+Example:
+
+```java
+class C implements I {
+  @NoAllocation
+  void directlyAllocatingMethod() {
+    new Object();
+  }
+}
+```
+
+## CHECKERS_ANNOTATION_REACHABILITY_ERROR
+
+Reported as "Annotation Reachability Error" by [annotation-reachability](checker-annotation-reachability.md).
+
+A method annotated with an annotation `@A` transitively calls a method annotated `@B` where the combination of annotations is forbidden (for example, `@UiThread` calling `@WorkerThread`).
+
+## CHECKERS_CALLS_EXPENSIVE_METHOD
+
+Reported as "Expensive Method Called" by [annotation-reachability](checker-annotation-reachability.md).
+
+A method annotated with `@PerformanceCritical` transitively calls a method annotated `@Expensive`.
+
+Example:
+
+```java
+class C {
+  @PerformanceCritical
+  void perfCritical() {
+    expensive();
+  }
+
+  @Expensive
+  void expensive() {}
+}
+```
+
+## CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED
+
+Reported as "Expensive Overrides Unannotated" by [annotation-reachability](checker-annotation-reachability.md).
+
+A method annotated with `@Expensive` overrides an un-annotated method.
+
+Example:
+
+```java
+interface I {
+  void foo();
+}
+
+class A implements I {
+  @Expensive
+  public void foo() {}
+}
+```
 
 ## CHECKERS_FRAGMENT_RETAINS_VIEW
 
@@ -80,6 +231,20 @@ list e.g. by adding elements.
 Action: you can change the return type to be immutable, or make a copy of the
 collection so that it can be modified.
 
+## CHECKERS_PRINTF_ARGS
+
+Reported as "Checkers Printf Args" by [printf-args](checker-printf-args.md).
+
+This error is reported when the argument types to a `printf` method do not match the format string.
+
+```java
+  void stringInsteadOfInteger(PrintStream out) {
+    out.printf("Hello %d", "world");
+  }
+```
+
+Action: fix the mismatch between format string and argument types.
+
 ## COMPONENT_FACTORY_FUNCTION
 
 Reported as "Component Factory Function" by [linters](checker-linters.md).
@@ -101,6 +266,37 @@ Reported as "Component With Unconventional Superclass" by [linters](checker-lint
 
 [Doc in ComponentKit page](http://componentkit.org/docs/never-subclass-components)
 
+## CONDITION_ALWAYS_FALSE
+
+Reported as "Condition Always False" by [bufferoverrun](checker-bufferoverrun.md).
+
+A condition expression is **always** evaluated to false.
+## CONDITION_ALWAYS_TRUE
+
+Reported as "Condition Always True" by [bufferoverrun](checker-bufferoverrun.md).
+
+A condition expression is **always** evaluated to true.
+## CONSTANT_ADDRESS_DEREFERENCE
+
+Reported as "Constant Address Dereference" by [pulse](checker-pulse.md).
+
+This is reported when an address obtained via a non-zero constant is
+dereferenced. If the address is zero then
+[`NULLPTR_DEREFERENCE`](#nullptr_dereference) is reported instead.
+
+For example, `int *p = (int *) 123; *p = 42;` generates this issue
+type.
+
+## CREATE_INTENT_FROM_URI
+
+Reported as "Create Intent From Uri" by [quandary](checker-quandary.md).
+
+Create an intent/start a component using a (possibly user-controlled) URI. may or may not be an issue depending on where the URI comes from.
+## CROSS_SITE_SCRIPTING
+
+Reported as "Cross Site Scripting" by [quandary](checker-quandary.md).
+
+Untrusted data flows into HTML; XSS risk.
 ## CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK
 
 Reported as "Cxx Reference Captured In Objc Block" by [linters](checker-linters.md).
@@ -526,6 +722,60 @@ the annotations of any method called directly by the current method, if
 relevant. If the annotations are correct, you can remove the @Nullable
 annotation.
 
+## EXECUTION_TIME_COMPLEXITY_INCREASE
+
+Reported as "Execution Time Complexity Increase" by [cost](checker-cost.md).
+
+Infer reports this issue when the execution time complexity of a
+program increases in degree: e.g. from constant to linear or from
+logarithmic to quadratic. This issue type is only reported in
+differential mode: i.e when we are comparing the analysis results of
+two runs of infer on a file.
+
+
+
+## EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD
+
+Reported as "Execution Time Complexity Increase Ui Thread" by [cost](checker-cost.md).
+
+Infer reports this issue when the execution time complexity of the procedure increases in degree **and** the procedure runs on the UI (main) thread.
+
+Infer considers a method as running on the UI thread whenever:
+
+- The method, one of its overrides, its class, or an ancestral class, is
+  annotated with `@UiThread`.
+- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`,
+  etc.
+- The method or its callees call a `Litho.ThreadUtils` method such as
+  `assertMainThread`.
+
+
+## EXECUTION_TIME_UNREACHABLE_AT_EXIT
+
+Reported as "Execution Time Unreachable At Exit" by [cost](checker-cost.md).
+
+This issue type indicates that the program's execution doesn't reach
+the exit node. Hence, we cannot compute a static bound for the
+procedure.
+
+
+Examples:
+```java
+void exit_unreachable() {
+  exit(0); // modeled as unreachable
+}
+
+
+void infeasible_path_unreachable() {
+    Preconditions.checkState(false); // like assert false, state pruned to bottom
+}
+```
+
+## EXPOSED_INSECURE_INTENT_HANDLING
+
+Reported as "Exposed Insecure Intent Handling" by [quandary](checker-quandary.md).
+
+Undocumented.
 ## GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 
 Reported as "Global Variable Initialized With Function Or Method Call" by [linters](checker-linters.md).
@@ -535,6 +785,160 @@ method or function call. The warning wants to make you aware that some functions
 are expensive. As the global variables are initialized before main() is called,
 these initializations can slow down the start-up time of an app.
 
+## GUARDEDBY_VIOLATION
+
+Reported as "GuardedBy Violation" by [racerd](checker-racerd.md).
+
+A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
+
+Example:
+
+```java
+class C {
+  @GuardedBy("this")
+  String f;
+
+  void foo(String s) {
+    f = s; // unprotected access here
+  }
+}
+```
+
+Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
+
+## INEFFICIENT_KEYSET_ITERATOR
+
+Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](checker-inefficient-keyset-iterator.md).
+
+This issue is raised when
+- iterating over a HashMap with `ketSet()` iterator
+- looking up the key each time
+
+Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
+ For instance, we would raise an issue for the following program:
+
+```java
+void inefficient_loop_bad(HashMap<String, Integer> testMap) {
+ for (String key : testMap.keySet()) {
+   Integer value = testMap.get(key); // extra look-up cost
+   foo(key, value);
+ }
+}
+```
+
+Instead, it is more efficient to have:
+```java
+void efficient_loop_ok(HashMap<String, Integer> testMap) {
+  for (Map.Entry<String, Integer> entry : testMap.entrySet()) {
+    String key = entry.getKey();
+    Integer value = entry.getValue();
+    foo(key, value);
+  }
+}
+```
+
+## INFERBO_ALLOC_IS_BIG
+
+Reported as "Inferbo Alloc Is Big" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` is passed a large constant value.
+## INFERBO_ALLOC_IS_NEGATIVE
+
+Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` is called with a negative size.
+## INFERBO_ALLOC_IS_ZERO
+
+Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` is called with a zero size.
+## INFERBO_ALLOC_MAY_BE_BIG
+
+Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` *may* be called with a large value.
+## INFERBO_ALLOC_MAY_BE_NEGATIVE
+
+Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` *may* be called with a negative value.
+## INFERBO_ALLOC_MAY_BE_TAINTED
+
+Reported as "Inferbo Alloc May Be Tainted" by [bufferoverrun](checker-bufferoverrun.md).
+
+`malloc` *may* be called with a tainted value from external sources.  This is experimental and will be removed sooner or later.
+## INFINITE_EXECUTION_TIME
+
+Reported as "Infinite Execution Time" by [cost](checker-cost.md).
+
+This warning indicates that Infer was not able to determine a static
+upper bound on the execution cost of the procedure. By default, this
+issue type is disabled.
+
+
+For instance, Inferbo's interval analysis is limited to affine
+expressions. Hence, we can't statically estimate an upper bound on the
+below example and obtain T(unknown) cost:
+```java
+// Expected: square root(x), got T
+void square_root_FP(int x) {
+ int i = 0;
+ while (i * i < x) {
+   i++;
+ }
+}
+```
+
+Consequently, we report an `INFINITE_EXECUTION_TIME`, corresponding to the biggest bound T.
+
+## INSECURE_INTENT_HANDLING
+
+Reported as "Insecure Intent Handling" by [quandary](checker-quandary.md).
+
+Undocumented.
+## INTEGER_OVERFLOW_L1
+
+Reported as "Integer Overflow L1" by [bufferoverrun](checker-bufferoverrun.md).
+
+Integer overflows reports fall into several "buckets" corresponding to the expected precision of the
+report. The higher the number, the more likely it is to be a false positive.
+
+*   `L1`: The most faithful report, when it *must* be unsafe.  For example,
+    `[2147483647,2147483647] + [1,1]` in 32-bit signed integer type.
+
+*   `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example,
+    `[2147483647,2147483647] + [0,1]` in 32-bit signed integer type.  Note that the integer of RHS
+    can be 0, which is safe.
+
+*   `L5`: The reports that are not included in the above cases.
+
+Other than them, there as some specific-purpose buffer overrun reports as follows.
+
+*   `R2`: A binary integer operation is unsafe by *risky* return values from `strndup`.
+
+*   `U5`: A binary integer operation is unsafe by unknown values, which are usually from unknown
+    function calls.
+
+## INTEGER_OVERFLOW_L2
+
+Reported as "Integer Overflow L2" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+## INTEGER_OVERFLOW_L5
+
+Reported as "Integer Overflow L5" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+## INTEGER_OVERFLOW_R2
+
+Reported as "Integer Overflow R2" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+## INTEGER_OVERFLOW_U5
+
+Reported as "Integer Overflow U5" by [bufferoverrun](checker-bufferoverrun.md).
+
+See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTERFACE_NOT_THREAD_SAFE
 
 Reported as "Interface Not Thread Safe" by [racerd](checker-racerd.md).
@@ -565,6 +969,34 @@ parameter is `nil`. For example:
 Possible solutions are adding a check for `nil`, or making sure that the method
 is not called with `nil`.
 
+## JAVASCRIPT_INJECTION
+
+Reported as "Javascript Injection" by [quandary](checker-quandary.md).
+
+Untrusted data flows into JavaScript.
+## LOCKLESS_VIOLATION
+
+Reported as "Lockless Violation" by [starvation](checker-starvation.md).
+
+A method implements an interface signature annotated with `@Lockless` but which transitively acquires a lock.
+
+Example:
+
+```java
+Interface I {
+    @Lockless
+    public void no_lock();
+}
+
+class C implements I {
+  private synchronized do_lock() {}
+
+  public void no_lock() { // this method should not acquire any locks
+    do_lock();
+  }
+}
+```
+
 ## LOCK_CONSISTENCY_VIOLATION
 
 Reported as "Lock Consistency Violation" by [racerd](checker-racerd.md).
@@ -590,9 +1022,14 @@ container (an array, a vector, etc).
   Infer considers a method as private if it's not exported in the header-file
   interface.
 
+## LOGGING_PRIVATE_DATA
+
+Reported as "Logging Private Data" by [quandary](checker-quandary.md).
+
+Undocumented.
 ## MEMORY_LEAK
 
-Reported as "Memory Leak" by [biabduction](checker-biabduction.md).
+Reported as "Memory Leak" by [pulse](checker-pulse.md).
 
 ### Memory leak in C
 
@@ -644,6 +1081,11 @@ Reported as "Mutable Local Variable In Component File" by [linters](checker-lint
 
 [Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
 
+## NULLPTR_DEREFERENCE
+
+Reported as "Nullptr Dereference" by [pulse](checker-pulse.md).
+
+See [NULL_DEREFERENCE](#null_dereference).
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](checker-biabduction.md).
@@ -804,6 +1246,11 @@ An example of such variadic methods is
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+## QUANDARY_TAINT_ERROR
+
+Reported as "Taint Error" by [quandary](checker-quandary.md).
+
+Generic taint error when nothing else fits.
 ## REGISTERED_OBSERVER_BEING_DEALLOCATED
 
 Reported as "Registered Observer Being Deallocated" by [linters](checker-linters.md).
@@ -1127,6 +1574,44 @@ hierarchy:
 @end
 ```
 
+## SHELL_INJECTION
+
+Reported as "Shell Injection" by [quandary](checker-quandary.md).
+
+Environment variable or file data flowing to shell.
+## SHELL_INJECTION_RISK
+
+Reported as "Shell Injection Risk" by [quandary](checker-quandary.md).
+
+Code injection if the caller of the endpoint doesn't sanitize on its end.
+## SQL_INJECTION
+
+Reported as "Sql Injection" by [quandary](checker-quandary.md).
+
+Untrusted and unescaped data flows to SQL.
+## SQL_INJECTION_RISK
+
+Reported as "Sql Injection Risk" by [quandary](checker-quandary.md).
+
+Untrusted and unescaped data flows to SQL.
+## STACK_VARIABLE_ADDRESS_ESCAPE
+
+Reported as "Stack Variable Address Escape" by [pulse](checker-pulse.md).
+
+Reported when an address pointing into the stack of the current
+function will escape to its calling context. Such addresses will
+become invalid by the time the function actually returns so are
+potentially dangerous.
+
+For example, directly returning a pointer to a local variable:
+
+```C
+int* foo() {
+   int x = 42;
+   return &x; // <-- warn here that "&x" will escape
+}
+```
+
 ## STARVATION
 
 Reported as "UI Thread Starvation" by [starvation](checker-starvation.md).
@@ -1359,6 +1844,121 @@ or
 ```objectivec
 if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
   font = [UIFont systemFontOfSize:size weight:0];
+}
+```
+
+## UNINITIALIZED_VALUE
+
+Reported as "Uninitialized Value" by [uninit](checker-uninit.md).
+
+A value is read before it has been initialized. For example, in C:
+
+```C
+struct coordinates {
+  int x;
+  int y;
+};
+
+void foo() {
+  struct coordinates c;
+  c.x = 42;
+  c.y++; // uninitialized value c.y!
+
+  int z;
+  if (z == 0) { // uninitialized value z!
+    // something
+  }
+}
+```
+
+## UNREACHABLE_CODE
+
+Reported as "Unreachable Code" by [bufferoverrun](checker-bufferoverrun.md).
+
+A program point is unreachable.
+## UNTRUSTED_BUFFER_ACCESS
+
+Reported as "Untrusted Buffer Access" by [quandary](checker-quandary.md).
+
+Untrusted data of any kind flowing to buffer.
+## UNTRUSTED_DESERIALIZATION
+
+Reported as "Untrusted Deserialization" by [quandary](checker-quandary.md).
+
+User-controlled deserialization.
+## UNTRUSTED_DESERIALIZATION_RISK
+
+Reported as "Untrusted Deserialization Risk" by [quandary](checker-quandary.md).
+
+User-controlled deserialization
+## UNTRUSTED_ENVIRONMENT_CHANGE_RISK
+
+Reported as "Untrusted Environment Change Risk" by [quandary](checker-quandary.md).
+
+User-controlled environment mutation.
+## UNTRUSTED_FILE
+
+Reported as "Untrusted File" by [quandary](checker-quandary.md).
+
+User-controlled file creation; may be vulnerable to path traversal and more.
+## UNTRUSTED_FILE_RISK
+
+Reported as "Untrusted File Risk" by [quandary](checker-quandary.md).
+
+User-controlled file creation; may be vulnerable to path traversal and more.
+## UNTRUSTED_HEAP_ALLOCATION
+
+Reported as "Untrusted Heap Allocation" by [quandary](checker-quandary.md).
+
+Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS.
+## UNTRUSTED_INTENT_CREATION
+
+Reported as "Untrusted Intent Creation" by [quandary](checker-quandary.md).
+
+Creating an Intent from user-controlled data.
+## UNTRUSTED_URL_RISK
+
+Reported as "Untrusted Url Risk" by [quandary](checker-quandary.md).
+
+Untrusted flag, environment variable, or file data flowing to URL.
+## UNTRUSTED_VARIABLE_LENGTH_ARRAY
+
+Reported as "Untrusted Variable Length Array" by [quandary](checker-quandary.md).
+
+Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack buffer that's too large will cause a stack overflow.
+## USER_CONTROLLED_SQL_RISK
+
+Reported as "User Controlled Sql Risk" by [quandary](checker-quandary.md).
+
+Untrusted data flows to SQL (no injection risk).
+## USE_AFTER_DELETE
+
+Reported as "Use After Delete" by [pulse](checker-pulse.md).
+
+An address that was invalidated by a call to `delete` in C++ is dereferenced.
+
+## USE_AFTER_FREE
+
+Reported as "Use After Free" by [pulse](checker-pulse.md).
+
+An address that was invalidated by a call to `free` in C is dereferenced.
+
+## USE_AFTER_LIFETIME
+
+Reported as "Use After Lifetime" by [pulse](checker-pulse.md).
+
+The lifetime of an object has ended but that object is being
+accessed. For example, the address of a variable holding a C++ object
+is accessed after the variable has gone out of scope:
+
+```C++
+void foo() {
+     X* p;
+     { // new scope
+       X x = X();
+       p = &x;
+     } // x has gone out of scope
+     p->method(); // ERROR: you should not access *p after x has gone out of scope
 }
 ```
 

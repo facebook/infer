@@ -3,8 +3,8 @@
     "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
   "doc_entries": [
     "all-issue-types", "checker-annotation-reachability",
-    "checker-biabduction", "checker-bufferoverrun", "checker-class-loads",
-    "checker-cost", "checker-eradicate", "checker-fragment-retains-view",
+    "checker-biabduction", "checker-bufferoverrun", "checker-cost",
+    "checker-eradicate", "checker-fragment-retains-view",
     "checker-immutable-cast", "checker-inefficient-keyset-iterator",
     "checker-linters", "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-printf-args", "checker-pulse",

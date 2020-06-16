@@ -21,6 +21,7 @@ Detect several kinds of "starvation" problems:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [DEADLOCK](all-issue-types.md#deadlock)
-- [STARVATION](all-issue-types.md#starvation)
-- [STRICT_MODE_VIOLATION](all-issue-types.md#strict_mode_violation)
+- [DEADLOCK](all-issue-types#deadlock)
+- [LOCKLESS_VIOLATION](all-issue-types#lockless_violation)
+- [STARVATION](all-issue-types#starvation)
+- [STRICT_MODE_VIOLATION](all-issue-types#strict_mode_violation)

@@ -13,3 +13,9 @@ Supported languages:
 - C/C++/ObjC: No
 - Java: Yes
 
+
+
+## List of Issue Types
+
+The following issue types are reported by this checker:
+- [CHECKERS_PRINTF_ARGS](all-issue-types#checkers_printf_args)

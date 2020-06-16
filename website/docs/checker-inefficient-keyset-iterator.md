@@ -11,3 +11,9 @@ Supported languages:
 - C/C++/ObjC: No
 - Java: Yes
 
+
+
+## List of Issue Types
+
+The following issue types are reported by this checker:
+- [INEFFICIENT_KEYSET_ITERATOR](all-issue-types#inefficient_keyset_iterator)
