@@ -633,6 +633,7 @@ let impure_function = register_from_string ~id:"IMPURE_FUNCTION" Error Impurity
 
 let inefficient_keyset_iterator =
   register_from_string ~id:"INEFFICIENT_KEYSET_ITERATOR" Error InefficientKeysetIterator
+    ~user_documentation:[%blob "../../documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
 let inferbo_alloc_is_big =
