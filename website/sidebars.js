@@ -15,7 +15,17 @@ module.exports = {
       "analyzing-apps-or-projects",
       "steps-for-ci",
       "advanced-features",
-      "man-pages",
+      {"Infer Manuals": [
+          "man-infer",
+          "man-infer-analyze",
+          "man-infer-capture",
+          "man-infer-compile",
+          "man-infer-explore",
+          "man-infer-help",
+          "man-infer-report",
+          "man-infer-reportdiff",
+          "man-infer-run"
+      ]}
     ],
     "Analyses and Issue Types": checkers.doc_entries,
     Foundations: [
