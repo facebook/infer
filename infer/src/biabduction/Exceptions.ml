@@ -37,10 +37,6 @@ exception Custom_error of string * IssueType.severity * Localise.error_desc
 exception
   Dangling_pointer_dereference of bool (* is it user visible? *) * Localise.error_desc * L.ocaml_pos
 
-exception Deallocate_stack_variable of Localise.error_desc
-
-exception Deallocate_static_memory of Localise.error_desc
-
 exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
@@ -133,10 +129,6 @@ let recognize_exception exn : IssueToReport.t =
         else IssueType.dangling_pointer_dereference_maybe
       in
       {issue_type; description= desc; ocaml_pos= Some ocaml_pos}
-  | Deallocate_stack_variable desc ->
-      {issue_type= IssueType.deallocate_stack_variable; description= desc; ocaml_pos= None}
-  | Deallocate_static_memory desc ->
-      {issue_type= IssueType.deallocate_static_memory; description= desc; ocaml_pos= None}
   | Divide_by_zero (desc, ocaml_pos) ->
       {issue_type= IssueType.divide_by_zero; description= desc; ocaml_pos= Some ocaml_pos}
   | Empty_vector_access (desc, ocaml_pos) ->

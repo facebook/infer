@@ -55,21 +55,6 @@ let hpred_is_open_resource tenv prop = function
       None
 
 
-(** Explain a deallocate stack variable error *)
-let explain_deallocate_stack_var pvar ra =
-  let pvar_str = Pvar.to_string pvar in
-  Localise.desc_deallocate_stack_variable pvar_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
-
-
-(** Explain a deallocate constant string error *)
-let explain_deallocate_constant_string s ra =
-  let const_str =
-    let pp fmt = Exp.pp fmt (Exp.Const (Const.Cstr s)) in
-    F.asprintf "%t" pp
-  in
-  Localise.desc_deallocate_static_memory const_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
-
-
 let verbose = Config.trace_error
 
 (** Special case for C++, where we translate code like [struct X; X getX() { X x; return X; }] as

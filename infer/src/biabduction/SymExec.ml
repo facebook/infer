@@ -481,25 +481,6 @@ let check_already_dereferenced {InterproceduralAnalysis.proc_desc; err_log; tenv
       ()
 
 
-(** Check whether symbolic execution de-allocated a stack variable or a constant string, raising an
-    exception in that case *)
-let check_deallocate_static_memory prop_after =
-  let check_deallocated_attribute = function
-    | Predicates.Apred (Aresource ({ra_kind= Rrelease} as ra), [Lvar pv])
-      when Pvar.is_local pv || Pvar.is_global pv ->
-        let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
-        raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | Predicates.Apred (Aresource ({ra_kind= Rrelease} as ra), [Const (Cstr s)]) ->
-        let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
-        raise (Exceptions.Deallocate_static_memory freed_desc)
-    | _ ->
-        ()
-  in
-  let exp_att_list = Attribute.get_all prop_after in
-  List.iter ~f:check_deallocated_attribute exp_att_list ;
-  prop_after
-
-
 let method_exists right_proc_name methods =
   if Language.curr_language_is Java then
     List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
@@ -1915,7 +1896,7 @@ and sym_exec_wrapper ({InterproceduralAnalysis.tenv; _} as analysis_data) handle
           (* but force them into either branch *)
           p'
       | _ ->
-          check_deallocate_static_memory (Abs.abstract_junk analysis_data p')
+          Abs.abstract_junk analysis_data p'
     in
     L.d_str "Instruction " ;
     Sil.d_instr instr ;

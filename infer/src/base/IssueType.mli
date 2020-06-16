@@ -168,10 +168,6 @@ val dead_store : t
 
 val deadlock : t
 
-val deallocate_stack_variable : t
-
-val deallocate_static_memory : t
-
 val divide_by_zero : t
 
 val do_not_report : t

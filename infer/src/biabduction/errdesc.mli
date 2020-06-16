@@ -38,12 +38,6 @@ val explain_class_cast_exception :
   -> Localise.error_desc
 (** explain a class cast exception *)
 
-val explain_deallocate_stack_var : Pvar.t -> PredSymb.res_action -> Localise.error_desc
-(** Explain a deallocate stack variable error *)
-
-val explain_deallocate_constant_string : string -> PredSymb.res_action -> Localise.error_desc
-(** Explain a deallocate constant string error *)
-
 val explain_dereference :
      Procname.t
   -> Tenv.t

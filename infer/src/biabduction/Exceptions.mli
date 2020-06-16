@@ -36,10 +36,6 @@ exception
   Dangling_pointer_dereference of
     bool (* is it user visible? *) * Localise.error_desc * Logging.ocaml_pos
 
-exception Deallocate_stack_variable of Localise.error_desc
-
-exception Deallocate_static_memory of Localise.error_desc
-
 exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 
 exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos

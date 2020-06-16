@@ -424,26 +424,6 @@ let desc_condition_always_true_false i cond_str_opt loc =
   {no_desc with descriptions= [description]; tags= !tags}
 
 
-let desc_deallocate_stack_variable var_str proc_name loc =
-  let tags = Tags.create () in
-  Tags.update tags Tags.value var_str ;
-  let description =
-    Format.asprintf "Stack variable %a is freed by a %s" MF.pp_monospaced var_str
-      (call_to_at_line tags proc_name loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-
-let desc_deallocate_static_memory const_str proc_name loc =
-  let tags = Tags.create () in
-  Tags.update tags Tags.value const_str ;
-  let description =
-    Format.asprintf "Constant string %a is freed by a %s" MF.pp_monospaced const_str
-      (call_to_at_line tags proc_name loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-
 let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
   let tags = Tags.create () in
   let in_expression =

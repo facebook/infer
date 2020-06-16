@@ -456,12 +456,6 @@ let deadlock =
     ~user_documentation:[%blob "../../documentation/issues/DEADLOCK.md"]
 
 
-let deallocate_stack_variable =
-  register_from_string ~id:"DEALLOCATE_STACK_VARIABLE" Error Biabduction
-
-
-let deallocate_static_memory = register_from_string ~id:"DEALLOCATE_STATIC_MEMORY" Error Biabduction
-
 let _direct_atomic_property_access =
   register_from_string ~id:"DIRECT_ATOMIC_PROPERTY_ACCESS" Warning Linters
     ~user_documentation:[%blob "../../documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]
