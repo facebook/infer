@@ -898,7 +898,7 @@ devsetup: Makefile.autoconf
 	  printf "$(TERM_INFO)  export BUILD_MODE=dev$(TERM_RESET)\n" >&2; \
 	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=dev' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2; \
 	fi
-	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
+	$(QUIET)PATH='$(ORIG_SHELL_PATH)'; if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Please run:$(TERM_RESET)' >&2; \
