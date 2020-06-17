@@ -24,8 +24,7 @@ let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
 
 
 let capture_buck_args () =
-  ["--show-output"; "-j"; Int.to_string Config.jobs]
-  @ (if Config.keep_going then ["--keep-going"] else [])
+  ("--show-output" :: (if Config.keep_going then ["--keep-going"] else []))
   @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
   @ Buck.config ClangFlavors @ List.rev Config.buck_build_args
 
