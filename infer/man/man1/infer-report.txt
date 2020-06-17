@@ -91,8 +91,6 @@ OPTIONS
              BAD_POINTER_COMPARISON (enabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABDUCTION_MEMORY_LEAK (disabled by default),
-             BIABD_CONDITION_ALWAYS_FALSE (disabled by default),
-             BIABD_CONDITION_ALWAYS_TRUE (disabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),
              BUFFER_OVERRUN_L2 (enabled by default),
              BUFFER_OVERRUN_L3 (enabled by default),

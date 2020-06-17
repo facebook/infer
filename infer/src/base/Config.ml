@@ -172,8 +172,6 @@ let nsnotification_center_checker_backend = false
 
 let property_attributes = "property_attributes"
 
-let report_condition_always_true_in_clang = false
-
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true

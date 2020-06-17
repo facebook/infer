@@ -259,16 +259,6 @@ let biabduction_analysis_stops =
     Biabduction
 
 
-let biabd_condition_always_false =
-  register_from_string ~enabled:false ~hum:"Condition Always False"
-    ~id:"BIABD_CONDITION_ALWAYS_FALSE" Warning Biabduction
-
-
-let biabd_condition_always_true =
-  register_from_string ~enabled:false ~hum:"Condition Always True" ~id:"BIABD_CONDITION_ALWAYS_TRUE"
-    Warning Biabduction
-
-
 let buffer_overrun_l1 =
   register_from_string ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "../../documentation/issues/BUFFER_OVERRUN.md"]

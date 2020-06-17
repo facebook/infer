@@ -1212,39 +1212,10 @@ let rec sym_exec
       execute_load analysis_data id rhs_exp typ loc prop_ |> ret_old_path
   | Sil.Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
       execute_store analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
-  | Sil.Prune (cond, loc, true_branch, ik) ->
+  | Sil.Prune (cond, _, _, _) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
-      let check_condition_always_true_false () =
-        if (not (Language.curr_language_is Clang)) || Config.report_condition_always_true_in_clang
-        then
-          let report_condition_always_true_false i =
-            let skip_loop =
-              match ik with
-              | Sil.Ik_while | Sil.Ik_for ->
-                  not (IntLit.iszero i) (* skip while(1) and for (;1;) *)
-              | Sil.Ik_dowhile ->
-                  true (* skip do..while *)
-              | Sil.Ik_land_lor ->
-                  true (* skip subpart of a condition obtained from compilation of && and || *)
-              | _ ->
-                  false
-            in
-            true_branch && not skip_loop
-          in
-          match Prop.exp_normalize_prop tenv Prop.prop_emp cond with
-          | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
-              let node = AnalysisState.get_node_exn () in
-              let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
-              let exn =
-                Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__)
-              in
-              BiabductionReporting.log_issue_deprecated_using_state current_pdesc err_log exn
-          | _ ->
-              ()
-      in
       if not (Procname.is_java current_pname) then
         check_already_dereferenced analysis_data cond prop__ ;
-      check_condition_always_true_false () ;
       let n_cond, prop = check_arith_norm_exp analysis_data cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
   | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) -> (

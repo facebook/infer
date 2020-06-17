@@ -28,8 +28,6 @@ exception Cannot_star of Logging.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
 
-exception Condition_always_true_false of Localise.error_desc * bool * Logging.ocaml_pos
-
 exception Custom_error of string * IssueType.severity * Localise.error_desc
 
 exception

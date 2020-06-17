@@ -30,8 +30,6 @@ exception Cannot_star of L.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
 
-exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_pos
-
 exception Custom_error of string * IssueType.severity * Localise.error_desc
 
 exception
@@ -114,11 +112,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.cannot_star; description= Localise.no_desc; ocaml_pos= Some ocaml_pos}
   | Class_cast_exception (desc, ocaml_pos) ->
       {issue_type= IssueType.class_cast_exception; description= desc; ocaml_pos= Some ocaml_pos}
-  | Condition_always_true_false (desc, b, ocaml_pos) ->
-      let issue_type =
-        if b then IssueType.biabd_condition_always_true else IssueType.biabd_condition_always_false
-      in
-      {issue_type; description= desc; ocaml_pos= Some ocaml_pos}
   | Custom_error (error_msg, severity, desc) ->
       { issue_type= IssueType.register_from_string ~id:error_msg severity Biabduction
       ; description= desc

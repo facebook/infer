@@ -114,8 +114,6 @@ val relative_path_backtrack : int
 
 val report : bool
 
-val report_condition_always_true_in_clang : bool
-
 val report_custom_error : bool
 
 val report_force_relative_path : bool
