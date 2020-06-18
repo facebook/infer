@@ -16,29 +16,8 @@ report.  The higher the number, the more likely it is to be a false positive.
 
 *   `L3`: The reports that are not included in the above cases.
 
-Other than them, there are some specific-purpose buffer overrun reports as follows.
-
-*   `R2`: An array access is unsafe by *risky* array values from `strndup`.  For example, suppose
-    there is a `strndup` call as follows.
-
-    ```c
-    char* s1 = (char*)malloc(sizeof(char) * size);
-    for (int i = 0; i < size; i++) {
-      s1[i] = 'a';
-    }
-    s1[5] = '\0';
-    char* s2 = strndup(s1, size - 1);
-    s2[size - 1] = 'a';
-    ```
-
-    Even if the second parameter of `strndup` is `size - 1`, the length of `s2` can be shorter than
-    `size` if there is the null character in the middle of `s1`.
-
 *   `S2`: An array access is unsafe by symbolic values.  For example, array size: `[n,n]`, offset
     `[n,+oo]`.
-
-*   `T1`: An array access is unsafe by tainted external values.  This is experimental and will be
-    removed sooner or later.
 
 *   `U5`: An array access is unsafe by unknown values, which are usually from unknown function
     calls.

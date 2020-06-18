@@ -95,12 +95,7 @@ val buffer_overrun_l4 : t
 
 val buffer_overrun_l5 : t
 
-val buffer_overrun_r2 : t
-
 val buffer_overrun_s2 : t
-
-val buffer_overrun_t1 : t
-(** Tainted values is used in array accesses, causing buffer over/underruns *)
 
 val buffer_overrun_u5 : t
 
@@ -227,8 +222,6 @@ val inferbo_alloc_may_be_big : t
 
 val inferbo_alloc_may_be_negative : t
 
-val inferbo_alloc_may_be_tainted : t
-
 val infinite_cost_call : kind:CostKind.t -> t
 
 val inherently_dangerous_function : t
@@ -240,8 +233,6 @@ val integer_overflow_l1 : t
 val integer_overflow_l2 : t
 
 val integer_overflow_l5 : t
-
-val integer_overflow_r2 : t
 
 val integer_overflow_u5 : t
 

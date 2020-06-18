@@ -284,18 +284,8 @@ let buffer_overrun_l5 =
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
-let buffer_overrun_r2 =
-  register_from_string ~id:"BUFFER_OVERRUN_R2" Error BufferOverrunChecker
-    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
-
-
 let buffer_overrun_s2 =
   register_from_string ~id:"BUFFER_OVERRUN_S2" Error BufferOverrunChecker
-    ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
-
-
-let buffer_overrun_t1 =
-  register_from_string ~id:"BUFFER_OVERRUN_T1" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
@@ -648,13 +638,6 @@ let inferbo_alloc_may_be_negative =
     ~user_documentation:"`malloc` *may* be called with a negative value."
 
 
-let inferbo_alloc_may_be_tainted =
-  register_from_string ~id:"INFERBO_ALLOC_MAY_BE_TAINTED" Error BufferOverrunChecker
-    ~user_documentation:
-      "`malloc` *may* be called with a tainted value from external sources.  This is experimental \
-       and will be removed sooner or later."
-
-
 let infinite_cost_call ~kind = register_from_cost_string ~enabled:false "INFINITE_%s" ~kind
 
 let inherently_dangerous_function =
@@ -678,11 +661,6 @@ let integer_overflow_l2 =
 
 let integer_overflow_l5 =
   register_from_string ~enabled:false ~id:"INTEGER_OVERFLOW_L5" Error BufferOverrunChecker
-    ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
-
-
-let integer_overflow_r2 =
-  register_from_string ~id:"INTEGER_OVERFLOW_R2" Error BufferOverrunChecker
     ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 

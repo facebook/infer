@@ -10,9 +10,5 @@ report. The higher the number, the more likely it is to be a false positive.
 
 *   `L5`: The reports that are not included in the above cases.
 
-Other than them, there as some specific-purpose buffer overrun reports as follows.
-
-*   `R2`: A binary integer operation is unsafe by *risky* return values from `strndup`.
-
 *   `U5`: A binary integer operation is unsafe by unknown values, which are usually from unknown
     function calls.

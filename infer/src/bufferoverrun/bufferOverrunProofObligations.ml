@@ -71,54 +71,36 @@ module ConditionTrace = struct
 
   let has_unknown ct = ValTrace.Issue.has_unknown ct.val_traces
 
-  let has_risky ct = ValTrace.Issue.has_risky ct.val_traces
-
   let exists_str ~f ct = ValTrace.Issue.exists_str ~f ct.val_traces
 
-  let check ~issue_type_u5 ~issue_type_r2 : _ t0 -> IssueType.t option =
-   fun ct ->
-    if has_risky ct then Some issue_type_r2 else if has_unknown ct then Some issue_type_u5 else None
+  let check ~issue_type_u5 : _ t0 -> IssueType.t option =
+   fun ct -> if has_unknown ct then Some issue_type_u5 else None
 
 
-  let check_buffer_overrun ct =
-    let issue_type_u5 = IssueType.buffer_overrun_u5 in
-    let issue_type_r2 = IssueType.buffer_overrun_r2 in
-    check ~issue_type_u5 ~issue_type_r2 ct
+  let check_buffer_overrun ct = check ~issue_type_u5:IssueType.buffer_overrun_u5 ct
 
-
-  let check_integer_overflow ct =
-    let issue_type_u5 = IssueType.integer_overflow_u5 in
-    let issue_type_r2 = IssueType.integer_overflow_r2 in
-    check ~issue_type_u5 ~issue_type_r2 ct
-
+  let check_integer_overflow ct = check ~issue_type_u5:IssueType.integer_overflow_u5 ct
 
   let for_summary : _ t0 -> summary_t = fun ct -> {ct with cond_trace= ()}
 end
 
-type report_issue_type =
-  | NotIssue
-  | Issue of IssueType.t
-  | SymbolicIssue
-  | TaintedIssue of IssueType.t
+type report_issue_type = NotIssue | Issue of IssueType.t | SymbolicIssue
 
 type checked_condition = {report_issue_type: report_issue_type; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = {length: ItvPure.t; can_be_zero: bool; taint: Dom.Taint.t} [@@deriving compare]
+  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare]
 
   let get_symbols {length} = ItvPure.get_symbols length
 
-  let pp fmt {length; taint} =
-    F.fprintf fmt "alloc(%a)" ItvPure.pp length ;
-    if Config.bo_debug >= 3 then F.fprintf fmt "(%a)" Dom.Taint.pp taint
-
+  let pp fmt {length} = F.fprintf fmt "alloc(%a)" ItvPure.pp length
 
   let pp_description ~markup fmt {length} =
     F.fprintf fmt "Length: %a" (ItvPure.pp_mark ~markup) length
 
 
-  let make ~can_be_zero ~length ~taint =
-    if ItvPure.is_invalid length then None else Some {length; can_be_zero; taint}
+  let make ~can_be_zero ~length =
+    if ItvPure.is_invalid length then None else Some {length; can_be_zero}
 
 
   let have_similar_bounds x y =
@@ -158,60 +140,50 @@ module AllocSizeCondition = struct
 
   let itv_big = ItvPure.of_int 1_000_000
 
-  let check {length; can_be_zero; taint} =
-    if Config.bo_service_handler_request && Dom.Taint.is_tainted taint then
-      {report_issue_type= TaintedIssue IssueType.inferbo_alloc_may_be_tainted; propagate= false}
-    else
-      match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
-      | `Equal | `RightSubsumesLeft ->
-          if can_be_zero then {report_issue_type= NotIssue; propagate= false}
-          else {report_issue_type= Issue IssueType.inferbo_alloc_is_zero; propagate= false}
-      | `LeftSmallerThanRight ->
-          {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
-      | _ -> (
-          let is_symbolic = ItvPure.is_symbolic length in
-          match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
-          | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
-              {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
-          | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
-              { report_issue_type= Issue IssueType.inferbo_alloc_may_be_negative
-              ; propagate= is_symbolic }
-          | cmp_mone -> (
-            match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
-            | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
-                {report_issue_type= Issue IssueType.inferbo_alloc_is_big; propagate= false}
-            | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
-                {report_issue_type= Issue IssueType.inferbo_alloc_may_be_big; propagate= is_symbolic}
-            | cmp_big ->
-                let propagate =
-                  match (cmp_mone, cmp_big) with
-                  | (`NotComparable | `LeftSubsumesRight), _
-                  | _, (`NotComparable | `LeftSubsumesRight) ->
-                      is_symbolic
-                  | _ ->
-                      false
-                in
-                if propagate then {report_issue_type= SymbolicIssue; propagate}
-                else {report_issue_type= NotIssue; propagate} ) )
+  let check {length; can_be_zero} =
+    match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
+    | `Equal | `RightSubsumesLeft ->
+        if can_be_zero then {report_issue_type= NotIssue; propagate= false}
+        else {report_issue_type= Issue IssueType.inferbo_alloc_is_zero; propagate= false}
+    | `LeftSmallerThanRight ->
+        {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
+    | _ -> (
+        let is_symbolic = ItvPure.is_symbolic length in
+        match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
+        | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
+            {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
+        | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
+            { report_issue_type= Issue IssueType.inferbo_alloc_may_be_negative
+            ; propagate= is_symbolic }
+        | cmp_mone -> (
+          match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
+          | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
+              {report_issue_type= Issue IssueType.inferbo_alloc_is_big; propagate= false}
+          | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
+              {report_issue_type= Issue IssueType.inferbo_alloc_may_be_big; propagate= is_symbolic}
+          | cmp_big ->
+              let propagate =
+                match (cmp_mone, cmp_big) with
+                | (`NotComparable | `LeftSubsumesRight), _ | _, (`NotComparable | `LeftSubsumesRight)
+                  ->
+                    is_symbolic
+                | _ ->
+                    false
+              in
+              if propagate then {report_issue_type= SymbolicIssue; propagate}
+              else {report_issue_type= NotIssue; propagate} ) )
 
 
-  let subst eval_sym eval_taint {length; can_be_zero; taint} =
+  let subst eval_sym {length; can_be_zero} =
     match ItvPure.subst length eval_sym with
     | NonBottom length ->
-        let taint = Dom.Taint.subst taint eval_taint in
-        Some {length; can_be_zero; taint}
+        Some {length; can_be_zero}
     | Bottom ->
         None
 end
 
 module ArrayAccessCondition = struct
-  type t =
-    { offset: ItvPure.t
-    ; idx: ItvPure.t
-    ; size: ItvPure.t
-    ; last_included: bool
-    ; void_ptr: bool
-    ; taint: Dom.Taint.t }
+  type t = {offset: ItvPure.t; idx: ItvPure.t; size: ItvPure.t; last_included: bool; void_ptr: bool}
   [@@deriving compare]
 
   let get_symbols c =
@@ -226,8 +198,7 @@ module ArrayAccessCondition = struct
     in
     let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
-      (ItvPure.make_positive c.size) ;
-    if Config.bo_debug >= 3 then F.fprintf fmt "(%a)" Dom.Taint.pp c.taint
+      (ItvPure.make_positive c.size)
 
 
   let pp_description : markup:bool -> F.formatter -> t -> unit =
@@ -245,18 +216,12 @@ module ArrayAccessCondition = struct
       pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
 
 
-  let make :
-         offset:ItvPure.t
-      -> idx:ItvPure.t
-      -> size:ItvPure.t
-      -> last_included:bool
-      -> taint:Dom.Taint.t
-      -> t option =
-   fun ~offset ~idx ~size ~last_included ~taint ->
+  let make : offset:ItvPure.t -> idx:ItvPure.t -> size:ItvPure.t -> last_included:bool -> t option =
+   fun ~offset ~idx ~size ~last_included ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
     else
       let void_ptr = ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb size in
-      Some {offset; idx; size; last_included; void_ptr; taint}
+      Some {offset; idx; size; last_included; void_ptr}
 
 
   let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; last_included= lcol}
@@ -374,9 +339,6 @@ module ArrayAccessCondition = struct
     (* il >= 0 and iu < sl, definitely not an error *)
     if Boolean.is_true not_overrun && Boolean.is_true not_underrun then
       {report_issue_type= NotIssue; propagate= false} (* iu < 0 or il >= su, definitely an error *)
-    else if Config.bo_service_handler_request && Dom.Taint.is_tainted c.taint then
-      {report_issue_type= Issue IssueType.buffer_overrun_t1; propagate= false}
-      (* tainted values are used in array accesses *)
     else if Boolean.is_false not_overrun || Boolean.is_false not_underrun then
       {report_issue_type= Issue IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
@@ -401,8 +363,8 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst : Bound.eval_sym -> Dom.Taint.eval_taint -> t -> t option =
-   fun eval_sym eval_taint c ->
+  let subst : Bound.eval_sym -> t -> t option =
+   fun eval_sym c ->
     match
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
     with
@@ -411,8 +373,7 @@ module ArrayAccessCondition = struct
           c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
           || ItvPure.has_void_ptr_symb size
         in
-        let taint = Dom.Taint.subst c.taint eval_taint in
-        Some {c with offset; idx; size; void_ptr; taint}
+        Some {c with offset; idx; size; void_ptr}
     | _ ->
         None
 end
@@ -625,11 +586,11 @@ module Condition = struct
         BinaryOperationCondition.get_symbols c
 
 
-  let subst eval_sym eval_taint = function
+  let subst eval_sym = function
     | AllocSize c ->
-        AllocSizeCondition.subst eval_sym eval_taint c |> make_alloc_size
+        AllocSizeCondition.subst eval_sym c |> make_alloc_size
     | ArrayAccess c ->
-        ArrayAccessCondition.subst eval_sym eval_taint c |> make_array_access
+        ArrayAccessCondition.subst eval_sym c |> make_array_access
     | BinaryOperation c ->
         BinaryOperationCondition.subst eval_sym c |> make_binary_operation
 
@@ -755,8 +716,8 @@ module ConditionWithTrace = struct
         call_site
     with
     | `Reachable reachability -> (
-        let {Dom.eval_sym; eval_taint; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
-        match Condition.subst eval_sym eval_taint cwt.cond with
+        let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
+        match Condition.subst eval_sym cwt.cond with
         | None ->
             None
         | Some cond ->
@@ -795,7 +756,7 @@ module ConditionWithTrace = struct
   let check cwt =
     let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond cwt.trace in
     match report_issue_type with
-    | NotIssue | SymbolicIssue | TaintedIssue _ ->
+    | NotIssue | SymbolicIssue ->
         checked
     | Issue issue_type ->
         let issue_type = set_u5 cwt issue_type in
@@ -816,7 +777,7 @@ module ConditionWithTrace = struct
     match checked.report_issue_type with
     | NotIssue | SymbolicIssue ->
         ()
-    | TaintedIssue issue_type | Issue issue_type ->
+    | Issue issue_type ->
         report cwt.cond cwt.trace issue_type
 
 
@@ -828,7 +789,7 @@ module ConditionWithTrace = struct
           match report_issue_type with
           | NotIssue ->
               assert false
-          | SymbolicIssue | TaintedIssue _ ->
+          | SymbolicIssue ->
               reported
           | Issue issue_type ->
               Some (Reported.make issue_type)
@@ -911,17 +872,17 @@ module ConditionSet = struct
         join_one condset (check_one cwt)
 
 
-  let add_array_access location ~offset ~idx ~size ~last_included ~taint ~idx_traces ~arr_traces
+  let add_array_access location ~offset ~idx ~size ~last_included ~idx_traces ~arr_traces
       ~latest_prune condset =
-    ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~taint
+    ArrayAccessCondition.make ~offset ~idx ~size ~last_included
     |> Condition.make_array_access
     |> add_opt location
          (ValTrace.Issue.(binary location ArrayAccess) idx_traces arr_traces)
          latest_prune condset
 
 
-  let add_alloc_size location ~can_be_zero ~length ~taint val_traces latest_prune condset =
-    AllocSizeCondition.make ~can_be_zero ~length ~taint
+  let add_alloc_size location ~can_be_zero ~length val_traces latest_prune condset =
+    AllocSizeCondition.make ~can_be_zero ~length
     |> Condition.make_alloc_size
     |> add_opt location (ValTrace.Issue.alloc location val_traces) latest_prune condset
 

@@ -74,10 +74,6 @@ DIRECT_TESTS += \
   cpp_starvation \
   cpp_uninit \
 
-ifeq ($(IS_FACEBOOK_TREE),yes)
-DIRECT_TESTS += cpp_fb-taint
-endif
-
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += \
   buck_blacklist \

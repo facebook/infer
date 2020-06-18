@@ -63,8 +63,6 @@ module SymbolPath : sig
 
   val is_this : partial -> bool
 
-  val is_request : partial -> bool
-
   val get_pvar : partial -> Pvar.t option
 
   val represents_multiple_values : partial -> bool
@@ -134,5 +132,3 @@ module SymbolMap : sig
 
   val for_all2 : f:(key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool
 end
-
-module SymbolPathSet : PrettyPrintable.PPSet with type elt = SymbolPath.partial

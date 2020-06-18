@@ -33,32 +33,11 @@ module ModeledRange : sig
   val of_modeled_function : Procname.t -> Location.t -> Bounds.Bound.t -> t
 end
 
-module type TaintS = sig
-  include AbstractDomain.WithBottom
-
-  val compare : t -> t -> int
-
-  val pp : Format.formatter -> t -> unit
-
-  val is_tainted : t -> bool
-
-  val param_of_path : Symb.SymbolPath.partial -> t
-
-  val tainted_of_path : Symb.SymbolPath.partial -> t
-
-  type eval_taint = Symb.SymbolPath.partial -> t
-
-  val subst : t -> eval_taint -> t
-end
-
-module Taint : TaintS
-
 (** type for on-demand symbol evaluation in Inferbo *)
 type eval_sym_trace =
   { eval_sym: Bounds.Bound.eval_sym  (** evaluating symbol *)
   ; trace_of_sym: Symb.Symbol.t -> BufferOverrunTrace.Set.t  (** getting traces of symbol *)
-  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *)
-  ; eval_taint: Taint.eval_taint  (** evaluating taint of path *) }
+  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *) }
 
 module Val : sig
   type t =
@@ -66,7 +45,6 @@ module Val : sig
     ; itv_thresholds: ItvThresholds.t
     ; itv_updated_by: ItvUpdatedBy.t
     ; modeled_range: ModeledRange.t
-    ; taint: Taint.t
     ; powloc: AbsLoc.PowLoc.t  (** Simple pointers *)
     ; arrayblk: ArrayBlk.t  (** Array blocks *)
     ; traces: BufferOverrunTrace.Set.t }
@@ -95,7 +73,7 @@ module Val : sig
 
   val of_int_lit : IntLit.t -> t
 
-  val of_itv : ?traces:BufferOverrunTrace.Set.t -> ?taint:Taint.t -> Itv.t -> t
+  val of_itv : ?traces:BufferOverrunTrace.Set.t -> Itv.t -> t
 
   val of_literal_string : Typ.IntegerWidths.t -> string -> t
 
@@ -134,8 +112,6 @@ module Val : sig
   val get_modeled_range : t -> ModeledRange.t
 
   val get_pow_loc : t -> AbsLoc.PowLoc.t
-
-  val get_taint : t -> Taint.t
 
   val get_traces : t -> BufferOverrunTrace.Set.t
 

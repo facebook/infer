@@ -10,8 +10,6 @@ open AbsLoc
 module F = Format
 
 module BoTrace = struct
-  type lib_fun = Snprintf | Strndup | Vsnprintf [@@deriving compare]
-
   type final = UnknownFrom of Procname.t option [@@deriving compare]
 
   type elem =
@@ -21,7 +19,7 @@ module BoTrace = struct
     | JavaIntDecleration
     | Parameter of Loc.t
     | SetArraySize
-    | Through of {risky_fun: lib_fun option}
+    | Through
   [@@deriving compare]
 
   type t =
@@ -30,12 +28,6 @@ module BoTrace = struct
     | Elem of {location: Location.t; length: int; kind: elem; from: t}
     | Call of {location: Location.t; length: int; caller: t; callee: t}
   [@@deriving compare]
-
-  let snprintf = Snprintf
-
-  let strndup = Strndup
-
-  let vsnprintf = Vsnprintf
 
   let length = function Empty -> 0 | Final _ -> 1 | Elem {length} | Call {length} -> length
 
@@ -46,8 +38,6 @@ module BoTrace = struct
   let add_elem location kind from = Elem {location; length= length from + 1; from; kind}
 
   let singleton location kind = add_elem location kind Empty
-
-  let through ~risky_fun = Through {risky_fun}
 
   let call location ~caller ~callee =
     Call {location; length= 1 + length caller + length callee; caller; callee}
@@ -61,15 +51,6 @@ module BoTrace = struct
 
 
   let pp_location = Location.pp_file_pos
-
-  let pp_lib_fun f = function
-    | Snprintf ->
-        F.fprintf f "snprintf"
-    | Strndup ->
-        F.fprintf f "strndup"
-    | Vsnprintf ->
-        F.fprintf f "vsnprintf"
-
 
   let pp_final f = function
     | UnknownFrom pname_opt ->
@@ -89,9 +70,8 @@ module BoTrace = struct
         F.fprintf f "Parameter `%a`" Loc.pp loc
     | SetArraySize ->
         F.pp_print_string f "SetArraySize"
-    | Through {risky_fun} ->
-        F.pp_print_string f "Through" ;
-        if Option.is_some risky_fun then F.pp_print_string f " RiskyLibCall"
+    | Through ->
+        F.pp_print_string f "Through"
 
 
   let rec pp f = function
@@ -119,22 +99,6 @@ module BoTrace = struct
 
 
   let has_unknown = final_exists ~f:(function UnknownFrom _ -> true)
-
-  let elem_has_risky = function
-    | JavaIntDecleration | ArrayDeclaration | Assign _ | Global _ | Parameter _ | SetArraySize ->
-        false
-    | Through {risky_fun} ->
-        Option.is_some risky_fun
-
-
-  let rec has_risky = function
-    | Empty | Final _ ->
-        false
-    | Elem {kind; from} ->
-        elem_has_risky kind || has_risky from
-    | Call {caller; callee} ->
-        has_risky caller || has_risky callee
-
 
   let exists_str ~f =
     let rec helper = function
@@ -173,12 +137,8 @@ module BoTrace = struct
         if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
     | SetArraySize ->
         "Set array size"
-    | Through {risky_fun} -> (
-      match risky_fun with
-      | None ->
-          "Through"
-      | Some f ->
-          F.asprintf "Risky value from: %a" pp_lib_fun f )
+    | Through ->
+        "Through"
 
 
   let rec make_err_trace depth t tail =
@@ -232,8 +192,6 @@ module Set = struct
 
   let has_unknown t = exists BoTrace.has_unknown t
 
-  let has_risky t = exists BoTrace.has_risky t
-
   let exists_str ~f t = exists (BoTrace.exists_str ~f) t
 
   let make_err_trace depth set tail =
@@ -282,8 +240,6 @@ module Issue = struct
 
 
   let has_unknown = has_common ~f:Set.has_unknown
-
-  let has_risky = has_common ~f:Set.has_risky
 
   let exists_str ~f = has_common ~f:(Set.exists_str ~f)
 

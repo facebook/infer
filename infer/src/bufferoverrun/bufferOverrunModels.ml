@@ -83,11 +83,9 @@ let check_alloc_size ~can_be_zero size_exp {location; integer_type_widths} mem c
   | Bottom ->
       cond_set
   | NonBottom length ->
-      let taint = Dom.Val.get_taint v_length in
       let traces = Dom.Val.get_traces v_length in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      PO.ConditionSet.add_alloc_size location ~can_be_zero ~length ~taint traces latest_prune
-        cond_set
+      PO.ConditionSet.add_alloc_size location ~can_be_zero ~length traces latest_prune cond_set
 
 
 let fgets str_exp num_exp =
@@ -319,7 +317,7 @@ let strndup src_exp length_exp =
       in
       let traces =
         Trace.Set.join (Dom.Val.get_traces src_strlen) (Dom.Val.get_traces length)
-        |> Trace.Set.add_elem location (Trace.through ~risky_fun:(Some Trace.strndup))
+        |> Trace.Set.add_elem location Trace.Through
         |> Trace.Set.add_elem location ArrayDeclaration
       in
       Dom.Val.of_c_array_alloc allocsite
@@ -360,16 +358,6 @@ let id exp =
 
 let by_value =
   let exec ~value _ ~ret:(ret_id, _) mem = model_by_value value ret_id mem in
-  fun value -> {exec= exec ~value; check= no_check}
-
-
-let by_risky_value_from lib_fun =
-  let exec ~value {location} ~ret:(ret_id, _) mem =
-    let traces =
-      Trace.(Set.add_elem location (through ~risky_fun:(Some lib_fun))) (Dom.Val.get_traces value)
-    in
-    model_by_value {value with traces} ret_id mem
-  in
   fun value -> {exec= exec ~value; check= no_check}
 
 
@@ -427,10 +415,6 @@ let set_array_length {exp; typ} length_exp =
   and check = check_alloc_size ~can_be_zero:false length_exp in
   {exec; check}
 
-
-let snprintf = by_risky_value_from Trace.snprintf Dom.Val.Itv.nat
-
-let vsnprintf = by_risky_value_from Trace.vsnprintf Dom.Val.Itv.nat
 
 let copy array_v ret_id mem =
   let dest_loc = Loc.of_id ret_id |> PowLoc.singleton in
@@ -1426,13 +1410,13 @@ module Call = struct
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
-      ; -"snprintf" <>--> snprintf
+      ; -"snprintf" <>--> by_value Dom.Val.Itv.nat
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strlen" <>$ capt_exp $!--> strlen
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
-      ; -"vsnprintf" <>--> vsnprintf
+      ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
         -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array

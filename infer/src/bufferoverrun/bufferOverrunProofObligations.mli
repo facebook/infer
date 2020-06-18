@@ -38,7 +38,6 @@ module ConditionSet : sig
     -> idx:ItvPure.t
     -> size:ItvPure.t
     -> last_included:bool
-    -> taint:BufferOverrunDomain.Taint.t
     -> idx_traces:BufferOverrunTrace.Set.t
     -> arr_traces:BufferOverrunTrace.Set.t
     -> latest_prune:BufferOverrunDomain.LatestPrune.t
@@ -49,7 +48,6 @@ module ConditionSet : sig
        Location.t
     -> can_be_zero:bool
     -> length:ItvPure.t
-    -> taint:BufferOverrunDomain.Taint.t
     -> BufferOverrunTrace.Set.t
     -> BufferOverrunDomain.LatestPrune.t
     -> checked_t

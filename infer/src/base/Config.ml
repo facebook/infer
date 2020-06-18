@@ -657,12 +657,6 @@ and bo_field_depth_limit =
     "Limit of field depth of abstract location in buffer-overrun checker"
 
 
-and bo_service_handler_request =
-  CLOpt.mk_bool ~long:"bo-service-handler-request"
-    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
-    "[EXPERIMENTAL] Use taint flow of service handler requests in buffer overflow checking."
-
-
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -2626,8 +2620,6 @@ and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
 
 and bo_field_depth_limit = !bo_field_depth_limit
-
-and bo_service_handler_request = !bo_service_handler_request
 
 and buck = !buck
 

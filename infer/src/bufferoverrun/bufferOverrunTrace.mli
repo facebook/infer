@@ -7,15 +7,6 @@
 
 open! IStd
 
-(** Library function names that may be risky *)
-type lib_fun = Snprintf | Strndup | Vsnprintf
-
-val snprintf : lib_fun
-
-val strndup : lib_fun
-
-val vsnprintf : lib_fun
-
 (** Final unknown function in trace *)
 type final = UnknownFrom of Procname.t option
 
@@ -27,9 +18,7 @@ type elem =
   | JavaIntDecleration
   | Parameter of AbsLoc.Loc.t
   | SetArraySize
-  | Through of {risky_fun: lib_fun option}
-
-val through : risky_fun:lib_fun option -> elem
+  | Through
 
 module Set : sig
   include AbstractDomain.WithBottom
@@ -59,9 +48,6 @@ module Issue : sig
 
   val call : Location.t -> Set.t -> t -> t
   (** Merge caller's trace set and callee's issue, i.e., [call location caller callee] *)
-
-  val has_risky : t -> bool
-  (** Check if the issue trace includes risky function calls by [Through] *)
 
   val has_unknown : t -> bool
   (** Check if the issue trace includes unknown function calls *)
