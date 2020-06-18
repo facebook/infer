@@ -238,7 +238,10 @@ let config_unsafe checker =
       ; activates= [] }
   | LoopHoisting ->
       { id= "loop-hoisting"
-      ; kind= UserFacing {title= "Loop Hoisting"; markdown_body= ""}
+      ; kind=
+          UserFacing
+            { title= "Loop Hoisting"
+            ; markdown_body= [%blob "../../documentation/checkers/LoopHoisting.md"] }
       ; support= supports_clang_and_java
       ; short_documentation=
           "Detect opportunities to hoist function calls that are invariant outside of loop bodies \

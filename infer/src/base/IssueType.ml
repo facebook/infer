@@ -700,7 +700,10 @@ let internal_error =
   register_from_string ~visibility:Developer ~id:"Internal_error" Error Biabduction
 
 
-let invariant_call = register_from_string ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
+let invariant_call =
+  register_from_string ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
+    ~user_documentation:[%blob "../../documentation/issues/INVARIANT_CALL.md"]
+
 
 let javascript_injection =
   register_from_string ~id:"JAVASCRIPT_INJECTION" Error Quandary
@@ -738,6 +741,7 @@ let logging_private_data =
 
 let expensive_loop_invariant_call =
   register_from_string ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
+    ~user_documentation:[%blob "../../documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
 
 
 let memory_leak =
