@@ -755,7 +755,8 @@ let missing_fld =
 
 
 let missing_required_prop =
-  register_from_string ~id:"MISSING_REQUIRED_PROP" Error LithoRequiredProps
+  register_from_string ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error
+    LithoRequiredProps ~user_documentation:"As explained by the analysis."
 
 
 let mixed_self_weakself =

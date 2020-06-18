@@ -185,7 +185,7 @@ OPTIONS
 
        --litho-required-props
            Activates: checker litho-required-props: Checks that all
-           non-option `@Prop`s have been specified when constructing Litho
+           non-optional `@Prop`s have been specified when constructing Litho
            components. (Conversely: --no-litho-required-props)
 
        --litho-required-props-only

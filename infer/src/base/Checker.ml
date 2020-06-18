@@ -220,10 +220,13 @@ let config_unsafe checker =
       ; activates= [] }
   | LithoRequiredProps ->
       { id= "litho-required-props"
-      ; kind= UserFacing {title= "Litho \"Required Props\""; markdown_body= ""}
+      ; kind=
+          UserFacing
+            { title= "Litho \"Required Props\""
+            ; markdown_body= [%blob "../../documentation/checkers/LithoRequiredProps.md"] }
       ; support= supports_java
       ; short_documentation=
-          "Checks that all non-option `@Prop`s have been specified when constructing Litho \
+          "Checks that all non-optional `@Prop`s have been specified when constructing Litho \
            components."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
