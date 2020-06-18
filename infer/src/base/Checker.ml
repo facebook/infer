@@ -186,7 +186,9 @@ let config_unsafe checker =
       ; activates= [] }
   | Impurity ->
       { id= "impurity"
-      ; kind= Internal
+      ; kind=
+          UserFacing
+            {title= "Impurity"; markdown_body= [%blob "../../documentation/checkers/Impurity.md"]}
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
           "Detects functions with potential side-effects. Same as \"purity\", but implemented on \
@@ -278,7 +280,9 @@ let config_unsafe checker =
       ; activates= [] }
   | Purity ->
       { id= "purity"
-      ; kind= Internal
+      ; kind=
+          UserFacing
+            {title= "Purity"; markdown_body= [%blob "../../documentation/checkers/Purity.md"]}
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
           "Detects pure (side-effect-free) functions. A different implementation of \"impurity\"."

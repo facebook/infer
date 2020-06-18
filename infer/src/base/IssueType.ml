@@ -613,7 +613,10 @@ let guardedby_violation_racerd =
     ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
-let impure_function = register_from_string ~id:"IMPURE_FUNCTION" Error Impurity
+let impure_function =
+  register_from_string ~id:"IMPURE_FUNCTION" Error Impurity
+    ~user_documentation:[%blob "../../documentation/issues/IMPURE_FUNCTION.md"]
+
 
 let inefficient_keyset_iterator =
   register_from_string ~id:"INEFFICIENT_KEYSET_ITERATOR" Error InefficientKeysetIterator
@@ -811,7 +814,10 @@ let pulse_memory_leak =
     ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
 
-let pure_function = register_from_string ~id:"PURE_FUNCTION" Error Purity
+let pure_function =
+  register_from_string ~id:"PURE_FUNCTION" Error Purity
+    ~user_documentation:[%blob "../../documentation/issues/PURE_FUNCTION.md"]
+
 
 let quandary_taint_error =
   register_from_string ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
