@@ -59,8 +59,6 @@ exception Premature_nil_termination of Localise.error_desc * L.ocaml_pos
 
 exception Null_dereference of Localise.error_desc * L.ocaml_pos
 
-exception Null_test_after_dereference of Localise.error_desc * L.ocaml_pos
-
 exception Parameter_not_null_checked of Localise.error_desc * L.ocaml_pos
 
 exception Pointer_size_mismatch of Localise.error_desc * L.ocaml_pos
@@ -130,10 +128,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.field_not_null_checked; description= desc; ocaml_pos= Some ocaml_pos}
   | Null_dereference (desc, ocaml_pos) ->
       {issue_type= IssueType.null_dereference; description= desc; ocaml_pos= Some ocaml_pos}
-  | Null_test_after_dereference (desc, ocaml_pos) ->
-      { issue_type= IssueType.null_test_after_dereference
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos }
   | Pointer_size_mismatch (desc, ocaml_pos) ->
       {issue_type= IssueType.pointer_size_mismatch; description= desc; ocaml_pos= Some ocaml_pos}
   | Inherently_dangerous_function desc ->

@@ -424,63 +424,6 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
       (Prop.exp_normalize_prop tenv prop exp, prop')
 
 
-(** Check if [cond] is testing for NULL a pointer already dereferenced *)
-let check_already_dereferenced {InterproceduralAnalysis.proc_desc; err_log; tenv} cond prop =
-  let find_hpred lhs =
-    List.find
-      ~f:(function Predicates.Hpointsto (e, _, _) -> Exp.equal e lhs | _ -> false)
-      prop.Prop.sigma
-  in
-  let rec is_check_zero = function
-    | Exp.Var id ->
-        Some id
-    | Exp.UnOp (Unop.LNot, e, _) ->
-        is_check_zero e
-    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Const (Const.Cint i), Exp.Var id)
-    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Var id, Exp.Const (Const.Cint i))
-      when IntLit.iszero i ->
-        Some id
-    (* These two patterns appear frequently in Prune nodes *)
-    | Exp.BinOp
-        ( (Binop.Eq | Binop.Ne)
-        , Exp.BinOp (Binop.Eq, Exp.Var id, Exp.Const (Const.Cint i))
-        , Exp.Const (Const.Cint j) )
-    | Exp.BinOp
-        ( (Binop.Eq | Binop.Ne)
-        , Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), Exp.Var id)
-        , Exp.Const (Const.Cint j) )
-      when IntLit.iszero i && IntLit.iszero j ->
-        Some id
-    | _ ->
-        None
-  in
-  let dereferenced_line =
-    match is_check_zero cond with
-    | Some id -> (
-      match find_hpred (Prop.exp_normalize_prop tenv prop (Exp.Var id)) with
-      | Some (Predicates.Hpointsto (_, se, _)) -> (
-        match Tabulation.find_dereference_without_null_check_in_sexp se with
-        | Some n ->
-            Some (id, n)
-        | None ->
-            None )
-      | _ ->
-          None )
-    | None ->
-        None
-  in
-  match dereferenced_line with
-  | Some (id, (n, _)) ->
-      let desc =
-        Errdesc.explain_null_test_after_dereference tenv (Exp.Var id)
-          (AnalysisState.get_node_exn ()) n (AnalysisState.get_loc_exn ())
-      in
-      let exn = Exceptions.Null_test_after_dereference (desc, __POS__) in
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
-  | None ->
-      ()
-
-
 let method_exists right_proc_name methods =
   if Language.curr_language_is Java then
     List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
@@ -1154,7 +1097,6 @@ let rec sym_exec
     ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
     analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
     (Prop.normal Prop.t * Paths.Path.t) list =
-  let current_pname = Procdesc.get_proc_name current_pdesc in
   AnalysisState.set_instr instr_ ;
   (* mark instruction last seen *)
   State.set_prop_tenv_pdesc prop_ tenv current_pdesc ;
@@ -1214,8 +1156,6 @@ let rec sym_exec
       execute_store analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
   | Sil.Prune (cond, _, _, _) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
-      if not (Procname.is_java current_pname) then
-        check_already_dereferenced analysis_data cond prop__ ;
       let n_cond, prop = check_arith_norm_exp analysis_data cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
   | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) -> (

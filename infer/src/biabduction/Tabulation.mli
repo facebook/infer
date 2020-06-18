@@ -13,11 +13,6 @@ open! IStd
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
 (** Remove constant string or class from a prop *)
 
-val find_dereference_without_null_check_in_sexp :
-  Predicates.strexp -> (int * PredSymb.path_pos) option
-(** Check whether a sexp contains a dereference without null check, and return the line number and
-    path position *)
-
 val create_cast_exception :
   Tenv.t -> Logging.ocaml_pos -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
 (** raise a cast exception *)

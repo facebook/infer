@@ -1112,15 +1112,5 @@ let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =
   Localise.desc_unary_minus_applied_to_unsigned_expression exp_str_opt typ_str loc
 
 
-(** explain a test for NULL of a dereferenced pointer *)
-let explain_null_test_after_dereference tenv exp node line loc =
-  match exp_rv_dexp tenv node exp with
-  | Some de ->
-      let expr_str = DExp.to_string de in
-      Localise.desc_null_test_after_dereference expr_str line loc
-  | None ->
-      Localise.no_desc
-
-
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc

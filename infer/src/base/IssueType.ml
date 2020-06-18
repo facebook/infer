@@ -775,10 +775,6 @@ let null_dereference =
     ~user_documentation:[%blob "../../documentation/issues/NULL_DEREFERENCE.md"]
 
 
-let null_test_after_dereference =
-  register_from_string ~enabled:false ~id:"NULL_TEST_AFTER_DEREFERENCE" Warning Biabduction
-
-
 let nullptr_dereference =
   register_from_string ~enabled:false ~id:"NULLPTR_DEREFERENCE" Error Pulse
     ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."

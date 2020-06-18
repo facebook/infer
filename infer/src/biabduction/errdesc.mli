@@ -87,10 +87,6 @@ val explain_leak :
     variable nullify, blame the variable. If it is an abstraction, blame any variable nullify at the
     current node. If there is an alloc attribute, print the function call and line number. *)
 
-val explain_null_test_after_dereference :
-  Tenv.t -> Exp.t -> Procdesc.Node.t -> int -> Location.t -> Localise.error_desc
-(** explain a test for NULL of a dereferenced pointer *)
-
 val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
 (** warn at the given location *)
 

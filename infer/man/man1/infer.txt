@@ -481,7 +481,6 @@ OPTIONS
              Missing_fld (enabled by default),
              NULLPTR_DEREFERENCE (disabled by default),
              NULL_DEREFERENCE (enabled by default),
-             NULL_TEST_AFTER_DEREFERENCE (disabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
              POINTER_SIZE_MISMATCH (enabled by default),
              POINTER_TO_CONST_OBJC_CLASS (enabled by default),

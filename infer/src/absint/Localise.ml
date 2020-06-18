@@ -552,16 +552,6 @@ let desc_precondition_not_met kind proc_name loc =
   {no_desc with descriptions= kind_str @ ["in " ^ call_to_at_line tags proc_name loc]; tags= !tags}
 
 
-let desc_null_test_after_dereference expr_str line loc =
-  let tags = Tags.create () in
-  Tags.update tags Tags.value expr_str ;
-  let description =
-    Format.asprintf "Pointer %a was dereferenced at line %d and is tested for null %s"
-      MF.pp_monospaced expr_str line (at_line tags loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-
 let desc_retain_cycle cycle_str loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:" ;
   let tags = Tags.create () in

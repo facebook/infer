@@ -283,8 +283,6 @@ val mutable_local_variable_in_component_file : t
 
 val null_dereference : t
 
-val null_test_after_dereference : t
-
 val nullptr_dereference : t
 
 val parameter_not_null_checked : t

@@ -31,7 +31,6 @@ codetoanalyze/c/biabduction/memory_leaks/cleanup_attribute.c, FP_cleanup_malloc_
 codetoanalyze/c/biabduction/memory_leaks/cleanup_attribute.c, FP_cleanup_string_good, 2, BIABDUCTION_MEMORY_LEAK, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, common_realloc_leak, 3, BIABDUCTION_MEMORY_LEAK, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, common_realloc_leak2, 3, BIABDUCTION_MEMORY_LEAK, no_bucket
-codetoanalyze/c/biabduction/memory_leaks/test.c, common_realloc_leak2, 5, NULL_TEST_AFTER_DEREFERENCE, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, conditional_last_instruction, 2, BIABDUCTION_MEMORY_LEAK, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, BIABDUCTION_MEMORY_LEAK, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket
@@ -106,7 +105,6 @@ codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, unreach
 codetoanalyze/c/biabduction/null_dereference/short.c, ternary2_bad, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/short.c, ternary4_bad, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/short.c, ternary7_bad, 2, NULL_DEREFERENCE, B1
-codetoanalyze/c/biabduction/null_test_after_deref/basic.c, null_test_deref_basic_bad, 2, NULL_TEST_AFTER_DEREFERENCE, no_bucket
 codetoanalyze/c/biabduction/resource_leaks/leak.c, fileNotClosed, 5, RESOURCE_LEAK, no_bucket
 codetoanalyze/c/biabduction/resource_leaks/leak.c, socketNotClosed, 5, RESOURCE_LEAK, no_bucket
 codetoanalyze/c/biabduction/sizeof/sizeof_706.c, sentinel_bad, 0, DIVIDE_BY_ZERO, no_bucket

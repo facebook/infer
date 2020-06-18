@@ -122,8 +122,6 @@ val desc_leak :
   -> string option
   -> error_desc
 
-val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
-
 val desc_custom_error : Location.t -> error_desc
 (** Create human-readable error description for assertion failures *)
 
