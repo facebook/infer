@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Tue Jun 16 10:14:14 2020 -->
+<!-- CreationDate: Fri Jun 19 10:50:59 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -234,15 +234,6 @@ checker (0-4)</p>
 
 <p style="margin-left:17%;">Limit of field depth of
 abstract location in buffer-overrun checker</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---bo-service-handler-request</b></p>
-
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL] Use
-taint flow of service handler requests in buffer overflow
-checking. (Conversely:
-<b>--no-bo-service-handler-request</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -663,16 +654,12 @@ Assert_failure (enabled by default), <br>
 BAD_POINTER_COMPARISON (enabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
-BIABD_CONDITION_ALWAYS_FALSE (disabled by default), <br>
-BIABD_CONDITION_ALWAYS_TRUE (disabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
 BUFFER_OVERRUN_L2 (enabled by default), <br>
 BUFFER_OVERRUN_L3 (enabled by default), <br>
 BUFFER_OVERRUN_L4 (disabled by default), <br>
 BUFFER_OVERRUN_L5 (disabled by default), <br>
-BUFFER_OVERRUN_R2 (enabled by default), <br>
 BUFFER_OVERRUN_S2 (enabled by default), <br>
-BUFFER_OVERRUN_T1 (enabled by default), <br>
 BUFFER_OVERRUN_U5 (disabled by default), <br>
 Bad_footprint (enabled by default), <br>
 CAPTURED_STRONG_SELF (enabled by default), <br>
@@ -710,8 +697,6 @@ DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
-DEALLOCATE_STACK_VARIABLE (enabled by default), <br>
-DEALLOCATE_STATIC_MEMORY (enabled by default), <br>
 DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
 DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by
 default), <br>
@@ -721,8 +706,6 @@ EMPTY_VECTOR_ACCESS (enabled by default), <br>
 ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
 <br>
 ERADICATE_CONDITION_REDUNDANT (enabled by default), <br>
-ERADICATE_CONDITION_REDUNDANT_NONNULL (enabled by default),
-<br>
 ERADICATE_FIELD_NOT_INITIALIZED (enabled by default), <br>
 ERADICATE_FIELD_NOT_NULLABLE (enabled by default), <br>
 ERADICATE_FIELD_OVER_ANNOTATED (enabled by default), <br>
@@ -768,14 +751,12 @@ INFERBO_ALLOC_IS_NEGATIVE (enabled by default), <br>
 INFERBO_ALLOC_IS_ZERO (enabled by default), <br>
 INFERBO_ALLOC_MAY_BE_BIG (enabled by default), <br>
 INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default), <br>
-INFERBO_ALLOC_MAY_BE_TAINTED (enabled by default), <br>
 INFINITE_EXECUTION_TIME (disabled by default), <br>
 INHERENTLY_DANGEROUS_FUNCTION (enabled by default), <br>
 INSECURE_INTENT_HANDLING (enabled by default), <br>
 INTEGER_OVERFLOW_L1 (enabled by default), <br>
 INTEGER_OVERFLOW_L2 (enabled by default), <br>
 INTEGER_OVERFLOW_L5 (disabled by default), <br>
-INTEGER_OVERFLOW_R2 (enabled by default), <br>
 INTEGER_OVERFLOW_U5 (disabled by default), <br>
 INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
@@ -798,7 +779,6 @@ default), <br>
 Missing_fld (enabled by default), <br>
 NULLPTR_DEREFERENCE (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
-NULL_TEST_AFTER_DEREFERENCE (disabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
 POINTER_SIZE_MISMATCH (enabled by default), <br>
 POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
@@ -1280,7 +1260,7 @@ issue types that infer might report. (Conversely:
 --litho-required-props</b></p>
 
 <p style="margin-left:17%;">Activates: checker
-litho-required-props: Checks that all non-option
+litho-required-props: Checks that all non-optional
 &rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>

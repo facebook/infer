@@ -16,25 +16,25 @@
 <link rel="stylesheet" href="/styles.20899050.css">
 
 
-<link rel="preload" href="/styles.1fc5de91.js" as="script">
+<link rel="preload" href="/styles.b23260d3.js" as="script">
 
-<link rel="preload" href="/runtime~main.226321d8.js" as="script">
+<link rel="preload" href="/runtime~main.942eabc8.js" as="script">
 
-<link rel="preload" href="/main.1214037c.js" as="script">
+<link rel="preload" href="/main.98c8fe6e.js" as="script">
 
-<link rel="preload" href="/1.ce2800d3.js" as="script">
+<link rel="preload" href="/1.20d059ed.js" as="script">
 
-<link rel="preload" href="/2.00717d49.js" as="script">
+<link rel="preload" href="/2.89c6efdb.js" as="script">
 
-<link rel="preload" href="/3.02b9acd7.js" as="script">
+<link rel="preload" href="/3.b7ac8c1e.js" as="script">
 
-<link rel="preload" href="/1be78505.43900ffe.js" as="script">
+<link rel="preload" href="/1be78505.09fdef9e.js" as="script">
 
-<link rel="preload" href="/20ac7829.dd9db384.js" as="script">
+<link rel="preload" href="/20ac7829.14db31e9.js" as="script">
 
-<link rel="preload" href="/17896441.5c3ae9f3.js" as="script">
+<link rel="preload" href="/17896441.e17cd408.js" as="script">
 
-<link rel="preload" href="/bff86c5f.e4bb9dd2.js" as="script">
+<link rel="preload" href="/bff86c5f.6147f4ef.js" as="script">
 
 </head>
 <body>
@@ -54,25 +54,25 @@ as in this example:</p><div class="mdxCodeBlock_iHAB"><div class="codeBlockConte
 nullable value without null check:</p><div class="mdxCodeBlock_iHAB"><div class="codeBlockContent_32p_"><button type="button" aria-label="Copy code to clipboard" class="copyButton_1BYj">Copy</button><div tabindex="0" class="prism-code language-java codeBlock_19pQ"><div class="codeBlockLines_2n9r" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">class C {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  int getLength(@Nullable String s) {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    return s.length();</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  }</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">}</span></div></div></div></div></div><p>But it will not report an error on this guarded dereference:</p><div class="mdxCodeBlock_iHAB"><div class="codeBlockContent_32p_"><button type="button" aria-label="Copy code to clipboard" class="copyButton_1BYj">Copy</button><div tabindex="0" class="prism-code language-java codeBlock_19pQ"><div class="codeBlockLines_2n9r" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">class C {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  int getLength(@Nullable String s) {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    if (s != null) {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">      return s.length();</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    } else {</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">      return -1;</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    }</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  }</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">}</span></div></div></div></div></div><p>Eradicate reports the following <a href="/docs/eradicate-warnings">warnings</a>.</p></div></article><div class="margin-vert--lg"><nav class="pagination-nav"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/docs/checkers"><div class="pagination-nav__link--sublabel">Previous</div><div class="pagination-nav__link--label">« Infer : AI</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/linters"><div class="pagination-nav__link--sublabel">Next</div><div class="pagination-nav__link--label">Infer : AL »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"><ul class="contents contents__left-border"><li><a href="#what-is-infereradicate" class="contents__link">What is Infer:Eradicate?</a></li><li><a href="#what-is-the-nullable-convention" class="contents__link">What is the @Nullable convention?</a></li><li><a href="#what-is-annotated" class="contents__link">What is annotated?</a></li><li><a href="#how-is-infereradicate-invoked" class="contents__link">How is Infer:Eradicate invoked?</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/checkers-bug-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://github.com/facebook/infer">GitHub</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://twitter.com/fbinfer">Twitter</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/inferstaticanalyzer">Facebook</a></li></ul></div></div><div class="text--center"><div>Copyright © 2020 Facebook, Inc. Built with Docusaurus.</div></div></div></footer>
 </div>
 
-<script src="/styles.1fc5de91.js"></script>
+<script src="/styles.b23260d3.js"></script>
 
-<script src="/runtime~main.226321d8.js"></script>
+<script src="/runtime~main.942eabc8.js"></script>
 
-<script src="/main.1214037c.js"></script>
+<script src="/main.98c8fe6e.js"></script>
 
-<script src="/1.ce2800d3.js"></script>
+<script src="/1.20d059ed.js"></script>
 
-<script src="/2.00717d49.js"></script>
+<script src="/2.89c6efdb.js"></script>
 
-<script src="/3.02b9acd7.js"></script>
+<script src="/3.b7ac8c1e.js"></script>
 
-<script src="/1be78505.43900ffe.js"></script>
+<script src="/1be78505.09fdef9e.js"></script>
 
-<script src="/20ac7829.dd9db384.js"></script>
+<script src="/20ac7829.14db31e9.js"></script>
 
-<script src="/17896441.5c3ae9f3.js"></script>
+<script src="/17896441.e17cd408.js"></script>
 
-<script src="/bff86c5f.e4bb9dd2.js"></script>
+<script src="/bff86c5f.6147f4ef.js"></script>
 
 
 </body>
