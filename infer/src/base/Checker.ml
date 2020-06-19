@@ -125,7 +125,10 @@ let config_unsafe checker =
       ; activates= [BufferOverrunAnalysis] }
   | ConfigChecksBetweenMarkers ->
       { id= "config-checks-between-markers"
-      ; kind= Internal
+      ; kind=
+          UserFacing
+            { title= "Config Checks between Markers"
+            ; markdown_body= "This checker is currently only useful for certain Facebook code." }
       ; support= supports_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Collects config checks between marker start and end."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
@@ -320,9 +323,17 @@ let config_unsafe checker =
       ; activates= [] }
   | ResourceLeakLabExercise ->
       { id= "resource-leak-lab"
-      ; kind= Exercise
-      ; support= (fun _ -> Support)
-      ; short_documentation= ""
+      ; kind=
+          UserFacing
+            { title= "Resource Leak Lab Exercise"
+            ; markdown_body=
+                "This toy checker does nothing by default. Hack on it to make it report resource \
+                 leaks! See the [lab \
+                 instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)."
+            }
+      ; support= (function Clang -> NoSupport | Java -> Support)
+      ; short_documentation=
+          "Toy checker for the \"resource leak\" write-your-own-checker exercise."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }

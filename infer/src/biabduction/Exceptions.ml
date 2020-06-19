@@ -111,7 +111,8 @@ let recognize_exception exn : IssueToReport.t =
   | Class_cast_exception (desc, ocaml_pos) ->
       {issue_type= IssueType.class_cast_exception; description= desc; ocaml_pos= Some ocaml_pos}
   | Custom_error (error_msg, severity, desc) ->
-      { issue_type= IssueType.register_from_string ~id:error_msg severity Biabduction
+      { issue_type=
+          IssueType.register_dynamic ~linters_def_file:None ~id:error_msg severity Biabduction
       ; description= desc
       ; ocaml_pos= None }
   | Dangling_pointer_dereference (user_visible, desc, ocaml_pos) ->

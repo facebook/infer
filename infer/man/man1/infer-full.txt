@@ -1740,7 +1740,8 @@ INTERNAL OPTIONS
            empty (see linters-def-folder).
 
        --resource-leak-lab
-           Activates: checker resource-leak-lab: (Conversely:
+           Activates: checker resource-leak-lab: Toy checker for the
+           "resource leak" write-your-own-checker exercise. (Conversely:
            --no-resource-leak-lab)
 
        --scheduler { file | restart | callgraph }

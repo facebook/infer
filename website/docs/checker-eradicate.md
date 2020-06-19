@@ -91,11 +91,20 @@ class C {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [ERADICATE_BAD_NESTED_CLASS_ANNOTATION](/docs/next/all-issue-types#eradicate_bad_nested_class_annotation)
 - [ERADICATE_CONDITION_REDUNDANT](/docs/next/all-issue-types#eradicate_condition_redundant)
 - [ERADICATE_FIELD_NOT_INITIALIZED](/docs/next/all-issue-types#eradicate_field_not_initialized)
 - [ERADICATE_FIELD_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_field_not_nullable)
+- [ERADICATE_FIELD_OVER_ANNOTATED](/docs/next/all-issue-types#eradicate_field_over_annotated)
 - [ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION](/docs/next/all-issue-types#eradicate_inconsistent_subclass_parameter_annotation)
 - [ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION](/docs/next/all-issue-types#eradicate_inconsistent_subclass_return_annotation)
+- [ERADICATE_META_CLASS_CAN_BE_NULLSAFE](/docs/next/all-issue-types#eradicate_meta_class_can_be_nullsafe)
+- [ERADICATE_META_CLASS_IS_NULLSAFE](/docs/next/all-issue-types#eradicate_meta_class_is_nullsafe)
+- [ERADICATE_META_CLASS_NEEDS_IMPROVEMENT](/docs/next/all-issue-types#eradicate_meta_class_needs_improvement)
+- [ERADICATE_NULLABLE_DEREFERENCE](/docs/next/all-issue-types#eradicate_nullable_dereference)
 - [ERADICATE_PARAMETER_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_parameter_not_nullable)
+- [ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION](/docs/next/all-issue-types#eradicate_redundant_nested_class_annotation)
 - [ERADICATE_RETURN_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_return_not_nullable)
 - [ERADICATE_RETURN_OVER_ANNOTATED](/docs/next/all-issue-types#eradicate_return_over_annotated)
+- [ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE](/docs/next/all-issue-types#eradicate_unchecked_usage_in_nullsafe)
+- [ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE](/docs/next/all-issue-types#eradicate_unvetted_third_party_in_nullsafe)

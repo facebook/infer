@@ -3,14 +3,15 @@
     "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
   "doc_entries": [
     "all-issue-types", "checker-annotation-reachability",
-    "checker-biabduction", "checker-bufferoverrun", "checker-cost",
+    "checker-biabduction", "checker-bufferoverrun",
+    "checker-config-checks-between-markers", "checker-cost",
     "checker-eradicate", "checker-fragment-retains-view",
     "checker-immutable-cast", "checker-impurity",
     "checker-inefficient-keyset-iterator", "checker-linters",
     "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-printf-args", "checker-pulse",
-    "checker-purity", "checker-quandary", "checker-racerd", "checker-siof",
-    "checker-self-in-block", "checker-starvation", "checker-topl",
-    "checker-uninit"
+    "checker-purity", "checker-quandary", "checker-racerd",
+    "checker-resource-leak-lab", "checker-siof", "checker-self-in-block",
+    "checker-starvation", "checker-topl", "checker-uninit"
   ]
 }

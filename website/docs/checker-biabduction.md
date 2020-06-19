@@ -16,10 +16,16 @@ Read more about its foundations in the [Separation Logic and Biabduction page](s
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [BIABDUCTION_MEMORY_LEAK](/docs/next/all-issue-types#biabduction_memory_leak)
+- [DANGLING_POINTER_DEREFERENCE](/docs/next/all-issue-types#dangling_pointer_dereference)
+- [DIVIDE_BY_ZERO](/docs/next/all-issue-types#divide_by_zero)
 - [EMPTY_VECTOR_ACCESS](/docs/next/all-issue-types#empty_vector_access)
 - [IVAR_NOT_NULL_CHECKED](/docs/next/all-issue-types#ivar_not_null_checked)
 - [NULL_DEREFERENCE](/docs/next/all-issue-types#null_dereference)
 - [PARAMETER_NOT_NULL_CHECKED](/docs/next/all-issue-types#parameter_not_null_checked)
+- [POINTER_SIZE_MISMATCH](/docs/next/all-issue-types#pointer_size_mismatch)
 - [PREMATURE_NIL_TERMINATION_ARGUMENT](/docs/next/all-issue-types#premature_nil_termination_argument)
 - [RESOURCE_LEAK](/docs/next/all-issue-types#resource_leak)
 - [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
+- [SKIP_POINTER_DEREFERENCE](/docs/next/all-issue-types#skip_pointer_dereference)
+- [UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION](/docs/next/all-issue-types#unary_minus_applied_to_unsigned_expression)

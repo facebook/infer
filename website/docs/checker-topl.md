@@ -11,3 +11,9 @@ Supported languages:
 - C/C++/ObjC: Experimental
 - Java: Experimental
 
+
+
+## List of Issue Types
+
+The following issue types are reported by this checker:
+- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)

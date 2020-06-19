@@ -45,14 +45,12 @@ val pp : Format.formatter -> t -> unit
 val find_from_string : id:string -> t option
 (** return the issue type if it was previously registered *)
 
-val register_from_string :
+val register_dynamic :
      ?enabled:bool
-  -> ?is_cost_issue:bool
   -> ?hum:string
   -> ?doc_url:string
-  -> ?linters_def_file:string
+  -> linters_def_file:string option
   -> id:string
-  -> ?visibility:visibility
   -> ?user_documentation:string
   -> severity
   -> Checker.t

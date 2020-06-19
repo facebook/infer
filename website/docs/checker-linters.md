@@ -710,6 +710,8 @@ The following issue types are reported by this checker:
 - [ASSIGN_POINTER_WARNING](/docs/next/all-issue-types#assign_pointer_warning)
 - [BAD_POINTER_COMPARISON](/docs/next/all-issue-types#bad_pointer_comparison)
 - [COMPONENT_FACTORY_FUNCTION](/docs/next/all-issue-types#component_factory_function)
+- [COMPONENT_FILE_CYCLOMATIC_COMPLEXITY](/docs/next/all-issue-types#component_file_cyclomatic_complexity)
+- [COMPONENT_FILE_LINE_COUNT](/docs/next/all-issue-types#component_file_line_count)
 - [COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS](/docs/next/all-issue-types#component_initializer_with_side_effects)
 - [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/next/all-issue-types#component_with_multiple_factory_methods)
 - [COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS](/docs/next/all-issue-types#component_with_unconventional_superclass)

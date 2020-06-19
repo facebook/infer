@@ -2,7 +2,7 @@
 title: List of all issue types
 ---
 
-Here is an overview of the issue types currently reported by Infer. Currently outdated and being worked on!
+Here is an overview of the issue types currently reported by Infer.
 
 
 ## ASSIGN_POINTER_WARNING
@@ -33,6 +33,11 @@ integer pointed to by `n` is nonzero (e.g., she may have meant to call an
 accessor like `[n intValue]` instead). Infer will ask the programmer explicitly
 compare `n` to `nil` or call an accessor to clarify her intention.
 
+## BIABDUCTION_MEMORY_LEAK
+
+Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
+
+See [MEMORY_LEAK](#memory_leak).
 ## BUFFER_OVERRUN_L1
 
 Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -55,29 +60,8 @@ report.  The higher the number, the more likely it is to be a false positive.
 
 *   `L3`: The reports that are not included in the above cases.
 
-Other than them, there are some specific-purpose buffer overrun reports as follows.
-
-*   `R2`: An array access is unsafe by *risky* array values from `strndup`.  For example, suppose
-    there is a `strndup` call as follows.
-
-    ```c
-    char* s1 = (char*)malloc(sizeof(char) * size);
-    for (int i = 0; i < size; i++) {
-      s1[i] = 'a';
-    }
-    s1[5] = '\0';
-    char* s2 = strndup(s1, size - 1);
-    s2[size - 1] = 'a';
-    ```
-
-    Even if the second parameter of `strndup` is `size - 1`, the length of `s2` can be shorter than
-    `size` if there is the null character in the middle of `s1`.
-
 *   `S2`: An array access is unsafe by symbolic values.  For example, array size: `[n,n]`, offset
     `[n,+oo]`.
-
-*   `T1`: An array access is unsafe by tainted external values.  This is experimental and will be
-    removed sooner or later.
 
 *   `U5`: An array access is unsafe by unknown values, which are usually from unknown function
     calls.
@@ -102,19 +86,9 @@ See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
-## BUFFER_OVERRUN_R2
-
-Reported as "Buffer Overrun R2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_S2
 
 Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
-## BUFFER_OVERRUN_T1
-
-Reported as "Buffer Overrun T1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_U5
@@ -250,6 +224,16 @@ Action: fix the mismatch between format string and argument types.
 Reported as "Component Factory Function" by [linters](/docs/next/checker-linters).
 
 
+## COMPONENT_FILE_CYCLOMATIC_COMPLEXITY
+
+Reported as "Component File Cyclomatic Complexity" by [linters](/docs/next/checker-linters).
+
+
+## COMPONENT_FILE_LINE_COUNT
+
+Reported as "Component File Line Count" by [linters](/docs/next/checker-linters).
+
+
 ## COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS
 
 Reported as "Component Initializer With Side Effects" by [linters](/docs/next/checker-linters).
@@ -276,6 +260,11 @@ A condition expression is **always** evaluated to false.
 Reported as "Condition Always True" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 A condition expression is **always** evaluated to true.
+## CONFIG_CHECKS_BETWEEN_MARKERS
+
+Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/next/checker-config-checks-between-markers).
+
+A config checking is done between a marker's start and end
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -315,6 +304,11 @@ const int copied_v = v;
 // use copied_v not v
 };
 ```
+
+## DANGLING_POINTER_DEREFERENCE
+
+Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
+
 
 ## DEADLOCK
 
@@ -467,6 +461,11 @@ I work for (null)
 
 Note that the custom setter was only invoked once.
 
+## DIVIDE_BY_ZERO
+
+Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).
+
+
 ## EMPTY_VECTOR_ACCESS
 
 Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).
@@ -483,6 +482,11 @@ int foo(){
   return vec[0]; // Empty vector access reported here
 }
 ```
+
+## ERADICATE_BAD_NESTED_CLASS_ANNOTATION
+
+Reported as "@Nullsafe annotation is inconsistent with outer class" by [eradicate](/docs/next/checker-eradicate).
+
 
 ## ERADICATE_CONDITION_REDUNDANT
 
@@ -557,6 +561,11 @@ the field, by changing the code or changing annotations. If this cannot be done,
 add a @Nullable annotation to the field. This annotation might trigger more
 warnings in other code that uses the field, as that code must now deal with null
 values.
+
+## ERADICATE_FIELD_OVER_ANNOTATED
+
+Reported as "Field Over Annotated" by [eradicate](/docs/next/checker-eradicate).
+
 
 ## ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION
 
@@ -647,6 +656,29 @@ class Main {
 }
 ```
 
+## ERADICATE_META_CLASS_CAN_BE_NULLSAFE
+
+Reported as "Class has 0 issues and can be marked @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
+
+
+## ERADICATE_META_CLASS_IS_NULLSAFE
+
+Reported as "Class is marked @Nullsafe and has 0 issues" by [eradicate](/docs/next/checker-eradicate).
+
+
+## ERADICATE_META_CLASS_NEEDS_IMPROVEMENT
+
+Reported as "Class needs improvement to become @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
+
+Reported when the class either:
+- has at least one nullability issue, or
+- has at least one (currently possibly hidden) issue preventing it from being marked `@Nullsafe`.
+
+## ERADICATE_NULLABLE_DEREFERENCE
+
+Reported as "Nullable Dereference" by [eradicate](/docs/next/checker-eradicate).
+
+
 ## ERADICATE_PARAMETER_NOT_NULLABLE
 
 Reported as "Parameter Not Nullable" by [eradicate](/docs/next/checker-eradicate).
@@ -673,6 +705,11 @@ the method, by changing the code or changing annotations. If this cannot be
 done, add a @Nullable annotation to the relevant parameter in the method
 declaration. This annotation might trigger more warnings in the implementation
 of method m, as that code must now deal with null values.
+
+## ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION
+
+Reported as "@Nullsafe annotation is redundant" by [eradicate](/docs/next/checker-eradicate).
+
 
 ## ERADICATE_RETURN_NOT_NULLABLE
 
@@ -721,6 +758,16 @@ annotation of any input parameters and fields of the current method, as well as
 the annotations of any method called directly by the current method, if
 relevant. If the annotations are correct, you can remove the @Nullable
 annotation.
+
+## ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE
+
+Reported as "Nullsafe mode: unchecked usage of a value" by [eradicate](/docs/next/checker-eradicate).
+
+
+## ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE
+
+Reported as "Nullsafe mode: unchecked usage of unvetted third-party" by [eradicate](/docs/next/checker-eradicate).
+
 
 ## EXECUTION_TIME_COMPLEXITY_INCREASE
 
@@ -904,11 +951,6 @@ Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/next/checker-buf
 Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` *may* be called with a negative value.
-## INFERBO_ALLOC_MAY_BE_TAINTED
-
-Reported as "Inferbo Alloc May Be Tainted" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-`malloc` *may* be called with a tainted value from external sources.  This is experimental and will be removed sooner or later.
 ## INFINITE_EXECUTION_TIME
 
 Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).
@@ -954,10 +996,6 @@ report. The higher the number, the more likely it is to be a false positive.
 
 *   `L5`: The reports that are not included in the above cases.
 
-Other than them, there as some specific-purpose buffer overrun reports as follows.
-
-*   `R2`: A binary integer operation is unsafe by *risky* return values from `strndup`.
-
 *   `U5`: A binary integer operation is unsafe by unknown values, which are usually from unknown
     function calls.
 
@@ -969,11 +1007,6 @@ See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_L5
 
 Reported as "Integer Overflow L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
-## INTEGER_OVERFLOW_R2
-
-Reported as "Integer Overflow R2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_U5
@@ -1040,6 +1073,11 @@ is not called with `nil`.
 Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into JavaScript.
+## LAB_RESOURCE_LEAK
+
+Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).
+
+Toy issue.
 ## LOCKLESS_VIOLATION
 
 Reported as "Lockless Violation" by [starvation](/docs/next/checker-starvation).
@@ -1287,6 +1325,11 @@ Possible solutions are adding a check for `nil`, or making sure that the method
 is not called with `nil`. When an argument will never be `nil`, you can add the
 annotation `nonnull` to the argument's type, to tell Infer (and the type
 system), that the argument won't be `nil`. This will silence the warning.
+
+## POINTER_SIZE_MISMATCH
+
+Reported as "Pointer Size Mismatch" by [biabduction](/docs/next/checker-biabduction).
+
 
 ## POINTER_TO_CONST_OBJC_CLASS
 
@@ -1693,6 +1736,11 @@ Environment variable or file data flowing to shell.
 Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).
 
 Code injection if the caller of the endpoint doesn't sanitize on its end.
+## SKIP_POINTER_DEREFERENCE
+
+Reported as "Skip Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
+
+
 ## SQL_INJECTION
 
 Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).
@@ -1928,6 +1976,16 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   other threads. The main utility of this annotation is in interfaces, where
   Infer cannot look up the implementation and decide for itself.
 
+## TOPL_ERROR
+
+Reported as "Topl Error" by [topl](/docs/next/checker-topl).
+
+Experimental.
+## UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION
+
+Reported as "Unary Minus Applied To Unsigned Expression" by [biabduction](/docs/next/checker-biabduction).
+
+
 ## UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK
 
 Reported as "Unavailable Api In Supported Ios Sdk" by [linters](/docs/next/checker-linters).
@@ -2065,6 +2123,29 @@ void foo() {
        p = &x;
      } // x has gone out of scope
      p->method(); // ERROR: you should not access *p after x has gone out of scope
+}
+```
+
+## VECTOR_INVALIDATION
+
+Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).
+
+An address pointing into a C++ `std::vector` might have become
+invalid. This can happen when an address is taken into a vector, then
+the vector is mutated in a way that might invalidate the address, for
+example by adding elements to the vector, which might trigger a
+re-allocation of the entire vector contents (thereby invalidating the
+pointers into the previous location of the contents).
+
+For example:
+
+```C++
+void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.push_back(42); // if the array backing the vector was full already, this
+                     // will re-allocate it and copy the previous contents
+                     // into the new array, then delete the previous array
+  std::cout << *y << "\n"; // bad: elt might be invalid
 }
 ```
 

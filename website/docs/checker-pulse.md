@@ -23,3 +23,4 @@ The following issue types are reported by this checker:
 - [USE_AFTER_DELETE](/docs/next/all-issue-types#use_after_delete)
 - [USE_AFTER_FREE](/docs/next/all-issue-types#use_after_free)
 - [USE_AFTER_LIFETIME](/docs/next/all-issue-types#use_after_lifetime)
+- [VECTOR_INVALIDATION](/docs/next/all-issue-types#vector_invalidation)

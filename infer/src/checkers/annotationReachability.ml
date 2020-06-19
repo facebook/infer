@@ -331,8 +331,8 @@ module CxxAnnotationSpecs = struct
             (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
         in
         let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
-        IssueType.register_from_string ~id:spec_name ~doc_url ~linters_def_file Error
-          AnnotationReachability
+        IssueType.register_dynamic ~id:spec_name ~doc_url ~linters_def_file:(Some linters_def_file)
+          Error AnnotationReachability
       in
       Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
         description

@@ -1177,7 +1177,7 @@ and () =
                 issue
             | None ->
                 (* unknown issue type: assume it will be defined in AL *)
-                IssueType.register_from_string ~id:issue_id Warning Linters
+                IssueType.register_dynamic ~id:issue_id Warning ~linters_def_file:None Linters
           in
           IssueType.set_enabled issue b ;
           issue_id )

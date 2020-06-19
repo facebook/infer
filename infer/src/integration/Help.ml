@@ -98,13 +98,11 @@ let all_issues_header =
 title: List of all issue types
 ---
 
-Here is an overview of the issue types currently reported by Infer. Currently outdated and being worked on!
+Here is an overview of the issue types currently reported by Infer.
 
 |}
 
 
-(* TODO: instead of just taking issues that have documentation, enforce that (some, eg enabled
-       by default) issue types always have documentation *)
 let all_issues =
   lazy
     ( IssueType.all_issues ()
