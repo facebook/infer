@@ -775,10 +775,6 @@ let parameter_not_null_checked =
     ~user_documentation:[%blob "../../documentation/issues/PARAMETER_NOT_NULL_CHECKED.md"]
 
 
-let pointer_size_mismatch =
-  register ~id:"POINTER_SIZE_MISMATCH" Error Biabduction (* TODO *) ~user_documentation:""
-
-
 let _pointer_to_const_objc_class =
   register ~id:"POINTER_TO_CONST_OBJC_CLASS" Warning Linters
     ~user_documentation:[%blob "../../documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]

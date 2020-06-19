@@ -964,63 +964,6 @@ let iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter p
   recurse_on_iters iter_subcases
 
 
-(** find the type at the offset from the given type expression, if any *)
-let type_at_offset tenv texp off =
-  let rec strip_offset (off : Predicates.offset list) (typ : Typ.t) =
-    match (off, typ.desc) with
-    | [], _ ->
-        Some typ
-    | Off_fld (f, _) :: off', Tstruct name -> (
-      match Tenv.lookup tenv name with
-      | Some {fields} -> (
-        match List.find ~f:(fun (f', _, _) -> Fieldname.equal f f') fields with
-        | Some (_, typ', _) ->
-            strip_offset off' typ'
-        | None ->
-            None )
-      | None ->
-          None )
-    | Off_index _ :: off', Tarray {elt= typ'} ->
-        strip_offset off' typ'
-    | _ ->
-        None
-  in
-  match texp with Exp.Sizeof {typ} -> strip_offset off typ | _ -> None
-
-
-(** Check that the size of a type coming from an instruction does not exceed the size of the type
-    from the pointsto predicate For example, that a pointer to int is not used to assign to a char *)
-let check_type_size {InterproceduralAnalysis.proc_desc; err_log; tenv} pname prop texp off
-    typ_from_instr =
-  L.d_strln ~color:Orange "check_type_size" ;
-  L.d_str "off: " ;
-  Predicates.d_offset_list off ;
-  L.d_ln () ;
-  L.d_str "typ_from_instr: " ;
-  Typ.d_full typ_from_instr ;
-  L.d_ln () ;
-  match type_at_offset tenv texp off with
-  | Some typ_of_object ->
-      L.d_str "typ_o: " ;
-      Typ.d_full typ_of_object ;
-      L.d_ln () ;
-      if
-        Prover.type_size_comparable typ_from_instr typ_of_object
-        && not (Prover.check_type_size_leq typ_from_instr typ_of_object)
-      then
-        let deref_str = Localise.deref_str_pointer_size_mismatch typ_from_instr typ_of_object in
-        let loc = AnalysisState.get_loc_exn () in
-        let exn =
-          Exceptions.Pointer_size_mismatch
-            (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
-        in
-        BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn
-  | None ->
-      L.d_str "texp: " ;
-      Exp.d_texp_full texp ;
-      L.d_ln ()
-
-
 (** Exposes lexp |->- from iter. In case that it is not possible to * expose lexp |->-, this
     function prints an error message and * faults. There are four things to note. First, typ is the
     type of the * root of lexp. Second, prop should mean the same as iter. Third, the * result []
@@ -1116,8 +1059,7 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
         [default_case_iter iter]
     | Some iter -> (
       match Prop.prop_iter_current tenv iter with
-      | Predicates.Hpointsto (_, _, texp), off ->
-          if Config.type_size then check_type_size analysis_data pname prop texp off typ_from_instr ;
+      | Predicates.Hpointsto (_, _, _), _ ->
           iter_rearrange_ptsto analysis_data pname tenv prop iter lexp inst
       | Predicates.Hlseg (Lseg_NE, para, e1, e2, elist), _ ->
           iter_rearrange_ne_lseg tenv recurse_on_iters iter para e1 e2 elist

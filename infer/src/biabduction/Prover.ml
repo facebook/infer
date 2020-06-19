@@ -228,11 +228,6 @@ let type_size_compare t1 t2 =
       None
 
 
-(** Check <= on the size of comparable types *)
-let check_type_size_leq t1 t2 =
-  match type_size_compare t1 t2 with None -> false | Some n -> n <= 0
-
-
 (** Check < on the size of comparable types *)
 let check_type_size_lt t1 t2 = match type_size_compare t1 t2 with None -> false | Some n -> n < 0
 

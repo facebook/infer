@@ -26,12 +26,6 @@ val check_equal : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> bool
 val check_disequal : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> bool
 (** Check whether [prop |- exp1!=exp2]. Result [false] means "don't know". *)
 
-val type_size_comparable : Typ.t -> Typ.t -> bool
-(** Return true if the two types have sizes which can be compared *)
-
-val check_type_size_leq : Typ.t -> Typ.t -> bool
-(** Check <= on the size of comparable types *)
-
 val check_atom : Tenv.t -> Prop.normal Prop.t -> atom -> bool
 (** Check whether [prop |- a]. Result [false] means "don't know". *)
 

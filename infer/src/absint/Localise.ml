@@ -245,19 +245,6 @@ let deref_str_dangling dangling_kind_opt =
   ; problem_str= "could be dangling and is dereferenced or freed" }
 
 
-(** dereference strings for a pointer size mismatch *)
-let deref_str_pointer_size_mismatch typ_from_instr typ_of_object =
-  let str_from_typ typ =
-    let pp f = Typ.pp_full Pp.text f typ in
-    F.asprintf "%t" pp
-  in
-  { tags= Tags.create ()
-  ; value_pre= Some (pointer_or_object ())
-  ; value_post= Some ("of type " ^ str_from_typ typ_from_instr)
-  ; problem_str= "could be used to access an object of smaller type " ^ str_from_typ typ_of_object
-  }
-
-
 (** dereference strings for an array out of bound access *)
 let deref_str_array_bound size_opt index_opt =
   let tags = Tags.create () in

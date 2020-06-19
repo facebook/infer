@@ -81,9 +81,6 @@ val deref_str_array_bound : IntLit.t option -> IntLit.t option -> deref_str
 val deref_str_nil_argument_in_variadic_method : Procname.t -> int -> int -> deref_str
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
 
-val deref_str_pointer_size_mismatch : Typ.t -> Typ.t -> deref_str
-(** dereference strings for a pointer size mismatch *)
-
 (** type of access *)
 type access =
   | Last_assigned of int * bool  (** line, null_case_flag *)
