@@ -8,13 +8,7 @@
 open! IStd
 open AbstractDomain.Types
 module F = Format
-
-module ConfigName = struct
-  type t = {config_class: Pvar.t; config_name: Fieldname.t} [@@deriving compare, equal]
-
-  (** For readability, this prints short name of config. *)
-  let pp f {config_name} = F.fprintf f "%a" Fieldname.pp config_name
-end
+module ConfigName = FbGKInteraction.ConfigName
 
 module ConfigTopLifted = struct
   type t = ConfigName.t top_lifted
@@ -40,7 +34,22 @@ module ConfigWithLocation = struct
   let pp f (config, location) = F.fprintf f "%a at %a" ConfigName.pp config Location.pp location
 end
 
-module Mem = AbstractDomain.Map (Ident) (ConfigTopLifted)
+module Loc = struct
+  type t = Id of Ident.t | Pvar of Pvar.t [@@deriving compare]
+
+  let pp f = function Id id -> Ident.pp f id | Pvar pvar -> Pvar.pp Pp.text f pvar
+
+  let of_id id = Id id
+
+  let of_pvar pvar = Pvar pvar
+end
+
+module Mem = struct
+  include AbstractDomain.Map (Loc) (ConfigTopLifted)
+
+  let copy ~to_ ~from mem =
+    Option.value_map (find_opt from mem) ~default:mem ~f:(fun config -> add to_ config mem)
+end
 
 module Trace = struct
   type elem = MarkerStart of IntLit.t | ConfigCheck of ConfigName.t
@@ -306,9 +315,15 @@ module Dom = struct
     && ConfigChecks.leq ~lhs:lhs.config_checks ~rhs:rhs.config_checks
 
 
-  let load_config id ~config_class ~config_name ({mem} as astate) =
-    {astate with mem= Mem.add id (NonTop {ConfigName.config_class; config_name}) mem}
+  let load_constant_config id config ({mem} as astate) =
+    {astate with mem= Mem.add id (NonTop config) mem}
 
+
+  let mem_copy ~to_ ~from ({mem} as astate) = {astate with mem= Mem.copy ~to_ ~from mem}
+
+  let load_config id pvar astate = mem_copy ~to_:(Loc.of_id id) ~from:(Loc.of_pvar pvar) astate
+
+  let store_config pvar id astate = mem_copy ~to_:(Loc.of_pvar pvar) ~from:(Loc.of_id id) astate
 
   let call_marker_start marker location ({context} as astate) =
     {astate with context= Context.call_marker_start marker location context}
@@ -319,7 +334,7 @@ module Dom = struct
 
 
   let call_config_check analysis_data id location ({mem; context; config_checks} as astate) =
-    match Mem.find_opt id mem with
+    match Mem.find_opt (Loc.of_id id) mem with
     | Some (NonTop config) ->
         let trace_elem = Trace.config_check config in
         let context = Context.call_config_check trace_elem location context in
@@ -376,9 +391,14 @@ module TransferFunctions = struct
   let exec_instr astate ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node
       instr =
     match (instr : Sil.instr) with
-    | Load {id; e= Lfield (Lvar config_class, config_name, _)}
-      when FbGKInteraction.is_config_class config_class ->
-        Dom.load_config id ~config_class ~config_name astate
+    | Load {id; e} -> (
+      match FbGKInteraction.get_config e with
+      | Some config ->
+          Dom.load_constant_config (Loc.of_id id) config astate
+      | None -> (
+        match e with Lvar pvar -> Dom.load_config id pvar astate | _ -> astate ) )
+    | Store {e1= Lvar pvar; e2= Exp.Var id} ->
+        Dom.store_config pvar id astate
     | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, location, _)
       when FbGKInteraction.is_marker_start tenv callee ->
         Dom.call_marker_start marker location astate

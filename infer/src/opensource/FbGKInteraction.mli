@@ -5,7 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val is_config_class : 'pvar -> bool
+module ConfigName : sig
+  type t
+
+  val compare : t -> t -> int
+
+  val equal : t -> t -> bool
+
+  val pp : Format.formatter -> t -> unit
+end
+
+val get_config : 'exp -> 'config_name option
 
 val is_config_check : 'tenv -> 'pname -> bool
 
