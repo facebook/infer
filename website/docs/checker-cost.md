@@ -34,12 +34,12 @@ The total cost of the node is the scalar product of these two vectors. Then, the
 
 At a high level, the analysis has three steps:
 - Choose control variables that allude to "how many times a loop may iterate".
-- Get abstract ranges of the control variables from [InferBO](checker-bufferoverrun) (a numerical analysis that infers symbolic intervals)
+- Get abstract ranges of the control variables from [InferBO](/docs/next/checker-bufferoverrun) (a numerical analysis that infers symbolic intervals)
 - Construct complexity polynomials for loops and functions by via a constraint solving algorithm.
 
 
 
-## Examples 
+## Examples
 
 Infer’s cost analysis statically estimates the execution cost of a
 program without running the code. For instance, assume that we had the
@@ -62,7 +62,7 @@ void loop(ArrayList<Integer> list){
 }
 ```
 
-where `foo` has a linear cost in its parameter, then Infer automatically detects that the complexity of loop has increased from `O(|list|)` to `O(|list|^2)` and then reports an [`EXECUTION_TIME_COMPLEXITY_INCREASE`](execution_time_complexity_increase) issue.    
+where `foo` has a linear cost in its parameter, then Infer automatically detects that the complexity of loop has increased from `O(|list|)` to `O(|list|^2)` and then reports an [`EXECUTION_TIME_COMPLEXITY_INCREASE`](/docs/next/all-issue-types#execution_time_complexity_increase) issue.
 
 
 
@@ -72,13 +72,13 @@ Differential cost analysis in action:
 - first run infer's cost analysis on `File.java` and rename `costs-report.json` (which is in `/infer-out`) to `previous-costs-report.json`
 - modify the function as shown above
 - re-run infer on `File.java` and rename  `costs-report.json` to `current-costs-report.json`
-- run `infer reportdiff --costs-current current-costs-report.json  --costs-previous current-costs-report`. 
+- run `infer reportdiff --costs-current current-costs-report.json  --costs-previous current-costs-report`.
 - Inspect `infer-out/differential/introduced.json` to see the newly found complexity increase issue(s).
 
 
 ## Limitations
 
-There are a number of known limitations to the design of the static cost analysis: 
+There are a number of known limitations to the design of the static cost analysis:
 
 - InferBo's intervals are limited to affine expressions, not full-blown polynomials. Hence, we can automatically infer bounds involving square roots.
 
@@ -90,7 +90,7 @@ There are a number of known limitations to the design of the static cost analysi
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [EXECUTION_TIME_COMPLEXITY_INCREASE](all-issue-types#execution_time_complexity_increase)
-- [EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD](all-issue-types#execution_time_complexity_increase_ui_thread)
-- [EXECUTION_TIME_UNREACHABLE_AT_EXIT](all-issue-types#execution_time_unreachable_at_exit)
-- [INFINITE_EXECUTION_TIME](all-issue-types#infinite_execution_time)
+- [EXECUTION_TIME_COMPLEXITY_INCREASE](/docs/next/all-issue-types#execution_time_complexity_increase)
+- [EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD](/docs/next/all-issue-types#execution_time_complexity_increase_ui_thread)
+- [EXECUTION_TIME_UNREACHABLE_AT_EXIT](/docs/next/all-issue-types#execution_time_unreachable_at_exit)
+- [INFINITE_EXECUTION_TIME](/docs/next/all-issue-types#infinite_execution_time)

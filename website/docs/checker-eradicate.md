@@ -91,11 +91,11 @@ class C {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [ERADICATE_CONDITION_REDUNDANT](all-issue-types#eradicate_condition_redundant)
-- [ERADICATE_FIELD_NOT_INITIALIZED](all-issue-types#eradicate_field_not_initialized)
-- [ERADICATE_FIELD_NOT_NULLABLE](all-issue-types#eradicate_field_not_nullable)
-- [ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION](all-issue-types#eradicate_inconsistent_subclass_parameter_annotation)
-- [ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION](all-issue-types#eradicate_inconsistent_subclass_return_annotation)
-- [ERADICATE_PARAMETER_NOT_NULLABLE](all-issue-types#eradicate_parameter_not_nullable)
-- [ERADICATE_RETURN_NOT_NULLABLE](all-issue-types#eradicate_return_not_nullable)
-- [ERADICATE_RETURN_OVER_ANNOTATED](all-issue-types#eradicate_return_over_annotated)
+- [ERADICATE_CONDITION_REDUNDANT](/docs/next/all-issue-types#eradicate_condition_redundant)
+- [ERADICATE_FIELD_NOT_INITIALIZED](/docs/next/all-issue-types#eradicate_field_not_initialized)
+- [ERADICATE_FIELD_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_field_not_nullable)
+- [ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION](/docs/next/all-issue-types#eradicate_inconsistent_subclass_parameter_annotation)
+- [ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION](/docs/next/all-issue-types#eradicate_inconsistent_subclass_return_annotation)
+- [ERADICATE_PARAMETER_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_parameter_not_nullable)
+- [ERADICATE_RETURN_NOT_NULLABLE](/docs/next/all-issue-types#eradicate_return_not_nullable)
+- [ERADICATE_RETURN_OVER_ANNOTATED](/docs/next/all-issue-types#eradicate_return_over_annotated)

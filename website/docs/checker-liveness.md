@@ -16,4 +16,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [DEAD_STORE](all-issue-types#dead_store)
+- [DEAD_STORE](/docs/next/all-issue-types#dead_store)

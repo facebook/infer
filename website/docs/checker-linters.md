@@ -16,7 +16,7 @@ Supported languages:
 For C/C++ and Objective-C languages, we provide a linters framework. These are
 checks about the syntax of the program; it could be about a property, or about
 code inside one method, or that a class or method have certain properties. We
-provide [a few checks](/docs/linters-bug-types) and we have developed a domain
+provide [a few checks by default](#list-of-issue-types) and we have developed a domain
 specific language (DSL) to make it easier to write checks.
 
 ## AL: A declarative language for writing linters in Infer
@@ -701,24 +701,24 @@ infer run --linters -- clang -c Test.m
 ```
 
 There are a few other command-line options that are useful for using or
-developing new linters in Infer. Read about them in the [`infer capture` manual](man-pages).
+developing new linters in Infer. Read about them in the [`infer capture` manual](/docs/next/man-infer-capture).
 
 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [ASSIGN_POINTER_WARNING](all-issue-types#assign_pointer_warning)
-- [BAD_POINTER_COMPARISON](all-issue-types#bad_pointer_comparison)
-- [COMPONENT_FACTORY_FUNCTION](all-issue-types#component_factory_function)
-- [COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS](all-issue-types#component_initializer_with_side_effects)
-- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](all-issue-types#component_with_multiple_factory_methods)
-- [COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS](all-issue-types#component_with_unconventional_superclass)
-- [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](all-issue-types#cxx_reference_captured_in_objc_block)
-- [DIRECT_ATOMIC_PROPERTY_ACCESS](all-issue-types#direct_atomic_property_access)
-- [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](all-issue-types#discouraged_weak_property_custom_setter)
-- [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](all-issue-types#global_variable_initialized_with_function_or_method_call)
-- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](all-issue-types#mutable_local_variable_in_component_file)
-- [POINTER_TO_CONST_OBJC_CLASS](all-issue-types#pointer_to_const_objc_class)
-- [REGISTERED_OBSERVER_BEING_DEALLOCATED](all-issue-types#registered_observer_being_deallocated)
-- [STRONG_DELEGATE_WARNING](all-issue-types#strong_delegate_warning)
-- [UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK](all-issue-types#unavailable_api_in_supported_ios_sdk)
+- [ASSIGN_POINTER_WARNING](/docs/next/all-issue-types#assign_pointer_warning)
+- [BAD_POINTER_COMPARISON](/docs/next/all-issue-types#bad_pointer_comparison)
+- [COMPONENT_FACTORY_FUNCTION](/docs/next/all-issue-types#component_factory_function)
+- [COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS](/docs/next/all-issue-types#component_initializer_with_side_effects)
+- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/next/all-issue-types#component_with_multiple_factory_methods)
+- [COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS](/docs/next/all-issue-types#component_with_unconventional_superclass)
+- [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](/docs/next/all-issue-types#cxx_reference_captured_in_objc_block)
+- [DIRECT_ATOMIC_PROPERTY_ACCESS](/docs/next/all-issue-types#direct_atomic_property_access)
+- [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](/docs/next/all-issue-types#discouraged_weak_property_custom_setter)
+- [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](/docs/next/all-issue-types#global_variable_initialized_with_function_or_method_call)
+- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](/docs/next/all-issue-types#mutable_local_variable_in_component_file)
+- [POINTER_TO_CONST_OBJC_CLASS](/docs/next/all-issue-types#pointer_to_const_objc_class)
+- [REGISTERED_OBSERVER_BEING_DEALLOCATED](/docs/next/all-issue-types#registered_observer_being_deallocated)
+- [STRONG_DELEGATE_WARNING](/docs/next/all-issue-types#strong_delegate_warning)
+- [UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK](/docs/next/all-issue-types#unavailable_api_in_supported_ios_sdk)

@@ -1,10 +1,7 @@
 This warning indicates a potential data race in Java. The analyser is called
 RacerD and this section gives brief but a mostly complete description of its
-features. See the [RacerD page](/docs/racerd) for more in-depth information and
+features. See the [RacerD page](/docs/next/checker-racerd) for more in-depth information and
 examples.
-
-NB this warning **is not related to @GuardedBy** and not issued by the same
-analysis.
 
 ### Thread-safety: What is a data race
 

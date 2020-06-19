@@ -16,7 +16,7 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CHECKERS_ALLOCATES_MEMORY](all-issue-types#checkers_allocates_memory)
-- [CHECKERS_ANNOTATION_REACHABILITY_ERROR](all-issue-types#checkers_annotation_reachability_error)
-- [CHECKERS_CALLS_EXPENSIVE_METHOD](all-issue-types#checkers_calls_expensive_method)
-- [CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED](all-issue-types#checkers_expensive_overrides_unannotated)
+- [CHECKERS_ALLOCATES_MEMORY](/docs/next/all-issue-types#checkers_allocates_memory)
+- [CHECKERS_ANNOTATION_REACHABILITY_ERROR](/docs/next/all-issue-types#checkers_annotation_reachability_error)
+- [CHECKERS_CALLS_EXPENSIVE_METHOD](/docs/next/all-issue-types#checkers_calls_expensive_method)
+- [CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED](/docs/next/all-issue-types#checkers_expensive_overrides_unannotated)

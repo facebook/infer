@@ -13,7 +13,7 @@ Supported languages:
 
 RacerD finds data races in your C++ and Java code. This page gives a more in-depth
 explanation of how the analysis works *for Java code*, but may be less complete than the
-[Thread Safety Violation bug description page](#thread-safety-violation).
+[Thread Safety Violation bug description page](/docs/next/all-issue-types#thread_safety_violation).
 
 To run the analysis, you can use plain `infer` (to run RacerD along with other
 analyses that are run by default) or `infer --racerd-only` (to run only RacerD).
@@ -308,7 +308,7 @@ synchronized void setFWithLock() {
 Unlike the other annotations shown here, this one lives in
 [Android](https://developer.android.com/reference/android/support/annotation/VisibleForTesting.html).
 
-## <a name="interprocedural"></a> Interprocedural Reasoning
+## Interprocedural Reasoning
 
 An important feature of RacerD is that it finds races by analyzing not just one
 file or class, but by looking at memory accesses that occur after going through
@@ -409,7 +409,7 @@ Facebook engineers.
 [A separate blog post looked at 100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/)
 in Infer's deployment in various bug categories, and for data races observed
 that 53 of them were inter-file (and thus involving multiple classes).
-[See above](racerd#interprocedural) for an example of RacerD's interprocedural
+[See above](#interprocedural-reasoning) for an example of RacerD's interprocedural
 capabilities.
 
 One reaction to the challenge of developing effective static race detectors has
@@ -421,14 +421,7 @@ Rust, and the use/checking of @GuardedBy annotations in
 [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf)
 including in
 [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md).
-When lock annotations are present they make the analyzer's life easier, and we
-have
-[GuardedBy checking as part of Infer](checkers-bug-types#UNSAFE_GUARDEDBY_ACCESS)
-(though separate from the race detector). Our GuardedBy checker can find some
-bugs that RacerD does not (see
-[this example on anonymous inner classes](checkers-bug-types#anonymous_inner)),
-but the race detector finds a greater number because it can work on un-annotated
-code. It is possible to have a very effective race analysis without decreeing
+When lock annotations are present they make the analyzer's life easier. It is possible to have a very effective race analysis without decreeing
 that such annotations must be present. This was essential for our deployment,
 since _requiring_ lock annotations would have been a show stopper for converting
 many thousands of lines of code to a concurrent context. We believe that this
@@ -505,7 +498,7 @@ resource.
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [GUARDEDBY_VIOLATION](all-issue-types#guardedby_violation)
-- [INTERFACE_NOT_THREAD_SAFE](all-issue-types#interface_not_thread_safe)
-- [LOCK_CONSISTENCY_VIOLATION](all-issue-types#lock_consistency_violation)
-- [THREAD_SAFETY_VIOLATION](all-issue-types#thread_safety_violation)
+- [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
+- [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
+- [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)
+- [THREAD_SAFETY_VIOLATION](/docs/next/all-issue-types#thread_safety_violation)

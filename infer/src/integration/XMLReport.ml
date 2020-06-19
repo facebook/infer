@@ -28,11 +28,11 @@ let pp_xml_issue f (issue : Jsonbug_t.jsonbug) =
   in
   F.fprintf f
     {|<file name="%s">
-    <violation begincolumn="%d" beginline="%d" endcolumn="%d" endline="%d" class="%s" method="%s" package="%s" priority="1" rule="%s" ruleset="Infer Rules" externalinfourl="https://fbinfer.com/docs/next/%s">%s</violation>
+    <violation begincolumn="%d" beginline="%d" endcolumn="%d" endline="%d" class="%s" method="%s" package="%s" priority="1" rule="%s" ruleset="Infer Rules" externalinfourl="https://fbinfer.com/%s">%s</violation>
   </file>|}
     issue.file (max issue.column 0) issue.line (max issue.column 0) (issue.line + 1) java_class_name
     method_name java_package issue.bug_type
-    (Help.url_fragment_of_issue_type issue.bug_type)
+    (Help.abs_url_of_issue_type issue.bug_type)
     issue.qualifier
 
 

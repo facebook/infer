@@ -22,6 +22,6 @@ val show_issue_types : IssueType.t list -> unit
 val write_website : website_root:string -> unit
 (** generate files for the fbinfer.com website *)
 
-val url_fragment_of_issue_type : string -> string
-(** given an issue type unique ID, return the URL fragment relative to the website documentation,
-    e.g. [url_fragment_of_issue_type "NULL_DEREFERENCE"] is ["all-issue-types#null_dereference"] *)
+val abs_url_of_issue_type : string -> string
+(** given an issue type unique ID, return the URL relative to the root of the website, e.g.
+    [abs_url_of_issue_type "NULL_DEREFERENCE"] is ["/docs/all-issue-types#null_dereference"] *)

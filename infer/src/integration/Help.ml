@@ -9,7 +9,9 @@ open! IStd
 module F = Format
 module L = Logging
 
-let mk_markdown_docs_path ~website_root ~basename = website_root ^/ "docs" ^/ basename ^ ".md"
+let docs_dir = "docs"
+
+let mk_markdown_docs_path ~website_root ~basename = website_root ^/ docs_dir ^/ basename ^ ".md"
 
 let escape_double_quotes s = String.substr_replace_all s ~pattern:"\"" ~with_:"\\\""
 
@@ -19,8 +21,8 @@ let basename_checker_prefix = "checker-"
 
 let basename_of_checker {Checker.id} = basename_checker_prefix ^ id
 
-let url_fragment_of_issue_type unique_id =
-  Printf.sprintf "%s#%s" all_issues_basename (String.lowercase unique_id)
+let abs_url_of_issue_type unique_id =
+  Printf.sprintf "/%s/next/%s#%s" docs_dir all_issues_basename (String.lowercase unique_id)
 
 
 let get_checker_web_documentation (checker : Checker.config) =
@@ -41,7 +43,8 @@ let markdown_one_issue f (issue_type : IssueType.t) =
       "Checker %s can report user-facing issue %s but is not of type UserFacing in \
        src/base/Checker.ml. Please fix!"
       checker_config.id issue_type.unique_id ;
-  F.fprintf f "Reported as \"%s\" by [%s](%s.md).@\n@\n" issue_type.hum checker_config.id
+  F.fprintf f "Reported as \"%s\" by [%s](/%s/next/%s).@\n@\n" issue_type.hum checker_config.id
+    docs_dir
     (basename_of_checker checker_config) ;
   match issue_type.user_documentation with
   | None ->
@@ -272,7 +275,7 @@ let pp_checker_issue_types f checker =
         Checker.equal issue_checker checker )
   in
   let pp_issue f {IssueType.unique_id} =
-    F.fprintf f "- [%s](%s)@\n" unique_id (url_fragment_of_issue_type unique_id)
+    F.fprintf f "- [%s](%s)@\n" unique_id (abs_url_of_issue_type unique_id)
   in
   List.iter checker_issues ~f:(pp_issue f)
 
@@ -304,7 +307,7 @@ let delete_checkers_website ~website_root =
       if String.is_prefix ~prefix:basename_checker_prefix (Filename.basename path) then (
         L.progress "deleting '%s'@\n" path ;
         Unix.unlink path ) )
-    (website_root ^/ "docs")
+    (website_root ^/ docs_dir)
 
 
 let all_checkers_website ~website_root =

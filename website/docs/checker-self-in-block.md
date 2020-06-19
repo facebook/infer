@@ -16,8 +16,8 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CAPTURED_STRONG_SELF](all-issue-types#captured_strong_self)
-- [MIXED_SELF_WEAKSELF](all-issue-types#mixed_self_weakself)
-- [MULTIPLE_WEAKSELF](all-issue-types#multiple_weakself)
-- [STRONG_SELF_NOT_CHECKED](all-issue-types#strong_self_not_checked)
-- [WEAK_SELF_IN_NO_ESCAPE_BLOCK](all-issue-types#weak_self_in_no_escape_block)
+- [CAPTURED_STRONG_SELF](/docs/next/all-issue-types#captured_strong_self)
+- [MIXED_SELF_WEAKSELF](/docs/next/all-issue-types#mixed_self_weakself)
+- [MULTIPLE_WEAKSELF](/docs/next/all-issue-types#multiple_weakself)
+- [STRONG_SELF_NOT_CHECKED](/docs/next/all-issue-types#strong_self_not_checked)
+- [WEAK_SELF_IN_NO_ESCAPE_BLOCK](/docs/next/all-issue-types#weak_self_in_no_escape_block)

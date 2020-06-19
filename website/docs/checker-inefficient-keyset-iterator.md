@@ -16,4 +16,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [INEFFICIENT_KEYSET_ITERATOR](all-issue-types#inefficient_keyset_iterator)
+- [INEFFICIENT_KEYSET_ITERATOR](/docs/next/all-issue-types#inefficient_keyset_iterator)

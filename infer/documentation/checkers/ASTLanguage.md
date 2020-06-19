@@ -1,7 +1,7 @@
 For C/C++ and Objective-C languages, we provide a linters framework. These are
 checks about the syntax of the program; it could be about a property, or about
 code inside one method, or that a class or method have certain properties. We
-provide [a few checks](/docs/linters-bug-types) and we have developed a domain
+provide [a few checks by default](#list-of-issue-types) and we have developed a domain
 specific language (DSL) to make it easier to write checks.
 
 ## AL: A declarative language for writing linters in Infer
@@ -686,4 +686,4 @@ infer run --linters -- clang -c Test.m
 ```
 
 There are a few other command-line options that are useful for using or
-developing new linters in Infer. Read about them in the [`infer capture` manual](man-pages).
+developing new linters in Infer. Read about them in the [`infer capture` manual](/docs/next/man-infer-capture).

@@ -1,5 +1,5 @@
 <pmd version="5.4.1" date="">
   <file name="hello.c">
-    <violation begincolumn="3" beginline="12" endcolumn="3" endline="13" class="" method="test" package="" priority="1" rule="NULL_DEREFERENCE" ruleset="Infer Rules" externalinfourl="https://fbinfer.com/docs/next/all-issue-types#null_dereference">pointer `s` last assigned on line 11 could be null and is dereferenced at line 12, column 3.</violation>
+    <violation begincolumn="3" beginline="12" endcolumn="3" endline="13" class="" method="test" package="" priority="1" rule="NULL_DEREFERENCE" ruleset="Infer Rules" externalinfourl="https://fbinfer.com//docs/next/all-issue-types#null_dereference">pointer `s` last assigned on line 11 could be null and is dereferenced at line 12, column 3.</violation>
   </file>
 </pmd>

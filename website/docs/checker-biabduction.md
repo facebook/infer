@@ -16,10 +16,10 @@ Read more about its foundations in the [Separation Logic and Biabduction page](s
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [EMPTY_VECTOR_ACCESS](all-issue-types#empty_vector_access)
-- [IVAR_NOT_NULL_CHECKED](all-issue-types#ivar_not_null_checked)
-- [NULL_DEREFERENCE](all-issue-types#null_dereference)
-- [PARAMETER_NOT_NULL_CHECKED](all-issue-types#parameter_not_null_checked)
-- [PREMATURE_NIL_TERMINATION_ARGUMENT](all-issue-types#premature_nil_termination_argument)
-- [RESOURCE_LEAK](all-issue-types#resource_leak)
-- [RETAIN_CYCLE](all-issue-types#retain_cycle)
+- [EMPTY_VECTOR_ACCESS](/docs/next/all-issue-types#empty_vector_access)
+- [IVAR_NOT_NULL_CHECKED](/docs/next/all-issue-types#ivar_not_null_checked)
+- [NULL_DEREFERENCE](/docs/next/all-issue-types#null_dereference)
+- [PARAMETER_NOT_NULL_CHECKED](/docs/next/all-issue-types#parameter_not_null_checked)
+- [PREMATURE_NIL_TERMINATION_ARGUMENT](/docs/next/all-issue-types#premature_nil_termination_argument)
+- [RESOURCE_LEAK](/docs/next/all-issue-types#resource_leak)
+- [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
