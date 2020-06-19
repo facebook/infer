@@ -408,7 +408,6 @@ OPTIONS
              EMPTY_VECTOR_ACCESS (enabled by default),
              ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
-             ERADICATE_CONDITION_REDUNDANT_NONNULL (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
              ERADICATE_FIELD_NOT_NULLABLE (enabled by default),
              ERADICATE_FIELD_OVER_ANNOTATED (enabled by default),

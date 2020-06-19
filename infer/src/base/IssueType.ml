@@ -467,12 +467,6 @@ let eradicate_condition_redundant =
     ~user_documentation:[%blob "../../documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]
 
 
-(* TODO(T54070503) remove condition redundant nonnull *)
-let _ =
-  register_from_string ~id:"ERADICATE_CONDITION_REDUNDANT_NONNULL"
-    ~hum:"Condition Redundant Non-Null" Warning Eradicate
-
-
 let eradicate_field_not_initialized =
   register_from_string ~id:"ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized" Warning
     Eradicate
