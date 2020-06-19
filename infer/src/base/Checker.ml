@@ -70,9 +70,6 @@ let config_unsafe checker =
   let supports_java (language : Language.t) =
     match language with Clang -> NoSupport | Java -> Support
   in
-  let supports_java_experimental (language : Language.t) =
-    match language with Clang -> NoSupport | Java -> ExperimentalSupport
-  in
   match checker with
   | AnnotationReachability ->
       { id= "annotation-reachability"
@@ -129,7 +126,7 @@ let config_unsafe checker =
           UserFacing
             { title= "Config Checks between Markers"
             ; markdown_body= "This checker is currently only useful for certain Facebook code." }
-      ; support= supports_java_experimental
+      ; support= supports_clang_and_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Collects config checks between marker start and end."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false

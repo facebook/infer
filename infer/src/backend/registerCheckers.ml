@@ -192,7 +192,7 @@ let all_checkers =
            interprocedural Payloads.Fields.config_checks_between_markers
              ConfigChecksBetweenMarkers.checker
          in
-         [(checker, Java)] ) } ]
+         [(checker, Clang); (checker, Java)] ) } ]
 
 
 let get_active_checkers () =

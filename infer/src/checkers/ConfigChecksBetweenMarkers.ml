@@ -6,27 +6,29 @@
  *)
 
 open! IStd
-open AbstractDomain.Types
 module F = Format
 module ConfigName = FbGKInteraction.ConfigName
+module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
-module ConfigTopLifted = struct
-  type t = ConfigName.t top_lifted
+module Marker = struct
+  type t = MarkerId of IntLit.t | MarkerName of {marker_class: Pvar.t; marker_name: Fieldname.t}
+  [@@deriving compare]
 
-  let pp = AbstractDomain.TopLiftedUtils.pp ~pp:ConfigName.pp
+  let equal = [%compare.equal: t]
 
-  let leq = AbstractDomain.TopLiftedUtils.leq ~leq:(fun ~lhs ~rhs -> ConfigName.equal lhs rhs)
-
-  let join x y =
-    match (x, y) with
-    | Top, _ | _, Top ->
-        Top
-    | NonTop x', NonTop y' ->
-        if ConfigName.equal x' y' then x else Top
+  let pp f = function
+    | MarkerId i ->
+        IntLit.pp f i
+    | MarkerName {marker_name} ->
+        Fieldname.pp f marker_name
 
 
-  let widen ~prev ~next ~num_iters:_ = join prev next
+  let of_int_lit i = MarkerId i
+
+  let of_name marker_class marker_name = MarkerName {marker_class; marker_name}
 end
+
+module MarkerLifted = AbstractDomain.Flat (Marker)
 
 module ConfigWithLocation = struct
   type t = ConfigName.t * Location.t [@@deriving compare]
@@ -44,15 +46,34 @@ module Loc = struct
   let of_pvar pvar = Pvar pvar
 end
 
+module Val = struct
+  (* NOTE: Instead of syntactically distinguishing config and marker variables with heuristics, we
+     evalute the values for both of them if possible. Later, one value of them should be actually
+     used in analyzing config checking or marker start/end statments. *)
+  include AbstractDomain.Pair (ConfigLifted) (MarkerLifted)
+
+  let is_bottom (config, marker) = ConfigLifted.is_bottom config && MarkerLifted.is_bottom marker
+
+  let get_config_opt (config, _) = ConfigLifted.get config
+
+  let get_marker_opt (_, marker) = MarkerLifted.get marker
+end
+
 module Mem = struct
-  include AbstractDomain.Map (Loc) (ConfigTopLifted)
+  include AbstractDomain.Map (Loc) (Val)
+
+  let add l v mem = if Val.is_bottom v then mem else add l v mem
+
+  let get_config_opt l mem = Option.bind (find_opt l mem) ~f:Val.get_config_opt
+
+  let get_marker_opt l mem = Option.bind (find_opt l mem) ~f:Val.get_marker_opt
 
   let copy ~to_ ~from mem =
     Option.value_map (find_opt from mem) ~default:mem ~f:(fun config -> add to_ config mem)
 end
 
 module Trace = struct
-  type elem = MarkerStart of IntLit.t | ConfigCheck of ConfigName.t
+  type elem = MarkerStart of Marker.t | ConfigCheck of ConfigName.t
 
   type t =
     | Empty
@@ -60,8 +81,8 @@ module Trace = struct
     | Call of {callee: Procname.t; location: Location.t; from: t; callee_trace: t}
 
   let pp_elem f = function
-    | MarkerStart i ->
-        F.fprintf f "MarkerStart(%a)" IntLit.pp i
+    | MarkerStart marker ->
+        F.fprintf f "MarkerStart(%a)" Marker.pp marker
     | ConfigCheck config ->
         F.fprintf f "ConfigCheck(%a)" ConfigName.pp config
 
@@ -82,7 +103,7 @@ module Trace = struct
 
   let make_desc = function
     | MarkerStart marker ->
-        F.asprintf "Marker %a start" IntLit.pp marker
+        F.asprintf "Marker %a start" Marker.pp marker
     | ConfigCheck gk_switch ->
         F.asprintf "Config %a is checked" ConfigName.pp gk_switch
 
@@ -132,7 +153,7 @@ module TraceWithReported = struct
 end
 
 module MarkerSet = struct
-  include AbstractDomain.Map (IntLit) (TraceWithReported)
+  include AbstractDomain.Map (Marker) (TraceWithReported)
 
   let pp f x =
     if is_empty x then F.pp_print_string f "{ }"
@@ -142,7 +163,7 @@ module MarkerSet = struct
       iter
         (fun marker _trace ->
           if !is_first then is_first := false else F.fprintf f ",@ " ;
-          IntLit.pp f marker )
+          Marker.pp f marker )
         x ;
       F.fprintf f " }@]" )
 
@@ -180,7 +201,7 @@ module MarkerSet = struct
       if reported then trace_reported
       else
         let desc =
-          F.asprintf "Config %a is checked inside marker %a" ConfigName.pp config IntLit.pp marker
+          F.asprintf "Config %a is checked inside marker %a" ConfigName.pp config Marker.pp marker
         in
         Reporting.log_issue proc_desc err_log ~loc:location ~ltr:(Trace.make_err_trace trace)
           ConfigChecksBetweenMarkers IssueType.config_checks_between_markers desc ;
@@ -189,7 +210,7 @@ module MarkerSet = struct
     mapi report_on_marker markers
 end
 
-module InvMarkerSet = AbstractDomain.InvertedSet (IntLit)
+module InvMarkerSet = AbstractDomain.InvertedSet (Marker)
 
 module Context = struct
   (** We use opposite orders in collecting the sets of started and ended markers. This is because we
@@ -315,8 +336,12 @@ module Dom = struct
     && ConfigChecks.leq ~lhs:lhs.config_checks ~rhs:rhs.config_checks
 
 
+  let load_constant id config marker ({mem} as astate) =
+    {astate with mem= Mem.add id (config, marker) mem}
+
+
   let load_constant_config id config ({mem} as astate) =
-    {astate with mem= Mem.add id (NonTop config) mem}
+    {astate with mem= Mem.add id (config, MarkerLifted.bottom) mem}
 
 
   let mem_copy ~to_ ~from ({mem} as astate) = {astate with mem= Mem.copy ~to_ ~from mem}
@@ -329,27 +354,46 @@ module Dom = struct
     {astate with context= Context.call_marker_start marker location context}
 
 
+  let call_marker_start_id id location ({mem} as astate) =
+    Mem.get_marker_opt (Loc.of_id id) mem
+    |> Option.value_map ~default:astate ~f:(fun marker -> call_marker_start marker location astate)
+
+
   let call_marker_end marker ({context} as astate) =
     {astate with context= Context.call_marker_end marker context}
 
 
-  let call_config_check analysis_data id location ({mem; context; config_checks} as astate) =
-    match Mem.find_opt (Loc.of_id id) mem with
-    | Some (NonTop config) ->
-        let trace_elem = Trace.config_check config in
-        let context = Context.call_config_check trace_elem location context in
-        let context =
-          { context with
-            started_markers= MarkerSet.report analysis_data config location context.started_markers
-          }
-        in
-        let context_with_trace =
-          {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
-        in
-        { astate with
-          config_checks= ConfigChecks.weak_add config context_with_trace location config_checks }
-    | _ ->
-        astate
+  let call_marker_end_id id ({mem} as astate) =
+    Mem.get_marker_opt (Loc.of_id id) mem
+    |> Option.value_map ~default:astate ~f:(fun marker -> call_marker_end marker astate)
+
+
+  let call_config_check analysis_data e location ({mem; context; config_checks} as astate) =
+    let astate' =
+      let open IOption.Let_syntax in
+      let* loc =
+        match (e : Exp.t) with
+        | Var id ->
+            Some (Loc.of_id id)
+        | Lvar pvar ->
+            Some (Loc.of_pvar pvar)
+        | _ ->
+            None
+      in
+      let+ config = Mem.get_config_opt loc mem in
+      let trace_elem = Trace.config_check config in
+      let context = Context.call_config_check trace_elem location context in
+      let context =
+        { context with
+          started_markers= MarkerSet.report analysis_data config location context.started_markers }
+      in
+      let context_with_trace =
+        {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
+      in
+      { astate with
+        config_checks= ConfigChecks.weak_add config context_with_trace location config_checks }
+    in
+    Option.value astate' ~default:astate
 
 
   let instantiate_callee analysis_data ~callee
@@ -391,24 +435,41 @@ module TransferFunctions = struct
   let exec_instr astate ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node
       instr =
     match (instr : Sil.instr) with
-    | Load {id; e} -> (
-      match FbGKInteraction.get_config e with
-      | Some config ->
-          Dom.load_constant_config (Loc.of_id id) config astate
-      | None -> (
-        match e with Lvar pvar -> Dom.load_config id pvar astate | _ -> astate ) )
+    | Load {id; e= Lvar pvar} ->
+        Dom.load_config id pvar astate
+    | Load {id; e} ->
+        let config =
+          Option.value_map (FbGKInteraction.get_config e) ~default:ConfigLifted.bottom
+            ~f:ConfigLifted.v
+        in
+        let marker =
+          Option.value_map (FbGKInteraction.get_marker e) ~default:MarkerLifted.bottom
+            ~f:(fun (marker_class, marker_name) ->
+              Marker.of_name marker_class marker_name |> MarkerLifted.v )
+        in
+        Dom.load_constant (Loc.of_id id) config marker astate
+    | Call (_, Const (Cfun callee), (Lvar pvar, _) :: (e, _) :: _, _, _)
+      when FbGKInteraction.is_config_load callee ->
+        Option.value_map (FbGKInteraction.get_config e) ~default:astate ~f:(fun config ->
+            Dom.load_constant_config (Loc.of_pvar pvar) (ConfigLifted.v config) astate )
     | Store {e1= Lvar pvar; e2= Exp.Var id} ->
         Dom.store_config pvar id astate
     | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, location, _)
-      when FbGKInteraction.is_marker_start tenv callee ->
-        Dom.call_marker_start marker location astate
+      when FbGKInteraction.is_marker_start_java tenv callee ->
+        Dom.call_marker_start (Marker.of_int_lit marker) location astate
     | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, _, _)
-      when FbGKInteraction.is_marker_end tenv callee ->
-        Dom.call_marker_end marker astate
+      when FbGKInteraction.is_marker_end_java tenv callee ->
+        Dom.call_marker_end (Marker.of_int_lit marker) astate
+    | Call (_, Const (Cfun callee), (Var id, _) :: _, location, _)
+      when FbGKInteraction.is_marker_start_objc callee ->
+        Dom.call_marker_start_id id location astate
+    | Call (_, Const (Cfun callee), (Var id, _) :: _, _, _)
+      when FbGKInteraction.is_marker_end_objc callee ->
+        Dom.call_marker_end_id id astate
     | Call (_, Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
-      | Some id ->
-          Dom.call_config_check analysis_data id location astate
+      | Some e ->
+          Dom.call_config_check analysis_data e location astate
       | None ->
           Option.value_map (analyze_dependency callee) ~default:astate
             ~f:(fun (_, callee_summary) ->

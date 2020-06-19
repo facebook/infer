@@ -1,0 +1,4 @@
+../../facebook/skel/infer/tests/codetoanalyze/objc/fb-gk-interaction/Basic.m, gk_check_in_callee, 2, CONFIG_CHECKS_BETWEEN_MARKERS, no_bucket, ADVICE, [Marker MY_MARKER start,Function gk_check is called,Config GK.my_kill_switch is checked]
+../../facebook/skel/infer/tests/codetoanalyze/objc/fb-gk-interaction/Basic.m, gk_check_with_get_bool, 3, CONFIG_CHECKS_BETWEEN_MARKERS, no_bucket, ADVICE, [Marker MY_MARKER start,Config GK.my_kill_switch is checked]
+../../facebook/skel/infer/tests/codetoanalyze/objc/fb-gk-interaction/Basic.m, gk_check_with_get_bool_qe_param, 3, CONFIG_CHECKS_BETWEEN_MARKERS, no_bucket, ADVICE, [Marker MY_MARKER start,Config GK.my_kill_switch is checked]
+../../facebook/skel/infer/tests/codetoanalyze/objc/fb-gk-interaction/Basic.m, gk_check_with_get_string_qe_param, 3, CONFIG_CHECKS_BETWEEN_MARKERS, no_bucket, ADVICE, [Marker MY_MARKER start,Config GK.my_kill_switch is checked]
