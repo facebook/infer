@@ -405,12 +405,14 @@ module TransferFunctions = struct
     | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, _, _)
       when FbGKInteraction.is_marker_end tenv callee ->
         Dom.call_marker_end marker astate
-    | Call (_, Const (Cfun callee), _ :: (Var id, _) :: _, location, _)
-      when FbGKInteraction.is_config_check tenv callee ->
-        Dom.call_config_check analysis_data id location astate
-    | Call (_, Const (Cfun callee), _, location, _) ->
-        Option.value_map (analyze_dependency callee) ~default:astate ~f:(fun (_, callee_summary) ->
-            Dom.instantiate_callee analysis_data ~callee ~callee_summary location astate )
+    | Call (_, Const (Cfun callee), args, location, _) -> (
+      match FbGKInteraction.get_config_check tenv callee args with
+      | Some id ->
+          Dom.call_config_check analysis_data id location astate
+      | None ->
+          Option.value_map (analyze_dependency callee) ~default:astate
+            ~f:(fun (_, callee_summary) ->
+              Dom.instantiate_callee analysis_data ~callee ~callee_summary location astate ) )
     | _ ->
         astate
 

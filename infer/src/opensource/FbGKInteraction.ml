@@ -19,7 +19,7 @@ end
 
 let get_config _ = None
 
-let is_config_check _ _ = false
+let get_config_check _ _ _ = None
 
 let is_marker_start _ _ = false
 
