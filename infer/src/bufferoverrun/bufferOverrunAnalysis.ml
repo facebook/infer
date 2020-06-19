@@ -405,6 +405,8 @@ module TransferFunctions = struct
             | _, `NotFound ->
                 (* This may happen for procedures with a biabduction model too. *)
                 L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
+                ScubaLogging.log_message ~label:"unmodeled_function_inferbo"
+                  ~message:(F.asprintf "Unmodeled Function[Inferbo] : %a" Procname.pp callee_pname) ;
                 Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
     | Call (((id, _) as ret), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
