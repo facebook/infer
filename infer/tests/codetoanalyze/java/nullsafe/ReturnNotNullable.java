@@ -214,4 +214,16 @@ public class ReturnNotNullable {
     field = 0;
     return field;
   }
+
+  static class AssignmentResultCheck {
+    // T58407328
+    public Throwable nullCheckAssignmentResultAsNonnull_FP(Throwable error) {
+      Throwable cause;
+      while ((cause = error.getCause()) != null) {
+        error = cause;
+      }
+
+      return error;
+    }
+  }
 }
