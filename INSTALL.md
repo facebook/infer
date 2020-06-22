@@ -18,7 +18,9 @@ is required to compile everything from source.
 - sqlite
 - pkg-config
 - Java (only needed for the Java analysis)
-- cmake (only needed for the C/Objective-C analysis)
+- CMake (only needed for the C/Objective-C analysis)
+- Ninja (optional, if you wish to use sequential linking when building the
+  C/Objective-C analysis)
 - clang in Xcode command line tools. You can install them with the command
   `xcode-select --install` (only needed for the C/Objective-C analysis)
 - Xcode >= 6.1 (only needed for the C/Objective-C analysis)
@@ -45,6 +47,9 @@ is required to compile everything from source.
 - Java (only needed for the Java analysis)
 - gcc >= 5.X or clang >= 3.4 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
+- CMake (only needed for the C/Objective-C analysis)
+- Ninja (optional, if you wish to use sequential linking when building the
+  C/Objective-C analysis)
 
 See also the distro-specific instructions for Ubuntu and Debian below.
 
