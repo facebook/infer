@@ -174,10 +174,7 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
       not build_exists_in_callees
 
 
-let should_report proc_desc tenv =
-  let pname = Procdesc.get_proc_name proc_desc in
-  (not (is_litho_function pname)) && not (is_component_build_method pname tenv)
-
+let should_report pname tenv = not (is_litho_function pname || is_component_build_method pname tenv)
 
 let report {InterproceduralAnalysis.proc_desc; tenv; err_log} astate =
   let check_on_string_set parent_typename create_loc call_chain prop_set =
@@ -310,14 +307,14 @@ let init_analysis_data ({InterproceduralAnalysis.analyze_dependency} as interpro
 
 let checker ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let ret_typ = Procdesc.get_ret_type proc_desc in
   let ret_path =
     let ret_var = Procdesc.get_ret_var proc_desc in
-    let ret_typ = Procdesc.get_ret_type proc_desc in
     Domain.LocalAccessPath.make_from_pvar ret_var ret_typ proc_name
   in
   let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) ret_path in
   Analyzer.compute_post (init_analysis_data analysis_data) ~initial proc_desc
   |> Option.map ~f:(fun post ->
-         let is_void_func = Procdesc.get_ret_type proc_desc |> Typ.is_void in
+         let is_void_func = Typ.is_void ret_typ in
          let post = Domain.get_summary ~is_void_func post in
-         if should_report proc_desc tenv then report analysis_data post else post )
+         if should_report proc_name tenv then report analysis_data post else post )
