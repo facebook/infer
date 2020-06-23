@@ -484,7 +484,6 @@ OPTIONS
              SHELL_INJECTION (enabled by default),
              SHELL_INJECTION_RISK (enabled by default),
              SKIP_FUNCTION (disabled by default),
-             SKIP_POINTER_DEREFERENCE (disabled by default),
              SQL_INJECTION (enabled by default),
              SQL_INJECTION_RISK (enabled by default),
              STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default),

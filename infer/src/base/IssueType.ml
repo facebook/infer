@@ -822,10 +822,6 @@ let retain_cycle =
 
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
 
-let skip_pointer_dereference =
-  register ~enabled:false ~id:"SKIP_POINTER_DEREFERENCE" Info Biabduction (* TODO *)
-    ~user_documentation:""
-
 
 let shell_injection =
   register ~id:"SHELL_INJECTION" Error Quandary

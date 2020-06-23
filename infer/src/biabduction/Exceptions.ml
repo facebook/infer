@@ -71,8 +71,6 @@ exception Registered_observer_being_deallocated of Localise.error_desc * L.ocaml
 
 exception Skip_function of Localise.error_desc
 
-exception Skip_pointer_dereference of Localise.error_desc * L.ocaml_pos
-
 exception Symexec_memory_error of L.ocaml_pos
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ocaml_pos
@@ -167,8 +165,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.failure_exe; description= Localise.no_desc; ocaml_pos= None}
   | Skip_function desc ->
       {issue_type= IssueType.skip_function; description= desc; ocaml_pos= None}
-  | Skip_pointer_dereference (desc, ocaml_pos) ->
-      {issue_type= IssueType.skip_pointer_dereference; description= desc; ocaml_pos= Some ocaml_pos}
   | Symexec_memory_error ocaml_pos ->
       { issue_type= IssueType.symexec_memory_error
       ; description= Localise.no_desc

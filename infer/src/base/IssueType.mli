@@ -294,8 +294,6 @@ val retain_cycle : t
 
 val skip_function : t
 
-val skip_pointer_dereference : t
-
 val shell_injection : t
 
 val shell_injection_risk : t

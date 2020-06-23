@@ -1271,10 +1271,11 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
                 else if Localise.is_empty_vector_access_desc desc then
                   raise (Exceptions.Empty_vector_access (desc, __POS__))
                 else raise (Exceptions.Null_dereference (desc, __POS__))
-            | Dereference_error (Deref_undef (_, _, pos), desc, path_opt) ->
-                extend_path path_opt (Some pos) ;
-                raise (Exceptions.Skip_pointer_dereference (desc, __POS__))
-            | Prover_checks _ | Cannot_combine | Missing_sigma_not_empty | Missing_fld_not_empty ->
+            | Dereference_error (Deref_undef _, _, _)
+            | Prover_checks _
+            | Cannot_combine
+            | Missing_sigma_not_empty
+            | Missing_fld_not_empty ->
                 assert false )
         | [] ->
             (* no dereference error detected *)
