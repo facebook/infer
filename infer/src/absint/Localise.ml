@@ -564,23 +564,6 @@ let desc_registered_observer_being_deallocated pvar loc =
   ; tags= !tags }
 
 
-let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
-  let tags = Tags.create () in
-  let expression =
-    match expr_str_opt with
-    | Some s ->
-        Tags.update tags Tags.value s ;
-        "expression " ^ s
-    | None ->
-        "an expression"
-  in
-  let description =
-    Format.asprintf "A unary minus is applied to %a of type %s %s" MF.pp_monospaced expression
-      typ_str (at_line tags loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-
 let desc_skip_function proc_name =
   let tags = Tags.create () in
   let proc_name_str = Procname.to_string proc_name in

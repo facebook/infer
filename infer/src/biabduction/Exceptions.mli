@@ -72,8 +72,6 @@ exception Skip_function of Localise.error_desc
 
 exception Symexec_memory_error of Logging.ocaml_pos
 
-exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ocaml_pos
-
 exception Wrong_argument_number of Logging.ocaml_pos
 
 val handle_exception : exn -> bool

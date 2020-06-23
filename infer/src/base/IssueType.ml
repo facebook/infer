@@ -889,10 +889,6 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 let topl_error = register ~id:"TOPL_ERROR" Error TOPL ~user_documentation:"Experimental."
 
-let unary_minus_applied_to_unsigned_expression =
-  register ~enabled:false ~id:"UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION" Warning
-    Biabduction (* TODO *) ~user_documentation:""
-
 
 let _unavailable_api_in_supported_ios_sdk =
   register ~id:"UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK" Warning Linters

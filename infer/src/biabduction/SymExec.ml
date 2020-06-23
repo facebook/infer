@@ -412,15 +412,7 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
-  | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
-      let desc =
-        Errdesc.explain_unary_minus_applied_to_unsigned_expression tenv e typ
-          (AnalysisState.get_node_exn ()) (AnalysisState.get_loc_exn ())
-      in
-      let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
-      BiabductionReporting.log_issue_deprecated_using_state proc_desc err_log exn ;
-      (Prop.exp_normalize_prop tenv prop exp, prop')
-  | None, prop' ->
+  | Some (Attribute.UminusUnsigned _), prop' | None, prop' ->
       (Prop.exp_normalize_prop tenv prop exp, prop')
 
 

@@ -220,8 +220,6 @@ OPTIONS
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
-             UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by
-           default),
              UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),

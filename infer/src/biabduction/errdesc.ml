@@ -1100,17 +1100,5 @@ let explain_condition_always_true_false tenv i cond node loc =
   Localise.desc_condition_always_true_false i cond_str_opt loc
 
 
-(** explain unary minus applied to unsigned expression *)
-let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =
-  let exp_str_opt =
-    match exp_rv_dexp tenv node exp with Some de -> Some (DExp.to_string de) | None -> None
-  in
-  let typ_str =
-    let pp fmt = Typ.pp_full Pp.text fmt typ in
-    F.asprintf "%t" pp
-  in
-  Localise.desc_unary_minus_applied_to_unsigned_expression exp_str_opt typ_str loc
-
-
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc

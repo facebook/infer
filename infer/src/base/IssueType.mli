@@ -318,8 +318,6 @@ val thread_safety_violation : t
 
 val topl_error : t
 
-val unary_minus_applied_to_unsigned_expression : t
-
 val uninitialized_value : t
 
 val unreachable_code_after : t

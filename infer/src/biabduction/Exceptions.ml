@@ -73,8 +73,6 @@ exception Skip_function of Localise.error_desc
 
 exception Symexec_memory_error of L.ocaml_pos
 
-exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ocaml_pos
-
 exception Wrong_argument_number of L.ocaml_pos
 
 let recognize_exception exn : IssueToReport.t =
@@ -168,10 +166,6 @@ let recognize_exception exn : IssueToReport.t =
   | Symexec_memory_error ocaml_pos ->
       { issue_type= IssueType.symexec_memory_error
       ; description= Localise.no_desc
-      ; ocaml_pos= Some ocaml_pos }
-  | Unary_minus_applied_to_unsigned_expression (desc, ocaml_pos) ->
-      { issue_type= IssueType.unary_minus_applied_to_unsigned_expression
-      ; description= desc
       ; ocaml_pos= Some ocaml_pos }
   | Wrong_argument_number ocaml_pos ->
       { issue_type= IssueType.wrong_argument_number

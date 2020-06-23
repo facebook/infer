@@ -72,10 +72,6 @@ val explain_condition_always_true_false :
   Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a condition which is always true or false *)
 
-val explain_unary_minus_applied_to_unsigned_expression :
-  Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
-(** explain unary minus applied to unsigned expression *)
-
 val explain_leak :
      Tenv.t
   -> Predicates.hpred
