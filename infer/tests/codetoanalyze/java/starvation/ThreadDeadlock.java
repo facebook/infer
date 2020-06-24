@@ -79,4 +79,23 @@ class ThreadDeadlock {
       }
     }
   }
+
+  Object lockE, lockF, lockG;
+
+  public void FP_sequentialEandGOk() {
+    synchronized (lockE) {
+      synchronized (lockF) {
+      }
+    }
+    // at this point we still believe lockE is held
+    synchronized (lockG) {
+    }
+  }
+
+  public void FP_nestedGthenEOk() {
+    synchronized (lockG) {
+      synchronized (lockE) {
+      }
+    }
+  }
 }
