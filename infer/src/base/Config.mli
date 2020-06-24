@@ -417,6 +417,8 @@ val print_active_checkers : bool
 
 val print_builtins : bool
 
+val print_jbir : bool
+
 val print_logs : bool
 
 val print_types : bool

@@ -1638,6 +1638,10 @@ INTERNAL OPTIONS
            Activates: Print the builtin functions and exit (Conversely:
            --no-print-builtins)
 
+       --print-jbir
+           Activates: Print JBir translation of Java bytecode in logs
+           (Conversely: --no-print-jbir)
+
        --print-types
            Activates: Print types in symbolic heaps (Conversely:
            --no-print-types)

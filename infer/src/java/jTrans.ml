@@ -282,6 +282,11 @@ let get_jbir_representation cm bytecode =
     bytecode
 
 
+let pp_jbir fmt jbir =
+  (Format.pp_print_list ~pp_sep:Format.pp_print_newline Format.pp_print_string)
+    fmt (JBir.print jbir)
+
+
 let trans_access = function
   | `Default ->
       PredSymb.Default
@@ -423,6 +428,9 @@ let create_cm_procdesc source_file program icfg cm proc_name =
   try
     let bytecode = get_bytecode cm in
     let jbir_code = get_jbir_representation cm bytecode in
+    if Config.print_jbir then
+      L.(debug Capture Verbose)
+        "Printing JBir of: %a@\n@[%a@]@." Procname.pp proc_name pp_jbir jbir_code ;
     let loc_start = get_start_location source_file proc_name bytecode in
     let loc_exit = get_exit_location source_file bytecode in
     let formals = translate_formals program tenv cn jbir_code in

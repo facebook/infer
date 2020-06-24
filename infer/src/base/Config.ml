@@ -982,6 +982,7 @@ and ( bo_debug
     , linters_developer_mode
     , only_cheap_debug
     , print_buckets
+    , print_jbir
     , print_logs
     , print_types
     , reports_include_ml_loc
@@ -1032,6 +1033,8 @@ and ( bo_debug
   and print_buckets =
     CLOpt.mk_bool ~long:"print-buckets"
       "Show the internal bucket of Infer reports in their textual description"
+  and print_jbir =
+    CLOpt.mk_bool ~long:"print-jbir" "Print JBir translation of Java bytecode in logs"
   and print_types = CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
   and keep_going =
     CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
@@ -1135,6 +1138,7 @@ and ( bo_debug
   , linters_developer_mode
   , only_cheap_debug
   , print_buckets
+  , print_jbir
   , print_logs
   , print_types
   , reports_include_ml_loc
@@ -3065,6 +3069,8 @@ and seconds_per_iteration = !seconds_per_iteration
 and select = !select
 
 and show_buckets = !print_buckets
+
+and print_jbir = !print_jbir
 
 and siof_check_iostreams = !siof_check_iostreams
 
