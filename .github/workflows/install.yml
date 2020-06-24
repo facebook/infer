@@ -65,6 +65,7 @@ jobs:
 
       # let the build run with c analyzers enabled
       - run: sed -i -e '/"--disable-c-analyzers"/d' opam opam.locked
+      - run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
 
       # ensure infer isn't installed in this switch, then deal with dependencies
       - run: opam remove infer || true
