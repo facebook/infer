@@ -78,3 +78,44 @@ jobs:
       - run: opam install --deps-only infer
 
       - run: opam install infer
+
+      - name: Test infer
+        run: |
+          eval $(opam env)
+
+          echo -e "#include <stdio.h> \n int main() { int *s = NULL; *s = 42; return 0; } " > FailingTest.c
+          echo -e "#include <stdio.h> \n int main() { int *s = NULL; if (s != NULL) { *s = 42; } return 0; }" > PassingTest.c
+
+          # first command should exit with status 2
+          infer --fail-on-issue -P -- clang -c FailingTest.c || if [[ $? -ne 2 ]]; then exit 1; fi
+          infer --fail-on-issue -P -- clang -c PassingTest.c
+
+          echo 'class FailingTest {' >> FailingTest.java
+          echo '  String mayReturnNull(int i) {' >> FailingTest.java
+          echo '    if (i > 0) {' >> FailingTest.java
+          echo '      return "Hello, Infer!";' >> FailingTest.java
+          echo '    }' >> FailingTest.java
+          echo '    return null;' >> FailingTest.java
+          echo '  }' >> FailingTest.java
+          echo '  int mayCauseNPE() {' >> FailingTest.java
+          echo '    String s = mayReturnNull(0);' >> FailingTest.java
+          echo '    return s.length();' >> FailingTest.java
+          echo '  }' >> FailingTest.java
+          echo '}' >> FailingTest.java
+
+          echo "  class PassingTest {" >> PassingTest.java
+          echo "    String mayReturnNull(int i) {" >> PassingTest.java
+          echo "      if (i > 0) {" >> PassingTest.java
+          echo '        return "Hello, Infer!";' >> PassingTest.java
+          echo "      }" >> PassingTest.java
+          echo "      return null;" >> PassingTest.java
+          echo "    }" >> PassingTest.java
+          echo "    int mayCauseNPE() {" >> PassingTest.java
+          echo "      String s = mayReturnNull(0);" >> PassingTest.java
+          echo "      return s == null ? 0 : s.length();" >> PassingTest.java
+          echo "    }" >> PassingTest.java
+          echo "  }" >> PassingTest.java
+
+          # first command should exit with status 2
+          infer --fail-on-issue -P -- javac FailingTest.java || if [[ $? -ne 2 ]]; then exit 1; fi
+          infer --fail-on-issue -P -- javac PassingTest.java
