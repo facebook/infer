@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package codetoanalyze.java.nullsafe_default;
+package codetoanalyze.java.nullsafe;
 
 // Test annotation to ensure Infer does not confuse it with @Nullable
 @interface SomeAnnotationEndingWithNullable {}

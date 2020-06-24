@@ -10,7 +10,7 @@
  * should be free of nullability issues (w.r.t to their mode). The goal of the test is to ensure
  * that mode to promote to is correct for each class.
  */
-package codetoanalyze.java.nullsafe_default;
+package codetoanalyze.java.nullsafe;
 
 import com.facebook.infer.annotation.Nullsafe;
 

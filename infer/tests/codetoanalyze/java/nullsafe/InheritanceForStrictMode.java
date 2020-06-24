@@ -6,7 +6,7 @@
  */
 
 /** Test for checking how @NullsafeStrict mode plays with inheritance rule */
-package codetoanalyze.java.nullsafe_default;
+package codetoanalyze.java.nullsafe;
 
 import com.facebook.infer.annotation.NullsafeStrict;
 import javax.annotation.Nullable;
