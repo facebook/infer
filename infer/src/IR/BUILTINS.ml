@@ -38,7 +38,7 @@ module type S = sig
 
   val __exit : t
 
-  val __free_cf : t
+  val __objc_bridge_transfer : t
 
   val __get_array_length : t
 

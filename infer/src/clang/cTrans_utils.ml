@@ -388,8 +388,8 @@ let cpp_new_trans integer_type_widths sil_loc function_type size_exp placement_a
   mk_trans_result (exp, function_type) {empty_control with instrs= stmt_call}
 
 
-let create_call_to_free_cf sil_loc exp typ =
-  let pname = BuiltinDecl.__free_cf in
+let create_call_to_objc_bridge_transfer sil_loc exp typ =
+  let pname = BuiltinDecl.__objc_bridge_transfer in
   let stmt_call =
     Sil.Call
       ( (Ident.create_fresh Ident.knormal, Typ.void)
@@ -456,7 +456,7 @@ let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast
   | _ -> (
     match objc_bridge_cast_kind with
     | Some `OBC_BridgeTransfer ->
-        let instr = create_call_to_free_cf sil_loc exp typ in
+        let instr = create_call_to_objc_bridge_transfer sil_loc exp typ in
         ([instr], (exp, cast_typ))
     | Some cast_kind ->
         L.debug Capture Verbose

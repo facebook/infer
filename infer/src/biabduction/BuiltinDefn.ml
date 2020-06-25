@@ -516,13 +516,6 @@ let execute_free mk ?(mark_as_freed = true)
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-(* This is for objects of CoreFoundation and CoreGraphics that ned to be released.
- However, we want to treat them a bit differently to standard free; in particular we
- don't want to flag Use_after_free because they can be used after CFRelease. The main purpose
- of this builtin is to remove the memory attribute so that we don't report Memory Leaks.
- This should behave correctly most of the time. *)
-let execute_free_cf mk = execute_free mk ~mark_as_freed:false
-
 let execute_alloc mk can_return_null
     {Builtin.analysis_data= {tenv; _} as analysis_data; prop_; path; ret_id_typ; args; loc} :
     Builtin.ret_typ =
@@ -863,7 +856,7 @@ let __delete_locked_attribute =
 
 let __exit = Builtin.register BuiltinDecl.__exit execute_exit
 
-let __free_cf = Builtin.register BuiltinDecl.__free_cf (execute_free_cf PredSymb.Mmalloc)
+let __objc_bridge_transfer = Builtin.register BuiltinDecl.__objc_bridge_transfer execute_skip
 
 (* return the length of the array passed as a parameter *)
 let __get_array_length = Builtin.register BuiltinDecl.__get_array_length execute___get_array_length

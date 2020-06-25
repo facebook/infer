@@ -58,7 +58,7 @@ let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
 let __exit = create_procname "_exit"
 
-let __free_cf = create_procname "__free_cf"
+let __objc_bridge_transfer = create_procname "__objc_bridge_transfer"
 
 let __get_array_length = create_procname "__get_array_length"
 

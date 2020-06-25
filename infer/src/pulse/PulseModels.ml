@@ -889,7 +889,7 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +match_builtin BuiltinDecl.__free_cf
+        ; +match_builtin BuiltinDecl.__objc_bridge_transfer
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null ] )
 end
