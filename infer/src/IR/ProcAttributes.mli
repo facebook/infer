@@ -11,8 +11,6 @@ open! IStd
 
 type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
 
-val kind_of_objc_accessor_type : objc_accessor_type -> string
-
 type var_data =
   { name: Mangled.t
   ; typ: Typ.t

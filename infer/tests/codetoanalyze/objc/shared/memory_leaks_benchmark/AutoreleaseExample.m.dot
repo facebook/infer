@@ -138,4 +138,26 @@ digraph cfg {
 	
 
 	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" ;
+"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_1" [label="1: Start Auto.setSon:\nFormals:  self:Auto* son:Auto*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_1" -> "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" ;
+"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_2" [label="2: Exit Auto.setSon: \n  " color=yellow style=filled]
+	
+
+"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:Auto* [line 15, column 17]\n  n$6=*&son:Auto* [line 15, column 17]\n  *n$5._son:Auto*=n$6 [line 15, column 17]\n " shape="box"]
+	
+
+	 "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" -> "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_2" ;
+"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_1" [label="1: Start Auto.son\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_1" -> "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" ;
+"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_2" [label="2: Exit Auto.son \n  " color=yellow style=filled]
+	
+
+"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:Auto* [line 15, column 17]\n  n$4=*n$3._son:Auto* [line 15, column 17]\n  *&return:Auto*=n$4 [line 15, column 17]\n " shape="box"]
+	
+
+	 "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" -> "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_2" ;
 }

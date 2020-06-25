@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_1" [label="1: Start NonnullAnnot.child\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_1" -> "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" ;
+"child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_2" [label="2: Exit NonnullAnnot.child \n  " color=yellow style=filled]
+	
+
+"child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:NonnullAnnot* [line 11, column 25]\n  n$6=*n$5._child:NonnullAnnot* [line 11, column 25]\n  *&return:NonnullAnnot*=n$6 [line 11, column 25]\n " shape="box"]
+	
+
+	 "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" -> "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_2" ;
 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" [label="1: Start NonnullAnnot.dealloc\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -22,6 +33,17 @@ digraph cfg {
 	
 
 	 "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_3" -> "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_2" ;
+"setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_1" [label="1: Start NonnullAnnot.setChild:\nFormals:  self:NonnullAnnot* child:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_1" -> "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" ;
+"setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_2" [label="2: Exit NonnullAnnot.setChild: \n  " color=yellow style=filled]
+	
+
+"setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:NonnullAnnot* [line 11, column 25]\n  n$4=*&child:NonnullAnnot* [line 11, column 25]\n  *n$3._child:NonnullAnnot*=n$4 [line 11, column 25]\n " shape="box"]
+	
+
+	 "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" -> "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_2" ;
 "test1:#NonnullAnnot(class NonnullAnnot)#instance.e1bfc3674bdae0a62d7e4bb2a1768f99_1" [label="1: Start NonnullAnnot.test1:\nFormals:  self:NonnullAnnot* a:NonnullAnnot*\nLocals:  aa:NonnullAnnot* \n  " color=yellow style=filled]
 	
 

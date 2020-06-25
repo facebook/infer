@@ -11,4 +11,26 @@ digraph cfg {
 	
 
 	 "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_3" -> "dealloc#Test#instance.5b6eb1b3af87ac0463c4245d2b33c913_2" ;
+"numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_1" [label="1: Start MyProtocol.numberOfFiles\nFormals:  self:MyProtocol*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_1" -> "numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_3" ;
+"numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_2" [label="2: Exit MyProtocol.numberOfFiles \n  " color=yellow style=filled]
+	
+
+"numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_3" [label="3:  BinaryOperatorStmt: Node \n   n$2=*&self:MyProtocol* [line 12, column 15]\n  n$3=*n$2.numberOfFiles:int [line 12, column 15]\n  *&return:int=n$3 [line 12, column 15]\n " shape="box"]
+	
+
+	 "numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_3" -> "numberOfFiles#MyProtocol#instance.c9f4776a6bed5539fbf6975c3df32bbd_2" ;
+"setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_1" [label="1: Start MyProtocol.setNumberOfFiles:\nFormals:  self:MyProtocol* numberOfFiles:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_1" -> "setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_3" ;
+"setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_2" [label="2: Exit MyProtocol.setNumberOfFiles: \n  " color=yellow style=filled]
+	
+
+"setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:MyProtocol* [line 12, column 15]\n  n$1=*&numberOfFiles:int [line 12, column 15]\n  *n$0.numberOfFiles:int=n$1 [line 12, column 15]\n " shape="box"]
+	
+
+	 "setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_3" -> "setNumberOfFiles:#MyProtocol#instance.c62f9b68d4d1ea33789366903af4810a_2" ;
 }

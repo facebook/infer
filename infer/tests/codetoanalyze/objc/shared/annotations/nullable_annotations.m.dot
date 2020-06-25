@@ -41,6 +41,17 @@ digraph cfg {
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_2" ;
+"name#User#instance.64d2642dd9cada63b69256c9a7def3b2_1" [label="1: Start User.name\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_1" -> "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" ;
+"name#User#instance.64d2642dd9cada63b69256c9a7def3b2_2" [label="2: Exit User.name \n  " color=yellow style=filled]
+	
+
+"name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:User* [line 23, column 40]\n  n$6=*n$5._name:NSString* [line 23, column 40]\n  *&return:NSString*=n$6 [line 23, column 40]\n " shape="box"]
+	
+
+	 "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" -> "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_2" ;
 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" [label="1: Start User.otherUserName\nFormals:  self:User*\nLocals:  ou:User* \n  " color=yellow style=filled]
 	
 
@@ -56,6 +67,17 @@ digraph cfg {
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_3" ;
+"setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_1" [label="1: Start User.setName:\nFormals:  self:User* name:NSString*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_1" -> "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" ;
+"setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_2" [label="2: Exit User.setName: \n  " color=yellow style=filled]
+	
+
+"setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:User* [line 23, column 40]\n  n$4=*&name:NSString* [line 23, column 40]\n  *n$3._name:NSString*=n$4 [line 23, column 40]\n " shape="box"]
+	
+
+	 "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" -> "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_2" ;
 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User.tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User.tellMeSomething(<>) \n  " color=yellow style=filled]
 	
 

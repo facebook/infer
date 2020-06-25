@@ -1264,31 +1264,23 @@ let rec sym_exec
                           load_ret_annots resolved_pname
                     in
                     match resolved_pdesc_opt with
-                    | Some resolved_pdesc -> (
+                    | Some resolved_pdesc ->
                         let attrs = Procdesc.get_attributes resolved_pdesc in
                         let ret_type = attrs.ProcAttributes.ret_type in
                         let model_as_malloc ret_type resolved_pname =
                           Objc_models.is_malloc_model ret_type resolved_pname
                         in
-                        match attrs.ProcAttributes.objc_accessor with
-                        | Some objc_accessor ->
-                            (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
-                            handle_objc_instance_method_call n_actual_params prop tenv
-                              (fst ret_id_typ) current_pdesc resolved_pname path (fun () ->
-                                sym_exec_objc_accessor resolved_pname objc_accessor ret_type
-                                  (fst ret_id_typ) analysis_data callee_pname loc n_actual_params
-                                  prop path )
-                        | None when model_as_malloc ret_type resolved_pname ->
-                            (* If it's an alloc model, call alloc rather than skipping *)
-                            sym_exec_alloc_model analysis_data resolved_pname ret_type ret_id_typ
-                              loc prop path
-                        | _ ->
-                            let is_objc_instance_method =
-                              ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
-                                ClangMethodKind.OBJC_INSTANCE
-                            in
-                            skip_call ~is_objc_instance_method ~reason prop path resolved_pname
-                              ret_annots loc ret_id_typ ret_type n_actual_params )
+                        if model_as_malloc ret_type resolved_pname then
+                          (* If it's an alloc model, call alloc rather than skipping *)
+                          sym_exec_alloc_model analysis_data resolved_pname ret_type ret_id_typ loc
+                            prop path
+                        else
+                          let is_objc_instance_method =
+                            ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
+                              ClangMethodKind.OBJC_INSTANCE
+                          in
+                          skip_call ~is_objc_instance_method ~reason prop path resolved_pname
+                            ret_annots loc ret_id_typ ret_type n_actual_params
                     | None ->
                         skip_call ~reason prop path resolved_pname ret_annots loc ret_id_typ
                           (snd ret_id_typ) n_actual_params )
@@ -1611,59 +1603,6 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
         [(prop_, path)] )
   | None ->
       [(prop_, path)]
-
-
-and sym_exec_objc_getter field ret_typ ret_id ({InterproceduralAnalysis.tenv; _} as analysis_data)
-    loc args prop =
-  let field_name, _, _ = field in
-  L.d_printfln "No custom getter found. Executing the ObjC builtin getter with ivar %a."
-    Fieldname.pp field_name ;
-  match args with
-  | [ ( lexp
-      , ( ({Typ.desc= Tstruct struct_name} as typ)
-        | {desc= Tptr (({desc= Tstruct struct_name} as typ), _)} ) ) ] ->
-      Tenv.add_field tenv struct_name field ;
-      let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
-      execute_load ~report_deref_errors:false analysis_data ret_id field_access_exp ret_typ loc prop
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-and sym_exec_objc_setter field _ _ ({InterproceduralAnalysis.tenv; _} as analysis_data) loc args
-    prop =
-  let field_name, _, _ = field in
-  L.d_printfln "No custom setter found. Executing the ObjC builtin setter with ivar %a."
-    Fieldname.pp field_name ;
-  match args with
-  | ( lexp1
-    , ( ({Typ.desc= Tstruct struct_name} as typ1)
-      | {Typ.desc= Tptr (({Typ.desc= Tstruct struct_name} as typ1), _)} ) )
-    :: (lexp2, typ2) :: _ ->
-      Tenv.add_field tenv struct_name field ;
-      let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
-      execute_store ~report_deref_errors:false analysis_data field_access_exp typ2 lexp2 loc prop
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-and sym_exec_objc_accessor callee_pname property_accesor ret_typ ret_id analysis_data _ loc args
-    prop path : Builtin.ret_typ =
-  let f_accessor =
-    match property_accesor with
-    | ProcAttributes.Objc_getter field ->
-        sym_exec_objc_getter field
-    | ProcAttributes.Objc_setter field ->
-        sym_exec_objc_setter field
-  in
-  (* we want to execute in the context of the current procedure, not in the context of callee_pname,
-     since this is the procname of the setter/getter method *)
-  let path_description =
-    F.sprintf "Executing synthesized %s %s"
-      (ProcAttributes.kind_of_objc_accessor_type property_accesor)
-      (Procname.to_simplified_string callee_pname)
-  in
-  let path = Paths.Path.add_description path path_description in
-  f_accessor ret_typ ret_id analysis_data loc args prop |> List.map ~f:(fun p -> (p, path))
 
 
 and sym_exec_alloc_model analysis_data pname ret_typ ret_id_typ loc prop path : Builtin.ret_typ =

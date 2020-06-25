@@ -8,13 +8,11 @@
 open! IStd
 module F = Format
 
-type attributes_kind = ProcUndefined | ProcObjCAccessor | ProcDefined [@@deriving compare]
+type attributes_kind = ProcUndefined | ProcDefined [@@deriving compare]
 
 let equal_attributes_kind = [%compare.equal: attributes_kind]
 
-let attributes_kind_to_int64 =
-  [(ProcUndefined, Int64.zero); (ProcObjCAccessor, Int64.one); (ProcDefined, Int64.of_int 2)]
-
+let attributes_kind_to_int64 = [(ProcUndefined, Int64.zero); (ProcDefined, Int64.of_int 2)]
 
 let int64_of_attributes_kind a =
   List.Assoc.find_exn ~equal:equal_attributes_kind attributes_kind_to_int64 a
@@ -27,9 +25,7 @@ let deserialize_attributes_kind =
 
 
 let proc_kind_of_attr (proc_attributes : ProcAttributes.t) =
-  if proc_attributes.is_defined then ProcDefined
-  else if Option.is_some proc_attributes.objc_accessor then ProcObjCAccessor
-  else ProcUndefined
+  if proc_attributes.is_defined then ProcDefined else ProcUndefined
 
 
 let replace pname pname_blob akind source_file attributes proc_desc callees =
@@ -105,7 +101,5 @@ let find_file_capturing_procedure pname =
 let pp_attributes_kind f = function
   | ProcUndefined ->
       F.pp_print_string f "<undefined>"
-  | ProcObjCAccessor ->
-      F.pp_print_string f "<ObjC accessor>"
   | ProcDefined ->
       F.pp_print_string f "<defined>"

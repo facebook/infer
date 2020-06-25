@@ -235,4 +235,26 @@ digraph cfg {
 	
 
 	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" ;
+"setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_1" [label="1: Start DispatchA.setX:\nFormals:  self:DispatchA* x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_1" -> "setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_3" ;
+"setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_2" [label="2: Exit DispatchA.setX: \n  " color=yellow style=filled]
+	
+
+"setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:DispatchA* [line 12, column 26]\n  n$1=*&x:int [line 12, column 26]\n  *n$0._x:int=n$1 [line 12, column 26]\n " shape="box"]
+	
+
+	 "setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_3" -> "setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_2" ;
+"x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_1" [label="1: Start DispatchA.x\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_1" -> "x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_3" ;
+"x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_2" [label="2: Exit DispatchA.x \n  " color=yellow style=filled]
+	
+
+"x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_3" [label="3:  BinaryOperatorStmt: Node \n   n$2=*&self:DispatchA* [line 12, column 26]\n  n$3=*n$2._x:int [line 12, column 26]\n  *&return:int=n$3 [line 12, column 26]\n " shape="box"]
+	
+
+	 "x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_3" -> "x#DispatchA#instance.f9f4a74f4e170606d41e9af1e202a966_2" ;
 }

@@ -157,6 +157,28 @@ digraph cfg {
 	
 
 	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" ;
+"attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_1" [label="1: Start MemoryLeakExample.attachmentContainerView\nFormals:  self:MemoryLeakExample*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_1" -> "attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_3" ;
+"attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_2" [label="2: Exit MemoryLeakExample.attachmentContainerView \n  " color=yellow style=filled]
+	
+
+"attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_3" [label="3:  BinaryOperatorStmt: Node \n   n$10=*&self:MemoryLeakExample* [line 14, column 27]\n  n$11=*n$10._attachmentContainerView:UIView* [line 14, column 27]\n  *&return:UIView*=n$11 [line 14, column 27]\n " shape="box"]
+	
+
+	 "attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_3" -> "attachmentContainerView#MemoryLeakExample#instance.aff4fd13563e9783b77bb7f4c56c06f7_2" ;
+"backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_1" [label="1: Start MemoryLeakExample.backgroundCoveringView\nFormals:  self:MemoryLeakExample*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_1" -> "backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_3" ;
+"backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_2" [label="2: Exit MemoryLeakExample.backgroundCoveringView \n  " color=yellow style=filled]
+	
+
+"backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_3" [label="3:  BinaryOperatorStmt: Node \n   n$6=*&self:MemoryLeakExample* [line 13, column 27]\n  n$7=*n$6._backgroundCoveringView:UIView* [line 13, column 27]\n  *&return:UIView*=n$7 [line 13, column 27]\n " shape="box"]
+	
+
+	 "backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_3" -> "backgroundCoveringView#MemoryLeakExample#instance.274e2fe96127ee4833b32c350286035f_2" ;
 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" [label="1: Start MemoryLeakExample.blockCapturedVarLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n  " color=yellow style=filled]
 	
 
@@ -256,6 +278,28 @@ digraph cfg {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;
+"setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_1" [label="1: Start MemoryLeakExample.setAttachmentContainerView:\nFormals:  self:MemoryLeakExample* attachmentContainerView:UIView*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_1" -> "setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_3" ;
+"setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_2" [label="2: Exit MemoryLeakExample.setAttachmentContainerView: \n  " color=yellow style=filled]
+	
+
+"setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_3" [label="3:  BinaryOperatorStmt: Node \n   n$12=*&self:MemoryLeakExample* [line 14, column 27]\n  n$13=*&attachmentContainerView:UIView* [line 14, column 27]\n  *n$12._attachmentContainerView:UIView*=n$13 [line 14, column 27]\n " shape="box"]
+	
+
+	 "setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_3" -> "setAttachmentContainerView:#MemoryLeakExample(class UIView)#instance.8d85bf92171cba689e1f602ab1f4c0c7_2" ;
+"setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_1" [label="1: Start MemoryLeakExample.setBackgroundCoveringView:\nFormals:  self:MemoryLeakExample* backgroundCoveringView:UIView*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_1" -> "setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_3" ;
+"setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_2" [label="2: Exit MemoryLeakExample.setBackgroundCoveringView: \n  " color=yellow style=filled]
+	
+
+"setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_3" [label="3:  BinaryOperatorStmt: Node \n   n$8=*&self:MemoryLeakExample* [line 13, column 27]\n  n$9=*&backgroundCoveringView:UIView* [line 13, column 27]\n  *n$8._backgroundCoveringView:UIView*=n$9 [line 13, column 27]\n " shape="box"]
+	
+
+	 "setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_3" -> "setBackgroundCoveringView:#MemoryLeakExample(class UIView)#instance.aa3950cc83a096190a5b6798bab718e3_2" ;
 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" [label="1: Start MemoryLeakExample.test\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * \n  " color=yellow style=filled]
 	
 

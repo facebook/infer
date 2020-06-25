@@ -63,4 +63,26 @@ digraph cfg {
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" ;
+"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nAnnotation: <_Nonnull> NonnullC.name(<>) \n  " color=yellow style=filled]
+	
+
+	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" ;
+"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_2" [label="2: Exit NonnullC.name \n  " color=yellow style=filled]
+	
+
+"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:NonnullC* [line 30, column 36]\n  n$6=*n$5._name:NSString* [line 30, column 36]\n  *&return:NSString*=n$6 [line 30, column 36]\n " shape="box"]
+	
+
+	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_2" ;
+"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" [label="1: Start NonnullC.setName:\nFormals:  self:NonnullC* name:NSString*\nLocals: \nAnnotation: <> NonnullC.setName:(<> <_Nonnull>) \n  " color=yellow style=filled]
+	
+
+	 "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" -> "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" ;
+"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_2" [label="2: Exit NonnullC.setName: \n  " color=yellow style=filled]
+	
+
+"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:NonnullC* [line 30, column 36]\n  n$4=*&name:NSString* [line 30, column 36]\n  *n$3._name:NSString*=n$4 [line 30, column 36]\n " shape="box"]
+	
+
+	 "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" -> "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_2" ;
 }
