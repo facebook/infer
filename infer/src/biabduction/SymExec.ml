@@ -1267,20 +1267,12 @@ let rec sym_exec
                     | Some resolved_pdesc ->
                         let attrs = Procdesc.get_attributes resolved_pdesc in
                         let ret_type = attrs.ProcAttributes.ret_type in
-                        let model_as_malloc ret_type resolved_pname =
-                          Objc_models.is_malloc_model ret_type resolved_pname
+                        let is_objc_instance_method =
+                          ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
+                            ClangMethodKind.OBJC_INSTANCE
                         in
-                        if model_as_malloc ret_type resolved_pname then
-                          (* If it's an alloc model, call alloc rather than skipping *)
-                          sym_exec_alloc_model analysis_data resolved_pname ret_type ret_id_typ loc
-                            prop path
-                        else
-                          let is_objc_instance_method =
-                            ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
-                              ClangMethodKind.OBJC_INSTANCE
-                          in
-                          skip_call ~is_objc_instance_method ~reason prop path resolved_pname
-                            ret_annots loc ret_id_typ ret_type n_actual_params
+                        skip_call ~is_objc_instance_method ~reason prop path resolved_pname
+                          ret_annots loc ret_id_typ ret_type n_actual_params
                     | None ->
                         skip_call ~reason prop path resolved_pname ret_annots loc ret_id_typ
                           (snd ret_id_typ) n_actual_params )
@@ -1603,21 +1595,6 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
         [(prop_, path)] )
   | None ->
       [(prop_, path)]
-
-
-and sym_exec_alloc_model analysis_data pname ret_typ ret_id_typ loc prop path : Builtin.ret_typ =
-  let alloc_source_function_arg = (Exp.Const (Const.Cfun pname), Typ.void) in
-  let args =
-    let sizeof_exp =
-      Exp.Sizeof {typ= ret_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-    in
-    let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
-    [exp; alloc_source_function_arg]
-  in
-  let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.malloc_no_fail) in
-  let alloc_instr = Sil.Call (ret_id_typ, alloc_fun, args, loc, CallFlags.default) in
-  L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
-  instrs analysis_data (Instrs.singleton alloc_instr) [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)

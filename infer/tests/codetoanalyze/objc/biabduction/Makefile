@@ -40,7 +40,6 @@ SOURCES_DEFAULT = \
   shared/category_procdesc/EOCPerson.m \
   shared/memory_leaks_benchmark/ArcExample.m \
   shared/memory_leaks_benchmark/AutoreleaseExample.m \
-  shared/memory_leaks_benchmark/MemoryLeakExample.m \
   shared/memory_leaks_benchmark/RetainReleaseExample.m \
   shared/memory_leaks_benchmark/arc_methods.m \
   shared/npe/Available_expr.m \
@@ -105,7 +104,6 @@ SOURCES_ARC = \
   npe/nullable.m \
   property/ExplicitIvarName.m \
   shared/block/dispatch_examples.m \
-  shared/memory_leaks_benchmark/TollBridgeExample.m \
   subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 
