@@ -153,6 +153,11 @@ module PowLoc : sig
       [Boolean.EqualOrder.ne], etc. *)
 
   val to_set : t -> LocSet.t
+
+  val get_linked_list_next : lhs:t -> rhs:t -> Loc.t option
+  (** It checks whether [rhs] is of [lhs.any_field], which is a heuristic for detecting a linked
+      list, e.g. [x = x.next()]. It returns [Some lhs] if the condition is satisfied, [None]
+      otherwise. *)
 end
 
 val can_strong_update : PowLoc.t -> bool

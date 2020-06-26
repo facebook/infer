@@ -243,6 +243,14 @@ module TransferFunctions = struct
               mem )
 
 
+  let java_store_linked_list_next locs v mem =
+    PowLoc.get_linked_list_next ~lhs:locs ~rhs:(Dom.Val.get_all_locs v)
+    |> Option.value_map ~default:mem ~f:(fun loc ->
+           let linked_list_index = Loc.append_field loc BufferOverrunField.java_linked_list_index in
+           let v = Dom.Mem.find linked_list_index mem |> Dom.Val.plus_a Dom.Val.Itv.one in
+           Dom.Mem.add_heap linked_list_index v mem )
+
+
   let modeled_load_of_empty_collection_opt =
     let known_empty_collections = String.Set.of_list ["EMPTY_LIST"; "EMPTY_SET"; "EMPTY_MAP"] in
     fun exp model_env ret mem ->
@@ -355,6 +363,7 @@ module TransferFunctions = struct
           Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
         in
         let mem = Dom.Mem.update_mem locs v mem in
+        let mem = java_store_linked_list_next locs v mem in
         let mem =
           if Language.curr_language_is Clang && Typ.is_char typ then
             BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem

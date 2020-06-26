@@ -564,6 +564,19 @@ module Prune = struct
     AliasTargets.fold accum_pruned (Mem.find_alias_loc iterator mem) astate
 
 
+  let prune_linked_list_index loc mem acc =
+    let lv_linked_list_index = Loc.append_field loc BufferOverrunField.java_linked_list_index in
+    Option.value_map (Mem.find_opt lv_linked_list_index mem) ~default:acc ~f:(fun index_v ->
+        let linked_list_length = Loc.append_field loc BufferOverrunField.java_linked_list_length in
+        Option.value_map (Loc.get_path linked_list_length) ~default:acc
+          ~f:(fun linked_list_length ->
+            let pruned_v =
+              Val.of_itv (Itv.of_normal_path ~unsigned:true linked_list_length)
+              |> Val.prune_binop Le index_v
+            in
+            update_mem_in_prune lv_linked_list_index pruned_v acc ) )
+
+
   let prune_unop : Exp.t -> t -> t =
    fun e ({mem} as astate) ->
     match e with
@@ -571,11 +584,12 @@ module Prune = struct
         let accum_prune_var rhs tgt acc =
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
-              let v = Mem.find rhs mem in
-              if Val.is_bot v then acc
-              else
-                let v' = Val.prune_ne_zero v in
-                update_mem_in_prune rhs v' acc
+              (let v = Mem.find rhs mem in
+               if Val.is_bot v then acc
+               else
+                 let v' = Val.prune_ne_zero v in
+                 update_mem_in_prune rhs v' acc )
+              |> prune_linked_list_index rhs mem
           | AliasTarget.Empty ->
               let v = Mem.find rhs mem in
               if Val.is_bot v then acc

@@ -29,6 +29,12 @@ val cpp_vector_elem : vec_typ:Typ.t -> elt_typ:Typ.t -> Fieldname.t
 val java_collection_internal_array : Fieldname.t
 (** Field for Java collection's elements *)
 
+val java_linked_list_index : Fieldname.t
+(** Virtual field for index of Java's linked list *)
+
+val java_linked_list_length : Fieldname.t
+(** Virtual field for length of Java's linked list *)
+
 val is_cpp_vector_elem : Fieldname.t -> bool
 (** Check if the field is for C++ vector's elements *)
 

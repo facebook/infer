@@ -634,23 +634,28 @@ module Val = struct
       | Some s ->
           of_itv (Itv.of_int (String.length s))
       | None -> (
-        match Loc.get_path l with
-        | None ->
-            L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
-            default
-        | Some path -> (
-          match typ_of_param_path path with
-          | None -> (
-            match typ with
-            | Some typ when Loc.is_global l ->
-                L.d_printfln_escaped "Val.on_demand for %a -> global" Loc.pp l ;
-                do_on_demand path typ
-            | _ ->
-                L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
-                default )
-          | Some typ ->
-              L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
-              do_on_demand path typ ) ) )
+        match l with
+        | Field {fn} when Fieldname.equal fn BufferOverrunField.java_linked_list_index ->
+            L.d_printfln_escaped "Val.on_demand for %a as zero" Loc.pp l ;
+            of_itv Itv.zero
+        | _ -> (
+          match Loc.get_path l with
+          | None ->
+              L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
+              default
+          | Some path -> (
+            match typ_of_param_path path with
+            | None -> (
+              match typ with
+              | Some typ when Loc.is_global l ->
+                  L.d_printfln_escaped "Val.on_demand for %a -> global" Loc.pp l ;
+                  do_on_demand path typ
+              | _ ->
+                  L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+                  default )
+            | Some typ ->
+                L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
+                do_on_demand path typ ) ) ) )
 
 
   module Itv = struct
@@ -667,6 +672,8 @@ module Val = struct
     let unknown_bool = of_itv Itv.unknown_bool
 
     let zero = of_itv Itv.zero
+
+    let one = of_itv Itv.one
   end
 end
 
@@ -705,6 +712,11 @@ module MemPure = struct
 
   let bot = empty
 
+  let get_linked_list_index loc mem =
+    let linked_list_index = Loc.append_field loc BufferOverrunField.java_linked_list_index in
+    Option.map (find_opt linked_list_index mem) ~f:(fun (_, v) -> (linked_list_index, v))
+
+
   let range :
          filter_loc:(Loc.t -> LoopHeadLoc.t option)
       -> node_id:ProcCfg.Normal.Node.id
@@ -715,6 +727,7 @@ module MemPure = struct
       (fun loc (_, v) acc ->
         match filter_loc loc with
         | Some loop_head_loc -> (
+            let loc, v = Option.value (get_linked_list_index loc mem) ~default:(loc, v) in
             let itv_updated_by = Val.get_itv_updated_by v in
             match itv_updated_by with
             | Addition | Multiplication ->

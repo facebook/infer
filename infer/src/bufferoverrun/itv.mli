@@ -148,6 +148,9 @@ val top : t
 val zero : t
 (** 0 *)
 
+val one : t
+(** 1 *)
+
 val zero_one : t
 (** [0, 1] *)
 

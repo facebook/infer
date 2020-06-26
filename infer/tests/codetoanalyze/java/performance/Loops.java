@@ -136,6 +136,12 @@ public class Loops {
     }
   }
 
+  void length_of_linked_list_simple_linear(MyLinkedList p) {
+    while (p != null) {
+      p = p.getNext();
+    }
+  }
+
   void length_of_linked_list_linear_FP(MyLinkedList p) {
     int n = 0;
     while (p != null) {

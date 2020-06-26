@@ -274,6 +274,9 @@ module Val : sig
     val zero : t
     (** [\[0,0\]] *)
 
+    val one : t
+    (** [\[1,1\]] *)
+
     val zero_255 : t
     (** [\[0,255\]] *)
 

@@ -379,6 +379,19 @@ module Loc = struct
         append_field l fn ~typ
     | BoField.(StarField _ | Prim (Var _ | Allocsite _)) ->
         x
+
+
+  let get_linked_list_next ~lhs ~rhs =
+    match (get_path lhs, get_path rhs) with
+    | ( Some lhs_path
+      , Some
+          (Prim
+            (Deref (Deref_JavaPointer, Field {prefix= Prim (Deref (Deref_JavaPointer, rhs_path))})))
+      )
+      when Symb.SymbolPath.equal_partial lhs_path rhs_path ->
+        Some lhs
+    | _, _ ->
+        None
 end
 
 module LocSet = PrettyPrintable.MakePPSet (Loc)
@@ -582,6 +595,14 @@ module PowLoc = struct
         LocSet.singleton Loc.unknown
     | Known ploc ->
         ploc
+
+
+  let get_linked_list_next ~lhs ~rhs =
+    match (is_singleton_or_more lhs, is_singleton_or_more rhs) with
+    | Singleton lhs, Singleton rhs ->
+        Loc.get_linked_list_next ~lhs ~rhs
+    | _, _ ->
+        None
 end
 
 let always_strong_update = false
