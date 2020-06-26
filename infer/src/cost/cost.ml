@@ -99,6 +99,10 @@ module InstrBasicCost = struct
                       CostDomain.unit_cost_atomic_operation
                     else instantiated_cost
                 | `NotFound ->
+                    ScubaLogging.log_message ~label:"unmodeled_function_cost_analysis"
+                      ~message:
+                        (F.asprintf "Unmodeled Function[Cost Analysis] : %a" Procname.pp
+                           callee_pname) ;
                     CostDomain.unit_cost_atomic_operation ) )
         in
         if is_allocation_function callee_pname then
