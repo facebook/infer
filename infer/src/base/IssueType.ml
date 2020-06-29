@@ -374,35 +374,10 @@ let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
-let component_factory_function =
-  register ~id:"COMPONENT_FACTORY_FUNCTION" Advice Linters
-    ~user_documentation:[%blob "../../documentation/issues/COMPONENT_FACTORY_FUNCTION.md"]
-
-
-let component_file_cyclomatic_complexity =
-  register ~id:"COMPONENT_FILE_CYCLOMATIC_COMPLEXITY" Info Linters ~user_documentation:""
-
-
-let component_file_line_count =
-  register ~enabled:false ~id:"COMPONENT_FILE_LINE_COUNT" Info Linters ~user_documentation:""
-
-
-let component_initializer_with_side_effects =
-  register ~id:"COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS.md"]
-
-
 let component_with_multiple_factory_methods =
   register ~id:"COMPONENT_WITH_MULTIPLE_FACTORY_METHODS" Advice Linters
     ~user_documentation:
       [%blob "../../documentation/issues/COMPONENT_WITH_MULTIPLE_FACTORY_METHODS.md"]
-
-
-let component_with_unconventional_superclass =
-  register ~id:"COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS.md"]
 
 
 let condition_always_false =

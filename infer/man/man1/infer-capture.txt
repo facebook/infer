@@ -228,11 +228,6 @@ CLANG OPTIONS
            escaped for the shell, eg coming from Xcode (can be specified
            multiple times)
 
-       --compute-analytics
-           Activates: Emit analytics as info-level issues, like component kit
-           line count and component kit file cyclomatic complexity
-           (Conversely: --no-compute-analytics)
-
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)
 

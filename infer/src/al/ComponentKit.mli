@@ -16,20 +16,5 @@ val contains_ck_impl : Clang_ast_t.decl list -> bool
 val mutable_local_vars_advice :
   CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t option
 
-val component_factory_function_advice :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t option
-
-val component_with_unconventional_superclass_advice :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t option
-
 val component_with_multiple_factory_methods_advice :
   CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t list
-
-val component_initializer_with_side_effects_advice :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t option
-
-val component_file_line_count_info :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t list
-
-val component_file_cyclomatic_complexity_info :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.t option

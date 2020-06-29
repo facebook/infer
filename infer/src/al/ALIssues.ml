@@ -77,27 +77,13 @@ let single_to_multi checker ctx an =
 
 
 (* List of checkers on decls *that return 0 or 1 issue* *)
-let decl_single_checkers_list =
-  [ ComponentKit.component_with_unconventional_superclass_advice
-  ; ComponentKit.mutable_local_vars_advice
-  ; ComponentKit.component_factory_function_advice
-  ; ComponentKit.component_file_cyclomatic_complexity_info ]
-
+let decl_single_checkers_list = [ComponentKit.mutable_local_vars_advice]
 
 (* List of checkers on decls *)
 let decl_checkers_list =
   ComponentKit.component_with_multiple_factory_methods_advice
-  :: ComponentKit.component_file_line_count_info
   :: List.map ~f:single_to_multi decl_single_checkers_list
 
-
-(* List of checkers on stmts *that return 0 or 1 issue* *)
-let stmt_single_checkers_list =
-  [ ComponentKit.component_file_cyclomatic_complexity_info
-  ; ComponentKit.component_initializer_with_side_effects_advice ]
-
-
-let stmt_checkers_list = List.map ~f:single_to_multi stmt_single_checkers_list
 
 let evaluate_place_holder ph an =
   match ph with
@@ -515,7 +501,7 @@ let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CI
 
 (* Calls the set of hard coded checkers (if any) *)
 let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node) =
-  let checkers = match an with Decl _ -> decl_checkers_list | Stmt _ -> stmt_checkers_list in
+  let checkers = match an with Decl _ -> decl_checkers_list | Stmt _ -> [] in
   List.iter
     ~f:(fun checker ->
       let issue_desc_list = checker context an in

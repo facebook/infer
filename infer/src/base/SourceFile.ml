@@ -9,11 +9,6 @@ open! IStd
 open PolyVariantEqual
 module L = Logging
 
-let count_newlines (path : string) : int =
-  let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
-  In_channel.with_file path ~f
-
-
 type t =
   | Invalid of {ml_source_file: string}
   | Absolute of string
@@ -91,11 +86,6 @@ let to_abs_path fname =
       Filename.concat Config.biabduction_models_src_dir path
   | Absolute path ->
       path
-
-
-let line_count source_file =
-  let abs_path = to_abs_path source_file in
-  count_newlines abs_path
 
 
 let to_rel_path fname = match fname with RelativeProjectRoot path -> path | _ -> to_abs_path fname

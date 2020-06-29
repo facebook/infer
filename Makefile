@@ -24,7 +24,7 @@ BUILD_SYSTEMS_TESTS += \
   annotation-reachability-sources-override \
   assembly \
   backtrack_level \
-  ck_analytics ck_imports \
+  ck_imports \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
   clang_translation \
@@ -42,7 +42,6 @@ BUILD_SYSTEMS_TESTS += \
   project_root_rel \
   reactive \
   results_xml \
-  run_hidden_linters \
   tracebugs \
   utf8_in_procname \
   export_changed_functions \

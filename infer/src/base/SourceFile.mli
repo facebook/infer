@@ -44,9 +44,6 @@ val is_biabduction_model : t -> bool
 val is_under_project_root : t -> bool
 (** Returns true if the file is in project root *)
 
-val line_count : t -> int
-(** compute line count of a source file *)
-
 val of_header : ?warn_on_error:bool -> t -> t option
 (** Return approximate source file corresponding to the parameter if it's header file and file
     exists. returns None otherwise. WARNING: If warn_on_error is false, no warning will be shown

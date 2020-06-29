@@ -449,14 +449,6 @@ let is_objc_factory_method ~class_decl:interface_decl ~method_decl:meth_decl_opt
       false
 
 
-let name_of_decl_ref_opt (decl_ref_opt : Clang_ast_t.decl_ref option) =
-  match decl_ref_opt with
-  | Some decl_ref -> (
-    match decl_ref.dr_name with Some named_decl_info -> Some named_decl_info.ni_name | _ -> None )
-  | _ ->
-      None
-
-
 let type_of_decl decl =
   let open Clang_ast_t in
   match decl with

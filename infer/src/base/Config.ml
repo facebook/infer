@@ -897,13 +897,6 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
-and compute_analytics =
-  CLOpt.mk_bool ~long:"compute-analytics" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_clang); (Run, manual_clang)]
-    "Emit analytics as info-level issues, like component kit line count and component kit file \
-     cyclomatic complexity"
-
-
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
     marking. *)
 and continue =
@@ -2674,8 +2667,6 @@ and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
-
-and compute_analytics = !compute_analytics
 
 and continue_analysis = !continue_analysis
 
