@@ -268,7 +268,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; procedure_name= Procname.get_method proc_name
           ; procedure_id= procedure_id_of_procname proc_name
           ; is_on_ui_thread
-          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post) }
+          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
     | _ ->

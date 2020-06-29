@@ -111,10 +111,11 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
     match get_callee_cost_summary_and_formals pname with
     | Some (CostDomain.{post= cost_record}, callee_formals) ->
         let callee_cost = CostDomain.get_operation_cost cost_record in
-        if CostDomain.BasicCost.is_symbolic callee_cost then
+        if CostDomain.BasicCost.is_symbolic callee_cost.cost then
           Some
             (Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
                ~callee_pname:pname ~callee_formals ~params ~callee_cost ~loc)
+              .cost
         else None
     | None ->
         let fun_arg_list =

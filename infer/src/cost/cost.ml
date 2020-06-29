@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 module BasicCost = CostDomain.BasicCost
+module BasicCostWithReason = CostDomain.BasicCostWithReason
 
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
@@ -29,10 +30,10 @@ let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~call
     BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals params
       inferbo_caller_mem
   in
-  BasicCost.subst callee_pname loc callee_cost eval_sym
+  BasicCostWithReason.subst callee_pname loc callee_cost eval_sym
 
 
-module InstrBasicCost = struct
+module InstrBasicCostWithReason = struct
   (*
     Compute the cost for an instruction.
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
@@ -95,8 +96,8 @@ module InstrBasicCost = struct
                           instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
                             ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
                     in
-                    if BasicCost.is_top (CostDomain.get_operation_cost instantiated_cost) then
-                      CostDomain.unit_cost_atomic_operation
+                    if BasicCostWithReason.is_top (CostDomain.get_operation_cost instantiated_cost)
+                    then CostDomain.unit_cost_atomic_operation
                     else instantiated_cost
                 | `NotFound ->
                     ScubaLogging.log_message ~label:"unmodeled_function_cost_analysis"
@@ -146,14 +147,14 @@ module InstrBasicCost = struct
         (Sil.pp_instr ~print_types:false Pp.text)
         instr
     in
-    if BasicCost.is_top operation_cost then log_msg "top"
-    else if BasicCost.is_unreachable operation_cost then log_msg "unreachable" ;
+    if BasicCostWithReason.is_top operation_cost then log_msg "top"
+    else if BasicCostWithReason.is_unreachable operation_cost then log_msg "unreachable" ;
     cost
 end
 
 let compute_errlog_extras cost =
-  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp_hum cost)
-  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
+  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
+  ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
   ; nullsafe_extra= None }
 
 
@@ -164,7 +165,9 @@ module WorstCaseCost = struct
       we report Top cost only at the top level per function. *)
   let exec_node tenv extras instr_node =
     let {get_node_nb_exec} = extras in
-    let instr_cost_record = InstrBasicCost.get_instr_node_cost_record tenv extras instr_node in
+    let instr_cost_record =
+      InstrBasicCostWithReason.get_instr_node_cost_record tenv extras instr_node
+    in
     let node = InstrCFG.Node.underlying_node instr_node in
     let nb_exec = get_node_nb_exec node in
     if BasicCost.is_top nb_exec then
@@ -191,11 +194,11 @@ module Check = struct
     let report issue suffix =
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
       Reporting.log_issue proc_desc err_log ~loc
-        ~ltr:(BasicCost.polynomial_traces cost)
+        ~ltr:(BasicCostWithReason.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) Cost issue message
     in
-    if BasicCost.is_top cost then report infinite_issue "cannot be computed"
-    else if BasicCost.is_unreachable cost then
+    if BasicCostWithReason.is_top cost then report infinite_issue "cannot be computed"
+    else if BasicCostWithReason.is_unreachable cost then
       report unreachable_issue
         "cannot be computed since the program's exit state is never reachable"
 

@@ -17,8 +17,35 @@ module BasicCost : sig
   (** version used to consistently compare at infer-reportdiff phase *)
 end
 
+module BasicCostWithReason : sig
+  (** This is for [Call] instruction. Most top cost function is caused by calling top-costed
+      function. The extension aims to find the root callee with top cost.
+
+      If the callee top cost and thus the caller has top cost, then
+
+      1. if for callee, [top_pname_opt] is [None], then callee is itself top cost, so for the
+      caller, we record [top_pname_opt = callee] ;
+
+      2. if for callee, [top_pname_opt] is [f], then we know that callee calls [f], which is top
+      cost, so for the caller, we record [top_pname_opt = f] *)
+
+  type t = {cost: BasicCost.t; top_pname_opt: Procname.t option}
+
+  val is_top : t -> bool
+
+  val is_unreachable : t -> bool
+
+  val subst : Procname.t -> Location.t -> t -> Bounds.Bound.eval_sym -> t
+
+  val degree : t -> Polynomials.Degree.t option
+
+  val polynomial_traces : t -> Errlog.loc_trace
+
+  val pp_hum : Format.formatter -> t -> unit
+end
+
 module VariantCostMap : sig
-  type t = BasicCost.t CostIssues.CostKindMap.t
+  type t = BasicCostWithReason.t CostIssues.CostKindMap.t
 
   val pp : F.formatter -> t -> unit
 end
@@ -29,11 +56,11 @@ type summary = {post: t; is_on_ui_thread: bool}
 
 val pp_summary : F.formatter -> summary -> unit
 
-val get_cost_kind : CostKind.t -> t -> BasicCost.t
+val get_cost_kind : CostKind.t -> t -> BasicCostWithReason.t
 
-val get_operation_cost : t -> BasicCost.t
+val get_operation_cost : t -> BasicCostWithReason.t
 
-val map : f:(BasicCost.t -> BasicCost.t) -> t -> t
+val map : f:(BasicCostWithReason.t -> BasicCostWithReason.t) -> t -> t
 
 val zero_record : t
 (** Map representing cost record \{OperationCost:0; AllocationCost:0; IOCost:0\} *)
