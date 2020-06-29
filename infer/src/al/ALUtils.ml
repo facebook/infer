@@ -56,39 +56,6 @@ let decl_ref_or_selector_name an =
         (tag_name_of_node an)
 
 
-let iphoneos_target_sdk_version context _ =
-  match CPredicates.iphoneos_target_sdk_version_by_path context with Some f -> f | None -> "0"
-
-
-let available_ios_sdk an =
-  let open Ctl_parser_types in
-  match CTL.next_state_via_transition an CTLTypes.PointerToDecl with
-  | [Decl decl] -> (
-    match CPredicates.get_available_attr_ios_sdk (Decl decl) with
-    | Some version ->
-        version
-    | None ->
-        "" )
-  | _ ->
-      L.(die ExternalError)
-        "available_ios_sdk must be called with a DeclRefExpr or an ObjCMessageExpr, but got %s"
-        (tag_name_of_node an)
-
-
-let class_available_ios_sdk an =
-  match CPredicates.receiver_method_call an with
-  | Some decl -> (
-    match CPredicates.get_available_attr_ios_sdk (Decl decl) with
-    | Some version ->
-        version
-    | None ->
-        "" )
-  | None ->
-      L.(die ExternalError)
-        "class_available_ios_sdk must be called with ObjCMessageExpr, but got %s"
-        (tag_name_of_node an)
-
-
 let receiver_method_call an =
   match CPredicates.receiver_method_call an with
   | Some decl ->

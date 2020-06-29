@@ -804,12 +804,6 @@ let quandary_taint_error =
     ~user_documentation:"Generic taint error when nothing else fits."
 
 
-let _registered_observer_being_deallocated =
-  register ~id:"REGISTERED_OBSERVER_BEING_DEALLOCATED" Warning Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/REGISTERED_OBSERVER_BEING_DEALLOCATED.md"]
-
-
 let resource_leak =
   register ~id:"RESOURCE_LEAK" Error Biabduction
     ~user_documentation:[%blob "../../documentation/issues/RESOURCE_LEAK.md"]
@@ -821,7 +815,6 @@ let retain_cycle =
 
 
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
-
 
 let shell_injection =
   register ~id:"SHELL_INJECTION" Error Quandary
@@ -888,12 +881,6 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 
 let topl_error = register ~id:"TOPL_ERROR" Error TOPL ~user_documentation:"Experimental."
-
-
-let _unavailable_api_in_supported_ios_sdk =
-  register ~id:"UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK.md"]
-
 
 let uninitialized_value =
   register ~id:"UNINITIALIZED_VALUE" Error Uninit

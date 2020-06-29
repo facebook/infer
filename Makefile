@@ -103,7 +103,6 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   objc_biabduction \
   objc_frontend \
-  objc_ioslints \
   objc_linters \
   objc_linters-def-folder \
   objc_linters-for-test-only \

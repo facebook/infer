@@ -99,11 +99,6 @@ val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
 (** wraps a function expecting 2 arguments in another that temporarily redirects stderr to /dev/null
     for the duration of the function call *)
 
-val compare_versions : string -> string -> int
-(** [compare_versions v1 v2] returns 1 if v1 is newer than v2, -1 if v1 is older than v2 and 0 if
-    they are the same version. The versions are strings of the shape "n.m.t", the order is
-    lexicographic. *)
-
 val rmtree : string -> unit
 (** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
 

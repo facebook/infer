@@ -148,8 +148,6 @@ val wrappers_dir : string
 
 (** {2 Configuration values specified by command-line options} *)
 
-type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
-
 val abs_struct : int
 
 val abs_val : int
@@ -329,10 +327,6 @@ val inclusive_cost : bool
 val inferconfig_file : string option
 
 val inferconfig_dir : string option
-
-val iphoneos_target_sdk_version : string option
-
-val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
 
 val is_checker_enabled : Checker.t -> bool
 

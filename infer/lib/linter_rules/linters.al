@@ -69,65 +69,6 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
         "Did you mean to use/compare against the unboxed value instead? Please either explicitly compare the NSNumber instance to nil, or use one of the NSNumber accessors before the comparison.";
 };
 
-
-DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
-
-    LET exists_method_calling_addObserver =
-         call_method("addObserver:selector:name:object:") HOLDS-EVENTUALLY;
-
-    LET exists_method_calling_addObserverForName =
-       call_method("addObserverForName:object:queue:usingBlock:") HOLDS-EVENTUALLY;
-
-    LET add_observer =
-       exists_method_calling_addObserver OR exists_method_calling_addObserverForName;
-
-    LET eventually_addObserver =
-        IN-NODE ObjCMethodDecl WITH-TRANSITION Body
-                     (add_observer)
-             HOLDS-EVENTUALLY;
-
-    LET exists_method_calling_removeObserver =
-         call_method("removeObserver:") HOLDS-EVENTUALLY;
-
-    LET exists_method_calling_removeObserverName =
-          call_method("removeObserver:name:object:") HOLDS-EVENTUALLY;
-
-    LET remove_observer =
-                exists_method_calling_removeObserver OR exists_method_calling_removeObserverName;
-
-    LET remove_observer_in_block =
-                IN-NODE BlockDecl WITH-TRANSITION Body
-                        (remove_observer)
-                HOLDS-EVENTUALLY;
-
-    LET remove_observer1 =
-                 remove_observer OR remove_observer_in_block;
-
-    LET remove_observer_in_method =
-      IN-NODE ObjCMethodDecl WITH-TRANSITION Body
-              (remove_observer1)
-        HOLDS-EVENTUALLY;
-
-    LET eventually_removeObserver =
-        IN-NODE ObjCImplementationDecl, ObjCProtocolDecl WITH-TRANSITION Any
-                 (remove_observer_in_method  OR
-                    remove_observer_in_method HOLDS-IN-SOME-SUPERCLASS-OF ObjCImplementationDecl)
-     HOLDS-EVENTUALLY;
-
-    SET report_when =
-            WHEN
-            NOT (eventually_addObserver IMPLIES eventually_removeObserver) AND
-                NOT iphoneos_target_sdk_version_greater_or_equal("9.0") //this is not needed after iOS SDK 9.0
-            HOLDS-IN-NODE ObjCImplementationDecl, ObjCProtocolDecl;
-
-    SET message =
-        "Object self is registered in a notification center but not being removed before deallocation";
-
-    SET suggestion =
-        "Consider removing the object from the notification center before its deallocation.";
-
-};
-
 DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
   LET name_contains_delegate = declaration_has_name(REGEXP("[dD]elegate"));
@@ -213,38 +154,6 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 
     SET severity = "ERROR";
         SET mode = "ON";
-};
-
-// If the declaration has availability attributes, check that it's compatible with
-// the iphoneos_target_sdk_version
-DEFINE-CHECKER UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK = {
-
-        SET report_when =
-             WHEN HOLDS-NEXT WITH-TRANSITION PointerToDecl
-                      (decl_unavailable_in_supported_ios_sdk() AND
-                      NOT within_responds_to_selector_block())
-                 HOLDS-IN-NODE DeclRefExpr, ObjCMessageExpr;
-
-          SET message =
-                "%decl_ref_or_selector_name% is not available in the required iOS SDK version %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
-      SET name = "Unavailable API In Supported iOS SDK";
-          SET suggestion = "This could cause a crash.";
-            SET severity = "ERROR";
-};
-
-DEFINE-CHECKER UNAVAILABLE_CLASS_IN_SUPPORTED_IOS_SDK = {
-        SET report_when =
-                 WHEN ((class_unavailable_in_supported_ios_sdk()) AND
-                       NOT within_available_class_block() AND
-                             (call_class_method("alloc") OR
-                             call_class_method("new")))
-                 HOLDS-IN-NODE ObjCMessageExpr;
-
-            SET message =
-                        "The receiver %receiver_method_call% of %name% is not available in the required iOS SDK version %iphoneos_target_sdk_version% (only available from version %class_available_ios_sdk%)";
-            SET name = "Unavailable API In Supported iOS SDK";
-            SET severity = "ERROR";
-            SET mode = "ON";
 };
 
 

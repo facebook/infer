@@ -174,14 +174,6 @@ CLANG LINTERS OPTIONS
            Deactivates: Use the default linters for the analysis.
            (Conversely: --default-linters)
 
-       --iphoneos-target-sdk-version string
-           Specify the target SDK version to use for iphoneos
-
-       --iphoneos-target-sdk-version-path-regex +string
-           To pass a specific target SDK version to use for iphoneos in a
-           particular path, with the format path:version (can be specified
-           multiple times)
-
        --linter string
            From the linters available, only run this one linter. (Useful
            together with --linters-developer-mode)

@@ -75,22 +75,6 @@ let declaration_name decl =
       None
 
 
-let get_available_attr_ios_sdk an =
-  match an with
-  | Ctl_parser_types.Decl decl ->
-      let decl_info = Clang_ast_proj.get_decl_tuple decl in
-      List.find_map decl_info.di_attributes ~f:(function
-        | `AvailabilityAttr (_attr_info, {Clang_ast_t.aai_platform= Some "ios"; aai_introduced}) ->
-            let get_opt_number = Option.value ~default:0 in
-            Some
-              (Printf.sprintf "%d.%d" aai_introduced.vt_major
-                 (get_opt_number aai_introduced.vt_minor))
-        | _ ->
-            None )
-  | _ ->
-      None
-
-
 let get_ivar_attributes ivar_decl =
   let open Clang_ast_t in
   match ivar_decl with
@@ -1114,62 +1098,6 @@ let is_at_selector_with_name an re =
   | Ctl_parser_types.Stmt (ObjCSelectorExpr (_, _, _, s)) ->
       ALVar.compare_str_with_alexp s re
   | _ ->
-      false
-
-
-let iphoneos_target_sdk_version_by_path (cxt : CLintersContext.context) =
-  let source_file = cxt.translation_unit_context.source_file in
-  let regex_version_opt =
-    List.find Config.iphoneos_target_sdk_version_path_regex
-      ~f:(fun (version_path_regex : Config.iphoneos_target_sdk_version_path_regex) ->
-        ALVar.str_match_forward (SourceFile.to_rel_path source_file) version_path_regex.path )
-  in
-  match regex_version_opt with
-  | Some version_by_regex ->
-      Some version_by_regex.version
-  | None (* no version by path specified, use default version *) ->
-      Config.iphoneos_target_sdk_version
-
-
-let iphoneos_target_sdk_version_greater_or_equal (cxt : CLintersContext.context) version =
-  match iphoneos_target_sdk_version_by_path cxt with
-  | Some target_version ->
-      Utils.compare_versions target_version version >= 0
-  | None ->
-      false
-
-
-let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
-  let config_iphoneos_target_sdk_version = iphoneos_target_sdk_version_by_path cxt in
-  let available_attr_ios_sdk_current_method =
-    match cxt.current_method with
-    | Some decl ->
-        get_available_attr_ios_sdk (Decl decl)
-    | None ->
-        None
-  in
-  let ios_version_guard =
-    match cxt.if_context with Some if_context -> if_context.ios_version_guard | None -> []
-  in
-  let allowed_os_versions =
-    Option.to_list config_iphoneos_target_sdk_version
-    @ ios_version_guard
-    @ Option.to_list available_attr_ios_sdk_current_method
-  in
-  let max_allowed_version = List.max_elt allowed_os_versions ~compare:Utils.compare_versions in
-  let available_attr_ios_sdk = get_available_attr_ios_sdk an in
-  match (available_attr_ios_sdk, max_allowed_version) with
-  | Some available_attr_ios_sdk, Some max_allowed_version ->
-      Utils.compare_versions available_attr_ios_sdk max_allowed_version > 0
-  | _ ->
-      false
-
-
-let class_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
-  match receiver_method_call an with
-  | Some decl ->
-      decl_unavailable_in_supported_ios_sdk cxt (Ctl_parser_types.Decl decl)
-  | None ->
       false
 
 

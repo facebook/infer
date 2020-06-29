@@ -41,8 +41,6 @@ val is_doc_url_keyword : keyword -> bool
 
 val is_name_keyword : keyword -> bool
 
-val str_match_forward : string -> Str.regexp -> bool
-
 val compare_str_with_alexp : string -> alexp -> bool
 
 module FormulaIdMap : Caml.Map.S with type key = formula_id

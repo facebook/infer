@@ -478,7 +478,6 @@ OPTIONS
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
-             REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),
              RESOURCE_LEAK (enabled by default),
              RETAIN_CYCLE (enabled by default),
              SHELL_INJECTION (enabled by default),
@@ -495,7 +494,6 @@ OPTIONS
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
-             UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
@@ -663,14 +661,6 @@ OPTIONS
            Activates: Enable inefficient-keyset-iterator and disable all
            other checkers (Conversely: --no-inefficient-keyset-iterator-only)       
     See also infer-analyze(1).
-
-       --iphoneos-target-sdk-version string
-           Specify the target SDK version to use for iphoneos           See also infer-capture(1).
-
-       --iphoneos-target-sdk-version-path-regex +string
-           To pass a specific target SDK version to use for iphoneos in a
-           particular path, with the format path:version (can be specified
-           multiple times)           See also infer-capture(1).
 
        --issues-tests file
            Write a list of issues in a format suitable for tests to file       
@@ -1470,12 +1460,6 @@ INTERNAL OPTIONS
            Activates: [EXPERIMENTAL] Use incremental analysis for changed
            files. Not compatible with --reanalyze and --continue-analysis.
            (Conversely: --no-incremental-analysis)
-
-       --iphoneos-target-sdk-version-path-regex-reset
-           Set --iphoneos-target-sdk-version-path-regex to the empty list.
-
-       --iphoneos-target-sdk-version-reset
-           Cancel the effect of --iphoneos-target-sdk-version.
 
        --issues-tests-reset
            Cancel the effect of --issues-tests.

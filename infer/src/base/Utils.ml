@@ -329,17 +329,6 @@ let suppress_stderr2 f2 x1 x2 =
   protect ~f ~finally
 
 
-let compare_versions v1 v2 =
-  let int_list_of_version v =
-    let lv = match String.split ~on:'.' v with [v] -> [v; "0"] | v -> v in
-    let int_of_string_or_zero v = try int_of_string v with Failure _ -> 0 in
-    List.map ~f:int_of_string_or_zero lv
-  in
-  let lv1 = int_list_of_version v1 in
-  let lv2 = int_list_of_version v2 in
-  [%compare: int list] lv1 lv2
-
-
 let rec rmtree name =
   match Unix.((lstat name).st_kind) with
   | S_DIR ->

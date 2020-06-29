@@ -1398,19 +1398,6 @@ and inclusive_cost =
   CLOpt.mk_bool ~long:"inclusive-cost" ~default:true "Computes the inclusive cost"
 
 
-and iphoneos_target_sdk_version =
-  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    "Specify the target SDK version to use for iphoneos"
-
-
-and iphoneos_target_sdk_version_path_regex =
-  CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-path-regex"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    "To pass a specific target SDK version to use for iphoneos in a particular path, with the \
-     format path:version (can be specified multiple times)"
-
-
 and issues_tests_fields =
   CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2564,22 +2551,6 @@ let command, parse_args_and_return_usage_exit =
 
 let print_usage_exit () = parse_args_and_return_usage_exit 1
 
-type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
-
-let process_iphoneos_target_sdk_version_path_regex args =
-  let process_iphoneos_target_sdk_version_path_regex arg : iphoneos_target_sdk_version_path_regex =
-    match String.rsplit2 ~on:':' arg with
-    | Some (path, version) ->
-        {path= Str.regexp path; version}
-    | None ->
-        L.(die UserError)
-          "Incorrect format for the option iphoneos-target-sdk_version-path-regex. The correct \
-           format is path:version but got %s"
-          arg
-  in
-  List.map ~f:process_iphoneos_target_sdk_version_path_regex args
-
-
 let process_linters_doc_url args =
   let linters_doc_url arg =
     match String.lsplit2 ~on:':' arg with
@@ -2828,12 +2799,6 @@ and hoisting_report_only_expensive = !hoisting_report_only_expensive
 and icfg_dotty_outfile = !icfg_dotty_outfile
 
 and inclusive_cost = !inclusive_cost
-
-and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
-
-and iphoneos_target_sdk_version_path_regex =
-  process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
-
 
 and issues_tests = !issues_tests
 
