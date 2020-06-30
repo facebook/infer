@@ -985,7 +985,8 @@ module ProcNameDispatcher = struct
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_bridge_transfer
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null ] )
+        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null
+        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ] )
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
