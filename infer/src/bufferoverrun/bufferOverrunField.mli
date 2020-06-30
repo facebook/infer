@@ -35,6 +35,9 @@ val java_linked_list_index : Fieldname.t
 val java_linked_list_length : Fieldname.t
 (** Virtual field for length of Java's linked list *)
 
+val java_linked_list_next : Typ.t -> Fieldname.t
+(** Virtual field for next of Java's linked list *)
+
 val is_cpp_vector_elem : Fieldname.t -> bool
 (** Check if the field is for C++ vector's elements *)
 

@@ -1105,6 +1105,23 @@ module JavaClass = struct
     {exec; check= no_check}
 end
 
+module JavaLinkedList = struct
+  let next {exp; typ} =
+    let exec _model_env ~ret:(ret_id, _) mem =
+      match exp with
+      | Exp.Var id -> (
+        match Dom.Mem.find_simple_alias id mem with
+        | [(l, zero)] when IntLit.iszero zero ->
+            let fn = BufferOverrunField.java_linked_list_next typ in
+            model_by_value (Loc.append_field l fn |> Dom.Val.of_loc) ret_id mem
+        | _ ->
+            mem )
+      | _ ->
+          mem
+    in
+    {exec; check= no_check}
+end
+
 module JavaString = struct
   let fn = BufferOverrunField.java_collection_internal_array
 
@@ -1648,5 +1665,15 @@ module Call = struct
         &:: "put" <>$ capt_var_exn $+...$--> Collection.put
       ; +PatternMatch.implements_pseudo_collection
         &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg $--> Collection.put
-      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
+      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; (* Java linked list models *)
+        +PatternMatch.implements_app_activity &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.implements_app_fragment
+        &:: "getParentFragment" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.implements_graphql_story
+        &:: "getAttachedStory" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.implements_psi_element &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.implements_view_group &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.implements_view_parent &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ]
 end

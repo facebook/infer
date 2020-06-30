@@ -385,9 +385,10 @@ module Loc = struct
     match (get_path lhs, get_path rhs) with
     | ( Some lhs_path
       , Some
-          (Prim
-            (Deref (Deref_JavaPointer, Field {prefix= Prim (Deref (Deref_JavaPointer, rhs_path))})))
-      )
+          ( Field {prefix= rhs_path}
+          | Prim
+              (Deref
+                (Deref_JavaPointer, Field {prefix= Prim (Deref (Deref_JavaPointer, rhs_path))})) ) )
       when Symb.SymbolPath.equal_partial lhs_path rhs_path ->
         Some lhs
     | _, _ ->

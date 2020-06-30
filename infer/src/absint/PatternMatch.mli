@@ -94,6 +94,24 @@ val implements_android : string -> Tenv.t -> string -> bool
 val implements_infer_annotation : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class of Infer annotation *)
 
+val implements_app_activity : Tenv.t -> string -> bool
+(** Check whether class implements a class of [android.app.Activity] *)
+
+val implements_app_fragment : Tenv.t -> string -> bool
+(** Check whether class implements a class of [androidx.fragment.app.Fragment] *)
+
+val implements_graphql_story : Tenv.t -> string -> bool
+(** Check whether class implements a class of [com.facebook.graphql.model.GraphQLStory] *)
+
+val implements_psi_element : Tenv.t -> string -> bool
+(** Check whether class implements a class of [com.intellij.psi.PsiElement] *)
+
+val implements_view_group : Tenv.t -> string -> bool
+(** Check whether class implements a class of [android.view.ViewGroup] *)
+
+val implements_view_parent : Tenv.t -> string -> bool
+(** Check whether class implements a class of [android.view.ViewParent] *)
+
 val implements_xmob_utils : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class of xmod.utils *)
 

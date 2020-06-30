@@ -109,6 +109,18 @@ let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class
 
 let implements_org_json class_name = implements ("org.json." ^ class_name)
 
+let implements_app_activity = implements "android.app.Activity"
+
+let implements_app_fragment = implements "androidx.fragment.app.Fragment"
+
+let implements_graphql_story = implements "com.facebook.graphql.model.GraphQLStory"
+
+let implements_psi_element = implements "com.intellij.psi.PsiElement"
+
+let implements_view_group = implements "android.view.ViewGroup"
+
+let implements_view_parent = implements "android.view.ViewParent"
+
 (** The type the method is invoked on *)
 let get_this_type_nonstatic_methods_only proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None

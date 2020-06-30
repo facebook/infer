@@ -6,6 +6,7 @@
  */
 package codetoanalyze.java.performance;
 
+import android.app.Activity;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -149,5 +150,11 @@ public class Loops {
       p = p.getNext();
     }
     loop_linear(n);
+  }
+
+  void linked_list_model_linear(Activity p) {
+    while (p != null) {
+      p = p.getParent();
+    }
   }
 }

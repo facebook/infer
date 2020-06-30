@@ -35,6 +35,8 @@ let java_linked_list_index = mk "java.linked_list_index" Typ.(int)
 
 let java_linked_list_length = mk "java.linked_list_length" Typ.(int)
 
+let java_linked_list_next typ = mk "java.linked_list_next" typ
+
 let is_java_collection_internal_array fn = Fieldname.equal fn java_collection_internal_array
 
 let c_strlen () =
