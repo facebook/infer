@@ -349,7 +349,7 @@ public class NullMethodCall {
     }
   }
 
-  void testInAssignmentFP(@Nullable Object object) {
+  void testInAssignmentOK(@Nullable Object object) {
     Object t;
     while ((t = getNullable()) != null) {
       t.toString(); // Should not warn here

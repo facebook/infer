@@ -673,22 +673,48 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
 
 
 (* Handle assignment fron a temp pvar in a condition.
-   This recognizes the handling of temp variables in ((x = ...) != null) *)
+   This recognizes the handling of temp variables in ((x = ...) != null)
+
+   The main idea is to take a quick look back in the CFG for any assignments
+   from [pvar]. *)
 let handle_assignment_in_condition_for_sil_prune idenv node pvar =
-  match Procdesc.Node.get_preds node with
-  | [prev_node] ->
-      let found = ref None in
-      let do_instr i =
-        match i with
-        | Sil.Store {e1= e; e2= e'} when Exp.equal (Exp.Lvar pvar) (IDEnv.expand_expr idenv e') ->
-            found := Some e
+  L.d_with_indent ~pp_result:(Pp.option Exp.pp) ~name:"handle_assignment_in_condition_for_sil_prune"
+    (fun () ->
+      L.d_printfln "Pvar being pruned: %a" (Pvar.pp Pp.text) pvar ;
+      (* We need to find the first *unique* immediate predecessor with non-empty
+         list of instructions. Since some nodes like Join_node can have empty list of instrs,
+          we need to traverse CFG a bit. *)
+      let rec find_pred_node_with_instrs node =
+        match Procdesc.Node.get_preds node with
+        | [pred] ->
+            if Instrs.is_empty (Procdesc.Node.get_instrs pred) then find_pred_node_with_instrs pred
+            else Some pred
         | _ ->
-            ()
+            None
       in
-      Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs prev_node) ;
-      !found
-  | _ ->
-      None
+      (* Inspect instructions within the node to find assignments from [pvar] *)
+      let find_aliased_var node =
+        let inspect_instr instr =
+          match instr with
+          | Sil.Store {e1= e; e2= e'} -> (
+              let expanded_rhs = IDEnv.expand_expr idenv e' in
+              L.d_printfln "Found store instr: %a; RHS expands to: %a"
+                (Sil.pp_instr ~print_types:false Pp.text)
+                instr Exp.pp expanded_rhs ;
+              match expanded_rhs with Exp.Lvar v when Pvar.equal v pvar -> Some e | _ -> None )
+          | _ ->
+              None
+        in
+        (* Here we check last instructions first. IDK if it makes a difference, but
+           it is at least compatible with the previous behaviour *)
+        Instrs.find_map (Procdesc.Node.get_instrs node |> Instrs.reverse_order) ~f:inspect_instr
+      in
+      match find_pred_node_with_instrs node with
+      | Some prev_node ->
+          L.d_printfln "Found non-empty unique predecessor node: #%a" Procdesc.Node.pp prev_node ;
+          find_aliased_var prev_node
+      | _ ->
+          None )
 
 
 let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =

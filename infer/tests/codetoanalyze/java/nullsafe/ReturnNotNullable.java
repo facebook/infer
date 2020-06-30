@@ -216,8 +216,7 @@ public class ReturnNotNullable {
   }
 
   static class AssignmentResultCheck {
-    // T58407328
-    public Throwable nullCheckAssignmentResultAsNonnull_FP(Throwable error) {
+    public Throwable nullCheckAssignmentResultAsNonnullOk(Throwable error) {
       Throwable cause;
       while ((cause = error.getCause()) != null) {
         error = cause;
