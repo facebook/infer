@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Fri Jun 19 10:50:58 2020 -->
+<!-- Creator     : groff version 1.19.2 -->
+<!-- CreationDate: Mon Jun 29 14:17:41 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -8,17 +8,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-capture</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-capture</h1>
+<h1 align=center>infer-capture</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -35,17 +34,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-capture -
 capture source files for later analysis</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -72,9 +69,8 @@ infer capture</b> <i>[options]</i> <b>-- ndk-build</b>
 infer capture</b> <i>[--no-xcpretty] [options]</i> <b>--
 xcodebuild</b> <i>...</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Capture the
@@ -84,9 +80,8 @@ source files, translate them into infer's intermediate
 representation, and store the result of the translation in
 the results directory.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -233,25 +228,24 @@ database operations, in milliseconds.</p>
 <p style="margin-left:17%;">SQLite page size in bytes, must
 be a power of two between 512 and 65536.</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -326,14 +320,14 @@ matched by the specified regular expression. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -343,9 +337,8 @@ don't inline any args starting with '@'. Only valid for
 <p style="margin-left:17%;">Specify the path to Xcode
 developer directory, to use for Buck clang targets</p>
 
-<h2>CLANG LINTERS OPTIONS
 <a name="CLANG LINTERS OPTIONS"></a>
-</h2>
+<h2>CLANG LINTERS OPTIONS</h2>
 
 
 
@@ -361,21 +354,6 @@ See <b>--debug-level</b> for accepted values.</p>
 <p style="margin-left:17%;">Deactivates: Use the default
 linters for the analysis. (Conversely:
 <b>--default-linters</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--iphoneos-target-sdk-version</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Specify the target SDK version
-to use for iphoneos</p>
-
-
-<p style="margin-left:11%;"><b>--iphoneos-target-sdk-version-path-regex</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">To pass a specific target SDK
-version to use for iphoneos in a particular path, with the
-format path:version (can be specified multiple times)</p>
 
 <p style="margin-left:11%;"><b>--linter</b>
 <i>string</i></p>
@@ -430,9 +408,8 @@ files even if some compilation fails. (Conversely:
 AL files, then emit possible errors in JSON format to stdout
 (Conversely: <b>--no-linters-validate-syntax-only</b>)</p>
 
-<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-</h2>
+<h2>CLANG OPTIONS</h2>
 
 
 
@@ -478,13 +455,6 @@ commands (can be specified multiple times)</p>
 commands where all entries are escaped for the shell, eg
 coming from Xcode (can be specified multiple times)</p>
 
-<p style="margin-left:11%;"><b>--compute-analytics</b></p>
-
-<p style="margin-left:17%;">Activates: Emit analytics as
-info-level issues, like component kit line count and
-component kit file cyclomatic complexity (Conversely:
-<b>--no-compute-analytics</b>)</p>
-
 <p style="margin-left:11%;"><b>--no-cxx</b></p>
 
 <p style="margin-left:17%;">Deactivates: Analyze C++
@@ -527,13 +497,12 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
@@ -575,9 +544,8 @@ used to generate the bytecode</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -587,9 +555,8 @@ Set it to your Java version if mvn is failing.</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -598,9 +565,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

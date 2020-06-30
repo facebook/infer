@@ -219,36 +219,10 @@ This error is reported when the argument types to a `printf` method do not match
 
 Action: fix the mismatch between format string and argument types.
 
-## COMPONENT_FACTORY_FUNCTION
-
-Reported as "Component Factory Function" by [linters](/docs/next/checker-linters).
-
-
-## COMPONENT_FILE_CYCLOMATIC_COMPLEXITY
-
-Reported as "Component File Cyclomatic Complexity" by [linters](/docs/next/checker-linters).
-
-
-## COMPONENT_FILE_LINE_COUNT
-
-Reported as "Component File Line Count" by [linters](/docs/next/checker-linters).
-
-
-## COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS
-
-Reported as "Component Initializer With Side Effects" by [linters](/docs/next/checker-linters).
-
-
 ## COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
 
 Reported as "Component With Multiple Factory Methods" by [linters](/docs/next/checker-linters).
 
-
-## COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS
-
-Reported as "Component With Unconventional Superclass" by [linters](/docs/next/checker-linters).
-
-[Doc in ComponentKit page](http://componentkit.org/docs/never-subclass-components)
 
 ## CONDITION_ALWAYS_FALSE
 
@@ -1326,11 +1300,6 @@ is not called with `nil`. When an argument will never be `nil`, you can add the
 annotation `nonnull` to the argument's type, to tell Infer (and the type
 system), that the argument won't be `nil`. This will silence the warning.
 
-## POINTER_SIZE_MISMATCH
-
-Reported as "Pointer Size Mismatch" by [biabduction](/docs/next/checker-biabduction).
-
-
 ## POINTER_TO_CONST_OBJC_CLASS
 
 Reported as "Pointer To Const Objc Class" by [linters](/docs/next/checker-linters).
@@ -1403,16 +1372,6 @@ void set_impure(int x, int y) {
 Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).
 
 Generic taint error when nothing else fits.
-## REGISTERED_OBSERVER_BEING_DEALLOCATED
-
-Reported as "Registered Observer Being Deallocated" by [linters](/docs/next/checker-linters).
-
-Objects register with a notification center to receive notifications. This check
-warns you when an object is registered as observer of a NSNotificationCenter but
-it is never unregistered. This is problematic as if the object is not
-unregistered the notification center can still send notification even after the
-object has been deallocated. In that case we would get a crash.
-
 ## RESOURCE_LEAK
 
 Reported as "Resource Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -1736,11 +1695,6 @@ Environment variable or file data flowing to shell.
 Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).
 
 Code injection if the caller of the endpoint doesn't sanitize on its end.
-## SKIP_POINTER_DEREFERENCE
-
-Reported as "Skip Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
-
-
 ## SQL_INJECTION
 
 Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).
@@ -1981,36 +1935,6 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 Reported as "Topl Error" by [topl](/docs/next/checker-topl).
 
 Experimental.
-## UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION
-
-Reported as "Unary Minus Applied To Unsigned Expression" by [biabduction](/docs/next/checker-biabduction).
-
-
-## UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK
-
-Reported as "Unavailable Api In Supported Ios Sdk" by [linters](/docs/next/checker-linters).
-
-This checks warns you when you are using an API (constant, method call, etc.)
-that is only defined in a version higher than the version that you support. To
-enable this check, pass to Infer the option
-`--iphoneos-target-sdk-version version`. Calling an undefined API will lead to a
-crash in the app. To fix this, you can choose a different API or use it inside
-an if, as in:
-
-```objectivec
-if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {
-  font = [UIFont systemFontOfSize:size weight:0];
-}
-```
-
-or
-
-```objectivec
-if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
-  font = [UIFont systemFontOfSize:size weight:0];
-}
-```
-
 ## UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).

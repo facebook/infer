@@ -8,7 +8,7 @@ description: "[EXPERIMENTAL] Collects config checks between marker start and end
 Activate with `--config-checks-between-markers`.
 
 Supported languages:
-- C/C++/ObjC: No
+- C/C++/ObjC: Experimental
 - Java: Experimental
 
 This checker is currently only useful for certain Facebook code.
