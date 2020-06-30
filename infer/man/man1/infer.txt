@@ -582,13 +582,17 @@ OPTIONS
        --generated-classes path
            Specify where to load the generated class files           See also infer-capture(1).
 
+       --global-tenv
+           Activates: Print the global type environment. (Conversely:
+           --no-global-tenv)           See also infer-debug(1).
+
        --headers
            Activates: Analyze code in header files (Conversely: --no-headers)       
     See also infer-capture(1).
 
        --help
            Show this manual           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-checker +checker-id
@@ -599,13 +603,13 @@ OPTIONS
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
            to pager otherwise.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-issue-type +UNIQUE_ID
@@ -813,19 +817,19 @@ OPTIONS
 
        --procedures
            Activates: Print functions and methods discovered by infer
-           (Conversely: --no-procedures)           See also infer-explore(1).
+           (Conversely: --no-procedures)           See also infer-debug(1).
 
        --procedures-attributes
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)       
-    See also infer-explore(1).
+    See also infer-debug(1).
 
        --no-procedures-definedness
            Deactivates: Include procedures definedness in the output of
            --procedures, i.e. whether the procedure definition was found, or
            only the procedure declaration, or the procedure is an
            auto-generated Objective-C accessor (Conversely:
-           --procedures-definedness)           See also infer-explore(1).
+           --procedures-definedness)           See also infer-debug(1).
 
        --procedures-filter filter
            With --procedures, only print functions and methods (procedures)
@@ -833,20 +837,20 @@ OPTIONS
            path_pattern:procedure_name. Patterns are interpreted as OCaml Str
            regular expressions. For instance, to keep only methods named
            "foo", one can use the filter ".*:foo", or "foo" for short.       
-    See also infer-explore(1).
+    See also infer-debug(1).
 
        --procedures-name
            Activates: Include procedures names in the output of --procedures
-           (Conversely: --no-procedures-name)           See also infer-explore(1).
+           (Conversely: --no-procedures-name)           See also infer-debug(1).
 
        --no-procedures-source-file
            Deactivates: Include the source file in which the procedure
            definition or declaration was found in the output of --procedures
-           (Conversely: --procedures-source-file)           See also infer-explore(1).
+           (Conversely: --procedures-source-file)           See also infer-debug(1).
 
        --procedures-summary
            Activates: Print the summaries of each procedure in the output of
-           --procedures (Conversely: --no-procedures-summary)           See also infer-explore(1).
+           --procedures (Conversely: --no-procedures-summary)           See also infer-debug(1).
 
        --no-progress-bar,-P
            Deactivates: Show a progress bar (Conversely: --progress-bar | -p)       
@@ -1043,33 +1047,33 @@ OPTIONS
 
        --source-files
            Activates: Print source files discovered by infer (Conversely:
-           --no-source-files)           See also infer-explore(1).
+           --no-source-files)           See also infer-debug(1).
 
        --source-files-cfg
            Activates: Output a dotty file in infer-out/captured for each
            source file in the output of --source-files (Conversely:
-           --no-source-files-cfg)           See also infer-explore(1).
+           --no-source-files-cfg)           See also infer-debug(1).
 
        --source-files-filter filter
            With --source-files, only print source files matching the
            specified filter. The filter is a pattern that should match the
            file path. Patterns are interpreted as OCaml Str regular
-           expressions.           See also infer-explore(1).
+           expressions.           See also infer-debug(1).
 
        --source-files-freshly-captured
            Activates: Print whether the source file has been captured in the
            most recent capture phase in the output of --source-files.
-           (Conversely: --no-source-files-freshly-captured)           See also infer-explore(1).
+           (Conversely: --no-source-files-freshly-captured)           See also infer-debug(1).
 
        --source-files-procedure-names
            Activates: Print the names of procedure of each source file in the
            output of --source-files (Conversely:
-           --no-source-files-procedure-names)           See also infer-explore(1).
+           --no-source-files-procedure-names)           See also infer-debug(1).
 
        --source-files-type-environment
            Activates: Print the type environment of each source file in the
            output of --source-files (Conversely:
-           --no-source-files-type-environment)           See also infer-explore(1).
+           --no-source-files-type-environment)           See also infer-debug(1).
 
        --no-source-preview
            Deactivates: print code excerpts around trace elements
@@ -1204,7 +1208,7 @@ FILES
 
 
 SEE ALSO
-       infer-analyze(1), infer-capture(1), infer-compile(1),
+       infer-analyze(1), infer-capture(1), infer-compile(1), infer-debug(1),
        infer-explore(1), infer-help(1), infer-report(1), infer-reportdiff(1),
        infer-run(1)
 

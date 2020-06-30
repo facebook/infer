@@ -13,6 +13,7 @@ type t =
   | Compile
       (** set up the infer environment then run the compilation commands without capturing the
           source files *)
+  | Debug  (** print information about internal structures *)
   | Explore  (** explore infer reports *)
   | Help  (** documentation about various aspects of infer *)
   | Report  (** post-process infer results and reports *)

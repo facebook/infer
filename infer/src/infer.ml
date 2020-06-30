@@ -61,11 +61,13 @@ let setup () =
         SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
+  | Debug ->
+      ResultsDir.assert_results_dir "please run an infer analysis or capture first"
   | Help ->
       () ) ;
   let has_result_dir =
     match Config.command with
-    | Analyze | Capture | Compile | Explore | Report | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Debug | Explore | Report | ReportDiff | Run ->
         true
     | Help ->
         false
@@ -209,9 +211,17 @@ let () =
       ReportDiff.reportdiff ~current_report:Config.report_current
         ~previous_report:Config.report_previous ~current_costs:Config.costs_current
         ~previous_costs:Config.costs_previous
-  | Explore -> (
-    match (Config.procedures, Config.source_files) with
-    | true, false ->
+  | Debug when not Config.(global_tenv || procedures || source_files) ->
+      L.die UserError
+        "Expected at least one of '--procedures', '--source_files', or '--global-tenv'"
+  | Debug ->
+      ( if Config.global_tenv then
+        match Tenv.load_global () with
+        | None ->
+            L.result "No global type environment was found.@."
+        | Some tenv ->
+            L.result "Global type environment:@\n@[<v>%a@]" Tenv.pp tenv ) ;
+      ( if Config.procedures then
         let filter = Lazy.force Filtering.procedures_filter in
         if Config.procedures_summary then
           let pp_summary fmt proc_name =
@@ -228,8 +238,8 @@ let () =
             Config.(
               Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
                 ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
-            ()
-    | false, true ->
+            () ) ;
+      if Config.source_files then (
         let filter = Lazy.force Filtering.source_files_filter in
         L.result "%a"
           (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
@@ -250,18 +260,16 @@ let () =
               (* emit the dot file in captured/... *)
               DotCfg.emit_frontend_cfg source_file cfgs ) ;
           L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
-            Config.dotty_frontend_output )
-    | false, false ->
-        (* explore bug traces *)
-        if Config.html then
-          TraceBugs.gen_html_report ~report_json:(ResultsDir.get_path ReportJson)
-            ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
-            ~report_html_dir:(ResultsDir.get_path ReportHtml)
-        else
-          TraceBugs.explore ~selector_limit:None ~report_json:(ResultsDir.get_path ReportJson)
-            ~report_txt:(ResultsDir.get_path ReportText) ~selected:Config.select
-            ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
-    | true, true ->
-        L.user_error "Options --procedures and --source-files cannot be used together.@\n" ) ) ;
+            Config.dotty_frontend_output ) )
+  | Explore ->
+      if (* explore bug traces *)
+         Config.html then
+        TraceBugs.gen_html_report ~report_json:(ResultsDir.get_path ReportJson)
+          ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
+          ~report_html_dir:(ResultsDir.get_path ReportHtml)
+      else
+        TraceBugs.explore ~selector_limit:None ~report_json:(ResultsDir.get_path ReportJson)
+          ~report_txt:(ResultsDir.get_path ReportText) ~selected:Config.select
+          ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0

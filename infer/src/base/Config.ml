@@ -139,9 +139,11 @@ let manual_clang_linters = "CLANG LINTERS OPTIONS"
 
 let manual_explore_bugs = "EXPLORE BUGS"
 
-let manual_explore_procedures = "EXPLORE PROCEDURES"
+let manual_debug_procedures = "DEBUG PROCEDURES"
 
-let manual_explore_source_files = "EXPLORE SOURCE FILES"
+let manual_debug_source_files = "DEBUG SOURCE FILES"
+
+let manual_debug_global_tenv = "DEBUG GLOBAL TYPE ENVIRONMENT"
 
 let manual_generic = Cmdliner.Manpage.s_options
 
@@ -485,7 +487,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Explore | Help | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -985,7 +987,7 @@ and ( bo_debug
   let all_generic_manuals =
     List.filter_map InferCommand.all_commands ~f:(fun (command : InferCommand.t) ->
         match command with
-        | Explore | Help ->
+        | Debug | Explore | Help ->
             None
         | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
@@ -1700,6 +1702,11 @@ and _print_log_identifier =
     "[DOES NOTHING] Print the unique identifier that is common to all logged events"
 
 
+and global_tenv =
+  CLOpt.mk_bool ~long:"global-tenv" "Print the global type environment."
+    ~in_help:InferCommand.[(Debug, manual_debug_global_tenv)]
+
+
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
@@ -1707,19 +1714,19 @@ and print_using_diff =
 
 and procedures =
   CLOpt.mk_bool ~long:"procedures"
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Print functions and methods discovered by infer"
 
 
 and procedures_attributes =
   CLOpt.mk_bool ~long:"procedures-attributes"
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
 and procedures_definedness =
   CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Include procedures definedness in the output of $(b,--procedures), i.e. whether the procedure \
      definition was found, or only the procedure declaration, or the procedure is an \
      auto-generated Objective-C accessor"
@@ -1727,7 +1734,7 @@ and procedures_definedness =
 
 and procedures_filter =
   CLOpt.mk_string_opt ~long:"procedures-filter" ~meta:"filter"
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "With $(b,--procedures), only print functions and methods (procedures) matching the specified \
      $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns are \
      interpreted as OCaml Str regular expressions. For instance, to keep only methods named \
@@ -1736,20 +1743,20 @@ and procedures_filter =
 
 and procedures_name =
   CLOpt.mk_bool ~long:"procedures-name"
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Include procedures names in the output of $(b,--procedures)"
 
 
 and procedures_source_file =
   CLOpt.mk_bool ~long:"procedures-source-file" ~default:true
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Include the source file in which the procedure definition or declaration was found in the \
      output of $(b,--procedures)"
 
 
 and procedures_summary =
   CLOpt.mk_bool ~long:"procedures-summary" ~default:false
-    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Print the summaries of each procedure in the output of $(b,--procedures)"
 
 
@@ -2077,13 +2084,13 @@ and source_preview =
 
 and source_files =
   CLOpt.mk_bool ~long:"source-files"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     "Print source files discovered by infer"
 
 
 and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     (Printf.sprintf
        "Output a dotty file in %s for each source file in the output of $(b,--source-files)"
        (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
@@ -2091,7 +2098,7 @@ and source_files_cfg =
 
 and source_files_filter =
   CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     "With $(b,--source-files), only print source files matching the specified $(i,filter). The \
      filter is a pattern that should match the file path. Patterns are interpreted as OCaml Str \
      regular expressions."
@@ -2099,19 +2106,19 @@ and source_files_filter =
 
 and source_files_type_environment =
   CLOpt.mk_bool ~long:"source-files-type-environment"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     "Print the type environment of each source file in the output of $(b,--source-files)"
 
 
 and source_files_procedure_names =
   CLOpt.mk_bool ~long:"source-files-procedure-names"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     "Print the names of procedure of each source file in the output of $(b,--source-files)"
 
 
 and source_files_freshly_captured =
   CLOpt.mk_bool ~long:"source-files-freshly-captured"
-    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     "Print whether the source file has been captured in the most recent capture phase in the \
      output of $(b,--source-files)."
 
@@ -2786,6 +2793,8 @@ and help_issue_type =
 and html = !html
 
 and hoisting_report_only_expensive = !hoisting_report_only_expensive
+
+and global_tenv = !global_tenv
 
 and icfg_dotty_outfile = !icfg_dotty_outfile
 

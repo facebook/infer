@@ -18,11 +18,7 @@ module TypenameHashNormalizer = MaximumSharing.ForHashtbl (TypenameHash)
 type t = Struct.t TypenameHash.t
 
 let pp fmt (tenv : t) =
-  TypenameHash.iter
-    (fun name typ ->
-      Format.fprintf fmt "@[<6>NAME: %s@]@," (Typ.Name.to_string name) ;
-      Format.fprintf fmt "@[<6>TYPE: %a@]@," (Struct.pp Pp.text name) typ )
-    tenv
+  TypenameHash.iter (fun name typ -> Format.fprintf fmt "%a@," (Struct.pp Pp.text name) typ) tenv
 
 
 (** Create a new type environment. *)

@@ -50,13 +50,12 @@ val mk_struct :
 val add_field : t -> Typ.Name.t -> Struct.field -> unit
 (** Add a field to a given struct in the global type environment. *)
 
-val pp : Format.formatter -> t -> unit [@@warning "-32"]
+val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
 type per_file = Global | FileLocal of t
 
 val pp_per_file : Format.formatter -> per_file -> unit
-  [@@warning "-32"]
 (** print per file type environment *)
 
 val merge : src:t -> dst:t -> unit

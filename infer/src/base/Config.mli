@@ -312,6 +312,8 @@ val hoisting_report_only_expensive : bool
 
 val html : bool
 
+val global_tenv : bool
+
 val icfg_dotty_outfile : string option
 
 val infer_is_clang : bool

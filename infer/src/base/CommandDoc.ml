@@ -116,22 +116,30 @@ let compile =
     ~see_also:InferCommand.[Capture]
 
 
+let debug =
+  mk_command_doc ~title:"Infer Debug" ~short_description:"print internal infer data structures"
+    ~synopsis:
+      {|$(b,infer) $(b,debug) $(b,--global-tenv)
+$(b,infer) $(b,debug) $(b,--procedures) $(i,[options])
+$(b,infer) $(b,debug) $(b,--source-files) $(i,[options])|}
+    ~description:
+      [ `P
+          "If $(b,--procedures) is passed, print information about each procedures captured by \
+           infer."
+      ; `P "If $(b,--source-files) is passed, print information about captured source files."
+      ; `P "If $(b,--global-tenv) is passed,  print the global type environment (if any)."
+      ; `P "At least one of the above options must be passed." ]
+    ~see_also:InferCommand.[Explore; Report]
+
+
 let explore =
   mk_command_doc ~title:"Infer Explore"
     ~short_description:"explore the error traces in infer reports"
-    ~synopsis:
-      {|$(b,infer) $(b,explore) $(i,[options])
-$(b,infer) $(b,explore) $(b,--procedures) $(i,[options])
-$(b,infer) $(b,explore) $(b,--source-files) $(i,[options])|}
+    ~synopsis:{|$(b,infer) $(b,explore) $(i,[options])|}
     ~description:
       [ `P
-          "If $(b,--procedures) is passed, print information about each procedure captured by \
-           infer."
-      ; `P "If $(b,--source-files) is passed, print information about captured source files."
-      ; `P
-          "Otherwise, show the list of bugs on the console and explore symbolic program traces \
-           emitted by infer to explain a report. Can also generate an HTML report from a JSON \
-           report." ]
+          "Show the list of bugs on the console and explore symbolic program traces emitted by \
+           infer to explain a report. Can also generate an HTML report from a JSON report." ]
     ~see_also:InferCommand.[Report; Run]
 
 
@@ -326,6 +334,7 @@ let command_to_data =
   [ mk Analyze analyze
   ; mk Capture capture
   ; mk Compile compile
+  ; mk Debug debug
   ; mk Explore explore
   ; mk Help help
   ; mk Report report
