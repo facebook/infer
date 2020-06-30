@@ -169,16 +169,18 @@ let capture ~changed_files = function
 
 (* shadowed for tracing *)
 let capture ~changed_files mode =
+  GCStats.log_f ~name:"capture" Capture
+  @@ fun () ->
+  ScubaLogging.execute_with_time_logging "capture"
+  @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"capture" ())) ;
   capture ~changed_files mode ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
-let capture ~changed_files mode =
-  ScubaLogging.execute_with_time_logging "capture" (fun () -> capture ~changed_files mode)
-
-
 let execute_analyze ~changed_files =
+  GCStats.log_f ~name:"analysis_scheduler" Analysis
+  @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
   InferAnalyze.main ~changed_files ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
@@ -208,6 +210,8 @@ let report ?(suppress_console = false) () =
 
 (* shadowed for tracing *)
 let report ?suppress_console () =
+  GCStats.log_f ~name:"report" Analysis
+  @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"report" ())) ;
   report ?suppress_console () ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
@@ -451,7 +455,10 @@ let run_epilogue () =
   ()
 
 
-let run_epilogue () = ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue
+let run_epilogue () =
+  GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
+  ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue
+
 
 let read_config_changed_files () =
   match Config.changed_files_index with

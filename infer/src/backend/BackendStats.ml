@@ -24,12 +24,11 @@ include struct
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
     ; mutable restart_scheduler_total_time: ExecutionDuration.t
-    ; mutable scheduler_process_analysis_time: ExecutionDuration.t }
-  (* - scheduler_process_analysis_time.wall counts the wall time of the analysis
-     phase
-     - scheduler_process_analysis_time.(user|sys) counts the (user|sys) time
-     only of the scheduler_process
-  *)
+    ; mutable scheduler_process_analysis_time: ExecutionDuration.t
+          (** - [scheduler_process_analysis_time.wall] counts the wall time of the analysis phase
+              - [scheduler_process_analysis_time.(user|sys)] counts the [(user|sys)] time only of
+                the scheduler_process *)
+    ; mutable gc_stats: GCStats.t option }
   [@@deriving fields]
 end
 
@@ -45,7 +44,8 @@ let global_stats =
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
   ; restart_scheduler_total_time= ExecutionDuration.zero
-  ; scheduler_process_analysis_time= ExecutionDuration.zero }
+  ; scheduler_process_analysis_time= ExecutionDuration.zero
+  ; gc_stats= None }
 
 
 let get () = global_stats
@@ -109,13 +109,15 @@ let copy from ~into : unit =
       ; proc_locker_unlock_time
       ; restart_scheduler_useful_time
       ; restart_scheduler_total_time
-      ; scheduler_process_analysis_time } =
+      ; scheduler_process_analysis_time
+      ; gc_stats } =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
     ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed ~ondemand_local_cache_hits
     ~ondemand_local_cache_misses ~proc_locker_lock_time ~proc_locker_unlock_time
     ~restart_scheduler_useful_time ~restart_scheduler_total_time ~scheduler_process_analysis_time
+    ~gc_stats
 
 
 let merge stats1 stats2 =
@@ -136,7 +138,8 @@ let merge stats1 stats2 =
         stats2.restart_scheduler_useful_time
   ; restart_scheduler_total_time=
       ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
-  ; scheduler_process_analysis_time= ExecutionDuration.zero }
+  ; scheduler_process_analysis_time= ExecutionDuration.zero
+  ; gc_stats= Option.merge stats1.gc_stats stats2.gc_stats ~f:GCStats.merge }
 
 
 let initial =
@@ -151,12 +154,21 @@ let initial =
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
   ; restart_scheduler_total_time= ExecutionDuration.zero
-  ; scheduler_process_analysis_time= ExecutionDuration.zero }
+  ; scheduler_process_analysis_time= ExecutionDuration.zero
+  ; gc_stats= None }
 
 
-let reset () = copy initial ~into:global_stats
+let reset () =
+  copy initial ~into:global_stats ;
+  global_stats.gc_stats <- Some (GCStats.get ~since:ProgramStart)
+
 
 let pp f stats =
+  let pp_field pp_value stats f field =
+    let field_value = Field.get field stats in
+    let field_name = Field.name field in
+    F.fprintf f "%s = %a@;" field_name pp_value field_value
+  in
   let pp_hit_percent hit miss f =
     let total = hit + miss in
     if Int.equal total 0 then F.pp_print_string f "N/A%%" else F.fprintf f "%d%%" (hit * 100 / total)
@@ -186,6 +198,7 @@ let pp f stats =
       ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_total_time:(pp_execution_duration_field stats f)
       ~scheduler_process_analysis_time:(pp_execution_duration_field stats f)
+      ~gc_stats:(pp_field (Pp.option GCStats.pp) stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
@@ -207,6 +220,9 @@ let log_to_scuba stats =
         ~label:("backend_stats." ^ Field.name field ^ "_wall")
         ~duration_ms:(ExecutionDuration.wall_time field_value |> secs_to_ms) ]
   in
+  let create_scuba_option scuba_creator field =
+    match Field.get field stats with None -> [] | Some value -> scuba_creator value
+  in
   let entries =
     Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
@@ -215,6 +231,7 @@ let log_to_scuba stats =
       ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
       ~restart_scheduler_total_time:create_time_entry
       ~scheduler_process_analysis_time:create_time_entry
+      ~gc_stats:(create_scuba_option (GCStats.to_scuba_entries ~prefix:"backend"))
     |> List.concat
   in
   ScubaLogging.log_many entries
