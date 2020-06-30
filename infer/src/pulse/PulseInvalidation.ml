@@ -47,6 +47,7 @@ type t =
   | CppDelete
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
+  | OptionalEmpty
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
 [@@deriving compare]
@@ -64,6 +65,8 @@ let issue_type_of_cause = function
       IssueType.vector_invalidation
   | GoneOutOfScope _ ->
       IssueType.use_after_lifetime
+  | OptionalEmpty ->
+      IssueType.optional_empty_access
   | JavaIterator _ | StdVector _ ->
       IssueType.vector_invalidation
 
@@ -87,6 +90,8 @@ let describe f cause =
         else F.fprintf f "is the address of a stack variable `%a`" Pvar.pp_value pvar
       in
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
+  | OptionalEmpty ->
+      F.pp_print_string f "is folly::None"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
   | JavaIterator java_iterator_f ->
@@ -101,7 +106,7 @@ let pp f invalidation =
       F.fprintf f "ConstantDereference(%a)" describe invalidation
   | CppDelete ->
       F.fprintf f "CppDelete(%a)" describe invalidation
-  | EndIterator | GoneOutOfScope _ ->
+  | EndIterator | GoneOutOfScope _ | OptionalEmpty ->
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation

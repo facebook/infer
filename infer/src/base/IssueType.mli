@@ -264,6 +264,8 @@ val null_dereference : t
 
 val nullptr_dereference : t
 
+val optional_empty_access : t
+
 val parameter_not_null_checked : t
 
 val precondition_not_found : t

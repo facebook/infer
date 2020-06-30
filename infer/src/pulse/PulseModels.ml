@@ -139,6 +139,82 @@ module ObjC = struct
     |> PulseOperations.ok_continue
 end
 
+module FollyOptional = struct
+  let internal_value =
+    Fieldname.make
+      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
+      "__infer_model_backing_value"
+
+
+  let internal_value_access = HilExp.Access.FieldAccess internal_value
+
+  let to_internal_value location optional astate =
+    PulseOperations.eval_access location optional internal_value_access astate
+
+
+  let to_internal_value_deref location optional astate =
+    let* astate, pointer = to_internal_value location optional astate in
+    PulseOperations.eval_access location pointer Dereference astate
+
+
+  let write_value location this ~value ~desc astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, value_field = to_internal_value location this astate in
+    let value_hist = (fst value, event :: snd value) in
+    let+ astate = PulseOperations.write_deref location ~ref:value_field ~obj:value_hist astate in
+    (astate, value_hist)
+
+
+  let assign_value_fresh location this ~desc astate =
+    write_value location this ~value:(AbstractValue.mk_fresh (), []) ~desc astate
+
+
+  let assign_none this ~desc : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let* astate, value = assign_value_fresh location this ~desc astate in
+    let astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+    let+ astate = PulseOperations.invalidate location Invalidation.OptionalEmpty value astate in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  let assign_value this init ~desc : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let* astate, value = to_internal_value_deref location init astate in
+    let+ astate, _ = write_value location this ~value ~desc astate in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  let emplace optional : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let+ astate, _ =
+      assign_value_fresh location optional ~desc:"folly::Optional::emplace()" astate
+    in
+    [ExecutionDomain.ContinueProgram astate]
+
+
+  let value optional : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "folly::Optional::value()"; location; in_call= []} in
+    let* astate, (value_addr, value_hist) = to_internal_value_deref location optional astate in
+    PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate
+    |> PulseOperations.ok_continue
+
+
+  let has_value optional : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let ret_value =
+      (ret_addr, [ValueHistory.Allocation {f= Model "folly::Optional::has_value()"; location}])
+    in
+    let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
+    let astate = PulseOperations.write_id ret_id ret_value astate in
+    let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
+    let astate_true = PulseArithmetic.and_positive ret_addr astate_non_empty in
+    let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
+    let astate_false = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate_empty in
+    [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
+end
+
 module Cplusplus = struct
   let delete deleted_access : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
@@ -742,8 +818,26 @@ module ProcNameDispatcher = struct
              ref-counting *)
           -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
         ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
-        ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
         ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+        ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
+          $+ any_arg_of_typ (-"folly" &:: "None")
+          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional(=None)"
+        ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
+          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional()"
+        ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::Optional(arg)"
+        ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
+          $+ any_arg_of_typ (-"folly" &:: "None")
+          $--> FollyOptional.assign_none ~desc:"folly::Optional::assign(=None)"
+        ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::assign()"
+        ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload $+...$--> FollyOptional.emplace
+        ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload $+...$--> FollyOptional.emplace
+        ; -"folly" &:: "Optional" &:: "has_value" <>$ capt_arg_payload
+          $+...$--> FollyOptional.has_value
+        ; -"folly" &:: "Optional" &:: "reset" <>$ capt_arg_payload
+          $+...$--> FollyOptional.assign_none ~desc:"folly::Optional::reset()"
+        ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload $+...$--> FollyOptional.value
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor

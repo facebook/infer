@@ -745,6 +745,11 @@ let nullptr_dereference =
     ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
 
 
+let optional_empty_access =
+  register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+    ~user_documentation:"Reports on accessing folly::Optional when it is none."
+
+
 let parameter_not_null_checked =
   register ~id:"PARAMETER_NOT_NULL_CHECKED" Warning Biabduction
     ~user_documentation:[%blob "../../documentation/issues/PARAMETER_NOT_NULL_CHECKED.md"]

@@ -29,6 +29,7 @@ type t =
   | CppDelete
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
+  | OptionalEmpty
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
 [@@deriving compare]
