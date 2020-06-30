@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Fri Jun 19 10:50:59 2020 -->
+<!-- Creator     : groff version 1.19.2 -->
+<!-- CreationDate: Mon Jun 29 14:17:41 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -8,17 +8,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-report</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-report</h1>
+<h1 align=center>infer-report</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -32,25 +31,22 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-report -
 compute and manipulate infer results</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 report</b> <i>[options]</i> [<i>file.specs</i>...]</p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Read, convert,
@@ -61,9 +57,8 @@ is printed to standard output unless option -q is used.</p>
 file are passed on the command line, process all the .specs
 in the results directory.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -79,18 +74,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;blacklist&quot;
 instead of a &quot;whitelist&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;"><b>--cost-issues-tests</b>
@@ -165,8 +160,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARRAY_OUT_OF_BOUNDS_L1
+(disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
 ASSIGN_POINTER_WARNING (enabled by default), <br>
@@ -195,15 +193,7 @@ CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default), <br>
 CHECKERS_IMMUTABLE_CAST (enabled by default), <br>
 CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
-COMPONENT_FACTORY_FUNCTION (enabled by default), <br>
-COMPONENT_FILE_CYCLOMATIC_COMPLEXITY (enabled by default),
-<br>
-COMPONENT_FILE_LINE_COUNT (disabled by default), <br>
-COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS (enabled by
-default), <br>
 COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by
-default), <br>
-COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS (enabled by
 default), <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
@@ -302,7 +292,6 @@ Missing_fld (enabled by default), <br>
 NULLPTR_DEREFERENCE (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
-POINTER_SIZE_MISMATCH (enabled by default), <br>
 POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
 PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
@@ -310,14 +299,11 @@ PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
-REGISTERED_OBSERVER_BEING_DEALLOCATED (enabled by default),
-<br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (enabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
-SKIP_POINTER_DEREFERENCE (disabled by default), <br>
 SQL_INJECTION (enabled by default), <br>
 SQL_INJECTION_RISK (enabled by default), <br>
 STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
@@ -330,10 +316,6 @@ STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
-UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by <br>
-default), <br>
-UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK (enabled by default),
-<br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -493,9 +475,8 @@ files in the specified directory</p>
 (Conversely:
 <b>--no-skip-analysis-in-path-skips-compilation</b>)</p>
 
-<h2>HOISTING OPTIONS
 <a name="HOISTING OPTIONS"></a>
-</h2>
+<h2>HOISTING OPTIONS</h2>
 
 
 
@@ -506,9 +487,8 @@ loop-invariant calls only when the function is expensive,
 i.e. at least linear (Conversely:
 <b>--hoisting-report-only-expensive</b>)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -518,9 +498,8 @@ i.e. at least linear (Conversely:
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -529,9 +508,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

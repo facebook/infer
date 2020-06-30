@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Fri Jun 19 10:50:59 2020 -->
+<!-- Creator     : groff version 1.19.2 -->
+<!-- CreationDate: Mon Jun 29 14:17:41 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -8,24 +8,22 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-run</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-run</h1>
+<h1 align=center>infer-run</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
-<a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
@@ -34,17 +32,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-run -
 capture source files, analyze, and report</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -52,9 +48,8 @@ run</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i> <b>--</b> <i>compile
 command</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Calling
@@ -65,14 +60,13 @@ to performing the following sequence of commands:</p>
 capture</b> <i>[options]</i> <b><br>
 infer analyze</b> <i>[options]</i></p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><i><b>--censor-report</b>
-+string</i></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--censor-report</b>
+<i>+string</i></p>
 
 <p style="margin-left:17%;">Specify a filter for issues to
 be censored by adding a 'censored_reason' field in the json
@@ -83,18 +77,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;blacklist&quot;
 instead of a &quot;whitelist&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
@@ -289,25 +283,24 @@ exit</p>
 <p style="margin-left:17%;">Print version information in
 json format and exit</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -326,22 +319,8 @@ not Java. <b><br>
 matched by the specified regular expression. Only valid for
 <b>--buck-compilation-database</b>.</p>
 
-<h2>CLANG OPTIONS
-<a name="CLANG OPTIONS"></a>
-</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>--compute-analytics</b></p>
-
-<p style="margin-left:17%;">Activates: Emit analytics as
-info-level issues, like component kit line count and
-component kit file cyclomatic complexity (Conversely:
-<b>--no-compute-analytics</b>)</p>
-
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
@@ -352,9 +331,8 @@ component kit file cyclomatic complexity (Conversely:
 by the specified OCaml regular expression (only supported by
 the javac integration for now).</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -364,9 +342,8 @@ the javac integration for now).</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -375,9 +352,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

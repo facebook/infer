@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Fri Jun 19 10:50:58 2020 -->
+<!-- Creator     : groff version 1.19.2 -->
+<!-- CreationDate: Mon Jun 29 14:17:41 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -8,17 +8,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-analyze</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-analyze</h1>
+<h1 align=center>infer-analyze</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -38,35 +37,31 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-analyze -
 analyze the files captured by infer</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 analyze</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Analyze the
 files captured in the project results directory and
 report.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -74,12 +69,12 @@ report.</p>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
-&rsquo;@Expensive&rsquo;, this checker will warn whenever
+annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
+&lsquo;@Expensive&lsquo;, this checker will warn whenever
 some method annotated with
-&rsquo;@PerformanceCritical&rsquo; calls, directly or
+&lsquo;@PerformanceCritical&lsquo; calls, directly or
 indirectly, another method annotated with
-&rsquo;@Expensive&rsquo; (Conversely:
+&lsquo;@Expensive&lsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
@@ -153,7 +148,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&rsquo;infer reportdiff&rsquo;. (Conversely:
+&lsquo;infer reportdiff&lsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
@@ -227,7 +222,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &rsquo;@Nullable&rsquo; checker for Java
+The eradicate &lsquo;@Nullable&lsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
@@ -273,9 +268,9 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
-&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
-&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
+&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
+&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 
@@ -344,7 +339,7 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&rsquo;@Prop&rsquo;s have been specified when constructing
+&lsquo;@Prop&lsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -403,11 +398,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &rsquo;printf&rsquo;
+Detect mismatches between the Java &lsquo;printf&lsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&rsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&rsquo; (Conversely:
+&lsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&lsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
@@ -555,7 +550,7 @@ files in the specified directory</p>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &rsquo;self&rsquo;. (Conversely:
+when a block captures &lsquo;self&lsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 
@@ -635,9 +630,8 @@ Warns when values are used before having been initialized.
 disable all other checkers (Conversely:
 <b>--no-uninit-only</b>)</p>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -647,9 +641,8 @@ disable all other checkers (Conversely:
 results directories specified in the dependency file.
 (Conversely: <b>--no-merge</b>)</p>
 
-<h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
-</h2>
+<h2>BUFFER OVERRUN OPTIONS</h2>
 
 
 
@@ -665,9 +658,8 @@ checker (0-4)</p>
 <p style="margin-left:17%;">Limit of field depth of
 abstract location in buffer-overrun checker</p>
 
-<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-</h2>
+<h2>CLANG OPTIONS</h2>
 
 
 
@@ -700,9 +692,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -759,9 +752,8 @@ to be checked in C++:</p>
 malloc(3) never returns null. (Conversely:
 <b>--no-unsafe-malloc</b>)</p>
 
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
@@ -790,9 +782,8 @@ packages.</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
-<h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>
-</h2>
+<h2>QUANDARY CHECKER OPTIONS</h2>
 
 
 
@@ -820,9 +811,8 @@ Quandary</p>
 <p style="margin-left:17%;">Specify custom sources for
 Quandary</p>
 
-<h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>
-</h2>
+<h2>RACERD CHECKER OPTIONS</h2>
 
 
 
@@ -845,9 +835,8 @@ nothing. (Conversely:
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
 
-<h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
-</h2>
+<h2>SIOF CHECKER OPTIONS</h2>
 
 
 
@@ -868,9 +857,8 @@ recent libstdc++ then it is safe to turn this option on.
 &quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
 multiple times)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -880,9 +868,8 @@ multiple times)</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -891,9 +878,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 
