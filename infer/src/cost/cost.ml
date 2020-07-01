@@ -84,10 +84,18 @@ module InstrBasicCostWithReason = struct
                   CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
                 match Tenv.get_summary_formals tenv ~get_summary ~get_formals callee_pname with
-                | `Found ({CostDomain.post= callee_cost_record}, callee_formals) ->
-                    CostDomain.map callee_cost_record ~f:(fun callee_cost ->
-                        instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                          ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
+                | `Found ({CostDomain.post= callee_cost_record}, callee_formals) -> (
+                    let instantiated_cost =
+                      CostDomain.map callee_cost_record ~f:(fun callee_cost ->
+                          instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                            ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
+                    in
+                    match CostDomain.get_operation_cost callee_cost_record with
+                    | {cost; top_pname_opt= None} when BasicCost.is_top cost ->
+                        CostDomain.add_top_pname_opt CostKind.OperationCost instantiated_cost
+                          (Some callee_pname)
+                    | _ ->
+                        instantiated_cost )
                 | `FoundFromSubclass
                     (callee_pname, {CostDomain.post= callee_cost_record}, callee_formals) ->
                     (* Note: It ignores top cost of subclass to avoid its propagations. *)
@@ -178,8 +186,16 @@ module WorstCaseCost = struct
 
   let compute tenv extras cfg =
     let init = CostDomain.zero_record in
-    InstrCFG.fold_nodes cfg ~init ~f:(fun acc pair ->
-        exec_node tenv extras pair |> CostDomain.plus acc )
+    let cost =
+      InstrCFG.fold_nodes cfg ~init ~f:(fun acc pair ->
+          exec_node tenv extras pair |> CostDomain.plus acc )
+    in
+    Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
+        ScubaLogging.log_message ~label:"unmodeled_function_top_cost"
+          ~message:(F.asprintf "Unmodeled Function[Top Cost] : %a" Procname.pp top_pname) ;
+        Logging.(debug Analysis Verbose)
+          "@ Unmodeled Function[Top Cost]: %a@\n" Procname.pp top_pname ) ;
+    cost
 end
 
 let is_report_suppressed pname =

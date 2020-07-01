@@ -31,6 +31,8 @@ module BasicCostWithReason = struct
     {record with cost= BasicCost.subst callee_pname location record.cost eval_sym}
 
 
+  (* When we fold the nodes while traversing the cfg,
+     make sure we only keep the first top cost callee we see *)
   let plus record1 record2 =
     { cost= BasicCost.plus record1.cost record2.cost
     ; top_pname_opt= Option.first_some record1.top_pname_opt record2.top_pname_opt }
@@ -77,6 +79,12 @@ type summary = {post: t; is_on_ui_thread: bool}
 let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp post
 
 let get_cost_kind kind cost_record = VariantCostMap.get kind cost_record
+
+let add_top_pname_opt kind cost_record top_pname_opt =
+  VariantCostMap.update kind
+    (function Some cost_with_reason -> Some {cost_with_reason with top_pname_opt} | _ -> None)
+    cost_record
+
 
 let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
 

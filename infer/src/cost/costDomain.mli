@@ -58,6 +58,8 @@ val pp_summary : F.formatter -> summary -> unit
 
 val get_cost_kind : CostKind.t -> t -> BasicCostWithReason.t
 
+val add_top_pname_opt : CostKind.t -> t -> Procname.t option -> t
+
 val get_operation_cost : t -> BasicCostWithReason.t
 
 val map : f:(BasicCostWithReason.t -> BasicCostWithReason.t) -> t -> t
