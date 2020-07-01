@@ -108,7 +108,7 @@ Let's stick with just an integer domain to keep things simple until (5).
 - Hint: `AbstractDomain.TopLifted` may be useful for this. Just put all the code in ResourceLeakDomain.ml that corresponds to the signature `AbstractDomain.S` into a submodule `FiniteBounds`, then let `TopLifted` do all the lifting with
 
 ```OCaml
-include AbstractDomain.TopLifter (FiniteBounds)
+include AbstractDomain.TopLifted (FiniteBounds)
 ```
 
 - Hint#2: use `open AbstractDomain.Types` to be able to write, e.g., `Top` instead of `AbstractDomain.Top`.
