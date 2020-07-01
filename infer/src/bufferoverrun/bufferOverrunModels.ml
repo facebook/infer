@@ -1340,6 +1340,23 @@ module InputStream = struct
     {exec; check= no_check}
 end
 
+module File = struct
+  let list_files exp =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let locs = Sem.eval integer_type_widths exp mem |> Dom.Val.get_pow_loc in
+      match PowLoc.is_singleton_or_more locs with
+      | Singleton loc ->
+          Loc.append_field loc BufferOverrunField.java_list_files_length
+          |> Loc.get_path
+          |> Option.value_map ~default:mem ~f:(fun path ->
+                 let length = Itv.of_normal_path ~unsigned:true path in
+                 JavaClass.decl_array model_env ~ret length mem )
+      | Empty | More ->
+          mem
+    in
+    {exec; check= no_check}
+end
+
 module FileChannel = struct
   (* https://docs.oracle.com/javase/7/docs/api/java/io/InputStream.html#read(byte[],%20int,%20int) *)
   let read buf_exp =
@@ -1575,6 +1592,7 @@ module Call = struct
       ; +PatternMatch.implements_infer_annotation "Assertions"
         &:: "nullsafeFIXME" <>$ capt_exp $+...$--> id
       ; +PatternMatch.implements_infer_annotation "Assertions" &::.*--> no_model
+      ; +PatternMatch.implements_io "File" &:: "listFiles" <>$ capt_exp $--> File.list_files
       ; +PatternMatch.implements_io "InputStream"
         &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext

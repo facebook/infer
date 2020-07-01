@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import com.google.common.base.Objects;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -121,5 +122,10 @@ class ListTest {
       o.my_put();
     }
     for (int i = 0; i < o.my_size; i++) {}
+  }
+
+  void call_list_files_linear(File dir) {
+    File[] files = dir.listFiles();
+    for (File f : files) {}
   }
 }
