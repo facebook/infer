@@ -117,41 +117,40 @@ let is_litho_function = function
       false
 
 
-let is_component_builder procname tenv =
+let is_builder procname tenv =
   match procname with
   | Procname.Java java_procname ->
-      PatternMatch.is_subtype_of_str tenv
-        (Procname.Java.get_class_type_name java_procname)
-        "com.facebook.litho.Component$Builder"
+      let class_name = Procname.Java.get_class_type_name java_procname in
+      Domain.is_component_or_section_builder class_name tenv
   | _ ->
       false
 
 
-let is_component procname tenv =
+let is_component_or_section procname tenv =
   match procname with
   | Procname.Java java_procname ->
-      PatternMatch.is_subtype_of_str tenv
-        (Procname.Java.get_class_type_name java_procname)
-        "com.facebook.litho.Component"
+      let class_name = Procname.Java.get_class_type_name java_procname in
+      PatternMatch.is_subtype_of_str tenv class_name "com.facebook.litho.Component"
+      || PatternMatch.is_subtype_of_str tenv class_name "com.facebook.litho.sections.Section"
   | _ ->
       false
 
 
-let is_component_build_method procname tenv =
+let is_build_method procname tenv =
+  match Procname.get_method procname with "build" -> is_builder procname tenv | _ -> false
+
+
+let is_create_method procname tenv =
   match Procname.get_method procname with
-  | "build" ->
-      is_component_builder procname tenv
+  | "create" ->
+      is_component_or_section procname tenv
   | _ ->
       false
-
-
-let is_component_create_method procname tenv =
-  match Procname.get_method procname with "create" -> is_component procname tenv | _ -> false
 
 
 let get_component_create_typ_opt procname tenv =
   match procname with
-  | Procname.Java java_pname when is_component_create_method procname tenv ->
+  | Procname.Java java_pname when is_create_method procname tenv ->
       Some (Procname.Java.get_class_type_name java_pname)
   | _ ->
       None
@@ -164,8 +163,8 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
     Option.value_map ~default:false callee_summary_opt ~f:(fun sum ->
         LithoDomain.Mem.contains_build sum )
   in
-  is_component_build_method callee_pname tenv
-  || is_component_create_method callee_pname tenv
+  is_build_method callee_pname tenv
+  || is_create_method callee_pname tenv
   ||
   match callee_pname with
   | Procname.Java java_callee_procname ->
@@ -174,7 +173,7 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
       not build_exists_in_callees
 
 
-let should_report pname tenv = not (is_litho_function pname || is_component_build_method pname tenv)
+let should_report pname tenv = not (is_litho_function pname || is_build_method pname tenv)
 
 let report {InterproceduralAnalysis.proc_desc; tenv; err_log} astate =
   let check_on_string_set parent_typename create_loc call_chain prop_set =
@@ -227,7 +226,7 @@ module TransferFunctions = struct
           Domain.LocalAccessPath.make_from_access_expression receiver_ae caller_pname
         in
         if
-          (is_component_builder callee_pname tenv || is_component_create_method callee_pname tenv)
+          (is_builder callee_pname tenv || is_create_method callee_pname tenv)
           (* track callee in order to report respective errors *)
           && satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
@@ -236,9 +235,9 @@ module TransferFunctions = struct
           | Some create_typ ->
               Domain.call_create return_access_path create_typ location astate
           | None ->
-              if is_component_build_method callee_pname tenv then
+              if is_build_method callee_pname tenv then
                 Domain.call_build_method ~ret:return_access_path ~receiver astate
-              else if is_component_builder callee_pname tenv then
+              else if is_builder callee_pname tenv then
                 let callee_prefix = Domain.MethodCallPrefix.make callee_pname location in
                 Domain.call_builder ~ret:return_access_path ~receiver callee_prefix astate
               else astate

@@ -7,6 +7,8 @@
 
 open! IStd
 
+val is_component_or_section_builder : Typ.Name.t -> Tenv.t -> bool
+
 (** Access path + its parent procedure *)
 module LocalAccessPath : sig
   type t = private {access_path: AccessPath.t; parent: Procname.t} [@@deriving compare]

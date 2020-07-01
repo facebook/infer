@@ -8,6 +8,12 @@
 open! IStd
 module F = Format
 
+let is_component_or_section_builder class_typ_name tenv =
+  PatternMatch.is_subtype_of_str tenv class_typ_name "com.facebook.litho.Component$Builder"
+  || PatternMatch.is_subtype_of_str tenv class_typ_name
+       "com.facebook.litho.sections.Section$Builder"
+
+
 module LocalAccessPath = struct
   type t = {access_path: AccessPath.t; parent: Procname.t} [@@deriving compare]
 
@@ -381,9 +387,7 @@ module Mem = struct
         match ptr_typ with
         | Typ.{desc= Tptr (typ, _)} -> (
           match Typ.name typ with
-          | Some typ_name
-            when PatternMatch.is_subtype_of_str tenv typ_name "com.facebook.litho.Component$Builder"
-            ->
+          | Some typ_name when is_component_or_section_builder typ_name tenv ->
               let formal_ae = LocalAccessPath.make_from_pvar pvar ptr_typ pname in
               let created_location = CreatedLocation.ByParameter formal_ae in
               { created= Created.add formal_ae (CreatedLocations.singleton created_location) created
