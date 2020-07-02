@@ -87,3 +87,12 @@ void replace_linear_FP(NSString* s) {
   for (int i = 0; i < r.length; i++) {
   }
 }
+
+NSString* string_with_utf8_string_linear_FP(const char* p) {
+  NSString* s = [NSString stringWithUTF8String:p];
+  NSInteger i = 0;
+  while ([s characterAtIndex:i] != 'a' && i < s.length) {
+    i++;
+  }
+  return s;
+}

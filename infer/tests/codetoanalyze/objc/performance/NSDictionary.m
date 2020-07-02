@@ -25,6 +25,29 @@ void nsdictionary_init_with_dictionary_linear_FP(NSDictionary* dict) {
   }
 }
 
+NSDictionary* nsdictionary_dictionary_with_objects_linear(int n_entries) {
+  NSDictionary* asciiDict;
+  NSString* keyArray[n_entries];
+  NSNumber* valueArray[n_entries];
+  NSInteger i;
+
+  for (i = 0; i < n_entries; i++) {
+
+    char charValue = 'a' + i;
+    keyArray[i] = [NSString stringWithFormat:@"%c", charValue];
+    valueArray[i] = [NSNumber numberWithChar:charValue];
+  }
+
+  asciiDict = [NSDictionary dictionaryWithObjects:(id*)valueArray
+                                          forKeys:(id*)keyArray
+                                            count:n_entries];
+
+  for (id key in asciiDict) {
+  }
+
+  return asciiDict;
+}
+
 // accessing values and keys
 
 void nsdictionary_all_keys_linear_FP(NSDictionary* dict) {
@@ -35,6 +58,15 @@ void nsdictionary_all_keys_linear_FP(NSDictionary* dict) {
 void nsdictionary_all_values_linear_FP(NSDictionary* dict) {
   for (int i = 0; i < [dict allValues].count; i++) {
   }
+}
+
+id nsdictionary_find_key_linear_FN(NSDictionary* dict, id item) {
+  NSEnumerator* enumerator = [dict keyEnumerator];
+  id key;
+  while ((key = [enumerator nextObject]) && dict[key] == item) {
+    return key;
+  }
+  return NULL;
 }
 
 // enumerate dictionary

@@ -42,6 +42,18 @@ NSArray* nsarray_init_with_objects_constant() {
   return [NSArray arrayWithObjects:strings count:2];
 }
 
+NSArray* nsarray_array_with_objects_constant() {
+  NSDate* aDate = [NSDate distantFuture];
+  NSValue* aValue = @(5);
+  NSString* aString = @"hello";
+
+  NSArray* array = [NSArray arrayWithObjects:aDate, aValue, aString, nil];
+  for (id item in array) {
+  }
+
+  return array;
+}
+
 // derive new array
 
 NSArray* nsarray_add_object_constant(id obj) {
@@ -67,6 +79,11 @@ void nsarray_access_linear_FP(NSArray* array) {
   id obj;
   for (int i = 0; i < array.count; i++) {
     obj = array[i];
+  }
+}
+
+void nsarray_find_linear_FP(NSArray* array) {
+  for (int i = 0; i < array.count && i != [array[i] integerValue]; i++) {
   }
 }
 
@@ -124,8 +141,20 @@ void nsarray_enumerator_linear_FN(NSArray* array) {
   }
 }
 
+void nsarray_next_object_linear_FN(NSArray* array) {
+  for (id item in array) {
+  }
+}
+
 // compare array
 boolean_t nsarray_is_equal_to_array_linear_FN(NSArray* array1,
                                               NSArray* array2) {
   return [array1 isEqualToArray:array2];
+}
+
+// count
+
+void nsarray_count_bounded_linear_FP(NSArray* array) {
+  for (int i = 0; i < array.count; i++) {
+  }
 }
