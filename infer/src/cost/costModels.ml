@@ -138,6 +138,7 @@ end
 
 module BoundsOfCollection = BoundsOf (CostUtils.Collection)
 module BoundsOfArray = BoundsOf (CostUtils.Array)
+module BoundsOfCString = BoundsOf (CostUtils.CString)
 
 module ImmutableSet = struct
   let construct = linear ~of_function:"ImmutableSet.construct"
@@ -151,7 +152,9 @@ module Call = struct
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let dispatcher =
       make_dispatcher
-        [ +PatternMatch.implements_collections
+        [ -"google" &:: "StrLen" <>$ capt_exp
+          $--> BoundsOfCString.linear_length ~of_function:"google::StrLen"
+        ; +PatternMatch.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"
         ; +PatternMatch.implements_list &:: "sort" $ capt_exp

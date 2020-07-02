@@ -66,6 +66,7 @@ DIRECT_TESTS += \
   cpp_linters \
   cpp_linters-for-test-only \
   cpp_liveness \
+  cpp_performance \
   cpp_pulse \
   cpp_quandary \
   cpp_racerd \

@@ -518,6 +518,8 @@ let eval_array_locs_length arr_locs mem =
         conservative_array_length ~traces arr_locs mem
 
 
+let eval_string_len exp mem = Mem.get_c_strlen (eval_locs exp mem) mem
+
 module Prune = struct
   type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
 

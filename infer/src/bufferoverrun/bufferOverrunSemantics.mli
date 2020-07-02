@@ -32,6 +32,9 @@ val eval_array_locs_length :
   AbsLoc.PowLoc.t -> _ BufferOverrunDomain.Mem.t0 -> BufferOverrunDomain.Val.t
 (** Evaluate length of array locations *)
 
+val eval_string_len : Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+(** Evaluate length of C string *)
+
 val conservative_array_length :
      ?traces:BufferOverrunTrace.Set.t
   -> AbsLoc.PowLoc.t
