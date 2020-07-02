@@ -209,8 +209,6 @@ val mk_subcommand :
 val args_env_var : string
 (** environment variable use to pass arguments from parent to child processes *)
 
-val strict_mode : bool
-
 val strict_mode_env_var : string
 
 val env_var_sep : char

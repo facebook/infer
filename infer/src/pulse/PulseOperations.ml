@@ -56,8 +56,7 @@ module Closures = struct
         let+ () =
           IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
             | Attribute.Closure _ ->
-                IContainer.iter_result ~fold:Memory.Edges.fold_bindings edges
-                  ~f:(fun (access, addr_trace) ->
+                IContainer.iter_result ~fold:Memory.Edges.fold edges ~f:(fun (access, addr_trace) ->
                     if is_captured_fake_access access then
                       let+ _ = check_addr_access action addr_trace astate in
                       ()
@@ -241,7 +240,7 @@ let invalidate_array_elements location cause addr_trace astate =
   | None ->
       astate
   | Some edges ->
-      Memory.Edges.fold edges ~init:astate ~f:(fun astate access dest_addr_trace ->
+      Memory.Edges.fold edges ~init:astate ~f:(fun astate (access, dest_addr_trace) ->
           match (access : Memory.Access.t) with
           | ArrayAccess _ ->
               AddressAttributes.invalidate dest_addr_trace cause location astate

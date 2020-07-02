@@ -106,7 +106,7 @@ let get_modified_params pname post_stack pre_heap post formals =
       | Some (addr, _) when Typ.is_pointer typ -> (
         match BaseMemory.find_opt addr pre_heap with
         | Some edges_pre ->
-            BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc access (addr, _) ->
+            BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
                 add_to_modified ~var ~access ~addr pre_heap post acc )
         | None ->
             debug "The address is not materialized in in pre-heap." ;

@@ -13,13 +13,13 @@ module type Config = sig
 end
 
 module type S = sig
-  type t [@@deriving compare]
+  type t
 
   type key
 
   type value
 
-  val equal : (value -> value -> bool) -> t -> t -> bool
+  val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
 
@@ -27,32 +27,30 @@ module type S = sig
 
   val add : key -> value -> t -> t
 
+  val bindings : t -> (key * value) list
+
+  val filter : t -> f:(key * value -> bool) -> t
+
   val find_opt : key -> t -> value option
 
-  val fold : t -> init:'acc -> f:('acc -> key -> value -> 'acc) -> 'acc
-
-  val fold_bindings : t -> init:'acc -> f:('acc -> key * value -> 'acc) -> 'acc
+  val fold : t -> init:'acc -> f:('acc -> key * value -> 'acc) -> 'acc
 
   val fold_map : t -> init:'acc -> f:('acc -> value -> 'acc * value) -> 'acc * t
 
   val is_empty : t -> bool
 
-  val bindings : t -> (key * value) list
+  val mem : t -> key -> bool
 
-  val union : f:(key -> value -> value -> value option) -> t -> t -> t
-
-  val merge : f:(key -> value option -> value option -> value option) -> t -> t -> t
+  val union_left_biased : t -> t -> t
 end
 
 module Make
-    (Key : PrettyPrintable.PrintableOrderedType)
+    (Key : PrettyPrintable.PrintableEquatableOrderedType)
     (Value : PrettyPrintable.PrintableOrderedType)
     (Config : Config) : S with type key = Key.t and type value = Value.t = struct
   type key = Key.t
 
   type value = Value.t [@@deriving compare]
-
-  module M = Caml.Map.Make (Key)
 
   (** [new_] and [old] together represent the map. Keys may be present in both [old] and [new_], in
       which case bindings in [new_] take precendence.
@@ -62,70 +60,109 @@ module Make
       [Config.limit] most recently modified elements will always be in the map, but we may
       temporarily have up to [2*Config.limit] elements in memory.
 
-      Using [Caml.Map]s as our backing data-structure allows us to avoid having to scan the [new_]
-      collection before adding an element in order to avoid adding it multiple times (which would
-      force us to either go over the [2*Config.limit] max number of elements or risk us losing some
-      of the [N] most recently-used keys because of repeating keys). *)
+      Adding elements requires scanning [new_] to possibly remove it, which is [O(Config.limit)].
+      This is assumed small (eg, around 50). *)
   type t =
     { count_new: int  (** invariant: [count_new] is [M.length new_] *)
-    ; new_: value M.t  (** invariant: [M.length new_ ≤ Config.limit] *)
-    ; old: value M.t
-          (** invariant: [M.length old ≤ Config.limit]. Actually, the length of [old] is always
+    ; new_: (key, value) List.Assoc.t  (** invariant: [List.length new_ ≤ Config.limit] *)
+    ; old: (key, value) List.Assoc.t
+          (** invariant: [List.length old ≤ Config.limit]. Actually, the length of [old] is always
               either [0] or [N], except possibly after a call to [merge]. *) }
-  [@@deriving compare]
 
-  let empty = {count_new= 0; old= M.empty; new_= M.empty}
+  let empty = {count_new= 0; old= []; new_= []}
 
-  let edges map =
-    M.union
-      (fun _addr edge_new _edge_old -> (* bindings in [new_] take precedence *) Some edge_new)
-      map.new_ map.old
+  let rec remove_aux front_rev key = function
+    | [] ->
+        List.rev front_rev
+    | (key', _) :: rest when Key.equal key key' ->
+        List.rev_append front_rev rest
+    | binding :: rest ->
+        remove_aux (binding :: front_rev) key rest
+
+
+  (** optimised: unroll [map.new_] a few times to try and avoid allocating unecessary intermediate
+      lists *)
+  let remove_from_new key map =
+    match map.new_ with
+    | [] ->
+        (false, [])
+    | (key', _) :: rest when Key.equal key key' ->
+        (true, rest)
+    | binding :: (key', _) :: rest when Key.equal key key' ->
+        (true, binding :: rest)
+    | binding1 :: binding2 :: (key', _) :: rest when Key.equal key key' ->
+        (true, binding1 :: binding2 :: rest)
+    | [_] | [_; _] | [_; _; _] ->
+        (* not found in the unrollings and no more elements *) (false, map.new_)
+    | binding1 :: binding2 :: binding3 :: rest ->
+        if List.exists rest ~f:(fun (key', _) -> Key.equal key key') then
+          (true, binding1 :: binding2 :: binding3 :: remove_aux [] key rest)
+        else (false, map.new_)
 
 
   (** {2 External API} *)
 
-  let is_empty map = map.count_new = 0 && M.is_empty map.old
+  let is_empty map = map.count_new = 0 && List.is_empty map.old
 
   let find_opt key map =
-    match M.find_opt key map.new_ with
+    match List.Assoc.find ~equal:Key.equal map.new_ key with
     | Some _ as value_yes ->
         value_yes
     | None ->
         (* Ideally we would want to put the binding in [new_] to reflect that it was recently
            accessed but that would imply returning the new map, which is odd for a [find_opt]
            function. Could be done in the future. *)
-        M.find_opt key map.old
+        List.Assoc.find ~equal:Key.equal map.old key
 
+
+  let mem map key = find_opt key map |> Option.is_some
 
   let add key value map =
+    let removed_from_new, new_without_key = remove_from_new key map in
     (* compute the final count first *)
-    let next_count_new = if M.mem key map.new_ then map.count_new else map.count_new + 1 in
+    let next_count_new = if removed_from_new then map.count_new else map.count_new + 1 in
     (* shrink if we are about to go past the limit size of [new_] *)
-    if next_count_new > Config.limit then {count_new= 1; new_= M.singleton key value; old= map.new_}
-    else {count_new= next_count_new; new_= M.add key value map.new_; old= map.old}
+    if next_count_new > Config.limit then {count_new= 1; new_= [(key, value)]; old= new_without_key}
+    else {count_new= next_count_new; new_= (key, value) :: new_without_key; old= map.old}
 
 
-  let equal equal_value map1 map2 =
-    let edges1 = edges map1 in
-    let edges2 = edges map2 in
-    M.equal equal_value edges1 edges2
-
+  let equal map1 map2 = phys_equal map1 map2
 
   let fold map ~init ~f =
-    let acc = M.fold (fun key value acc -> f acc key value) map.new_ init in
-    M.fold (fun key value acc -> if M.mem key map.new_ then acc else f acc key value) map.old acc
+    let acc = List.fold map.new_ ~init ~f in
+    (* this is quadratic time but the lists are at most [Config.limit] long, assumed small *)
+    List.fold map.old ~init:acc ~f:(fun acc binding ->
+        if List.Assoc.mem ~equal:Key.equal map.new_ (fst binding) then acc else f acc binding )
 
 
-  let fold_bindings map ~init ~f = fold map ~init ~f:(fun acc k v -> f acc (k, v))
+  let bindings map = fold ~init:[] ~f:(fun bindings binding -> binding :: bindings) map
+
+  let filter map ~f =
+    let count_new = ref map.count_new in
+    let f_update_count_new binding =
+      let r = f binding in
+      if not r then decr count_new ;
+      r
+    in
+    let new_ = List.filter map.new_ ~f:f_update_count_new in
+    let old = List.filter map.old ~f in
+    {new_; count_new= !count_new; old}
+
 
   let pp fmt map =
     let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Key.pp k Value.pp v in
-    IContainer.pp_collection ~pp_item fmt map ~fold:fold_bindings
+    IContainer.pp_collection ~pp_item fmt map ~fold
 
 
   let map m ~f =
-    let new_ = M.map f m.new_ in
-    let old = M.mapi (fun key value -> if M.mem key m.new_ then value else f value) m.old in
+    let new_ = List.Assoc.map m.new_ ~f in
+    let old =
+      List.map m.old ~f:(fun ((key, value) as binding) ->
+          if List.Assoc.mem ~equal:Key.equal m.new_ key then binding
+          else
+            let value' = f value in
+            if phys_equal value value' then binding else (key, value') )
+    in
     {m with new_; old}
 
 
@@ -140,66 +177,48 @@ module Make
     (!acc_ref, m')
 
 
-  let bindings map = M.bindings (edges map)
+  (** return [List.take (l1 @ l2) Config.limit], the length thereof, and the rest of [l1 @ l2] *)
+  let concat_and_spill l1 count1 l2 =
+    if Int.equal count1 0 then (l2, List.length l2, [])
+    else if Int.equal count1 Config.limit then (l1, count1, l2)
+    else
+      (* take elements from the start of [l2] to add to [l1], in order to preserve recency ordering
+         *)
+      let l2_rev, count_l2, rest_rev =
+        List.fold l2 ~init:([], 0, [])
+          ~f:(fun ((l2_rev, count_l2, rest_rev) as acc) ((key2, _) as binding) ->
+            if count_l2 + count1 >= Config.limit then (l2_rev, count_l2, binding :: rest_rev)
+            else if List.Assoc.mem ~equal:Key.equal l1 key2 then acc
+            else (binding :: l2_rev, count_l2 + 1, rest_rev) )
+      in
+      (l1 @ List.rev l2_rev, count1 + count_l2, List.rev rest_rev)
 
-  (** [merge ~f map1 map2] has at least all the elements [M.merge f map1.new_ map2.new_] but if
-      there are more than [N] then some will be arbitrarily demoted to [old]. Elements of
-      [M.merge f map1.old map2.old] may not make it into the final map if [old] then overflows too.
-      In other words: merge new first, overflow arbitrarily into old, then overflow old arbitrarily
-      into nothingness. *)
-  let merge ~f map1 map2 =
-    let count_new = ref 0 in
-    let count_old = ref 0 in
-    let old = ref M.empty in
-    let new_ =
-      M.merge
-        (fun addr val1_opt val2_opt ->
-          match f addr val1_opt val2_opt with
-          | None ->
-              None
-          | Some value as value_opt ->
-              incr count_new ;
-              if !count_new > Config.limit then (
-                incr count_old ;
-                old := M.add addr value !old ;
-                None )
-              else value_opt )
-        map1.new_ map2.new_
+
+  let union_left_biased map1 map2 =
+    (* first take everything from [map1] *)
+    let new_, count_new, rest =
+      (* hack: reverse because [bindings] reverses the recency order (clients do not need to know
+         that but we care) *)
+      let bindings1 = List.rev (bindings map1) in
+      let count = List.length bindings1 in
+      if count <= Config.limit then (bindings1, count, [])
+      else
+        let new_, rest = List.split_n bindings1 Config.limit in
+        (new_, Config.limit, rest)
     in
-    (* save [old] as it was after having added just the [new_] components *)
-    let old_from_new_ = !old in
-    let old =
-      M.merge
-        (fun addr val1_opt val2_opt ->
-          (* Check if we have already seen [addr] when merging the [new_] maps. As bindings in
-             [new_] override those in [old] we don't want to add it again in case it was spilled
-             into [old_from_new_], but it's fine to add it again if it made it to [new_].
-
-             Also if [!old] is already full then we cannot add any more elements so return [None].
-          *)
-          if !count_old >= Config.limit || M.mem addr old_from_new_ then None
-          else
-            match f addr val1_opt val2_opt with
-            | None ->
-                None
-            | Some _ as value_opt ->
-                incr count_old ;
-                value_opt )
-        map1.old map2.old
+    let new_, count_new, rest =
+      if count_new < Config.limit then
+        (* still room: fill with [map2.new_] *)
+        concat_and_spill new_ count_new map2.new_
+      else (new_, count_new, rest)
     in
-    {count_new= !count_new; old= M.union (fun _k _v1 _v2 -> assert false) old_from_new_ old; new_}
-
-
-  (** standard-looking implementation of [union] based on [merge] *)
-  let union ~f map1 map2 =
-    merge
-      ~f:(fun addr val1_opt val2_opt ->
-        match (val1_opt, val2_opt) with
-        | None, None ->
-            None
-        | (Some _ as val_), None | None, (Some _ as val_) ->
-            val_
-        | Some val1, Some val2 ->
-            f addr val1 val2 )
-      map1 map2
+    let new_, count_new, rest =
+      if count_new < Config.limit then
+        (* still room: fill with [map2.old] *)
+        concat_and_spill new_ count_new map2.old
+      else (new_, count_new, rest)
+    in
+    (* Note: we haven't bothered trying to fill [rest] as much as possible because the contract is
+       to keep between [Config.limit] and [2*Config.limit] elements so this is good enough. *)
+    {new_; count_new; old= rest}
 end

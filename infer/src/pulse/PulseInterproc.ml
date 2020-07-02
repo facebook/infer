@@ -134,7 +134,7 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
     | None ->
         Ok call_state
     | Some edges_pre ->
-        Container.fold_result ~fold:Memory.Edges.fold_bindings ~init:call_state edges_pre
+        Container.fold_result ~fold:Memory.Edges.fold ~init:call_state edges_pre
           ~f:(fun call_state (access, (addr_pre_dest, _)) ->
             let astate, addr_hist_dest_caller =
               Memory.eval_edge addr_hist_caller access call_state.astate
@@ -156,25 +156,8 @@ let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~act
   |> function Some result -> result | None -> Ok call_state
 
 
-let is_cell_read_only ~edges_pre_opt ~cell_post:(edges_post, attrs_post) =
-  match edges_pre_opt with
-  | None ->
-      false
-  | Some edges_pre when not (Attributes.is_modified attrs_post) ->
-      let are_edges_equal =
-        BaseMemory.Edges.equal
-          (fun (addr_dest_pre, _) (addr_dest_post, _) ->
-            (* NOTE: ignores traces
-
-               TODO: can the traces be leveraged here? maybe easy to detect writes by looking at
-               the post trace *)
-            AbstractValue.equal addr_dest_pre addr_dest_post )
-          edges_pre edges_post
-      in
-      if CommandLineOption.strict_mode then assert are_edges_equal ;
-      are_edges_equal
-  | _ ->
-      false
+let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
+  match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
 
 
 let materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
@@ -292,13 +275,11 @@ let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_c
     | None ->
         old_post_edges
     | Some edges_pre ->
-        BaseMemory.Edges.merge old_post_edges edges_pre ~f:(fun _access old_opt pre_opt ->
-            (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
-               whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
-            if Option.is_some pre_opt then
-              (* delete edge if some edge for the same access exists in the pre *)
-              None
-            else (* keep old edge if it exists *) old_opt ) )
+        (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
+           whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
+        BaseMemory.Edges.filter old_post_edges ~f:(fun (access, _) ->
+            (* delete edge if some edge for the same access exists in the pre *)
+            not (BaseMemory.Edges.mem edges_pre access) ) )
 
 
 let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
@@ -327,8 +308,7 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
       delete_edges_in_callee_pre_from_caller ~addr_callee ~edges_pre_opt ~addr_caller call_state
     in
     let edges_post_caller =
-      BaseMemory.Edges.union post_edges_minus_pre translated_post_edges ~f:(fun _ _ post_cell ->
-          Some post_cell )
+      BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
     in
     AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate
   in
@@ -354,7 +334,7 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
               ~cell_callee_post call_state
         in
         Memory.Edges.fold ~init:call_state_after_post edges_post
-          ~f:(fun call_state _access (addr_callee_dest, _) ->
+          ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
             let call_state, addr_hist_curr_dest =
               call_state_subst_find_or_new call_state addr_callee_dest
                 ~default_hist_caller:(snd addr_hist_caller)
