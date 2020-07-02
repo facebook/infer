@@ -63,8 +63,7 @@ jobs:
 
       - run: tar -xzf clang-install-${{ matrix.os }}.tar.gz -C facebook-clang-plugins/clang/
 
-      # is this needed?
-      # - run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
+      - run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
 
       # ensure infer isn't installed in this switch, then deal with dependencies
       - run: opam remove infer || true
