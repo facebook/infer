@@ -6,19 +6,9 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 
 type t
-
-val pp : F.formatter -> t -> unit
-
-val log : name:string -> L.debug_kind -> t -> unit
-(** log to infer's log file and to Scuba *)
-
-val log_f : name:string -> L.debug_kind -> (unit -> 'a) -> 'a
-(** log GC stats for the duration of the function passed as argument to infer's log file and to
-    Scuba *)
 
 type since =
   | ProgramStart  (** get GC stats from the beginning of the program *)
@@ -28,7 +18,12 @@ type since =
 
 val get : since:since -> t
 
-val merge : t -> t -> t
-(** combine statistics from two processes *)
+val log : name:string -> L.debug_kind -> t -> unit
+(** log to infer's log file and to Scuba *)
 
-val to_scuba_entries : prefix:string -> t -> LogEntry.t list
+val log_aggregate : prefix:string -> L.debug_kind -> t list -> unit
+(** log aggregate to infer's log file and to Scuba *)
+
+val log_f : name:string -> L.debug_kind -> (unit -> 'a) -> 'a
+(** log GC stats for the duration of the function passed as argument to infer's log file and to
+    Scuba *)

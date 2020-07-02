@@ -132,8 +132,9 @@ let analyze source_files_to_analyze =
     let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
+    let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
     Tasks.run_sequentially ~f:analyze_target target_files ;
-    BackendStats.get () )
+    ([BackendStats.get ()], [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]) )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
@@ -142,18 +143,37 @@ let analyze source_files_to_analyze =
     (* Prepare tasks one file at a time while executing in parallel *)
     RestartScheduler.setup () ;
     let runner =
-      Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
+      (* use a ref to pass data from prologue to epilogue without too much machinery *)
+      let gc_stats_pre_fork = ref None in
+      let child_prologue () =
+        BackendStats.reset () ;
+        gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart)
+      in
+      let child_epilogue () =
+        let gc_stats_in_fork =
+          match !gc_stats_pre_fork with
+          | Some stats ->
+              Some (GCStats.get ~since:(PreviousStats stats))
+          | None ->
+              L.internal_error "child did not store GC stats in its prologue, what happened?" ;
+              None
+        in
+        (BackendStats.get (), gc_stats_in_fork)
+      in
+      Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
         ~tasks:build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
     RestartScheduler.clean () ;
     let collected_stats =
-      Array.fold workers_stats ~init:BackendStats.initial ~f:(fun collated_stats stats_opt ->
+      Array.fold workers_stats ~init:([], [])
+        ~f:(fun ((backend_stats_list, gc_stats_list) as stats_list) stats_opt ->
           match stats_opt with
           | None ->
-              collated_stats
-          | Some stats ->
-              BackendStats.merge stats collated_stats )
+              stats_list
+          | Some (backend_stats, gc_stats_opt) ->
+              ( backend_stats :: backend_stats_list
+              , Option.fold ~init:gc_stats_list ~f:(fun l x -> x :: l) gc_stats_opt ) )
     in
     collected_stats )
 
@@ -208,11 +228,12 @@ let main ~changed_files =
   let source_files = lazy (get_source_files_to_analyze ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
-  let stats = analyze source_files in
+  let backend_stats_list, gc_stats_list = analyze source_files in
+  BackendStats.log_aggregate backend_stats_list ;
+  GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;
   let analysis_duration = ExecutionDuration.since start in
-  BackendStats.set_analysis_time stats analysis_duration ;
   L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp_float_s
     (ExecutionDuration.wall_time analysis_duration) ;
-  L.debug Analysis Quiet "Collected stats:@\n%a@." BackendStats.pp stats ;
-  BackendStats.log_to_scuba stats ;
+  ExecutionDuration.log ~prefix:"backend_stats.scheduler_process_analysis_time" Analysis
+    analysis_duration ;
   ()

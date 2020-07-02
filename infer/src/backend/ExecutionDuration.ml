@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 module Duration = struct
   type t = {time: float; comp: float}
@@ -59,9 +60,9 @@ let sys_time exe_duration = Duration.secs exe_duration.sys
 
 let wall_time exe_duration = Mtime.Span.to_s exe_duration.wall
 
-let pp ~field fmt exe_duration =
-  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f" field (user_time exe_duration) field
-    (sys_time exe_duration) field (wall_time exe_duration)
+let pp ~prefix fmt exe_duration =
+  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f" prefix (user_time exe_duration) prefix
+    (sys_time exe_duration) prefix (wall_time exe_duration)
 
 
 let counter () = {process_times= Unix.times (); wall_time= Mtime_clock.counter ()}
@@ -70,3 +71,16 @@ let timed_evaluate ~f =
   let start = counter () in
   let result = f () in
   {result; execution_duration= since start}
+
+
+let to_scuba_entries ~prefix exe_duration =
+  let secs_to_ms s = s *. 1000. |> Float.to_int in
+  [ LogEntry.mk_time ~label:(prefix ^ "_sys") ~duration_ms:(sys_time exe_duration |> secs_to_ms)
+  ; LogEntry.mk_time ~label:(prefix ^ "_user") ~duration_ms:(user_time exe_duration |> secs_to_ms)
+  ; LogEntry.mk_time ~label:(prefix ^ "_wall") ~duration_ms:(wall_time exe_duration |> secs_to_ms)
+  ]
+
+
+let log ~prefix debug_kind exe_duration =
+  L.debug debug_kind Quiet "%a@\n" (pp ~prefix) exe_duration ;
+  ScubaLogging.log_many (to_scuba_entries ~prefix exe_duration)

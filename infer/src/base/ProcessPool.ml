@@ -374,7 +374,7 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
 
     The child inherits [updates_w] to send updates up to the parent, and a new pipe is set up for
     the parent to send instructions down to the child. *)
-let fork_child ~file_lock ~child_prelude ~slot (updates_r, updates_w) ~f ~epilogue =
+let fork_child ~file_lock ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
   let to_child_r, to_child_w = Unix.pipe () in
   match Unix.fork () with
   | `In_the_child ->
@@ -384,7 +384,7 @@ let fork_child ~file_lock ~child_prelude ~slot (updates_r, updates_w) ~f ~epilog
       Utils.set_best_cpu_for slot ;
       ProcessPoolState.in_child := true ;
       ProcessPoolState.reset_pid () ;
-      child_prelude () ;
+      child_prologue () ;
       let updates_oc = Unix.out_channel_of_descr updates_w in
       let send_to_parent (message : 'b worker_message) =
         marshal_to_pipe ~file_lock updates_oc message
@@ -432,19 +432,19 @@ let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pi
 
 let create :
        jobs:int
-    -> child_prelude:(unit -> unit)
+    -> child_prologue:(unit -> unit)
     -> f:('work -> 'result option)
     -> child_epilogue:(unit -> 'final)
     -> tasks:(unit -> ('work, 'result) TaskGenerator.t)
     -> ('work, 'final, 'result) t =
- fun ~jobs ~child_prelude ~f ~child_epilogue ~tasks ->
+ fun ~jobs ~child_prologue ~f ~child_epilogue ~tasks ->
   let file_lock = Utils.create_file_lock () in
   let task_bar = TaskBar.create ~jobs in
   let children_pipes = create_pipes jobs in
   let slots =
     Array.init jobs ~f:(fun slot ->
         let child_pipe = List.nth_exn children_pipes slot in
-        fork_child ~file_lock ~child_prelude ~slot child_pipe ~f ~epilogue:child_epilogue )
+        fork_child ~file_lock ~child_prologue ~slot child_pipe ~f ~epilogue:child_epilogue )
   in
   ProcessPoolState.has_running_children := true ;
   Epilogues.register ~description:"Wait children processes exit" ~f:(fun () ->

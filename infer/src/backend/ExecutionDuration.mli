@@ -23,12 +23,13 @@ val add_duration_since : t -> counter -> t
 
 val add : t -> t -> t
 
-val user_time : t -> float
-
-val sys_time : t -> float
-
 val wall_time : t -> float
 
-val pp : field:string -> Format.formatter -> t -> unit
+val pp : prefix:string -> Format.formatter -> t -> unit
 
 val timed_evaluate : f:(unit -> 'a) -> 'a evaluation_result
+
+val log : prefix:string -> Logging.debug_kind -> t -> unit
+(** log to debug logs and to Scuba *)
+
+val to_scuba_entries : prefix:string -> t -> LogEntry.t list

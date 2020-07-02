@@ -10,8 +10,6 @@ open! IStd
 
 type t
 
-val initial : t
-
 val incr_summary_file_try_load : unit -> unit
 (** a query to the filesystem attempting to load a summary file *)
 
@@ -36,18 +34,11 @@ val add_to_restart_scheduler_total_time : ExecutionDuration.t -> unit
 
 val add_to_restart_scheduler_useful_time : ExecutionDuration.t -> unit
 
-val set_analysis_time : t -> ExecutionDuration.t -> unit
-
 val reset : unit -> unit
 (** reset all stats *)
 
 val get : unit -> t
 (** get the stats so far *)
 
-val pp : Format.formatter -> t -> unit
-
-val merge : t -> t -> t
-(** return a new value that adds up the stats in both arguments *)
-
-val log_to_scuba : t -> unit
-(** Log aggregated backend stats to Scuba. Use after the stats have been fully calculated *)
+val log_aggregate : t list -> unit
+(** log aggregated stats to infer's log file and to Scuba *)

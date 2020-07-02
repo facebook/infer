@@ -55,7 +55,7 @@ type (_, _, _) t
 
 val create :
      jobs:int
-  -> child_prelude:(unit -> unit)
+  -> child_prologue:(unit -> unit)
   -> f:('work -> 'result option)
   -> child_epilogue:(unit -> 'final)
   -> tasks:(unit -> ('work, 'result) TaskGenerator.t)

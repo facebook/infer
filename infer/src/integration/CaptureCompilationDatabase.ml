@@ -60,7 +60,11 @@ let run_compilation_database compilation_database should_capture_file =
   (* no stats to record so [child_epilogue] does nothing and we ignore the return
      {!Tasks.Runner.run} *)
   let runner =
-    Tasks.Runner.create ~jobs:Config.jobs ~f:invoke_cmd ~child_epilogue:(fun () -> ()) ~tasks
+    Tasks.Runner.create ~jobs:Config.jobs
+      ~child_prologue:(fun () -> ())
+      ~f:invoke_cmd
+      ~child_epilogue:(fun () -> ())
+      ~tasks
   in
   Tasks.Runner.run runner |> ignore ;
   L.progress "@." ;

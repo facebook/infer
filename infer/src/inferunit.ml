@@ -13,7 +13,7 @@ let rec mk_test_fork_proof test =
   let open OUnitTest in
   match test with
   | TestCase (length, f) ->
-      TestCase (length, Tasks.fork_protect ~f)
+      TestCase (length, ForkUtils.protect ~f)
   | TestList l ->
       TestList (List.map ~f:mk_test_fork_proof l)
   | TestLabel (label, test) ->
