@@ -281,9 +281,9 @@ module PulseTransferFunctions = struct
               if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
             in
             remove_vars vars_to_remove astates
-      | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
+      | Metadata (VariableLifetimeBegins (pvar, _, location)) when not (Pvar.is_global pvar) ->
           [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
-      | Metadata (Abstract _ | Nullify _ | Skip) ->
+      | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [Domain.ContinueProgram astate] )
 
 

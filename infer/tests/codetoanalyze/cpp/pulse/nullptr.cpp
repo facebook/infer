@@ -122,3 +122,35 @@ X* getX(bool b) {
 }
 
 void call_modeled_abort_ok() { getX(false)->foo(); }
+
+struct S {
+  int field;
+};
+
+void set_S();
+
+struct T {
+  static S*& get() {
+    auto& s = T::getRaw();
+    if (T::getRaw() == nullptr) {
+      set_S();
+    }
+    return s;
+  }
+
+  static S*& getRaw() {
+    thread_local S* s = nullptr;
+    return s;
+  }
+};
+
+void set_S() {
+  auto& s = T::getRaw();
+  if (s != nullptr) {
+    return;
+  }
+
+  s = (S*)calloc(1, sizeof(S));
+}
+
+int thread_local_was_set_ok() { return T::get()->field; }
