@@ -299,6 +299,10 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 byte src_build src_build_common test_build: clang_plugin
 endif
 
+ifneq ($(NINJA),no)
+FCP_COMPILE_ARGS = --ninja --sequential-link
+endif
+
 $(INFER_COMMAND_MANUALS): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
 	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help-scrubbed --help-format=groff > $@
@@ -361,7 +365,7 @@ clang_setup:
 	    echo '$(TERM_INFO)(TIP: you can also force a clang rebuild by removing $(FCP_DIR)/clang/installed.version)$(TERM_RESET)' >&2; \
 	    echo >&2 ; \
 	  fi; \
-	  $(FCP_DIR)/clang/setup.sh; \
+	  $(FCP_DIR)/clang/setup.sh $(FCP_COMPILE_ARGS); \
 	}
 
 .PHONY: clang_plugin
