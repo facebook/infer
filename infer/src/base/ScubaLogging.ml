@@ -72,6 +72,8 @@ let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
 
 let log_message ~label ~message = log_one (LogEntry.mk_string ~label ~message)
 
+let cost_log_message ~label ~message = if Config.cost_scuba_logging then log_message ~label ~message
+
 let execute_with_time_logging label f =
   let ret_val, duration_ms = Utils.timeit ~f in
   let entry = LogEntry.mk_time ~label ~duration_ms in

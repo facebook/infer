@@ -230,6 +230,8 @@ val costs_current : string option
 
 val cost_issues_tests : string option
 
+val cost_scuba_logging : bool
+
 val costs_previous : string option
 
 val cxx : bool

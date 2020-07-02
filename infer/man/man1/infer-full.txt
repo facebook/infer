@@ -1311,6 +1311,11 @@ INTERNAL OPTIONS
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 
+       --cost-scuba-logging
+           Activates: Log unknown functions to scuba in cost/inferbo
+           checkers; also sets --scuba-logging. (Conversely:
+           --no-cost-scuba-logging)
+
        --costs-current-reset
            Cancel the effect of --costs-current.
 

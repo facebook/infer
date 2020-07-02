@@ -21,6 +21,9 @@ val log_count : label:string -> value:int -> unit
 val log_message : label:string -> message:string -> unit
 (** Log a [string]. Event is prefixed with ["msg."] *)
 
+val cost_log_message : label:string -> message:string -> unit
+(** Similar to [log_message], but log only when [--cost-scuba-logging] option is given. *)
+
 val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 (** A helper to log execution time of a particular function. Use this to measure a performance of a
     given function. Example:

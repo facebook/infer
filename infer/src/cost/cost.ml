@@ -108,7 +108,7 @@ module InstrBasicCostWithReason = struct
                     then CostDomain.unit_cost_atomic_operation
                     else instantiated_cost
                 | `NotFound ->
-                    ScubaLogging.log_message ~label:"unmodeled_function_cost_analysis"
+                    ScubaLogging.cost_log_message ~label:"unmodeled_function_cost_analysis"
                       ~message:
                         (F.asprintf "Unmodeled Function[Cost Analysis] : %a" Procname.pp
                            callee_pname) ;
@@ -191,7 +191,7 @@ module WorstCaseCost = struct
           exec_node tenv extras pair |> CostDomain.plus acc )
     in
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
-        ScubaLogging.log_message ~label:"unmodeled_function_top_cost"
+        ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"
           ~message:(F.asprintf "Unmodeled Function[Top Cost] : %a" Procname.pp top_pname) ;
         Logging.(debug Analysis Verbose)
           "@ Unmodeled Function[Top Cost]: %a@\n" Procname.pp top_pname ) ;
