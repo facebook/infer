@@ -1283,10 +1283,9 @@ module BoundTrace = struct
   let rec make_err_trace ~depth trace =
     match trace with
     | Loop loop_head_loc ->
-        let desc = F.asprintf "Loop at %a" Location.pp loop_head_loc in
-        [Errlog.make_trace_element depth loop_head_loc desc []]
+        [Errlog.make_trace_element depth loop_head_loc "Loop" []]
     | Call {callee_pname; location; callee_trace} ->
-        let desc = F.asprintf "call to %a" Procname.pp callee_pname in
+        let desc = F.asprintf "Call to %a" Procname.pp callee_pname in
         Errlog.make_trace_element depth location desc []
         :: make_err_trace ~depth:(depth + 1) callee_trace
     | ModeledFunction {pname; location} ->
