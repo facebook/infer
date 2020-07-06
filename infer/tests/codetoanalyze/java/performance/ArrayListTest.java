@@ -249,6 +249,10 @@ public class ArrayListTest {
     for (int i = 0; i < slist.size(); i++) {}
   }
 
+  void add_all_linear(ArrayList<String> l1, ArrayList<String> l2) {
+    l1.addAll(l2);
+  }
+
   void sort_comparator_nlogn(ArrayList<Person> people) {
     java.util.Collections.sort(people, new LexicographicComparator());
   }

@@ -170,6 +170,12 @@ module Call = struct
           $+...$--> BoundsOfArray.logarithmic_length ~of_function:"Arrays.binarySearch"
         ; +PatternMatch.implements_arrays &:: "copyOf" <>$ any_arg $+ capt_exp
           $+...$--> linear ~of_function:"Arrays.copyOf"
+        ; +PatternMatch.implements_collection
+          &:: "addAll" <>$ any_arg $+ any_arg $+ capt_exp
+          $--> BoundsOfCollection.linear_length ~of_function:"Collection.addAll"
+        ; +PatternMatch.implements_collection
+          &:: "addAll" <>$ any_arg $+ capt_exp
+          $--> BoundsOfCollection.linear_length ~of_function:"Collection.addAll"
         ; +PatternMatch.implements_collections
           &:: "copy" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.copy"
