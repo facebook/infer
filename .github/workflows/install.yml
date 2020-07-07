@@ -38,6 +38,10 @@ jobs:
         run: brew install pkg-config automake jq
         if: runner.os == 'macOS'
 
+      - name: Install Required Apt Packages for Ubuntu
+        run: sudo apt-get install libmpfr-dev libsqlite3-dev
+        if: runner.os == 'Linux'
+
       - name: Fetch clang Release
         run: |
           REPO="facebook/facebook-clang-plugins"
@@ -65,18 +69,13 @@ jobs:
 
       - run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
 
-      # ensure infer isn't installed in this switch, then deal with dependencies
-      - run: opam remove infer || true
+      - run: ./build-infer.sh -y all
 
-      - run: opam update --upgrade
+      - run: make install
+        if: runner.os == 'macOS'
 
-      - run: opam pin add --no-action infer .
-
-      - run: opam depext --update infer;
-
-      - run: opam install --deps-only infer
-
-      - run: opam install infer
+      - run: sudo make install
+        if: runner.os == 'Linux'
 
       - name: Test infer
         run: |
