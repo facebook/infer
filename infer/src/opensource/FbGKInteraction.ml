@@ -19,8 +19,6 @@ end
 
 let get_config _ = None
 
-let get_marker _ = None
-
 let get_config_check _ _ _ = None
 
 let is_config_load _ = false

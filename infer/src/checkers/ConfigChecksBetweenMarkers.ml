@@ -37,8 +37,7 @@ module ConfigWithLocation = struct
 end
 
 module Loc = struct
-  type t = Id of Ident.t | Pvar of Pvar.t | ThisField of Fieldname.t
-  [@@deriving compare] [@@warning "-37"]
+  type t = Id of Ident.t | Pvar of Pvar.t | ThisField of Fieldname.t [@@deriving compare]
 
   let pp f = function
     | Id id ->
@@ -49,9 +48,13 @@ module Loc = struct
         F.fprintf f "this.%a" Fieldname.pp fn
 
 
+  let is_this = function Pvar pvar -> Pvar.is_this pvar | Id _ | ThisField _ -> false
+
   let of_id id = Id id
 
   let of_pvar pvar = Pvar pvar
+
+  let of_this_field fn = ThisField fn
 end
 
 module Locs = AbstractDomain.FiniteSet (Loc)
@@ -92,6 +95,10 @@ module Val = struct
 
   let of_config config = make ~config:(ConfigLifted.v config) ()
 
+  let of_marker marker = make ~marker:(MarkerLifted.v marker) ()
+
+  let of_loc loc = make ~locs:(Locs.singleton loc) ()
+
   let is_bottom {config; marker; locs} =
     ConfigLifted.is_bottom config && MarkerLifted.is_bottom marker && Locs.is_bottom locs
 
@@ -99,6 +106,8 @@ module Val = struct
   let get_config_opt {config} = ConfigLifted.get config
 
   let get_marker_opt {marker} = MarkerLifted.get marker
+
+  let get_locs {locs} = locs
 end
 
 module Mem = struct
@@ -110,8 +119,28 @@ module Mem = struct
 
   let get_marker_opt l mem = Option.bind (find_opt l mem) ~f:Val.get_marker_opt
 
-  let copy ~to_ ~from mem =
-    Option.value_map (find_opt from mem) ~default:mem ~f:(fun config -> add to_ config mem)
+  let load id pvar mem =
+    let from = Loc.of_pvar pvar in
+    let v = IOption.value_default_f (find_opt from mem) ~f:(fun () -> Val.of_loc from) in
+    add (Loc.of_id id) v mem
+
+
+  let store pvar id mem =
+    Option.value_map
+      (find_opt (Loc.of_id id) mem)
+      ~default:mem
+      ~f:(fun v -> add (Loc.of_pvar pvar) v mem)
+
+
+  let store_constant id fn marker mem =
+    let marker = Marker.of_int_lit marker in
+    let add_marker loc acc =
+      if Loc.is_this loc then add (Loc.of_this_field fn) (Val.of_marker marker) acc else acc
+    in
+    let locs =
+      find_opt (Loc.of_id id) mem |> Option.value_map ~default:Locs.bottom ~f:Val.get_locs
+    in
+    Locs.fold add_marker locs mem
 end
 
 module Trace = struct
@@ -386,11 +415,13 @@ module Dom = struct
     {astate with mem= Mem.add id (Val.of_config config) mem}
 
 
-  let mem_copy ~to_ ~from ({mem} as astate) = {astate with mem= Mem.copy ~to_ ~from mem}
+  let load_config id pvar ({mem} as astate) = {astate with mem= Mem.load id pvar mem}
 
-  let load_config id pvar astate = mem_copy ~to_:(Loc.of_id id) ~from:(Loc.of_pvar pvar) astate
+  let store_config pvar id ({mem} as astate) = {astate with mem= Mem.store pvar id mem}
 
-  let store_config pvar id astate = mem_copy ~to_:(Loc.of_pvar pvar) ~from:(Loc.of_id id) astate
+  let store_constant id fn marker ({mem} as astate) =
+    {astate with mem= Mem.store_constant id fn marker mem}
+
 
   let call_marker_start marker location ({context} as astate) =
     {astate with context= Context.call_marker_start marker location context}
@@ -474,8 +505,44 @@ module TransferFunctions = struct
 
   type analysis_data = Summary.t InterproceduralAnalysis.t
 
-  let exec_instr astate ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node
-      instr =
+  let get_java_constructor tenv typ =
+    let open IOption.Let_syntax in
+    let* typ_name = Typ.name typ in
+    let* {Struct.methods} = Tenv.lookup tenv typ_name in
+    List.find methods ~f:Procname.is_constructor
+
+
+  let get_marker_from_load {InterproceduralAnalysis.tenv; analyze_dependency} e mem =
+    match e with
+    | Exp.Lfield (Lvar pvar, fn, _) when Pvar.is_global pvar ->
+        Some (Marker.of_name pvar fn)
+    | Exp.Lfield (Var id, fn, typ) -> (
+        let open IOption.Let_syntax in
+        let* locs = Mem.find_opt (Loc.of_id id) mem in
+        match Val.get_locs locs |> Locs.is_singleton_or_more with
+        | Singleton this when Loc.is_this this ->
+            let* constructor = get_java_constructor tenv typ in
+            let* _, {Summary.mem= constructor_mem} = analyze_dependency constructor in
+            let* v = Mem.find_opt (Loc.of_this_field fn) constructor_mem in
+            Val.get_marker_opt v
+        | _ ->
+            None )
+    | _ ->
+        None
+
+
+  let get_marker_from_java_param e mem =
+    match e with
+    | Exp.Const (Cint marker) ->
+        Some (Marker.of_int_lit marker)
+    | Exp.Var id ->
+        Mem.get_marker_opt (Loc.of_id id) mem
+    | _ ->
+        None
+
+
+  let exec_instr ({Dom.mem} as astate)
+      ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
@@ -485,9 +552,8 @@ module TransferFunctions = struct
             ~f:ConfigLifted.v
         in
         let marker =
-          Option.value_map (FbGKInteraction.get_marker e) ~default:MarkerLifted.bottom
-            ~f:(fun (marker_class, marker_name) ->
-              Marker.of_name marker_class marker_name |> MarkerLifted.v )
+          get_marker_from_load analysis_data e mem
+          |> Option.value_map ~default:MarkerLifted.bottom ~f:MarkerLifted.v
         in
         Dom.load_constant (Loc.of_id id) config marker astate
     | Call (_, Const (Cfun callee), (Lvar pvar, _) :: (e, _) :: _, _, _)
@@ -496,12 +562,17 @@ module TransferFunctions = struct
             Dom.load_constant_config (Loc.of_pvar pvar) config astate )
     | Store {e1= Lvar pvar; e2= Exp.Var id} ->
         Dom.store_config pvar id astate
-    | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, location, _)
+    | Store {e1= Lfield (Var id, fn, _); e2= Const (Const.Cint marker)} ->
+        Dom.store_constant id fn marker astate
+    | Call (_, Const (Cfun callee), _ :: (e, _) :: _, location, _)
       when FbGKInteraction.is_marker_start_java tenv callee ->
-        Dom.call_marker_start (Marker.of_int_lit marker) location astate
-    | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, _, _)
+        get_marker_from_java_param e mem
+        |> Option.value_map ~default:astate ~f:(fun marker ->
+               Dom.call_marker_start marker location astate )
+    | Call (_, Const (Cfun callee), _ :: (e, _) :: _, _, _)
       when FbGKInteraction.is_marker_end_java tenv callee ->
-        Dom.call_marker_end (Marker.of_int_lit marker) astate
+        get_marker_from_java_param e mem
+        |> Option.value_map ~default:astate ~f:(fun marker -> Dom.call_marker_end marker astate)
     | Call (_, Const (Cfun callee), (Var id, _) :: _, location, _)
       when FbGKInteraction.is_marker_start_objc callee ->
         Dom.call_marker_start_id id location astate

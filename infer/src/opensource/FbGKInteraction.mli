@@ -17,8 +17,6 @@ end
 
 val get_config : 'exp -> 'config_name option
 
-val get_marker : 'exp -> 'marker option
-
 val get_config_check : 'tenv -> 'pname -> 'args -> 'ident option
 
 val is_config_load : 'pname -> bool
