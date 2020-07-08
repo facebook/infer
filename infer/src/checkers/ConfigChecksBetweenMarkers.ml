@@ -37,26 +37,68 @@ module ConfigWithLocation = struct
 end
 
 module Loc = struct
-  type t = Id of Ident.t | Pvar of Pvar.t [@@deriving compare]
+  type t = Id of Ident.t | Pvar of Pvar.t | ThisField of Fieldname.t
+  [@@deriving compare] [@@warning "-37"]
 
-  let pp f = function Id id -> Ident.pp f id | Pvar pvar -> Pvar.pp Pp.text f pvar
+  let pp f = function
+    | Id id ->
+        Ident.pp f id
+    | Pvar pvar ->
+        Pvar.pp Pp.text f pvar
+    | ThisField fn ->
+        F.fprintf f "this.%a" Fieldname.pp fn
+
 
   let of_id id = Id id
 
   let of_pvar pvar = Pvar pvar
 end
 
+module Locs = AbstractDomain.FiniteSet (Loc)
+
 module Val = struct
   (* NOTE: Instead of syntactically distinguishing config and marker variables with heuristics, we
      evalute the values for both of them if possible. Later, one value of them should be actually
      used in analyzing config checking or marker start/end statments. *)
-  include AbstractDomain.Pair (ConfigLifted) (MarkerLifted)
+  type t = {config: ConfigLifted.t; marker: MarkerLifted.t; locs: Locs.t}
 
-  let is_bottom (config, marker) = ConfigLifted.is_bottom config && MarkerLifted.is_bottom marker
+  let pp f {config; marker; locs} =
+    F.fprintf f "@[@[config:@ %a@]@\n@[marker:@ %a@]@\n@[locs:@ %a@]@]" ConfigLifted.pp config
+      MarkerLifted.pp marker Locs.pp locs
 
-  let get_config_opt (config, _) = ConfigLifted.get config
 
-  let get_marker_opt (_, marker) = MarkerLifted.get marker
+  let leq ~lhs ~rhs =
+    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config
+    && MarkerLifted.leq ~lhs:lhs.marker ~rhs:rhs.marker
+    && Locs.leq ~lhs:lhs.locs ~rhs:rhs.locs
+
+
+  let join x y =
+    { config= ConfigLifted.join x.config y.config
+    ; marker= MarkerLifted.join x.marker y.marker
+    ; locs= Locs.join x.locs y.locs }
+
+
+  let widen ~prev ~next ~num_iters =
+    { config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters
+    ; marker= MarkerLifted.widen ~prev:prev.marker ~next:next.marker ~num_iters
+    ; locs= Locs.widen ~prev:prev.locs ~next:next.locs ~num_iters }
+
+
+  let make ?(config = ConfigLifted.bottom) ?(marker = MarkerLifted.bottom) ?(locs = Locs.bottom) ()
+      =
+    {config; marker; locs}
+
+
+  let of_config config = make ~config:(ConfigLifted.v config) ()
+
+  let is_bottom {config; marker; locs} =
+    ConfigLifted.is_bottom config && MarkerLifted.is_bottom marker && Locs.is_bottom locs
+
+
+  let get_config_opt {config} = ConfigLifted.get config
+
+  let get_marker_opt {marker} = MarkerLifted.get marker
 end
 
 module Mem = struct
@@ -300,11 +342,11 @@ module ConfigChecks = struct
 end
 
 module Summary = struct
-  type t = {context: Context.t; config_checks: ConfigChecks.t}
+  type t = {context: Context.t; config_checks: ConfigChecks.t; mem: Mem.t}
 
-  let pp f {context; config_checks} =
-    F.fprintf f "@[@[%a@]@\n@[config checks:@ %a@]@]" Context.pp context ConfigChecks.pp
-      config_checks
+  let pp f {context; config_checks; mem} =
+    F.fprintf f "@[@[%a@]@\n@[config checks:@ %a@]@\n@[mem:@ %a@]@]" Context.pp context
+      ConfigChecks.pp config_checks Mem.pp mem
 end
 
 module Dom = struct
@@ -337,11 +379,11 @@ module Dom = struct
 
 
   let load_constant id config marker ({mem} as astate) =
-    {astate with mem= Mem.add id (config, marker) mem}
+    {astate with mem= Mem.add id (Val.make ~config ~marker ()) mem}
 
 
   let load_constant_config id config ({mem} as astate) =
-    {astate with mem= Mem.add id (config, MarkerLifted.bottom) mem}
+    {astate with mem= Mem.add id (Val.of_config config) mem}
 
 
   let mem_copy ~to_ ~from ({mem} as astate) = {astate with mem= Mem.copy ~to_ ~from mem}
@@ -423,7 +465,7 @@ module Dom = struct
     {astate with context; config_checks}
 
 
-  let to_summary {context; config_checks} = {Summary.context; config_checks}
+  let to_summary {mem; context; config_checks} = {Summary.context; config_checks; mem}
 end
 
 module TransferFunctions = struct
@@ -451,7 +493,7 @@ module TransferFunctions = struct
     | Call (_, Const (Cfun callee), (Lvar pvar, _) :: (e, _) :: _, _, _)
       when FbGKInteraction.is_config_load callee ->
         Option.value_map (FbGKInteraction.get_config e) ~default:astate ~f:(fun config ->
-            Dom.load_constant_config (Loc.of_pvar pvar) (ConfigLifted.v config) astate )
+            Dom.load_constant_config (Loc.of_pvar pvar) config astate )
     | Store {e1= Lvar pvar; e2= Exp.Var id} ->
         Dom.store_config pvar id astate
     | Call (_, Const (Cfun callee), _ :: (Const (Cint marker), _) :: _, location, _)
