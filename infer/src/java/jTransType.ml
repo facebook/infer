@@ -274,7 +274,7 @@ let rec get_method_procname program tenv cn ms kind =
 and translate_method_name program tenv m =
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   let proc_name = get_method_procname program tenv cn ms (get_method_kind m) in
-  JClasspath.add_missing_callee program proc_name cn ms ;
+  JProgramDesc.add_missing_callee program proc_name cn ms ;
   proc_name
 
 
@@ -284,7 +284,7 @@ and get_all_fields program tenv cn =
     (statics, fields)
   in
   let trans_fields classname =
-    match JClasspath.lookup_node classname program with
+    match JProgramDesc.lookup_node classname program with
     | Some (Javalib.JClass jclass) ->
         let superclass_fields =
           match jclass.Javalib.c_super_class with
@@ -325,7 +325,7 @@ and get_class_struct_typ =
       Javalib.m_fold (fun m procnames -> translate_method_name program tenv m :: procnames) node []
     in
     let node_name = Javalib.get_name node in
-    let java_location : Location.t option = JClasspath.get_java_location program node_name in
+    let java_location : Location.t option = JProgramDesc.get_java_location program node_name in
     ( match java_location with
     | Some loc ->
         L.debug Capture Verbose "Java location %s -> %a@." (JBasics.cn_name node_name)
@@ -344,7 +344,7 @@ and get_class_struct_typ =
         Tenv.mk_struct ~dummy:true tenv name
     | None -> (
         seen := JBasics.ClassSet.add cn !seen ;
-        match JClasspath.lookup_node cn program with
+        match JProgramDesc.lookup_node cn program with
         | None ->
             Tenv.mk_struct ~dummy:true tenv name
         | Some (Javalib.JInterface jinterface as node) ->

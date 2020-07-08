@@ -21,7 +21,7 @@ val is_java_native : JCode.jcode Javalib.concrete_method -> bool
 
 val create_callee_attributes :
      Tenv.t
-  -> JClasspath.program
+  -> JProgramDesc.t
   -> JBasics.class_name
   -> JBasics.method_signature
   -> Procname.t
@@ -29,7 +29,7 @@ val create_callee_attributes :
 
 val create_am_procdesc :
      SourceFile.t
-  -> JClasspath.program
+  -> JProgramDesc.t
   -> JContext.icfg
   -> Javalib.abstract_method
   -> Procname.t
@@ -38,7 +38,7 @@ val create_am_procdesc :
 
 val create_native_procdesc :
      SourceFile.t
-  -> JClasspath.program
+  -> JProgramDesc.t
   -> JContext.icfg
   -> JCode.jcode Javalib.concrete_method
   -> Procname.t
@@ -47,7 +47,7 @@ val create_native_procdesc :
 
 val create_empty_procdesc :
      SourceFile.t
-  -> JClasspath.program
+  -> JProgramDesc.t
   -> JContext.icfg
   -> JCode.jcode Javalib.concrete_method
   -> Procname.t
@@ -55,7 +55,7 @@ val create_empty_procdesc :
 
 val create_cm_procdesc :
      SourceFile.t
-  -> JClasspath.program
+  -> JProgramDesc.t
   -> JContext.icfg
   -> JCode.jcode Javalib.concrete_method
   -> Procname.t

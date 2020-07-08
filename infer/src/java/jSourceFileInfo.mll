@@ -371,7 +371,7 @@ and skip_comments action = parse
   open Javalib_pack
 
   (** We scan source file [file] and record location of each class declaration *)
-  let collect_class_location (program:JClasspath.program) (file:SourceFile.t) =
+  let collect_class_location (program:JProgramDesc.t)(file:SourceFile.t) =
     let path = SourceFile.to_abs_path file in
     if String.is_suffix path ~suffix:".java" then (
       let cin = In_channel.create path in
@@ -381,7 +381,7 @@ and skip_comments action = parse
         let cn : JBasics.class_name = JBasics.make_cn classname in
         Logging.debug Capture Verbose "set_java_location %s with location %a@."
           (JBasics.cn_name cn) Location.pp_file_pos loc;
-        JClasspath.set_java_location program cn loc in
+        JProgramDesc.set_java_location program cn loc in
       try (
         class_scan { record_location; stack; } (from_channel cin) ;
         In_channel.close cin )

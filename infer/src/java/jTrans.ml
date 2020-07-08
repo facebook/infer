@@ -332,7 +332,7 @@ let create_callee_attributes tenv program cn ms procname =
         ; is_abstract }
     with Caml.Not_found -> None
   in
-  Option.bind ~f (JClasspath.lookup_node cn program)
+  Option.bind ~f (JProgramDesc.lookup_node cn program)
 
 
 let create_empty_cfg source_file procdesc =
@@ -624,7 +624,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
   in
   let resolve_method (context : JContext.t) cn ms =
     let rec search_in_parents get_parents cn =
-      match JClasspath.lookup_node cn context.program with
+      match JProgramDesc.lookup_node cn context.program with
       | None ->
           None
       | Some node ->

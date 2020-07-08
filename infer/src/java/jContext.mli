@@ -32,10 +32,10 @@ type t = private
   ; goto_jumps: (int, jump_kind) Caml.Hashtbl.t
   ; cn: JBasics.class_name
   ; source_file: SourceFile.t
-  ; program: JClasspath.program }
+  ; program: JProgramDesc.t }
 
 val create_context :
-  icfg -> Procdesc.t -> JBir.t -> JBasics.class_name -> SourceFile.t -> JClasspath.program -> t
+  icfg -> Procdesc.t -> JBir.t -> JBasics.class_name -> SourceFile.t -> JProgramDesc.t -> t
 (** cretes a context for a given method. *)
 
 val get_tenv : t -> Tenv.t

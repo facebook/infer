@@ -26,7 +26,7 @@ type t =
   ; goto_jumps: (int, jump_kind) Hashtbl.t
   ; cn: JBasics.class_name
   ; source_file: SourceFile.t
-  ; program: JClasspath.program }
+  ; program: JProgramDesc.t }
 
 let create_context icfg procdesc impl cn source_file program =
   { icfg

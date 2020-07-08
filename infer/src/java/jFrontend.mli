@@ -19,11 +19,11 @@ val is_classname_cached : JBasics.class_name -> bool
 (** [is_classname_cached cn] *)
 
 val compute_source_icfg :
-  JClasspath.program -> Tenv.t -> string -> string option -> SourceFile.t -> Cfg.t
+  JProgramDesc.t -> Tenv.t -> string -> string option -> SourceFile.t -> Cfg.t
 (** [compute_cfg linereader program tenv source_basename source_file] create the control flow graph
     for the file [source_file] by translating all the classes in [program] originating from
     [source_file] *)
 
 val compute_class_icfg :
-  SourceFile.t -> JClasspath.program -> Tenv.t -> JCode.jcode Javalib.interface_or_class -> Cfg.t
+  SourceFile.t -> JProgramDesc.t -> Tenv.t -> JCode.jcode Javalib.interface_or_class -> Cfg.t
 (** Compute the CFG for a class *)

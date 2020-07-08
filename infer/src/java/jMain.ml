@@ -47,7 +47,7 @@ let capture_libs program tenv =
         store_icfg fake_source_file cfg ;
         JFrontend.cache_classname cn
   in
-  JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
+  JBasics.ClassMap.iter (capture_class tenv) (JProgramDesc.get_classmap program)
 
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
@@ -74,7 +74,7 @@ let store_callee_attributes tenv program =
       ~f:(Attributes.store ~proc_desc:None)
       (JTrans.create_callee_attributes tenv program cn ms proc_name)
   in
-  JClasspath.iter_missing_callees program ~f
+  JProgramDesc.iter_missing_callees program ~f
 
 
 (* The program is loaded and translated *)
@@ -106,7 +106,7 @@ let do_all_files sources program =
   if Config.dependency_mode then capture_libs program tenv ;
   store_callee_attributes tenv program ;
   save_tenv tenv ;
-  JClasspath.cleanup program ;
+  JProgramDesc.cleanup program ;
   L.(debug Capture Quiet) "done capturing all files@."
 
 
@@ -133,7 +133,7 @@ let main load_sources_and_classes =
   L.(debug Capture Quiet)
     "Translating %d source files (%d classes)@." (String.Map.length sources)
     (JBasics.ClassSet.cardinal classes) ;
-  let program = JClasspath.load_program ~classpath classes in
+  let program = JProgramDesc.load_program ~classpath classes in
   do_all_files sources program
 
 

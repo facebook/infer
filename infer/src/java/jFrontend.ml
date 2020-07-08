@@ -141,7 +141,7 @@ let test_source_file_location source_file program cn node =
         jc.Javalib.c_synthetic
   in
   if not (is_synthetic node) then
-    match JClasspath.get_java_location program cn with
+    match JProgramDesc.get_java_location program cn with
     | None ->
         L.(debug Capture Verbose)
           "WARNING SOURCE FILE PARSER: location not found for class %s in source file %s \n"
@@ -160,7 +160,7 @@ let create_icfg source_file program tenv icfg cn node =
   test_source_file_location source_file program cn node ;
   let translate m =
     let proc_name = JTransType.translate_method_name program tenv m in
-    JClasspath.set_callee_translated program proc_name ;
+    JProgramDesc.set_callee_translated program proc_name ;
     if BiabductionModels.mem proc_name then
       (* do not translate the method if there is a model for it *)
       L.debug Capture Verbose "Skipping method with a model: %a@." Procname.pp proc_name
@@ -193,7 +193,7 @@ let should_capture program package_opt source_basename node =
     | Some found_pkg ->
         String.equal found_pkg pkg
   in
-  if JClasspath.mem_classmap classname program then
+  if JProgramDesc.mem_classmap classname program then
     match Javalib.get_sourcefile node with
     | None ->
         false
@@ -221,7 +221,7 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
       (select
          (should_capture program package_opt source_basename)
          (create_icfg source_file program tenv icfg))
-      (JClasspath.get_classmap program)
+      (JProgramDesc.get_classmap program)
   in
   icfg.JContext.cfg
 
