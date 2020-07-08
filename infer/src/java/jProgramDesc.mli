@@ -21,9 +21,7 @@ val get_java_location : t -> JBasics.class_name -> Location.t option
 
 val mem_classmap : JBasics.class_name -> t -> bool
 
-val cleanup : t -> unit
-
-val load_program : classpath:string -> JBasics.ClassSet.t -> t
+val load : JClasspath.t -> t
 (** load a java program *)
 
 val lookup_node : JBasics.class_name -> t -> JCode.jcode Javalib.interface_or_class option

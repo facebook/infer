@@ -106,7 +106,6 @@ let do_all_files sources program =
   if Config.dependency_mode then capture_libs program tenv ;
   store_callee_attributes tenv program ;
   save_tenv tenv ;
-  JProgramDesc.cleanup program ;
   L.(debug Capture Quiet) "done capturing all files@."
 
 
@@ -122,21 +121,11 @@ let main load_sources_and_classes =
   | false, true ->
       JModels.load_models ~jar_filename:Config.biabduction_models_jar ) ;
   JBasics.set_permissive true ;
-  let JClasspath.{classpath; sources; classes} =
-    match load_sources_and_classes with
-    | `FromVerboseOut verbose_out_file ->
-        JClasspath.load_from_verbose_output verbose_out_file
-    | `FromArguments path ->
-        JClasspath.load_from_arguments path
-  in
-  if String.Map.is_empty sources then L.(die InternalError) "Failed to load any Java source code" ;
-  L.(debug Capture Quiet)
-    "Translating %d source files (%d classes)@." (String.Map.length sources)
-    (JBasics.ClassSet.cardinal classes) ;
-  let program = JProgramDesc.load_program ~classpath classes in
-  do_all_files sources program
+  JClasspath.with_classpath load_sources_and_classes ~f:(fun classpath ->
+      let program = JProgramDesc.load classpath in
+      do_all_files classpath.sources program )
 
 
-let from_arguments path = main (`FromArguments path)
+let from_arguments path = main (JClasspath.FromArguments {path})
 
-let from_verbose_out verbose_out_file = main (`FromVerboseOut verbose_out_file)
+let from_verbose_out verbose_out_file = main (JClasspath.FromVerboseOut {verbose_out_file})

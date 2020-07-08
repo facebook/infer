@@ -12,10 +12,16 @@ open Javalib_pack
 (** map entry for source files with potential basename collision within the same compiler call *)
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
-type t = {classpath: string; sources: file_entry String.Map.t; classes: JBasics.ClassSet.t}
+type t =
+  { classpath_channel: Javalib.class_path
+  ; sources: file_entry String.Map.t
+  ; classes: JBasics.ClassSet.t }
 
-val load_from_verbose_output : string -> t
-(** load the list of source files and the list of classes from the javac verbose file *)
+type source =
+  | FromVerboseOut of {verbose_out_file: string}
+      (** load the list of source files and the list of classes from the javac verbose file *)
+  | FromArguments of {path: string}
+      (** load the list of source files and the list of classes from [Config.generated_classes] *)
 
-val load_from_arguments : string -> t
-(** load the list of source files and the list of classes from Config.generated_classes *)
+val with_classpath : f:(t -> unit) -> source -> unit
+(** load a class path, pass it to [f] and cleanup after [f] is done *)

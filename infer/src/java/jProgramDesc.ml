@@ -67,8 +67,6 @@ let iter_missing_callees program ~f =
   Procname.Hash.iter select program.callees
 
 
-let cleanup program = Javalib.close_class_path program.classpath_channel
-
 let lookup_node cn program =
   try Some (JBasics.ClassMap.find cn (get_classmap program))
   with Caml.Not_found -> (
@@ -84,10 +82,10 @@ let lookup_node cn program =
         None )
 
 
-let load_program ~classpath classes =
+let load JClasspath.{classpath_channel; classes} =
   L.(debug Capture Medium) "loading program ... %!" ;
   let program =
-    { classpath_channel= Javalib.class_path classpath
+    { classpath_channel
     ; classmap= JBasics.ClassMap.empty
     ; java_location_map= JBasics.ClassMap.empty
     ; callees= Procname.Hash.create 128 }

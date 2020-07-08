@@ -28,7 +28,10 @@ let classpath_of_paths paths =
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
-type t = {classpath: string; sources: file_entry String.Map.t; classes: JBasics.ClassSet.t}
+type t =
+  { classpath_channel: Javalib.class_path
+  ; sources: file_entry String.Map.t
+  ; classes: JBasics.ClassSet.t }
 
 (* Open the source file and search for the package declaration.
    Only the case where the package is declared in a single line is supported *)
@@ -103,7 +106,7 @@ let load_from_verbose_output =
     match In_channel.input_line file_in with
     | None ->
         let classpath = classpath_of_paths (String.Set.elements roots @ paths) in
-        {classpath; sources; classes}
+        {classpath_channel= Javalib.class_path classpath; sources; classes}
     | Some line when Str.string_match class_filename_re line 0 -> (
         let path =
           try Str.matched_group 5 line
@@ -189,4 +192,24 @@ let load_from_arguments classes_out_path =
     split Config.bootclasspath @ split Config.classpath @ String.Set.elements roots
     |> classpath_of_paths
   in
-  {classpath; sources= search_sources (); classes}
+  {classpath_channel= Javalib.class_path classpath; sources= search_sources (); classes}
+
+
+type source = FromVerboseOut of {verbose_out_file: string} | FromArguments of {path: string}
+
+let with_classpath ~f source =
+  let classpath =
+    match source with
+    | FromVerboseOut {verbose_out_file} ->
+        load_from_verbose_output verbose_out_file
+    | FromArguments {path} ->
+        load_from_arguments path
+  in
+  if String.Map.is_empty classpath.sources then
+    L.(die InternalError) "Failed to load any Java source code" ;
+  L.(debug Capture Quiet)
+    "Translating %d source files (%d classes)@."
+    (String.Map.length classpath.sources)
+    (JBasics.ClassSet.cardinal classpath.classes) ;
+  f classpath ;
+  Javalib.close_class_path classpath.classpath_channel
