@@ -154,3 +154,29 @@ void set_S() {
 }
 
 int thread_local_was_set_ok() { return T::get()->field; }
+
+struct Item {
+  X* get() const;
+};
+
+struct Handle {
+  X* get() const noexcept {
+    return item_.get() == nullptr ? nullptr : toX(item_);
+  }
+
+  X* operator->() const noexcept {
+    // dynamic check get() != null
+    return get();
+  }
+
+ private:
+  Item item_{};
+  static X* toX(Item item);
+};
+
+// We do not want to report nullptr dereference in this case
+// as we "know" that Item::get does not return null, however
+// at the moment we are not able to show it in pulse.
+// That's why as a workaround we model the analysis of Handle::get`
+// to return non-null
+void explicit_check_for_null_ok(Handle h) { return h->foo(); }

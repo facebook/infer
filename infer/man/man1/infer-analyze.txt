@@ -255,6 +255,9 @@ OPTIONS
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse
 
+       --pulse-model-return-nonnull +string
+           Methods that should be modelled as returning non-null in Pulse
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method

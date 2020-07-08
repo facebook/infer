@@ -884,6 +884,10 @@ OPTIONS
            Regex of methods that should be modelled as release in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-return-nonnull +string
+           Methods that should be modelled as returning non-null in Pulse       
+    See also infer-analyze(1).
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method       

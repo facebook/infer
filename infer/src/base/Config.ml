@@ -1842,6 +1842,12 @@ and pulse_model_release_pattern =
     "Regex of methods that should be modelled as release in Pulse"
 
 
+and pulse_model_return_nonnull =
+  CLOpt.mk_string_list ~long:"pulse-model-return-nonnull"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Methods that should be modelled as returning non-null in Pulse"
+
+
 and pulse_model_transfer_ownership =
   CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2961,6 +2967,8 @@ and pulse_model_abort = !pulse_model_abort
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
+
+and pulse_model_return_nonnull = !pulse_model_return_nonnull
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =

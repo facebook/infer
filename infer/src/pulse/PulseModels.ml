@@ -50,6 +50,16 @@ module Misc = struct
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
+  let return_positive ~desc : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let ret_addr = AbstractValue.mk_fresh () in
+    let ret_value = (ret_addr, [event]) in
+    PulseOperations.write_id ret_id ret_value astate
+    |> PulseArithmetic.and_positive ret_addr
+    |> PulseOperations.ok_continue
+
+
   let return_unknown_size : model =
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
@@ -789,7 +799,7 @@ module ProcNameDispatcher = struct
       in
       transfer_ownership_namespace_matchers @ transfer_ownership_name_matchers
     in
-    let abort_matchers =
+    let get_cpp_matchers config ~model =
       let cpp_separator_regex = Str.regexp_string "::" in
       List.filter_map
         ~f:(fun m ->
@@ -797,11 +807,19 @@ module ProcNameDispatcher = struct
           | [] ->
               None
           | first :: rest ->
-              Some (List.fold rest ~f:( &:: ) ~init:(-first) &--> Misc.early_exit) )
-        Config.pulse_model_abort
+              Some (List.fold rest ~f:( &:: ) ~init:(-first) &--> model m) )
+        config
+    in
+    let abort_matchers =
+      get_cpp_matchers ~model:(fun _ -> Misc.early_exit) Config.pulse_model_abort
+    in
+    let return_nonnull_matchers =
+      get_cpp_matchers
+        ~model:(fun m -> Misc.return_positive ~desc:m)
+        Config.pulse_model_return_nonnull
     in
     make_dispatcher
-      ( transfer_ownership_matchers @ abort_matchers
+      ( transfer_ownership_matchers @ abort_matchers @ return_nonnull_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
