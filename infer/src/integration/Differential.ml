@@ -233,6 +233,13 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
             "Please make sure this is an expected change. You can inspect the trace to understand \
              the complexity increase:"
       in
+      let ui_msg =
+        if is_on_ui_thread then
+          Format.asprintf "%a %s" MarkupFormatter.pp_bold
+            "This function is called on the UI Thread!"
+            " It is important to avoid potential regressions in this phase. "
+        else ""
+      in
       let msg f =
         (* Java Only *)
         if String.equal method_name Procname.Java.constructor_method_name then
@@ -242,7 +249,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         else
           Format.fprintf f "%a" (MarkupFormatter.wrap_monospaced Format.pp_print_string) method_name
       in
-      Format.asprintf "%s of %t has %a from %a to %a. %a"
+      Format.asprintf "%s of %t has %a from %a to %a. %s%a"
         (CostKind.to_complexity_string kind)
         msg
         (MarkupFormatter.wrap_bold pp_delta)
@@ -250,7 +257,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
         prev_item
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
-        curr_item pp_extra_msg ()
+        curr_item ui_msg pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
