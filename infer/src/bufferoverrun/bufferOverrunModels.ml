@@ -886,6 +886,15 @@ module Collection = struct
     {exec; check= no_check}
 
 
+  let of_list list =
+    let exec env ~ret:((id, _) as ret) mem =
+      let mem = new_collection.exec env ~ret mem in
+      List.fold_left list ~init:mem ~f:(fun acc {exp= elem_exp} ->
+          (add id elem_exp).exec env ~ret acc )
+    in
+    {exec; check= no_check}
+
+
   let singleton_collection =
     let exec env ~ret:((id, _) as ret) mem =
       let {exec= new_exec; check= _} = new_collection in
@@ -1576,6 +1585,8 @@ module Call = struct
       ; +PatternMatch.implements_collections
         &:: "singletonMap" <>--> Collection.singleton_collection
       ; +PatternMatch.implements_collections &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
+      ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+        &:: "of" &++> Collection.of_list
       ; +PatternMatch.implements_google "common.base.Preconditions"
         &:: "checkArgument" <>$ capt_exp $+...$--> Preconditions.check_argument
       ; +PatternMatch.implements_google "common.base.Preconditions"

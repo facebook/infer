@@ -20,6 +20,7 @@ codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_variant_F
 codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_variant_FP(int):void, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Parameter `x`,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType$1.<init>(), 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.<clinit>():void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Call to CollectionTest$MyEnumType$1.<init>(),Unbounded loop,Loop]
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.immutable_set_of_constant():void, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.emptyList_constant():void, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.emptySet_constant():void, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/java/performance/CollectionsTest.java, CollectionsTest.globalEmptyList_constant():void, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]

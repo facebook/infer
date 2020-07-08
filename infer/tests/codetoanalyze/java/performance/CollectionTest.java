@@ -6,6 +6,7 @@
  */
 
 import android.util.SparseArray;
+import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -88,5 +89,17 @@ public class CollectionTest {
             for (MyEnumType type : MyEnumType.values()) {}
           }
         };
+  }
+
+  void immutable_set_of_constant() {
+
+    ImmutableSet<Integer> set = ImmutableSet.of();
+    for (int i = 0; i < set.size(); i++) {}
+  }
+
+  void immutable_set_of_multiple_constant() {
+
+    ImmutableSet<Integer> set = ImmutableSet.of(1, 2, 3, 4, 5);
+    for (int i = 0; i < set.size(); i++) {}
   }
 }
