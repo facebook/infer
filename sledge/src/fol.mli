@@ -131,8 +131,8 @@ and Formula : sig
   (** Construct *)
 
   (* constants *)
-  val true_ : t
-  val false_ : t
+  val tt : t
+  val ff : t
 
   (* comparisons *)
   val eq : Term.t -> Term.t -> t

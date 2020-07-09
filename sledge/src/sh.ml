@@ -33,7 +33,7 @@ let emp =
   { us= Var.Set.empty
   ; xs= Var.Set.empty
   ; ctx= Context.true_
-  ; pure= Formula.true_
+  ; pure= Formula.tt
   ; heap= []
   ; djns= [] }
 
@@ -508,7 +508,7 @@ let or_ q1 q2 =
       { us= Var.Set.union q1.us q2.us
       ; xs= Var.Set.empty
       ; ctx= Context.true_
-      ; pure= Formula.true_
+      ; pure= Formula.tt
       ; heap= []
       ; djns= [[q1; q2]] } )
   |>
@@ -553,7 +553,7 @@ let subst sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
   let dom, eqs =
-    Var.Subst.fold sub ~init:(Var.Set.empty, Formula.true_)
+    Var.Subst.fold sub ~init:(Var.Set.empty, Formula.tt)
       ~f:(fun var trm (dom, eqs) ->
         ( Var.Set.add dom var
         , Formula.and_ (Formula.eq (Term.var var) (Term.var trm)) eqs ) )

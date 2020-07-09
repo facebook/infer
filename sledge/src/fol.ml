@@ -96,6 +96,8 @@ module Formula = struct
 
   let inject b = b
   let project e = Some e
+  let tt = true_
+  let ff = false_
 
   let of_exp e =
     let b = Term.of_exp e in
