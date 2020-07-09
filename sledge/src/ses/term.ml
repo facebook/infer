@@ -40,35 +40,25 @@ type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
 module rec Set : sig
   include NS.Set.S with type elt := T.t
 
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end = struct
   include NS.Set.Make (T)
-
-  let hash_fold_t = hash_fold_t T.hash_fold_t
-  let hash = Hash.of_fold hash_fold_t
-
   include Provide_of_sexp (T)
 end
 
 and Qset : sig
   include NS.Qset.S with type elt := T.t
 
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end = struct
   include NS.Qset.Make (T)
 
-  let hash_fold_t = hash_fold_t T.hash_fold_t
-  let hash = Hash.of_fold hash_fold_t
   let t_of_sexp = t_of_sexp T.t_of_sexp
 end
 
 and T : sig
-  type set = Set.t [@@deriving compare, equal, hash, sexp]
-  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
+  type set = Set.t [@@deriving compare, equal, sexp]
+  type qset = Qset.t [@@deriving compare, equal, sexp]
 
   type t =
     | Var of {id: int; name: string}
@@ -85,10 +75,10 @@ and T : sig
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 end = struct
-  type set = Set.t [@@deriving compare, equal, hash, sexp]
-  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
+  type set = Set.t [@@deriving compare, equal, sexp]
+  type qset = Qset.t [@@deriving compare, equal, sexp]
 
   type t =
     | Var of {id: int; name: string}
@@ -105,7 +95,7 @@ end = struct
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
      non-coefficient, so Integer and Rational terms must compare higher than

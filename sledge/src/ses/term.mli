@@ -26,7 +26,7 @@ type op1 =
           [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type op2 =
   | Eq  (** Equal test *)
@@ -45,36 +45,34 @@ type op2 =
   | Ashr  (** Arithmetic shift right, bitwise *)
   | Sized  (** Size-tagged sequence *)
   | Update of int  (** Constant record with updated index *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type op3 =
   | Conditional  (** If-then-else *)
   | Extract  (** Extract a slice of an sequence value *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type opN =
   | Concat  (** Byte-array concatenation *)
   | Record  (** Record (array / struct) constant *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 module rec Set : sig
   include NS.Set.S with type elt := T.t
 
-  val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end
 
 and Qset : sig
   include NS.Qset.S with type elt := T.t
 
-  val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
 end
 
 and T : sig
-  type set = Set.t [@@deriving compare, equal, hash, sexp]
+  type set = Set.t [@@deriving compare, equal, sexp]
 
-  type qset = Qset.t [@@deriving compare, equal, hash, sexp]
+  type qset = Qset.t [@@deriving compare, equal, sexp]
 
   and t = private
     | Var of {id: int; name: string}
@@ -93,7 +91,7 @@ and T : sig
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
     | RecRecord of int  (** Reference to ancestor recursive record *)
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 end
 
 include module type of T with type t = T.t
@@ -101,7 +99,7 @@ include module type of T with type t = T.t
 (** Term.Var is re-exported as Var *)
 module Var : sig
   type term := t
-  type t = private term [@@deriving compare, equal, hash, sexp]
+  type t = private term [@@deriving compare, equal, sexp]
   type strength = t -> [`Universal | `Existential | `Anonymous] option
 
   module Map : Map.S with type key := t
@@ -109,7 +107,6 @@ module Var : sig
   module Set : sig
     include NS.Set.S with type elt := t
 
-    val hash_fold_t : t Hash.folder
     val sexp_of_t : t -> Sexp.t
     val t_of_sexp : Sexp.t -> t
     val ppx : strength -> t pp
