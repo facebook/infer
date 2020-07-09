@@ -48,7 +48,7 @@ val or_ : Var.Set.t -> t -> t -> Var.Set.t * t
 val orN : Var.Set.t -> t list -> Var.Set.t * t
 (** Nary disjunction. *)
 
-val rename : t -> Var.Subst.t -> t
+val rename : t -> (Var.t -> Var.t) -> t
 (** Apply a renaming substitution to the relation. *)
 
 val fv : t -> Var.Set.t

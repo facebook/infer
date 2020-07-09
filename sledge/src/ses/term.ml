@@ -1220,10 +1220,8 @@ let disjuncts e =
   in
   Set.elements (disjuncts_ e)
 
-let rename sub e =
-  map_rec_pre e ~f:(function
-    | Var _ as v -> Some (Var.Subst.apply sub v)
-    | _ -> None )
+let rename f e =
+  map_rec_pre e ~f:(function Var _ as v -> Some (f v) | _ -> None)
 
 (** Traverse *)
 

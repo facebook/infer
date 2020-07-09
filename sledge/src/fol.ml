@@ -11,10 +11,11 @@ module Term = struct
   include Ses.Term
 
   let ite = conditional
+  let rename s e = rename (Var.Subst.apply s) e
 end
 
 module Formula = struct
-  include Ses.Term
+  include Term
 
   let inject b = b
   let project e = Some e
@@ -29,6 +30,7 @@ module Context = struct
 
   let and_formula = and_term
   let normalizef = normalize
+  let rename x sub = rename x (Var.Subst.apply sub)
 
   module Subst = struct
     include Subst
