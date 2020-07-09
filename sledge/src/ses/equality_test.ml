@@ -498,11 +498,4 @@ let%test_module _ =
            rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r19 z !0
-
-    let%expect_test _ =
-      Equality.replay
-        {|(And_eq () (Var (id 10) (name v))
-           (Mul (((Var (id 8) (name v)) 1) ((Var (id 9) (name v)) 1)))
-           ((xs ()) (sat true) (rep ())))|} ;
-      [%expect {| |}]
   end )

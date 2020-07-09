@@ -110,7 +110,3 @@ val solve_for_vars : Var.Set.t list -> t -> Subst.t
 val elim : Var.Set.t -> t -> t
 (** Weaken relation by removing oriented equations [k ↦ _] for [k] in
     [ks]. *)
-
-(* Replay debugging *)
-
-val replay : string -> unit
