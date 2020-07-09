@@ -83,15 +83,15 @@ let exec_intrinsic ~skip_throw q r i es =
     (List.map ~f:Term.of_exp es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
-let term_eq_class_has_only_vars_in fvs cong term =
+let term_eq_class_has_only_vars_in fvs ctx term =
   [%Trace.call fun {pf} ->
-    pf "@[<v> fvs: @[%a@] @,cong: @[%a@] @,term: @[%a@]@]" Var.Set.pp fvs
-      Context.pp cong Term.pp term]
+    pf "@[<v> fvs: @[%a@] @,ctx: @[%a@] @,term: @[%a@]@]" Var.Set.pp fvs
+      Context.pp ctx Term.pp term]
   ;
   let term_has_only_vars_in fvs term =
     Var.Set.is_subset (Term.fv term) ~of_:fvs
   in
-  let term_eq_class = Context.class_of cong term in
+  let term_eq_class = Context.class_of ctx term in
   List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
   |>
   [%Trace.retn fun {pf} -> pf "%b"]
@@ -106,8 +106,8 @@ let garbage_collect (q : t) ~wrt =
     else
       let new_set =
         List.fold ~init:current q.heap ~f:(fun current seg ->
-            if term_eq_class_has_only_vars_in current q.cong seg.loc then
-              List.fold (Context.class_of q.cong seg.seq) ~init:current
+            if term_eq_class_has_only_vars_in current q.ctx seg.loc then
+              List.fold (Context.class_of q.ctx seg.seq) ~init:current
                 ~f:(fun c e -> Var.Set.union c (Term.fv e))
             else current )
       in
@@ -115,7 +115,7 @@ let garbage_collect (q : t) ~wrt =
   in
   let r_vars = all_reachable_vars Var.Set.empty wrt q in
   Sh.filter_heap q ~f:(fun seg ->
-      term_eq_class_has_only_vars_in r_vars q.cong seg.loc )
+      term_eq_class_has_only_vars_in r_vars q.ctx seg.loc )
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 

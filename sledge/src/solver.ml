@@ -26,10 +26,9 @@ module Goal : sig
   type t = private
     { us: Var.Set.t  (** (universal) vocabulary of entire judgment *)
     ; com: Sh.t  (** common star-conjunct of minuend and subtrahend *)
-    ; min: Sh.t
-          (** minuend, cong strengthened by pure_approx (com * min) *)
+    ; min: Sh.t  (** minuend, ctx strengthened by pure_approx (com * min) *)
     ; xs: Var.Set.t  (** existentials over subtrahend and remainder *)
-    ; sub: Sh.t  (** subtrahend, cong strengthened by min.cong *)
+    ; sub: Sh.t  (** subtrahend, ctx strengthened by min.ctx *)
     ; zs: Var.Set.t  (** existentials over remainder *)
     ; pgs: bool  (** indicates whether a deduction rule has been applied *)
     }
@@ -71,7 +70,7 @@ end = struct
     Format.fprintf fs "@[<hv>%s %a@ | %a@ @[\\- %a%a@]@]"
       (if pgs then "t" else "f")
       Sh.pp com Sh.pp min Var.Set.pp_xs xs
-      (Sh.pp_diff_eq ~us:(Var.Set.union min.us sub.us) ~xs min.cong)
+      (Sh.pp_diff_eq ~us:(Var.Set.union min.us sub.us) ~xs min.ctx)
       sub
 
   let invariant g =
@@ -156,15 +155,15 @@ let excise_exists goal =
     let solutions_for_xs =
       let xs =
         Var.Set.diff goal.xs
-          (Sh.fv ~ignore_cong:() (Sh.with_pure Term.true_ goal.sub))
+          (Sh.fv ~ignore_ctx:() (Sh.with_pure Term.true_ goal.sub))
       in
-      Context.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
+      Context.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.ctx
     in
     if Context.Subst.is_empty solutions_for_xs then goal
     else
       let removed =
         Var.Set.diff goal.xs
-          (Sh.fv ~ignore_cong:() (Sh.norm solutions_for_xs goal.sub))
+          (Sh.fv ~ignore_ctx:() (Sh.norm solutions_for_xs goal.sub))
       in
       if Var.Set.is_empty removed then goal
       else
@@ -183,7 +182,7 @@ let excise_exists goal =
 
 let excise_pure ({min; sub} as goal) =
   trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
-  let pure' = Context.normalize min.cong sub.pure in
+  let pure' = Context.normalize min.ctx sub.pure in
   if Term.is_false pure' then None
   else Some (goal |> with_ ~sub:(Sh.with_pure pure' sub))
 
@@ -202,8 +201,8 @@ let excise_pure ({min; sub} as goal) =
  *)
 let excise_seg_same ({com; min; sub} as goal) msg ssg =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_same@ %a@ \\- %a@]" (Sh.pp_seg_norm sub.cong)
-        msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+      pf "@[<hv 2>excise_seg_same@ %a@ \\- %a@]" (Sh.pp_seg_norm sub.ctx)
+        msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; seq= a} = msg in
   let {Sh.bas= b'; len= m'; seq= a'} = ssg in
   let com = Sh.star (Sh.seg msg) com in
@@ -231,7 +230,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
     =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_sub_prefix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let o_n = Term.integer o_n in
@@ -271,7 +270,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
     =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_min_prefix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let n_o = Term.integer n_o in
@@ -307,7 +306,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_sub_suffix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -349,7 +348,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_ln =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_sub_infix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -396,7 +395,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_l ln_ko =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_min_skew@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -446,7 +445,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_min_suffix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -483,7 +482,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_ko =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_min_infix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -524,7 +523,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_k ko_ln =
   excise (fun {pf} ->
       pf "@[<hv 2>excise_seg_sub_skew@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.cong) msg (Sh.pp_seg_norm sub.cong) ssg ) ;
+        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; seq= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; seq= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -558,14 +557,14 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 (* C ❮ k-[b;m)->⟨o,α⟩ * M ⊢ ∃xs. l-[b';m')->⟨n,α'⟩ * S ❯ R *)
 let excise_seg ({sub} as goal) msg ssg =
   trace (fun {pf} ->
-      pf "@[<2>excise_seg@ %a@  |-  %a@]" (Sh.pp_seg_norm sub.cong) msg
-        (Sh.pp_seg_norm sub.cong) ssg ) ;
+      pf "@[<2>excise_seg@ %a@  |-  %a@]" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
-  let* k_l = Context.difference sub.cong k l in
+  let* k_l = Context.difference sub.ctx k l in
   if
-    (not (Context.entails_eq sub.cong b b'))
-    || not (Context.entails_eq sub.cong m m')
+    (not (Context.entails_eq sub.ctx b b'))
+    || not (Context.entails_eq sub.ctx m m')
   then
     Some
       ( goal
@@ -578,11 +577,11 @@ let excise_seg ({sub} as goal) msg ssg =
     | Neg -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.cong ko ln in
+        let* ko_ln = Context.difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0 so k+o < l+n *)
         | Neg -> (
-            let* l_ko = Context.difference sub.cong l ko in
+            let* l_ko = Context.difference sub.ctx l ko in
             match Int.sign (Z.sign l_ko) with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
@@ -600,7 +599,7 @@ let excise_seg ({sub} as goal) msg ssg =
         )
     (* k-l = 0 so k = l *)
     | Zero -> (
-        let* o_n = Context.difference sub.cong o n in
+        let* o_n = Context.difference sub.ctx o n in
         match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
@@ -615,7 +614,7 @@ let excise_seg ({sub} as goal) msg ssg =
     | Pos -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.cong ko ln in
+        let* ko_ln = Context.difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
@@ -625,7 +624,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | Zero -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
         | Pos -> (
-            let* k_ln = Context.difference sub.cong k ln in
+            let* k_ln = Context.difference sub.ctx k ln in
             match Int.sign (Z.sign k_ln) with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
@@ -673,7 +672,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
         List.find_map dnf_subtrahend ~f:(fun sub ->
             [%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
             ;
-            let sub = Sh.and_cong min.cong (Sh.extend_us us sub) in
+            let sub = Sh.and_ctx min.ctx (Sh.extend_us us sub) in
             excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
             |>
             [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )

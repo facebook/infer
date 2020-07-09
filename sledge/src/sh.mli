@@ -17,7 +17,8 @@ type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
-  ; cong: Context.t  (** congruence induced by rest of formula *)
+  ; ctx: Context.t
+        (** first-order logical context induced by rest of formula *)
   ; pure: Term.t  (** pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
@@ -61,8 +62,8 @@ val pure : Term.t -> t
 val and_ : Term.t -> t -> t
 (** Conjoin a boolean constraint to a formula. *)
 
-val and_cong : Context.t -> t -> t
-(** Conjoin constraints of a congruence to a formula, extending to a common
+val and_ctx : Context.t -> t -> t
+(** Conjoin a context to that of a formula, extending to a common
     vocabulary, and avoiding capturing existentials. *)
 
 val and_subst : Context.Subst.t -> t -> t
@@ -73,9 +74,9 @@ val and_subst : Context.Subst.t -> t -> t
 
 val with_pure : Term.t -> t -> t
 (** [with_pure pure q] is [{q with pure}], which assumes that [q.pure] and
-    [pure] are defined in the same vocabulary. Note that [cong] is not
-    weakened, so if [pure] and [q.pure] do not induce the same congruence,
-    then the result will have a stronger [cong] than induced by its [pure]. *)
+    [pure] are defined in the same vocabulary. Note that [ctx] is not
+    weakened, so if [pure] and [q.pure] do not induce the same context, then
+    the result will have a stronger [ctx] than induced by its [pure]. *)
 
 val rem_seg : seg -> t -> t
 (** [star (seg s) (rem_seg s q)] is equivalent to [q], assuming that [s] is
@@ -116,13 +117,13 @@ val extend_us : Var.Set.t -> t -> t
 (** Query *)
 
 val is_emp : t -> bool
-(** Holds of [emp], with any vocabulary, existentials, and congruence. *)
+(** Holds of [emp], with any vocabulary, existentials, and context. *)
 
 val is_false : t -> bool
 (** Holds only of inconsistent formulas, does not hold of all inconsistent
     formulas. *)
 
-val fv : ?ignore_cong:unit -> t -> Var.Set.t
+val fv : ?ignore_ctx:unit -> t -> Var.Set.t
 (** Free variables, a subset of vocabulary. *)
 
 val pure_approx : t -> t
