@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Var = Ses.Var
+module Var = Ses.Term.Var
 module Term = Ses.Term
 module Context = Ses.Equality
