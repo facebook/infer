@@ -57,78 +57,89 @@ end
 
 (** Terms *)
 module Term : sig
-  type t [@@deriving compare, equal, sexp]
+  type term
+  type formula = term
 
-  val ppx : Var.strength -> t pp
-  val pp : t pp
+  val ppx : Var.strength -> term pp
+  val pp : term pp
 
-  module Map : Map.S with type key := t
+  module Map : Map.S with type key := term
 
   (** Construct *)
 
+  (** terms *)
+
   (* variables *)
-  val var : Var.t -> t
+  val var : Var.t -> term
 
   (* constants *)
-  val true_ : t
-  val false_ : t
-  val integer : Z.t -> t
-  val zero : t
-  val one : t
-  val rational : Q.t -> t
-
-  (* comparisons *)
-  val eq : t -> t -> t
-  val dq : t -> t -> t
-  val lt : t -> t -> t
-  val le : t -> t -> t
+  val zero : term
+  val one : term
+  val integer : Z.t -> term
+  val rational : Q.t -> term
 
   (* arithmetic *)
-  val neg : t -> t
-  val add : t -> t -> t
-  val sub : t -> t -> t
-  val mulq : Q.t -> t -> t
-  val mul : t -> t -> t
-
-  (* boolean *)
-  val and_ : t -> t -> t
-  val or_ : t -> t -> t
-  val not_ : t -> t
-
-  (* if-then-else *)
-  val conditional : cnd:t -> thn:t -> els:t -> t
+  val neg : term -> term
+  val add : term -> term -> term
+  val sub : term -> term -> term
+  val mulq : Q.t -> term -> term
+  val mul : term -> term -> term
 
   (* sequences *)
-  val splat : t -> t
-  val sized : seq:t -> siz:t -> t
-  val extract : seq:t -> off:t -> len:t -> t
-  val concat : t array -> t
+  val splat : term -> term
+  val sized : seq:term -> siz:term -> term
+  val extract : seq:term -> off:term -> len:term -> term
+  val concat : term array -> term
 
-  (* convert *)
-  val of_exp : Llair.Exp.t -> t
+  (* if-then-else *)
+  val ite : cnd:formula -> thn:term -> els:term -> term
+
+  (** formulas *)
+
+  (* constants *)
+  val true_ : formula
+  val false_ : formula
+
+  (* comparisons *)
+  val eq : term -> term -> formula
+  val dq : term -> term -> formula
+  val lt : term -> term -> formula
+  val le : term -> term -> formula
+
+  (* connectives *)
+  val not_ : formula -> formula
+  val and_ : formula -> formula -> formula
+  val or_ : formula -> formula -> formula
+  val conditional : cnd:formula -> thn:formula -> els:formula -> formula
+
+  (** Convert *)
+
+  val of_exp : Llair.Exp.t -> term
 
   (** Destruct *)
 
-  val d_int : t -> Z.t option
+  val d_int : term -> Z.t option
 
   (** Access *)
 
-  val const_of : t -> Q.t option
+  val const_of : term -> Q.t option
 
   (** Transform *)
 
-  val disjuncts : t -> t list
-  val rename : Var.Subst.t -> t -> t
+  val disjuncts : term -> term list
+  val rename : Var.Subst.t -> term -> term
 
   (** Traverse *)
 
-  val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
+  val fold_vars : term -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 
   (** Query *)
 
-  val fv : t -> Var.Set.t
-  val is_true : t -> bool
-  val is_false : t -> bool
+  val is_true : formula -> bool
+  val is_false : formula -> bool
+  val fv : term -> Var.Set.t
+
+  type t = term [@@deriving compare, equal, sexp]
 end
 
 (** Inference System *)

@@ -6,5 +6,14 @@
  *)
 
 module Var = Ses.Term.Var
-module Term = Ses.Term
+
+module Term = struct
+  include Ses.Term
+
+  type term = t
+  type formula = t
+
+  let ite = conditional
+end
+
 module Context = Ses.Equality
