@@ -10,6 +10,51 @@ let pp_boxed fs fmt =
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
 (*
+ * (Uninterpreted) Function Symbols
+ *)
+
+module Funsym = struct
+  type t =
+    | Float of string
+    | Label of {parent: string; name: string}
+    | Mul
+    | Div
+    | Rem
+    | EmptyRecord
+    | RecRecord of int
+    | BitAnd
+    | BitOr
+    | BitXor
+    | BitShl
+    | BitLshr
+    | BitAshr
+    | Signed of int
+    | Unsigned of int
+    | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
+  [@@deriving compare, equal, sexp]
+
+  let pp fs f =
+    let pf fmt = pp_boxed fs fmt in
+    match f with
+    | Float s -> pf "%s" s
+    | Label {name} -> pf "%s" name
+    | Mul -> pf "@<1>×"
+    | Div -> pf "/"
+    | Rem -> pf "%%"
+    | EmptyRecord -> pf "{}"
+    | RecRecord i -> pf "(rec_record %i)" i
+    | BitAnd -> pf "&&"
+    | BitOr -> pf "||"
+    | BitXor -> pf "xor"
+    | BitShl -> pf "shl"
+    | BitLshr -> pf "lshr"
+    | BitAshr -> pf "ashr"
+    | Signed n -> pf "(s%i)" n
+    | Unsigned n -> pf "(u%i)" n
+    | Convert {src; dst} -> pf "(%a)(%a)" Llair.Typ.pp dst Llair.Typ.pp src
+end
+
+(*
  * Terms
  *)
 
@@ -23,28 +68,15 @@ type trm =
   | Add of trm * trm
   | Sub of trm * trm
   | Mulq of Q.t * trm
-  | Mul of trm * trm
-  | Div of trm * trm
-  | Rem of trm * trm
   | Splat of trm
   | Sized of {seq: trm; siz: trm}
   | Extract of {seq: trm; off: trm; len: trm}
-  | Concat of trm iarray
-  | Select of trm * trm
-  | Update of trm * trm * trm
-  | Record of trm iarray
-  | RecRecord of int
-  | Label of {parent: string; name: string}
-  | Float of string
-  | BAnd of trm * trm
-  | BOr of trm * trm
-  | BXor of trm * trm
-  | BShl of trm * trm
-  | BLshr of trm * trm
-  | BAshr of trm * trm
-  | Signed of int * trm
-  | Unsigned of int * trm
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t; arg: trm}
+  | Concat of trm array
+  | Select of {rcd: trm; idx: trm}
+  | Update of {rcd: trm; idx: trm; elt: trm}
+  | Tuple of trm array
+  | Project of {ary: int; idx: int; tup: trm}
+  | Apply of Funsym.t * trm
 [@@deriving compare, equal, sexp]
 
 let compare_trm x y =
@@ -67,26 +99,15 @@ let _Neg x = Neg x
 let _Add x y = Add (x, y)
 let _Sub x y = Sub (x, y)
 let _Mulq q x = Mulq (q, x)
-let _Mul x y = Mul (x, y)
-let _Div x y = Div (x, y)
-let _Rem x y = Rem (x, y)
 let _Splat x = Splat x
 let _Sized seq siz = Sized {seq; siz}
 let _Extract seq off len = Extract {seq; off; len}
 let _Concat es = Concat es
-let _Select r i = Select (r, i)
-let _Update r i x = Update (r, i, x)
-let _Record es = Record es
-let _RecRecord n = RecRecord n
-let _BAnd x y = BAnd (x, y)
-let _BOr x y = BOr (x, y)
-let _BXor x y = BXor (x, y)
-let _BShl x y = BShl (x, y)
-let _BLshr x y = BLshr (x, y)
-let _BAshr x y = BAshr (x, y)
-let _Signed n x = Signed (n, x)
-let _Unsigned n x = Unsigned (n, x)
-let _Convert src dst arg = Convert {src; dst; arg}
+let _Select rcd idx = Select {rcd; idx}
+let _Update rcd idx elt = Update {rcd; idx; elt}
+let _Tuple es = Tuple es
+let _Project ary idx tup = Project {ary; idx; tup}
+let _Apply f a = Apply (f, a)
 
 (*
  * Formulas
@@ -355,10 +376,25 @@ type var = Var.t
 
 (** pp *)
 
+let encoded_record r =
+  let exception Not_a_record in
+  let rec encoded_record_ i = function
+    | Apply (EmptyRecord, Tuple [||]) when Z.equal i Z.zero -> []
+    | Update {rcd= Apply (EmptyRecord, Tuple [||]); idx= Z j; elt}
+      when Z.equal i j ->
+        [elt]
+    | Update {rcd; idx= Z j; elt} when Z.equal i j ->
+        elt :: encoded_record_ (Z.succ i) rcd
+    | _ -> raise Not_a_record
+  in
+  match encoded_record_ Z.zero r with
+  | es -> Some es
+  | exception Not_a_record -> None
+
 let rec ppx_t strength fs trm =
   let rec pp fs trm =
     let pf fmt = pp_boxed fs fmt in
-    match (trm : trm) with
+    match trm with
     | Var _ as v -> Var.ppx strength fs (Var.of_ v)
     | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
     | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
@@ -366,31 +402,25 @@ let rec ppx_t strength fs trm =
     | Add (x, y) -> pf "(%a@ + %a)" pp x pp y
     | Sub (x, y) -> pf "(%a@ - %a)" pp x pp y
     | Mulq (q, x) -> pf "(%a@ @<2>× %a)" Q.pp q pp x
-    | Mul (x, y) -> pf "(%a@ @<2>× %a)" pp x pp y
-    | Div (x, y) -> pf "(%a@ / %a)" pp x pp y
-    | Rem (x, y) -> pf "(%a@ %% %a)" pp x pp y
     | Splat x -> pf "%a^" pp x
     | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
     | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
-    | Concat xs when IArray.is_empty xs -> pf "@<2>⟨⟩"
-    | Concat xs -> pf "(%a)" (IArray.pp "@,^" pp) xs
-    | Select (rcd, idx) -> pf "%a[%a]" pp rcd pp idx
-    | Update (rcd, idx, elt) ->
-        pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
-    | Record xs -> pf "{%a}" (pp_record strength) xs
-    | RecRecord i -> pf "(rec_record %i)" i
-    | Label {name} -> pf "%s" name
-    | Float s -> pf "%s" s
-    | BAnd (x, y) -> pf "(%a@ && %a)" pp x pp y
-    | BOr (x, y) -> pf "(%a@ || %a)" pp x pp y
-    | BXor (x, y) -> pf "(%a@ xor %a)" pp x pp y
-    | BShl (x, y) -> pf "(%a@ shl %a)" pp x pp y
-    | BLshr (x, y) -> pf "(%a@ lshr %a)" pp x pp y
-    | BAshr (x, y) -> pf "(%a@ ashr %a)" pp x pp y
-    | Signed (n, x) -> pf "((s%i)@ %a)" n pp x
-    | Unsigned (n, x) -> pf "((u%i)@ %a)" n pp x
-    | Convert {src; dst; arg} ->
-        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
+    | Concat [||] -> pf "@<2>⟨⟩"
+    | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
+    | Select {rcd; idx} -> pf "%a[%a]" pp rcd pp idx
+    | Update {rcd; idx; elt} -> (
+      match encoded_record trm with
+      | None -> pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
+      | Some elts -> pf "{%a}" (pp_record strength) elts )
+    | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
+    | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
+    | Apply (f, Tuple [||]) -> pf "%a" Funsym.pp f
+    | Apply
+        ( ( ( Mul | Div | Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr
+            | BitAshr ) as f )
+        , Tuple [|x; y|] ) ->
+        pf "(%a@ %a@ %a)" pp x Funsym.pp f pp y
+    | Apply (f, a) -> pf "%a@ %a" Funsym.pp f pp a
   in
   pp fs trm
 
@@ -398,18 +428,21 @@ and pp_record strength fs elts =
   [%Trace.fprintf
     fs "%a"
       (fun fs elts ->
+        let exception Not_a_string in
         match
-          String.init (IArray.length elts) ~f:(fun i ->
-              match IArray.get elts i with
-              | Z z -> Char.of_int_exn (Z.to_int z)
-              | _ -> raise (Invalid_argument "not a string") )
+          String.of_char_list
+            (List.map elts ~f:(function
+              | Z c -> Char.of_int_exn (Z.to_int c)
+              | _ -> raise Not_a_string ))
         with
-        | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-        | exception _ ->
+        | s -> Format.fprintf fs "%S" s
+        | exception (Not_a_string | Z.Overflow | Failure _) ->
             Format.fprintf fs "@[<h>%a@]"
-              (IArray.pp ",@ " (ppx_t strength))
+              (List.pp ",@ " (ppx_t strength))
               elts )
       elts]
+
+let pp_t = ppx_t (fun _ -> None)
 
 let ppx_f strength fs fml =
   let pp_t = ppx_t strength in
@@ -456,35 +489,25 @@ let pp = ppx (fun _ -> None)
 (** fold_vars *)
 
 let rec fold_vars_t e ~init ~f =
-  match (e : trm) with
+  match e with
   | Var _ as v -> f init (Var.of_ v)
-  | Z _ | Q _ | RecRecord _ | Label _ | Float _ -> init
+  | Z _ | Q _ -> init
   | Neg x
    |Mulq (_, x)
    |Splat x
-   |Signed (_, x)
-   |Unsigned (_, x)
-   |Convert {src= _; dst= _; arg= x} ->
+   |Project {ary= _; idx= _; tup= x}
+   |Apply (_, x) ->
       fold_vars_t ~f x ~init
   | Add (x, y)
    |Sub (x, y)
-   |Mul (x, y)
-   |Div (x, y)
-   |Rem (x, y)
    |Sized {seq= x; siz= y}
-   |Select (x, y)
-   |BAnd (x, y)
-   |BOr (x, y)
-   |BXor (x, y)
-   |BShl (x, y)
-   |BLshr (x, y)
-   |BAshr (x, y) ->
+   |Select {rcd= x; idx= y} ->
       fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Update (x, y, z) | Extract {seq= x; off= y; len= z} ->
+  | Update {rcd= x; idx= y; elt= z} | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
-  | Concat xs | Record xs ->
-      IArray.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
+  | Concat xs | Tuple xs ->
+      Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
@@ -528,7 +551,7 @@ let map3 f e cons x y z =
   if x == x' && y == y' && z == z' then e else cons x' y' z'
 
 let mapN f e cons xs =
-  let xs' = IArray.map_endo ~f xs in
+  let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
 let rec map_vars_t ~f e =
@@ -539,26 +562,15 @@ let rec map_vars_t ~f e =
   | Add (x, y) -> map2 (map_vars_t ~f) e _Add x y
   | Sub (x, y) -> map2 (map_vars_t ~f) e _Sub x y
   | Mulq (q, x) -> map1 (map_vars_t ~f) e (_Mulq q) x
-  | Mul (x, y) -> map2 (map_vars_t ~f) e _Mul x y
-  | Div (x, y) -> map2 (map_vars_t ~f) e _Div x y
-  | Rem (x, y) -> map2 (map_vars_t ~f) e _Rem x y
   | Splat x -> map1 (map_vars_t ~f) e _Splat x
   | Sized {seq; siz} -> map2 (map_vars_t ~f) e _Sized seq siz
   | Extract {seq; off; len} -> map3 (map_vars_t ~f) e _Extract seq off len
   | Concat xs -> mapN (map_vars_t ~f) e _Concat xs
-  | Select (r, i) -> map2 (map_vars_t ~f) e _Select r i
-  | Update (r, i, e) -> map3 (map_vars_t ~f) e _Update r i e
-  | Record xs -> mapN (map_vars_t ~f) e _Record xs
-  | RecRecord _ | Label _ | Float _ -> e
-  | BAnd (x, y) -> map2 (map_vars_t ~f) e _BAnd x y
-  | BOr (x, y) -> map2 (map_vars_t ~f) e _BOr x y
-  | BXor (x, y) -> map2 (map_vars_t ~f) e _BXor x y
-  | BShl (x, y) -> map2 (map_vars_t ~f) e _BShl x y
-  | BLshr (x, y) -> map2 (map_vars_t ~f) e _BLshr x y
-  | BAshr (x, y) -> map2 (map_vars_t ~f) e _BAshr x y
-  | Signed (n, x) -> map1 (map_vars_t ~f) e (_Signed n) x
-  | Unsigned (n, x) -> map1 (map_vars_t ~f) e (_Unsigned n) x
-  | Convert {src; dst; arg} -> map1 (map_vars_t ~f) e (_Convert src dst) arg
+  | Select {rcd; idx} -> map2 (map_vars_t ~f) e _Select rcd idx
+  | Update {rcd; idx; elt} -> map3 (map_vars_t ~f) e _Update rcd idx elt
+  | Tuple xs -> mapN (map_vars_t ~f) e _Tuple xs
+  | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
+  | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
 
 let rec map_vars_f ~f e =
   match e with
@@ -859,13 +871,6 @@ module Term = struct
 
   let rational q = `Trm (Q q)
 
-  let float s =
-    match Q.of_float (Float.of_string s) with
-    | q when Q.is_real q -> rational q
-    | _ | (exception Invalid_argument _) -> `Trm (Float s)
-
-  let label ~parent ~name = `Trm (Label {parent; name})
-
   (* arithmetic *)
 
   let neg = ap1t _Neg
@@ -882,45 +887,27 @@ module Term = struct
           match y with
           | Z z -> mulq (Q.of_z z) (`Trm x)
           | Q q -> mulq q (`Trm x)
-          | _ -> ap2t _Mul (`Trm x) (`Trm y) ) )
-
-  let div = ap2t _Div
-  let rem = ap2t _Rem
+          | _ ->
+              ap2t
+                (fun x y -> Apply (Mul, Tuple [|x; y|]))
+                (`Trm x) (`Trm y) ) )
 
   (* sequences *)
 
   let splat = ap1t _Splat
   let sized ~seq ~siz = ap2t _Sized seq siz
   let extract ~seq ~off ~len = ap3t _Extract seq off len
-  let concat elts = apNt (fun es -> _Concat (IArray.of_list es)) elts
+  let concat elts = apNt (fun es -> _Concat (Array.of_list es)) elts
 
   (* records *)
 
   let select ~rcd ~idx = ap2t _Select rcd idx
   let update ~rcd ~idx ~elt = ap3t _Update rcd idx elt
-  let record elts = apNt (fun es -> _Record (IArray.of_list es)) elts
-  let rec_record i = `Trm (_RecRecord i)
 
-  (* bitwise *)
+  (* tuples *)
 
-  let band = ap2t _BAnd
-  let bor = ap2t _BOr
-  let bxor = ap2t _BXor
-  let bshl = ap2t _BShl
-  let blshr = ap2t _BLshr
-  let bashr = ap2t _BAshr
-
-  (* type conversions *)
-
-  let signed bits = function
-    | `Fml _ as fml when bits = 1 -> fml
-    | arg -> ap1t (_Signed bits) arg
-
-  let unsigned bits = function
-    | `Fml _ as fml when bits = 1 -> fml
-    | arg -> ap1t (_Unsigned bits) arg
-
-  let convert src ~to_:dst arg = ap1t (_Convert src dst) arg
+  let tuple elts = apNt (fun es -> _Tuple (Array.of_list es)) elts
+  let project ~ary ~idx tup = ap1t (_Project ary idx) tup
 
   (* if-then-else *)
 
@@ -934,11 +921,12 @@ module Term = struct
 
   let const_of x =
     let rec const_of t =
-      let add = Option.map2 ~f:Q.add in
       let neg = Option.map ~f:Q.neg in
+      let add = Option.map2 ~f:Q.add in
       match t with
       | Z z -> Some (Q.of_z z)
       | Q q -> Some q
+      | Neg x -> neg (const_of x)
       | Add (x, y) -> add (const_of x) (const_of y)
       | Sub (x, y) -> add (const_of x) (neg (const_of y))
       | _ -> None
@@ -998,36 +986,42 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Add (x, y) -> Ses.Term.add (t_to_ses x) (t_to_ses y)
   | Sub (x, y) -> Ses.Term.sub (t_to_ses x) (t_to_ses y)
   | Mulq (q, x) -> Ses.Term.mulq q (t_to_ses x)
-  | Mul (x, y) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
-  | Div (x, y) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
-  | Rem (x, y) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
-  | Select (r, i) ->
-      Ses.Term.select ~rcd:(t_to_ses r) ~idx:(to_int (t_to_ses i))
-  | Update (r, i, e) ->
-      Ses.Term.update ~rcd:(t_to_ses r)
-        ~idx:(to_int (t_to_ses i))
-        ~elt:(t_to_ses e)
-  | Record es -> Ses.Term.record (IArray.map ~f:t_to_ses es)
-  | RecRecord i -> Ses.Term.rec_record i
   | Splat x -> Ses.Term.splat (t_to_ses x)
   | Sized {seq; siz} ->
       Ses.Term.sized ~seq:(t_to_ses seq) ~siz:(t_to_ses siz)
   | Extract {seq; off; len} ->
       Ses.Term.extract ~seq:(t_to_ses seq) ~off:(t_to_ses off)
         ~len:(t_to_ses len)
-  | Concat es ->
-      Ses.Term.concat (IArray.to_array (IArray.map ~f:t_to_ses es))
-  | BAnd (x, y) -> Ses.Term.and_ (t_to_ses x) (t_to_ses y)
-  | BOr (x, y) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
-  | BXor (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
-  | BShl (x, y) -> Ses.Term.shl (t_to_ses x) (t_to_ses y)
-  | BLshr (x, y) -> Ses.Term.lshr (t_to_ses x) (t_to_ses y)
-  | BAshr (x, y) -> Ses.Term.ashr (t_to_ses x) (t_to_ses y)
-  | Label {parent; name} -> Ses.Term.label ~parent ~name
-  | Float s -> Ses.Term.float s
-  | Signed (n, x) -> Ses.Term.signed n (t_to_ses x)
-  | Unsigned (n, x) -> Ses.Term.unsigned n (t_to_ses x)
-  | Convert {src; dst; arg} -> Ses.Term.convert src ~to_:dst (t_to_ses arg)
+  | Concat es -> Ses.Term.concat (Array.map ~f:t_to_ses es)
+  | Select {rcd; idx} ->
+      Ses.Term.select ~rcd:(t_to_ses rcd) ~idx:(to_int (t_to_ses idx))
+  | Update {rcd; idx; elt} ->
+      Ses.Term.update ~rcd:(t_to_ses rcd)
+        ~idx:(to_int (t_to_ses idx))
+        ~elt:(t_to_ses elt)
+  | Apply (Float s, Tuple [||]) -> Ses.Term.float s
+  | Apply (Label {parent; name}, Tuple [||]) -> Ses.Term.label ~parent ~name
+  | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
+  | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
+  | Apply (Rem, Tuple [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
+  | Apply (EmptyRecord, Tuple [||]) ->
+      Ses.Term.record (IArray.of_array [||])
+  | Apply (RecRecord i, Tuple [||]) -> Ses.Term.rec_record i
+  | Apply (BitAnd, Tuple [|x; y|]) ->
+      Ses.Term.and_ (t_to_ses x) (t_to_ses y)
+  | Apply (BitOr, Tuple [|x; y|]) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
+  | Apply (BitXor, Tuple [|x; y|]) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
+  | Apply (BitShl, Tuple [|x; y|]) -> Ses.Term.shl (t_to_ses x) (t_to_ses y)
+  | Apply (BitLshr, Tuple [|x; y|]) ->
+      Ses.Term.lshr (t_to_ses x) (t_to_ses y)
+  | Apply (BitAshr, Tuple [|x; y|]) ->
+      Ses.Term.ashr (t_to_ses x) (t_to_ses y)
+  | Apply (Signed n, Tuple [|x|]) -> Ses.Term.signed n (t_to_ses x)
+  | Apply (Unsigned n, Tuple [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
+  | Apply (Convert {src; dst}, Tuple [|x|]) ->
+      Ses.Term.convert src ~to_:dst (t_to_ses x)
+  | (Apply _ | Tuple _ | Project _) as t ->
+      fail "cannot translate to Ses: %a" pp_t t ()
 
 let rec f_to_ses : fml -> Ses.Term.t = function
   | Tt -> Ses.Term.true_
@@ -1068,8 +1062,12 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
   Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun vs v ->
       Var.Set.add vs (v_of_ses v) )
 
-let rec ap_tt f a = f (of_ses a)
-and ap_ttt f a b = f (of_ses a) (of_ses b)
+let uap0 f = `Trm (Apply (f, Tuple [||]))
+let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
+let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
+
+let rec uap_tt f a = uap1 f (of_ses a)
+and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
 and ap_ttf f a b = `Fml (f (of_ses a) (of_ses b))
 
 and ap2 mk_f mk_t a b =
@@ -1100,11 +1098,11 @@ and of_ses : Ses.Term.t -> exp =
   | Var {id; name} -> var (Var.identified ~id ~name)
   | Integer {data} -> integer data
   | Rational {data} -> rational data
-  | Float {data} -> float data
-  | Label {parent; name} -> label ~parent ~name
-  | Ap1 (Signed {bits}, e) -> ap_tt (signed bits) e
-  | Ap1 (Unsigned {bits}, e) -> ap_tt (unsigned bits) e
-  | Ap1 (Convert {src; dst}, e) -> ap_tt (convert src ~to_:dst) e
+  | Float {data} -> uap0 (Float data)
+  | Label {parent; name} -> uap0 (Label {parent; name})
+  | Ap1 (Signed {bits}, e) -> uap_tt (Signed bits) e
+  | Ap1 (Unsigned {bits}, e) -> uap_tt (Unsigned bits) e
+  | Ap1 (Convert {src; dst}, e) -> uap_tt (Convert {src; dst}) e
   | Ap2 (Eq, d, e) -> ap2_f iff eq d e
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
   | Ap2 (Lt, d, e) -> ap2_f (Fn.flip nimp) lt d e
@@ -1123,23 +1121,26 @@ and of_ses : Ses.Term.t -> exp =
     | None -> one
     | Some (e, q, prod) ->
         let rec expn e n =
-          if Z.sign n = 0 then one else mul e (expn e (Z.pred n))
+          let p = Z.pred n in
+          if Z.sign p = 0 then e else uap2 Mul e (expn e p)
         in
         let exp e q =
           let n = Q.num q in
-          if Z.sign n >= 0 then expn (of_ses e) n
-          else div one (expn (of_ses e) (Z.neg n))
+          let sn = Z.sign n in
+          if sn = 0 then of_ses e
+          else if sn > 0 then expn (of_ses e) n
+          else uap2 Div one (expn (of_ses e) (Z.neg n))
         in
         Ses.Term.Qset.fold prod ~init:(exp e q) ~f:(fun e q s ->
-            mul (exp e q) s ) )
-  | Ap2 (Div, d, e) -> ap_ttt div d e
-  | Ap2 (Rem, d, e) -> ap_ttt rem d e
-  | And es -> apN and_ band tt es
-  | Or es -> apN or_ bor ff es
-  | Ap2 (Xor, d, e) -> ap2 xor bxor d e
-  | Ap2 (Shl, d, e) -> ap_ttt bshl d e
-  | Ap2 (Lshr, d, e) -> ap_ttt blshr d e
-  | Ap2 (Ashr, d, e) -> ap_ttt bashr d e
+            uap2 Mul (exp e q) s ) )
+  | Ap2 (Div, d, e) -> uap_ttt Div d e
+  | Ap2 (Rem, d, e) -> uap_ttt Rem d e
+  | And es -> apN and_ (uap2 BitAnd) tt es
+  | Or es -> apN or_ (uap2 BitOr) ff es
+  | Ap2 (Xor, d, e) -> ap2 xor (uap2 BitXor) d e
+  | Ap2 (Shl, d, e) -> uap_ttt BitShl d e
+  | Ap2 (Lshr, d, e) -> uap_ttt BitLshr d e
+  | Ap2 (Ashr, d, e) -> uap_ttt BitAshr d e
   | Ap3 (Conditional, cnd, thn, els) -> (
       let cnd = embed_into_fml (of_ses cnd) in
       match (of_ses thn, of_ses els) with
@@ -1150,7 +1151,7 @@ and of_ses : Ses.Term.t -> exp =
       extract ~seq:(of_ses seq) ~off:(of_ses off) ~len:(of_ses len)
   | Ap2 (Sized, siz, seq) -> sized ~seq:(of_ses seq) ~siz:(of_ses siz)
   | ApN (Concat, args) ->
-      concat (IArray.to_array (IArray.map ~f:of_ses args))
+      concat (Array.map ~f:of_ses (IArray.to_array args))
   | Ap1 (Select idx, rcd) ->
       select ~rcd:(of_ses rcd) ~idx:(integer (Z.of_int idx))
   | Ap2 (Update idx, rcd, elt) ->
@@ -1158,8 +1159,10 @@ and of_ses : Ses.Term.t -> exp =
         ~idx:(integer (Z.of_int idx))
         ~elt:(of_ses elt)
   | ApN (Record, elts) ->
-      record (IArray.to_array (IArray.map ~f:of_ses elts))
-  | RecRecord i -> rec_record i
+      let init = uap0 EmptyRecord in
+      IArray.foldi ~init elts ~f:(fun i rcd e ->
+          update ~rcd ~idx:(integer (Z.of_int i)) ~elt:(of_ses e) )
+  | RecRecord i -> uap0 (RecRecord i)
 
 let f_of_ses e = embed_into_fml (of_ses e)
 
@@ -1357,13 +1360,15 @@ end
  *)
 
 module Term_of_Llair = struct
-  let rec uap_ttt : 'a. (exp -> exp -> 'a) -> _ -> _ -> _ -> 'a =
+  let rec uap_te f a = uap1 f (exp a)
+  and uap_tte f a b = uap2 f (exp a) (exp b)
+
+  and usap_ttt : 'a. (exp -> exp -> 'a) -> _ -> _ -> _ -> 'a =
    fun f typ a b ->
     let bits = Llair.Typ.bit_size_of typ in
-    f (Term.unsigned bits (exp a)) (Term.unsigned bits (exp b))
+    f (uap1 (Unsigned bits) (exp a)) (uap1 (Unsigned bits) (exp b))
 
-  and uap_ttf (f : exp -> exp -> fml) typ a b = `Fml (uap_ttt f typ a b)
-  and ap_tt : 'a. (exp -> 'a) -> _ -> 'a = fun f a -> f (exp a)
+  and usap_ttf (f : exp -> exp -> fml) typ a b = `Fml (usap_ttt f typ a b)
   and ap_ttt : 'a. (exp -> exp -> 'a) -> _ -> _ -> 'a =
    fun f a b -> f (exp a) (exp b)
   and ap_ttf (f : exp -> exp -> fml) a b = `Fml (ap_ttt f a b)
@@ -1384,12 +1389,27 @@ module Term_of_Llair = struct
     let open Formula in
     match e with
     | Reg {name; global; typ= _} -> var (Var.program ~name ~global)
-    | Label {parent; name} -> label ~parent ~name
+    | Label {parent; name} -> uap0 (Label {parent; name})
     | Integer {typ= _; data} -> integer data
-    | Float {data; typ= _} -> float data
-    | Ap1 (Signed {bits}, _, e) -> ap_tt (signed bits) e
-    | Ap1 (Unsigned {bits}, _, e) -> ap_tt (unsigned bits) e
-    | Ap1 (Convert {src}, dst, e) -> ap_tt (convert src ~to_:dst) e
+    | Float {data; typ= _} -> (
+      match Q.of_float (Float.of_string data) with
+      | q when Q.is_real q -> rational q
+      | _ | (exception Invalid_argument _) -> uap0 (Float data) )
+    | Ap1 (Signed {bits}, _, e) ->
+        let a = exp e in
+        if bits = 1 then
+          match Formula.project a with
+          | Some fml -> Formula.inject fml
+          | _ -> uap1 (Signed bits) a
+        else uap1 (Signed bits) a
+    | Ap1 (Unsigned {bits}, _, e) ->
+        let a = exp e in
+        if bits = 1 then
+          match Formula.project a with
+          | Some fml -> Formula.inject fml
+          | _ -> uap1 (Unsigned bits) a
+        else uap1 (Unsigned bits) a
+    | Ap1 (Convert {src}, dst, e) -> uap_te (Convert {src; dst}) e
     | Ap2 (Eq, Integer {bits= 1; _}, d, e) -> ap_fff iff d e
     | Ap2 (Dq, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
     | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, d, e) -> ap_fff nimp d e
@@ -1402,10 +1422,10 @@ module Term_of_Llair = struct
     | Ap2 (Lt, _, d, e) -> ap_ttf lt d e
     | Ap2 (Ge, _, d, e) -> ap_ttf le e d
     | Ap2 (Le, _, d, e) -> ap_ttf le d e
-    | Ap2 (Ugt, typ, d, e) -> uap_ttf lt typ e d
-    | Ap2 (Ult, typ, d, e) -> uap_ttf lt typ d e
-    | Ap2 (Uge, typ, d, e) -> uap_ttf le typ e d
-    | Ap2 (Ule, typ, d, e) -> uap_ttf le typ d e
+    | Ap2 (Ugt, typ, d, e) -> usap_ttf lt typ e d
+    | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
+    | Ap2 (Uge, typ, d, e) -> usap_ttf le typ e d
+    | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
     | Ap2 (Ord, _, d, e) -> ap_ttf ord d e
     | Ap2 (Uno, _, d, e) -> ap_ttf uno d e
     | Ap2 (Add, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
@@ -1414,19 +1434,19 @@ module Term_of_Llair = struct
     | Ap2 (Add, _, d, e) -> ap_ttt add d e
     | Ap2 (Sub, _, d, e) -> ap_ttt sub d e
     | Ap2 (Mul, _, d, e) -> ap_ttt mul d e
-    | Ap2 (Div, _, d, e) -> ap_ttt div d e
-    | Ap2 (Rem, _, d, e) -> ap_ttt rem d e
-    | Ap2 (Udiv, typ, d, e) -> uap_ttt div typ d e
-    | Ap2 (Urem, typ, d, e) -> uap_ttt rem typ d e
+    | Ap2 (Div, _, d, e) -> uap_tte Div d e
+    | Ap2 (Rem, _, d, e) -> uap_tte Rem d e
+    | Ap2 (Udiv, typ, d, e) -> usap_ttt (uap2 Div) typ d e
+    | Ap2 (Urem, typ, d, e) -> usap_ttt (uap2 Rem) typ d e
     | Ap2 (And, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
     | Ap2 (Or, Integer {bits= 1; _}, d, e) -> ap_fff or_ d e
     | Ap2 (Xor, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 (And, _, d, e) -> ap_ttt band d e
-    | Ap2 (Or, _, d, e) -> ap_ttt bor d e
-    | Ap2 (Xor, _, d, e) -> ap_ttt bxor d e
-    | Ap2 (Shl, _, d, e) -> ap_ttt bshl d e
-    | Ap2 (Lshr, _, d, e) -> ap_ttt blshr d e
-    | Ap2 (Ashr, _, d, e) -> ap_ttt bashr d e
+    | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
+    | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e
+    | Ap2 (Xor, _, d, e) -> ap_ttt (uap2 BitXor) d e
+    | Ap2 (Shl, _, d, e) -> ap_ttt (uap2 BitShl) d e
+    | Ap2 (Lshr, _, d, e) -> ap_ttt (uap2 BitLshr) d e
+    | Ap2 (Ashr, _, d, e) -> ap_ttt (uap2 BitAshr) d e
     | Ap3 (Conditional, Integer {bits= 1; _}, cnd, pos, neg) ->
         ap_ffff _Cond cnd pos neg
     | Ap3 (Conditional, _, cnd, thn, els) ->
@@ -1436,8 +1456,10 @@ module Term_of_Llair = struct
     | Ap2 (Update idx, _, rcd, elt) ->
         update ~rcd:(exp rcd) ~idx:(integer (Z.of_int idx)) ~elt:(exp elt)
     | ApN (Record, _, elts) ->
-        record (IArray.to_array (IArray.map ~f:exp elts))
-    | RecRecord (i, _) -> rec_record i
+        let init = uap0 EmptyRecord in
+        IArray.foldi ~init elts ~f:(fun i rcd e ->
+            update ~rcd ~idx:(integer (Z.of_int i)) ~elt:(exp e) )
+    | RecRecord (i, _) -> uap0 (RecRecord i)
     | Ap1 (Splat, _, byt) -> splat (exp byt)
 end
 

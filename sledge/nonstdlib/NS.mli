@@ -87,6 +87,10 @@ module Array : sig
 
   val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
 
+  val map_endo : 'a t -> f:('a -> 'a) -> 'a t
+  (** Like map, but specialized to require [f] to be an endofunction, which
+      enables preserving [==] if [f] preserves [==] of every element. *)
+
   val fold_map_inplace :
     'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
 end

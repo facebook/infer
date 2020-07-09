@@ -92,6 +92,10 @@ module rec Term : sig
   val select : rcd:t -> idx:t -> t
   val update : rcd:t -> idx:t -> elt:t -> t
 
+  (* tuples *)
+  val tuple : t array -> t
+  val project : ary:int -> idx:int -> t -> t
+
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
 
