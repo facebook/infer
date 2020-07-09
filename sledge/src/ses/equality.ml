@@ -710,12 +710,6 @@ let fold_vars r ~init ~f =
 
 let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
-let diff_classes r s =
-  Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
-      match List.filter cls ~f:(fun exp -> not (entails_eq s rep exp)) with
-      | [] -> None
-      | cls -> Some cls )
-
 (** Existential Witnessing and Elimination *)
 
 let subst_invariant us s0 s =

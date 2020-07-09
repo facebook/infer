@@ -1190,28 +1190,8 @@ let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
 
 module Context = struct
   type t = Ses.Equality.t [@@deriving sexp]
-  type classes = exp list Term.Map.t
 
-  let classes_of_ses clss =
-    Ses.Term.Map.fold clss ~init:Term.Map.empty
-      ~f:(fun ~key:rep ~data:cls clss ->
-        let rep' = of_ses rep in
-        let cls' = List.map ~f:of_ses cls in
-        Term.Map.set ~key:rep' ~data:cls' clss )
-
-  let classes x = classes_of_ses (Ses.Equality.classes x)
-  let diff_classes x y = classes_of_ses (Ses.Equality.diff_classes x y)
   let pp = Ses.Equality.pp
-  let ppx_cls x = List.pp "@ = " (Term.ppx x)
-
-  let ppx_classes x fs clss =
-    List.pp "@ @<2>∧ "
-      (fun fs (rep, cls) ->
-        Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
-          (List.sort ~compare:Term.compare cls) )
-      fs (Term.Map.to_alist clss)
-
-  let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
   let invariant = Ses.Equality.invariant
   let true_ = Ses.Equality.true_
 
@@ -1232,13 +1212,48 @@ module Context = struct
   let is_true x = Ses.Equality.is_true x
   let is_false x = Ses.Equality.is_false x
   let entails_eq x e f = Ses.Equality.entails_eq x (to_ses e) (to_ses f)
-  let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
   let normalize x e = ses_map (Ses.Equality.normalize x) e
   let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
   let difference x e f = Ses.Equality.difference x (to_ses e) (to_ses f)
 
   let fold_terms ~init x ~f =
     Ses.Equality.fold_terms x ~init ~f:(fun s e -> f s (of_ses e))
+
+  (* Classes *)
+
+  let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
+
+  type classes = exp list Term.Map.t
+
+  let classes_of_ses clss =
+    Ses.Term.Map.fold clss ~init:Term.Map.empty
+      ~f:(fun ~key:rep ~data:cls clss ->
+        let rep' = of_ses rep in
+        let cls' = List.map ~f:of_ses cls in
+        Term.Map.set ~key:rep' ~data:cls' clss )
+
+  let classes x = classes_of_ses (Ses.Equality.classes x)
+
+  let diff_classes r s =
+    Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
+        match
+          List.filter cls ~f:(fun exp -> not (entails_eq s rep exp))
+        with
+        | [] -> None
+        | cls -> Some cls )
+
+  let ppx_cls x = List.pp "@ = " (Term.ppx x)
+
+  let ppx_classes x fs clss =
+    List.pp "@ @<2>∧ "
+      (fun fs (rep, cls) ->
+        Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
+          (List.sort ~compare:Term.compare cls) )
+      fs (Term.Map.to_alist clss)
+
+  let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
+
+  (* Substs *)
 
   module Subst = struct
     type t = Ses.Equality.Subst.t [@@deriving sexp]

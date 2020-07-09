@@ -20,10 +20,6 @@ val classes : t -> classes
 (** [classes r] maps each equivalence class representative to the other
     terms [r] proves equal to it. *)
 
-val diff_classes : t -> t -> classes
-(** [diff_classes r s] is the equality classes of [r] omitting equalities in
-    [s]. *)
-
 val pp : t pp
 val pp_classes : t pp
 val ppx_classes : Var.strength -> classes pp
