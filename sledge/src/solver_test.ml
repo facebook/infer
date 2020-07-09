@@ -69,7 +69,7 @@ let%test_module _ =
         ) infer_frame:   false |}]
 
     let%expect_test _ =
-      check_frame Sh.emp [n_; m_] (Sh.and_ (Term.eq m n) Sh.emp) ;
+      check_frame Sh.emp [n_; m_] (Sh.and_ (Formula.eq m n) Sh.emp) ;
       [%expect
         {|
         ( infer_frame:   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
@@ -101,7 +101,7 @@ let%test_module _ =
       let seg1 = Sh.seg {loc= l; bas= b; len= !10; siz= !10; seq= a} in
       let minued = Sh.star common seg1 in
       let subtrahend =
-        Sh.and_ (Term.eq m n)
+        Sh.and_ (Formula.eq m n)
           (Sh.exists
              (Var.Set.of_list [m_])
              (Sh.extend_us (Var.Set.of_list [m_]) common))
@@ -229,7 +229,7 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.and_
-           Term.(or_ (or_ (eq n !0) (eq n !1)) (eq n !2))
+           Formula.(or_ (or_ (eq n !0) (eq n !1)) (eq n !2))
            seg_split_symbolically)
         [m_; a_]
         (Sh.seg {loc= l; bas= l; len= m; siz= m; seq= a}) ;
@@ -263,7 +263,7 @@ let%test_module _ =
     (* Incompleteness: equivalent to above but using ≤ instead of ∨ *)
     let%expect_test _ =
       infer_frame
-        (Sh.and_ (Term.le n !2) seg_split_symbolically)
+        (Sh.and_ (Formula.le n !2) seg_split_symbolically)
         [m_; a_]
         (Sh.seg {loc= l; bas= l; len= m; siz= m; seq= a}) ;
       [%expect
@@ -278,7 +278,9 @@ let%test_module _ =
     (* Incompleteness: cannot witness existentials to satisfy non-equality
        pure constraints *)
     let%expect_test _ =
-      let subtrahend = Sh.and_ (Term.eq m a) (Sh.pure (Term.dq m !0)) in
+      let subtrahend =
+        Sh.and_ (Formula.eq m a) (Sh.pure (Formula.dq m !0))
+      in
       let minuend = Sh.extend_us (Var.Set.of_ a_) Sh.emp in
       infer_frame minuend [m_] subtrahend ;
       [%expect

@@ -38,7 +38,7 @@ let is_false = Sh.is_false
 let dnf = Sh.dnf
 
 let exec_assume q b =
-  Exec.assume q (Term.of_exp b) |> Option.map ~f:simplify
+  Exec.assume q (Formula.of_exp b) |> Option.map ~f:simplify
 
 let exec_kill q r = Exec.kill q (Var.of_reg r) |> simplify
 
@@ -122,7 +122,7 @@ let garbage_collect (q : t) ~wrt =
 let and_eqs sub formals actuals q =
   let and_eq q formal actual =
     let actual' = Term.rename sub actual in
-    Sh.and_ (Term.eq (Term.var formal) actual') q
+    Sh.and_ (Formula.eq (Term.var formal) actual') q
   in
   List.fold2_exn ~f:and_eq formals actuals ~init:q
 
@@ -277,7 +277,7 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
     Var.Set.fold formals ~init:q ~f:(fun q var ->
         let var = Term.var var in
         let renamed_var = Term.rename subst var in
-        Sh.and_ (Term.eq renamed_var var) q )
+        Sh.and_ (Formula.eq renamed_var var) q )
   in
   (* Add back the original formals name *)
   let post = Sh.rename subst post in

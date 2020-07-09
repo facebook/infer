@@ -56,90 +56,110 @@ module Var : sig
 end
 
 (** Terms *)
-module Term : sig
-  type term
-  type formula = term
+module rec Term : sig
+  type t [@@deriving compare, equal, sexp]
 
-  val ppx : Var.strength -> term pp
-  val pp : term pp
+  (* pretty-printing *)
+  val ppx : Var.strength -> t pp
+  val pp : t pp
 
-  module Map : Map.S with type key := term
+  module Map : Map.S with type key := t
 
   (** Construct *)
 
-  (** terms *)
-
   (* variables *)
-  val var : Var.t -> term
+  val var : Var.t -> t
 
   (* constants *)
-  val zero : term
-  val one : term
-  val integer : Z.t -> term
-  val rational : Q.t -> term
+  val zero : t
+  val one : t
+  val integer : Z.t -> t
+  val rational : Q.t -> t
 
   (* arithmetic *)
-  val neg : term -> term
-  val add : term -> term -> term
-  val sub : term -> term -> term
-  val mulq : Q.t -> term -> term
-  val mul : term -> term -> term
+  val neg : t -> t
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val mulq : Q.t -> t -> t
+  val mul : t -> t -> t
 
   (* sequences *)
-  val splat : term -> term
-  val sized : seq:term -> siz:term -> term
-  val extract : seq:term -> off:term -> len:term -> term
-  val concat : term array -> term
+  val splat : t -> t
+  val sized : seq:t -> siz:t -> t
+  val extract : seq:t -> off:t -> len:t -> t
+  val concat : t array -> t
 
   (* if-then-else *)
-  val ite : cnd:formula -> thn:term -> els:term -> term
-
-  (** formulas *)
-
-  (* constants *)
-  val true_ : formula
-  val false_ : formula
-
-  (* comparisons *)
-  val eq : term -> term -> formula
-  val dq : term -> term -> formula
-  val lt : term -> term -> formula
-  val le : term -> term -> formula
-
-  (* connectives *)
-  val not_ : formula -> formula
-  val and_ : formula -> formula -> formula
-  val or_ : formula -> formula -> formula
-  val conditional : cnd:formula -> thn:formula -> els:formula -> formula
+  val ite : cnd:Formula.t -> thn:t -> els:t -> t
 
   (** Convert *)
 
-  val of_exp : Llair.Exp.t -> term
+  val of_exp : Llair.Exp.t -> t
 
   (** Destruct *)
 
-  val d_int : term -> Z.t option
+  val d_int : t -> Z.t option
 
   (** Access *)
 
-  val const_of : term -> Q.t option
+  val const_of : t -> Q.t option
 
   (** Transform *)
 
-  val disjuncts : term -> term list
-  val rename : Var.Subst.t -> term -> term
+  val rename : Var.Subst.t -> t -> t
 
   (** Traverse *)
 
-  val fold_vars : term -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
+  val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 
   (** Query *)
 
-  val is_true : formula -> bool
-  val is_false : formula -> bool
-  val fv : term -> Var.Set.t
+  val fv : t -> Var.Set.t
+end
 
-  type t = term [@@deriving compare, equal, sexp]
+(** Formulas *)
+and Formula : sig
+  type t [@@deriving compare, equal, sexp]
+
+  val inject : t -> Term.t
+  val project : Term.t -> t option
+
+  (* pretty-printing *)
+  val ppx : Var.strength -> t pp
+  val pp : t pp
+
+  (** Construct *)
+
+  (* constants *)
+  val true_ : t
+  val false_ : t
+
+  (* comparisons *)
+  val eq : Term.t -> Term.t -> t
+  val dq : Term.t -> Term.t -> t
+  val lt : Term.t -> Term.t -> t
+  val le : Term.t -> Term.t -> t
+
+  (* connectives *)
+  val not_ : t -> t
+  val and_ : t -> t -> t
+  val or_ : t -> t -> t
+  val conditional : cnd:t -> thn:t -> els:t -> t
+
+  (** Convert *)
+
+  val of_exp : Llair.Exp.t -> t
+
+  (** Transform *)
+
+  val rename : Var.Subst.t -> t -> t
+  val disjuncts : t -> t list
+
+  (** Query *)
+
+  val is_true : t -> bool
+  val is_false : t -> bool
+  val fv : t -> Var.Set.t
 end
 
 (** Inference System *)
@@ -164,7 +184,7 @@ module Context : sig
   val true_ : t
   (** The diagonal relation, which only equates each term with itself. *)
 
-  val and_term : Var.Set.t -> Term.t -> t -> Var.Set.t * t
+  val and_formula : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
   (** Conjoin a (Boolean) term to a relation. *)
 
   val and_ : Var.Set.t -> t -> t -> Var.Set.t * t
@@ -197,6 +217,8 @@ module Context : sig
       relation, where [e'] and its subterms are expressed in terms of the
       relation's canonical representatives of each equivalence class. *)
 
+  val normalizef : t -> Formula.t -> Formula.t
+
   val difference : t -> Term.t -> Term.t -> Z.t option
   (** The difference as an offset. [difference r a b = Some k] if [r]
       implies [a = b+k], or [None] if [a] and [b] are not equal up to an
@@ -216,6 +238,8 @@ module Context : sig
 
     val subst : t -> Term.t -> Term.t
     (** Apply a substitution recursively to subterms. *)
+
+    val substf : t -> Formula.t -> Formula.t
 
     val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
     (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks

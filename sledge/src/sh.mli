@@ -19,7 +19,7 @@ type starjunction = private
   ; xs: Var.Set.t  (** existentially-bound variables *)
   ; ctx: Context.t
         (** first-order logical context induced by rest of formula *)
-  ; pure: Term.t  (** pure boolean constraints *)
+  ; pure: Formula.t  (** pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
 
@@ -56,10 +56,10 @@ val or_ : t -> t -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
-val pure : Term.t -> t
+val pure : Formula.t -> t
 (** Atomic pure boolean constraint formula. *)
 
-val and_ : Term.t -> t -> t
+val and_ : Formula.t -> t -> t
 (** Conjoin a boolean constraint to a formula. *)
 
 val and_ctx : Context.t -> t -> t
@@ -72,7 +72,7 @@ val and_subst : Context.Subst.t -> t -> t
 
 (** Update *)
 
-val with_pure : Term.t -> t -> t
+val with_pure : Formula.t -> t -> t
 (** [with_pure pure q] is [{q with pure}], which assumes that [q.pure] and
     [pure] are defined in the same vocabulary. Note that [ctx] is not
     weakened, so if [pure] and [q.pure] do not induce the same context, then

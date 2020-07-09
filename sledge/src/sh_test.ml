@@ -24,7 +24,7 @@ let%test_module _ =
     let ( ~$ ) = Var.Set.of_list
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( - ) = Term.sub
-    let ( = ) = Term.eq
+    let ( = ) = Formula.eq
     let f = Term.splat (* any uninterpreted function *)
 
     let wrt = Var.Set.empty
@@ -45,12 +45,12 @@ let%test_module _ =
     let y = Term.var y_
 
     let eq_concat (siz, seq) ms =
-      Term.(
-        eq (sized ~siz ~seq)
-          (concat (Array.map ~f:(fun (siz, seq) -> sized ~siz ~seq) ms)))
+      Formula.eq (Term.sized ~siz ~seq)
+        (Term.concat
+           (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms))
 
     let of_eqs l =
-      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Term.eq a b) q) l
+      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Formula.eq a b) q) l
 
     let%expect_test _ =
       let p = exists ~$[x_] (extend_us ~$[x_] emp) in
@@ -160,7 +160,7 @@ let%test_module _ =
           (star
              (pure (eq_concat (!16, e) [|(!8, a); (!8, d)|]))
              (or_
-                (pure (Term.dq x !0))
+                (pure (Formula.dq x !0))
                 (exists
                    (Var.Set.of_list [b_])
                    (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])))))

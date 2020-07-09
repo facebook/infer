@@ -9,7 +9,7 @@
 
 open Fol
 
-val assume : Sh.t -> Term.t -> Sh.t option
+val assume : Sh.t -> Formula.t -> Sh.t option
 val kill : Sh.t -> Var.t -> Sh.t
 val move : Sh.t -> (Var.t * Term.t) iarray -> Sh.t
 val load : Sh.t -> reg:Var.t -> ptr:Term.t -> len:Term.t -> Sh.t option

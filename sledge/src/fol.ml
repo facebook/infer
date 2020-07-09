@@ -10,10 +10,29 @@ module Var = Ses.Term.Var
 module Term = struct
   include Ses.Term
 
-  type term = t
-  type formula = t
-
   let ite = conditional
 end
 
-module Context = Ses.Equality
+module Formula = struct
+  include Ses.Term
+
+  let inject b = b
+  let project e = Some e
+
+  let of_exp e =
+    let b = Term.of_exp e in
+    match project b with Some p -> p | None -> dq Term.zero b
+end
+
+module Context = struct
+  include Ses.Equality
+
+  let and_formula = and_term
+  let normalizef = normalize
+
+  module Subst = struct
+    include Subst
+
+    let substf = subst
+  end
+end
