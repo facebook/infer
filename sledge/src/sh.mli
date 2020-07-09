@@ -7,7 +7,7 @@
 
 (** Symbolic Heap Formulas *)
 
-open Ses
+open Fol
 
 (** Segment of memory starting at [loc] containing [seq] (a byte-array) of
     size [siz], contained in an enclosing allocation-block starting at [bas]

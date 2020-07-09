@@ -7,7 +7,7 @@
 
 (** Abstract domain *)
 
-open Ses
+open Fol
 
 type t = Sh.t [@@deriving equal, sexp]
 

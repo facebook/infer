@@ -7,7 +7,7 @@
 
 (** Symbolic Heap Formulas *)
 
-open Ses
+open Fol
 
 [@@@warning "+9"]
 

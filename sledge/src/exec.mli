@@ -7,7 +7,7 @@
 
 (** Symbolic Execution *)
 
-open Ses
+open Fol
 
 val assume : Sh.t -> Term.t -> Sh.t option
 val kill : Sh.t -> Var.t -> Sh.t
