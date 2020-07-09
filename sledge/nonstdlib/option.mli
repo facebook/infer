@@ -16,4 +16,7 @@ val or_else : f:(unit -> 'a option) -> 'a option -> 'a option
 
 val cons : 'a t -> 'a list -> 'a list
 
-module Monad_syntax : Monad_syntax with type 'a t := 'a option
+module Import : sig
+  include Monad_syntax with type 'a t := 'a option
+  include module type of Monad_infix
+end

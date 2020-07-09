@@ -21,3 +21,8 @@ module Monad_syntax = struct
   let ( let* ) x f = bind ~f x
   let ( and* ) x y = both x y
 end
+
+module Import = struct
+  include Monad_infix
+  include Monad_syntax
+end

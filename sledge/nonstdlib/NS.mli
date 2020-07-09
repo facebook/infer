@@ -73,8 +73,7 @@ module Invariant : module type of Core.Invariant
 (** Containers *)
 
 module Option = Option
-include module type of Option.Monad_infix
-include module type of Option.Monad_syntax
+include module type of Option.Import
 module List = List
 
 module Array : sig

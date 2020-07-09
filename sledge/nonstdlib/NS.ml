@@ -76,8 +76,7 @@ end
 (** Containers *)
 
 module Option = Option
-include Option.Monad_infix
-include Option.Monad_syntax
+include Option.Import
 module List = List
 
 module Array = struct

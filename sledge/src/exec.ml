@@ -637,7 +637,7 @@ let strlen_spec reg ptr =
  * Symbolic Execution
  *)
 
-open Option.Monad_syntax
+open Option.Import
 
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   let gain_us = Var.Set.diff q1.us q0.us in
