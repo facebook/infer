@@ -1183,23 +1183,19 @@ module Context = struct
         let cls' = List.map ~f:of_ses cls in
         Term.Map.set ~key:rep' ~data:cls' clss )
 
-  let classes_to_ses clss =
-    Term.Map.fold clss ~init:Ses.Term.Map.empty
-      ~f:(fun ~key:rep ~data:cls clss ->
-        let rep' = to_ses rep in
-        let cls' = List.map ~f:to_ses cls in
-        Ses.Term.Map.set ~key:rep' ~data:cls' clss )
-
   let classes x = classes_of_ses (Ses.Equality.classes x)
   let diff_classes x y = classes_of_ses (Ses.Equality.diff_classes x y)
   let pp = Ses.Equality.pp
-  let pp_classes = Ses.Equality.pp_classes
+  let ppx_cls x = List.pp "@ = " (Term.ppx x)
 
   let ppx_classes x fs clss =
-    Ses.Equality.ppx_classes
-      (fun v -> x (v_of_ses v))
-      fs (classes_to_ses clss)
+    List.pp "@ @<2>∧ "
+      (fun fs (rep, cls) ->
+        Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
+          (List.sort ~compare:Term.compare cls) )
+      fs (Term.Map.to_alist clss)
 
+  let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
   let invariant = Ses.Equality.invariant
   let true_ = Ses.Equality.true_
 
