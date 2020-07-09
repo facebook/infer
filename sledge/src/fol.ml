@@ -98,6 +98,7 @@ module Formula = struct
   let project e = Some e
   let tt = true_
   let ff = false_
+  let cond ~cnd ~pos ~neg = conditional ~cnd ~thn:pos ~els:neg
 
   let of_exp e =
     let b = Term.of_exp e in

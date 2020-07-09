@@ -144,7 +144,7 @@ and Formula : sig
   val not_ : t -> t
   val and_ : t -> t -> t
   val or_ : t -> t -> t
-  val conditional : cnd:t -> thn:t -> els:t -> t
+  val cond : cnd:t -> pos:t -> neg:t -> t
 
   (** Convert *)
 

@@ -412,9 +412,9 @@ let realloc_spec reg ptr siz =
     Sh.or_
       (Sh.and_ (Formula.eq loc Term.zero) (Sh.rename sub foot))
       (Sh.and_
-         (Formula.conditional ~cnd:(Formula.le len siz)
-            ~thn:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~els:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
+         (Formula.cond ~cnd:(Formula.le len siz)
+            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
          (Sh.seg rseg))
   in
   {foot; sub; ms; post}
@@ -441,9 +441,9 @@ let rallocx_spec reg ptr siz =
     Sh.or_
       (Sh.and_ (Formula.eq loc Term.zero) (Sh.rename sub pheap))
       (Sh.and_
-         (Formula.conditional ~cnd:(Formula.le len siz)
-            ~thn:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~els:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
+         (Formula.cond ~cnd:(Formula.le len siz)
+            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
          (Sh.seg rseg))
   in
   {foot; sub; ms; post}
@@ -472,9 +472,9 @@ let xallocx_spec reg ptr siz ext =
   let post =
     Sh.and_
       (Formula.and_
-         (Formula.conditional ~cnd:(Formula.le len siz)
-            ~thn:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~els:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
+         (Formula.cond ~cnd:(Formula.le len siz)
+            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
          (Formula.and_ (Formula.le siz reg)
             (Formula.le reg (Term.add siz ext))))
       (Sh.seg seg')
