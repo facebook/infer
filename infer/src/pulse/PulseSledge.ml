@@ -6,14 +6,13 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
 
 [@@@warning "+9"]
 
 module Var = struct
-  module Var = Ses.Var
+  module Var = Sledge.Fol.Var
 
   let of_absval (v : AbstractValue.t) = Var.identified ~name:"v" ~id:(v :> int)
 
@@ -26,153 +25,133 @@ module Var = struct
 end
 
 module Term = struct
-  module Term = Ses.Term
+  module Term = Sledge.Fol.Term
 
   let of_intlit i = Term.integer (IntLit.to_big_int i)
 
   let of_absval v = Term.var (Var.of_absval v)
 
-  let of_unop (unop : Unop.t) t = match unop with Neg -> Term.neg t | BNot | LNot -> Term.not_ t
+  let of_unop (unop : Unop.t) t = match unop with Neg -> Some (Term.neg t) | BNot | LNot -> None
 
   let of_binop (binop : Binop.t) t1 t2 =
     let open Term in
     match binop with
     | PlusA _ | PlusPI ->
-        add t1 t2
+        Some (add t1 t2)
     | MinusA _ | MinusPI | MinusPP ->
-        sub t1 t2
+        Some (sub t1 t2)
     | Mult _ ->
-        mul t1 t2
-    | Div ->
-        div t1 t2
-    | Mod ->
-        rem t1 t2
-    | Shiftlt ->
-        shl t1 t2
-    | Shiftrt ->
-        lshr t1 t2
-    | Lt ->
-        lt t1 t2
-    | Gt ->
-        lt t2 t1
-    | Le ->
-        le t1 t2
-    | Ge ->
-        le t2 t1
-    | Eq ->
-        eq t1 t2
-    | Ne ->
-        dq t1 t2
-    | BAnd | LAnd ->
-        and_ t1 t2
-    | BOr | LOr ->
-        or_ t1 t2
-    | BXor ->
-        xor t1 t2
+        Some (mul t1 t2)
+    | Div | Mod | Shiftlt | Shiftrt | Lt | Gt | Le | Ge | Eq | Ne | BAnd | LAnd | BOr | LOr | BXor
+      ->
+        None
 
 
   include Term
 end
 
-module Equality = struct
-  include Ses.Equality
+module Formula = struct
+  module Formula = Sledge.Fol.Formula
+
+  let term_binop (binop : Binop.t) t1 t2 =
+    match binop with
+    | BAnd
+    | BOr
+    | BXor
+    | PlusA _
+    | PlusPI
+    | MinusA _
+    | MinusPI
+    | MinusPP
+    | Mult _
+    | Div
+    | Mod
+    | Shiftlt
+    | Shiftrt ->
+        Term.of_binop binop t1 t2 |> Option.map ~f:(fun t -> Formula.dq t Term.zero)
+    | Lt ->
+        Some (Formula.lt t1 t2)
+    | Gt ->
+        Some (Formula.lt t2 t1)
+    | Le ->
+        Some (Formula.le t1 t2)
+    | Ge ->
+        Some (Formula.le t2 t1)
+    | Eq ->
+        Some (Formula.eq t1 t2)
+    | Ne ->
+        Some (Formula.dq t1 t2)
+    | LAnd ->
+        Option.both (Formula.project t1) (Formula.project t2)
+        |> Option.map ~f:(fun (f1, f2) -> Formula.and_ f1 f2)
+    | LOr ->
+        Option.both (Formula.project t1) (Formula.project t2)
+        |> Option.map ~f:(fun (f1, f2) -> Formula.or_ f1 f2)
+
+
+  include Formula
+end
+
+module Context = struct
+  include Sledge.Fol.Context
 
   let assert_no_new_vars api new_vars =
     if not (Var.Set.is_empty new_vars) then
       L.die InternalError "Huho, %s generated fresh new variables %a" api Var.Set.pp new_vars
 
 
-  let and_eq t1 t2 r =
-    let new_vars, r' = Ses.Equality.and_eq Var.Set.empty t1 t2 r in
-    assert_no_new_vars "Equality.and_eq" new_vars ;
-    r'
-
-
-  let and_term t r =
-    let new_vars, r' = Ses.Equality.and_term Var.Set.empty t r in
-    assert_no_new_vars "Equality.and_term" new_vars ;
+  let and_formula phi r =
+    let new_vars, r' = Sledge.Fol.Context.and_formula Var.Set.empty phi r in
+    assert_no_new_vars "Context.and_formula" new_vars ;
     r'
 
 
   let and_ r1 r2 =
-    let new_vars, r' = Ses.Equality.and_ Var.Set.empty r1 r2 in
-    assert_no_new_vars "Equality.and_" new_vars ;
+    let new_vars, r' = Sledge.Fol.Context.and_ Var.Set.empty r1 r2 in
+    assert_no_new_vars "Context.and_" new_vars ;
     r'
 
 
   let apply_subst subst r =
-    let new_vars, r' = Ses.Equality.apply_subst Var.Set.empty subst r in
-    assert_no_new_vars "Equality.apply_subst" new_vars ;
+    let new_vars, r' = Sledge.Fol.Context.apply_subst Var.Set.empty subst r in
+    assert_no_new_vars "Context.apply_subst" new_vars ;
     r'
 end
 
-(** We distinguish between what the equality relation of sledge can express and the "non-equalities"
-    terms that this relation ignores. We keep the latter around for completeness: we can still
-    substitute known equalities into these and sometimes get contradictions back. *)
-type t = {eqs: Equality.t lazy_t; non_eqs: Term.t lazy_t}
+type t = Context.t lazy_t
 
-let pp fmt {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
-  F.fprintf fmt "%a∧%a" Equality.pp eqs Term.pp non_eqs
+let pp fmt (lazy phi) = Context.pp fmt phi
 
+let true_ = Lazy.from_val Context.true_
 
-let true_ = {eqs= Lazy.from_val Equality.true_; non_eqs= Lazy.from_val Term.true_}
+let and_formula f phi = lazy (Context.and_formula f (Lazy.force phi))
 
-let and_eq t1 t2 phi = {phi with eqs= lazy (Equality.and_eq t1 t2 (Lazy.force phi.eqs))}
+let and_ phi1 phi2 = lazy (Context.and_ (Lazy.force phi1) (Lazy.force phi2))
 
-let and_term (t : Term.t) phi =
-  (* add the term to the relation *)
-  let eqs = lazy (Equality.and_term t (Lazy.force phi.eqs)) in
-  (* [t] normalizes to [true_] so [non_eqs] never changes, do this regardless for now *)
-  let non_eqs = lazy (Term.and_ (Lazy.force phi.non_eqs) (Equality.normalize (Lazy.force eqs) t)) in
-  {eqs; non_eqs}
+let is_known_zero t phi = Context.entails_eq (Lazy.force phi) t Term.zero
 
+let is_unsat phi = Context.is_false (Lazy.force phi)
 
-let and_ phi1 phi2 =
-  { eqs= lazy (Equality.and_ (Lazy.force phi1.eqs) (Lazy.force phi2.eqs))
-  ; non_eqs= lazy (Term.and_ (Lazy.force phi1.non_eqs) (Lazy.force phi2.non_eqs)) }
-
-
-let is_known_zero t phi = Equality.entails_eq (Lazy.force phi.eqs) t Term.zero
-
-(* NOTE: not normalizing non_eqs here gives imprecise results but is cheaper *)
-let is_unsat {eqs; non_eqs} =
-  (* [Term.is_false] is cheap, forcing [eqs] is expensive, then calling [Equality.normalize] is
-     expensive on top of that *)
-  Term.is_false (Lazy.force non_eqs)
-  || Equality.is_false (Lazy.force eqs)
-  || Term.is_false (Equality.normalize (Lazy.force eqs) (Lazy.force non_eqs))
-
-
-let fv {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
-  Term.Var.Set.union (Equality.fv eqs) (Term.fv non_eqs)
-
+let fv (lazy phi) = Context.fv phi
 
 let fold_map_variables phi ~init ~f =
-  let term_fold_map t ~init ~f =
-    Term.fold_map_rec_pre t ~init ~f:(fun acc t ->
-        Var.of_term t
-        |> Option.map ~f:(fun v ->
-               let acc', v' = f acc v in
-               (acc', Term.var v') ) )
+  let acc, phi' =
+    Context.classes (Lazy.force phi)
+    |> Term.Map.fold ~init:(init, Context.true_) ~f:(fun ~key:t ~data:equal_ts (acc, phi') ->
+           let acc, t' = Term.fold_map_vars ~init:acc ~f t in
+           List.fold equal_ts ~init:(acc, phi') ~f:(fun (acc, phi') equal_t ->
+               let acc, t_mapped = Term.fold_map_vars ~init:acc ~f equal_t in
+               (acc, Context.and_formula (Formula.eq t' t_mapped) phi') ) )
   in
-  let acc, eqs' =
-    Equality.classes (Lazy.force phi.eqs)
-    |> Term.Map.fold ~init:(init, Equality.true_) ~f:(fun ~key:t ~data:equal_ts (acc, eqs') ->
-           let acc, t' = term_fold_map ~init:acc ~f t in
-           List.fold equal_ts ~init:(acc, eqs') ~f:(fun (acc, eqs') equal_t ->
-               let acc, t_mapped = term_fold_map ~init:acc ~f equal_t in
-               (acc, Equality.and_eq t' t_mapped eqs') ) )
-  in
-  let acc, non_eqs' = term_fold_map ~init:acc ~f (Lazy.force phi.non_eqs) in
-  (acc, {eqs= Lazy.from_val eqs'; non_eqs= Lazy.from_val non_eqs'})
+  (acc, Lazy.from_val phi')
 
 
 let simplify ~keep phi =
   let all_vs = fv phi in
   let keep_vs =
     AbstractValue.Set.fold
-      (fun v keep_vs -> Term.Var.Set.add keep_vs (Var.of_absval v))
-      keep Term.Var.Set.empty
+      (fun v keep_vs -> Var.Set.add keep_vs (Var.of_absval v))
+      keep Var.Set.empty
   in
-  let simpl_subst = Equality.solve_for_vars [keep_vs; all_vs] (Lazy.force phi.eqs) in
-  {phi with eqs= Lazy.from_val (Equality.apply_subst simpl_subst (Lazy.force phi.eqs))}
+  let simpl_subst = Context.solve_for_vars [keep_vs; all_vs] (Lazy.force phi) in
+  Lazy.from_val (Context.apply_subst simpl_subst (Lazy.force phi))

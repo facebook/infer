@@ -128,6 +128,7 @@ module Var : sig
   val of_ : term -> t
   val of_term : term -> t option
   val of_reg : Llair.Reg.t -> t
+  val program : name:string -> global:bool -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t

@@ -51,7 +51,7 @@ let and_nonnegative v ({satisfiable; bo_itvs; citvs; pudge} as phi) =
     { satisfiable
     ; bo_itvs= BoItvs.add v Itv.ItvPure.nat bo_itvs
     ; citvs= CItvs.add v CItv.zero_inf citvs
-    ; pudge= Pudge.and_term Pudge.Term.(le zero (of_absval v)) pudge }
+    ; pudge= Pudge.(and_formula (Formula.lt Term.zero (Term.of_absval v)) pudge) }
 
 
 let and_positive v ({satisfiable; bo_itvs; citvs; pudge} as phi) =
@@ -60,7 +60,7 @@ let and_positive v ({satisfiable; bo_itvs; citvs; pudge} as phi) =
     { satisfiable
     ; bo_itvs= BoItvs.add v Itv.ItvPure.pos bo_itvs
     ; citvs= CItvs.add v (CItv.ge_to IntLit.one) citvs
-    ; pudge= Pudge.and_term Pudge.Term.(lt zero (of_absval v)) pudge }
+    ; pudge= Pudge.(and_formula (Formula.lt Term.zero (Term.of_absval v)) pudge) }
 
 
 let and_eq_int v i ({satisfiable; bo_itvs; citvs; pudge} as phi) =
@@ -69,7 +69,7 @@ let and_eq_int v i ({satisfiable; bo_itvs; citvs; pudge} as phi) =
     { satisfiable
     ; bo_itvs= BoItvs.add v (Itv.ItvPure.of_int_lit i) bo_itvs
     ; citvs= CItvs.add v (CItv.equal_to i) citvs
-    ; pudge= Pudge.and_eq (Pudge.Term.of_absval v) (Pudge.Term.of_intlit i) pudge }
+    ; pudge= Pudge.(and_formula (Formula.eq (Term.of_absval v) (Term.of_intlit i)) pudge) }
 
 
 let simplify ~keep {satisfiable; bo_itvs; citvs; pudge} =
@@ -182,8 +182,9 @@ let and_pudge_callee subst pudge_caller pudge_callee =
         let subst', v_caller = subst_find_or_new subst v_callee in
         (subst', Pudge.Var.of_absval v_caller) )
   in
-  (* Don't trigger the computation of [path_condition] by asking for satisfiability here. Instead,
-     pudge (un-)satisfiability is computed lazily when we discover issues. *)
+  (* Don't trigger the computation of the underlying Sledge data structure by asking for
+     satisfiability here. Instead, pudge (un-)satisfiability is computed lazily when we discover
+     issues. *)
   (subst, Pudge.and_ pudge_caller pudge_callee_translated)
 
 
@@ -240,16 +241,19 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs bo_itvs =
   BoItvs.add binop_addr bo_itv bo_itvs
 
 
-let eval_path_condition_binop binop_addr binop op_lhs op_rhs pudge =
+let eval_pudge_binop binop_addr binop op_lhs op_rhs pudge =
+  let open Pudge in
   let term_of_op = function
     | LiteralOperand i ->
-        Pudge.Term.of_intlit i
+        Term.of_intlit i
     | AbstractValueOperand v ->
-        Pudge.Term.of_absval v
+        Term.of_absval v
   in
-  Pudge.and_eq (Pudge.Term.of_absval binop_addr)
-    (Pudge.Term.of_binop binop (term_of_op op_lhs) (term_of_op op_rhs))
-    pudge
+  match Term.of_binop binop (term_of_op op_lhs) (term_of_op op_rhs) with
+  | None ->
+      pudge
+  | Some t_binop ->
+      and_formula (Formula.eq (Term.of_absval binop_addr) t_binop) pudge
 
 
 let eval_binop binop_addr binop op_lhs op_rhs ({satisfiable; bo_itvs; citvs; pudge} as phi) =
@@ -258,7 +262,7 @@ let eval_binop binop_addr binop op_lhs op_rhs ({satisfiable; bo_itvs; citvs; pud
     { satisfiable
     ; bo_itvs= eval_bo_itv_binop binop_addr binop op_lhs op_rhs bo_itvs
     ; citvs= eval_citv_binop binop_addr binop op_lhs op_rhs citvs
-    ; pudge= eval_path_condition_binop binop_addr binop op_lhs op_rhs pudge }
+    ; pudge= eval_pudge_binop binop_addr binop op_lhs op_rhs pudge }
 
 
 let eval_citv_unop unop_addr unop operand_addr citvs =
@@ -278,8 +282,13 @@ let eval_bo_itv_unop unop_addr unop operand_addr bo_itvs =
       BoItvs.add unop_addr itv bo_itvs
 
 
-let eval_path_condition_unop unop_addr unop addr pudge =
-  Pudge.and_eq (Pudge.Term.of_absval unop_addr) Pudge.Term.(of_unop unop (of_absval addr)) pudge
+let eval_pudge_unop unop_addr (unop : Unop.t) addr pudge =
+  let open Pudge in
+  match Term.of_unop unop (Term.of_absval addr) with
+  | None ->
+      pudge
+  | Some t_unop ->
+      and_formula (Formula.eq (Term.of_absval unop_addr) t_unop) pudge
 
 
 let eval_unop unop_addr unop addr ({satisfiable; bo_itvs; citvs; pudge} as phi) =
@@ -288,7 +297,7 @@ let eval_unop unop_addr unop addr ({satisfiable; bo_itvs; citvs; pudge} as phi) 
     { satisfiable
     ; bo_itvs= eval_bo_itv_unop unop_addr unop addr bo_itvs
     ; citvs= eval_citv_unop unop_addr unop addr citvs
-    ; pudge= eval_path_condition_unop unop_addr unop addr pudge }
+    ; pudge= eval_pudge_unop unop_addr unop addr pudge }
 
 
 let prune_bo_with_bop ~negated v_opt arith bop arith' phi =
@@ -328,15 +337,18 @@ let bind_satisfiable phi ~f = if phi.satisfiable then f phi else phi
 let prune_binop ~negated bop lhs_op rhs_op ({satisfiable; bo_itvs= _; citvs; pudge} as phi) =
   if not satisfiable then phi
   else
-    let value_lhs_opt, arith_lhs_opt, bo_itv_lhs, path_cond_lhs = eval_operand phi lhs_op in
-    let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, path_cond_rhs = eval_operand phi rhs_op in
+    let value_lhs_opt, arith_lhs_opt, bo_itv_lhs, pudge_lhs = eval_operand phi lhs_op in
+    let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, pudge_rhs = eval_operand phi rhs_op in
     let phi =
-      let pudge =
-        let t_positive = Pudge.Term.of_binop bop path_cond_lhs path_cond_rhs in
-        let t = if negated then Pudge.Term.not_ t_positive else t_positive in
-        Pudge.and_term t pudge
-      in
-      {phi with pudge}
+      match Pudge.Formula.term_binop bop pudge_lhs pudge_rhs with
+      | None ->
+          phi
+      | Some f_positive ->
+          let pudge =
+            let f = if negated then Pudge.Formula.not_ f_positive else f_positive in
+            Pudge.and_formula f pudge
+          in
+          {phi with pudge}
     in
     match CItv.abduce_binop_is_true ~negated bop arith_lhs_opt arith_rhs_opt with
     | Unsatisfiable ->

@@ -10,6 +10,7 @@ module Var : sig
   type t [@@deriving compare, equal, sexp]
   type strength = t -> [`Universal | `Existential | `Anonymous] option
 
+  val ppx : strength -> t pp
   val pp : t pp
 
   module Map : Map.S with type key := t
@@ -98,17 +99,22 @@ module rec Term : sig
 
   val const_of : t -> Q.t option
 
-  (** Transform *)
-
-  val rename : Var.Subst.t -> t -> t
-
-  (** Traverse *)
-
-  val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
-
   (** Query *)
 
   val fv : t -> Var.Set.t
+
+  (** Traverse *)
+
+  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+
+  (** Transform *)
+
+  val map_vars : f:(Var.t -> Var.t) -> t -> t
+
+  val fold_map_vars :
+    t -> init:'a -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
+
+  val rename : Var.Subst.t -> t -> t
 end
 
 (** Formulas *)
@@ -140,16 +146,25 @@ and Formula : sig
   val or_ : t -> t -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
 
+  (** Query *)
+
+  val fv : t -> Var.Set.t
+  val is_true : t -> bool
+  val is_false : t -> bool
+
+  (** Traverse *)
+
+  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+
   (** Transform *)
+
+  val map_vars : f:(Var.t -> Var.t) -> t -> t
+
+  val fold_map_vars :
+    init:'a -> t -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
 
   val rename : Var.Subst.t -> t -> t
   val disjuncts : t -> t list
-
-  (** Query *)
-
-  val is_true : t -> bool
-  val is_false : t -> bool
-  val fv : t -> Var.Set.t
 end
 
 (** Inference System *)
@@ -214,7 +229,7 @@ module Context : sig
       implies [a = b+k], or [None] if [a] and [b] are not equal up to an
       integer offset. *)
 
-  val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
+  val fold_terms : init:'a -> t -> f:('a -> Term.t -> 'a) -> 'a
 
   (** Solution Substitutions *)
   module Subst : sig

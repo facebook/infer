@@ -1040,6 +1040,8 @@ module Var = struct
     | Some v -> v
     | _ -> violates Llair.Reg.invariant r
 
+  let program ~name ~global = Var {name; id= (if global then -1 else 0)}
+
   let fresh name ~wrt =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
     let x' = Var {name; id= max + 1} in

@@ -21,19 +21,25 @@ module Term = struct
 
   let zero = ()
 
-  let le () () = ()
+  let of_intlit _ = ()
+
+  let of_absval _ = ()
+
+  let of_unop _ () = None
+
+  let of_binop _ () () = None
+end
+
+module Formula = struct
+  type t = unit
+
+  let eq () () = ()
 
   let lt () () = ()
 
   let not_ () = ()
 
-  let of_intlit _ = ()
-
-  let of_absval _ = ()
-
-  let of_unop _ () = ()
-
-  let of_binop _ () () = ()
+  let term_binop _ () () = None
 end
 
 (* same type as {!PulsePathCondition.t} to be nice to summary serialization *)
@@ -46,9 +52,7 @@ let pp fmt {eqs= (lazy eqs); non_eqs= (lazy non_eqs)} =
 
 let true_ = {eqs= Lazy.from_val Ses.Equality.true_; non_eqs= Lazy.from_val Ses.Term.true_}
 
-let and_eq () () phi = phi
-
-let and_term () phi = phi
+let and_formula () phi = phi
 
 let and_ phi1 _ = phi1
 

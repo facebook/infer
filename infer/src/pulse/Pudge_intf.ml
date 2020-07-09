@@ -16,26 +16,6 @@ module type S = sig
 
   val true_ : t
 
-  module Term : sig
-    type t
-
-    val zero : t
-
-    val le : t -> t -> t
-
-    val lt : t -> t -> t
-
-    val not_ : t -> t
-
-    val of_intlit : IntLit.t -> t
-
-    val of_absval : AbstractValue.t -> t
-
-    val of_unop : Unop.t -> t -> t
-
-    val of_binop : Binop.t -> t -> t -> t
-  end
-
   module Var : sig
     type t
 
@@ -46,9 +26,33 @@ module type S = sig
         [AbstractValue.t] using [Var.of_absval] *)
   end
 
-  val and_eq : Term.t -> Term.t -> t -> t
+  module Term : sig
+    type t
 
-  val and_term : Term.t -> t -> t
+    val zero : t
+
+    val of_intlit : IntLit.t -> t
+
+    val of_absval : AbstractValue.t -> t
+
+    val of_unop : Unop.t -> t -> t option
+
+    val of_binop : Binop.t -> t -> t -> t option
+  end
+
+  module Formula : sig
+    type t
+
+    val eq : Term.t -> Term.t -> t
+
+    val lt : Term.t -> Term.t -> t
+
+    val not_ : t -> t
+
+    val term_binop : Binop.t -> Term.t -> Term.t -> t option
+  end
+
+  val and_formula : Formula.t -> t -> t
 
   val and_ : t -> t -> t
 
