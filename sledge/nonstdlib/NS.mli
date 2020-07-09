@@ -79,12 +79,19 @@ module List = List
 module Array : sig
   include module type of Array
 
+  type 'a t = 'a Array.t [@@deriving compare, equal, hash, sexp]
+
+  module Import : sig
+    type 'a array = 'a t [@@deriving compare, equal, hash, sexp]
+  end
+
   val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
 
   val fold_map_inplace :
     'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
 end
 
+include module type of Array.Import
 module IArray = IArray
 include module type of IArray.Import
 module Set = Set

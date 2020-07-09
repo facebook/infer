@@ -82,6 +82,13 @@ module List = List
 module Array = struct
   include Core.Array
 
+  let hash_fold_t hash_fold_elt s a =
+    Hash.Builtin.hash_fold_array_frozen hash_fold_elt s a
+
+  module Import = struct
+    type 'a array = 'a t [@@deriving compare, equal, hash, sexp]
+  end
+
   let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
 
   let fold_map_inplace a ~init ~f =
@@ -95,6 +102,7 @@ module Array = struct
     !s
 end
 
+include Array.Import
 module IArray = IArray
 include IArray.Import
 module Set = Set
