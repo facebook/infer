@@ -25,7 +25,8 @@ let%test_module _ =
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( - ) = Term.sub
     let ( = ) = Term.eq
-    let f = Term.unsigned 8
+    let f = Term.splat (* any uninterpreted function *)
+
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let b_, wrt = Var.fresh "b" ~wrt
@@ -146,11 +147,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   %x_6 = ((u8) %x_6) ∧ (%y_7 + -1) = ((u8) %y_7) ∧ emp
+        ∃ %x_6 .   %x_6 = %x_6^ ∧ (%y_7 + -1) = %y_7^ ∧ emp
 
-          (%y_7 + -1) = ((u8) %y_7) ∧ (((u8) %y_7) = (%y_7 + -1)) ∧ emp
+          (%y_7 + -1) = %y_7^ ∧ (%y_7^ = (%y_7 + -1)) ∧ emp
 
-          (%y_7 + -1) = ((u8) %y_7) ∧ emp |}]
+          (%y_7 + -1) = %y_7^ ∧ emp |}]
 
     let%expect_test _ =
       let q =
