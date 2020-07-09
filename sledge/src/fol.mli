@@ -169,7 +169,7 @@ end
 
 (** Inference System *)
 module Context : sig
-  type t [@@deriving compare, equal, sexp]
+  type t [@@deriving sexp]
   type classes = Term.t list Term.Map.t
 
   val classes : t -> classes

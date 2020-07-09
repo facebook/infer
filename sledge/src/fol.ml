@@ -1173,7 +1173,7 @@ let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
  *)
 
 module Context = struct
-  type t = Ses.Equality.t [@@deriving compare, equal, sexp]
+  type t = Ses.Equality.t [@@deriving sexp]
   type classes = exp list Term.Map.t
 
   let classes_of_ses clss =

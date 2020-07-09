@@ -17,7 +17,7 @@ type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
 type starjunction =
   { us: Var.Set.t
   ; xs: Var.Set.t
-  ; ctx: Context.t
+  ; ctx: Context.t [@ignore]
   ; pure: Formula.t
   ; heap: seg list
   ; djns: disjunction list }
