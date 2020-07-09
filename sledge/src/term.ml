@@ -253,7 +253,7 @@ let assert_monomial mono =
   match mono with
   | Mul args ->
       Qset.iter args ~f:(fun factor exponent ->
-          assert (Q.is_real exponent) ;
+          assert (Z.equal (Q.den exponent) Z.one) ;
           assert (Q.sign exponent > 0) ;
           assert_indeterminate factor |> Fn.id )
   | _ -> assert_indeterminate mono |> Fn.id
