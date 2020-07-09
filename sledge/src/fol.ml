@@ -7,4 +7,4 @@
 
 module Var = Ses.Var
 module Term = Ses.Term
-module Equality = Ses.Equality
+module Context = Ses.Equality

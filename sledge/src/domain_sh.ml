@@ -86,12 +86,12 @@ let exec_intrinsic ~skip_throw q r i es =
 let term_eq_class_has_only_vars_in fvs cong term =
   [%Trace.call fun {pf} ->
     pf "@[<v> fvs: @[%a@] @,cong: @[%a@] @,term: @[%a@]@]" Var.Set.pp fvs
-      Equality.pp cong Term.pp term]
+      Context.pp cong Term.pp term]
   ;
   let term_has_only_vars_in fvs term =
     Var.Set.is_subset (Term.fv term) ~of_:fvs
   in
-  let term_eq_class = Equality.class_of cong term in
+  let term_eq_class = Context.class_of cong term in
   List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
   |>
   [%Trace.retn fun {pf} -> pf "%b"]
@@ -107,7 +107,7 @@ let garbage_collect (q : t) ~wrt =
       let new_set =
         List.fold ~init:current q.heap ~f:(fun current seg ->
             if term_eq_class_has_only_vars_in current q.cong seg.loc then
-              List.fold (Equality.class_of q.cong seg.seq) ~init:current
+              List.fold (Context.class_of q.cong seg.seq) ~init:current
                 ~f:(fun c e -> Var.Set.union c (Term.fv e))
             else current )
       in

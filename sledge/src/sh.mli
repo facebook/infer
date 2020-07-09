@@ -17,7 +17,7 @@ type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
-  ; cong: Equality.t  (** congruence induced by rest of formula *)
+  ; cong: Context.t  (** congruence induced by rest of formula *)
   ; pure: Term.t  (** pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
@@ -26,11 +26,11 @@ and disjunction = starjunction list
 
 type t = starjunction [@@deriving compare, equal, sexp]
 
-val pp_seg_norm : Equality.t -> seg pp
+val pp_seg_norm : Context.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> ?vs:Var.Set.t -> unit -> Var.Set.t pp
 val pp : t pp
 val pp_raw : t pp
-val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Equality.t -> t pp
+val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Context.t -> t pp
 val pp_djn : disjunction pp
 val simplify : t -> t
 
@@ -61,11 +61,11 @@ val pure : Term.t -> t
 val and_ : Term.t -> t -> t
 (** Conjoin a boolean constraint to a formula. *)
 
-val and_cong : Equality.t -> t -> t
+val and_cong : Context.t -> t -> t
 (** Conjoin constraints of a congruence to a formula, extending to a common
     vocabulary, and avoiding capturing existentials. *)
 
-val and_subst : Equality.Subst.t -> t -> t
+val and_subst : Context.Subst.t -> t -> t
 (** Conjoin constraints of a solution substitution to a formula, extending
     to a common vocabulary, and avoiding capturing existentials. *)
 
@@ -85,7 +85,7 @@ val rem_seg : seg -> t -> t
 val filter_heap : f:(seg -> bool) -> t -> t
 (** [filter_heap q f] Remove all segments in [q] for which [f] returns false *)
 
-val norm : Equality.Subst.t -> t -> t
+val norm : Context.Subst.t -> t -> t
 (** [norm s q] is [q] where subterms have been normalized with a
     substitution. *)
 

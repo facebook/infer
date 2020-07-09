@@ -158,9 +158,9 @@ let excise_exists goal =
         Var.Set.diff goal.xs
           (Sh.fv ~ignore_cong:() (Sh.with_pure Term.true_ goal.sub))
       in
-      Equality.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
+      Context.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.cong
     in
-    if Equality.Subst.is_empty solutions_for_xs then goal
+    if Context.Subst.is_empty solutions_for_xs then goal
     else
       let removed =
         Var.Set.diff goal.xs
@@ -169,13 +169,13 @@ let excise_exists goal =
       if Var.Set.is_empty removed then goal
       else
         let _, removed, witnesses =
-          Equality.Subst.partition_valid removed solutions_for_xs
+          Context.Subst.partition_valid removed solutions_for_xs
         in
-        if Equality.Subst.is_empty witnesses then goal
+        if Context.Subst.is_empty witnesses then goal
         else (
           excise (fun {pf} ->
               pf "@[<2>excise_exists @[%a%a@]@]" Var.Set.pp_xs removed
-                Equality.Subst.pp witnesses ) ;
+                Context.Subst.pp witnesses ) ;
           let us = Var.Set.union goal.us removed in
           let xs = Var.Set.diff goal.xs removed in
           let min = Sh.and_subst witnesses goal.min in
@@ -183,7 +183,7 @@ let excise_exists goal =
 
 let excise_pure ({min; sub} as goal) =
   trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
-  let pure' = Equality.normalize min.cong sub.pure in
+  let pure' = Context.normalize min.cong sub.pure in
   if Term.is_false pure' then None
   else Some (goal |> with_ ~sub:(Sh.with_pure pure' sub))
 
@@ -562,10 +562,10 @@ let excise_seg ({sub} as goal) msg ssg =
         (Sh.pp_seg_norm sub.cong) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
-  let* k_l = Equality.difference sub.cong k l in
+  let* k_l = Context.difference sub.cong k l in
   if
-    (not (Equality.entails_eq sub.cong b b'))
-    || not (Equality.entails_eq sub.cong m m')
+    (not (Context.entails_eq sub.cong b b'))
+    || not (Context.entails_eq sub.cong m m')
   then
     Some
       ( goal
@@ -578,11 +578,11 @@ let excise_seg ({sub} as goal) msg ssg =
     | Neg -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Equality.difference sub.cong ko ln in
+        let* ko_ln = Context.difference sub.cong ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0 so k+o < l+n *)
         | Neg -> (
-            let* l_ko = Equality.difference sub.cong l ko in
+            let* l_ko = Context.difference sub.cong l ko in
             match Int.sign (Z.sign l_ko) with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
@@ -600,7 +600,7 @@ let excise_seg ({sub} as goal) msg ssg =
         )
     (* k-l = 0 so k = l *)
     | Zero -> (
-        let* o_n = Equality.difference sub.cong o n in
+        let* o_n = Context.difference sub.cong o n in
         match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
@@ -615,7 +615,7 @@ let excise_seg ({sub} as goal) msg ssg =
     | Pos -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Equality.difference sub.cong ko ln in
+        let* ko_ln = Context.difference sub.cong ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
@@ -625,7 +625,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | Zero -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
         | Pos -> (
-            let* k_ln = Equality.difference sub.cong k ln in
+            let* k_ln = Context.difference sub.cong k ln in
             match Int.sign (Z.sign k_ln) with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
