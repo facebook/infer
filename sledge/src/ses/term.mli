@@ -102,7 +102,11 @@ module Var : sig
   type t = private term [@@deriving compare, equal, sexp]
   type strength = t -> [`Universal | `Existential | `Anonymous] option
 
-  module Map : Map.S with type key := t
+  module Map : sig
+    include Map.S with type key := t
+
+    val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
+  end
 
   module Set : sig
     include NS.Set.S with type elt := t
@@ -132,23 +136,6 @@ module Var : sig
       variables do not clash with [fresh] variables is to pass the
       [identified] variables to [fresh] in [wrt]:
       [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
-
-  module Subst : sig
-    type var := t
-    type t [@@deriving compare, equal, sexp]
-    type x = {sub: t; dom: Set.t; rng: Set.t}
-
-    val pp : t pp
-    val empty : t
-    val freshen : Set.t -> wrt:Set.t -> x * Set.t
-    val invert : t -> t
-    val restrict : t -> Set.t -> x
-    val is_empty : t -> bool
-    val domain : t -> Set.t
-    val range : t -> Set.t
-    val apply : t -> var -> var
-    val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
-  end
 end
 
 module Map : sig
