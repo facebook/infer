@@ -88,6 +88,10 @@ module rec Term : sig
   val extract : seq:t -> off:t -> len:t -> t
   val concat : t array -> t
 
+  (* records *)
+  val select : rcd:t -> idx:int -> t
+  val update : rcd:t -> idx:int -> elt:t -> t
+
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
 
