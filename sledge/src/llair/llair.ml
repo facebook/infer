@@ -363,7 +363,10 @@ end
 (** Basic-Blocks *)
 
 module Block = struct
-  module T = struct type t = block [@@deriving compare, equal, sexp_of] end
+  module T = struct
+    type t = block [@@deriving compare, equal, sexp_of]
+  end
+
   include T
   module Map = Map.Make (T)
 

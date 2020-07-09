@@ -7,4 +7,6 @@
 
 (** Variables *)
 
-include module type of struct include Exp.Reg end
+include module type of struct
+  include Exp.Reg
+end

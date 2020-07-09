@@ -1,8 +1,8 @@
-profile = compact
-break-before-in = fit-or-vertical
-break-collection-expressions = fit-or-vertical
+profile = ocamlformat
+break-cases = fit
 break-infix = fit-or-vertical
 break-sequences = true
 margin = 76
+module-item-spacing = compact
 parse-docstrings = true
 wrap-comments = true

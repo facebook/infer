@@ -103,7 +103,9 @@ module String : sig
 end
 
 module Q : sig
-  include module type of struct include Q end
+  include module type of struct
+    include Q
+  end
 
   val of_z : Z.t -> t
   val compare : t -> t -> int
@@ -115,7 +117,9 @@ module Q : sig
 end
 
 module Z : sig
-  include module type of struct include Z end
+  include module type of struct
+    include Z
+  end
 
   val compare : t -> t -> int
   val hash : t -> int

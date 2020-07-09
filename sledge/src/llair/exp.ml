@@ -75,7 +75,12 @@ module T = struct
 end
 
 include T
-module Set = struct include Set.Make (T) include Provide_of_sexp (T) end
+
+module Set = struct
+  include Set.Make (T)
+  include Provide_of_sexp (T)
+end
+
 module Map = Map.Make (T)
 
 let pp_op2 fs op =

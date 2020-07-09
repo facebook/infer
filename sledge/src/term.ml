@@ -128,7 +128,11 @@ end = struct
 end
 
 include T
-module Map = struct include Map.Make (T) include Provide_of_sexp (T) end
+
+module Map = struct
+  include Map.Make (T)
+  include Provide_of_sexp (T)
+end
 
 let rec ppx strength fs term =
   let rec pp fs term =
