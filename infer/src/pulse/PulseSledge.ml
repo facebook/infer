@@ -13,7 +13,7 @@ module AbstractValue = PulseAbstractValue
 [@@@warning "+9"]
 
 module Var = struct
-  module Var = Sledge.Var
+  module Var = Ses.Var
 
   let of_absval (v : AbstractValue.t) = Var.identified ~name:"v" ~id:(v :> int)
 
@@ -26,7 +26,7 @@ module Var = struct
 end
 
 module Term = struct
-  module Term = Sledge.Term
+  module Term = Ses.Term
 
   let of_intlit i = Term.integer (IntLit.to_big_int i)
 
@@ -75,7 +75,7 @@ module Term = struct
 end
 
 module Equality = struct
-  include Sledge.Equality
+  include Ses.Equality
 
   let assert_no_new_vars api new_vars =
     if not (Var.Set.is_empty new_vars) then
@@ -83,25 +83,25 @@ module Equality = struct
 
 
   let and_eq t1 t2 r =
-    let new_vars, r' = Sledge.Equality.and_eq Var.Set.empty t1 t2 r in
+    let new_vars, r' = Ses.Equality.and_eq Var.Set.empty t1 t2 r in
     assert_no_new_vars "Equality.and_eq" new_vars ;
     r'
 
 
   let and_term t r =
-    let new_vars, r' = Sledge.Equality.and_term Var.Set.empty t r in
+    let new_vars, r' = Ses.Equality.and_term Var.Set.empty t r in
     assert_no_new_vars "Equality.and_term" new_vars ;
     r'
 
 
   let and_ r1 r2 =
-    let new_vars, r' = Sledge.Equality.and_ Var.Set.empty r1 r2 in
+    let new_vars, r' = Ses.Equality.and_ Var.Set.empty r1 r2 in
     assert_no_new_vars "Equality.and_" new_vars ;
     r'
 
 
   let apply_subst subst r =
-    let new_vars, r' = Sledge.Equality.apply_subst Var.Set.empty subst r in
+    let new_vars, r' = Ses.Equality.apply_subst Var.Set.empty subst r in
     assert_no_new_vars "Equality.apply_subst" new_vars ;
     r'
 end

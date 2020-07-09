@@ -7,6 +7,8 @@
 
 (** Frame Inference Solver over Symbolic Heaps *)
 
+open Ses
+
 module Goal : sig
   (** Excision judgment
 

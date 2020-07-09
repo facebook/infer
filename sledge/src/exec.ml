@@ -7,6 +7,8 @@
 
 (** Symbolic Execution *)
 
+open Ses
+
 [@@@warning "+9"]
 
 module Fresh : sig

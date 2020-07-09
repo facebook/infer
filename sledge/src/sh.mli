@@ -7,6 +7,8 @@
 
 (** Symbolic Heap Formulas *)
 
+open Ses
+
 (** Segment of memory starting at [loc] containing [seq] (a byte-array) of
     size [siz], contained in an enclosing allocation-block starting at [bas]
     of length [len]. *)

@@ -7,6 +7,7 @@
 
 (** Interval abstract domain *)
 
+open Ses
 open Apron
 
 let equal_apron_typ =

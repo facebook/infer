@@ -7,6 +7,8 @@
 
 (** Symbolic Heap Formulas *)
 
+open Ses
+
 [@@@warning "+9"]
 
 type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}

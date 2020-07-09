@@ -7,6 +7,8 @@
 
 (** Abstract domain *)
 
+open Ses
+
 type t = Sh.t [@@deriving equal, sexp]
 
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q

@@ -46,11 +46,23 @@
   (inline_tests)))
 
 (subdir
+ src/ses
+ (library
+  (name ses)
+  (public_name sledge.ses)
+  (libraries nonstdlib llair)
+  (flags
+   (:standard -open NS))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
  src
  (library
   (name sledge)
   (public_name sledge)
-  (libraries nonstdlib llair)
+  (libraries nonstdlib llair ses)
   (flags
    (:standard -open NS))
   (preprocess
