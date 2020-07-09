@@ -22,10 +22,8 @@ module Var : sig
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
-    val of_regs : Llair.Reg.Set.t -> t
   end
 
-  val of_reg : Llair.Reg.t -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t
@@ -92,10 +90,6 @@ module rec Term : sig
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
 
-  (** Convert *)
-
-  val of_exp : Llair.Exp.t -> t
-
   (** Destruct *)
 
   val d_int : t -> Z.t option
@@ -145,10 +139,6 @@ and Formula : sig
   val and_ : t -> t -> t
   val or_ : t -> t -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
-
-  (** Convert *)
-
-  val of_exp : Llair.Exp.t -> t
 
   (** Transform *)
 
@@ -265,4 +255,19 @@ module Context : sig
   (* Replay debugging *)
 
   val replay : string -> unit
+end
+
+(** Convert from Llair *)
+
+module Var_of_Llair : sig
+  val reg : Llair.Reg.t -> Var.t
+  val regs : Llair.Reg.Set.t -> Var.Set.t
+end
+
+module Term_of_Llair : sig
+  val exp : Llair.Exp.t -> Term.t
+end
+
+module Formula_of_Llair : sig
+  val exp : Llair.Exp.t -> Formula.t
 end

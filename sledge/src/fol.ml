@@ -99,10 +99,6 @@ module Formula = struct
   let tt = true_
   let ff = false_
   let cond ~cnd ~pos ~neg = conditional ~cnd ~thn:pos ~els:neg
-
-  let of_exp e =
-    let b = Term.of_exp e in
-    match project b with Some p -> p | None -> dq Term.zero b
 end
 
 module Context = struct
@@ -197,4 +193,21 @@ module Context = struct
     wrap solve_for_vars_tmr
       (fun () -> solve_for_vars vss r)
       (fun () -> Solve_for_vars (vss, r))
+end
+
+(*
+ * Convert from Llair
+ *)
+
+module Term_of_Llair = struct
+  let exp = Ses.Term.of_exp
+end
+
+module Formula_of_Llair = struct
+  let exp = Term_of_Llair.exp
+end
+
+module Var_of_Llair = struct
+  let reg = Ses.Var.of_reg
+  let regs = Ses.Var.Set.of_regs
 end
