@@ -11,7 +11,6 @@ license: "MIT"
 build: [
   ["./autogen.sh"]
   ["./configure"
-     "--disable-c-analyzers"
      "--prefix=%{prefix}%"]
   [make "-j" jobs]
   [make "-j" jobs "config_tests"] {with-test}

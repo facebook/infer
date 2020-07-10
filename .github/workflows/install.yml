@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
+          - macOS-latest
           - ubuntu-latest
         ocaml-version:
           - 4.09.1
@@ -35,18 +35,98 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('opam.locked') }}
 
       - name: Install Required Brew Packages for MacOS
-        run: brew install pkg-config automake
+        run: brew install pkg-config automake jq
         if: runner.os == 'macOS'
 
-      # ensure infer isn't installed in this switch, then deal with dependencies
-      - run: opam remove infer || true
+      - name: Install Required Apt Packages for Ubuntu
+        run: sudo apt-get install libmpfr-dev libsqlite3-dev
+        if: runner.os == 'Linux'
 
-      - run: opam update --upgrade
+      - name: Fetch clang Release
+        run: |
+          REPO="facebook/facebook-clang-plugins"
+          URL="https://api.github.com/repos/$REPO"
 
-      - run: opam pin add --no-action infer .
+          CLANGFILE="clang-install-${{ matrix.os }}.tar.gz"
 
-      - run: opam depext --update infer;
+          RELEASE_INFO="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL/releases/latest")"
+          if ! ASSET_ID="$(jq ".assets | map(select(.name == \"$CLANGFILE\"))[0].id" <<< "$RELEASE_INFO")"; then
+              echo "$RELEASE_INFO"
+              exit 1
+          fi
 
-      - run: opam install --deps-only infer
+          if [[ -z "$ASSET_ID" || "$ASSET_ID" == "null" ]]; then
+              echo "Could not find asset ID" >&2
+              exit 1
+          fi
 
-      - run: opam install infer
+          curl -J -L "$URL/releases/assets/$ASSET_ID" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/octet-stream" \
+              -o "$CLANGFILE"
+
+      - run: tar -xzf clang-install-${{ matrix.os }}.tar.gz -C facebook-clang-plugins/clang/
+
+      - run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
+
+      - run: ./build-infer.sh -y all
+
+      - run: make install
+        if: runner.os == 'macOS'
+
+      - run: sudo make install
+        if: runner.os == 'Linux'
+
+      - name: Test infer
+        run: |
+          eval $(opam env)
+
+          {
+            echo 'class FailingTest {'
+            echo '  String mayReturnNull(int i) {'
+            echo '    if (i > 0) {'
+            echo '      return "Hello, Infer!";'
+            echo '    }'
+            echo '    return null;'
+            echo '  }'
+            echo '  int mayCauseNPE() {'
+            echo '    String s = mayReturnNull(0);'
+            echo '    return s.length();'
+            echo '  }'
+            echo '}'
+          } > FailingTest.java
+
+          {
+            echo "  class PassingTest {"
+            echo "    String mayReturnNull(int i) {"
+            echo "      if (i > 0) {"
+            echo '        return "Hello, Infer!";'
+            echo "      }"
+            echo "      return null;"
+            echo "    }"
+            echo "    int mayCauseNPE() {"
+            echo "      String s = mayReturnNull(0);"
+            echo "      return s == null ? 0 : s.length();"
+            echo "    }"
+            echo "  }"
+          } > PassingTest.java
+
+          # first command should exit with status 2
+          infer --fail-on-issue -P -- javac FailingTest.java || if [[ $? -ne 2 ]]; then exit 1; fi
+          infer --fail-on-issue -P -- javac PassingTest.java
+
+          {
+            echo "#include <stdio.h>"
+            echo "int main()"
+            echo "{ int *s = NULL; *s = 42; return 0; } "
+          } > FailingTest.c
+
+          {
+            echo "#include <stdio.h>"
+            echo "int main()"
+            echo "{ int *s = NULL; if (s != NULL) { *s = 42; } return 0; }"
+          } > PassingTest.c
+
+          # first command should exit with status 2
+          infer --fail-on-issue -P -- clang -c FailingTest.c || if [[ $? -ne 2 ]]; then exit 1; fi
+          infer --fail-on-issue -P -- clang -c PassingTest.c
