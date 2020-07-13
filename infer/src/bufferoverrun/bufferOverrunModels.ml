@@ -1473,6 +1473,8 @@ module Call = struct
       ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSArray.length
       ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_arg $+ capt_arg $!--> NSArray.at
       ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSArray.create_array
+      ; -"NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
+      ; -"NSNumber" &:: "integerValue" <>$ capt_exp $--> id
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
