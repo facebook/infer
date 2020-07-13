@@ -88,11 +88,14 @@ void replace_linear_FP(NSString* s) {
   }
 }
 
-NSString* string_with_utf8_string_linear_FP(const char* p) {
+NSString* string_with_utf8_string_linear(const char* p) {
   NSString* s = [NSString stringWithUTF8String:p];
-  NSInteger i = 0;
-  while ([s characterAtIndex:i] != 'a' && i < s.length) {
-    i++;
+  for (int i = 0; i < [s.length integerValue]; i++) {
   }
   return s;
+}
+
+void string_length_linear(NSString* s) {
+  for (int i = 0; i < [s.length integerValue]; i++) {
+  }
 }

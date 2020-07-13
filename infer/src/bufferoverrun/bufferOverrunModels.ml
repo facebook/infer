@@ -1325,6 +1325,18 @@ module JavaString = struct
   let replace = id
 end
 
+module NSString = struct
+  let create_string_from_c_string src_exp =
+    let exec model_env ~ret mem =
+      let v = Sem.eval_string_len src_exp mem in
+      JavaString.create_with_length model_env ~ret ~begin_idx:Exp.zero ~end_v:v mem
+    in
+    {exec; check= no_check}
+
+
+  let length = JavaString.length
+end
+
 module Preconditions = struct
   let check_argument exp =
     let exec {integer_type_widths; location} ~ret:_ mem =
@@ -1475,6 +1487,9 @@ module Call = struct
       ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSArray.create_array
       ; -"NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; -"NSNumber" &:: "integerValue" <>$ capt_exp $--> id
+      ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
+        $!--> NSString.create_string_from_c_string
+      ; -"NSString" &:: "length" <>$ capt_exp $--> NSString.length
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")

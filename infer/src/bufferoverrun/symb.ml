@@ -94,7 +94,7 @@ module SymbolPath = struct
   let rec pp_partial_paren ~paren fmt = function
     | BoField.Prim (Pvar pvar) ->
         if Config.bo_debug >= 3 then Pvar.pp_value fmt pvar else Pvar.pp_value_non_verbose fmt pvar
-    | BoField.Prim (Deref (Deref_JavaPointer, p)) when Config.bo_debug < 3 ->
+    | BoField.Prim (Deref ((Deref_CPointer | Deref_JavaPointer), p)) when Config.bo_debug < 3 ->
         pp_partial_paren ~paren fmt p
     | BoField.Prim (Deref (Deref_ArrayIndex, p)) ->
         F.fprintf fmt "%a[*]" (pp_partial_paren ~paren:true) p
