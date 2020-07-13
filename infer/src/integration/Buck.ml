@@ -87,12 +87,6 @@ module Target = struct
         add_flavor_internal target "infer-capture-all"
 end
 
-type buck_argument =
-  | NotATarget of string
-  | AliasTarget of string
-  | PatternTarget of string
-  | NormalTarget of string
-
 let parse_target_string =
   let alias_target_regexp = Str.regexp "^[^/:]+\\(#.*\\)?$" in
   let pattern_target_regexp = Str.regexp "^[^/]*//\\(\\.\\.\\.\\|.*\\(:\\|/\\.\\.\\.\\)\\)$" in
@@ -100,13 +94,13 @@ let parse_target_string =
   let noname_target_regexp = Str.regexp "^[^/]*//.*$" in
   let parse_with_retry s ~retry =
     (* do not consider --buck-options as targets *)
-    if String.equal s "" || Char.equal s.[0] '-' || Char.equal s.[0] '@' then NotATarget s
-    else if Str.string_match alias_target_regexp s 0 then AliasTarget s
-    else if Str.string_match pattern_target_regexp s 0 then PatternTarget s
-    else if Str.string_match normal_target_regexp s 0 then NormalTarget s
+    if String.equal s "" || Char.equal s.[0] '-' || Char.equal s.[0] '@' then `NotATarget s
+    else if Str.string_match alias_target_regexp s 0 then `AliasTarget s
+    else if Str.string_match pattern_target_regexp s 0 then `PatternTarget s
+    else if Str.string_match normal_target_regexp s 0 then `NormalTarget s
     else if Str.string_match noname_target_regexp s 0 then
       let name = String.split s ~on:'/' |> List.last_exn in
-      NormalTarget (F.sprintf "%s:%s" s name)
+      `NormalTarget (F.sprintf "%s:%s" s name)
     else retry s
   in
   fun s ->
@@ -277,9 +271,15 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   else Fn.id
 
 
-type parsed_args = {rev_not_targets: string list; targets: string list}
+type parsed_args =
+  { rev_not_targets': string list
+  ; normal_targets: string list
+  ; alias_targets: string list
+  ; pattern_targets: string list }
 
-let empty_parsed_args = {rev_not_targets= []; targets= []}
+let empty_parsed_args =
+  {rev_not_targets'= []; normal_targets= []; alias_targets= []; pattern_targets= []}
+
 
 let split_buck_command buck_cmd =
   match buck_cmd with
@@ -326,27 +326,39 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
         parsed_args
     | param :: arg :: args when List.mem ~equal:String.equal parameters_with_argument param ->
         parse_cmd_args
-          {parsed_args with rev_not_targets= arg :: param :: parsed_args.rev_not_targets}
+          {parsed_args with rev_not_targets'= arg :: param :: parsed_args.rev_not_targets'}
           args
     | target :: args ->
         let parsed_args =
           match parse_target_string target with
-          | NotATarget s ->
-              {parsed_args with rev_not_targets= s :: parsed_args.rev_not_targets}
-          | NormalTarget t | AliasTarget t | PatternTarget t ->
-              {parsed_args with targets= t :: parsed_args.targets}
+          | `NotATarget s ->
+              {parsed_args with rev_not_targets'= s :: parsed_args.rev_not_targets'}
+          | `NormalTarget t ->
+              {parsed_args with normal_targets= t :: parsed_args.normal_targets}
+          | `AliasTarget a ->
+              {parsed_args with alias_targets= a :: parsed_args.alias_targets}
+          | `PatternTarget p ->
+              {parsed_args with pattern_targets= p :: parsed_args.pattern_targets}
         in
         parse_cmd_args parsed_args args
   in
   let parsed_args = parse_cmd_args empty_parsed_args args in
-  let targets = resolve_pattern_targets buck_mode parsed_args.targets in
+  let targets =
+    match (buck_mode, parsed_args) with
+    | ClangFlavors, {pattern_targets= []; alias_targets= []; normal_targets} ->
+        normal_targets
+    | ( (ClangFlavors | CombinedGenrule | JavaGenruleMaster | ClangCompilationDB _)
+      , {pattern_targets; alias_targets; normal_targets} ) ->
+        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
+        |> resolve_pattern_targets buck_mode
+  in
   let targets =
     Option.value_map ~default:targets
       ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
       buck_targets_blacklist_regexp
   in
   ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
-  (command, parsed_args.rev_not_targets, targets)
+  (command, parsed_args.rev_not_targets', targets)
 
 
 let rec exceed_length ~max = function
