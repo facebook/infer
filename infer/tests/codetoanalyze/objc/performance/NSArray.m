@@ -8,7 +8,14 @@
 
 // init array
 
-void nsarray_init_constant_FP() {
+void nsarray_empty_array_constant() {
+  NSArray* array = [NSArray array];
+
+  for (int i = 0; i < array.count; i++) {
+  }
+}
+
+void nsarray_init_constant() {
   NSArray* array = [[NSArray alloc] init];
 
   for (int i = 0; i < array.count; i++) {
@@ -39,7 +46,9 @@ NSArray* nsarray_init_with_objects_constant() {
   strings[1] = @"Second";
   strings[2] = @"Third";
 
-  return [NSArray arrayWithObjects:strings count:2];
+  NSArray* array = [NSArray arrayWithObjects:strings count:2];
+  for (int i = 0; i < array.count; i++) {
+  }
 }
 
 NSArray* nsarray_array_with_objects_constant() {
@@ -75,14 +84,21 @@ void nsarray_access_constant() {
   }
 }
 
-void nsarray_access_linear_FP(NSArray* array) {
+void nsarray_object_at_indexed_constant_FP() {
+  NSArray* array = @[ @2, @3 ];
+
+  for (int i = 0; i < [array[0] integerValue]; i++) {
+  }
+}
+
+void nsarray_access_linear(NSArray* array) {
   id obj;
   for (int i = 0; i < array.count; i++) {
     obj = array[i];
   }
 }
 
-void nsarray_find_linear_FP(NSArray* array) {
+void nsarray_find_linear(NSArray* array) {
   for (int i = 0; i < array.count && i != [array[i] integerValue]; i++) {
   }
 }
@@ -154,7 +170,7 @@ boolean_t nsarray_is_equal_to_array_linear_FN(NSArray* array1,
 
 // count
 
-void nsarray_count_bounded_linear_FP(NSArray* array) {
+void nsarray_count_bounded_linear(NSArray* array) {
   for (int i = 0; i < array.count; i++) {
   }
 }

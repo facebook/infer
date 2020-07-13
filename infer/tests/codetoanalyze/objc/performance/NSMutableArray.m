@@ -86,7 +86,7 @@ void nsmarray_add_all_constant() {
 
 void nsmarray_set_constant(NSMutableArray* array) { array[0] = @1; }
 
-void nsmarray_set_linear_FP(NSMutableArray* array) {
+void nsmarray_set_linear(NSMutableArray* array) {
   for (int i = 0; i < array.count; i++) {
     array[i] = [NSNumber numberWithInt:([array[i] intValue] + 1)];
   }

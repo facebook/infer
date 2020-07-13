@@ -428,7 +428,7 @@ let create_copy_array src_exp =
   {exec; check= no_check}
 
 
-module CFArray = struct
+module NSArray = struct
   (** Creates a new array from the given array by copying the first X elements. *)
   let create_array src_exp size_exp =
     let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
@@ -454,6 +454,9 @@ module CFArray = struct
       Dom.Mem.add_stack (Loc.of_id ret_id) length mem
     in
     {exec; check= no_check}
+
+
+  let empty_array = malloc ~can_be_zero:true Exp.zero
 end
 
 module StdArray = struct
@@ -1459,12 +1462,17 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
+        -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
-      ; -"CFArrayGetCount" <>$ capt_exp $!--> CFArray.length
-      ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> CFArray.at
-      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> CFArray.length
-      ; -"MCFArrayGetCount" <>$ capt_exp $!--> CFArray.length
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> NSArray.length
+      ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> NSArray.at
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSArray.length
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSArray.length
+      ; -"NSArray" &:: "array" <>--> NSArray.empty_array
+      ; -"NSArray" &:: "init" <>--> NSArray.empty_array
+      ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSArray.length
+      ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_arg $+ capt_arg $!--> NSArray.at
+      ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSArray.create_array
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
