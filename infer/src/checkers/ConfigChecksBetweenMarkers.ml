@@ -441,7 +441,21 @@ module Dom = struct
     |> Option.value_map ~default:astate ~f:(fun marker -> call_marker_end marker astate)
 
 
-  let call_config_check analysis_data e location ({mem; context; config_checks} as astate) =
+  let call_config_check analysis_data config location ({context; config_checks} as astate) =
+    let trace_elem = Trace.config_check config in
+    let context = Context.call_config_check trace_elem location context in
+    let context =
+      { context with
+        started_markers= MarkerSet.report analysis_data config location context.started_markers }
+    in
+    let context_with_trace =
+      {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
+    in
+    { astate with
+      config_checks= ConfigChecks.weak_add config context_with_trace location config_checks }
+
+
+  let call_config_check_exp analysis_data e location ({mem} as astate) =
     let astate' =
       let open IOption.Let_syntax in
       let* loc =
@@ -454,17 +468,7 @@ module Dom = struct
             None
       in
       let+ config = Mem.get_config_opt loc mem in
-      let trace_elem = Trace.config_check config in
-      let context = Context.call_config_check trace_elem location context in
-      let context =
-        { context with
-          started_markers= MarkerSet.report analysis_data config location context.started_markers }
-      in
-      let context_with_trace =
-        {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
-      in
-      { astate with
-        config_checks= ConfigChecks.weak_add config context_with_trace location config_checks }
+      call_config_check analysis_data config location astate
     in
     Option.value astate' ~default:astate
 
@@ -581,8 +585,10 @@ module TransferFunctions = struct
         Dom.call_marker_end_id id astate
     | Call (_, Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
-      | Some e ->
-          Dom.call_config_check analysis_data e location astate
+      | Some (`Config config) ->
+          Dom.call_config_check analysis_data config location astate
+      | Some (`Exp e) ->
+          Dom.call_config_check_exp analysis_data e location astate
       | None ->
           Option.value_map (analyze_dependency callee) ~default:astate
             ~f:(fun (_, callee_summary) ->
