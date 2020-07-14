@@ -26,20 +26,6 @@ let get_super_interface_decl otdi_super =
       None
 
 
-let get_protocols protocols =
-  let protocol_names =
-    List.map
-      ~f:(fun decl ->
-        match decl.Clang_ast_t.dr_name with
-        | Some name_info ->
-            CAst_utils.get_qualified_name name_info
-        | None ->
-            assert false )
-      protocols
-  in
-  protocol_names
-
-
 let add_class_decl qual_type_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.oidi_class_interface in
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt true
@@ -63,22 +49,11 @@ let add_class_implementation qual_type_to_sil_type tenv idi =
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt false
 
 
-(*The superclass is the first element in the list of super classes of structs in the tenv, *)
-(* then come the protocols and categories. *)
-let get_interface_supers super_opt protocols =
-  let super_class =
+let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super =
+  let super_opt = get_super_interface_decl otdi_super in
+  let supers =
     match super_opt with None -> [] | Some super -> [Typ.Name.Objc.from_qual_name super]
   in
-  let protocol_names = List.map ~f:Typ.Name.Objc.protocol_from_qual_name protocols in
-  let super_classes = super_class @ protocol_names in
-  super_classes
-
-
-let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super otdi_protocols
-    =
-  let super = get_super_interface_decl otdi_super in
-  let protocols = get_protocols otdi_protocols in
-  let supers = get_interface_supers super protocols in
   let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tname decl_list in
   (supers, fields)
 
@@ -98,7 +73,7 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
   (* We don't need to add the methods of the superclass *)
   let decl_supers, decl_fields =
     create_supers_fields qual_type_to_sil_type tenv interface_name decl_list
-      ocidi.Clang_ast_t.otdi_super ocidi.Clang_ast_t.otdi_protocols
+      ocidi.Clang_ast_t.otdi_super
   in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
