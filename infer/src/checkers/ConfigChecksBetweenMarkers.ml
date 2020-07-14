@@ -132,15 +132,21 @@ module Mem = struct
       ~f:(fun v -> add (Loc.of_pvar pvar) v mem)
 
 
-  let store_constant id fn marker mem =
-    let marker = Marker.of_int_lit marker in
-    let add_marker loc acc =
-      if Loc.is_this loc then add (Loc.of_this_field fn) (Val.of_marker marker) acc else acc
-    in
-    let locs =
-      find_opt (Loc.of_id id) mem |> Option.value_map ~default:Locs.bottom ~f:Val.get_locs
-    in
-    Locs.fold add_marker locs mem
+  let store_constant e marker mem =
+    let marker = Marker.of_int_lit marker |> Val.of_marker in
+    match (e : Exp.t) with
+    | Lfield (Var id, fn, _) ->
+        let add_marker loc acc =
+          if Loc.is_this loc then add (Loc.of_this_field fn) marker acc else acc
+        in
+        let locs =
+          find_opt (Loc.of_id id) mem |> Option.value_map ~default:Locs.bottom ~f:Val.get_locs
+        in
+        Locs.fold add_marker locs mem
+    | Lvar pvar ->
+        add (Loc.of_pvar pvar) marker mem
+    | _ ->
+        mem
 end
 
 module Trace = struct
@@ -419,9 +425,7 @@ module Dom = struct
 
   let store_config pvar id ({mem} as astate) = {astate with mem= Mem.store pvar id mem}
 
-  let store_constant id fn marker ({mem} as astate) =
-    {astate with mem= Mem.store_constant id fn marker mem}
-
+  let store_constant e marker ({mem} as astate) = {astate with mem= Mem.store_constant e marker mem}
 
   let call_marker_start marker location ({context} as astate) =
     {astate with context= Context.call_marker_start marker location context}
@@ -566,8 +570,8 @@ module TransferFunctions = struct
             Dom.load_constant_config (Loc.of_pvar pvar) config astate )
     | Store {e1= Lvar pvar; e2= Exp.Var id} ->
         Dom.store_config pvar id astate
-    | Store {e1= Lfield (Var id, fn, _); e2= Const (Const.Cint marker)} ->
-        Dom.store_constant id fn marker astate
+    | Store {e1; e2= Const (Const.Cint marker)} ->
+        Dom.store_constant e1 marker astate
     | Call (_, Const (Cfun callee), _ :: (e, _) :: _, location, _)
       when FbGKInteraction.is_marker_start_java tenv callee ->
         get_marker_from_java_param e mem
