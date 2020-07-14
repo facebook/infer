@@ -229,7 +229,7 @@ module TraceWithReported = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module MarkerSet = struct
+module StartedMarkers = struct
   include AbstractDomain.Map (Marker) (TraceWithReported)
 
   let pp f x =
@@ -287,7 +287,7 @@ module MarkerSet = struct
     mapi report_on_marker markers
 end
 
-module InvMarkerSet = AbstractDomain.InvertedSet (Marker)
+module EndedMarkers = AbstractDomain.InvertedSet (Marker)
 
 module Context = struct
   (** We use opposite orders in collecting the sets of started and ended markers. This is because we
@@ -295,59 +295,59 @@ module Context = struct
       join, we want to know "the markers that have been started, at least, one of the control flow"
       (i.e. may-started) and "the markers that have been ended in all of the control flows" (i.e.
       must-ended). *)
-  type t = {started_markers: MarkerSet.t; ended_markers: InvMarkerSet.t}
+  type t = {started_markers: StartedMarkers.t; ended_markers: EndedMarkers.t}
 
   let pp f {started_markers; ended_markers} =
-    F.fprintf f "@[@[started markers: %a@]@\n@[ended markers: %a@]@]" MarkerSet.pp started_markers
-      InvMarkerSet.pp ended_markers
+    F.fprintf f "@[@[started markers: %a@]@\n@[ended markers: %a@]@]" StartedMarkers.pp
+      started_markers EndedMarkers.pp ended_markers
 
 
   let leq ~lhs ~rhs =
-    MarkerSet.leq ~lhs:lhs.started_markers ~rhs:rhs.started_markers
-    && InvMarkerSet.leq ~lhs:lhs.ended_markers ~rhs:rhs.ended_markers
+    StartedMarkers.leq ~lhs:lhs.started_markers ~rhs:rhs.started_markers
+    && EndedMarkers.leq ~lhs:lhs.ended_markers ~rhs:rhs.ended_markers
 
 
   let join x y =
-    { started_markers= MarkerSet.join x.started_markers y.started_markers
-    ; ended_markers= InvMarkerSet.join x.ended_markers y.ended_markers }
+    { started_markers= StartedMarkers.join x.started_markers y.started_markers
+    ; ended_markers= EndedMarkers.join x.ended_markers y.ended_markers }
 
 
   let widen ~prev ~next ~num_iters =
     { started_markers=
-        MarkerSet.widen ~prev:prev.started_markers ~next:next.started_markers ~num_iters
-    ; ended_markers= InvMarkerSet.widen ~prev:prev.ended_markers ~next:next.ended_markers ~num_iters
+        StartedMarkers.widen ~prev:prev.started_markers ~next:next.started_markers ~num_iters
+    ; ended_markers= EndedMarkers.widen ~prev:prev.ended_markers ~next:next.ended_markers ~num_iters
     }
 
 
-  let init = {started_markers= MarkerSet.bottom; ended_markers= InvMarkerSet.top}
+  let init = {started_markers= StartedMarkers.bottom; ended_markers= EndedMarkers.top}
 
   let call_marker_start marker location {started_markers; ended_markers} =
     let trace = Trace.singleton (Trace.marker_start marker) location in
     let trace_with_reported = {TraceWithReported.trace; reported= false} in
-    { started_markers= MarkerSet.add marker trace_with_reported started_markers
-    ; ended_markers= InvMarkerSet.remove marker ended_markers }
+    { started_markers= StartedMarkers.add marker trace_with_reported started_markers
+    ; ended_markers= EndedMarkers.remove marker ended_markers }
 
 
   let call_marker_end marker {started_markers; ended_markers} =
-    { started_markers= MarkerSet.remove marker started_markers
-    ; ended_markers= InvMarkerSet.add marker ended_markers }
+    { started_markers= StartedMarkers.remove marker started_markers
+    ; ended_markers= EndedMarkers.add marker ended_markers }
 
 
   let call_config_check new_trace location ({started_markers} as context) =
-    {context with started_markers= MarkerSet.add_trace new_trace location started_markers}
+    {context with started_markers= StartedMarkers.add_trace new_trace location started_markers}
 
 
   let instantiate_callee ~callee_pname ?config_check_trace location ~callee_context ~caller_context
       =
     let started_markers =
-      MarkerSet.join_on_call callee_pname ?config_check_trace location
+      StartedMarkers.join_on_call callee_pname ?config_check_trace location
         ~callee:callee_context.started_markers ~caller:caller_context.started_markers
-      |> InvMarkerSet.fold MarkerSet.remove callee_context.ended_markers
+      |> EndedMarkers.fold StartedMarkers.remove callee_context.ended_markers
     in
     let ended_markers =
-      InvMarkerSet.join caller_context.ended_markers callee_context.ended_markers
-      |> MarkerSet.fold
-           (fun marker _trace acc -> InvMarkerSet.remove marker acc)
+      EndedMarkers.join caller_context.ended_markers callee_context.ended_markers
+      |> StartedMarkers.fold
+           (fun marker _trace acc -> EndedMarkers.remove marker acc)
            callee_context.started_markers
     in
     {started_markers; ended_markers}
@@ -450,7 +450,8 @@ module Dom = struct
     let context = Context.call_config_check trace_elem location context in
     let context =
       { context with
-        started_markers= MarkerSet.report analysis_data config location context.started_markers }
+        started_markers= StartedMarkers.report analysis_data config location context.started_markers
+      }
     in
     let context_with_trace =
       {ContextWithTrace.context; trace= Trace.singleton trace_elem location}
@@ -493,7 +494,7 @@ module Dom = struct
           let context =
             { context with
               started_markers=
-                MarkerSet.report analysis_data config location context.started_markers }
+                StartedMarkers.report analysis_data config location context.started_markers }
           in
           let trace =
             Trace.add_call callee location ~from:Trace.Empty ~callee_trace:config_check_trace
