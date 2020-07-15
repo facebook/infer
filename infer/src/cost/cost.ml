@@ -316,7 +316,9 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; get_summary
       ; get_formals }
     in
-    WorstCaseCost.compute tenv extras instr_cfg
+    AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
+      ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")
+      ~f:(fun () -> WorstCaseCost.compute tenv extras instr_cfg)
   in
   let () =
     L.(debug Analysis Verbose)
