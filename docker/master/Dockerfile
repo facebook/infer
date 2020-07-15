@@ -22,6 +22,7 @@ RUN apt-get update && \
       make \
       openjdk-11-jdk-headless \
       patch \
+      patchelf \
       pkg-config \
       python3.7 \
       python3-distutils \
@@ -56,6 +57,7 @@ RUN cd /infer && \
 RUN cd /infer && \
     make install-with-libs \
     BUILD_MODE=opt \
+    PATCHELF=patchelf \
     DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
 
