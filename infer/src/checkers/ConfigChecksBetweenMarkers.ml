@@ -59,6 +59,8 @@ module Loc = struct
   let of_pvar pvar = Pvar pvar
 
   let of_this_field fn = ThisField fn
+
+  let of_ret pname = Pvar (Pvar.get_ret_pvar pname)
 end
 
 module Locs = AbstractDomain.FiniteSet (Loc)
@@ -496,9 +498,15 @@ module Dom = struct
     Option.value astate' ~default:astate
 
 
-  let instantiate_callee analysis_data ~callee
-      ~callee_summary:{Summary.context= callee_context; config_checks= callee_config_checks}
-      location ({context= caller_context; config_checks= caller_config_checks} as astate) =
+  let instantiate_callee analysis_data ret_id ~callee
+      ~callee_summary:
+        {Summary.context= callee_context; config_checks= callee_config_checks; mem= callee_mem}
+      location {mem= caller_mem; context= caller_context; config_checks= caller_config_checks} =
+    let mem =
+      Mem.find_opt (Loc.of_ret callee) callee_mem
+      |> Option.value_map ~default:caller_mem ~f:(fun ret_v ->
+             Mem.add (Loc.of_id ret_id) ret_v caller_mem )
+    in
     let context =
       Context.instantiate_callee ~callee_pname:callee location ~callee_context ~caller_context
     in
@@ -520,7 +528,7 @@ module Dom = struct
           ConfigChecks.weak_add config {context; trace} location acc )
         callee_config_checks caller_config_checks
     in
-    {astate with context; config_checks}
+    {mem; context; config_checks}
 
 
   let to_summary {mem; context; config_checks} = {Summary.context; config_checks; mem}
@@ -605,7 +613,7 @@ module TransferFunctions = struct
     | Call (_, Const (Cfun callee), (Var id, _) :: _, _, _)
       when FbGKInteraction.is_marker_end_objc callee ->
         Dom.call_marker_end_id id astate
-    | Call (_, Const (Cfun callee), args, location, _) -> (
+    | Call ((ret_id, _), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
           Dom.call_config_check analysis_data config location astate
@@ -614,7 +622,8 @@ module TransferFunctions = struct
       | None ->
           Option.value_map (analyze_dependency callee) ~default:astate
             ~f:(fun (_, callee_summary) ->
-              Dom.instantiate_callee analysis_data ~callee ~callee_summary location astate ) )
+              Dom.instantiate_callee analysis_data ret_id ~callee ~callee_summary location astate )
+      )
     | _ ->
         astate
 
