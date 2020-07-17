@@ -639,7 +639,7 @@ module NonNegativePolynomial = struct
 
   let unreachable_lifted_increasing ~f p1 p2 =
     match (p1, p2) with
-    | (Below _ as below), Val _ | Val _, (Below _ as below) ->
+    | (Below _ as below), _ | _, (Below _ as below) ->
         below
     | _ ->
         top_lifted_increasing ~f p1 p2

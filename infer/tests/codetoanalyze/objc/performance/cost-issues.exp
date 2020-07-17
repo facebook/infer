@@ -156,3 +156,8 @@ codetoanalyze/objc/performance/switch_continue.m, test_switch_FN, 601,  OnUIThre
 codetoanalyze/objc/performance/switch_continue.m, unroll_loop, 16 + (n - 1) + 11 ⋅ (max(1, n)),  OnUIThread:false, [{max(1, n)},Loop,{n - 1},Loop]
 codetoanalyze/objc/performance/two_loops_symbolic.m, nop, 2,  OnUIThread:false, []
 codetoanalyze/objc/performance/two_loops_symbolic.m, two_loops_symb_diff, 8 + 5 ⋅ k + 5 ⋅ m + 2 ⋅ (1+max(0, k)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop,{1+max(0, k)},Loop,{m},Loop,{k},Loop]
+codetoanalyze/objc/performance/unreachable.m, always_ret_false, 2,  OnUIThread:false, []
+codetoanalyze/objc/performance/unreachable.m, linear_loop, 3 + 3 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Loop,{x},Loop]
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_constant, 4,  OnUIThread:false, []
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_constant2, 4,  OnUIThread:false, []
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_linear_loop, 8 + 3 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Call to linear_loop,Loop,{x},Call to linear_loop,Loop]

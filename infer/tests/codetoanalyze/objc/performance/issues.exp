@@ -78,3 +78,6 @@ codetoanalyze/objc/performance/loops.m, if_in_loop, 5, INTEGER_OVERFLOW_L5, no_b
 codetoanalyze/objc/performance/switch_continue.m, test_switch_FN, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/switch_continue.m, unroll_loop, 6, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/objc/performance/switch_continue.m, unroll_loop, 9, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_constant, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_constant2, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/objc/performance/unreachable.m, unreachable_branch_linear_loop, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
