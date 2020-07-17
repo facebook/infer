@@ -140,6 +140,17 @@ module BoundsOfCollection = BoundsOf (CostUtils.Collection)
 module BoundsOfArray = BoundsOf (CostUtils.Array)
 module BoundsOfCString = BoundsOf (CostUtils.CString)
 
+module NSString = struct
+  let op_on_two_str cost_op ~of_function str1 str2 ({location} as model_env) ~ret:_ mem =
+    let get_length str =
+      let itv =
+        BufferOverrunModels.NSString.get_length model_env str mem |> BufferOverrunDomain.Val.get_itv
+      in
+      CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+    in
+    cost_op (get_length str1) (get_length str2)
+end
+
 module ImmutableSet = struct
   let construct = linear ~of_function:"ImmutableSet.construct"
 
@@ -154,6 +165,16 @@ module Call = struct
       make_dispatcher
         [ -"google" &:: "StrLen" <>$ capt_exp
           $--> BoundsOfCString.linear_length ~of_function:"google::StrLen"
+        ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
+          $--> BoundsOfCString.linear_length ~of_function:"NSString.stringWithUTF8String:"
+        ; -"NSString" &:: "stringByAppendingPathComponent:" <>$ capt_exp $+ capt_exp
+          $--> NSString.op_on_two_str BasicCost.plus
+                 ~of_function:"NSString.stringByAppendingPathComponent:"
+        ; -"NSString" &:: "isEqualToString:" <>$ capt_exp $+ capt_exp
+          $--> NSString.op_on_two_str BasicCost.min_default_left
+                 ~of_function:"NSString.isEqualToString:"
+        ; -"NSString" &:: "hasPrefix:" <>$ capt_exp $+ capt_exp
+          $--> NSString.op_on_two_str BasicCost.min_default_left ~of_function:"NSString.hasPrefix:"
         ; +PatternMatch.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"

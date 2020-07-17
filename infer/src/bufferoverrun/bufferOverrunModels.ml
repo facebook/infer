@@ -1335,6 +1335,8 @@ module NSString = struct
 
 
   let length = JavaString.length
+
+  let get_length = JavaString.get_length
 end
 
 module Preconditions = struct

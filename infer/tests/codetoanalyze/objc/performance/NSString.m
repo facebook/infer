@@ -99,3 +99,16 @@ void string_length_linear(NSString* s) {
   for (int i = 0; i < [s.length integerValue]; i++) {
   }
 }
+
+bool string_is_equal_to_string_linear(NSString* str1, NSString* str2) {
+  return [str1 isEqualToString:str2];
+}
+
+NSString* string_by_appending_path_component_linear(NSString* path,
+                                                    NSString* file) {
+  return [path stringByAppendingPathComponent:file];
+}
+
+bool string_has_prefix_linear(NSString* str, NSString* prefix) {
+  return [str hasPrefix:prefix];
+}
