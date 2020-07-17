@@ -741,6 +741,15 @@ let pp_variable_list fmt etl =
       etl
 
 
+let pp_captured_list fmt etl =
+  List.iter
+    ~f:(fun (id, ty, mode) ->
+      Format.fprintf fmt " [%s] %a:%a"
+        (Pvar.string_of_capture_mode mode)
+        Mangled.pp id (Typ.pp_full Pp.text) ty )
+    etl
+
+
 let pp_objc_accessor fmt accessor =
   match accessor with
   | Some (ProcAttributes.Objc_getter field) ->
@@ -760,7 +769,7 @@ let pp_signature fmt pdesc =
     attributes.ProcAttributes.objc_accessor pp_variable_list (get_formals pdesc) pp_locals_list
     (get_locals pdesc) ;
   if not (List.is_empty (get_captured pdesc)) then
-    Format.fprintf fmt ", Captured: %a" pp_variable_list (get_captured pdesc) ;
+    Format.fprintf fmt ", Captured: %a" pp_captured_list (get_captured pdesc) ;
   let method_annotation = attributes.ProcAttributes.method_annotation in
   ( if not (Annot.Method.is_empty method_annotation) then
     let pname_string = Procname.to_string pname in
@@ -792,9 +801,11 @@ let is_captured_pvar procdesc pvar =
     | _ ->
         false
   in
+  let pvar_matches_in_captured (name, _, _) = Mangled.equal name pvar_name in
   let is_captured_var_objc_block =
     (* var is captured if the procedure is a objc block and the var is in the captured *)
-    Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
+    Procname.is_objc_block procname
+    && List.exists ~f:pvar_matches_in_captured (get_captured procdesc)
   in
   is_captured_var_cpp_lambda || is_captured_var_objc_block
 

@@ -119,7 +119,7 @@ let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
       List.find_map
-        ~f:(fun (e, var, typ) ->
+        ~f:(fun (e, var, typ, _) ->
           match typ.Typ.desc with
           | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
               None

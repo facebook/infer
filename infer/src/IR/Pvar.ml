@@ -324,3 +324,7 @@ module Set = PrettyPrintable.MakePPSet (struct
 
   let pp = pp Pp.text
 end)
+
+type capture_mode = ByReference | ByValue [@@deriving compare]
+
+let string_of_capture_mode = function ByReference -> "by ref" | ByValue -> "by value"

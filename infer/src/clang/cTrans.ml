@@ -291,10 +291,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** Given a captured var, return the instruction to assign it to a temp *)
-  let assign_captured_var loc (cvar, typ) =
+  let assign_captured_var loc (cvar, typ, mode) =
     let id = Ident.create_fresh Ident.knormal in
     let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; typ; loc} in
-    ((Exp.Var id, cvar, typ), instr)
+    ((Exp.Var id, cvar, typ, mode), instr)
 
 
   let closure_trans closure_pname captured_vars context stmt_info expr_info =
@@ -2833,11 +2833,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CType_decl.CProcname.from_decl decl ~tenv:context.tenv ~block_return_type:return_type
             ~outer_proc
         in
-        let captured_vars =
+        let captured_vars_no_mode =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables
         in
         let passed_as_noescape_block_to = trans_state.passed_as_noescape_block_to in
+        (* TODO: set correct capture mode *)
+        let captured_vars =
+          List.map captured_vars_no_mode ~f:(fun (var, typ) -> (var, typ, Pvar.ByReference))
+        in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
           Some
@@ -2870,16 +2874,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
-    let translate_normal_capture ~is_by_ref ((pvar, typ) as pvar_typ)
-        (trans_results_acc, captured_vars_acc) =
+    let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
       let loc =
         CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
       in
-      if is_by_ref then (trans_results_acc, (Exp.Lvar pvar, pvar, typ) :: captured_vars_acc)
-      else
-        let ((exp, _, typ) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ in
-        let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
-        (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
+      match mode with
+      | Pvar.ByReference ->
+          (trans_results_acc, (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc)
+      | Pvar.ByValue ->
+          let pvar_typ_mode = (pvar, typ, mode) in
+          let ((exp, _, typ, _) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ_mode in
+          let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
+          (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
     in
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this; lci_capture_kind}
@@ -2899,27 +2905,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
             false
       in
+      let mode = if is_by_ref then Pvar.ByReference else Pvar.ByValue in
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl -> (
         (* capture and init *)
         match get_captured_pvar_typ captured_var_decl_ref with
-        | Some pvar_typ ->
+        | Some ((pvar, typ) as pvar_typ) ->
             ( translate_capture_init pvar_typ init_decl :: trans_results_acc
-            , (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
+            , (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc )
         | None ->
             (trans_results_acc, captured_vars_acc) )
       | Some captured_var_decl_ref, None -> (
         (* just capture *)
         match get_captured_pvar_typ captured_var_decl_ref with
         | Some pvar_typ ->
-            translate_normal_capture ~is_by_ref pvar_typ acc
+            translate_normal_capture mode pvar_typ acc
         | None ->
             (trans_results_acc, captured_vars_acc) )
       | None, None ->
           if lci_capture_this then
             (* captured [this] *)
             let this_typ = get_this_pvar_typ stmt_info context in
-            translate_normal_capture ~is_by_ref this_typ acc
+            translate_normal_capture mode this_typ acc
           else acc
       | None, Some _ ->
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range

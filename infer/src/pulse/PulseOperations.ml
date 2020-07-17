@@ -72,9 +72,9 @@ module Closures = struct
       List.rev_filter_map captured
         ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
           match mode with
-          | `ByValue ->
+          | Pvar.ByValue ->
               None
-          | `ByReference ->
+          | Pvar.ByReference ->
               let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
               Some (address_captured, new_trace) )
     in
@@ -114,12 +114,8 @@ let eval location exp0 astate =
     | Closure {name; captured_vars} ->
         let+ astate, rev_captured =
           List.fold_result captured_vars ~init:(astate, [])
-            ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _) ->
+            ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _, mode) ->
               let+ astate, addr_trace = eval capt_exp astate in
-              let mode =
-                (* HACK: the frontend follows this discipline *)
-                match (capt_exp : Exp.t) with Lvar _ -> `ByReference | _ -> `ByValue
-              in
               (astate, (captured_as, addr_trace, mode) :: rev_captured) )
         in
         Closures.record location name (List.rev rev_captured) astate

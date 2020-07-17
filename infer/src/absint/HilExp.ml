@@ -547,7 +547,7 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
     | Closure closure ->
         let environment =
           List.map
-            ~f:(fun (value, pvar, typ) ->
+            ~f:(fun (value, pvar, typ, _) ->
               (* TODO: this is a hack than can disappear once we have proper AccessExpressions (t23176430) *)
               let typ' =
                 match value with

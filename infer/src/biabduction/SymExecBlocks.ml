@@ -34,7 +34,7 @@ let get_extended_args_for_method_with_block_analysis act_params =
         match act_param with
         | Exp.Closure cl, _, _ ->
             let captured =
-              List.map ~f:(fun (exp, var, typ) -> (exp, Some var, typ)) cl.captured_vars
+              List.map ~f:(fun (exp, var, typ, _) -> (exp, Some var, typ)) cl.captured_vars
             in
             append_no_duplicates_vars all_args captured
         | _ ->

@@ -39,7 +39,8 @@ let pp_var_data fmt {name; typ; modify_in_block} =
 
 type t =
   { access: PredSymb.access  (** visibility access *)
-  ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
+  ; captured: (Mangled.t * Typ.t * Pvar.capture_mode) list
+        (** name and type of variables captured in blocks *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
@@ -118,6 +119,13 @@ let pp_parameters =
   Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text))
 
 
+let pp_captured_var fmt (var, typ, mode) =
+  F.fprintf fmt "(%a,@,%a,@,%s)" Mangled.pp var (Typ.pp_full Pp.text) typ
+    (Pvar.string_of_capture_mode mode)
+
+
+let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break pp_captured_var
+
 let pp f
     ({ access
      ; captured
@@ -152,8 +160,8 @@ let pp f
     translation_unit ;
   if not (PredSymb.equal_access default.access access) then
     F.fprintf f "; access= %a@," (Pp.of_string ~f:PredSymb.string_of_access) access ;
-  if not ([%compare.equal: (Mangled.t * Typ.t) list] default.captured captured) then
-    F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
+  if not ([%compare.equal: (Mangled.t * Typ.t * Pvar.capture_mode) list] default.captured captured)
+  then F.fprintf f "; captured= [@[%a@]]@," pp_captured captured ;
   if not ([%compare.equal: string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)

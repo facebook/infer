@@ -225,7 +225,7 @@ val get_attributes : t -> ProcAttributes.t
 
 val set_attributes : t -> ProcAttributes.t -> unit
 
-val get_captured : t -> (Mangled.t * Typ.t) list
+val get_captured : t -> (Mangled.t * Typ.t * Pvar.capture_mode) list
 (** Return name and type of block's captured variables *)
 
 val get_exit_node : t -> Node.t

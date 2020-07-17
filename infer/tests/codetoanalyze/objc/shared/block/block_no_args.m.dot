@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" [label="1: Start objc_blockBlock_no_args.m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n  " color=yellow style=filled]
+"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" [label="1: Start objc_blockBlock_no_args.m_1\nFormals:  z:int\nLocals: \nCaptured:  [by ref]z:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" -> "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" ;
@@ -66,7 +66,7 @@ digraph cfg {
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,(n$7 &z:int)) [line 23, column 3]\n " shape="box"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by ref]n$7 &z:int)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" ;

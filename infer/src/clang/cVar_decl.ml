@@ -101,6 +101,7 @@ let sil_var_of_captured_var context source_range procname decl_ref =
   in
   match (var_opt, typ_opt) with
   | Some var, Some typ ->
+      (* TODO: set correct capture mode *)
       Some (var, typ)
   | None, None ->
       None

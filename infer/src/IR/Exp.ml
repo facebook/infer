@@ -18,7 +18,7 @@ type ident_ = Ident.t
 
 let compare_ident_ x y = Ident.compare y x
 
-type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
+type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * Pvar.capture_mode) list}
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -184,7 +184,7 @@ let fold_captured ~f exp acc =
         fold_captured_ e1 captured_acc |> fold_captured_ e2
     | Closure {captured_vars} ->
         List.fold captured_vars
-          ~f:(fun acc (captured_exp, _, _) -> f acc captured_exp)
+          ~f:(fun acc (captured_exp, _, _, _) -> f acc captured_exp)
           ~init:captured_acc
     | Const _ | Lvar _ | Var _ | Sizeof _ ->
         captured_acc
@@ -249,12 +249,14 @@ let rec pp_ pe pp_t f e =
         subtype
 
 
-and pp_captured_var pe pp_t f (exp, var, typ) =
+and pp_captured_var pe pp_t f (exp, var, typ, mode) =
   match exp with
   | Lvar evar when Pvar.equal var evar ->
       (Pvar.pp pe) f var
   | _ ->
-      F.fprintf f "(%a %a:%a)" (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
+      F.fprintf f "([%s]%a %a:%a)"
+        (Pvar.string_of_capture_mode mode)
+        (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 
 
 let pp_printenv ~print_types pe f e =
@@ -323,7 +325,7 @@ let rec gen_free_vars =
   | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
       gen_free_vars e
   | Closure {captured_vars} ->
-      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_free_vars e)
+      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _, _) -> gen_free_vars e)
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) | Lvar _ | Sizeof {dynamic_length= None}
     ->
       return ()
@@ -347,7 +349,7 @@ let rec gen_program_vars =
   | BinOp (_, e1, e2) | Lindex (e1, e2) ->
       gen_program_vars e1 >>= fun () -> gen_program_vars e2
   | Closure {captured_vars} ->
-      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_program_vars e)
+      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _, _) -> gen_program_vars e)
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
@@ -363,7 +365,7 @@ let rec rename_pvars ~(f : string -> string) : t -> t =
   | Exn e ->
       Exn (re e)
   | Closure {name; captured_vars} ->
-      let captured_vars = List.map ~f:(function e, v, t -> (re e, rv v, t)) captured_vars in
+      let captured_vars = List.map ~f:(function e, v, t, m -> (re e, rv v, t, m)) captured_vars in
       Closure {name; captured_vars}
   | Cast (t, e) ->
       Cast (t, re e)

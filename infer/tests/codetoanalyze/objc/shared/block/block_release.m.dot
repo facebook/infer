@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" [label="1: Start objc_blockMy_manager.blockReleaseNoLeak_1\nFormals:  newImage:CGImage* a:int\nLocals: \nCaptured:  newImage:CGImage* \n  " color=yellow style=filled]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" [label="1: Start objc_blockMy_manager.blockReleaseNoLeak_1\nFormals:  newImage:CGImage* a:int\nLocals: \nCaptured:  [by ref]newImage:CGImage* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" ;
@@ -60,7 +60,7 @@ digraph cfg {
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,(n$9 &newImage:CGImage*)) [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by ref]n$9 &newImage:CGImage*)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;

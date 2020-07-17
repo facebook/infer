@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" [label="1: Start objc_blockBlockVar.blockPostBad_2\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" [label="1: Start objc_blockBlockVar.blockPostBad_2\nFormals:  x:int*\nLocals: \nCaptured:  [by ref]x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" -> "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_3" -> "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_2" ;
-"objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" [label="1: Start objc_blockBlockVar.blockPostOk_3\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" [label="1: Start objc_blockBlockVar.blockPostOk_3\nFormals:  x:int*\nLocals: \nCaptured:  [by ref]x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" -> "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_3" -> "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_2" ;
-"objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" [label="1: Start objc_blockBlockVar.capturedNoNullDeref_5\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" [label="1: Start objc_blockBlockVar.capturedNoNullDeref_5\nFormals:  x:int*\nLocals: \nCaptured:  [by ref]x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" -> "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_3" ;
@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_3" -> "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_2" ;
-"objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" [label="1: Start objc_blockBlockVar.capturedNullDeref_4\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" [label="1: Start objc_blockBlockVar.capturedNullDeref_4\nFormals:  x:int*\nLocals: \nCaptured:  [by ref]x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" -> "objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_3" ;
@@ -129,7 +129,7 @@ digraph cfg {
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_2" ;
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 31, column 3]\n  n$14=*&x:int* [line 31, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.blockPostBad_2,(n$14 &x:int*)) [line 31, column 3]\n " shape="box"]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 31, column 3]\n  n$14=*&x:int* [line 31, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.blockPostBad_2,([by ref]n$14 &x:int*)) [line 31, column 3]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" ;
@@ -148,7 +148,7 @@ digraph cfg {
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_2" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 40, column 3]\n  n$19=*&x:int* [line 40, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.blockPostOk_3,(n$19 &x:int*)) [line 40, column 3]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 40, column 3]\n  n$19=*&x:int* [line 40, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.blockPostOk_3,([by ref]n$19 &x:int*)) [line 40, column 3]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" ;
@@ -175,7 +175,7 @@ digraph cfg {
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 57, column 3]\n  n$28=*&x:int* [line 57, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.capturedNoNullDeref_5,(n$28 &x:int*)) [line 57, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 57, column 3]\n  n$28=*&x:int* [line 57, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.capturedNoNullDeref_5,([by ref]n$28 &x:int*)) [line 57, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" ;
@@ -198,7 +198,7 @@ digraph cfg {
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 48, column 3]\n  n$23=*&x:int* [line 48, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.capturedNullDeref_4,(n$23 &x:int*)) [line 48, column 3]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 48, column 3]\n  n$23=*&x:int* [line 48, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar.capturedNullDeref_4,([by ref]n$23 &x:int*)) [line 48, column 3]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" ;

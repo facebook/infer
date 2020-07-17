@@ -15,7 +15,9 @@ let tests =
   let assert_empty = invariant "{ }" in
   let fun_ptr_typ = Typ.mk (Tptr (Typ.mk Tfun, Pk_pointer)) in
   let closure_exp captured_pvars =
-    let mk_captured_var str = (Exp.Var (ident_of_str str), pvar_of_str str, dummy_typ) in
+    let mk_captured_var str =
+      (Exp.Var (ident_of_str str), pvar_of_str str, dummy_typ, Pvar.ByReference)
+    in
     let captured_vars = List.map ~f:mk_captured_var captured_pvars in
     let closure = {Exp.name= dummy_procname; captured_vars} in
     Exp.Closure closure

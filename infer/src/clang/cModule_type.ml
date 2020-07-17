@@ -8,7 +8,7 @@
 open! IStd
 
 type block_data =
-  { captured_vars: (Pvar.t * Typ.t) list
+  { captured_vars: (Pvar.t * Typ.t * Pvar.capture_mode) list
   ; context: CContext.t
   ; passed_as_noescape_block_to: Procname.t option
   ; procname: Procname.t

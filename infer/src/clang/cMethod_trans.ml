@@ -216,10 +216,15 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
     let formals =
       List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
     in
-    let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var, t)) captured in
+    let captured_mangled =
+      List.map ~f:(fun (var, t, mode) -> (Pvar.get_name var, t, mode)) captured
+    in
     (* Captured variables for blocks are treated as parameters *)
-    let formals = captured_mangled @ formals in
-    let const_formals = get_const_params_indices ~shift:(List.length captured_mangled) all_params in
+    let captured_as_formals = List.map ~f:(fun (var, t, _) -> (var, t)) captured_mangled in
+    let formals = captured_as_formals @ formals in
+    let const_formals =
+      get_const_params_indices ~shift:(List.length captured_as_formals) all_params
+    in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;

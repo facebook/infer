@@ -1108,7 +1108,7 @@ let rec sym_exec
           | Exp.Closure c ->
               let proc_exp = Exp.Const (Const.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop tenv prop_ proc_exp in
-              let par' = List.map ~f:(fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
+              let par' = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | _ ->
               Sil.Call (ret, exp', par, loc, call_flags)

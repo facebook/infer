@@ -21,7 +21,8 @@ type var_data =
 
 type t =
   { access: PredSymb.access  (** visibility access *)
-  ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
+  ; captured: (Mangled.t * Typ.t * Pvar.capture_mode) list
+        (** name, type, and mode of variables captured in blocks and lambdas *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)

@@ -31,7 +31,7 @@ val create_local_procdesc :
   -> Tenv.t
   -> CMethodSignature.t
   -> Clang_ast_t.stmt list
-  -> (Pvar.t * Typ.t) list
+  -> (Pvar.t * Typ.t * Pvar.capture_mode) list
   -> bool
 
 val create_external_procdesc :

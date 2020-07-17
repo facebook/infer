@@ -212,7 +212,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
             let id = Ident.create_fresh_specialized_with_blocks Ident.knormal in
             let pvar = Pvar.mk var resolved_pname in
             ( Var.of_id id
-            , (Exp.Var id, pvar, typ)
+            , (Exp.Var id, pvar, typ, Pvar.ByReference)
             , Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc} ) )
         |> List.unzip3
       in
@@ -259,7 +259,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
           get_block_name_and_load_captured_vars_instrs block_var loc
         in
         let call_instr =
-          let id_exps = List.map ~f:(fun (id, _, typ) -> (id, typ)) id_exp_typs in
+          let id_exps = List.map ~f:(fun (id, _, typ, _) -> (id, typ)) id_exp_typs in
           let converted_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
           Sil.Call
             ( return_ids
@@ -304,7 +304,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
         | Some (cl : Exp.closure) ->
             let formals_from_captured =
               List.map
-                ~f:(fun (_, var, typ) ->
+                ~f:(fun (_, var, typ, _) ->
                   (* Here we create fresh names for the new formals, based on the names of the captured
                      variables annotated with the name of the caller method *)
                   (Pvar.get_name_of_local_with_procname var, typ) )

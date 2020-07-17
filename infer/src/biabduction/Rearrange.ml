@@ -1289,7 +1289,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     | Some (_, Exp.Lvar pvar) ->
         (* pvar is the block *)
         let name = Pvar.get_name pvar in
-        List.exists ~f:(fun (cn, _) -> Mangled.equal name cn) (Procdesc.get_captured pdesc)
+        List.exists ~f:(fun (cn, _, _) -> Mangled.equal name cn) (Procdesc.get_captured pdesc)
     | _ ->
         false
   in
