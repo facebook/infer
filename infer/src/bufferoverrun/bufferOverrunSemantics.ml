@@ -304,8 +304,11 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id ->
-      let alias_loc = AliasTargets.find_simple_alias (Mem.find_alias_id id mem) in
-      Option.value_map alias_loc ~default:Val.bot ~f:(fun loc -> Mem.find loc mem)
+      let loc =
+        AliasTargets.find_simple_alias (Mem.find_alias_id id mem)
+        |> IOption.value_default_f ~f:(fun () -> Loc.of_id id)
+      in
+      Mem.find loc mem
   | Exp.Lvar pvar ->
       Mem.find (Loc.of_pvar pvar) mem
   | Exp.BinOp (bop, e1, e2) ->
