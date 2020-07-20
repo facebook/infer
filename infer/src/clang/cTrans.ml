@@ -2860,7 +2860,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     call_translation context lei_lambda_decl ;
     let procname = Procdesc.get_proc_name context.procdesc in
-    let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let get_captured_pvar_typ decl_ref =
       CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
@@ -2935,6 +2934,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let lei_captures = CMethod_trans.get_captures_from_cpp_lambda lei_lambda_decl in
     let trans_results, captured_vars =
       List.fold_right ~f:translate_captured ~init:([], []) lei_captures
+    in
+    let captured_var_names =
+      List.map ~f:(fun (_, var, typ, mode) -> (var, typ, mode)) captured_vars
+    in
+    let lambda_pname =
+      CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl captured_var_names
     in
     let closure = Exp.Closure {name= lambda_pname; captured_vars} in
     collect_trans_results context.procdesc ~return:(closure, typ) trans_results

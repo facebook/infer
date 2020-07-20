@@ -302,7 +302,7 @@ digraph cfg {
 "#lambda_shared_lambda_lambda1.cpp:24:12#fooOK#{12805486487749307717|constexpr}.5e8e5a47f663bbae0aeb80a4152608e7_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:24:12:: \n  " color=yellow style=filled]
 	
 
-"operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_1" [label="1: Start normal_capture::lambda_shared_lambda_lambda1.cpp:31:10::operator()\nFormals:  this:normal_capture::lambda_shared_lambda_lambda1.cpp:31:10*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_1" [label="1: Start normal_capture::lambda_shared_lambda_lambda1.cpp:31:10::operator()\nFormals:  this:normal_capture::lambda_shared_lambda_lambda1.cpp:31:10*\nLocals: \nCaptured:  [by value]x:int [by value]y:int \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_3" ;
@@ -313,7 +313,7 @@ digraph cfg {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" [label="1: Start capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::operator()\nFormals:  this:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" [label="1: Start capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::operator()\nFormals:  this:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*\nLocals: \nCaptured:  [by ref]x:int \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" ;
@@ -324,7 +324,7 @@ digraph cfg {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_1" [label="1: Start init_capture1::lambda_shared_lambda_lambda1.cpp:41:10::operator()\nFormals:  this:init_capture1::lambda_shared_lambda_lambda1.cpp:41:10*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_1" [label="1: Start init_capture1::lambda_shared_lambda_lambda1.cpp:41:10::operator()\nFormals:  this:init_capture1::lambda_shared_lambda_lambda1.cpp:41:10*\nLocals: \nCaptured:  [by value]i:int \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_3" ;
@@ -335,7 +335,7 @@ digraph cfg {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:41:10#init_capture1#(11958159405823124536).c1401fcf3820489850f4deb3dab109ac_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_1" [label="1: Start init_capture2::lambda_shared_lambda_lambda1.cpp:46:10::operator()\nFormals:  this:init_capture2::lambda_shared_lambda_lambda1.cpp:46:10*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_1" [label="1: Start init_capture2::lambda_shared_lambda_lambda1.cpp:46:10::operator()\nFormals:  this:init_capture2::lambda_shared_lambda_lambda1.cpp:46:10*\nLocals: \nCaptured:  [by value]a:int [by value]b:int [by value]c:int \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_3" ;
@@ -346,7 +346,7 @@ digraph cfg {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:46:10#init_capture2#(10943089228143620310).415a6350451062f52188b6cc908fbf46_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#(1084455887557995828.1d62aec1dfb3de86dac2a9a51e124083_1" [label="1: Start Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19::operator()\nFormals:  this:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#(1084455887557995828.1d62aec1dfb3de86dac2a9a51e124083_1" [label="1: Start Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19::operator()\nFormals:  this:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19*\nLocals: \nCaptured:  [by ref]this:Capture* \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#(1084455887557995828.1d62aec1dfb3de86dac2a9a51e124083_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#(1084455887557995828.1d62aec1dfb3de86dac2a9a51e124083_3" ;
@@ -368,7 +368,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_3" -> "#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#(11891233366713773989).2f1caaa7509ffca98027857cb192891f_1" [label="1: Start Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19::operator()\nFormals:  this:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#(11891233366713773989).2f1caaa7509ffca98027857cb192891f_1" [label="1: Start Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19::operator()\nFormals:  this:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19*\nLocals: \nCaptured:  [by value]this:Capture* \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#(11891233366713773989).2f1caaa7509ffca98027857cb192891f_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#(11891233366713773989).2f1caaa7509ffca98027857cb192891f_2" ;
@@ -386,7 +386,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_3" -> "#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#(91082432562742530.b72f197de8f4f60c1d815523b52f3221_1" [label="1: Start Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19::operator()\nFormals:  this:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#(91082432562742530.b72f197de8f4f60c1d815523b52f3221_1" [label="1: Start Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19::operator()\nFormals:  this:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19*\nLocals: \nCaptured:  [by ref]this:Capture* \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#(91082432562742530.b72f197de8f4f60c1d815523b52f3221_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#(91082432562742530.b72f197de8f4f60c1d815523b52f3221_3" ;
@@ -408,7 +408,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_3" -> "#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#(476955214552649307.449a23f73c844f26ba0d7a54aef5727e_1" [label="1: Start Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19::operator()\nFormals:  this:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#(476955214552649307.449a23f73c844f26ba0d7a54aef5727e_1" [label="1: Start Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19::operator()\nFormals:  this:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19*\nLocals: \nCaptured:  [by ref]this:Capture* \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#(476955214552649307.449a23f73c844f26ba0d7a54aef5727e_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#(476955214552649307.449a23f73c844f26ba0d7a54aef5727e_3" ;
@@ -430,7 +430,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_3" -> "#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::operator()\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*\nLocals:  \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::operator()\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*\nLocals: \nCaptured:  [by value]x:SomeStruct [by value]y:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_3" ;
