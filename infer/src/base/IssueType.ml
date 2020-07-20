@@ -399,6 +399,9 @@ let constant_address_dereference =
   register ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
+let pil_constant_address_dereference =
+  register ~enabled:false ~id:"PIL_CONSTANT_ADDRESS_DEREFERENCE" Warning Pil
+    ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 let create_intent_from_uri =
   register ~id:"CREATE_INTENT_FROM_URI" Error Quandary
@@ -421,6 +424,9 @@ let dangling_pointer_dereference =
   register ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error Biabduction (* TODO *)
     ~user_documentation:""
 
+let uninitialized_dereference =
+  register ~enabled:false ~id:"UNINITIALIZED_DEREFERENCE" Error Pil
+    ~user_documentation:""
 
 let dangling_pointer_dereference_maybe =
   register_hidden ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE_MAYBE" Warning Biabduction
@@ -744,9 +750,16 @@ let nullptr_dereference =
   register ~enabled:false ~id:"NULLPTR_DEREFERENCE" Error Pulse
     ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
 
+let pil_nullptr_dereference =
+  register ~enabled:false ~id:"PIL_NULLPTR_DEREFERENCE" Error Pil
+      ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
 
 let optional_empty_access =
   register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+    ~user_documentation:"Reports on accessing folly::Optional when it is none."
+
+let pil_optional_empty_access =
+  register ~enabled:false ~id:"PIL_OPTIONAL_EMPTY_ACCESS" Error Pil
     ~user_documentation:"Reports on accessing folly::Optional when it is none."
 
 
@@ -773,6 +786,9 @@ let pulse_memory_leak =
   register ~id:"MEMORY_LEAK" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
+let pil_memory_leak =
+ register ~id:"PIL_MEMORY_LEAK" Error Pil
+  ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
 let pure_function =
   register ~id:"PURE_FUNCTION" Error Purity
@@ -820,6 +836,9 @@ let stack_variable_address_escape =
   register ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
+let pil_stack_variable_address_escape =
+  register ~id:"PIL_STACK_VARIABLE_ADDRESS_ESCAPE" Error Pil
+  ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 let starvation =
   register ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
@@ -876,16 +895,25 @@ let use_after_delete =
   register ~id:"USE_AFTER_DELETE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
 
+let pil_use_after_delete =
+  register ~id:"PIL_USE_AFTER_DELETE" Error Pil
+   ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
 
 let use_after_free =
   register ~id:"USE_AFTER_FREE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
 
+let pil_use_after_free =
+   register ~id:"PIL_USE_AFTER_FREE" Error Pil
+    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
 
 let use_after_lifetime =
   register ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
 
+let pil_use_after_lifetime =
+  register ~id:"PIL_USE_AFTER_LIFETIME" Error Pil
+    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
 
 let user_controlled_sql_risk =
   register ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
@@ -951,6 +979,9 @@ let vector_invalidation =
   register ~id:"VECTOR_INVALIDATION" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/VECTOR_INVALIDATION.md"]
 
+let pil_vector_invalidation =
+  register ~id:"PIL_VECTOR_INVALIDATION" Error Pil
+    ~user_documentation:[%blob "../../documentation/issues/VECTOR_INVALIDATION.md"]
 
 let weak_self_in_noescape_block =
   register ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock

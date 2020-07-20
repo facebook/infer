@@ -10,7 +10,7 @@
   (:standard
      -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
      -open IBase -open IR -open Absint -open Biabduction -open BO -open Nullsafe
-     -open Pulselib  -open Checkers -open Costlib -open Quandary -open TOPLlib
+     -open Pulselib -open PulseISLlib  -open Checkers -open Costlib -open Quandary -open TOPLlib
      -open Concurrency -open Labs))
  (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction Nullsafe BO
             Checkers Costlib Quandary TOPLlib Concurrency Labs)

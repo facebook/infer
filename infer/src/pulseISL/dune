@@ -1,0 +1,14 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name PulseISLlib)
+ (public_name infer.PulseISLlib)
+ (flags
+  (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
+    -open IBase -open Absint -open BO))
+ (libraries core sledge IStdlib ATDGenerated IBase IR Absint BO)
+ (preprocess (pps ppx_compare ppx_variants_conv))
+)

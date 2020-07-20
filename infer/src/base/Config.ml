@@ -1807,6 +1807,12 @@ and pulse_cut_to_one_path_procedures_pattern =
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
 
+and pil_cut_to_one_path_procedures_pattern =
+  CLOpt.mk_string_opt ~long:"pil-cut-to-one-path-procedures-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods for which pil will only explore one path. Can be used on pathologically \
+     large procedures to prevent too-big states from being produced."
+
 
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
@@ -1858,6 +1864,20 @@ and pulse_model_transfer_ownership =
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
+
+(*pil*)
+ and pil_intraprocedural_only =
+  CLOpt.mk_bool ~long:"pil-intraprocedural-only" ~default:false
+    "Disable inter-procedural analysis in Pulse.ISL. Used for experimentations only."
+
+and pil_recency_limit =
+  CLOpt.mk_int ~long:"pil-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
+  
+and pil_max_disjuncts =
+  CLOpt.mk_int ~long:"pil-max-disjuncts" ~default:100
+    "Under-approximate after $(i,int) disjunctions in the domain"
 
 
 and pure_by_default =
@@ -2955,12 +2975,21 @@ and pudge = !pudge
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
+and pil_cut_to_one_path_procedures_pattern =
+  Option.map ~f:Str.regexp !pil_cut_to_one_path_procedures_pattern
+
 
 and pulse_recency_limit = !pulse_recency_limit
 
+and pil_recency_limit = !pil_recency_limit
+
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
+and pil_intraprocedural_only = !pil_intraprocedural_only
+                                                              
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pil_max_disjuncts = !pil_max_disjuncts
 
 and pulse_model_abort = !pulse_model_abort
 

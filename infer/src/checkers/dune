@@ -8,8 +8,8 @@
  (public_name infer.Checkers)
  (flags
   (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd -open ATDGenerated
-    -open IBase -open Absint -open Biabduction -open BO -open Pulselib))
- (libraries base64 core ocamlgraph IStdlib ATDGenerated IBase IR Absint Biabduction BO Pulselib)
+    -open IBase -open Absint -open Biabduction -open BO -open Pulselib -open PulseISLlib))
+ (libraries base64 core ocamlgraph IStdlib ATDGenerated IBase IR Absint Biabduction BO Pulselib PulseISLlib)
  (preprocess (pps ppx_compare))
 )
 

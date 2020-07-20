@@ -26,6 +26,7 @@ type t =
   | NullsafeDeprecated
   | PrintfArgs
   | Pulse
+  | Pil
   | Purity
   | Quandary
   | RacerD

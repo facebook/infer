@@ -136,6 +136,10 @@ let all_checkers =
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
          [(pulse, Clang); (pulse, Java)] ) }
+  ; { checker= Pil
+    ; callbacks=
+        (let pil = interprocedural Payloads.Fields.pil PulseISL.checker in
+         [(pil, Clang); (pil, Java)] ) }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =

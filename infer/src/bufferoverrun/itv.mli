@@ -56,6 +56,8 @@ module ItvPure : sig
 
   val is_one : t -> bool
 
+  val is_equal : t -> t -> bool
+
   val is_ge_zero : t -> bool
 
   val is_le_zero : t -> bool

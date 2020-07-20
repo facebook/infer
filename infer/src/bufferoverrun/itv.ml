@@ -174,6 +174,8 @@ module ItvPure = struct
 
   let is_one : t -> bool = fun (l, u) -> Bound.eq l Bound.one && Bound.eq u Bound.one
 
+  let is_equal : t -> t -> bool = fun (l1, u1) (l2, u2)  -> Bound.eq l1 l2 && Bound.eq u1 u2
+
   let is_mone : t -> bool = fun (l, u) -> Bound.eq l Bound.mone && Bound.eq u Bound.mone
 
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
