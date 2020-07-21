@@ -8,7 +8,6 @@
 open! IStd
 module L = Logging
 
-module VDom = AbstractDomain.Flat (JavaClassName)
 (** value domain, with the following concretization function [gamma]:
 
     {[
@@ -16,6 +15,7 @@ module VDom = AbstractDomain.Flat (JavaClassName)
       gamma(VDom.v A) = { any ref of exact class A }
       gamma(VDom.bot) = emptyset
     ]} *)
+module VDom = AbstractDomain.Flat (JavaClassName)
 
 module CFG = ProcCfg.Normal
 module Domain = AbstractDomain.Map (Var) (VDom)

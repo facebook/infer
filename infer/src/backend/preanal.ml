@@ -377,6 +377,8 @@ let do_preanalysis exe_env pdesc =
   if Procname.is_java proc_name then InlineJavaSyntheticMethods.process pdesc ;
   if Config.function_pointer_specialization && not (Procname.is_java proc_name) then
     FunctionPointerSubstitution.process pdesc ;
+  (* NOTE: It is important that this preanalysis stays before Liveness *)
+  if not (Procname.is_java proc_name) then ClosuresSubstitution.process summary ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process summary tenv ;

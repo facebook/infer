@@ -17,7 +17,7 @@ int block_captured_var_leak_bad() {
   return blk();
 }
 
-int block_free_ok_FP() {
+int block_free_ok() {
   int* x = malloc(sizeof(int));
   *x = 2;
   int (^blk)(void) = ^() {
