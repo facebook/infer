@@ -653,6 +653,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
 
 
+  let get_arrayWithObjects_count_infos method_pointer =
+    Option.bind (CAst_utils.get_decl_opt method_pointer) ~f:(function
+      | Clang_ast_t.ObjCMethodDecl
+          (decl_info, {ni_name}, {omdi_parameters= ParmVarDecl (_, _, objects_qual_typ, _) :: _})
+        when String.equal ni_name CFrontend_config.arrayWithObjects_count ->
+          Some (decl_info, objects_qual_typ)
+      | _ ->
+          None )
+
+
   let this_expr_trans stmt_info ?class_qual_type trans_state sil_loc =
     let this_pvar, this_typ = get_this_pvar_typ stmt_info ?class_qual_type trans_state.context in
     let return = (Exp.Lvar this_pvar, this_typ) in
@@ -2781,8 +2791,91 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and objCArrayLiteral_trans trans_state expr_info stmt_info stmts array_literal_info =
     let method_pointer = array_literal_info.Clang_ast_t.oalei_array_method in
-    let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
-    objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
+    match get_arrayWithObjects_count_infos method_pointer with
+    | Some infos ->
+        objCArrayLiteral_arrayWithObjects_count_trans trans_state expr_info stmt_info stmts infos
+          method_pointer
+    | None ->
+        let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
+        objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
+
+
+  (** Translates an array literal `NSArray* a = @ [ @2, @3 ];` to
+
+      n$1=NSNumber.numberWithInt:(2:int)
+      n$2=NSNumber.numberWithInt:(3:int)
+      temp[0]:objc_object*=n$1
+      temp[1]:objc_object*=n$2
+      n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
+      a:NSArray*=n$3
+
+      where `temp` is an additional local variable declared as array. *)
+  and objCArrayLiteral_arrayWithObjects_count_trans
+      ({context= {procdesc; tenv; translation_unit_context} as context} as trans_state) expr_info
+      stmt_info stmts (decl_info, objects_qual_typ) method_pointer =
+    let loc = CLocation.location_of_stmt_info translation_unit_context.source_file stmt_info in
+    (* 1. Add a temporary local variable for an array *)
+    let temp = CVar_decl.mk_temp_sil_var procdesc ~name:"SIL_arrayWithObjects_count___" in
+    let length = List.length stmts |> IntLit.of_int in
+    let ((temp_var, array_typ) as temp_with_typ) =
+      let array_typ =
+        match CType_decl.qual_type_to_sil_type tenv objects_qual_typ with
+        | Typ.{desc= Tptr (t, _)} ->
+            Typ.mk_array ~length ~stride:(IntLit.of_int 8) t
+        | _ ->
+            Typ.void_star
+      in
+      (Exp.Lvar temp, array_typ)
+    in
+    Procdesc.append_locals procdesc
+      [ { ProcAttributes.name= Pvar.get_name temp
+        ; typ= array_typ
+        ; modify_in_block= false
+        ; is_constexpr= false } ] ;
+    (* 2. Translate array elements *)
+    let res_trans_elems = List.mapi ~f:(exec_instruction_with_trans_state trans_state None) stmts in
+    (* 3. Add array initialization (elements assignments) *)
+    let res_trans_array =
+      let instrs =
+        List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
+            let idx = Exp.Const (Cint (IntLit.of_int i)) in
+            Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} )
+      in
+      mk_trans_result temp_with_typ {empty_control with instrs}
+    in
+    (* 4. Add a function call. *)
+    let res_trans_call =
+      let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info tenv in
+      let method_type = add_reference_if_glvalue method_type_no_ref expr_info in
+      let actuals = [temp_with_typ; (Exp.Const (Cint length), Typ.int)] in
+      let callee_name, method_call_type =
+        let typ =
+          CAst_utils.qual_type_of_decl_ptr
+            (Option.value_exn decl_info.Clang_ast_t.di_parent_pointer)
+        in
+        let obj_c_message_expr_info =
+          { Clang_ast_t.omei_selector= CFrontend_config.arrayWithObjects_count
+          ; omei_receiver_kind= `Class typ
+          ; omei_is_definition_found= true
+          ; omei_decl_pointer= method_pointer }
+        in
+        let callee_ms_opt =
+          Option.bind method_pointer ~f:(fun method_pointer ->
+              CMethod_trans.method_signature_of_pointer tenv method_pointer )
+        in
+        get_callee_objc_method context obj_c_message_expr_info callee_ms_opt actuals
+      in
+      let method_sil = Exp.Const (Cfun callee_name) in
+      let call_flags =
+        { CallFlags.default with
+          cf_virtual= CMethod_trans.equal_method_call_type method_call_type CMethod_trans.MCVirtual
+        }
+      in
+      create_call_instr trans_state method_type method_sil actuals loc call_flags
+        ~is_objc_method:true ~is_inherited_ctor:false
+    in
+    collect_trans_results procdesc ~return:res_trans_call.return
+      (res_trans_elems @ [res_trans_array; res_trans_call])
 
 
   and objCDictionaryLiteral_trans trans_state expr_info stmt_info stmts dict_literal_info =

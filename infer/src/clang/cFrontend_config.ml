@@ -22,6 +22,8 @@ type decl_trans_context = [`DeclTraversal | `Translation]
 
 let alloc = "alloc"
 
+let arrayWithObjects_count = "arrayWithObjects:count:"
+
 let dealloc = "dealloc"
 
 let assert_fail = "__assert_fail"
