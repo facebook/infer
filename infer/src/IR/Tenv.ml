@@ -97,11 +97,15 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
 end
 
 let merge ~src ~dst =
-  TypenameHash.iter
-    (fun pname cfg ->
-      if (not (Struct.is_dummy cfg)) || not (TypenameHash.mem dst pname) then
-        TypenameHash.replace dst pname cfg )
-    src
+  let merge_internal typename newer =
+    match TypenameHash.find_opt dst typename with
+    | None ->
+        TypenameHash.add dst typename newer
+    | Some current ->
+        let merged_struct = Struct.merge typename ~newer ~current in
+        TypenameHash.replace dst typename merged_struct
+  in
+  TypenameHash.iter merge_internal src
 
 
 let merge_per_file ~src ~dst =
