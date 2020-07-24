@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://fbinfer.com/img/logo.png" alt="logo" width="20%" />
+  <img src="website/static/img/logo.png" alt="logo" width="20%" />
 </p>
 <h1 align="center">
   Infer
