@@ -243,3 +243,37 @@ let get_summary_formals tenv ~get_summary ~get_formals =
             `NotFound ) )
   in
   fun pname -> get_summary_formals_aux pname
+
+
+let resolve_method ~method_exists tenv class_name proc_name =
+  let visited = ref Typ.Name.Set.empty in
+  let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
+    if
+      (not (Typ.Name.is_class class_name))
+      || (not (Struct.is_not_java_interface class_struct))
+      || Typ.Name.Set.mem class_name !visited
+    then None
+    else (
+      visited := Typ.Name.Set.add class_name !visited ;
+      let right_proc_name = Procname.replace_class proc_name class_name in
+      if method_exists right_proc_name class_struct.methods then Some right_proc_name
+      else
+        let supers_to_search =
+          match (class_name : Typ.Name.t) with
+          | CStruct _ | CUnion _ | CppClass _ ->
+              (* multiple inheritance possible, search all supers *)
+              class_struct.supers
+          | JavaClass _ ->
+              (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
+              class_struct.supers
+          | ObjcClass _ ->
+              (* multiple inheritance impossible, but recursive calls will throw away protocols *)
+              class_struct.supers
+          | ObjcProtocol _ ->
+              []
+        in
+        List.find_map supers_to_search ~f:resolve_name )
+  and resolve_name class_name =
+    lookup tenv class_name |> Option.bind ~f:(resolve_name_struct class_name)
+  in
+  resolve_name class_name

@@ -431,27 +431,7 @@ let method_exists right_proc_name methods =
 
 
 let resolve_method tenv class_name proc_name =
-  let found_class =
-    let visited = ref Typ.Name.Set.empty in
-    let rec resolve (class_name : Typ.Name.t) =
-      visited := Typ.Name.Set.add class_name !visited ;
-      let right_proc_name = Procname.replace_class proc_name class_name in
-      match Tenv.lookup tenv class_name with
-      | Some {methods; supers} when Typ.Name.is_class class_name -> (
-          if method_exists right_proc_name methods then Some right_proc_name
-          else
-            match supers with
-            | super_classname :: _ ->
-                if not (Typ.Name.Set.mem super_classname !visited) then resolve super_classname
-                else None
-            | _ ->
-                None )
-      | _ ->
-          None
-    in
-    resolve class_name
-  in
-  match found_class with
+  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
   | None ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;

@@ -272,3 +272,10 @@ let merge typename ~newer ~current =
       newer
   | JavaClass _ ->
       full_merge ~newer ~current
+
+
+let is_not_java_interface = function
+  | {java_class_info= Some {kind= Interface}} ->
+      false
+  | _ ->
+      true

@@ -75,3 +75,7 @@ val add_sub : Typ.Name.t -> t -> t
 
 val merge : Typ.Name.t -> newer:t -> current:t -> t
 (** best effort directed merge of two structs for the same typename *)
+
+val is_not_java_interface : t -> bool
+(** check that a struct either defines a non-java type, or a non-java-interface type (abstract or
+    normal class) *)

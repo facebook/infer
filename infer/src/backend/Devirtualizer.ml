@@ -99,16 +99,7 @@ let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
 (* inspired from biabduction/Symexec.ml, function resolve_method  *)
 let resolve_method tenv class_name proc_name =
   let method_exists pname methods = List.exists ~f:(Procname.equal pname) methods in
-  let rec resolve class_name =
-    let resolved_proc_name = Procname.replace_class proc_name class_name in
-    match Tenv.lookup tenv class_name with
-    | Some {methods; supers} when Typ.Name.is_class class_name -> (
-        if method_exists resolved_proc_name methods then Some resolved_proc_name
-        else match supers with super_classname :: _ -> resolve super_classname | _ -> None )
-    | _ ->
-        None
-  in
-  resolve class_name
+  Tenv.resolve_method ~method_exists tenv class_name proc_name
 
 
 let process summary tenv =
