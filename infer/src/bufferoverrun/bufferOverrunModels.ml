@@ -1365,6 +1365,8 @@ module JavaString = struct
 end
 
 module NSString = struct
+  let fn = JavaString.fn
+
   let create_string_from_c_string src_exp =
     let exec model_env ~ret mem =
       let v = Sem.eval_string_len src_exp mem in
@@ -1373,9 +1375,39 @@ module NSString = struct
     {exec; check= no_check}
 
 
+  let substring_from_index = JavaString.substring_no_end
+
   let length = JavaString.length
 
+  (** For cost analysis *)
   let get_length = JavaString.get_length
+
+  let concat = JavaString.concat
+
+  let split exp =
+    let exec ({location} as model_env) ~ret:((id, _) as ret) mem =
+      let itv =
+        ArrObjCommon.eval_size model_env exp ~fn mem
+        |> JavaString.range_itv_one_max_one_mone |> Dom.Val.of_itv
+      in
+      let {exec} = malloc ~can_be_zero:false Exp.one in
+      let mem = exec model_env ~ret mem in
+      let dest_loc = Loc.of_id id |> PowLoc.singleton in
+      Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length:itv) dest_loc mem
+    in
+    {exec; check= no_check}
+
+
+  let append_string str1_exp str2_exp =
+    let exec ({location} as model_env) ~ret:_ mem =
+      let to_add_len = JavaString.get_length model_env str2_exp mem |> Dom.Val.get_itv in
+      let arr_locs = JavaString.deref_of model_env str1_exp mem in
+      let mem = Dom.Mem.forget_size_alias arr_locs mem in
+      Dom.Mem.transform_mem
+        ~f:(Dom.Val.transform_array_length location ~f:(Itv.plus to_add_len))
+        arr_locs mem
+    in
+    {exec; check= no_check}
 end
 
 module Preconditions = struct
@@ -1543,6 +1575,11 @@ module Call = struct
       ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
         $!--> NSString.create_string_from_c_string
       ; -"NSString" &:: "length" <>$ capt_exp $--> NSString.length
+      ; -"NSString" &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp $!--> NSString.concat
+      ; -"NSString" &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp
+        $--> NSString.substring_from_index
+      ; -"NSString" &:: "appendString:" <>$ capt_exp $+ capt_exp $--> NSString.append_string
+      ; -"NSString" &:: "componentsSeparatedByString:" <>$ capt_exp $+ any_arg $--> NSString.split
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")

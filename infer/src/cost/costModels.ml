@@ -141,14 +141,19 @@ module BoundsOfArray = BoundsOf (CostUtils.Array)
 module BoundsOfCString = BoundsOf (CostUtils.CString)
 
 module NSString = struct
-  let op_on_two_str cost_op ~of_function str1 str2 ({location} as model_env) ~ret:_ mem =
-    let get_length str =
-      let itv =
-        BufferOverrunModels.NSString.get_length model_env str mem |> BufferOverrunDomain.Val.get_itv
-      in
-      CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+  let get_length str ~of_function ({location} as model_env) ~ret:_ mem =
+    let itv =
+      BufferOverrunModels.NSString.get_length model_env str mem |> BufferOverrunDomain.Val.get_itv
     in
+    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+
+
+  let op_on_two_str cost_op ~of_function str1 str2 model_env ~ret mem =
+    let get_length str = get_length str ~of_function model_env ~ret mem in
     cost_op (get_length str1) (get_length str2)
+
+
+  let substring_from_index = JavaString.substring_no_end
 end
 
 module ImmutableSet = struct
@@ -167,6 +172,9 @@ module Call = struct
           $--> BoundsOfCString.linear_length ~of_function:"google::StrLen"
         ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
           $--> BoundsOfCString.linear_length ~of_function:"NSString.stringWithUTF8String:"
+        ; -"NSString" &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp
+          $--> NSString.op_on_two_str BasicCost.plus
+                 ~of_function:"NSString.stringByAppendingString:"
         ; -"NSString" &:: "stringByAppendingPathComponent:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.plus
                  ~of_function:"NSString.stringByAppendingPathComponent:"
@@ -175,6 +183,15 @@ module Call = struct
                  ~of_function:"NSString.isEqualToString:"
         ; -"NSString" &:: "hasPrefix:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.min_default_left ~of_function:"NSString.hasPrefix:"
+        ; -"NSString" &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp
+          $!--> NSString.substring_from_index
+        ; -"NSString" &:: "rangeOfString:" <>$ capt_exp $+ capt_exp
+          $!--> NSString.op_on_two_str BasicCost.mult ~of_function:"NSString.rangeOfString:"
+        ; -"NSMutableString" &:: "appendString:" <>$ any_arg $+ capt_exp
+          $--> NSString.get_length ~of_function:"NSMutableString.appendString:"
+        ; -"NSString" &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
+          $--> NSString.op_on_two_str BasicCost.mult
+                 ~of_function:"NSString.componentsSeparatedByString:"
         ; +PatternMatch.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"
