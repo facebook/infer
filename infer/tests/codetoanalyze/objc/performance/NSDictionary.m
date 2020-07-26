@@ -42,7 +42,7 @@ NSDictionary* nsdictionary_dictionary_with_objects_linear(int n_entries) {
                                           forKeys:(id*)keyArray
                                             count:n_entries];
 
-  for (id key in asciiDict) {
+  for (int i = 0; i < [asciiDict.count integerValue]; i++) {
   }
 
   return asciiDict;
@@ -50,12 +50,19 @@ NSDictionary* nsdictionary_dictionary_with_objects_linear(int n_entries) {
 
 // accessing values and keys
 
-void nsdictionary_all_keys_linear_FP(NSDictionary* dict) {
+void nsdictionary_all_keys_linear1(NSDictionary* dict) {
   for (int i = 0; i < [dict allKeys].count; i++) {
   }
 }
 
-void nsdictionary_all_values_linear_FP(NSDictionary* dict) {
+void nsdictionary_all_keys_linear2(NSDictionary* dict) {
+  NSArray* array = [dict allKeys];
+
+  for (int i = 0; i < array.count; i++) {
+  }
+}
+
+void nsdictionary_all_values_linear(NSDictionary* dict) {
   for (int i = 0; i < [dict allValues].count; i++) {
   }
 }

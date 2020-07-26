@@ -533,7 +533,7 @@ module ArrObjCommon = struct
       cond_set
 end
 
-module NSArray = struct
+module NSCollection = struct
   (** Creates a new array from the given array by copying the first X elements. *)
   let create_array src_exp size_exp =
     let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
@@ -550,15 +550,6 @@ module NSArray = struct
     {exec; check}
 
 
-  let length e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
-      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
-    in
-    {exec; check= no_check}
-
-
   let empty_array = malloc ~can_be_zero:true Exp.zero
 
   let get_internal_array_locs arr_id _ = Loc.of_id arr_id |> PowLoc.singleton
@@ -566,6 +557,15 @@ module NSArray = struct
   let get_internal_elements_locs arr_id mem =
     let arr_locs = get_internal_array_locs arr_id mem in
     Dom.Mem.find_set arr_locs mem |> Dom.Val.get_all_locs
+
+
+  let length e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval_arr integer_type_widths e mem in
+      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
+      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
+    in
+    {exec; check= no_check}
 
 
   let check_index ~last_included arr_id index_exp =
@@ -1515,19 +1515,29 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSArray.create_array
+        -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSCollection.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
-      ; -"CFArrayGetCount" <>$ capt_exp $!--> NSArray.length
-      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSArray.get_at_index
-      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSArray.length
-      ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSArray.length
-      ; -"NSArray" &:: "array" <>--> NSArray.empty_array
-      ; -"NSArray" &:: "init" <>--> NSArray.empty_array
-      ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSArray.length
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
+      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.length
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
+      ; -"NSArray" &:: "array" <>--> NSCollection.empty_array
+      ; -"NSArray" &:: "init" <>--> NSCollection.empty_array
+      ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSCollection.length
       ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp
-        $!--> NSArray.get_at_index
-      ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSArray.create_array
-      ; -"NSArray" &:: "arrayWithObjects" &++> NSArray.array_from_list
+        $!--> NSCollection.get_at_index
+      ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp
+        $--> NSCollection.create_array
+      ; -"NSArray" &:: "arrayWithObjects" &++> NSCollection.array_from_list
+      ; -"NSDictionary" &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp
+        $+ capt_exp $--> NSCollection.create_array
+      ; -"NSDictionary" &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp
+        $--> NSCollection.get_at_index
+      ; -"NSDictionary" &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp
+        $--> NSCollection.get_at_index
+      ; -"NSDictionary" &:: "count" <>$ capt_exp $--> NSCollection.length
+      ; -"NSDictionary" &:: "allKeys" <>$ capt_exp $--> create_copy_array
+      ; -"NSDictionary" &:: "allValues" <>$ capt_exp $--> create_copy_array
       ; -"NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; -"NSNumber" &:: "integerValue" <>$ capt_exp $--> id
       ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
