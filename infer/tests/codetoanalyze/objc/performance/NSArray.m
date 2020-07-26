@@ -84,7 +84,7 @@ void nsarray_access_constant() {
   }
 }
 
-void nsarray_object_at_indexed_constant_FP() {
+void nsarray_object_at_indexed_constant() {
   NSArray* array = @[ @2, @3 ];
 
   for (int i = 0; i < [array[0] integerValue]; i++) {

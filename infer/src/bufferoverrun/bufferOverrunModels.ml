@@ -428,37 +428,6 @@ let create_copy_array src_exp =
   {exec; check= no_check}
 
 
-module NSArray = struct
-  (** Creates a new array from the given array by copying the first X elements. *)
-  let create_array src_exp size_exp =
-    let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
-    let exec model_env ~ret:((id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
-      let dest_loc = Loc.of_id id |> PowLoc.singleton in
-      let dest_arr_loc = Dom.Val.get_array_locs (Dom.Mem.find_set dest_loc mem) in
-      let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-      Dom.Mem.update_mem dest_arr_loc src_arr_v mem
-    and check {location; integer_type_widths} mem cond_set =
-      BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
-        ~last_included:true mem location cond_set
-    in
-    {exec; check}
-
-
-  let at {exp= array_exp} {exp= index_exp} = at ?size:None array_exp index_exp
-
-  let length e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
-      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
-    in
-    {exec; check= no_check}
-
-
-  let empty_array = malloc ~can_be_zero:true Exp.zero
-end
-
 module StdArray = struct
   let constructor _size =
     let exec _model_env ~ret:_ mem = mem (* initialize? *) in
@@ -550,6 +519,83 @@ module ArrObjCommon = struct
     | _ ->
         let v = Sem.eval integer_type_widths src mem in
         Dom.Mem.update_mem elem_locs v mem
+
+
+  let check_index ~last_included get_array_locs arr_id index_exp {location; integer_type_widths} mem
+      cond_set =
+    let arr =
+      let arr_locs = get_array_locs arr_id mem in
+      Dom.Mem.find_set arr_locs mem
+    in
+    let idx = Sem.eval integer_type_widths index_exp mem in
+    let latest_prune = Dom.Mem.get_latest_prune mem in
+    BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included ~latest_prune location
+      cond_set
+end
+
+module NSArray = struct
+  (** Creates a new array from the given array by copying the first X elements. *)
+  let create_array src_exp size_exp =
+    let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
+    let exec model_env ~ret:((id, _) as ret) mem =
+      let mem = malloc_exec model_env ~ret mem in
+      let dest_loc = Loc.of_id id |> PowLoc.singleton in
+      let dest_arr_loc = Dom.Val.get_array_locs (Dom.Mem.find_set dest_loc mem) in
+      let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
+      Dom.Mem.update_mem dest_arr_loc src_arr_v mem
+    and check {location; integer_type_widths} mem cond_set =
+      BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
+        ~last_included:true mem location cond_set
+    in
+    {exec; check}
+
+
+  let length e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval_arr integer_type_widths e mem in
+      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
+      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
+    in
+    {exec; check= no_check}
+
+
+  let empty_array = malloc ~can_be_zero:true Exp.zero
+
+  let get_internal_array_locs arr_id _ = Loc.of_id arr_id |> PowLoc.singleton
+
+  let get_internal_elements_locs arr_id mem =
+    let arr_locs = get_internal_array_locs arr_id mem in
+    Dom.Mem.find_set arr_locs mem |> Dom.Val.get_all_locs
+
+
+  let check_index ~last_included arr_id index_exp =
+    ArrObjCommon.check_index ~last_included get_internal_array_locs arr_id index_exp
+
+
+  let get_at_index arr_id index_exp =
+    let exec _model_env ~ret:(ret_id, _) mem =
+      let locs = get_internal_elements_locs arr_id mem in
+      let v = Dom.Mem.find_set locs mem in
+      model_by_value v ret_id mem
+    in
+    {exec; check= check_index ~last_included:false arr_id index_exp}
+
+
+  let set_elem_exec {integer_type_widths} arr_id elem_exp mem =
+    let locs = get_internal_elements_locs arr_id mem in
+    let v = Sem.eval integer_type_widths elem_exp mem in
+    Dom.Mem.update_mem locs v mem
+
+
+  let array_from_list list =
+    let len_exp = List.length list |> IntLit.of_int |> Exp.int in
+    let {exec= create_array_exec; check= _} = malloc ~can_be_zero:true len_exp in
+    let exec model_env ~ret:((arr_id, _) as ret) mem =
+      let mem = create_array_exec model_env ~ret mem in
+      List.fold_left list ~init:mem ~f:(fun acc {exp= elem_exp} ->
+          set_elem_exec model_env arr_id elem_exp acc )
+    in
+    {exec; check= no_check}
 end
 
 module StdVector = struct
@@ -1007,15 +1053,8 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  let check_index ~last_included coll_id index_exp {location; integer_type_widths} mem cond_set =
-    let arr =
-      let arr_locs = get_collection_internal_array_locs coll_id mem in
-      Dom.Mem.find_set arr_locs mem
-    in
-    let idx = Sem.eval integer_type_widths index_exp mem in
-    let latest_prune = Dom.Mem.get_latest_prune mem in
-    BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included ~latest_prune location
-      cond_set
+  let check_index ~last_included arr_id index_exp =
+    ArrObjCommon.check_index ~last_included get_collection_internal_array_locs arr_id index_exp
 
 
   let add_at_index (coll_id : Ident.t) index_exp =
@@ -1479,14 +1518,16 @@ module Call = struct
         -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"CFArrayGetCount" <>$ capt_exp $!--> NSArray.length
-      ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> NSArray.at
+      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSArray.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSArray.length
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSArray.length
       ; -"NSArray" &:: "array" <>--> NSArray.empty_array
       ; -"NSArray" &:: "init" <>--> NSArray.empty_array
       ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSArray.length
-      ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_arg $+ capt_arg $!--> NSArray.at
+      ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp
+        $!--> NSArray.get_at_index
       ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSArray.create_array
+      ; -"NSArray" &:: "arrayWithObjects" &++> NSArray.array_from_list
       ; -"NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; -"NSNumber" &:: "integerValue" <>$ capt_exp $--> id
       ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp

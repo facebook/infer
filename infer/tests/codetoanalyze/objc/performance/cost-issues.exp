@@ -19,7 +19,7 @@ codetoanalyze/objc/performance/NSArray.m, nsarray_is_equal_to_array_linear_FN, 5
 codetoanalyze/objc/performance/NSArray.m, nsarray_iterate_linear_FN, 14,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_last_object_constant, 4,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_next_object_linear_FN, 10,  OnUIThread:false, []
-codetoanalyze/objc/performance/NSArray.m, nsarray_object_at_indexed_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
+codetoanalyze/objc/performance/NSArray.m, nsarray_object_at_indexed_constant, 34,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_sort_using_descriptors_constant, 34,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_sort_using_descriptors_nlogn_FN, 10,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, objc_blocknsarray_binary_search_log_FN_1, 5,  OnUIThread:false, []
