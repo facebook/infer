@@ -23,9 +23,9 @@ Facebook has adopted a Code of Conduct that we expect project participants to ad
 
 Read our [contributing guide](./CONTRIBUTING.md) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Infer.
 
-### [Good First Issues](https://github.com/facebook/jest/labels/good%20first%20issue)
+### [Good First Issues](https://github.com/facebook/infer/labels/good%20first%20issue)
 
-To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/facebook/jest/labels/good%20first%20issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
+To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/facebook/infer/labels/good%20first%20issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
 
 ## License
 
