@@ -851,6 +851,7 @@ module ProcNameDispatcher = struct
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
+        ; +match_builtin BuiltinDecl.__new &--> Misc.return_positive ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
         ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg

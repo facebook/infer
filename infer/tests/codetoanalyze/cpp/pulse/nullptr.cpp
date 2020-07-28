@@ -180,3 +180,7 @@ struct Handle {
 // That's why as a workaround we model the analysis of Handle::get`
 // to return non-null
 void explicit_check_for_null_ok(Handle h) { return h->foo(); }
+
+X* checks_for_null() { return getX(true) == nullptr ? nullptr : new X(); }
+
+void cannot_be_null_ok() { return checks_for_null()->foo(); }
