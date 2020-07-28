@@ -1415,30 +1415,6 @@ int getrusage(int who, struct rusage* r_usage) {
   return ret;
 }
 
-#ifdef __APPLE__
-#define gettimeofday_tzp_decl void* __restrict tzp
-#else
-#ifdef __CYGWIN__
-#define gettimeofday_tzp_decl void* __restrict tzp
-#else
-#define gettimeofday_tzp_decl struct timezone* __restrict tzp
-#endif
-#endif
-
-int gettimeofday(struct timeval* __restrict tp, gettimeofday_tzp_decl) {
-  struct timeval tmp_tp;
-  struct timezone tmp_tzp;
-  int success;
-
-  if (tp != 0)
-    *tp = tmp_tp;
-  if (tzp != 0)
-    *(struct timezone*)tzp = tmp_tzp;
-
-  success = __infer_nondet_int();
-  return success ? 0 : -1;
-}
-
 struct tm* localtime_r(const time_t* __restrict timer,
                        struct tm* __restrict result) {
   int success;
