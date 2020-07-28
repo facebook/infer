@@ -57,15 +57,18 @@ module Make (Set : Set) = struct
 
     let is_a_repr (t : t) e = not (H.mem t e)
 
-    let rec find (t : t) e : Repr.t =
-      match H.find_opt t e with
-      | None ->
-          Repr.of_elt e
-      | Some r ->
-          let r' = find t (r :> Set.elt) in
-          if not (phys_equal r r') then H.replace t e r' ;
-          r'
+    let rec find_opt (t : t) e : Repr.t option =
+      H.find_opt t e
+      |> Option.map ~f:(fun (r : Repr.t) ->
+             match find_opt t (r :> Set.elt) with
+             | None ->
+                 r
+             | Some r' ->
+                 if not (phys_equal r r') then H.replace t e r' ;
+                 r' )
 
+
+    let find (t : t) e : Repr.t = match find_opt t e with Some r -> r | None -> Repr.of_elt e
 
     let merge (t : t) ~(from : Repr.t) ~(to_ : Repr.t) = H.replace t (from :> Set.elt) to_
   end
