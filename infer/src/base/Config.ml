@@ -1724,6 +1724,15 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_cfg =
+  CLOpt.mk_bool ~long:"procedures-cfg"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/<file_name>/<proc_name>.dot for each procedure in the output of \
+        $(b,--procedures)"
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+
+
 and procedures_definedness =
   CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -2923,6 +2932,8 @@ and print_using_diff = !print_using_diff
 and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
+
+and procedures_cfg = !procedures_cfg
 
 and procedures_definedness = !procedures_definedness
 

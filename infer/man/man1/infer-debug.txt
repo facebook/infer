@@ -46,6 +46,11 @@ DEBUG PROCEDURES
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)
 
+       --procedures-cfg
+           Activates: Output a dotty file in
+           infer-out/captured/<file_name>/<proc_name>.dot for each procedure
+           in the output of --procedures (Conversely: --no-procedures-cfg)
+
        --no-procedures-definedness
            Deactivates: Include procedures definedness in the output of
            --procedures, i.e. whether the procedure definition was found, or

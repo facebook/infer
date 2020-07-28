@@ -237,7 +237,8 @@ let () =
           L.result "%a"
             Config.(
               Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
-                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
+                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes
+                ~proc_cfg:procedures_cfg)
             () ) ;
       if Config.source_files then (
         let filter = Lazy.force Filtering.source_files_filter in

@@ -177,7 +177,8 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     incr nesting ;
     Preanal.do_preanalysis (Option.value_exn !exe_env_ref) callee_pdesc ;
     if Config.debug_mode then
-      DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc ;
+      DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
+      |> ignore ;
     let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
     add_active callee_pname ;
     initial_callee_summary

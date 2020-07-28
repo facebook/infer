@@ -425,6 +425,8 @@ val procedures : bool
 
 val procedures_attributes : bool
 
+val procedures_cfg : bool
+
 val procedures_definedness : bool
 
 val procedures_filter : string option

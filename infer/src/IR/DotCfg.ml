@@ -141,4 +141,5 @@ let emit_proc_desc source proc_desc =
     in
     DB.filename_to_string db_name ^ ".dot"
   in
-  with_dot_file filename ~pp:(fun fmt -> print_pdesc source fmt proc_desc)
+  with_dot_file filename ~pp:(fun fmt -> print_pdesc source fmt proc_desc) ;
+  filename
