@@ -45,23 +45,19 @@ public class DefaultInInterface {
     }
   }
 
-  static void FN_uncertainCallNPE(int i) {
-    A firstAthenB = new A();
+  static void uncertainCallMethod1NPE(int i) {
+    A aAorB = new A();
     if (i > 0) { // feasible path
-      firstAthenB = new B();
+      aAorB = new B();
     }
-    System.out.println(firstAthenB.defaultMethod1().toString());
+    System.out.println(aAorB.defaultMethod1().toString());
   }
 
-  static boolean alwaysFalse() {
-    return false;
-  }
-
-  static void FP_uncertainCallOk(int i) {
-    A firstAthenB = new A();
-    if (alwaysFalse()) { // unfeasible path
-      firstAthenB = new B();
+  static void FN_uncertainCallMethod2NPE(int i) {
+    A aAorB = new A();
+    if (i > 0) { // feasible path
+      aAorB = new B();
     }
-    System.out.println(firstAthenB.defaultMethod2().toString());
+    System.out.println(aAorB.defaultMethod2().toString());
   }
 }

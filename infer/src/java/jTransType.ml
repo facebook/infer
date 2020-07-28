@@ -71,15 +71,6 @@ let rec create_array_type typ dim =
   else typ
 
 
-let extract_cn_no_obj (typ : Typ.t) =
-  match typ.desc with
-  | Tptr ({desc= Tstruct (JavaClass _ as name)}, Pk_pointer) ->
-      let class_name = JBasics.make_cn (Typ.Name.name name) in
-      if JBasics.cn_equal class_name JBasics.java_lang_object then None else Some class_name
-  | _ ->
-      None
-
-
 (** Printing types *)
 let object_type_to_string ot =
   let rec array_type_to_string (vt : JBasics.value_type) =
