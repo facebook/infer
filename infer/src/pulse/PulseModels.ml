@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 open IResult.Let_syntax
 open PulseBasicInterface
@@ -534,6 +535,33 @@ module GenericArrayBackedCollectionIterator = struct
     construct location event ~init ~ref:this astate >>| ExecutionDomain.continue >>| List.return
 
 
+  let operator_compare comparison ~desc iter_lhs iter_rhs _ ~callee_procname:_ location
+      ~ret:(ret_id, _) astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, _, (index_lhs, _) = to_internal_pointer_deref location iter_lhs astate in
+    let+ astate, _, (index_rhs, _) = to_internal_pointer_deref location iter_rhs astate in
+    let ret_val = AbstractValue.mk_fresh () in
+    let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
+    let ret_val_equal, ret_val_notequal =
+      match comparison with
+      | `Equal ->
+          (IntLit.one, IntLit.zero)
+      | `NotEqual ->
+          (IntLit.zero, IntLit.one)
+    in
+    let astate_equal =
+      PulseArithmetic.and_eq_int ret_val ret_val_equal astate
+      |> PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
+           (AbstractValueOperand index_rhs)
+    in
+    let astate_notequal =
+      PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
+      |> PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
+           (AbstractValueOperand index_rhs)
+    in
+    [ExecutionDomain.ContinueProgram astate_equal; ExecutionDomain.ContinueProgram astate_notequal]
+
+
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, pointer, index = to_internal_pointer_deref location iter astate in
@@ -907,6 +935,16 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
           $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
                  ~desc:"iterator operator--"
+        ; -"std" &:: "operator=="
+          $ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $+ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `Equal
+                 ~desc:"iterator operator=="
+        ; -"std" &:: "operator!="
+          $ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $+ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `NotEqual
+                 ~desc:"iterator operator!="
         ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
           $+ capt_arg_payload
           $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
@@ -918,6 +956,16 @@ module ProcNameDispatcher = struct
         ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
           $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
                  ~desc:"iterator operator--"
+        ; -"__gnu_cxx" &:: "operator=="
+          $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `Equal
+                 ~desc:"iterator operator=="
+        ; -"__gnu_cxx" &:: "operator!="
+          $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `NotEqual
+                 ~desc:"iterator operator!="
         ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references Assign
         ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
