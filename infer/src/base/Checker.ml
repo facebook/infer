@@ -34,7 +34,8 @@ type t =
   | SIOF
   | SelfInBlock
   | Starvation
-  | TOPL
+  | ToplOnBiabduction
+  | ToplOnPulse
   | Uninit
 [@@deriving equal, enumerate]
 
@@ -366,8 +367,8 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
-  | TOPL ->
-      { id= "topl"
+  | ToplOnBiabduction ->
+      { id= "topl-biabd"
       ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
@@ -375,6 +376,15 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Biabduction] }
+  | ToplOnPulse ->
+      { id= "topl-pulse"
+      ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
+      ; support= supports_clang_and_java_experimental
+      ; short_documentation=
+          "Detects errors based on user-provided state machines describing multi-object monitors."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [Pulse] }
   | Uninit ->
       { id= "uninit"
       ; kind= UserFacing {title= "Uninitialized Variable"; markdown_body= ""}

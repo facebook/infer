@@ -24,9 +24,16 @@ val cfg : unit -> Cfg.t
 (** The CFG of the synthesized code. This function has a side-effect, because that's how [Cfg]
     works, so do NOT call when Topl is inactive.*)
 
-val instrument_callback :
+val analyze_with_biabduction :
      (BiabductionSummary.t InterproceduralAnalysis.t -> BiabductionSummary.t option)
   -> BiabductionSummary.t InterproceduralAnalysis.t
   -> BiabductionSummary.t option
 (** Run biabduction with Topl instrumentation if active. Inserts calls to the TOPL automaton.
     Mutates the arguments: it is the caller's responsibility to instrument procedures at most once. *)
+
+val analyze_with_pulse :
+     (PulseSummary.t InterproceduralAnalysis.t -> PulseSummary.t option)
+  -> PulseSummary.t InterproceduralAnalysis.t
+  -> PulseSummary.t option
+(** Run pulse with Topl instrumentation if active. Inserts calls to the TOPL automaton. Mutates the
+    arguments: it is the caller's responsibility to instrument procedures at most once. *)

@@ -172,11 +172,11 @@ let add_types tenv =
   ()
 
 
-let instrument tenv procdesc =
-  if not (ToplUtils.is_synthesized (Procdesc.get_proc_name procdesc)) then (
+let instrument {InterproceduralAnalysis.proc_desc; tenv; _} =
+  if not (ToplUtils.is_synthesized (Procdesc.get_proc_name proc_desc)) then (
     let f _node = instrument_instruction in
     tt "instrument@\n" ;
-    let _updated = Procdesc.replace_instrs_by procdesc ~f in
+    let _updated = Procdesc.replace_instrs_by proc_desc ~f in
     tt "add types@\n" ;
     add_types tenv ;
     tt "done@\n" )
@@ -243,7 +243,7 @@ let conjoin_props env post pre =
     To compute (pre & post) the function [conjoin_props] from above is used, which returns a weaker
     formula: in particular, the spatial part of pre is dropped. To get around some limitations of
     the prover we also use [lookup_static_var]; if a call to this function fails, we don't warn. *)
-let add_errors env proc_desc err_log biabduction_summary =
+let add_errors_biabduction {InterproceduralAnalysis.proc_desc; tenv; err_log} biabduction_summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   if not (ToplUtils.is_synthesized proc_name) then
     let preposts : Prop.normal BiabductionSummary.spec list =
@@ -266,26 +266,27 @@ let add_errors env proc_desc err_log biabduction_summary =
         let start_exp = Exp.int (IntLit.of_int start) in
         let error_exp = Exp.int (IntLit.of_int error) in
         let pre_start =
-          Prop.normalize env (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_pre) pre)
+          Prop.normalize tenv (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_pre) pre)
         in
-        let pre_start = Prop.conjoin_eq env start_exp start_pre_value pre_start in
+        let pre_start = Prop.conjoin_eq tenv start_exp start_pre_value pre_start in
         let handle_post (post, _path (* TODO: use for getting a trace*)) =
           let handle_state_post_value state_post_value =
             tt "POST = %a@\n" (Prop.pp_prop Pp.text) post ;
             let loc = Procdesc.get_loc proc_desc in
             let post =
-              Prop.normalize env (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_post) post)
+              Prop.normalize tenv (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_post) post)
             in
-            let phi = conjoin_props env post pre_start in
-            let psi = Prop.conjoin_neq env error_exp state_post_value phi in
-            if (not (is_inconsistent env phi)) && is_inconsistent env psi then (
+            let phi = conjoin_props tenv post pre_start in
+            let psi = Prop.conjoin_neq tenv error_exp state_post_value phi in
+            if (not (is_inconsistent tenv phi)) && is_inconsistent tenv psi then (
               let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
               let message = Printf.sprintf "property %s reaches error" property in
               tt "WARN@\n" ;
-              Reporting.log_issue proc_desc err_log TOPL IssueType.topl_error ~loc message )
+              Reporting.log_issue proc_desc err_log ToplOnBiabduction IssueType.topl_error ~loc
+                message )
           in
           (* Don't warn if [lookup_static_var] fails. *)
-          Option.iter ~f:handle_state_post_value (lookup_static_var env state_var post)
+          Option.iter ~f:handle_state_post_value (lookup_static_var tenv state_var post)
         in
         List.iter ~f:handle_post posts
       in
@@ -294,9 +295,14 @@ let add_errors env proc_desc err_log biabduction_summary =
         List.iter ~f:(handle_start_error state_pre_value) start_error_pairs
       in
       (* Don't warn if [lookup_static_var] fails. *)
-      Option.iter ~f:handle_state_pre_value (lookup_static_var env state_var pre)
+      Option.iter ~f:handle_state_pre_value (lookup_static_var tenv state_var pre)
     in
     List.iter ~f:handle_preposts preposts
+
+
+let add_errors_pulse _analysis_data _summary =
+  (* TODO(rgrigore): Do something similar to add_errors_biabduction, but for pulse summaries. *)
+  ()
 
 
 let sourcefile () =
@@ -309,9 +315,15 @@ let cfg () =
   ToplMonitor.cfg ()
 
 
-let instrument_callback biabduction
-    ({InterproceduralAnalysis.proc_desc; tenv; err_log} as analysis_data) =
-  if is_active () then instrument tenv proc_desc ;
-  let biabduction_summary = biabduction analysis_data in
-  if is_active () then add_errors tenv proc_desc err_log biabduction_summary ;
-  biabduction_summary
+let analyze_with analyze postprocess analysis_data =
+  if is_active () then instrument analysis_data ;
+  let summary = analyze analysis_data in
+  if is_active () then postprocess analysis_data summary ;
+  summary
+
+
+let analyze_with_biabduction biabduction analysis_data =
+  analyze_with biabduction add_errors_biabduction analysis_data
+
+
+let analyze_with_pulse pulse analysis_data = analyze_with pulse add_errors_pulse analysis_data

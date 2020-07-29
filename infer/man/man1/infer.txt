@@ -1114,14 +1114,23 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
-       --topl
-           Activates: checker topl: Detects errors based on user-provided
-           state machines describing multi-object monitors. (Conversely:
-           --no-topl)           See also infer-analyze(1).
+       --topl-biabd
+           Activates: checker topl-biabd: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-biabd)           See also infer-analyze(1).
 
-       --topl-only
-           Activates: Enable topl and disable all other checkers (Conversely:
-           --no-topl-only)           See also infer-analyze(1).
+       --topl-biabd-only
+           Activates: Enable topl-biabd and disable all other checkers
+           (Conversely: --no-topl-biabd-only)           See also infer-analyze(1).
+
+       --topl-pulse
+           Activates: checker topl-pulse: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-pulse)           See also infer-analyze(1).
+
+       --topl-pulse-only
+           Activates: Enable topl-pulse and disable all other checkers
+           (Conversely: --no-topl-pulse-only)           See also infer-analyze(1).
 
        --no-uninit
            Deactivates: checker uninit: Warns when values are used before

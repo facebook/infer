@@ -860,7 +860,9 @@ let complexity_increase ~kind ~is_on_ui_thread =
   register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
-let topl_error = register ~id:"TOPL_ERROR" Error TOPL ~user_documentation:"Experimental."
+let topl_error =
+  register ~id:"TOPL_ERROR" Error ToplOnBiabduction ~user_documentation:"Experimental."
+
 
 let uninitialized_value =
   register ~id:"UNINITIALIZED_VALUE" Error Uninit

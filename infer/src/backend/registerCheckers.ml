@@ -134,7 +134,11 @@ let all_checkers =
         ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
   ; { checker= Pulse
     ; callbacks=
-        (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
+        (let checker =
+           if Config.is_checker_enabled ToplOnPulse then Topl.analyze_with_pulse Pulse.checker
+           else Pulse.checker
+         in
+         let pulse = interprocedural Payloads.Fields.pulse checker in
          [(pulse, Clang); (pulse, Java)] ) }
   ; { checker= Impurity
     ; callbacks=
@@ -175,8 +179,8 @@ let all_checkers =
     ; callbacks=
         (let biabduction =
            dynamic_dispatch Payloads.Fields.biabduction
-             ( if Config.is_checker_enabled TOPL then
-               Topl.instrument_callback Interproc.analyze_procedure
+             ( if Config.is_checker_enabled ToplOnBiabduction then
+               Topl.analyze_with_biabduction Interproc.analyze_procedure
              else Interproc.analyze_procedure )
          in
          [(biabduction, Clang); (biabduction, Java)] ) }
