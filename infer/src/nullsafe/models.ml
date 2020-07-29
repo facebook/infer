@@ -154,3 +154,9 @@ let find_nonnullable_alternative proc_name =
      It is a good idea to support this feature in a user-facing third party repository. *)
   let proc_id = Procname.to_unique_id proc_name in
   Hashtbl.find_opt nonnull_alternatives_table proc_id
+
+
+(* Check if a given field is known to be a non-nullable *)
+let is_field_nonnullable field_name =
+  Hashtbl.find_opt field_nullability_table (Fieldname.to_full_string field_name)
+  |> Option.value_map ~f:(fun is_nullable -> not is_nullable) ~default:false

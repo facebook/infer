@@ -168,6 +168,14 @@ class Strict {
     return SomeEnum.valueOf("this will throw but won't return null");
   }
 
+  private Boolean booleanFALSE_NonNullableOK() {
+    return Boolean.FALSE;
+  }
+
+  private Boolean booleanTRUE_NonNullableOK() {
+    return Boolean.TRUE;
+  }
+
   private String nonStrictClass_convertingNonnullToNonnullIsBad() {
     // even that it is declared as nonnull, can not convert it to nonnull it without checking before
     return (new NonStrict()).getNonnull();

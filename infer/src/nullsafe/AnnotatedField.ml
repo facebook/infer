@@ -76,6 +76,8 @@ let get tenv field_name class_typ =
         (* This field is artifact of codegen and is not visible to the user.
            Surfacing it as non-strict is non-actionable for the user *)
         AnnotatedNullability.StrictNonnull SyntheticField
+      else if Models.is_field_nonnullable field_name then
+        AnnotatedNullability.StrictNonnull ModelledNonnull
       else nullability
     else nullability
   in
