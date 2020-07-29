@@ -69,20 +69,8 @@ module TransferFunctions = struct
         mem
 
 
-  let symbolic_pname_value pname params typ location mem =
-    let obj_path =
-      match params with
-      | (param, _) :: _ ->
-          PowLoc.min_elt_opt (Sem.eval_locs param mem) |> Option.bind ~f:Loc.get_path
-      | _ ->
-          None
-    in
-    let path = Symb.SymbolPath.of_callsite ?obj_path ~ret_typ:typ (CallSite.make pname location) in
-    Dom.Mem.find (Loc.of_allocsite (Allocsite.make_symbol path)) mem
-
-
-  let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname params
-      ~callee_exit_mem ({Dom.eval_locpath} as eval_sym_trace) mem location =
+  let instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem
+      ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
       List.fold callee_formals ~init:LocSet.empty ~f:(fun acc (formal, _) ->
           LocSet.add (Loc.of_pvar formal) acc )
@@ -122,9 +110,7 @@ module TransferFunctions = struct
       | Some callee_pdesc when Procdesc.has_added_return_param callee_pdesc ->
           Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname))
       | _ ->
-          if Language.curr_language_is Java && Dom.Mem.is_exc_raised callee_exit_mem then
-            symbolic_pname_value callee_pname params ret_typ location mem
-          else Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
+          Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
     in
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
@@ -136,7 +122,7 @@ module TransferFunctions = struct
   let instantiate_mem :
          is_params_ref:bool
       -> Typ.IntegerWidths.t
-      -> Ident.t * Typ.t
+      -> Ident.t
       -> (Pvar.t * Typ.t) list
       -> Procname.t
       -> (Exp.t * Typ.t) list
@@ -144,15 +130,15 @@ module TransferFunctions = struct
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun ~is_params_ref integer_type_widths ret callee_formals callee_pname params caller_mem
+   fun ~is_params_ref integer_type_widths ret_id callee_formals callee_pname params caller_mem
        callee_exit_mem location ->
     let eval_sym_trace =
       Sem.mk_eval_sym_trace ~is_params_ref integer_type_widths callee_formals params caller_mem
         ~mode:Sem.EvalNormal
     in
     let mem =
-      instantiate_mem_reachable ret callee_formals callee_pname params ~callee_exit_mem
-        eval_sym_trace caller_mem location
+      instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem eval_sym_trace
+        caller_mem location
     in
     if Language.curr_language_is Java then
       Dom.Mem.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem mem
@@ -409,7 +395,7 @@ module TransferFunctions = struct
             with
             | callee_pname, `Found (callee_exit_mem, callee_formals)
             | _, `FoundFromSubclass (callee_pname, callee_exit_mem, callee_formals) ->
-                instantiate_mem ~is_params_ref integer_type_widths ret callee_formals callee_pname
+                instantiate_mem ~is_params_ref integer_type_widths id callee_formals callee_pname
                   params mem callee_exit_mem location
             | _, `NotFound ->
                 (* This may happen for procedures with a biabduction model too. *)

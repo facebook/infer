@@ -2226,8 +2226,6 @@ module Mem = struct
 
   let exc_raised : t = ExcRaised
 
-  let is_exc_raised = function ExcRaised -> true | _ -> false
-
   let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else

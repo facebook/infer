@@ -351,7 +351,7 @@ codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.<init>(),
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_concrete_func_linear_FP(UnknownCallsTest$AbstractC):void, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_loop_over_charArray_FP(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false, [Call to void UnknownCallsTest.loop_over_charArray_FP(StringBuilder,String),Unbounded loop,Loop]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_may_throw_exception_constant():void, 220,  OnUIThread:false, []
-codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_throw_exception_linear():void, 5 + 5 ⋅ UnknownCallsTest.throw_exception().ub + 8 ⋅ (1+max(0, UnknownCallsTest.throw_exception().ub)),  OnUIThread:false, [{1+max(0, UnknownCallsTest.throw_exception().ub)},Loop,{UnknownCallsTest.throw_exception().ub},Loop]
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.call_throw_exception_unknown():void, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.jsonArray_constant():void, 22,  OnUIThread:false, []
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.jsonArray_linear(org.json.JSONArray):void, 8 + 5 ⋅ jsonArray.length,  OnUIThread:false, [{jsonArray.length},Loop]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.loop_over_charArray_FP(java.lang.StringBuilder,java.lang.String):void, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
