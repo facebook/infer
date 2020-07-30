@@ -14,7 +14,17 @@ type t = Exp.t Ident.Hash.t Lazy.t
 
 let create_ proc_desc =
   let map = Ident.Hash.create 1 in
-  let do_instr _ = function Sil.Load {id; e} -> Ident.Hash.add map id e | _ -> () in
+  let do_instr _ = function
+    | Sil.Load {id; e} ->
+        Ident.Hash.add map id e
+    | Sil.Call ((res_ident, _), Exp.Const (Const.Cfun fname), [(Exp.Var src_ident, _); _], _, _)
+    (* [id] = __cast([ex]) when [ex] is a frontend temporary, try to unfold it further *)
+      when Procname.equal fname BuiltinDecl.__cast ->
+        Ident.Hash.find_opt map src_ident
+        |> Option.iter ~f:(fun ex -> Ident.Hash.add map res_ident ex)
+    | _ ->
+        ()
+  in
   Procdesc.iter_instrs do_instr proc_desc ;
   map
 

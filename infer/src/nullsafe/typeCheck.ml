@@ -717,31 +717,43 @@ let handle_assignment_in_condition_for_sil_prune idenv node pvar =
           None )
 
 
+let pp_normalized_cond fmt (_, exp) = Exp.pp fmt exp
+
 let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =
-  match cond with
-  | Exp.UnOp (Unop.LNot, c, top) ->
-      let node', c' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c in
-      (node', Exp.UnOp (Unop.LNot, c', top))
-  | Exp.BinOp (bop, c1, c2) ->
-      let node', c1' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c1 in
-      let node'', c2' = normalize_cond_for_sil_prune_rec idenv ~node:node' ~original_node c2 in
-      (node'', Exp.BinOp (bop, c1', c2'))
-  | Exp.Var _ ->
-      let c' = IDEnv.expand_expr idenv cond in
-      if not (Exp.equal c' cond) then normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
-      else (node, c')
-  | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
-    match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
-    | None -> (
-      match Decompile.find_program_variable_assignment node pvar with
-      | Some (node', id) ->
-          (node', Exp.Var id)
-      | None ->
-          (node, cond) )
-    | Some e2 ->
-        (node, e2) )
-  | c ->
-      (node, c)
+  L.d_with_indent ~name:"normalize_cond_for_sil_prune_rec" ~pp_result:pp_normalized_cond (fun () ->
+      L.d_printfln "cond=%a" Exp.pp cond ;
+      match cond with
+      | Exp.UnOp (Unop.LNot, c, top) ->
+          L.d_printfln "UnOp" ;
+          let node', c' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c in
+          (node', Exp.UnOp (Unop.LNot, c', top))
+      | Exp.BinOp (bop, c1, c2) ->
+          L.d_printfln "BinOp" ;
+          let node', c1' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c1 in
+          let node'', c2' = normalize_cond_for_sil_prune_rec idenv ~node:node' ~original_node c2 in
+          L.d_printfln "c1=%a@\nc2=%a" Exp.pp c1 Exp.pp c2 ;
+          (node'', Exp.BinOp (bop, c1', c2'))
+      | Exp.Var _ ->
+          L.d_printfln "Var" ;
+          let c' = IDEnv.expand_expr idenv cond in
+          L.d_printfln "c'=%a" Exp.pp c' ;
+          if not (Exp.equal c' cond) then
+            normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
+          else (node, c')
+      | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
+          L.d_printfln "Lvar" ;
+          match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
+          | None -> (
+            match Decompile.find_program_variable_assignment node pvar with
+            | Some (node', id) ->
+                (node', Exp.Var id)
+            | None ->
+                (node, cond) )
+          | Some e2 ->
+              (node, e2) )
+      | c ->
+          L.d_printfln "other" ;
+          (node, c) )
 
 
 (* Normalize the condition by resolving temp variables. *)

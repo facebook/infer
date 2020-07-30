@@ -233,8 +233,7 @@ public class ReturnNotNullable {
     // 1. The argument is a generic,
     // 2. The type parameter is not {@code Object}.
     // Both are important to trigger the behaviour we're checking (indirection via typecast in CFG).
-    public List<String> nullCheckGenericAssignmentResultAsNonnullOk_FP(
-        BlockingQueue<Runnable> queue) {
+    public List<String> nullCheckGenericAssignmentResultAsNonnullOk(BlockingQueue<Runnable> queue) {
       final ArrayList<String> records = new ArrayList<>(queue.size());
       try {
         Runnable task;
@@ -258,7 +257,7 @@ public class ReturnNotNullable {
       }
     }
 
-    public void chainedCallsWithAssignmentChecksOk_FP(@Nullable NullableGetter<NullableGetter> c1) {
+    public void chainedCallsWithAssignmentChecksOk(@Nullable NullableGetter<NullableGetter> c1) {
       NullableGetter<NullableGetter> c2, c3;
 
       if (c1 != null && (c2 = c1.get()) != null && (c3 = c2.get()) != null) {
