@@ -10,23 +10,12 @@ module F = Format
 module L = Logging
 module CLOpt = CommandLineOption
 
-(** return the list of the .specs files in the results dir and libs, if they're defined *)
+(** return the list of the .specs files in the results dir *)
 let load_specfiles () =
-  let specs_files_in_dir dir =
-    let is_specs_file fname =
-      PolyVariantEqual.(Sys.is_directory fname <> `Yes)
-      && Filename.check_suffix fname Config.specs_files_suffix
-    in
-    match Sys.readdir dir with
-    | exception Sys_error _ ->
-        []
-    | files ->
-        Array.fold files ~init:[] ~f:(fun acc fname ->
-            let path = Filename.concat dir fname in
-            if is_specs_file path then path :: acc else acc )
-  in
+  let is_specs_file fname = Filename.check_suffix fname Config.specs_files_suffix in
+  let do_file acc path = if is_specs_file path then path :: acc else acc in
   let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir in
-  specs_files_in_dir result_specs_dir
+  Utils.directory_fold do_file [] result_specs_dir
 
 
 let print_usage_exit err_s =

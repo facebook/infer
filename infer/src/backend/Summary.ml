@@ -130,14 +130,26 @@ module OnDisk = struct
     Procname.Hash.replace cache proc_name summary
 
 
-  let specs_filename pname =
-    let pname_file = Procname.to_filename pname in
-    pname_file ^ Config.specs_files_suffix
+  let specs_filename_and_crc pname =
+    let pname_file, crc = Procname.to_filename_and_crc pname in
+    (pname_file ^ Config.specs_files_suffix, crc)
 
+
+  let specs_filename pname = specs_filename_and_crc pname |> fst
 
   (** Return the path to the .specs file for the given procedure in the current results directory *)
   let specs_filename_of_procname pname =
-    DB.filename_from_string (ResultsDir.get_path Specs ^/ specs_filename pname)
+    let filename, crc = specs_filename_and_crc pname in
+    let sharded_filename =
+      if Serialization.is_shard_mode then
+        let shard_dirs =
+          String.sub crc ~pos:0 ~len:Config.specs_shard_depth
+          |> String.concat_map ~sep:"/" ~f:Char.to_string
+        in
+        shard_dirs ^/ filename
+      else filename
+    in
+    DB.filename_from_string (ResultsDir.get_path Specs ^/ sharded_filename)
 
 
   (** paths to the .specs file for the given procedure in the models folder *)

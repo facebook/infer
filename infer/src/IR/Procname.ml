@@ -775,8 +775,7 @@ let get_qualifiers pname =
       QualifiedCppName.empty
 
 
-(** Convert a proc name to a filename *)
-let to_filename pname =
+let to_filename_and_crc pname =
   (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
   let pp_rev_qualified fmt pname =
     let rev_qualifiers = get_qualifiers pname |> QualifiedCppName.to_rev_list in
@@ -796,6 +795,9 @@ let to_filename pname =
   in
   DB.append_crc_cutoff proc_id
 
+
+(** Convert a proc name to a filename *)
+let to_filename pname = to_filename_and_crc pname |> fst
 
 module SQLite = struct
   module T = struct

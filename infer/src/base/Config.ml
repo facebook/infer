@@ -2160,6 +2160,13 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
+and specs_shard_depth =
+  CLOpt.mk_int ~long:"specs-shard-depth" ~default:0
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
+    "Specify the depth of the directory structure of specs, used for \"sharding\" .specs files. \
+     Zero turns sharding off."
+
+
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -3097,6 +3104,12 @@ and source_files_freshly_captured = !source_files_freshly_captured
 and sources = !sources
 
 and sourcepath = !sourcepath
+
+and specs_shard_depth =
+  if 0 <= !specs_shard_depth && !specs_shard_depth <= 32 then !specs_shard_depth
+  else
+    L.die UserError "Invalid number of shard depths %d: must be between 0 and 32" !specs_shard_depth
+
 
 and sqlite_cache_size = !sqlite_cache_size
 

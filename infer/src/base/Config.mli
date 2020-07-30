@@ -553,6 +553,8 @@ val source_files_type_environment : bool
 
 val source_preview : bool
 
+val specs_shard_depth : int
+
 val sqlite_cache_size : int
 
 val sqlite_page_size : int
