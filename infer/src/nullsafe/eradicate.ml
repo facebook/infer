@@ -25,7 +25,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
            has very special meaning and nullability limitations (it can never be null).
         *)
         TypeOrigin.This
-      else if PatternMatch.is_override_of_java_lang_object_equals curr_pname then
+      else if PatternMatch.Java.is_override_of_lang_object_equals curr_pname then
         TypeOrigin.CurrMethodParameter ObjectEqualsOverride
       else TypeOrigin.CurrMethodParameter (Normal param_signature)
     in

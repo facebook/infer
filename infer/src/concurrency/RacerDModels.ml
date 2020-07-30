@@ -364,7 +364,7 @@ let is_thread_safe_method pname tenv =
 let is_marked_thread_safe pname tenv =
   ((* current class not marked [@NotThreadSafe] *)
    not
-     (PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
+     (PatternMatch.Java.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
   && ConcurrencyModels.find_override_or_superclass_annotated is_thread_safe tenv pname
      |> Option.is_some
 

@@ -192,75 +192,82 @@ module Call = struct
         ; -"NSString" &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.mult
                  ~of_function:"NSString.componentsSeparatedByString:"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"
-        ; +PatternMatch.implements_list &:: "sort" $ capt_exp
+        ; +PatternMatch.Java.implements_list
+          &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"List.sort"
-        ; +PatternMatch.implements_arrays &:: "sort" $ capt_exp
+        ; +PatternMatch.Java.implements_arrays
+          &:: "sort" $ capt_exp
           $+...$--> BoundsOfArray.n_log_n_length ~of_function:"Arrays.sort"
-        ; +PatternMatch.implements_list &:: "contains" <>$ capt_exp
+        ; +PatternMatch.Java.implements_list
+          &:: "contains" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"List.contains"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "binarySearch" <>$ capt_exp
           $+...$--> BoundsOfCollection.logarithmic_length ~of_function:"Collections.binarySearch"
-        ; +PatternMatch.implements_arrays &:: "binarySearch" <>$ capt_exp
+        ; +PatternMatch.Java.implements_arrays
+          &:: "binarySearch" <>$ capt_exp
           $+...$--> BoundsOfArray.logarithmic_length ~of_function:"Arrays.binarySearch"
-        ; +PatternMatch.implements_arrays &:: "copyOf" <>$ any_arg $+ capt_exp
+        ; +PatternMatch.Java.implements_arrays
+          &:: "copyOf" <>$ any_arg $+ capt_exp
           $+...$--> linear ~of_function:"Arrays.copyOf"
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "addAll" <>$ any_arg $+ any_arg $+ capt_exp
           $--> BoundsOfCollection.linear_length ~of_function:"Collection.addAll"
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "addAll" <>$ any_arg $+ capt_exp
           $--> BoundsOfCollection.linear_length ~of_function:"Collection.addAll"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "copy" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.copy"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "fill" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.fill"
-        ; +PatternMatch.implements_arrays &:: "fill" <>$ capt_exp
+        ; +PatternMatch.Java.implements_arrays
+          &:: "fill" <>$ capt_exp
           $+...$--> BoundsOfArray.linear_length ~of_function:"Arrays.fill"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "reverse" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.reverse"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "max" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.max"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "min" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.min"
-        ; +PatternMatch.implements_collections
+        ; +PatternMatch.Java.implements_collections
           &:: "shuffle" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.shuffle"
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring_no_end
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &:: "indexOf" <>$ capt_exp
-          $+ capt_exp_of_typ (+PatternMatch.implements_lang "String")
+          $+ capt_exp_of_typ (+PatternMatch.Java.implements_lang "String")
           $--> JavaString.indexOf_str
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &:: "indexOf" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $+ capt_exp
           $--> JavaString.indexOf_char_starting_from
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &:: "indexOf" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $--> JavaString.indexOf_char
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &:: "substring"
-          $ any_arg_of_typ (+PatternMatch.implements_lang "String")
+          $ any_arg_of_typ (+PatternMatch.Java.implements_lang "String")
           $+ capt_exp $+ capt_exp $--> JavaString.substring
-        ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> provider_get
-        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
-        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
-        ; +PatternMatch.implements_xmob_utils "IntHashMap"
+        ; +PatternMatch.Java.implements_inject "Provider" &:: "get" <>--> provider_get
+        ; +PatternMatch.Java.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
+        ; +PatternMatch.Java.implements_xmob_utils "IntHashMap"
+          &:: "getElement" <>--> unit_cost_model
+        ; +PatternMatch.Java.implements_xmob_utils "IntHashMap"
           &:: "keys" <>$ capt_arg $--> IntHashMap.keys
-        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model
-        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model
-        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+        ; +PatternMatch.Java.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model
+        ; +PatternMatch.Java.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model
+        ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
           &:: "chooseTableSize" <>$ capt_exp $+...$--> ImmutableSet.choose_table_size
-        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+        ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
           &:: "construct" <>$ capt_exp_of_prim_typ int_typ $+...$--> ImmutableSet.construct
-        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+        ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
           &:: "construct" <>$ any_arg $+ capt_exp_of_prim_typ int_typ
           $+...$--> ImmutableSet.construct ]
     in

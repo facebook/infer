@@ -33,7 +33,7 @@ let is_allocator tenv pname =
   | Procname.Java pname_java ->
       let is_throwable () =
         let class_name = Procname.Java.get_class_type_name pname_java in
-        PatternMatch.is_throwable tenv class_name
+        PatternMatch.Java.is_throwable tenv class_name
       in
       Procname.is_constructor pname
       && (not (BuiltinDecl.is_declared pname))
@@ -43,7 +43,7 @@ let is_allocator tenv pname =
 
 
 let check_attributes check tenv pname =
-  PatternMatch.check_class_attributes check tenv pname
+  PatternMatch.Java.check_class_attributes check tenv pname
   || Annotations.pname_has_return_annot pname check
 
 

@@ -156,7 +156,7 @@ module TransferFunctions = struct
 
   let is_java_enum_values tenv callee_pname =
     Option.exists (Procname.get_class_type_name callee_pname) ~f:(fun callee_class_name ->
-        PatternMatch.is_java_enum tenv callee_class_name
+        PatternMatch.Java.is_enum tenv callee_class_name
         && String.equal (Procname.get_method callee_pname) "values" )
 
 

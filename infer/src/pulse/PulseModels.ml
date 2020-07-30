@@ -859,7 +859,7 @@ module ProcNameDispatcher = struct
         ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__infer_initializer_list
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-        ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
+        ; +PatternMatch.Java.implements_lang "System" &:: "exit" <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
@@ -892,9 +892,9 @@ module ProcNameDispatcher = struct
           $++$--> StdFunction.operator_call
         ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
           $--> StdFunction.operator_equal
-        ; +PatternMatch.implements_lang "Object"
+        ; +PatternMatch.Java.implements_lang "Object"
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-        ; ( +PatternMatch.implements_lang "System"
+        ; ( +PatternMatch.Java.implements_lang "System"
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
           $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
@@ -988,54 +988,61 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
-        ; +PatternMatch.implements_list &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ capt_arg_payload $--> JavaCollection.add_at
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_list
+          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.add_at
+        ; +PatternMatch.Java.implements_collection
           &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
-        ; +PatternMatch.implements_list &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ any_arg $--> JavaCollection.remove_at
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_list
+          &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+          $--> JavaCollection.remove_at
+        ; +PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_queue
+        ; +PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_lang "StringBuilder"
+        ; +PatternMatch.Java.implements_lang "StringBuilder"
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_lang "StringBuilder"
+        ; +PatternMatch.Java.implements_lang "StringBuilder"
           &:: "setLength" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references ShrinkToFit
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_iterator
+          &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
-        ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_arg_payload
+          $+...$--> StdVector.push_back
+        ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_arg_payload
           $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
-        ; +PatternMatch.implements_list &:: "set" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ capt_arg_payload $--> JavaCollection.set
-        ; +PatternMatch.implements_iterator &:: "hasNext"
+        ; +PatternMatch.Java.implements_list
+          &:: "set" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.set
+        ; +PatternMatch.Java.implements_iterator
+          &:: "hasNext"
           &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
-        ; +PatternMatch.implements_enumeration
+        ; +PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
           &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-        ; +PatternMatch.implements_lang "Object"
+        ; +PatternMatch.Java.implements_lang "Object"
           &:: "equals"
           &--> Misc.nondet ~fn_name:"Object.equals"
-        ; +PatternMatch.implements_lang "Iterable"
+        ; +PatternMatch.Java.implements_lang "Iterable"
           &:: "iterator" <>$ capt_arg_payload
           $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
-        ; +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_iterator
+          &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; ( +PatternMatch.implements_enumeration
+        ; ( +PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )

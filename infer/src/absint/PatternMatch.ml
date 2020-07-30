@@ -41,86 +41,6 @@ let is_subtype_of_str tenv cn1 classname_str =
   is_subtype tenv cn1 typename
 
 
-let implements interface tenv typename =
-  let is_interface s _ = String.equal interface (Typ.Name.name s) in
-  supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
-
-
-let implements_arrays = implements "java.util.Arrays"
-
-let implements_iterator = implements "java.util.Iterator"
-
-let implements_collection = implements "java.util.Collection"
-
-let implements_collections = implements "java.util.Collections"
-
-let implements_list = implements "java.util.List"
-
-let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
-
-let implements_pseudo_collection =
-  let androidx_class_names =
-    List.map
-      ~f:(fun class_name -> "androidx.collection." ^ class_name)
-      [ "ArrayMap"
-      ; "ArraySet"
-      ; "CircularArray"
-      ; "LongSparseArray"
-      ; "LruCache"
-      ; "SimpleArrayMap"
-      ; "SparseArrayCompat" ]
-  in
-  fun t s ->
-    implements "android.util.SparseArray" t s
-    || implements "android.util.SparseIntArray" t s
-    || implements_xmob_utils "IntArrayList" t s
-    || List.exists ~f:(fun class_name -> implements class_name t s) androidx_class_names
-
-
-let implements_enumeration = implements "java.util.Enumeration"
-
-let implements_inject class_name = implements ("javax.inject." ^ class_name)
-
-let implements_io class_name = implements ("java.io." ^ class_name)
-
-let implements_nio class_name = implements ("java.nio." ^ class_name)
-
-let implements_map = implements "java.util.Map"
-
-let implements_androidx_map = implements "androidx.collection.SimpleArrayMap"
-
-let implements_set = implements "java.util.Set"
-
-let implements_map_entry = implements "java.util.Map$Entry"
-
-let implements_queue = implements "java.util.Queue"
-
-let implements_lang class_name = implements ("java.lang." ^ class_name)
-
-let implements_google class_name = implements ("com.google." ^ class_name)
-
-let implements_android class_name = implements ("android." ^ class_name)
-
-let implements_infer_annotation class_name =
-  implements ("com.facebook.infer.annotation." ^ class_name)
-
-
-let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class_name)
-
-let implements_org_json class_name = implements ("org.json." ^ class_name)
-
-let implements_app_activity = implements "android.app.Activity"
-
-let implements_app_fragment = implements "androidx.fragment.app.Fragment"
-
-let implements_graphql_story = implements "com.facebook.graphql.model.GraphQLStory"
-
-let implements_psi_element = implements "com.intellij.psi.PsiElement"
-
-let implements_view_group = implements "android.view.ViewGroup"
-
-let implements_view_parent = implements "android.view.ViewParent"
-
 (** The type the method is invoked on *)
 let get_this_type_nonstatic_methods_only proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
@@ -174,17 +94,224 @@ let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string op
       None
 
 
-let java_get_const_type_name (const : Const.t) : string =
-  match const with
-  | Const.Cstr _ ->
-      "java.lang.String"
-  | Const.Cint _ ->
-      "java.lang.Integer"
-  | Const.Cfloat _ ->
-      "java.lang.Double"
-  | _ ->
-      "_"
+module Java = struct
+  let implements interface tenv typename =
+    let is_interface s _ = String.equal interface (Typ.Name.name s) in
+    supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
 
+
+  let implements_arrays = implements "java.util.Arrays"
+
+  let implements_iterator = implements "java.util.Iterator"
+
+  let implements_collection = implements "java.util.Collection"
+
+  let implements_collections = implements "java.util.Collections"
+
+  let implements_list = implements "java.util.List"
+
+  let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
+
+  let implements_pseudo_collection =
+    let androidx_class_names =
+      List.map
+        ~f:(fun class_name -> "androidx.collection." ^ class_name)
+        [ "ArrayMap"
+        ; "ArraySet"
+        ; "CircularArray"
+        ; "LongSparseArray"
+        ; "LruCache"
+        ; "SimpleArrayMap"
+        ; "SparseArrayCompat" ]
+    in
+    fun t s ->
+      implements "android.util.SparseArray" t s
+      || implements "android.util.SparseIntArray" t s
+      || implements_xmob_utils "IntArrayList" t s
+      || List.exists ~f:(fun class_name -> implements class_name t s) androidx_class_names
+
+
+  let implements_enumeration = implements "java.util.Enumeration"
+
+  let implements_inject class_name = implements ("javax.inject." ^ class_name)
+
+  let implements_io class_name = implements ("java.io." ^ class_name)
+
+  let implements_nio class_name = implements ("java.nio." ^ class_name)
+
+  let implements_map = implements "java.util.Map"
+
+  let implements_androidx_map = implements "androidx.collection.SimpleArrayMap"
+
+  let implements_set = implements "java.util.Set"
+
+  let implements_map_entry = implements "java.util.Map$Entry"
+
+  let implements_queue = implements "java.util.Queue"
+
+  let implements_lang class_name = implements ("java.lang." ^ class_name)
+
+  let implements_google class_name = implements ("com.google." ^ class_name)
+
+  let implements_android class_name = implements ("android." ^ class_name)
+
+  let implements_infer_annotation class_name =
+    implements ("com.facebook.infer.annotation." ^ class_name)
+
+
+  let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class_name)
+
+  let implements_org_json class_name = implements ("org.json." ^ class_name)
+
+  let implements_app_activity = implements "android.app.Activity"
+
+  let implements_app_fragment = implements "androidx.fragment.app.Fragment"
+
+  let implements_graphql_story = implements "com.facebook.graphql.model.GraphQLStory"
+
+  let implements_psi_element = implements "com.intellij.psi.PsiElement"
+
+  let implements_view_group = implements "android.view.ViewGroup"
+
+  let implements_view_parent = implements "android.view.ViewParent"
+
+  let initializer_classes =
+    List.map ~f:Typ.Name.Java.from_string
+      [ "android.app.Activity"
+      ; "android.app.Application"
+      ; "android.app.Fragment"
+      ; "android.app.Service"
+      ; "android.support.v4.app.Fragment"
+      ; "androidx.fragment.app.Fragment"
+      ; "junit.framework.TestCase" ]
+
+
+  let initializer_methods = ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"]
+
+  (** Check if the type has in its supertypes from the initializer_classes list. *)
+  let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
+    let is_initializer_class typename _ =
+      List.mem ~equal:Typ.Name.equal initializer_classes typename
+    in
+    match t.desc with
+    | Typ.Tstruct name | Tptr ({desc= Tstruct name}, _) ->
+        supertype_exists tenv is_initializer_class name
+    | _ ->
+        false
+
+
+  (** Check if the method is one of the known initializer methods. *)
+  let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) : bool =
+    match get_this_type_nonstatic_methods_only proc_attributes with
+    | Some this_type ->
+        if type_has_initializer tenv this_type then
+          match proc_attributes.ProcAttributes.proc_name with
+          | Procname.Java pname_java ->
+              let mname = Procname.Java.get_method pname_java in
+              List.exists ~f:(String.equal mname) initializer_methods
+          | _ ->
+              false
+        else false
+    | None ->
+        false
+
+
+  let get_const_type_name (const : Const.t) : string =
+    match const with
+    | Const.Cstr _ ->
+        "java.lang.String"
+    | Const.Cint _ ->
+        "java.lang.Integer"
+    | Const.Cfloat _ ->
+        "java.lang.Double"
+    | _ ->
+        ""
+
+
+  (** Checks if the class name is a Java exception *)
+  let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
+
+  let is_enum tenv typename = is_subtype_of_str tenv typename "java.lang.Enum"
+
+  (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument,
+      including for supertypes*)
+  let check_class_attributes check tenv = function
+    | Procname.Java java_pname ->
+        let check_class_annots _ {Struct.annots} = check annots in
+        supertype_exists tenv check_class_annots (Procname.Java.get_class_type_name java_pname)
+    | _ ->
+        false
+
+
+  (** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, for the
+      current class only*)
+  let check_current_class_attributes check tenv = function
+    | Procname.Java java_pname -> (
+      match Tenv.lookup tenv (Procname.Java.get_class_type_name java_pname) with
+      | Some struct_typ ->
+          check struct_typ.annots
+      | _ ->
+          false )
+    | _ ->
+        false
+
+
+  (** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
+  let rec find_superclasses_with_attributes check tenv tname =
+    match Tenv.lookup tenv tname with
+    | Some struct_typ ->
+        let result_from_supers =
+          List.concat (List.map ~f:(find_superclasses_with_attributes check tenv) struct_typ.supers)
+        in
+        if check struct_typ.annots then tname :: result_from_supers else result_from_supers
+    | _ ->
+        []
+
+
+  let is_override_of_lang_object_equals curr_pname =
+    let is_only_param_of_object_type = function
+      | [Procname.Parameter.JavaParameter param_type]
+        when JavaSplitName.equal param_type JavaSplitName.java_lang_object ->
+          true
+      | _ ->
+          false
+    in
+    String.equal (Procname.get_method curr_pname) "equals"
+    && is_only_param_of_object_type (Procname.get_parameters curr_pname)
+end
+
+module ObjectiveC = struct
+  let is_core_graphics_create_or_copy _ procname =
+    String.is_prefix ~prefix:"CG" procname
+    && ( String.is_substring ~substring:"Create" procname
+       || String.is_substring ~substring:"Copy" procname )
+
+
+  let is_core_foundation_create_or_copy _ procname =
+    String.is_prefix ~prefix:"CF" procname
+    && ( String.is_substring ~substring:"Create" procname
+       || String.is_substring ~substring:"Copy" procname )
+
+
+  let is_core_graphics_release _ procname =
+    String.is_prefix ~prefix:"CG" procname && String.is_suffix ~suffix:"Release" procname
+
+
+  let is_modelled_as_alloc _ procname =
+    match Config.pulse_model_alloc_pattern with
+    | Some regex ->
+        Str.string_match regex procname 0
+    | None ->
+        false
+
+
+  let is_modelled_as_release _ procname =
+    match Config.pulse_model_release_pattern with
+    | Some regex ->
+        Str.string_match regex procname 0
+    | None ->
+        false
+end
 
 let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : string list =
   (* Is this the node creating ivar? *)
@@ -225,7 +352,7 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
                Some (nvar_type_name nvar)
            | Sil.Store {e1= Exp.Lindex (Exp.Var iv, _); e2= Exp.Const c}
              when Ident.equal iv array_nvar ->
-               Some (Some (java_get_const_type_name c))
+               Some (Some (Java.get_const_type_name c))
            | _ ->
                None )
       |> Option.join
@@ -268,47 +395,6 @@ let type_is_class typ =
   | Tstruct _ ->
       true
   | _ ->
-      false
-
-
-let initializer_classes =
-  List.map ~f:Typ.Name.Java.from_string
-    [ "android.app.Activity"
-    ; "android.app.Application"
-    ; "android.app.Fragment"
-    ; "android.app.Service"
-    ; "android.support.v4.app.Fragment"
-    ; "androidx.fragment.app.Fragment"
-    ; "junit.framework.TestCase" ]
-
-
-let initializer_methods = ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"]
-
-(** Check if the type has in its supertypes from the initializer_classes list. *)
-let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
-  let is_initializer_class typename _ =
-    List.mem ~equal:Typ.Name.equal initializer_classes typename
-  in
-  match t.desc with
-  | Typ.Tstruct name | Tptr ({desc= Tstruct name}, _) ->
-      supertype_exists tenv is_initializer_class name
-  | _ ->
-      false
-
-
-(** Check if the method is one of the known initializer methods. *)
-let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) : bool =
-  match get_this_type_nonstatic_methods_only proc_attributes with
-  | Some this_type ->
-      if type_has_initializer tenv this_type then
-        match proc_attributes.ProcAttributes.proc_name with
-        | Procname.Java pname_java ->
-            let mname = Procname.Java.get_method pname_java in
-            List.exists ~f:(String.equal mname) initializer_methods
-        | _ ->
-            false
-      else false
-  | None ->
       false
 
 
@@ -422,89 +508,3 @@ let get_fields_nullified procdesc =
       ~init:(Fieldname.Set.empty, Ident.Set.empty)
   in
   nullified_flds
-
-
-(** Checks if the class name is a Java exception *)
-let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
-
-let is_java_enum tenv typename = is_subtype_of_str tenv typename "java.lang.Enum"
-
-(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, including
-    for supertypes*)
-let check_class_attributes check tenv = function
-  | Procname.Java java_pname ->
-      let check_class_annots _ {Struct.annots} = check annots in
-      supertype_exists tenv check_class_annots (Procname.Java.get_class_type_name java_pname)
-  | _ ->
-      false
-
-
-(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument, for the
-    current class only*)
-let check_current_class_attributes check tenv = function
-  | Procname.Java java_pname -> (
-    match Tenv.lookup tenv (Procname.Java.get_class_type_name java_pname) with
-    | Some struct_typ ->
-        check struct_typ.annots
-    | _ ->
-        false )
-  | _ ->
-      false
-
-
-(** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
-let rec find_superclasses_with_attributes check tenv tname =
-  match Tenv.lookup tenv tname with
-  | Some struct_typ ->
-      let result_from_supers =
-        List.concat (List.map ~f:(find_superclasses_with_attributes check tenv) struct_typ.supers)
-      in
-      if check struct_typ.annots then tname :: result_from_supers else result_from_supers
-  | _ ->
-      []
-
-
-let is_override_of_java_lang_object_equals curr_pname =
-  let is_only_param_of_object_type = function
-    | [Procname.Parameter.JavaParameter param_type]
-      when JavaSplitName.equal param_type JavaSplitName.java_lang_object ->
-        true
-    | _ ->
-        false
-  in
-  String.equal (Procname.get_method curr_pname) "equals"
-  && is_only_param_of_object_type (Procname.get_parameters curr_pname)
-
-
-module ObjectiveC = struct
-  let is_core_graphics_create_or_copy _ procname =
-    String.is_prefix ~prefix:"CG" procname
-    && ( String.is_substring ~substring:"Create" procname
-       || String.is_substring ~substring:"Copy" procname )
-
-
-  let is_core_foundation_create_or_copy _ procname =
-    String.is_prefix ~prefix:"CF" procname
-    && ( String.is_substring ~substring:"Create" procname
-       || String.is_substring ~substring:"Copy" procname )
-
-
-  let is_core_graphics_release _ procname =
-    String.is_prefix ~prefix:"CG" procname && String.is_suffix ~suffix:"Release" procname
-
-
-  let is_modelled_as_alloc _ procname =
-    match Config.pulse_model_alloc_pattern with
-    | Some regex ->
-        Str.string_match regex procname 0
-    | None ->
-        false
-
-
-  let is_modelled_as_release _ procname =
-    match Config.pulse_model_release_pattern with
-    | Some regex ->
-        Str.string_match regex procname 0
-    | None ->
-        false
-end

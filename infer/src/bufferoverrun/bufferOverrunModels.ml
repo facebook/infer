@@ -1514,16 +1514,16 @@ module Call = struct
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__infer_objc_cpp_throw" <>--> bottom
       ; -"__new"
-        <>$ any_arg_of_typ (+PatternMatch.implements_collection)
+        <>$ any_arg_of_typ (+PatternMatch.Java.implements_collection)
         $+...$--> Collection.new_collection
       ; -"__new"
-        <>$ any_arg_of_typ (+PatternMatch.implements_map)
+        <>$ any_arg_of_typ (+PatternMatch.Java.implements_map)
         $+...$--> Collection.new_collection
       ; -"__new"
-        <>$ any_arg_of_typ (+PatternMatch.implements_org_json "JSONArray")
+        <>$ any_arg_of_typ (+PatternMatch.Java.implements_org_json "JSONArray")
         $+...$--> Collection.new_collection
       ; -"__new"
-        <>$ any_arg_of_typ (+PatternMatch.implements_pseudo_collection)
+        <>$ any_arg_of_typ (+PatternMatch.Java.implements_pseudo_collection)
         $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
@@ -1661,162 +1661,176 @@ module Call = struct
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
         -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
-      ; +PatternMatch.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
-      ; +PatternMatch.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp
-        $+...$--> Collection.copyOf
+      ; +PatternMatch.Java.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
+      ; +PatternMatch.Java.implements_arrays
+        &:: "copyOf" <>$ capt_exp $+ capt_exp $+...$--> Collection.copyOf
       ; (* model sets and maps as lists *)
-        +PatternMatch.implements_collection
+        +PatternMatch.Java.implements_collection
         &:: "<init>" <>$ capt_var_exn
-        $+ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $+ capt_exp_of_typ (+PatternMatch.Java.implements_collection)
         $--> Collection.init_with_arg
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "<init>" <>$ any_arg $+ capt_exp $--> Collection.init_with_capacity
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $--> Collection.add_at_index
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "add" <>$ capt_var_exn $+ capt_exp $--> Collection.add
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $--> Collection.addAll_at_index
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
-      ; +PatternMatch.implements_collection
+      ; +PatternMatch.Java.implements_collection
         &:: "set" <>$ capt_var_exn $+ capt_exp $+ capt_exp $--> Collection.set_at_index
-      ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
-      ; +PatternMatch.implements_collection &:: "toArray" <>$ capt_exp $+...$--> create_copy_array
-      ; +PatternMatch.implements_collections &:: "emptyList" <>--> Collection.new_collection
-      ; +PatternMatch.implements_collections &:: "emptyMap" <>--> Collection.new_collection
-      ; +PatternMatch.implements_collections &:: "emptySet" <>--> Collection.new_collection
-      ; +PatternMatch.implements_collections &:: "singleton" <>--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections
+      ; +PatternMatch.Java.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.Java.implements_collection
+        &:: "toArray" <>$ capt_exp $+...$--> create_copy_array
+      ; +PatternMatch.Java.implements_collections &:: "emptyList" <>--> Collection.new_collection
+      ; +PatternMatch.Java.implements_collections &:: "emptyMap" <>--> Collection.new_collection
+      ; +PatternMatch.Java.implements_collections &:: "emptySet" <>--> Collection.new_collection
+      ; +PatternMatch.Java.implements_collections
+        &:: "singleton" <>--> Collection.singleton_collection
+      ; +PatternMatch.Java.implements_collections
         &:: "singletonList" <>--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections
+      ; +PatternMatch.Java.implements_collections
         &:: "singletonList" <>--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections
+      ; +PatternMatch.Java.implements_collections
         &:: "singletonMap" <>--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections
+      ; +PatternMatch.Java.implements_collections
         &:: "singletonMap" <>--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
-      ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+      ; +PatternMatch.Java.implements_collections
+        &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
+      ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
         &:: "of" &++> Collection.of_list
-      ; +PatternMatch.implements_google "common.base.Preconditions"
+      ; +PatternMatch.Java.implements_google "common.base.Preconditions"
         &:: "checkArgument" <>$ capt_exp $+...$--> Preconditions.check_argument
-      ; +PatternMatch.implements_google "common.base.Preconditions"
+      ; +PatternMatch.Java.implements_google "common.base.Preconditions"
         &:: "checkNotNull" <>$ capt_exp $+...$--> id
-      ; +PatternMatch.implements_google "common.base.Preconditions"
+      ; +PatternMatch.Java.implements_google "common.base.Preconditions"
         &:: "checkState" <>$ capt_exp $+...$--> Preconditions.check_argument
-      ; +PatternMatch.implements_infer_annotation "Assertions"
+      ; +PatternMatch.Java.implements_infer_annotation "Assertions"
         &:: "assertGet" <>$ capt_exp $+ capt_exp $--> InferAnnotation.assert_get
-      ; +PatternMatch.implements_infer_annotation "Assertions"
+      ; +PatternMatch.Java.implements_infer_annotation "Assertions"
         &:: "assertNotNull" <>$ capt_exp $+...$--> id
-      ; +PatternMatch.implements_infer_annotation "Assertions"
+      ; +PatternMatch.Java.implements_infer_annotation "Assertions"
         &:: "assumeNotNull" <>$ capt_exp $+...$--> id
-      ; +PatternMatch.implements_infer_annotation "Assertions"
+      ; +PatternMatch.Java.implements_infer_annotation "Assertions"
         &:: "nullsafeFIXME" <>$ capt_exp $+...$--> id
-      ; +PatternMatch.implements_infer_annotation "Assertions" &::.*--> no_model
-      ; +PatternMatch.implements_io "File" &:: "listFiles" <>$ capt_exp $--> File.list_files
-      ; +PatternMatch.implements_io "InputStream"
+      ; +PatternMatch.Java.implements_infer_annotation "Assertions" &::.*--> no_model
+      ; +PatternMatch.Java.implements_io "File" &:: "listFiles" <>$ capt_exp $--> File.list_files
+      ; +PatternMatch.Java.implements_io "InputStream"
         &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read
-      ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
-      ; +PatternMatch.implements_iterator &:: "next" <>$ capt_exp $!--> Collection.next
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
+      ; +PatternMatch.Java.implements_iterator &:: "next" <>$ capt_exp $!--> Collection.next
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp_of_prim_typ char_array
         $--> JavaString.constructor_from_array
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "equals"
-        $ any_arg_of_typ (+PatternMatch.implements_lang "CharSequence")
-        $+ any_arg_of_typ (+PatternMatch.implements_lang "CharSequence")
+        $ any_arg_of_typ (+PatternMatch.Java.implements_lang "CharSequence")
+        $+ any_arg_of_typ (+PatternMatch.Java.implements_lang "CharSequence")
         $--> by_value Dom.Val.Itv.unknown_bool
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "length" <>$ capt_exp $!--> JavaString.length
-      ; +PatternMatch.implements_lang "CharSequence"
+      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "substring" <>$ any_arg $+ capt_exp $+ capt_exp $--> JavaString.substring
-      ; +PatternMatch.implements_lang "Class"
+      ; +PatternMatch.Java.implements_lang "Class"
         &:: "getCanonicalName" &::.*--> JavaString.inferbo_constant_string
-      ; +PatternMatch.implements_lang "Class"
+      ; +PatternMatch.Java.implements_lang "Class"
         &:: "getEnumConstants" <>$ capt_exp $--> JavaClass.get_enum_constants
-      ; +PatternMatch.implements_lang "Class" &:: "getFields" <>$ capt_exp $--> JavaClass.get_fields
-      ; +PatternMatch.implements_lang "Enum" &:: "name" &::.*--> JavaString.inferbo_constant_string
-      ; +PatternMatch.implements_lang "Integer"
+      ; +PatternMatch.Java.implements_lang "Class"
+        &:: "getFields" <>$ capt_exp $--> JavaClass.get_fields
+      ; +PatternMatch.Java.implements_lang "Enum"
+        &:: "name" &::.*--> JavaString.inferbo_constant_string
+      ; +PatternMatch.Java.implements_lang "Integer"
         &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
-      ; +PatternMatch.implements_lang "Integer" &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
-      ; +PatternMatch.implements_lang "Iterable"
+      ; +PatternMatch.Java.implements_lang "Integer"
+        &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
+      ; +PatternMatch.Java.implements_lang "Iterable"
         &:: "iterator" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.implements_lang "Math"
+      ; +PatternMatch.Java.implements_lang "Math"
         &:: "max" <>$ capt_exp $+ capt_exp
         $--> eval_binop ~f:(Itv.max_sem ~use_minmax_bound:true)
-      ; +PatternMatch.implements_lang "Math"
+      ; +PatternMatch.Java.implements_lang "Math"
         &:: "min" <>$ capt_exp $+ capt_exp
         $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true)
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "<init>" <>$ capt_exp $--> JavaString.empty_constructor
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "indexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "lastIndexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "replace" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $+ any_arg_of_prim_typ int_typ
         $--> JavaString.replace
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "split" <>$ any_arg $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "split" <>$ capt_exp $+ any_arg $--> JavaString.split
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "startsWith"
-        $ any_arg_of_typ (+PatternMatch.implements_lang "String")
-        $+ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $ any_arg_of_typ (+PatternMatch.Java.implements_lang "String")
+        $+ any_arg_of_typ (+PatternMatch.Java.implements_lang "String")
         $--> by_value Dom.Val.Itv.unknown_bool
-      ; +PatternMatch.implements_lang "String"
+      ; +PatternMatch.Java.implements_lang "String"
         &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring_no_end
-      ; +PatternMatch.implements_lang "StringBuilder"
+      ; +PatternMatch.Java.implements_lang "StringBuilder"
         &:: "append" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
-      ; +PatternMatch.implements_lang "StringBuilder" &:: "toString" <>$ capt_exp $+...$--> id
-      ; +PatternMatch.implements_list &:: "listIterator" <>$ capt_exp $+...$--> Collection.iterator
-      ; +PatternMatch.implements_list &:: "subList" <>$ any_arg $+ capt_exp $+ capt_exp
-        $--> Collection.subList
-      ; +PatternMatch.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ capt_exp
+      ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "toString" <>$ capt_exp $+...$--> id
+      ; +PatternMatch.Java.implements_list
+        &:: "listIterator" <>$ capt_exp $+...$--> Collection.iterator
+      ; +PatternMatch.Java.implements_list
+        &:: "subList" <>$ any_arg $+ capt_exp $+ capt_exp $--> Collection.subList
+      ; +PatternMatch.Java.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.Java.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ capt_exp
         $--> Collection.put_with_elem
-      ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
+      ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
         $--> Collection.putAll
-      ; +PatternMatch.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
-      ; +PatternMatch.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.implements_nio "ByteBuffer" &:: "get" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.implements_nio "ByteBuffer" &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.implements_nio "ByteBuffer" &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.implements_nio "ByteBuffer"
+      ; +PatternMatch.Java.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.Java.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.Java.implements_nio "ByteBuffer"
+        &:: "get" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.Java.implements_nio "ByteBuffer"
+        &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.Java.implements_nio "ByteBuffer"
+        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.Java.implements_nio "ByteBuffer"
         &:: "getShort" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.implements_nio "channels.FileChannel"
+      ; +PatternMatch.Java.implements_nio "channels.FileChannel"
         &:: "read" <>$ any_arg $+ capt_exp $+ any_arg $--> FileChannel.read
-      ; +PatternMatch.implements_org_json "JSONArray"
+      ; +PatternMatch.Java.implements_org_json "JSONArray"
         &:: "<init>" <>$ capt_var_exn
-        $+ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $+ capt_exp_of_typ (+PatternMatch.Java.implements_collection)
         $--> Collection.init_with_arg
-      ; +PatternMatch.implements_org_json "JSONArray"
+      ; +PatternMatch.Java.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
-      ; +PatternMatch.implements_org_json "JSONArray"
+      ; +PatternMatch.Java.implements_org_json "JSONArray"
         &:: "put" <>$ capt_var_exn $+...$--> Collection.put
-      ; +PatternMatch.implements_pseudo_collection
+      ; +PatternMatch.Java.implements_pseudo_collection
         &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg $--> Collection.put
-      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.Java.implements_pseudo_collection
+        &:: "size" <>$ capt_exp $!--> Collection.size
       ; (* Java linked list models *)
-        +PatternMatch.implements_app_activity &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
-      ; +PatternMatch.implements_app_fragment
+        +PatternMatch.Java.implements_app_activity
+        &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.Java.implements_app_fragment
         &:: "getParentFragment" <>$ capt_arg $!--> JavaLinkedList.next
-      ; +PatternMatch.implements_graphql_story
+      ; +PatternMatch.Java.implements_graphql_story
         &:: "getAttachedStory" <>$ capt_arg $!--> JavaLinkedList.next
-      ; +PatternMatch.implements_psi_element &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
-      ; +PatternMatch.implements_view_group &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
-      ; +PatternMatch.implements_view_parent &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
-      ]
+      ; +PatternMatch.Java.implements_psi_element
+        &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.Java.implements_view_group
+        &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next
+      ; +PatternMatch.Java.implements_view_parent
+        &:: "getParent" <>$ capt_arg $!--> JavaLinkedList.next ]
 end

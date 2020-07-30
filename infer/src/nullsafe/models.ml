@@ -48,7 +48,7 @@ let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability
 let get_special_method_modelled_nullability tenv proc_name =
   let open IOption.Let_syntax in
   let* class_name = Procname.get_class_type_name proc_name in
-  if PatternMatch.is_java_enum tenv class_name then
+  if PatternMatch.Java.is_enum tenv class_name then
     match (Procname.get_method proc_name, Procname.get_parameters proc_name) with
     (* values() is a synthetic enum method that is never null *)
     | "values", [] ->
@@ -138,7 +138,7 @@ let is_true_on_null proc_name = table_has_procedure true_on_null_table proc_name
 let is_false_on_null proc_name =
   (* The only usecase for now - consider all overrides of `Object.equals()` correctly
      implementing the Java specification contract (returning false on null). *)
-  PatternMatch.is_override_of_java_lang_object_equals proc_name
+  PatternMatch.Java.is_override_of_lang_object_equals proc_name
 
 
 (** Check if the procedure is Map.containsKey(). *)
