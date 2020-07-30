@@ -1553,33 +1553,43 @@ module Call = struct
       ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.length
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
-      ; -"NSArray" &:: "array" <>--> NSCollection.empty_array
-      ; -"NSArray" &:: "init" <>--> NSCollection.empty_array
-      ; -"NSArray" &:: "count" <>$ capt_exp $!--> NSCollection.length
-      ; -"NSArray" &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp
-        $!--> NSCollection.get_at_index
-      ; -"NSArray" &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.empty_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>--> NSCollection.empty_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "count" <>$ capt_exp $!--> NSCollection.length
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "arrayWithObjects" &++> NSCollection.array_from_list
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_array
-      ; -"NSArray" &:: "arrayWithObjects" &++> NSCollection.array_from_list
-      ; -"NSDictionary" &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp
-        $+ capt_exp $--> NSCollection.create_array
-      ; -"NSDictionary" &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp
-        $--> NSCollection.get_at_index
-      ; -"NSDictionary" &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp
-        $--> NSCollection.get_at_index
-      ; -"NSDictionary" &:: "count" <>$ capt_exp $--> NSCollection.length
-      ; -"NSDictionary" &:: "allKeys" <>$ capt_exp $--> create_copy_array
-      ; -"NSDictionary" &:: "allValues" <>$ capt_exp $--> create_copy_array
-      ; -"NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
-      ; -"NSNumber" &:: "integerValue" <>$ capt_exp $--> id
-      ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
-        $!--> NSString.create_string_from_c_string
-      ; -"NSString" &:: "length" <>$ capt_exp $--> NSString.length
-      ; -"NSString" &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp $!--> NSString.concat
-      ; -"NSString" &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp
-        $--> NSString.substring_from_index
-      ; -"NSString" &:: "appendString:" <>$ capt_exp $+ capt_exp $--> NSString.append_string
-      ; -"NSString" &:: "componentsSeparatedByString:" <>$ capt_exp $+ any_arg $--> NSString.split
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "count" <>$ capt_exp $--> NSCollection.length
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "allKeys" <>$ capt_exp $--> create_copy_array
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "allValues" <>$ capt_exp $--> create_copy_array
+      ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_string_from_c_string
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "length" <>$ capt_exp $--> NSString.length
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp $!--> NSString.concat
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp $--> NSString.substring_from_index
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "appendString:" <>$ capt_exp $+ capt_exp $--> NSString.append_string
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "componentsSeparatedByString:" <>$ capt_exp $+ any_arg $--> NSString.split
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")

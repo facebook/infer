@@ -281,6 +281,11 @@ module Java = struct
 end
 
 module ObjectiveC = struct
+  let implements interface tenv typename =
+    let is_interface s _ = String.equal interface (Typ.Name.name s) in
+    supertype_exists tenv is_interface (Typ.Name.Objc.from_string typename)
+
+
   let is_core_graphics_create_or_copy _ procname =
     String.is_prefix ~prefix:"CG" procname
     && ( String.is_substring ~substring:"Create" procname

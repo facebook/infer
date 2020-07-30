@@ -170,26 +170,34 @@ module Call = struct
       make_dispatcher
         [ -"google" &:: "StrLen" <>$ capt_exp
           $--> BoundsOfCString.linear_length ~of_function:"google::StrLen"
-        ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "stringWithUTF8String:" <>$ capt_exp
           $--> BoundsOfCString.linear_length ~of_function:"NSString.stringWithUTF8String:"
-        ; -"NSString" &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.plus
                  ~of_function:"NSString.stringByAppendingString:"
-        ; -"NSString" &:: "stringByAppendingPathComponent:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "stringByAppendingPathComponent:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.plus
                  ~of_function:"NSString.stringByAppendingPathComponent:"
-        ; -"NSString" &:: "isEqualToString:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "isEqualToString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.min_default_left
                  ~of_function:"NSString.isEqualToString:"
-        ; -"NSString" &:: "hasPrefix:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "hasPrefix:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.min_default_left ~of_function:"NSString.hasPrefix:"
-        ; -"NSString" &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp
-          $!--> NSString.substring_from_index
-        ; -"NSString" &:: "rangeOfString:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp $!--> NSString.substring_from_index
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "rangeOfString:" <>$ capt_exp $+ capt_exp
           $!--> NSString.op_on_two_str BasicCost.mult ~of_function:"NSString.rangeOfString:"
-        ; -"NSMutableString" &:: "appendString:" <>$ any_arg $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSMutableString"
+          &:: "appendString:" <>$ any_arg $+ capt_exp
           $--> NSString.get_length ~of_function:"NSMutableString.appendString:"
-        ; -"NSString" &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSString"
+          &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.mult
                  ~of_function:"NSString.componentsSeparatedByString:"
         ; +PatternMatch.Java.implements_collections

@@ -23,7 +23,7 @@ void nsmarray_empty_ok_costant() {
   [array insertObject:@1 atIndex:0];
 }
 
-void nsmarray_add_in_loop_constant_FP() {
+void nsmarray_add_in_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
@@ -50,7 +50,7 @@ void nsmarray_add_in_loop_quadratic(NSUInteger n, NSUInteger m) {
   }
 }
 
-void nsmarray_add_then_loop_constant_FP() {
+void nsmarray_add_then_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   [array addObject:@0];
   [array addObject:@1];
@@ -92,7 +92,7 @@ void nsmarray_set_linear(NSMutableArray* array) {
   }
 }
 
-void nsmarray_set_constant_FP() {
+void nsmarray_set_in_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   [array addObject:@0];
   [array addObject:@1];
@@ -105,7 +105,7 @@ void nsmarray_set_constant_FP() {
 
 // remove element
 
-id nsmarray_reomove_constant() {
+id nsmarray_remove_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   [array addObject:@0];
   [array addObject:@1];
@@ -113,7 +113,7 @@ id nsmarray_reomove_constant() {
   return array[0];
 }
 
-void nsmarray_remove_in_loop_constant_FP() {
+void nsmarray_remove_in_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];

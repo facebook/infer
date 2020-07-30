@@ -182,6 +182,9 @@ val has_same_signature : Procname.t -> (Procname.t -> bool) Staged.t
     parameters.) *)
 
 module ObjectiveC : sig
+  val implements : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a given ObjC class *)
+
   val is_core_graphics_create_or_copy : Tenv.t -> string -> bool
 
   val is_core_foundation_create_or_copy : Tenv.t -> string -> bool
