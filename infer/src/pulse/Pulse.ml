@@ -294,9 +294,7 @@ module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
-      let join_policy =
-        match Config.pulse_max_disjuncts with 0 -> `NeverJoin | n -> `UnderApproximateAfter n
-
+      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
 
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)

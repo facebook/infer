@@ -132,12 +132,9 @@ struct
       fun lhs rhs ->
         if phys_equal lhs rhs then lhs
         else
-          match DConfig.join_policy with
-          | `NeverJoin ->
-              List.rev_append rhs lhs
-          | `UnderApproximateAfter n ->
-              let lhs_length = List.length lhs in
-              if lhs_length >= n then lhs else list_rev_append rhs lhs (n - lhs_length)
+          let (`UnderApproximateAfter n) = DConfig.join_policy in
+          let lhs_length = List.length lhs in
+          if lhs_length >= n then lhs else list_rev_append rhs lhs (n - lhs_length)
 
 
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on

@@ -34,7 +34,7 @@ module type MakeHIL = functor (C : ProcCfg.S) -> sig
 end
 
 module type DisjunctiveConfig = sig
-  val join_policy : [`UnderApproximateAfter of int | `NeverJoin]
+  val join_policy : [`UnderApproximateAfter of int]
 
   val widen_policy : [`UnderApproximateAfterNumIterations of int]
 end
