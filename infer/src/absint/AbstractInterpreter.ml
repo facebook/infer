@@ -184,11 +184,8 @@ struct
   let exec_instr pre_disjuncts analysis_data node instr =
     List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
         let should_skip =
-          match DConfig.join_policy with
-          | `NeverJoin ->
-              false
-          | `UnderApproximateAfter n ->
-              List.length post_disjuncts >= n
+          let (`UnderApproximateAfter n) = DConfig.join_policy in
+          List.length post_disjuncts >= n
         in
         if should_skip then (
           L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
