@@ -419,6 +419,15 @@ let copy array_v ret_id mem =
   Dom.Mem.update_mem dest_loc array_v mem
 
 
+(** Returns a fixed-size array with a given length backed by the specified array. *)
+let copyOf array_exp length_exp =
+  let exec ({integer_type_widths} as model) ~ret:(id, _) mem =
+    let array_v = Sem.eval integer_type_widths array_exp mem in
+    copy array_v id mem |> set_size model array_v length_exp
+  in
+  {exec; check= no_check}
+
+
 (** Creates a new array with the values from the given array.*)
 let create_copy_array src_exp =
   let exec {integer_type_widths} ~ret:(id, _) mem =
@@ -865,15 +874,6 @@ module Collection = struct
     mem
     |> Dom.Mem.add_heap internal_array_loc internal_array
     |> Dom.Mem.add_stack (Loc.of_id id) (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
-
-
-  (** Returns a fixed-size list with a given length backed by the specified array. *)
-  let copyOf array_exp length_exp =
-    let exec ({integer_type_widths} as model) ~ret:(id, _) mem =
-      let array_v = Sem.eval integer_type_widths array_exp mem in
-      copy array_v id mem |> set_size model array_v length_exp
-    in
-    {exec; check= no_check}
 
 
   let new_collection =
@@ -1672,8 +1672,7 @@ module Call = struct
       ; (* Java models *)
         -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
       ; +PatternMatch.Java.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
-      ; +PatternMatch.Java.implements_arrays
-        &:: "copyOf" <>$ capt_exp $+ capt_exp $+...$--> Collection.copyOf
+      ; +PatternMatch.Java.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp $+...$--> copyOf
       ; (* model sets and maps as lists *)
         +PatternMatch.Java.implements_collection
         &:: "<init>" <>$ capt_var_exn
