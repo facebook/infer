@@ -70,7 +70,7 @@ let filter ~fold ~filter t ~init ~f =
 
 let map ~f:g fold t ~init ~f = fold t ~init ~f:(fun acc item -> f acc (g item))
 
-let fold_of_pervasives_map_fold ~fold collection ~init ~f =
+let fold_of_pervasives_map_fold fold collection ~init ~f =
   fold (fun item value accum -> f accum (item, value)) collection init
 
 

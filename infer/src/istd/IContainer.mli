@@ -46,7 +46,7 @@ val filter :
 val map : f:('a -> 'b) -> ('t, 'a, 'accum) Container.fold -> ('t, 'b, 'accum) Container.fold
 
 val fold_of_pervasives_map_fold :
-     fold:(('key -> 'value -> 'accum -> 'accum) -> 't -> 'accum -> 'accum)
+     (('key -> 'value -> 'accum -> 'accum) -> 't -> 'accum -> 'accum)
   -> ('t, 'key * 'value, 'accum) Container.fold
 
 val iter_result :

@@ -76,7 +76,7 @@ let pp_contradiction fmt = function
 exception Contradiction of contradiction
 
 let fold_globals_of_stack call_loc stack call_state ~f =
-  Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:BaseStack.fold)
+  Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
