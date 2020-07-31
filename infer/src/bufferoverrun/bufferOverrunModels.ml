@@ -149,6 +149,18 @@ let malloc ~can_be_zero size_exp =
   {exec; check}
 
 
+let objc_malloc exp =
+  let can_be_zero = true in
+  let exec ({tenv} as model) ~ret mem =
+    match exp with
+    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
+        (malloc ~can_be_zero Exp.zero).exec model ~ret mem
+    | _ ->
+        (malloc ~can_be_zero exp).exec model ~ret mem
+  in
+  {exec; check= check_alloc_size ~can_be_zero exp}
+
+
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
@@ -1547,14 +1559,15 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSCollection.create_array
+        -"__objc_alloc_no_fail" <>$ capt_exp $+...$--> objc_malloc
+      ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSCollection.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"CFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
       ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.length
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.empty_array
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>--> NSCollection.empty_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "count" <>$ capt_exp $!--> NSCollection.length
       ; +PatternMatch.ObjectiveC.implements "NSArray"
