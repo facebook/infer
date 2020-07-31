@@ -195,6 +195,33 @@ public class FieldNotInitialized {
       bad = bad; // BAD: this is a circular initialization
     }
   }
+
+  // A test to ensure suppressions work on constructor level
+  class Suppressions {
+    String f1;
+    String f2;
+
+    // BAD: forgot to initialize f2
+    Suppressions(int a) {
+      f1 = "";
+      f(null); // Expect to see "parameter not nullable" issue
+    }
+
+    // Should suppress both field not initialized warning.
+    // But actually suppresses all nullsafe issues.
+    @SuppressLint("eradicate-field-not-initialized")
+    Suppressions(int a, int b) {
+      f(null); // FALSE NEGATIVE: this issue was unintentionally suppressed as well
+    }
+
+    // This annotation correctly suppresses only needed issues
+    @SuppressFieldNotInitialized
+    Suppressions(int a, int b, int c) {
+      f(null); // Expect to see "parameter not nullable" issue - it should NOT be suppressed
+    }
+
+    void f(String a) {}
+  }
 }
 
 /**
