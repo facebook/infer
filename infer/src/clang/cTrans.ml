@@ -2218,20 +2218,81 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Fast iteration for collections
 
-      [for (type_it i in collection) { body }] is translated as
+      [for (item_type item in items) { body }] is translated as
 
       {[
-        i = type_next_object();
-        while(i != nil) { body; i = type_next_object();}
+        NSEnumerator *enumerator = [items objectEnumerator];
+        item_type item;
+        while (item = [enumerator nextObject]) { body }
       ]} *)
-  and objCForCollectionStmt_trans trans_state item items body stmt_info =
-    ignore (instruction trans_state item) ;
-    (* Here we do ast transformation, so we don't need the value of the translation of the *)
-    (* variable item but we still need to add the variable to the locals *)
-    let assign_next_object, cond = Ast_expressions.make_next_object_exp stmt_info item items in
-    let body' = Clang_ast_t.CompoundStmt (stmt_info, [body; assign_next_object]) in
-    let loop = Clang_ast_t.WhileStmt (stmt_info, [cond; body']) in
-    instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
+  and objCForCollectionStmt_trans ({context= {procdesc}} as trans_state) item items body stmt_info =
+    match item with
+    | Clang_ast_t.DeclRefExpr
+        ( _
+        , _
+        , _
+        , { drti_decl_ref=
+              Some
+                { dr_decl_pointer= item_pointer
+                ; dr_name= Some item_ni
+                ; dr_qual_type= Some item_qual_type } } )
+    | Clang_ast_t.DeclStmt (_, _, [VarDecl ({di_pointer= item_pointer}, item_ni, item_qual_type, _)])
+      ->
+        let enumerator_type =
+          Ast_expressions.create_class_pointer_qual_type
+            (Typ.Name.Objc.from_string CFrontend_config.nsenumerator_cl)
+        in
+        let enumerator_pointer = CAst_utils.get_fresh_pointer () in
+        let enumerator_ni =
+          let pvar = Pvar.mk_tmp "__enumerator_" (Procdesc.get_proc_name procdesc) in
+          Ast_expressions.create_named_decl_info (Pvar.to_string pvar)
+        in
+        let enumerator_decl =
+          let object_enumerator_objc_message_expr =
+            Ast_expressions.create_obj_c_message_expr stmt_info enumerator_type
+              CFrontend_config.object_enumerator [items]
+          in
+          let var_decl =
+            Clang_ast_t.VarDecl
+              ( Ast_expressions.create_decl_info stmt_info enumerator_pointer
+              , enumerator_ni
+              , enumerator_type
+              , { Ast_expressions.default_var_decl_info with
+                  vdi_init_expr= Some object_enumerator_objc_message_expr } )
+          in
+          Clang_ast_t.DeclStmt (stmt_info, [object_enumerator_objc_message_expr], [var_decl])
+        in
+        let while_stmt =
+          let item_expr =
+            Ast_expressions.create_decl_ref_expr stmt_info item_pointer item_ni item_qual_type
+          in
+          let enumerator_expr =
+            let enumerator_decl_ref_expr =
+              Ast_expressions.create_decl_ref_expr stmt_info enumerator_pointer enumerator_ni
+                enumerator_type
+            in
+            Ast_expressions.create_implicit_cast_expr stmt_info [enumerator_decl_ref_expr]
+              enumerator_type `LValueToRValue
+          in
+          let next_object_call =
+            Ast_expressions.create_obj_c_message_expr stmt_info enumerator_type
+              CFrontend_config.next_object [enumerator_expr]
+          in
+          let cond =
+            Clang_ast_t.BinaryOperator
+              ( stmt_info
+              , [item_expr; next_object_call]
+              , {ei_qual_type= item_qual_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
+              , {boi_kind= `Assign} )
+          in
+          Clang_ast_t.WhileStmt (stmt_info, [cond; body])
+        in
+        instruction trans_state
+          (Clang_ast_t.CompoundStmt (stmt_info, [enumerator_decl; item; while_stmt]))
+    | _ ->
+        L.debug Capture Medium "Couldn't translate ObjCForCollectionStmt properly: %s@\n"
+          (Clang_ast_j.string_of_stmt_info stmt_info) ;
+        mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
 
 
   and initListExpr_array_trans trans_state stmt_info stmts var_exp field_typ =

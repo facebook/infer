@@ -18,12 +18,21 @@ val create_void_type : qual_type
 
 val create_char_star_type : ?quals:Typ.type_quals -> unit -> qual_type
 
-val make_next_object_exp :
-  stmt_info -> stmt -> Clang_ast_t.stmt -> Clang_ast_t.stmt * Clang_ast_t.stmt
+val create_class_pointer_qual_type : ?quals:Typ.type_quals -> Typ.Name.t -> qual_type
 
 val create_nil : stmt_info -> stmt
 
 val create_implicit_cast_expr : stmt_info -> stmt list -> qual_type -> cast_kind -> stmt
+
+val create_decl_info : stmt_info -> pointer -> decl_info
+
+val default_var_decl_info : var_decl_info
+
+val create_named_decl_info : string -> named_decl_info
+
+val create_decl_ref_expr : stmt_info -> pointer -> named_decl_info -> qual_type -> stmt
+
+val create_obj_c_message_expr : stmt_info -> qual_type -> selector -> stmt list -> stmt
 
 val make_obj_c_message_expr_info_class :
   string -> Typ.Name.t -> pointer option -> obj_c_message_expr_info
