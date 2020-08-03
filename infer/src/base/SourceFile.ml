@@ -73,6 +73,8 @@ let to_string =
         else path
 
 
+let has_extension t ~ext = String.is_suffix (to_string t) ~suffix:ext
+
 let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 
 let to_abs_path fname =

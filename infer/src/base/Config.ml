@@ -186,6 +186,8 @@ let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
+let kotlin_source_extension = ".kt"
+
 let specs_files_suffix = ".specs"
 
 (** Enable detailed tracing information during array abstraction *)

@@ -126,6 +126,8 @@ val smt_output : bool
 
 val source_file_extentions : string list
 
+val kotlin_source_extension : string
+
 val sourcepath : string option
 
 val sources : string list

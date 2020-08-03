@@ -89,8 +89,10 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
 (** Add a concrete method. *)
 let add_cmethod source_file program icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  if Inferconfig.skip_implementation_matcher source_file proc_name then
-    ignore (JTrans.create_empty_procdesc source_file program icfg cm proc_name)
+  if
+    Inferconfig.skip_implementation_matcher source_file proc_name
+    || SourceFile.has_extension source_file ~ext:Config.kotlin_source_extension
+  then ignore (JTrans.create_empty_procdesc source_file program icfg cm proc_name)
   else
     match JTrans.create_cm_procdesc source_file program icfg cm proc_name with
     | None ->
