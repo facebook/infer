@@ -56,6 +56,7 @@ codetoanalyze/objc/performance/NSString.m, call_init_with_string_constant_FP, �
 codetoanalyze/objc/performance/NSString.m, component_seperated_by_char_linear, 6 + m.length.ub + 3 ⋅ (-1+max(2, m.length.ub)) + 3 ⋅ (max(2, m.length.ub)),  OnUIThread:false, [{max(2, m.length.ub)},Loop,{-1+max(2, m.length.ub)},Loop,{m.length.ub},Modeled call to NSString.componentsSeparatedByString:]
 codetoanalyze/objc/performance/NSString.m, component_seperated_by_string_linear, 6 + sep.length.ub × m.length.ub + 3 ⋅ (-1+max(2, m.length.ub)) + 3 ⋅ (max(2, m.length.ub)),  OnUIThread:false, [{max(2, m.length.ub)},Loop,{-1+max(2, m.length.ub)},Loop,{m.length.ub},Modeled call to NSString.componentsSeparatedByString:,{sep.length.ub},Modeled call to NSString.componentsSeparatedByString:]
 codetoanalyze/objc/performance/NSString.m, has_prefix_constant, 13,  OnUIThread:false, []
+codetoanalyze/objc/performance/NSString.m, init_string_constant, 9,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, init_with_bytes_linear_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSString.m, init_with_string_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSString.m, init_with_string_linear_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]

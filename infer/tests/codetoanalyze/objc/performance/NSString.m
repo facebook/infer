@@ -63,6 +63,12 @@ void init_with_bytes_linear_FP(const void* bytes,
   }
 }
 
+void init_string_constant() {
+  NSString* str = [[NSString alloc] init];
+  for (int i = 0; i < str.length; i++) {
+  }
+}
+
 void init_with_string_constant_FP() {
   NSString* s = @"abcd";
   NSString* str = [[NSString alloc] initWithString:s];

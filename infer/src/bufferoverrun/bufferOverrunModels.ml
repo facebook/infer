@@ -149,18 +149,6 @@ let malloc ~can_be_zero size_exp =
   {exec; check}
 
 
-let objc_malloc exp =
-  let can_be_zero = true in
-  let exec ({tenv} as model) ~ret mem =
-    match exp with
-    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
-        (malloc ~can_be_zero Exp.zero).exec model ~ret mem
-    | _ ->
-        (malloc ~can_be_zero exp).exec model ~ret mem
-  in
-  {exec; check= check_alloc_size ~can_be_zero exp}
-
-
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
@@ -1379,7 +1367,7 @@ end
 module NSString = struct
   let fn = JavaString.fn
 
-  let create_string_from_c_string src_exp =
+  let create_with_c_string src_exp =
     let exec model_env ~ret mem =
       let v = Sem.eval_string_len src_exp mem in
       JavaString.create_with_length model_env ~ret ~begin_idx:Exp.zero ~end_v:v mem
@@ -1421,6 +1409,21 @@ module NSString = struct
     in
     {exec; check= no_check}
 end
+
+let objc_malloc exp =
+  let can_be_zero = true in
+  let exec ({tenv} as model) ~ret mem =
+    match exp with
+    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
+        (malloc ~can_be_zero Exp.zero).exec model ~ret mem
+    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
+      ->
+        (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
+    | _ ->
+        (malloc ~can_be_zero exp).exec model ~ret mem
+  in
+  {exec; check= check_alloc_size ~can_be_zero exp}
+
 
 module Preconditions = struct
   let check_argument exp =
@@ -1566,8 +1569,8 @@ module Call = struct
       ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.length
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.empty_array
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.empty_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "count" <>$ capt_exp $!--> NSCollection.length
       ; +PatternMatch.ObjectiveC.implements "NSArray"
@@ -1591,8 +1594,9 @@ module Call = struct
         &:: "allValues" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSString" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
-        &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_string_from_c_string
+        &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_with_c_string
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "length" <>$ capt_exp $--> NSString.length
       ; +PatternMatch.ObjectiveC.implements "NSString"
