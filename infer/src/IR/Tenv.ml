@@ -197,54 +197,6 @@ let store_global tenv =
   store_to_filename tenv global_tenv_path
 
 
-let get_summary_formals tenv ~get_summary ~get_formals =
-  let get pname =
-    match (get_summary pname, get_formals pname) with
-    | Some summary, Some formals ->
-        `Found (summary, formals)
-    | _, _ ->
-        `NotFound
-  in
-  let found_from_subclass pname = function
-    | `Found (summary, formals) ->
-        `FoundFromSubclass (pname, summary, formals)
-    | v ->
-        v
-  in
-  let rec get_summary_formals_aux pname =
-    match get pname with
-    | `Found _ as v ->
-        v
-    | `NotFound -> (
-      match Procname.get_class_type_name pname with
-      | None ->
-          `NotFound
-      | Some class_name when String.is_prefix (Typ.Name.name class_name) ~prefix:"java." ->
-          (* Note: We do not search sub-classes of `java.` because the super-classes are too
-             general.  Selecting one arbitrary sub-class of them does not help in making preciser
-             analysis results. *)
-          `NotFound
-      | Some class_name -> (
-        match lookup tenv class_name with
-        | Some {Struct.java_class_info= Some info; subs}
-          when Struct.equal_java_class_kind info.kind Interface
-               && Int.equal (Typ.Name.Set.cardinal subs) 1 ->
-            let unique_sub = Typ.Name.Set.choose subs in
-            Logging.d_printfln_escaped "Found a unique sub-class %a" Typ.Name.pp unique_sub ;
-            let sub_pname = Procname.replace_class pname unique_sub in
-            get_summary_formals_aux sub_pname |> found_from_subclass sub_pname
-        | Some {Struct.java_class_info= Some info; subs}
-          when Struct.equal_java_class_kind info.kind AbstractClass ->
-            Option.value_map (Typ.Name.Set.min_elt_opt subs) ~default:`NotFound ~f:(fun sub ->
-                Logging.d_printfln_escaped "Found an arbitrary sub-class %a" Typ.Name.pp sub ;
-                let sub_pname = Procname.replace_class pname sub in
-                get sub_pname |> found_from_subclass sub_pname )
-        | _ ->
-            `NotFound ) )
-  in
-  fun pname -> get_summary_formals_aux pname
-
-
 let resolve_method ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
   let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =

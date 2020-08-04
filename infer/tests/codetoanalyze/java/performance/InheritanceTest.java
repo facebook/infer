@@ -16,7 +16,7 @@ class InheritanceTest {
     }
   }
 
-  public void call_interface_method_linear(MyInterface c, int x) {
+  public void call_interface_method_linear_FN(MyInterface c, int x) {
     c.foo(x);
   }
 
@@ -41,7 +41,7 @@ class InheritanceTest {
   }
 
   /* By heuristics, [Impl1.foo] is selected. It is hard to say good or bad. */
-  public void call_interface_method2_linear(MyInterface2 c, int x) {
+  public void call_interface_method2_linear_FN(MyInterface2 c, int x) {
     c.foo(x);
   }
 
