@@ -24,6 +24,7 @@ codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.init_array_constant():void, 2568,  OnUIThread:false, []
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.sort_array_nlogn(int):void, 5 + size × log(size),  OnUIThread:false, [{size},Modeled call to Arrays.sort,{size},Modeled call to Arrays.sort]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.toArray_linear(java.util.ArrayList):void, 6 + 6 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false, [{list.length + 1},Loop,{list.length},Loop]
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.toArray_map_linear(java.util.Map):void, 6 + 6 ⋅ map.length + 6 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.use_static_final_array_field_constant():void, 18,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayCost.java, ArrayCost.<init>(), 3,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayCost.java, ArrayCost.ArrayCost(int[]):void, 8 + 5 ⋅ mag.length,  OnUIThread:false, [{mag.length},Loop]
