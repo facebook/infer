@@ -116,7 +116,7 @@ public class Loops {
     for (int i = 0; i < seq.length(); i++) {}
   }
 
-  void modeled_range_linear(FileChannel fc, ByteBuffer bb) throws IOException {
+  void modeled_range_linear_FP(FileChannel fc, ByteBuffer bb) throws IOException {
     int i;
     int offset = 0;
     do {

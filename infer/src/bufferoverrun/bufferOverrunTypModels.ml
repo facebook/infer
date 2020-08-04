@@ -39,5 +39,6 @@ let dispatch : (Tenv.t, typ_model, unit) ProcnameDispatcher.TypName.dispatcher =
     ; +PatternMatch.Java.implements_iterator &::.*--> Java.collection
     ; +PatternMatch.Java.implements_map &::.*--> Java.collection
     ; +PatternMatch.Java.implements_pseudo_collection &::.*--> Java.collection
+    ; +PatternMatch.Java.implements_nio "Buffer" &::.*--> Java.collection
     ; +PatternMatch.Java.implements_lang "Integer" &::.*--> Java.integer
     ; +PatternMatch.Java.implements_org_json "JSONArray" &::.*--> Java.collection ]

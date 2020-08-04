@@ -881,6 +881,14 @@ module Collection = struct
     {exec; check= no_check}
 
 
+  let allocate size_exp =
+    let exec ({integer_type_widths} as env) ~ret mem =
+      let length = Sem.eval integer_type_widths size_exp mem |> Dom.Val.get_itv in
+      create_collection env ~ret mem ~length
+    in
+    {exec; check= no_check}
+
+
   let eval_collection_internal_array_locs coll_exp mem =
     Sem.eval_locs coll_exp mem
     |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
@@ -1487,8 +1495,8 @@ module FileChannel = struct
     {exec; check= no_check}
 end
 
-module ByteBuffer = struct
-  let get_int buf_exp =
+module Buffer = struct
+  let get buf_exp =
     let exec _ ~ret:(ret_id, _) mem =
       let range = Dom.Mem.find_set (Sem.eval_locs buf_exp mem) mem |> Dom.Val.get_modeled_range in
       let v = Dom.Val.of_itv Itv.nat |> Dom.Val.set_modeled_range range in
@@ -1750,6 +1758,11 @@ module Call = struct
       ; +PatternMatch.Java.implements_io "InputStream"
         &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read
       ; +PatternMatch.Java.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
+      ; +PatternMatch.Java.implements_nio "Buffer" &:: "wrap" <>$ capt_exp $--> create_copy_array
+      ; +PatternMatch.Java.implements_nio "Buffer"
+        &:: "allocate" <>$ capt_exp $--> Collection.allocate
+      ; +PatternMatch.Java.implements_nio "Buffer"
+        &:: "hasRemaining" <>$ capt_exp $!--> Collection.hasNext
       ; +PatternMatch.Java.implements_iterator &:: "next" <>$ capt_exp $!--> Collection.next
       ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
@@ -1824,14 +1837,9 @@ module Call = struct
         $--> Collection.putAll
       ; +PatternMatch.Java.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.Java.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.Java.implements_nio "ByteBuffer"
-        &:: "get" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.Java.implements_nio "ByteBuffer"
-        &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.Java.implements_nio "ByteBuffer"
-        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
-      ; +PatternMatch.Java.implements_nio "ByteBuffer"
-        &:: "getShort" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.Java.implements_nio "Buffer"
+        &::+ startsWith "get" <>$ capt_exp $+...$--> Buffer.get
+      ; +PatternMatch.Java.implements_nio "Buffer" &:: "duplicate" <>$ capt_exp $+...$--> id
       ; +PatternMatch.Java.implements_nio "channels.FileChannel"
         &:: "read" <>$ any_arg $+ capt_exp $+ any_arg $--> FileChannel.read
       ; +PatternMatch.Java.implements_org_json "JSONArray"

@@ -31,12 +31,11 @@ let modifies_third = PurityDomain.impure_params (PurityDomain.ModifiedParamIndic
 
 let pure_builtins _ s = BuiltinPureMethods.mem s pure_builtins
 
-let endsWith suffix _ s = String.is_suffix ~suffix s
-
-let startsWith prefix _ s = String.is_prefix ~prefix s
-
 (* matches get*Value *)
-let getStarValue tenv s = startsWith "get" tenv s && endsWith "Value" tenv s
+let getStarValue tenv s =
+  let open ProcnameDispatcher.ProcName in
+  startsWith "get" tenv s && endsWith "Value" tenv s
+
 
 module ProcName = struct
   let dispatch : (Tenv.t, PurityDomain.t, unit) ProcnameDispatcher.ProcName.dispatcher =
@@ -77,6 +76,8 @@ module ProcName = struct
       ; +PatternMatch.Java.implements_collection &:: "isEmpty" <>--> PurityDomain.pure
       ; +PatternMatch.Java.implements_collection &:: "get" <>--> PurityDomain.pure
       ; +PatternMatch.Java.implements_collection &:: "set" <>--> modifies_first
+      ; +PatternMatch.Java.implements_nio "Buffer" &::+ startsWith "get" <>--> modifies_first
+      ; +PatternMatch.Java.implements_nio "Buffer" &::+ startsWith "put" <>--> modifies_first
       ; +PatternMatch.Java.implements_list &:: "contains" <>--> PurityDomain.pure
       ; +PatternMatch.Java.implements_collection &:: "contains" <>--> PurityDomain.pure
       ; +PatternMatch.Java.implements_enumeration &:: "hasMoreElements" <>--> PurityDomain.pure
