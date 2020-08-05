@@ -1045,6 +1045,16 @@ module NSCollection = struct
         ~last_included:true mem location cond_set
     in
     {exec; check}
+
+
+  let copy coll_id src_exp =
+    let exec model_env ~ret:((id, _) as ret) mem =
+      let coll = Dom.Mem.find_stack (Loc.of_id coll_id) mem in
+      let set_length = Collection.eval_collection_length src_exp mem |> Dom.Val.get_itv in
+      Collection.change_size_by ~size_f:(fun _ -> set_length) coll_id model_env ~ret mem
+      |> model_by_value coll id
+    in
+    {exec; check= no_check}
 end
 
 module JavaClass = struct
@@ -1334,6 +1344,29 @@ module NSString = struct
     {exec; check= no_check}
 
 
+  let init_with_string tgt_exp src_exp =
+    let {exec= copy_exec; check= _} = JavaString.copy_constructor tgt_exp src_exp in
+    let exec ({integer_type_widths} as model_env) ~ret:((id, _) as ret) mem =
+      let mem = copy_exec model_env ~ret mem in
+      let v = Sem.eval integer_type_widths tgt_exp mem in
+      model_by_value v id mem
+    in
+    {exec; check= no_check}
+
+
+  let init_with_c_string_with_len tgt_exp src_exp len_exp =
+    let exec ({integer_type_widths; location} as model_env) ~ret:(id, _) mem =
+      let len_v = Sem.eval integer_type_widths len_exp mem in
+      let tgt_v = Sem.eval integer_type_widths tgt_exp mem in
+      let tgt_deref = Dom.Val.get_all_locs tgt_v in
+      let tgt_arr_loc = JavaString.deref_of model_env tgt_exp mem in
+      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref ~fn src_exp mem
+      |> Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length:len_v) tgt_arr_loc
+      |> model_by_value tgt_v id
+    in
+    {exec; check= no_check}
+
+
   let substring_from_index = JavaString.substring_no_end
 
   let length = JavaString.length
@@ -1527,6 +1560,11 @@ module Call = struct
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> Collection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "initWithArray:copyItems:" <>$ capt_var_exn $+ capt_exp $+ any_arg
+        $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "count" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> Collection.get_at_index
@@ -1561,6 +1599,11 @@ module Call = struct
         &:: "appendString:" <>$ capt_exp $+ capt_exp $--> NSString.append_string
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "componentsSeparatedByString:" <>$ capt_exp $+ any_arg $--> NSString.split
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "initWithString:" <>$ capt_exp $+ capt_exp $--> NSString.init_with_string
+      ; +PatternMatch.ObjectiveC.implements "NSString"
+        &:: "initWithBytes:length:encoding:" <>$ capt_exp $+ capt_exp $+ capt_exp $+ any_arg
+        $!--> NSString.init_with_c_string_with_len
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")

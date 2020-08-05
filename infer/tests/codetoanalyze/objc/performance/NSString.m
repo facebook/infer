@@ -53,9 +53,9 @@ void call_component_separated_by_char_constant() {
   component_seperated_by_char_linear(s);
 }
 
-void init_with_bytes_linear_FP(const void* bytes,
-                               NSUInteger length,
-                               NSStringEncoding encoding) {
+void init_with_bytes_linear(const void* bytes,
+                            NSUInteger length,
+                            NSStringEncoding encoding) {
   NSString* s = [[NSString alloc] initWithBytes:bytes
                                          length:length
                                        encoding:encoding];
@@ -69,22 +69,22 @@ void init_string_constant() {
   }
 }
 
-void init_with_string_constant_FP() {
+void init_with_string_constant() {
   NSString* s = @"abcd";
   NSString* str = [[NSString alloc] initWithString:s];
   for (int i = 0; i < str.length; i++) {
   }
 }
 
-void init_with_string_linear_FP(NSString* s) {
+void init_with_string_linear(NSString* s) {
   NSString* str = [[NSString alloc] initWithString:s];
   for (int i = 0; i < str.length; i++) {
   }
 }
 
-void call_init_with_string_constant_FP() {
+void call_init_with_string_constant() {
   NSString* s = [[NSString alloc] init];
-  init_with_string_linear_FP(s);
+  init_with_string_linear(s);
 }
 
 void substring_no_end_linear(NSString* s, int x) {
