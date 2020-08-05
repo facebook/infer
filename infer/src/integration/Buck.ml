@@ -89,6 +89,56 @@ module Target = struct
         add_flavor_internal target "infer-capture-all"
 end
 
+let config =
+  let clang_path =
+    List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
+  in
+  let get_java_genrule_config () =
+    ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
+  in
+  let get_java_flavor_config () =
+    if Config.buck_java_flavor_suppress_config then []
+    else
+      [ "infer_java.version=" ^ Version.versionString
+      ; Printf.sprintf "infer_java.binary=%s/infer" Config.bin_dir ]
+  in
+  let get_flavors_config () =
+    [ "client.id=infer.clang"
+    ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
+    ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
+    ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
+    ; "*//cxx.pch_enabled=false"
+    ; (* Infer doesn't support C++ modules yet (T35656509) *)
+      "*//cxx.modules_default=false"
+    ; "*//cxx.modules=false" ]
+    @ ( match Config.xcode_developer_dir with
+      | Some d ->
+          [Printf.sprintf "apple.xcode_developer_dir=%s" d]
+      | None ->
+          [] )
+    @
+    if List.is_empty Config.buck_blacklist then []
+    else
+      [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
+          (String.concat ~sep:")|(" Config.buck_blacklist) ]
+  in
+  fun buck_mode ->
+    let args =
+      match (buck_mode : BuckMode.t) with
+      | JavaGenruleMaster ->
+          get_java_genrule_config ()
+      | JavaFlavor ->
+          get_java_flavor_config ()
+      | ClangFlavors ->
+          get_flavors_config ()
+      | CombinedGenrule ->
+          get_java_genrule_config () @ get_flavors_config ()
+      | ClangCompilationDB _ ->
+          []
+    in
+    List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
+
+
 let parse_target_string =
   let alias_target_regexp = Str.regexp "^[^/:]+\\(#.*\\)?$" in
   let pattern_target_regexp = Str.regexp "^[^/]*//\\(\\.\\.\\.\\|.*\\(:\\|/\\.\\.\\.\\)\\)$" in
@@ -162,12 +212,71 @@ module Query = struct
         F.fprintf fmt "attrfilter(labels, %s, %a)" label pp expr
 
 
-  let exec ?(buck_config = []) expr =
-    let query = F.asprintf "%a" pp expr in
-    let cmd =
-      ("buck" :: "query" :: buck_config) @ List.rev_append Config.buck_build_args_no_inline [query]
+  (* example query json output
+     [
+     {
+       "//example/foo:bar" : {
+         "srcs" : [ "example/foo/bar.cc", "example/foo/lib/lib.cc" ]
+       }
+       "//example/foo:main" : {}
+     }
+     ]
+  *)
+  let parse_query_output ?buck_mode output =
+    let get_target_srcs_assoc_list json =
+      match json with
+      | `Assoc fields ->
+          fields
+      | _ ->
+          L.internal_error "Could not parse target json: %s@." (Yojson.Basic.to_string json) ;
+          []
     in
-    wrap_buck_call ~label:"query" cmd
+    let get_json_field fieldname = function
+      | `Assoc fields ->
+          List.Assoc.find fields ~equal:String.equal fieldname
+      | _ ->
+          None
+    in
+    let is_valid_source source_path_json =
+      match source_path_json with
+      | `String source_path ->
+          String.is_suffix ~suffix:".java" source_path
+          && not (String.is_suffix ~suffix:"MetagenRoot.java" source_path)
+      | _ ->
+          L.internal_error "Could not parse source path json: %s@."
+            (Yojson.Basic.to_string source_path_json) ;
+          false
+    in
+    let process_target acc (target, json) =
+      match get_json_field "srcs" json with
+      | Some (`List srcs) when List.exists srcs ~f:is_valid_source ->
+          target :: acc
+      | _ ->
+          acc
+    in
+    match (buck_mode : BuckMode.t option) with
+    | Some JavaFlavor ->
+        String.concat output |> Yojson.Basic.from_string |> get_target_srcs_assoc_list
+        |> List.fold ~init:[] ~f:process_target
+    | _ ->
+        output
+
+
+  let exec ?buck_mode expr =
+    let query = F.asprintf "%a" pp expr in
+    let buck_config = Option.value_map buck_mode ~default:[] ~f:config in
+    let buck_output_options =
+      match (buck_mode : BuckMode.t option) with
+      | Some JavaFlavor ->
+          ["--output-format"; "json"; "--output-attribute"; "srcs"]
+      | _ ->
+          []
+    in
+    let cmd =
+      ("buck" :: "query" :: buck_config)
+      @ List.rev_append Config.buck_build_args_no_inline (query :: buck_output_options)
+    in
+    wrap_buck_call ~label:"query" cmd |> parse_query_output ?buck_mode
 end
 
 let accepted_buck_commands = ["build"]
@@ -274,7 +383,7 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   |> ( if BuckMode.is_java_genrule_master_or_combined buck_mode then
        Query.label_filter ~label:infer_enabled_label
      else Fn.id )
-  |> Query.exec ~buck_config:(config buck_mode)
+  |> Query.exec ~buck_mode
   |>
   if BuckMode.is_java_genrule_master_or_combined buck_mode then
     List.rev_map ~f:(fun s -> s ^ genrule_suffix)
