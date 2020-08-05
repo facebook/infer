@@ -75,8 +75,7 @@ type err_instance =
       { dereference_violation: DereferenceRule.violation
       ; dereference_location: Location.t
       ; dereference_type: DereferenceRule.ReportableViolation.dereference_type
-      ; nullable_object_descr: string option
-      ; nullable_object_origin: TypeOrigin.t }
+      ; nullable_object_descr: string option }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
@@ -269,11 +268,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
          let severity = AssignmentRule.ReportableViolation.get_severity reportable_violation in
          (description, issue_type, Some error_location, severity) )
   | Nullable_dereference
-      { dereference_violation
-      ; dereference_location
-      ; nullable_object_descr
-      ; dereference_type
-      ; nullable_object_origin } ->
+      {dereference_violation; dereference_location; nullable_object_descr; dereference_type} ->
       (* If violation is reportable, create tuple, otherwise None *)
       let+ reportable_violation =
         DereferenceRule.ReportableViolation.from nullsafe_mode dereference_violation
@@ -281,7 +276,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
       lazy
         (let description, issue_type, error_location =
            DereferenceRule.ReportableViolation.get_description reportable_violation
-             ~dereference_location dereference_type ~nullable_object_descr ~nullable_object_origin
+             ~dereference_location dereference_type ~nullable_object_descr
          in
          let severity = DereferenceRule.ReportableViolation.get_severity reportable_violation in
          (description, issue_type, Some error_location, severity) )

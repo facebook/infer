@@ -28,18 +28,11 @@ let is_virtual = function
 
 let check_object_dereference ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nullsafe_mode
     find_canonical_duplicate node instr_ref object_exp dereference_type inferred_nullability loc =
-  Result.iter_error
-    (DereferenceRule.check (InferredNullability.get_nullability inferred_nullability))
-    ~f:(fun dereference_violation ->
-      let nullable_object_origin = InferredNullability.get_origin inferred_nullability in
+  Result.iter_error (DereferenceRule.check inferred_nullability) ~f:(fun dereference_violation ->
       let nullable_object_descr = explain_expr tenv node object_exp in
       let type_error =
         TypeErr.Nullable_dereference
-          { dereference_violation
-          ; dereference_location= loc
-          ; nullable_object_descr
-          ; dereference_type
-          ; nullable_object_origin }
+          {dereference_violation; dereference_location= loc; nullable_object_descr; dereference_type}
       in
       TypeErr.register_error analysis_data find_canonical_duplicate type_error (Some instr_ref)
         ~nullsafe_mode loc )

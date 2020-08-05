@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {nullability: Nullability.t} [@@deriving compare]
+type violation = {nullability: InferredNullability.t} [@@deriving compare]
 
 module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
@@ -19,7 +19,10 @@ module ReportableViolation = struct
   [@@deriving compare]
 
   let from nullsafe_mode ({nullability} as violation) =
-    if Nullability.is_considered_nonnull ~nullsafe_mode nullability then None
+    if
+      Nullability.is_considered_nonnull ~nullsafe_mode
+        (InferredNullability.get_nullability nullability)
+    then None
     else Some {nullsafe_mode; violation}
 
 
@@ -96,14 +99,16 @@ module ReportableViolation = struct
 
 
   let get_description {nullsafe_mode; violation= {nullability}} ~dereference_location
-      dereference_type ~nullable_object_descr ~nullable_object_origin =
+      dereference_type ~nullable_object_descr =
     let user_friendly_nullable =
-      ErrorRenderingUtils.UserFriendlyNullable.from_nullability nullability
+      ErrorRenderingUtils.UserFriendlyNullable.from_nullability
+        (InferredNullability.get_nullability nullability)
       |> IOption.if_none_eval ~f:(fun () ->
              Logging.die InternalError
                "get_description:: Dereference violation should not be possible for non-nullable \
                 values" )
     in
+    let nullable_object_origin = InferredNullability.get_origin nullability in
     match user_friendly_nullable with
     | ErrorRenderingUtils.UserFriendlyNullable.UntrustedNonnull untrusted_kind ->
         (* Attempt to dereference a value which is not explictly declared as nullable,
@@ -121,7 +126,7 @@ module ReportableViolation = struct
 end
 
 let check nullability =
-  match nullability with
+  match InferredNullability.get_nullability nullability with
   (* StrictNonnull is the only "real" value that is not null according to type system rules.
      Other values can not be fully trusted.
   *)
