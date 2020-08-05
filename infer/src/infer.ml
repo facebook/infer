@@ -191,7 +191,7 @@ let () =
       in
       match (Config.issues_tests, Config.cost_issues_tests) with
       | None, None ->
-          if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
+          if not Config.quiet then L.result "%t" Summary.OnDisk.pp_specs_from_config
       | Some out_path, Some cost_out_path ->
           write_from_json out_path ;
           write_from_cost_json cost_out_path

@@ -95,7 +95,7 @@ let whole_program_analysis () =
   let work_set = WorkHashSet.create 1 in
   let exe_env = Exe_env.mk () in
   L.progress "Processing on-disk summaries...@." ;
-  SpecsFiles.iter ~f:(iter_summary exe_env ~f:(WorkHashSet.add_pairs work_set)) ;
+  Summary.OnDisk.iter_specs ~f:(iter_summary exe_env ~f:(WorkHashSet.add_pairs work_set)) ;
   L.progress "Loaded %d pairs@." (WorkHashSet.length work_set) ;
   L.progress "Reporting on processed summaries...@." ;
   report exe_env work_set
