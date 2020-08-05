@@ -542,71 +542,6 @@ module ArrObjCommon = struct
       cond_set
 end
 
-module NSCollection = struct
-  (** Creates a new array from the given array by copying the first X elements. *)
-  let create_array src_exp size_exp =
-    let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
-    let exec model_env ~ret:((id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
-      let dest_loc = Loc.of_id id |> PowLoc.singleton in
-      let dest_arr_loc = Dom.Val.get_array_locs (Dom.Mem.find_set dest_loc mem) in
-      let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-      Dom.Mem.update_mem dest_arr_loc src_arr_v mem
-    and check {location; integer_type_widths} mem cond_set =
-      BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
-        ~last_included:true mem location cond_set
-    in
-    {exec; check}
-
-
-  let empty_array = malloc ~can_be_zero:true Exp.zero
-
-  let get_internal_array_locs arr_id _ = Loc.of_id arr_id |> PowLoc.singleton
-
-  let get_internal_elements_locs arr_id mem =
-    let arr_locs = get_internal_array_locs arr_id mem in
-    Dom.Mem.find_set arr_locs mem |> Dom.Val.get_all_locs
-
-
-  let length e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.get_size (Dom.Val.get_array_blk v)) in
-      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
-    in
-    {exec; check= no_check}
-
-
-  let check_index ~last_included arr_id index_exp =
-    ArrObjCommon.check_index ~last_included get_internal_array_locs arr_id index_exp
-
-
-  let get_at_index arr_id index_exp =
-    let exec _model_env ~ret:(ret_id, _) mem =
-      let locs = get_internal_elements_locs arr_id mem in
-      let v = Dom.Mem.find_set locs mem in
-      model_by_value v ret_id mem
-    in
-    {exec; check= check_index ~last_included:false arr_id index_exp}
-
-
-  let set_elem_exec {integer_type_widths} arr_id elem_exp mem =
-    let locs = get_internal_elements_locs arr_id mem in
-    let v = Sem.eval integer_type_widths elem_exp mem in
-    Dom.Mem.update_mem locs v mem
-
-
-  let array_from_list list =
-    let len_exp = List.length list |> IntLit.of_int |> Exp.int in
-    let {exec= create_array_exec; check= _} = malloc ~can_be_zero:true len_exp in
-    let exec model_env ~ret:((arr_id, _) as ret) mem =
-      let mem = create_array_exec model_env ~ret mem in
-      List.fold_left list ~init:mem ~f:(fun acc {exp= elem_exp} ->
-          set_elem_exec model_env arr_id elem_exp acc )
-    in
-    {exec; check= no_check}
-end
-
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
     Loc.append_field loc (BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
@@ -1096,6 +1031,22 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+module NSCollection = struct
+  (** Creates a new array from the given c array by copying the first X elements. *)
+  let create_from_array src_exp size_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:((id, _) as ret) mem =
+      let size_v = Sem.eval integer_type_widths size_exp mem |> Dom.Val.get_itv in
+      let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
+      let mem = Collection.create_collection model_env ~ret mem ~length:size_v in
+      let dest_arr_loc = Collection.get_collection_internal_elements_locs id mem in
+      Dom.Mem.update_mem dest_arr_loc src_arr_v mem
+    and check {location; integer_type_widths} mem cond_set =
+      BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
+        ~last_included:true mem location cond_set
+    in
+    {exec; check}
+end
+
 module JavaClass = struct
   let decl_array {pname; node_hash; location} ~ret:(ret_id, _) length mem =
     let loc =
@@ -1393,15 +1344,11 @@ module NSString = struct
   let concat = JavaString.concat
 
   let split exp =
-    let exec ({location} as model_env) ~ret:((id, _) as ret) mem =
+    let exec model_env ~ret mem =
       let itv =
-        ArrObjCommon.eval_size model_env exp ~fn mem
-        |> JavaString.range_itv_one_max_one_mone |> Dom.Val.of_itv
+        ArrObjCommon.eval_size model_env exp ~fn mem |> JavaString.range_itv_one_max_one_mone
       in
-      let {exec} = malloc ~can_be_zero:false Exp.one in
-      let mem = exec model_env ~ret mem in
-      let dest_loc = Loc.of_id id |> PowLoc.singleton in
-      Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length:itv) dest_loc mem
+      Collection.create_collection ~length:itv model_env ~ret mem
     in
     {exec; check= no_check}
 
@@ -1423,7 +1370,7 @@ let objc_malloc exp =
   let exec ({tenv} as model) ~ret mem =
     match exp with
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
-        (malloc ~can_be_zero Exp.zero).exec model ~ret mem
+        Collection.new_collection.exec model ~ret mem
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
       ->
         (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
@@ -1571,31 +1518,30 @@ module Call = struct
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
         -"__objc_alloc_no_fail" <>$ capt_exp $+...$--> objc_malloc
-      ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> NSCollection.create_array
+      ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp
+        $+...$--> NSCollection.create_from_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
-      ; -"CFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
-      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
-      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.length
-      ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.length
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> Collection.size
+      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> Collection.get_at_index
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> Collection.size
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.empty_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> Collection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "count" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "count" <>$ capt_exp $!--> NSCollection.length
+        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> Collection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
-      ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_array
-      ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "arrayWithObjects" &++> NSCollection.array_from_list
+        &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "arrayWithObjects" &++> Collection.of_list
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
-        $--> NSCollection.create_array
+        $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "count" <>$ capt_exp $--> NSCollection.length
+        &:: "count" <>$ capt_exp $--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
