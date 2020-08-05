@@ -40,7 +40,7 @@ class InheritanceTest {
     public void foo(int x) {}
   }
 
-  /* By heuristics, [Impl1.foo] is selected. It is hard to say good or bad. */
+  /* As of now, we cannot find implementations of interface methods. */
   public void call_interface_method2_linear_FN(MyInterface2 c, int x) {
     c.foo(x);
   }

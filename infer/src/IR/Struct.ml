@@ -43,7 +43,6 @@ type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
-  ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
@@ -58,8 +57,8 @@ let pp_field pe f (field_name, typ, ann) =
 
 
 let pp pe name f
-    ({fields; statics; subs; supers; methods; exported_objc_methods; annots; java_class_info; dummy}[@warning
-                                                                                                    "+9"])
+    ({fields; statics; supers; methods; exported_objc_methods; annots; java_class_info; dummy}[@warning
+                                                                                                "+9"])
     =
   let pp_field pe f (field_name, typ, ann) =
     F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
@@ -76,7 +75,6 @@ let pp pe name f
      @[<v>fields: {@[<v>%a@]}@,\
      statics: {@[<v>%a@]}@,\
      supers: {@[<v>%a@]}@,\
-     subs: {@[<v>%a@]}@,\
      methods: {@[<v>%a@]}@,\
      exported_obj_methods: {@[<v>%a@]}@,\
      annots: {@[<v>%a@]}@,\
@@ -89,8 +87,6 @@ let pp pe name f
     statics
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     supers
-    (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
-    (Typ.Name.Set.elements subs)
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
@@ -105,16 +101,14 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; methods= []
     ; exported_objc_methods= []
     ; supers= []
-    ; subs= Typ.Name.Set.empty
     ; annots= Annot.Item.empty
     ; java_class_info= None
     ; dummy= false }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
-      ?(supers = default.supers) ?(subs = default.subs) ?(annots = default.annots)
-      ?(dummy = default.dummy) () =
-    {fields; statics; methods; exported_objc_methods; supers; subs; annots; java_class_info; dummy}
+      ?(supers = default.supers) ?(annots = default.annots) ?(dummy = default.dummy) () =
+    {fields; statics; methods; exported_objc_methods; supers; annots; java_class_info; dummy}
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
 
@@ -187,8 +181,6 @@ let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
 
 
 let is_dummy {dummy} = dummy
-
-let add_sub sub x = {x with subs= Typ.Name.Set.add sub x.subs}
 
 let merge_lists ~compare ~newer ~current =
   let equal x y = Int.equal 0 (compare x y) in

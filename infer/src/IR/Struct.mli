@@ -26,7 +26,6 @@ type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
-  ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
@@ -69,9 +68,6 @@ val fld_typ : lookup:lookup -> default:Typ.t -> Fieldname.t -> Typ.t -> Typ.t
 val get_field_type_and_annotation :
   lookup:lookup -> Fieldname.t -> Typ.t -> (Typ.t * Annot.Item.t) option
 (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
-
-val add_sub : Typ.Name.t -> t -> t
-(** Add a subclass to the struct type *)
 
 val merge : Typ.Name.t -> newer:t -> current:t -> t
 (** best effort directed merge of two structs for the same typename *)

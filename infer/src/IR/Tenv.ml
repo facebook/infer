@@ -171,19 +171,6 @@ let store_to_filename tenv tenv_filename =
   if Config.debug_mode then store_debug_file tenv tenv_filename
 
 
-let init_inheritances tenv =
-  let sub_to_supers =
-    TypenameHash.fold (fun sub {Struct.supers} acc -> (sub, supers) :: acc) tenv []
-  in
-  List.iter sub_to_supers ~f:(fun (sub, supers) ->
-      List.iter supers ~f:(fun super ->
-          (* Ignore the super class of java.lang.Object since its sub-classes are too many, which
-             harms the analysis precision. *)
-          if not (Typ.Name.equal super Typ.Name.Java.java_lang_object) then
-            Option.iter (lookup tenv super) ~f:(fun super_struct ->
-                Struct.add_sub sub super_struct |> TypenameHash.replace tenv super ) ) )
-
-
 let store_global tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
@@ -192,7 +179,6 @@ let store_global tenv =
   let tenv = TypenameHashNormalizer.normalize tenv in
   L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
     (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
-  init_inheritances tenv ;
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
 
