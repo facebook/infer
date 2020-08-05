@@ -1,0 +1,9 @@
+java_library(
+    name='module2',
+    srcs=glob(["*.java"]),
+    deps=[
+        '//module1:module1',
+        '//annotations:annotations',
+        '//module3:module3',
+    ]
+)

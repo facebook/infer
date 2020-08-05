@@ -1,0 +1,7 @@
+java_library(
+    name='annotations',
+    srcs=['ThreadSafe.java'],
+    visibility=[
+        'PUBLIC'
+    ],
+)

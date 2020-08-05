@@ -53,6 +53,8 @@ val bin_dir : string
 
 val bound_error_allowed_in_procedure_call : bool
 
+val buck_java_flavor_suppress_config : bool
+
 val clang_exe_aliases : string list
 
 val clang_initializer_prefix : string

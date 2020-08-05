@@ -83,6 +83,8 @@ module Target = struct
         add_flavor_internal target "compilation-database"
     | ClangFlavors, Compile | JavaGenruleMaster, _ | CombinedGenrule, _ ->
         target
+    | JavaFlavor, _ ->
+        add_flavor_internal target "infer-java-capture"
     | ClangFlavors, _ ->
         add_flavor_internal target "infer-capture-all"
 end
@@ -197,7 +199,7 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
       "^(apple|cxx)_(binary|library|test)$"
   | ClangFlavors ->
       "^(apple|cxx)_(binary|library)$"
-  | JavaGenruleMaster ->
+  | JavaGenruleMaster | JavaFlavor ->
       "^(java|android)_library$"
 
 
@@ -215,6 +217,12 @@ let config =
   in
   let get_java_genrule_config () =
     ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
+  in
+  let get_java_flavor_config () =
+    if Config.buck_java_flavor_suppress_config then []
+    else
+      [ "infer_java.version=" ^ Version.versionString
+      ; Printf.sprintf "infer_java.binary=%s/infer" Config.bin_dir ]
   in
   let get_flavors_config () =
     [ "client.id=infer.clang"
@@ -241,6 +249,8 @@ let config =
       match (buck_mode : BuckMode.t) with
       | JavaGenruleMaster ->
           get_java_genrule_config ()
+      | JavaFlavor ->
+          get_java_flavor_config ()
       | ClangFlavors ->
           get_flavors_config ()
       | CombinedGenrule ->
@@ -256,7 +266,7 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   |> ( match buck_mode with
      | ClangFlavors | ClangCompilationDB NoDependencies ->
          Fn.id
-     | CombinedGenrule | ClangCompilationDB DepsAllDepths | JavaGenruleMaster ->
+     | CombinedGenrule | ClangCompilationDB DepsAllDepths | JavaGenruleMaster | JavaFlavor ->
          Query.deps None
      | ClangCompilationDB (DepsUpToDepth depth) ->
          Query.deps (Some depth) )
@@ -347,7 +357,7 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
     match (buck_mode, parsed_args) with
     | ClangFlavors, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | ( (ClangFlavors | CombinedGenrule | JavaGenruleMaster | ClangCompilationDB _)
+    | ( (ClangFlavors | CombinedGenrule | JavaGenruleMaster | ClangCompilationDB _ | JavaFlavor)
       , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode

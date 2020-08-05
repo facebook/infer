@@ -7,5 +7,8 @@
 
 open! IStd
 
+val infer_deps_of_build_report : string -> unit
+(** parse a buck build report and construct resulting [infer-deps.txt] *)
+
 val capture : BuckMode.t -> string list -> unit
 (** do genrule capture with the given buck command line *)

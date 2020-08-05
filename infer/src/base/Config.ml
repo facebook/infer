@@ -703,6 +703,13 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
+and buck_java_flavor_suppress_config =
+  CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Suppress setting buck config values for the infer binary and its version in the \
+     buck-java-flavor integration."
+
+
 and buck_merge_all_deps =
   CLOpt.mk_bool ~long:"buck-merge-all-deps" ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -748,6 +755,12 @@ and buck_mode =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `CombinedGenrule)
     "Buck integration for clang-based and Java targets."
+  |> ignore ;
+  CLOpt.mk_bool ~long:"buck-java-flavor"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    ~f:(set_mode `JavaFlavor)
+    "Buck integration for Java which uses the buck flavor #infer-java-capture instead of genrules \
+     like buck-java."
   |> ignore ;
   buck_mode
 
@@ -2638,6 +2651,8 @@ and buck_build_args_no_inline = !buck_build_args_no_inline
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
+and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
+
 and buck_merge_all_deps = !buck_merge_all_deps
 
 and buck_mode : BuckMode.t option =
@@ -2656,6 +2671,8 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB (DepsUpToDepth depth))
   | `CombinedGenrule, _ ->
       Some CombinedGenrule
+  | `JavaFlavor, _ ->
+      Some JavaFlavor
 
 
 and buck_targets_blacklist = !buck_targets_blacklist

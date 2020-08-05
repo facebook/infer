@@ -22,6 +22,7 @@ type mode =
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckGenruleMaster of {build_cmd: string list}
+  | BuckJavaFlavor of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -49,6 +50,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckGenruleMaster {build_cmd} ->
       F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
+  | BuckJavaFlavor {build_cmd} ->
+      F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -137,6 +140,9 @@ let capture ~changed_files = function
   | BuckGenruleMaster {build_cmd} ->
       L.progress "Capturing for BuckGenruleMaster integration...@." ;
       BuckGenrule.capture JavaGenruleMaster build_cmd
+  | BuckJavaFlavor {build_cmd} ->
+      L.progress "Capturing for BuckJavaFlavor integration...@." ;
+      BuckJavaFlavor.capture build_cmd
   | Clang {compiler; prog; args} ->
       if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
@@ -258,7 +264,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
            && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ ->
+    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ | BuckJavaFlavor _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
@@ -348,7 +354,7 @@ let assert_supported_build_system build_system =
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
-        | Some JavaGenruleMaster ->
+        | Some (JavaGenruleMaster | JavaFlavor) ->
             (`Java, Config.string_of_build_system build_system)
       in
       assert_supported_mode analyzer build_string
@@ -386,6 +392,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           BuckClangFlavor {build_cmd}
       | BBuck, Some JavaGenruleMaster ->
           BuckGenruleMaster {build_cmd}
+      | BBuck, Some JavaFlavor ->
+          BuckJavaFlavor {build_cmd}
       | BBuck, Some ClangFlavors ->
           BuckClangFlavor {build_cmd}
       | BClang, _ ->
