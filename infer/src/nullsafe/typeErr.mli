@@ -54,8 +54,7 @@ type err_instance =
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
-      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type
-      ; rhs_origin: TypeOrigin.t }
+      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type }
 [@@deriving compare]
 
 val pp_err_instance : Format.formatter -> err_instance -> unit

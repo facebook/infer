@@ -143,12 +143,9 @@ let check_field_assignment
         in
         Annotations.ia_is_cleanup ret_annotation_deprecated
       in
-      let declared_nullability =
-        AnnotatedNullability.get_nullability annotated_field.annotated_type.nullability
-      in
+      let declared_nullability = annotated_field.annotated_type.nullability in
       let assignment_check_result =
-        AssignmentRule.check ~lhs:declared_nullability
-          ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
+        AssignmentRule.check ~lhs:declared_nullability ~rhs:inferred_nullability_rhs
       in
       Result.iter_error assignment_check_result ~f:(fun assignment_violation ->
           let should_report =
@@ -159,12 +156,10 @@ let check_field_assignment
             && not (field_is_in_cleanup_context ())
           in
           if should_report then
-            let rhs_origin = InferredNullability.get_origin inferred_nullability_rhs in
             TypeErr.register_error analysis_data find_canonical_duplicate
               (TypeErr.Bad_assignment
                  { assignment_violation
                  ; assignment_location= loc
-                 ; rhs_origin
                  ; assignment_type= AssignmentRule.ReportableViolation.AssigningToField fname })
               (Some instr_ref) ~nullsafe_mode loc ) )
 
@@ -341,16 +336,14 @@ let check_return_not_nullable ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _
     ~nullsafe_mode find_canonical_duplicate loc (ret_signature : AnnotatedSignature.ret_signature)
     ret_inferred_nullability =
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
-  let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
-  let rhs = InferredNullability.get_nullability ret_inferred_nullability in
+  let lhs = ret_signature.ret_annotated_type.nullability in
+  let rhs = ret_inferred_nullability in
   Result.iter_error (AssignmentRule.check ~lhs ~rhs) ~f:(fun assignment_violation ->
-      let rhs_origin = InferredNullability.get_origin ret_inferred_nullability in
       let curr_pname = Procdesc.get_proc_name curr_pdesc in
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Bad_assignment
            { assignment_violation
            ; assignment_location= loc
-           ; rhs_origin
            ; assignment_type= ReturningFromFunction curr_pname })
         None ~nullsafe_mode loc )
 
@@ -434,12 +427,10 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
         | None ->
             "formal parameter " ^ Mangled.to_string formal.mangled
       in
-      let rhs_origin = InferredNullability.get_origin nullability_actual in
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Bad_assignment
            { assignment_violation
            ; assignment_location= loc
-           ; rhs_origin
            ; assignment_type=
                PassingParamToFunction
                  { param_signature= formal
@@ -452,8 +443,8 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
       (* Passing a param to a function is essentially an assignment the actual param value
          to the formal param *)
-      let lhs = AnnotatedNullability.get_nullability formal.param_annotated_type.nullability in
-      let rhs = InferredNullability.get_nullability nullability_actual in
+      let lhs = formal.param_annotated_type.nullability in
+      let rhs = nullability_actual in
       Result.iter_error (AssignmentRule.check ~lhs ~rhs) ~f:(report ~nullsafe_mode)
   in
   List.iter ~f:check resolved_params

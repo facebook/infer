@@ -80,8 +80,7 @@ type err_instance =
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
-      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type
-      ; rhs_origin: TypeOrigin.t }
+      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type }
 [@@deriving compare]
 
 let pp_err_instance fmt err_instance =
@@ -96,8 +95,8 @@ let pp_err_instance fmt err_instance =
       F.pp_print_string fmt "Over_annotation"
   | Nullable_dereference _ ->
       F.pp_print_string fmt "Nullable_dereference"
-  | Bad_assignment {rhs_origin} ->
-      F.fprintf fmt "Bad_assignment: rhs %s" (TypeOrigin.to_string rhs_origin)
+  | Bad_assignment _ ->
+      F.fprintf fmt "Bad_assignment"
 
 
 module H = Hashtbl.Make (struct
@@ -257,7 +256,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
           , IssueType.eradicate_field_not_initialized
           , None
           , NullsafeMode.severity nullsafe_mode ) )
-  | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->
+  | Bad_assignment {assignment_location; assignment_type; assignment_violation} ->
       (* If violation is reportable, create tuple, otherwise None *)
       let+ reportable_violation =
         AssignmentRule.ReportableViolation.from nullsafe_mode assignment_violation
@@ -265,7 +264,7 @@ let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
       lazy
         (let description, issue_type, error_location =
            AssignmentRule.ReportableViolation.get_description ~assignment_location assignment_type
-             ~rhs_origin reportable_violation
+             reportable_violation
          in
          let severity = AssignmentRule.ReportableViolation.get_severity reportable_violation in
          (description, issue_type, Some error_location, severity) )

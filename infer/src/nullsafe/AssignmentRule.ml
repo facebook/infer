@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
+type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t} [@@deriving compare]
 
 module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
@@ -28,12 +28,12 @@ module ReportableViolation = struct
     let falls_under_optimistic_third_party =
       Config.nullsafe_optimistic_third_party_params_in_non_strict
       && NullsafeMode.equal nullsafe_mode Default
-      && Nullability.equal lhs ThirdPartyNonnull
+      && Nullability.equal (AnnotatedNullability.get_nullability lhs) ThirdPartyNonnull
     in
     let is_non_reportable =
       falls_under_optimistic_third_party
       || (* In certain modes, we trust rhs to be non-nullable and don't report violation *)
-      Nullability.is_considered_nonnull ~nullsafe_mode rhs
+      Nullability.is_considered_nonnull ~nullsafe_mode (InferredNullability.get_nullability rhs)
     in
     if is_non_reportable then None else Some {nullsafe_mode; violation}
 
@@ -200,10 +200,11 @@ module ReportableViolation = struct
     (error_message, issue_type, assignment_location)
 
 
-  let get_description ~assignment_location assignment_type ~rhs_origin
-      {nullsafe_mode; violation= {rhs}} =
+  let get_description ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
+    let rhs_origin = InferredNullability.get_origin rhs in
     let user_friendly_nullable =
-      ErrorRenderingUtils.UserFriendlyNullable.from_nullability rhs
+      ErrorRenderingUtils.UserFriendlyNullable.from_nullability
+        (InferredNullability.get_nullability rhs)
       |> IOption.if_none_eval ~f:(fun () ->
              Logging.die InternalError
                "get_description:: Assignment violation should not be possible for non-nullable \
@@ -223,5 +224,9 @@ module ReportableViolation = struct
 end
 
 let check ~lhs ~rhs =
-  let is_subtype = Nullability.is_subtype ~supertype:lhs ~subtype:rhs in
+  let is_subtype =
+    Nullability.is_subtype
+      ~supertype:(AnnotatedNullability.get_nullability lhs)
+      ~subtype:(InferredNullability.get_nullability rhs)
+  in
   Result.ok_if_true is_subtype ~error:{lhs; rhs}
