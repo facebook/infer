@@ -783,6 +783,10 @@ OPTIONS
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)           See also infer-analyze(1).
 
+       --max-jobs int
+           Maximum number of analysis jobs running simultaneously       
+    See also infer-analyze(1).
+
        --max-nesting int
            Level of nested procedure calls to show. Trace elements beyond the
            maximum nesting level are skipped. If omitted, all levels are

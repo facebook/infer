@@ -1563,6 +1563,12 @@ and margin =
     "Set right margin for the pretty printing functions"
 
 
+and max_jobs =
+  CLOpt.mk_int_opt ~long:"max-jobs"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"int" "Maximum number of analysis jobs running simultaneously"
+
+
 and max_nesting =
   CLOpt.mk_int_opt ~long:"max-nesting"
     ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
@@ -2867,7 +2873,7 @@ and javac_classes_out = !javac_classes_out
 
 and job_id = !job_id
 
-and jobs = !jobs
+and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
 
 and join_cond = !join_cond
 

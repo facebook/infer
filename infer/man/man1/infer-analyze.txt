@@ -209,6 +209,9 @@ OPTIONS
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)
 
+       --max-jobs int
+           Maximum number of analysis jobs running simultaneously
+
        --perf-profiler-data-file file
            DEPRECATED: Specify the file containing perf profiler data to read
 
