@@ -15,13 +15,23 @@ let assert_has_nullability_info ?expected_file ?expected_line storage unique_rep
   | None ->
       assert_failure
         (F.asprintf "Expected to find info for %a, but it was not found"
-           ThirdPartyMethod.pp_unique_repr unique_repr)
-  | Some {filename; line_number; nullability} ->
-      assert_equal expected_nullability nullability
+           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr)
+  | Some {filename; line_number; signature} ->
+      let expected_ret, expected_param_nullability = expected_nullability in
+      let expected_params =
+        List.zip_exn unique_repr.ThirdPartyAnnotationInfo.param_types expected_param_nullability
+      in
+      let expected_signature =
+        { ThirdPartyMethod.class_name= unique_repr.ThirdPartyAnnotationInfo.class_name
+        ; method_name= unique_repr.ThirdPartyAnnotationInfo.method_name
+        ; ret_nullability= expected_ret
+        ; params= expected_params }
+      in
+      assert_equal expected_signature signature
         ~msg:
-          (F.asprintf "Nullability info for %a does not match" ThirdPartyMethod.pp_unique_repr
+          (F.asprintf "Signature for %a does not match" ThirdPartyAnnotationInfo.pp_unique_repr
              unique_repr)
-        ~printer:(Pp.string_of_pp ThirdPartyMethod.pp_nullability) ;
+        ~printer:(Pp.string_of_pp ThirdPartyMethod.pp) ;
       Option.iter expected_file ~f:(fun expected_file ->
           assert_equal expected_file filename ~msg:"Filename does not match" ) ;
       Option.iter expected_line ~f:(fun expected_line ->
@@ -32,10 +42,10 @@ let assert_no_info storage unique_repr =
   match ThirdPartyAnnotationInfo.find_nullability_info storage unique_repr with
   | None ->
       ()
-  | Some {nullability} ->
+  | Some {signature} ->
       assert_failure
         (F.asprintf "Did not expect to find nullability info for method %a, but found %a"
-           ThirdPartyMethod.pp_unique_repr unique_repr ThirdPartyMethod.pp_nullability nullability)
+           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr ThirdPartyMethod.pp signature)
 
 
 let add_from_annot_file_and_check_success storage ~filename ~lines =
@@ -72,11 +82,11 @@ let basic_find =
   (* Make sure we can find what we just stored *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_nullability:(Nonnull, [Nonnull])
     ~expected_file:"test.sig" ~expected_line:1 ;
   assert_has_nullability_info storage
     {class_name= "b.B"; method_name= Method "bar"; param_types= ["c.C"; "d.D"]}
-    ~expected_nullability:{ret_nullability= Nullable; param_nullability= [Nonnull; Nullable]}
+    ~expected_nullability:(Nullable, [Nonnull; Nullable])
     ~expected_file:"test.sig" ~expected_line:2 ;
   (* Make sure we can not find stuff we did not store *)
   (* Wrong class name *)
@@ -104,7 +114,7 @@ let disregards_whitespace_lines_and_comments =
   in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_nullability:(Nonnull, [Nonnull])
     ~expected_file:"test.sig" ~expected_line:2 ;
   (* Commented out signatures should be ignored *)
   assert_no_info storage {class_name= "a.A"; method_name= Method "bar"; param_types= ["b.B"]}
@@ -133,10 +143,10 @@ let overload_resolution =
   (* a.b.SomeClass.foo with 1 param *)
   assert_has_nullability_info storage
     {class_name= "a.b.SomeClass"; method_name= Method "foo"; param_types= ["a.b.C1"]}
-    ~expected_nullability:{ret_nullability= Nullable; param_nullability= [Nullable]} ;
+    ~expected_nullability:(Nullable, [Nullable]) ;
   assert_has_nullability_info storage
     {class_name= "a.b.SomeClass"; method_name= Method "foo"; param_types= ["a.b.C2"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nullable]} ;
+    ~expected_nullability:(Nonnull, [Nullable]) ;
   (* wrong type *)
   assert_no_info storage
     {class_name= "a.b.SomeClass"; method_name= Method "foo"; param_types= ["a.b.C3"]} ;
@@ -151,8 +161,7 @@ let overload_resolution =
     { class_name= "a.b.SomeClass"
     ; method_name= Method "foo"
     ; param_types= ["a.b.C1"; "a.b.C3"; "c.d.C4"] }
-    ~expected_nullability:
-      {ret_nullability= Nullable; param_nullability= [Nullable; Nullable; Nonnull]} ;
+    ~expected_nullability:(Nullable, [Nullable; Nullable; Nonnull]) ;
   (* wrong param order *)
   assert_no_info storage
     { class_name= "a.b.SomeClass"
@@ -164,13 +173,13 @@ let overload_resolution =
   (* possibility of constructor overload should be respected *)
   assert_has_nullability_info storage
     {class_name= "a.b.SomeClass"; method_name= Constructor; param_types= []}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= []} ;
+    ~expected_nullability:(Nonnull, []) ;
   assert_has_nullability_info storage
     {class_name= "a.b.SomeClass"; method_name= Constructor; param_types= ["a.b.C1"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]} ;
+    ~expected_nullability:(Nonnull, [Nonnull]) ;
   assert_has_nullability_info storage
     {class_name= "a.b.SomeClass"; method_name= Constructor; param_types= ["a.b.C2"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nullable]} ;
+    ~expected_nullability:(Nonnull, [Nullable]) ;
   (* wrong param type *)
   assert_no_info storage
     {class_name= "a.b.SomeClass"; method_name= Constructor; param_types= ["a.b.C3"]}
@@ -189,19 +198,19 @@ let can_add_several_files =
   in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_nullability:(Nonnull, [Nonnull])
     ~expected_file:"file1.sig" ~expected_line:1 ;
   (* 2. Add another file and check if we added info *)
   let file2 = ["e.E#baz(f.F)"; "g.G#<init>(h.H, @Nullable i.I) @Nullable"] in
   let storage = add_from_annot_file_and_check_success storage ~filename:"file2.sig" ~lines:file2 in
   assert_has_nullability_info storage
     {class_name= "e.E"; method_name= Method "baz"; param_types= ["f.F"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_nullability:(Nonnull, [Nonnull])
     ~expected_file:"file2.sig" ~expected_line:1 ;
   (* 3. Ensure we did not forget the content from the first file *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:{ret_nullability= Nonnull; param_nullability= [Nonnull]}
+    ~expected_nullability:(Nonnull, [Nonnull])
     ~expected_file:"file1.sig" ~expected_line:1
 
 

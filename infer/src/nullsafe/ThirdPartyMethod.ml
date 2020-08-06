@@ -5,23 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module F = Format
 open Result.Monad_infix
 
-type fully_qualified_type = string [@@deriving sexp]
-
-type unique_repr =
+type t =
   { class_name: fully_qualified_type
   ; method_name: method_name
-  ; param_types: fully_qualified_type list }
-[@@deriving sexp]
+  ; ret_nullability: type_nullability
+  ; params: (fully_qualified_type * type_nullability) list }
+
+and fully_qualified_type = string [@@deriving sexp]
 
 and method_name = Constructor | Method of string
 
-type type_nullability = Nullable | Nonnull [@@deriving sexp]
-
-type nullability = {ret_nullability: type_nullability; param_nullability: type_nullability list}
-[@@deriving sexp]
+and type_nullability = Nullable | Nonnull [@@deriving sexp]
 
 type parsing_error =
   | BadStructure
@@ -45,33 +41,6 @@ let string_of_parsing_error = function
   | BadParam ->
       "Each param should have form of [@Nullable] <fully qualified type name>"
 
-
-let pp_unique_repr fmt signature = Sexp.pp fmt (sexp_of_unique_repr signature)
-
-let java_type_to_string java_type =
-  let package = JavaSplitName.package java_type in
-  let type_name = JavaSplitName.type_name java_type in
-  match package with
-  | None ->
-      (* Primitive type *)
-      type_name
-  | Some package ->
-      package ^ "." ^ type_name
-
-
-let unique_repr_of_java_proc_name java_proc_name =
-  let class_name = Procname.Java.get_class_name java_proc_name in
-  let method_name =
-    if Procname.Java.is_constructor java_proc_name then Constructor
-    else Method (Procname.Java.get_method java_proc_name)
-  in
-  let param_types =
-    Procname.Java.get_parameters java_proc_name |> List.map ~f:java_type_to_string
-  in
-  {class_name; method_name; param_types}
-
-
-let pp_nullability fmt nullability = Sexp.pp fmt (sexp_of_nullability nullability)
 
 let nullable_annotation = "@Nullable"
 
@@ -192,12 +161,26 @@ let parse str =
       parse_method_name method_name_str
       >>= fun method_name ->
       match_after_open_brace rest
-      >>= fun (parsed_params, ret_nullability) ->
-      let param_types, param_nullability = List.unzip parsed_params in
-      Ok ({class_name; method_name; param_types}, {ret_nullability; param_nullability})
+      >>= fun (params, ret_nullability) -> Ok {class_name; method_name; ret_nullability; params}
   | _ ->
       Error BadStructure
 
 
-let pp_parse_result fmt (unique_repr, nullability) =
-  F.fprintf fmt "(%a; %a)" pp_unique_repr unique_repr pp_nullability nullability
+let to_canonical_string
+    { class_name: fully_qualified_type
+    ; method_name: method_name
+    ; ret_nullability: type_nullability
+    ; params } =
+  let method_name_to_string = function Constructor -> "<init>" | Method name -> name in
+  let param_to_string (typ, nullability) =
+    match nullability with Nullable -> Format.sprintf "@Nullable %s" typ | Nonnull -> typ
+  in
+  let param_list_to_string params = List.map params ~f:param_to_string |> String.concat ~sep:", " in
+  let ret_to_string = function Nullable -> " @Nullable" | Nonnull -> "" in
+  Format.sprintf "%s#%s(%s)%s" class_name
+    (method_name_to_string method_name)
+    (param_list_to_string params) (ret_to_string ret_nullability)
+
+
+(* Pretty print exactly as the canonical representation, for convenience *)
+let pp = Pp.of_string ~f:to_canonical_string

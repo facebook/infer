@@ -11,7 +11,21 @@ open! IStd
 type signature_info =
   { filename: string  (** File where the particular signature is stored *)
   ; line_number: int  (** Line number with this signature *)
-  ; nullability: ThirdPartyMethod.nullability }
+  ; signature: ThirdPartyMethod.t }
+
+(** The minimum information that is needed to _uniquely_ identify the method. That why we don't
+
+    - include e.g. return type, access quilifiers, or whether the method is static (because Java
+    - overload resolution rules ignore these things). In contrast, parameter types are essential,
+    - because Java allows several methods with different types. *)
+type unique_repr =
+  { class_name: ThirdPartyMethod.fully_qualified_type
+  ; method_name: ThirdPartyMethod.method_name
+  ; param_types: ThirdPartyMethod.fully_qualified_type list }
+
+val pp_unique_repr : Format.formatter -> unique_repr -> unit
+
+val unique_repr_of_java_proc_name : Procname.Java.t -> unique_repr
 
 type storage
 
@@ -26,7 +40,7 @@ val add_from_signature_file :
   storage -> filename:string -> lines:string list -> (storage, file_parsing_error) result
 (** Parse the information from the signature file, and add it to the storage *)
 
-val find_nullability_info : storage -> ThirdPartyMethod.unique_repr -> signature_info option
+val find_nullability_info : storage -> unique_repr -> signature_info option
 (** The main method. Do we have an information about the third-party method? If we do not, or it is
     not a third-party method, returns None. Otherwise returns the nullability information. *)
 

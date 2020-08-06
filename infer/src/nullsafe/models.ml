@@ -31,17 +31,17 @@ let get_unique_repr proc_name =
   let java_proc_name =
     match proc_name with Procname.Java java_proc_name -> Some java_proc_name | _ -> None
   in
-  Option.map java_proc_name ~f:ThirdPartyMethod.unique_repr_of_java_proc_name
+  Option.map java_proc_name ~f:ThirdPartyAnnotationInfo.unique_repr_of_java_proc_name
 
 
-let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability} =
+let to_modelled_nullability ThirdPartyMethod.{ret_nullability; params} =
   let is_nullable = function
     | ThirdPartyMethod.Nullable ->
         true
     | ThirdPartyMethod.Nonnull ->
         false
   in
-  (is_nullable ret_nullability, List.map param_nullability ~f:is_nullable)
+  (is_nullable ret_nullability, List.map params ~f:(fun (_, nullability) -> is_nullable nullability))
 
 
 (* Some methods *)
@@ -91,8 +91,8 @@ let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attribut
          ~f:
            (ThirdPartyAnnotationInfo.find_nullability_info
               (ThirdPartyAnnotationGlobalRepo.get_repo ()))
-    |> Option.map ~f:(fun ThirdPartyAnnotationInfo.{nullability; filename; line_number} ->
-           (to_modelled_nullability nullability, filename, line_number) )
+    |> Option.map ~f:(fun ThirdPartyAnnotationInfo.{signature; filename; line_number} ->
+           (to_modelled_nullability signature, filename, line_number) )
     |> Option.value_map
        (* If we found information in third-party repo, overwrite annotated signature *)
          ~f:(fun (modelled_nullability, filename, line_number) ->
