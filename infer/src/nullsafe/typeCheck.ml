@@ -635,8 +635,7 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
     find_canonical_duplicate typestate' =
   (* Get the proc name for map.get() from map.put() *)
   let pname_get_from_pname_put pname_put =
-    let object_t = JavaSplitName.java_lang_object in
-    let parameters = [object_t] in
+    let parameters = [object_typ] in
     pname_put
     |> Procname.Java.replace_method_name "get"
     |> Procname.Java.replace_return_type object_typ

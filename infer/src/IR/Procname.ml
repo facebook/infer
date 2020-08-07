@@ -22,13 +22,10 @@ module Java = struct
     | Static  (** in Java, procedures called with invokestatic *)
   [@@deriving compare]
 
-  (* TODO: use Mangled.t here *)
-  type java_type = JavaSplitName.t [@@deriving compare, equal]
-
   (** Type of java procedure names. *)
   type t =
     { method_name: string
-    ; parameters: java_type list
+    ; parameters: Typ.t list
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
@@ -84,9 +81,7 @@ module Java = struct
       F.pp_print_char fmt '.'
     in
     let pp_package_method_and_params fmt j =
-      let pp_param_list fmt params =
-        Pp.seq ~sep:"," (JavaSplitName.pp_type_verbosity ~verbose) fmt params
-      in
+      let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_java ~verbose) fmt params in
       F.fprintf fmt "%a%s(%a)" pp_class_name_dot j j.method_name pp_param_list j.parameters
     in
     match verbosity with
@@ -164,7 +159,11 @@ module Java = struct
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)
   let is_vararg {parameters} =
-    List.last parameters |> Option.exists ~f:JavaSplitName.(equal java_lang_object_array)
+    match List.last parameters with
+    | Some {desc= Tptr ({desc= Tarray {elt}}, Pk_pointer)} ->
+        Typ.(equal pointer_to_java_lang_object elt)
+    | _ ->
+        false
 
 
   let is_external java_pname =
@@ -179,8 +178,7 @@ module Parameter = struct
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
-  [@@deriving compare, equal]
+  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter [@@deriving compare, equal]
 
   let of_typ typ =
     match typ.Typ.desc with Typ.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None
@@ -695,7 +693,7 @@ let rec replace_parameters new_parameters procname =
 let parameter_of_name procname class_name =
   match procname with
   | Java _ ->
-      Parameter.JavaParameter (JavaSplitName.of_string (Typ.Name.name class_name))
+      Parameter.JavaParameter Typ.(mk_ptr (mk_struct class_name))
   | _ ->
       Parameter.ClangParameter (Parameter.clang_param_of_name class_name)
 

@@ -110,56 +110,7 @@ let object_type_to_string ot =
       array_type_to_string vt
 
 
-let string_of_basic_type = function
-  | `Bool ->
-      JConfig.boolean_st
-  | `Byte ->
-      JConfig.byte_st
-  | `Char ->
-      JConfig.char_st
-  | `Double ->
-      JConfig.double_st
-  | `Float ->
-      JConfig.float_st
-  | `Int ->
-      JConfig.int_st
-  | `Long ->
-      JConfig.long_st
-  | `Short ->
-      JConfig.short_st
-
-
-let rec string_of_type vt =
-  match vt with
-  | JBasics.TBasic bt ->
-      string_of_basic_type bt
-  | JBasics.TObject ot -> (
-    match ot with
-    | JBasics.TArray vt ->
-        string_of_type vt ^ "[]"
-    | JBasics.TClass cn ->
-        JBasics.cn_name cn )
-
-
 let package_to_string = function [] -> None | p -> Some (String.concat ~sep:"." p)
-
-let cn_to_java_type cn =
-  JavaSplitName.make
-    ?package:(package_to_string (JBasics.cn_package cn))
-    (JBasics.cn_simple_name cn)
-
-
-let vt_to_java_type vt =
-  match vt with
-  | JBasics.TBasic bt ->
-      JavaSplitName.of_string (string_of_basic_type bt)
-  | JBasics.TObject ot -> (
-    match ot with
-    | JBasics.TArray vt ->
-        JavaSplitName.of_string (string_of_type vt ^ "[]")
-    | JBasics.TClass cn ->
-        cn_to_java_type cn )
-
 
 let method_signature_names ms =
   let method_name = JBasics.ms_name ms in
@@ -172,7 +123,7 @@ let method_signature_names ms =
     | Some vt ->
         Some (get_named_type vt)
   in
-  let args_types = List.map ~f:vt_to_java_type (JBasics.ms_args ms) in
+  let args_types = List.map ~f:get_named_type (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)
 
 

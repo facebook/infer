@@ -21,9 +21,7 @@ let unique_repr_of_signature ThirdPartyMethod.{class_name; method_name; params} 
   {class_name; method_name; param_types= List.map params ~f:(fun (param_type, _) -> param_type)}
 
 
-let java_type_to_string java_type =
-  Pp.string_of_pp (JavaSplitName.pp_type_verbosity ~verbose:true) java_type
-
+let java_type_to_string java_type = Pp.string_of_pp (Typ.pp_java ~verbose:true) java_type
 
 let unique_repr_of_java_proc_name java_proc_name =
   let class_name = Procname.Java.get_class_name java_proc_name in

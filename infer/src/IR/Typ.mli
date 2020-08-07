@@ -167,6 +167,10 @@ val double : t
 val void_star : t
 (** void* type *)
 
+val pointer_to_java_lang_object : t
+
+val pointer_to_java_lang_string : t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 

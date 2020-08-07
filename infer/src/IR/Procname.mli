@@ -19,8 +19,6 @@ module Java : sig
 
   type t [@@deriving compare]
 
-  type java_type = JavaSplitName.t [@@deriving compare, equal]
-
   val constructor_method_name : string
 
   val class_initializer_method_name : string
@@ -28,7 +26,7 @@ module Java : sig
   val replace_method_name : string -> t -> t
   (** Replace the method name of an existing java procname. *)
 
-  val replace_parameters : java_type list -> t -> t
+  val replace_parameters : Typ.t list -> t -> t
   (** Replace the parameters of a java procname. *)
 
   val replace_return_type : Typ.t -> t -> t
@@ -49,7 +47,7 @@ module Java : sig
   val get_method : t -> string
   (** Return the method name of a java procedure name. *)
 
-  val get_parameters : t -> java_type list
+  val get_parameters : t -> Typ.t list
   (** Return the parameters of a java procedure name. *)
 
   val get_return_typ : t -> Typ.t
@@ -105,8 +103,7 @@ module Parameter : sig
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
-  [@@deriving compare, equal]
+  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter [@@deriving compare, equal]
 
   val of_typ : Typ.t -> clang_parameter
 end
@@ -256,7 +253,7 @@ val make_java :
      class_name:Typ.Name.t
   -> return_type:Typ.t option
   -> method_name:string
-  -> parameters:Java.java_type list
+  -> parameters:Typ.t list
   -> kind:Java.kind
   -> unit
   -> t

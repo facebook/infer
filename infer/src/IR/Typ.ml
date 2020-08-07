@@ -656,3 +656,8 @@ let rec is_java_type t =
       is_java_type elt
   | _ ->
       false
+
+
+let pointer_to_java_lang_object = mk_ptr (mk_struct Name.Java.java_lang_object)
+
+let pointer_to_java_lang_string = mk_ptr (mk_struct Name.Java.java_lang_string)

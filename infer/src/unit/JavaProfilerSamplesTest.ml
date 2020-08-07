@@ -9,8 +9,6 @@ open! IStd
 open OUnit2
 module T = JProcname.JNI.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY
 
-let mk_split (pkg, typ) = JavaSplitName.make ?package:pkg typ
-
 let test_jni_pp =
   let create_test input expected _ =
     let found = Format.asprintf "%a" T.pp input in
@@ -126,37 +124,6 @@ let test_jni_parse_str_with_invalid_input =
          name >:: create_test test_input expected_exception )
 
 
-let test_jni_to_java_type_with_valid_input =
-  let create_test input expected _ =
-    let found = T.to_java_type input in
-    let pp_diff fmt (expected, actual) =
-      let exp_pkg = Option.value ~default:"<None>" (JavaSplitName.package expected) in
-      let exp_cl = JavaSplitName.type_name expected in
-      let actual_pkg = Option.value ~default:"<None>" (JavaSplitName.package actual) in
-      let actual_cl = JavaSplitName.type_name actual in
-      Format.fprintf fmt "Expected: '(%s, %s)', found: '(%s, %s)'" exp_pkg exp_cl actual_pkg
-        actual_cl
-    in
-    let cmp a b = Int.equal 0 (Procname.Java.compare_java_type a b) in
-    assert_equal ~cmp ~pp_diff expected found
-  in
-  [ ("test_jni_to_java_type_1", T.Boolean, mk_split (None, "bool"))
-  ; ( "test_jni_to_java_type_2"
-    , T.FullyQualifiedClass ("java.lang", "String")
-    , mk_split (Some "java.lang", "String") ) ]
-  |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
-
-
-let test_jni_to_java_type_with_invalid_input =
-  let run () = T.to_java_type (Method ([], Void)) in
-  let expected_exception =
-    Logging.InferUserError "Cannot express a method as a Procname.Java.java_type"
-  in
-  let do_assert _ = assert_raises expected_exception run in
-  "test_jni_to_java_type_with_method_should_fail" >:: do_assert
-
-
 let test_from_json_string_with_valid_input =
   let create_test input expected ~use_signature _ =
     let found = JavaProfilerSamples.from_json_string input ~use_signature in
@@ -183,19 +150,13 @@ let test_from_json_string_with_valid_input =
               make_java
                 ~class_name:(Typ.Name.Java.from_string "lll.mmm.Nnn")
                 ~return_type:None ~method_name:Java.constructor_method_name
-                ~parameters:
-                  [ mk_split (Some "java.lang", "String")
-                  ; mk_split (None, "int[]")
-                  ; mk_split (None, "long") ]
+                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
                 ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ggg.hhh.Iii")
                 ~return_type:None ~method_name:Java.class_initializer_method_name
-                ~parameters:
-                  [ mk_split (Some "java.lang", "String")
-                  ; mk_split (None, "int[]")
-                  ; mk_split (None, "long") ]
+                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
                 ~kind:Java.Non_Static ()) ] )
     ; ( "label2"
       , Procname.Set.of_list
@@ -204,10 +165,7 @@ let test_from_json_string_with_valid_input =
                 ~class_name:(Typ.Name.Java.from_string "ddd.eee.Fff")
                 ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_array java_char)))))
                 ~method_name:"methodTwo"
-                ~parameters:
-                  [ mk_split (Some "java.lang", "String")
-                  ; mk_split (None, "int[]")
-                  ; mk_split (None, "long") ]
+                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
                 ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
@@ -273,7 +231,6 @@ let test_from_json_string_with_invalid_input =
 
 let tests =
   "java_profiler_samples"
-  >::: (test_jni_to_java_type_with_invalid_input :: test_jni_parse_str_with_valid_input)
-       @ test_jni_parse_str_with_invalid_input @ test_jni_parse_method_str_with_invalid_input
-       @ test_jni_pp @ test_jni_to_java_type_with_valid_input
+  >::: test_jni_parse_str_with_valid_input @ test_jni_parse_str_with_invalid_input
+       @ test_jni_parse_method_str_with_invalid_input @ test_jni_pp
        @ test_from_json_string_with_valid_input @ test_from_json_string_with_invalid_input

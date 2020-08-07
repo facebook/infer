@@ -55,7 +55,7 @@ let get_special_method_modelled_nullability tenv proc_name =
         Some (false, [])
     (* valueOf() is a synthetic enum method that is never null *)
     | "valueOf", [Procname.Parameter.JavaParameter param_type_name]
-      when JavaSplitName.equal param_type_name JavaSplitName.java_lang_string ->
+      when Typ.equal param_type_name Typ.pointer_to_java_lang_string ->
         Some (false, [false])
     | _ ->
         None

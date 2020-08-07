@@ -33,8 +33,6 @@ module JNI : sig
 
     val parse_method_str : string -> t list * t
 
-    val to_java_type : t -> Procname.Java.java_type
-
     val pp : Format.formatter -> t -> unit
   end
 end

@@ -271,7 +271,7 @@ module Java = struct
   let is_override_of_lang_object_equals curr_pname =
     let is_only_param_of_object_type = function
       | [Procname.Parameter.JavaParameter param_type]
-        when JavaSplitName.equal param_type JavaSplitName.java_lang_object ->
+        when Typ.equal param_type Typ.pointer_to_java_lang_object ->
           true
       | _ ->
           false

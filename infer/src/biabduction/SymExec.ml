@@ -621,31 +621,32 @@ let resolve_and_analyze
 
 (** recognize calls to the constructor java.net.URL and splits the argument string to be only the
     protocol. *)
-let call_constructor_url_update_args pname actual_params =
+let call_constructor_url_update_args =
   let url_pname =
     Procname.make_java
       ~class_name:(Typ.Name.Java.from_string "java.net.URL")
       ~return_type:None ~method_name:Procname.Java.constructor_method_name
-      ~parameters:[JavaSplitName.java_lang_string] ~kind:Procname.Java.Non_Static ()
+      ~parameters:[Typ.pointer_to_java_lang_string] ~kind:Procname.Java.Non_Static ()
   in
-  if Procname.equal url_pname pname then
-    match actual_params with
-    | [this; (Exp.Const (Const.Cstr s), atype)] -> (
-        let parts = Str.split (Str.regexp_string "://") s in
-        match parts with
-        | frst :: _ ->
-            if
-              String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
-              || String.equal frst "mailto" || String.equal frst "jar"
-            then [this; (Exp.Const (Const.Cstr frst), atype)]
-            else actual_params
-        | _ ->
-            actual_params )
-    | [this; (_, atype)] ->
-        [this; (Exp.Const (Const.Cstr "file"), atype)]
-    | _ ->
-        actual_params
-  else actual_params
+  fun pname actual_params ->
+    if Procname.equal url_pname pname then
+      match actual_params with
+      | [this; (Exp.Const (Const.Cstr s), atype)] -> (
+          let parts = Str.split (Str.regexp_string "://") s in
+          match parts with
+          | frst :: _ ->
+              if
+                String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
+                || String.equal frst "mailto" || String.equal frst "jar"
+              then [this; (Exp.Const (Const.Cstr frst), atype)]
+              else actual_params
+          | _ ->
+              actual_params )
+      | [this; (_, atype)] ->
+          [this; (Exp.Const (Const.Cstr "file"), atype)]
+      | _ ->
+          actual_params
+    else actual_params
 
 
 let receiver_self receiver prop =

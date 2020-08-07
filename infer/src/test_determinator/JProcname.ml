@@ -67,37 +67,6 @@ module JNI = struct
         Format.fprintf fmt "(%a)%a" (Pp.seq ~sep:"" pp) args pp ret_typ
 
 
-  let rec to_java_type jni =
-    let make = JavaSplitName.make in
-    match jni with
-    | Boolean ->
-        make "bool"
-    | Byte ->
-        make "byte"
-    | Char ->
-        make "char"
-    | Short ->
-        make "short"
-    | Int ->
-        make "int"
-    | Long ->
-        make "long"
-    | Float ->
-        make "float"
-    | Double ->
-        make "double"
-    | Void ->
-        make "void"
-    | FullyQualifiedClass (pkg, cl) ->
-        make ~package:pkg cl
-    | Array typ ->
-        let java_type = to_java_type typ in
-        let typ_str = JavaSplitName.type_name java_type in
-        make ?package:(JavaSplitName.package java_type) (Printf.sprintf "%s[]" typ_str)
-    | Method _ ->
-        L.(die UserError "Cannot express a method as a Procname.Java.java_type")
-
-
   let rec to_typ jni =
     match jni with
     | Boolean ->
@@ -279,8 +248,6 @@ module JNI = struct
 
     let parse_method_str = parse_method_str
 
-    let to_java_type = to_java_type
-
     let pp = pp
   end
 end
@@ -289,7 +256,7 @@ let create_procname ~classname ~methodname:method_name ~signature ~use_signature
   let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
   let class_name = Typ.Name.Java.from_string classname in
   let args, return_type = JNI.parse_method_str signature in
-  let parameters = List.map ~f:JNI.to_java_type args in
+  let parameters = List.map ~f:JNI.to_typ args in
   let return_type =
     if
       String.equal method_name Procname.Java.constructor_method_name
