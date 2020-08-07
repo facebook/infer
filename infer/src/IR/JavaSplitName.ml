@@ -34,8 +34,6 @@ let java_lang_string = make ~package:"java.lang" "String"
 
 let java_lang_string_array = make ~package:"java.lang" "String[]"
 
-let void = make "void"
-
 let pp_type_verbosity ~verbose fmt = function
   | {package= Some package; type_name} when verbose ->
       F.fprintf fmt "%s.%s" package type_name

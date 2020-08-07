@@ -31,7 +31,7 @@ module Java : sig
   val replace_parameters : java_type list -> t -> t
   (** Replace the parameters of a java procname. *)
 
-  val replace_return_type : java_type -> t -> t
+  val replace_return_type : Typ.t -> t -> t
   (** Replace the method of a java procname. *)
 
   val get_class_name : t -> string
@@ -254,7 +254,7 @@ end
 
 val make_java :
      class_name:Typ.Name.t
-  -> return_type:Java.java_type option
+  -> return_type:Typ.t option
   -> method_name:string
   -> parameters:Java.java_type list
   -> kind:Java.kind

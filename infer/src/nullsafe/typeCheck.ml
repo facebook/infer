@@ -627,6 +627,8 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       typestate'
 
 
+let object_typ = Typ.(mk_ptr (mk_struct Name.Java.java_lang_object))
+
 (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
 let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
     call_params callee_pname loc node calls_this checks instr_ref ~nullsafe_mode
@@ -637,7 +639,7 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
     let parameters = [object_t] in
     pname_put
     |> Procname.Java.replace_method_name "get"
-    |> Procname.Java.replace_return_type object_t
+    |> Procname.Java.replace_return_type object_typ
     |> Procname.Java.replace_parameters parameters
   in
   match call_params with
@@ -813,10 +815,9 @@ let rec check_condition_for_sil_prune
           (DExp.Dretcall
             (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
           let pname_java' =
-            let object_t = JavaSplitName.java_lang_object in
             pname_java
             |> Procname.Java.replace_method_name "get"
-            |> Procname.Java.replace_return_type object_t
+            |> Procname.Java.replace_return_type object_typ
           in
           let fun_dexp = DExp.Dconst (Const.Cfun (Procname.Java pname_java')) in
           Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))

@@ -34,7 +34,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void readerClosed_FP() throws IOException {
+  public void readerClosedOk() throws IOException {
     Reader r = null;
     try {
       r = new FileReader("testing.txt");

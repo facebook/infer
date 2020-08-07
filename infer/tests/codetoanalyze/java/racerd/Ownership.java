@@ -176,13 +176,6 @@ public class Ownership {
     writeToFormal(o);
   }
 
-  public void writeToOwnedInCalleeOk2() {
-    synchronized (this) {
-      this.field = new Obj();
-    }
-    writeToFormal(this.field);
-  }
-
   public void writeToOwnedInCalleeIndirectOk1() {
     Obj o = new Obj();
     callWriteToFormal(o);

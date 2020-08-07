@@ -31,9 +31,6 @@ val java_lang_string : t
 val java_lang_string_array : t
 (** [java.lang.String\[\]] type *)
 
-val void : t
-(** Java [void] type *)
-
 val package : t -> string option
 
 val type_name : t -> string

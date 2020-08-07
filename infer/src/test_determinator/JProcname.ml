@@ -98,6 +98,34 @@ module JNI = struct
         L.(die UserError "Cannot express a method as a Procname.Java.java_type")
 
 
+  let rec to_typ jni =
+    match jni with
+    | Boolean ->
+        Typ.boolean
+    | Byte ->
+        Typ.java_byte
+    | Char ->
+        Typ.java_char
+    | Short ->
+        Typ.java_short
+    | Int ->
+        Typ.int
+    | Long ->
+        Typ.long
+    | Float ->
+        Typ.float
+    | Double ->
+        Typ.double
+    | Void ->
+        Typ.void
+    | FullyQualifiedClass (pkg, classname) ->
+        Typ.(mk_ptr (mk_struct (JavaClass (JavaClassName.make ~package:(Some pkg) ~classname))))
+    | Array typ ->
+        Typ.mk_ptr (Typ.mk_array (to_typ typ))
+    | Method _ ->
+        L.die UserError "JNI: Cannot express a method as a typ"
+
+
   let tokenize input =
     let rec tokenize_aux input acc =
       match input with
@@ -267,7 +295,7 @@ let create_procname ~classname ~methodname:method_name ~signature ~use_signature
       String.equal method_name Procname.Java.constructor_method_name
       || String.equal method_name Procname.Java.class_initializer_method_name
     then None
-    else Some (JNI.to_java_type return_type)
+    else Some (JNI.to_typ return_type)
   in
   Procname.make_java ~class_name ~return_type ~method_name ~parameters
     ~kind:Procname.Java.Non_Static ()

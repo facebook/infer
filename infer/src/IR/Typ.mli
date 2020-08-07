@@ -290,6 +290,9 @@ val pp_full : Pp.env -> F.formatter -> t -> unit
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type. *)
 
+val pp_java : verbose:bool -> F.formatter -> t -> unit
+(** Pretty print a Java type. Raises if type isn't produced by the Java frontend *)
+
 val to_string : t -> string
 
 val d_full : t -> unit

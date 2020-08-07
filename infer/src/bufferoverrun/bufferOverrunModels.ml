@@ -1099,9 +1099,10 @@ module JavaClass = struct
       | Exp.Const (Const.Cclass name) -> (
           let enum_values_pname =
             let class_name_str = Ident.name_to_string name in
+            let class_name = Typ.JavaClass (JavaClassName.from_string class_name_str) in
             Procname.make_java
               ~class_name:(Typ.Name.Java.from_string class_name_str)
-              ~return_type:(Some (JavaSplitName.make (class_name_str ^ "[]")))
+              ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_struct class_name)))))
               ~method_name:"values" ~parameters:[] ~kind:Procname.Java.Static ()
           in
           match get_summary enum_values_pname with

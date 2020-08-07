@@ -168,9 +168,9 @@ let method_signature_names ms =
     | None when String.equal method_name JConfig.constructor_name ->
         None
     | None ->
-        Some (JavaSplitName.make JConfig.void)
+        Some Typ.void
     | Some vt ->
-        Some (vt_to_java_type vt)
+        Some (get_named_type vt)
   in
   let args_types = List.map ~f:vt_to_java_type (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)

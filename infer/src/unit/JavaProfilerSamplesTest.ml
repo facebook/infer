@@ -202,7 +202,7 @@ let test_from_json_string_with_valid_input =
           [ Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ddd.eee.Fff")
-                ~return_type:(Some (mk_split (None, "char[][]")))
+                ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_array java_char)))))
                 ~method_name:"methodTwo"
                 ~parameters:
                   [ mk_split (Some "java.lang", "String")
@@ -212,8 +212,8 @@ let test_from_json_string_with_valid_input =
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "aaa.bbb.Ccc")
-                ~return_type:(Some (mk_split (None, "void")))
-                ~method_name:"methodOne" ~parameters:[] ~kind:Java.Non_Static ()) ] ) ]
+                ~return_type:(Some Typ.void) ~method_name:"methodOne" ~parameters:[]
+                ~kind:Java.Non_Static ()) ] ) ]
   in
   let expected3 =
     [ ( "label1"
@@ -233,13 +233,13 @@ let test_from_json_string_with_valid_input =
           [ Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ddd.eee.Fff")
-                ~return_type:(Some (mk_split (None, "void")))
-                ~method_name:"methodTwo" ~parameters:[] ~kind:Java.Non_Static ())
+                ~return_type:(Some Typ.void) ~method_name:"methodTwo" ~parameters:[]
+                ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "aaa.bbb.Ccc")
-                ~return_type:(Some (mk_split (None, "void")))
-                ~method_name:"methodOne" ~parameters:[] ~kind:Java.Non_Static ()) ] ) ]
+                ~return_type:(Some Typ.void) ~method_name:"methodOne" ~parameters:[]
+                ~kind:Java.Non_Static ()) ] ) ]
   in
   [ ("test_from_json_string_1", input1, expected1, true)
   ; ("test_from_json_string_2", input2, expected2, true)
