@@ -34,7 +34,13 @@ module Java = struct
     ; kind: kind }
   [@@deriving compare]
 
+  let ensure_java_type t =
+    if not (Typ.is_java_type t) then
+      L.die InternalError "Expected java type but got %a@." (Typ.pp_full Pp.text) t
+
+
   let make ~class_name ~return_type ~method_name ~parameters ~kind () =
+    Option.iter return_type ~f:ensure_java_type ;
     {class_name; return_type; method_name; parameters; kind}
 
 

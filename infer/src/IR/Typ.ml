@@ -631,3 +631,28 @@ let rec pp_java ~verbose f {desc} =
       F.fprintf f "%a[]" (pp_java ~verbose) elt
   | _ ->
       L.die InternalError "pp_java rec"
+
+
+let is_java_primitive_type {desc} =
+  let is_java_int = function
+    | IInt | IBool | ISChar | IUShort | ILong | IShort ->
+        true
+    | _ ->
+        false
+  in
+  let is_java_float = function FFloat | FDouble -> true | _ -> false in
+  match desc with Tint ik -> is_java_int ik | Tfloat fk -> is_java_float fk | _ -> false
+
+
+let rec is_java_type t =
+  match t.desc with
+  | Tvoid ->
+      true
+  | Tint _ | Tfloat _ ->
+      is_java_primitive_type t
+  | Tptr ({desc= Tstruct (JavaClass _)}, Pk_pointer) ->
+      true
+  | Tptr ({desc= Tarray {elt}}, Pk_pointer) ->
+      is_java_type elt
+  | _ ->
+      false

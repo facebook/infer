@@ -338,6 +338,9 @@ val is_unsigned_int : t -> bool
 
 val is_char : t -> bool
 
+val is_java_type : t -> bool
+(** is [t] a type produced by the Java frontend? *)
+
 val has_block_prefix : string -> bool
 
 val unsome : string -> t option -> t
