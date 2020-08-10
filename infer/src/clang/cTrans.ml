@@ -2351,7 +2351,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
     match stmts with
     | [stmt] ->
-        [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
+        [ init_expr_trans ~is_initListExpr_builtin:true trans_state (var_exp, var_typ) stmt_info
+            (Some stmt) ]
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "InitListExpression for var %a type %a with multiple init statements" Exp.pp var_exp
@@ -2434,8 +2435,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     |> mk_trans_result ret_exp_typ
 
 
-  and init_expr_trans ?(is_var_unused = false) trans_state var_exp_typ ?qual_type var_stmt_info
-      init_expr_opt =
+  and init_expr_trans ?(is_var_unused = false) ?(is_initListExpr_builtin = false) trans_state
+      var_exp_typ ?qual_type var_stmt_info init_expr_opt =
     match init_expr_opt with
     | None -> (
       match Option.bind qual_type ~f:(fun qt -> CAst_utils.get_type qt.Clang_ast_t.qt_type_ptr) with
@@ -2477,7 +2478,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let pre_init_opt =
           match var_exp with
-          | Exp.Lvar pvar ->
+          | Exp.Lvar pvar when not is_initListExpr_builtin ->
+              (* Do not add duplicated variable declaration when we translate InitListExpr
+                 as it will be added in the translation of DeclStmt *)
               Some
                 { empty_control with
                   instrs= [Sil.Metadata (VariableLifetimeBegins (pvar, var_typ, sil_loc))] }
