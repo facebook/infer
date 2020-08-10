@@ -18,6 +18,8 @@ let get_field_name {field_name} = field_name
 
 let is_java {class_name} = Typ.Name.Java.is_class class_name
 
+let is_java_synthetic t = is_java t && String.contains (get_field_name t) '$'
+
 module T = struct
   type nonrec t = t [@@deriving compare]
 end

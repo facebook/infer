@@ -121,12 +121,14 @@ let get_for_class_under_analysis tenv proc_attributes =
   {result with nullsafe_mode}
 
 
+let pp_ia fmt ia = if not (List.is_empty ia) then F.fprintf fmt "%a " Annot.Item.pp ia
+
+let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
+  F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp param_annotated_type
+    Mangled.pp mangled
+
+
 let pp proc_name fmt annotated_signature =
-  let pp_ia fmt ia = if not (List.is_empty ia) then F.fprintf fmt "%a " Annot.Item.pp ia in
-  let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
-    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp param_annotated_type
-      Mangled.pp mangled
-  in
   let {ret_annotation_deprecated; ret_annotated_type} = annotated_signature.ret in
   F.fprintf fmt "[%a] %a%a %a (%a )" NullsafeMode.pp annotated_signature.nullsafe_mode pp_ia
     ret_annotation_deprecated AnnotatedType.pp ret_annotated_type
