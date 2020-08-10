@@ -114,14 +114,18 @@ let rec to_string = function
 let atline loc = " at line " ^ string_of_int loc.Location.line
 
 let get_method_ret_description pname call_loc
-    AnnotatedSignature.{model_source; ret= {ret_annotated_type= {nullability}}} =
+    AnnotatedSignature.{kind; ret= {ret_annotated_type= {nullability}}} =
   let should_show_class_name =
     (* Class name is generally redundant: the user knows line number and
        can immediatelly go to definition and see the function annotation.
        When something is modelled though, let's show the class name as well, so it is
        super clear what exactly is modelled.
     *)
-    Option.is_some model_source
+    match kind with
+    | FirstParty | ThirdParty Unregistered ->
+        false
+    | ThirdParty ModelledInternally | ThirdParty (InThirdPartyRepo _) ->
+        true
   in
   let ret_nullability =
     match nullability with
@@ -135,12 +139,12 @@ let get_method_ret_description pname call_loc
         "non-nullable"
   in
   let model_info =
-    match model_source with
-    | None ->
+    match kind with
+    | FirstParty | ThirdParty Unregistered ->
         ""
-    | Some InternalModel ->
+    | ThirdParty ModelledInternally ->
         Format.sprintf " (%s according to nullsafe internal models)" ret_nullability
-    | Some (ThirdPartyRepo {filename; line_number}) ->
+    | ThirdParty (InThirdPartyRepo {filename; line_number}) ->
         let filename_to_show =
           ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name ~filename
         in

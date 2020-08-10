@@ -427,7 +427,7 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
            ; assignment_type=
                PassingParamToFunction
                  { param_signature= formal
-                 ; model_source= callee_annotated_signature.AnnotatedSignature.model_source
+                 ; kind= callee_annotated_signature.AnnotatedSignature.kind
                  ; actual_param_expression
                  ; param_position
                  ; function_procname= callee_pname } })

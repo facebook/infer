@@ -62,17 +62,18 @@ let is_object_nullability_self_explanatory ~object_expression (object_origin : T
          the user can quickly go to field_name definition and see if its annotation. *)
       let field_name_str = Fieldname.get_field_name field_name in
       String.is_suffix object_expression ~suffix:field_name_str
-  | MethodCall {pname; annotated_signature= {model_source}} ->
-      let is_modelled = Option.is_some model_source in
-      if is_modelled then (* This is non-trivial and should always be explained to the user *)
-        false
-      else
+  | MethodCall {pname; annotated_signature= {kind}} -> (
+    match kind with
+    | FirstParty | ThirdParty Unregistered ->
         (* Either local variable or expression like <smth>.method_name(...).
            Latter case is self-explanatory: it is easy to the user to jump to definition
            and check out the method annotation.
         *)
         let method_name = Procname.to_simplified_string pname in
         String.is_suffix object_expression ~suffix:method_name
+    | ThirdParty ModelledInternally | ThirdParty (InThirdPartyRepo _) ->
+        (* This is non-trivial and should always be explained to the user *)
+        false )
   (* These cases are not yet supported because they normally mean non-nullable case, for which
      we don't render important messages yet.
   *)

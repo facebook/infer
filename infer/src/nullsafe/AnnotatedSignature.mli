@@ -10,10 +10,7 @@
 open! IStd
 
 type t =
-  { nullsafe_mode: NullsafeMode.t
-  ; model_source: model_source option  (** None, if signature is not modelled *)
-  ; ret: ret_signature
-  ; params: param_signature list }
+  {nullsafe_mode: NullsafeMode.t; kind: kind; ret: ret_signature; params: param_signature list}
 [@@deriving compare]
 
 and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_annotated_type: AnnotatedType.t}
@@ -25,10 +22,19 @@ and param_signature =
   ; param_annotated_type: AnnotatedType.t }
 [@@deriving compare]
 
-and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_number: int}
+and kind =
+  | FirstParty  (** Code under control. Its nullability should be expressed via annotations. *)
+  | ThirdParty of third_party_model_source [@deriving compare]
+
+and third_party_model_source =
+  | Unregistered
+      (** This is an unregistered third party method. It's nullability is best effort based on its
+          annotations. Lack of annotation is treated depending on the mode. *)
+  | ModelledInternally
+  | InThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
-val set_modelled_nullability : Procname.t -> t -> model_source -> bool * bool list -> t
+val set_modelled_nullability : Procname.t -> t -> third_party_model_source -> bool * bool list -> t
 (** Override nullability for a function signature given its modelled nullability (for ret value and
     params) *)
 

@@ -19,7 +19,7 @@ module ReportableViolation = struct
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
-    ; model_source: AnnotatedSignature.model_source option
+    ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
     ; function_procname: Procname.t }
@@ -62,7 +62,7 @@ module ReportableViolation = struct
 
 
   let mk_description_for_bad_param_passed
-      {model_source; param_signature; actual_param_expression; param_position; function_procname}
+      {kind; param_signature; actual_param_expression; param_position; function_procname}
       ~param_nullability_kind ~nullability_evidence =
     let nullability_evidence_as_suffix =
       Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
@@ -118,12 +118,12 @@ module ReportableViolation = struct
     | Nullability.UncheckedNonnull
     | Nullability.StrictNonnull ->
         let nonnull_evidence =
-          match model_source with
-          | None ->
+          match kind with
+          | FirstParty | ThirdParty Unregistered ->
               ""
-          | Some InternalModel ->
+          | ThirdParty ModelledInternally ->
               " (according to nullsafe internal models)"
-          | Some (ThirdPartyRepo {filename; line_number}) ->
+          | ThirdParty (InThirdPartyRepo {filename; line_number}) ->
               Format.sprintf " (see %s at line %d)"
                 (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
                    ~filename)

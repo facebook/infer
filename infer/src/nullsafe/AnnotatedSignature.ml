@@ -16,10 +16,7 @@ module L = Logging
 *)
 
 type t =
-  { nullsafe_mode: NullsafeMode.t
-  ; model_source: model_source option
-  ; ret: ret_signature
-  ; params: param_signature list }
+  {nullsafe_mode: NullsafeMode.t; kind: kind; ret: ret_signature; params: param_signature list}
 [@@deriving compare]
 
 and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_annotated_type: AnnotatedType.t}
@@ -31,7 +28,12 @@ and param_signature =
   ; param_annotated_type: AnnotatedType.t }
 [@@deriving compare]
 
-and model_source = InternalModel | ThirdPartyRepo of {filename: string; line_number: int}
+and kind = FirstParty | ThirdParty of third_party_model_source [@deriving compare]
+
+and third_party_model_source =
+  | Unregistered
+  | ModelledInternally
+  | InThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
@@ -102,7 +104,8 @@ let get ~is_callee_in_trust_list ~nullsafe_mode
         ; mangled
         ; param_annotated_type= AnnotatedType.{nullability; typ} } )
   in
-  {nullsafe_mode; model_source= None; ret; params}
+  let kind = if is_third_party then ThirdParty Unregistered else FirstParty in
+  {nullsafe_mode; kind; ret; params}
 
 
 let get_for_class_under_analysis tenv proc_attributes =
@@ -191,7 +194,11 @@ let set_modelled_nullability proc_name asig model_source (nullability_for_ret, p
     in
     model_param_nullability asig.params params_nullability
   in
-  { asig with
-    ret= set_modelled_nullability_for_ret asig.ret nullability_for_ret
-  ; model_source= Some model_source
-  ; params= final_params }
+  match model_source with
+  | Unregistered ->
+      Logging.die InternalError "the method should be either internally or externally modelled"
+  | ModelledInternally | InThirdPartyRepo _ ->
+      { asig with
+        ret= set_modelled_nullability_for_ret asig.ret nullability_for_ret
+      ; kind= ThirdParty model_source
+      ; params= final_params }

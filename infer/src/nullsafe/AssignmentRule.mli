@@ -32,7 +32,7 @@ module ReportableViolation : sig
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
-    ; model_source: AnnotatedSignature.model_source option
+    ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
     ; function_procname: Procname.t }

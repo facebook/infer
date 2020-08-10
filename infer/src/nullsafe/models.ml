@@ -81,7 +81,7 @@ let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attribut
              get_special_method_modelled_nullability tenv proc_name )
     in
     Option.value_map modelled_nullability
-      ~f:(AnnotatedSignature.set_modelled_nullability proc_name ann_sig InternalModel)
+      ~f:(AnnotatedSignature.set_modelled_nullability proc_name ann_sig ModelledInternally)
       ~default:ann_sig
   in
   (* Look at external models *)
@@ -97,7 +97,7 @@ let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attribut
        (* If we found information in third-party repo, overwrite annotated signature *)
          ~f:(fun (modelled_nullability, filename, line_number) ->
            AnnotatedSignature.set_modelled_nullability proc_name ann_sig
-             (ThirdPartyRepo {filename; line_number})
+             (InThirdPartyRepo {filename; line_number})
              modelled_nullability )
          ~default:ann_sig
   in
