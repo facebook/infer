@@ -236,14 +236,16 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
         false
   in
   let locals = Procdesc.get_locals proc_desc in
-  let is_constexpr pvar =
+  let is_constexpr_or_unused pvar =
     List.find locals ~f:(fun local_data ->
         Mangled.equal (Pvar.get_name pvar) local_data.ProcAttributes.name )
-    |> Option.exists ~f:(fun local -> local.ProcAttributes.is_constexpr)
+    |> Option.exists ~f:(fun local ->
+           local.ProcAttributes.is_constexpr || local.ProcAttributes.is_declared_unused )
   in
   let should_report pvar typ live_vars captured_by_ref_vars =
     not
-      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar || is_constexpr pvar
+      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+      || is_constexpr_or_unused pvar
       || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
       || Domain.mem (Var.of_pvar pvar) live_vars
       || Procdesc.is_captured_pvar proc_desc pvar

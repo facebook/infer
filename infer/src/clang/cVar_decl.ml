@@ -70,8 +70,11 @@ let add_var_to_locals procdesc var_decl typ pvar =
           vdi.Clang_ast_t.vdi_is_const_expr
           || (Typ.is_const typ.Typ.quals && vdi.Clang_ast_t.vdi_is_init_expr_cxx11_constant)
         in
+        let is_declared_unused =
+          List.exists decl_info.di_attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
+        in
         let var_data : ProcAttributes.var_data =
-          {name= Pvar.get_name pvar; typ; modify_in_block; is_constexpr}
+          {name= Pvar.get_name pvar; typ; modify_in_block; is_constexpr; is_declared_unused}
         in
         Procdesc.append_locals procdesc [var_data]
   | _ ->

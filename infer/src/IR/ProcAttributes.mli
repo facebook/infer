@@ -17,7 +17,8 @@ type var_data =
   ; modify_in_block: bool
         (** __block attribute of Objective-C variables, means that it will be modified inside a
             block *)
-  ; is_constexpr: bool }
+  ; is_constexpr: bool
+  ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
 
 type t =
   { access: PredSymb.access  (** visibility access *)
