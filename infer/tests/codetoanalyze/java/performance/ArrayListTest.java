@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -335,6 +336,24 @@ public class ArrayListTest {
     ArrayList<Integer> a = new ArrayList<>();
     a.add(5);
     for (int i = 0; i < a.get(0); i++) {}
+  }
+
+  boolean rand;
+
+  int get_size(ArrayList<Integer> arr) {
+    return arr.size();
+  }
+
+  void loop_invariant_linear_FP(ArrayList<Integer> arr, InputStream is) {
+    if (rand) {
+      arr = new ArrayList<>();
+    }
+    for (int i = 0; i < get_size(arr); i++) {
+      try {
+        is.read();
+      } catch (Exception e) {
+      }
+    }
   }
 }
 
