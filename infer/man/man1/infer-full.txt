@@ -1840,10 +1840,6 @@ INTERNAL OPTIONS
        --sqlite-vfs-reset
            Cancel the effect of --sqlite-vfs.
 
-       --sqlite-write-daemon
-           Activates: Route all DB writes through a daemon process
-           (Conversely: --no-sqlite-write-daemon)
-
        --starvation-skip-analysis json
            Specify combinations of class/method list that should be skipped
            during starvation analysis

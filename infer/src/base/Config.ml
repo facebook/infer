@@ -2228,9 +2228,9 @@ and sqlite_vfs =
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
 
-and sqlite_write_daemon =
-  CLOpt.mk_bool ~default:false "Route all DB writes through a daemon process"
-    ~long:"sqlite-write-daemon"
+and (_ : bool ref) =
+  CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
+    ~deprecated:["-sqlite-write-daemon"] ~deprecated_no:["-no-sqlite-write-daemon"] ~long:""
 
 
 and subtype_multirange =
@@ -3143,8 +3143,6 @@ and sqlite_page_size = !sqlite_page_size
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
-
-and sqlite_write_daemon = !sqlite_write_daemon
 
 and starvation_skip_analysis = !starvation_skip_analysis
 

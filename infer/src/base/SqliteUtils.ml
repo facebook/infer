@@ -89,12 +89,6 @@ let db_close db =
             (Sqlite3.errmsg db)))
 
 
-let with_transaction db ~f =
-  exec db ~log:"begin transaction" ~stmt:"BEGIN IMMEDIATE TRANSACTION" ;
-  f () ;
-  exec db ~log:"commit transaction" ~stmt:"COMMIT"
-
-
 module type Data = sig
   type t
 
