@@ -1061,9 +1061,9 @@ let calc_typestate_after_call
           node typestate1 call_params callee_pname_java instr_ref loc
           (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
-        EradicateChecks.check_call_parameters analysis_data ~nullsafe_mode
-          ~callee_annotated_signature find_canonical_duplicate node callee_attributes
-          resolved_params loc instr_ref ;
+        EradicateChecks.check_call_parameters ~callee_pname:callee_pname_java analysis_data
+          ~nullsafe_mode ~callee_annotated_signature find_canonical_duplicate node resolved_params
+          loc instr_ref ;
       if Models.is_check_not_null callee_pname then
         match Models.get_check_not_null_parameter callee_pname with
         | Some index ->

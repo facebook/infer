@@ -103,15 +103,17 @@ let lookup_related_sig_file {filenames} ~package =
   |> List.max_elt ~compare:(fun name1 name2 -> String.length name1 - String.length name2)
 
 
-let lookup_related_sig_file_for_proc storage procname =
-  let package =
-    match procname with
-    | Procname.Java java_pname ->
-        Procname.Java.get_package java_pname
-    | _ ->
-        None
-  in
+let lookup_related_sig_file_for_java_proc storage procname =
+  let package = Procname.Java.get_package procname in
   Option.bind package ~f:(fun package -> lookup_related_sig_file storage ~package)
+
+
+let lookup_related_sig_file_for_proc storage procname =
+  match procname with
+  | Procname.Java java_pname ->
+      lookup_related_sig_file_for_java_proc storage java_pname
+  | _ ->
+      None
 
 
 let is_third_party_proc storage procname =

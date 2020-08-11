@@ -325,19 +325,17 @@ let check_constructor_initialization
         ()
 
 
-let check_return_not_nullable ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
-    ~nullsafe_mode find_canonical_duplicate loc (ret_signature : AnnotatedSignature.ret_signature)
-    ret_inferred_nullability =
+let check_return_not_nullable analysis_data ~nullsafe_mode ~java_pname find_canonical_duplicate loc
+    (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
   let lhs = ret_signature.ret_annotated_type.nullability in
   let rhs = ret_inferred_nullability in
   Result.iter_error (AssignmentRule.check ~lhs ~rhs) ~f:(fun assignment_violation ->
-      let curr_pname = Procdesc.get_proc_name curr_pdesc in
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Bad_assignment
            { assignment_violation
            ; assignment_location= loc
-           ; assignment_type= ReturningFromFunction curr_pname })
+           ; assignment_type= ReturningFromFunction java_pname })
         None ~nullsafe_mode loc )
 
 
@@ -360,20 +358,18 @@ let check_return_overrannotated
 
 
 (** Check the annotations when returning from a method. *)
-let check_return_annotation ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
-    find_canonical_duplicate ret_range (annotated_signature : AnnotatedSignature.t)
-    ret_implicitly_nullable loc : unit =
-  let curr_pname = Procdesc.get_proc_name curr_pdesc in
+let check_return_annotation analysis_data ~java_pname find_canonical_duplicate ret_range
+    (annotated_signature : AnnotatedSignature.t) ret_implicitly_nullable loc : unit =
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
-  | Some _
-    when match curr_pname with Java java_pname -> Procname.Java.is_lambda java_pname | _ -> false ->
+  | Some _ when Procname.Java.is_lambda java_pname ->
       ()
   | Some (_, ret_inferred_nullability) ->
       (* TODO(T54308240) Model ret_implicitly_nullable in AnnotatedNullability *)
       if not ret_implicitly_nullable then
-        check_return_not_nullable analysis_data ~nullsafe_mode:annotated_signature.nullsafe_mode
-          find_canonical_duplicate loc annotated_signature.ret ret_inferred_nullability ;
+        check_return_not_nullable ~java_pname analysis_data
+          ~nullsafe_mode:annotated_signature.nullsafe_mode find_canonical_duplicate loc
+          annotated_signature.ret ret_inferred_nullability ;
       if Config.eradicate_return_over_annotated then
         check_return_overrannotated analysis_data find_canonical_duplicate loc
           annotated_signature.ret ~nullsafe_mode:annotated_signature.nullsafe_mode
@@ -408,9 +404,8 @@ type resolved_param =
 
 (** Check the parameters of a call. *)
 let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nullsafe_mode
-    ~callee_annotated_signature find_canonical_duplicate node callee_attributes resolved_params loc
+    ~callee_pname ~callee_annotated_signature find_canonical_duplicate node resolved_params loc
     instr_ref : unit =
-  let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
     let report ~nullsafe_mode assignment_violation =
       let actual_param_expression =

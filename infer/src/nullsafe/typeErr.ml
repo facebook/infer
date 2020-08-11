@@ -101,7 +101,7 @@ let is_synthetic_err = function
         | PassingParamToFunction {function_procname; _} ->
             (* NOTE: this currently doesn't cover the case when the actual
                argument involves syntethic code *)
-            Procname.is_java_autogen_method function_procname
+            Procname.Java.is_autogen_method function_procname
         | AssigningToField fieldname ->
             Fieldname.is_java_synthetic fieldname
         | _ ->

@@ -292,6 +292,9 @@ val is_constructor : t -> bool
 val is_java : t -> bool
 (** Check if this is a Java procedure name. *)
 
+val as_java_exn : explanation:string -> t -> Java.t
+(** Converts to a Java.t. Throws if [is_java] is false *)
+
 val with_block_parameters : t -> Block.block_name list -> t
 (** Create a procedure name instantiated with block parameters from a base procedure name and a list
     of block procedure names (the arguments). *)

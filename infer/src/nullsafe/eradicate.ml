@@ -12,7 +12,7 @@ module F = Format
 (* make sure that this is initialized *)
 let () = NullsafeInit.init ()
 
-let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data)
+let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data) ~curr_java_pname
     find_canonical_duplicate calls_this checks idenv annotated_signature linereader proc_loc :
     bool * TypeState.t option =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
@@ -39,8 +39,8 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
     List.fold ~f:add_formal ~init:typestate_empty annotated_signature.AnnotatedSignature.params
   in
   (* Check the nullable flag computed for the return value and report inconsistencies. *)
-  let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc : unit
-      =
+  let check_return ~java_pname find_canonical_duplicate exit_node final_typestate
+      annotated_signature loc : unit =
     let {AnnotatedSignature.ret_annotated_type} = annotated_signature.AnnotatedSignature.ret in
     let ret_pvar = Procdesc.get_ret_var curr_pdesc in
     let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
@@ -57,16 +57,17 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
         ~f:(fun f -> f curr_pdesc ret_annotated_type.typ typ_found_opt loc)
         checks.TypeCheck.check_ret_type ;
     if checks.TypeCheck.eradicate then
-      EradicateChecks.check_return_annotation analysis_data find_canonical_duplicate ret_range
-        annotated_signature ret_implicitly_nullable loc
+      EradicateChecks.check_return_annotation analysis_data ~java_pname find_canonical_duplicate
+        ret_range annotated_signature ret_implicitly_nullable loc
   in
   let do_before_dataflow initial_typestate =
     if Config.eradicate_verbose then
       L.result "Initial Typestate@\n%a@." TypeState.pp initial_typestate
   in
-  let do_after_dataflow find_canonical_duplicate final_typestate =
+  let do_after_dataflow ~java_pname find_canonical_duplicate final_typestate =
     let exit_node = Procdesc.get_exit_node curr_pdesc in
-    check_return find_canonical_duplicate exit_node final_typestate annotated_signature proc_loc
+    check_return ~java_pname find_canonical_duplicate exit_node final_typestate annotated_signature
+      proc_loc
   in
   let module DFTypeCheck = DataFlow.MakeDF (struct
     type t = TypeState.t
@@ -98,14 +99,15 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
   let transitions = DFTypeCheck.run curr_pdesc initial_typestate in
   match transitions (Procdesc.get_exit_node curr_pdesc) with
   | DFTypeCheck.Transition (final_typestate, _, _) ->
-      do_after_dataflow find_canonical_duplicate final_typestate ;
+      do_after_dataflow ~java_pname:curr_java_pname find_canonical_duplicate final_typestate ;
       (!calls_this, Some final_typestate)
   | DFTypeCheck.Dead_state ->
       (!calls_this, None)
 
 
-let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data) calls_this
-    checks annotated_signature linereader proc_loc : unit =
+let analyze_one_procedure ~java_pname
+    ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data) calls_this checks
+    annotated_signature linereader proc_loc : unit =
   let idenv = IDEnv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
   let find_canonical_duplicate node =
@@ -153,10 +155,12 @@ let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analy
         && checks.TypeCheck.eradicate
       then (
         let typestates_for_curr_constructor_and_all_initializer_methods =
-          Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc typecheck_proc
+          Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc
+            (typecheck_proc ~curr_java_pname:java_pname)
         in
         let typestates_for_all_constructors_incl_current =
-          Initializers.final_constructor_typestates_lazy tenv proc_name typecheck_proc
+          Initializers.final_constructor_typestates_lazy tenv proc_name
+            (typecheck_proc ~curr_java_pname:java_pname)
         in
         EradicateChecks.check_constructor_initialization analysis_data find_canonical_duplicate
           start_node ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
@@ -167,7 +171,8 @@ let analyze_one_procedure ({IntraproceduralAnalysis.tenv; proc_desc; _} as analy
     match typestate_opt with None -> () | Some typestate -> do_typestate typestate
   in
   let calls_this, final_typestate_opt =
-    typecheck_proc true proc_name proc_desc (Some (annotated_signature, proc_loc, idenv))
+    typecheck_proc ~curr_java_pname:java_pname true proc_name proc_desc
+      (Some (annotated_signature, proc_loc, idenv))
   in
   do_final_typestate final_typestate_opt calls_this ;
   if checks.TypeCheck.eradicate then
@@ -206,6 +211,9 @@ let analyze checks ({IntraproceduralAnalysis.proc_desc; tenv; _} as analysis_dat
   | None ->
       (* start the analysis! *)
       let calls_this = ref false in
+      let java_pname =
+        Procname.as_java_exn ~explanation:"Would have skipped the analysis otherwise" proc_name
+      in
       let annotated_signature =
         AnnotatedSignature.get_for_class_under_analysis tenv (Procdesc.get_attributes proc_desc)
       in
@@ -218,7 +226,8 @@ let analyze checks ({IntraproceduralAnalysis.proc_desc; tenv; _} as analysis_dat
       (* The main method - during this the actual analysis will happen and TypeErr will be populated with
          issues (and some of them - reported).
       *)
-      analyze_one_procedure analysis_data calls_this checks annotated_signature linereader loc ;
+      analyze_one_procedure ~java_pname analysis_data calls_this checks annotated_signature
+        linereader loc ;
       (* Collect issues that were detected during analysis and put them in summary for further processing *)
       let issues = TypeErr.get_errors () |> List.map ~f:(fun (issues, _) -> issues) in
       (* Report errors of "farall" class - those could not be reported during analysis phase. *)

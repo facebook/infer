@@ -393,6 +393,14 @@ let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
 let is_java = function Java _ -> true | _ -> false
 
+let as_java_exn ~explanation t =
+  match t with
+  | Java java ->
+      java
+  | _ ->
+      Logging.die InternalError "Expected Java procname: %s" explanation
+
+
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
 let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 

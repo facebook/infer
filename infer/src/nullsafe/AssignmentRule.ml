@@ -14,7 +14,7 @@ module ReportableViolation = struct
   type assignment_type =
     | PassingParamToFunction of function_info
     | AssigningToField of Fieldname.t
-    | ReturningFromFunction of Procname.t
+    | ReturningFromFunction of Procname.Java.t
   [@@deriving compare]
 
   and function_info =
@@ -22,7 +22,7 @@ module ReportableViolation = struct
     ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
-    ; function_procname: Procname.t }
+    ; function_procname: Procname.Java.t }
 
   let from nullsafe_mode ({lhs; rhs} as violation) =
     let falls_under_optimistic_third_party =
@@ -94,7 +94,7 @@ module ReportableViolation = struct
            So we phrase it differently to remain truthful, but as specific as possible.
         *)
         let suggested_third_party_sig_file =
-          ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
+          ThirdPartyAnnotationInfo.lookup_related_sig_file_for_java_proc
             (ThirdPartyAnnotationGlobalRepo.get_repo ())
             function_procname
         in
@@ -106,7 +106,7 @@ module ReportableViolation = struct
               (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
             ~default:"the third party signature storage"
         in
-        let procname_str = Procname.to_simplified_string ~withclass:true function_procname in
+        let procname_str = Procname.Java.to_simplified_string ~withclass:true function_procname in
         Format.asprintf
           "Third-party %a is missing a signature that would allow passing a nullable to param \
            #%d%a. Actual argument %s%s. Consider adding the correct signature of %a to %s."
@@ -131,7 +131,7 @@ module ReportableViolation = struct
         in
         Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
           MF.pp_monospaced
-          (Procname.to_simplified_string ~withclass:true function_procname)
+          (Procname.Java.to_simplified_string ~withclass:true function_procname)
           param_position pp_param_name param_signature.mangled nonnull_evidence argument_description
           nullability_evidence_as_suffix
 
@@ -193,7 +193,7 @@ module ReportableViolation = struct
           in
           Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s.%s"
             MF.pp_monospaced
-            (Procname.to_simplified_string ~withclass:false function_proc_name)
+            (Procname.Java.to_simplified_string ~withclass:false function_proc_name)
             return_description nullability_evidence_as_suffix alternative_recommendation
     in
     let issue_type = get_issue_type assignment_type in

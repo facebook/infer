@@ -27,7 +27,7 @@ module ReportableViolation : sig
   type assignment_type =
     | PassingParamToFunction of function_info
     | AssigningToField of Fieldname.t
-    | ReturningFromFunction of Procname.t
+    | ReturningFromFunction of Procname.Java.t
   [@@deriving compare]
 
   and function_info =
@@ -35,7 +35,7 @@ module ReportableViolation : sig
     ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
-    ; function_procname: Procname.t }
+    ; function_procname: Procname.Java.t }
 
   val get_severity : t -> IssueType.severity
   (** Severity of the violation to be reported *)

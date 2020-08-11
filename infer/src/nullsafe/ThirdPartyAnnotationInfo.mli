@@ -50,6 +50,9 @@ val lookup_related_sig_file : storage -> package:string -> string option
 val lookup_related_sig_file_for_proc : storage -> Procname.t -> string option
 (** If the function is third-party (based on its package), return relevant .sig file *)
 
+val lookup_related_sig_file_for_java_proc : storage -> Procname.Java.t -> string option
+(** If the function is third-party (based on its package), return relevant .sig file *)
+
 val is_third_party_proc : storage -> Procname.t -> bool
 (** Checks whether a required procname comes from third-party code based on available .sig files and
     config flags. NOTE: considering config flags is done for compatibility with the legacy behaviour
