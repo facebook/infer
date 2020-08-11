@@ -177,7 +177,7 @@ let analyze_one_procedure ~java_pname
   do_final_typestate final_typestate_opt calls_this ;
   if checks.TypeCheck.eradicate then
     EradicateChecks.check_overridden_annotations analysis_data find_canonical_duplicate
-      annotated_signature ;
+      ~proc_name:java_pname annotated_signature ;
   ()
 
 

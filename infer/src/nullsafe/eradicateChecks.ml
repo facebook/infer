@@ -438,10 +438,8 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
   List.iter ~f:check resolved_params
 
 
-let check_inheritance_rule_for_return
-    ({IntraproceduralAnalysis.proc_desc= overridden_proc_desc; _} as analysis_data)
-    find_canonical_duplicate loc ~nullsafe_mode ~base_proc_name ~base_nullability
-    ~overridden_nullability =
+let check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc ~nullsafe_mode
+    ~overridden_proc_name ~base_proc_name ~base_nullability ~overridden_nullability =
   Result.iter_error
     (InheritanceRule.check InheritanceRule.Ret ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
@@ -449,15 +447,14 @@ let check_inheritance_rule_for_return
         (Inconsistent_subclass
            { inheritance_violation
            ; violation_type= InconsistentReturn
-           ; overridden_proc_name= Procdesc.get_proc_name overridden_proc_desc
+           ; overridden_proc_name
            ; base_proc_name })
         None ~nullsafe_mode loc )
 
 
-let check_inheritance_rule_for_param
-    ({IntraproceduralAnalysis.proc_desc= overridden_proc_desc; _} as analysis_data)
-    find_canonical_duplicate loc ~nullsafe_mode ~overridden_param_name ~base_proc_name
-    ~param_position ~base_nullability ~overridden_nullability =
+let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc ~nullsafe_mode
+    ~overridden_param_name ~base_proc_name ~param_position ~base_nullability ~overridden_nullability
+    ~overridden_proc_name =
   Result.iter_error
     (InheritanceRule.check InheritanceRule.Param ~base:base_nullability
        ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
@@ -468,12 +465,12 @@ let check_inheritance_rule_for_param
                InconsistentParam
                  {param_position; param_description= Mangled.to_string overridden_param_name}
            ; base_proc_name
-           ; overridden_proc_name= Procdesc.get_proc_name overridden_proc_desc })
+           ; overridden_proc_name })
         None ~nullsafe_mode loc )
 
 
 let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc ~nullsafe_mode
-    ~base_proc_name ~base_signature ~overridden_signature =
+    ~base_proc_name ~base_signature ~overridden_signature ~overridden_proc_name =
   let base_params = base_signature.AnnotatedSignature.params in
   let overridden_params = overridden_signature.AnnotatedSignature.params in
   let zipped_params = List.zip base_params overridden_params in
@@ -492,6 +489,7 @@ let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc
             ~overridden_param_name ~base_proc_name
             ~param_position:(if should_index_from_zero then index else index + 1)
             ~base_nullability:(AnnotatedNullability.get_nullability annotated_nullability_base)
+            ~overridden_proc_name
             ~overridden_nullability:
               (AnnotatedNullability.get_nullability annotated_nullability_overridden) )
   | Unequal_lengths ->
@@ -502,55 +500,58 @@ let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc
 
 (** Check both params and return values for complying for co- and contravariance *)
 let check_inheritance_rule_for_signature analysis_data find_canonical_duplicate loc ~nullsafe_mode
-    ~base_proc_name ~base_signature ~overridden_signature =
+    ~base_proc_name ~base_signature ~overridden_signature ~overridden_proc_name =
   (* Check params *)
   check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc ~nullsafe_mode
-    ~base_proc_name ~base_signature ~overridden_signature ;
+    ~base_proc_name ~base_signature ~overridden_signature ~overridden_proc_name ;
   (* Check return value *)
-  match base_proc_name with
-  (* TODO model this as unknown nullability and get rid of that check *)
-  | Procname.Java java_pname when not (Procname.Java.is_external java_pname) ->
-      (* Check if return value is consistent with the base *)
-      let base_nullability =
-        AnnotatedNullability.get_nullability
-          base_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
-      in
-      let overridden_nullability =
-        AnnotatedNullability.get_nullability
-          overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
-      in
-      check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc ~nullsafe_mode
-        ~base_proc_name ~base_nullability ~overridden_nullability
-  | _ ->
-      (* the analysis should not report return type inconsistencies with external code *)
-      ()
+  if Procname.Java.is_external base_proc_name then
+    (* the analysis should not report return type inconsistencies with external code *) ()
+  else
+    (* Check if return value is consistent with the base *)
+    let base_nullability =
+      AnnotatedNullability.get_nullability
+        base_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+    in
+    let overridden_nullability =
+      AnnotatedNullability.get_nullability
+        overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+    in
+    check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc ~nullsafe_mode
+      ~base_proc_name ~base_nullability ~overridden_nullability ~overridden_proc_name
 
 
 (** Checks if the annotations are consistent with the derived classes and with the implemented
     interfaces *)
 let check_overridden_annotations ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data)
-    find_canonical_duplicate annotated_signature =
+    find_canonical_duplicate annotated_signature ~proc_name =
   let start_node = Procdesc.get_start_node proc_desc in
   let loc = Procdesc.Node.get_loc start_node in
   let check_if_base_signature_matches_current base_proc_name =
-    match PatternMatch.lookup_attributes tenv base_proc_name with
-    | Some base_attributes ->
-        let base_signature =
-          (* TODO(T62825735): fully support trusted callees. Note that for inheritance
-             rule it doesn't make much difference, but would be nice to refactor anyway. *)
-          Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv
-            base_attributes
-        in
-        check_inheritance_rule_for_signature analysis_data
-          ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
-          find_canonical_duplicate loc ~base_proc_name ~base_signature
-          ~overridden_signature:annotated_signature
-    | None ->
-        (* Could not find the attributes - optimistically skipping the check *)
-        (* TODO(T54687014) ensure this is not an issue in practice *)
+    match base_proc_name with
+    | Procname.Java base_java_proc_name -> (
+      match PatternMatch.lookup_attributes tenv base_proc_name with
+      | Some base_attributes ->
+          let base_signature =
+            (* TODO(T62825735): fully support trusted callees. Note that for inheritance
+               rule it doesn't make much difference, but would be nice to refactor anyway. *)
+            Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv
+              base_attributes
+          in
+          check_inheritance_rule_for_signature analysis_data
+            ~nullsafe_mode:annotated_signature.AnnotatedSignature.nullsafe_mode
+            find_canonical_duplicate loc ~base_proc_name:base_java_proc_name ~base_signature
+            ~overridden_signature:annotated_signature ~overridden_proc_name:proc_name
+      | None ->
+          (* Could not find the attributes - optimistically skipping the check *)
+          (* TODO(T54687014) ensure this is not an issue in practice *)
+          () )
+    | _ ->
+        (* The base method is not a Java method. This is a weird situation and should not happen in practice.
+           TODO(T54687014) ensure this is not an issue in practice
+        *)
         ()
   in
-  let proc_name = Procdesc.get_proc_name proc_desc in
   (* Iterate over all methods the current method overrides and see the current
      method is compatible with all of them *)
-  PatternMatch.override_iter check_if_base_signature_matches_current tenv proc_name
+  PatternMatch.override_iter check_if_base_signature_matches_current tenv (Procname.Java proc_name)

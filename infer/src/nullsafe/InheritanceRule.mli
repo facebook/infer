@@ -42,7 +42,11 @@ module ReportableViolation : sig
   (** Severity of the violation to be reported *)
 
   val get_description :
-    t -> violation_type -> base_proc_name:Procname.t -> overridden_proc_name:Procname.t -> string
+       t
+    -> violation_type
+    -> base_proc_name:Procname.Java.t
+    -> overridden_proc_name:Procname.Java.t
+    -> string
   (** Given context around violation, return error message together with the info where to put this
       message *)
 end

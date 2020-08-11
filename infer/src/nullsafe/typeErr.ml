@@ -65,8 +65,8 @@ type err_instance =
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
       ; violation_type: InheritanceRule.ReportableViolation.violation_type
-      ; base_proc_name: Procname.t
-      ; overridden_proc_name: Procname.t }
+      ; base_proc_name: Procname.Java.t
+      ; overridden_proc_name: Procname.Java.t }
   | Field_not_initialized of {field_name: Fieldname.t}
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
