@@ -997,8 +997,7 @@ let calc_typestate_after_call
     ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
     find_canonical_duplicate calls_this checks idenv instr_ref signature_params cflags call_params
     ~is_anonymous_inner_class_constructor ~callee_annotated_signature ~callee_attributes
-    ~callee_pname ~callee_pname_java ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1
-    loc node =
+    ~callee_pname ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node =
   let resolve_param i (formal_param, actual_param) =
     let (orig_e2, e2), t2 = actual_param in
     let _, inferred_nullability_actual =
@@ -1058,19 +1057,18 @@ let calc_typestate_after_call
     if not is_anonymous_inner_class_constructor then (
       if cflags.CallFlags.cf_virtual && checks.eradicate then
         EradicateChecks.check_call_receiver analysis_data ~nullsafe_mode find_canonical_duplicate
-          node typestate1 call_params callee_pname_java instr_ref loc
+          node typestate1 call_params callee_pname instr_ref loc
           (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
-        EradicateChecks.check_call_parameters ~callee_pname:callee_pname_java analysis_data
-          ~nullsafe_mode ~callee_annotated_signature find_canonical_duplicate node resolved_params
-          loc instr_ref ;
-      if Models.is_check_not_null callee_pname then
-        match Models.get_check_not_null_parameter callee_pname with
+        EradicateChecks.check_call_parameters ~callee_pname analysis_data ~nullsafe_mode
+          ~callee_annotated_signature find_canonical_duplicate node resolved_params loc instr_ref ;
+      if Models.is_check_not_null (Procname.Java callee_pname) then
+        match Models.get_check_not_null_parameter (Procname.Java callee_pname) with
         | Some index ->
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv index ~is_vararg:false
               typestate1
-        | None when Procname.Java.is_vararg callee_pname_java ->
+        | None when Procname.Java.is_vararg callee_pname ->
             let last_parameter = List.length call_params in
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv last_parameter ~is_vararg:true
@@ -1079,13 +1077,16 @@ let calc_typestate_after_call
             (* assume the first parameter is checked for null *)
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv 1 ~is_vararg:false typestate1
-      else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname then
+      else if
+        Models.is_check_state (Procname.Java callee_pname)
+        || Models.is_check_argument (Procname.Java callee_pname)
+      then
         let curr_pname = Procdesc.get_proc_name curr_pdesc in
         do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_signature
           call_params loc node typestate1
-      else if Models.is_mapPut callee_pname then
-        do_map_put analysis_data call_params callee_pname loc node calls_this checks instr_ref
-          ~nullsafe_mode find_canonical_duplicate typestate1
+      else if Models.is_mapPut (Procname.Java callee_pname) then
+        do_map_put analysis_data call_params (Procname.Java callee_pname) loc node calls_this checks
+          instr_ref ~nullsafe_mode find_canonical_duplicate typestate1
       else typestate1 )
     else typestate1
   in
@@ -1175,7 +1176,7 @@ let typecheck_sil_call_function
       let typestate_after_call, finally_resolved_ret =
         calc_typestate_after_call analysis_data find_canonical_duplicate calls_this checks idenv
           instr_ref signature_params cflags call_params ~is_anonymous_inner_class_constructor
-          ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java
+          ~callee_annotated_signature ~callee_attributes ~callee_pname:callee_pname_java
           ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node
       in
       do_return finally_resolved_ret typestate_after_call )

@@ -69,7 +69,7 @@ let is_object_nullability_self_explanatory ~object_expression (object_origin : T
            Latter case is self-explanatory: it is easy to the user to jump to definition
            and check out the method annotation.
         *)
-        let method_name = Procname.to_simplified_string pname in
+        let method_name = Procname.Java.to_simplified_string pname in
         String.is_suffix object_expression ~suffix:method_name
     | ThirdParty ModelledInternally | ThirdParty (InThirdPartyRepo _) ->
         (* This is non-trivial and should always be explained to the user *)
@@ -95,14 +95,6 @@ type message_info =
   ; what_is_used: string
   ; recommendation: string
   ; issue_type: IssueType.t }
-
-let get_method_class_name procname =
-  match procname with
-  | Procname.Java java_pname ->
-      Some (Procname.Java.get_simple_class_name java_pname)
-  | _ ->
-      None
-
 
 let get_field_class_name field_name =
   let class_with_field = Fieldname.to_simplified_string field_name in
@@ -163,7 +155,7 @@ let get_info object_origin nullsafe_mode untrusted_kind =
   | TypeOrigin.MethodCall {pname; call_loc} ->
       let offending_object =
         F.asprintf "%a" MarkupFormatter.pp_monospaced
-          (Procname.to_simplified_string ~withclass:true pname)
+          (Procname.Java.to_simplified_string ~withclass:true pname)
       in
       let object_loc = call_loc in
       let what_is_used = "Result of this call" in
@@ -171,7 +163,7 @@ let get_info object_origin nullsafe_mode untrusted_kind =
         match untrusted_kind with
         | UserFriendlyNullable.ThirdPartyNonnull ->
             let suggested_third_party_sig_file =
-              ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
+              ThirdPartyAnnotationInfo.lookup_related_sig_file_for_java_proc
                 (ThirdPartyAnnotationGlobalRepo.get_repo ())
                 pname
             in
@@ -191,9 +183,7 @@ let get_info object_origin nullsafe_mode untrusted_kind =
               mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind
             in
             let recommendation =
-              let what_to_strictify =
-                Option.value (get_method_class_name pname) ~default:offending_object
-              in
+              let what_to_strictify = Procname.Java.get_simple_class_name pname in
               mk_strictification_advice_unchecked_or_locally_checked_case_only nullsafe_mode
                 untrusted_kind ~what_to_strictify
             in
@@ -269,11 +259,11 @@ let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_u
 let find_alternative_nonnull_method_description nullable_origin =
   let open IOption.Let_syntax in
   match nullable_origin with
-  | TypeOrigin.MethodCall {pname= Procname.Java java_pname as pname} ->
+  | TypeOrigin.MethodCall {pname} ->
       let* ModelTables.{package_name; class_name; method_name} =
         Models.find_nonnullable_alternative pname
       in
-      let+ original_package_name = Procname.Java.get_package java_pname in
+      let+ original_package_name = Procname.Java.get_package pname in
       if String.equal original_package_name package_name then
         (* The same package that is from origin - omit name for simplicity *)
         class_name ^ "." ^ method_name ^ "()"

@@ -23,7 +23,7 @@ type t =
   | CurrMethodParameter of method_parameter_origin
   | This
   | MethodCall of
-      { pname: Procname.t
+      { pname: Procname.Java.t
       ; call_loc: Location.t
       ; annotated_signature: AnnotatedSignature.t
       ; is_defined: bool }
@@ -96,7 +96,7 @@ let rec to_string = function
   | This ->
       "this"
   | MethodCall {pname} ->
-      Printf.sprintf "Fun %s" (Procname.to_simplified_string pname)
+      Printf.sprintf "Fun %s" (Procname.Java.to_simplified_string pname)
   | CallToGetKnownToContainsKey ->
       "CallToGetKnownToContainsKey"
   | New ->
@@ -152,7 +152,7 @@ let get_method_ret_description pname call_loc
           line_number
   in
   Format.sprintf "call to %s%s%s"
-    (Procname.to_simplified_string ~withclass:should_show_class_name pname)
+    (Procname.Java.to_simplified_string ~withclass:should_show_class_name pname)
     (atline call_loc) model_info
 
 

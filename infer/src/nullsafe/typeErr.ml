@@ -219,7 +219,7 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
   match nonnull_origin with
   | MethodCall {pname} ->
       Format.asprintf ": %a is not annotated as `@Nullable`" MF.pp_monospaced
-        (Procname.to_simplified_string ~withclass:true pname)
+        (Procname.Java.to_simplified_string ~withclass:true pname)
   | NullConst _ ->
       Logging.die Logging.InternalError
         "Unexpected origin NullConst: this is for nullable types, should not lead to condition \
