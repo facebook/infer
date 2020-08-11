@@ -1058,7 +1058,7 @@ let calc_typestate_after_call
     if not is_anonymous_inner_class_constructor then (
       if cflags.CallFlags.cf_virtual && checks.eradicate then
         EradicateChecks.check_call_receiver analysis_data ~nullsafe_mode find_canonical_duplicate
-          node typestate1 call_params callee_pname instr_ref loc
+          node typestate1 call_params callee_pname_java instr_ref loc
           (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
         EradicateChecks.check_call_parameters analysis_data ~nullsafe_mode

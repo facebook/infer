@@ -19,6 +19,8 @@ module Java : sig
 
   type t [@@deriving compare]
 
+  val to_simplified_string : ?withclass:bool -> t -> string
+
   val constructor_method_name : string
 
   val class_initializer_method_name : string

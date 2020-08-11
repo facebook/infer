@@ -21,7 +21,7 @@ module ReportableViolation : sig
   type t
 
   type dereference_type =
-    | MethodCall of Procname.t
+    | MethodCall of Procname.Java.t
     | AccessToField of Fieldname.t
     | AccessByIndex of {index_desc: string}
     | ArrayLengthAccess

@@ -108,6 +108,8 @@ module Java = struct
         F.fprintf fmt "%a(%s)" pp_method_name j params
 
 
+  let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
+
   let get_return_typ pname_java = Option.value ~default:Typ.void pname_java.return_type
 
   let is_close {method_name} = String.equal method_name "close"

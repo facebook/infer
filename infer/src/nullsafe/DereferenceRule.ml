@@ -12,7 +12,7 @@ module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
 
   type dereference_type =
-    | MethodCall of Procname.t
+    | MethodCall of Procname.Java.t
     | AccessToField of Fieldname.t
     | AccessByIndex of {index_desc: string}
     | ArrayLengthAccess
@@ -61,7 +61,7 @@ module ReportableViolation = struct
       match dereference_type with
       | MethodCall method_name ->
           Format.sprintf "calling %s"
-            (MF.monospaced_to_string (Procname.to_simplified_string method_name))
+            (MF.monospaced_to_string (Procname.Java.to_simplified_string method_name))
       | AccessToField field_name ->
           Format.sprintf "accessing field %s"
             (MF.monospaced_to_string (Fieldname.to_simplified_string field_name))
