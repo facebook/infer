@@ -187,7 +187,7 @@ public class ArrayListTest {
   // Control vars include the list length and the element which is some intValue.
   // O(list.length x (-list.elements + 11))
   // Simplified version of real code https://fburl.com/a3gge1b7
-  public boolean iterate_over_arraylist_shortcut_linear_FP(ArrayList<Integer> list) {
+  public boolean iterate_over_arraylist_shortcut_linear(ArrayList<Integer> list) {
     for (Integer element : list) {
       if (element > 10) {
         return false;
@@ -344,7 +344,7 @@ public class ArrayListTest {
     return arr.size();
   }
 
-  void loop_invariant_linear_FP(ArrayList<Integer> arr, InputStream is) {
+  void loop_invariant_linear(ArrayList<Integer> arr, InputStream is) {
     if (rand) {
       arr = new ArrayList<>();
     }

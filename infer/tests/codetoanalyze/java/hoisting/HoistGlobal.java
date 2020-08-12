@@ -34,7 +34,7 @@ class HoistGlobal {
     }
   }
 
-  int global_modification_dont_hoist(int size) {
+  int global_modification_dont_hoist_FP(int size) {
     Foo f = new Foo();
     int d = 0;
     for (int i = 0; i < size; i++) {
@@ -45,7 +45,7 @@ class HoistGlobal {
     return d;
   }
 
-  int global_modification_hoist_FN(ArrayList<?> list) {
+  int global_modification_hoist(ArrayList<?> list) {
     Foo f = new Foo();
     int d = 0;
     for (int i = 0; i < list.size(); i++) {
@@ -58,7 +58,7 @@ class HoistGlobal {
 
   void call_global_modification_dont_hoist(int size) {
     for (int i = 0; i < size; i++) {
-      global_modification_dont_hoist(size);
+      global_modification_dont_hoist_FP(size);
     }
   }
 
