@@ -186,7 +186,9 @@ module Java = struct
       ; "junit.framework.TestCase" ]
 
 
-  let initializer_methods = ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"]
+  let initializer_methods =
+    ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"; "onViewCreated"]
+
 
   (** Check if the type has in its supertypes from the initializer_classes list. *)
   let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
