@@ -145,7 +145,7 @@ let config_unsafe checker =
            runtime complexity with `infer reportdiff`."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [BufferOverrunAnalysis] }
+      ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
   | Eradicate ->
       { id= "eradicate"
       ; kind=
