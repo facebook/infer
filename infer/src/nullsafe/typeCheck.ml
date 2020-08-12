@@ -15,7 +15,7 @@ type typecheck_result =
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
-  let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
+  let procname_instanceof pname = Procname.equal BuiltinDecl.__instanceof pname
 
   let is_annotated_with predicate tenv procname =
     match PatternMatch.lookup_attributes tenv procname with
@@ -31,17 +31,23 @@ module ComplexExpressions = struct
         false
 
 
+  (* given a predicate that requries Java procname, return a filter that requires generic prodname
+   *)
+  let java_predicate_to_pname_predicate java_predicate pname =
+    match pname with Procname.Java java_pname -> java_predicate java_pname | _ -> false
+
+
   let procname_is_false_on_null tenv procname =
     is_annotated_with Annotations.ia_is_false_on_null tenv procname
-    || Models.is_false_on_null procname
+    || java_predicate_to_pname_predicate Models.is_false_on_null procname
 
 
   let procname_is_true_on_null tenv procname =
     is_annotated_with Annotations.ia_is_true_on_null tenv procname
-    || Models.is_true_on_null procname
+    || java_predicate_to_pname_predicate Models.is_true_on_null procname
 
 
-  let procname_containsKey = Models.is_containsKey
+  let procname_containsKey = java_predicate_to_pname_predicate Models.is_containsKey
 
   (** Recognize *all* the procedures treated specially in conditionals *)
   let procname_used_in_condition pn =
@@ -645,9 +651,9 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
   | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _ -> (
       (* Convert the dexp for k to the dexp for m.get(k) *)
       let convert_dexp_key_to_dexp_get dopt =
-        match (dopt, callee_pname) with
-        | Some dexp_key, Procname.Java callee_pname_java ->
-            let pname_get = Procname.Java (pname_get_from_pname_put callee_pname_java) in
+        match dopt with
+        | Some dexp_key ->
+            let pname_get = Procname.Java (pname_get_from_pname_put callee_pname) in
             let dexp_get = DExp.Dconst (Const.Cfun pname_get) in
             let dexp_map = DExp.Dpvar pv_map in
             let args = [dexp_map; dexp_key] in
@@ -1062,8 +1068,8 @@ let calc_typestate_after_call
       if checks.eradicate then
         EradicateChecks.check_call_parameters ~callee_pname analysis_data ~nullsafe_mode
           ~callee_annotated_signature find_canonical_duplicate node resolved_params loc instr_ref ;
-      if Models.is_check_not_null (Procname.Java callee_pname) then
-        match Models.get_check_not_null_parameter (Procname.Java callee_pname) with
+      if Models.is_check_not_null callee_pname then
+        match Models.get_check_not_null_parameter callee_pname with
         | Some index ->
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv index ~is_vararg:false
@@ -1077,16 +1083,13 @@ let calc_typestate_after_call
             (* assume the first parameter is checked for null *)
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv 1 ~is_vararg:false typestate1
-      else if
-        Models.is_check_state (Procname.Java callee_pname)
-        || Models.is_check_argument (Procname.Java callee_pname)
-      then
+      else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname then
         let curr_pname = Procdesc.get_proc_name curr_pdesc in
         do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_signature
           call_params loc node typestate1
-      else if Models.is_mapPut (Procname.Java callee_pname) then
-        do_map_put analysis_data call_params (Procname.Java callee_pname) loc node calls_this checks
-          instr_ref ~nullsafe_mode find_canonical_duplicate typestate1
+      else if Models.is_mapPut callee_pname then
+        do_map_put analysis_data call_params callee_pname loc node calls_this checks instr_ref
+          ~nullsafe_mode find_canonical_duplicate typestate1
       else typestate1 )
     else typestate1
   in
@@ -1343,8 +1346,8 @@ let can_instrunction_throw tenv node instr =
 
 (* true if after this instruction the program interrupts *)
 let is_noreturn_instruction = function
-  | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) when Models.is_noreturn callee_pname
-    ->
+  | Sil.Call (_, Exp.Const (Const.Cfun (Procname.Java callee_pname)), _, _, _)
+    when Models.is_noreturn callee_pname ->
       true
   | _ ->
       false

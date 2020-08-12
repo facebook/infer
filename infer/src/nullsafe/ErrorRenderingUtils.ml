@@ -163,7 +163,7 @@ let get_info object_origin nullsafe_mode untrusted_kind =
         match untrusted_kind with
         | UserFriendlyNullable.ThirdPartyNonnull ->
             let suggested_third_party_sig_file =
-              ThirdPartyAnnotationInfo.lookup_related_sig_file_for_java_proc
+              ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
                 (ThirdPartyAnnotationGlobalRepo.get_repo ())
                 pname
             in

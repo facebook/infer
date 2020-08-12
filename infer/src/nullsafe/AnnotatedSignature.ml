@@ -80,6 +80,10 @@ let extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party 
 let get ~is_callee_in_trust_list ~nullsafe_mode
     ( {ProcAttributes.proc_name; ret_type; method_annotation= {return= ret_annotation}} as
     proc_attributes ) : t =
+  let proc_name =
+    Procname.as_java_exn ~explanation:"AnnotatedSignature.get:: should call only for Java methods"
+      proc_name
+  in
   let is_third_party =
     ThirdPartyAnnotationInfo.is_third_party_proc
       (ThirdPartyAnnotationGlobalRepo.get_repo ())

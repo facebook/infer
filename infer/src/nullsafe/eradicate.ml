@@ -189,7 +189,7 @@ let find_reason_to_skip_analysis proc_name proc_desc =
       else if
         ThirdPartyAnnotationInfo.is_third_party_proc
           (ThirdPartyAnnotationGlobalRepo.get_repo ())
-          proc_name
+          java_pname
       then Some "third party method"
       else if (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method then
         Some "bridge method"

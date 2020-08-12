@@ -94,7 +94,7 @@ module ReportableViolation = struct
            So we phrase it differently to remain truthful, but as specific as possible.
         *)
         let suggested_third_party_sig_file =
-          ThirdPartyAnnotationInfo.lookup_related_sig_file_for_java_proc
+          ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
             (ThirdPartyAnnotationGlobalRepo.get_repo ())
             function_procname
         in

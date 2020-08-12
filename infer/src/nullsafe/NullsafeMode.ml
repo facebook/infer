@@ -174,15 +174,17 @@ let of_class tenv class_name =
   of_class_and_outer_classes user_defined_class
 
 
-let of_procname tenv pname =
-  let class_name =
-    match pname with
-    | Procname.Java jn ->
-        Procname.Java.get_class_type_name jn
-    | _ ->
-        Logging.die InternalError "Unexpected non-Java procname %a" Procname.pp pname
-  in
+let of_java_procname tenv pname =
+  let class_name = Procname.Java.get_class_type_name pname in
   of_class tenv (Typ.Name.Java.get_java_class_name_exn class_name)
+
+
+let of_procname tenv pname =
+  match pname with
+  | Procname.Java jn ->
+      of_java_procname tenv jn
+  | _ ->
+      Logging.die InternalError "Unexpected non-Java procname %a" Procname.pp pname
 
 
 let is_stricter_than ~stricter ~weaker =
