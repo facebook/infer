@@ -179,34 +179,6 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
-let should_report proc_name =
-  not
-    ( Procname.is_constructor proc_name
-    ||
-    match proc_name with
-    | Procname.Java java_pname ->
-        Procname.Java.is_class_initializer java_pname || Procname.Java.is_access_method java_pname
-    | Procname.ObjC_Cpp name ->
-        Procname.ObjC_Cpp.is_destructor name
-        || Procname.ObjC_Cpp.is_objc_constructor name.method_name
-    | _ ->
-        false )
-
-
-let report_errors {InterproceduralAnalysis.proc_desc; err_log} astate_opt =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  match astate_opt with
-  | Some astate ->
-      if should_report proc_name && PurityDomain.is_pure astate then
-        let loc = Procdesc.get_loc proc_desc in
-        let exp_desc = F.asprintf "Side-effect free function %a" Procname.pp proc_name in
-        let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-        Reporting.log_issue proc_desc err_log ~loc ~ltr Purity IssueType.pure_function exp_desc
-  | None ->
-      L.internal_error "Analyzer failed to compute purity information for %a@." Procname.pp
-        proc_name
-
-
 let compute_summary {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency}
     inferbo_invariant_map =
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -227,6 +199,5 @@ let checker analysis_data =
       (InterproceduralAnalysis.bind_payload ~f:snd analysis_data)
   in
   let astate_opt = compute_summary analysis_data inferbo_invariant_map in
-  report_errors analysis_data astate_opt ;
   Option.iter astate_opt ~f:(fun astate -> debug "Purity summary :%a \n" PurityDomain.pp astate) ;
   astate_opt

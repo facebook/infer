@@ -7,8 +7,6 @@
 
 open! IStd
 
-val checker :
-     (PurityDomain.summary option * BufferOverrunAnalysisSummary.t option) InterproceduralAnalysis.t
-  -> PurityDomain.summary option
-
 val should_report : Procname.t -> bool
+
+val checker : IntraproceduralAnalysis.t -> PurityDomain.summary option -> unit

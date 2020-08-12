@@ -775,7 +775,7 @@ let pulse_memory_leak =
 
 
 let pure_function =
-  register ~id:"PURE_FUNCTION" Error Purity
+  register ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "../../documentation/issues/PURE_FUNCTION.md"]
 
 

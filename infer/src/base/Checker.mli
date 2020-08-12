@@ -26,7 +26,8 @@ type t =
   | NullsafeDeprecated
   | PrintfArgs
   | Pulse
-  | Purity
+  | PurityAnalysis
+  | PurityChecker
   | Quandary
   | RacerD
   | ResourceLeakLabExercise

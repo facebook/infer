@@ -27,7 +27,8 @@ type t =
   | NullsafeDeprecated
   | PrintfArgs
   | Pulse
-  | Purity
+  | PurityAnalysis
+  | PurityChecker
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
@@ -252,7 +253,7 @@ let config_unsafe checker =
            for efficiency."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [BufferOverrunAnalysis; Purity] }
+      ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
   | NullsafeDeprecated ->
       { id= "nullsafe"
       ; kind= Internal
@@ -285,7 +286,15 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
-  | Purity ->
+  | PurityAnalysis ->
+      { id= "purity-analysis"
+      ; kind= Internal
+      ; support= supports_clang_and_java_experimental
+      ; short_documentation= "Internal part of the purity checker."
+      ; cli_flags= None
+      ; enabled_by_default= false
+      ; activates= [BufferOverrunAnalysis] }
+  | PurityChecker ->
       { id= "purity"
       ; kind=
           UserFacing
@@ -295,7 +304,7 @@ let config_unsafe checker =
           "Detects pure (side-effect-free) functions. A different implementation of \"impurity\"."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [BufferOverrunAnalysis] }
+      ; activates= [PurityAnalysis] }
   | Quandary ->
       { id= "quandary"
       ; kind=

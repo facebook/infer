@@ -77,11 +77,31 @@ let all_checkers =
   (* The order of the list is important for those checkers that depend on other checkers having run
      before them. *)
   [ {checker= SelfInBlock; callbacks= [(intraprocedural SelfInBlock.checker, Clang)]}
-  ; { checker= Purity
+  ; { checker= BufferOverrunAnalysis
+    ; callbacks=
+        (let bo_analysis =
+           interprocedural Payloads.Fields.buffer_overrun_analysis
+             BufferOverrunAnalysis.analyze_procedure
+         in
+         [(bo_analysis, Clang); (bo_analysis, Java)] ) }
+  ; { checker= BufferOverrunChecker
+    ; callbacks=
+        (let bo_checker =
+           interprocedural2 Payloads.Fields.buffer_overrun_checker
+             Payloads.Fields.buffer_overrun_analysis BufferOverrunChecker.checker
+         in
+         [(bo_checker, Clang); (bo_checker, Java)] ) }
+  ; { checker= PurityAnalysis
     ; callbacks=
         (let purity =
            interprocedural2 Payloads.Fields.purity Payloads.Fields.buffer_overrun_analysis
-             Purity.checker
+             PurityAnalysis.checker
+         in
+         [(purity, Java); (purity, Clang)] ) }
+  ; { checker= PurityChecker
+    ; callbacks=
+        (let purity =
+           intraprocedural_with_field_dependency Payloads.Fields.purity PurityChecker.checker
          in
          [(purity, Java); (purity, Clang)] ) }
   ; { checker= Starvation
@@ -161,20 +181,6 @@ let all_checkers =
         [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
         ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ]
     }
-  ; { checker= BufferOverrunChecker
-    ; callbacks=
-        (let bo_checker =
-           interprocedural2 Payloads.Fields.buffer_overrun_checker
-             Payloads.Fields.buffer_overrun_analysis BufferOverrunChecker.checker
-         in
-         [(bo_checker, Clang); (bo_checker, Java)] ) }
-  ; { checker= BufferOverrunAnalysis
-    ; callbacks=
-        (let bo_analysis =
-           interprocedural Payloads.Fields.buffer_overrun_analysis
-             BufferOverrunAnalysis.analyze_procedure
-         in
-         [(bo_analysis, Clang); (bo_analysis, Java)] ) }
   ; { checker= Biabduction
     ; callbacks=
         (let biabduction =

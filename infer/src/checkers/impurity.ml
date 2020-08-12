@@ -155,7 +155,8 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
   let modified_globals = get_modified_globals pre_heap post post_stack in
   let skipped_calls =
     SkippedCalls.filter
-      (fun proc_name _ -> Purity.should_report proc_name && not (is_modeled_pure tenv proc_name))
+      (fun proc_name _ ->
+        PurityChecker.should_report proc_name && not (is_modeled_pure tenv proc_name) )
       astate.AbductiveDomain.skipped_calls
   in
   {modified_globals; modified_params; skipped_calls; exited}
@@ -185,7 +186,7 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt
             let modified = extract_impurity tenv proc_desc exec_state in
             ImpurityDomain.join acc modified )
       in
-      if Purity.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
+      if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
         let modified_ltr param_source set acc =
           ImpurityDomain.ModifiedVarSet.fold
             (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
