@@ -48,6 +48,7 @@ val lookup_related_sig_file : storage -> package:string -> string option
 (** If the package is third-party, return the relevant .sig file to add signatures for this package. *)
 
 val lookup_related_sig_file_for_proc : storage -> Procname.t -> string option
+  [@@warning "-32"]
 (** If the function is third-party (based on its package), return relevant .sig file *)
 
 val lookup_related_sig_file_for_java_proc : storage -> Procname.Java.t -> string option
