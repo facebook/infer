@@ -283,6 +283,14 @@ module Term = struct
         (acc, t')
     | _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_variables t' ~init:acc ~f)
+
+
+  let fold_variables t ~init ~f = fold_map_variables t ~init ~f:(fun acc v -> (f acc v, v)) |> fst
+
+  let iter_variables t ~f = fold_variables t ~init:() ~f:(fun () v -> f v)
+
+  let has_var_notin vars t =
+    Container.exists t ~iter:iter_variables ~f:(fun v -> not (AbstractValue.Set.mem v vars))
 end
 
 (** Basically boolean terms, used to build formulas. *)
@@ -509,6 +517,11 @@ module Atom = struct
     fold_map_terms a ~init ~f:(fun acc t -> Term.fold_map_variables t ~init:acc ~f)
 
 
+  let has_var_notin vars atom =
+    let t1, t2 = get_terms atom in
+    Term.has_var_notin vars t1 || Term.has_var_notin vars t2
+
+
   module Set = Caml.Set.Make (struct
     type nonrec t = t [@@deriving compare]
   end)
@@ -556,6 +569,8 @@ let is_literal_false = function False -> true | _ -> false
 
 let ttrue = True
 
+let is_literal_true = function True -> true | _ -> false
+
 let rec pp_with_pp_var pp_var fmt = function
   | True ->
       F.fprintf fmt "true"
@@ -602,21 +617,38 @@ let rec pp_with_pp_var pp_var fmt = function
 
 let pp = pp_with_pp_var AbstractValue.pp
 
+let mk_less_than t1 t2 = Atom (LessThan (t1, t2))
+
+let mk_less_equal t1 t2 = Atom (LessEqual (t1, t2))
+
+let mk_equal t1 t2 = Atom (Equal (t1, t2))
+
+let mk_not_equal t1 t2 = Atom (NotEqual (t1, t2))
+
+let aand phi1 phi2 =
+  if is_literal_false phi1 || is_literal_false phi2 then ffalse
+  else if is_literal_true phi1 then phi2
+  else if is_literal_true phi2 then phi1
+  else And (phi1, phi2)
+
+
 module NormalForm : sig
-  val of_formula : t -> t
+  val of_formula : t -> [`NormalForm of UnionFind.t * Atom.Set.t | `Unsatisfiable]
   (** This computes equivalence classes between terms induced by the given conjunctive formula, then
       symbolically evaluates the resulting terms and atoms to form a [NormalForm _] term equivalent
       to the input formula, or [True] or [False]. *)
 
-  val to_formula : UnionFind.t -> Atom.Set.t -> t
-  (** transforms a congruence relation and set of atoms into a formula without [NormalForm _]
-      sub-formulas *)
+  val to_formula : ?filter:(Atom.t -> bool) -> UnionFind.t -> Atom.Set.t -> t
+  (** Transforms a congruence relation and set of atoms into a formula without [NormalForm _]
+      sub-formulas. Atoms not matching the optional [filter] are discarded. *)
 end = struct
   (* NOTE: throughout this module some cases that are never supposed to happen at the moment are
      handled nonetheless to avoid hassle and surprises in the future. *)
 
-  let to_formula uf facts =
-    let phi = Atom.Set.fold (fun atom phi -> And (Atom atom, phi)) facts True in
+  let to_formula ?(filter = fun _ -> true) uf facts =
+    let phi =
+      Atom.Set.fold (fun atom phi -> if filter atom then aand (Atom atom) phi else phi) facts True
+    in
     let phi =
       UnionFind.fold_congruences uf ~init:phi ~f:(fun conjuncts (repr, terms) ->
           L.d_printf "@\nEquivalence class of %a: " Term.pp (repr :> Term.t) ;
@@ -624,7 +656,9 @@ end = struct
             (fun t conjuncts ->
               L.d_printf "%a," Term.pp t ;
               if phys_equal t (repr :> Term.t) then conjuncts
-              else And (Atom (Equal ((repr :> Term.t), t)), conjuncts) )
+              else
+                let atom = Atom.Equal ((repr :> Term.t), t) in
+                if filter atom then aand (Atom atom) conjuncts else conjuncts )
             terms conjuncts )
     in
     L.d_ln () ;
@@ -736,22 +770,9 @@ end = struct
     try
       let uf, facts, new_facts = gather_congruences_and_facts (uf, facts, []) phi in
       let facts = normalize_atoms uf ~add_to:facts new_facts in
-      NormalForm {congruences= uf; facts}
-    with Contradiction -> ffalse
+      `NormalForm (uf, facts)
+    with Contradiction -> `Unsatisfiable
 end
-
-let mk_less_than t1 t2 = Atom (LessThan (t1, t2))
-
-let mk_less_equal t1 t2 = Atom (LessEqual (t1, t2))
-
-let mk_equal t1 t2 = Atom (Equal (t1, t2))
-
-let mk_not_equal t1 t2 = Atom (NotEqual (t1, t2))
-
-(** propagates literal [False] *)
-let aand phi1 phi2 =
-  if is_literal_false phi1 || is_literal_false phi2 then ffalse else And (phi1, phi2)
-
 
 let rec nnot phi =
   match phi with
@@ -828,9 +849,109 @@ let of_term_binop bop t1 t2 =
   Term.of_binop bop t1 t2 |> of_term
 
 
-let normalize phi = NormalForm.of_formula phi
+let normalize phi =
+  L.d_printfln "Normalizing %a" pp phi ;
+  match NormalForm.of_formula phi with
+  | `NormalForm (congruences, facts) ->
+      NormalForm {congruences; facts}
+  | `Unsatisfiable ->
+      ffalse
 
-let simplify ~keep:_ phi = (* TODO: actually remove variables not in [keep] *) normalize phi
+
+(** Intermediate step of [simplify]: build an (undirected) graph between variables where an edge
+    between two variables means that they appear together in an atom of [facts] or an equivalence
+    class of [congruences]. *)
+let build_var_graph congruences facts =
+  (* pretty naive representation of an undirected graph: a map where a vertex maps to the set of
+     destination vertices and each edge has its symmetric in the map *)
+  (* unused but can be useful for debugging *)
+  let _pp_graph fmt graph =
+    Caml.Hashtbl.iter
+      (fun v vs -> F.fprintf fmt "%a->{%a}" AbstractValue.pp v AbstractValue.Set.pp vs)
+      graph
+  in
+  (* add [v->vs] to [graph] *)
+  let add_set graph src vs =
+    let dest =
+      match Caml.Hashtbl.find_opt graph src with
+      | None ->
+          vs
+      | Some dest0 ->
+          AbstractValue.Set.union vs dest0
+    in
+    Caml.Hashtbl.replace graph src dest
+  in
+  (* 16 because why not *)
+  let graph = Caml.Hashtbl.create 16 in
+  (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
+     the number of variables of these terms) *)
+  let add_from_terms t1 t2 =
+    (* compute [vs U vars(t)] *)
+    let union_vars_of_term t vs =
+      Term.fold_variables t ~init:vs ~f:(fun vs v -> AbstractValue.Set.add v vs)
+    in
+    let vs = union_vars_of_term t1 AbstractValue.Set.empty |> union_vars_of_term t2 in
+    AbstractValue.Set.iter (fun v -> add_set graph v vs) vs
+  in
+  Container.iter ~fold:UnionFind.fold_congruences congruences
+    ~f:(fun ((repr : UnionFind.repr), ts) ->
+      UnionFind.Set.iter (fun t -> add_from_terms (repr :> Term.t) t) ts ) ;
+  Atom.Set.iter
+    (fun atom ->
+      let t1, t2 = Atom.get_terms atom in
+      add_from_terms t1 t2 )
+    facts ;
+  graph
+
+
+(** Intermediate step of [simplify]: construct transitive closure of variables reachable from [vs]
+    in [graph]. *)
+let get_reachable_from graph vs =
+  (* HashSet represented as a [Hashtbl.t] mapping items to [()], start with the variables in [vs] *)
+  let reachable = Caml.Hashtbl.create (AbstractValue.Set.cardinal vs) in
+  AbstractValue.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
+  (* Do a Dijkstra-style graph transitive closure in [graph] starting from [vs]. At each step,
+     [new_vs] contains the variables to explore next. Iterative to avoid blowing the stack. *)
+  let new_vs = ref (AbstractValue.Set.elements vs) in
+  while not (List.is_empty !new_vs) do
+    (* pop [new_vs] *)
+    let[@warning "-8"] (v :: rest) = !new_vs in
+    new_vs := rest ;
+    Caml.Hashtbl.find_opt graph v
+    |> Option.iter ~f:(fun vs' ->
+           AbstractValue.Set.iter
+             (fun v' ->
+               if not (Caml.Hashtbl.mem reachable v') then (
+                 (* [v'] seen for the first time: we need to explore it *)
+                 Caml.Hashtbl.replace reachable v' () ;
+                 new_vs := v' :: !new_vs ) )
+             vs' )
+  done ;
+  Caml.Hashtbl.to_seq_keys reachable |> AbstractValue.Set.of_seq
+
+
+let simplify ~keep phi =
+  match NormalForm.of_formula phi with
+  | `Unsatisfiable ->
+      False
+  | `NormalForm (congruences, facts) ->
+      L.d_printfln "Simplifying %a wrt {%a}" pp
+        (NormalForm {congruences; facts})
+        AbstractValue.Set.pp keep ;
+      (* Get rid of atoms when they contain only variables that do not appear in atoms mentioning
+         variables in [keep], or variables appearing in atoms together with variables in [keep], and
+         so on. In other words, the variables to keep are all the ones transitively reachable from
+         variables in [keep] in the graph connecting two variables whenever they appear together in
+         a same atom of the formula. *)
+      let var_graph = build_var_graph congruences facts in
+      let vars_to_keep = get_reachable_from var_graph keep in
+      L.d_printfln "Reachable vars: {%a}" AbstractValue.Set.pp vars_to_keep ;
+      (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
+         to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
+         closure on the graph above *)
+      NormalForm.to_formula congruences facts ~filter:(fun atom ->
+          not (Atom.has_var_notin vars_to_keep atom) )
+
 
 let rec fold_map_variables phi ~init ~f =
   match phi with

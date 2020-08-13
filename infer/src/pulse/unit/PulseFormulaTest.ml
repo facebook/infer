@@ -104,21 +104,31 @@ let%test_module _ =
     let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect {|
-[0=x ∧ 1=y ∧ 2=z ∧ 3=w && true]|}]
+0 = x|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
       [%expect {|
-[0=x=(y+1) && true]|}]
+0 = x|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
       [%expect {|
-[0=x=(y+1) && true]|}]
+0 = y+1|}]
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect {|
-[0=v=(w+1) ∧ x=(y+z) ∧ w=(x-y) && true]|}]
+{w = x-y}∧{{x = y+z}∧{0 = w+1}}|}]
+
+    let%expect_test _ =
+      simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
+      [%expect {|
+{v = w+1}∧{{x = y+z}∧{0 = (w+x)+y}}|}]
+
+    let%expect_test _ =
+      simplify ~keep:[x_var; y_var] (x = y + i 4 && x = w && y = z) ;
+      [%expect {|
+{y = z}∧{{x = y+4}∧{x = w}}|}]
   end )
