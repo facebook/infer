@@ -176,7 +176,7 @@ let and_citvs_callee subst citvs_caller citvs_callee =
   (subst, citvs')
 
 
-let and_formula_callee subst formula_caller formula_callee =
+let and_formula_callee subst formula_caller ~callee:formula_callee =
   (* need to translate callee variables to make sense for the caller, thereby possibly extending
      the current substitution *)
   let subst, formula_callee_translated =
@@ -199,7 +199,7 @@ let and_callee subst phi ~callee:phi_callee =
           L.d_printfln "contradiction found by concrete intervals" ;
           (subst, false_)
       | subst, citvs' ->
-          let subst, formula' = and_formula_callee subst phi.formula phi_callee.formula in
+          let subst, formula' = and_formula_callee subst phi.formula ~callee:phi_callee.formula in
           L.d_printfln "conjoined formula post call: %a@\n" Formula.pp formula' ;
           let formula' = Formula.normalize formula' in
           let is_unsat = Formula.is_literal_false formula' in
