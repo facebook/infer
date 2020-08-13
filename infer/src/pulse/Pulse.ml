@@ -22,7 +22,8 @@ let check_error_transform analysis_data ~f = function
   | Ok astate ->
       f astate
   | Error (diagnostic, astate) ->
-      if PulseArithmetic.is_unsat_expensive astate then []
+      let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
+      if is_unsat then []
       else (
         report analysis_data diagnostic ;
         [ExecutionDomain.AbortProgram astate] )

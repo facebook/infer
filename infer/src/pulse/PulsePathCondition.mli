@@ -55,5 +55,5 @@ val is_known_zero : t -> AbstractValue.t -> bool
 val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
 
-val is_unsat_expensive : t -> bool
+val is_unsat_expensive : t -> t * bool
 (** whether the state contains a contradiction, only call this when you absolutely have to *)

@@ -50,4 +50,5 @@ let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.
 let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition
 
 let is_unsat_expensive astate =
-  PathCondition.is_unsat_expensive astate.AbductiveDomain.path_condition
+  let phi', is_unsat = PathCondition.is_unsat_expensive astate.AbductiveDomain.path_condition in
+  (AbductiveDomain.set_path_condition phi' astate, is_unsat)

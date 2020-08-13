@@ -52,5 +52,10 @@ let of_posts pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       let (AbortProgram astate | ContinueProgram astate | ExitProgram astate) = exec_state in
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
-      if PulseArithmetic.is_unsat_expensive astate then None
-      else Some (map exec_state ~f:(AbductiveDomain.of_post pdesc)) )
+      let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
+      if is_unsat then None
+      else
+        Some
+          (map exec_state ~f:(fun _astate ->
+               (* prefer [astate] since it is an equivalent state that has been normalized *)
+               AbductiveDomain.of_post pdesc astate )) )
