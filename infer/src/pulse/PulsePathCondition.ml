@@ -200,7 +200,10 @@ let and_callee subst phi ~callee:phi_callee =
       | subst, citvs' ->
           let subst, formula' = and_formula_callee subst phi.formula phi_callee.formula in
           L.d_printfln "conjoined formula post call: %a@\n" Formula.pp formula' ;
-          (subst, {satisfiable= true; bo_itvs= bo_itvs'; citvs= citvs'; formula= formula'}) )
+          let formula' = Formula.normalize formula' in
+          let satisfiable = not (Formula.is_literal_false formula') in
+          if not satisfiable then L.d_printfln "contradiction found by formulas" ;
+          (subst, {satisfiable; bo_itvs= bo_itvs'; citvs= citvs'; formula= formula'}) )
 
 
 (** {2 Operations} *)
@@ -331,14 +334,6 @@ let prune_binop ~negated bop lhs_op rhs_op ({satisfiable; bo_itvs= _; citvs; for
   else
     let value_lhs_opt, arith_lhs_opt, bo_itv_lhs, t_lhs = eval_operand phi lhs_op in
     let value_rhs_opt, arith_rhs_opt, bo_itv_rhs, t_rhs = eval_operand phi rhs_op in
-    let phi =
-      let f_positive = Formula.of_term_binop bop t_lhs t_rhs in
-      let formula =
-        let f = if negated then Formula.nnot f_positive else f_positive in
-        Formula.aand f formula
-      in
-      {phi with formula}
-    in
     match CItv.abduce_binop_is_true ~negated bop arith_lhs_opt arith_rhs_opt with
     | Unsatisfiable ->
         L.d_printfln "contradiction detected by concrete intervals" ;
@@ -368,9 +363,21 @@ let prune_binop ~negated bop lhs_op rhs_op ({satisfiable; bo_itvs= _; citvs; for
           bind_satisfiable phi ~f:(fun phi ->
               prune_bo_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs phi )
         in
-        Option.value_map (Binop.symmetric bop) ~default:phi ~f:(fun bop' ->
-            bind_satisfiable phi ~f:(fun phi ->
-                prune_bo_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs phi ) )
+        let phi =
+          Option.value_map (Binop.symmetric bop) ~default:phi ~f:(fun bop' ->
+              bind_satisfiable phi ~f:(fun phi ->
+                  prune_bo_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs phi ) )
+        in
+        if not phi.satisfiable then phi
+        else
+          let f_positive = Formula.of_term_binop bop t_lhs t_rhs in
+          let formula =
+            let f = if negated then Formula.nnot f_positive else f_positive in
+            Formula.aand f formula |> Formula.normalize
+          in
+          let satisfiable = not (Formula.is_literal_false formula) in
+          if not satisfiable then L.d_printfln "contradiction detected by formulas" ;
+          {phi with satisfiable; formula}
 
 
 (** {2 Queries} *)
