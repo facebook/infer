@@ -36,48 +36,86 @@ module Term = struct
 
   let equal_syntax = [%compare.equal: t]
 
-  let rec pp fmt = function
+  let needs_paren = function
+    | Const (Cint i) when IntLit.isnegative i ->
+        true
+    | Const (Cfloat _) ->
+        true
+    | Const (Cint _ | Cfun _ | Cstr _ | Cclass _) ->
+        false
+    | Var _ ->
+        false
+    | Minus _
+    | BitNot _
+    | Not _
+    | Add _
+    | Mult _
+    | Div _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _
+    | And _
+    | Or _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _ ->
+        true
+
+
+  let rec pp_paren ~needs_paren fmt t =
+    if needs_paren t then F.fprintf fmt "(%a)" pp_no_paren t else pp_no_paren fmt t
+
+
+  and pp_no_paren fmt = function
     | Var v ->
         AbstractValue.pp fmt v
     | Const c ->
         Const.pp Pp.text fmt c
     | Minus t ->
-        F.fprintf fmt "-(%a)" pp t
+        F.fprintf fmt "-%a" (pp_paren ~needs_paren) t
     | BitNot t ->
-        F.fprintf fmt "BitNot(%a)" pp t
+        F.fprintf fmt "BitNot%a" (pp_paren ~needs_paren) t
     | Not t ->
-        F.fprintf fmt "¬(%a)" pp t
+        F.fprintf fmt "¬%a" (pp_paren ~needs_paren) t
+    | Add (t1, Minus t2) ->
+        F.fprintf fmt "%a-%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Add (t1, t2) ->
-        F.fprintf fmt "(%a)+(%a)" pp t1 pp t2
+        F.fprintf fmt "%a+%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Mult (t1, t2) ->
-        F.fprintf fmt "(%a)×(%a)" pp t1 pp t2
+        F.fprintf fmt "%a×%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Div (t1, t2) ->
-        F.fprintf fmt "(%a)÷(%a)" pp t1 pp t2
+        F.fprintf fmt "%a÷%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Mod (t1, t2) ->
-        F.fprintf fmt "(%a) mod (%a)" pp t1 pp t2
+        F.fprintf fmt "%a mod %a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | BitAnd (t1, t2) ->
-        F.fprintf fmt "(%a)&(%a)" pp t1 pp t2
+        F.fprintf fmt "%a&%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | BitOr (t1, t2) ->
-        F.fprintf fmt "(%a)|(%a)" pp t1 pp t2
+        F.fprintf fmt "%a|%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | BitShiftLeft (t1, t2) ->
-        F.fprintf fmt "(%a)<<(%a)" pp t1 pp t2
+        F.fprintf fmt "%a<<%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | BitShiftRight (t1, t2) ->
-        F.fprintf fmt "(%a)>>(%a)" pp t1 pp t2
+        F.fprintf fmt "%a>>%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | BitXor (t1, t2) ->
-        F.fprintf fmt "(%a) xor (%a)" pp t1 pp t2
+        F.fprintf fmt "%a xor %a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | And (t1, t2) ->
-        F.fprintf fmt "(%a)∧(%a)" pp t1 pp t2
+        F.fprintf fmt "%a∧%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Or (t1, t2) ->
-        F.fprintf fmt "(%a)∨(%a)" pp t1 pp t2
+        F.fprintf fmt "%a∨%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | LessThan (t1, t2) ->
-        F.fprintf fmt "(%a)<(%a)" pp t1 pp t2
+        F.fprintf fmt "%a<%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | LessEqual (t1, t2) ->
-        F.fprintf fmt "(%a)≤(%a)" pp t1 pp t2
+        F.fprintf fmt "%a≤%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | Equal (t1, t2) ->
-        F.fprintf fmt "(%a)=(%a)" pp t1 pp t2
+        F.fprintf fmt "%a=%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
     | NotEqual (t1, t2) ->
-        F.fprintf fmt "(%a)≠(%a)" pp t1 pp t2
+        F.fprintf fmt "%a≠%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
 
+
+  let pp fmt t = pp_no_paren fmt t
 
   let of_absval v = Var v
 
@@ -254,15 +292,20 @@ module Atom = struct
 
   type atom = t
 
-  let pp fmt = function
+  let pp fmt atom =
+    (* add parens around terms that look like atoms to disambiguate *)
+    let needs_paren (t : Term.t) =
+      match t with LessThan _ | LessEqual _ | Equal _ | NotEqual _ -> true | _ -> false
+    in
+    match atom with
     | LessEqual (t1, t2) ->
-        F.fprintf fmt "%a ≤ %a" Term.pp t1 Term.pp t2
+        F.fprintf fmt "%a ≤ %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
     | LessThan (t1, t2) ->
-        F.fprintf fmt "%a < %a" Term.pp t1 Term.pp t2
+        F.fprintf fmt "%a < %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
     | Equal (t1, t2) ->
-        F.fprintf fmt "%a = %a" Term.pp t1 Term.pp t2
+        F.fprintf fmt "%a = %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
     | NotEqual (t1, t2) ->
-        F.fprintf fmt "%a ≠ %a" Term.pp t1 Term.pp t2
+        F.fprintf fmt "%a ≠ %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
 
 
   let nnot = function
@@ -521,25 +564,31 @@ let rec pp fmt = function
         in
         F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:true ~f:pp_coll_aux |> ignore)
       in
+      let term_pp_paren = Term.pp_paren ~needs_paren:Term.needs_paren in
       let pp_ts_or_repr repr fmt ts =
-        if UnionFind.Set.is_empty ts then Term.pp fmt repr
+        if UnionFind.Set.is_empty ts then term_pp_paren fmt repr
         else
           pp_collection ~sep:"="
             ~fold:(IContainer.fold_of_pervasives_set_fold UnionFind.Set.fold)
-            ~pp_item:Term.pp fmt ts
+            ~pp_item:term_pp_paren fmt ts
       in
       let pp_congruences fmt congruences =
-        pp_collection ~sep:"∧" ~fold:UnionFind.fold_congruences fmt congruences
+        let is_empty = ref true in
+        pp_collection ~sep:" ∧ " ~fold:UnionFind.fold_congruences fmt congruences
           ~pp_item:(fun fmt ((repr : UnionFind.repr), ts) ->
-            F.fprintf fmt "%a=%a" Term.pp (repr :> Term.t) (pp_ts_or_repr (repr :> Term.t)) ts )
+            is_empty := false ;
+            F.fprintf fmt "%a=%a" term_pp_paren (repr :> Term.t) (pp_ts_or_repr (repr :> Term.t)) ts ) ;
+        if !is_empty then pp fmt True
       in
       let pp_atoms fmt atoms =
-        pp_collection ~sep:"∧"
-          ~fold:(IContainer.fold_of_pervasives_set_fold Atom.Set.fold)
-          ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" Atom.pp atom)
-          fmt atoms
+        if Atom.Set.is_empty atoms then pp fmt True
+        else
+          pp_collection ~sep:"∧"
+            ~fold:(IContainer.fold_of_pervasives_set_fold Atom.Set.fold)
+            ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" Atom.pp atom)
+            fmt atoms
       in
-      F.fprintf fmt "[%a@;&&@ %a]" pp_congruences congruences pp_atoms facts
+      F.fprintf fmt "[@[<hv>%a@ &&@ %a@]]" pp_congruences congruences pp_atoms facts
   | And (phi1, phi2) ->
       F.fprintf fmt "{%a}∧{%a}" pp phi1 pp phi2
 

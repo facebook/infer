@@ -51,14 +51,12 @@ let%test_module _ =
     let%expect_test _ =
       normalize (x + i 1 - i 1 < x) ;
       [%expect {|
-        [ &&
-        {((v1)+(1))+(-1) < v1}]|}]
+        [true && {(v1+1)+(-1) < v1}]|}]
 
     let%expect_test _ =
       normalize (x + (y - x) < y) ;
       [%expect {|
-        [ &&
-        {(v1)+((v2)+(-(v1))) < v2}]|}]
+        [true && {v1+(v2-v1) < v2}]|}]
 
     let%expect_test _ =
       normalize (x = y && y = z && z = i 0 && x = i 1) ;
@@ -69,25 +67,36 @@ let%test_module _ =
     let%expect_test _ =
       normalize (x = w + y + i 1 && y + i 1 = z && x = i 1 && w + z = i 0) ;
       [%expect {|
-[0=(v4)+(v3)∧1=v1=((v4)+(v2))+(1)∧v3=(v2)+(1) &&
-]|}]
+[0=(v4+v3) ∧ 1=v1=((v4+v2)+1) ∧ v3=(v2+1) && true]|}]
+
+    let%expect_test _ =
+      normalize (x = i 0 && Formula.Term.of_binop Ne x y = i 0 && y = i 1) ;
+      [%expect {|
+        [0=v1=(0≠v2) ∧ 1=v2 && true]|}]
+
+    let%expect_test _ =
+      normalize (x = i 0 && Formula.Term.of_binop Eq x y = i 0 && y = i 1) ;
+      [%expect {|
+        [0=v1=(0=v2) ∧ 1=v2 && true]|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect {|
-[0=v1∧1=v2∧2=v3∧3=v4 &&
-]|}]
+[0=v1 ∧ 1=v2 ∧ 2=v3 ∧ 3=v4 && true]|}]
+
+    let%expect_test _ =
+      simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
+      [%expect {|
+[0=v1=(v2+1) && true]|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
       [%expect {|
-[0=v1=(v2)+(1) &&
-]|}]
+[0=v1=(v2+1) && true]|}]
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect {|
-[0=v5=(v4)+(1)∧v1=(v2)+(v3)∧v4=(v1)+(-(v2)) &&
-]|}]
+[0=v5=(v4+1) ∧ v1=(v2+v3) ∧ v4=(v1-v2) && true]|}]
   end )
