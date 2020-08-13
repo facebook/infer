@@ -638,14 +638,25 @@ end = struct
         acc
     | False ->
         raise Contradiction
-    | Atom (Equal (t1, t2)) ->
-        (* NOTE: this should also normalize sub-terms of [t1] and [t2] according to the equality
-           relation. We don't do that yet. *)
-        let uf = UnionFind.union uf t1 t2 in
-        (* change facts into atoms when the equality relation changes so they will be normalized
-           again later using the new equality relation *)
-        let atoms_with_facts = Atom.Set.fold (fun atom atoms -> atom :: atoms) facts atoms in
-        (uf, Atom.Set.empty, atoms_with_facts)
+    | Atom (Equal _ as atom) ->
+        (* Normalize the terms of the equality w.r.t. the equalities we have discovered so far. Note
+           that we don't go back and normalize the existing equalities w.r.t. the new atom, which is
+           dodgy. Doing so could have adverse perf implications.
+
+           Note also that other (non-[Equal]) atoms are not yet normalized, this will happen after
+           [gather_congruences_and_facts] has run. *)
+        apply_atom uf atom
+        |> Option.value_map ~default:acc ~f:(function
+             | Atom.Equal (t1, t2) ->
+                 let uf = UnionFind.union uf t1 t2 in
+                 (* change facts into atoms when the equality relation changes so they will be normalized
+                    again later using the new equality relation *)
+                 let atoms_with_facts =
+                   Atom.Set.fold (fun atom atoms -> atom :: atoms) facts atoms
+                 in
+                 (uf, Atom.Set.empty, atoms_with_facts)
+             | atom ->
+                 (uf, facts, atom :: atoms) )
     | Atom atom ->
         (uf, facts, atom :: atoms)
     | And (phi1, phi2) ->

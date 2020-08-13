@@ -111,7 +111,7 @@ void find_first_non_space(StringRange& x) {
   }
 }
 
-void FP_function_empty_range_interproc_ok() {
+void function_empty_range_interproc_ok() {
   StringRange x{};
   find_first_non_space(x);
 }

@@ -44,5 +44,5 @@ let%test_module _ =
 
     let%expect_test _ =
       normalize (x = y && y = z && z = i 0 && x = i 1) ;
-      [%expect "\n        [0=1=v1=v2=v3 &&\n        ]"]
+      [%expect "\n        false"]
   end )
