@@ -45,7 +45,7 @@ void diverge_if_alias_ok(int* x, int* y) {
   }
 }
 
-void FP_diverge_before_null_deref_ok(int* x) {
+void diverge_before_null_deref_ok(int* x) {
   diverge_if_alias_ok(x, x);
   int* p = nullptr;
   *p = 42;

@@ -36,7 +36,7 @@ bool equal(size_t x, size_t y) {
   return x == y;
 }
 
-void FP_unreachable_interproc_compare_ok(int* x, size_t y) {
+void unreachable_interproc_compare_ok(int* x, size_t y) {
   if (equal(y, 0)) {
     free(x);
   }

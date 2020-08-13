@@ -45,6 +45,9 @@ val filter :
 
 val map : f:('a -> 'b) -> ('t, 'a, 'accum) Container.fold -> ('t, 'b, 'accum) Container.fold
 
+val fold_of_pervasives_set_fold :
+  (('elt -> 'accum -> 'accum) -> 't -> 'accum -> 'accum) -> ('t, 'elt, 'accum) Container.fold
+
 val fold_of_pervasives_map_fold :
      (('key -> 'value -> 'accum -> 'accum) -> 't -> 'accum -> 'accum)
   -> ('t, 'key * 'value, 'accum) Container.fold
