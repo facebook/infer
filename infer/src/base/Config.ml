@@ -1825,12 +1825,6 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
-and pudge =
-  CLOpt.mk_bool ~long:"pudge" ~default:false
-    "Experimental flag to enable sledge arithmetic on path conditions. This is intended for Pulse \
-     development only and will be removed once the feature is stable."
-
-
 and pulse_cut_to_one_path_procedures_pattern =
   CLOpt.mk_string_opt ~long:"pulse-cut-to-one-path-procedures-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2112,12 +2106,6 @@ and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
     ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
-
-
-and sledge_timers =
-  CLOpt.mk_bool ~long:"sledge-timers"
-    "Enable debug timing info from sledge on stderr (you probably want $(b,--no-progress-bar) as \
-     well)."
 
 
 and source_preview =
@@ -2993,8 +2981,6 @@ and progress_bar =
 
 and project_root = !project_root
 
-and pudge = !pudge
-
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
@@ -3109,8 +3095,6 @@ and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compi
 and skip_duplicated_types = !skip_duplicated_types
 
 and skip_translation_headers = !skip_translation_headers
-
-and sledge_timers = !sledge_timers
 
 and source_preview = !source_preview
 

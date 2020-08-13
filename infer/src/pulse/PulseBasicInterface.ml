@@ -36,8 +36,6 @@ include struct
   [@@deprecated "use the short form PathCondition instead"]
   module PulseSkippedCalls = PulseSkippedCalls
   [@@deprecated "use the short form SkippedCalls instead"]
-  module PulseSledge = PulseSledge [@@deprecated "use Pudge instead"]
-  module PulseDummySledge = PulseDummySledge [@@deprecated "use Pudge instead"]
   module PulseTrace = PulseTrace [@@deprecated "use the short form Trace instead"]
   module PulseValueHistory = PulseValueHistory
   [@@deprecated "use the short form ValueHistory instead"]

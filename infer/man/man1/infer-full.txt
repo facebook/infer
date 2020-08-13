@@ -1690,11 +1690,6 @@ INTERNAL OPTIONS
        --profiler-samples-reset
            Cancel the effect of --profiler-samples.
 
-       --pudge
-           Activates: Experimental flag to enable sledge arithmetic on path
-           conditions. This is intended for Pulse development only and will
-           be removed once the feature is stable. (Conversely: --no-pudge)
-
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
@@ -1813,11 +1808,6 @@ INTERNAL OPTIONS
 
        --skip-translation-headers-reset
            Set --skip-translation-headers to the empty list.
-
-       --sledge-timers
-           Activates: Enable debug timing info from sledge on stderr (you
-           probably want --no-progress-bar as well). (Conversely:
-           --no-sledge-timers)
 
        --source-files-filter-reset
            Cancel the effect of --source-files-filter.

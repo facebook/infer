@@ -376,7 +376,7 @@ let prune_binop ~negated bop lhs_op rhs_op ({satisfiable; bo_itvs= _; citvs; for
 (** {2 Queries} *)
 
 let is_known_zero phi v =
-  (* don't ask sledge because it might be too expensive *)
+  (* TODO: ask [Formula] too *)
   CItvs.find_opt v phi.citvs |> Option.value_map ~default:false ~f:CItv.is_equal_to_zero
   || BoItvs.find_opt v phi.bo_itvs |> Option.value_map ~default:false ~f:Itv.ItvPure.is_zero
 

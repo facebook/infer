@@ -299,23 +299,6 @@ module DisjunctiveAnalyzer =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
-(* Output cases that sledge was unhappy with in files for later replay or inclusion as sledge test
-   cases. We create one file for each PID to avoid all analysis processes racing on writing to the same
-   file. *)
-let sledge_test_fmt =
-  lazy
-    (let sledge_test_output =
-       Out_channel.create
-         ( ResultsDir.get_path Debug
-         ^/ Printf.sprintf "sledge_test-%d.ml" (Pid.to_int (Unix.getpid ())) )
-     in
-     let f = F.formatter_of_out_channel sledge_test_output in
-     Epilogues.register ~description:"closing sledge debug fd" ~f:(fun () ->
-         F.pp_print_flush f () ;
-         Out_channel.close sledge_test_output ) ;
-     f )
-
-
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial = [ExecutionDomain.mk_initial proc_desc] in
@@ -324,29 +307,3 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       Some (PulseSummary.of_posts proc_desc posts)
   | None ->
       None
-  | exception exn ->
-      (* output sledge replay tests, see comment on [sledge_test_fmt] *)
-      IExn.reraise_if exn ~f:(fun () ->
-          match Exn.sexp_of_t exn with
-          | List [exn; replay] ->
-              let exn = Error.t_of_sexp exn in
-              L.internal_error "Analysis of %a FAILED:@\n@[%a@]@\n" Procname.pp
-                (Procdesc.get_proc_name proc_desc)
-                Error.pp exn ;
-              F.fprintf (Lazy.force sledge_test_fmt)
-                "@\n\
-                \    let%%expect_test _ =@\n\
-                \      Equality.replay@\n\
-                \        {|%a|} ;@\n\
-                \      [%%expect {| |}]@\n\
-                 @\n\
-                 %!"
-                Sexp.pp_hum replay ;
-              false
-          | _ | (exception _) ->
-              (* re-raise original exception *)
-              true ) ;
-      None
-
-
-let () = NS.Timer.enabled := Config.sledge_timers

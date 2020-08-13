@@ -451,8 +451,6 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
 
-val pudge : bool
-
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
 val pulse_recency_limit : int
@@ -540,8 +538,6 @@ val skip_analysis_in_path_skips_compilation : bool
 val skip_duplicated_types : bool
 
 val skip_translation_headers : string list
-
-val sledge_timers : bool
 
 val source_files : bool
 
