@@ -408,7 +408,12 @@ let implicit_sdk_root =
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
-  else if !Sys.interactive || String.is_substring ~substring:"inferunit" exe_basename then NoParse
+  else if
+    !Sys.interactive
+    || String.is_substring ~substring:"inferunit" exe_basename
+    || String.equal "run.exe" exe_basename
+    || String.equal "run.bc" exe_basename
+  then NoParse
   else if infer_is_clang then NoParse
   else InferCommand
 
@@ -3290,9 +3295,11 @@ let is_in_custom_symbols list_name symbol =
       false
 
 
-let execution_id =
-  Random.self_init () ;
-  Random.int64 Int64.max_value
+let scuba_execution_id =
+  if scuba_logging then (
+    Random.self_init () ;
+    Some (Random.int64 Int64.max_value) )
+  else None
 
 
 let toplevel_results_dir =

@@ -641,7 +641,8 @@ val is_in_custom_symbols : string -> string -> bool
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
-val execution_id : Int64.t
+val scuba_execution_id : Int64.t option
+(** a random number to (hopefully) uniquely identify this run *)
 
 (** {2 Global variables with initial values specified by command-line options} *)
 

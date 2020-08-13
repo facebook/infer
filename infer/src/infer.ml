@@ -152,7 +152,7 @@ let () =
   if has_results_dir then log_environment_info () ;
   if has_results_dir && Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
-    L.progress "Execution ID %Ld@." Config.execution_id ) ;
+    Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
   ( match Config.command with
   | _ when Config.test_determinator && not Config.process_clang_ast ->
       TestDeterminator.compute_and_emit_test_to_run ()

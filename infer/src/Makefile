@@ -86,13 +86,20 @@ endif
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
 
+# NOTE: the complexity below is because @runtest and @fmt interact poorly: we want dune to format
+# test files *after* having promoted them when the test outputs change
 .PHONY: test
 test: BUILD_MODE = test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)$(DUNE_BUILD) \
+	$(QUIET)exit_code=0; \
+	$(DUNE_BUILD) \
 	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
 	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe \
-	  @fmt --auto-promote
+	  || exit_code=$$?; \
+	$(DUNE_BUILD) @runtest --auto-promote || exit_code=$$?; \
+	$(DUNE_BUILD) @fmt --auto-promote || exit_code=$$?; \
+	exit $$exit_code
+
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
