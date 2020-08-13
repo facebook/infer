@@ -40,3 +40,7 @@ val reset_capture_tables : unit -> unit
 val start : unit -> unit
 
 val stop : unit -> unit
+
+val store_spec : proc_uid:Sqlite3.Data.t -> spec:Sqlite3.Data.t -> unit
+
+val delete_spec : proc_uid:Sqlite3.Data.t -> unit

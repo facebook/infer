@@ -173,10 +173,44 @@ module Implementation = struct
     SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
     SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
     ResultsDatabase.create_tables db
+
+
+  let store_spec =
+    let store_statement =
+      ResultsDatabase.register_statement "INSERT OR REPLACE INTO specs VALUES (:proc_uid, :spec)"
+    in
+    fun ~proc_uid ~spec ->
+      ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
+          Sqlite3.bind store_stmt 1 proc_uid
+          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
+          Sqlite3.bind store_stmt 2 spec
+          |> SqliteUtils.check_result_code db ~log:"store spec bind spec" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
+
+
+  let delete_spec =
+    let delete_statement =
+      ResultsDatabase.register_statement "DELETE FROM specs WHERE proc_uid = :k"
+    in
+    fun ~proc_uid ->
+      ResultsDatabase.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+          Sqlite3.bind delete_stmt 1 proc_uid
+          |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
 end
 
 module Command = struct
   type t =
+    | AddSourceFile of
+        { source_file: Sqlite3.Data.t
+        ; tenv: Sqlite3.Data.t
+        ; integer_type_widths: Sqlite3.Data.t
+        ; proc_names: Sqlite3.Data.t }
+    | DeleteSpec of {proc_uid: Sqlite3.Data.t}
+    | Handshake
+    | MarkAllSourceFilesStale
+    | Merge of {infer_deps_file: string}
+    | StoreSpec of {proc_uid: Sqlite3.Data.t; spec: Sqlite3.Data.t}
     | ReplaceAttributes of
         { pname_str: string
         ; pname: Sqlite3.Data.t
@@ -185,57 +219,57 @@ module Command = struct
         ; attributes: Sqlite3.Data.t
         ; proc_desc: Sqlite3.Data.t
         ; callees: Sqlite3.Data.t }
-    | AddSourceFile of
-        { source_file: Sqlite3.Data.t
-        ; tenv: Sqlite3.Data.t
-        ; integer_type_widths: Sqlite3.Data.t
-        ; proc_names: Sqlite3.Data.t }
-    | MarkAllSourceFilesStale
-    | Merge of {infer_deps_file: string}
-    | Vacuum
     | ResetCaptureTables
-    | Handshake
     | Terminate
+    | Vacuum
 
   let to_string = function
-    | ReplaceAttributes _ ->
-        "ReplaceAttributes"
     | AddSourceFile _ ->
         "AddSourceFile"
+    | DeleteSpec _ ->
+        "DeleteSpec"
+    | Handshake ->
+        "Handshake"
     | MarkAllSourceFilesStale ->
         "MarkAllSourceFilesStale"
     | Merge _ ->
         "Merge"
-    | Vacuum ->
-        "Vacuum"
+    | ReplaceAttributes _ ->
+        "ReplaceAttributes"
     | ResetCaptureTables ->
         "ResetCaptureTables"
-    | Handshake ->
-        "Handshake"
+    | StoreSpec _ ->
+        "StoreSpec"
     | Terminate ->
         "Terminate"
+    | Vacuum ->
+        "Vacuum"
 
 
   let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
 
   let execute = function
-    | ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees} ->
-        Implementation.replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes
-          ~proc_desc ~callees
     | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
+    | DeleteSpec {proc_uid} ->
+        Implementation.delete_spec ~proc_uid
+    | Handshake ->
+        ()
     | MarkAllSourceFilesStale ->
         Implementation.mark_all_source_files_stale ()
     | Merge {infer_deps_file} ->
         Implementation.merge infer_deps_file
-    | Vacuum ->
-        Implementation.canonicalize ()
+    | StoreSpec {proc_uid; spec} ->
+        Implementation.store_spec ~proc_uid ~spec
+    | ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees} ->
+        Implementation.replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes
+          ~proc_desc ~callees
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
-    | Handshake ->
-        ()
     | Terminate ->
         ()
+    | Vacuum ->
+        Implementation.canonicalize ()
 end
 
 type response = Ack
@@ -349,3 +383,7 @@ let merge ~infer_deps_file = Command.Merge {infer_deps_file} |> perform
 let canonicalize () = perform Command.Vacuum
 
 let reset_capture_tables () = perform Command.ResetCaptureTables
+
+let store_spec ~proc_uid ~spec = perform (Command.StoreSpec {proc_uid; spec})
+
+let delete_spec ~proc_uid = perform (Command.DeleteSpec {proc_uid})

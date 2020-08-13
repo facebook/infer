@@ -85,11 +85,12 @@ module OnDisk : sig
       cache *)
 
   val iter_specs : f:(t -> unit) -> unit
-  (** Iterates over all summaries from the .specs files *)
+  (** Iterates over all stored summaries *)
 
   val iter_specs_from_config : f:(t -> unit) -> unit
-  (** Iterates over all sumaries from the .specs files unless a list of specs files has been passed
-      on the command line *)
+  (** Iterates over all stored summaries, or over the summaries of the list of procedure filenames
+      passed on the command line *)
 
   val pp_specs_from_config : Format.formatter -> unit
+  (** pretty print all stored summaries *)
 end

@@ -2585,15 +2585,12 @@ let post_parsing_initialization command_opt =
   Option.value ~default:InferCommand.Run command_opt
 
 
-let command, parse_args_and_return_usage_exit =
-  let command_opt, usage_exit =
+let command =
+  let command_opt, _usage_exit =
     CLOpt.parse ?config_file:inferconfig_file ~usage:exe_usage startup_action initial_command
   in
-  let command = post_parsing_initialization command_opt in
-  (command, usage_exit)
+  post_parsing_initialization command_opt
 
-
-let print_usage_exit () = parse_args_and_return_usage_exit 1
 
 let process_linters_doc_url args =
   let linters_doc_url arg =

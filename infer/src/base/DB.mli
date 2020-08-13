@@ -42,9 +42,6 @@ module Results_dir : sig
   val path_to_filename : path_kind -> path -> filename
   (** convert a path to a filename *)
 
-  val specs_dir : filename
-  (** directory of spec files *)
-
   val init : ?debug:bool -> SourceFile.t -> unit
   (** Initialize the results directory *)
 

@@ -118,6 +118,10 @@ let pp_html source fmt summary =
   F.fprintf fmt "</LISTING>@\n"
 
 
+module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+  type nonrec t = t
+end)
+
 module OnDisk = struct
   type cache = t Procname.Hash.t
 
@@ -173,12 +177,29 @@ module OnDisk = struct
     opt
 
 
+  let spec_of_model proc_name = load_from_file (specs_models_filename proc_name)
+
+  let spec_of_proc_uid =
+    let load_statement =
+      ResultsDatabase.register_statement "SELECT spec FROM specs WHERE proc_uid = :k"
+    in
+    fun proc_file ->
+      ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
+          Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT proc_file)
+          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_file" ;
+          SqliteUtils.result_single_column_option ~finalize:false ~log:"load proc specs run" db
+            load_stmt
+          |> Option.map ~f:SQLite.deserialize )
+
+
+  let spec_of_procname proc_name = spec_of_proc_uid (Procname.to_unique_id proc_name)
+
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table proc_name =
     let summ_opt =
-      match load_from_file (specs_filename_of_procname proc_name) with
+      match spec_of_procname proc_name with
       | None when BiabductionModels.mem proc_name ->
-          load_from_file (specs_models_filename proc_name)
+          spec_of_model proc_name
       | summ_opt ->
           summ_opt
     in
@@ -212,9 +233,14 @@ module OnDisk = struct
     let proc_name = get_proc_name final_summary in
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name final_summary ;
-    Serialization.write_to_file summary_serializer
-      (specs_filename_of_procname proc_name)
-      ~data:final_summary
+    if Config.biabduction_models_mode then
+      Serialization.write_to_file summary_serializer
+        (specs_filename_of_procname proc_name)
+        ~data:final_summary
+    else
+      DBWriter.store_spec
+        ~proc_uid:(Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
+        ~spec:(SQLite.serialize final_summary)
 
 
   let reset proc_desc =
@@ -233,72 +259,50 @@ module OnDisk = struct
 
   let reset_all ~filter () =
     let reset proc_name =
-      let filename = specs_filename_of_procname proc_name in
-      BackendStats.incr_summary_file_try_load () ;
-      Serialization.read_from_file summary_serializer filename
+      spec_of_procname proc_name
       |> Option.iter ~f:(fun summary ->
-             BackendStats.incr_summary_read_from_disk () ;
              let blank_summary = reset summary.proc_desc in
-             Serialization.write_to_file summary_serializer filename ~data:blank_summary )
+             store blank_summary )
     in
     Procedures.get_all ~filter () |> List.iter ~f:reset
 
 
   let delete pname =
-    let filename = specs_filename_of_procname pname |> DB.filename_to_string in
-    (* Unix_error is raised if the file isn't present so do nothing in this case *)
-    (try Unix.unlink filename with Unix.Unix_error _ -> ()) ;
-    remove_from_cache pname
+    remove_from_cache pname ;
+    if Config.biabduction_models_mode then
+      let filename = specs_filename_of_procname pname |> DB.filename_to_string in
+      (* Unix_error is raised if the file isn't present so do nothing in this case *)
+      try Unix.unlink filename with Unix.Unix_error _ -> ()
+    else DBWriter.delete_spec ~proc_uid:(Sqlite3.Data.TEXT (Procname.to_unique_id pname))
 
 
-  (** return the list of the .specs files in the results dir *)
-  let load_specfiles () =
-    let is_specs_file fname = Filename.check_suffix fname Config.specs_files_suffix in
-    let do_file acc path = if is_specs_file path then path :: acc else acc in
-    let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir in
-    Utils.directory_fold do_file [] result_specs_dir
+  let iter_specs =
+    let iter_statement =
+      ResultsDatabase.register_statement "SELECT spec FROM specs ORDER BY proc_uid ASC"
+    in
+    fun ~f ->
+      ResultsDatabase.with_registered_statement iter_statement ~f:(fun db stmt ->
+          SqliteUtils.result_fold_single_column_rows ~finalize:false db stmt
+            ~log:"iter over all specs" ~init:() ~f:(fun () sqlite_spec ->
+              let summary : t = SQLite.deserialize sqlite_spec in
+              let () = f summary in
+              () ) )
 
 
-  let print_usage_exit err_s =
-    L.user_error "Load Error: %s@\n@." err_s ;
-    Config.print_usage_exit ()
+  let iter_specs_of_proc_uids proc_uids ~f =
+    List.iter proc_uids ~f:(fun proc_file -> spec_of_proc_uid proc_file |> Option.iter ~f)
 
 
-  let spec_files_from_cmdline () =
-    if CLOpt.is_originator then (
+  let iter_specs_from_config ~f =
+    if CLOpt.is_originator && not (List.is_empty Config.anon_args) then (
       (* Find spec files specified by command-line arguments.  Not run at init time since the specs
-         files may be generated between init and report time. *)
-      List.iter
-        ~f:(fun arg ->
-          if
-            (not (Filename.check_suffix arg Config.specs_files_suffix))
-            && not (String.equal arg ".")
-          then print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
-        Config.anon_args ;
+          files may be generated between init and report time. *)
       if Config.test_filtering then (
         Inferconfig.test () ;
         L.exit 0 ) ;
-      if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
-    else load_specfiles ()
+      iter_specs_of_proc_uids Config.anon_args ~f )
+    else iter_specs ~f
 
-
-  (** Create an iterator which loads spec files one at a time *)
-  let summary_iterator spec_files =
-    let sorted_spec_files = List.sort ~compare:String.compare (spec_files ()) in
-    let do_spec f fname =
-      match load_from_file (DB.filename_from_string fname) with
-      | None ->
-          L.(die UserError) "Error: cannot open file %s@." fname
-      | Some summary ->
-          f summary
-    in
-    let iterate f = List.iter ~f:(do_spec f) sorted_spec_files in
-    iterate
-
-
-  let iter_specs_from_config ~f = summary_iterator spec_files_from_cmdline f
-
-  let iter_specs ~f = summary_iterator load_specfiles f
 
   let pp_specs_from_config fmt =
     iter_specs_from_config ~f:(fun summary ->

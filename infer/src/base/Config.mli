@@ -647,7 +647,3 @@ val scuba_execution_id : Int64.t option
 (** {2 Global variables with initial values specified by command-line options} *)
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
-
-(** {2 Command Line Interface Documentation} *)
-
-val print_usage_exit : unit -> 'a
