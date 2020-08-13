@@ -12,12 +12,6 @@ module Formula = PulseFormula
 
 let%test_module _ =
   ( module struct
-    let normalize phi = Formula.normalize phi |> F.printf "%a" Formula.pp
-
-    let simplify ~keep phi =
-      Formula.simplify ~keep:(AbstractValue.Set.of_list keep) phi |> F.printf "%a" Formula.pp
-
-
     (** shorthand for defining formulas easily *)
 
     let i i = Formula.Term.of_intlit (IntLit.of_int i)
@@ -32,31 +26,59 @@ let%test_module _ =
 
     let ( && ) phi1 phi2 = Formula.aand phi1 phi2
 
-    let x_var = AbstractValue.mk_fresh ()
+    let var_names = Caml.Hashtbl.create 4
+
+    let mk_var name =
+      let v = AbstractValue.mk_fresh () in
+      Caml.Hashtbl.add var_names v name ;
+      v
+
+
+    let x_var = mk_var "x"
 
     let x = Formula.Term.of_absval x_var
 
-    let y_var = AbstractValue.mk_fresh ()
+    let y_var = mk_var "y"
 
     let y = Formula.Term.of_absval y_var
 
-    let z_var = AbstractValue.mk_fresh ()
+    let z_var = mk_var "z"
 
     let z = Formula.Term.of_absval z_var
 
-    let w = Formula.Term.of_absval (AbstractValue.mk_fresh ())
+    let w = Formula.Term.of_absval (mk_var "w")
 
-    let v = Formula.Term.of_absval (AbstractValue.mk_fresh ())
+    let v = Formula.Term.of_absval (mk_var "v")
+
+    (** utilities for writing tests *)
+
+    let pp_var fmt v =
+      match Caml.Hashtbl.find_opt var_names v with
+      | Some name ->
+          F.pp_print_string fmt name
+      | None ->
+          AbstractValue.pp fmt v
+
+
+    let formula_pp = Formula.pp_with_pp_var pp_var
+
+    let normalize phi = Formula.normalize phi |> F.printf "%a" formula_pp
+
+    let simplify ~keep phi =
+      Formula.simplify ~keep:(AbstractValue.Set.of_list keep) phi |> F.printf "%a" formula_pp
+
+
+    (** the actual tests *)
 
     let%expect_test _ =
       normalize (x + i 1 - i 1 < x) ;
       [%expect {|
-        [true && {(v1+1)+(-1) < v1}]|}]
+        [true && {(x+1)+(-1) < x}]|}]
 
     let%expect_test _ =
       normalize (x + (y - x) < y) ;
       [%expect {|
-        [true && {v1+(v2-v1) < v2}]|}]
+        [true && {x+(y-x) < y}]|}]
 
     let%expect_test _ =
       normalize (x = y && y = z && z = i 0 && x = i 1) ;
@@ -67,36 +89,36 @@ let%test_module _ =
     let%expect_test _ =
       normalize (x = w + y + i 1 && y + i 1 = z && x = i 1 && w + z = i 0) ;
       [%expect {|
-[0=(v4+v3) ∧ 1=v1=((v4+v2)+1) ∧ v3=(v2+1) && true]|}]
+[0=(w+z) ∧ 1=x=((w+y)+1) ∧ z=(y+1) && true]|}]
 
     let%expect_test _ =
-      normalize (x = i 0 && Formula.Term.of_binop Ne x y = i 0 && y = i 1) ;
+      normalize (Formula.Term.of_binop Ne x y = i 0 && x = i 0 && y = i 1) ;
       [%expect {|
-        [0=v1=(0≠v2) ∧ 1=v2 && true]|}]
+        [0=x=(x≠y) ∧ 1=y && true]|}]
 
     let%expect_test _ =
-      normalize (x = i 0 && Formula.Term.of_binop Eq x y = i 0 && y = i 1) ;
+      normalize (Formula.Term.of_binop Eq x y = i 0 && x = i 0 && y = i 1) ;
       [%expect {|
-        [0=v1=(0=v2) ∧ 1=v2 && true]|}]
+        [0=x=(x=y) ∧ 1=y && true]|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect {|
-[0=v1 ∧ 1=v2 ∧ 2=v3 ∧ 3=v4 && true]|}]
+[0=x ∧ 1=y ∧ 2=z ∧ 3=w && true]|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
       [%expect {|
-[0=v1=(v2+1) && true]|}]
+[0=x=(y+1) && true]|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
       [%expect {|
-[0=v1=(v2+1) && true]|}]
+[0=x=(y+1) && true]|}]
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect {|
-[0=v5=(v4+1) ∧ v1=(v2+v3) ∧ v4=(v1-v2) && true]|}]
+[0=v=(w+1) ∧ x=(y+z) ∧ w=(x-y) && true]|}]
   end )

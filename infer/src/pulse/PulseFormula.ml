@@ -66,56 +66,60 @@ module Term = struct
         true
 
 
-  let rec pp_paren ~needs_paren fmt t =
-    if needs_paren t then F.fprintf fmt "(%a)" pp_no_paren t else pp_no_paren fmt t
+  let rec pp_paren pp_var ~needs_paren fmt t =
+    if needs_paren t then F.fprintf fmt "(%a)" (pp_no_paren pp_var) t else pp_no_paren pp_var fmt t
 
 
-  and pp_no_paren fmt = function
+  and pp_no_paren pp_var fmt = function
     | Var v ->
-        AbstractValue.pp fmt v
+        pp_var fmt v
     | Const c ->
         Const.pp Pp.text fmt c
     | Minus t ->
-        F.fprintf fmt "-%a" (pp_paren ~needs_paren) t
+        F.fprintf fmt "-%a" (pp_paren pp_var ~needs_paren) t
     | BitNot t ->
-        F.fprintf fmt "BitNot%a" (pp_paren ~needs_paren) t
+        F.fprintf fmt "BitNot%a" (pp_paren pp_var ~needs_paren) t
     | Not t ->
-        F.fprintf fmt "¬%a" (pp_paren ~needs_paren) t
+        F.fprintf fmt "¬%a" (pp_paren pp_var ~needs_paren) t
     | Add (t1, Minus t2) ->
-        F.fprintf fmt "%a-%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a-%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Add (t1, t2) ->
-        F.fprintf fmt "%a+%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a+%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Mult (t1, t2) ->
-        F.fprintf fmt "%a×%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a×%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Div (t1, t2) ->
-        F.fprintf fmt "%a÷%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a÷%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Mod (t1, t2) ->
-        F.fprintf fmt "%a mod %a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a mod %a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren)
+          t2
     | BitAnd (t1, t2) ->
-        F.fprintf fmt "%a&%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a&%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | BitOr (t1, t2) ->
-        F.fprintf fmt "%a|%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a|%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | BitShiftLeft (t1, t2) ->
-        F.fprintf fmt "%a<<%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a<<%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | BitShiftRight (t1, t2) ->
-        F.fprintf fmt "%a>>%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a>>%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | BitXor (t1, t2) ->
-        F.fprintf fmt "%a xor %a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a xor %a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren)
+          t2
     | And (t1, t2) ->
-        F.fprintf fmt "%a∧%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a∧%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Or (t1, t2) ->
-        F.fprintf fmt "%a∨%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a∨%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | LessThan (t1, t2) ->
-        F.fprintf fmt "%a<%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a<%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | LessEqual (t1, t2) ->
-        F.fprintf fmt "%a≤%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a≤%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Equal (t1, t2) ->
-        F.fprintf fmt "%a=%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a=%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | NotEqual (t1, t2) ->
-        F.fprintf fmt "%a≠%a" (pp_paren ~needs_paren) t1 (pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
 
 
-  let pp fmt t = pp_no_paren fmt t
+  let pp_with_pp_var pp_var fmt t = pp_no_paren pp_var fmt t
+
+  let pp fmt t = pp_with_pp_var AbstractValue.pp fmt t
 
   let of_absval v = Var v
 
@@ -292,21 +296,24 @@ module Atom = struct
 
   type atom = t
 
-  let pp fmt atom =
+  let pp_with_pp_var pp_var fmt atom =
     (* add parens around terms that look like atoms to disambiguate *)
     let needs_paren (t : Term.t) =
       match t with LessThan _ | LessEqual _ | Equal _ | NotEqual _ -> true | _ -> false
     in
+    let pp_term = Term.pp_paren pp_var ~needs_paren in
     match atom with
     | LessEqual (t1, t2) ->
-        F.fprintf fmt "%a ≤ %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a ≤ %a" pp_term t1 pp_term t2
     | LessThan (t1, t2) ->
-        F.fprintf fmt "%a < %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a < %a" pp_term t1 pp_term t2
     | Equal (t1, t2) ->
-        F.fprintf fmt "%a = %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a = %a" pp_term t1 pp_term t2
     | NotEqual (t1, t2) ->
-        F.fprintf fmt "%a ≠ %a" (Term.pp_paren ~needs_paren) t1 (Term.pp_paren ~needs_paren) t2
+        F.fprintf fmt "%a ≠ %a" pp_term t1 pp_term t2
 
+
+  let pp = pp_with_pp_var AbstractValue.pp
 
   let nnot = function
     | LessEqual (t1, t2) ->
@@ -549,13 +556,13 @@ let is_literal_false = function False -> true | _ -> false
 
 let ttrue = True
 
-let rec pp fmt = function
+let rec pp_with_pp_var pp_var fmt = function
   | True ->
       F.fprintf fmt "true"
   | False ->
       F.fprintf fmt "false"
   | Atom atom ->
-      Atom.pp fmt atom
+      Atom.pp_with_pp_var pp_var fmt atom
   | NormalForm {congruences; facts} ->
       let pp_collection ~fold ~sep ~pp_item fmt coll =
         let pp_coll_aux is_first item =
@@ -564,7 +571,7 @@ let rec pp fmt = function
         in
         F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:true ~f:pp_coll_aux |> ignore)
       in
-      let term_pp_paren = Term.pp_paren ~needs_paren:Term.needs_paren in
+      let term_pp_paren = Term.pp_paren pp_var ~needs_paren:Term.needs_paren in
       let pp_ts_or_repr repr fmt ts =
         if UnionFind.Set.is_empty ts then term_pp_paren fmt repr
         else
@@ -578,20 +585,22 @@ let rec pp fmt = function
           ~pp_item:(fun fmt ((repr : UnionFind.repr), ts) ->
             is_empty := false ;
             F.fprintf fmt "%a=%a" term_pp_paren (repr :> Term.t) (pp_ts_or_repr (repr :> Term.t)) ts ) ;
-        if !is_empty then pp fmt True
+        if !is_empty then pp_with_pp_var pp_var fmt True
       in
       let pp_atoms fmt atoms =
-        if Atom.Set.is_empty atoms then pp fmt True
+        if Atom.Set.is_empty atoms then pp_with_pp_var pp_var fmt True
         else
           pp_collection ~sep:"∧"
             ~fold:(IContainer.fold_of_pervasives_set_fold Atom.Set.fold)
-            ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" Atom.pp atom)
+            ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (Atom.pp_with_pp_var pp_var) atom)
             fmt atoms
       in
       F.fprintf fmt "[@[<hv>%a@ &&@ %a@]]" pp_congruences congruences pp_atoms facts
   | And (phi1, phi2) ->
-      F.fprintf fmt "{%a}∧{%a}" pp phi1 pp phi2
+      F.fprintf fmt "{%a}∧{%a}" (pp_with_pp_var pp_var) phi1 (pp_with_pp_var pp_var) phi2
 
+
+let pp = pp_with_pp_var AbstractValue.pp
 
 module NormalForm : sig
   val of_formula : t -> t

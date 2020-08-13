@@ -34,6 +34,10 @@ type t
 
 val pp : F.formatter -> t -> unit
 
+val pp_with_pp_var : (F.formatter -> AbstractValue.t -> unit) -> F.formatter -> t -> unit
+  [@@warning "-32"]
+(** only used for unit tests *)
+
 (** {3 Build formulas from non-formulas} *)
 
 val ttrue : t
