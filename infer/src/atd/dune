@@ -12,72 +12,79 @@
  (preprocess
   (pps ppx_compare)))
 
-(documentation (package infer) (mld_files ATDGenerated))
+(documentation
+ (package infer)
+ (mld_files ATDGenerated))
 
 ; Rules below are boilerplatey, but this is benign and very easy to
 ; understand boilerplate.
 
 ; ATD for jsonbug
-(rule
- (targets jsonbug_j.ml
-          jsonbug_j.mli)
- (deps    jsonbug.atd)
- (action  (run atdgen -j -j-std %{deps})))
 
 (rule
- (targets jsonbug_t.ml
-          jsonbug_t.mli)
- (deps    jsonbug.atd)
- (action  (run atdgen -t %{deps})))
+ (targets jsonbug_j.ml jsonbug_j.mli)
+ (deps jsonbug.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets jsonbug_t.ml jsonbug_t.mli)
+ (deps jsonbug.atd)
+ (action
+  (run atdgen -t %{deps})))
 
 ; ATD for runstate
-(rule
- (targets runstate_j.ml
-          runstate_j.mli)
- (deps    runstate.atd)
- (action  (run atdgen -j -j-std %{deps})))
 
 (rule
- (targets runstate_t.ml
-          runstate_t.mli)
- (deps    runstate.atd)
- (action  (run atdgen -t %{deps})))
+ (targets runstate_j.ml runstate_j.mli)
+ (deps runstate.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets runstate_t.ml runstate_t.mli)
+ (deps runstate.atd)
+ (action
+  (run atdgen -t %{deps})))
 
 ; ATD for java_method_decl
-(rule
- (targets java_method_decl_j.ml
-          java_method_decl_j.mli)
- (deps    java_method_decl.atd)
- (action  (run atdgen -j -j-std %{deps})))
 
 (rule
- (targets java_method_decl_t.ml
-          java_method_decl_t.mli)
- (deps    java_method_decl.atd)
- (action  (run atdgen -t %{deps})))
+ (targets java_method_decl_j.ml java_method_decl_j.mli)
+ (deps java_method_decl.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets java_method_decl_t.ml java_method_decl_t.mli)
+ (deps java_method_decl.atd)
+ (action
+  (run atdgen -t %{deps})))
 
 ; ATD for java_profiler_samples
-(rule
- (targets java_profiler_samples_j.ml
-          java_profiler_samples_j.mli)
- (deps    java_profiler_samples.atd)
- (action  (run atdgen -j -j-std %{deps})))
 
 (rule
- (targets java_profiler_samples_t.ml
-          java_profiler_samples_t.mli)
- (deps    java_profiler_samples.atd)
- (action  (run atdgen -t %{deps})))
+ (targets java_profiler_samples_j.ml java_profiler_samples_j.mli)
+ (deps java_profiler_samples.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets java_profiler_samples_t.ml java_profiler_samples_t.mli)
+ (deps java_profiler_samples.atd)
+ (action
+  (run atdgen -t %{deps})))
 
 ; ATD for clang_profiler_samples
-(rule
- (targets clang_profiler_samples_j.ml
-          clang_profiler_samples_j.mli)
- (deps    clang_profiler_samples.atd)
- (action  (run atdgen -j -j-std %{deps})))
 
 (rule
- (targets clang_profiler_samples_t.ml
-          clang_profiler_samples_t.mli)
- (deps    clang_profiler_samples.atd)
- (action  (run atdgen -t %{deps})))
+ (targets clang_profiler_samples_j.ml clang_profiler_samples_j.mli)
+ (deps clang_profiler_samples.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets clang_profiler_samples_t.ml clang_profiler_samples_t.mli)
+ (deps clang_profiler_samples.atd)
+ (action
+  (run atdgen -t %{deps})))

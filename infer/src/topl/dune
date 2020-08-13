@@ -5,7 +5,9 @@
 
 (ocamllex ToplLexer)
 
-(menhir (flags --unused-token INDENT --explain) (modules ToplParser))
+(menhir
+ (flags --unused-token INDENT --explain)
+ (modules ToplParser))
 
 (library
  (name TOPLlib)
@@ -14,5 +16,5 @@
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Absint -open Biabduction -open Pulselib))
  (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction Pulselib)
- (preprocess (pps ppx_compare ppx_hash ppx_sexp_conv))
-)
+ (preprocess
+  (pps ppx_compare ppx_hash ppx_sexp_conv)))

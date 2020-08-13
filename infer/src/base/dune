@@ -6,14 +6,17 @@
 (library
  (name IBase)
  (public_name infer.IBase)
- (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open OpenSource))
+ (flags
+  (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open
+    OpenSource))
  (libraries cmdliner core mtime.clock.os parmap re sqlite3 zip ATDGenerated
    IStdlib OpenSource)
  (preprocess
   (pps ppx_blob ppx_compare ppx_enumerate))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
-  (glob_files ../../documentation/issues/*.md))
-)
+  (glob_files ../../documentation/issues/*.md)))
 
-(documentation (package infer) (mld_files IBase))
+(documentation
+ (package infer)
+ (mld_files IBase))

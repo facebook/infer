@@ -10,7 +10,9 @@
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Absint -open Biabduction))
  (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction)
- (preprocess (pps ppx_compare ppx_sexp_conv))
-)
+ (preprocess
+  (pps ppx_compare ppx_sexp_conv)))
 
-(documentation (package infer) (mld_files Nullsafe))
+(documentation
+ (package infer)
+ (mld_files Nullsafe))

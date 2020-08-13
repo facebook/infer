@@ -7,14 +7,15 @@
  (name Backend)
  (public_name infer.Backend)
  (flags
-  (:standard
-     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
-     -open IBase -open IR -open Absint -open Biabduction -open BO -open Nullsafe
-     -open Pulselib  -open Checkers -open Costlib -open Quandary -open TOPLlib
-     -open Concurrency -open Labs))
+  (:standard -open Core -open IStdlib -open IStd -open OpenSource -open
+    ATDGenerated -open IBase -open IR -open Absint -open Biabduction -open BO
+    -open Nullsafe -open Pulselib -open Checkers -open Costlib -open Quandary
+    -open TOPLlib -open Concurrency -open Labs))
  (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction Nullsafe BO
-            Checkers Costlib Quandary TOPLlib Concurrency Labs)
- (preprocess (pps ppx_compare ppx_fields_conv))
-)
+   Checkers Costlib Quandary TOPLlib Concurrency Labs)
+ (preprocess
+  (pps ppx_compare ppx_fields_conv)))
 
-(documentation (package infer) (mld_files Backend))
+(documentation
+ (package infer)
+ (mld_files Backend))

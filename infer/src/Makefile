@@ -91,7 +91,8 @@ test: BUILD_MODE = test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)$(DUNE_BUILD) \
 	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
-	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
+	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe \
+	  @fmt --auto-promote
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
