@@ -20,6 +20,8 @@ type model =
   -> AbductiveDomain.t
   -> ExecutionDomain.t list PulseOperations.access_result
 
+let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
+
 module Misc = struct
   let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
     let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
@@ -151,11 +153,7 @@ module ObjC = struct
 end
 
 module FollyOptional = struct
-  let internal_value =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_value"
-
+  let internal_value = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_value"
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
 
@@ -472,11 +470,9 @@ module StdFunction = struct
 end
 
 module GenericArrayBackedCollection = struct
-  let field =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_array"
+  let field = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_array"
 
+  let last_field = Fieldname.make (Typ.CStruct cpp_model_namespace) "past_the_end"
 
   let access = HilExp.Access.FieldAccess field
 
@@ -491,14 +487,18 @@ module GenericArrayBackedCollection = struct
   let element location collection index astate =
     let* astate, internal_array = eval location collection astate in
     eval_element location internal_array index astate
+
+
+  let eval_pointer_to_last_element location collection astate =
+    let+ astate, pointer =
+      PulseOperations.eval_access location collection (FieldAccess last_field) astate
+    in
+    let astate = AddressAttributes.mark_as_end_of_collection (fst pointer) astate in
+    (astate, pointer)
 end
 
 module GenericArrayBackedCollectionIterator = struct
-  let internal_pointer =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_pointer"
-
+  let internal_pointer = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_pointer"
 
   let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
 
@@ -512,10 +512,25 @@ module GenericArrayBackedCollectionIterator = struct
     (astate, pointer, index)
 
 
-  let to_elem_pointed_by_iterator location iterator index astate =
+  let to_elem_pointed_by_iterator ?(step = None) location iterator astate =
+    let* astate, pointer = to_internal_pointer location iterator astate in
+    let* astate, index = PulseOperations.eval_access location pointer Dereference astate in
+    (* Check if not end iterator *)
+    let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
+    let* astate =
+      if AddressAttributes.is_end_of_collection (fst pointer) astate && not is_minus_minus then
+        let invalidation_trace = Trace.Immediate {location; history= []} in
+        let access_trace = Trace.Immediate {location; history= snd pointer} in
+        Error
+          ( Diagnostic.AccessToInvalidAddress
+              {invalidation= EndIterator; invalidation_trace; access_trace}
+          , astate )
+      else Ok astate
+    in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
     let* astate = PulseOperations.check_addr_access location index astate in
-    GenericArrayBackedCollection.element location iterator (fst index) astate
+    let+ astate, elem = GenericArrayBackedCollection.element location iterator (fst index) astate in
+    (astate, pointer, elem)
 
 
   let construct location event ~init ~ref astate =
@@ -564,8 +579,7 @@ module GenericArrayBackedCollectionIterator = struct
 
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, pointer, index = to_internal_pointer_deref location iter astate in
-    let+ astate, (elem, _) = to_elem_pointed_by_iterator location iter index astate in
+    let+ astate, pointer, (elem, _) = to_elem_pointed_by_iterator location iter astate in
     let astate = PulseOperations.write_id (fst ret) (elem, event :: snd pointer) astate in
     [ExecutionDomain.ContinueProgram astate]
 
@@ -573,15 +587,7 @@ module GenericArrayBackedCollectionIterator = struct
   let operator_step step ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let index_new = AbstractValue.mk_fresh () in
-    let* astate, pointer, current_index = to_internal_pointer_deref location iter astate in
-    let* astate =
-      match (step, AddressAttributes.is_end_iterator (fst current_index) astate) with
-      | `MinusMinus, true ->
-          Ok astate
-      | _ ->
-          let* astate, _ = to_elem_pointed_by_iterator location iter current_index astate in
-          Ok astate
-    in
+    let* astate, pointer, _ = to_elem_pointed_by_iterator ~step:(Some step) location iter astate in
     PulseOperations.write_deref location ~ref:pointer ~obj:(index_new, event :: snd pointer) astate
     >>| ExecutionDomain.continue >>| List.return
 end
@@ -705,23 +711,20 @@ module StdVector = struct
   let vector_end vector iter : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= []} in
-    let pointer_addr = AbstractValue.mk_fresh () in
+    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval location vector astate in
+    let* astate, (pointer_addr, _) =
+      GenericArrayBackedCollection.eval_pointer_to_last_element location vector astate
+    in
     let pointer_hist = event :: snd iter in
     let pointer_val = (pointer_addr, pointer_hist) in
-    let index_last = AbstractValue.mk_fresh () in
-    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval location vector astate in
     let* astate =
       PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
         ~obj:(arr_addr, pointer_hist) astate
     in
-    let* astate =
+    let+ astate =
       PulseOperations.write_field location ~ref:iter
         GenericArrayBackedCollectionIterator.internal_pointer ~obj:pointer_val astate
     in
-    let* astate =
-      PulseOperations.write_deref location ~ref:pointer_val ~obj:(index_last, pointer_hist) astate
-    in
-    let+ astate = PulseOperations.invalidate location EndIterator (index_last, []) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 

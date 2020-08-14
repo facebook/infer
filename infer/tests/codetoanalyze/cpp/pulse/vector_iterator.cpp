@@ -71,6 +71,12 @@ void iterator_end_read_bad() {
   std::cout << *iter << '\n';
 }
 
+void iterator_end_next_bad() {
+  std::vector<int> vec = {1, 2};
+  auto iter = vec.end();
+  ++iter;
+}
+
 void iterator_end_prev_read_ok() {
   std::vector<int> vec = {1, 2};
   auto iter = vec.end();
@@ -105,5 +111,23 @@ void call_iterator_loop_ok(bool b) {
   while (!finished) {
     if (!for_each_ok(vec, b))
       return;
+  }
+}
+
+std::vector<int>::iterator find(std::vector<int>& vec, bool b) {
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    if (b) {
+      return it;
+    }
+  }
+  return vec.end();
+}
+
+void iterator_end_returned_ok(std::vector<int> vec, bool b) {
+  auto it = find(vec, b);
+  if (it != vec.end()) {
+    *it = 3;
+  } else {
+    return;
   }
 }

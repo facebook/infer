@@ -30,6 +30,7 @@ module Attribute = struct
     | Allocated of Procname.t * Trace.t
     | Closure of Procname.t
     | DynamicType of Typ.Name.t
+    | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
@@ -67,6 +68,8 @@ module Attribute = struct
 
   let dynamic_type_rank = Variants.to_rank (DynamicType (Typ.Name.Objc.from_string ""))
 
+  let end_of_collection_rank = Variants.to_rank EndOfCollection
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -85,6 +88,8 @@ module Attribute = struct
         Procname.pp f pname
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" Typ.Name.pp typ
+    | EndOfCollection ->
+        F.pp_print_string f "EndOfCollection"
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -135,6 +140,10 @@ module Attributes = struct
            (var, loc, history) )
 
 
+  let is_end_of_collection attrs =
+    Set.find_rank attrs Attribute.end_of_collection_rank |> Option.is_some
+
+
   let is_std_vector_reserved attrs =
     Set.find_rank attrs Attribute.std_vector_reserve_rank |> Option.is_some
 
@@ -171,6 +180,7 @@ let is_suitable_for_pre = function
   | Allocated _
   | Closure _
   | DynamicType _
+  | EndOfCollection
   | Invalid _
   | StdVectorReserve
   | WrittenTo _ ->
@@ -190,5 +200,6 @@ let map_trace ~f = function
     | AddressOfStackVariable _
     | Closure _
     | DynamicType _
+    | EndOfCollection
     | StdVectorReserve ) as attr ->
       attr
