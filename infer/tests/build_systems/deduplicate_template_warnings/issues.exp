@@ -1,1 +1,1 @@
-templates.cpp, unused_var_template_bad<char>, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+templates.cpp, unused_var_template_bad<int>, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]

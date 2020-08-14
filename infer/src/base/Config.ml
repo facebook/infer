@@ -479,8 +479,6 @@ let get_symbols_regexp json_obj =
    can be defined together sharing a reference. See debug and specs_library below for two
    different examples. *)
 
-let anon_args = CLOpt.mk_anon ()
-
 let all_checkers = ref []
 
 let disable_all_checkers () = List.iter !all_checkers ~f:(fun (_, _, var) -> var := false)
@@ -2609,9 +2607,7 @@ let process_linters_doc_url args =
 
 (** Freeze initialized configuration values *)
 
-let anon_args = !anon_args
-
-and rest = !rest
+let rest = !rest
 
 and abs_struct = !abs_struct
 

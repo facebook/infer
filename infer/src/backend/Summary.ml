@@ -179,20 +179,18 @@ module OnDisk = struct
 
   let spec_of_model proc_name = load_from_file (specs_models_filename proc_name)
 
-  let spec_of_proc_uid =
+  let spec_of_procname =
     let load_statement =
-      ResultsDatabase.register_statement "SELECT spec FROM specs WHERE proc_uid = :k"
+      ResultsDatabase.register_statement "SELECT spec FROM specs WHERE proc_name = :k"
     in
-    fun proc_file ->
+    fun proc_name ->
       ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
-          Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT proc_file)
-          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_file" ;
+          Sqlite3.bind load_stmt 1 (Procname.SQLite.serialize proc_name)
+          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_single_column_option ~finalize:false ~log:"load proc specs run" db
             load_stmt
           |> Option.map ~f:SQLite.deserialize )
 
-
-  let spec_of_procname proc_name = spec_of_proc_uid (Procname.to_unique_id proc_name)
 
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table proc_name =
@@ -239,7 +237,7 @@ module OnDisk = struct
         ~data:final_summary
     else
       DBWriter.store_spec
-        ~proc_uid:(Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
+        ~proc_name:(Procname.SQLite.serialize proc_name)
         ~spec:(SQLite.serialize final_summary)
 
 
@@ -273,12 +271,13 @@ module OnDisk = struct
       let filename = specs_filename_of_procname pname |> DB.filename_to_string in
       (* Unix_error is raised if the file isn't present so do nothing in this case *)
       try Unix.unlink filename with Unix.Unix_error _ -> ()
-    else DBWriter.delete_spec ~proc_uid:(Sqlite3.Data.TEXT (Procname.to_unique_id pname))
+    else DBWriter.delete_spec ~proc_name:(Procname.SQLite.serialize pname)
 
 
   let iter_specs =
     let iter_statement =
-      ResultsDatabase.register_statement "SELECT spec FROM specs ORDER BY proc_uid ASC"
+      (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
+      ResultsDatabase.register_statement "SELECT spec FROM specs ORDER BY proc_name ASC"
     in
     fun ~f ->
       ResultsDatabase.with_registered_statement iter_statement ~f:(fun db stmt ->
@@ -289,18 +288,23 @@ module OnDisk = struct
               () ) )
 
 
-  let iter_specs_of_proc_uids proc_uids ~f =
-    List.iter proc_uids ~f:(fun proc_file -> spec_of_proc_uid proc_file |> Option.iter ~f)
+  let iter_over_filter ~filter ~f =
+    let db = ResultsDatabase.get_database () in
+    (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
+    Sqlite3.prepare db "SELECT proc_name, spec FROM specs ORDER BY proc_name ASC"
+    |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
+         ~f:(fun stmt ->
+           let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+           let spec = Sqlite3.column stmt 1 |> SQLite.deserialize in
+           if filter (SourceFile.invalid "invalid") proc_name then f spec )
 
 
   let iter_specs_from_config ~f =
-    if CLOpt.is_originator && not (List.is_empty Config.anon_args) then (
-      (* Find spec files specified by command-line arguments.  Not run at init time since the specs
-          files may be generated between init and report time. *)
+    if CLOpt.is_originator && Option.is_some Config.procedures_filter then (
       if Config.test_filtering then (
         Inferconfig.test () ;
         L.exit 0 ) ;
-      iter_specs_of_proc_uids Config.anon_args ~f )
+      iter_over_filter ~filter:(Lazy.force Filtering.procedures_filter) ~f )
     else iter_specs ~f
 
 

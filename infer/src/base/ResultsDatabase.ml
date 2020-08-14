@@ -40,7 +40,7 @@ let specs_schema prefix =
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sspecs
-      ( proc_uid TEXT PRIMARY KEY
+      ( proc_name TEXT PRIMARY KEY
       , spec BLOB NOT NULL
     )|}
     prefix

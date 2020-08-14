@@ -137,6 +137,7 @@ val mk_symbol_seq :
 val mk_json : Yojson.Basic.t ref t
 
 val mk_anon : unit -> string list ref
+  [@@warning "-32"]
 (** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse
     order they appeared on the command line. *)
 

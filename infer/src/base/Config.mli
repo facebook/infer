@@ -164,8 +164,6 @@ val annotation_reachability_cxx_sources : Yojson.Basic.t
 
 val annotation_reachability_custom_pairs : Yojson.Basic.t
 
-val anon_args : string list
-
 val array_level : int
 
 val biabduction_models_mode : bool
