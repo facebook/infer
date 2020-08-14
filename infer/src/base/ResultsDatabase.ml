@@ -41,7 +41,8 @@ let specs_schema prefix =
     {|
       CREATE TABLE IF NOT EXISTS %sspecs
       ( proc_name TEXT PRIMARY KEY
-      , spec BLOB NOT NULL
+      , analysis_summary BLOB NOT NULL
+      , report_summary BLOB NOT NULL
     )|}
     prefix
 

@@ -41,6 +41,10 @@ val start : unit -> unit
 
 val stop : unit -> unit
 
-val store_spec : proc_name:Sqlite3.Data.t -> spec:Sqlite3.Data.t -> unit
+val store_spec :
+     proc_name:Sqlite3.Data.t
+  -> analysis_summary:Sqlite3.Data.t
+  -> report_summary:Sqlite3.Data.t
+  -> unit
 
 val delete_spec : proc_name:Sqlite3.Data.t -> unit

@@ -177,14 +177,17 @@ module Implementation = struct
 
   let store_spec =
     let store_statement =
-      ResultsDatabase.register_statement "INSERT OR REPLACE INTO specs VALUES (:proc_name, :spec)"
+      ResultsDatabase.register_statement
+        "INSERT OR REPLACE INTO specs VALUES (:proc_name, :analysis_summary, :report_summary)"
     in
-    fun ~proc_name ~spec ->
+    fun ~proc_name ~analysis_summary ~report_summary ->
       ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind store_stmt 1 proc_name
           |> SqliteUtils.check_result_code db ~log:"store spec bind proc_name" ;
-          Sqlite3.bind store_stmt 2 spec
-          |> SqliteUtils.check_result_code db ~log:"store spec bind spec" ;
+          Sqlite3.bind store_stmt 2 analysis_summary
+          |> SqliteUtils.check_result_code db ~log:"store spec bind analysis_summary" ;
+          Sqlite3.bind store_stmt 3 report_summary
+          |> SqliteUtils.check_result_code db ~log:"store spec bind report_summary" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
 
@@ -210,7 +213,8 @@ module Command = struct
     | Handshake
     | MarkAllSourceFilesStale
     | Merge of {infer_deps_file: string}
-    | StoreSpec of {proc_name: Sqlite3.Data.t; spec: Sqlite3.Data.t}
+    | StoreSpec of
+        {proc_name: Sqlite3.Data.t; analysis_summary: Sqlite3.Data.t; report_summary: Sqlite3.Data.t}
     | ReplaceAttributes of
         { pname_str: string
         ; pname: Sqlite3.Data.t
@@ -259,8 +263,8 @@ module Command = struct
         Implementation.mark_all_source_files_stale ()
     | Merge {infer_deps_file} ->
         Implementation.merge infer_deps_file
-    | StoreSpec {proc_name; spec} ->
-        Implementation.store_spec ~proc_name ~spec
+    | StoreSpec {proc_name; analysis_summary; report_summary} ->
+        Implementation.store_spec ~proc_name ~analysis_summary ~report_summary
     | ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees} ->
         Implementation.replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes
           ~proc_desc ~callees
@@ -368,22 +372,23 @@ let start () = Server.start ()
 let stop () = Server.send Command.Terminate
 
 let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
-  Command.ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees}
-  |> perform
+  perform (ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees})
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
-  Command.AddSourceFile {source_file; tenv; integer_type_widths; proc_names} |> perform
+  perform (AddSourceFile {source_file; tenv; integer_type_widths; proc_names})
 
 
-let mark_all_source_files_stale () = perform Command.MarkAllSourceFilesStale
+let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
-let merge ~infer_deps_file = Command.Merge {infer_deps_file} |> perform
+let merge ~infer_deps_file = perform (Merge {infer_deps_file})
 
-let canonicalize () = perform Command.Vacuum
+let canonicalize () = perform Vacuum
 
-let reset_capture_tables () = perform Command.ResetCaptureTables
+let reset_capture_tables () = perform ResetCaptureTables
 
-let store_spec ~proc_name ~spec = perform (Command.StoreSpec {proc_name; spec})
+let store_spec ~proc_name ~analysis_summary ~report_summary =
+  perform (StoreSpec {proc_name; analysis_summary; report_summary})
 
-let delete_spec ~proc_name = perform (Command.DeleteSpec {proc_name})
+
+let delete_spec ~proc_name = perform (DeleteSpec {proc_name})

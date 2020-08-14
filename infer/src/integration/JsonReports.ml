@@ -282,20 +282,15 @@ let mk_error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-let collect_issues summary issues_acc =
-  let err_log = Summary.get_err_log summary in
-  let proc_name = Summary.get_proc_name summary in
-  let proc_location = Summary.get_loc summary in
+let collect_issues proc_name proc_location err_log issues_acc =
   Errlog.fold
     (fun err_key err_data acc -> {Issue.proc_name; proc_location; err_key; err_data} :: acc)
     err_log issues_acc
 
 
-let write_costs summary (outfile : Utils.outfile) =
-  let proc_name = Summary.get_proc_name summary in
+let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
   if not (Cost.is_report_suppressed proc_name) then
-    JsonCostsPrinter.pp outfile.fmt
-      {loc= Summary.get_loc summary; proc_name; cost_opt= summary.Summary.payloads.Payloads.cost}
+    JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
 (** Process lint issues of a procedure *)
@@ -305,17 +300,17 @@ let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname 
 
 
 (** Process a summary *)
-let process_summary ~costs_outf summary issues_acc =
-  write_costs summary costs_outf ;
-  collect_issues summary issues_acc
+let process_summary ~costs_outf proc_name loc cost_opt err_log issues_acc =
+  write_costs proc_name loc cost_opt costs_outf ;
+  collect_issues proc_name loc err_log issues_acc
 
 
 let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   let linereader = LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
-  Summary.OnDisk.iter_specs_from_config ~f:(fun summary ->
-      all_issues := process_summary ~costs_outf summary !all_issues ) ;
+  Summary.OnDisk.iter_report_summaries_from_config ~f:(fun proc_name loc cost_opt err_log ->
+      all_issues := process_summary ~costs_outf proc_name loc cost_opt err_log !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   List.iter
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->

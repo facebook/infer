@@ -50,8 +50,6 @@ val get_proc_desc : t -> Procdesc.t
 
 val get_err_log : t -> Errlog.t
 
-val get_loc : t -> Location.t
-
 val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
@@ -87,9 +85,9 @@ module OnDisk : sig
   val iter_specs : f:(t -> unit) -> unit
   (** Iterates over all stored summaries *)
 
-  val iter_specs_from_config : f:(t -> unit) -> unit
-  (** Iterates over all stored summaries, or over the summaries of the list of procedure filenames
-      passed on the command line *)
+  val iter_report_summaries_from_config :
+    f:(Procname.t -> Location.t -> CostDomain.summary option -> Errlog.t -> unit) -> unit
+  (** Iterates over all analysis artefacts listed above, for each procedure *)
 
   val pp_specs_from_config : Format.formatter -> unit
   (** pretty print all stored summaries *)
