@@ -339,9 +339,8 @@ let check_return_not_nullable analysis_data ~nullsafe_mode ~java_pname find_cano
         None ~nullsafe_mode loc )
 
 
-let check_return_overrannotated
-    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_data) find_canonical_duplicate
-    loc ~nullsafe_mode (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
+let check_return_overrannotated ~java_pname analysis_data find_canonical_duplicate loc
+    ~nullsafe_mode (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
   let what = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   (* In our CFG implementation, there is only one place where we return from a function
@@ -351,9 +350,8 @@ let check_return_overrannotated
   let by_rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
   Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
     ~f:(fun over_annotated_violation ->
-      let curr_pname = Procdesc.get_proc_name curr_pdesc in
       TypeErr.register_error analysis_data find_canonical_duplicate
-        (Over_annotation {over_annotated_violation; violation_type= ReturnOverAnnotated curr_pname})
+        (Over_annotation {over_annotated_violation; violation_type= ReturnOverAnnotated java_pname})
         None ~nullsafe_mode loc )
 
 
@@ -371,7 +369,7 @@ let check_return_annotation analysis_data ~java_pname find_canonical_duplicate r
           ~nullsafe_mode:annotated_signature.nullsafe_mode find_canonical_duplicate loc
           annotated_signature.ret ret_inferred_nullability ;
       if Config.eradicate_return_over_annotated then
-        check_return_overrannotated analysis_data find_canonical_duplicate loc
+        check_return_overrannotated ~java_pname analysis_data find_canonical_duplicate loc
           annotated_signature.ret ~nullsafe_mode:annotated_signature.nullsafe_mode
           ret_inferred_nullability
   | None ->
