@@ -167,8 +167,6 @@ and Formula : sig
   (** Query *)
 
   val fv : t -> Var.Set.t
-  val is_true : t -> bool
-  val is_false : t -> bool
 
   (** Traverse *)
 

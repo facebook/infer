@@ -59,7 +59,7 @@ let map_seg ~f h =
 let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
     =
   let pure = f_fml pure in
-  if Formula.is_false pure then false_ us
+  if Formula.(equal ff pure) then false_ us
   else
     let ctx = f_ctx ctx in
     let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
@@ -274,7 +274,7 @@ let fv ?ignore_ctx q =
   in
   fv_union Var.Set.empty q
 
-let invariant_pure p = assert (not (Formula.is_false p))
+let invariant_pure p = assert (not Formula.(equal ff p))
 let invariant_seg _ = ()
 
 let rec invariant q =
@@ -293,7 +293,7 @@ let rec invariant q =
     ( match djns with
     | [[]] ->
         assert (Context.is_empty ctx) ;
-        assert (Formula.is_true pure) ;
+        assert (Formula.(equal tt pure)) ;
         assert (List.is_empty heap)
     | _ -> assert (not (Context.is_unsat ctx)) ) ;
     invariant_pure pure ;
@@ -451,11 +451,11 @@ let star q1 q2 =
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
       false_ (Var.Set.union q1.us q2.us)
   | {us= _; xs= _; ctx; pure; heap= []; djns= []}, _
-    when Context.is_empty ctx && Formula.is_true pure ->
+    when Context.is_empty ctx && Formula.(equal tt pure) ->
       let us = Var.Set.union q1.us q2.us in
       if us == q2.us then q2 else {q2 with us}
   | _, {us= _; xs= _; ctx; pure; heap= []; djns= []}
-    when Context.is_empty ctx && Formula.is_true pure ->
+    when Context.is_empty ctx && Formula.(equal tt pure) ->
       let us = Var.Set.union q1.us q2.us in
       if us == q1.us then q1 else {q1 with us}
   | _ ->
@@ -496,11 +496,11 @@ let or_ q1 q2 =
   | _, {djns= [[]]; _} -> extend_us q2.us q1
   | ( ({djns= []; _} as q)
     , ({us= _; xs; ctx= _; pure; heap= []; djns= [djn]} as d) )
-    when Var.Set.is_empty xs && Formula.is_true pure ->
+    when Var.Set.is_empty xs && Formula.(equal tt pure) ->
       {d with us= Var.Set.union q.us d.us; djns= [q :: djn]}
   | ( ({us= _; xs; ctx= _; pure; heap= []; djns= [djn]} as d)
     , ({djns= []; _} as q) )
-    when Var.Set.is_empty xs && Formula.is_true pure ->
+    when Var.Set.is_empty xs && Formula.(equal tt pure) ->
       {d with us= Var.Set.union q.us d.us; djns= [q :: djn]}
   | _ ->
       { us= Var.Set.union q1.us q2.us

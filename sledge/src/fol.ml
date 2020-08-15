@@ -979,8 +979,6 @@ module Formula = struct
   (** Query *)
 
   let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
-  let is_true = function Tt -> true | _ -> false
-  let is_false = function Ff -> true | _ -> false
 
   (** Traverse *)
 
@@ -1327,7 +1325,7 @@ module Context = struct
     let fml =
       let normalizef x e = f_ses_map (Ses.Equality.normalize x) e in
       let fml' = normalizef ctx fml in
-      if Formula.is_true fml' then [] else [fml']
+      if Formula.(equal tt fml') then [] else [fml']
     in
     List.pp
       ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
