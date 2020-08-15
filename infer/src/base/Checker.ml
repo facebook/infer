@@ -27,7 +27,6 @@ type t =
   | NullsafeDeprecated
   | PrintfArgs
   | Pulse
-  | Pil
   | Purity
   | Quandary
   | RacerD
@@ -283,14 +282,6 @@ let config_unsafe checker =
       ; support= supports_clang_and_java_experimental
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [] }
-  | Pil ->
-      { id= "pil"
-      ; kind= UserFacing {title= "Pil"; markdown_body= ""}
-      ; support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] Pulse Incorrectness Separation Logic."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
   | Purity ->

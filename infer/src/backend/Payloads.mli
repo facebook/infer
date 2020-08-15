@@ -22,7 +22,6 @@ include sig
     ; lab_resource_leaks: ResourceLeakDomain.summary option
     ; litho_required_props: LithoDomain.summary option
     ; pulse: PulseSummary.t option
-    ; pil: PulseISLSummary.t option
     ; purity: PurityDomain.summary option
     ; quandary: QuandarySummary.t option
     ; racerd: RacerDDomain.summary option

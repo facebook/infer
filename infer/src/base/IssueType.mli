@@ -135,15 +135,11 @@ val config_checks_between_markers : t
 
 val constant_address_dereference : t
 
-val pil_constant_address_dereference : t
-
 val create_intent_from_uri : t
 
 val cross_site_scripting : t
 
 val dangling_pointer_dereference : t
-
-val uninitialized_dereference : t
 
 val dangling_pointer_dereference_maybe : t
 
@@ -268,11 +264,7 @@ val null_dereference : t
 
 val nullptr_dereference : t
 
-val pil_nullptr_dereference : t
-
 val optional_empty_access : t
-
-val pil_optional_empty_access : t
 
 val parameter_not_null_checked : t
 
@@ -283,8 +275,6 @@ val precondition_not_met : t
 val premature_nil_termination : t
 
 val pulse_memory_leak : t
-
-val pil_memory_leak : t
 
 val pure_function : t
 
@@ -305,8 +295,6 @@ val sql_injection : t
 val sql_injection_risk : t
 
 val stack_variable_address_escape : t
-
-val pil_stack_variable_address_escape : t
 
 val starvation : t
 
@@ -332,12 +320,6 @@ val use_after_free : t
 
 val use_after_lifetime : t
 
-val pil_use_after_delete : t
-
-val pil_use_after_free : t
-
-val pil_use_after_lifetime : t
-  
 val untrusted_buffer_access : t
 
 val untrusted_deserialization : t
@@ -361,8 +343,6 @@ val untrusted_variable_length_array : t
 val user_controlled_sql_risk : t
 
 val vector_invalidation : t
-
-val pil_vector_invalidation : t
 
 val weak_self_in_noescape_block : t
 
