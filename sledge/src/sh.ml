@@ -595,9 +595,13 @@ let rec is_empty q =
 
 let rec pure_approx q =
   Formula.andN
-    ( q.pure
-    :: List.map q.djns ~f:(fun djn ->
-           Formula.orN (List.map djn ~f:pure_approx) ) )
+    ( [q.pure]
+    |> fun init ->
+    List.fold ~init q.heap ~f:(fun p seg ->
+        Formula.dq Term.zero seg.loc :: p )
+    |> fun init ->
+    List.fold ~init q.djns ~f:(fun p djn ->
+        Formula.orN (List.map djn ~f:pure_approx) :: p ) )
 
 let pure_approx q =
   [%Trace.call fun {pf} -> pf "%a" pp q]
