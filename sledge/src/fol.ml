@@ -1173,16 +1173,10 @@ let v_map_ses : (var -> var) -> Ses.Var.t -> Ses.Var.t =
   if v' == v then x else v_to_ses v'
 
 let ses_map : (Ses.Term.t -> Ses.Term.t) -> exp -> exp =
- fun f x ->
-  let e = to_ses x in
-  let e' = f e in
-  if e' == e then x else of_ses e'
+ fun f x -> of_ses (f (to_ses x))
 
 let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
- fun f x ->
-  let e = f_to_ses x in
-  let e' = f e in
-  if e' == e then x else f_of_ses e'
+ fun f x -> f_of_ses (f (f_to_ses x))
 
 (*
  * Contexts
