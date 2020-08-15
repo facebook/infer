@@ -230,11 +230,6 @@ module Context : sig
       relation, where [e'] and its subterms are expressed in terms of the
       relation's canonical representatives of each equivalence class. *)
 
-  val difference : t -> Term.t -> Term.t -> Z.t option
-  (** The difference as an offset. [difference r a b = Some k] if [r]
-      implies [a = b+k], or [None] if [a] and [b] are not equal up to an
-      integer offset. *)
-
   val fold_terms : init:'a -> t -> f:('a -> Term.t -> 'a) -> 'a
 
   (** Solution Substitutions *)

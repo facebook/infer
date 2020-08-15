@@ -1220,7 +1220,6 @@ module Context = struct
     Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
 
   let normalize x e = ses_map (Ses.Equality.normalize x) e
-  let difference x e f = Term.d_int (normalize x (Term.sub e f))
 
   let fold_terms ~init x ~f =
     Ses.Equality.fold_terms x ~init ~f:(fun s e -> f s (of_ses e))

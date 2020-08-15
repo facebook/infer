@@ -57,6 +57,7 @@ let%test_module _ =
     (* let and_eq a b r = and_formula wrt (Formula.eq a b) r |> snd *)
     (* let and_ r s = and_ wrt r s |> snd *)
     let or_ r s = orN wrt [r; s] |> snd
+    let difference x e f = Term.d_int (Context.normalize x (Term.sub e f))
     let r0 = true_
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))

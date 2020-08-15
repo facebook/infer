@@ -144,6 +144,7 @@ let fresh_var name vs zs ~wrt =
   let v = Term.var v in
   (v, vs, zs, wrt)
 
+let difference x e f = Term.d_int (Context.normalize x (Term.sub e f))
 let excise (k : Trace.pf -> _) = [%Trace.infok k]
 let trace (k : Trace.pf -> _) = [%Trace.infok k]
 
@@ -555,7 +556,7 @@ let excise_seg ({sub} as goal) msg ssg =
         (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
-  let* k_l = Context.difference sub.ctx k l in
+  let* k_l = difference sub.ctx k l in
   if
     (not (Context.implies sub.ctx (Formula.eq b b')))
     || not (Context.implies sub.ctx (Formula.eq m m'))
@@ -572,11 +573,11 @@ let excise_seg ({sub} as goal) msg ssg =
     | Neg -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.ctx ko ln in
+        let* ko_ln = difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0 so k+o < l+n *)
         | Neg -> (
-            let* l_ko = Context.difference sub.ctx l ko in
+            let* l_ko = difference sub.ctx l ko in
             match Int.sign (Z.sign l_ko) with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
@@ -594,7 +595,7 @@ let excise_seg ({sub} as goal) msg ssg =
         )
     (* k-l = 0 so k = l *)
     | Zero -> (
-        let* o_n = Context.difference sub.ctx o n in
+        let* o_n = difference sub.ctx o n in
         match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
@@ -609,7 +610,7 @@ let excise_seg ({sub} as goal) msg ssg =
     | Pos -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.ctx ko ln in
+        let* ko_ln = difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
@@ -619,7 +620,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | Zero -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
         | Pos -> (
-            let* k_ln = Context.difference sub.ctx k ln in
+            let* k_ln = difference sub.ctx k ln in
             match Int.sign (Z.sign k_ln) with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
