@@ -217,20 +217,13 @@ let rec pp_ ?var_strength vs parent_xs parent_ctx fs
     if not (Var.Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;
   if not (Var.Set.is_empty xs_d_vs) then
     Format.fprintf fs "@<2>∃ @[%a@] .@ " (Var.Set.ppx x) xs_d_vs ;
-  let clss = Context.diff_classes ctx parent_ctx in
-  let first = Term.Map.is_empty clss in
-  if not first then Format.fprintf fs "  " ;
-  Context.ppx_classes x fs clss ;
-  let pure =
-    if Option.is_none var_strength then [pure]
-    else
-      let pure' = Context.normalizef ctx pure in
-      if Formula.is_true pure' then [] else [pure']
+  let first =
+    if Option.is_some var_strength then
+      Context.ppx_diff x fs parent_ctx pure ctx
+    else (
+      Format.fprintf fs "@[  %a@]" Formula.pp pure ;
+      false )
   in
-  List.pp
-    ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
-    "@ @<2>∧ " (Formula.ppx x) fs pure ~suf:"@]" ;
-  let first = first && List.is_empty pure in
   if List.is_empty heap then
     Format.fprintf fs
       ( if first then if List.is_empty djns then "  emp" else ""
@@ -265,8 +258,13 @@ let pp_diff_eq ?(us = Var.Set.empty) ?(xs = Var.Set.empty) ctx fs q =
   pp_ ~var_strength:(var_strength ~xs q) us xs ctx fs q
 
 let pp fs q = pp_diff_eq Context.true_ fs q
-let pp_djn fs d = pp_djn Var.Set.empty Var.Set.empty Context.true_ fs d
-let pp_raw fs q = pp_ Var.Set.empty Var.Set.empty Context.true_ fs q
+
+let pp_djn fs d =
+  pp_djn ?var_strength:None Var.Set.empty Var.Set.empty Context.true_ fs d
+
+let pp_raw fs q =
+  pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.true_ fs q
+
 let fv_seg seg = fold_vars_seg seg ~f:Var.Set.add ~init:Var.Set.empty
 
 let fv ?ignore_ctx q =

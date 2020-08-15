@@ -180,19 +180,12 @@ end
 (** Inference System *)
 module Context : sig
   type t [@@deriving sexp]
-  type classes = Term.t list Term.Map.t
-
-  val classes : t -> classes
-  (** [classes r] maps each equivalence class representative to the other
-      terms [r] proves equal to it. *)
-
-  val diff_classes : t -> t -> classes
-  (** [diff_classes r s] is the equality classes of [r] omitting equalities
-      in [s]. *)
 
   val pp : t pp
   val pp_classes : t pp
-  val ppx_classes : Var.strength -> classes pp
+
+  val ppx_diff :
+    Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
 
   include Invariant.S with type t := t
 
@@ -236,8 +229,6 @@ module Context : sig
   (** Normalize a term [e] to [e'] such that [e = e'] is implied by the
       relation, where [e'] and its subterms are expressed in terms of the
       relation's canonical representatives of each equivalence class. *)
-
-  val normalizef : t -> Formula.t -> Formula.t
 
   val difference : t -> Term.t -> Term.t -> Z.t option
   (** The difference as an offset. [difference r a b = Some k] if [r]

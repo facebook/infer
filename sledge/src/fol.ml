@@ -1220,7 +1220,6 @@ module Context = struct
     Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
 
   let normalize x e = ses_map (Ses.Equality.normalize x) e
-  let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
   let difference x e f = Term.d_int (normalize x (Term.sub e f))
 
   let fold_terms ~init x ~f =
@@ -1229,8 +1228,6 @@ module Context = struct
   (* Classes *)
 
   let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
-
-  type classes = exp list Term.Map.t
 
   let classes_of_ses clss =
     Ses.Term.Map.fold clss ~init:Term.Map.empty
@@ -1260,6 +1257,23 @@ module Context = struct
       fs (Term.Map.to_alist clss)
 
   let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
+
+  let ppx_diff var_strength fs parent_ctx fml ctx =
+    let clss = diff_classes ctx parent_ctx in
+    let first = Term.Map.is_empty clss in
+    if not first then Format.fprintf fs "  " ;
+    ppx_classes var_strength fs clss ;
+    let fml =
+      let normalizef x e = f_ses_map (Ses.Equality.normalize x) e in
+      let fml' = normalizef ctx fml in
+      if Formula.is_true fml' then [] else [fml']
+    in
+    List.pp
+      ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
+      "@ @<2>∧ "
+      (Formula.ppx var_strength)
+      fs fml ~suf:"@]" ;
+    first && List.is_empty fml
 
   (* Substs *)
 
@@ -1294,7 +1308,6 @@ module Context = struct
 
   type call =
     | Normalize of t * exp
-    | Normalizef of t * fml
     | And_formula of Var.Set.t * fml * t
     | And_ of Var.Set.t * t * t
     | OrN of Var.Set.t * t list
@@ -1306,7 +1319,6 @@ module Context = struct
   let replay c =
     match call_of_sexp (Sexp.of_string c) with
     | Normalize (r, e) -> normalize r e |> ignore
-    | Normalizef (r, e) -> normalizef r e |> ignore
     | And_formula (us, e, r) -> and_formula us e r |> ignore
     | And_ (us, r, s) -> and_ us r s |> ignore
     | OrN (us, rs) -> orN us rs |> ignore
@@ -1348,11 +1360,6 @@ module Context = struct
 
   let normalize r e =
     wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
-
-  let normalizef r e =
-    wrap normalize_tmr
-      (fun () -> normalizef r e)
-      (fun () -> Normalizef (r, e))
 
   let and_formula us e r =
     wrap and_formula_tmr
