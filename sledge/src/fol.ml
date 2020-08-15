@@ -615,7 +615,7 @@ let fold_vars ~init e ~f =
   | `Fml p -> fold_vars_f ~f ~init p
   | #cnd as c -> fold_vars_c ~f ~init c
 
-(** map_vars *)
+(** map *)
 
 let map1 f e cons x =
   let x' = f x in
@@ -636,6 +636,29 @@ let mapN f e cons xs =
   let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
+(** map_trms *)
+
+let rec map_trms_f ~f b =
+  match b with
+  | Tt | Ff -> b
+  | Eq (x, y) -> map2 f b _Eq x y
+  | Dq (x, y) -> map2 f b _Dq x y
+  | Eq0 x -> map1 f b _Eq0 x
+  | Dq0 x -> map1 f b _Dq0 x
+  | Gt0 x -> map1 f b _Gt0 x
+  | Ge0 x -> map1 f b _Ge0 x
+  | Lt0 x -> map1 f b _Lt0 x
+  | Le0 x -> map1 f b _Le0 x
+  | And (x, y) -> map2 (map_trms_f ~f) b _And x y
+  | Or (x, y) -> map2 (map_trms_f ~f) b _Or x y
+  | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
+  | Xor (x, y) -> map2 (map_trms_f ~f) b _Xor x y
+  | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
+  | UPosLit (p, x) -> map1 f b (_UPosLit p) x
+  | UNegLit (p, x) -> map1 f b (_UNegLit p) x
+
+(** map_vars *)
+
 let rec map_vars_t ~f e =
   match e with
   | Var _ as v -> (f (Var.of_ v) : var :> trm)
@@ -654,24 +677,7 @@ let rec map_vars_t ~f e =
   | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
   | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
 
-let rec map_vars_f ~f e =
-  match e with
-  | Tt | Ff -> e
-  | Eq (x, y) -> map2 (map_vars_t ~f) e _Eq x y
-  | Dq (x, y) -> map2 (map_vars_t ~f) e _Dq x y
-  | Eq0 x -> map1 (map_vars_t ~f) e _Eq0 x
-  | Dq0 x -> map1 (map_vars_t ~f) e _Dq0 x
-  | Gt0 x -> map1 (map_vars_t ~f) e _Gt0 x
-  | Ge0 x -> map1 (map_vars_t ~f) e _Ge0 x
-  | Lt0 x -> map1 (map_vars_t ~f) e _Lt0 x
-  | Le0 x -> map1 (map_vars_t ~f) e _Le0 x
-  | And (x, y) -> map2 (map_vars_f ~f) e _And x y
-  | Or (x, y) -> map2 (map_vars_f ~f) e _Or x y
-  | Iff (x, y) -> map2 (map_vars_f ~f) e _Iff x y
-  | Xor (x, y) -> map2 (map_vars_f ~f) e _Xor x y
-  | Cond {cnd; pos; neg} -> map3 (map_vars_f ~f) e _Cond cnd pos neg
-  | UPosLit (p, x) -> map1 (map_vars_t ~f) e (_UPosLit p) x
-  | UNegLit (p, x) -> map1 (map_vars_t ~f) e (_UNegLit p) x
+let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
 
 let rec map_vars_c ~f c =
   match c with
@@ -1030,6 +1036,32 @@ module Formula = struct
   (** Transform *)
 
   let map_vars = map_vars_f
+
+  let rec map_terms ~f b =
+    let lift_map1 : (exp -> exp) -> t -> (trm -> t) -> trm -> t =
+     fun f b cons x -> map1 f b (ap1f cons) (`Trm x)
+    in
+    let lift_map2 :
+        (exp -> exp) -> t -> (trm -> trm -> t) -> trm -> trm -> t =
+     fun f b cons x y -> map2 f b (ap2f cons) (`Trm x) (`Trm y)
+    in
+    match b with
+    | Tt | Ff -> b
+    | Eq (x, y) -> lift_map2 f b _Eq x y
+    | Dq (x, y) -> lift_map2 f b _Dq x y
+    | Eq0 x -> lift_map1 f b _Eq0 x
+    | Dq0 x -> lift_map1 f b _Dq0 x
+    | Gt0 x -> lift_map1 f b _Gt0 x
+    | Ge0 x -> lift_map1 f b _Ge0 x
+    | Lt0 x -> lift_map1 f b _Lt0 x
+    | Le0 x -> lift_map1 f b _Le0 x
+    | And (x, y) -> map2 (map_terms ~f) b _And x y
+    | Or (x, y) -> map2 (map_terms ~f) b _Or x y
+    | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
+    | Xor (x, y) -> map2 (map_terms ~f) b _Xor x y
+    | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
+    | UPosLit (p, x) -> lift_map1 f b (_UPosLit p) x
+    | UNegLit (p, x) -> lift_map1 f b (_UNegLit p) x
 
   let fold_map_vars ~init e ~f =
     let s = ref init in
@@ -1392,7 +1424,6 @@ module Context = struct
           f ~key:(of_ses key) ~data:(of_ses data) )
 
     let subst s = ses_map (Ses.Equality.Subst.subst s)
-    let substf s = f_ses_map (Ses.Equality.Subst.subst s)
 
     let partition_valid vs s =
       let t, ks, u = Ses.Equality.Subst.partition_valid (vs_to_ses vs) s in

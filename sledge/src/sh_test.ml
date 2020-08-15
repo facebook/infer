@@ -146,7 +146,7 @@ let%test_module _ =
         {|
         ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
     
-          (%y_7^ = (-1 + %y_7)) ∧ emp
+          ((%y_7^ = (-1 + %y_7)) ∧ tt) ∧ emp
 
           (-1 + %y_7) = %y_7^ ∧ emp |}]
 
@@ -175,7 +175,9 @@ let%test_module _ =
           ∨ (∃ %b_2 .   (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩)) ∧ emp)
           )
 
-          tt ∧ emp * ( (  tt ∧ emp) ∨ (  (%x_6 ≠ 0) ∧ emp) )
+          ((tt ∧ (tt ∧ tt)) ∧ tt)
+        ∧ emp
+        * ( (  tt ∧ emp) ∨ (  (%x_6 ≠ 0) ∧ emp) )
 
           ( (  emp) ∨ (  (%x_6 ≠ 0) ∧ emp) ) |}]
   end )

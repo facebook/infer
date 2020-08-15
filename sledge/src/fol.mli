@@ -174,6 +174,7 @@ and Formula : sig
 
   (** Transform *)
 
+  val map_terms : f:(Term.t -> Term.t) -> t -> t
   val map_vars : f:(Var.t -> Var.t) -> t -> t
 
   val fold_map_vars :
@@ -253,8 +254,6 @@ module Context : sig
 
     val subst : t -> Term.t -> Term.t
     (** Apply a substitution recursively to subterms. *)
-
-    val substf : t -> Formula.t -> Formula.t
 
     val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
     (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks

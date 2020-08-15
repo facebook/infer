@@ -638,7 +638,7 @@ let rec norm_ s q =
   ;
   let q =
     map q ~f_sjn:(norm_ s) ~f_ctx:Fn.id ~f_trm:(Context.Subst.subst s)
-      ~f_fml:(Context.Subst.substf s)
+      ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
   in
   let xs, ctx = Context.apply_subst (Var.Set.union q.us q.xs) s q.ctx in
   exists_fresh xs {q with ctx}
