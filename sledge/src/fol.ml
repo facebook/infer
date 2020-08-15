@@ -1113,7 +1113,14 @@ and of_ses : Ses.Term.t -> exp =
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero
     | Some (e, q, sum) ->
-        let mul e q = mulq q (of_ses e) in
+        let mul e q =
+          if Q.equal Q.one q then of_ses e
+          else
+            match of_ses e with
+            | `Trm (Z z) -> rational (Q.mul q (Q.of_z z))
+            | `Trm (Q r) -> rational (Q.mul q r)
+            | t -> mulq q t
+        in
         Ses.Term.Qset.fold sum ~init:(mul e q) ~f:(fun e q s ->
             add (mul e q) s ) )
   | Mul prod -> (
