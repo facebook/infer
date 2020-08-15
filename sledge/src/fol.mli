@@ -185,7 +185,8 @@ and Formula : sig
   val disjuncts : t -> t list
 end
 
-(** Inference System *)
+(** Sets of assumptions, interpreted as conjunction, plus reasoning about
+    their logical consequences. *)
 module Context : sig
   type t [@@deriving sexp]
 
@@ -197,43 +198,45 @@ module Context : sig
 
   include Invariant.S with type t := t
 
-  val true_ : t
-  (** The diagonal relation, which only equates each term with itself. *)
+  val empty : t
+  (** The empty context of assumptions. *)
 
-  val and_formula : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
-  (** Conjoin a (Boolean) term to a relation. *)
+  val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
+  (** Add (that is, conjoin) an assumption to a context. *)
 
-  val and_ : Var.Set.t -> t -> t -> Var.Set.t * t
-  (** Conjunction. *)
+  val union : Var.Set.t -> t -> t -> Var.Set.t * t
+  (** Union (that is, conjoin) two contexts of assumptions. *)
 
-  val orN : Var.Set.t -> t list -> Var.Set.t * t
-  (** Nary disjunction. *)
+  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  (** Intersect (that is, disjoin) contexts of assumptions. *)
 
   val rename : t -> Var.Subst.t -> t
-  (** Apply a renaming substitution to the relation. *)
+  (** Apply a renaming substitution to the context. *)
 
-  val is_true : t -> bool
-  (** Test if the relation is diagonal. *)
+  val is_empty : t -> bool
+  (** Test if the context of assumptions is empty. *)
 
-  val is_false : t -> bool
-  (** Test if the relation is empty / inconsistent. *)
+  val is_unsat : t -> bool
+  (** Test if the context of assumptions is inconsistent. *)
 
   val implies : t -> Formula.t -> bool
-  (** [implies x f] holds only if [f] is a logical consequence of [x]. This
-      only checks if [f] is valid in the current state of [x], without doing
-      any further logical reasoning or propagation. *)
+  (** Holds only if a formula is a logical consequence of a context of
+      assumptions. This only checks if the formula is valid in the current
+      state of the context, without doing any further logical reasoning or
+      propagation. *)
 
   val refutes : t -> Formula.t -> bool
-  (** [refutes x f] holds only if [f] is inconsistent with [x]. *)
+  (** Holds only if a formula is inconsistent with a context of assumptions,
+      that is, conjoining the formula to the assumptions is unsatisfiable. *)
 
   val class_of : t -> Term.t -> Term.t list
-  (** Equivalence class of [e]: all the terms [f] in the relation such that
-      [e = f] is implied by the relation. *)
+  (** Equivalence class of [e]: all the terms [f] in the context such that
+      [e = f] is implied by the assumptions. *)
 
   val normalize : t -> Term.t -> Term.t
   (** Normalize a term [e] to [e'] such that [e = e'] is implied by the
-      relation, where [e'] and its subterms are expressed in terms of the
-      relation's canonical representatives of each equivalence class. *)
+      assumptions, where [e'] and its subterms are expressed in terms of the
+      canonical representatives of each equivalence class. *)
 
   val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
   (** Enumerate the variables occurring in the terms of the context. *)
@@ -263,23 +266,24 @@ module Context : sig
   end
 
   val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
-  (** Relation induced by applying a substitution to a set of equations
-      generating the argument relation. *)
+  (** Context induced by applying a solution substitution to a set of
+      equations generating the argument context. *)
 
   val solve_for_vars : Var.Set.t list -> t -> Subst.t
-  (** [solve_for_vars vss r] is a solution substitution that is entailed by
-      [r] and consists of oriented equalities [x ↦ e] that map terms [x]
+  (** [solve_for_vars vss x] is a solution substitution that is implied by
+      [x] and consists of oriented equalities [v ↦ e] that map terms [v]
       with free variables contained in (the union of) a prefix [uss] of
       [vss] to terms [e] with free variables contained in as short a prefix
       of [uss] as possible. *)
 
   val elim : Var.Set.t -> t -> t
-  (** Weaken relation by removing oriented equations [k ↦ _] for [k] in
-      [ks]. *)
+  (** [elim ks x] is [x] weakened by removing oriented equations [k ↦ _]
+      for [k] in [ks]. *)
 
-  (* Replay debugging *)
+  (**/**)
 
   val replay : string -> unit
+  (** Replay debugging *)
 end
 
 (** Convert from Llair *)

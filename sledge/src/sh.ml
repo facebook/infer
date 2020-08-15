@@ -32,7 +32,7 @@ type t = starjunction [@@deriving compare, equal, sexp]
 let emp =
   { us= Var.Set.empty
   ; xs= Var.Set.empty
-  ; ctx= Context.true_
+  ; ctx= Context.empty
   ; pure= Formula.tt
   ; heap= []
   ; djns= [] }
@@ -256,13 +256,13 @@ and pp_djn ?var_strength vs xs ctx fs = function
 let pp_diff_eq ?(us = Var.Set.empty) ?(xs = Var.Set.empty) ctx fs q =
   pp_ ~var_strength:(var_strength ~xs q) us xs ctx fs q
 
-let pp fs q = pp_diff_eq Context.true_ fs q
+let pp fs q = pp_diff_eq Context.empty fs q
 
 let pp_djn fs d =
-  pp_djn ?var_strength:None Var.Set.empty Var.Set.empty Context.true_ fs d
+  pp_djn ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs d
 
 let pp_raw fs q =
-  pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.true_ fs q
+  pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs q
 
 let fv_seg seg = fold_vars_seg seg ~f:Var.Set.add ~init:Var.Set.empty
 
@@ -292,10 +292,10 @@ let rec invariant q =
     Context.invariant ctx ;
     ( match djns with
     | [[]] ->
-        assert (Context.is_true ctx) ;
+        assert (Context.is_empty ctx) ;
         assert (Formula.is_true pure) ;
         assert (List.is_empty heap)
-    | _ -> assert (not (Context.is_false ctx)) ) ;
+    | _ -> assert (not (Context.is_unsat ctx)) ) ;
     invariant_pure pure ;
     List.iter heap ~f:invariant_seg ;
     List.iter djns ~f:(fun djn ->
@@ -430,8 +430,8 @@ let elim_exists xs q =
 (** conjoin an FOL context assuming vocabulary is compatible *)
 let and_ctx_ ctx q =
   assert (Var.Set.is_subset (Context.fv ctx) ~of_:q.us) ;
-  let xs, ctx = Context.and_ (Var.Set.union q.us q.xs) q.ctx ctx in
-  if Context.is_false ctx then false_ q.us else exists_fresh xs {q with ctx}
+  let xs, ctx = Context.union (Var.Set.union q.us q.xs) q.ctx ctx in
+  if Context.is_unsat ctx then false_ q.us else exists_fresh xs {q with ctx}
 
 let and_ctx ctx q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Context.pp ctx pp q]
@@ -451,11 +451,11 @@ let star q1 q2 =
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
       false_ (Var.Set.union q1.us q2.us)
   | {us= _; xs= _; ctx; pure; heap= []; djns= []}, _
-    when Context.is_true ctx && Formula.is_true pure ->
+    when Context.is_empty ctx && Formula.is_true pure ->
       let us = Var.Set.union q1.us q2.us in
       if us == q2.us then q2 else {q2 with us}
   | _, {us= _; xs= _; ctx; pure; heap= []; djns= []}
-    when Context.is_true ctx && Formula.is_true pure ->
+    when Context.is_empty ctx && Formula.is_true pure ->
       let us = Var.Set.union q1.us q2.us in
       if us == q1.us then q1 else {q1 with us}
   | _ ->
@@ -466,9 +466,9 @@ let star q1 q2 =
       let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
       assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
       let xs, ctx =
-        Context.and_ (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
+        Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
       in
-      if Context.is_false ctx then false_ us
+      if Context.is_unsat ctx then false_ us
       else
         exists_fresh xs
           { us
@@ -505,7 +505,7 @@ let or_ q1 q2 =
   | _ ->
       { us= Var.Set.union q1.us q2.us
       ; xs= Var.Set.empty
-      ; ctx= Context.true_
+      ; ctx= Context.empty
       ; pure= Formula.tt
       ; heap= []
       ; djns= [[q1; q2]] } )
@@ -526,8 +526,8 @@ let pure (p : Formula.t) =
   List.fold (Formula.disjuncts p) ~init:(false_ Var.Set.empty)
     ~f:(fun q p ->
       let us = Formula.fv p in
-      let xs, ctx = Context.(and_formula us p true_) in
-      if Context.is_false ctx then false_ us
+      let xs, ctx = Context.add us p Context.empty in
+      if Context.is_unsat ctx then false_ us
       else or_ q (exists_fresh xs {emp with us; ctx; pure= p}) )
   |>
   [%Trace.retn fun {pf} q ->
@@ -701,7 +701,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
                let dj = propagate_context_ ancestor_vs ancestor_ctx dj in
                (dj.ctx, dj) )
          in
-         let new_xs, djn_ctx = Context.orN ancestor_vs dj_ctxs in
+         let new_xs, djn_ctx = Context.interN ancestor_vs dj_ctxs in
          (* hoist xs appearing in disjunction's context *)
          let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
          let djn = List.map ~f:(elim_exists djn_xs) djn in
@@ -787,7 +787,7 @@ let simplify q =
   [%Trace.call fun {pf} -> pf "%a" pp_raw q]
   ;
   let q = freshen_nested_xs q in
-  let q = propagate_context Var.Set.empty Context.true_ q in
+  let q = propagate_context Var.Set.empty Context.empty q in
   let q = simplify_ q.us [] q in
   q
   |>

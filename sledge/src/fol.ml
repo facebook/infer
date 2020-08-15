@@ -1257,23 +1257,23 @@ module Context = struct
 
   let pp = Ses.Equality.pp
   let invariant = Ses.Equality.invariant
-  let true_ = Ses.Equality.true_
+  let empty = Ses.Equality.true_
 
-  let and_formula vs f x =
+  let add vs f x =
     let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
     (vs_of_ses vs', x')
 
-  let and_ vs x y =
+  let union vs x y =
     let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
     (vs_of_ses vs', z)
 
-  let orN vs xs =
+  let interN vs xs =
     let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
     (vs_of_ses vs', z)
 
   let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
-  let is_true x = Ses.Equality.is_true x
-  let is_false x = Ses.Equality.is_false x
+  let is_empty x = Ses.Equality.is_true x
+  let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
 
   let refutes x b =
@@ -1369,9 +1369,9 @@ module Context = struct
 
   type call =
     | Normalize of t * exp
-    | And_formula of Var.Set.t * fml * t
-    | And_ of Var.Set.t * t * t
-    | OrN of Var.Set.t * t list
+    | Add of Var.Set.t * fml * t
+    | Union of Var.Set.t * t * t
+    | InterN of Var.Set.t * t list
     | Rename of t * Var.Subst.t
     | Apply_subst of Var.Set.t * Subst.t * t
     | Solve_for_vars of Var.Set.t list * t
@@ -1380,9 +1380,9 @@ module Context = struct
   let replay c =
     match call_of_sexp (Sexp.of_string c) with
     | Normalize (r, e) -> normalize r e |> ignore
-    | And_formula (us, e, r) -> and_formula us e r |> ignore
-    | And_ (us, r, s) -> and_ us r s |> ignore
-    | OrN (us, rs) -> orN us rs |> ignore
+    | Add (us, e, r) -> add us e r |> ignore
+    | Union (us, r, s) -> union us r s |> ignore
+    | InterN (us, rs) -> interN us rs |> ignore
     | Rename (r, s) -> rename r s |> ignore
     | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
     | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
@@ -1412,9 +1412,9 @@ module Context = struct
       try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
 
   let normalize_tmr = Timer.create "normalize" ~at_exit:report
-  let and_formula_tmr = Timer.create "and_formula" ~at_exit:report
-  let and_tmr = Timer.create "and_" ~at_exit:report
-  let orN_tmr = Timer.create "orN" ~at_exit:report
+  let add_tmr = Timer.create "add" ~at_exit:report
+  let uniontmr = Timer.create "union" ~at_exit:report
+  let interN_tmr = Timer.create "interN" ~at_exit:report
   let rename_tmr = Timer.create "rename" ~at_exit:report
   let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
   let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
@@ -1422,15 +1422,14 @@ module Context = struct
   let normalize r e =
     wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
-  let and_formula us e r =
-    wrap and_formula_tmr
-      (fun () -> and_formula us e r)
-      (fun () -> And_formula (us, e, r))
+  let add us e r =
+    wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
 
-  let and_ us r s =
-    wrap and_tmr (fun () -> and_ us r s) (fun () -> And_ (us, r, s))
+  let union us r s =
+    wrap uniontmr (fun () -> union us r s) (fun () -> Union (us, r, s))
 
-  let orN us rs = wrap orN_tmr (fun () -> orN us rs) (fun () -> OrN (us, rs))
+  let interN us rs =
+    wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
 
   let rename r s =
     wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))

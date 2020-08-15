@@ -49,16 +49,16 @@ let%test_module _ =
     (* let g = Term.mul u *)
 
     let of_eqs l =
-      List.fold ~init:(wrt, true_)
-        ~f:(fun (us, r) (a, b) -> and_formula us (Formula.eq a b) r)
+      List.fold ~init:(wrt, empty)
+        ~f:(fun (us, r) (a, b) -> add us (Formula.eq a b) r)
         l
       |> snd
 
     (* let and_eq a b r = and_formula wrt (Formula.eq a b) r |> snd *)
     (* let and_ r s = and_ wrt r s |> snd *)
-    let or_ r s = orN wrt [r; s] |> snd
+    let or_ r s = interN wrt [r; s] |> snd
     let difference x e f = Term.d_int (Context.normalize x (Term.sub e f))
-    let r0 = true_
+    let r0 = empty
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
