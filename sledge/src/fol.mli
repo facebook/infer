@@ -204,9 +204,6 @@ module Context : sig
   val rename : t -> Var.Subst.t -> t
   (** Apply a renaming substitution to the relation. *)
 
-  val fv : t -> Var.Set.t
-  (** The variables occurring in the terms of the relation. *)
-
   val is_true : t -> bool
   (** Test if the relation is diagonal. *)
 
@@ -230,7 +227,11 @@ module Context : sig
       relation, where [e'] and its subterms are expressed in terms of the
       relation's canonical representatives of each equivalence class. *)
 
-  val fold_terms : init:'a -> t -> f:('a -> Term.t -> 'a) -> 'a
+  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  (** Enumerate the variables occurring in the terms of the context. *)
+
+  val fv : t -> Var.Set.t
+  (** The variables occurring in the terms of the context. *)
 
   (** Solution Substitutions *)
   module Subst : sig

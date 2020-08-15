@@ -1211,7 +1211,6 @@ module Context = struct
     (vs_of_ses vs', z)
 
   let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
-  let fv x = vs_of_ses (Ses.Equality.fv x)
   let is_true x = Ses.Equality.is_true x
   let is_false x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
@@ -1221,8 +1220,10 @@ module Context = struct
 
   let normalize x e = ses_map (Ses.Equality.normalize x) e
 
-  let fold_terms ~init x ~f =
-    Ses.Equality.fold_terms x ~init ~f:(fun s e -> f s (of_ses e))
+  let fold_vars ~init x ~f =
+    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
+
+  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
   (* Classes *)
 

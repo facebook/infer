@@ -696,8 +696,6 @@ let fold_terms r ~init ~f =
 let fold_vars r ~init ~f =
   fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
-
 (** Existential Witnessing and Elimination *)
 
 let subst_invariant us s0 s =

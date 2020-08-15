@@ -53,6 +53,7 @@ let%test_module _ =
     let and_eq a b r = and_eq wrt a b r |> snd
     let and_ r s = and_ wrt r s |> snd
     let or_ r s = or_ wrt r s |> snd
+    let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
     (* tests *)
 

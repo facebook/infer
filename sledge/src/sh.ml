@@ -81,8 +81,7 @@ let fold_vars_stem ?ignore_ctx {us= _; xs= _; ctx; pure; heap; djns= _}
   |> fun init ->
   Term.fold_vars ~f ~init (Formula.inject pure)
   |> fun init ->
-  if Option.is_some ignore_ctx then init
-  else Context.fold_terms ~init ctx ~f:(fun init -> Term.fold_vars ~f ~init)
+  if Option.is_some ignore_ctx then init else Context.fold_vars ~f ~init ctx
 
 let fold_vars ?ignore_ctx fold_vars q ~init ~f =
   fold_vars_stem ?ignore_ctx ~init ~f q

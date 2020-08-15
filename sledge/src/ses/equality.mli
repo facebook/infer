@@ -47,9 +47,6 @@ val orN : Var.Set.t -> t list -> Var.Set.t * t
 val rename : t -> (Var.t -> Var.t) -> t
 (** Apply a renaming substitution to the relation. *)
 
-val fv : t -> Var.Set.t
-(** The variables occurring in the terms of the relation. *)
-
 val is_true : t -> bool
 (** Test if the relation is diagonal. *)
 
@@ -68,7 +65,7 @@ val normalize : t -> Term.t -> Term.t
     relation, where [e'] and its subterms are expressed in terms of the
     relation's canonical representatives of each equivalence class. *)
 
-val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
+val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 
 (** Solution Substitutions *)
 module Subst : sig
