@@ -128,41 +128,85 @@ end
 (** Formulas, denoting sets of structures, built from propositional
     variables, applications of predicate symbols from various theories, and
     first-order logic connectives. *)
-type fml =
-  | Tt
-  | Ff
-  | Eq of trm * trm
-  | Dq of trm * trm
-  | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
-  | Dq0 of trm  (** [Dq0(x)] iff x ≠ 0 *)
-  | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
-  | Ge0 of trm  (** [Ge0(x)] iff x ≥ 0 *)
-  | Lt0 of trm  (** [Lt0(x)] iff x < 0 *)
-  | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
-  | And of fml * fml
-  | Or of fml * fml
-  | Iff of fml * fml
-  | Xor of fml * fml
-  | Cond of {cnd: fml; pos: fml; neg: fml}
-  | UPosLit of Predsym.t * trm
-  | UNegLit of Predsym.t * trm
-[@@deriving compare, equal, sexp]
+module Fml : sig
+  type fml = private
+    | Tt
+    | Ff
+    | Eq of trm * trm
+    | Dq of trm * trm
+    | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
+    | Dq0 of trm  (** [Dq0(x)] iff x ≠ 0 *)
+    | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
+    | Ge0 of trm  (** [Ge0(x)] iff x ≥ 0 *)
+    | Lt0 of trm  (** [Lt0(x)] iff x < 0 *)
+    | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
+    | And of fml * fml
+    | Or of fml * fml
+    | Iff of fml * fml
+    | Xor of fml * fml
+    | Cond of {cnd: fml; pos: fml; neg: fml}
+    | UPosLit of Predsym.t * trm
+    | UNegLit of Predsym.t * trm
+  [@@deriving compare, equal, sexp]
 
-let _Eq x y = Eq (x, y)
-let _Dq x y = Dq (x, y)
-let _Eq0 x = Eq0 x
-let _Dq0 x = Dq0 x
-let _Gt0 x = Gt0 x
-let _Ge0 x = Ge0 x
-let _Lt0 x = Lt0 x
-let _Le0 x = Le0 x
-let _And p q = And (p, q)
-let _Or p q = Or (p, q)
-let _Iff p q = Iff (p, q)
-let _Xor p q = Xor (p, q)
-let _Cond cnd pos neg = Cond {cnd; pos; neg}
-let _UPosLit p x = UPosLit (p, x)
-let _UNegLit p x = UNegLit (p, x)
+  val _Tt : fml
+  val _Ff : fml
+  val _Eq : trm -> trm -> fml
+  val _Dq : trm -> trm -> fml
+  val _Eq0 : trm -> fml
+  val _Dq0 : trm -> fml
+  val _Gt0 : trm -> fml
+  val _Ge0 : trm -> fml
+  val _Lt0 : trm -> fml
+  val _Le0 : trm -> fml
+  val _And : fml -> fml -> fml
+  val _Or : fml -> fml -> fml
+  val _Iff : fml -> fml -> fml
+  val _Xor : fml -> fml -> fml
+  val _Cond : fml -> fml -> fml -> fml
+  val _UPosLit : Predsym.t -> trm -> fml
+  val _UNegLit : Predsym.t -> trm -> fml
+end = struct
+  type fml =
+    | Tt
+    | Ff
+    | Eq of trm * trm
+    | Dq of trm * trm
+    | Eq0 of trm
+    | Dq0 of trm
+    | Gt0 of trm
+    | Ge0 of trm
+    | Lt0 of trm
+    | Le0 of trm
+    | And of fml * fml
+    | Or of fml * fml
+    | Iff of fml * fml
+    | Xor of fml * fml
+    | Cond of {cnd: fml; pos: fml; neg: fml}
+    | UPosLit of Predsym.t * trm
+    | UNegLit of Predsym.t * trm
+  [@@deriving compare, equal, sexp]
+
+  let _Tt = Tt
+  let _Ff = Ff
+  let _Eq x y = Eq (x, y)
+  let _Dq x y = Dq (x, y)
+  let _Eq0 x = Eq0 x
+  let _Dq0 x = Dq0 x
+  let _Gt0 x = Gt0 x
+  let _Ge0 x = Ge0 x
+  let _Lt0 x = Lt0 x
+  let _Le0 x = Le0 x
+  let _And p q = And (p, q)
+  let _Or p q = Or (p, q)
+  let _Iff p q = Iff (p, q)
+  let _Xor p q = Xor (p, q)
+  let _Cond cnd pos neg = Cond {cnd; pos; neg}
+  let _UPosLit p x = UPosLit (p, x)
+  let _UNegLit p x = UNegLit (p, x)
+end
+
+open Fml
 
 (*
  * Conditional terms
@@ -686,17 +730,17 @@ let embed_into_fml : exp -> fml = function
          0)] ==> [(p ? tt : ff)] ==> [p]. *)
       let dq0 : trm -> fml = function
         (* 0 ≠ 0 ==> ff *)
-        | Z _ as z when z == zero -> Ff
+        | Z _ as z when z == zero -> _Ff
         (* 0 ≠ N ==> tt for N≠0 *)
-        | Z _ -> Tt
-        | t -> Dq (zero, t)
+        | Z _ -> _Tt
+        | t -> _Dq zero t
       in
       let cond : fml -> fml -> fml -> fml =
        fun cnd pos neg ->
         match (pos, neg) with
         (* (p ? tt : ff) ==> p *)
         | Tt, Ff -> cnd
-        | _ -> Cond {cnd; pos; neg}
+        | _ -> _Cond cnd pos neg
       in
       map_cnd cond dq0 c
 
@@ -704,7 +748,7 @@ let embed_into_fml : exp -> fml = function
 let ite : fml -> exp -> exp -> exp =
  fun cnd thn els ->
   match (thn, els) with
-  | `Fml pos, `Fml neg -> `Fml (Cond {cnd; pos; neg})
+  | `Fml pos, `Fml neg -> `Fml (_Cond cnd pos neg)
   | _ -> (
       let c = `Ite (cnd, embed_into_cnd thn, embed_into_cnd els) in
       match project_out_fml c with Some f -> `Fml f | None -> c )
@@ -920,8 +964,8 @@ module Formula = struct
 
   (* constants *)
 
-  let tt = Tt
-  let ff = Ff
+  let tt = _Tt
+  let ff = _Ff
 
   (* comparisons *)
 
@@ -958,23 +1002,23 @@ module Formula = struct
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
 
   let rec not_ = function
-    | Tt -> Ff
-    | Ff -> Tt
-    | Eq (x, y) -> Dq (x, y)
-    | Dq (x, y) -> Eq (x, y)
-    | Eq0 x -> Dq0 x
-    | Dq0 x -> Eq0 x
-    | Gt0 x -> Le0 x
-    | Ge0 x -> Lt0 x
-    | Lt0 x -> Ge0 x
-    | Le0 x -> Gt0 x
-    | And (x, y) -> Or (not_ x, not_ y)
-    | Or (x, y) -> And (not_ x, not_ y)
-    | Iff (x, y) -> Xor (x, y)
-    | Xor (x, y) -> Iff (x, y)
-    | Cond {cnd; pos; neg} -> Cond {cnd; pos= not_ pos; neg= not_ neg}
-    | UPosLit (p, x) -> UNegLit (p, x)
-    | UNegLit (p, x) -> UPosLit (p, x)
+    | Tt -> _Ff
+    | Ff -> _Tt
+    | Eq (x, y) -> _Dq x y
+    | Dq (x, y) -> _Eq x y
+    | Eq0 x -> _Dq0 x
+    | Dq0 x -> _Eq0 x
+    | Gt0 x -> _Le0 x
+    | Ge0 x -> _Lt0 x
+    | Lt0 x -> _Ge0 x
+    | Le0 x -> _Gt0 x
+    | And (x, y) -> _Or (not_ x) (not_ y)
+    | Or (x, y) -> _And (not_ x) (not_ y)
+    | Iff (x, y) -> _Xor x y
+    | Xor (x, y) -> _Iff x y
+    | Cond {cnd; pos; neg} -> _Cond cnd (not_ pos) (not_ neg)
+    | UPosLit (p, x) -> _UNegLit p x
+    | UNegLit (p, x) -> _UPosLit p x
 
   (** Query *)
 
@@ -1124,8 +1168,8 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
 let uap0 f = `Trm (Apply (f, Tuple [||]))
 let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
-let upos2 p = ap2f (fun x y -> UPosLit (p, Tuple [|x; y|]))
-let uneg2 p = ap2f (fun x y -> UNegLit (p, Tuple [|x; y|]))
+let upos2 p = ap2f (fun x y -> _UPosLit p (Tuple [|x; y|]))
+let uneg2 p = ap2f (fun x y -> _UNegLit p (Tuple [|x; y|]))
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
