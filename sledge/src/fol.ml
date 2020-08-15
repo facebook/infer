@@ -761,92 +761,6 @@ let apNt : (trm list -> trm) -> exp array -> exp =
     (Array.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
 
 (*
- * Formulas: exposed interface
- *)
-
-module Formula = struct
-  type t = fml [@@deriving compare, equal, sexp]
-
-  let inject f = `Fml f
-  let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
-  let ppx = ppx_f
-  let pp = pp_f
-
-  (* constants *)
-
-  let tt = Tt
-  let ff = Ff
-
-  (* comparisons *)
-
-  let eq = ap2f _Eq
-  let dq = ap2f _Dq
-  let lt = ap2f _Lt
-  let le = ap2f _Le
-
-  (* connectives *)
-
-  let and_ = _And
-  let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
-  let or_ = _Or
-  let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
-  let iff = _Iff
-  let xor = _Xor
-  let cond ~cnd ~pos ~neg = _Cond cnd pos neg
-
-  let rec not_ = function
-    | Tt -> Ff
-    | Ff -> Tt
-    | Eq (x, y) -> Dq (x, y)
-    | Dq (x, y) -> Eq (x, y)
-    | Lt (x, y) -> Le (y, x)
-    | Le (x, y) -> Lt (y, x)
-    | And (x, y) -> Or (not_ x, not_ y)
-    | Or (x, y) -> And (not_ x, not_ y)
-    | Iff (x, y) -> Xor (x, y)
-    | Xor (x, y) -> Iff (x, y)
-    | Cond {cnd; pos; neg} -> Cond {cnd; pos= not_ pos; neg= not_ neg}
-    | UPosLit (p, x) -> UNegLit (p, x)
-    | UNegLit (p, x) -> UPosLit (p, x)
-
-  (** Query *)
-
-  let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
-  let is_true = function Tt -> true | _ -> false
-  let is_false = function Ff -> true | _ -> false
-
-  (** Traverse *)
-
-  let fold_vars = fold_vars_f
-
-  (** Transform *)
-
-  let map_vars = map_vars_f
-
-  let fold_map_vars ~init e ~f =
-    let s = ref init in
-    let f x =
-      let s', x' = f !s x in
-      s := s' ;
-      x'
-    in
-    let e' = map_vars ~f e in
-    (!s, e')
-
-  let rename s e = map_vars ~f:(Var.Subst.apply s) e
-
-  let disjuncts p =
-    let rec disjuncts_ p ds =
-      match p with
-      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
-      | Cond {cnd; pos; neg} ->
-          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
-      | d -> d :: ds
-    in
-    disjuncts_ p []
-end
-
-(*
  * Terms: exposed interface
  *)
 
@@ -971,6 +885,92 @@ module Term = struct
   (** Query *)
 
   let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
+end
+
+(*
+ * Formulas: exposed interface
+ *)
+
+module Formula = struct
+  type t = fml [@@deriving compare, equal, sexp]
+
+  let inject f = `Fml f
+  let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
+  let ppx = ppx_f
+  let pp = pp_f
+
+  (* constants *)
+
+  let tt = Tt
+  let ff = Ff
+
+  (* comparisons *)
+
+  let eq = ap2f _Eq
+  let dq = ap2f _Dq
+  let lt = ap2f _Lt
+  let le = ap2f _Le
+
+  (* connectives *)
+
+  let and_ = _And
+  let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
+  let or_ = _Or
+  let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
+  let iff = _Iff
+  let xor = _Xor
+  let cond ~cnd ~pos ~neg = _Cond cnd pos neg
+
+  let rec not_ = function
+    | Tt -> Ff
+    | Ff -> Tt
+    | Eq (x, y) -> Dq (x, y)
+    | Dq (x, y) -> Eq (x, y)
+    | Lt (x, y) -> Le (y, x)
+    | Le (x, y) -> Lt (y, x)
+    | And (x, y) -> Or (not_ x, not_ y)
+    | Or (x, y) -> And (not_ x, not_ y)
+    | Iff (x, y) -> Xor (x, y)
+    | Xor (x, y) -> Iff (x, y)
+    | Cond {cnd; pos; neg} -> Cond {cnd; pos= not_ pos; neg= not_ neg}
+    | UPosLit (p, x) -> UNegLit (p, x)
+    | UNegLit (p, x) -> UPosLit (p, x)
+
+  (** Query *)
+
+  let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
+  let is_true = function Tt -> true | _ -> false
+  let is_false = function Ff -> true | _ -> false
+
+  (** Traverse *)
+
+  let fold_vars = fold_vars_f
+
+  (** Transform *)
+
+  let map_vars = map_vars_f
+
+  let fold_map_vars ~init e ~f =
+    let s = ref init in
+    let f x =
+      let s', x' = f !s x in
+      s := s' ;
+      x'
+    in
+    let e' = map_vars ~f e in
+    (!s, e')
+
+  let rename s e = map_vars ~f:(Var.Subst.apply s) e
+
+  let disjuncts p =
+    let rec disjuncts_ p ds =
+      match p with
+      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
+      | Cond {cnd; pos; neg} ->
+          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
+      | d -> d :: ds
+    in
+    disjuncts_ p []
 end
 
 (*
