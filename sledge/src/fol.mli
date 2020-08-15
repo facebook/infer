@@ -218,8 +218,10 @@ module Context : sig
   val is_false : t -> bool
   (** Test if the relation is empty / inconsistent. *)
 
-  val entails_eq : t -> Term.t -> Term.t -> bool
-  (** Test if an equation is entailed by a relation. *)
+  val implies : t -> Formula.t -> bool
+  (** [implies x f] holds only if [f] is a logical consequence of [x]. This
+      only checks if [f] is valid in the current state of [x], without doing
+      any further logical reasoning or propagation. *)
 
   val class_of : t -> Term.t -> Term.t list
   (** Equivalence class of [e]: all the terms [f] in the relation such that

@@ -185,7 +185,8 @@ let pp_heap x ?pre ctx fs heap =
   let break s1 s2 =
     (not (Term.equal s1.bas s2.bas))
     || (not (Term.equal s1.len s2.len))
-    || not (Context.entails_eq ctx (Term.add s1.loc s1.siz) s2.loc)
+    || not
+         (Context.implies ctx (Formula.eq (Term.add s1.loc s1.siz) s2.loc))
   in
   let heap = List.map heap ~f:(map_seg ~f:(Context.normalize ctx)) in
   let blocks = List.group ~break (List.sort ~compare heap) in
@@ -591,7 +592,7 @@ let is_false = function
   | {ctx; pure; heap; _} ->
       Formula.is_false (Context.normalizef ctx pure)
       || List.exists heap ~f:(fun seg ->
-             Context.entails_eq ctx seg.loc Term.zero )
+             Context.implies ctx (Formula.eq seg.loc Term.zero) )
 
 let rec pure_approx ({us; xs; ctx; pure; heap= _; djns} as q) =
   let heap = emp.heap in

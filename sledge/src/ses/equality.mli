@@ -56,8 +56,8 @@ val is_true : t -> bool
 val is_false : t -> bool
 (** Test if the relation is empty / inconsistent. *)
 
-val entails_eq : t -> Term.t -> Term.t -> bool
-(** Test if an equation is entailed by a relation. *)
+val implies : t -> Term.t -> bool
+(** Test if a term is implied by a relation. *)
 
 val class_of : t -> Term.t -> Term.t list
 (** Equivalence class of [e]: all the terms [f] in the relation such that

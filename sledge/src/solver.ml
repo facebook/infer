@@ -563,8 +563,8 @@ let excise_seg ({sub} as goal) msg ssg =
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
   let* k_l = Context.difference sub.ctx k l in
   if
-    (not (Context.entails_eq sub.ctx b b'))
-    || not (Context.entails_eq sub.ctx m m')
+    (not (Context.implies sub.ctx (Formula.eq b b')))
+    || not (Context.implies sub.ctx (Formula.eq m m'))
   then
     Some
       ( goal

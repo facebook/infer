@@ -1212,7 +1212,7 @@ module Context = struct
   let fv x = vs_of_ses (Ses.Equality.fv x)
   let is_true x = Ses.Equality.is_true x
   let is_false x = Ses.Equality.is_false x
-  let entails_eq x e f = Ses.Equality.entails_eq x (to_ses e) (to_ses f)
+  let implies x b = Ses.Equality.implies x (f_to_ses b)
   let normalize x e = ses_map (Ses.Equality.normalize x) e
   let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
   let difference x e f = Term.d_int (normalize x (Term.sub e f))
@@ -1238,7 +1238,8 @@ module Context = struct
   let diff_classes r s =
     Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
         match
-          List.filter cls ~f:(fun exp -> not (entails_eq s rep exp))
+          List.filter cls ~f:(fun exp ->
+              not (implies s (Formula.eq rep exp)) )
         with
         | [] -> None
         | cls -> Some cls )
