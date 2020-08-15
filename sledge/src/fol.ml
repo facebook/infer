@@ -197,7 +197,7 @@ end = struct
 
   let _Tt = Tt
   let _Ff = Ff
-  let _Eq x y = Eq (x, y)
+  let _Eq x y = if equal_trm x y then Tt else Eq (x, y)
   let _Dq x y = Dq (x, y)
   let _Eq0 x = Eq0 x
 
