@@ -145,6 +145,14 @@ and Formula : sig
   (* comparisons *)
   val eq : Term.t -> Term.t -> t
   val dq : Term.t -> Term.t -> t
+  val eq0 : Term.t -> t
+  val dq0 : Term.t -> t
+  val gt0 : Term.t -> t
+  val ge0 : Term.t -> t
+  val lt0 : Term.t -> t
+  val le0 : Term.t -> t
+  val gt : Term.t -> Term.t -> t
+  val ge : Term.t -> Term.t -> t
   val lt : Term.t -> Term.t -> t
   val le : Term.t -> Term.t -> t
 

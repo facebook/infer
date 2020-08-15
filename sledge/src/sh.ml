@@ -587,8 +587,7 @@ let rec pure_approx q =
   Formula.andN
     ( [q.pure]
     |> fun init ->
-    List.fold ~init q.heap ~f:(fun p seg ->
-        Formula.dq Term.zero seg.loc :: p )
+    List.fold ~init q.heap ~f:(fun p seg -> Formula.dq0 seg.loc :: p)
     |> fun init ->
     List.fold ~init q.djns ~f:(fun p djn ->
         Formula.orN (List.map djn ~f:pure_approx) :: p ) )

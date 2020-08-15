@@ -133,8 +133,12 @@ type fml =
   | Ff
   | Eq of trm * trm
   | Dq of trm * trm
-  | Lt of trm * trm
-  | Le of trm * trm
+  | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
+  | Dq0 of trm  (** [Dq0(x)] iff x ≠ 0 *)
+  | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
+  | Ge0 of trm  (** [Ge0(x)] iff x ≥ 0 *)
+  | Lt0 of trm  (** [Lt0(x)] iff x < 0 *)
+  | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
   | And of fml * fml
   | Or of fml * fml
   | Iff of fml * fml
@@ -146,8 +150,12 @@ type fml =
 
 let _Eq x y = Eq (x, y)
 let _Dq x y = Dq (x, y)
-let _Lt x y = Lt (x, y)
-let _Le x y = Le (x, y)
+let _Eq0 x = Eq0 x
+let _Dq0 x = Dq0 x
+let _Gt0 x = Gt0 x
+let _Ge0 x = Ge0 x
+let _Lt0 x = Lt0 x
+let _Le0 x = Le0 x
 let _And p q = And (p, q)
 let _Or p q = Or (p, q)
 let _Iff p q = Iff (p, q)
@@ -461,8 +469,12 @@ let ppx_f strength fs fml =
     | Ff -> pf "ff"
     | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
     | Dq (x, y) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
-    | Lt (x, y) -> pf "(%a@ < %a)" pp_t x pp_t y
-    | Le (x, y) -> pf "(%a@ @<2>≤ %a)" pp_t x pp_t y
+    | Eq0 x -> pf "(0 = %a)" pp_t x
+    | Dq0 x -> pf "(0 @<2>≠ %a)" pp_t x
+    | Gt0 x -> pf "(0 < %a)" pp_t x
+    | Ge0 x -> pf "(0 @<2>≤ %a)" pp_t x
+    | Lt0 x -> pf "(0 > %a)" pp_t x
+    | Le0 x -> pf "(0 @<2>≥ %a)" pp_t x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
@@ -518,8 +530,8 @@ let rec fold_vars_t e ~init ~f =
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
   | Tt | Ff -> init
-  | Eq (x, y) | Dq (x, y) | Lt (x, y) | Le (x, y) ->
-      fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
+  | Eq (x, y) | Dq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
+  | Eq0 x | Dq0 x | Gt0 x | Ge0 x | Lt0 x | Le0 x -> fold_vars_t ~f x ~init
   | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) ->
       fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
   | Cond {cnd; pos; neg} ->
@@ -582,8 +594,12 @@ let rec map_vars_f ~f e =
   | Tt | Ff -> e
   | Eq (x, y) -> map2 (map_vars_t ~f) e _Eq x y
   | Dq (x, y) -> map2 (map_vars_t ~f) e _Dq x y
-  | Lt (x, y) -> map2 (map_vars_t ~f) e _Lt x y
-  | Le (x, y) -> map2 (map_vars_t ~f) e _Le x y
+  | Eq0 x -> map1 (map_vars_t ~f) e _Eq0 x
+  | Dq0 x -> map1 (map_vars_t ~f) e _Dq0 x
+  | Gt0 x -> map1 (map_vars_t ~f) e _Gt0 x
+  | Ge0 x -> map1 (map_vars_t ~f) e _Ge0 x
+  | Lt0 x -> map1 (map_vars_t ~f) e _Lt0 x
+  | Le0 x -> map1 (map_vars_t ~f) e _Le0 x
   | And (x, y) -> map2 (map_vars_f ~f) e _And x y
   | Or (x, y) -> map2 (map_vars_f ~f) e _Or x y
   | Iff (x, y) -> map2 (map_vars_f ~f) e _Iff x y
@@ -698,6 +714,9 @@ let ap1 : (trm -> exp) -> exp -> exp =
  fun f x -> map_cnd ite f (embed_into_cnd x)
 
 let ap1t : (trm -> trm) -> exp -> exp = fun f -> ap1 (fun x -> `Trm (f x))
+
+let ap1f : (trm -> fml) -> exp -> fml =
+ fun f x -> map_cnd _Cond f (embed_into_cnd x)
 
 (** Map a binary function on terms over conditional terms. This yields a
     conditional tree with the structure from the first argument where each
@@ -908,8 +927,25 @@ module Formula = struct
 
   let eq = ap2f _Eq
   let dq = ap2f _Dq
-  let lt = ap2f _Lt
-  let le = ap2f _Le
+  let eq0 = ap1f _Eq0
+  let dq0 = ap1f _Dq0
+  let gt0 = ap1f _Gt0
+  let ge0 = ap1f _Ge0
+  let lt0 = ap1f _Lt0
+  let le0 = ap1f _Le0
+
+  let gt a b =
+    if a == Term.zero then lt0 b
+    else if b == Term.zero then gt0 a
+    else gt0 (Term.sub a b)
+
+  let ge a b =
+    if a == Term.zero then le0 b
+    else if b == Term.zero then ge0 a
+    else ge0 (Term.sub a b)
+
+  let lt a b = gt b a
+  let le a b = ge b a
 
   (* connectives *)
 
@@ -926,8 +962,12 @@ module Formula = struct
     | Ff -> Tt
     | Eq (x, y) -> Dq (x, y)
     | Dq (x, y) -> Eq (x, y)
-    | Lt (x, y) -> Le (y, x)
-    | Le (x, y) -> Lt (y, x)
+    | Eq0 x -> Dq0 x
+    | Dq0 x -> Eq0 x
+    | Gt0 x -> Le0 x
+    | Ge0 x -> Lt0 x
+    | Lt0 x -> Ge0 x
+    | Le0 x -> Gt0 x
     | And (x, y) -> Or (not_ x, not_ y)
     | Or (x, y) -> And (not_ x, not_ y)
     | Iff (x, y) -> Xor (x, y)
@@ -1043,8 +1083,12 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Ff -> Ses.Term.false_
   | Eq (x, y) -> Ses.Term.eq (t_to_ses x) (t_to_ses y)
   | Dq (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
-  | Lt (x, y) -> Ses.Term.lt (t_to_ses x) (t_to_ses y)
-  | Le (x, y) -> Ses.Term.le (t_to_ses x) (t_to_ses y)
+  | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
+  | Dq0 x -> Ses.Term.dq Ses.Term.zero (t_to_ses x)
+  | Gt0 x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
+  | Ge0 x -> Ses.Term.le Ses.Term.zero (t_to_ses x)
+  | Lt0 x -> Ses.Term.lt (t_to_ses x) Ses.Term.zero
+  | Le0 x -> Ses.Term.le (t_to_ses x) Ses.Term.zero
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
@@ -1467,13 +1511,13 @@ module Term_of_Llair = struct
         ap_fff (fun p q -> or_ p (not_ q)) p q
     | Ap2 (Eq, _, d, e) -> ap_ttf eq d e
     | Ap2 (Dq, _, d, e) -> ap_ttf dq d e
-    | Ap2 (Gt, _, d, e) -> ap_ttf lt e d
+    | Ap2 (Gt, _, d, e) -> ap_ttf gt d e
     | Ap2 (Lt, _, d, e) -> ap_ttf lt d e
-    | Ap2 (Ge, _, d, e) -> ap_ttf le e d
+    | Ap2 (Ge, _, d, e) -> ap_ttf ge d e
     | Ap2 (Le, _, d, e) -> ap_ttf le d e
-    | Ap2 (Ugt, typ, d, e) -> usap_ttf lt typ e d
+    | Ap2 (Ugt, typ, d, e) -> usap_ttf gt typ d e
     | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
-    | Ap2 (Uge, typ, d, e) -> usap_ttf le typ e d
+    | Ap2 (Uge, typ, d, e) -> usap_ttf ge typ d e
     | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
     | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 Ordered) d e
     | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 Ordered) d e
