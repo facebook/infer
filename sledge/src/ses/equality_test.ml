@@ -111,9 +111,6 @@ let%test_module _ =
       pp_classes r0 ;
       [%expect {||}]
 
-    let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
-    let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
-
     let r1 = of_eqs [(x, y)]
 
     let%expect_test _ =
@@ -152,7 +149,6 @@ let%test_module _ =
     let%test _ = entails_eq r2 (f y) y
     let%test _ = entails_eq r2 (f x) (f z)
     let%test _ = entails_eq r2 (g x y) (g z y)
-    let%test _ = difference (or_ r1 r2) x z |> Poly.equal None
 
     let%expect_test _ =
       let r = of_eqs [(w, y); (y, z)] in
@@ -222,7 +218,6 @@ let%test_module _ =
              [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r4 x (w + !5)
-    let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
 
     let r5 = of_eqs [(x, y); (g w x, y); (g w y, f z)]
 
@@ -323,49 +318,6 @@ let%test_module _ =
        rep= [[%x_5 ↦ (13 × %z_7)]; [%y_6 ↦ 14]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = entails_eq r8 y !14
-
-    let r9 = of_eqs [(x, z - !16)]
-
-    let%expect_test _ =
-      pp_classes r9 ;
-      pp r9 ;
-      [%expect
-        {|
-        (%z_7 + -16) = %x_5
-    
-      {sat= true;
-       rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
-
-    let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
-
-    let r10 = of_eqs [(!16, z - x)]
-
-    let%expect_test _ =
-      pp_classes r10 ;
-      pp r10 ;
-      Format.printf "@.%a@." Term.pp (z - (x + !8)) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + !8))) ;
-      Format.printf "@.%a@." Term.pp (x + !8 - z) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (x + !8 - z)) ;
-      [%expect
-        {|
-          (%z_7 + -16) = %x_5
-    
-        {sat= true;
-         rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]}
-
-        (-1 × %x_5 + %z_7 + -8)
-
-        8
-
-        (%x_5 + -1 × %z_7 + 8)
-
-        -8 |}]
-
-    let%test _ = difference r10 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
-
-    let%test _ =
-      difference r10 (x + !8) z |> Poly.equal (Some (Z.of_int (-8)))
 
     let r11 = of_eqs [(!16, z - x); (x + !8 - z, z - !16 + !8 - z)]
 

@@ -1215,7 +1215,7 @@ module Context = struct
   let entails_eq x e f = Ses.Equality.entails_eq x (to_ses e) (to_ses f)
   let normalize x e = ses_map (Ses.Equality.normalize x) e
   let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
-  let difference x e f = Ses.Equality.difference x (to_ses e) (to_ses f)
+  let difference x e f = Term.d_int (normalize x (Term.sub e f))
 
   let fold_terms ~init x ~f =
     Ses.Equality.fold_terms x ~init ~f:(fun s e -> f s (of_ses e))

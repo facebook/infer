@@ -588,20 +588,6 @@ let fold_uses_of r t ~init ~f =
       let f trm s = fold_ trm ~init:s ~f in
       f trm (f rep s) )
 
-let difference r a b =
-  [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
-  ;
-  let a = canon r a in
-  let b = canon r b in
-  ( if Term.equal a b then Some Z.zero
-  else
-    match normalize r (Term.sub a b) with
-    | Integer {data} -> Some data
-    | _ -> None )
-  |>
-  [%Trace.retn fun {pf} ->
-    function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
-
 let apply_subst us s r =
   [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
   ;
