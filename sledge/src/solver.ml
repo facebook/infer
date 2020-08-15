@@ -179,12 +179,6 @@ let excise_exists goal =
           let min = Sh.and_subst witnesses goal.min in
           goal |> with_ ~us ~min ~xs ~pgs:true )
 
-let excise_pure ({min; sub} as goal) =
-  trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
-  let pure' = Context.normalizef min.ctx sub.pure in
-  if Formula.is_false pure' then None
-  else Some (goal |> with_ ~sub:(Sh.with_pure pure' sub))
-
 (*   [k; o)
  * ⊢ [l; n)
  *
@@ -643,18 +637,16 @@ let excise_heap ({min; sub} as goal) =
   | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal
 
+let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
+
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
   if Sh.is_false min then Some (Sh.false_ (Var.Set.diff sub.us zs))
-  else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
+  else if pure_entails min.ctx sub then
+    Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
-    goal
-    |> with_ ~pgs:false
-    |> excise_exists
-    |> excise_pure
-    >>= excise_heap
-    >>= excise
+    goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
 
 let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =

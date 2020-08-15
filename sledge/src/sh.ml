@@ -583,16 +583,15 @@ let filter_heap ~f q =
 
 (** Query *)
 
-let is_emp = function
-  | {us= _; xs= _; ctx= _; pure; heap= []; djns= []} -> Formula.is_true pure
-  | _ -> false
-
 let is_false = function
   | {djns= [[]]; _} -> true
   | {ctx; pure; heap; _} ->
       Formula.is_false (Context.normalizef ctx pure)
       || List.exists heap ~f:(fun seg ->
              Context.implies ctx (Formula.eq seg.loc Term.zero) )
+
+let rec is_empty q =
+  List.is_empty q.heap && List.for_all ~f:(List.for_all ~f:is_empty) q.djns
 
 let rec pure_approx q =
   Formula.andN

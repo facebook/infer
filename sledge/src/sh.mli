@@ -116,18 +116,20 @@ val extend_us : Var.Set.t -> t -> t
 
 (** Query *)
 
-val is_emp : t -> bool
-(** Holds of [emp], with any vocabulary, existentials, and context. *)
-
 val is_false : t -> bool
 (** Holds only of inconsistent formulas, does not hold of all inconsistent
     formulas. *)
 
-val fv : ?ignore_ctx:unit -> t -> Var.Set.t
-(** Free variables, a subset of vocabulary. *)
+val is_empty : t -> bool
+(** Holds only if all satisfying states have empty heap. *)
 
 val pure_approx : t -> Formula.t
-(** [pure_approx q] is inconsistent only if [q] is inconsistent. *)
+(** [pure_approx q] is inconsistent only if [q] is inconsistent. If
+    [is_empty q], then [pure_approx q] is equivalent to
+    [pure (pure_approx q)]. *)
+
+val fv : ?ignore_ctx:unit -> t -> Var.Set.t
+(** Free variables, a subset of vocabulary. *)
 
 val fold_dnf :
      conj:(starjunction -> 'conjuncts -> 'conjuncts)
