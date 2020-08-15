@@ -135,12 +135,10 @@ type fml =
   | Dq of trm * trm
   | Lt of trm * trm
   | Le of trm * trm
-  | Not of fml
   | And of fml * fml
   | Or of fml * fml
   | Iff of fml * fml
   | Xor of fml * fml
-  | Imp of fml * fml
   | Cond of {cnd: fml; pos: fml; neg: fml}
   | UPosLit of Predsym.t * trm
   | UNegLit of Predsym.t * trm
@@ -150,12 +148,10 @@ let _Eq x y = Eq (x, y)
 let _Dq x y = Dq (x, y)
 let _Lt x y = Lt (x, y)
 let _Le x y = Le (x, y)
-let _Not p = Not p
 let _And p q = And (p, q)
 let _Or p q = Or (p, q)
 let _Iff p q = Iff (p, q)
 let _Xor p q = Xor (p, q)
-let _Imp p q = Imp (p, q)
 let _Cond cnd pos neg = Cond {cnd; pos; neg}
 let _UPosLit p x = UPosLit (p, x)
 let _UNegLit p x = UNegLit (p, x)
@@ -467,12 +463,10 @@ let ppx_f strength fs fml =
     | Dq (x, y) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
     | Lt (x, y) -> pf "(%a@ < %a)" pp_t x pp_t y
     | Le (x, y) -> pf "(%a@ @<2>≤ %a)" pp_t x pp_t y
-    | Not x -> pf "¬%a" pp x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
-    | Imp (x, y) -> pf "(%a@ => %a)" pp x pp y
     | Cond {cnd; pos; neg} -> pf "(%a@ ? %a@ : %a)" pp cnd pp pos pp neg
     | UPosLit (p, x) -> pf "%a(%a)" Predsym.pp p pp_t x
     | UNegLit (p, x) -> pf "@<1>¬%a(%a)" Predsym.pp p pp_t x
@@ -526,8 +520,7 @@ let rec fold_vars_f ~init p ~f =
   | Tt | Ff -> init
   | Eq (x, y) | Dq (x, y) | Lt (x, y) | Le (x, y) ->
       fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Not x -> fold_vars_f ~f x ~init
-  | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) | Imp (x, y) ->
+  | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) ->
       fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
@@ -591,12 +584,10 @@ let rec map_vars_f ~f e =
   | Dq (x, y) -> map2 (map_vars_t ~f) e _Dq x y
   | Lt (x, y) -> map2 (map_vars_t ~f) e _Lt x y
   | Le (x, y) -> map2 (map_vars_t ~f) e _Le x y
-  | Not x -> map1 (map_vars_f ~f) e _Not x
   | And (x, y) -> map2 (map_vars_f ~f) e _And x y
   | Or (x, y) -> map2 (map_vars_f ~f) e _Or x y
   | Iff (x, y) -> map2 (map_vars_f ~f) e _Iff x y
   | Xor (x, y) -> map2 (map_vars_f ~f) e _Xor x y
-  | Imp (x, y) -> map2 (map_vars_f ~f) e _Imp x y
   | Cond {cnd; pos; neg} -> map3 (map_vars_f ~f) e _Cond cnd pos neg
   | UPosLit (p, x) -> map1 (map_vars_t ~f) e (_UPosLit p) x
   | UNegLit (p, x) -> map1 (map_vars_t ~f) e (_UNegLit p) x
@@ -795,16 +786,28 @@ module Formula = struct
 
   (* connectives *)
 
-  let not_ = _Not
   let and_ = _And
   let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
   let or_ = _Or
   let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
   let iff = _Iff
   let xor = _Xor
-  let imp = _Imp
-  let nimp x y = not_ (imp x y)
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
+
+  let rec not_ = function
+    | Tt -> Ff
+    | Ff -> Tt
+    | Eq (x, y) -> Dq (x, y)
+    | Dq (x, y) -> Eq (x, y)
+    | Lt (x, y) -> Le (y, x)
+    | Le (x, y) -> Lt (y, x)
+    | And (x, y) -> Or (not_ x, not_ y)
+    | Or (x, y) -> And (not_ x, not_ y)
+    | Iff (x, y) -> Xor (x, y)
+    | Xor (x, y) -> Iff (x, y)
+    | Cond {cnd; pos; neg} -> Cond {cnd; pos= not_ pos; neg= not_ neg}
+    | UPosLit (p, x) -> UNegLit (p, x)
+    | UNegLit (p, x) -> UPosLit (p, x)
 
   (** Query *)
 
@@ -837,7 +840,7 @@ module Formula = struct
       match p with
       | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
       | Cond {cnd; pos; neg} ->
-          disjuncts_ (And (cnd, pos)) (disjuncts_ (And (Not cnd, neg)) ds)
+          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
       | d -> d :: ds
     in
     disjuncts_ p []
@@ -1042,12 +1045,10 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Dq (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
   | Lt (x, y) -> Ses.Term.lt (t_to_ses x) (t_to_ses y)
   | Le (x, y) -> Ses.Term.le (t_to_ses x) (t_to_ses y)
-  | Not p -> Ses.Term.not_ (f_to_ses p)
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
   | Xor (p, q) -> Ses.Term.dq (f_to_ses p) (f_to_ses q)
-  | Imp (p, q) -> Ses.Term.le (f_to_ses p) (f_to_ses q)
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
@@ -1123,8 +1124,8 @@ and of_ses : Ses.Term.t -> exp =
   | Ap1 (Convert {src; dst}, e) -> uap_tt (Convert {src; dst}) e
   | Ap2 (Eq, d, e) -> ap2_f iff eq d e
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
-  | Ap2 (Lt, d, e) -> ap2_f (Fn.flip nimp) lt d e
-  | Ap2 (Le, d, e) -> ap2_f imp le d e
+  | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
+  | Ap2 (Le, d, e) -> ap2_f (fun p q -> or_ (not_ p) q) le d e
   | Ap2 (Ord, d, e) -> ap_ttf (upos2 Ordered) d e
   | Ap2 (Uno, d, e) -> ap_ttf (uneg2 Ordered) d e
   | Add sum -> (
@@ -1456,12 +1457,14 @@ module Term_of_Llair = struct
           | _ -> uap1 (Unsigned bits) a
         else uap1 (Unsigned bits) a
     | Ap1 (Convert {src}, dst, e) -> uap_te (Convert {src; dst}) e
-    | Ap2 (Eq, Integer {bits= 1; _}, d, e) -> ap_fff iff d e
-    | Ap2 (Dq, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, d, e) -> ap_fff nimp d e
-    | Ap2 ((Lt | Ult), Integer {bits= 1; _}, d, e) -> ap_fff nimp e d
-    | Ap2 ((Ge | Uge), Integer {bits= 1; _}, d, e) -> ap_fff imp e d
-    | Ap2 ((Le | Ule), Integer {bits= 1; _}, d, e) -> ap_fff imp d e
+    | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff iff p q
+    | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q)
+     |Ap2 ((Lt | Ult), Integer {bits= 1; _}, q, p) ->
+        ap_fff (fun p q -> and_ p (not_ q)) p q
+    | Ap2 ((Ge | Uge), Integer {bits= 1; _}, p, q)
+     |Ap2 ((Le | Ule), Integer {bits= 1; _}, q, p) ->
+        ap_fff (fun p q -> or_ p (not_ q)) p q
     | Ap2 (Eq, _, d, e) -> ap_ttf eq d e
     | Ap2 (Dq, _, d, e) -> ap_ttf dq d e
     | Ap2 (Gt, _, d, e) -> ap_ttf lt e d
@@ -1474,9 +1477,9 @@ module Term_of_Llair = struct
     | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
     | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 Ordered) d e
     | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 Ordered) d e
-    | Ap2 (Add, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 (Sub, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 (Mul, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
+    | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
     | Ap2 (Add, _, d, e) -> ap_ttt add d e
     | Ap2 (Sub, _, d, e) -> ap_ttt sub d e
     | Ap2 (Mul, _, d, e) -> ap_ttt mul d e
@@ -1484,9 +1487,9 @@ module Term_of_Llair = struct
     | Ap2 (Rem, _, d, e) -> uap_tte Rem d e
     | Ap2 (Udiv, typ, d, e) -> usap_ttt (uap2 Div) typ d e
     | Ap2 (Urem, typ, d, e) -> usap_ttt (uap2 Rem) typ d e
-    | Ap2 (And, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
-    | Ap2 (Or, Integer {bits= 1; _}, d, e) -> ap_fff or_ d e
-    | Ap2 (Xor, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
+    | Ap2 (And, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
+    | Ap2 (Or, Integer {bits= 1; _}, p, q) -> ap_fff or_ p q
+    | Ap2 (Xor, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
     | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
     | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e
     | Ap2 (Xor, _, d, e) -> ap_ttt (uap2 BitXor) d e
