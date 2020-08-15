@@ -110,6 +110,18 @@ let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
 
 (*
+ * (Uninterpreted) Predicate Symbols
+ *)
+
+module Predsym = struct
+  type t = Ordered [@@deriving compare, equal, hash, sexp]
+
+  let pp fs p =
+    let pf fmt = pp_boxed fs fmt in
+    match p with Ordered -> pf "ordered"
+end
+
+(*
  * Formulas
  *)
 
@@ -123,8 +135,6 @@ type fml =
   | Dq of trm * trm
   | Lt of trm * trm
   | Le of trm * trm
-  | Ord of trm * trm
-  | Uno of trm * trm
   | Not of fml
   | And of fml * fml
   | Or of fml * fml
@@ -132,14 +142,14 @@ type fml =
   | Xor of fml * fml
   | Imp of fml * fml
   | Cond of {cnd: fml; pos: fml; neg: fml}
+  | UPosLit of Predsym.t * trm
+  | UNegLit of Predsym.t * trm
 [@@deriving compare, equal, sexp]
 
 let _Eq x y = Eq (x, y)
 let _Dq x y = Dq (x, y)
 let _Lt x y = Lt (x, y)
 let _Le x y = Le (x, y)
-let _Ord x y = Ord (x, y)
-let _Uno x y = Uno (x, y)
 let _Not p = Not p
 let _And p q = And (p, q)
 let _Or p q = Or (p, q)
@@ -147,6 +157,8 @@ let _Iff p q = Iff (p, q)
 let _Xor p q = Xor (p, q)
 let _Imp p q = Imp (p, q)
 let _Cond cnd pos neg = Cond {cnd; pos; neg}
+let _UPosLit p x = UPosLit (p, x)
+let _UNegLit p x = UNegLit (p, x)
 
 (*
  * Conditional terms
@@ -455,8 +467,6 @@ let ppx_f strength fs fml =
     | Dq (x, y) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
     | Lt (x, y) -> pf "(%a@ < %a)" pp_t x pp_t y
     | Le (x, y) -> pf "(%a@ @<2>≤ %a)" pp_t x pp_t y
-    | Ord (x, y) -> pf "(%a@ ord %a)" pp_t x pp_t y
-    | Uno (x, y) -> pf "(%a@ uno %a)" pp_t x pp_t y
     | Not x -> pf "¬%a" pp x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
@@ -464,6 +474,8 @@ let ppx_f strength fs fml =
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
     | Imp (x, y) -> pf "(%a@ => %a)" pp x pp y
     | Cond {cnd; pos; neg} -> pf "(%a@ ? %a@ : %a)" pp cnd pp pos pp neg
+    | UPosLit (p, x) -> pf "%a(%a)" Predsym.pp p pp_t x
+    | UNegLit (p, x) -> pf "@<1>¬%a(%a)" Predsym.pp p pp_t x
   in
   pp fs fml
 
@@ -512,8 +524,7 @@ let rec fold_vars_t e ~init ~f =
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
   | Tt | Ff -> init
-  | Eq (x, y) | Dq (x, y) | Lt (x, y) | Le (x, y) | Ord (x, y) | Uno (x, y)
-    ->
+  | Eq (x, y) | Dq (x, y) | Lt (x, y) | Le (x, y) ->
       fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
   | Not x -> fold_vars_f ~f x ~init
   | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) | Imp (x, y) ->
@@ -521,6 +532,7 @@ let rec fold_vars_f ~init p ~f =
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
         ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
+  | UPosLit (_, x) | UNegLit (_, x) -> fold_vars_t ~f x ~init
 
 let rec fold_vars_c ~init ~f = function
   | `Ite (cnd, thn, els) ->
@@ -579,8 +591,6 @@ let rec map_vars_f ~f e =
   | Dq (x, y) -> map2 (map_vars_t ~f) e _Dq x y
   | Lt (x, y) -> map2 (map_vars_t ~f) e _Lt x y
   | Le (x, y) -> map2 (map_vars_t ~f) e _Le x y
-  | Ord (x, y) -> map2 (map_vars_t ~f) e _Ord x y
-  | Uno (x, y) -> map2 (map_vars_t ~f) e _Uno x y
   | Not x -> map1 (map_vars_f ~f) e _Not x
   | And (x, y) -> map2 (map_vars_f ~f) e _And x y
   | Or (x, y) -> map2 (map_vars_f ~f) e _Or x y
@@ -588,6 +598,8 @@ let rec map_vars_f ~f e =
   | Xor (x, y) -> map2 (map_vars_f ~f) e _Xor x y
   | Imp (x, y) -> map2 (map_vars_f ~f) e _Imp x y
   | Cond {cnd; pos; neg} -> map3 (map_vars_f ~f) e _Cond cnd pos neg
+  | UPosLit (p, x) -> map1 (map_vars_t ~f) e (_UPosLit p) x
+  | UNegLit (p, x) -> map1 (map_vars_t ~f) e (_UNegLit p) x
 
 let rec map_vars_c ~f c =
   match c with
@@ -780,8 +792,6 @@ module Formula = struct
   let dq = ap2f _Dq
   let lt = ap2f _Lt
   let le = ap2f _Le
-  let ord = ap2f _Ord
-  let uno = ap2f _Uno
 
   (* connectives *)
 
@@ -1032,8 +1042,6 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Dq (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
   | Lt (x, y) -> Ses.Term.lt (t_to_ses x) (t_to_ses y)
   | Le (x, y) -> Ses.Term.le (t_to_ses x) (t_to_ses y)
-  | Ord (x, y) -> Ses.Term.ord (t_to_ses x) (t_to_ses y)
-  | Uno (x, y) -> Ses.Term.uno (t_to_ses x) (t_to_ses y)
   | Not p -> Ses.Term.not_ (f_to_ses p)
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
@@ -1043,6 +1051,12 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
+  | UPosLit (Ordered, Tuple [|x; y|]) ->
+      Ses.Term.ord (t_to_ses x) (t_to_ses y)
+  | UNegLit (Ordered, Tuple [|x; y|]) ->
+      Ses.Term.uno (t_to_ses x) (t_to_ses y)
+  | (UPosLit (Ordered, _) | UNegLit (Ordered, _)) as f ->
+      fail "cannot translate to Ses: %a" pp_f f ()
 
 let rec to_ses : exp -> Ses.Term.t = function
   | `Ite (cnd, thn, els) ->
@@ -1067,6 +1081,8 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
 let uap0 f = `Trm (Apply (f, Tuple [||]))
 let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
+let upos2 p = ap2f (fun x y -> UPosLit (p, Tuple [|x; y|]))
+let uneg2 p = ap2f (fun x y -> UNegLit (p, Tuple [|x; y|]))
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
@@ -1109,8 +1125,8 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
   | Ap2 (Lt, d, e) -> ap2_f (Fn.flip nimp) lt d e
   | Ap2 (Le, d, e) -> ap2_f imp le d e
-  | Ap2 (Ord, d, e) -> ap_ttf ord d e
-  | Ap2 (Uno, d, e) -> ap_ttf uno d e
+  | Ap2 (Ord, d, e) -> ap_ttf (upos2 Ordered) d e
+  | Ap2 (Uno, d, e) -> ap_ttf (uneg2 Ordered) d e
   | Add sum -> (
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero
@@ -1456,8 +1472,8 @@ module Term_of_Llair = struct
     | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
     | Ap2 (Uge, typ, d, e) -> usap_ttf le typ e d
     | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
-    | Ap2 (Ord, _, d, e) -> ap_ttf ord d e
-    | Ap2 (Uno, _, d, e) -> ap_ttf uno d e
+    | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 Ordered) d e
+    | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 Ordered) d e
     | Ap2 (Add, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
     | Ap2 (Sub, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
     | Ap2 (Mul, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
