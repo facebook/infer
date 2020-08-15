@@ -20,8 +20,8 @@ let%test_module _ =
      * [@@@warning "-32"] *)
 
     let printf pp = Format.printf "@\n%a@." pp
-    let pp = printf pp
-    let pp_classes = Format.printf "@\n@[<hv>  %a@]@." pp_classes
+    let pp_raw = printf pp_raw
+    let pp = Format.printf "@\n@[<hv>  %a@]@." pp
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add
     let ( - ) = Term.sub
@@ -75,8 +75,8 @@ let%test_module _ =
     let r9 = of_eqs [(x, z - !16)]
 
     let%expect_test _ =
-      pp_classes r9 ;
       pp r9 ;
+      pp_raw r9 ;
       [%expect
         {|
         (-16 + %z_5) = %x_3
@@ -89,8 +89,8 @@ let%test_module _ =
     let r10 = of_eqs [(!16, z - x)]
 
     let%expect_test _ =
-      pp_classes r10 ;
       pp r10 ;
+      pp_raw r10 ;
       Format.printf "@.%a@." Term.pp (z - (x + !8)) ;
       Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + !8))) ;
       Format.printf "@.%a@." Term.pp (x + !8 - z) ;

@@ -189,7 +189,6 @@ module Context : sig
   type t [@@deriving sexp]
 
   val pp : t pp
-  val pp_classes : t pp
 
   val ppx_diff :
     Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
@@ -279,6 +278,8 @@ module Context : sig
       for [k] in [ks]. *)
 
   (**/**)
+
+  val pp_raw : t pp
 
   val replay : string -> unit
   (** Replay debugging *)

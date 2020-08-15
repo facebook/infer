@@ -1253,7 +1253,6 @@ let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
 module Context = struct
   type t = Ses.Equality.t [@@deriving sexp]
 
-  let pp = Ses.Equality.pp
   let invariant = Ses.Equality.invariant
   let empty = Ses.Equality.true_
 
@@ -1306,6 +1305,9 @@ module Context = struct
         | [] -> None
         | cls -> Some cls )
 
+  (* Pretty printing *)
+
+  let pp_raw = Ses.Equality.pp
   let ppx_cls x = List.pp "@ = " (Term.ppx x)
 
   let ppx_classes x fs clss =
@@ -1315,7 +1317,7 @@ module Context = struct
           (List.sort ~compare:Term.compare cls) )
       fs (Term.Map.to_alist clss)
 
-  let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
+  let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
 
   let ppx_diff var_strength fs parent_ctx fml ctx =
     let clss = diff_classes ctx parent_ctx in

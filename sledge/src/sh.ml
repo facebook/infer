@@ -682,8 +682,7 @@ let rec freshen_nested_xs q =
     invariant q']
 
 let rec propagate_context_ ancestor_vs ancestor_ctx q =
-  [%Trace.call fun {pf} ->
-    pf "(%a)@ %a" Context.pp_classes ancestor_ctx pp q]
+  [%Trace.call fun {pf} -> pf "(%a)@ %a" Context.pp ancestor_ctx pp q]
   ;
   (* extend vocabulary with variables in scope above *)
   let ancestor_vs = Var.Set.union ancestor_vs (Var.Set.union q.us q.xs) in
@@ -714,8 +713,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
     invariant q']
 
 let propagate_context ancestor_vs ancestor_ctx q =
-  [%Trace.call fun {pf} ->
-    pf "(%a)@ %a" Context.pp_classes ancestor_ctx pp q]
+  [%Trace.call fun {pf} -> pf "(%a)@ %a" Context.pp ancestor_ctx pp q]
   ;
   propagate_context_ ancestor_vs ancestor_ctx q
   |>
