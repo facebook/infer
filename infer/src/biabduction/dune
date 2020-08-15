@@ -10,5 +10,5 @@
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Absint))
  (libraries core IStdlib ATDGenerated IBase IR Absint)
- (preprocess (pps ppx_compare))
-)
+ (preprocess
+  (pps ppx_compare)))

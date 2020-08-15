@@ -7,11 +7,12 @@
  (name TestDeterminators)
  (public_name infer.TestDeterminators)
  (flags
-  (:standard
-     -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
-     -open IBase -open IR -open CStubs))
+  (:standard -open Core -open IStdlib -open IStd -open OpenSource -open
+    ATDGenerated -open IBase -open IR -open CStubs))
  (libraries core IStdlib ATDGenerated IBase IR CStubs)
- (preprocess (pps ppx_compare))
-)
+ (preprocess
+  (pps ppx_compare)))
 
-(documentation (package infer) (mld_files TestDeterminators))
+(documentation
+ (package infer)
+ (mld_files TestDeterminators))

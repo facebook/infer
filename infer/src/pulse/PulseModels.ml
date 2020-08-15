@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 open IResult.Let_syntax
 open PulseBasicInterface
@@ -18,6 +19,8 @@ type model =
   -> ret:Ident.t * Typ.t
   -> AbductiveDomain.t
   -> ExecutionDomain.t list PulseOperations.access_result
+
+let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
 
 module Misc = struct
   let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
@@ -150,11 +153,7 @@ module ObjC = struct
 end
 
 module FollyOptional = struct
-  let internal_value =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_value"
-
+  let internal_value = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_value"
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
 
@@ -471,11 +470,9 @@ module StdFunction = struct
 end
 
 module GenericArrayBackedCollection = struct
-  let field =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_array"
+  let field = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_array"
 
+  let last_field = Fieldname.make (Typ.CStruct cpp_model_namespace) "past_the_end"
 
   let access = HilExp.Access.FieldAccess field
 
@@ -490,14 +487,18 @@ module GenericArrayBackedCollection = struct
   let element location collection index astate =
     let* astate, internal_array = eval location collection astate in
     eval_element location internal_array index astate
+
+
+  let eval_pointer_to_last_element location collection astate =
+    let+ astate, pointer =
+      PulseOperations.eval_access location collection (FieldAccess last_field) astate
+    in
+    let astate = AddressAttributes.mark_as_end_of_collection (fst pointer) astate in
+    (astate, pointer)
 end
 
 module GenericArrayBackedCollectionIterator = struct
-  let internal_pointer =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"]))
-      "__infer_model_backing_pointer"
-
+  let internal_pointer = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_pointer"
 
   let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
 
@@ -511,10 +512,25 @@ module GenericArrayBackedCollectionIterator = struct
     (astate, pointer, index)
 
 
-  let to_elem_pointed_by_iterator location iterator index astate =
+  let to_elem_pointed_by_iterator ?(step = None) location iterator astate =
+    let* astate, pointer = to_internal_pointer location iterator astate in
+    let* astate, index = PulseOperations.eval_access location pointer Dereference astate in
+    (* Check if not end iterator *)
+    let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
+    let* astate =
+      if AddressAttributes.is_end_of_collection (fst pointer) astate && not is_minus_minus then
+        let invalidation_trace = Trace.Immediate {location; history= []} in
+        let access_trace = Trace.Immediate {location; history= snd pointer} in
+        Error
+          ( Diagnostic.AccessToInvalidAddress
+              {invalidation= EndIterator; invalidation_trace; access_trace}
+          , astate )
+      else Ok astate
+    in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
     let* astate = PulseOperations.check_addr_access location index astate in
-    GenericArrayBackedCollection.element location iterator (fst index) astate
+    let+ astate, elem = GenericArrayBackedCollection.element location iterator (fst index) astate in
+    (astate, pointer, elem)
 
 
   let construct location event ~init ~ref astate =
@@ -534,10 +550,36 @@ module GenericArrayBackedCollectionIterator = struct
     construct location event ~init ~ref:this astate >>| ExecutionDomain.continue >>| List.return
 
 
+  let operator_compare comparison ~desc iter_lhs iter_rhs _ ~callee_procname:_ location
+      ~ret:(ret_id, _) astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, _, (index_lhs, _) = to_internal_pointer_deref location iter_lhs astate in
+    let+ astate, _, (index_rhs, _) = to_internal_pointer_deref location iter_rhs astate in
+    let ret_val = AbstractValue.mk_fresh () in
+    let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
+    let ret_val_equal, ret_val_notequal =
+      match comparison with
+      | `Equal ->
+          (IntLit.one, IntLit.zero)
+      | `NotEqual ->
+          (IntLit.zero, IntLit.one)
+    in
+    let astate_equal =
+      PulseArithmetic.and_eq_int ret_val ret_val_equal astate
+      |> PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
+           (AbstractValueOperand index_rhs)
+    in
+    let astate_notequal =
+      PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
+      |> PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
+           (AbstractValueOperand index_rhs)
+    in
+    [ExecutionDomain.ContinueProgram astate_equal; ExecutionDomain.ContinueProgram astate_notequal]
+
+
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, pointer, index = to_internal_pointer_deref location iter astate in
-    let+ astate, (elem, _) = to_elem_pointed_by_iterator location iter index astate in
+    let+ astate, pointer, (elem, _) = to_elem_pointed_by_iterator location iter astate in
     let astate = PulseOperations.write_id (fst ret) (elem, event :: snd pointer) astate in
     [ExecutionDomain.ContinueProgram astate]
 
@@ -545,15 +587,7 @@ module GenericArrayBackedCollectionIterator = struct
   let operator_step step ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let index_new = AbstractValue.mk_fresh () in
-    let* astate, pointer, current_index = to_internal_pointer_deref location iter astate in
-    let* astate =
-      match (step, AddressAttributes.is_end_iterator (fst current_index) astate) with
-      | `MinusMinus, true ->
-          Ok astate
-      | _ ->
-          let* astate, _ = to_elem_pointed_by_iterator location iter current_index astate in
-          Ok astate
-    in
+    let* astate, pointer, _ = to_elem_pointed_by_iterator ~step:(Some step) location iter astate in
     PulseOperations.write_deref location ~ref:pointer ~obj:(index_new, event :: snd pointer) astate
     >>| ExecutionDomain.continue >>| List.return
 end
@@ -677,23 +711,20 @@ module StdVector = struct
   let vector_end vector iter : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= []} in
-    let pointer_addr = AbstractValue.mk_fresh () in
+    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval location vector astate in
+    let* astate, (pointer_addr, _) =
+      GenericArrayBackedCollection.eval_pointer_to_last_element location vector astate
+    in
     let pointer_hist = event :: snd iter in
     let pointer_val = (pointer_addr, pointer_hist) in
-    let index_last = AbstractValue.mk_fresh () in
-    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval location vector astate in
     let* astate =
       PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
         ~obj:(arr_addr, pointer_hist) astate
     in
-    let* astate =
+    let+ astate =
       PulseOperations.write_field location ~ref:iter
         GenericArrayBackedCollectionIterator.internal_pointer ~obj:pointer_val astate
     in
-    let* astate =
-      PulseOperations.write_deref location ~ref:pointer_val ~obj:(index_last, pointer_hist) astate
-    in
-    let+ astate = PulseOperations.invalidate location EndIterator (index_last, []) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
@@ -823,6 +854,7 @@ module ProcNameDispatcher = struct
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
+        ; +match_builtin BuiltinDecl.__new &--> Misc.return_positive ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
         ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
@@ -830,7 +862,7 @@ module ProcNameDispatcher = struct
         ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__infer_initializer_list
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-        ; +PatternMatch.implements_lang "System" &:: "exit" <>--> Misc.early_exit
+        ; +PatternMatch.Java.implements_lang "System" &:: "exit" <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
@@ -863,9 +895,9 @@ module ProcNameDispatcher = struct
           $++$--> StdFunction.operator_call
         ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
           $--> StdFunction.operator_equal
-        ; +PatternMatch.implements_lang "Object"
+        ; +PatternMatch.Java.implements_lang "Object"
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-        ; ( +PatternMatch.implements_lang "System"
+        ; ( +PatternMatch.Java.implements_lang "System"
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
           $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
@@ -907,6 +939,16 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
           $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
                  ~desc:"iterator operator--"
+        ; -"std" &:: "operator=="
+          $ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $+ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `Equal
+                 ~desc:"iterator operator=="
+        ; -"std" &:: "operator!="
+          $ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $+ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `NotEqual
+                 ~desc:"iterator operator!="
         ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
           $+ capt_arg_payload
           $+...$--> GenericArrayBackedCollectionIterator.constructor ~desc:"iterator constructor"
@@ -918,6 +960,16 @@ module ProcNameDispatcher = struct
         ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
           $--> GenericArrayBackedCollectionIterator.operator_step `MinusMinus
                  ~desc:"iterator operator--"
+        ; -"__gnu_cxx" &:: "operator=="
+          $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `Equal
+                 ~desc:"iterator operator=="
+        ; -"__gnu_cxx" &:: "operator!="
+          $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+          $--> GenericArrayBackedCollectionIterator.operator_compare `NotEqual
+                 ~desc:"iterator operator!="
         ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references Assign
         ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
@@ -939,54 +991,61 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
-        ; +PatternMatch.implements_list &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ capt_arg_payload $--> JavaCollection.add_at
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_list
+          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.add_at
+        ; +PatternMatch.Java.implements_collection
           &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
-        ; +PatternMatch.implements_list &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ any_arg $--> JavaCollection.remove_at
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_list
+          &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+          $--> JavaCollection.remove_at
+        ; +PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_queue
+        ; +PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_lang "StringBuilder"
+        ; +PatternMatch.Java.implements_lang "StringBuilder"
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_lang "StringBuilder"
+        ; +PatternMatch.Java.implements_lang "StringBuilder"
           &:: "setLength" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references ShrinkToFit
-        ; +PatternMatch.implements_lang "String"
+        ; +PatternMatch.Java.implements_lang "String"
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_iterator &:: "remove" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_iterator
+          &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
-        ; +PatternMatch.implements_map &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.implements_map &:: "putAll" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_arg_payload
+          $+...$--> StdVector.push_back
+        ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_arg_payload
           $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-        ; +PatternMatch.implements_collection
+        ; +PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
-        ; +PatternMatch.implements_list &:: "set" <>$ capt_arg_payload $+ capt_arg_payload
-          $+ capt_arg_payload $--> JavaCollection.set
-        ; +PatternMatch.implements_iterator &:: "hasNext"
+        ; +PatternMatch.Java.implements_list
+          &:: "set" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.set
+        ; +PatternMatch.Java.implements_iterator
+          &:: "hasNext"
           &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
-        ; +PatternMatch.implements_enumeration
+        ; +PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
           &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-        ; +PatternMatch.implements_lang "Object"
+        ; +PatternMatch.Java.implements_lang "Object"
           &:: "equals"
           &--> Misc.nondet ~fn_name:"Object.equals"
-        ; +PatternMatch.implements_lang "Iterable"
+        ; +PatternMatch.Java.implements_lang "Iterable"
           &:: "iterator" <>$ capt_arg_payload
           $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
-        ; +PatternMatch.implements_iterator &:: "next" <>$ capt_arg_payload
+        ; +PatternMatch.Java.implements_iterator
+          &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; ( +PatternMatch.implements_enumeration
+        ; ( +PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )

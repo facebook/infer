@@ -36,7 +36,20 @@ let source_files_schema prefix =
     prefix
 
 
-let schema_hum = Printf.sprintf "%s;\n%s" (procedures_schema "") (source_files_schema "")
+let specs_schema prefix =
+  Printf.sprintf
+    {|
+      CREATE TABLE IF NOT EXISTS %sspecs
+      ( proc_name TEXT PRIMARY KEY
+      , analysis_summary BLOB NOT NULL
+      , report_summary BLOB NOT NULL
+    )|}
+    prefix
+
+
+let schema_hum =
+  String.concat ~sep:";\n" [procedures_schema ""; source_files_schema ""; specs_schema ""]
+
 
 let create_procedures_table ~prefix db =
   (* it would be nice to use "WITHOUT ROWID" here but ancient versions of sqlite do not support
@@ -48,9 +61,14 @@ let create_source_files_table ~prefix db =
   SqliteUtils.exec db ~log:"creating source_files table" ~stmt:(source_files_schema prefix)
 
 
+let create_specs_table ~prefix db =
+  SqliteUtils.exec db ~log:"creating specs table" ~stmt:(specs_schema prefix)
+
+
 let create_tables ?(prefix = "") db =
   create_procedures_table ~prefix db ;
-  create_source_files_table ~prefix db
+  create_source_files_table ~prefix db ;
+  create_specs_table ~prefix db
 
 
 let create_db () =

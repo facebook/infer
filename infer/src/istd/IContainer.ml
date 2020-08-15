@@ -68,9 +68,13 @@ let filter ~fold ~filter t ~init ~f =
   fold t ~init ~f:(fun acc item -> if filter item then f acc item else acc)
 
 
+let fold_of_pervasives_set_fold fold collection ~init ~f =
+  fold (fun elt accum -> f accum elt) collection init
+
+
 let map ~f:g fold t ~init ~f = fold t ~init ~f:(fun acc item -> f acc (g item))
 
-let fold_of_pervasives_map_fold ~fold collection ~init ~f =
+let fold_of_pervasives_map_fold fold collection ~init ~f =
   fold (fun item value accum -> f accum (item, value)) collection init
 
 

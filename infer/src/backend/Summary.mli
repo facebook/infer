@@ -50,8 +50,6 @@ val get_proc_desc : t -> Procdesc.t
 
 val get_err_log : t -> Errlog.t
 
-val get_loc : t -> Location.t
-
 val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
@@ -65,21 +63,11 @@ module OnDisk : sig
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
 
-  val remove_from_cache : Procname.t -> unit
-  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a
-      summary keeping the same Procdesc and updates the cache accordingly. *)
-
   val get : Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
   val reset : Procdesc.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-
-  val specs_filename_of_procname : Procname.t -> DB.filename
-  (** Return the path to the .specs file for the given procedure in the current results directory *)
-
-  val load_from_file : DB.filename -> t option
-  (** Load procedure summary from the given file *)
 
   val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
   (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
@@ -89,4 +77,18 @@ module OnDisk : sig
   (** Save summary for the procedure into the spec database *)
 
   val reset_all : filter:Filtering.procedures_filter -> unit -> unit
+
+  val delete : Procname.t -> unit
+  (** Delete the .specs file corresponding to the procname and remove its summary from the Summary
+      cache *)
+
+  val iter_specs : f:(t -> unit) -> unit
+  (** Iterates over all stored summaries *)
+
+  val iter_report_summaries_from_config :
+    f:(Procname.t -> Location.t -> CostDomain.summary option -> Errlog.t -> unit) -> unit
+  (** Iterates over all analysis artefacts listed above, for each procedure *)
+
+  val pp_specs_from_config : Format.formatter -> unit
+  (** pretty print all stored summaries *)
 end

@@ -590,3 +590,74 @@ let has_block_prefix s =
 
 
 type typ = t
+
+let rec pp_java ~verbose f {desc} =
+  let string_of_int = function
+    | IInt ->
+        JConfig.int_st
+    | IBool ->
+        JConfig.boolean_st
+    | ISChar ->
+        JConfig.byte_st
+    | IUShort ->
+        JConfig.char_st
+    | ILong ->
+        JConfig.long_st
+    | IShort ->
+        JConfig.short_st
+    | _ ->
+        L.die InternalError "pp_java int"
+  in
+  let string_of_float = function
+    | FFloat ->
+        JConfig.float_st
+    | FDouble ->
+        JConfig.double_st
+    | _ ->
+        L.die InternalError "pp_java float"
+  in
+  match desc with
+  | Tint ik ->
+      F.pp_print_string f (string_of_int ik)
+  | Tfloat fk ->
+      F.pp_print_string f (string_of_float fk)
+  | Tvoid ->
+      F.pp_print_string f JConfig.void
+  | Tptr (typ, _) ->
+      pp_java ~verbose f typ
+  | Tstruct (JavaClass java_class_name) ->
+      JavaClassName.pp_with_verbosity ~verbose f java_class_name
+  | Tarray {elt} ->
+      F.fprintf f "%a[]" (pp_java ~verbose) elt
+  | _ ->
+      L.die InternalError "pp_java rec"
+
+
+let is_java_primitive_type {desc} =
+  let is_java_int = function
+    | IInt | IBool | ISChar | IUShort | ILong | IShort ->
+        true
+    | _ ->
+        false
+  in
+  let is_java_float = function FFloat | FDouble -> true | _ -> false in
+  match desc with Tint ik -> is_java_int ik | Tfloat fk -> is_java_float fk | _ -> false
+
+
+let rec is_java_type t =
+  match t.desc with
+  | Tvoid ->
+      true
+  | Tint _ | Tfloat _ ->
+      is_java_primitive_type t
+  | Tptr ({desc= Tstruct (JavaClass _)}, Pk_pointer) ->
+      true
+  | Tptr ({desc= Tarray {elt}}, Pk_pointer) ->
+      is_java_type elt
+  | _ ->
+      false
+
+
+let pointer_to_java_lang_object = mk_ptr (mk_struct Name.Java.java_lang_object)
+
+let pointer_to_java_lang_string = mk_ptr (mk_struct Name.Java.java_lang_string)

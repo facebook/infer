@@ -243,9 +243,8 @@ end = struct
   let fold ~var_filter astate ~init ~f ~finish =
     let finish (visited, accum) = (visited, finish accum) in
     let init = (AbstractValue.Set.empty, init) in
-    Container.fold_until astate.stack
-      ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold) ~init ~finish
-      ~f:(fun visited_accum (var, (address, _loc)) ->
+    Container.fold_until astate.stack ~fold:(IContainer.fold_of_pervasives_map_fold Stack.fold)
+      ~init ~finish ~f:(fun visited_accum (var, (address, _loc)) ->
         if var_filter var then visit_address var ~f [] astate address visited_accum
         else Continue visited_accum )
 end

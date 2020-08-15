@@ -161,14 +161,24 @@ let get_vars_to_invalidate node loop_head args modified_params invalidated_vars 
     args
 
 
-let all_unmodeled_modified tenv loop_nodes =
+let is_pure get_callee_purity callee_pname =
+  match get_callee_purity callee_pname with
+  | Some purity_summary ->
+      PurityDomain.is_pure purity_summary
+  | None ->
+      false
+
+
+let all_unmodeled_modified tenv loop_nodes ~get_callee_purity =
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
              | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _)
-               when is_not_modeled tenv callee_pname ->
+               when is_not_modeled tenv callee_pname && not (is_pure get_callee_purity callee_pname)
+               ->
+                 debug "Invalidate unmodeled %a \n" Ident.pp id ;
                  InvalidatedVars.add (Var.of_id id) acc
              | _ ->
                  acc ) )
@@ -179,7 +189,7 @@ let all_unmodeled_modified tenv loop_nodes =
    all its non-primitive arguments. Once invalidated, it should be
    never added again. *)
 let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_purity loop_nodes =
-  let all_unmodeled_modified = lazy (all_unmodeled_modified tenv loop_nodes) in
+  let all_unmodeled_modified = lazy (all_unmodeled_modified tenv loop_nodes ~get_callee_purity) in
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node

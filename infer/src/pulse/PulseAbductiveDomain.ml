@@ -232,8 +232,12 @@ module AddressAttributes = struct
     BaseAddressAttributes.is_std_vector_reserved addr (astate.post :> base_domain).attrs
 
 
-  let is_end_iterator addr astate =
-    BaseAddressAttributes.is_end_iterator addr (astate.post :> base_domain).attrs
+  let mark_as_end_of_collection addr astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.mark_as_end_of_collection addr)
+
+
+  let is_end_of_collection addr astate =
+    BaseAddressAttributes.is_end_of_collection addr (astate.post :> base_domain).attrs
 
 
   let abduce_and_add value attrs astate =

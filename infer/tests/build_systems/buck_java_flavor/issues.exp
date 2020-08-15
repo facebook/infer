@@ -1,0 +1,2 @@
+module2/Class2.java, genrulecapture.module2.Class2.get():int, 22, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [<Read trace>,call to int Class1.get(),access to `this.c.x`,<Write trace>,call to void Class1.set(int),access to `this.c.x`]
+module2/Class2.java, genrulecapture.module2.Class2.set(int):void, 18, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [call to void Class1.set(int),access to `this.c.x`]

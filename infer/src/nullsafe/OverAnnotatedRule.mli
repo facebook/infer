@@ -26,7 +26,7 @@ val check : what:Nullability.t -> by_rhs_upper_bound:Nullability.t -> (unit, vio
 
 type violation_type =
   | FieldOverAnnoted of Fieldname.t
-  | ReturnOverAnnotated of Procname.t  (** Return value of a method can be made non-nullable *)
+  | ReturnOverAnnotated of Procname.Java.t  (** Return value of a method can be made non-nullable *)
 [@@deriving compare]
 
 val violation_description : violation -> violation_type -> string

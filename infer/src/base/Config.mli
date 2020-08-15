@@ -53,6 +53,8 @@ val bin_dir : string
 
 val bound_error_allowed_in_procedure_call : bool
 
+val buck_java_flavor_suppress_config : bool
+
 val clang_exe_aliases : string list
 
 val clang_initializer_prefix : string
@@ -126,6 +128,8 @@ val smt_output : bool
 
 val source_file_extentions : string list
 
+val kotlin_source_extension : string
+
 val sourcepath : string option
 
 val sources : string list
@@ -159,8 +163,6 @@ val annotation_reachability_cxx : Yojson.Basic.t
 val annotation_reachability_cxx_sources : Yojson.Basic.t
 
 val annotation_reachability_custom_pairs : Yojson.Basic.t
-
-val anon_args : string list
 
 val array_level : int
 
@@ -425,6 +427,8 @@ val procedures : bool
 
 val procedures_attributes : bool
 
+val procedures_cfg : bool
+
 val procedures_definedness : bool
 
 val procedures_filter : string option
@@ -444,8 +448,6 @@ val profiler_samples : string option
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
-
-val pudge : bool
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
@@ -535,8 +537,6 @@ val skip_duplicated_types : bool
 
 val skip_translation_headers : string list
 
-val sledge_timers : bool
-
 val source_files : bool
 
 val source_files_cfg : bool
@@ -551,6 +551,8 @@ val source_files_type_environment : bool
 
 val source_preview : bool
 
+val specs_shard_depth : int
+
 val sqlite_cache_size : int
 
 val sqlite_page_size : int
@@ -558,8 +560,6 @@ val sqlite_page_size : int
 val sqlite_lock_timeout : int
 
 val sqlite_vfs : string option
-
-val sqlite_write_daemon : bool
 
 val starvation_skip_analysis : Yojson.Basic.t
 
@@ -639,12 +639,9 @@ val is_in_custom_symbols : string -> string -> bool
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
-val execution_id : Int64.t
+val scuba_execution_id : Int64.t option
+(** a random number to (hopefully) uniquely identify this run *)
 
 (** {2 Global variables with initial values specified by command-line options} *)
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
-
-(** {2 Command Line Interface Documentation} *)
-
-val print_usage_exit : unit -> 'a

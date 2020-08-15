@@ -12,5 +12,5 @@ let no_return = true
 let dispatch : (Tenv.t, bool, unit) ProcnameDispatcher.ProcName.dispatcher =
   let open ProcnameDispatcher.ProcName in
   make_dispatcher
-    [ +PatternMatch.implements_lang "System" &:: "exit" <>--> no_return
-    ; +PatternMatch.implements_lang "Runtime" &:: "exit" <>--> no_return ]
+    [ +PatternMatch.Java.implements_lang "System" &:: "exit" <>--> no_return
+    ; +PatternMatch.Java.implements_lang "Runtime" &:: "exit" <>--> no_return ]

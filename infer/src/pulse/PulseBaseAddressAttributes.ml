@@ -72,6 +72,8 @@ let allocate procname (address, history) location memory =
 
 let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
 
+let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
+
 let check_valid address attrs =
   L.d_printfln "Checking validity of %a" AbstractValue.pp address ;
   match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_invalid with
@@ -100,9 +102,8 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
-let is_end_iterator address attrs =
-  let invalid_attrs = get_attribute Attributes.get_invalid address attrs in
-  match invalid_attrs with Some (EndIterator, _) -> true | _ -> false
+let is_end_of_collection address attrs =
+  Graph.find_opt address attrs |> Option.value_map ~default:false ~f:Attributes.is_end_of_collection
 
 
 let is_std_vector_reserved address attrs =

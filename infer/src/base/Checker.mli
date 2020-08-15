@@ -26,14 +26,16 @@ type t =
   | NullsafeDeprecated
   | PrintfArgs
   | Pulse
-  | Purity
+  | PurityAnalysis
+  | PurityChecker
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
   | SIOF
   | SelfInBlock
   | Starvation
-  | TOPL
+  | ToplOnBiabduction
+  | ToplOnPulse
   | Uninit
 [@@deriving equal, enumerate]
 

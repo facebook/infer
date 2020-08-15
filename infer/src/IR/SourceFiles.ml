@@ -55,10 +55,7 @@ let add source_file cfg tenv integer_type_widths =
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
-  if Config.sqlite_write_daemon then Cfg.store source_file cfg
-  else
-    SqliteUtils.with_transaction (ResultsDatabase.get_database ()) ~f:(fun () ->
-        Cfg.store source_file cfg ) ;
+  Cfg.store source_file cfg ;
   DBWriter.add_source_file
     ~source_file:(SourceFile.SQLite.serialize source_file)
     ~tenv:(Tenv.SQLite.serialize tenv)

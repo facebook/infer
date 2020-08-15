@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --seconds-per-iteration 100 --symops-per-iteration 100000 --topl-properties SkipAfterRemove.topl --topl-only
+INFER_OPTIONS = --seconds-per-iteration 100 --symops-per-iteration 100000 --topl-properties SkipAfterRemove.topl --topl-biabd-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)

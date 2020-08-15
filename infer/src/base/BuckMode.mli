@@ -17,6 +17,7 @@ type t =
   | CombinedGenrule
   | ClangFlavors
   | ClangCompilationDB of clang_compilation_db_deps
+  | JavaFlavor
   | JavaGenruleMaster
 
 val is_java_genrule_master_or_combined : t -> bool

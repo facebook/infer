@@ -143,6 +143,16 @@ BUCK OPTIONS
            Activates: Buck integration for Java targets. (Conversely:
            --no-buck-java)
 
+       --buck-java-flavor
+           Activates: Buck integration for Java which uses the buck flavor
+           #infer-java-capture instead of genrules like buck-java.
+           (Conversely: --no-buck-java-flavor)
+
+       --buck-java-flavor-suppress-config
+           Activates: Suppress setting buck config values for the infer
+           binary and its version in the buck-java-flavor integration.
+           (Conversely: --no-buck-java-flavor-suppress-config)
+
        --buck-merge-all-deps
            Activates: Find and merge all infer dependencies produced by buck.
            Use this flag if infer doesn't find any files to analyze after a

@@ -86,12 +86,20 @@ endif
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
 
+# NOTE: the complexity below is because @runtest and @fmt interact poorly: we want dune to format
+# test files *after* having promoted them when the test outputs change
 .PHONY: test
 test: BUILD_MODE = test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)$(DUNE_BUILD) \
+	$(QUIET)exit_code=0; \
+	$(DUNE_BUILD) \
 	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
-	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
+	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe \
+	  || exit_code=$$?; \
+	$(DUNE_BUILD) @runtest --auto-promote || exit_code=$$?; \
+	$(DUNE_BUILD) @fmt --auto-promote || exit_code=$$?; \
+	exit $$exit_code
+
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
@@ -153,7 +161,7 @@ roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif
-clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs deadcode integration IR istd java labs llvm nullsafe opensource pulse quandary scripts test_determinator third-party topl unit
+clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs deadcode integration IR istd java labs llvm nullsafe opensource pulse quandary scripts test_determinator topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))

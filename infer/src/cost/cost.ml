@@ -83,8 +83,8 @@ module InstrBasicCostWithReason = struct
                   in
                   CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
-                match Tenv.get_summary_formals tenv ~get_summary ~get_formals callee_pname with
-                | `Found ({CostDomain.post= callee_cost_record}, callee_formals) -> (
+                match (get_summary callee_pname, get_formals callee_pname) with
+                | Some {CostDomain.post= callee_cost_record}, Some callee_formals -> (
                     let instantiated_cost =
                       CostDomain.map callee_cost_record ~f:(fun callee_cost ->
                           instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
@@ -96,18 +96,7 @@ module InstrBasicCostWithReason = struct
                           (Some callee_pname)
                     | _ ->
                         instantiated_cost )
-                | `FoundFromSubclass
-                    (callee_pname, {CostDomain.post= callee_cost_record}, callee_formals) ->
-                    (* Note: It ignores top cost of subclass to avoid its propagations. *)
-                    let instantiated_cost =
-                      CostDomain.map callee_cost_record ~f:(fun callee_cost ->
-                          instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                            ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
-                    in
-                    if BasicCostWithReason.is_top (CostDomain.get_operation_cost instantiated_cost)
-                    then CostDomain.unit_cost_atomic_operation
-                    else instantiated_cost
-                | `NotFound ->
+                | _, _ ->
                     ScubaLogging.cost_log_message ~label:"unmodeled_function_cost_analysis"
                       ~message:
                         (F.asprintf "Unmodeled Function[Cost Analysis] : %a" Procname.pp

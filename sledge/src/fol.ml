@@ -108,6 +108,20 @@ let _Update rcd idx elt = Update {rcd; idx; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
+let zero = Z Z.zero
+let one = Z Z.one
+
+(*
+ * (Uninterpreted) Predicate Symbols
+ *)
+
+module Predsym = struct
+  type t = Ordered [@@deriving compare, equal, hash, sexp]
+
+  let pp fs p =
+    let pf fmt = pp_boxed fs fmt in
+    match p with Ordered -> pf "ordered"
+end
 
 (*
  * Formulas
@@ -116,37 +130,104 @@ let _Apply f a = Apply (f, a)
 (** Formulas, denoting sets of structures, built from propositional
     variables, applications of predicate symbols from various theories, and
     first-order logic connectives. *)
-type fml =
-  | Tt
-  | Ff
-  | Eq of trm * trm
-  | Dq of trm * trm
-  | Lt of trm * trm
-  | Le of trm * trm
-  | Ord of trm * trm
-  | Uno of trm * trm
-  | Not of fml
-  | And of fml * fml
-  | Or of fml * fml
-  | Iff of fml * fml
-  | Xor of fml * fml
-  | Imp of fml * fml
-  | Cond of {cnd: fml; pos: fml; neg: fml}
-[@@deriving compare, equal, sexp]
+module Fml : sig
+  type fml = private
+    | Tt
+    | Ff
+    | Eq of trm * trm
+    | Dq of trm * trm
+    | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
+    | Dq0 of trm  (** [Dq0(x)] iff x ≠ 0 *)
+    | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
+    | Ge0 of trm  (** [Ge0(x)] iff x ≥ 0 *)
+    | Lt0 of trm  (** [Lt0(x)] iff x < 0 *)
+    | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
+    | And of fml * fml
+    | Or of fml * fml
+    | Iff of fml * fml
+    | Xor of fml * fml
+    | Cond of {cnd: fml; pos: fml; neg: fml}
+    | UPosLit of Predsym.t * trm
+    | UNegLit of Predsym.t * trm
+  [@@deriving compare, equal, sexp]
 
-let _Eq x y = Eq (x, y)
-let _Dq x y = Dq (x, y)
-let _Lt x y = Lt (x, y)
-let _Le x y = Le (x, y)
-let _Ord x y = Ord (x, y)
-let _Uno x y = Uno (x, y)
-let _Not p = Not p
-let _And p q = And (p, q)
-let _Or p q = Or (p, q)
-let _Iff p q = Iff (p, q)
-let _Xor p q = Xor (p, q)
-let _Imp p q = Imp (p, q)
-let _Cond cnd pos neg = Cond {cnd; pos; neg}
+  val _Tt : fml
+  val _Ff : fml
+  val _Eq : trm -> trm -> fml
+  val _Dq : trm -> trm -> fml
+  val _Eq0 : trm -> fml
+  val _Dq0 : trm -> fml
+  val _Gt0 : trm -> fml
+  val _Ge0 : trm -> fml
+  val _Lt0 : trm -> fml
+  val _Le0 : trm -> fml
+  val _And : fml -> fml -> fml
+  val _Or : fml -> fml -> fml
+  val _Iff : fml -> fml -> fml
+  val _Xor : fml -> fml -> fml
+  val _Cond : fml -> fml -> fml -> fml
+  val _UPosLit : Predsym.t -> trm -> fml
+  val _UNegLit : Predsym.t -> trm -> fml
+end = struct
+  type fml =
+    | Tt
+    | Ff
+    | Eq of trm * trm
+    | Dq of trm * trm
+    | Eq0 of trm
+    | Dq0 of trm
+    | Gt0 of trm
+    | Ge0 of trm
+    | Lt0 of trm
+    | Le0 of trm
+    | And of fml * fml
+    | Or of fml * fml
+    | Iff of fml * fml
+    | Xor of fml * fml
+    | Cond of {cnd: fml; pos: fml; neg: fml}
+    | UPosLit of Predsym.t * trm
+    | UNegLit of Predsym.t * trm
+  [@@deriving compare, equal, sexp]
+
+  (** Some normalization is necessary for [embed_into_fml] (defined below)
+      to be left inverse to [embed_into_cnd]. Essentially
+      [0 ≠ (p ? 1 : 0)] needs to normalize to [p], by way of
+      [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==> [(p ? tt : ff)]
+      ==> [p]. *)
+
+  let _Tt = Tt
+  let _Ff = Ff
+  let _Eq x y = if equal_trm x y then Tt else Eq (x, y)
+  let _Dq x y = Dq (x, y)
+  let _Eq0 x = Eq0 x
+
+  let _Dq0 = function
+    (* 0 ≠ 0 ==> ff *)
+    | Z _ as z when z == zero -> Ff
+    (* 0 ≠ N ==> tt for N ≢ 0 *)
+    | Z _ -> Tt
+    | t -> Dq0 t
+
+  let _Gt0 x = Gt0 x
+  let _Ge0 x = Ge0 x
+  let _Lt0 x = Lt0 x
+  let _Le0 x = Le0 x
+  let _And p q = And (p, q)
+  let _Or p q = Or (p, q)
+  let _Iff p q = Iff (p, q)
+  let _Xor p q = Xor (p, q)
+
+  let _Cond cnd pos neg =
+    match (pos, neg) with
+    (* (p ? tt : ff) ==> p *)
+    | Tt, Ff -> cnd
+    | _ -> Cond {cnd; pos; neg}
+
+  let _UPosLit p x = UPosLit (p, x)
+  let _UNegLit p x = UNegLit (p, x)
+end
+
+open Fml
 
 (*
  * Conditional terms
@@ -453,17 +534,19 @@ let ppx_f strength fs fml =
     | Ff -> pf "ff"
     | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
     | Dq (x, y) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
-    | Lt (x, y) -> pf "(%a@ < %a)" pp_t x pp_t y
-    | Le (x, y) -> pf "(%a@ @<2>≤ %a)" pp_t x pp_t y
-    | Ord (x, y) -> pf "(%a@ ord %a)" pp_t x pp_t y
-    | Uno (x, y) -> pf "(%a@ uno %a)" pp_t x pp_t y
-    | Not x -> pf "¬%a" pp x
+    | Eq0 x -> pf "(0 = %a)" pp_t x
+    | Dq0 x -> pf "(0 @<2>≠ %a)" pp_t x
+    | Gt0 x -> pf "(0 < %a)" pp_t x
+    | Ge0 x -> pf "(0 @<2>≤ %a)" pp_t x
+    | Lt0 x -> pf "(0 > %a)" pp_t x
+    | Le0 x -> pf "(0 @<2>≥ %a)" pp_t x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
-    | Imp (x, y) -> pf "(%a@ => %a)" pp x pp y
     | Cond {cnd; pos; neg} -> pf "(%a@ ? %a@ : %a)" pp cnd pp pos pp neg
+    | UPosLit (p, x) -> pf "%a(%a)" Predsym.pp p pp_t x
+    | UNegLit (p, x) -> pf "@<1>¬%a(%a)" Predsym.pp p pp_t x
   in
   pp fs fml
 
@@ -512,15 +595,14 @@ let rec fold_vars_t e ~init ~f =
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
   | Tt | Ff -> init
-  | Eq (x, y) | Dq (x, y) | Lt (x, y) | Le (x, y) | Ord (x, y) | Uno (x, y)
-    ->
-      fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Not x -> fold_vars_f ~f x ~init
-  | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) | Imp (x, y) ->
+  | Eq (x, y) | Dq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
+  | Eq0 x | Dq0 x | Gt0 x | Ge0 x | Lt0 x | Le0 x -> fold_vars_t ~f x ~init
+  | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) ->
       fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
         ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
+  | UPosLit (_, x) | UNegLit (_, x) -> fold_vars_t ~f x ~init
 
 let rec fold_vars_c ~init ~f = function
   | `Ite (cnd, thn, els) ->
@@ -533,7 +615,7 @@ let fold_vars ~init e ~f =
   | `Fml p -> fold_vars_f ~f ~init p
   | #cnd as c -> fold_vars_c ~f ~init c
 
-(** map_vars *)
+(** map *)
 
 let map1 f e cons x =
   let x' = f x in
@@ -554,6 +636,29 @@ let mapN f e cons xs =
   let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
+(** map_trms *)
+
+let rec map_trms_f ~f b =
+  match b with
+  | Tt | Ff -> b
+  | Eq (x, y) -> map2 f b _Eq x y
+  | Dq (x, y) -> map2 f b _Dq x y
+  | Eq0 x -> map1 f b _Eq0 x
+  | Dq0 x -> map1 f b _Dq0 x
+  | Gt0 x -> map1 f b _Gt0 x
+  | Ge0 x -> map1 f b _Ge0 x
+  | Lt0 x -> map1 f b _Lt0 x
+  | Le0 x -> map1 f b _Le0 x
+  | And (x, y) -> map2 (map_trms_f ~f) b _And x y
+  | Or (x, y) -> map2 (map_trms_f ~f) b _Or x y
+  | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
+  | Xor (x, y) -> map2 (map_trms_f ~f) b _Xor x y
+  | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
+  | UPosLit (p, x) -> map1 f b (_UPosLit p) x
+  | UNegLit (p, x) -> map1 f b (_UNegLit p) x
+
+(** map_vars *)
+
 let rec map_vars_t ~f e =
   match e with
   | Var _ as v -> (f (Var.of_ v) : var :> trm)
@@ -572,22 +677,7 @@ let rec map_vars_t ~f e =
   | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
   | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
 
-let rec map_vars_f ~f e =
-  match e with
-  | Tt | Ff -> e
-  | Eq (x, y) -> map2 (map_vars_t ~f) e _Eq x y
-  | Dq (x, y) -> map2 (map_vars_t ~f) e _Dq x y
-  | Lt (x, y) -> map2 (map_vars_t ~f) e _Lt x y
-  | Le (x, y) -> map2 (map_vars_t ~f) e _Le x y
-  | Ord (x, y) -> map2 (map_vars_t ~f) e _Ord x y
-  | Uno (x, y) -> map2 (map_vars_t ~f) e _Uno x y
-  | Not x -> map1 (map_vars_f ~f) e _Not x
-  | And (x, y) -> map2 (map_vars_f ~f) e _And x y
-  | Or (x, y) -> map2 (map_vars_f ~f) e _Or x y
-  | Iff (x, y) -> map2 (map_vars_f ~f) e _Iff x y
-  | Xor (x, y) -> map2 (map_vars_f ~f) e _Xor x y
-  | Imp (x, y) -> map2 (map_vars_f ~f) e _Imp x y
-  | Cond {cnd; pos; neg} -> map3 (map_vars_f ~f) e _Cond cnd pos neg
+let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
 
 let rec map_vars_c ~f c =
   match c with
@@ -612,9 +702,6 @@ let map_vars ~f = function
  * could be freely mixed, instead of being strictly partitioned into terms
  * and formulas stratified below conditional terms and then expressions.
  *)
-
-let zero = Z Z.zero
-let one = Z Z.one
 
 (** Map a unary function on terms over the leaves of a conditional term,
     rebuilding the tree of conditionals with the supplied ite construction
@@ -660,32 +747,13 @@ let project_out_fml : cnd -> fml option = function
       [0 ≠ x] holds. *)
 let embed_into_fml : exp -> fml = function
   | `Fml fml -> fml
-  | #cnd as c ->
-      (* Some normalization is necessary for [embed_into_fml] to be left
-         inverse to [embed_into_cnd]. Essentially [0 ≠ (p ? 1 : 0)] needs to
-         normalize to [p], by way of [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠
-         0)] ==> [(p ? tt : ff)] ==> [p]. *)
-      let dq0 : trm -> fml = function
-        (* 0 ≠ 0 ==> ff *)
-        | Z _ as z when z == zero -> Ff
-        (* 0 ≠ N ==> tt for N≠0 *)
-        | Z _ -> Tt
-        | t -> Dq (zero, t)
-      in
-      let cond : fml -> fml -> fml -> fml =
-       fun cnd pos neg ->
-        match (pos, neg) with
-        (* (p ? tt : ff) ==> p *)
-        | Tt, Ff -> cnd
-        | _ -> Cond {cnd; pos; neg}
-      in
-      map_cnd cond dq0 c
+  | #cnd as c -> map_cnd _Cond _Dq0 c
 
 (** Construct a conditional term, or formula if possible precisely. *)
 let ite : fml -> exp -> exp -> exp =
  fun cnd thn els ->
   match (thn, els) with
-  | `Fml pos, `Fml neg -> `Fml (Cond {cnd; pos; neg})
+  | `Fml pos, `Fml neg -> `Fml (_Cond cnd pos neg)
   | _ -> (
       let c = `Ite (cnd, embed_into_cnd thn, embed_into_cnd els) in
       match project_out_fml c with Some f -> `Fml f | None -> c )
@@ -695,6 +763,9 @@ let ap1 : (trm -> exp) -> exp -> exp =
  fun f x -> map_cnd ite f (embed_into_cnd x)
 
 let ap1t : (trm -> trm) -> exp -> exp = fun f -> ap1 (fun x -> `Trm (f x))
+
+let ap1f : (trm -> fml) -> exp -> fml =
+ fun f x -> map_cnd _Cond f (embed_into_cnd x)
 
 (** Map a binary function on terms over conditional terms. This yields a
     conditional tree with the structure from the first argument where each
@@ -756,80 +827,6 @@ let apNt : (trm list -> trm) -> exp array -> exp =
   rev_mapN_cnd ite
     (fun xs -> `Trm (f xs))
     (Array.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
-
-(*
- * Formulas: exposed interface
- *)
-
-module Formula = struct
-  type t = fml [@@deriving compare, equal, sexp]
-
-  let inject f = `Fml f
-  let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
-  let ppx = ppx_f
-  let pp = pp_f
-
-  (* constants *)
-
-  let tt = Tt
-  let ff = Ff
-
-  (* comparisons *)
-
-  let eq = ap2f _Eq
-  let dq = ap2f _Dq
-  let lt = ap2f _Lt
-  let le = ap2f _Le
-  let ord = ap2f _Ord
-  let uno = ap2f _Uno
-
-  (* connectives *)
-
-  let not_ = _Not
-  let and_ = _And
-  let or_ = _Or
-  let iff = _Iff
-  let xor = _Xor
-  let imp = _Imp
-  let nimp x y = not_ (imp x y)
-  let cond ~cnd ~pos ~neg = _Cond cnd pos neg
-
-  (** Query *)
-
-  let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
-  let is_true = function Tt -> true | _ -> false
-  let is_false = function Ff -> true | _ -> false
-
-  (** Traverse *)
-
-  let fold_vars = fold_vars_f
-
-  (** Transform *)
-
-  let map_vars = map_vars_f
-
-  let fold_map_vars ~init e ~f =
-    let s = ref init in
-    let f x =
-      let s', x' = f !s x in
-      s := s' ;
-      x'
-    in
-    let e' = map_vars ~f e in
-    (!s, e')
-
-  let rename s e = map_vars ~f:(Var.Subst.apply s) e
-
-  let disjuncts p =
-    let rec disjuncts_ p ds =
-      match p with
-      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
-      | Cond {cnd; pos; neg} ->
-          disjuncts_ (And (cnd, pos)) (disjuncts_ (And (Not cnd, neg)) ds)
-      | d -> d :: ds
-    in
-    disjuncts_ p []
-end
 
 (*
  * Terms: exposed interface
@@ -959,6 +956,137 @@ module Term = struct
 end
 
 (*
+ * Formulas: exposed interface
+ *)
+
+module Formula = struct
+  type t = fml [@@deriving compare, equal, sexp]
+
+  let inject f = `Fml f
+  let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
+  let ppx = ppx_f
+  let pp = pp_f
+
+  (* constants *)
+
+  let tt = _Tt
+  let ff = _Ff
+
+  (* comparisons *)
+
+  let eq = ap2f _Eq
+  let dq = ap2f _Dq
+  let eq0 = ap1f _Eq0
+  let dq0 = ap1f _Dq0
+  let gt0 = ap1f _Gt0
+  let ge0 = ap1f _Ge0
+  let lt0 = ap1f _Lt0
+  let le0 = ap1f _Le0
+
+  let gt a b =
+    if a == Term.zero then lt0 b
+    else if b == Term.zero then gt0 a
+    else gt0 (Term.sub a b)
+
+  let ge a b =
+    if a == Term.zero then le0 b
+    else if b == Term.zero then ge0 a
+    else ge0 (Term.sub a b)
+
+  let lt a b = gt b a
+  let le a b = ge b a
+
+  (* connectives *)
+
+  let and_ = _And
+  let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
+  let or_ = _Or
+  let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
+  let iff = _Iff
+  let xor = _Xor
+  let cond ~cnd ~pos ~neg = _Cond cnd pos neg
+
+  let rec not_ = function
+    | Tt -> _Ff
+    | Ff -> _Tt
+    | Eq (x, y) -> _Dq x y
+    | Dq (x, y) -> _Eq x y
+    | Eq0 x -> _Dq0 x
+    | Dq0 x -> _Eq0 x
+    | Gt0 x -> _Le0 x
+    | Ge0 x -> _Lt0 x
+    | Lt0 x -> _Ge0 x
+    | Le0 x -> _Gt0 x
+    | And (x, y) -> _Or (not_ x) (not_ y)
+    | Or (x, y) -> _And (not_ x) (not_ y)
+    | Iff (x, y) -> _Xor x y
+    | Xor (x, y) -> _Iff x y
+    | Cond {cnd; pos; neg} -> _Cond cnd (not_ pos) (not_ neg)
+    | UPosLit (p, x) -> _UNegLit p x
+    | UNegLit (p, x) -> _UPosLit p x
+
+  (** Query *)
+
+  let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
+
+  (** Traverse *)
+
+  let fold_vars = fold_vars_f
+
+  (** Transform *)
+
+  let map_vars = map_vars_f
+
+  let rec map_terms ~f b =
+    let lift_map1 : (exp -> exp) -> t -> (trm -> t) -> trm -> t =
+     fun f b cons x -> map1 f b (ap1f cons) (`Trm x)
+    in
+    let lift_map2 :
+        (exp -> exp) -> t -> (trm -> trm -> t) -> trm -> trm -> t =
+     fun f b cons x y -> map2 f b (ap2f cons) (`Trm x) (`Trm y)
+    in
+    match b with
+    | Tt | Ff -> b
+    | Eq (x, y) -> lift_map2 f b _Eq x y
+    | Dq (x, y) -> lift_map2 f b _Dq x y
+    | Eq0 x -> lift_map1 f b _Eq0 x
+    | Dq0 x -> lift_map1 f b _Dq0 x
+    | Gt0 x -> lift_map1 f b _Gt0 x
+    | Ge0 x -> lift_map1 f b _Ge0 x
+    | Lt0 x -> lift_map1 f b _Lt0 x
+    | Le0 x -> lift_map1 f b _Le0 x
+    | And (x, y) -> map2 (map_terms ~f) b _And x y
+    | Or (x, y) -> map2 (map_terms ~f) b _Or x y
+    | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
+    | Xor (x, y) -> map2 (map_terms ~f) b _Xor x y
+    | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
+    | UPosLit (p, x) -> lift_map1 f b (_UPosLit p) x
+    | UNegLit (p, x) -> lift_map1 f b (_UNegLit p) x
+
+  let fold_map_vars ~init e ~f =
+    let s = ref init in
+    let f x =
+      let s', x' = f !s x in
+      s := s' ;
+      x'
+    in
+    let e' = map_vars ~f e in
+    (!s, e')
+
+  let rename s e = map_vars ~f:(Var.Subst.apply s) e
+
+  let disjuncts p =
+    let rec disjuncts_ p ds =
+      match p with
+      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
+      | Cond {cnd; pos; neg} ->
+          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
+      | d -> d :: ds
+    in
+    disjuncts_ p []
+end
+
+(*
  * Convert to Ses
  *)
 
@@ -1028,19 +1156,25 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Ff -> Ses.Term.false_
   | Eq (x, y) -> Ses.Term.eq (t_to_ses x) (t_to_ses y)
   | Dq (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
-  | Lt (x, y) -> Ses.Term.lt (t_to_ses x) (t_to_ses y)
-  | Le (x, y) -> Ses.Term.le (t_to_ses x) (t_to_ses y)
-  | Ord (x, y) -> Ses.Term.ord (t_to_ses x) (t_to_ses y)
-  | Uno (x, y) -> Ses.Term.uno (t_to_ses x) (t_to_ses y)
-  | Not p -> Ses.Term.not_ (f_to_ses p)
+  | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
+  | Dq0 x -> Ses.Term.dq Ses.Term.zero (t_to_ses x)
+  | Gt0 x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
+  | Ge0 x -> Ses.Term.le Ses.Term.zero (t_to_ses x)
+  | Lt0 x -> Ses.Term.lt (t_to_ses x) Ses.Term.zero
+  | Le0 x -> Ses.Term.le (t_to_ses x) Ses.Term.zero
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
   | Xor (p, q) -> Ses.Term.dq (f_to_ses p) (f_to_ses q)
-  | Imp (p, q) -> Ses.Term.le (f_to_ses p) (f_to_ses q)
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
+  | UPosLit (Ordered, Tuple [|x; y|]) ->
+      Ses.Term.ord (t_to_ses x) (t_to_ses y)
+  | UNegLit (Ordered, Tuple [|x; y|]) ->
+      Ses.Term.uno (t_to_ses x) (t_to_ses y)
+  | (UPosLit (Ordered, _) | UNegLit (Ordered, _)) as f ->
+      fail "cannot translate to Ses: %a" pp_f f ()
 
 let rec to_ses : exp -> Ses.Term.t = function
   | `Ite (cnd, thn, els) ->
@@ -1065,6 +1199,8 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
 let uap0 f = `Trm (Apply (f, Tuple [||]))
 let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
+let upos2 p = ap2f (fun x y -> _UPosLit p (Tuple [|x; y|]))
+let uneg2 p = ap2f (fun x y -> _UNegLit p (Tuple [|x; y|]))
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
@@ -1105,15 +1241,22 @@ and of_ses : Ses.Term.t -> exp =
   | Ap1 (Convert {src; dst}, e) -> uap_tt (Convert {src; dst}) e
   | Ap2 (Eq, d, e) -> ap2_f iff eq d e
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
-  | Ap2 (Lt, d, e) -> ap2_f (Fn.flip nimp) lt d e
-  | Ap2 (Le, d, e) -> ap2_f imp le d e
-  | Ap2 (Ord, d, e) -> ap_ttf ord d e
-  | Ap2 (Uno, d, e) -> ap_ttf uno d e
+  | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
+  | Ap2 (Le, d, e) -> ap2_f (fun p q -> or_ (not_ p) q) le d e
+  | Ap2 (Ord, d, e) -> ap_ttf (upos2 Ordered) d e
+  | Ap2 (Uno, d, e) -> ap_ttf (uneg2 Ordered) d e
   | Add sum -> (
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero
     | Some (e, q, sum) ->
-        let mul e q = mulq q (of_ses e) in
+        let mul e q =
+          if Q.equal Q.one q then of_ses e
+          else
+            match of_ses e with
+            | `Trm (Z z) -> rational (Q.mul q (Q.of_z z))
+            | `Trm (Q r) -> rational (Q.mul q r)
+            | t -> mulq q t
+        in
         Ses.Term.Qset.fold sum ~init:(mul e q) ~f:(fun e q s ->
             add (mul e q) s ) )
   | Mul prod -> (
@@ -1173,16 +1316,10 @@ let v_map_ses : (var -> var) -> Ses.Var.t -> Ses.Var.t =
   if v' == v then x else v_to_ses v'
 
 let ses_map : (Ses.Term.t -> Ses.Term.t) -> exp -> exp =
- fun f x ->
-  let e = to_ses x in
-  let e' = f e in
-  if e' == e then x else of_ses e'
+ fun f x -> of_ses (f (to_ses x))
 
 let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
- fun f x ->
-  let e = f_to_ses x in
-  let e' = f e in
-  if e' == e then x else f_of_ses e'
+ fun f x -> f_of_ses (f (f_to_ses x))
 
 (*
  * Contexts
@@ -1191,39 +1328,39 @@ let f_ses_map : (Ses.Term.t -> Ses.Term.t) -> fml -> fml =
 module Context = struct
   type t = Ses.Equality.t [@@deriving sexp]
 
-  let pp = Ses.Equality.pp
   let invariant = Ses.Equality.invariant
-  let true_ = Ses.Equality.true_
+  let empty = Ses.Equality.true_
 
-  let and_formula vs f x =
+  let add vs f x =
     let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
     (vs_of_ses vs', x')
 
-  let and_ vs x y =
+  let union vs x y =
     let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
     (vs_of_ses vs', z)
 
-  let orN vs xs =
+  let interN vs xs =
     let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
     (vs_of_ses vs', z)
 
   let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
-  let fv x = vs_of_ses (Ses.Equality.fv x)
-  let is_true x = Ses.Equality.is_true x
-  let is_false x = Ses.Equality.is_false x
-  let entails_eq x e f = Ses.Equality.entails_eq x (to_ses e) (to_ses f)
-  let normalize x e = ses_map (Ses.Equality.normalize x) e
-  let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
-  let difference x e f = Ses.Equality.difference x (to_ses e) (to_ses f)
+  let is_empty x = Ses.Equality.is_true x
+  let is_unsat x = Ses.Equality.is_false x
+  let implies x b = Ses.Equality.implies x (f_to_ses b)
 
-  let fold_terms ~init x ~f =
-    Ses.Equality.fold_terms x ~init ~f:(fun s e -> f s (of_ses e))
+  let refutes x b =
+    Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
+
+  let normalize x e = ses_map (Ses.Equality.normalize x) e
+
+  let fold_vars ~init x ~f =
+    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
+
+  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
   (* Classes *)
 
   let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
-
-  type classes = exp list Term.Map.t
 
   let classes_of_ses clss =
     Ses.Term.Map.fold clss ~init:Term.Map.empty
@@ -1237,11 +1374,15 @@ module Context = struct
   let diff_classes r s =
     Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
         match
-          List.filter cls ~f:(fun exp -> not (entails_eq s rep exp))
+          List.filter cls ~f:(fun exp ->
+              not (implies s (Formula.eq rep exp)) )
         with
         | [] -> None
         | cls -> Some cls )
 
+  (* Pretty printing *)
+
+  let pp_raw = Ses.Equality.pp
   let ppx_cls x = List.pp "@ = " (Term.ppx x)
 
   let ppx_classes x fs clss =
@@ -1251,7 +1392,24 @@ module Context = struct
           (List.sort ~compare:Term.compare cls) )
       fs (Term.Map.to_alist clss)
 
-  let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
+  let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
+
+  let ppx_diff var_strength fs parent_ctx fml ctx =
+    let clss = diff_classes ctx parent_ctx in
+    let first = Term.Map.is_empty clss in
+    if not first then Format.fprintf fs "  " ;
+    ppx_classes var_strength fs clss ;
+    let fml =
+      let normalizef x e = f_ses_map (Ses.Equality.normalize x) e in
+      let fml' = normalizef ctx fml in
+      if Formula.(equal tt fml') then [] else [fml']
+    in
+    List.pp
+      ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
+      "@ @<2>∧ "
+      (Formula.ppx var_strength)
+      fs fml ~suf:"@]" ;
+    first && List.is_empty fml
 
   (* Substs *)
 
@@ -1266,7 +1424,6 @@ module Context = struct
           f ~key:(of_ses key) ~data:(of_ses data) )
 
     let subst s = ses_map (Ses.Equality.Subst.subst s)
-    let substf s = f_ses_map (Ses.Equality.Subst.subst s)
 
     let partition_valid vs s =
       let t, ks, u = Ses.Equality.Subst.partition_valid (vs_to_ses vs) s in
@@ -1286,10 +1443,9 @@ module Context = struct
 
   type call =
     | Normalize of t * exp
-    | Normalizef of t * fml
-    | And_formula of Var.Set.t * fml * t
-    | And_ of Var.Set.t * t * t
-    | OrN of Var.Set.t * t list
+    | Add of Var.Set.t * fml * t
+    | Union of Var.Set.t * t * t
+    | InterN of Var.Set.t * t list
     | Rename of t * Var.Subst.t
     | Apply_subst of Var.Set.t * Subst.t * t
     | Solve_for_vars of Var.Set.t list * t
@@ -1298,10 +1454,9 @@ module Context = struct
   let replay c =
     match call_of_sexp (Sexp.of_string c) with
     | Normalize (r, e) -> normalize r e |> ignore
-    | Normalizef (r, e) -> normalizef r e |> ignore
-    | And_formula (us, e, r) -> and_formula us e r |> ignore
-    | And_ (us, r, s) -> and_ us r s |> ignore
-    | OrN (us, rs) -> orN us rs |> ignore
+    | Add (us, e, r) -> add us e r |> ignore
+    | Union (us, r, s) -> union us r s |> ignore
+    | InterN (us, rs) -> interN us rs |> ignore
     | Rename (r, s) -> rename r s |> ignore
     | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
     | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
@@ -1331,9 +1486,9 @@ module Context = struct
       try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
 
   let normalize_tmr = Timer.create "normalize" ~at_exit:report
-  let and_formula_tmr = Timer.create "and_formula" ~at_exit:report
-  let and_tmr = Timer.create "and_" ~at_exit:report
-  let orN_tmr = Timer.create "orN" ~at_exit:report
+  let add_tmr = Timer.create "add" ~at_exit:report
+  let uniontmr = Timer.create "union" ~at_exit:report
+  let interN_tmr = Timer.create "interN" ~at_exit:report
   let rename_tmr = Timer.create "rename" ~at_exit:report
   let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
   let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
@@ -1341,20 +1496,14 @@ module Context = struct
   let normalize r e =
     wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
-  let normalizef r e =
-    wrap normalize_tmr
-      (fun () -> normalizef r e)
-      (fun () -> Normalizef (r, e))
+  let add us e r =
+    wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
 
-  let and_formula us e r =
-    wrap and_formula_tmr
-      (fun () -> and_formula us e r)
-      (fun () -> And_formula (us, e, r))
+  let union us r s =
+    wrap uniontmr (fun () -> union us r s) (fun () -> Union (us, r, s))
 
-  let and_ us r s =
-    wrap and_tmr (fun () -> and_ us r s) (fun () -> And_ (us, r, s))
-
-  let orN us rs = wrap orN_tmr (fun () -> orN us rs) (fun () -> OrN (us, rs))
+  let interN us rs =
+    wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
 
   let rename r s =
     wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
@@ -1425,27 +1574,29 @@ module Term_of_Llair = struct
           | _ -> uap1 (Unsigned bits) a
         else uap1 (Unsigned bits) a
     | Ap1 (Convert {src}, dst, e) -> uap_te (Convert {src; dst}) e
-    | Ap2 (Eq, Integer {bits= 1; _}, d, e) -> ap_fff iff d e
-    | Ap2 (Dq, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, d, e) -> ap_fff nimp d e
-    | Ap2 ((Lt | Ult), Integer {bits= 1; _}, d, e) -> ap_fff nimp e d
-    | Ap2 ((Ge | Uge), Integer {bits= 1; _}, d, e) -> ap_fff imp e d
-    | Ap2 ((Le | Ule), Integer {bits= 1; _}, d, e) -> ap_fff imp d e
+    | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff iff p q
+    | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q)
+     |Ap2 ((Lt | Ult), Integer {bits= 1; _}, q, p) ->
+        ap_fff (fun p q -> and_ p (not_ q)) p q
+    | Ap2 ((Ge | Uge), Integer {bits= 1; _}, p, q)
+     |Ap2 ((Le | Ule), Integer {bits= 1; _}, q, p) ->
+        ap_fff (fun p q -> or_ p (not_ q)) p q
     | Ap2 (Eq, _, d, e) -> ap_ttf eq d e
     | Ap2 (Dq, _, d, e) -> ap_ttf dq d e
-    | Ap2 (Gt, _, d, e) -> ap_ttf lt e d
+    | Ap2 (Gt, _, d, e) -> ap_ttf gt d e
     | Ap2 (Lt, _, d, e) -> ap_ttf lt d e
-    | Ap2 (Ge, _, d, e) -> ap_ttf le e d
+    | Ap2 (Ge, _, d, e) -> ap_ttf ge d e
     | Ap2 (Le, _, d, e) -> ap_ttf le d e
-    | Ap2 (Ugt, typ, d, e) -> usap_ttf lt typ e d
+    | Ap2 (Ugt, typ, d, e) -> usap_ttf gt typ d e
     | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
-    | Ap2 (Uge, typ, d, e) -> usap_ttf le typ e d
+    | Ap2 (Uge, typ, d, e) -> usap_ttf ge typ d e
     | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
-    | Ap2 (Ord, _, d, e) -> ap_ttf ord d e
-    | Ap2 (Uno, _, d, e) -> ap_ttf uno d e
-    | Ap2 (Add, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 (Sub, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
-    | Ap2 (Mul, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
+    | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 Ordered) d e
+    | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 Ordered) d e
+    | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
+    | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
     | Ap2 (Add, _, d, e) -> ap_ttt add d e
     | Ap2 (Sub, _, d, e) -> ap_ttt sub d e
     | Ap2 (Mul, _, d, e) -> ap_ttt mul d e
@@ -1453,9 +1604,9 @@ module Term_of_Llair = struct
     | Ap2 (Rem, _, d, e) -> uap_tte Rem d e
     | Ap2 (Udiv, typ, d, e) -> usap_ttt (uap2 Div) typ d e
     | Ap2 (Urem, typ, d, e) -> usap_ttt (uap2 Rem) typ d e
-    | Ap2 (And, Integer {bits= 1; _}, d, e) -> ap_fff and_ d e
-    | Ap2 (Or, Integer {bits= 1; _}, d, e) -> ap_fff or_ d e
-    | Ap2 (Xor, Integer {bits= 1; _}, d, e) -> ap_fff xor d e
+    | Ap2 (And, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
+    | Ap2 (Or, Integer {bits= 1; _}, p, q) -> ap_fff or_ p q
+    | Ap2 (Xor, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
     | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
     | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e
     | Ap2 (Xor, _, d, e) -> ap_ttt (uap2 BitXor) d e

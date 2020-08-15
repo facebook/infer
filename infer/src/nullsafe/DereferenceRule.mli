@@ -11,7 +11,7 @@ open! IStd
 
 type violation [@@deriving compare]
 
-val check : Nullability.t -> (unit, violation) result
+val check : InferredNullability.t -> (unit, violation) result
 (** violation of Dereference rule reflects possibility of dereferencing of `null`. Note that this
     might or might not be severe enough to be reported to the user, depending on the mode
     agreements. *)
@@ -21,7 +21,7 @@ module ReportableViolation : sig
   type t
 
   type dereference_type =
-    | MethodCall of Procname.t
+    | MethodCall of Procname.Java.t
     | AccessToField of Fieldname.t
     | AccessByIndex of {index_desc: string}
     | ArrayLengthAccess
@@ -39,7 +39,6 @@ module ReportableViolation : sig
     -> dereference_location:Location.t
     -> dereference_type
     -> nullable_object_descr:string option
-    -> nullable_object_origin:TypeOrigin.t
     -> string * IssueType.t * Location.t
   (** Given context around violation, return error message together with the info where to put this
       message *)

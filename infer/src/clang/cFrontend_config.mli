@@ -22,6 +22,8 @@ type decl_trans_context = [`DeclTraversal | `Translation]
 
 val alloc : string
 
+val arrayWithObjects_count : string
+
 val dealloc : string
 
 val assert_fail : string
@@ -69,6 +71,8 @@ val new_str : string
 
 val next_object : string
 
+val nsenumerator_cl : string
+
 val nsproxy_cl : string
 
 val nsobject_cl : string
@@ -78,6 +82,8 @@ val nsstring_cl : string
 val objc_class : string
 
 val objc_object : string
+
+val object_enumerator : string
 
 val return_param : string
 

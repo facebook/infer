@@ -16,7 +16,7 @@ class InheritanceTest {
     }
   }
 
-  public void call_interface_method_Good(MyInterface x) {
+  public void call_interface_method_Good_FP(MyInterface x) {
     int a[] = new int[10];
     a[x.foo()] = 0;
   }

@@ -9,6 +9,6 @@
  (flags
   (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd
     -open ATDGenerated -open IBase -open Absint -open BO -open Checkers))
- (libraries core sledge IStdlib ATDGenerated IBase IR Absint BO Checkers)
- (preprocess (pps ppx_compare))
-)
+ (libraries core IStdlib ATDGenerated IBase IR Absint BO Checkers)
+ (preprocess
+  (pps ppx_compare)))

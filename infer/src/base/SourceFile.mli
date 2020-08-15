@@ -62,4 +62,7 @@ val to_string : ?force_relative:bool -> t -> string
 (** convert a source file to a string WARNING: result may not be valid file path, do not use this
     function to perform operations on filenames *)
 
+val has_extension : t -> ext:string -> bool
+(** returns whether the source file has provided extension *)
+
 module SQLite : SqliteUtils.Data with type t = t

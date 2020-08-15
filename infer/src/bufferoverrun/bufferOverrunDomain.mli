@@ -467,8 +467,6 @@ module Mem : sig
 
   val exc_raised : t
 
-  val is_exc_raised : _ t0 -> bool
-
   val is_rep_multi_loc : AbsLoc.Loc.t -> _ t0 -> bool
   (** Check if an abstract location represents multiple concrete locations. *)
 

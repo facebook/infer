@@ -158,6 +158,17 @@ OPTIONS
            Activates: Buck integration for Java targets. (Conversely:
            --no-buck-java)           See also infer-capture(1).
 
+       --buck-java-flavor
+           Activates: Buck integration for Java which uses the buck flavor
+           #infer-java-capture instead of genrules like buck-java.
+           (Conversely: --no-buck-java-flavor)           See also infer-capture(1).
+
+       --buck-java-flavor-suppress-config
+           Activates: Suppress setting buck config values for the infer
+           binary and its version in the buck-java-flavor integration.
+           (Conversely: --no-buck-java-flavor-suppress-config)       
+    See also infer-capture(1).
+
        --buck-merge-all-deps
            Activates: Find and merge all infer dependencies produced by buck.
            Use this flag if infer doesn't find any files to analyze after a
@@ -772,6 +783,10 @@ OPTIONS
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)           See also infer-analyze(1).
 
+       --max-jobs int
+           Maximum number of analysis jobs running simultaneously       
+    See also infer-analyze(1).
+
        --max-nesting int
            Level of nested procedure calls to show. Trace elements beyond the
            maximum nesting level are skipped. If omitted, all levels are
@@ -822,6 +837,12 @@ OPTIONS
        --procedures-attributes
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)       
+    See also infer-debug(1).
+
+       --procedures-cfg
+           Activates: Output a dotty file in
+           infer-out/captured/<file_name>/<proc_name>.dot for each procedure
+           in the output of --procedures (Conversely: --no-procedures-cfg)       
     See also infer-debug(1).
 
        --no-procedures-definedness
@@ -1083,6 +1104,10 @@ OPTIONS
            Deactivates: print code excerpts around trace elements
            (Conversely: --source-preview)           See also infer-explore(1).
 
+       --specs-shard-depth int
+           Specify the depth of the directory structure of specs, used for
+           "sharding" .specs files. Zero turns sharding off.           See also infer-analyze(1) and infer-run(1).
+
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),
            follows formal of corresponding SQLite PRAGMA.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
@@ -1108,14 +1133,23 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
-       --topl
-           Activates: checker topl: Detects errors based on user-provided
-           state machines describing multi-object monitors. (Conversely:
-           --no-topl)           See also infer-analyze(1).
+       --topl-biabd
+           Activates: checker topl-biabd: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-biabd)           See also infer-analyze(1).
 
-       --topl-only
-           Activates: Enable topl and disable all other checkers (Conversely:
-           --no-topl-only)           See also infer-analyze(1).
+       --topl-biabd-only
+           Activates: Enable topl-biabd and disable all other checkers
+           (Conversely: --no-topl-biabd-only)           See also infer-analyze(1).
+
+       --topl-pulse
+           Activates: checker topl-pulse: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-pulse)           See also infer-analyze(1).
+
+       --topl-pulse-only
+           Activates: Enable topl-pulse and disable all other checkers
+           (Conversely: --no-topl-pulse-only)           See also infer-analyze(1).
 
        --no-uninit
            Deactivates: checker uninit: Warns when values are used before

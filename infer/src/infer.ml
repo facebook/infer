@@ -152,7 +152,7 @@ let () =
   if has_results_dir then log_environment_info () ;
   if has_results_dir && Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
-    L.progress "Execution ID %Ld@." Config.execution_id ) ;
+    Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
   ( match Config.command with
   | _ when Config.test_determinator && not Config.process_clang_ast ->
       TestDeterminator.compute_and_emit_test_to_run ()
@@ -191,7 +191,7 @@ let () =
       in
       match (Config.issues_tests, Config.cost_issues_tests) with
       | None, None ->
-          if not Config.quiet then L.result "%t" SpecsFiles.pp_from_config
+          if not Config.quiet then L.result "%t" Summary.OnDisk.pp_specs_from_config
       | Some out_path, Some cost_out_path ->
           write_from_json out_path ;
           write_from_cost_json cost_out_path
@@ -237,7 +237,8 @@ let () =
           L.result "%a"
             Config.(
               Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
-                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
+                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes
+                ~proc_cfg:procedures_cfg)
             () ) ;
       if Config.source_files then (
         let filter = Lazy.force Filtering.source_files_filter in

@@ -19,13 +19,19 @@ type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 val equal_method_call_type : method_call_type -> method_call_type -> bool
 
 val should_create_procdesc :
-  Cfg.t -> Procname.t -> defined:bool -> set_objc_accessor_attr:bool -> bool
+     ?captured_vars:(Mangled.t * Typ.typ * Pvar.capture_mode) list
+  -> Cfg.t
+  -> Procname.t
+  -> defined:bool
+  -> set_objc_accessor_attr:bool
+  -> bool
 (** Return if a procdesc should be added or not. It returns [false] when the same name of procdesc
     was added previously. [defined] represents if the function body is non-empty.
     [set_objc_accessor_attr] represents if the function is a getter/setter in Obj-C. *)
 
 val create_local_procdesc :
      ?set_objc_accessor_attr:bool
+  -> ?update_lambda_captured:bool
   -> CFrontend_config.translation_unit_context
   -> Cfg.t
   -> Tenv.t
@@ -55,8 +61,14 @@ val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer -> CMethodSignat
 val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Procname.t option
 
 val create_procdesc_with_pointer :
-  CContext.t -> Clang_ast_t.pointer -> Typ.Name.t option -> string -> Procname.t
+     ?captured_vars:(Pvar.t * Typ.t * Pvar.capture_mode) list
+  -> CContext.t
+  -> Clang_ast_t.pointer
+  -> Typ.Name.t option
+  -> string
+  -> Procname.t
 
-val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Procname.t
+val get_procname_from_cpp_lambda :
+  CContext.t -> Clang_ast_t.decl -> (Pvar.t * Typ.t * Pvar.capture_mode) list -> Procname.t
 
 val get_captures_from_cpp_lambda : Clang_ast_t.decl -> Clang_ast_t.lambda_capture_info list

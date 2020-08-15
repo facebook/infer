@@ -800,12 +800,6 @@ let execute_objc_NSArray_alloc_no_fail builtin_args symb_state pname =
   execute_objc_alloc_no_fail symb_state ret_typ (Some pname) builtin_args
 
 
-let execute_NSArray_arrayWithObjects_count builtin_args =
-  let n_formals = 1 in
-  let res = SymExec.check_variadic_sentinel ~fails_on_nil:true n_formals (0, 1) builtin_args in
-  execute_objc_NSArray_alloc_no_fail builtin_args res BuiltinDecl.nsArray_arrayWithObjectsCount
-
-
 let execute_NSArray_arrayWithObjects builtin_args =
   let n_formals = 1 in
   let res = SymExec.check_variadic_sentinel n_formals (0, 1) builtin_args in
@@ -963,7 +957,7 @@ let nsArray_arrayWithObjects =
 
 
 let nsArray_arrayWithObjectsCount =
-  Builtin.register BuiltinDecl.nsArray_arrayWithObjectsCount execute_NSArray_arrayWithObjects_count
+  Builtin.register BuiltinDecl.nsArray_arrayWithObjectsCount execute_skip
 
 
 (* model throwing exception in objc/c++ as divergence *)

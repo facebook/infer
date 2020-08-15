@@ -67,35 +67,32 @@ module JNI = struct
         Format.fprintf fmt "(%a)%a" (Pp.seq ~sep:"" pp) args pp ret_typ
 
 
-  let rec to_java_type jni =
-    let make = JavaSplitName.make in
+  let rec to_typ jni =
     match jni with
     | Boolean ->
-        make "bool"
+        Typ.boolean
     | Byte ->
-        make "byte"
+        Typ.java_byte
     | Char ->
-        make "char"
+        Typ.java_char
     | Short ->
-        make "short"
+        Typ.java_short
     | Int ->
-        make "int"
+        Typ.int
     | Long ->
-        make "long"
+        Typ.long
     | Float ->
-        make "float"
+        Typ.float
     | Double ->
-        make "double"
+        Typ.double
     | Void ->
-        make "void"
-    | FullyQualifiedClass (pkg, cl) ->
-        make ~package:pkg cl
+        Typ.void
+    | FullyQualifiedClass (pkg, classname) ->
+        Typ.(mk_ptr (mk_struct (JavaClass (JavaClassName.make ~package:(Some pkg) ~classname))))
     | Array typ ->
-        let java_type = to_java_type typ in
-        let typ_str = JavaSplitName.type_name java_type in
-        make ?package:(JavaSplitName.package java_type) (Printf.sprintf "%s[]" typ_str)
+        Typ.mk_ptr (Typ.mk_array (to_typ typ))
     | Method _ ->
-        L.(die UserError "Cannot express a method as a Procname.Java.java_type")
+        L.die UserError "JNI: Cannot express a method as a typ"
 
 
   let tokenize input =
@@ -251,8 +248,6 @@ module JNI = struct
 
     let parse_method_str = parse_method_str
 
-    let to_java_type = to_java_type
-
     let pp = pp
   end
 end
@@ -261,13 +256,13 @@ let create_procname ~classname ~methodname:method_name ~signature ~use_signature
   let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
   let class_name = Typ.Name.Java.from_string classname in
   let args, return_type = JNI.parse_method_str signature in
-  let parameters = List.map ~f:JNI.to_java_type args in
+  let parameters = List.map ~f:JNI.to_typ args in
   let return_type =
     if
       String.equal method_name Procname.Java.constructor_method_name
       || String.equal method_name Procname.Java.class_initializer_method_name
     then None
-    else Some (JNI.to_java_type return_type)
+    else Some (JNI.to_typ return_type)
   in
   Procname.make_java ~class_name ~return_type ~method_name ~parameters
     ~kind:Procname.Java.Non_Static ()

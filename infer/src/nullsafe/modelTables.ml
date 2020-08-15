@@ -712,3 +712,11 @@ let nonnull_alternatives_table =
       ~f:(fun (_, method_descr, alternative) -> (alternative, method_descr))
   in
   mk_table method_descr_to_alternative
+
+
+let field_nullability = [("java.lang.Boolean.TRUE", o); ("java.lang.Boolean.FALSE", o)]
+
+let field_nullability_table =
+  let table = Hashtbl.create 1 in
+  List.iter field_nullability ~f:(fun (name, nullability) -> Hashtbl.add table name nullability) ;
+  table

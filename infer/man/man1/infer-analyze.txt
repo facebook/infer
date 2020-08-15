@@ -209,6 +209,9 @@ OPTIONS
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)
 
+       --max-jobs int
+           Maximum number of analysis jobs running simultaneously
+
        --perf-profiler-data-file file
            DEPRECATED: Specify the file containing perf profiler data to read
 
@@ -332,6 +335,10 @@ OPTIONS
            Activates: Enable siof and disable all other checkers (Conversely:
            --no-siof-only)
 
+       --specs-shard-depth int
+           Specify the depth of the directory structure of specs, used for
+           "sharding" .specs files. Zero turns sharding off.
+
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),
            follows formal of corresponding SQLite PRAGMA.
@@ -352,14 +359,23 @@ OPTIONS
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
 
-       --topl
-           Activates: checker topl: Detects errors based on user-provided
-           state machines describing multi-object monitors. (Conversely:
-           --no-topl)
+       --topl-biabd
+           Activates: checker topl-biabd: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-biabd)
 
-       --topl-only
-           Activates: Enable topl and disable all other checkers (Conversely:
-           --no-topl-only)
+       --topl-biabd-only
+           Activates: Enable topl-biabd and disable all other checkers
+           (Conversely: --no-topl-biabd-only)
+
+       --topl-pulse
+           Activates: checker topl-pulse: Detects errors based on
+           user-provided state machines describing multi-object monitors.
+           (Conversely: --no-topl-pulse)
+
+       --topl-pulse-only
+           Activates: Enable topl-pulse and disable all other checkers
+           (Conversely: --no-topl-pulse-only)
 
        --no-uninit
            Deactivates: checker uninit: Warns when values are used before

@@ -7,7 +7,7 @@ digraph cfg {
 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" [label="2: Exit super_example_main \n  " color=yellow style=filled]
 	
 
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:objc_object*); [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject.init(n$0:ASuper*) virtual [line 40, column 21]\n " shape="box"]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:objc_object*); [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject.init(n$0:ASuper*) virtual [line 40, column 21]\n  *&a:objc_object*=n$1 [line 40, column 5]\n " shape="box"]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;

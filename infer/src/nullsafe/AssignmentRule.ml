@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
+type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t} [@@deriving compare]
 
 module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
@@ -14,26 +14,26 @@ module ReportableViolation = struct
   type assignment_type =
     | PassingParamToFunction of function_info
     | AssigningToField of Fieldname.t
-    | ReturningFromFunction of Procname.t
+    | ReturningFromFunction of Procname.Java.t
   [@@deriving compare]
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
-    ; model_source: AnnotatedSignature.model_source option
+    ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
-    ; function_procname: Procname.t }
+    ; function_procname: Procname.Java.t }
 
   let from nullsafe_mode ({lhs; rhs} as violation) =
     let falls_under_optimistic_third_party =
       Config.nullsafe_optimistic_third_party_params_in_non_strict
       && NullsafeMode.equal nullsafe_mode Default
-      && Nullability.equal lhs ThirdPartyNonnull
+      && Nullability.equal (AnnotatedNullability.get_nullability lhs) ThirdPartyNonnull
     in
     let is_non_reportable =
       falls_under_optimistic_third_party
       || (* In certain modes, we trust rhs to be non-nullable and don't report violation *)
-      Nullability.is_considered_nonnull ~nullsafe_mode rhs
+      Nullability.is_considered_nonnull ~nullsafe_mode (InferredNullability.get_nullability rhs)
     in
     if is_non_reportable then None else Some {nullsafe_mode; violation}
 
@@ -62,7 +62,7 @@ module ReportableViolation = struct
 
 
   let mk_description_for_bad_param_passed
-      {model_source; param_signature; actual_param_expression; param_position; function_procname}
+      {kind; param_signature; actual_param_expression; param_position; function_procname}
       ~param_nullability_kind ~nullability_evidence =
     let nullability_evidence_as_suffix =
       Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
@@ -106,7 +106,7 @@ module ReportableViolation = struct
               (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
             ~default:"the third party signature storage"
         in
-        let procname_str = Procname.to_simplified_string ~withclass:true function_procname in
+        let procname_str = Procname.Java.to_simplified_string ~withclass:true function_procname in
         Format.asprintf
           "Third-party %a is missing a signature that would allow passing a nullable to param \
            #%d%a. Actual argument %s%s. Consider adding the correct signature of %a to %s."
@@ -118,12 +118,12 @@ module ReportableViolation = struct
     | Nullability.UncheckedNonnull
     | Nullability.StrictNonnull ->
         let nonnull_evidence =
-          match model_source with
-          | None ->
+          match kind with
+          | FirstParty | ThirdParty Unregistered ->
               ""
-          | Some InternalModel ->
+          | ThirdParty ModelledInternally ->
               " (according to nullsafe internal models)"
-          | Some (ThirdPartyRepo {filename; line_number}) ->
+          | ThirdParty (InThirdPartyRepo {filename; line_number}) ->
               Format.sprintf " (see %s at line %d)"
                 (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
                    ~filename)
@@ -131,7 +131,7 @@ module ReportableViolation = struct
         in
         Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
           MF.pp_monospaced
-          (Procname.to_simplified_string ~withclass:true function_procname)
+          (Procname.Java.to_simplified_string ~withclass:true function_procname)
           param_position pp_param_name param_signature.mangled nonnull_evidence argument_description
           nullability_evidence_as_suffix
 
@@ -193,17 +193,18 @@ module ReportableViolation = struct
           in
           Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s.%s"
             MF.pp_monospaced
-            (Procname.to_simplified_string ~withclass:false function_proc_name)
+            (Procname.Java.to_simplified_string ~withclass:false function_proc_name)
             return_description nullability_evidence_as_suffix alternative_recommendation
     in
     let issue_type = get_issue_type assignment_type in
     (error_message, issue_type, assignment_location)
 
 
-  let get_description ~assignment_location assignment_type ~rhs_origin
-      {nullsafe_mode; violation= {rhs}} =
+  let get_description ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
+    let rhs_origin = InferredNullability.get_origin rhs in
     let user_friendly_nullable =
-      ErrorRenderingUtils.UserFriendlyNullable.from_nullability rhs
+      ErrorRenderingUtils.UserFriendlyNullable.from_nullability
+        (InferredNullability.get_nullability rhs)
       |> IOption.if_none_eval ~f:(fun () ->
              Logging.die InternalError
                "get_description:: Assignment violation should not be possible for non-nullable \
@@ -223,5 +224,9 @@ module ReportableViolation = struct
 end
 
 let check ~lhs ~rhs =
-  let is_subtype = Nullability.is_subtype ~supertype:lhs ~subtype:rhs in
+  let is_subtype =
+    Nullability.is_subtype
+      ~supertype:(AnnotatedNullability.get_nullability lhs)
+      ~subtype:(InferredNullability.get_nullability rhs)
+  in
   Result.ok_if_true is_subtype ~error:{lhs; rhs}

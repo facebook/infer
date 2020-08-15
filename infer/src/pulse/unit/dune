@@ -1,0 +1,13 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name PulseTest)
+ (flags
+  (:standard -open IStdlib -open IStd -open Pulselib -open IR))
+ (libraries IStdlib Pulselib)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (inline_tests))

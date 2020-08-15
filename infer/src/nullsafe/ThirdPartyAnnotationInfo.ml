@@ -7,11 +7,37 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 
-type signature_info = {filename: string; line_number: int; nullability: ThirdPartyMethod.nullability}
+type signature_info = {filename: string; line_number: int; signature: ThirdPartyMethod.t}
+
+type unique_repr =
+  { class_name: ThirdPartyMethod.fully_qualified_type
+  ; method_name: ThirdPartyMethod.method_name
+  ; param_types: ThirdPartyMethod.fully_qualified_type list }
+[@@deriving sexp]
+
+let pp_unique_repr fmt signature = Sexp.pp fmt (sexp_of_unique_repr signature)
+
+let unique_repr_of_signature ThirdPartyMethod.{class_name; method_name; params} =
+  {class_name; method_name; param_types= List.map params ~f:(fun (param_type, _) -> param_type)}
+
+
+let java_type_to_string java_type = Pp.string_of_pp (Typ.pp_java ~verbose:true) java_type
+
+let unique_repr_of_java_proc_name java_proc_name =
+  let class_name = Procname.Java.get_class_name java_proc_name in
+  let method_name =
+    if Procname.Java.is_constructor java_proc_name then ThirdPartyMethod.Constructor
+    else ThirdPartyMethod.Method (Procname.Java.get_method java_proc_name)
+  in
+  let param_types =
+    Procname.Java.get_parameters java_proc_name |> List.map ~f:java_type_to_string
+  in
+  {class_name; method_name; param_types}
+
 
 type storage = {signature_map: signature_map; filenames: string list}
 
-and signature_map = (ThirdPartyMethod.unique_repr, signature_info) Hashtbl.t
+and signature_map = (unique_repr, signature_info) Hashtbl.t
 
 let create_storage () = {signature_map= Hashtbl.create 1; filenames= []}
 
@@ -42,9 +68,10 @@ let parse_line_and_add_to_storage signature_map ~filename ~line_index line =
   if is_whitespace_or_comment line then Ok signature_map
   else
     ThirdPartyMethod.parse line
-    >>= fun (signature, nullability) ->
+    >>= fun signature ->
+    let key = unique_repr_of_signature signature in
     Ok
-      ( Hashtbl.add signature_map signature {filename; line_number= line_index + 1; nullability} ;
+      ( Hashtbl.add signature_map key {filename; line_number= line_index + 1; signature} ;
         signature_map )
 
 
@@ -77,24 +104,12 @@ let lookup_related_sig_file {filenames} ~package =
 
 
 let lookup_related_sig_file_for_proc storage procname =
-  let package =
-    match procname with
-    | Procname.Java java_pname ->
-        Procname.Java.get_package java_pname
-    | _ ->
-        None
-  in
+  let package = Procname.Java.get_package procname in
   Option.bind package ~f:(fun package -> lookup_related_sig_file storage ~package)
 
 
 let is_third_party_proc storage procname =
-  let is_from_config =
-    match procname with
-    | Procname.Java java_pname ->
-        Procname.Java.is_external java_pname
-    | _ ->
-        false
-  in
+  let is_from_config = Procname.Java.is_external procname in
   let lookup_sig_file _ = lookup_related_sig_file_for_proc storage procname in
   is_from_config || Option.is_some (lookup_sig_file ())
 

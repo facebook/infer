@@ -27,7 +27,7 @@ let check ~what ~by_rhs_upper_bound =
 
 type violation_type =
   | FieldOverAnnoted of Fieldname.t
-  | ReturnOverAnnotated of Procname.t  (** Return value of a method can be made non-nullable *)
+  | ReturnOverAnnotated of Procname.Java.t  (** Return value of a method can be made non-nullable *)
 [@@deriving compare]
 
 let violation_description _ violation_type =
@@ -41,5 +41,5 @@ let violation_description _ violation_type =
         MF.pp_monospaced nullable_annotation
   | ReturnOverAnnotated proc_name ->
       Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
-        (Procname.to_simplified_string proc_name)
+        (Procname.Java.to_simplified_string proc_name)
         MF.pp_monospaced nullable_annotation

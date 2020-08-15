@@ -7,8 +7,8 @@
  (name BO)
  (public_name infer.BO)
  (flags
-  (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd -open ATDGenerated
-    -open IBase -open Absint -open Biabduction))
+  (:standard -open Core -open OpenSource -open IR -open IStdlib -open IStd
+    -open ATDGenerated -open IBase -open Absint -open Biabduction))
  (libraries base64 core IStdlib ATDGenerated IBase IR Absint Biabduction)
- (preprocess (pps ppx_compare))
-)
+ (preprocess
+  (pps ppx_compare)))

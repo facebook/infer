@@ -167,6 +167,10 @@ val double : t
 val void_star : t
 (** void* type *)
 
+val pointer_to_java_lang_object : t
+
+val pointer_to_java_lang_string : t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 
@@ -290,6 +294,9 @@ val pp_full : Pp.env -> F.formatter -> t -> unit
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type. *)
 
+val pp_java : verbose:bool -> F.formatter -> t -> unit
+(** Pretty print a Java type. Raises if type isn't produced by the Java frontend *)
+
 val to_string : t -> string
 
 val d_full : t -> unit
@@ -334,6 +341,9 @@ val is_int : t -> bool
 val is_unsigned_int : t -> bool
 
 val is_char : t -> bool
+
+val is_java_type : t -> bool
+(** is [t] a type produced by the Java frontend? *)
 
 val has_block_prefix : string -> bool
 

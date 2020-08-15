@@ -133,6 +133,10 @@ OPTIONS
            Ignore files whose path matches the given prefix (can be specified
            multiple times)
 
+       --specs-shard-depth int
+           Specify the depth of the directory structure of specs, used for
+           "sharding" .specs files. Zero turns sharding off.
+
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),
            follows formal of corresponding SQLite PRAGMA.

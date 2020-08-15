@@ -8,6 +8,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 module Stats = struct
   type t =
@@ -67,6 +68,8 @@ include struct
   [@@deriving fields]
 end
 
+type full_summary = t
+
 let get_status summary = summary.status
 
 let get_proc_desc summary = summary.proc_desc
@@ -116,6 +119,59 @@ let pp_html source fmt summary =
   F.fprintf fmt "</LISTING>@\n"
 
 
+module ReportSummary = struct
+  type t = {loc: Location.t; cost_opt: CostDomain.summary option; err_log: Errlog.t}
+
+  let of_full_summary (f : full_summary) =
+    ({loc= get_loc f; cost_opt= f.payloads.Payloads.cost; err_log= f.err_log} : t)
+
+
+  module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+    type nonrec t = t
+  end)
+end
+
+module AnalysisSummary = struct
+  include struct
+    (* ignore dead modules added by @@deriving fields *)
+    [@@@warning "-60"]
+
+    type t =
+      { payloads: Payloads.t
+      ; mutable sessions: int
+      ; stats: Stats.t
+      ; status: Status.t
+      ; proc_desc: Procdesc.t
+      ; mutable callee_pnames: Procname.Set.t }
+    [@@deriving fields]
+  end
+
+  let of_full_summary (f : full_summary) =
+    ( { payloads= f.payloads
+      ; sessions= f.sessions
+      ; stats= f.stats
+      ; status= f.status
+      ; proc_desc= f.proc_desc
+      ; callee_pnames= f.callee_pnames }
+      : t )
+
+
+  module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+    type nonrec t = t
+  end)
+end
+
+let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : AnalysisSummary.t) =
+  ( { payloads= analysis_summary.payloads
+    ; sessions= analysis_summary.sessions
+    ; stats= analysis_summary.stats
+    ; status= analysis_summary.status
+    ; proc_desc= analysis_summary.proc_desc
+    ; callee_pnames= analysis_summary.callee_pnames
+    ; err_log= report_summary.err_log }
+    : full_summary )
+
+
 module OnDisk = struct
   type cache = t Procname.Hash.t
 
@@ -123,6 +179,8 @@ module OnDisk = struct
 
   let clear_cache () = Procname.Hash.clear cache
 
+  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a
+      summary keeping the same Procdesc and updates the cache accordingly. *)
   let remove_from_cache pname = Procname.Hash.remove cache pname
 
   (** Add the summary to the table for the given function *)
@@ -130,14 +188,26 @@ module OnDisk = struct
     Procname.Hash.replace cache proc_name summary
 
 
-  let specs_filename pname =
-    let pname_file = Procname.to_filename pname in
-    pname_file ^ Config.specs_files_suffix
+  let specs_filename_and_crc pname =
+    let pname_file, crc = Procname.to_filename_and_crc pname in
+    (pname_file ^ Config.specs_files_suffix, crc)
 
+
+  let specs_filename pname = specs_filename_and_crc pname |> fst
 
   (** Return the path to the .specs file for the given procedure in the current results directory *)
   let specs_filename_of_procname pname =
-    DB.filename_from_string (ResultsDir.get_path Specs ^/ specs_filename pname)
+    let filename, crc = specs_filename_and_crc pname in
+    let sharded_filename =
+      if Serialization.is_shard_mode then
+        let shard_dirs =
+          String.sub crc ~pos:0 ~len:Config.specs_shard_depth
+          |> String.concat_map ~sep:"/" ~f:Char.to_string
+        in
+        shard_dirs ^/ filename
+      else filename
+    in
+    DB.filename_from_string (ResultsDir.get_path Specs ^/ sharded_filename)
 
 
   (** paths to the .specs file for the given procedure in the models folder *)
@@ -157,12 +227,30 @@ module OnDisk = struct
     opt
 
 
+  let spec_of_model proc_name = load_from_file (specs_models_filename proc_name)
+
+  let spec_of_procname =
+    let load_statement =
+      ResultsDatabase.register_statement
+        "SELECT analysis_summary, report_summary FROM specs WHERE proc_name = :k"
+    in
+    fun proc_name ->
+      ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
+          Sqlite3.bind load_stmt 1 (Procname.SQLite.serialize proc_name)
+          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
+          SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
+            ~read_row:(fun stmt ->
+              let analysis_summary = Sqlite3.column stmt 0 |> AnalysisSummary.SQLite.deserialize in
+              let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
+              mk_full_summary report_summary analysis_summary ) )
+
+
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table proc_name =
     let summ_opt =
-      match load_from_file (specs_filename_of_procname proc_name) with
+      match spec_of_procname proc_name with
       | None when BiabductionModels.mem proc_name ->
-          load_from_file (specs_models_filename proc_name)
+          spec_of_model proc_name
       | summ_opt ->
           summ_opt
     in
@@ -196,9 +284,17 @@ module OnDisk = struct
     let proc_name = get_proc_name final_summary in
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name final_summary ;
-    Serialization.write_to_file summary_serializer
-      (specs_filename_of_procname proc_name)
-      ~data:final_summary
+    if Config.biabduction_models_mode then
+      Serialization.write_to_file summary_serializer
+        (specs_filename_of_procname proc_name)
+        ~data:final_summary
+    else
+      let analysis_summary = AnalysisSummary.of_full_summary final_summary in
+      let report_summary = ReportSummary.of_full_summary final_summary in
+      DBWriter.store_spec
+        ~proc_name:(Procname.SQLite.serialize proc_name)
+        ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
+        ~report_summary:(ReportSummary.SQLite.serialize report_summary)
 
 
   let reset proc_desc =
@@ -217,13 +313,75 @@ module OnDisk = struct
 
   let reset_all ~filter () =
     let reset proc_name =
-      let filename = specs_filename_of_procname proc_name in
-      BackendStats.incr_summary_file_try_load () ;
-      Serialization.read_from_file summary_serializer filename
+      spec_of_procname proc_name
       |> Option.iter ~f:(fun summary ->
-             BackendStats.incr_summary_read_from_disk () ;
              let blank_summary = reset summary.proc_desc in
-             Serialization.write_to_file summary_serializer filename ~data:blank_summary )
+             store blank_summary )
     in
     Procedures.get_all ~filter () |> List.iter ~f:reset
+
+
+  let delete pname =
+    remove_from_cache pname ;
+    if Config.biabduction_models_mode then
+      let filename = specs_filename_of_procname pname |> DB.filename_to_string in
+      (* Unix_error is raised if the file isn't present so do nothing in this case *)
+      try Unix.unlink filename with Unix.Unix_error _ -> ()
+    else DBWriter.delete_spec ~proc_name:(Procname.SQLite.serialize pname)
+
+
+  let iter_filtered_specs ~filter ~f =
+    let db = ResultsDatabase.get_database () in
+    let dummy_source_file = SourceFile.invalid __FILE__ in
+    (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
+    Sqlite3.prepare db
+      "SELECT proc_name, analysis_summary, report_summary FROM specs ORDER BY proc_name ASC"
+    |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
+         ~f:(fun stmt ->
+           let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+           if filter dummy_source_file proc_name then
+             let analysis_summary = Sqlite3.column stmt 1 |> AnalysisSummary.SQLite.deserialize in
+             let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
+             let spec = mk_full_summary report_summary analysis_summary in
+             f spec )
+
+
+  let iter_filtered_report_summaries ~filter ~f =
+    let db = ResultsDatabase.get_database () in
+    let dummy_source_file = SourceFile.invalid __FILE__ in
+    (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
+    Sqlite3.prepare db "SELECT proc_name, report_summary FROM specs ORDER BY proc_name ASC"
+    |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
+         ~f:(fun stmt ->
+           let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+           if filter dummy_source_file proc_name then
+             let ({loc; cost_opt; err_log} : ReportSummary.t) =
+               Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize
+             in
+             f proc_name loc cost_opt err_log )
+
+
+  let make_filtered_iterator_from_config ~iter ~f =
+    let filter =
+      if Option.is_some Config.procedures_filter then (
+        if Config.test_filtering then (
+          Inferconfig.test () ;
+          L.exit 0 ) ;
+        Lazy.force Filtering.procedures_filter )
+      else fun _ _ -> true
+    in
+    iter ~filter ~f
+
+
+  let iter_report_summaries_from_config ~f =
+    make_filtered_iterator_from_config ~iter:iter_filtered_report_summaries ~f
+
+
+  let iter_specs_from_config ~f = make_filtered_iterator_from_config ~iter:iter_filtered_specs ~f
+
+  let iter_specs ~f = iter_filtered_specs ~filter:(fun _ _ -> true) ~f
+
+  let pp_specs_from_config fmt =
+    iter_specs_from_config ~f:(fun summary ->
+        F.fprintf fmt "Procedure: %a@\n%a@." Procname.pp (get_proc_name summary) pp_text summary )
 end

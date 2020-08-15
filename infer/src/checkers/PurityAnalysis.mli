@@ -7,4 +7,6 @@
 
 open! IStd
 
-include Pudge_intf.S
+val checker :
+     (PurityDomain.summary option * BufferOverrunAnalysisSummary.t option) InterproceduralAnalysis.t
+  -> PurityDomain.summary option

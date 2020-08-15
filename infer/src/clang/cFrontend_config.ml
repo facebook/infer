@@ -22,6 +22,8 @@ type decl_trans_context = [`DeclTraversal | `Translation]
 
 let alloc = "alloc"
 
+let arrayWithObjects_count = "arrayWithObjects:count:"
+
 let dealloc = "dealloc"
 
 let assert_fail = "__assert_fail"
@@ -75,6 +77,8 @@ let new_str = "new"
 
 let next_object = "nextObject"
 
+let nsenumerator_cl = "NSEnumerator"
+
 let nsproxy_cl = "NSProxy"
 
 let nsobject_cl = "NSObject"
@@ -84,6 +88,8 @@ let nsstring_cl = "NSString"
 let objc_class = "objc_class"
 
 let objc_object = "objc_object"
+
+let object_enumerator = "objectEnumerator"
 
 let return_param = "__return_param"
 

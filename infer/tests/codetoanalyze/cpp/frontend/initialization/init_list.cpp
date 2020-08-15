@@ -25,6 +25,7 @@ struct C { // non-POD struct
 void zero_init_primitive() {
   int i{};
   int* p{};
+  int* p2{nullptr};
   float f{};
 }
 

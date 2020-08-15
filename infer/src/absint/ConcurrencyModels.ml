@@ -300,7 +300,7 @@ let get_current_class_and_annotated_superclasses is_annot tenv pname =
   | Procname.Java java_pname ->
       let current_class = Procname.Java.get_class_type_name java_pname in
       let annotated_classes =
-        PatternMatch.find_superclasses_with_attributes is_annot tenv current_class
+        PatternMatch.Java.find_superclasses_with_attributes is_annot tenv current_class
       in
       Some (current_class, annotated_classes)
   | _ ->

@@ -344,3 +344,8 @@ void use_uninit_in_expr_bad() {
   int x;
   int y = x + 2;
 }
+
+int unused_attribute_ok() {
+  int __attribute__((unused)) x = 42;
+  return x;
+}

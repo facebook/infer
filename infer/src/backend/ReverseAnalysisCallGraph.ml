@@ -14,4 +14,4 @@ let register_summary graph summary =
     callee_pnames
 
 
-let build graph = SpecsFiles.iter ~f:(register_summary graph)
+let build graph = Summary.OnDisk.iter_specs ~f:(register_summary graph)

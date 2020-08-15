@@ -133,7 +133,9 @@ module AddressAttributes : sig
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
-  val is_end_iterator : AbstractValue.t -> t -> bool
+  val is_end_of_collection : AbstractValue.t -> t -> bool
+
+  val mark_as_end_of_collection : AbstractValue.t -> t -> t
 
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 

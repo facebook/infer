@@ -29,7 +29,7 @@ let is_enum_value tenv ~class_typ (field_info : Struct.field_info) =
     match (get_type_name class_typ, get_type_name field_info.typ) with
     (* enums values are fields which type is the same as the type of the enum class *)
     | Some class_name, Some field_type_name
-      when Typ.equal_name class_name field_type_name && PatternMatch.is_java_enum tenv class_name ->
+      when Typ.equal_name class_name field_type_name && PatternMatch.Java.is_enum tenv class_name ->
         true
     (* Could not fetch one of the class names, or they are different. Should not happen for enum values. *)
     | _ ->
@@ -76,6 +76,8 @@ let get tenv field_name class_typ =
         (* This field is artifact of codegen and is not visible to the user.
            Surfacing it as non-strict is non-actionable for the user *)
         AnnotatedNullability.StrictNonnull SyntheticField
+      else if Models.is_field_nonnullable field_name then
+        AnnotatedNullability.StrictNonnull ModelledNonnull
       else nullability
     else nullability
   in

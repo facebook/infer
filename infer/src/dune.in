@@ -41,12 +41,14 @@ let env_stanza =
     {|
 (env
   (dev
-    (flags %s))
+    (flags %s)
+    (inline_tests enabled))
   (opt
     (flags %s)
     (ocamlopt_flags (:standard -O3)))
   (test
-    (flags %s))
+    (flags %s)
+    (inline_tests enabled))
   )
 |}
     lenient_flags lenient_flags strict_flags

@@ -402,8 +402,9 @@ let is_assume_true =
 
 
 let is_java_main_method (pname : Procname.t) =
+  let pointer_to_array_of_java_lang_string = Typ.(mk_ptr (mk_array pointer_to_java_lang_string)) in
   let check_main_args args =
-    match args with [arg] -> JavaSplitName.(equal java_lang_string_array arg) | _ -> false
+    match args with [arg] -> Typ.equal pointer_to_array_of_java_lang_string arg | _ -> false
   in
   match pname with
   | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | WithBlockParameters _ ->

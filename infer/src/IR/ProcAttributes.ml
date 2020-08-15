@@ -29,12 +29,13 @@ let pp_objc_accessor_type fmt objc_accessor_type =
     annots
 
 
-type var_data = {name: Mangled.t; typ: Typ.t; modify_in_block: bool; is_constexpr: bool}
+type var_data =
+  {name: Mangled.t; typ: Typ.t; modify_in_block: bool; is_constexpr: bool; is_declared_unused: bool}
 [@@deriving compare]
 
-let pp_var_data fmt {name; typ; modify_in_block} =
-  F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a;@ modify_in_block=@ %b@ }@]" Mangled.pp name
-    (Typ.pp_full Pp.text) typ modify_in_block
+let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
+  F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a;@ modify_in_block=@ %b;@ is_declared_unused=@ %b@ }@]"
+    Mangled.pp name (Typ.pp_full Pp.text) typ modify_in_block is_declared_unused
 
 
 type t =

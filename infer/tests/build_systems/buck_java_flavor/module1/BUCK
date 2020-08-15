@@ -1,0 +1,10 @@
+java_library(
+    name='module1',
+    srcs=glob(["*.java"]),
+    deps=[
+        '//annotations:annotations',
+    ],
+    visibility=[
+        'PUBLIC'
+    ],
+)

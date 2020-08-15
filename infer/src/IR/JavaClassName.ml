@@ -9,7 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** invariant: if [package = Some str] then [not (String.equal str "")] *)
+(** invariant: if [package = Some str] then [not (String.equal str "")]. [classname] appears first
+    so that the comparator fails earlier *)
 type t = {classname: string; package: string option} [@@deriving compare, equal]
 
 module Map = Caml.Map.Make (struct

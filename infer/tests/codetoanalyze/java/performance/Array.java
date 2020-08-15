@@ -96,6 +96,10 @@ public class Array {
     for (int i = 0; i < list.toArray().length; i++) {}
   }
 
+  void toArray_map_linear(java.util.Map<String, Integer> map) {
+    for (int i = 0; i < map.values().toArray().length; i++) {}
+  }
+
   private static final String[] static_final_field = new String[] {"", ""};
 
   void use_static_final_array_field_constant() {

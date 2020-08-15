@@ -25,7 +25,7 @@ let append_crc_cutoff ?(key = "") name =
     let name_for_crc = name ^ key in
     Utils.string_crc_hex32 name_for_crc
   in
-  Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str
+  (Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str, crc_str)
 
 
 let curr_source_file_encoding = `Enc_crc
@@ -41,7 +41,7 @@ let source_file_encoding source_file =
   | `Enc_crc ->
       let base = Filename.basename source_file_s in
       let dir = Filename.dirname source_file_s in
-      append_crc_cutoff ~key:dir base
+      append_crc_cutoff ~key:dir base |> fst
 
 
 (** {2 Source Dirs} *)
@@ -55,7 +55,7 @@ let source_dir_to_string source_dir = source_dir
 (** get the path to an internal file with the given extention (.tenv, ...) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
-    append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir))
+    append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir)) |> fst
   in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
@@ -138,9 +138,8 @@ module Results_dir = struct
 
   let clean_specs_dir () =
     (* create dir just in case it doesn't exist to avoid errors *)
-    Utils.create_dir specs_dir ;
-    Array.iter (Sys.readdir specs_dir) ~f:(fun specs ->
-        Filename.concat specs_dir specs |> Sys.remove )
+    Utils.rmtree specs_dir ;
+    Utils.create_dir specs_dir
 
 
   (** create a file at the given path, creating any missing directories *)

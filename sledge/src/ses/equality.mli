@@ -47,17 +47,14 @@ val orN : Var.Set.t -> t list -> Var.Set.t * t
 val rename : t -> (Var.t -> Var.t) -> t
 (** Apply a renaming substitution to the relation. *)
 
-val fv : t -> Var.Set.t
-(** The variables occurring in the terms of the relation. *)
-
 val is_true : t -> bool
 (** Test if the relation is diagonal. *)
 
 val is_false : t -> bool
 (** Test if the relation is empty / inconsistent. *)
 
-val entails_eq : t -> Term.t -> Term.t -> bool
-(** Test if an equation is entailed by a relation. *)
+val implies : t -> Term.t -> bool
+(** Test if a term is implied by a relation. *)
 
 val class_of : t -> Term.t -> Term.t list
 (** Equivalence class of [e]: all the terms [f] in the relation such that
@@ -68,12 +65,7 @@ val normalize : t -> Term.t -> Term.t
     relation, where [e'] and its subterms are expressed in terms of the
     relation's canonical representatives of each equivalence class. *)
 
-val difference : t -> Term.t -> Term.t -> Z.t option
-(** The difference as an offset. [difference r a b = Some k] if [r] implies
-    [a = b+k], or [None] if [a] and [b] are not equal up to an integer
-    offset. *)
-
-val fold_terms : t -> init:'a -> f:('a -> Term.t -> 'a) -> 'a
+val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 
 (** Solution Substitutions *)
 module Subst : sig

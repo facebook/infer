@@ -775,7 +775,7 @@ let pulse_memory_leak =
 
 
 let pure_function =
-  register ~id:"PURE_FUNCTION" Error Purity
+  register ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "../../documentation/issues/PURE_FUNCTION.md"]
 
 
@@ -860,7 +860,9 @@ let complexity_increase ~kind ~is_on_ui_thread =
   register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
-let topl_error = register ~id:"TOPL_ERROR" Error TOPL ~user_documentation:"Experimental."
+let topl_error =
+  register ~id:"TOPL_ERROR" Error ToplOnBiabduction ~user_documentation:"Experimental."
+
 
 let uninitialized_value =
   register ~id:"UNINITIALIZED_VALUE" Error Uninit

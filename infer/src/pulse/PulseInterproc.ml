@@ -76,7 +76,7 @@ let pp_contradiction fmt = function
 exception Contradiction of contradiction
 
 let fold_globals_of_stack call_loc stack call_state ~f =
-  Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:BaseStack.fold)
+  Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
@@ -92,11 +92,18 @@ let fold_globals_of_stack call_loc stack call_state ~f =
           Ok call_state )
 
 
-let visit call_state ~addr_callee ~addr_hist_caller =
+let visit call_state ~pre ~addr_callee ~addr_hist_caller =
   let addr_caller = fst addr_hist_caller in
   ( match AddressMap.find_opt addr_caller call_state.rev_subst with
   | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
-      raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
+      (* [addr_caller] corresponds to several values in the callee, see if that's a problem for
+         applying the pre-condition, i.e. if both values are addresses in the callee's heap, which
+         means they must be disjoint. If so, raise a contradiction, but if not then continue as it
+         just means that the callee doesn't care about the value of these variables. *)
+      if
+        BaseMemory.mem addr_callee pre.BaseDomain.heap
+        && BaseMemory.mem addr_callee' pre.BaseDomain.heap
+      then raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
   | _ ->
       () ) ;
   if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
@@ -126,7 +133,7 @@ let add_call_to_trace proc_name call_location caller_history in_call =
     addresses are traversed in the process. *)
 let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre ~addr_hist_caller
     call_state =
-  match visit call_state ~addr_callee:addr_pre ~addr_hist_caller with
+  match visit call_state ~pre ~addr_callee:addr_pre ~addr_hist_caller with
   | `AlreadyVisited, call_state ->
       Ok call_state
   | `NotAlreadyVisited, call_state -> (
@@ -318,7 +325,7 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
 let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre; _} as pre_post)
     ~addr_callee ~addr_hist_caller call_state =
   L.d_printfln "%a<->%a" AbstractValue.pp addr_callee AbstractValue.pp (fst addr_hist_caller) ;
-  match visit call_state ~addr_callee ~addr_hist_caller with
+  match visit call_state ~pre:(pre :> BaseDomain.t) ~addr_callee ~addr_hist_caller with
   | `AlreadyVisited, call_state ->
       call_state
   | `NotAlreadyVisited, call_state -> (

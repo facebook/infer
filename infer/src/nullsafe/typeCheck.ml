@@ -15,7 +15,7 @@ type typecheck_result =
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
-  let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
+  let procname_instanceof pname = Procname.equal BuiltinDecl.__instanceof pname
 
   let is_annotated_with predicate tenv procname =
     match PatternMatch.lookup_attributes tenv procname with
@@ -31,17 +31,23 @@ module ComplexExpressions = struct
         false
 
 
+  (* given a predicate that requries Java procname, return a filter that requires generic prodname
+   *)
+  let java_predicate_to_pname_predicate java_predicate pname =
+    match pname with Procname.Java java_pname -> java_predicate java_pname | _ -> false
+
+
   let procname_is_false_on_null tenv procname =
     is_annotated_with Annotations.ia_is_false_on_null tenv procname
-    || Models.is_false_on_null procname
+    || java_predicate_to_pname_predicate Models.is_false_on_null procname
 
 
   let procname_is_true_on_null tenv procname =
     is_annotated_with Annotations.ia_is_true_on_null tenv procname
-    || Models.is_true_on_null procname
+    || java_predicate_to_pname_predicate Models.is_true_on_null procname
 
 
-  let procname_containsKey = Models.is_containsKey
+  let procname_containsKey = java_predicate_to_pname_predicate Models.is_containsKey
 
   (** Recognize *all* the procedures treated specially in conditionals *)
   let procname_used_in_condition pn =
@@ -627,26 +633,27 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       typestate'
 
 
+let object_typ = Typ.(mk_ptr (mk_struct Name.Java.java_lang_object))
+
 (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
 let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
     call_params callee_pname loc node calls_this checks instr_ref ~nullsafe_mode
     find_canonical_duplicate typestate' =
   (* Get the proc name for map.get() from map.put() *)
   let pname_get_from_pname_put pname_put =
-    let object_t = JavaSplitName.java_lang_object in
-    let parameters = [object_t] in
+    let parameters = [object_typ] in
     pname_put
     |> Procname.Java.replace_method_name "get"
-    |> Procname.Java.replace_return_type object_t
+    |> Procname.Java.replace_return_type object_typ
     |> Procname.Java.replace_parameters parameters
   in
   match call_params with
   | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _ -> (
       (* Convert the dexp for k to the dexp for m.get(k) *)
       let convert_dexp_key_to_dexp_get dopt =
-        match (dopt, callee_pname) with
-        | Some dexp_key, Procname.Java callee_pname_java ->
-            let pname_get = Procname.Java (pname_get_from_pname_put callee_pname_java) in
+        match dopt with
+        | Some dexp_key ->
+            let pname_get = Procname.Java (pname_get_from_pname_put callee_pname) in
             let dexp_get = DExp.Dconst (Const.Cfun pname_get) in
             let dexp_map = DExp.Dpvar pv_map in
             let args = [dexp_map; dexp_key] in
@@ -717,31 +724,43 @@ let handle_assignment_in_condition_for_sil_prune idenv node pvar =
           None )
 
 
+let pp_normalized_cond fmt (_, exp) = Exp.pp fmt exp
+
 let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =
-  match cond with
-  | Exp.UnOp (Unop.LNot, c, top) ->
-      let node', c' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c in
-      (node', Exp.UnOp (Unop.LNot, c', top))
-  | Exp.BinOp (bop, c1, c2) ->
-      let node', c1' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c1 in
-      let node'', c2' = normalize_cond_for_sil_prune_rec idenv ~node:node' ~original_node c2 in
-      (node'', Exp.BinOp (bop, c1', c2'))
-  | Exp.Var _ ->
-      let c' = IDEnv.expand_expr idenv cond in
-      if not (Exp.equal c' cond) then normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
-      else (node, c')
-  | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
-    match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
-    | None -> (
-      match Decompile.find_program_variable_assignment node pvar with
-      | Some (node', id) ->
-          (node', Exp.Var id)
-      | None ->
-          (node, cond) )
-    | Some e2 ->
-        (node, e2) )
-  | c ->
-      (node, c)
+  L.d_with_indent ~name:"normalize_cond_for_sil_prune_rec" ~pp_result:pp_normalized_cond (fun () ->
+      L.d_printfln "cond=%a" Exp.pp cond ;
+      match cond with
+      | Exp.UnOp (Unop.LNot, c, top) ->
+          L.d_printfln "UnOp" ;
+          let node', c' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c in
+          (node', Exp.UnOp (Unop.LNot, c', top))
+      | Exp.BinOp (bop, c1, c2) ->
+          L.d_printfln "BinOp" ;
+          let node', c1' = normalize_cond_for_sil_prune_rec idenv ~node ~original_node c1 in
+          let node'', c2' = normalize_cond_for_sil_prune_rec idenv ~node:node' ~original_node c2 in
+          L.d_printfln "c1=%a@\nc2=%a" Exp.pp c1 Exp.pp c2 ;
+          (node'', Exp.BinOp (bop, c1', c2'))
+      | Exp.Var _ ->
+          L.d_printfln "Var" ;
+          let c' = IDEnv.expand_expr idenv cond in
+          L.d_printfln "c'=%a" Exp.pp c' ;
+          if not (Exp.equal c' cond) then
+            normalize_cond_for_sil_prune_rec idenv ~node ~original_node c'
+          else (node, c')
+      | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
+          L.d_printfln "Lvar" ;
+          match handle_assignment_in_condition_for_sil_prune idenv original_node pvar with
+          | None -> (
+            match Decompile.find_program_variable_assignment node pvar with
+            | Some (node', id) ->
+                (node', Exp.Var id)
+            | None ->
+                (node, cond) )
+          | Some e2 ->
+              (node, e2) )
+      | c ->
+          L.d_printfln "other" ;
+          (node, c) )
 
 
 (* Normalize the condition by resolving temp variables. *)
@@ -801,10 +820,9 @@ let rec check_condition_for_sil_prune
           (DExp.Dretcall
             (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
           let pname_java' =
-            let object_t = JavaSplitName.java_lang_object in
             pname_java
             |> Procname.Java.replace_method_name "get"
-            |> Procname.Java.replace_return_type object_t
+            |> Procname.Java.replace_return_type object_typ
           in
           let fun_dexp = DExp.Dconst (Const.Cfun (Procname.Java pname_java')) in
           Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
@@ -985,8 +1003,7 @@ let calc_typestate_after_call
     ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
     find_canonical_duplicate calls_this checks idenv instr_ref signature_params cflags call_params
     ~is_anonymous_inner_class_constructor ~callee_annotated_signature ~callee_attributes
-    ~callee_pname ~callee_pname_java ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1
-    loc node =
+    ~callee_pname ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node =
   let resolve_param i (formal_param, actual_param) =
     let (orig_e2, e2), t2 = actual_param in
     let _, inferred_nullability_actual =
@@ -1049,16 +1066,15 @@ let calc_typestate_after_call
           node typestate1 call_params callee_pname instr_ref loc
           (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks) ;
       if checks.eradicate then
-        EradicateChecks.check_call_parameters analysis_data ~nullsafe_mode
-          ~callee_annotated_signature find_canonical_duplicate node callee_attributes
-          resolved_params loc instr_ref ;
+        EradicateChecks.check_call_parameters ~callee_pname analysis_data ~nullsafe_mode
+          ~callee_annotated_signature find_canonical_duplicate node resolved_params loc instr_ref ;
       if Models.is_check_not_null callee_pname then
         match Models.get_check_not_null_parameter callee_pname with
         | Some index ->
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv index ~is_vararg:false
               typestate1
-        | None when Procname.Java.is_vararg callee_pname_java ->
+        | None when Procname.Java.is_vararg callee_pname ->
             let last_parameter = List.length call_params in
             do_preconditions_check_not_null analysis_data instr_ref find_canonical_duplicate node
               loc curr_annotated_signature checks call_params idenv last_parameter ~is_vararg:true
@@ -1163,7 +1179,7 @@ let typecheck_sil_call_function
       let typestate_after_call, finally_resolved_ret =
         calc_typestate_after_call analysis_data find_canonical_duplicate calls_this checks idenv
           instr_ref signature_params cflags call_params ~is_anonymous_inner_class_constructor
-          ~callee_annotated_signature ~callee_attributes ~callee_pname ~callee_pname_java
+          ~callee_annotated_signature ~callee_attributes ~callee_pname:callee_pname_java
           ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node
       in
       do_return finally_resolved_ret typestate_after_call )
@@ -1330,8 +1346,8 @@ let can_instrunction_throw tenv node instr =
 
 (* true if after this instruction the program interrupts *)
 let is_noreturn_instruction = function
-  | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) when Models.is_noreturn callee_pname
-    ->
+  | Sil.Call (_, Exp.Const (Const.Cfun (Procname.Java callee_pname)), _, _, _)
+    when Models.is_noreturn callee_pname ->
       true
   | _ ->
       false

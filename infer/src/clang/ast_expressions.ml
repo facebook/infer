@@ -9,11 +9,6 @@
 
 open! IStd
 
-let stmt_info_with_fresh_pointer stmt_info =
-  { Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()
-  ; si_source_range= stmt_info.Clang_ast_t.si_source_range }
-
-
 let create_qual_type ?(quals = Typ.mk_type_quals ()) qt_type_ptr =
   { Clang_ast_t.qt_type_ptr
   ; qt_is_const= Typ.is_const quals
@@ -43,6 +38,56 @@ let create_char_star_type ?quals () = create_pointer_qual_type ?quals create_cha
 
 let create_class_qual_type ?quals typename =
   create_qual_type ?quals (Clang_ast_extend.ClassType typename)
+
+
+let create_class_pointer_qual_type ?quals typename =
+  create_pointer_qual_type ?quals (create_class_qual_type ?quals typename)
+
+
+let create_decl_info stmt_info pointer =
+  { Clang_ast_t.di_pointer= pointer
+  ; di_parent_pointer= None
+  ; di_source_range= stmt_info.Clang_ast_t.si_source_range
+  ; di_owning_module= None
+  ; di_is_hidden= false
+  ; di_is_implicit= false
+  ; di_is_used= true
+  ; di_is_this_declaration_referenced= true
+  ; di_is_invalid_decl= false
+  ; di_attributes= []
+  ; di_full_comment= None
+  ; di_access= `None }
+
+
+let default_var_decl_info =
+  { Clang_ast_t.vdi_is_global= false
+  ; vdi_is_extern= false
+  ; vdi_is_static= false
+  ; vdi_is_static_local= false
+  ; vdi_is_static_data_member= false
+  ; vdi_is_const_expr= false
+  ; vdi_is_init_ice= false
+  ; vdi_init_expr= None
+  ; vdi_is_init_expr_cxx11_constant= false
+  ; vdi_parm_index_in_function= None }
+
+
+let create_named_decl_info name = {Clang_ast_t.ni_name= name; ni_qual_name= [name]}
+
+let create_decl_ref pointer ni qual_type =
+  { Clang_ast_t.dr_kind= `Var
+  ; dr_decl_pointer= pointer
+  ; dr_name= Some ni
+  ; dr_is_hidden= false
+  ; dr_qual_type= Some qual_type }
+
+
+let create_decl_ref_expr stmt_info pointer ni qual_type =
+  Clang_ast_t.DeclRefExpr
+    ( stmt_info
+    , []
+    , {ei_qual_type= qual_type; ei_value_kind= `LValue; ei_object_kind= `Ordinary}
+    , {drti_decl_ref= Some (create_decl_ref pointer ni qual_type); drti_found_decl_ref= None} )
 
 
 let create_integer_literal n =
@@ -88,19 +133,6 @@ let create_nil stmt_info =
   create_implicit_cast_expr stmt_info [paren_expr] create_id_type `NullToPointer
 
 
-let make_expr_info qt vk objc_kind =
-  {Clang_ast_t.ei_qual_type= qt; ei_value_kind= vk; ei_object_kind= objc_kind}
-
-
-let make_expr_info_with_objc_kind qt objc_kind = make_expr_info qt `LValue objc_kind
-
-let make_obj_c_message_expr_info_instance sel =
-  { Clang_ast_t.omei_selector= sel
-  ; omei_receiver_kind= `Instance
-  ; omei_is_definition_found= false
-  ; omei_decl_pointer= None (* TODO look into it *) }
-
-
 let make_obj_c_message_expr_info_class selector tname pointer =
   { Clang_ast_t.omei_selector= selector
   ; omei_receiver_kind= `Class (create_class_qual_type tname)
@@ -108,78 +140,15 @@ let make_obj_c_message_expr_info_class selector tname pointer =
   ; omei_decl_pointer= pointer }
 
 
-let make_decl_ref k decl_ptr name is_hidden qt_opt =
-  { Clang_ast_t.dr_kind= k
-  ; dr_decl_pointer= decl_ptr
-  ; dr_name= Some name
-  ; dr_is_hidden= is_hidden
-  ; dr_qual_type= qt_opt }
-
-
-let make_decl_ref_qt k decl_ptr name is_hidden qt =
-  make_decl_ref k decl_ptr name is_hidden (Some qt)
-
-
-let make_decl_ref_expr_info decl_ref =
-  {Clang_ast_t.drti_decl_ref= Some decl_ref; drti_found_decl_ref= None}
-
-
-let make_message_expr param_qt selector decl_ref_exp stmt_info add_cast =
-  let stmt_info = stmt_info_with_fresh_pointer stmt_info in
-  let parameters =
-    if add_cast then
-      let cast_expr = create_implicit_cast_expr stmt_info [decl_ref_exp] param_qt `LValueToRValue in
-      [cast_expr]
-    else [decl_ref_exp]
-  in
-  let obj_c_message_expr_info = make_obj_c_message_expr_info_instance selector in
-  let expr_info = make_expr_info_with_objc_kind param_qt `ObjCProperty in
-  Clang_ast_t.ObjCMessageExpr (stmt_info, parameters, expr_info, obj_c_message_expr_info)
-
-
-let make_binary_stmt stmt1 stmt2 stmt_info expr_info boi =
-  let stmt_info = stmt_info_with_fresh_pointer stmt_info in
-  Clang_ast_t.BinaryOperator (stmt_info, [stmt1; stmt2], expr_info, boi)
-
-
-let make_next_object_exp stmt_info item items =
-  let rec get_decl_ref item =
-    match item with
-    | Clang_ast_t.DeclStmt (_, _, [Clang_ast_t.VarDecl (di, name_info, var_qual_type, _)]) ->
-        let decl_ptr = di.Clang_ast_t.di_pointer in
-        let decl_ref = make_decl_ref_qt `Var decl_ptr name_info false var_qual_type in
-        let stmt_info_var =
-          { Clang_ast_t.si_pointer= di.Clang_ast_t.di_pointer
-          ; si_source_range= di.Clang_ast_t.di_source_range }
-        in
-        let expr_info = make_expr_info_with_objc_kind var_qual_type `ObjCProperty in
-        let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
-        (Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info), var_qual_type)
-    | Clang_ast_t.DeclRefExpr (_, _, expr_info, _) ->
-        (item, expr_info.Clang_ast_t.ei_qual_type)
-    | stmt -> (
-        let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
-        match stmts with
-        | [stmt] ->
-            get_decl_ref stmt
-        | _ ->
-            CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
-              "unexpected item %a"
-              (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
-              item )
-  in
-  let var_decl_ref, var_type = get_decl_ref item in
-  let message_call =
-    make_message_expr create_id_type CFrontend_config.next_object items stmt_info false
-  in
-  let boi = {Clang_ast_t.boi_kind= `Assign} in
-  let expr_info = make_expr_info_with_objc_kind var_type `ObjCProperty in
-  let assignment = make_binary_stmt var_decl_ref message_call stmt_info expr_info boi in
-  let boi' = {Clang_ast_t.boi_kind= `NE} in
-  let cast = create_implicit_cast_expr stmt_info [var_decl_ref] var_type `LValueToRValue in
-  let nil_exp = create_nil stmt_info in
-  let loop_cond = make_binary_stmt cast nil_exp stmt_info expr_info boi' in
-  (assignment, loop_cond)
+let create_obj_c_message_expr stmt_info qual_type selector args =
+  Clang_ast_t.ObjCMessageExpr
+    ( stmt_info
+    , args
+    , {ei_qual_type= qual_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
+    , { omei_selector= selector
+      ; omei_is_definition_found= false
+      ; omei_decl_pointer= None
+      ; omei_receiver_kind= `Instance } )
 
 
 (* We translate an expression with a conditional*)

@@ -64,6 +64,10 @@ module type Common = sig
   val ( ~+ ) : ('context -> string -> bool) -> ('context, 'f, 'f, 'arg_payload) name_matcher
   (** Starts a path with a matching name that satisfies the given function *)
 
+  val startsWith : string -> 'context -> string -> bool
+
+  val endsWith : string -> 'context -> string -> bool
+
   val ( &+ ) :
        ('context, 'f_in, 'f_interm, accept_more, 'arg_payload) templ_matcher
     -> ('f_interm, 'f_out, 'lc) template_arg

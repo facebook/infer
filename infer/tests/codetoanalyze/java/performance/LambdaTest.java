@@ -10,7 +10,7 @@ interface LambdaTestI {
 }
 
 class LambdaTest {
-  void call_lambda(int x) {
+  void call_lambda_FN(int x) {
     /* Three methods are auto-generated here:
     - LambdaTest.callsite_LambdaTest$Lambda$_2_0
     - LambdaTest.access_LambdaTest$Lambda$_2_0

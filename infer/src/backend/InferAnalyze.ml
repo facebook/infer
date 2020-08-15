@@ -201,7 +201,8 @@ let invalidate_changed_procedures changed_files =
     let invalidated_nodes =
       CallGraph.fold_flagged reverse_callgraph
         ~f:(fun node acc ->
-          SpecsFiles.delete node.pname ;
+          Ondemand.LocalCache.remove node.pname ;
+          Summary.OnDisk.delete node.pname ;
           acc + 1 )
         0
     in

@@ -186,6 +186,8 @@ let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
+let kotlin_source_extension = ".kt"
+
 let specs_files_suffix = ".specs"
 
 (** Enable detailed tracing information during array abstraction *)
@@ -406,7 +408,12 @@ let implicit_sdk_root =
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
-  else if !Sys.interactive || String.is_substring ~substring:"inferunit" exe_basename then NoParse
+  else if
+    !Sys.interactive
+    || String.is_substring ~substring:"inferunit" exe_basename
+    || String.equal "run.exe" exe_basename
+    || String.equal "run.bc" exe_basename
+  then NoParse
   else if infer_is_clang then NoParse
   else InferCommand
 
@@ -471,8 +478,6 @@ let get_symbols_regexp json_obj =
    the command line. For cases where order-dependence is desired, the interacting options
    can be defined together sharing a reference. See debug and specs_library below for two
    different examples. *)
-
-let anon_args = CLOpt.mk_anon ()
 
 let all_checkers = ref []
 
@@ -701,6 +706,13 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
+and buck_java_flavor_suppress_config =
+  CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Suppress setting buck config values for the infer binary and its version in the \
+     buck-java-flavor integration."
+
+
 and buck_merge_all_deps =
   CLOpt.mk_bool ~long:"buck-merge-all-deps" ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -746,6 +758,12 @@ and buck_mode =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `CombinedGenrule)
     "Buck integration for clang-based and Java targets."
+  |> ignore ;
+  CLOpt.mk_bool ~long:"buck-java-flavor"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    ~f:(set_mode `JavaFlavor)
+    "Buck integration for Java which uses the buck flavor #infer-java-capture instead of genrules \
+     like buck-java."
   |> ignore ;
   buck_mode
 
@@ -1548,6 +1566,12 @@ and margin =
     "Set right margin for the pretty printing functions"
 
 
+and max_jobs =
+  CLOpt.mk_int_opt ~long:"max-jobs"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"int" "Maximum number of analysis jobs running simultaneously"
+
+
 and max_nesting =
   CLOpt.mk_int_opt ~long:"max-nesting"
     ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
@@ -1724,6 +1748,15 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_cfg =
+  CLOpt.mk_bool ~long:"procedures-cfg"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/<file_name>/<proc_name>.dot for each procedure in the output of \
+        $(b,--procedures)"
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+
+
 and procedures_definedness =
   CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -1793,12 +1826,6 @@ and project_root =
         ; (Run, manual_generic)
         ; (Report, manual_generic) ]
     ~meta:"dir" "Specify the root directory of the project"
-
-
-and pudge =
-  CLOpt.mk_bool ~long:"pudge" ~default:false
-    "Experimental flag to enable sledge arithmetic on path conditions. This is intended for Pulse \
-     development only and will be removed once the feature is stable."
 
 
 and pulse_cut_to_one_path_procedures_pattern =
@@ -2084,12 +2111,6 @@ and skip_translation_headers =
     ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
 
 
-and sledge_timers =
-  CLOpt.mk_bool ~long:"sledge-timers"
-    "Enable debug timing info from sledge on stderr (you probably want $(b,--no-progress-bar) as \
-     well)."
-
-
 and source_preview =
   CLOpt.mk_bool ~long:"source-preview" ~default:true
     ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
@@ -2151,6 +2172,13 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
+and specs_shard_depth =
+  CLOpt.mk_int ~long:"specs-shard-depth" ~default:0
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
+    "Specify the depth of the directory structure of specs, used for \"sharding\" .specs files. \
+     Zero turns sharding off."
+
+
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -2191,9 +2219,9 @@ and sqlite_vfs =
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
 
-and sqlite_write_daemon =
-  CLOpt.mk_bool ~default:false "Route all DB writes through a daemon process"
-    ~long:"sqlite-write-daemon"
+and (_ : bool ref) =
+  CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
+    ~deprecated:["-sqlite-write-daemon"] ~deprecated_no:["-no-sqlite-write-daemon"] ~long:""
 
 
 and subtype_multirange =
@@ -2555,15 +2583,12 @@ let post_parsing_initialization command_opt =
   Option.value ~default:InferCommand.Run command_opt
 
 
-let command, parse_args_and_return_usage_exit =
-  let command_opt, usage_exit =
+let command =
+  let command_opt, _usage_exit =
     CLOpt.parse ?config_file:inferconfig_file ~usage:exe_usage startup_action initial_command
   in
-  let command = post_parsing_initialization command_opt in
-  (command, usage_exit)
+  post_parsing_initialization command_opt
 
-
-let print_usage_exit () = parse_args_and_return_usage_exit 1
 
 let process_linters_doc_url args =
   let linters_doc_url arg =
@@ -2582,9 +2607,7 @@ let process_linters_doc_url args =
 
 (** Freeze initialized configuration values *)
 
-let anon_args = !anon_args
-
-and rest = !rest
+let rest = !rest
 
 and abs_struct = !abs_struct
 
@@ -2620,6 +2643,8 @@ and buck_build_args_no_inline = !buck_build_args_no_inline
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
+and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
+
 and buck_merge_all_deps = !buck_merge_all_deps
 
 and buck_mode : BuckMode.t option =
@@ -2638,6 +2663,8 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB (DepsUpToDepth depth))
   | `CombinedGenrule, _ ->
       Some CombinedGenrule
+  | `JavaFlavor, _ ->
+      Some JavaFlavor
 
 
 and buck_targets_blacklist = !buck_targets_blacklist
@@ -2832,7 +2859,7 @@ and javac_classes_out = !javac_classes_out
 
 and job_id = !job_id
 
-and jobs = !jobs
+and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
 
 and join_cond = !join_cond
 
@@ -2924,6 +2951,8 @@ and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
 
+and procedures_cfg = !procedures_cfg
+
 and procedures_definedness = !procedures_definedness
 
 and procedures_filter = !procedures_filter
@@ -2949,8 +2978,6 @@ and progress_bar =
 
 
 and project_root = !project_root
-
-and pudge = !pudge
 
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
@@ -3067,8 +3094,6 @@ and skip_duplicated_types = !skip_duplicated_types
 
 and skip_translation_headers = !skip_translation_headers
 
-and sledge_timers = !sledge_timers
-
 and source_preview = !source_preview
 
 and source_files = !source_files
@@ -3087,6 +3112,12 @@ and sources = !sources
 
 and sourcepath = !sourcepath
 
+and specs_shard_depth =
+  if 0 <= !specs_shard_depth && !specs_shard_depth <= 32 then !specs_shard_depth
+  else
+    L.die UserError "Invalid number of shard depths %d: must be between 0 and 32" !specs_shard_depth
+
+
 and sqlite_cache_size = !sqlite_cache_size
 
 and sqlite_page_size = !sqlite_page_size
@@ -3094,8 +3125,6 @@ and sqlite_page_size = !sqlite_page_size
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
-
-and sqlite_write_daemon = !sqlite_write_daemon
 
 and starvation_skip_analysis = !starvation_skip_analysis
 
@@ -3259,9 +3288,11 @@ let is_in_custom_symbols list_name symbol =
       false
 
 
-let execution_id =
-  Random.self_init () ;
-  Random.int64 Int64.max_value
+let scuba_execution_id =
+  if scuba_logging then (
+    Random.self_init () ;
+    Some (Random.int64 Int64.max_value) )
+  else None
 
 
 let toplevel_results_dir =

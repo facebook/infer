@@ -6,10 +6,12 @@
 (executable
  (name all_infer_in_one_file)
  (modes byte)
- (flags (:standard -w +60))
+ (flags
+  (:standard -w +60))
  (libraries javalib ANSITerminal async atdgen base base64 cmdliner core
-   mtime.clock.os ocamlgraph oUnit parmap re sawja sledge sqlite3 str unix xmlm
+   mtime.clock.os ocamlgraph oUnit parmap re sawja sqlite3 str unix xmlm
    yojson zarith zip CStubs)
  (modules All_infer_in_one_file)
- (preprocess (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash ppx_sexp_conv ppx_variants_conv -no-check))
-)
+ (preprocess
+  (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
+    ppx_sexp_conv ppx_variants_conv -no-check)))

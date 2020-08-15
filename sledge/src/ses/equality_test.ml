@@ -49,9 +49,11 @@ let%test_module _ =
         l
       |> snd
 
+    let implies_eq r a b = implies r (Term.eq a b)
     let and_eq a b r = and_eq wrt a b r |> snd
     let and_ r s = and_ wrt r s |> snd
     let or_ r s = or_ wrt r s |> snd
+    let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
     (* tests *)
 
@@ -111,9 +113,6 @@ let%test_module _ =
       pp_classes r0 ;
       [%expect {||}]
 
-    let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
-    let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
-
     let r1 = of_eqs [(x, y)]
 
     let%expect_test _ =
@@ -125,7 +124,7 @@ let%test_module _ =
 
       {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r1 x y
+    let%test _ = implies_eq r1 x y
 
     let r2 = of_eqs [(x, y); (f x, y); (f y, z)]
 
@@ -144,15 +143,14 @@ let%test_module _ =
              [-1 ↦ ];
              [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r2 x z
-    let%test _ = entails_eq (or_ r1 r2) x y
-    let%test _ = not (entails_eq (or_ r1 r2) x z)
-    let%test _ = entails_eq (or_ f1 r2) x z
-    let%test _ = entails_eq (or_ r2 f3) x z
-    let%test _ = entails_eq r2 (f y) y
-    let%test _ = entails_eq r2 (f x) (f z)
-    let%test _ = entails_eq r2 (g x y) (g z y)
-    let%test _ = difference (or_ r1 r2) x z |> Poly.equal None
+    let%test _ = implies_eq r2 x z
+    let%test _ = implies_eq (or_ r1 r2) x y
+    let%test _ = not (implies_eq (or_ r1 r2) x z)
+    let%test _ = implies_eq (or_ f1 r2) x z
+    let%test _ = implies_eq (or_ r2 f3) x z
+    let%test _ = implies_eq r2 (f y) y
+    let%test _ = implies_eq r2 (f x) (f z)
+    let%test _ = implies_eq r2 (g x y) (g z y)
 
     let%expect_test _ =
       let r = of_eqs [(w, y); (y, z)] in
@@ -175,7 +173,7 @@ let%test_module _ =
       let r = of_eqs [(w, y); (y, z)] in
       let s = of_eqs [(x, y); (y, z)] in
       let rs = or_ r s in
-      entails_eq rs y z
+      implies_eq rs y z
 
     let r3 = of_eqs [(g y z, w); (v, w); (g y w, t); (x, v); (x, u); (u, z)]
 
@@ -200,9 +198,9 @@ let%test_module _ =
              [-1 ↦ ];
              [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r3 t z
-    let%test _ = entails_eq r3 x z
-    let%test _ = entails_eq (and_ r2 r3) x z
+    let%test _ = implies_eq r3 t z
+    let%test _ = implies_eq r3 x z
+    let%test _ = implies_eq (and_ r2 r3) x z
 
     let r4 = of_eqs [(w + !2, x - !3); (x - !5, y + !7); (y, z - !4)]
 
@@ -221,8 +219,7 @@ let%test_module _ =
              [-1 ↦ ];
              [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r4 x (w + !5)
-    let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
+    let%test _ = implies_eq r4 x (w + !5)
 
     let r5 = of_eqs [(x, y); (g w x, y); (g w y, f z)]
 
@@ -239,7 +236,7 @@ let%test_module _ =
 
       {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r6 x y
+    let%test _ = implies_eq r6 x y
 
     let r7 = of_eqs [(v, x); (w, z); (y, z)]
 
@@ -305,10 +302,10 @@ let%test_module _ =
     let%test _ = normalize r7' w |> Term.equal v
 
     let%test _ =
-      entails_eq (of_eqs [(g w x, g y z); (x, z)]) (g w x) (g w z)
+      implies_eq (of_eqs [(g w x, g y z); (x, z)]) (g w x) (g w z)
 
     let%test _ =
-      entails_eq (of_eqs [(g w x, g y w); (x, z)]) (g w x) (g w z)
+      implies_eq (of_eqs [(g w x, g y w); (x, z)]) (g w x) (g w z)
 
     let r8 = of_eqs [(x + !42, (3 * y) + (13 * z)); (13 * z, x)]
 
@@ -322,50 +319,7 @@ let%test_module _ =
       {sat= true;
        rep= [[%x_5 ↦ (13 × %z_7)]; [%y_6 ↦ 14]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r8 y !14
-
-    let r9 = of_eqs [(x, z - !16)]
-
-    let%expect_test _ =
-      pp_classes r9 ;
-      pp r9 ;
-      [%expect
-        {|
-        (%z_7 + -16) = %x_5
-    
-      {sat= true;
-       rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
-
-    let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
-
-    let r10 = of_eqs [(!16, z - x)]
-
-    let%expect_test _ =
-      pp_classes r10 ;
-      pp r10 ;
-      Format.printf "@.%a@." Term.pp (z - (x + !8)) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + !8))) ;
-      Format.printf "@.%a@." Term.pp (x + !8 - z) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (x + !8 - z)) ;
-      [%expect
-        {|
-          (%z_7 + -16) = %x_5
-    
-        {sat= true;
-         rep= [[%x_5 ↦ (%z_7 + -16)]; [%z_7 ↦ ]; [-1 ↦ ]; [0 ↦ ]]}
-
-        (-1 × %x_5 + %z_7 + -8)
-
-        8
-
-        (%x_5 + -1 × %z_7 + 8)
-
-        -8 |}]
-
-    let%test _ = difference r10 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
-
-    let%test _ =
-      difference r10 (x + !8) z |> Poly.equal (Some (Z.of_int (-8)))
+    let%test _ = implies_eq r8 y !14
 
     let r11 = of_eqs [(!16, z - x); (x + !8 - z, z - !16 + !8 - z)]
 
@@ -405,7 +359,7 @@ let%test_module _ =
         {|
           {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r14 a Term.true_
+    let%test _ = implies_eq r14 a Term.true_
 
     let b = Term.dq y !0
     let r14 = of_eqs [(a, b); (x, !1)]
@@ -422,8 +376,8 @@ let%test_module _ =
                  [-1 ↦ ];
                  [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r14 a Term.true_
-    let%test _ = entails_eq r14 b Term.true_
+    let%test _ = implies_eq r14 a Term.true_
+    let%test _ = implies_eq r14 b Term.true_
 
     let b = Term.dq x !0
     let r15 = of_eqs [(b, b); (x, !1)]
@@ -434,8 +388,8 @@ let%test_module _ =
         {|
           {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r15 b (Term.signed 1 !1)
-    let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
+    let%test _ = implies_eq r15 b (Term.signed 1 !1)
+    let%test _ = implies_eq r15 (Term.unsigned 1 b) !1
 
     (* f(x−1)−1=x+1, f(y)+1=y−1, y+1=x ⊢ false *)
     let r16 =
@@ -497,5 +451,5 @@ let%test_module _ =
           {sat= true;
            rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
-    let%test _ = entails_eq r19 z !0
+    let%test _ = implies_eq r19 z !0
   end )

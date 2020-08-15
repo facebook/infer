@@ -144,6 +144,7 @@ let fresh_var name vs zs ~wrt =
   let v = Term.var v in
   (v, vs, zs, wrt)
 
+let difference x e f = Term.d_int (Context.normalize x (Term.sub e f))
 let excise (k : Trace.pf -> _) = [%Trace.infok k]
 let trace (k : Trace.pf -> _) = [%Trace.infok k]
 
@@ -178,12 +179,6 @@ let excise_exists goal =
           let xs = Var.Set.diff goal.xs removed in
           let min = Sh.and_subst witnesses goal.min in
           goal |> with_ ~us ~min ~xs ~pgs:true )
-
-let excise_pure ({min; sub} as goal) =
-  trace (fun {pf} -> pf "@[<2>excise_pure@ %a@]" pp goal) ;
-  let pure' = Context.normalizef min.ctx sub.pure in
-  if Formula.is_false pure' then None
-  else Some (goal |> with_ ~sub:(Sh.with_pure pure' sub))
 
 (*   [k; o)
  * ⊢ [l; n)
@@ -561,10 +556,10 @@ let excise_seg ({sub} as goal) msg ssg =
         (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
-  let* k_l = Context.difference sub.ctx k l in
+  let* k_l = difference sub.ctx k l in
   if
-    (not (Context.entails_eq sub.ctx b b'))
-    || not (Context.entails_eq sub.ctx m m')
+    (not (Context.implies sub.ctx (Formula.eq b b')))
+    || not (Context.implies sub.ctx (Formula.eq m m'))
   then
     Some
       ( goal
@@ -578,11 +573,11 @@ let excise_seg ({sub} as goal) msg ssg =
     | Neg -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.ctx ko ln in
+        let* ko_ln = difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0 so k+o < l+n *)
         | Neg -> (
-            let* l_ko = Context.difference sub.ctx l ko in
+            let* l_ko = difference sub.ctx l ko in
             match Int.sign (Z.sign l_ko) with
             (* l-(k+o) < 0     [k;   o)
              * so l < k+o    ⊢    [l;  n) *)
@@ -600,7 +595,7 @@ let excise_seg ({sub} as goal) msg ssg =
         )
     (* k-l = 0 so k = l *)
     | Zero -> (
-        let* o_n = Context.difference sub.ctx o n in
+        let* o_n = difference sub.ctx o n in
         match Int.sign (Z.sign o_n) with
         (* o-n < 0      [k; o)
          * so o < n   ⊢ [l;   n) *)
@@ -615,7 +610,7 @@ let excise_seg ({sub} as goal) msg ssg =
     | Pos -> (
         let ko = Term.add k o in
         let ln = Term.add l n in
-        let* ko_ln = Context.difference sub.ctx ko ln in
+        let* ko_ln = difference sub.ctx ko ln in
         match Int.sign (Z.sign ko_ln) with
         (* k+o-(l+n) < 0        [k; o)
          * so k+o < l+n    ⊢ [l;      n) *)
@@ -625,7 +620,7 @@ let excise_seg ({sub} as goal) msg ssg =
         | Zero -> Some (excise_seg_min_suffix goal msg ssg k_l)
         (* k+o-(l+n) > 0 so k+o > l+n *)
         | Pos -> (
-            let* k_ln = Context.difference sub.ctx k ln in
+            let* k_ln = difference sub.ctx k ln in
             match Int.sign (Z.sign k_ln) with
             (* k-(l+n) < 0        [k;  o)
              * so k < l+n    ⊢ [l;   n) *)
@@ -643,18 +638,16 @@ let excise_heap ({min; sub} as goal) =
   | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal
 
+let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
+
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
   if Sh.is_false min then Some (Sh.false_ (Var.Set.diff sub.us zs))
-  else if Sh.is_emp sub then Some (Sh.exists zs (Sh.extend_us xs min))
+  else if pure_entails min.ctx sub then
+    Some (Sh.exists zs (Sh.extend_us xs min))
   else if Sh.is_false sub then None
   else if pgs then
-    goal
-    |> with_ ~pgs:false
-    |> excise_exists
-    |> excise_pure
-    >>= excise_heap
-    >>= excise
+    goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
 
 let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =

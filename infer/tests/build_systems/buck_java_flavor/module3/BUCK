@@ -1,0 +1,9 @@
+cxx_library(
+  name = 'module3',
+  visibility = [
+    'PUBLIC',
+  ],
+  srcs = [
+    'some_c_code.c',
+  ],
+)

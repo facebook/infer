@@ -65,8 +65,8 @@ type err_instance =
   | Inconsistent_subclass of
       { inheritance_violation: InheritanceRule.violation
       ; violation_type: InheritanceRule.ReportableViolation.violation_type
-      ; base_proc_name: Procname.t
-      ; overridden_proc_name: Procname.t }
+      ; base_proc_name: Procname.Java.t
+      ; overridden_proc_name: Procname.Java.t }
   | Field_not_initialized of {field_name: Fieldname.t}
   | Over_annotation of
       { over_annotated_violation: OverAnnotatedRule.violation
@@ -75,14 +75,40 @@ type err_instance =
       { dereference_violation: DereferenceRule.violation
       ; dereference_location: Location.t
       ; dereference_type: DereferenceRule.ReportableViolation.dereference_type
-      ; nullable_object_descr: string option
-      ; nullable_object_origin: TypeOrigin.t }
+      ; nullable_object_descr: string option }
   | Bad_assignment of
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
-      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type
-      ; rhs_origin: TypeOrigin.t }
+      ; assignment_type: AssignmentRule.ReportableViolation.assignment_type }
 [@@deriving compare]
+
+(** Returns whether we can be certain that an [err_instance] is related to synthetic code,
+    autogen/codegen).
+
+    NOTE: This implementation is very naive and handles only simplest cases (which is actually
+    enough for our use-case at the moment). The problem here is that in general:
+
+    - any expression that has synthetic code inside can be considered "tainted",
+    - any expression with a "tainted" sub-expression is also "tainted",
+    - with "tainted" expressions all bets are off and error reporting should be suppressed.
+
+    We could handle this properly by introducing [Nullability.Synthetic] but this is quite involved
+    (and hopefully won't be needed). *)
+let is_synthetic_err = function
+  | Bad_assignment {assignment_type; _} -> (
+      AssignmentRule.ReportableViolation.(
+        match assignment_type with
+        | PassingParamToFunction {function_procname; _} ->
+            (* NOTE: this currently doesn't cover the case when the actual
+               argument involves syntethic code *)
+            Procname.Java.is_autogen_method function_procname
+        | AssigningToField fieldname ->
+            Fieldname.is_java_synthetic fieldname
+        | _ ->
+            false) )
+  | _ ->
+      false
+
 
 let pp_err_instance fmt err_instance =
   match err_instance with
@@ -96,8 +122,8 @@ let pp_err_instance fmt err_instance =
       F.pp_print_string fmt "Over_annotation"
   | Nullable_dereference _ ->
       F.pp_print_string fmt "Nullable_dereference"
-  | Bad_assignment {rhs_origin} ->
-      F.fprintf fmt "Bad_assignment: rhs %s" (TypeOrigin.to_string rhs_origin)
+  | Bad_assignment _ ->
+      F.fprintf fmt "Bad_assignment"
 
 
 module H = Hashtbl.Make (struct
@@ -193,7 +219,7 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
   match nonnull_origin with
   | MethodCall {pname} ->
       Format.asprintf ": %a is not annotated as `@Nullable`" MF.pp_monospaced
-        (Procname.to_simplified_string ~withclass:true pname)
+        (Procname.Java.to_simplified_string ~withclass:true pname)
   | NullConst _ ->
       Logging.die Logging.InternalError
         "Unexpected origin NullConst: this is for nullable types, should not lead to condition \
@@ -218,90 +244,88 @@ let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.
 (** If error is reportable to the user, return its information. Otherwise return [None]. *)
 let get_error_info_if_reportable_lazy ~nullsafe_mode err_instance =
   let open IOption.Let_syntax in
-  match err_instance with
-  | Condition_redundant {is_always_true; condition_descr; nonnull_origin} ->
-      Some
-        ( lazy
-          ( P.sprintf "The condition %s might be always %b%s."
-              (Option.value condition_descr ~default:"")
-              is_always_true
-              (get_nonnull_explanation_for_condition_redudant nonnull_origin)
-          , IssueType.eradicate_condition_redundant
-          , None
-          , (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with null,
-               this can have a lot of reasons to be actually nullable.
-               Until it is made non-precise, it is recommended to not turn this warning on.
-               But even when it is on, this should not be more than advice.
-            *)
-            IssueType.Advice ) )
-  | Over_annotation {over_annotated_violation; violation_type} ->
-      Some
-        ( lazy
-          ( OverAnnotatedRule.violation_description over_annotated_violation violation_type
+  if is_synthetic_err err_instance then None
+  else
+    match err_instance with
+    | Condition_redundant {is_always_true; condition_descr; nonnull_origin} ->
+        Some
+          ( lazy
+            ( P.sprintf "The condition %s might be always %b%s."
+                (Option.value condition_descr ~default:"")
+                is_always_true
+                (get_nonnull_explanation_for_condition_redudant nonnull_origin)
+            , IssueType.eradicate_condition_redundant
+            , None
+            , (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with null,
+                 this can have a lot of reasons to be actually nullable.
+                 Until it is made non-precise, it is recommended to not turn this warning on.
+                 But even when it is on, this should not be more than advice.
+              *)
+              IssueType.Advice ) )
+    | Over_annotation {over_annotated_violation; violation_type} ->
+        Some
+          ( lazy
+            ( OverAnnotatedRule.violation_description over_annotated_violation violation_type
+            , ( match violation_type with
+              | OverAnnotatedRule.FieldOverAnnoted _ ->
+                  IssueType.eradicate_field_over_annotated
+              | OverAnnotatedRule.ReturnOverAnnotated _ ->
+                  IssueType.eradicate_return_over_annotated )
+            , None
+            , (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
+              IssueType.Advice ) )
+    | Field_not_initialized {field_name} ->
+        Some
+          ( lazy
+            ( Format.asprintf
+                "Field %a is declared non-nullable, so it should be initialized in the constructor \
+                 or in an `@Initializer` method"
+                MF.pp_monospaced
+                (Fieldname.get_field_name field_name)
+            , IssueType.eradicate_field_not_initialized
+            , None
+            , NullsafeMode.severity nullsafe_mode ) )
+    | Bad_assignment {assignment_location; assignment_type; assignment_violation} ->
+        (* If violation is reportable, create tuple, otherwise None *)
+        let+ reportable_violation =
+          AssignmentRule.ReportableViolation.from nullsafe_mode assignment_violation
+        in
+        lazy
+          (let description, issue_type, error_location =
+             AssignmentRule.ReportableViolation.get_description ~assignment_location assignment_type
+               reportable_violation
+           in
+           let severity = AssignmentRule.ReportableViolation.get_severity reportable_violation in
+           (description, issue_type, Some error_location, severity) )
+    | Nullable_dereference
+        {dereference_violation; dereference_location; nullable_object_descr; dereference_type} ->
+        (* If violation is reportable, create tuple, otherwise None *)
+        let+ reportable_violation =
+          DereferenceRule.ReportableViolation.from nullsafe_mode dereference_violation
+        in
+        lazy
+          (let description, issue_type, error_location =
+             DereferenceRule.ReportableViolation.get_description reportable_violation
+               ~dereference_location dereference_type ~nullable_object_descr
+           in
+           let severity = DereferenceRule.ReportableViolation.get_severity reportable_violation in
+           (description, issue_type, Some error_location, severity) )
+    | Inconsistent_subclass
+        {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
+        (* If violation is reportable, create tuple, otherwise None *)
+        let+ reportable_violation =
+          InheritanceRule.ReportableViolation.from nullsafe_mode inheritance_violation
+        in
+        lazy
+          ( InheritanceRule.ReportableViolation.get_description reportable_violation violation_type
+              ~base_proc_name ~overridden_proc_name
           , ( match violation_type with
-            | OverAnnotatedRule.FieldOverAnnoted _ ->
-                IssueType.eradicate_field_over_annotated
-            | OverAnnotatedRule.ReturnOverAnnotated _ ->
-                IssueType.eradicate_return_over_annotated )
+            | InconsistentReturn ->
+                IssueType.eradicate_inconsistent_subclass_return_annotation
+            | InconsistentParam _ ->
+                IssueType.eradicate_inconsistent_subclass_parameter_annotation )
           , None
-          , (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
-            IssueType.Advice ) )
-  | Field_not_initialized {field_name} ->
-      Some
-        ( lazy
-          ( Format.asprintf
-              "Field %a is declared non-nullable, so it should be initialized in the constructor \
-               or in an `@Initializer` method"
-              MF.pp_monospaced
-              (Fieldname.get_field_name field_name)
-          , IssueType.eradicate_field_not_initialized
-          , None
-          , NullsafeMode.severity nullsafe_mode ) )
-  | Bad_assignment {rhs_origin; assignment_location; assignment_type; assignment_violation} ->
-      (* If violation is reportable, create tuple, otherwise None *)
-      let+ reportable_violation =
-        AssignmentRule.ReportableViolation.from nullsafe_mode assignment_violation
-      in
-      lazy
-        (let description, issue_type, error_location =
-           AssignmentRule.ReportableViolation.get_description ~assignment_location assignment_type
-             ~rhs_origin reportable_violation
-         in
-         let severity = AssignmentRule.ReportableViolation.get_severity reportable_violation in
-         (description, issue_type, Some error_location, severity) )
-  | Nullable_dereference
-      { dereference_violation
-      ; dereference_location
-      ; nullable_object_descr
-      ; dereference_type
-      ; nullable_object_origin } ->
-      (* If violation is reportable, create tuple, otherwise None *)
-      let+ reportable_violation =
-        DereferenceRule.ReportableViolation.from nullsafe_mode dereference_violation
-      in
-      lazy
-        (let description, issue_type, error_location =
-           DereferenceRule.ReportableViolation.get_description reportable_violation
-             ~dereference_location dereference_type ~nullable_object_descr ~nullable_object_origin
-         in
-         let severity = DereferenceRule.ReportableViolation.get_severity reportable_violation in
-         (description, issue_type, Some error_location, severity) )
-  | Inconsistent_subclass
-      {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
-      (* If violation is reportable, create tuple, otherwise None *)
-      let+ reportable_violation =
-        InheritanceRule.ReportableViolation.from nullsafe_mode inheritance_violation
-      in
-      lazy
-        ( InheritanceRule.ReportableViolation.get_description reportable_violation violation_type
-            ~base_proc_name ~overridden_proc_name
-        , ( match violation_type with
-          | InconsistentReturn ->
-              IssueType.eradicate_inconsistent_subclass_return_annotation
-          | InconsistentParam _ ->
-              IssueType.eradicate_inconsistent_subclass_parameter_annotation )
-        , None
-        , InheritanceRule.ReportableViolation.get_severity reportable_violation )
+          , InheritanceRule.ReportableViolation.get_severity reportable_violation )
 
 
 (** If error is reportable to the user, return description, severity etc. Otherwise return None. *)

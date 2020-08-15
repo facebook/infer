@@ -145,20 +145,28 @@ and Formula : sig
   (* comparisons *)
   val eq : Term.t -> Term.t -> t
   val dq : Term.t -> Term.t -> t
+  val eq0 : Term.t -> t
+  val dq0 : Term.t -> t
+  val gt0 : Term.t -> t
+  val ge0 : Term.t -> t
+  val lt0 : Term.t -> t
+  val le0 : Term.t -> t
+  val gt : Term.t -> Term.t -> t
+  val ge : Term.t -> Term.t -> t
   val lt : Term.t -> Term.t -> t
   val le : Term.t -> Term.t -> t
 
   (* connectives *)
   val not_ : t -> t
   val and_ : t -> t -> t
+  val andN : t list -> t
   val or_ : t -> t -> t
+  val orN : t list -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
 
   (** Query *)
 
   val fv : t -> Var.Set.t
-  val is_true : t -> bool
-  val is_false : t -> bool
 
   (** Traverse *)
 
@@ -166,6 +174,7 @@ and Formula : sig
 
   (** Transform *)
 
+  val map_terms : f:(Term.t -> Term.t) -> t -> t
   val map_vars : f:(Var.t -> Var.t) -> t -> t
 
   val fold_map_vars :
@@ -175,69 +184,63 @@ and Formula : sig
   val disjuncts : t -> t list
 end
 
-(** Inference System *)
+(** Sets of assumptions, interpreted as conjunction, plus reasoning about
+    their logical consequences. *)
 module Context : sig
   type t [@@deriving sexp]
-  type classes = Term.t list Term.Map.t
-
-  val classes : t -> classes
-  (** [classes r] maps each equivalence class representative to the other
-      terms [r] proves equal to it. *)
-
-  val diff_classes : t -> t -> classes
-  (** [diff_classes r s] is the equality classes of [r] omitting equalities
-      in [s]. *)
 
   val pp : t pp
-  val pp_classes : t pp
-  val ppx_classes : Var.strength -> classes pp
+
+  val ppx_diff :
+    Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
 
   include Invariant.S with type t := t
 
-  val true_ : t
-  (** The diagonal relation, which only equates each term with itself. *)
+  val empty : t
+  (** The empty context of assumptions. *)
 
-  val and_formula : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
-  (** Conjoin a (Boolean) term to a relation. *)
+  val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
+  (** Add (that is, conjoin) an assumption to a context. *)
 
-  val and_ : Var.Set.t -> t -> t -> Var.Set.t * t
-  (** Conjunction. *)
+  val union : Var.Set.t -> t -> t -> Var.Set.t * t
+  (** Union (that is, conjoin) two contexts of assumptions. *)
 
-  val orN : Var.Set.t -> t list -> Var.Set.t * t
-  (** Nary disjunction. *)
+  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  (** Intersect (that is, disjoin) contexts of assumptions. *)
 
   val rename : t -> Var.Subst.t -> t
-  (** Apply a renaming substitution to the relation. *)
+  (** Apply a renaming substitution to the context. *)
 
-  val fv : t -> Var.Set.t
-  (** The variables occurring in the terms of the relation. *)
+  val is_empty : t -> bool
+  (** Test if the context of assumptions is empty. *)
 
-  val is_true : t -> bool
-  (** Test if the relation is diagonal. *)
+  val is_unsat : t -> bool
+  (** Test if the context of assumptions is inconsistent. *)
 
-  val is_false : t -> bool
-  (** Test if the relation is empty / inconsistent. *)
+  val implies : t -> Formula.t -> bool
+  (** Holds only if a formula is a logical consequence of a context of
+      assumptions. This only checks if the formula is valid in the current
+      state of the context, without doing any further logical reasoning or
+      propagation. *)
 
-  val entails_eq : t -> Term.t -> Term.t -> bool
-  (** Test if an equation is entailed by a relation. *)
+  val refutes : t -> Formula.t -> bool
+  (** Holds only if a formula is inconsistent with a context of assumptions,
+      that is, conjoining the formula to the assumptions is unsatisfiable. *)
 
   val class_of : t -> Term.t -> Term.t list
-  (** Equivalence class of [e]: all the terms [f] in the relation such that
-      [e = f] is implied by the relation. *)
+  (** Equivalence class of [e]: all the terms [f] in the context such that
+      [e = f] is implied by the assumptions. *)
 
   val normalize : t -> Term.t -> Term.t
   (** Normalize a term [e] to [e'] such that [e = e'] is implied by the
-      relation, where [e'] and its subterms are expressed in terms of the
-      relation's canonical representatives of each equivalence class. *)
+      assumptions, where [e'] and its subterms are expressed in terms of the
+      canonical representatives of each equivalence class. *)
 
-  val normalizef : t -> Formula.t -> Formula.t
+  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  (** Enumerate the variables occurring in the terms of the context. *)
 
-  val difference : t -> Term.t -> Term.t -> Z.t option
-  (** The difference as an offset. [difference r a b = Some k] if [r]
-      implies [a = b+k], or [None] if [a] and [b] are not equal up to an
-      integer offset. *)
-
-  val fold_terms : init:'a -> t -> f:('a -> Term.t -> 'a) -> 'a
+  val fv : t -> Var.Set.t
+  (** The variables occurring in the terms of the context. *)
 
   (** Solution Substitutions *)
   module Subst : sig
@@ -252,8 +255,6 @@ module Context : sig
     val subst : t -> Term.t -> Term.t
     (** Apply a substitution recursively to subterms. *)
 
-    val substf : t -> Formula.t -> Formula.t
-
     val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
     (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
         and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks
@@ -261,23 +262,26 @@ module Context : sig
   end
 
   val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
-  (** Relation induced by applying a substitution to a set of equations
-      generating the argument relation. *)
+  (** Context induced by applying a solution substitution to a set of
+      equations generating the argument context. *)
 
   val solve_for_vars : Var.Set.t list -> t -> Subst.t
-  (** [solve_for_vars vss r] is a solution substitution that is entailed by
-      [r] and consists of oriented equalities [x ↦ e] that map terms [x]
+  (** [solve_for_vars vss x] is a solution substitution that is implied by
+      [x] and consists of oriented equalities [v ↦ e] that map terms [v]
       with free variables contained in (the union of) a prefix [uss] of
       [vss] to terms [e] with free variables contained in as short a prefix
       of [uss] as possible. *)
 
   val elim : Var.Set.t -> t -> t
-  (** Weaken relation by removing oriented equations [k ↦ _] for [k] in
-      [ks]. *)
+  (** [elim ks x] is [x] weakened by removing oriented equations [k ↦ _]
+      for [k] in [ks]. *)
 
-  (* Replay debugging *)
+  (**/**)
+
+  val pp_raw : t pp
 
   val replay : string -> unit
+  (** Replay debugging *)
 end
 
 (** Convert from Llair *)

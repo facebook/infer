@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -186,7 +187,7 @@ public class ArrayListTest {
   // Control vars include the list length and the element which is some intValue.
   // O(list.length x (-list.elements + 11))
   // Simplified version of real code https://fburl.com/a3gge1b7
-  public boolean iterate_over_arraylist_shortcut_linear_FP(ArrayList<Integer> list) {
+  public boolean iterate_over_arraylist_shortcut_linear(ArrayList<Integer> list) {
     for (Integer element : list) {
       if (element > 10) {
         return false;
@@ -335,6 +336,24 @@ public class ArrayListTest {
     ArrayList<Integer> a = new ArrayList<>();
     a.add(5);
     for (int i = 0; i < a.get(0); i++) {}
+  }
+
+  boolean rand;
+
+  int get_size(ArrayList<Integer> arr) {
+    return arr.size();
+  }
+
+  void loop_invariant_linear(ArrayList<Integer> arr, InputStream is) {
+    if (rand) {
+      arr = new ArrayList<>();
+    }
+    for (int i = 0; i < get_size(arr); i++) {
+      try {
+        is.read();
+      } catch (Exception e) {
+      }
+    }
   }
 }
 

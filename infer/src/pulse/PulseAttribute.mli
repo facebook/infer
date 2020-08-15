@@ -17,6 +17,7 @@ type t =
       (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
   | Closure of Procname.t
   | DynamicType of Typ.Name.t
+  | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
@@ -40,6 +41,8 @@ module Attributes : sig
   val get_allocation : t -> (Procname.t * Trace.t) option
 
   val get_dynamic_type : t -> Typ.Name.t option
+
+  val is_end_of_collection : t -> bool
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 

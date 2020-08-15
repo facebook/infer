@@ -431,27 +431,7 @@ let method_exists right_proc_name methods =
 
 
 let resolve_method tenv class_name proc_name =
-  let found_class =
-    let visited = ref Typ.Name.Set.empty in
-    let rec resolve (class_name : Typ.Name.t) =
-      visited := Typ.Name.Set.add class_name !visited ;
-      let right_proc_name = Procname.replace_class proc_name class_name in
-      match Tenv.lookup tenv class_name with
-      | Some {methods; supers} when Typ.Name.is_class class_name -> (
-          if method_exists right_proc_name methods then Some right_proc_name
-          else
-            match supers with
-            | super_classname :: _ ->
-                if not (Typ.Name.Set.mem super_classname !visited) then resolve super_classname
-                else None
-            | _ ->
-                None )
-      | _ ->
-          None
-    in
-    resolve class_name
-  in
-  match found_class with
+  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
   | None ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;
@@ -641,31 +621,32 @@ let resolve_and_analyze
 
 (** recognize calls to the constructor java.net.URL and splits the argument string to be only the
     protocol. *)
-let call_constructor_url_update_args pname actual_params =
+let call_constructor_url_update_args =
   let url_pname =
     Procname.make_java
       ~class_name:(Typ.Name.Java.from_string "java.net.URL")
       ~return_type:None ~method_name:Procname.Java.constructor_method_name
-      ~parameters:[JavaSplitName.java_lang_string] ~kind:Procname.Java.Non_Static ()
+      ~parameters:[Typ.pointer_to_java_lang_string] ~kind:Procname.Java.Non_Static ()
   in
-  if Procname.equal url_pname pname then
-    match actual_params with
-    | [this; (Exp.Const (Const.Cstr s), atype)] -> (
-        let parts = Str.split (Str.regexp_string "://") s in
-        match parts with
-        | frst :: _ ->
-            if
-              String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
-              || String.equal frst "mailto" || String.equal frst "jar"
-            then [this; (Exp.Const (Const.Cstr frst), atype)]
-            else actual_params
-        | _ ->
-            actual_params )
-    | [this; (_, atype)] ->
-        [this; (Exp.Const (Const.Cstr "file"), atype)]
-    | _ ->
-        actual_params
-  else actual_params
+  fun pname actual_params ->
+    if Procname.equal url_pname pname then
+      match actual_params with
+      | [this; (Exp.Const (Const.Cstr s), atype)] -> (
+          let parts = Str.split (Str.regexp_string "://") s in
+          match parts with
+          | frst :: _ ->
+              if
+                String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
+                || String.equal frst "mailto" || String.equal frst "jar"
+              then [this; (Exp.Const (Const.Cstr frst), atype)]
+              else actual_params
+          | _ ->
+              actual_params )
+      | [this; (_, atype)] ->
+          [this; (Exp.Const (Const.Cstr "file"), atype)]
+      | _ ->
+          actual_params
+    else actual_params
 
 
 let receiver_self receiver prop =

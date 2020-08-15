@@ -22,19 +22,19 @@ void nsarray_init_constant() {
   }
 }
 
-void nsarray_init_with_array_linear_FP(NSArray* array) {
+void nsarray_init_with_array_linear(NSArray* array) {
   NSArray* ref_array = [[NSArray alloc] initWithArray:array];
 
   for (int i = 0; i < ref_array.count; i++) {
   }
 }
 
-void nsarray_init_with_array_constant_FP() {
+void nsarray_init_with_array_constant() {
   NSArray* array = [[NSArray alloc] init];
-  nsarray_init_with_array_linear_FP(array);
+  nsarray_init_with_array_linear(array);
 }
 
-void nsarray_init_with_array_copy_linear_FP(NSArray* array) {
+void nsarray_init_with_array_copy_linear(NSArray* array) {
   NSArray* copy_array = [[NSArray alloc] initWithArray:array copyItems:YES];
   for (int i = 0; i < copy_array.count; i++) {
   }
@@ -84,7 +84,7 @@ void nsarray_access_constant() {
   }
 }
 
-void nsarray_object_at_indexed_constant_FP() {
+void nsarray_object_at_indexed_constant() {
   NSArray* array = @[ @2, @3 ];
 
   for (int i = 0; i < [array[0] integerValue]; i++) {

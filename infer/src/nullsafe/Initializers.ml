@@ -107,7 +107,7 @@ let get_class pn =
 let final_initializer_typestates_lazy tenv curr_pname curr_pdesc typecheck_proc =
   lazy
     (let is_initializer proc_attributes =
-       PatternMatch.method_is_initializer tenv proc_attributes
+       PatternMatch.Java.method_is_initializer tenv proc_attributes
        ||
        let ia =
          (* TODO(T62825735): support trusted callees for fields *)

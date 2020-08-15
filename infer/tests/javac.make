@@ -16,11 +16,13 @@ include $(TESTS_DIR)/infer.make
 
 PROJECT_ROOT ?= $(TESTS_DIR)
 
+JAVAC_FLAGS = -g
+
 $(OBJECTS): $(SOURCES)
-	$(QUIET)$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
+	$(QUIET)$(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --project-root $(PROJECT_ROOT) --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -- \
-	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))
+	    $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES))

@@ -64,9 +64,5 @@ val package_to_string : string list -> string option
 val create_array_type : Typ.t -> int -> Typ.t
 (** [create_array_type typ dim] creates an array type with dimension dim and content typ *)
 
-val extract_cn_no_obj : Typ.t -> JBasics.class_name option
-(** [extract_cn_type_np] returns the Java class name of typ when typ is a pointer type, otherwise
-    returns None *)
-
 val object_type_to_string : JBasics.object_type -> string
 (** returns a string representation of an object Java type *)

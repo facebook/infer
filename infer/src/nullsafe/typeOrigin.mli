@@ -22,7 +22,7 @@ type t =
       (** Parameter of a method we are currently in, *)
   | This (* `this` object. Can not be null, according to Java rules. *)
   | MethodCall of
-      { pname: Procname.t
+      { pname: Procname.Java.t
       ; call_loc: Location.t
       ; annotated_signature: AnnotatedSignature.t
       ; is_defined: bool }  (** A result of a method call *)

@@ -5,4 +5,3 @@
 ; LICENSE file in the root directory of this source tree.
 
 (using menhir 1.0)
-(formatting (enabled_for dune))

@@ -14,7 +14,7 @@ module F = Format
 (** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
     other annotations. *)
 type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 and parameter = {name: string option; value: value} [@@deriving compare]
 
@@ -86,7 +86,7 @@ and pp fmt annotation =
 
 module Item = struct
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = (t * bool) list [@@deriving compare]
+  type nonrec t = (t * bool) list [@@deriving compare, equal]
 
   (** Pretty print an item annotation. *)
   let pp fmt ann =

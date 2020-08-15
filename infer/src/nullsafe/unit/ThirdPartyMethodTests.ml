@@ -14,12 +14,15 @@ let assert_parse_ok input expected_output =
   let result = ThirdPartyMethod.parse input in
   match result with
   | Ok output ->
+      (* Check that it was parsed to the expected result*)
       assert_equal output expected_output ~printer:(fun parse_result ->
-          Pp.string_of_pp pp_parse_result parse_result )
+          Pp.string_of_pp pp parse_result ) ;
+      (* Check also that the canonical representation matches the original *)
+      assert_equal (to_canonical_string output) input
   | Error error ->
       assert_failure
-        (F.asprintf "Expected '%s' to be parsed as %a, but got error %s instead" input
-           ThirdPartyMethod.pp_parse_result expected_output (string_of_parsing_error error))
+        (F.asprintf "Expected '%s' to be parsed, but got error %s instead" input
+           (string_of_parsing_error error))
 
 
 let assert_parse_bad input =
@@ -28,7 +31,7 @@ let assert_parse_bad input =
   | Ok output ->
       assert_failure
         (F.asprintf "Expected '%s' to be NOT parsed, but was parsed as %a instead" input
-           ThirdPartyMethod.pp_parse_result output)
+           ThirdPartyMethod.pp output)
   | Error _ ->
       ()
 
@@ -38,38 +41,52 @@ let success_cases =
   >:: fun _ ->
   (* No params *)
   assert_parse_ok "a.b.C#foo()"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
-    , {ret_nullability= Nonnull; param_nullability= []} ) ;
+    {class_name= "a.b.C"; method_name= Method "foo"; params= []; ret_nullability= Nonnull} ;
   assert_parse_ok "a.b.C#foo() @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
-    , {ret_nullability= Nullable; param_nullability= []} ) ;
+    {class_name= "a.b.C"; method_name= Method "foo"; params= []; ret_nullability= Nullable} ;
   (* One param *)
   assert_parse_ok "a.b.C#foo(c.d.E)"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
-    , {ret_nullability= Nonnull; param_nullability= [Nonnull]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nonnull)]
+    ; ret_nullability= Nonnull } ;
   assert_parse_ok "a.b.C#foo(@Nullable c.d.E)"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
-    , {ret_nullability= Nonnull; param_nullability= [Nullable]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nullable)]
+    ; ret_nullability= Nonnull } ;
   assert_parse_ok "a.b.C#foo(c.d.E) @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
-    , {ret_nullability= Nullable; param_nullability= [Nonnull]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nonnull)]
+    ; ret_nullability= Nullable } ;
   assert_parse_ok "a.b.C#foo(@Nullable c.d.E) @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
-    , {ret_nullability= Nullable; param_nullability= [Nullable]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nullable)]
+    ; ret_nullability= Nullable } ;
   (* Many params *)
   assert_parse_ok "a.b.C#foo(c.d.E, a.b.C, x.y.Z)"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
-    , {ret_nullability= Nonnull; param_nullability= [Nonnull; Nonnull; Nonnull]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nonnull); ("a.b.C", Nonnull); ("x.y.Z", Nonnull)]
+    ; ret_nullability= Nonnull } ;
   assert_parse_ok "a.b.C#foo(c.d.E, @Nullable a.b.C, x.y.Z)"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
-    , {ret_nullability= Nonnull; param_nullability= [Nonnull; Nullable; Nonnull]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nonnull); ("a.b.C", Nullable); ("x.y.Z", Nonnull)]
+    ; ret_nullability= Nonnull } ;
   assert_parse_ok "a.b.C#foo(@Nullable c.d.E, a.b.C, @Nullable x.y.Z) @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
-    , {ret_nullability= Nullable; param_nullability= [Nullable; Nonnull; Nullable]} ) ;
+    { class_name= "a.b.C"
+    ; method_name= Method "foo"
+    ; params= [("c.d.E", Nullable); ("a.b.C", Nonnull); ("x.y.Z", Nullable)]
+    ; ret_nullability= Nullable } ;
   (* Constructor *)
   assert_parse_ok "a.b.C#<init>(@Nullable c.d.E, a.b.C, x.y.Z) @Nullable"
-    ( {class_name= "a.b.C"; method_name= Constructor; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
-    , {ret_nullability= Nullable; param_nullability= [Nullable; Nonnull; Nonnull]} )
+    { class_name= "a.b.C"
+    ; method_name= Constructor
+    ; params= [("c.d.E", Nullable); ("a.b.C", Nonnull); ("x.y.Z", Nonnull)]
+    ; ret_nullability= Nullable }
 
 
 (* We intentionally don't test all bad cases.

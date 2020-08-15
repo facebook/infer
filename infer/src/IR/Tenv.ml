@@ -97,11 +97,15 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
 end
 
 let merge ~src ~dst =
-  TypenameHash.iter
-    (fun pname cfg ->
-      if (not (Struct.is_dummy cfg)) || not (TypenameHash.mem dst pname) then
-        TypenameHash.replace dst pname cfg )
-    src
+  let merge_internal typename newer =
+    match TypenameHash.find_opt dst typename with
+    | None ->
+        TypenameHash.add dst typename newer
+    | Some current ->
+        let merged_struct = Struct.merge typename ~newer ~current in
+        TypenameHash.replace dst typename merged_struct
+  in
+  TypenameHash.iter merge_internal src
 
 
 let merge_per_file ~src ~dst =
@@ -167,19 +171,6 @@ let store_to_filename tenv tenv_filename =
   if Config.debug_mode then store_debug_file tenv tenv_filename
 
 
-let init_inheritances tenv =
-  let sub_to_supers =
-    TypenameHash.fold (fun sub {Struct.supers} acc -> (sub, supers) :: acc) tenv []
-  in
-  List.iter sub_to_supers ~f:(fun (sub, supers) ->
-      List.iter supers ~f:(fun super ->
-          (* Ignore the super class of java.lang.Object since its sub-classes are too many, which
-             harms the analysis precision. *)
-          if not (Typ.Name.equal super Typ.Name.Java.java_lang_object) then
-            Option.iter (lookup tenv super) ~f:(fun super_struct ->
-                Struct.add_sub sub super_struct |> TypenameHash.replace tenv super ) ) )
-
-
 let store_global tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
@@ -188,54 +179,39 @@ let store_global tenv =
   let tenv = TypenameHashNormalizer.normalize tenv in
   L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
     (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
-  init_inheritances tenv ;
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
 
 
-let get_summary_formals tenv ~get_summary ~get_formals =
-  let get pname =
-    match (get_summary pname, get_formals pname) with
-    | Some summary, Some formals ->
-        `Found (summary, formals)
-    | _, _ ->
-        `NotFound
+let resolve_method ~method_exists tenv class_name proc_name =
+  let visited = ref Typ.Name.Set.empty in
+  let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
+    if
+      (not (Typ.Name.is_class class_name))
+      || (not (Struct.is_not_java_interface class_struct))
+      || Typ.Name.Set.mem class_name !visited
+    then None
+    else (
+      visited := Typ.Name.Set.add class_name !visited ;
+      let right_proc_name = Procname.replace_class proc_name class_name in
+      if method_exists right_proc_name class_struct.methods then Some right_proc_name
+      else
+        let supers_to_search =
+          match (class_name : Typ.Name.t) with
+          | CStruct _ | CUnion _ | CppClass _ ->
+              (* multiple inheritance possible, search all supers *)
+              class_struct.supers
+          | JavaClass _ ->
+              (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
+              class_struct.supers
+          | ObjcClass _ ->
+              (* multiple inheritance impossible, but recursive calls will throw away protocols *)
+              class_struct.supers
+          | ObjcProtocol _ ->
+              []
+        in
+        List.find_map supers_to_search ~f:resolve_name )
+  and resolve_name class_name =
+    lookup tenv class_name |> Option.bind ~f:(resolve_name_struct class_name)
   in
-  let found_from_subclass pname = function
-    | `Found (summary, formals) ->
-        `FoundFromSubclass (pname, summary, formals)
-    | v ->
-        v
-  in
-  let rec get_summary_formals_aux pname =
-    match get pname with
-    | `Found _ as v ->
-        v
-    | `NotFound -> (
-      match Procname.get_class_type_name pname with
-      | None ->
-          `NotFound
-      | Some class_name when String.is_prefix (Typ.Name.name class_name) ~prefix:"java." ->
-          (* Note: We do not search sub-classes of `java.` because the super-classes are too
-             general.  Selecting one arbitrary sub-class of them does not help in making preciser
-             analysis results. *)
-          `NotFound
-      | Some class_name -> (
-        match lookup tenv class_name with
-        | Some {Struct.java_class_info= Some info; subs}
-          when Struct.equal_java_class_kind info.kind Interface
-               && Int.equal (Typ.Name.Set.cardinal subs) 1 ->
-            let unique_sub = Typ.Name.Set.choose subs in
-            Logging.d_printfln_escaped "Found a unique sub-class %a" Typ.Name.pp unique_sub ;
-            let sub_pname = Procname.replace_class pname unique_sub in
-            get_summary_formals_aux sub_pname |> found_from_subclass sub_pname
-        | Some {Struct.java_class_info= Some info; subs}
-          when Struct.equal_java_class_kind info.kind AbstractClass ->
-            Option.value_map (Typ.Name.Set.min_elt_opt subs) ~default:`NotFound ~f:(fun sub ->
-                Logging.d_printfln_escaped "Found an arbitrary sub-class %a" Typ.Name.pp sub ;
-                let sub_pname = Procname.replace_class pname sub in
-                get sub_pname |> found_from_subclass sub_pname )
-        | _ ->
-            `NotFound ) )
-  in
-  fun pname -> get_summary_formals_aux pname
+  resolve_name class_name

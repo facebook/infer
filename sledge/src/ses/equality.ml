@@ -561,10 +561,10 @@ let is_true {sat; rep} =
 
 let is_false {sat} = not sat
 
-let entails_eq r d e =
-  [%Trace.call fun {pf} -> pf "%a = %a@ %a" Term.pp d Term.pp e pp r]
+let implies r b =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp b pp r]
   ;
-  Term.is_true (Term.eq (canon r d) (canon r e))
+  Term.is_true (canon r b)
   |>
   [%Trace.retn fun {pf} -> pf "%b"]
 
@@ -587,20 +587,6 @@ let fold_uses_of r t ~init ~f =
   Subst.fold r.rep ~init ~f:(fun ~key:trm ~data:rep s ->
       let f trm s = fold_ trm ~init:s ~f in
       f trm (f rep s) )
-
-let difference r a b =
-  [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Term.pp a Term.pp b pp r]
-  ;
-  let a = canon r a in
-  let b = canon r b in
-  ( if Term.equal a b then Some Z.zero
-  else
-    match normalize r (Term.sub a b) with
-    | Integer {data} -> Some data
-    | _ -> None )
-  |>
-  [%Trace.retn fun {pf} ->
-    function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
 
 let apply_subst us s r =
   [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
@@ -644,7 +630,9 @@ let or_ us r s =
           List.fold cls
             ~init:([rep], rs)
             ~f:(fun (reps, rs) exp ->
-              match List.find ~f:(entails_eq r exp) reps with
+              match
+                List.find ~f:(fun rep -> implies r (Term.eq exp rep)) reps
+              with
               | Some rep -> (reps, and_eq_ us exp rep rs)
               | None -> (exp :: reps, rs) )
           |> snd )
@@ -707,8 +695,6 @@ let fold_terms r ~init ~f =
 
 let fold_vars r ~init ~f =
   fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
-
-let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
 (** Existential Witnessing and Elimination *)
 
@@ -948,7 +934,7 @@ let solve_concat_extracts_eq r x =
   let find_extracts_at_off off =
     List.filter uses ~f:(fun use ->
         match (use : Term.t) with
-        | Ap3 (Extract, _, o, _) -> entails_eq r o off
+        | Ap3 (Extract, _, o, _) -> implies r (Term.eq o off)
         | _ -> false )
   in
   let rec find_extracts full_rev_extracts rev_prefix off =
@@ -957,7 +943,7 @@ let solve_concat_extracts_eq r x =
         match e with
         | Ap3 (Extract, Ap2 (Sized, n, _), o, l) ->
             let o_l = Term.add o l in
-            if entails_eq r n o_l then
+            if implies r (Term.eq n o_l) then
               (e :: rev_prefix) :: full_rev_extracts
             else find_extracts full_rev_extracts (e :: rev_prefix) o_l
         | _ -> full_rev_extracts )
@@ -1043,7 +1029,7 @@ let solve_for_vars vss r =
     pf "%a" Subst.pp subst ;
     Subst.iteri subst ~f:(fun ~key ~data ->
         assert (
-          entails_eq r key data
+          implies r (Term.eq key data)
           || fail "@[%a@ = %a@ not entailed by@ @[%a@]@]" Term.pp key
                Term.pp data pp_classes r () ) ;
         assert (

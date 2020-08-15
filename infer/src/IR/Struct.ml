@@ -8,29 +8,47 @@
 open! IStd
 module F = Format
 
-type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
-type fields = field list
+type fields = field list [@@deriving equal]
 
-type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
+type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal, compare]
+
+let pp_java_class_kind fmt kind =
+  F.pp_print_string fmt
+    ( match kind with
+    | Interface ->
+        "Interface"
+    | AbstractClass ->
+        "AbstractClass"
+    | NormalClass ->
+        "NormalClass" )
+
 
 type java_class_info =
   { kind: java_class_kind  (** class kind in Java *)
   ; loc: Location.t option
         (** None should correspond to rare cases when it was impossible to fetch the location in
             source file *) }
+[@@deriving equal]
+
+let pp_java_class_info fmt {kind; loc} =
+  F.fprintf fmt "{kind= %a; loc= %a}" pp_java_class_kind kind (Pp.option Location.pp) loc
+
+
+let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 
 (** Type for a structured value. *)
 type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
-  ; subs: Typ.Name.Set.t  (** subclasses, initialized after merging type environments *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *) }
+[@@deriving equal]
 
 type lookup = Typ.Name.t -> t option
 
@@ -38,7 +56,10 @@ let pp_field pe f (field_name, typ, ann) =
   F.fprintf f "@\n\t\t%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
 
 
-let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
+let pp pe name f
+    ({fields; statics; supers; methods; exported_objc_methods; annots; java_class_info; dummy}[@warning
+                                                                                                "+9"])
+    =
   let pp_field pe f (field_name, typ, ann) =
     F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
   in
@@ -52,19 +73,24 @@ let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
   F.fprintf f
     "%a@,\
      @[<v>fields: {@[<v>%a@]}@,\
+     statics: {@[<v>%a@]}@,\
      supers: {@[<v>%a@]}@,\
      methods: {@[<v>%a@]}@,\
      exported_obj_methods: {@[<v>%a@]}@,\
-     annots: {%a}@]@,"
+     annots: {@[<v>%a@]}@,\
+     java_class_info: {@[<v>%a@]}@,\
+     dummy: %b@]@,"
     Typ.Name.pp name
     (seq (pp_field pe))
     fields
+    (seq (pp_field pe))
+    statics
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     supers
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
-    exported_objc_methods Annot.Item.pp annots
+    exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
@@ -75,16 +101,14 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; methods= []
     ; exported_objc_methods= []
     ; supers= []
-    ; subs= Typ.Name.Set.empty
     ; annots= Annot.Item.empty
     ; java_class_info= None
     ; dummy= false }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
-      ?(supers = default.supers) ?(subs = default.subs) ?(annots = default.annots)
-      ?(dummy = default.dummy) () =
-    {fields; statics; methods; exported_objc_methods; supers; subs; annots; java_class_info; dummy}
+      ?(supers = default.supers) ?(annots = default.annots) ?(dummy = default.dummy) () =
+    {fields; statics; methods; exported_objc_methods; supers; annots; java_class_info; dummy}
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
 
@@ -158,4 +182,92 @@ let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
 
 let is_dummy {dummy} = dummy
 
-let add_sub sub x = {x with subs= Typ.Name.Set.add sub x.subs}
+let merge_lists ~compare ~newer ~current =
+  let equal x y = Int.equal 0 (compare x y) in
+  match (newer, current) with
+  | [], _ ->
+      current
+  | _, [] ->
+      newer
+  | _, _ when List.equal equal newer current ->
+      newer
+  | _, _ ->
+      List.dedup_and_sort ~compare (newer @ current)
+
+
+let merge_fields ~newer ~current = merge_lists ~compare:compare_field ~newer ~current
+
+let merge_supers ~newer ~current = merge_lists ~compare:Typ.Name.compare ~newer ~current
+
+let merge_methods ~newer ~current = merge_lists ~compare:Procname.compare ~newer ~current
+
+let merge_annots ~newer ~current = merge_lists ~compare:[%compare: Annot.t * bool] ~newer ~current
+
+let merge_kind ~newer ~current =
+  (* choose the maximal, ie most concrete *)
+  if compare_java_class_kind newer current < 0 then current else newer
+
+
+(* choose [Some] option if possible, [newer] if both [None] else [merge] *)
+let merge_opt ~merge ~newer ~current =
+  match (newer, current) with
+  | _, None ->
+      newer
+  | None, _ ->
+      current
+  | Some newer, Some current ->
+      Some (merge ~newer ~current)
+
+
+let merge_loc ~newer ~current =
+  if Location.equal Location.dummy newer then current
+  else if Location.equal Location.dummy current then newer
+  else if (* arbitrarily but deterministically choose one *) Location.compare newer current <= 0
+  then newer
+  else current
+
+
+let merge_loc_opt ~newer ~current = merge_opt ~merge:merge_loc ~newer ~current
+
+let merge_java_class_info ~newer ~current =
+  { kind= merge_kind ~newer:newer.kind ~current:current.kind
+  ; loc= merge_loc_opt ~newer:newer.loc ~current:current.loc }
+
+
+let merge_java_class_info_opt ~newer ~current =
+  merge_opt ~merge:merge_java_class_info ~newer ~current
+
+
+let full_merge ~newer ~current =
+  let fields = merge_fields ~newer:newer.fields ~current:current.fields in
+  let statics = merge_fields ~newer:newer.statics ~current:current.statics in
+  let supers = merge_supers ~newer:newer.supers ~current:current.supers in
+  (* the semantics of [subs] is such that no merging is attempted *)
+  let methods = merge_methods ~newer:newer.methods ~current:current.methods in
+  (* we are merging only Java classes, so [exported_obj_methods] should be empty, so no merge *)
+  let annots = merge_annots ~newer:newer.annots ~current:current.annots in
+  let java_class_info =
+    merge_java_class_info_opt ~newer:newer.java_class_info ~current:current.java_class_info
+  in
+  {newer with fields; statics; supers; methods; annots; java_class_info}
+
+
+let merge typename ~newer ~current =
+  match (typename : Typ.Name.t) with
+  | CStruct _ | CUnion _ | ObjcClass _ | ObjcProtocol _ | CppClass _ ->
+      if not (is_dummy newer) then newer else current
+  | JavaClass _ when is_dummy newer ->
+      current
+  | JavaClass _ when is_dummy current ->
+      newer
+  | JavaClass _ when equal newer current ->
+      newer
+  | JavaClass _ ->
+      full_merge ~newer ~current
+
+
+let is_not_java_interface = function
+  | {java_class_info= Some {kind= Interface}} ->
+      false
+  | _ ->
+      true

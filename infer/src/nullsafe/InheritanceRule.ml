@@ -31,24 +31,19 @@ module ReportableViolation = struct
     else Some {nullsafe_mode; violation}
 
 
-  let is_java_lang_object_equals = function
-    | Procname.Java java_procname -> (
-      match
-        (Procname.Java.get_class_name java_procname, Procname.Java.get_method java_procname)
-      with
-      | "java.lang.Object", "equals" ->
-          true
-      | _ ->
-          false )
+  let is_java_lang_object_equals procname =
+    match (Procname.Java.get_class_name procname, Procname.Java.get_method procname) with
+    | "java.lang.Object", "equals" ->
+        true
     | _ ->
         false
 
 
   let get_description _ violation_type ~base_proc_name ~overridden_proc_name =
     let module MF = MarkupFormatter in
-    let base_method_descr = Procname.to_simplified_string ~withclass:true base_proc_name in
+    let base_method_descr = Procname.Java.to_simplified_string ~withclass:true base_proc_name in
     let overridden_method_descr =
-      Procname.to_simplified_string ~withclass:true overridden_proc_name
+      Procname.Java.to_simplified_string ~withclass:true overridden_proc_name
     in
     match violation_type with
     | InconsistentReturn ->

@@ -22,27 +22,26 @@ module Java = struct
     | Static  (** in Java, procedures called with invokestatic *)
   [@@deriving compare]
 
-  (* TODO: use Mangled.t here *)
-  type java_type = JavaSplitName.t [@@deriving compare, equal]
-
-  let java_void = JavaSplitName.void
-
   (** Type of java procedure names. *)
   type t =
     { method_name: string
-    ; parameters: java_type list
+    ; parameters: Typ.t list
     ; class_name: Typ.Name.t
-    ; return_type: java_type option (* option because constructors have no return type *)
+    ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
   [@@deriving compare]
 
+  let ensure_java_type t =
+    if not (Typ.is_java_type t) then
+      L.die InternalError "Expected java type but got %a@." (Typ.pp_full Pp.text) t
+
+
   let make ~class_name ~return_type ~method_name ~parameters ~kind () =
+    Option.iter return_type ~f:ensure_java_type ;
     {class_name; return_type; method_name; parameters; kind}
 
 
-  let pp_return_type ~verbose fmt j =
-    Option.iter j.return_type ~f:(JavaSplitName.pp_type_verbosity ~verbose fmt)
-
+  let pp_return_type ~verbose fmt j = Option.iter j.return_type ~f:(Typ.pp_java ~verbose fmt)
 
   let constructor_method_name = "<init>"
 
@@ -82,9 +81,7 @@ module Java = struct
       F.pp_print_char fmt '.'
     in
     let pp_package_method_and_params fmt j =
-      let pp_param_list fmt params =
-        Pp.seq ~sep:"," (JavaSplitName.pp_type_verbosity ~verbose) fmt params
-      in
+      let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_java ~verbose) fmt params in
       F.fprintf fmt "%a%s(%a)" pp_class_name_dot j j.method_name pp_param_list j.parameters
     in
     match verbosity with
@@ -111,34 +108,9 @@ module Java = struct
         F.fprintf fmt "%a(%s)" pp_method_name j params
 
 
-  let get_return_typ pname_java =
-    let rec java_from_string = function
-      | "" | "void" ->
-          Typ.void
-      | "int" ->
-          Typ.int
-      | "byte" ->
-          Typ.java_byte
-      | "short" ->
-          Typ.java_short
-      | "boolean" ->
-          Typ.boolean
-      | "char" ->
-          Typ.java_char
-      | "long" ->
-          Typ.long
-      | "float" ->
-          Typ.float
-      | "double" ->
-          Typ.double
-      | typ_str when String.contains typ_str '[' ->
-          let stripped_typ = String.sub typ_str ~pos:0 ~len:(String.length typ_str - 2) in
-          Typ.(mk_ptr (mk_array (java_from_string stripped_typ)))
-      | typ_str ->
-          Typ.(mk_ptr (mk_struct (Typ.Name.Java.from_string typ_str)))
-    in
-    java_from_string (F.asprintf "%a" (pp_return_type ~verbose:true) pname_java)
+  let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
 
+  let get_return_typ pname_java = Option.value ~default:Typ.void pname_java.return_type
 
   let is_close {method_name} = String.equal method_name "close"
 
@@ -148,7 +120,7 @@ module Java = struct
     { method_name= class_initializer_method_name
     ; parameters= []
     ; class_name
-    ; return_type= Some java_void
+    ; return_type= Some Typ.void
     ; kind= Static }
 
 
@@ -189,7 +161,11 @@ module Java = struct
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)
   let is_vararg {parameters} =
-    List.last parameters |> Option.exists ~f:JavaSplitName.(equal java_lang_object_array)
+    match List.last parameters with
+    | Some {desc= Tptr ({desc= Tarray {elt}}, Pk_pointer)} ->
+        Typ.(equal pointer_to_java_lang_object elt)
+    | _ ->
+        false
 
 
   let is_external java_pname =
@@ -204,8 +180,7 @@ module Parameter = struct
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
-  [@@deriving compare, equal]
+  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter [@@deriving compare, equal]
 
   let of_typ typ =
     match typ.Typ.desc with Typ.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None
@@ -417,6 +392,14 @@ let hash = Hashtbl.hash
 let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
 let is_java = function Java _ -> true | _ -> false
+
+let as_java_exn ~explanation t =
+  match t with
+  | Java java ->
+      java
+  | _ ->
+      Logging.die InternalError "Expected Java procname: %s" explanation
+
 
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
 let is_c_method = function ObjC_Cpp _ -> true | _ -> false
@@ -720,7 +703,7 @@ let rec replace_parameters new_parameters procname =
 let parameter_of_name procname class_name =
   match procname with
   | Java _ ->
-      Parameter.JavaParameter (JavaSplitName.of_string (Typ.Name.name class_name))
+      Parameter.JavaParameter Typ.(mk_ptr (mk_struct class_name))
   | _ ->
       Parameter.ClangParameter (Parameter.clang_param_of_name class_name)
 
@@ -775,8 +758,7 @@ let get_qualifiers pname =
       QualifiedCppName.empty
 
 
-(** Convert a proc name to a filename *)
-let to_filename pname =
+let to_filename_and_crc pname =
   (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
   let pp_rev_qualified fmt pname =
     let rev_qualifiers = get_qualifiers pname |> QualifiedCppName.to_rev_list in
@@ -796,6 +778,9 @@ let to_filename pname =
   in
   DB.append_crc_cutoff proc_id
 
+
+(** Convert a proc name to a filename *)
+let to_filename pname = to_filename_and_crc pname |> fst
 
 module SQLite = struct
   module T = struct

@@ -43,3 +43,7 @@ val nonnull_alternatives_table : (string, nonnull_alternative_method) Caml.Hasht
 (** The key is a string representation of a [@Nullable] method. The value is the description of
     non-nullable alternative: a method does the same, but never returns null (does a null check
     inside). *)
+
+val field_nullability_table : (string, bool) Caml.Hashtbl.t
+(** Table of known fields whos nullability is explicitly modelled. Keys are field full names; value
+    [true] means nullable *)

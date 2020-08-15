@@ -253,6 +253,10 @@ module type Common = sig
   val ( ~+ ) : ('context -> string -> bool) -> ('context, 'f, 'f, 'arg_payload) name_matcher
   (** Starts a path with a matching name that satisfies the given function *)
 
+  val startsWith : string -> 'context -> string -> bool
+
+  val endsWith : string -> 'context -> string -> bool
+
   val ( &+ ) :
        ('context, 'f_in, 'f_interm, accept_more, 'arg_payload) templ_matcher
     -> ('f_interm, 'f_out, 'lc) template_arg
@@ -352,6 +356,10 @@ module Common = struct
   let ( ~- ) name = empty &::! name
 
   let ( ~+ ) f_name = name_cons_f empty f_name
+
+  let startsWith prefix _ s = String.is_prefix ~prefix s
+
+  let endsWith suffix _ s = String.is_suffix ~suffix s
 
   let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
 
