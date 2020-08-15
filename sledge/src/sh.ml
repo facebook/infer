@@ -583,13 +583,6 @@ let filter_heap ~f q =
 
 (** Query *)
 
-let is_false = function
-  | {djns= [[]]; _} -> true
-  | {ctx; pure; heap; _} ->
-      Formula.is_false (Context.normalizef ctx pure)
-      || List.exists heap ~f:(fun seg ->
-             Context.implies ctx (Formula.eq seg.loc Term.zero) )
-
 let rec is_empty q =
   List.is_empty q.heap && List.for_all ~f:(List.for_all ~f:is_empty) q.djns
 
@@ -609,6 +602,8 @@ let pure_approx q =
   pure_approx q
   |>
   [%Trace.retn fun {pf} -> pf "%a" Formula.pp]
+
+let is_false q = Context.refutes q.ctx (pure_approx q)
 
 let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =

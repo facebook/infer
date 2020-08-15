@@ -1215,6 +1215,10 @@ module Context = struct
   let is_true x = Ses.Equality.is_true x
   let is_false x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
+
+  let refutes x b =
+    Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
+
   let normalize x e = ses_map (Ses.Equality.normalize x) e
   let normalizef x e = f_ses_map (Ses.Equality.normalize x) e
   let difference x e f = Term.d_int (normalize x (Term.sub e f))

@@ -225,6 +225,9 @@ module Context : sig
       only checks if [f] is valid in the current state of [x], without doing
       any further logical reasoning or propagation. *)
 
+  val refutes : t -> Formula.t -> bool
+  (** [refutes x f] holds only if [f] is inconsistent with [x]. *)
+
   val class_of : t -> Term.t -> Term.t list
   (** Equivalence class of [e]: all the terms [f] in the relation such that
       [e = f] is implied by the relation. *)
