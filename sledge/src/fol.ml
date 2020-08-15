@@ -787,7 +787,9 @@ module Formula = struct
 
   let not_ = _Not
   let and_ = _And
+  let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
   let or_ = _Or
+  let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
   let iff = _Iff
   let xor = _Xor
   let imp = _Imp

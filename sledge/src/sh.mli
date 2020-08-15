@@ -126,7 +126,7 @@ val is_false : t -> bool
 val fv : ?ignore_ctx:unit -> t -> Var.Set.t
 (** Free variables, a subset of vocabulary. *)
 
-val pure_approx : t -> t
+val pure_approx : t -> Formula.t
 (** [pure_approx q] is inconsistent only if [q] is inconsistent. *)
 
 val fold_dnf :

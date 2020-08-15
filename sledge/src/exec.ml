@@ -696,7 +696,9 @@ let exec_specs pre =
   let rec exec_specs_ (xs, pre) = function
     | specm :: specs ->
         let gs, spec = gen_spec pre.Sh.us specm in
-        let pre_pure = Sh.(star (exists gs (pure_approx spec.foot)) pre) in
+        let pre_pure =
+          Sh.(star (exists gs (Sh.pure (pure_approx spec.foot))) pre)
+        in
         let* post = exec_spec_ (xs, pre_pure) (gs, spec) in
         let+ posts = exec_specs_ (xs, pre) specs in
         Sh.or_ post posts

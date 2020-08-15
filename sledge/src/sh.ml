@@ -594,20 +594,18 @@ let is_false = function
       || List.exists heap ~f:(fun seg ->
              Context.implies ctx (Formula.eq seg.loc Term.zero) )
 
-let rec pure_approx ({us; xs; ctx; pure; heap= _; djns} as q) =
-  let heap = emp.heap in
-  let djns =
-    List.map_endo djns ~f:(fun djn -> List.map_endo djn ~f:pure_approx)
-  in
-  if heap == q.heap && djns == q.djns then q
-  else {us; xs; ctx; pure; heap; djns} |> check invariant
+let rec pure_approx q =
+  Formula.andN
+    ( q.pure
+    :: List.map q.djns ~f:(fun djn ->
+           Formula.orN (List.map djn ~f:pure_approx) ) )
 
 let pure_approx q =
   [%Trace.call fun {pf} -> pf "%a" pp q]
   ;
   pure_approx q
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Trace.retn fun {pf} -> pf "%a" Formula.pp]
 
 let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =

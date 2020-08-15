@@ -151,7 +151,9 @@ and Formula : sig
   (* connectives *)
   val not_ : t -> t
   val and_ : t -> t -> t
+  val andN : t list -> t
   val or_ : t -> t -> t
+  val orN : t list -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
 
   (** Query *)
