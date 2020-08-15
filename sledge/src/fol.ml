@@ -108,6 +108,8 @@ let _Update rcd idx elt = Update {rcd; idx; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
+let zero = Z Z.zero
+let one = Z Z.one
 
 (*
  * (Uninterpreted) Predicate Symbols
@@ -187,12 +189,25 @@ end = struct
     | UNegLit of Predsym.t * trm
   [@@deriving compare, equal, sexp]
 
+  (** Some normalization is necessary for [embed_into_fml] (defined below)
+      to be left inverse to [embed_into_cnd]. Essentially
+      [0 ≠ (p ? 1 : 0)] needs to normalize to [p], by way of
+      [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==> [(p ? tt : ff)]
+      ==> [p]. *)
+
   let _Tt = Tt
   let _Ff = Ff
   let _Eq x y = Eq (x, y)
   let _Dq x y = Dq (x, y)
   let _Eq0 x = Eq0 x
-  let _Dq0 x = Dq0 x
+
+  let _Dq0 = function
+    (* 0 ≠ 0 ==> ff *)
+    | Z _ as z when z == zero -> Ff
+    (* 0 ≠ N ==> tt for N ≢ 0 *)
+    | Z _ -> Tt
+    | t -> Dq0 t
+
   let _Gt0 x = Gt0 x
   let _Ge0 x = Ge0 x
   let _Lt0 x = Lt0 x
@@ -201,7 +216,13 @@ end = struct
   let _Or p q = Or (p, q)
   let _Iff p q = Iff (p, q)
   let _Xor p q = Xor (p, q)
-  let _Cond cnd pos neg = Cond {cnd; pos; neg}
+
+  let _Cond cnd pos neg =
+    match (pos, neg) with
+    (* (p ? tt : ff) ==> p *)
+    | Tt, Ff -> cnd
+    | _ -> Cond {cnd; pos; neg}
+
   let _UPosLit p x = UPosLit (p, x)
   let _UNegLit p x = UNegLit (p, x)
 end
@@ -676,9 +697,6 @@ let map_vars ~f = function
  * and formulas stratified below conditional terms and then expressions.
  *)
 
-let zero = Z Z.zero
-let one = Z Z.one
-
 (** Map a unary function on terms over the leaves of a conditional term,
     rebuilding the tree of conditionals with the supplied ite construction
     function. *)
@@ -723,26 +741,7 @@ let project_out_fml : cnd -> fml option = function
       [0 ≠ x] holds. *)
 let embed_into_fml : exp -> fml = function
   | `Fml fml -> fml
-  | #cnd as c ->
-      (* Some normalization is necessary for [embed_into_fml] to be left
-         inverse to [embed_into_cnd]. Essentially [0 ≠ (p ? 1 : 0)] needs to
-         normalize to [p], by way of [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠
-         0)] ==> [(p ? tt : ff)] ==> [p]. *)
-      let dq0 : trm -> fml = function
-        (* 0 ≠ 0 ==> ff *)
-        | Z _ as z when z == zero -> _Ff
-        (* 0 ≠ N ==> tt for N≠0 *)
-        | Z _ -> _Tt
-        | t -> _Dq zero t
-      in
-      let cond : fml -> fml -> fml -> fml =
-       fun cnd pos neg ->
-        match (pos, neg) with
-        (* (p ? tt : ff) ==> p *)
-        | Tt, Ff -> cnd
-        | _ -> _Cond cnd pos neg
-      in
-      map_cnd cond dq0 c
+  | #cnd as c -> map_cnd _Cond _Dq0 c
 
 (** Construct a conditional term, or formula if possible precisely. *)
 let ite : fml -> exp -> exp -> exp =
