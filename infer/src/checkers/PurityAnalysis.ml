@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open AbstractDomain.Types
 module F = Format
 module L = Logging
 module ModifiedVarSet = PrettyPrintable.MakePPSet (Var)
@@ -130,9 +131,9 @@ module TransferFunctions = struct
   (* if the callee is impure, find the parameters that have been modified by the callee *)
   let find_modified_if_impure inferbo_mem formals args callee_summary =
     match callee_summary with
-    | AbstractDomain.Types.Top ->
+    | Top ->
         Domain.impure_global
-    | AbstractDomain.Types.NonTop callee_modified_params ->
+    | NonTop callee_modified_params ->
         Domain.(
           debug "Callee modified params %a \n" ModifiedParamIndices.pp callee_modified_params ;
           if ModifiedParamIndices.is_empty callee_modified_params then pure
@@ -169,7 +170,7 @@ module TransferFunctions = struct
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java *)
         debug "Unexpected indirect call %a" HilInstr.pp instr ;
-        AbstractDomain.Types.Top
+        Top
     | _ ->
         astate
 
