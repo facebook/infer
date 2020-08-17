@@ -8,12 +8,17 @@
 open! IStd
 module F = Format
 module L = Logging
-module AbstractValue = PulseAbstractValue
+module Var = PulseAbstractValue
 
+type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
+
+(** Expressive term structure to be able to express all of SIL, but the main smarts of the formulas
+    are for the equality between variables and linear arithmetic subsets. Terms (and atoms, below)
+    are kept as a last-resort for when outside that fragment. *)
 module Term = struct
   type t =
     | Const of Const.t
-    | Var of AbstractValue.t
+    | Var of Var.t
     | Add of t * t
     | Minus of t
     | LessThan of t * t
@@ -117,13 +122,16 @@ module Term = struct
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
 
 
-  let pp_with_pp_var pp_var fmt t = pp_no_paren pp_var fmt t
-
-  let pp fmt t = pp_with_pp_var AbstractValue.pp fmt t
-
   let of_absval v = Var v
 
   let of_intlit i = Const (Cint i)
+
+  let of_operand = function
+    | AbstractValueOperand v ->
+        of_absval v
+    | LiteralOperand i ->
+        of_intlit i
+
 
   let one = of_intlit IntLit.one
 
@@ -278,22 +286,27 @@ module Term = struct
   let rec fold_map_variables t ~init ~f =
     match t with
     | Var v ->
-        let acc, v' = f init v in
-        let t' = if phys_equal v v' then t else Var v' in
+        let acc, t_v = f init v in
+        let t' = match t_v with Var v' when Var.equal v v' -> t | _ -> t_v in
         (acc, t')
     | _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_variables t' ~init:acc ~f)
 
 
-  let fold_variables t ~init ~f = fold_map_variables t ~init ~f:(fun acc v -> (f acc v, v)) |> fst
+  let fold_variables t ~init ~f =
+    fold_map_variables t ~init ~f:(fun acc v -> (f acc v, Var v)) |> fst
+
 
   let iter_variables t ~f = fold_variables t ~init:() ~f:(fun () v -> f v)
 
+  let map_variables t ~f = fold_map_variables t ~init:() ~f:(fun () v -> ((), f v)) |> snd
+
   let has_var_notin vars t =
-    Container.exists t ~iter:iter_variables ~f:(fun v -> not (AbstractValue.Set.mem v vars))
+    Container.exists t ~iter:iter_variables ~f:(fun v -> not (Var.Set.mem v vars))
 end
 
-(** Basically boolean terms, used to build formulas. *)
+(** Basically boolean terms, used to build the part of a formula that is not equalities between
+    linear arithmetic. *)
 module Atom = struct
   type t =
     | LessEqual of Term.t * Term.t
@@ -321,18 +334,7 @@ module Atom = struct
         F.fprintf fmt "%a ≠ %a" pp_term t1 pp_term t2
 
 
-  let pp = pp_with_pp_var AbstractValue.pp
-
-  let nnot = function
-    | LessEqual (t1, t2) ->
-        LessThan (t2, t1)
-    | LessThan (t1, t2) ->
-        LessEqual (t2, t1)
-    | Equal (t1, t2) ->
-        NotEqual (t1, t2)
-    | NotEqual (t1, t2) ->
-        Equal (t1, t2)
-
+  let pp = pp_with_pp_var Var.pp
 
   let get_terms atom =
     let (LessEqual (t1, t2) | LessThan (t1, t2) | Equal (t1, t2) | NotEqual (t1, t2)) = atom in
@@ -386,11 +388,7 @@ module Atom = struct
         to_term atom
 
 
-  (* other simplifications TODO:
-     - push Minus inwards
-     - (t1+i1)+((i2+t2)+i3) -> (t1+t2)+(i1+i2+i3): need to flatten trees of additions (and Minus)
-     - same for multiplications, possibly others too
-  *)
+  (* Many simplifications are still TODO *)
   let rec eval_term t =
     let open Term in
     let t_norm_subterms = map_direct_subterms ~f:eval_term t in
@@ -527,380 +525,606 @@ module Atom = struct
   end)
 end
 
-module UnionFind = UnionFind.Make (struct
-  type t = Term.t [@@deriving compare]
+(** "normalized" is not to be taken too seriously, it just means *some* normalization was applied
+    that could result in discovering something is unsatisfiable *)
+type 'a normalized = Unsat | Sat of 'a
 
-  let is_simpler_than (t1 : Term.t) (t2 : Term.t) =
-    match (t1, t2) with
-    | Const _, _ ->
-        true
-    | _, Const _ ->
-        false
-    | Var _, _ ->
-        true
-    | _, Var _ ->
-        false
-    | _ ->
-        false
-end)
+module SatUnsatMonad = struct
+  let map_normalized f norm = match norm with Unsat -> Unsat | Sat phi -> Sat (f phi)
 
-(** The main datatype is either in a normal form [True | False | NormalForm _], or in a
-    not-yet-normalized form [Atom _ | And _], or a mix of both.
+  let ( >>| ) phi f = map_normalized f phi
 
-    Note the absence of disjunction and negation: negations are interpreted eagerly and
-    under-approximately by only remembering the first produced disjunct, and disjunctions are kept
-    in {!Term.t} form. *)
-type t =
-  | True
-  | False
-  | NormalForm of
-      { congruences: UnionFind.t
-            (** equality relation between terms represented by a union-find data structure with
-                canonical representatives for each class of congruent terms *)
-      ; facts: Atom.Set.t
-            (** atoms not of the form [Equal _], normalized with respect to the congruence relation
-                and the {!Atom.eval} function *) }
-  | And of t * t
-  | Atom of Atom.t
+  let ( let+ ) phi f = map_normalized f phi
 
-let ffalse = False
+  let bind_normalized f norm = match norm with Unsat -> Unsat | Sat phi -> f phi
 
-let is_literal_false = function False -> true | _ -> false
+  let ( >>= ) x f = bind_normalized f x
 
-let ttrue = True
-
-let is_literal_true = function True -> true | _ -> false
-
-let rec pp_with_pp_var pp_var fmt = function
-  | True ->
-      F.fprintf fmt "true"
-  | False ->
-      F.fprintf fmt "false"
-  | Atom atom ->
-      Atom.pp_with_pp_var pp_var fmt atom
-  | NormalForm {congruences; facts} ->
-      let pp_collection ~fold ~sep ~pp_item fmt coll =
-        let pp_coll_aux is_first item =
-          F.fprintf fmt "@[<h>%s%a@]" (if is_first then "" else sep) pp_item item ;
-          (* is_first not true anymore *) false
-        in
-        F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:true ~f:pp_coll_aux |> ignore)
-      in
-      let term_pp_paren = Term.pp_paren pp_var ~needs_paren:Term.needs_paren in
-      let pp_ts_or_repr repr fmt ts =
-        if UnionFind.Set.is_empty ts then term_pp_paren fmt repr
-        else
-          pp_collection ~sep:"="
-            ~fold:(IContainer.fold_of_pervasives_set_fold UnionFind.Set.fold)
-            ~pp_item:term_pp_paren fmt ts
-      in
-      let pp_congruences fmt congruences =
-        let is_empty = ref true in
-        pp_collection ~sep:" ∧ " ~fold:UnionFind.fold_congruences fmt congruences
-          ~pp_item:(fun fmt ((repr : UnionFind.repr), ts) ->
-            is_empty := false ;
-            F.fprintf fmt "%a=%a" term_pp_paren (repr :> Term.t) (pp_ts_or_repr (repr :> Term.t)) ts ) ;
-        if !is_empty then pp_with_pp_var pp_var fmt True
-      in
-      let pp_atoms fmt atoms =
-        if Atom.Set.is_empty atoms then pp_with_pp_var pp_var fmt True
-        else
-          pp_collection ~sep:"∧"
-            ~fold:(IContainer.fold_of_pervasives_set_fold Atom.Set.fold)
-            ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (Atom.pp_with_pp_var pp_var) atom)
-            fmt atoms
-      in
-      F.fprintf fmt "[@[<hv>%a@ &&@ %a@]]" pp_congruences congruences pp_atoms facts
-  | And (phi1, phi2) ->
-      F.fprintf fmt "{%a}∧{%a}" (pp_with_pp_var pp_var) phi1 (pp_with_pp_var pp_var) phi2
-
-
-let pp = pp_with_pp_var AbstractValue.pp
-
-let mk_less_than t1 t2 = Atom (LessThan (t1, t2))
-
-let mk_less_equal t1 t2 = Atom (LessEqual (t1, t2))
-
-let mk_equal t1 t2 = Atom (Equal (t1, t2))
-
-let mk_not_equal t1 t2 = Atom (NotEqual (t1, t2))
-
-let aand phi1 phi2 =
-  if is_literal_false phi1 || is_literal_false phi2 then ffalse
-  else if is_literal_true phi1 then phi2
-  else if is_literal_true phi2 then phi1
-  else And (phi1, phi2)
-
-
-module NormalForm : sig
-  val of_formula : t -> [`NormalForm of UnionFind.t * Atom.Set.t | `Unsatisfiable]
-  (** This computes equivalence classes between terms induced by the given conjunctive formula, then
-      symbolically evaluates the resulting terms and atoms to form a [NormalForm _] term equivalent
-      to the input formula, or [True] or [False]. *)
-
-  val to_formula : ?filter:(Atom.t -> bool) -> UnionFind.t -> Atom.Set.t -> t
-  (** Transforms a congruence relation and set of atoms into a formula without [NormalForm _]
-      sub-formulas. Atoms not matching the optional [filter] are discarded. *)
-end = struct
-  (* NOTE: throughout this module some cases that are never supposed to happen at the moment are
-     handled nonetheless to avoid hassle and surprises in the future. *)
-
-  let to_formula ?(filter = fun _ -> true) uf facts =
-    let phi =
-      Atom.Set.fold (fun atom phi -> if filter atom then aand (Atom atom) phi else phi) facts True
-    in
-    let phi =
-      UnionFind.fold_congruences uf ~init:phi ~f:(fun conjuncts (repr, terms) ->
-          L.d_printf "@\nEquivalence class of %a: " Term.pp (repr :> Term.t) ;
-          UnionFind.Set.fold
-            (fun t conjuncts ->
-              L.d_printf "%a," Term.pp t ;
-              if phys_equal t (repr :> Term.t) then conjuncts
-              else
-                let atom = Atom.Equal ((repr :> Term.t), t) in
-                if filter atom then aand (Atom atom) conjuncts else conjuncts )
-            terms conjuncts )
-    in
-    L.d_ln () ;
-    phi
-
-
-  (** used for quickly detecting contradictions *)
-  exception Contradiction
-
-  (** normalize term by replacing every (sub-)term by its canonical representative *)
-  let rec apply_term uf t =
-    match (UnionFind.find_opt uf t :> Term.t option) with
-    | None ->
-        (* no representative found for [t], look for substitution opportunities in its sub-terms *)
-        Term.map_direct_subterms t ~f:(fun t' -> apply_term uf t')
-    | Some t_repr ->
-        t_repr
-
-
-  let apply_atom uf (atom : Atom.t) =
-    let atom' = Atom.map_terms atom ~f:(fun t -> apply_term uf t) in
-    match Atom.eval atom' with
-    | True ->
-        None
-    | False ->
-        (* early exit on contradictions *)
-        L.d_printfln "Contradiction detected! %a ~> %a is False" Atom.pp atom Atom.pp atom' ;
-        raise_notrace Contradiction
-    | Atom atom ->
-        Some atom
-
-
-  (** normalize atomes by replacing every (sub-)term by their canonical representative then
-      symbolically evaluating the result *)
-  let normalize_atoms uf ~add_to:facts0 atoms =
-    List.fold atoms ~init:facts0 ~f:(fun facts atom ->
-        match apply_atom uf atom with None -> facts | Some atom' -> Atom.Set.add atom' facts )
-
-
-  (** Extract [NormalForm _] from the given formula and return the formula without that part
-      (replaced with [True]). If there are several [NormalForm _] sub-formulas, return only one of
-      them and leave the others in. *)
-  let split_normal_form phi =
-    let rec find_normal_form normal_form phi =
-      match phi with
-      | NormalForm _ when Option.is_some normal_form ->
-          (normal_form, phi)
-      | NormalForm {congruences; facts} ->
-          (Some (congruences, facts), ttrue)
-      | True | False | Atom _ ->
-          (normal_form, phi)
-      | And (phi1, phi2) ->
-          let normal_form, phi1' = find_normal_form normal_form phi1 in
-          let normal_form, phi2' = find_normal_form normal_form phi2 in
-          let phi' =
-            if phys_equal phi1' phi && phys_equal phi2' phi2 then phi else And (phi1', phi2')
-          in
-          (normal_form, phi')
-    in
-    find_normal_form None phi
-
-
-  (** split the given formula into [(uf, facts, atoms)] where [phi] is equivalent to
-      [uf ∧ facts ∧ atoms], [facts] are in normal form w.r.t. [uf], but [atoms] are not and need
-      to be normalized *)
-  let rec gather_congruences_and_facts ((uf, facts, atoms) as acc) phi =
-    match phi with
-    | True ->
-        acc
-    | False ->
-        raise Contradiction
-    | Atom (Equal _ as atom) ->
-        (* Normalize the terms of the equality w.r.t. the equalities we have discovered so far. Note
-           that we don't go back and normalize the existing equalities w.r.t. the new atom, which is
-           dodgy. Doing so could have adverse perf implications.
-
-           Note also that other (non-[Equal]) atoms are not yet normalized, this will happen after
-           [gather_congruences_and_facts] has run. *)
-        apply_atom uf atom
-        |> Option.value_map ~default:acc ~f:(function
-             | Atom.Equal (t1, t2) ->
-                 let uf = UnionFind.union uf t1 t2 in
-                 (* change facts into atoms when the equality relation changes so they will be normalized
-                    again later using the new equality relation *)
-                 let atoms_with_facts =
-                   Atom.Set.fold (fun atom atoms -> atom :: atoms) facts atoms
-                 in
-                 (uf, Atom.Set.empty, atoms_with_facts)
-             | atom ->
-                 (uf, facts, atom :: atoms) )
-    | Atom atom ->
-        (uf, facts, atom :: atoms)
-    | And (phi1, phi2) ->
-        let acc' = gather_congruences_and_facts acc phi1 in
-        gather_congruences_and_facts acc' phi2
-    | NormalForm {congruences; facts} ->
-        gather_congruences_and_facts acc (to_formula congruences facts)
-
-
-  let of_formula phi =
-    (* start from a pre-existing normal form if any *)
-    let (uf, facts), phi =
-      match split_normal_form phi with
-      | Some uf_facts, phi ->
-          (uf_facts, phi)
-      | None, phi ->
-          ((UnionFind.empty, Atom.Set.empty), phi)
-    in
-    try
-      let uf, facts, new_facts = gather_congruences_and_facts (uf, facts, []) phi in
-      let facts = normalize_atoms uf ~add_to:facts new_facts in
-      `NormalForm (uf, facts)
-    with Contradiction -> `Unsatisfiable
+  let ( let* ) phi f = bind_normalized f phi
 end
 
-let rec nnot phi =
-  match phi with
-  | True ->
-      False
-  | False ->
-      True
-  | Atom a ->
-      Atom (Atom.nnot a)
-  | NormalForm {congruences; facts} ->
-      NormalForm.to_formula congruences facts |> nnot
-  | And (phi1, _phi2) ->
-      (* HACK/TODO: this keeps only one disjunct of the negation, which is ok for
-         under-approximation even though it's quite incomplete (especially for [And (True,
-         phi)]!). We could work harder at disjunctions if that proves to be an issue. *)
-      nnot phi1
+(** Linear Arithmetic*)
+module LinArith : sig
+  (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
+  type t
+
+  val pp : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
+
+  val is_zero : t -> bool
+
+  val add : t -> t -> t
+
+  val minus : t -> t
+
+  val subtract : t -> t -> t
+
+  val solve_eq : t -> t -> (Var.t * t) option normalized
+  (** [solve_eq l1 l2] is [Sat (Some (x, l))] if [l1=l2 <=> x=l], [Sat None] if [l1 = l2] is always
+      true, and [Unsat] if it is always false *)
+
+  val of_var : Var.t -> t
+
+  val of_intlit : IntLit.t -> t
+
+  val of_operand : operand -> t
+
+  val get_as_const : t -> Q.t option
+  (** [get_as_const l] is [Some c] if [l=c], else [None] *)
+
+  val get_as_var : t -> Var.t option
+  (** [get_as_var l] is [Some x] if [l=x], else [None] *)
+
+  val has_var : Var.t -> t -> bool
+
+  val subst : Var.t -> Var.t -> t -> t
+
+  val subst_vars : f:(Var.t -> t) -> t -> t
+
+  val get_variables : t -> Var.t Seq.t
+
+  val fold_map_variables : t -> init:'a -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
+end = struct
+  (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
+  type t = Q.t Var.Map.t * Q.t
+
+  let pp pp_var fmt (vs, c) =
+    if Var.Map.is_empty vs then Q.pp_print fmt c
+    else
+      let pp_c fmt c =
+        if Q.equal c Q.zero then ()
+        else
+          let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
+          F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
+      in
+      let pp_coeff fmt q =
+        if Q.equal q Q.one then ()
+        else if Q.equal q Q.minus_one then F.pp_print_string fmt "-"
+        else F.fprintf fmt "%a·" Q.pp_print q
+      in
+      let pp_vs fmt vs =
+        Pp.collection ~sep:" + "
+          ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+          ~pp_item:(fun fmt (v, q) -> F.fprintf fmt "%a%a" pp_coeff q pp_var v)
+          fmt vs
+      in
+      F.fprintf fmt "@[<h>%a%a@]" pp_vs vs pp_c c
 
 
-(** Detects terms that look like formulas, but maybe the logic in here would be better in
-    [Atom.eval_term] to avoid duplicating reasoning steps. *)
-let rec of_term (t : Term.t) =
-  match t with
-  | And (t1, t2) ->
-      aand (of_term t1) (of_term t2)
-  | LessThan (t1, t2) ->
-      mk_less_than t1 t2
-  | LessEqual (t1, t2) ->
-      mk_less_equal t1 t2
-  | Equal (t1, t2) ->
-      mk_equal t1 t2
-  | NotEqual (t1, t2) ->
-      mk_not_equal t1 t2
-  | Const (Cint i) ->
-      if IntLit.iszero i then ffalse else ttrue
-  | Const (Cfloat f) ->
-      if Float.equal f Float.zero then ffalse else ttrue
-  | Const (Cstr _ | Cfun _ | Cclass _) ->
-      ttrue
-  | Mult (t1, t2) ->
-      (* [t1 × t2 ≠ 0] iff [t1 ≠ 0] && [t2 ≠ 0] *)
-      aand (of_term t1) (of_term t2)
-  | Div (t1, t2) when Term.equal_syntax t1 t2 ->
-      (* [t ÷ t = 1] *)
-      ttrue
-  | Div (t1, t2) ->
-      (* [t1 ÷ t2 ≠ 0] iff [t1 ≠ 0 ∧ t1 ≥ t2] *)
-      aand (of_term t1) (mk_less_equal t2 t1)
-  | Not t ->
-      nnot (of_term t)
-  | Minus t ->
-      (* [-t ≠ 0] iff [t ≠ 0] *)
-      of_term t
-  | Add (t1, Minus t2) | Add (Minus t1, t2) ->
-      (* [t1 - t2 ≠ 0] iff [t1 ≠ t2] *)
-      mk_not_equal t1 t2
-  | Or _
-  | Add _
-  | Var _
-  | Mod _
-  | BitAnd _
-  | BitOr _
-  | BitNot _
-  | BitShiftLeft _
-  | BitShiftRight _
-  | BitXor _ ->
-      (* default case: we don't know how to change the term itself into a formula so we represent
-         the fact that [t] is "true" by [t ≠ 0] *)
-      Atom (NotEqual (t, Term.zero))
+  let add (vs1, c1) (vs2, c2) =
+    ( Var.Map.union
+        (fun _v c1 c2 ->
+          let c = Q.add c1 c2 in
+          if Q.equal c Q.zero then None else Some c )
+        vs1 vs2
+    , Q.add c1 c2 )
 
 
-let of_term_binop bop t1 t2 =
-  (* be brutal and convert to a term, then trust that [of_term] will restore the formula structure
-     as the conversion is lossless *)
-  Term.of_binop bop t1 t2 |> of_term
+  let minus (vs, c) = (Var.Map.map (fun c -> Q.neg c) vs, Q.neg c)
+
+  let subtract l1 l2 = add l1 (minus l2)
+
+  let zero = (Var.Map.empty, Q.zero)
+
+  let is_zero (vs, c) = Q.equal c Q.zero && Var.Map.is_empty vs
+
+  let mult q ((vs, c) as l) =
+    if Q.equal q Q.zero then (* needed for correction: coeffs cannot be zero *) zero
+    else if Q.equal q Q.one then (* purely an optimisation *) l
+    else (Var.Map.map (fun c -> Q.mul q c) vs, Q.mul q c)
 
 
-let normalize phi =
-  L.d_printfln "Normalizing %a" pp phi ;
-  match NormalForm.of_formula phi with
-  | `NormalForm (congruences, facts) ->
-      NormalForm {congruences; facts}
-  | `Unsatisfiable ->
-      ffalse
+  let solve_eq_zero (vs, c) =
+    match Var.Map.min_binding_opt vs with
+    | None ->
+        if Q.equal c Q.zero then Sat None else Unsat
+    | Some (x, coeff) ->
+        let d = Q.neg coeff in
+        let vs' =
+          Var.Map.fold
+            (fun v' coeff' vs' ->
+              if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
+            vs Var.Map.empty
+        in
+        let c' = Q.div c d in
+        Sat (Some (x, (vs', c')))
+
+
+  let solve_eq l1 l2 = solve_eq_zero (subtract l1 l2)
+
+  let of_var v = (Var.Map.singleton v Q.one, Q.zero)
+
+  let of_intlit i = (Var.Map.empty, IntLit.to_big_int i |> Q.of_bigint)
+
+  let of_operand = function AbstractValueOperand v -> of_var v | LiteralOperand i -> of_intlit i
+
+  let get_as_const (vs, c) = if Var.Map.is_empty vs then Some c else None
+
+  let get_as_var (vs, c) =
+    if Q.equal c Q.zero then
+      match Var.Map.is_singleton_or_more vs with
+      | Singleton (x, cx) when Q.equal cx Q.one ->
+          Some x
+      | _ ->
+          None
+    else None
+
+
+  let has_var x (vs, _) = Var.Map.mem x vs
+
+  let subst x y ((vs, c) as l) =
+    match Var.Map.find_opt x vs with
+    | None ->
+        l
+    | Some cx ->
+        let vs' = Var.Map.remove x vs |> Var.Map.add y cx in
+        (vs', c)
+
+
+  let subst_vars ~f (vs, c) = Var.Map.fold (fun v q l -> mult q (f v) |> add l) vs (Var.Map.empty, c)
+
+  let fold_map_variables (vs_foreign, c) ~init ~f =
+    let acc_f, vs =
+      Var.Map.fold
+        (fun v_foreign q0 (acc_f, vs) ->
+          let acc_f, v = f acc_f v_foreign in
+          let vs =
+            match Var.Map.find_opt v vs with
+            | None ->
+                Var.Map.add v q0 vs
+            | Some q ->
+                let q' = Q.add q q0 in
+                if Q.equal q' Q.zero then Var.Map.remove v vs else Var.Map.add v q vs
+          in
+          (acc_f, vs) )
+        vs_foreign (init, Var.Map.empty)
+    in
+    (acc_f, (vs, c))
+
+
+  let get_variables (vs, _) = Var.Map.to_seq vs |> Seq.map fst
+end
+
+module VarUF =
+  UnionFind.Make
+    (struct
+      type t = Var.t [@@deriving compare]
+
+      let is_simpler_than (v1 : Var.t) (v2 : Var.t) = (v1 :> int) < (v2 :> int)
+    end)
+    (Var.Set)
+
+type t =
+  { var_eqs: VarUF.t  (** equality relation between variables *)
+  ; linear_eqs: LinArith.t Var.Map.t
+        (** equalities of the form [x = l] where [l] is from linear arithmetic *)
+  ; atoms: Atom.Set.t  (** not always normalized w.r.t. [var_eqs] and [linear_eqs] *) }
+
+let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
+
+let pp_with_pp_var pp_var fmt phi =
+  let pp_linear_eqs fmt m =
+    if Var.Map.is_empty m then F.pp_print_string fmt "true (no linear)"
+    else
+      Pp.collection ~sep:" ∧ "
+        ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+        ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
+        fmt m
+  in
+  let pp_atoms fmt atoms =
+    if Atom.Set.is_empty atoms then F.pp_print_string fmt "true (no atoms)"
+    else
+      Pp.collection ~sep:"∧"
+        ~fold:(IContainer.fold_of_pervasives_set_fold Atom.Set.fold)
+        ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (Atom.pp_with_pp_var pp_var) atom)
+        fmt atoms
+  in
+  F.fprintf fmt "[@[<hv>%a@ &&@ %a@ &&@ %a@]]"
+    (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
+    phi.var_eqs pp_linear_eqs phi.linear_eqs pp_atoms phi.atoms
+
+
+let pp = pp_with_pp_var Var.pp
+
+(** module that breaks invariants more often that the rest, with an interface that is safer to use *)
+module Normalizer : sig
+  val and_var_linarith : Var.t -> LinArith.t -> t -> t normalized
+
+  val and_var_var : Var.t -> Var.t -> t -> t normalized
+
+  val normalize : t -> t normalized
+end = struct
+  (* Use the monadic notations when normalizing formulas. *)
+  open SatUnsatMonad
+
+  (** OVERVIEW: the best way to think about this is as a half-assed Shostak technique.
+
+      The [var_eqs] and [linear_eqs] parts of a formula are kept in a normal form of sorts. We apply
+      some deduction every time a new equality is discovered. Where this is incomplete is that 1) we
+      don't insist on normalizing the linear part of the relation always, and 2) we stop discovering
+      new consequences of facts after some fixed number of steps (the [fuel] argument of some of the
+      functions of this module).
+
+      Normalizing more than 1) happens on [normalize], where we rebuild the linear equality relation
+      (the equalities between variables are always "normalized" thanks to the union-find data
+      structure).
+
+      For 2), there is no mitigation as saturating the consequences of what we know implies keeping
+      track of *all* the consequences (to avoid diverging by re-discovering the same facts over and
+      over), which would be expensive.
+
+      There is also an interaction between equality classes and linear equalities [x = l], as each
+      such key [x] in the [linear_eqs] map is (or was at some point) the representative of its
+      class. Unlike (non-diverging...) Shostak techniques, we do not try very hard to normalize the
+      [l] in the linear equalities.
+
+      Disclaimer: It could be that this half-assedness is premature optimisation and that we could
+      afford much more completeness. *)
+
+  (** the canonical representative of a given variable *)
+  let get_repr phi x = VarUF.find phi.var_eqs x
+
+  (** substitute vars in [l] *once* with their linear form to discover more simplification
+      opportunities *)
+  let apply phi l =
+    LinArith.subst_vars l ~f:(fun v ->
+        let repr = (get_repr phi v :> Var.t) in
+        match Var.Map.find_opt repr phi.linear_eqs with
+        | None ->
+            LinArith.of_var repr
+        | Some l' ->
+            l' )
+
+
+  let rec solve_eq ~fuel t1 t2 phi =
+    LinArith.solve_eq t1 t2
+    >>= function None -> Sat phi | Some (x, l) -> merge_var_linarith ~fuel x l phi
+
+
+  and merge_var_linarith ~fuel v l phi =
+    let v = (get_repr phi v :> Var.t) in
+    let l = apply phi l in
+    match LinArith.get_as_var l with
+    | Some v' ->
+        merge_vars ~fuel (v :> Var.t) v' phi
+    | None -> (
+      match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
+      | None ->
+          (* this is probably dodgy as nothing guarantees that [l] does not mention [v] *)
+          Sat {phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}
+      | Some l' ->
+          (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
+             do not record these anywhere (except when there consequence can be recorded as [y =
+             l''] or [y = y'], we could potentially discover the same equality over and over and
+             diverge otherwise *)
+          if fuel > 0 then solve_eq ~fuel:(fuel - 1) l l' phi
+          else (* [fuel = 0]: give up simplifying further for fear of diverging *) Sat phi )
+
+
+  and merge_vars ~fuel v1 v2 phi =
+    let var_eqs, subst_opt = VarUF.union phi.var_eqs v1 v2 in
+    let phi = {phi with var_eqs} in
+    match subst_opt with
+    | None ->
+        (* we already knew the equality *)
+        Sat phi
+    | Some (v_old, v_new) -> (
+        (* new equality [v_old = v_new]: we need to update a potential [v_old = l] to be [v_new =
+           l], and if [v_new = l'] was known we need to also explore the consequences of [l = l'] *)
+        (* NOTE: we try to maintain the invariant that for all [x=l] in [phi.linear_eqs], [x ∉
+           vars(l)], because other Shostak techniques do so (in fact, they impose a stricter
+           condition that the domain and the range of [phi.linear_eqs] mention distinct variables),
+           but some other steps of the reasoning may break that. Not sure why we bother. *)
+        let v_new = (v_new :> Var.t) in
+        let phi, l_new =
+          match Var.Map.find_opt v_new phi.linear_eqs with
+          | None ->
+              (phi, None)
+          | Some l ->
+              if LinArith.has_var v_old l then
+                let l_new = LinArith.subst v_old v_new l in
+                let linear_eqs = Var.Map.add v_new l_new phi.linear_eqs in
+                ({phi with linear_eqs}, Some l_new)
+              else (phi, Some l)
+        in
+        let phi, l_old =
+          match Var.Map.find_opt v_old phi.linear_eqs with
+          | None ->
+              (phi, None)
+          | Some l_old ->
+              (* [l_old] has no [v_old] or [v_new] by invariant so no need to subst, unlike for
+                 [l_new] above: variables in [l_old] are strictly greater than [v_old], and [v_new]
+                 is smaller than [v_old] *)
+              ({phi with linear_eqs= Var.Map.remove v_old phi.linear_eqs}, Some l_old)
+        in
+        match (l_old, l_new) with
+        | None, None | None, Some _ ->
+            Sat phi
+        | Some l, None ->
+            Sat {phi with linear_eqs= Var.Map.add v_new l phi.linear_eqs}
+        | Some l1, Some l2 ->
+            (* no need to consume fuel here as we can only go through this branch finitely many
+               times because there are finitely many variables in a given formula *)
+            (* TODO: we may want to keep the "simpler" representative for [v_new] between [l1] and [l2] *)
+            solve_eq ~fuel l1 l2 phi )
+
+
+  (** an arbitrary value *)
+  let fuel = 5
+
+  let and_var_linarith v l phi = merge_var_linarith ~fuel v l phi
+
+  let and_var_var v1 v2 phi = merge_vars ~fuel v1 v2 phi
+
+  let normalize_linear_eqs phi0 =
+    (* reconstruct the relation from scratch *)
+    Var.Map.fold
+      (fun v l phi -> bind_normalized (and_var_linarith v (apply phi0 l)) phi)
+      phi0.linear_eqs
+      (Sat {phi0 with linear_eqs= Var.Map.empty})
+
+
+  let z_of_q q = match Q.to_bigint q with z -> Some z | exception _ -> None
+
+  let normalize_atom phi (atom : Atom.t) =
+    let normalize_term phi t =
+      Term.map_variables t ~f:(fun v ->
+          let v_canon = (VarUF.find phi.var_eqs v :> Var.t) in
+          let z_opt =
+            let open Option.Monad_infix in
+            Var.Map.find_opt v_canon phi.linear_eqs >>= LinArith.get_as_const >>= z_of_q
+          in
+          match z_opt with None -> Var v_canon | Some z -> Term.of_intlit (IntLit.of_big_int z) )
+    in
+    let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
+    match Atom.eval atom' with
+    | True ->
+        Sat None
+    | False ->
+        L.d_printfln "Contradiction detected! %a ~> %a is False" Atom.pp atom Atom.pp atom' ;
+        Unsat
+    | Atom atom ->
+        Sat (Some atom)
+
+
+  let normalize_atoms phi =
+    (* TODO: normalizing an atom may produce a new linear arithmetic or variable equality fact, we
+       should detect that and feed it back to the rest of the formula *)
+    let+ atoms =
+      IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi.atoms ~init:(Sat Atom.Set.empty)
+        ~f:(fun facts atom ->
+          let* facts = facts in
+          normalize_atom phi atom
+          >>| function None -> facts | Some atom' -> Atom.Set.add atom' facts )
+    in
+    {phi with atoms}
+
+
+  let normalize phi = normalize_linear_eqs phi >>= normalize_atoms
+end
+
+let and_equal op1 op2 phi =
+  match (op1, op2) with
+  | LiteralOperand i1, LiteralOperand i2 ->
+      if IntLit.eq i1 i2 then Sat phi else Unsat
+  | AbstractValueOperand v, LiteralOperand i | LiteralOperand i, AbstractValueOperand v ->
+      Normalizer.and_var_linarith v (LinArith.of_intlit i) phi
+  | AbstractValueOperand v1, AbstractValueOperand v2 ->
+      Normalizer.and_var_var v1 v2 phi
+
+
+let and_atom atom phi = {phi with atoms= Atom.Set.add atom phi.atoms}
+
+let and_less_equal op1 op2 phi =
+  match (op1, op2) with
+  | LiteralOperand i1, LiteralOperand i2 ->
+      if IntLit.leq i1 i2 then Sat phi else Unsat
+  | _ ->
+      Sat (and_atom (LessEqual (Term.of_operand op1, Term.of_operand op2)) phi)
+
+
+let and_less_than op1 op2 phi =
+  match (op1, op2) with
+  | LiteralOperand i1, LiteralOperand i2 ->
+      if IntLit.lt i1 i2 then Sat phi else Unsat
+  | _ ->
+      Sat (and_atom (LessThan (Term.of_operand op1, Term.of_operand op2)) phi)
+
+
+let and_equal_unop v (op : Unop.t) x phi =
+  match op with
+  | Neg ->
+      Normalizer.and_var_linarith v LinArith.(minus (of_operand x)) phi
+  | BNot | LNot ->
+      Sat (and_atom (Equal (Term.of_absval v, Term.of_unop op (Term.of_operand x))) phi)
+
+
+let and_equal_binop v (bop : Binop.t) x y phi =
+  let and_linear_eq l = Normalizer.and_var_linarith v l phi in
+  match bop with
+  | PlusA _ | PlusPI ->
+      LinArith.(add (of_operand x) (of_operand y)) |> and_linear_eq
+  | MinusA _ | MinusPI | MinusPP ->
+      LinArith.(subtract (of_operand x) (of_operand y)) |> and_linear_eq
+  (* TODO: some of the below could become linear arithmetic after simplifications (e.g. up to constants) *)
+  | Mult _
+  | Div
+  | Mod
+  | Shiftlt
+  | Shiftrt
+  | BAnd
+  | BXor
+  | BOr
+  (* TODO: (most) logical operators should be translated into the formula structure *)
+  | Lt
+  | Gt
+  | Le
+  | Ge
+  | Eq
+  | Ne
+  | LAnd
+  | LOr ->
+      Sat
+        (and_atom
+           (Equal (Term.of_absval v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y)))
+           phi)
+
+
+let prune_binop ~negated (bop : Binop.t) x y phi =
+  let atom op x y =
+    let tx = Term.of_operand x in
+    let ty = Term.of_operand y in
+    let atom : Atom.t =
+      match op with
+      | `LessThan ->
+          LessThan (tx, ty)
+      | `LessEqual ->
+          LessEqual (tx, ty)
+      | `NotEqual ->
+          NotEqual (tx, ty)
+    in
+    Sat (and_atom atom phi)
+  in
+  match (bop, negated) with
+  | Eq, false | Ne, true ->
+      and_equal x y phi
+  | Ne, false | Eq, true ->
+      atom `NotEqual x y
+  | Lt, false | Ge, true ->
+      atom `LessThan x y
+  | Le, false | Gt, true ->
+      atom `LessEqual x y
+  | Ge, false | Lt, true ->
+      atom `LessEqual y x
+  | Gt, false | Le, true ->
+      atom `LessThan y x
+  | LAnd, _
+  | LOr, _
+  | Mult _, _
+  | Div, _
+  | Mod, _
+  | Shiftlt, _
+  | Shiftrt, _
+  | BAnd, _
+  | BXor, _
+  | BOr, _
+  | PlusA _, _
+  | PlusPI, _
+  | MinusA _, _
+  | MinusPI, _
+  | MinusPP, _ ->
+      Sat phi
+
+
+let normalize phi = Normalizer.normalize phi
+
+(** translate each variable in [phi_foreign] according to [f] then incorporate each fact into [phi0] *)
+let and_fold_map_variables phi0 ~up_to_f:phi_foreign ~init ~f =
+  (* propagate [Unsat] faster using this exception *)
+  let exception Contradiction in
+  let sat_value_exn (norm : 'a normalized) =
+    match norm with Unsat -> raise Contradiction | Sat x -> x
+  in
+  let and_var_eqs acc =
+    VarUF.fold_congruences phi_foreign.var_eqs ~init:acc
+      ~f:(fun (acc_f, phi) (repr_foreign, vs_foreign) ->
+        let acc_f, repr = f acc_f (repr_foreign :> Var.t) in
+        IContainer.fold_of_pervasives_set_fold Var.Set.fold vs_foreign ~init:(acc_f, phi)
+          ~f:(fun (acc_f, phi) v_foreign ->
+            let acc_f, v = f acc_f v_foreign in
+            let phi = Normalizer.and_var_var repr v phi |> sat_value_exn in
+            (acc_f, phi) ) )
+  in
+  let and_linear_eqs acc =
+    IContainer.fold_of_pervasives_map_fold Var.Map.fold phi_foreign.linear_eqs ~init:acc
+      ~f:(fun (acc_f, phi) (v_foreign, l_foreign) ->
+        let acc_f, v = f acc_f v_foreign in
+        let acc_f, l = LinArith.fold_map_variables l_foreign ~init:acc_f ~f in
+        let phi = Normalizer.and_var_linarith v l phi |> sat_value_exn in
+        (acc_f, phi) )
+  in
+  let and_atoms acc =
+    IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi_foreign.atoms ~init:acc
+      ~f:(fun (acc_f, phi) atom_foreign ->
+        let acc_f, atom =
+          Atom.fold_map_variables atom_foreign ~init:acc_f ~f:(fun acc_f v ->
+              let acc_f, v' = f acc_f v in
+              (acc_f, Term.Var v') )
+        in
+        let phi = and_atom atom phi in
+        (acc_f, phi) )
+  in
+  try Sat (and_var_eqs (init, phi0) |> and_linear_eqs |> and_atoms) with Contradiction -> Unsat
 
 
 (** Intermediate step of [simplify]: build an (undirected) graph between variables where an edge
-    between two variables means that they appear together in an atom of [facts] or an equivalence
-    class of [congruences]. *)
-let build_var_graph congruences facts =
+    between two variables means that they appear together in an atom, a linear equation, or an
+    equivalence class. *)
+let build_var_graph phi =
   (* pretty naive representation of an undirected graph: a map where a vertex maps to the set of
      destination vertices and each edge has its symmetric in the map *)
   (* unused but can be useful for debugging *)
   let _pp_graph fmt graph =
-    Caml.Hashtbl.iter
-      (fun v vs -> F.fprintf fmt "%a->{%a}" AbstractValue.pp v AbstractValue.Set.pp vs)
-      graph
-  in
-  (* add [v->vs] to [graph] *)
-  let add_set graph src vs =
-    let dest =
-      match Caml.Hashtbl.find_opt graph src with
-      | None ->
-          vs
-      | Some dest0 ->
-          AbstractValue.Set.union vs dest0
-    in
-    Caml.Hashtbl.replace graph src dest
+    Caml.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
   in
   (* 16 because why not *)
   let graph = Caml.Hashtbl.create 16 in
+  (* add edges between all pairs of [vs] *)
+  let add_all vs =
+    (* add [src->vs] to [graph] (but not the symmetric edges) *)
+    let add_set graph src vs =
+      let dest =
+        match Caml.Hashtbl.find_opt graph src with
+        | None ->
+            vs
+        | Some dest0 ->
+            Var.Set.union vs dest0
+      in
+      Caml.Hashtbl.replace graph src dest
+    in
+    Var.Set.iter (fun v -> add_set graph v vs) vs
+  in
+  Container.iter ~fold:VarUF.fold_congruences phi.var_eqs ~f:(fun ((repr : VarUF.repr), vs) ->
+      add_all (Var.Set.add (repr :> Var.t) vs) ) ;
+  Var.Map.iter
+    (fun v l ->
+      LinArith.get_variables l
+      |> Seq.fold_left (fun vs v -> Var.Set.add v vs) (Var.Set.singleton v)
+      |> add_all )
+    phi.linear_eqs ;
   (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
      the number of variables of these terms) *)
   let add_from_terms t1 t2 =
     (* compute [vs U vars(t)] *)
     let union_vars_of_term t vs =
-      Term.fold_variables t ~init:vs ~f:(fun vs v -> AbstractValue.Set.add v vs)
+      Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
     in
-    let vs = union_vars_of_term t1 AbstractValue.Set.empty |> union_vars_of_term t2 in
-    AbstractValue.Set.iter (fun v -> add_set graph v vs) vs
+    union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
   in
-  Container.iter ~fold:UnionFind.fold_congruences congruences
-    ~f:(fun ((repr : UnionFind.repr), ts) ->
-      UnionFind.Set.iter (fun t -> add_from_terms (repr :> Term.t) t) ts ) ;
   Atom.Set.iter
     (fun atom ->
       let t1, t2 = Atom.get_terms atom in
       add_from_terms t1 t2 )
-    facts ;
+    phi.atoms ;
   graph
 
 
@@ -908,18 +1132,18 @@ let build_var_graph congruences facts =
     in [graph]. *)
 let get_reachable_from graph vs =
   (* HashSet represented as a [Hashtbl.t] mapping items to [()], start with the variables in [vs] *)
-  let reachable = Caml.Hashtbl.create (AbstractValue.Set.cardinal vs) in
-  AbstractValue.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
+  let reachable = Caml.Hashtbl.create (Var.Set.cardinal vs) in
+  Var.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
   (* Do a Dijkstra-style graph transitive closure in [graph] starting from [vs]. At each step,
      [new_vs] contains the variables to explore next. Iterative to avoid blowing the stack. *)
-  let new_vs = ref (AbstractValue.Set.elements vs) in
+  let new_vs = ref (Var.Set.elements vs) in
   while not (List.is_empty !new_vs) do
     (* pop [new_vs] *)
     let[@warning "-8"] (v :: rest) = !new_vs in
     new_vs := rest ;
     Caml.Hashtbl.find_opt graph v
     |> Option.iter ~f:(fun vs' ->
-           AbstractValue.Set.iter
+           Var.Set.iter
              (fun v' ->
                if not (Caml.Hashtbl.mem reachable v') then (
                  (* [v'] seen for the first time: we need to explore it *)
@@ -927,44 +1151,30 @@ let get_reachable_from graph vs =
                  new_vs := v' :: !new_vs ) )
              vs' )
   done ;
-  Caml.Hashtbl.to_seq_keys reachable |> AbstractValue.Set.of_seq
+  Caml.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
 
 
 let simplify ~keep phi =
-  match NormalForm.of_formula phi with
-  | `Unsatisfiable ->
-      False
-  | `NormalForm (congruences, facts) ->
-      L.d_printfln "Simplifying %a wrt {%a}" pp
-        (NormalForm {congruences; facts})
-        AbstractValue.Set.pp keep ;
-      (* Get rid of atoms when they contain only variables that do not appear in atoms mentioning
+  let open SatUnsatMonad in
+  let+ phi = normalize phi in
+  L.d_printfln "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
+  (* Get rid of atoms when they contain only variables that do not appear in atoms mentioning
          variables in [keep], or variables appearing in atoms together with variables in [keep], and
          so on. In other words, the variables to keep are all the ones transitively reachable from
          variables in [keep] in the graph connecting two variables whenever they appear together in
          a same atom of the formula. *)
-      let var_graph = build_var_graph congruences facts in
-      let vars_to_keep = get_reachable_from var_graph keep in
-      L.d_printfln "Reachable vars: {%a}" AbstractValue.Set.pp vars_to_keep ;
-      (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
+  let var_graph = build_var_graph phi in
+  let vars_to_keep = get_reachable_from var_graph keep in
+  L.d_printfln "Reachable vars: {%a}" Var.Set.pp vars_to_keep ;
+  (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
          to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
          closure on the graph above *)
-      NormalForm.to_formula congruences facts ~filter:(fun atom ->
-          not (Atom.has_var_notin vars_to_keep atom) )
+  let var_eqs = VarUF.filter_not_in_closed_set ~keep:vars_to_keep phi.var_eqs in
+  let linear_eqs = Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.linear_eqs in
+  let atoms = Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.atoms in
+  {var_eqs; linear_eqs; atoms}
 
 
-let rec fold_map_variables phi ~init ~f =
-  match phi with
-  | True | False ->
-      (init, phi)
-  | NormalForm {congruences; facts} ->
-      NormalForm.to_formula congruences facts |> fold_map_variables ~init ~f
-  | Atom atom ->
-      let acc, atom' = Atom.fold_map_variables atom ~init ~f in
-      let phi' = if phys_equal atom atom' then phi else Atom atom' in
-      (acc, phi')
-  | And (phi1, phi2) ->
-      let acc, phi1' = fold_map_variables phi1 ~init ~f in
-      let acc, phi2' = fold_map_variables phi2 ~init:acc ~f in
-      if phys_equal phi1' phi1 && phys_equal phi2' phi2 then (acc, phi)
-      else (acc, And (phi1', phi2'))
+let is_known_zero phi v =
+  Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
+  |> Option.exists ~f:LinArith.is_zero

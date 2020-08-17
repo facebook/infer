@@ -202,3 +202,17 @@ let cli_args fmt args = cli_args_with_verbosity ~verbose:true fmt args
 let pair ~fst ~snd fmt (a, b) = F.fprintf fmt "(%a,@,%a)" fst a snd b
 
 let in_backticks pp fmt x = F.fprintf fmt "`%a`" pp x
+
+let collection :
+       fold:('t, 'item, _) Container.fold
+    -> sep:string
+    -> pp_item:(F.formatter -> 'item -> unit)
+    -> F.formatter
+    -> 't
+    -> unit =
+ fun ~fold ~sep ~pp_item fmt coll ->
+  let pp_coll_aux is_first item =
+    F.fprintf fmt "@[<h>%s%a@]" (if is_first then "" else sep) pp_item item ;
+    (* [is_first] not true anymore *) false
+  in
+  F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:true ~f:pp_coll_aux |> ignore)
