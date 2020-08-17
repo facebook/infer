@@ -27,9 +27,6 @@ end
 (** Generic serializer *)
 type 'a serializer
 
-val is_shard_mode : bool
-(** If the spec directory is sharded or not *)
-
 val create_serializer : Key.t -> 'a serializer
 (** create a serializer from a file name given an integer key used as double-check of the file type *)
 
