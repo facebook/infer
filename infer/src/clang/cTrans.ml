@@ -2873,16 +2873,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
-  (** Translates an array literal `NSArray* a = @ [ @2, @3 ];` to
+  (** Translates an array literal [NSArray* a = @\[ @2, @3 \];] to
 
-      n$1=NSNumber.numberWithInt:(2:int)
-      n$2=NSNumber.numberWithInt:(3:int)
-      temp[0]:objc_object*=n$1
-      temp[1]:objc_object*=n$2
-      n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
-      a:NSArray*=n$3
+      {[
+        n$1=NSNumber.numberWithInt:(2:int)
+        n$2=NSNumber.numberWithInt:(3:int)
+        temp[0]:objc_object*=n$1
+        temp[1]:objc_object*=n$2
+        n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
+        a:NSArray*=n$3
+      ]}
 
-      where `temp` is an additional local variable declared as array. *)
+      where [temp] is an additional local variable declared as array. *)
   and objCArrayLiteral_arrayWithObjects_count_trans
       ({context= {procdesc; tenv; translation_unit_context} as context} as trans_state) expr_info
       stmt_info stmts (decl_info, objects_qual_typ) method_pointer =
