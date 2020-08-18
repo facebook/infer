@@ -1572,28 +1572,31 @@ module Call = struct
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
     let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
+    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
-        -"__cast" <>$ capt_exp $+ capt_exp $+...$--> cast
-      ; -"__exit" <>--> bottom
-      ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
-      ; -"__infer_objc_cpp_throw" <>--> bottom
-      ; -"__new"
+        +match_builtin BuiltinDecl.__cast <>$ capt_exp $+ capt_exp $+...$--> cast
+      ; +match_builtin BuiltinDecl.__exit <>--> bottom
+      ; +match_builtin BuiltinDecl.__get_array_length <>$ capt_exp $!--> get_array_length
+      ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> bottom
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_collection)
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_map)
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_org_json "JSONArray")
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_pseudo_collection)
         $+...$--> Collection.new_collection
-      ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
-      ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
+      ; +match_builtin BuiltinDecl.__new <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +match_builtin BuiltinDecl.__new_array <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +match_builtin BuiltinDecl.__placement_new
+        <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
+      ; +match_builtin BuiltinDecl.__set_array_length
+        <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
@@ -1612,7 +1615,7 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        -"__objc_alloc_no_fail" <>$ capt_exp $+...$--> objc_malloc
+        +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $+...$--> objc_malloc
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp
         $+...$--> NSCollection.create_from_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
