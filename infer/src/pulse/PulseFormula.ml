@@ -17,7 +17,7 @@ type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
     are kept as a last-resort for when outside that fragment. *)
 module Term = struct
   type t =
-    | Const of Const.t
+    | Const of Q.t
     | Var of Var.t
     | Add of t * t
     | Minus of t
@@ -42,12 +42,11 @@ module Term = struct
   let equal_syntax = [%compare.equal: t]
 
   let needs_paren = function
-    | Const (Cint i) when IntLit.isnegative i ->
-        true
-    | Const (Cfloat _) ->
-        true
-    | Const (Cint _ | Cfun _ | Cstr _ | Cclass _) ->
+    | Const c when Q.geq c Q.zero && Z.equal (Q.den c) Z.one ->
+        (* nonnegative integer *)
         false
+    | Const _ ->
+        (* negative and/or a fraction *) true
     | Var _ ->
         false
     | Minus _
@@ -79,7 +78,7 @@ module Term = struct
     | Var v ->
         pp_var fmt v
     | Const c ->
-        Const.pp Pp.text fmt c
+        Q.pp_print fmt c
     | Minus t ->
         F.fprintf fmt "-%a" (pp_paren pp_var ~needs_paren) t
     | BitNot t ->
@@ -122,20 +121,13 @@ module Term = struct
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
 
 
-  let of_absval v = Var v
+  let of_intlit i = Const (Q.of_bigint (IntLit.to_big_int i))
 
-  let of_intlit i = Const (Cint i)
+  let of_operand = function AbstractValueOperand v -> Var v | LiteralOperand i -> of_intlit i
 
-  let of_operand = function
-    | AbstractValueOperand v ->
-        of_absval v
-    | LiteralOperand i ->
-        of_intlit i
+  let one = Const Q.one
 
-
-  let one = of_intlit IntLit.one
-
-  let zero = of_intlit IntLit.zero
+  let zero = Const Q.zero
 
   let of_unop (unop : Unop.t) t =
     match unop with Neg -> Minus t | BNot -> BitNot t | LNot -> Not t
@@ -181,9 +173,9 @@ module Term = struct
         Or (t1, t2)
 
 
-  let is_zero = function Const c -> Const.iszero_int_float c | _ -> false
+  let is_zero = function Const c -> Q.equal c Q.zero | _ -> false
 
-  let is_non_zero_const = function Const c -> not (Const.iszero_int_float c) | _ -> false
+  let is_non_zero_const = function Const c -> not (Q.equal c Q.zero) | _ -> false
 
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
@@ -398,55 +390,55 @@ module Atom = struct
     | Minus (Minus t) ->
         (* [--t = t] *)
         t
-    | Minus (Const (Cint i)) ->
-        (* [-i = -1*i] *)
-        Const (Cint (IntLit.(mul minus_one) i))
+    | Minus (Const c) ->
+        (* [-c = -1*c] *)
+        Const (Q.(mul minus_one) c)
     | BitNot (BitNot t) ->
         (* [~~t = t] *)
         t
-    | Not (Const c) when Const.iszero_int_float c ->
+    | Not (Const c) when Q.equal c Q.zero ->
         (* [!0 = 1]  *)
         one
-    | Not (Const c) when Const.isone_int_float c ->
+    | Not (Const c) when Q.equal c Q.one ->
         (* [!1 = 0]  *)
         zero
-    | Add (Const (Cint i1), Const (Cint i2)) ->
+    | Add (Const c1, Const c2) ->
         (* constants *)
-        Const (Cint (IntLit.add i1 i2))
-    | Add (Const c, t) when Const.iszero_int_float c ->
+        Const (Q.add c1 c2)
+    | Add (Const c, t) when Q.equal c Q.zero ->
         (* [0 + t = t] *)
         t
-    | Add (t, Const c) when Const.iszero_int_float c ->
+    | Add (t, Const c) when Q.equal c Q.zero ->
         (* [t + 0 = t] *)
         t
-    | Mult (Const c, t) when Const.isone_int_float c ->
+    | Mult (Const c, t) when Q.equal c Q.one ->
         (* [1 × t = t] *)
         t
-    | Mult (t, Const c) when Const.isone_int_float c ->
+    | Mult (t, Const c) when Q.equal c Q.one ->
         (* [t × 1 = t] *)
         t
-    | Mult (Const c, _) when Const.iszero_int_float c ->
+    | Mult (Const c, _) when Q.equal c Q.zero ->
         (* [0 × t = 0] *)
         zero
-    | Mult (_, Const c) when Const.iszero_int_float c ->
+    | Mult (_, Const c) when Q.equal c Q.zero ->
         (* [t × 0 = 0] *)
         zero
-    | Div (Const c, _) when Const.iszero_int_float c ->
+    | Div (Const c, _) when Q.equal c Q.zero ->
         (* [0 / t = 0] *)
         zero
-    | Div (t, Const c) when Const.isone_int_float c ->
+    | Div (t, Const c) when Q.equal c Q.one ->
         (* [t / 1 = t] *)
         t
-    | Div (t, Const c) when Const.isminusone_int_float c ->
+    | Div (t, Const c) when Q.equal c Q.minus_one ->
         (* [t / (-1) = -t] *)
         eval_term (Minus t)
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
         eval_term (Div (t1, t2))
-    | Mod (Const c, _) when Const.iszero_int_float c ->
+    | Mod (Const c, _) when Q.equal c Q.zero ->
         (* [0 % t = 0] *)
         zero
-    | Mod (_, Const (Cint i)) when IntLit.isone i ->
+    | Mod (_, Const q) when Q.equal q Q.one ->
         (* [t % 1 = 0] *)
         zero
     | Mod (t1, t2) when equal_syntax t1 t2 ->
@@ -485,16 +477,16 @@ module Atom = struct
   and eval_atom (atom : t) =
     let t1, t2 = get_terms atom in
     match (t1, t2) with
-    | Const (Cint i1), Const (Cint i2) -> (
+    | Const c1, Const c2 -> (
       match atom with
       | Equal _ ->
-          eval_result_of_bool (IntLit.eq i1 i2)
+          eval_result_of_bool (Q.equal c1 c2)
       | NotEqual _ ->
-          eval_result_of_bool (IntLit.neq i1 i2)
+          eval_result_of_bool (not (Q.equal c1 c2))
       | LessEqual _ ->
-          eval_result_of_bool (IntLit.leq i1 i2)
+          eval_result_of_bool (Q.leq c1 c2)
       | LessThan _ ->
-          eval_result_of_bool (IntLit.lt i1 i2) )
+          eval_result_of_bool (Q.lt c1 c2) )
     | _ ->
         if Term.equal_syntax t1 t2 then
           match atom with
@@ -883,17 +875,15 @@ end = struct
       (Sat {phi0 with linear_eqs= Var.Map.empty})
 
 
-  let z_of_q q = match Q.to_bigint q with z -> Some z | exception _ -> None
-
   let normalize_atom phi (atom : Atom.t) =
     let normalize_term phi t =
       Term.map_variables t ~f:(fun v ->
           let v_canon = (VarUF.find phi.var_eqs v :> Var.t) in
-          let z_opt =
+          let q_opt =
             let open Option.Monad_infix in
-            Var.Map.find_opt v_canon phi.linear_eqs >>= LinArith.get_as_const >>= z_of_q
+            Var.Map.find_opt v_canon phi.linear_eqs >>= LinArith.get_as_const
           in
-          match z_opt with None -> Var v_canon | Some z -> Term.of_intlit (IntLit.of_big_int z) )
+          match q_opt with None -> Var v_canon | Some q -> Const q )
     in
     let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
     match Atom.eval atom' with
@@ -955,7 +945,7 @@ let and_equal_unop v (op : Unop.t) x phi =
   | Neg ->
       Normalizer.and_var_linarith v LinArith.(minus (of_operand x)) phi
   | BNot | LNot ->
-      Sat (and_atom (Equal (Term.of_absval v, Term.of_unop op (Term.of_operand x))) phi)
+      Sat (and_atom (Equal (Term.Var v, Term.of_unop op (Term.of_operand x))) phi)
 
 
 let and_equal_binop v (bop : Binop.t) x y phi =
@@ -985,7 +975,7 @@ let and_equal_binop v (bop : Binop.t) x y phi =
   | LOr ->
       Sat
         (and_atom
-           (Equal (Term.of_absval v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y)))
+           (Equal (Term.Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y)))
            phi)
 
 

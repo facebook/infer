@@ -29,7 +29,7 @@ val eq : t -> t -> bool
 
 val of_int : int -> t
 
-val of_big_int : Z.t -> t
+val of_big_int : Z.t -> t [@@warning "-32"]
 
 val of_int32 : int32 -> t
 
