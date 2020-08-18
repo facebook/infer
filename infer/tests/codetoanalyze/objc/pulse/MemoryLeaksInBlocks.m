@@ -17,13 +17,13 @@ int block_captured_var_leak_bad() {
   return blk();
 }
 
-int block_free_ok() {
+int block_free_ok(int* y) {
   int* x = malloc(sizeof(int));
   *x = 2;
-  int (^blk)(void) = ^() {
-    int i = *x;
+  int (^blk)(int*) = ^(int* y) {
+    int i = *x + *y;
     free(x);
     return i;
   };
-  return blk();
+  return blk(y);
 }
