@@ -31,8 +31,6 @@ end
 (** version of the binary files, to be incremented for each change *)
 let version = 27
 
-let is_shard_mode = (not Config.biabduction_models_mode) && Config.specs_shard_depth > 0
-
 let create_serializer (key : Key.t) : 'a serializer =
   let read_data ((key' : int), (version' : int), (value : 'a)) source_msg =
     if key.key <> key' then (
@@ -66,7 +64,6 @@ let create_serializer (key : Key.t) : 'a serializer =
     let filename = DB.filename_to_string fname in
     PerfEvent.(
       log (fun logger -> log_begin_event logger ~name:("writing " ^ key.name) ~categories:["io"] ())) ;
-    if is_shard_mode then Utils.create_dir (Filename.dirname filename) ;
     Utils.with_intermediate_temp_file_out filename ~f:(fun outc ->
         Marshal.to_channel outc (key.key, version, data) [] ) ;
     PerfEvent.(log (fun logger -> log_end_event logger ()))

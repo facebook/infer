@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+open AbstractDomain.Types
 module L = Logging
 module InvariantVars = AbstractDomain.FiniteSet (Var)
 module VarsInLoop = AbstractDomain.FiniteSet (Var)
@@ -199,7 +200,7 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
                  let purity = get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname in
                  PurityDomain.(
                    match purity with
-                   | AbstractDomain.Types.Top ->
+                   | Top ->
                        (* modified global *)
                        (* if one of the callees modifies a global static
                           variable, invalidate all unmodeled function calls + args *)
@@ -209,7 +210,7 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
                            (InvalidatedVars.add (Var.of_id id) acc)
                        in
                        InvalidatedVars.union invalidated_args (force all_unmodeled_modified)
-                   | AbstractDomain.Types.NonTop modified_params ->
+                   | NonTop modified_params ->
                        if ModifiedParamIndices.is_empty modified_params then (*pure*)
                          acc
                        else

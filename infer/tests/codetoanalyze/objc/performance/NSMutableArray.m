@@ -23,7 +23,10 @@ void nsmarray_empty_ok_costant() {
   [array insertObject:@1 atIndex:0];
 }
 
-void nsmarray_add_in_loop_constant() {
+// top cost caused by not able to estimate the
+// length of array after adding elements to the
+// array in a loop
+void nsmarray_add_in_loop_constant_FP() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
@@ -32,12 +35,12 @@ void nsmarray_add_in_loop_constant() {
   }
 }
 
-void nsmarray_add_in_loop_linear(NSUInteger n) {
+void nsmarray_add_in_loop_linear_FP(NSUInteger n) {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < n; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
   }
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < array.count; i++) {
   }
 }
 
@@ -77,8 +80,6 @@ void nsmarray_add_all_constant() {
   [array2 addObject:@0];
   [array2 addObject:@1];
 
-  NSIndexSet* index_set = [[NSIndexSet alloc] initWithIndex:0];
-
   [array2 addObjectsFromArray:array1];
 }
 
@@ -108,15 +109,23 @@ id nsmarray_remove_constant() {
   [array addObject:@0];
   [array addObject:@1];
   [array removeObjectAtIndex:0];
+  [array removeLastObject];
   return array[0];
 }
 
-void nsmarray_remove_in_loop_constant() {
+void nsmarray_remove_in_loop_constant_FP() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
   }
   for (int i = 0; i < array.count; i++) {
     [array removeObjectAtIndex:i];
+  }
+}
+
+void nsmarray_remove_all_linear(NSMutableArray* array) {
+
+  [array removeAllObjects];
+  for (int i = 0; i < array.count; i++) {
   }
 }

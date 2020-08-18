@@ -341,9 +341,6 @@ val pp_unique_id : F.formatter -> t -> unit
 val to_unique_id : t -> string
 (** Convert a proc name into a unique identifier. *)
 
-val to_filename_and_crc : t -> string * string
-(** Convert a proc name to a filename and crc. *)
-
 val to_filename : t -> string
 (** Convert a proc name to a filename. *)
 

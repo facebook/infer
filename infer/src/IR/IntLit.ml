@@ -72,6 +72,8 @@ let of_int = of_z Z.of_int
 
 let of_string = of_z Z.of_string
 
+let of_big_int = of_z Fn.id
+
 let z_to_int_opt i = try Some (Z.to_int i) with Z.Overflow -> None
 
 let to_int {i} = z_to_int_opt i

@@ -7,69 +7,74 @@
 
 open! IStd
 module F = Format
-module AbstractValue = PulseAbstractValue
+
+(* NOTE: using [Var] for [AbstractValue] here since this is how "abstract values" are interpreted,
+   in particular as far as arithmetic is concerned *)
+module Var = PulseAbstractValue
 
 (** {2 Arithmetic solver}
 
     Build formulas from SIL and tries to decide if they are (mostly un-)satisfiable. *)
 
-module Term : sig
-  (** Similar to {!Exp.t} but with no memory operations and with {!AbstractValue.t} instead of SIL
-      variables. The rich structure allows us to represent all of SIL but is not a promise that we
-      are able to meaningfully reason about all of it. *)
-  type t
-
-  val zero : t
-
-  val of_absval : AbstractValue.t -> t
-
-  val of_intlit : IntLit.t -> t
-
-  val of_binop : Binop.t -> t -> t -> t
-
-  val of_unop : Unop.t -> t -> t
-end
-
 type t
 
 val pp : F.formatter -> t -> unit
 
-val pp_with_pp_var : (F.formatter -> AbstractValue.t -> unit) -> F.formatter -> t -> unit
+val pp_with_pp_var : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
   [@@warning "-32"]
 (** only used for unit tests *)
 
-(** {3 Build formulas from non-formulas} *)
+type 'a normalized = Unsat | Sat of 'a
+
+type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
+
+(** {3 Build formulas} *)
 
 val ttrue : t
 
-val of_term_binop : Binop.t -> Term.t -> Term.t -> t
+val and_equal : operand -> operand -> t -> t normalized
 
-val mk_equal : Term.t -> Term.t -> t
+val and_less_equal : operand -> operand -> t -> t normalized
 
-val mk_less_equal : Term.t -> Term.t -> t
+val and_less_than : operand -> operand -> t -> t normalized
 
-val mk_less_than : Term.t -> Term.t -> t
+val and_equal_unop : Var.t -> Unop.t -> operand -> t -> t normalized
 
-(** {3 Combine formulas} *)
+val and_equal_binop : Var.t -> Binop.t -> operand -> operand -> t -> t normalized
 
-val aand : t -> t -> t
-
-val nnot : t -> t
+val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t normalized
 
 (** {3 Operations} *)
 
-val simplify : keep:AbstractValue.Set.t -> t -> t
+val normalize : t -> t normalized
+(** think a bit harder about the formula *)
 
-val fold_map_variables : t -> init:'a -> f:('a -> AbstractValue.t -> 'a * AbstractValue.t) -> 'a * t
+val simplify : keep:Var.Set.t -> t -> t normalized
 
-val is_literal_false : t -> bool
-(** Call [is_literal_false (normalize phi)] to check satisfiability. *)
+val and_fold_map_variables :
+  t -> up_to_f:t -> init:'acc -> f:('acc -> Var.t -> 'acc * Var.t) -> ('acc * t) normalized
 
-val normalize : t -> t
-(** Produces a semantically-equivalent formula¹ where all consequences of equalities have been
-    applied and some ad-hoc arithmetic and logical reasoning has been performed. In particular, the
-    canonical representation of a known-false formula is [ffalse], and [is_literal_false ffalse] is
-    [true]. Probably a good idea to not throw away the result of calling this if you are going to
-    re-use the formula.
+val is_known_zero : t -> Var.t -> bool
 
-    (¹) Except it might throw away disjuncts! *)
+(** {3 Notations} *)
+
+include sig
+  [@@@warning "-60"]
+
+  (** Useful notations to deal with normalized formulas *)
+  module SatUnsatMonad : sig
+    [@@@warning "-32"]
+
+    val map_normalized : ('a -> 'b) -> 'a normalized -> 'b normalized
+
+    val ( >>| ) : 'a normalized -> ('a -> 'b) -> 'b normalized
+
+    val ( let+ ) : 'a normalized -> ('a -> 'b) -> 'b normalized
+
+    val bind_normalized : ('a -> 'b normalized) -> 'a normalized -> 'b normalized
+
+    val ( >>= ) : 'a normalized -> ('a -> 'b normalized) -> 'b normalized
+
+    val ( let* ) : 'a normalized -> ('a -> 'b normalized) -> 'b normalized
+  end
+end

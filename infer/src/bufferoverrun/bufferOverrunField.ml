@@ -41,6 +41,8 @@ let java_list_files_length = mk "java.list_files_length" Typ.(int)
 
 let is_java_collection_internal_array fn = Fieldname.equal fn java_collection_internal_array
 
+let objc_collection_internal_array = mk "nscollection.elements" Typ.(mk_array void)
+
 let c_strlen () =
   if Language.curr_language_is Java then mk "length" Typ.uint else mk "c.strlen" Typ.uint
 

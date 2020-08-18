@@ -103,24 +103,31 @@ let get_class pn =
   match pn with Procname.Java pn_java -> Some (Procname.Java.get_class_name pn_java) | _ -> None
 
 
+let is_annotated_initializer tenv proc_name =
+  PatternMatch.lookup_attributes tenv proc_name
+  |> Option.value_map
+       ~f:(fun ProcAttributes.{method_annotation= {return}} -> Annotations.ia_is_initializer return)
+       ~default:false
+
+
+let is_annotated_initializer_in_chain tenv proc_name =
+  PatternMatch.override_exists (is_annotated_initializer tenv) tenv proc_name
+
+
+(* Should the (non-constructor) function be considered an initializer method *)
+let is_initializer tenv proc_attributes =
+  (* Either modelled as initializer or the descendent of such a method *)
+  PatternMatch.Java.method_is_initializer tenv proc_attributes
+  || (* Or explicitly marked @Initializer or the descendent of such a method *)
+  is_annotated_initializer_in_chain tenv proc_attributes.ProcAttributes.proc_name
+
+
 (** Typestates after the current procedure and all initializer procedures. *)
 let final_initializer_typestates_lazy tenv curr_pname curr_pdesc typecheck_proc =
   lazy
-    (let is_initializer proc_attributes =
-       PatternMatch.Java.method_is_initializer tenv proc_attributes
-       ||
-       let ia =
-         (* TODO(T62825735): support trusted callees for fields *)
-         (Models.get_modelled_annotated_signature ~is_callee_in_trust_list:false tenv
-            proc_attributes)
-           .AnnotatedSignature.ret
-           .ret_annotation_deprecated
-       in
-       Annotations.ia_is_initializer ia
-     in
-     let initializers_current_class =
+    (let initializers_current_class =
        pname_and_pdescs_with tenv curr_pname (function pname, proc_attributes ->
-           is_initializer proc_attributes
+           is_initializer tenv proc_attributes
            && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
      final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class) tenv typecheck_proc

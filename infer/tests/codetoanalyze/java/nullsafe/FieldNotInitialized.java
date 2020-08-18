@@ -328,4 +328,65 @@ class TestInitializerAnnotation {
     // return some meaninful object
     return "";
   }
+
+  abstract class TestFieldNotInitializedBase {
+    @Initializer
+    protected abstract void markedInitializerInBase();
+
+    protected abstract void notMarkedInitializerInBase1();
+
+    protected abstract void notMarkedInitializerInBase2();
+  }
+
+  // Test to ensure we respect parent @Initializer annotations
+  class TestFieldNotInitializedDerived extends TestFieldNotInitializedBase {
+    private String field1_OK;
+    private String field2_BAD;
+    private String field3_OK;
+
+    @Override
+    public void markedInitializerInBase() {
+      // OK: implicitly @Initializer (inherited from the base)
+      field1_OK = "";
+    }
+
+    @Override
+    public void notMarkedInitializerInBase1() {
+      // BAD: field not initialized
+      field2_BAD = "";
+    }
+
+    @Override
+    @Initializer
+    public void notMarkedInitializerInBase2() {
+      // OK: explicitly marked as an initializer
+      field3_OK = "";
+    }
+  }
+
+  // Ensure that chains with non-trivial length work as well
+  class TestFieldNotInitializedDerivedDerived extends TestFieldNotInitializedDerived {
+    private String field1_OK;
+    private String field2_BAD;
+    private String field3_OK;
+
+    @Override
+    public void markedInitializerInBase() {
+      // OK: implicitly @Initializer (inherited from the base through the chain)
+      field1_OK = "";
+    }
+
+    @Override
+    public void notMarkedInitializerInBase1() {
+      // BAD: field not initialized, and the method is not marked as @Initializer in any of the
+      // bases
+      field2_BAD = "";
+    }
+
+    @Override
+    public void notMarkedInitializerInBase2() {
+      // OK: explicitly marked as an initializer in the direct base
+      field3_OK = "";
+    }
+  }
 }

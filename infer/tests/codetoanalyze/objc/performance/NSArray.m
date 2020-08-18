@@ -77,6 +77,12 @@ NSArray* nsarray_add_objects_from_array_linear_FN(NSArray* append_array) {
 
 // query element
 
+void nsarray_get_first_constant() {
+  NSArray* array = @[ @1, @2 ];
+  for (int i = 0; i < [[array firstObject] integerValue]; i++) {
+  }
+}
+
 void nsarray_access_constant() {
   NSArray* array = @[ @1.0f, @2.0f, @3.0f, @4.0f, @5.0f, @6.0f, @7.0f, @8.0f ];
   for (int i = 0; i < 4; i++) {
@@ -103,7 +109,7 @@ void nsarray_find_linear(NSArray* array) {
   }
 }
 
-void nsarray_contains_object_linear_FN(NSArray* array) {
+void nsarray_contains_object_linear(NSArray* array) {
   [array containsObject:@1];
 }
 
@@ -163,8 +169,7 @@ void nsarray_next_object_linear_FN(NSArray* array) {
 }
 
 // compare array
-boolean_t nsarray_is_equal_to_array_linear_FN(NSArray* array1,
-                                              NSArray* array2) {
+boolean_t nsarray_is_equal_to_array_linear(NSArray* array1, NSArray* array2) {
   return [array1 isEqualToArray:array2];
 }
 

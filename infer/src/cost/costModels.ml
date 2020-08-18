@@ -156,6 +156,20 @@ module NSString = struct
   let substring_from_index = JavaString.substring_no_end
 end
 
+module NSCollection = struct
+  let get_length str ~of_function {location} ~ret:_ mem =
+    let itv =
+      BufferOverrunModels.NSCollection.eval_collection_length str mem
+      |> BufferOverrunDomain.Val.get_itv
+    in
+    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+
+
+  let op_on_two_coll cost_op ~of_function coll1 coll2 model_env ~ret mem =
+    let get_length coll = get_length coll ~of_function model_env ~ret mem in
+    cost_op (get_length coll1) (get_length coll2)
+end
+
 module ImmutableSet = struct
   let construct = linear ~of_function:"ImmutableSet.construct"
 
@@ -200,6 +214,17 @@ module Call = struct
           &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.mult
                  ~of_function:"NSString.componentsSeparatedByString:"
+        ; -"NSArray" &:: "initWithArray:" <>$ any_arg $+ capt_exp
+          $--> NSCollection.get_length ~of_function:"NSArray.initWithArray:"
+        ; -"NSArray" &:: "isEqualToArray:" <>$ capt_exp $+ capt_exp
+          $--> NSCollection.op_on_two_coll BasicCost.min_default_left
+                 ~of_function:"NSArray.isEqualToArray:"
+        ; -"NSArray" &:: "containsObject:" <>$ capt_exp $+ any_arg
+          $--> NSCollection.get_length ~of_function:"NSArray.containsObject:"
+        ; -"NSMutableArray" &:: "removeAllObjects" <>$ capt_exp
+          $--> NSCollection.get_length ~of_function:"NSArray.removeAllObjects"
+        ; -"NSMutableArray" &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
+          $--> NSCollection.get_length ~of_function:"NSArray.addObjectsFromArray:"
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"

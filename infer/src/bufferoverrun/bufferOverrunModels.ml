@@ -783,11 +783,15 @@ module JavaInteger = struct
     {exec; check= no_check}
 end
 
-(* Java's Collections are represented like arrays. But we don't care about the elements.
+module type Lang = sig
+  val collection_internal_array_field : Fieldname.t
+end
+
+(* Abstract Collections are represented like arrays. But we don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
-module Collection = struct
+module AbstractCollection (Lang : Lang) = struct
   let create_collection {pname; node_hash; location} ~ret:(id, _) mem ~length =
     let represents_multiple_values = true in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
@@ -803,9 +807,7 @@ module Collection = struct
       Dom.Val.of_java_array_alloc allocsite ~length ~traces
     in
     let coll_loc = Loc.of_allocsite coll_allocsite in
-    let internal_array_loc =
-      Loc.append_field coll_loc BufferOverrunField.java_collection_internal_array
-    in
+    let internal_array_loc = Loc.append_field coll_loc Lang.collection_internal_array_field in
     mem
     |> Dom.Mem.add_heap internal_array_loc internal_array
     |> Dom.Mem.add_stack (Loc.of_id id) (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
@@ -825,14 +827,12 @@ module Collection = struct
 
 
   let eval_collection_internal_array_locs coll_exp mem =
-    Sem.eval_locs coll_exp mem
-    |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
+    Sem.eval_locs coll_exp mem |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
 
 
   let get_collection_internal_array_locs coll_id mem =
     let coll = Dom.Mem.find (Loc.of_id coll_id) mem in
-    Dom.Val.get_pow_loc coll
-    |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
+    Dom.Val.get_pow_loc coll |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
 
 
   let get_collection_internal_elements_locs coll_id mem =
@@ -1031,14 +1031,49 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+module Collection = AbstractCollection (struct
+  let collection_internal_array_field = BufferOverrunField.java_collection_internal_array
+end)
+
 module NSCollection = struct
+  include AbstractCollection (struct
+    let collection_internal_array_field = BufferOverrunField.objc_collection_internal_array
+  end)
+
+  let create_collection {pname; node_hash; location; integer_type_widths} ~ret:(coll_id, _) mem
+      ~size_exp =
+    let represents_multiple_values = true in
+    let _, stride, length0, _ = get_malloc_info size_exp in
+    let length = Sem.eval integer_type_widths length0 mem in
+    let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
+    let internal_array =
+      let allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+          ~represents_multiple_values
+      in
+      let offset, size = (Itv.zero, Dom.Val.get_itv length) in
+      Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
+    in
+    let coll_allocsite =
+      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+        ~represents_multiple_values
+    in
+    let coll_loc = Loc.of_allocsite coll_allocsite in
+    let internal_array_loc =
+      Loc.append_field coll_loc BufferOverrunField.objc_collection_internal_array
+    in
+    mem
+    |> Dom.Mem.add_heap internal_array_loc internal_array
+    |> Dom.Mem.add_stack (Loc.of_id coll_id)
+         (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
+
+
   (** Creates a new array from the given c array by copying the first X elements. *)
   let create_from_array src_exp size_exp =
-    let exec ({integer_type_widths} as model_env) ~ret:((id, _) as ret) mem =
-      let size_v = Sem.eval integer_type_widths size_exp mem |> Dom.Val.get_itv in
+    let exec model_env ~ret:((id, _) as ret) mem =
       let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-      let mem = Collection.create_collection model_env ~ret mem ~length:size_v in
-      let dest_arr_loc = Collection.get_collection_internal_elements_locs id mem in
+      let mem = create_collection model_env ~ret mem ~size_exp in
+      let dest_arr_loc = get_collection_internal_elements_locs id mem in
       Dom.Mem.update_mem dest_arr_loc src_arr_v mem
     and check {location; integer_type_widths} mem cond_set =
       BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
@@ -1047,11 +1082,36 @@ module NSCollection = struct
     {exec; check}
 
 
+  let new_collection =
+    let exec = create_collection ~size_exp:Exp.zero in
+    {exec; check= no_check}
+
+
+  let get_first coll_id = get_at_index coll_id Exp.zero
+
+  let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr coll_id; check= no_check}
+
+  let remove_all coll_id =
+    let exec model_env ~ret mem =
+      change_size_by ~size_f:(fun _ -> Itv.zero) coll_id model_env ~ret mem
+    in
+    {exec; check= no_check}
+
+
+  let of_list list =
+    let exec env ~ret:((id, _) as ret) mem =
+      let mem = new_collection.exec env ~ret mem in
+      List.fold_left list ~init:mem ~f:(fun acc {exp= elem_exp} ->
+          (add id elem_exp).exec env ~ret acc )
+    in
+    {exec; check= no_check}
+
+
   let copy coll_id src_exp =
     let exec model_env ~ret:((id, _) as ret) mem =
       let coll = Dom.Mem.find_stack (Loc.of_id coll_id) mem in
-      let set_length = Collection.eval_collection_length src_exp mem |> Dom.Val.get_itv in
-      Collection.change_size_by ~size_f:(fun _ -> set_length) coll_id model_env ~ret mem
+      let set_length = eval_collection_length src_exp mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(fun _ -> set_length) coll_id model_env ~ret mem
       |> model_by_value coll id
     in
     {exec; check= no_check}
@@ -1378,11 +1438,12 @@ module NSString = struct
   let concat = JavaString.concat
 
   let split exp =
-    let exec model_env ~ret mem =
-      let itv =
+    let exec model_env ~ret:((coll_id, _) as ret) mem =
+      let to_add_length =
         ArrObjCommon.eval_size model_env exp ~fn mem |> JavaString.range_itv_one_max_one_mone
       in
-      Collection.create_collection ~length:itv model_env ~ret mem
+      NSCollection.create_collection ~size_exp:Exp.zero model_env ~ret mem
+      |> NSCollection.change_size_by ~size_f:(Itv.plus to_add_length) coll_id model_env ~ret
     in
     {exec; check= no_check}
 
@@ -1404,7 +1465,7 @@ let objc_malloc exp =
   let exec ({tenv} as model) ~ret mem =
     match exp with
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
-        Collection.new_collection.exec model ~ret mem
+        NSCollection.new_collection.exec model ~ret mem
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
       ->
         (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
@@ -1511,28 +1572,31 @@ module Call = struct
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
     let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
+    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
-        -"__cast" <>$ capt_exp $+ capt_exp $+...$--> cast
-      ; -"__exit" <>--> bottom
-      ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
-      ; -"__infer_objc_cpp_throw" <>--> bottom
-      ; -"__new"
+        +match_builtin BuiltinDecl.__cast <>$ capt_exp $+ capt_exp $+...$--> cast
+      ; +match_builtin BuiltinDecl.__exit <>--> bottom
+      ; +match_builtin BuiltinDecl.__get_array_length <>$ capt_exp $!--> get_array_length
+      ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> bottom
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_collection)
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_map)
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_org_json "JSONArray")
         $+...$--> Collection.new_collection
-      ; -"__new"
+      ; +match_builtin BuiltinDecl.__new
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_pseudo_collection)
         $+...$--> Collection.new_collection
-      ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
-      ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
+      ; +match_builtin BuiltinDecl.__new <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +match_builtin BuiltinDecl.__new_array <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +match_builtin BuiltinDecl.__placement_new
+        <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
+      ; +match_builtin BuiltinDecl.__set_array_length
+        <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
@@ -1551,36 +1615,53 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        -"__objc_alloc_no_fail" <>$ capt_exp $+...$--> objc_malloc
+        +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $+...$--> objc_malloc
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp
         $+...$--> NSCollection.create_from_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
-      ; -"CFArrayGetCount" <>$ capt_exp $!--> Collection.size
-      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> Collection.get_at_index
-      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> Collection.size
-      ; -"MCFArrayGetCount" <>$ capt_exp $!--> Collection.size
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
+      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.size
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> Collection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "initWithArray:copyItems:" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $--> NSCollection.copy
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "count" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> Collection.get_at_index
+        &:: "count" <>$ capt_exp $!--> NSCollection.size
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "arrayWithObjects" &++> Collection.of_list
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "arrayWithObjects" &++> NSCollection.of_list
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeLastObject" <>$ capt_var_exn $--> NSCollection.remove_last
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "insertObject:atIndex:" <>$ capt_var_exn $+ any_arg $+ capt_exp
+        $--> NSCollection.add_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeObjectAtIndex:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.remove_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeAllObjects:" <>$ capt_var_exn $--> NSCollection.remove_all
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "addObjectsFromArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.addAll
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
+        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
+        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "count" <>$ capt_exp $--> Collection.size
+        &:: "count" <>$ capt_exp $--> NSCollection.size
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"

@@ -47,6 +47,9 @@ val is_cpp_vector_elem : Fieldname.t -> bool
 val is_java_collection_internal_array : Fieldname.t -> bool
 (** Check if the field is for Java collection's elements *)
 
+val objc_collection_internal_array : Fieldname.t
+(** Field for ObjC's collection's elements *)
+
 (** {2 Field domain constructor} *)
 
 type field_typ = Typ.t option

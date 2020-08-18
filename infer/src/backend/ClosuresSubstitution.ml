@@ -100,7 +100,7 @@ let replace_instr node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
               let captured_values =
                 List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars
               in
-              let actual_params = actual_params @ captured_values in
+              let actual_params = captured_values @ actual_params in
               let new_instr =
                 Sil.Call (ret_id_typ, Const (Cfun c.name), actual_params, loc, call_flags)
               in

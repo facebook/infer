@@ -5,24 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+open AbstractDomain.Types
 module F = Format
 module ModifiedParamIndices = AbstractDomain.FiniteSet (Int)
 module Domain = AbstractDomain.TopLifted (ModifiedParamIndices)
 include Domain
 
-let pure = AbstractDomain.Types.NonTop ModifiedParamIndices.empty
+let pure = NonTop ModifiedParamIndices.empty
 
-let impure_global = AbstractDomain.Types.Top
+let impure_global = Top
 
 let is_pure astate =
   match astate with
-  | AbstractDomain.Types.Top ->
+  | Top ->
       false
-  | AbstractDomain.Types.NonTop modified_params ->
+  | NonTop modified_params ->
       ModifiedParamIndices.is_empty modified_params
 
 
-let impure_params modified_params = AbstractDomain.Types.NonTop modified_params
+let impure_params modified_params = NonTop modified_params
 
 let all_params_modified args =
   List.foldi ~init:ModifiedParamIndices.empty

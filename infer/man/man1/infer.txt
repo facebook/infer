@@ -1104,10 +1104,6 @@ OPTIONS
            Deactivates: print code excerpts around trace elements
            (Conversely: --source-preview)           See also infer-explore(1).
 
-       --specs-shard-depth int
-           Specify the depth of the directory structure of specs, used for
-           "sharding" .specs files. Zero turns sharding off.           See also infer-analyze(1) and infer-run(1).
-
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),
            follows formal of corresponding SQLite PRAGMA.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
