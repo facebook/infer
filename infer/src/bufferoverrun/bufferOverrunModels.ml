@@ -1089,6 +1089,15 @@ module NSCollection = struct
 
   let get_first coll_id = get_at_index coll_id Exp.zero
 
+  let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr coll_id; check= no_check}
+
+  let remove_all coll_id =
+    let exec model_env ~ret mem =
+      change_size_by ~size_f:(fun _ -> Itv.zero) coll_id model_env ~ret mem
+    in
+    {exec; check= no_check}
+
+
   let of_list list =
     let exec env ~ret:((id, _) as ret) mem =
       let mem = new_collection.exec env ~ret mem in
@@ -1628,6 +1637,19 @@ module Call = struct
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects" &++> NSCollection.of_list
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeLastObject" <>$ capt_var_exn $--> NSCollection.remove_last
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "insertObject:atIndex:" <>$ capt_var_exn $+ any_arg $+ capt_exp
+        $--> NSCollection.add_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeObjectAtIndex:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.remove_at_index
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "removeAllObjects:" <>$ capt_var_exn $--> NSCollection.remove_all
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "addObjectsFromArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.addAll
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_from_array

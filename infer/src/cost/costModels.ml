@@ -221,6 +221,10 @@ module Call = struct
                  ~of_function:"NSArray.isEqualToArray:"
         ; -"NSArray" &:: "containsObject:" <>$ capt_exp $+ any_arg
           $--> NSCollection.get_length ~of_function:"NSArray.containsObject:"
+        ; -"NSMutableArray" &:: "removeAllObjects" <>$ capt_exp
+          $--> NSCollection.get_length ~of_function:"NSArray.removeAllObjects"
+        ; -"NSMutableArray" &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
+          $--> NSCollection.get_length ~of_function:"NSArray.addObjectsFromArray:"
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"
