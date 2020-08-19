@@ -756,13 +756,13 @@ ifneq ($(INSTALL_NAME_TOOL),no)
 	done
 	set -x; \
 	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.dylib; do \
-	  $(INSTALL_NAME_TOOL) -add_rpath "@executable_path" "$$sofile" 2> /dev/null || true; \
+	  $(INSTALL_NAME_TOOL) -add_rpath "@executable_path" "$$sofile"; \
 	  scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso "$$sofile"; \
 	done
-	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer 2> /dev/null || true
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks 2> /dev/null || true
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
 endif
 else # install_name_tool not found
