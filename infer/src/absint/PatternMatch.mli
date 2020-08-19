@@ -104,6 +104,9 @@ module Java : sig
   val implements_psi_element : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.intellij.psi.PsiElement] *)
 
+  val implements_sparse_float_array : Tenv.t -> string -> bool
+  (** Check whether class implements a class of [com.facebook.litho.internal.SparseFloatArray] *)
+
   val implements_view_group : Tenv.t -> string -> bool
   (** Check whether class implements a class of [android.view.ViewGroup] *)
 

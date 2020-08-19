@@ -171,6 +171,8 @@ module Java = struct
 
   let implements_psi_element = implements "com.intellij.psi.PsiElement"
 
+  let implements_sparse_float_array = implements "com.facebook.litho.internal.SparseFloatArray"
+
   let implements_view_group = implements "android.view.ViewGroup"
 
   let implements_view_parent = implements "android.view.ViewParent"
