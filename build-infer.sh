@@ -199,7 +199,7 @@ if [ "$BUILD_CLANG" == "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only
   fi
 fi
 
-make -j "$JOBS" || (
+make -j "$JOBS" opt || (
   echo >&2
   echo '  compilation failure; you can try running' >&2
   echo >&2

@@ -9,10 +9,6 @@ default: infer
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
-ORIG_SHELL_BUILD_MODE = $(BUILD_MODE)
-# override this for faster builds (but slower infer)
-BUILD_MODE ?= opt
-
 MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 
 ifneq ($(UTOP),no)
@@ -230,7 +226,7 @@ SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -pat
 fmt_all:
 	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(SRC_ML) $(DUNE_ML)
 
-# pre-building these avoids race conditions when building, eg src_build and test_build in parallel
+# pre-building these avoids race conditions when doing multiple builds in parallel
 .PHONY: src_build_common
 src_build_common:
 	$(QUIET)$(call silent_on_success,Generating source dependencies,\
@@ -251,14 +247,11 @@ check: src_build_common
 	$(QUIET)$(call silent_on_success,Building artifacts for tooling support,\
 	$(MAKE_SOURCE) check)
 
-.PHONY: test_build
-test_build: src_build_common
-	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
-	$(MAKE_SOURCE) test)
-
 # deadcode analysis: only do the deadcode detection on Facebook builds and if GNU sed is available
 .PHONY: real_deadcode
 real_deadcode: src_build_common
+	$(QUIET)$(call silent_on_success,Building all OCaml code,\
+	$(MAKE_SOURCE) build_all)
 	$(QUIET)$(call silent_on_success,Testing there is no dead OCaml code,\
 	$(MAKE) -C $(SRC_DIR)/deadcode)
 
@@ -293,11 +286,11 @@ toplevel_test:
 	$(MAKE_SOURCE) toplevel)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-byte src_build_common src_build test_build: fb-setup
+byte src_build_common src_build: fb-setup
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-byte src_build src_build_common test_build: clang_plugin
+byte src_build src_build_common: clang_plugin
 endif
 
 ifneq ($(NINJA),no)
@@ -439,10 +432,9 @@ clang_plugin_test_replace: clang_setup
 	)
 
 .PHONY: ocaml_unit_test
-ocaml_unit_test: test_build
-	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
+ocaml_unit_test: src_build_common
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
-	INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN))
+	$(MAKE_SOURCE) unit)
 
 define silence_make
   $(1) 2> >(grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target')
@@ -583,11 +575,8 @@ mod_dep: src_build_common
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
 
-# `test_build` and `src_build` (which is a dependency of `endtoend_test`) should not be run in
-# parallel since they build infer with different profiles (and therefore conflict). Therefore,
-# `test_build` is in the dependency, and `endtoend_test` in the recipe.
 .PHONY: config_tests
-config_tests: test_build ocaml_unit_test validate-skel mod_dep
+config_tests: ocaml_unit_test validate-skel mod_dep
 	$(MAKE) endtoend_test checkCopyright
 	$(MAKE) manuals
 
@@ -886,17 +875,6 @@ devsetup: Makefile.autoconf
 	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"$(TERM_RESET)\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
 	fi; \
-	if [ -z "$(ORIG_SHELL_BUILD_MODE)" ]; then \
-	  echo >&2; \
-	  echo '$(TERM_INFO)*** NOTE: Set `BUILD_MODE=dev` in your shell to disable flambda by default.$(TERM_RESET)' >&2; \
-	  echo '$(TERM_INFO)*** NOTE: Compiling with flambda is ~5 times slower than without, so unless you are$(TERM_RESET)' >&2; \
-	  echo '$(TERM_INFO)*** NOTE: testing infer on a very large project it will not be worth it. Use the$(TERM_RESET)' >&2; \
-	  echo '$(TERM_INFO)*** NOTE: commands below to set the default build mode. You can then use `make opt`$(TERM_RESET)' >&2; \
-	  echo '$(TERM_INFO)*** NOTE: when you really do want to enable flambda.$(TERM_RESET)' >&2; \
-	  echo >&2; \
-	  printf "$(TERM_INFO)  export BUILD_MODE=dev$(TERM_RESET)\n" >&2; \
-	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=dev' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2; \
-	fi
 	$(QUIET)PATH='$(ORIG_SHELL_PATH)'; if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
