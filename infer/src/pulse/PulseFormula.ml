@@ -730,7 +730,7 @@ let pp_with_pp_var pp_var fmt phi =
         ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (Atom.pp_with_pp_var pp_var) atom)
         fmt atoms
   in
-  F.fprintf fmt "[@[<hv>%a@ &&@ %a@ &&@ %a@]]"
+  F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@]"
     (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
     phi.var_eqs pp_linear_eqs phi.linear_eqs pp_atoms phi.atoms
 
