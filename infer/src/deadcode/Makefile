@@ -194,7 +194,8 @@ detect_dead_src_file:
 	  || [[ $$1 =~ .*FrontendStubs.mli?$$ ]] \
 	  || [[ $$1 =~ ^labs/ ]] \
 	  || [[ $$1 =~ ^llvm/ ]] \
-	  || [[ $$1 =~ ^opensource/ ]]; then \
+	  || [[ $$1 =~ ^opensource/ ]] \
+	  || grep -q -F 'let%test_module' $(INFER_BUILD_DIR)/$$1 ; then \
 	    exit 0; \
           else \
 	    exit 1; \

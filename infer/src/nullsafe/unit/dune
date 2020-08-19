@@ -11,4 +11,5 @@
     -open IBase -open Nullsafe))
  (libraries oUnit core IStdlib ATDGenerated IBase IR Nullsafe)
  (preprocess
-  (pps ppx_compare)))
+  (pps ppx_compare ppx_expect ppx_inline_test))
+ (inline_tests))

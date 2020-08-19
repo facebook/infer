@@ -7,5 +7,4 @@
 
 open! IStd
 
-let tests =
-  [ThirdPartyMethodTests.test; ThirdPartyAnnotationInfoTests.test; AggregatedSummariesTest.test]
+let tests = [ThirdPartyAnnotationInfoTests.test; AggregatedSummariesTest.test]
