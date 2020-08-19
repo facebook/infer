@@ -157,4 +157,18 @@ public class Loops {
       p = p.getParent();
     }
   }
+
+  boolean rand;
+
+  void two_control_variables_linear_FP(int n) {
+    int i = 0;
+    int j = n;
+    while (i <= j) {
+      if (rand) {
+        i++;
+      } else {
+        j--;
+      }
+    }
+  }
 }
