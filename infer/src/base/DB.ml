@@ -125,21 +125,12 @@ module Results_dir = struct
     filename_from_base base path
 
 
-  (** directory of spec files *)
-  let specs_dir = ResultsDir.get_path Specs
-
   (** initialize the results directory *)
   let init ?(debug = false) source =
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
     if debug || Config.html || Config.debug_mode || Config.frontend_tests then (
       Utils.create_dir (ResultsDir.get_path Debug) ;
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
-
-
-  let clean_specs_dir () =
-    (* create dir just in case it doesn't exist to avoid errors *)
-    Utils.rmtree specs_dir ;
-    Utils.create_dir specs_dir
 
 
   (** create a file at the given path, creating any missing directories *)

@@ -45,9 +45,6 @@ module Results_dir : sig
   val init : ?debug:bool -> SourceFile.t -> unit
   (** Initialize the results directory *)
 
-  val clean_specs_dir : unit -> unit
-  (** Clean up specs directory *)
-
   val create_file : path_kind -> path -> Unix.File_descr.t
   (** create a file at the given path, creating any missing directories *)
 end
