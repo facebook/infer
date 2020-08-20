@@ -200,6 +200,11 @@ module Implementation = struct
           Sqlite3.bind delete_stmt 1 proc_name
           |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_name" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
+
+
+  let delete_all_specs () =
+    let db = ResultsDatabase.get_database () in
+    SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
 end
 
 module Command = struct
@@ -209,6 +214,7 @@ module Command = struct
         ; tenv: Sqlite3.Data.t
         ; integer_type_widths: Sqlite3.Data.t
         ; proc_names: Sqlite3.Data.t }
+    | DeleteAllSpecs
     | DeleteSpec of {proc_name: Sqlite3.Data.t}
     | Handshake
     | MarkAllSourceFilesStale
@@ -230,6 +236,8 @@ module Command = struct
   let to_string = function
     | AddSourceFile _ ->
         "AddSourceFile"
+    | DeleteAllSpecs ->
+        "DeleteAllSpecs"
     | DeleteSpec _ ->
         "DeleteSpec"
     | Handshake ->
@@ -255,6 +263,8 @@ module Command = struct
   let execute = function
     | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
+    | DeleteAllSpecs ->
+        Implementation.delete_all_specs ()
     | DeleteSpec {proc_name} ->
         Implementation.delete_spec ~proc_name
     | Handshake ->
@@ -392,3 +402,5 @@ let store_spec ~proc_name ~analysis_summary ~report_summary =
 
 
 let delete_spec ~proc_name = perform (DeleteSpec {proc_name})
+
+let delete_all_specs () = perform DeleteAllSpecs

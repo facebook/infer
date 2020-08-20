@@ -225,7 +225,7 @@ let main ~changed_files =
       L.progress "Invalidating procedures to be reanalyzed@." ;
       Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
       L.progress "Done@." )
-    else if not Config.incremental_analysis then DB.Results_dir.clean_specs_dir () ;
+    else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
   let source_files = lazy (get_source_files_to_analyze ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;

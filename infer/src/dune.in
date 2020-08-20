@@ -46,12 +46,12 @@ let env_stanza =
   (opt
     (flags %s)
     (ocamlopt_flags (:standard -O3)))
-  (test
+  (dev-noerror
     (flags %s)
     (inline_tests enabled))
   )
 |}
-    lenient_flags lenient_flags strict_flags
+    strict_flags lenient_flags lenient_flags
 
 
 (** Put this *first* in (libraries) specifications to prevent a clash between extlib's and base64's

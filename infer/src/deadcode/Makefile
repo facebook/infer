@@ -41,9 +41,9 @@ default: detect_dead_code
 
 # Annoying find being different on OSX/BSD and GNU/Linux
 ifeq ($(PLATFORM),Linux)
-DEPTH_ONE=-mindepth 1 -maxdepth 1
+DEPTH_ONE = -mindepth 1 -maxdepth 1
 else
-DEPTH_ONE=-depth 1
+DEPTH_ONE = -depth 1
 endif
 
 # ./ is necessary for find to work correctly.
@@ -53,29 +53,23 @@ endif
 LIBRARY_FOLDERS = . ./IR ./absint ./al ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./clang ./clang/unit ./concurrency ./cost ./integration ./istd ./java ./labs ./nullsafe ./nullsafe/unit ./pulse ./quandary ./scripts ./test_determinator ./topl ./unit
 INCLUDE_FOLDERS = -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I clang -I clang/unit -I concurrency -I cost -I integration -I istd -I java -I labs -I nullsafe -I nullsafe/unit -I pulse -I quandary -I scripts -I test_determinator -I topl -I unit
 
-ml_src_files:=$(shell \
-	cd $(INFER_BUILD_DIR); \
-	for d in $(LIBRARY_FOLDERS); do \
-	[ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.ml' \( -not -regex '.*\.pp\.ml' \) \
-				| sed 's/^\.\///'); \
-	done)
-mli_src_files:=$(shell \
-	cd $(INFER_BUILD_DIR); \
-	for d in $(LIBRARY_FOLDERS); do \
-	[ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
-				| sed 's/^\.\///'); \
-	done)
-ml_src_files_without_mli:=$(shell \
-	cd $(INFER_BUILD_DIR); \
-	for i in $(ml_src_files); do [ -f $${i}i ] || echo $$i; done)
+ml_src_files = $(shell \
+  cd $(INFER_BUILD_DIR); \
+  for d in $(LIBRARY_FOLDERS); do \
+  [ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.ml' \( -not -regex '.*\.pp\.ml' \) \
+                | sed 's/^\.\///'); \
+  done)
 
-.PHONY: dump_ml dump_mli dump_ml_only
-dump_ml:
-	@echo $(ml_src_files)
-dump_mli:
-	@echo $(mli_src_files)
-dump_ml_only:
-	@echo $(ml_src_files_without_mli)
+mli_src_files = $(shell \
+  cd $(INFER_BUILD_DIR); \
+  for d in $(LIBRARY_FOLDERS); do \
+  [ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
+                | sed 's/^\.\///'); \
+  done)
+
+ml_src_files_without_mli:=$(shell \
+  cd $(INFER_BUILD_DIR); \
+  for i in $(ml_src_files); do [ -f $${i}i ] || echo $$i; done)
 
 .PHONY: depend
 depend:
@@ -174,7 +168,7 @@ detect_dead_code: dune
 #	dune file for this directory
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get the generated code for the lexers and parsers in ../_build
-	$(MAKE) -C .. test
+	$(MAKE) -C ..
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
 #	have changed. For both of these reasons, run another `make`.
@@ -185,10 +179,10 @@ detect_dead_code: dune
 	mv "$$tmp_file" $(ALL_INFER_IN_ONE_FILE_ML); \
 	sort -u "$$tmp_file_copied" > $(ALL_ML_FILES_COPIED); \
 	rm "$$tmp_file_copied"
-	$(MAKE) -j 1 detect_dead_src_file
 #	build and get dead code warnings
-	dune build --profile test all_infer_in_one_file.bc
+	$(DUNE_BUILD) all_infer_in_one_file.bc
 	$(REMOVE) dune
+	$(MAKE) -j 1 detect_dead_src_file
 
 .PHONY: detect_dead_src_file
 detect_dead_src_file:
@@ -200,7 +194,8 @@ detect_dead_src_file:
 	  || [[ $$1 =~ .*FrontendStubs.mli?$$ ]] \
 	  || [[ $$1 =~ ^labs/ ]] \
 	  || [[ $$1 =~ ^llvm/ ]] \
-	  || [[ $$1 =~ ^opensource/ ]]; then \
+	  || [[ $$1 =~ ^opensource/ ]] \
+	  || grep -q -F 'let%test_module' $(INFER_BUILD_DIR)/$$1 ; then \
 	    exit 0; \
           else \
 	    exit 1; \

@@ -7,87 +7,82 @@
 
 open! IStd
 module F = Format
-open OUnit2
-open ThirdPartyMethod
 
-let assert_parse_ok input expected_output =
+let parse input =
   let result = ThirdPartyMethod.parse input in
   match result with
   | Ok output ->
-      (* Check that it was parsed to the expected result*)
-      assert_equal output expected_output ~printer:(fun parse_result ->
-          Pp.string_of_pp pp parse_result ) ;
-      (* Check also that the canonical representation matches the original *)
-      assert_equal (to_canonical_string output) input
+      F.print_string (Sexp.to_string (ThirdPartyMethod.sexp_of_t output)) ;
+      let output_s = ThirdPartyMethod.to_canonical_string output in
+      if not (String.equal output_s input) then
+        F.printf
+          "@\n\
+           FAILED TEST: the canonical string of the parsed object is '%s', which does not match \
+           the input string."
+          output_s
   | Error error ->
-      assert_failure
-        (F.asprintf "Expected '%s' to be parsed, but got error %s instead" input
-           (string_of_parsing_error error))
+      F.printf "error: %s" (ThirdPartyMethod.string_of_parsing_error error)
 
 
-let assert_parse_bad input =
-  let result = ThirdPartyMethod.parse input in
-  match result with
-  | Ok output ->
-      assert_failure
-        (F.asprintf "Expected '%s' to be NOT parsed, but was parsed as %a instead" input
-           ThirdPartyMethod.pp output)
-  | Error _ ->
-      ()
+let%test_module "Third-party Method Tests OK Cases" =
+  ( module struct
+    (* No params *)
 
+    let%expect_test "no params" =
+      parse "a.b.C#foo()" ;
+      [%expect {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nonnull)(params()))|}]
 
-let success_cases =
-  "success_cases"
-  >:: fun _ ->
-  (* No params *)
-  assert_parse_ok "a.b.C#foo()"
-    {class_name= "a.b.C"; method_name= Method "foo"; params= []; ret_nullability= Nonnull} ;
-  assert_parse_ok "a.b.C#foo() @Nullable"
-    {class_name= "a.b.C"; method_name= Method "foo"; params= []; ret_nullability= Nullable} ;
-  (* One param *)
-  assert_parse_ok "a.b.C#foo(c.d.E)"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nonnull)]
-    ; ret_nullability= Nonnull } ;
-  assert_parse_ok "a.b.C#foo(@Nullable c.d.E)"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nullable)]
-    ; ret_nullability= Nonnull } ;
-  assert_parse_ok "a.b.C#foo(c.d.E) @Nullable"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nonnull)]
-    ; ret_nullability= Nullable } ;
-  assert_parse_ok "a.b.C#foo(@Nullable c.d.E) @Nullable"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nullable)]
-    ; ret_nullability= Nullable } ;
-  (* Many params *)
-  assert_parse_ok "a.b.C#foo(c.d.E, a.b.C, x.y.Z)"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nonnull); ("a.b.C", Nonnull); ("x.y.Z", Nonnull)]
-    ; ret_nullability= Nonnull } ;
-  assert_parse_ok "a.b.C#foo(c.d.E, @Nullable a.b.C, x.y.Z)"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nonnull); ("a.b.C", Nullable); ("x.y.Z", Nonnull)]
-    ; ret_nullability= Nonnull } ;
-  assert_parse_ok "a.b.C#foo(@Nullable c.d.E, a.b.C, @Nullable x.y.Z) @Nullable"
-    { class_name= "a.b.C"
-    ; method_name= Method "foo"
-    ; params= [("c.d.E", Nullable); ("a.b.C", Nonnull); ("x.y.Z", Nullable)]
-    ; ret_nullability= Nullable } ;
-  (* Constructor *)
-  assert_parse_ok "a.b.C#<init>(@Nullable c.d.E, a.b.C, x.y.Z) @Nullable"
-    { class_name= "a.b.C"
-    ; method_name= Constructor
-    ; params= [("c.d.E", Nullable); ("a.b.C", Nonnull); ("x.y.Z", Nonnull)]
-    ; ret_nullability= Nullable }
+    let%expect_test _ =
+      parse "a.b.C#foo() @Nullable" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nullable)(params()))|}]
 
+    (* One param *)
+
+    let%expect_test _ =
+      parse "a.b.C#foo(c.d.E)" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nonnull)(params((c.d.E Nonnull))))|}]
+
+    let%expect_test _ =
+      parse "a.b.C#foo(@Nullable c.d.E)" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nonnull)(params((c.d.E Nullable))))|}]
+
+    let%expect_test _ =
+      parse "a.b.C#foo(c.d.E) @Nullable" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nullable)(params((c.d.E Nonnull))))|}]
+
+    let%expect_test _ =
+      parse "a.b.C#foo(@Nullable c.d.E) @Nullable" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nullable)(params((c.d.E Nullable))))|}]
+
+    (* Many params *)
+
+    let%expect_test _ =
+      parse "a.b.C#foo(c.d.E, a.b.C, x.y.Z)" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nonnull)(params((c.d.E Nonnull)(a.b.C Nonnull)(x.y.Z Nonnull))))|}]
+
+    let%expect_test _ =
+      parse "a.b.C#foo(c.d.E, @Nullable a.b.C, x.y.Z)" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nonnull)(params((c.d.E Nonnull)(a.b.C Nullable)(x.y.Z Nonnull))))|}]
+
+    let%expect_test _ =
+      parse "a.b.C#foo(@Nullable c.d.E, a.b.C, @Nullable x.y.Z) @Nullable" ;
+      [%expect
+        {|((class_name a.b.C)(method_name(Method foo))(ret_nullability Nullable)(params((c.d.E Nullable)(a.b.C Nonnull)(x.y.Z Nullable))))|}]
+
+    (* Constructor *)
+
+    let%expect_test _ =
+      parse "a.b.C#<init>(@Nullable c.d.E, a.b.C, x.y.Z) @Nullable" ;
+      [%expect
+        {|((class_name a.b.C)(method_name Constructor)(ret_nullability Nullable)(params((c.d.E Nullable)(a.b.C Nonnull)(x.y.Z Nonnull))))|}]
+  end )
 
 (* We intentionally don't test all bad cases.
    It is generally OK for nullsafe to allow something that is not really valid:
@@ -95,28 +90,49 @@ let success_cases =
    Also we don't test exact error type, because this is an implementation detail
    needed merely to simplify diagnostics
    *)
-let bad_cases =
-  "bad_cases"
-  >:: fun _ ->
-  assert_parse_bad "" ;
-  assert_parse_bad "   " ;
-  assert_parse_bad "blablabla" ;
-  (* no # delimiter *)
-  assert_parse_bad "a.b.C.f()" ;
-  (* nested parenthesis *)
-  assert_parse_bad "a.b.C#f(())" ;
-  (* param names are not accepted *)
-  assert_parse_bad "a.b.C#f(int param)" ;
-  (* missed package for class *)
-  assert_parse_bad "C#f()" ;
-  (* Missed @ in annotation*)
-  assert_parse_bad "a.b.C#f(Nullable a.b.C)" ;
-  (* Extra spaces *)
-  assert_parse_bad "a.b.C#f( a.b.C )" ;
-  (* No space after comma *)
-  assert_parse_bad "a.b.C#f(a.b.C,a.b.C)" ;
-  (* Param names are not accepted *)
-  assert_parse_bad "a.b.C#f(@Nullable int param)"
+let%test_module "Third-party Method Tests Bad Cases" =
+  ( module struct
+    let%expect_test _ =
+      parse "" ;
+      [%expect {| error: Accepted format is <class>#<method>(<params>)[<return nullability>] |}]
 
+    let%expect_test _ =
+      parse "   " ;
+      [%expect {| error: Accepted format is <class>#<method>(<params>)[<return nullability>] |}]
 
-let test = "ThirdPartyMethodTests" >::: [success_cases; bad_cases]
+    let%expect_test _ =
+      parse "blablabla" ;
+      [%expect {|error: Accepted format is <class>#<method>(<params>)[<return nullability>]|}]
+
+    let%expect_test "no # delimiter" =
+      parse "a.b.C.f()" ;
+      [%expect {|error: Accepted format is <class>#<method>(<params>)[<return nullability>]|}]
+
+    let%expect_test "nested parenthesis" =
+      parse "a.b.C#f(())" ;
+      [%expect {|error: Accepted format is <class>#<method>(<params>)[<return nullability>]|}]
+
+    let%expect_test "param names are not accepted" =
+      parse "a.b.C#f(int param)" ;
+      [%expect {|error: Each param should have form of [@Nullable] <fully qualified type name>|}]
+
+    let%expect_test "missed package for class" =
+      parse "C#f()" ;
+      [%expect {|error: Class name should be fully qualified, including package name|}]
+
+    let%expect_test "Missed @ in annotation" =
+      parse "a.b.C#f(Nullable a.b.C)" ;
+      [%expect {|error: Each param should have form of [@Nullable] <fully qualified type name>|}]
+
+    let%expect_test "Extra spaces" =
+      parse "a.b.C#f( a.b.C )" ;
+      [%expect {|error: Each param should have form of [@Nullable] <fully qualified type name>|}]
+
+    let%expect_test "No space after comma" =
+      parse "a.b.C#f(a.b.C,a.b.C)" ;
+      [%expect {|error: Params should be separated by a comma, followed by a single space|}]
+
+    let%expect_test "Param names are not accepted" =
+      parse "a.b.C#f(@Nullable int param)" ;
+      [%expect {|error: Each param should have form of [@Nullable] <fully qualified type name>|}]
+  end )

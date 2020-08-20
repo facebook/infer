@@ -302,7 +302,10 @@ module Call = struct
           &:: "construct" <>$ capt_exp_of_prim_typ int_typ $+...$--> ImmutableSet.construct
         ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
           &:: "construct" <>$ any_arg $+ capt_exp_of_prim_typ int_typ
-          $+...$--> ImmutableSet.construct ]
+          $+...$--> ImmutableSet.construct
+        ; +PatternMatch.Java.implements_sparse_float_array
+          &:: "binarySearch" <>$ any_arg $+ capt_exp_of_prim_typ int_typ
+          $+...$--> log ~of_function:"binarySearch" ]
     in
     merge_dispatchers dispatcher FbCostModels.Call.dispatch
 end

@@ -48,3 +48,5 @@ val store_spec :
   -> unit
 
 val delete_spec : proc_name:Sqlite3.Data.t -> unit
+
+val delete_all_specs : unit -> unit
