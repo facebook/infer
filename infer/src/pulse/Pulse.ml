@@ -31,7 +31,7 @@ let check_error_transform analysis_data ~f = function
 
 let check_error_continue analysis_data result =
   check_error_transform analysis_data
-    ~f:(fun astate -> [ExecutionDomain.ContinueProgram astate])
+    ~f:(fun astates -> List.map ~f:(fun astate -> ExecutionDomain.ContinueProgram astate) astates)
     result
 
 
@@ -201,7 +201,17 @@ module PulseTransferFunctions = struct
     let astates = List.fold ~f:call_dealloc dealloc_data ~init:[Domain.ContinueProgram astate] in
     (astates, ret_vars)
 
-
+  let update_imm_var lhs_exp astate=
+    let rec update exp=
+      match (exp : Exp.t) with
+        | Lvar pvar -> AbductiveDomain.remove_imm_param (Var.of_pvar pvar) astate
+        | Lfield (exp', _, _)
+          | Lindex (exp', _) ->
+           update exp'
+        | _ -> astate
+    in
+    update lhs_exp
+ 
   let exec_instr (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
@@ -213,32 +223,77 @@ module PulseTransferFunctions = struct
         (* program already exited, simply propagate the exited state upwards  *)
         [astate]
     | ContinueProgram astate -> (
-      match instr with
+     match (astate.status : AbductiveDomain.PostStatus.t) with
+     | Er _ ->
+           (match instr with
+            | Prune (_, _, _is_then_branch, _) when _is_then_branch ->
+               []
+            | _ ->
+               [ContinueProgram astate]
+           )
+     | Ok ->
+      (match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
           (* [lhs_id := *rhs_exp] *)
-          let result =
+         let result =
+           if not Config.pulse_isl then
             let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
-            PulseOperations.write_id lhs_id rhs_addr_hist astate
+            let astate = PulseOperations.write_id lhs_id rhs_addr_hist astate in
+            [astate]
+           else
+            let+ ls_astate_rhs_addr_hist = PulseOperations.eval_deref_biad proc_desc loc rhs_exp astate in
+             PulseOperations.write_id_list lhs_id ls_astate_rhs_addr_hist
           in
           check_error_continue analysis_data result
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+      | Store {e1= lhs_exp; e2= rhs_exp; loc} -> (
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
-            let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
-            let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
-            let* astate =
-              PulseOperations.write_deref loc ~ref:lhs_addr_hist
-                ~obj:(rhs_addr, event :: rhs_history)
-                astate
-            in
-            match lhs_exp with
-            | Lvar pvar when Pvar.is_return pvar ->
-                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
-            | _ ->
-                Ok astate
+            if not Config.pulse_isl then
+              (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+              let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
+              let* astate =
+                PulseOperations.write_deref loc ~ref:lhs_addr_hist
+                    ~obj:(rhs_addr, event :: rhs_history)
+                    astate
+              in
+              match lhs_exp with
+              | Lvar pvar when Pvar.is_return pvar ->
+                 PulseOperations.check_address_escape_list loc proc_desc rhs_addr rhs_history [astate]
+              | _ ->
+                 Ok [astate])
+            else
+              (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+               let astate = AbductiveDomain.add_mod_addr rhs_addr astate in
+               let astate = update_imm_var lhs_exp astate in
+               let* is_biad, ls_astate_lhs_addr_hist = PulseOperations.eval_structure proc_desc loc lhs_exp astate in
+               let* astates =
+                 List.fold ls_astate_lhs_addr_hist ~init:(Ok [])
+                     ~f:(fun acc (astate, lhs_addr_hist) ->
+                         match acc with
+                         | Ok  acc_astates ->
+                          (match astate.AbductiveDomain.status with
+                           | Ok ->
+                              let+ astates =
+                                if is_biad then
+                                  PulseOperations.write_deref_biad (Procdesc.get_proc_name proc_desc) loc ~ref:lhs_addr_hist Dereference ~obj:(rhs_addr, event :: rhs_history) astate
+                                else
+                                  let+ astate = PulseOperations.write_deref loc ~ref:lhs_addr_hist ~obj:(rhs_addr, event :: rhs_history) astate in
+                                  [astate]
+                              in
+                              acc_astates@astates
+                           | Er _ ->
+                              Ok (acc_astates@[astate])
+                          )
+                         | Error _ as a -> a)
+              in
+              match lhs_exp with
+              | Lvar pvar when Pvar.is_return pvar ->
+                 PulseOperations.check_address_escape_list loc proc_desc rhs_addr rhs_history astates
+              | _ ->
+                 Ok astates)
           in
-          check_error_continue analysis_data result
+          check_error_continue analysis_data result)
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           PulseOperations.prune loc ~condition astate
           |> check_error_transform analysis_data ~f:(fun astate ->
@@ -260,7 +315,7 @@ module PulseTransferFunctions = struct
                     [astate]
                 | ContinueProgram astate ->
                     let astate =
-                      PulseOperations.remove_vars vars location astate
+                      PulseOperations.remove_vars (Procdesc.get_proc_name proc_desc) vars location astate
                       |> check_error_continue analysis_data
                     in
                     List.rev_append astate astates )
@@ -285,17 +340,17 @@ module PulseTransferFunctions = struct
       | Metadata (VariableLifetimeBegins (pvar, _, location)) when not (Pvar.is_global pvar) ->
           [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
-          [Domain.ContinueProgram astate] )
+          [Domain.ContinueProgram astate] ))
 
 
-  let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
+  let pp_session_name _node fmt = F.pp_print_string fmt (if not Config.pulse_isl then "Pulse" else "Pil")
 end
 
 module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
-      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
+      let join_policy = `UnderApproximateAfter (if not Config.pulse_isl then Config.pulse_max_disjuncts else Config.pil_max_disjuncts)
 
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
@@ -305,6 +360,32 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
-      Some (PulseSummary.of_posts proc_desc posts)
+     if not Config.pulse_isl then
+       Some (PulseSummary.of_posts proc_desc posts)
+     else
+       (let simpl_er_posts, re_posts, abort_posts, is_raised_er =
+          List.fold posts ~init:([], [], [], false) ~f:(fun (r1, re, ra, r3) post ->
+          match post with
+          | ExecutionDomain.ContinueProgram astate -> (
+              match astate.AbductiveDomain.status with
+              | AbductiveDomain.PostStatus.Er _ when (BaseDomain.is_empty (astate.pre :> BaseDomain.t)) -> (r1, re, ra, r3)
+              | AbductiveDomain.PostStatus.Er raise_opt -> r1@[astate], re, ra, (r3 || Option.is_some raise_opt)
+              | _ -> r1, re@[post], ra, r3 )
+          | ExecutionDomain.AbortProgram astate -> r1, re, ra@[ExecutionDomain.AbortProgram  astate], r3
+          | _ -> r1, re@[post], ra, r3)
+        in
+        let () =
+          if is_raised_er && List.is_empty abort_posts then
+            let diagnostic_opt = PulseOperations.merge_spec (Procdesc.get_loc proc_desc) simpl_er_posts in
+            match diagnostic_opt with
+            | Some diagnostic ->
+               report analysis_data diagnostic
+            | None ->
+               ()
+          else
+            ()
+        in
+        let simpl_posts = (List.map simpl_er_posts ~f:(fun astate -> ExecutionDomain.ContinueProgram astate))@re_posts@abort_posts in
+        Some (PulseSummary.of_posts proc_desc simpl_posts))
   | None ->
       None

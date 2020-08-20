@@ -713,6 +713,8 @@ type t =
 
 let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
 
+let is_ttrue {var_eqs; linear_eqs; atoms} = VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Atom.Set.is_empty atoms
+  
 let pp_with_pp_var pp_var fmt phi =
   let pp_linear_eqs fmt m =
     if Var.Map.is_empty m then F.pp_print_string fmt "true (no linear)"
@@ -1164,7 +1166,34 @@ let simplify ~keep phi =
   let atoms = Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.atoms in
   {var_eqs; linear_eqs; atoms}
 
-
+let get_variables {var_eqs; linear_eqs; atoms}=
+   let get_var_eqs acc =
+    VarUF.fold_congruences var_eqs ~init:acc
+      ~f:(fun acc_f  (repr_foreign, vs_foreign) ->
+        let acc_f = Var.Set.add (repr_foreign :> Var.t) acc_f in
+        IContainer.fold_of_pervasives_set_fold Var.Set.fold vs_foreign ~init:(acc_f)
+          ~f:(fun acc_f v_foreign ->
+            Var.Set.add v_foreign acc_f
+      ) )
+  in
+  let get_linear_eqs acc =
+    IContainer.fold_of_pervasives_map_fold Var.Map.fold linear_eqs ~init:acc
+      ~f:(fun acc_f (v_foreign, l_foreign) ->
+        let acc_f =  Var.Set.add v_foreign acc_f in
+        (fst (LinArith.fold_map_variables l_foreign ~init:acc_f ~f:(fun acc_f var -> Var.Set.add var acc_f,var))))
+  in
+  let get_atoms acc =
+    IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms ~init:acc
+      ~f:(fun acc_f atom_foreign ->
+        let acc_f, _ =
+          Atom.fold_map_variables atom_foreign ~init:acc_f ~f:(fun acc_f v ->
+              let acc_f =  Var.Set.add v acc_f in
+              (acc_f, Term.Var v) )
+        in
+        (acc_f) )
+  in
+  get_atoms (get_linear_eqs (get_var_eqs Var.Set.empty))
+  
 let is_known_zero phi v =
   Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
   |> Option.exists ~f:LinArith.is_zero

@@ -171,6 +171,18 @@ let is_equal_to_zero = function
   | Between (Int l, Int u) when IntLit.iszero l && IntLit.iszero u ->
       true
   | _ ->
+     false
+
+let is_equal_to i = function
+  | Between (Int l, Int u) when IntLit.eq l i && IntLit.eq u i ->
+      true
+  | _ ->
+     false
+
+let is_neq_to_zero = function
+  | Outside (l, u) when IntLit.iszero l && IntLit.iszero u ->
+      true
+  | _ ->
       false
 
 

@@ -16,6 +16,11 @@ type t =
 
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 
+let set_outer_location new_loc trace =
+  match trace with
+    | Immediate tr -> Immediate {tr with location = new_loc}
+    | ViaCall tr -> ViaCall {tr with location = new_loc}
+                                                                                                                                                                      
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history
 
 let get_start_location trace =

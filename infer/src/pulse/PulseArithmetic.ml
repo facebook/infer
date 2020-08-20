@@ -47,6 +47,10 @@ let prune_binop ~negated bop lhs_op rhs_op astate =
 
 let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v
 
+let is_equal_to astate v i = PathCondition.is_equal_to astate.AbductiveDomain.path_condition v i
+                                                      
+let is_known_neq_zero astate v = PathCondition.is_known_neq_zero astate.AbductiveDomain.path_condition v
+                                                      
 let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition
 
 let is_unsat_expensive astate =

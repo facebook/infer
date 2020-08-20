@@ -17,15 +17,20 @@ type t =
       {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | OrError of (t list * Location.t)
+[@@deriving compare]
+
+let equal = [%compare.equal: t]
 
 let get_location = function
   | AccessToInvalidAddress {access_trace} ->
       Trace.get_outer_location access_trace
   | MemoryLeak {location} | StackVariableAddressEscape {location} ->
-      location
+     location
+  | OrError (_, location) -> location
 
 
-let get_message = function
+let rec get_message ?print_loc:(pr=false) = function
   | AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} ->
       (* The goal is to get one of the following messages depending on the scenario:
 
@@ -43,16 +48,22 @@ let get_message = function
 
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
-      *)
+       *)
+      let pp_line fmt line = if line < 0 then F.fprintf fmt " in a caller" else F.fprintf fmt " on line %d" line in
       let pp_access_trace fmt (trace : Trace.t) =
         match trace with
-        | Immediate _ ->
-            F.fprintf fmt "accessing memory that "
-        | ViaCall {f; _} ->
-            F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+        | Immediate {location} ->
+             if pr then
+                 F.fprintf fmt "accessing memory (%a) that " pp_line location.Location.line
+             else
+                 F.fprintf fmt "accessing memory that "
+        | ViaCall {f; location} ->
+             if pr then
+                 F.fprintf fmt ("call to %a eventually accesses memory (%a) that ") CallEvent.describe f pp_line location.Location.line
+             else
+                 F.fprintf fmt ("call to %a eventually accesses memory that ") CallEvent.describe f
       in
       let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-        let pp_line fmt line = F.fprintf fmt " on line %d" line in
         match trace with
         | Immediate _ ->
             F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
@@ -87,7 +98,8 @@ let get_message = function
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "address of %a is returned by the function" pp_var variable
-
+  | OrError (ers, _) ->
+     F.asprintf "If this function is called, one of the following errors will happen:\n%s" (List.fold ers ~init:"" ~f:(fun acc er -> acc ^ ("   - " ^ get_message ~print_loc:true er) ^"\n"))
 
 let add_errlog_header ~title location errlog =
   let depth = 0 in
@@ -122,6 +134,8 @@ let get_trace = function
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
+  | OrError _ ->
+     []
 
 
 let get_issue_type = function
@@ -131,3 +145,5 @@ let get_issue_type = function
       IssueType.pulse_memory_leak
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape
+  | OrError _ ->
+     IssueType.combined_pointer_errors

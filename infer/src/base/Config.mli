@@ -453,9 +453,13 @@ val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
 val pulse_recency_limit : int
 
+val pulse_isl : bool
+
 val pulse_intraprocedural_only : bool
 
 val pulse_max_disjuncts : int
+
+val pil_max_disjuncts : int
 
 val pulse_model_abort : string list
 

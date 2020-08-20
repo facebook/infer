@@ -32,6 +32,10 @@ val prune_binop :
 
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 
+val is_equal_to : AbductiveDomain.t -> AbstractValue.t -> IntLit.t -> bool
+
+val is_known_neq_zero : AbductiveDomain.t -> AbstractValue.t -> bool
+
 val is_unsat_cheap : AbductiveDomain.t -> bool
 
 val is_unsat_expensive : AbductiveDomain.t -> AbductiveDomain.t * bool

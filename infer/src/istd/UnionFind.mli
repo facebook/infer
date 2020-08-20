@@ -27,6 +27,8 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) : sig
 
   val empty : t
 
+  val is_empty : t -> bool
+
   val union : t -> X.t -> X.t -> t * (X.t * repr) option
   (** return the optional new equality added between the old representatives of the two items in the
       form of "old representative = new representative", [None] if they were already in the same

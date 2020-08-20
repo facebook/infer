@@ -24,7 +24,9 @@ let empty =
   ; stack= Stack.empty
   ; attrs= AddressAttributes.empty }
 
-
+let is_empty {heap; stack; attrs}=
+  Memory.is_empty heap && Stack.is_empty stack && AddressAttributes.is_empty attrs
+      
 type cell = Memory.Edges.t * Attributes.t
 
 let find_cell_opt addr {heap; attrs} =
@@ -251,9 +253,34 @@ end
 
 include GraphComparison
 
-let reachable_addresses astate =
+let reachable_addresses_from var_mem astate =
   GraphVisit.fold astate
-    ~var_filter:(fun _ -> true)
+    ~var_filter:var_mem
     ~init:() ~finish:Fn.id
     ~f:(fun () _ _ _ -> Continue ())
   |> fst
+
+let reachable_addresses astate = reachable_addresses_from (fun _ -> true) astate
+
+let is_reachable address nonlocal_vars astate =
+  let var_mem v = Var.Set.mem v nonlocal_vars in
+  GraphVisit.fold astate
+    ~var_filter:var_mem
+    ~init:false ~finish:Fn.id
+    ~f:(fun acc addr _ _ ->
+        if AbstractValue.equal addr address then
+            Stop true
+        else Continue acc)
+  |> snd
+
+let reachable_vars_from address var_mem astate =
+  GraphVisit.fold astate
+    ~var_filter:var_mem
+    ~init:(Var.Set.empty) ~finish:Fn.id
+    ~f:(fun acc addr var _ ->
+        if AbstractValue.equal addr address then
+            Stop (Var.Set.add var acc)
+        else Continue acc)
+  |> snd
+
+

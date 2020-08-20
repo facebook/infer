@@ -7,12 +7,26 @@
 open! IStd
 module F = Format
 open PulseBasicInterface
+   
+module VarAddress : sig
+  type t = Var.t
 
+  val equal : t -> t -> bool
+end
+
+module AddrHistPair : sig
+  type t = AbstractValue.t * ValueHistory.t
+
+end
+     
 include
-  PrettyPrintable.MonoMap with type key = Var.t and type value = AbstractValue.t * ValueHistory.t
+  PrettyPrintable.MonoMap with type key = VarAddress.t and type value = AddrHistPair.t
+
 
 (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
      different type *)
 val compare : t -> t -> int [@@warning "-32"]
 
 val pp : F.formatter -> t -> unit
+
+val get_vars : t -> VarAddress.t list

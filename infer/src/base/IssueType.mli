@@ -141,6 +141,9 @@ val cross_site_scripting : t
 
 val dangling_pointer_dereference : t
 
+val pulse_dangling_pointer_dereference : t
+
+
 val dangling_pointer_dereference_maybe : t
 
 val dead_store : t
@@ -348,4 +351,6 @@ val weak_self_in_noescape_block : t
 
 val wrong_argument_number : t
 
+val combined_pointer_errors : t
+  
 val unreachable_cost_call : kind:CostKind.t -> t

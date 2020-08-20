@@ -11,10 +11,12 @@ open PulseBasicInterface
 (** Stacks: map addresses of variables to values and histoy. *)
 
 module VarAddress = struct
-  include Var
+  type t = Var.t [@@deriving compare]
 
+  let equal = [%compare.equal: t]
+             
   let pp f var =
-    let pp_ampersand f = function ProgramVar _ -> F.pp_print_string f "&" | LogicalVar _ -> () in
+    let pp_ampersand f = function Var.ProgramVar _ -> F.pp_print_string f "&" | Var.LogicalVar _ -> () in
     F.fprintf f "%a%a" pp_ampersand var Var.pp var
 end
 
@@ -28,6 +30,7 @@ module AddrHistPair = struct
 end
 
 include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
+module Stack = PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
 
 let pp fmt m =
   let pp_item fmt (var_address, v) =
@@ -37,3 +40,6 @@ let pp fmt m =
 
 
 let compare = compare AddrHistPair.compare
+
+let get_vars (stack: t)=
+  Stack.fold (fun v _ acc -> acc@[v]) stack []

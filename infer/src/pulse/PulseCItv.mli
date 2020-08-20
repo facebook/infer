@@ -15,6 +15,10 @@ val equal_to : IntLit.t -> t
 
 val is_equal_to_zero : t -> bool
 
+val is_equal_to : IntLit.t -> t -> bool
+
+val is_neq_to_zero : t -> bool
+
 val pp : F.formatter -> t -> unit
 
 type abduction_result =

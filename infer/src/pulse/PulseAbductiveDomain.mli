@@ -12,6 +12,7 @@ module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
+module VarSet = Var.Set
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
     when necessary
@@ -49,13 +50,23 @@ module PostDomain : BaseDomainSig
     lattice of [Domain], but since we never actually join states or check implication the two
     collapse into one. * *)
 module PreDomain : BaseDomainSig
+module PostStatus : sig
+    type t = Ok | Er  of Diagnostic.t option
+    val pp : Format.formatter -> t -> unit
+    val eq: t -> t -> bool
+end
 
 (** biabduction-style pre/post state + skipped calls *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
-  ; path_condition: PathCondition.t  (** arithmetic facts *) }
+  ; path_condition: PathCondition.t  (** arithmetic facts *)
+  ; status: PostStatus.t
+  ; local_ptrvars : VarSet.t
+  ; nonref_formals : VarSet.t
+  ; imm_params : VarSet.t
+  ; mod_addrs : AbstractValue.Set.t }
 
 val leq : lhs:t -> rhs:t -> bool
 
@@ -78,7 +89,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval : Location.t -> ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -94,6 +105,16 @@ module Memory : sig
   module Access = BaseMemory.Access
   module Edges = BaseMemory.Edges
 
+  val map_post_heap :
+    f:(BaseMemory.t -> BaseMemory.t)
+    -> t
+    -> t
+
+  val map_pre_heap :
+    f:(BaseMemory.t -> BaseMemory.t)
+    -> t
+    -> t
+    
   val add_edge :
        AbstractValue.t * ValueHistory.t
     -> Access.t
@@ -101,6 +122,10 @@ module Memory : sig
     -> Location.t
     -> t
     -> t
+
+  val register_address: AbstractValue.t -> t -> t
+
+  val remove_address: AbstractValue.t -> t -> t
 
   val eval_edge :
     AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
@@ -110,16 +135,33 @@ module Memory : sig
   val find_opt : AbstractValue.t -> t -> BaseMemory.Edges.t option
 
   val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+
+  val find_edges_opt : AbstractValue.t -> t -> Edges.t option
 end
 
 (** attribute operations like {!BaseAddressAttributes} but that also take care of propagating facts
     to the precondition *)
 module AddressAttributes : sig
+  val map_pre_attrs :
+    f:(BaseAddressAttributes.t -> BaseAddressAttributes.t)
+    -> t
+    -> t
+
+  val map_post_attrs :
+    f:(BaseAddressAttributes.t -> BaseAddressAttributes.t)
+    -> t
+    -> t
+    
   val abduce_and_add : AbstractValue.t -> Attributes.t -> t -> t
   (** add the attributes to both the current state and, if meaningful, the pre *)
 
+  val abduce_attrs : AbstractValue.t -> Attributes.t -> t -> t
+
+
   val add_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute only to the post *)
+
+  val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
@@ -131,18 +173,26 @@ module AddressAttributes : sig
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
+  val remove_must_be_valid_attr : AbstractValue.t -> t -> t
+
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
 
   val mark_as_end_of_collection : AbstractValue.t -> t -> t
 
+  val is_pre_invalid_const : AbstractValue.t -> t -> bool
+
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
   val std_vector_reserve : AbstractValue.t -> t -> t
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
+
+  val check_valid_and_abduce : Procname.t -> Trace.t -> AbstractValue.t -> ?null_noop:bool -> bool -> bool -> t -> (t list, Invalidation.t * Trace.t * t) result
+
 end
+
 
 val is_local : Var.t -> t -> bool
 
@@ -156,9 +206,23 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
+val set_status : PostStatus.t -> t -> t
+
+val set_er_status : t -> t
+
+val remove_imm_param : Var.t -> t -> t
+
+val add_mod_addr : AbstractValue.t -> t -> t
+
+val remove_local_var : Var.t -> t -> t
+  
+
+
 val set_path_condition : PathCondition.t -> t -> t
 
 val of_post : Procdesc.t -> t -> t
+
+val invalidate_locals : Procdesc.t -> t -> t
 
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)

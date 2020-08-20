@@ -28,6 +28,7 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
+    | AbdAllocated of Procname.t * Trace.t
     | Closure of Procname.t
     | DynamicType of Typ.Name.t
     | EndOfCollection
@@ -69,7 +70,16 @@ module Attribute = struct
   let dynamic_type_rank = Variants.to_rank (DynamicType (Typ.Name.Objc.from_string ""))
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
+                        
+  let abdallocated_rank = Variants.to_rank (AbdAllocated (Procname.Linters_dummy_method, dummy_trace))
 
+  let is_imply attr1 attr2=
+    match attr1, attr2 with
+      | (MustBeValid _ | Allocated _ | AbdAllocated _ ), Invalid _ -> false
+      | Invalid _, (MustBeValid _ | Allocated _ | AbdAllocated _) -> false
+      | Invalid (v1, _), Invalid (v2, _) -> Invalidation.equal v1 v2
+      | _ -> true
+ 
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -83,6 +93,11 @@ module Attribute = struct
         F.fprintf f "Allocated %a"
           (Trace.pp
              ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)))
+          trace
+    | AbdAllocated (procname, trace) ->
+        F.fprintf f "AbdAllocated %a"
+          (Trace.pp
+             ~pp_immediate:(pp_string_if_debug ("abdallocation with " ^ Procname.to_string procname)))
           trace
     | Closure pname ->
         Procname.pp f pname
@@ -101,6 +116,12 @@ module Attribute = struct
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 end
+module PPKey = struct
+  type nonrec t = Attribute.t [@@deriving compare]
+
+  let pp = Attribute.pp
+end
+module Set = PrettyPrintable.MakePPSet (PPKey)
 
 module Attributes = struct
   module Set = PrettyPrintable.MakePPUniqRankSet (Int) (Attribute)
@@ -159,6 +180,48 @@ module Attributes = struct
            let[@warning "-8"] (Attribute.Allocated (procname, trace)) = attr in
            (procname, trace) )
 
+  let get_abdallocation attrs =
+    Set.find_rank attrs Attribute.abdallocated_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.AbdAllocated (pname, action)) = attr in
+           (pname, action) )
+
+  let is_not_empty_heap attrs =
+    Option.is_some (Set.find_rank attrs Attribute.abdallocated_rank)
+    || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
+    
+
+  let is_imply attrs1 attrs2=
+    Set.fold attrs1 ~init:true ~f:(fun acc attr1 ->
+            Set.fold attrs2 ~init:acc ~f:(fun acc2 attr2 ->
+                    acc2 && (Attribute.is_imply attr1 attr2)
+                )
+        )
+  (*if att in attrs_callee has been abduced, then replace the actual attr in attrs_caller,
+    if any*)
+  let replace_abduce attrs_callee attrs_caller=
+    Set.fold attrs_callee ~init:Set.empty ~f:(fun acc attr1 ->
+     let attr1 =
+       match attr1 with
+       | AbdAllocated _ -> (match get_allocation attrs_caller with
+                             | None -> attr1
+                             | Some (p, a) -> Attribute.Allocated (p, a)
+                           )
+       | Invalid (v_callee, _) ->
+          ( match get_invalid attrs_caller with
+              | None -> attr1
+              | Some (v_caller, trace) -> (
+                  match v_callee, v_caller with
+                    | CFree, (CFree | CppDelete) -> Attribute.Invalid (v_caller, trace)
+                    | ConstantDereference i, OptionalEmpty when IntLit.iszero i ->
+                       Attribute.Invalid (OptionalEmpty, trace)
+                    | _ -> attr1
+              )
+          )
+       | _ -> attr1
+     in
+     Set.add acc attr1
+    )
 
   let get_dynamic_type attrs =
     Set.find_rank attrs Attribute.dynamic_type_rank
@@ -175,13 +238,13 @@ include Attribute
 let is_suitable_for_pre = function
   | MustBeValid _ ->
       true
+  | Invalid _ | Allocated _ | AbdAllocated _ ->
+     if not Config.pulse_isl then false else true
   | AddressOfCppTemporary _
   | AddressOfStackVariable _
-  | Allocated _
   | Closure _
   | DynamicType _
   | EndOfCollection
-  | Invalid _
   | StdVectorReserve
   | WrittenTo _ ->
       false
@@ -189,7 +252,9 @@ let is_suitable_for_pre = function
 
 let map_trace ~f = function
   | Allocated (procname, trace) ->
-      Allocated (procname, f trace)
+     Allocated (procname, f trace)
+  | AbdAllocated (procname, trace) ->
+     AbdAllocated (procname, f trace)
   | Invalid (invalidation, trace) ->
       Invalid (invalidation, f trace)
   | MustBeValid trace ->

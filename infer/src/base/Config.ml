@@ -1834,6 +1834,9 @@ and pulse_cut_to_one_path_procedures_pattern =
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
 
+and pulse_isl =
+  CLOpt.mk_bool ~long:"isl" ~default:false
+    "[Pulse] enable ISL - Incorrectness Separation Logic"
 
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
@@ -1885,6 +1888,10 @@ and pulse_model_transfer_ownership =
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
+
+and pil_max_disjuncts =
+  CLOpt.mk_int ~long:"pil-max-disjuncts" ~default:100
+    "Under-approximate after $(i,int) disjunctions in the domain"
 
 
 and pure_by_default =
@@ -2978,9 +2985,13 @@ and pulse_cut_to_one_path_procedures_pattern =
 
 and pulse_recency_limit = !pulse_recency_limit
 
+and pulse_isl = !pulse_isl
+
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pil_max_disjuncts = !pil_max_disjuncts
 
 and pulse_model_abort = !pulse_model_abort
 

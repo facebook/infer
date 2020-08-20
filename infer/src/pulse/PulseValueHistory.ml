@@ -15,7 +15,7 @@ type event =
   | Capture of {captured_as: Pvar.t; location: Location.t}
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
-  | FormalDeclared of Pvar.t * Location.t
+  | FormalDeclared of Pvar.t * Typ.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
@@ -40,12 +40,13 @@ let pp_event_no_location fmt event =
         is_then_branch
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"
-  | FormalDeclared (pvar, _) ->
-      let pp_proc fmt pvar =
+  | FormalDeclared (pvar, typ,  _) ->
+      let pp_proc fmt pvar=
         Pvar.get_declaring_function pvar
         |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
-      F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+      F.fprintf fmt "parameter `%a`%a:%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+          (Typ.pp Pp.text) typ
   | VariableAccessed (pvar, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _) ->
@@ -59,7 +60,7 @@ let location_of_event = function
   | Capture {location}
   | Conditional {location}
   | CppTemporaryCreated location
-  | FormalDeclared (_, location)
+  | FormalDeclared (_, _, location)
   | VariableAccessed (_, location)
   | VariableDeclared (_, location) ->
       location

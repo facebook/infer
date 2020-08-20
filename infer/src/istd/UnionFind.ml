@@ -28,6 +28,8 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
 
     val empty : t
 
+    val is_empty : t -> bool
+
     val find_opt : t -> X.t -> repr option
 
     val find : t -> X.t -> repr
@@ -46,6 +48,8 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
     type t = X.t Map.t
 
     let empty = Map.empty
+
+    let is_empty = Map.is_empty
 
     let find_opt reprs x =
       let rec find_opt_aux candidate_repr =
@@ -85,6 +89,8 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
   type t = {reprs: UF.t; classes: XSet.t UF.Map.t}
 
   let empty = {reprs= UF.empty; classes= UF.Map.empty}
+
+  let is_empty {reprs; classes} = UF.is_empty reprs && UF.Map.is_empty classes
 
   let find_opt uf x = UF.find_opt uf.reprs x
 

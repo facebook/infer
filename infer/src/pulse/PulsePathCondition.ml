@@ -43,6 +43,10 @@ let true_ = {is_unsat= false; bo_itvs= BoItvs.empty; citvs= CItvs.empty; formula
 
 let false_ = {is_unsat= true; bo_itvs= BoItvs.empty; citvs= CItvs.empty; formula= Formula.ttrue}
 
+let is_true phi=
+  (not phi.is_unsat) && BoItvs.is_empty phi.bo_itvs &&
+      CItvs.is_empty phi.citvs && Formula.is_ttrue phi.formula
+
 let map_sat phi f = if phi.is_unsat then phi else f phi
 
 let ( let+ ) phi f = map_sat phi f
@@ -364,6 +368,18 @@ let is_known_zero phi v =
   CItvs.find_opt v phi.citvs |> Option.value_map ~default:false ~f:CItv.is_equal_to_zero
   || BoItvs.find_opt v phi.bo_itvs |> Option.value_map ~default:false ~f:Itv.ItvPure.is_zero
   || Formula.is_known_zero phi.formula v
+
+let is_equal_to phi v i =
+  let bo_i = Itv.ItvPure.of_int_lit i in
+  CItvs.find_opt v phi.citvs |> Option.value_map ~default:false ~f:(CItv.is_equal_to i)
+  || BoItvs.find_opt v phi.bo_itvs |> Option.value_map ~default:false ~f:(Itv.ItvPure.is_equal bo_i)
+
+let get_variables phi=
+  Formula.get_variables phi.formula
+
+let is_known_neq_zero phi v =
+  (* don't ask sledge because it might be too expensive *)
+  CItvs.find_opt v phi.citvs |> Option.value_map ~default:false ~f:CItv.is_neq_to_zero
 
 
 let is_unsat_cheap phi = phi.is_unsat

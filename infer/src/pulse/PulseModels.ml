@@ -62,6 +62,15 @@ module Misc = struct
     |> PulseArithmetic.and_positive ret_addr
     |> PulseOperations.ok_continue
 
+  let cpp_new ~desc : model =
+   fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let ret_addr = AbstractValue.mk_fresh () in
+    let ret_value = (ret_addr, [event]) in
+    PulseOperations.write_id ret_id ret_value astate
+    |> PulseOperations.allocate callee_procname location ret_value
+    |> PulseArithmetic.and_positive ret_addr
+    |> PulseOperations.ok_continue
 
   let return_unknown_size : model =
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
@@ -83,18 +92,41 @@ module Misc = struct
     PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
 end
 
+let check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates=
+  List.fold astates ~init:(Ok ()) ~f:(fun acc astate ->
+          match astate.AbductiveDomain.status with
+          | AbductiveDomain.PostStatus.Ok ->
+               (* temporaly remove deleted addr *)
+               let astate = Memory.remove_address deleted_addr astate in
+               let live_addresses_after = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
+               let unreachable_addrs = AbstractValue.Set.diff live_addresses_before_free live_addresses_after in
+               let+ _ = PulseOperations.check_memory_leak callee_procname location unreachable_addrs astate in
+               ()
+          | AbductiveDomain.PostStatus.Er _ -> acc
+      )
+
 module C = struct
-  let free deleted_access : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
+  let free ((deleted_addr, _) as deleted_access) : model =
+   fun _ ~callee_procname location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
     if PulseArithmetic.is_known_zero astate (fst deleted_access) then
       PulseOperations.ok_continue astate
-    else
-      let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
-      [ExecutionDomain.ContinueProgram astate]
+    else (
+      if not Config.pulse_isl then
+        let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+        let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
+        [ExecutionDomain.ContinueProgram astate]
+     else
+        let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
+        let* astates = PulseOperations.invalidate_biad callee_procname location Invalidation.CFree ~null_noop:true deleted_access astate in
+        let+ () = check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates in
+        List.map astates ~f:(fun astate ->
+             let modified_vars = BaseDomain.reachable_vars_from deleted_addr (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
+             let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
+             ExecutionDomain.ContinueProgram astate)
+     )
 
 
   let malloc _ : model =
@@ -171,6 +203,12 @@ module FollyOptional = struct
     let* astate, value_field = to_internal_value location this astate in
     let value_hist = (fst value, event :: snd value) in
     let+ astate = PulseOperations.write_deref location ~ref:value_field ~obj:value_hist astate in
+    let astate =
+       if not Config.pulse_isl then
+         astate
+       else
+       PulseOperations.add_attr_post (fst value) (MustBeValid (Trace.Immediate {location; history= snd value_hist})) astate
+    in
     (astate, value_hist)
 
 
@@ -179,11 +217,19 @@ module FollyOptional = struct
 
 
   let assign_none this ~desc : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
+   fun _ ~callee_procname location ~ret:_ astate ->
     let* astate, value = assign_value_fresh location this ~desc astate in
     let astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
-    let+ astate = PulseOperations.invalidate location Invalidation.OptionalEmpty value astate in
-    [ExecutionDomain.ContinueProgram astate]
+    let+ astates =
+      if not Config.pulse_isl then
+        let+ astate = PulseOperations.invalidate location Invalidation.OptionalEmpty value astate in
+        [astate]
+      else
+        let+ astates = PulseOperations.invalidate_biad callee_procname location Invalidation.OptionalEmpty value astate in
+	astates
+    in
+    List.map astates ~f:(fun astate ->
+            ExecutionDomain.ContinueProgram astate)
 
 
   let assign_value this init ~desc : model =
@@ -225,12 +271,23 @@ module FollyOptional = struct
 end
 
 module Cplusplus = struct
-  let delete deleted_access : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let+ astate =
-      PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
-    in
-    [ExecutionDomain.ContinueProgram astate]
+  let delete ((deleted_addr, _) as deleted_access) : model =
+   fun _ ~callee_procname location ~ret:_ astate ->
+    if not Config.pulse_isl then
+      let+ astate =
+        PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
+      in
+      [ExecutionDomain.ContinueProgram astate]
+    else
+      let live_addresses_before_free = BaseDomain.reachable_addresses (astate.AbductiveDomain.post :> BaseDomain.t) in
+      let* astates =
+       PulseOperations.invalidate_biad callee_procname location Invalidation.CppDelete deleted_access  astate
+      in
+      let+ () = check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates in
+      List.map astates ~f:(fun astate ->
+            let modified_vars = BaseDomain.reachable_vars_from deleted_addr (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
+             let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
+             ExecutionDomain.ContinueProgram astate)
 
 
   let placement_new actuals : model =
@@ -483,7 +540,9 @@ module GenericArrayBackedCollection = struct
   let eval_element location internal_array index astate =
     PulseOperations.eval_access location internal_array (ArrayAccess (Typ.void, index)) astate
 
-
+  let get_array_access internal_array ati astate =
+    PulseOperations.get_array_access internal_array ati astate
+    
   let element location collection index astate =
     let* astate, internal_array = eval location collection astate in
     eval_element location internal_array index astate
@@ -694,10 +753,19 @@ module StdVector = struct
     let event = ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= []} in
     let pointer_hist = event :: snd iter in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
-    let index_zero = AbstractValue.mk_fresh () in
-    let astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
     let* astate, ((arr_addr, _) as arr) =
       GenericArrayBackedCollection.eval location vector astate
+    in
+    let index_zero , astate =
+      if not Config.pulse_isl then
+        let index_zero = AbstractValue.mk_fresh () in
+        (index_zero, PulseArithmetic.and_eq_int index_zero IntLit.zero astate)
+     else
+      (match GenericArrayBackedCollection.get_array_access arr_addr IntLit.zero astate with
+        | None ->
+           let index_zero = AbstractValue.mk_fresh () in
+           index_zero, PulseArithmetic.and_eq_int index_zero IntLit.zero astate
+        | Some v -> v, astate)
     in
     let* astate, _ = GenericArrayBackedCollection.eval_element location arr index_zero astate in
     PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
@@ -854,7 +922,7 @@ module ProcNameDispatcher = struct
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
-        ; +match_builtin BuiltinDecl.__new &--> Misc.return_positive ~desc:"new"
+        ; +match_builtin BuiltinDecl.__new &--> (if not Config.pulse_isl then Misc.return_positive else Misc.cpp_new) ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
         ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg

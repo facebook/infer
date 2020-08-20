@@ -52,6 +52,10 @@ let find_opt = Graph.find_opt
 
 let empty = Graph.empty
 
+let is_empty = Graph.is_empty
+
+let remove = Graph.remove
+           
 let filter = Graph.filter
 
 let filter_with_discarded_addrs f x =
@@ -93,12 +97,62 @@ let remove_allocation_attr address memory =
   | Some (procname, trace) ->
       remove_one address (Attribute.Allocated (procname, trace)) memory
   | None ->
+     memory
+
+let remove_abdallocation_attr address memory =
+  match get_attribute Attributes.get_abdallocation address memory with
+  | Some (procname, trace) ->
+      remove_one address (Attribute.AbdAllocated (procname, trace)) memory
+  | None ->
+     memory
+
+let remove_must_be_valid_attr address memory =
+  match get_attribute Attributes.get_must_be_valid address memory with
+  | Some trace ->
+      remove_one address (Attribute.MustBeValid trace) memory
+  | None ->
       memory
 
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+let get_invalid = get_attribute Attributes.get_invalid
+
+exception Found of (AbstractValue.t * Invalidation.t * Trace.t)
+                
+let find_first_invalid memory=
+  try
+      Graph.fold (fun addr attrs acc ->
+              match Attributes.get_invalid attrs with
+                | Some (invalidation, trace) ->
+                   raise (Found (addr, invalidation, trace))
+                | None ->
+                   acc) memory None
+  with Found res -> Some res
+
+let get_address_of_stack_variable =
+  get_attribute Attributes.get_address_of_stack_variable
+
+let exist_invalid addrs addr_attrs=
+  AbstractValue.Set.exists (fun addr -> Option.is_some (get_invalid addr addr_attrs)) addrs
+
+let is_invalid_const address attrs =
+  let invalid_attrs = get_attribute Attributes.get_invalid address attrs in
+  match invalid_attrs with Some (ConstantDereference _, _) -> true | _ -> false
+
+let get_must_be_valid =
+  get_attribute Attributes.get_must_be_valid
+
+let get_must_be_valid_or_allocated address attrs =
+  match get_must_be_valid address attrs with
+    | Some a -> Some a
+    | None -> ( match get_attribute Attributes.get_allocation address attrs with
+                  | Some (_, trace) -> Some trace
+                  | None -> ( match get_attribute Attributes.get_abdallocation address attrs with
+                                | Some (_, trace) -> Some trace
+                                | None -> None
+                            )
+              )
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
@@ -109,3 +163,24 @@ let is_end_of_collection address attrs =
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs
   |> Option.value_map ~default:false ~f:Attributes.is_std_vector_reserved
+
+
+let is_empty_heap_attrs addresses hattrs=
+  not (Graph.exists (fun addr attrs -> AbstractValue.Set.mem addr addresses && (Attributes.is_not_empty_heap attrs)) hattrs)
+
+module GraphS = PrettyPrintable.MakePPMonoMap (AbstractValue) (Attribute.Set)
+
+type st = GraphS.t
+
+let sempty = GraphS.empty
+
+let sfold = GraphS.fold
+           
+let union addr attributes attrs =
+  match GraphS.find_opt addr attrs with
+  | None ->
+        let new_attrs = Attributes.fold attributes ~init:Attribute.Set.empty ~f:(fun acc attr -> Attribute.Set.add attr acc) in
+      GraphS.add addr new_attrs attrs
+  | Some old_attrs ->
+      let new_attrs = Attributes.fold attributes ~init:old_attrs ~f:(fun acc attr -> Attribute.Set.add attr acc) in
+      GraphS.add addr new_attrs attrs

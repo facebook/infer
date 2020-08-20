@@ -16,8 +16,12 @@ type t =
       {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | OrError of (t list * Location.t)
+[@@deriving compare]
 
-val get_message : t -> string
+val equal : t -> t -> bool
+
+val get_message : ?print_loc:bool -> t -> string
 
 val get_location : t -> Location.t
 

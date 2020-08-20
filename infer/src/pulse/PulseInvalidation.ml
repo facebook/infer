@@ -44,6 +44,7 @@ let pp_java_iterator_function f = function Remove -> F.pp_print_string f "Iterat
 type t =
   | CFree
   | ConstantDereference of IntLit.t
+  | UninitializedDereference
   | CppDelete
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
@@ -59,6 +60,8 @@ let issue_type_of_cause = function
       IssueType.nullptr_dereference
   | ConstantDereference _ ->
       IssueType.constant_address_dereference
+  | UninitializedDereference ->
+     IssueType.pulse_dangling_pointer_dereference
   | CppDelete ->
       IssueType.use_after_delete
   | EndIterator ->
@@ -70,6 +73,30 @@ let issue_type_of_cause = function
   | JavaIterator _ | StdVector _ ->
       IssueType.vector_invalidation
 
+let equal v1 v2=
+  match v1, v2 with
+    | CFree, CFree -> true
+    | ConstantDereference i1, ConstantDereference i2 -> IntLit.eq i1 i2
+    | CppDelete, CppDelete
+      | CFree, CppDelete
+      | UninitializedDereference, UninitializedDereference
+      | EndIterator, EndIterator
+      | GoneOutOfScope _, GoneOutOfScope _
+      | OptionalEmpty, OptionalEmpty
+      | StdVector _, StdVector _
+      | JavaIterator _, JavaIterator _ -> true
+    | _ -> false
+
+     
+let is_abduce_free v=
+  match v with
+    | CFree -> true
+    | _ -> false
+
+let is_actual_free v=
+  match v with
+    | CppDelete | CFree -> true
+    | _ -> false
 
 let describe f cause =
   match cause with
@@ -78,7 +105,9 @@ let describe f cause =
   | ConstantDereference i when IntLit.iszero i ->
       F.pp_print_string f "is the null pointer"
   | ConstantDereference i ->
-      F.fprintf f "is the constant %a" IntLit.pp i
+     F.fprintf f "is the constant %a" IntLit.pp i
+  | UninitializedDereference ->
+      F.pp_print_string f "is uninitialized"
   | CppDelete ->
       F.pp_print_string f "was invalidated by `delete`"
   | EndIterator ->
@@ -104,6 +133,8 @@ let pp f invalidation =
       F.fprintf f "CFree(%a)" describe invalidation
   | ConstantDereference _ ->
       F.fprintf f "ConstantDereference(%a)" describe invalidation
+  | UninitializedDereference ->
+      F.fprintf f "UninitializedDereference(%a)" describe invalidation
   | CppDelete ->
       F.fprintf f "CppDelete(%a)" describe invalidation
   | EndIterator | GoneOutOfScope _ | OptionalEmpty ->

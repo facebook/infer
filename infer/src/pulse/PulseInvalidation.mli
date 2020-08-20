@@ -26,6 +26,7 @@ type java_iterator_function = Remove [@@deriving compare]
 type t =
   | CFree
   | ConstantDereference of IntLit.t
+  | UninitializedDereference
   | CppDelete
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
@@ -33,6 +34,12 @@ type t =
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
 [@@deriving compare]
+
+val equal : t -> t -> bool
+
+val is_abduce_free : t -> bool
+
+val is_actual_free : t -> bool
 
 val pp : F.formatter -> t -> unit
 

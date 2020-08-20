@@ -38,16 +38,28 @@ module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (Edges)
 let register_address addr memory =
   if Graph.mem addr memory then memory else Graph.add addr Edges.empty memory
 
+let remove_address addr memory =
+   Graph.remove addr memory
+
+let find_edges_opt addr memory =
+  Graph.find_opt addr memory
+  
+let find_edge_opt addr access memory =
+  let open Option.Monad_infix in
+  find_edges_opt addr memory >>= Edges.find_opt access
 
 let add_edge addr_src access value memory =
   let old_edges = Graph.find_opt addr_src memory |> Option.value ~default:Edges.empty in
   let new_edges = Edges.add access value old_edges in
   if phys_equal old_edges new_edges then memory else Graph.add addr_src new_edges memory
 
+let exist_edge_dest dest_addr=
+  Graph.exists (fun _ e ->
+     let ne = Edges.filter e ~f:(fun (_, (addr, _)) ->
+                      AbstractValue.equal addr dest_addr) in
+     not (Edges.is_empty ne)
+      )
 
-let find_edge_opt addr access memory =
-  let open Option.Monad_infix in
-  Graph.find_opt addr memory >>= Edges.find_opt access
 
 
 include Graph
