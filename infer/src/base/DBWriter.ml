@@ -100,72 +100,77 @@ module Implementation = struct
 
 
   let merge_procedures_table ~db_file =
-    let db = ResultsDatabase.get_database () in
     (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
        sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
        cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
        NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-    Sqlite3.exec db
-      {|
-        INSERT OR REPLACE INTO memdb.procedures
-        SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees
-        FROM (
-          attached.procedures AS sub
-          LEFT OUTER JOIN memdb.procedures AS main
-          ON sub.proc_name = main.proc_name )
-        WHERE
-          main.attr_kind IS NULL
-          OR main.attr_kind < sub.attr_kind
-          OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
-      |}
-    |> SqliteUtils.check_result_code db
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO memdb.procedures
+              SELECT
+                sub.proc_name,
+                sub.proc_name_hum,
+                sub.attr_kind,
+                sub.source_file,
+                sub.proc_attributes,
+                sub.cfg,
+                sub.callees
+              FROM (
+                attached.procedures AS sub
+                LEFT OUTER JOIN memdb.procedures AS main
+                ON sub.proc_name = main.proc_name )
+              WHERE
+                main.attr_kind IS NULL
+                OR main.attr_kind < sub.attr_kind
+                OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
+            |}
 
 
   let merge_source_files_table ~db_file =
-    let db = ResultsDatabase.get_database () in
-    Sqlite3.exec db
-      {|
-        INSERT OR REPLACE INTO memdb.source_files
-        SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
-        FROM attached.source_files
-      |}
-    |> SqliteUtils.check_result_code db
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO memdb.source_files
+              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
+              FROM attached.source_files
+            |}
 
 
   let copy_to_main db =
-    Sqlite3.exec db {| INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures |}
-    |> SqliteUtils.check_result_code db ~log:"Copying procedures into main db" ;
-    Sqlite3.exec db {| INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files |}
-    |> SqliteUtils.check_result_code db ~log:"Copying source_files into main db"
+    SqliteUtils.exec db ~log:"Copying procedures into main db"
+      ~stmt:"INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures" ;
+    SqliteUtils.exec db ~log:"Copying source_files into main db"
+      ~stmt:"INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files"
 
 
   let merge_db infer_out_src =
     let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
     let main_db = ResultsDatabase.get_database () in
-    Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
-    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
+    SqliteUtils.exec main_db
+      ~stmt:(Printf.sprintf "ATTACH '%s' AS attached" db_file)
+      ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
     merge_procedures_table ~db_file ;
     merge_source_files_table ~db_file ;
-    Sqlite3.exec main_db "DETACH attached"
-    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "detaching database '%s'" db_file)
+    SqliteUtils.exec main_db ~stmt:"DETACH attached"
+      ~log:(Printf.sprintf "detaching database '%s'" db_file)
 
 
   let merge infer_deps_file =
     let main_db = ResultsDatabase.get_database () in
-    Sqlite3.exec main_db "ATTACH ':memory:' AS memdb"
-    |> SqliteUtils.check_result_code main_db ~log:"attaching memdb" ;
+    SqliteUtils.exec main_db ~stmt:"ATTACH ':memory:' AS memdb" ~log:"attaching memdb" ;
     ResultsDatabase.create_tables ~prefix:"memdb." main_db ;
     Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
     copy_to_main main_db ;
-    Sqlite3.exec main_db "DETACH memdb"
-    |> SqliteUtils.check_result_code main_db ~log:"detaching memdb"
+    SqliteUtils.exec main_db ~stmt:"DETACH memdb" ~log:"detaching memdb"
 
 
   let canonicalize () =
-    let db = ResultsDatabase.get_database () in
-    SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
+    ResultsDatabase.get_database () |> SqliteUtils.exec ~log:"running VACUUM" ~stmt:"VACUUM"
 
 
   let reset_capture_tables () =
@@ -203,8 +208,8 @@ module Implementation = struct
 
 
   let delete_all_specs () =
-    let db = ResultsDatabase.get_database () in
-    SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
 end
 
 module Command = struct
