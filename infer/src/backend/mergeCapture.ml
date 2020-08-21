@@ -23,8 +23,10 @@ let merge_global_tenvs infer_deps_file =
     Tenv.read global_tenv_path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
   in
   Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge infer_deps_file ;
+  let time1 = Mtime_clock.counter () in
   Tenv.store_global global_tenv ;
-  L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0)
+  L.progress "Merging type environments took %a, of which %a were spent storing the global tenv@."
+    Mtime.Span.pp (Mtime_clock.count time0) Mtime.Span.pp (Mtime_clock.count time1)
 
 
 let merge_json_results infer_out_src json_entry =
